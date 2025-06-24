@@ -1,10 +1,11 @@
-use crate::web::StatusCode;
+
 // HTTP server implementation for GlowUpHTTP
 
 use crate::stdlib::glowup_http::error::{GlowUpError, GlowUpResult};
 use crate::stdlib::glowup_http::handler::{Handler, HandlerFunc};
 use crate::stdlib::glowup_http::request::{VibeRequest, Method, HttpVersion, HeaderMap};
-use crate::stdlib::glowup_http::response::{ResponderVibe, StatusCode};
+use crate::stdlib::glowup_http::response::ResponderVibe;
+use crate::web::StatusCode;
 use std::collections::HashMap;
 use std::io::{BufRead, BufReader, BufWriter, Read, Write};
 use std::net::{SocketAddr, TcpListener, TcpStream};
@@ -414,7 +415,7 @@ impl ConnectionHandler {
             handler.handle_vibe(&response, &request)?;
         } else {
             // No handler - return 404
-            response.write_header(StatusCode::NOT_FOUND);
+            response.write_header(StatusCode::NotFound);
             response.write(b"Not Found")?;
         }
         

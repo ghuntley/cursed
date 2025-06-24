@@ -15,7 +15,7 @@ use inkwell::{
     context::Context,
     module::Module,
     values::{FunctionValue, BasicValueEnum, InstructionValue, StructValue, PointerValue},
-    crate::types::{StructType, BasicType, BasicTypeEnum, IntType, FloatType, PointerType},
+    types::{StructType, BasicType, BasicTypeEnum, IntType, FloatType, PointerType},
     basic_block::BasicBlock,
     builder::Builder,
     AddressSpace,

@@ -86,9 +86,9 @@ impl Barrier {
         }
 
         let handle = if let Some(ref name) = config.name {
-            IpcHandle::named(name, crate::stdlib::ipc::crate::types::IpcHandleType::Barrier)
+            IpcHandle::named(name, crate::stdlib::ipc::types::IpcHandleType::Barrier)
         } else {
-            IpcHandle::anonymous(crate::stdlib::ipc::crate::types::IpcHandleType::Barrier)
+            IpcHandle::anonymous(crate::stdlib::ipc::types::IpcHandleType::Barrier)
         };
 
         let state = BarrierState {

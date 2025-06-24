@@ -1,8 +1,8 @@
-//! Type Information Extractor for CURSED Documentation
-//! 
-//! This module provides comprehensive type information extraction for
-//! documentation generation, including complete type signatures, generic
-//! parameters, constraints, and relationships.
+// Type Information Extractor for CURSED Documentation
+// 
+// This module provides comprehensive type information extraction for
+// documentation generation, including complete type signatures, generic
+// parameters, constraints, and relationships.
 
 use crate::ast::*;
 use crate::documentation::extractors::ast_node_support::{ExpressionType, Literal};

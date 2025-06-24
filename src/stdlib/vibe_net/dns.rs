@@ -1,4 +1,4 @@
-//! DNS resolution types and utilities for VibeNet
+// DNS resolution types and utilities for VibeNet
 
 use crate::error::CursedError;
 use crate::error::Error;

@@ -1,13 +1,13 @@
 use crate::error::Error;
-//! Workspace management for CURSED language server
-//! 
-//! Handles multi-file projects, workspace folders, and project-wide operations
-//! with comprehensive semantic analysis using CURSED's compiler infrastructure
+// Workspace management for CURSED language server
+// 
+// Handles multi-file projects, workspace folders, and project-wide operations
+// with comprehensive semantic analysis using CURSED's compiler infrastructure
 
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 use dashmap::DashMap;
-use tower_lsp::lsp_crate::types::*;
+use tower_lsp::lsp_types::*;
 use tracing::{debug, error, info, instrument, warn};
 use walkdir::WalkDir;
 

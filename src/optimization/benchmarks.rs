@@ -1,8 +1,8 @@
 
-//! Performance Benchmarking System for CURSED Optimization
-//! 
-//! Provides comprehensive benchmarking infrastructure to measure and validate
-//! performance improvements from various optimization techniques.
+// Performance Benchmarking System for CURSED Optimization
+// 
+// Provides comprehensive benchmarking infrastructure to measure and validate
+// performance improvements from various optimization techniques.
 
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};

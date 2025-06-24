@@ -1,7 +1,7 @@
-//! Build Pipeline System
-//! 
-//! Comprehensive build pipeline that orchestrates all build phases including
-//! formatting, linting, compilation, testing, documentation, and packaging.
+// Build Pipeline System
+// 
+// Comprehensive build pipeline that orchestrates all build phases including
+// formatting, linting, compilation, testing, documentation, and packaging.
 
 use crate::build_system::{
     BuildConfig, BuildTarget, BuildProfile, BuildResult, BuildError, 

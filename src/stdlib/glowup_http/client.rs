@@ -638,7 +638,7 @@ async fn convert_response(response: reqwest::Response) -> GlowUpResult<VibeRespo
         status,
         headers,
         body,
-        status_line: format!("{} {}", status, StatusCode::from_u16(status).unwrap_or(StatusCode::OK).canonical_reason().unwrap_or("Unknown")),
+        status_line: format!("{} {}", status, StatusCode::from_u16(status).unwrap_or(StatusCode::OK).canonical_reason()),
         status_code: StatusCode::from_u16(status).unwrap_or(StatusCode::OK),
         proto: "HTTP/1.1".to_string(),
         content_length: body.len() as i64,

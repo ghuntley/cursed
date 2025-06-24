@@ -1,8 +1,9 @@
+// Channel runtime system for CURSED
+// 
+// Provides channel operations, buffering, synchronization primitives,
+// and select functionality for goroutine communication.
+
 use crate::error::Error;
-//! Channel runtime system for CURSED
-//! 
-//! Provides channel operations, buffering, synchronization primitives,
-//! and select functionality for goroutine communication.
 
 pub mod buffer;
 pub mod select;

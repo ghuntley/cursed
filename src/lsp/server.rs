@@ -1,5 +1,5 @@
 use crate::error::Error;
-//! Main LSP server implementation
+// Main LSP server implementation
 
 use std::sync::Arc;
 use tokio::net::{TcpListener, ToSocketAddrs};

@@ -1,8 +1,8 @@
-//! PEM/DER Codec - Production Implementation
+// PEM/DER Codec - Production Implementation
 
 use crate::stdlib::packages::crypto_pki::{
     error::{PkiError, PkiResult},
-    crate::types::*,
+    types::*,
 };
 
 /// Encoding format enumeration

@@ -1,5 +1,5 @@
 use crate::error::Error;
-//! SlayProcess implementation for process management
+// SlayProcess implementation for process management
 
 use std::sync::{Arc, Mutex};
 use std::time::{Duration, Instant};

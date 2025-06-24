@@ -1,4 +1,4 @@
-//! Connection pool implementation for VibeNet
+// Connection pool implementation for VibeNet
 
 use crate::error::CursedError;
 use crate::error::Error;

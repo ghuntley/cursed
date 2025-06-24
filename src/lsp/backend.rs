@@ -1,5 +1,5 @@
 use crate::error::Error;
-//! LSP backend implementation providing the core language server functionality
+// LSP backend implementation providing the core language server functionality
 
 use std::collections::HashMap;
 use std::sync::Arc;
@@ -8,7 +8,7 @@ use ropey::Rope;
 use serde_json::Value;
 use tokio::sync::RwLock;
 use tower_lsp::jsonrpc::{Result as LspResult, Error as LspError};
-use tower_lsp::lsp_crate::types::*;
+use tower_lsp::lsp_types::*;
 use tower_lsp::{Client, LanguageServer};
 use tracing::{debug, error, info, instrument, warn};
 

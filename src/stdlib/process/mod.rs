@@ -111,7 +111,7 @@ pub use exec_vibez::{
     VibezCommand as ProcessVibezCommand,
     VibezResult as ProcessVibezResult
 };
-pub use exec_vibez_crate::types::{
+pub use exec_vibez_types::{
     VibezResult, ExecutionContext, EnhancedCmd, ResourceLimits as ExecResourceLimits,
     SecurityContext as ExecSecurityContext, ExecutionMode, Priority
 };

@@ -1,7 +1,7 @@
-//! Key validation utilities for cryptographic keys
-//! 
-//! Provides comprehensive validation for RSA, elliptic curve, and EdDSA keys
-//! with mathematical verification and security parameter checking.
+// Key validation utilities for cryptographic keys
+// 
+// Provides comprehensive validation for RSA, elliptic curve, and EdDSA keys
+// with mathematical verification and security parameter checking.
 
 use crate::stdlib::value::Value;
 use crate::error::CursedError;

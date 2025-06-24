@@ -1,8 +1,8 @@
 use crate::error::Error;
-//! Session Management for CURSED REPL
-//! 
-//! Manages REPL session state including variables, functions,
-//! command history, and code execution context.
+// Session Management for CURSED REPL
+// 
+// Manages REPL session state including variables, functions,
+// command history, and code execution context.
 
 use std::collections::HashMap;
 use std::time::SystemTime;

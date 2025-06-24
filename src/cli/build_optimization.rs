@@ -1,8 +1,8 @@
 
-//! Enhanced CLI for Build Optimization Commands
-//! 
-//! Provides comprehensive command-line interface for advanced build system
-//! optimization features including analytics, distributed compilation, and performance tuning.
+// Enhanced CLI for Build Optimization Commands
+// 
+// Provides comprehensive command-line interface for advanced build system
+// optimization features including analytics, distributed compilation, and performance tuning.
 
 use clap::{Parser, Subcommand, Args};
 use std::path::PathBuf;

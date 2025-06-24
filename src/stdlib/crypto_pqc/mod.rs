@@ -1,30 +1,30 @@
-//! Comprehensive Post-Quantum Cryptography Module for CURSED
-//! 
-//! This module provides production-ready implementations of post-quantum cryptographic algorithms
-//! that are believed to be secure against attacks by quantum computers.
-//! 
-//! # Algorithm Families Supported
-//! 
-//! - **Lattice-based**: Kyber, Dilithium, NTRU, FrodoKEM
-//! - **Hash-based**: SPHINCS+, LMS, XMSS
-//! - **Multivariate**: Rainbow, GeMSS  
-//! - **Code-based**: Classic McEliece, BIKE, HQC
-//! - **Isogeny-based**: SIKE/SIDH (deprecated but included for research)
-//! 
-//! # Features
-//! 
-//! - NIST PQC standardization compliance
-//! - Hybrid classical+PQC protocols for migration
-//! - Performance benchmarking and algorithm selection
-//! - Comprehensive key management with multiple formats
-//! - Integration with existing PKI infrastructure
-//! 
-//! # Security Levels
-//! 
-//! All algorithms provide multiple security levels:
-//! - Level 1: Equivalent to AES-128 (128-bit classical security)
-//! - Level 3: Equivalent to AES-192 (192-bit classical security)
-//! - Level 5: Equivalent to AES-256 (256-bit classical security)
+// Comprehensive Post-Quantum Cryptography Module for CURSED
+// 
+// This module provides production-ready implementations of post-quantum cryptographic algorithms
+// that are believed to be secure against attacks by quantum computers.
+// 
+// # Algorithm Families Supported
+// 
+// - **Lattice-based**: Kyber, Dilithium, NTRU, FrodoKEM
+// - **Hash-based**: SPHINCS+, LMS, XMSS
+// - **Multivariate**: Rainbow, GeMSS  
+// - **Code-based**: Classic McEliece, BIKE, HQC
+// - **Isogeny-based**: SIKE/SIDH (deprecated but included for research)
+// 
+// # Features
+// 
+// - NIST PQC standardization compliance
+// - Hybrid classical+PQC protocols for migration
+// - Performance benchmarking and algorithm selection
+// - Comprehensive key management with multiple formats
+// - Integration with existing PKI infrastructure
+// 
+// # Security Levels
+// 
+// All algorithms provide multiple security levels:
+// - Level 1: Equivalent to AES-128 (128-bit classical security)
+// - Level 3: Equivalent to AES-192 (192-bit classical security)
+// - Level 5: Equivalent to AES-256 (256-bit classical security)
 
 pub mod algorithms;
 pub mod key_management;

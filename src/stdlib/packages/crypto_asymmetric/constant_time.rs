@@ -1,7 +1,7 @@
-//! Constant time operations
-//! 
-//! Provides constant time cryptographic operations to prevent timing side-channel attacks.
-//! All operations in this module are designed to execute in constant time regardless of input values.
+// Constant time operations
+// 
+// Provides constant time cryptographic operations to prevent timing side-channel attacks.
+// All operations in this module are designed to execute in constant time regardless of input values.
 
 use crate::stdlib::value::Value;
 use crate::error::CursedError;

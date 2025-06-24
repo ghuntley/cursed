@@ -1,8 +1,8 @@
 
-//! Comprehensive Performance Optimization System for CURSED
-//! 
-//! This module provides a complete optimization system that enables all major
-//! optimization features by default and implements advanced optimization strategies.
+// Comprehensive Performance Optimization System for CURSED
+// 
+// This module provides a complete optimization system that enables all major
+// optimization features by default and implements advanced optimization strategies.
 
 use std::time::{Duration, Instant};
 use std::collections::HashMap;

@@ -1,8 +1,8 @@
-//! Production-ready Performance Optimization System for CURSED
-//! 
-//! This module provides a complete implementation of the performance optimization system
-//! that replaces placeholder implementations with real functionality providing measurable
-//! performance improvements.
+// Production-ready Performance Optimization System for CURSED
+// 
+// This module provides a complete implementation of the performance optimization system
+// that replaces placeholder implementations with real functionality providing measurable
+// performance improvements.
 
 use crate::error::{Error, Result};
 use crate::common::optimization_level::OptimizationLevel;
@@ -10,7 +10,7 @@ use crate::optimization::{
     build_profiles::{BuildProfile, ProfileManager},
     config::OptimizationConfig,
     compilation_speed::CompilationUnit,
-    benchmarking_crate::types::{BenchmarkType, BenchmarkConfig, BenchmarkResults, BenchmarkingEngine},
+    benchmarking_types::{BenchmarkType, BenchmarkConfig, BenchmarkResults, BenchmarkingEngine},
     performance_system::{
         PerformanceSystemConfig, PerformanceMonitoringLevel, ParallelConfig, CacheConfig,
         CompilationPerformanceMetrics, AdaptiveDecision, AdaptiveDecisionType, PerformanceRecommendation,

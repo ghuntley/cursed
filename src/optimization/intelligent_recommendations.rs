@@ -1,7 +1,7 @@
-//! Intelligent Optimization Recommendations System for CURSED
-//! 
-//! This module provides comprehensive code analysis and generates intelligent
-//! optimization recommendations based on CURSED source code patterns and constructs.
+// Intelligent Optimization Recommendations System for CURSED
+// 
+// This module provides comprehensive code analysis and generates intelligent
+// optimization recommendations based on CURSED source code patterns and constructs.
 
 use crate::ast::*;
 use crate::parser::Parser;

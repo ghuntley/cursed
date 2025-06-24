@@ -1,8 +1,8 @@
 use crate::error::Error;
-//! CURSED Optimization Profiler
-//! 
-//! A command-line tool for analyzing and reporting optimization performance
-//! across different optimization levels and compilation strategies.
+// CURSED Optimization Profiler
+// 
+// A command-line tool for analyzing and reporting optimization performance
+// across different optimization levels and compilation strategies.
 
 use clap::{Arg, App, SubCommand};
 use cursed::optimization::{

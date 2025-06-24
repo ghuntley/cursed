@@ -1,8 +1,8 @@
-//! LaTeX Documentation Generator
-//! 
-//! A comprehensive LaTeX documentation generator for the CURSED programming language
-//! that produces professional academic-style documentation with syntax highlighting,
-//! mathematical notation, cross-references, and support for multiple document classes.
+// LaTeX Documentation Generator
+// 
+// A comprehensive LaTeX documentation generator for the CURSED programming language
+// that produces professional academic-style documentation with syntax highlighting,
+// mathematical notation, cross-references, and support for multiple document classes.
 
 use crate::ast::*;
 use crate::error::{Error, SourceLocation};

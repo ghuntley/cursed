@@ -11,7 +11,7 @@
 /// - Enables panic handling and memory management
 
 use crate::stdlib::value::Value;
-use crate::crate::stdlib::errors_simple::CursedError;
+use crate::stdlib::errors_simple::CursedError;
 use std::collections::HashMap;
 use std::any::Any;
 use std::panic;

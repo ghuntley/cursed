@@ -1,8 +1,8 @@
 use crate::error::Error;
-//! Incremental Build Cache
-//! 
-//! Provides caching mechanisms for incremental builds to speed up
-//! recompilation by tracking file dependencies and build artifacts.
+// Incremental Build Cache
+// 
+// Provides caching mechanisms for incremental builds to speed up
+// recompilation by tracking file dependencies and build artifacts.
 
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;

@@ -20,7 +20,7 @@ use inkwell::{
     values::{FunctionValue, BasicValue, BasicValueEnum, InstructionValue, IntValue, FloatValue, PointerValue, CallSiteValue},
     basic_block::BasicBlock,
     builder::Builder,
-    crate::types::{BasicType, BasicTypeEnum, FunctionType},
+    types::{BasicType, BasicTypeEnum, FunctionType},
     IntPredicate, FloatPredicate,
     passes::{PassManager},
 };

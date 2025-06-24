@@ -1,11 +1,11 @@
 use crate::error::Error;
-//! Semantic highlighting implementation for CURSED language constructs
-//! 
-//! Provides comprehensive semantic highlighting for CURSED's Gen Z slang keywords,
-//! type system, and language constructs.
+// Semantic highlighting implementation for CURSED language constructs
+// 
+// Provides comprehensive semantic highlighting for CURSED's Gen Z slang keywords,
+// type system, and language constructs.
 
 use std::collections::HashMap;
-use tower_lsp::lsp_crate::types::*;
+use tower_lsp::lsp_types::*;
 use tracing::{debug, instrument};
 
 use crate::lexer::{Lexer, Token, TokenType};

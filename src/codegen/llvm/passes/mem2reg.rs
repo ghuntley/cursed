@@ -14,7 +14,7 @@ use inkwell::{
     values::{FunctionValue, BasicValueEnum, InstructionValue, BasicValue, PointerValue},
     basic_block::BasicBlock,
     builder::Builder,
-    crate::types::{BasicType, BasicTypeEnum},
+    types::{BasicType, BasicTypeEnum},
 };
 
 use std::collections::{HashMap, HashSet, VecDeque};

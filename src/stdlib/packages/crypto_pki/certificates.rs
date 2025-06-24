@@ -1,8 +1,8 @@
-//! PKI Certificates - Enhanced Implementation
-//! 
-//! Comprehensive certificate management and utilities for CURSED crypto.
+// PKI Certificates - Enhanced Implementation
+// 
+// Comprehensive certificate management and utilities for CURSED crypto.
 
-use crate::stdlib::packages::crypto_pki::crate::types::*;
+use crate::stdlib::packages::crypto_pki::types::*;
 use crate::stdlib::packages::crypto_pki::error::{PkiError, PkiResult};
 use crate::error::Error;
 use std::collections::HashMap;

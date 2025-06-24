@@ -132,7 +132,7 @@ impl Handler for VibeRouter {
             final_handler.handle_vibe(w, r)
         } else {
             // No route found
-            use crate::stdlib::glowup_http::response::StatusCode;
+            use crate::web::StatusCode;
             w.write_header(StatusCode::NOT_FOUND);
             w.write(b"Not Found")?;
             Ok(())
@@ -158,7 +158,7 @@ pub use new_vibe_router as NewVibeRouter;
 mod tests {
     use super::*;
     use crate::stdlib::glowup_http::handler::handler_func;
-    use crate::stdlib::glowup_http::response::StatusCode;
+    use crate::web::StatusCode;
 
     #[test]
     fn test_router_creation() {

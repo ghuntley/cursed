@@ -1,14 +1,14 @@
-//! Certificate Revocation List (CRL) Manager - Production Implementation
-//! 
-//! Complete CRL management including:
-//! - CRL generation and distribution
-//! - Revocation checking
-//! - Delta CRL support
-//! - CRL caching and validation
+// Certificate Revocation List (CRL) Manager - Production Implementation
+// 
+// Complete CRL management including:
+// - CRL generation and distribution
+// - Revocation checking
+// - Delta CRL support
+// - CRL caching and validation
 
 use crate::stdlib::packages::crypto_pki::{
     error::{PkiError, PkiResult, CertificateErrorCode},
-    crate::types::*,
+    types::*,
 };
 use std::collections::{HashMap, HashSet};
 use std::sync::{Arc, Mutex};

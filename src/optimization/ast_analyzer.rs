@@ -1,7 +1,7 @@
-//! Advanced AST Analysis for Optimization Recommendations
-//! 
-//! This module provides sophisticated AST analysis capabilities for detecting
-//! optimization patterns in CURSED source code.
+// Advanced AST Analysis for Optimization Recommendations
+// 
+// This module provides sophisticated AST analysis capabilities for detecting
+// optimization patterns in CURSED source code.
 
 use crate::ast::*;
 use crate::optimization::intelligent_recommendations::*;

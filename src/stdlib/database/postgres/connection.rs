@@ -13,7 +13,7 @@ use crate::stdlib::database::{
 use crate::error::Error;
 use super::config::PostgresConfig;
 use super::error::{PostgresError, PostgresErrorKind, PostgresResult};
-use super::crate::types::{map_postgres_value, prepare_parameters, extract_column_info};
+use super::types::{map_postgres_value, prepare_parameters, extract_column_info};
 use super::statement::PostgresStatement;
 use super::transaction::PostgresTransaction;
 
@@ -179,7 +179,7 @@ impl PostgresConnection {
         self.update_stats(|stats| stats.queries_executed += 1);
         
         let params = prepare_parameters(args)?;
-        let param_refs: Vec<&(dyn tokio_postgres::crate::types::ToSql + Sync)> = 
+        let param_refs: Vec<&(dyn tokio_postgres::types::ToSql + Sync)> = 
             params.iter().map(|p| p.as_ref()).collect();
         
         let rows = tokio::time::timeout(
@@ -233,7 +233,7 @@ impl PostgresConnection {
         self.update_stats(|stats| stats.queries_executed += 1);
         
         let params = prepare_parameters(args)?;
-        let param_refs: Vec<&(dyn tokio_postgres::crate::types::ToSql + Sync)> = 
+        let param_refs: Vec<&(dyn tokio_postgres::types::ToSql + Sync)> = 
             params.iter().map(|p| p.as_ref()).collect();
         
         let rows_affected = tokio::time::timeout(

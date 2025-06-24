@@ -1,7 +1,7 @@
-//! Bootstrap CLI Commands
-//!
-//! This module provides CLI commands for the CURSED bootstrap compiler system,
-//! enabling self-hosting capability through multi-stage compilation.
+// Bootstrap CLI Commands
+//
+// This module provides CLI commands for the CURSED bootstrap compiler system,
+// enabling self-hosting capability through multi-stage compilation.
 
 use crate::bootstrap::{
     SelfCompilationVerifier, VerificationConfig, VerificationResult

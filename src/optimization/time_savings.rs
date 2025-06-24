@@ -1,4 +1,4 @@
-//! Real time savings calculations for optimization passes
+// Real time savings calculations for optimization passes
 
 use crate::error::{Result, CursedError};
 use crate::optimization::metrics::CompilationUnit;

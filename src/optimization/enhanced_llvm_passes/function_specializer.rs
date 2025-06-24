@@ -11,7 +11,7 @@ use tracing::{debug, trace};
 
 use inkwell::{
     values::{FunctionValue, BasicValue, BasicValueEnum, CallSiteValue},
-    crate::types::{BasicType, FunctionType},
+    types::{BasicType, FunctionType},
     module::Module,
     builder::Builder,
     context::Context,

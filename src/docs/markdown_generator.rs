@@ -1,6 +1,6 @@
-//! Markdown Documentation Generator
-//! 
-//! Generates comprehensive Markdown documentation for GitHub and other markdown platforms.
+// Markdown Documentation Generator
+// 
+// Generates comprehensive Markdown documentation for GitHub and other markdown platforms.
 
 use crate::docs::generator::{DocGeneratorConfig, ExtractedDocumentation, DocumentationItem};
 use crate::error::Error;

@@ -1,8 +1,8 @@
-//! Core heap interface and algorithms
-//!
-//! This module provides the fundamental heap operations that work with any type
-//! implementing the `Interface` collab. The heap is maintained as a binary heap
-//! where each parent node satisfies the heap property relative to its children.
+// Core heap interface and algorithms
+//
+// This module provides the fundamental heap operations that work with any type
+// implementing the `Interface` collab. The heap is maintained as a binary heap
+// where each parent node satisfies the heap property relative to its children.
 
 use crate::stdlib::value::Value;
 use crate::error::Error;

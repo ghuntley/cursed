@@ -1,8 +1,8 @@
-//! Relationship Extractor for CURSED Documentation
-//! 
-//! This module provides comprehensive extraction of relationships between
-//! code elements, including inheritance, implementation, usage, and
-//! cross-reference relationships for documentation generation.
+// Relationship Extractor for CURSED Documentation
+// 
+// This module provides comprehensive extraction of relationships between
+// code elements, including inheritance, implementation, usage, and
+// cross-reference relationships for documentation generation.
 
 use crate::ast::*;
 use crate::documentation::extractors::ast_node_support::{ExpressionType, Literal};

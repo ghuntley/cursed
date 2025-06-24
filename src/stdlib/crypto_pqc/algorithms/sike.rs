@@ -1,7 +1,7 @@
-//! SIKE/SIDH Isogeny-based Implementation (DEPRECATED)
-//! 
-//! SIKE/SIDH was broken by classical attacks and should not be used.
-//! This is included only for research and educational purposes.
+// SIKE/SIDH Isogeny-based Implementation (DEPRECATED)
+// 
+// SIKE/SIDH was broken by classical attacks and should not be used.
+// This is included only for research and educational purposes.
 
 use crate::stdlib::crypto_pqc::{PqcResult, PqcError, SecurityLevel, AlgorithmType};
 use crate::error::Error;

@@ -1,5 +1,5 @@
 use crate::error::Error;
-//! Core import resolution logic
+// Core import resolution logic
 
 use std::path::{Path, PathBuf};
 use std::collections::HashMap;

@@ -1,4 +1,4 @@
-//! LLVM optimization pass management and integration
+// LLVM optimization pass management and integration
 
 use crate::error::{Result, CursedError};
 use crate::optimization::{OptimizationConfig};

@@ -1,6 +1,6 @@
 /// Certificate Operations - Production Implementation
 
-use crate::stdlib::packages::crypto_pki::crate::types::{PkiResult, PkiError, X509Certificate};
+use crate::stdlib::packages::crypto_pki::types::{PkiResult, PkiError, X509Certificate};
 use crate::error::Error;
 use std::collections::HashMap;
 use std::time::SystemTime;

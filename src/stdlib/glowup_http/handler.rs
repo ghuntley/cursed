@@ -112,7 +112,7 @@ impl Handler for FileHandler {
     fn handle_vibe(&self, w: &ResponderVibe, r: &VibeRequest) -> GlowUpResult<()> {
         use std::path::{Path, PathBuf};
         use std::fs;
-        use crate::stdlib::glowup_http::response::StatusCode;
+        use crate::web::StatusCode;
         
         debug!("Serving file for {} {}", r.method, r.url);
         
@@ -124,7 +124,7 @@ impl Handler for FileHandler {
         
         // Prevent directory traversal
         if path.contains("..") {
-            w.write_header(StatusCode::BAD_REQUEST);
+            w.write_header(StatusCode::BadRequest);
             w.write(b"Bad Request")?;
             return Ok(());
         }
@@ -148,7 +148,7 @@ impl Handler for FileHandler {
                         w.write(&content)?;
                     }
                     Err(_) => {
-                        w.write_header(StatusCode::INTERNAL_SERVER_ERROR);
+                        w.write_header(StatusCode::InternalServerError);
                         w.write(b"Internal Server Error")?;
                     }
                 }
@@ -169,7 +169,7 @@ impl Handler for FileHandler {
                             w.write(&content)?;
                         }
                         Err(_) => {
-                            w.write_header(StatusCode::INTERNAL_SERVER_ERROR);
+                            w.write_header(StatusCode::InternalServerError);
                             w.write(b"Internal Server Error")?;
                         }
                     }
@@ -240,14 +240,14 @@ impl RedirectHandler {
 impl Handler for RedirectHandler {
     #[instrument(skip(self, w, r))]
     fn handle_vibe(&self, w: &ResponderVibe, r: &VibeRequest) -> GlowUpResult<()> {
-        use crate::stdlib::glowup_http::response::StatusCode;
+        use crate::web::StatusCode;
         
         debug!("Redirecting {} {} to {}", r.method, r.url, self.url);
         
         let status_code = if self.permanent {
-            StatusCode::MOVED_PERMANENTLY
+            StatusCode::MovedPermanently
         } else {
-            StatusCode::FOUND
+            StatusCode::Found
         };
         
         w.redirect(&self.url, status_code)?;
@@ -316,7 +316,7 @@ where
 mod tests {
     use super::*;
     use crate::stdlib::glowup_http::request::Method;
-    use crate::stdlib::glowup_http::response::StatusCode;
+    use crate::web::StatusCode;
 
     #[test]
     fn test_static_handler() {
@@ -343,7 +343,7 @@ mod tests {
         
         let headers = response.get_headers();
         assert_eq!(headers.get("location"), Some(&"/new-location".to_string()));
-        assert_eq!(response.get_status(), Some(StatusCode::FOUND));
+        assert_eq!(response.get_status(), Some(StatusCode::Found));
     }
 
     #[test]

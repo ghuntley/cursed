@@ -1,5 +1,5 @@
 use crate::error::Error;
-//! SlayTask implementation for background task management
+// SlayTask implementation for background task management
 
 use std::sync::{Arc, Mutex};
 use std::time::{Duration, Instant};

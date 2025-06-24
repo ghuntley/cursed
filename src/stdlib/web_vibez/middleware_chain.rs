@@ -498,7 +498,7 @@ impl MiddlewareChain {
             debug!("Executing request handler");
             if let Err(e) = handler.handle(context, response).await {
                 error!(error = %e, "Handler execution failed");
-                response.set_status(crate::stdlib::web_vibez::StatusCode::INTERNAL_SERVER_ERROR);
+                response.set_status(crate::stdlib::web_vibez::StatusCode::InternalServerError);
                 response.set_text(&format!("Handler error: {}", e));
             }
         }

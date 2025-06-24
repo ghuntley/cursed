@@ -1,14 +1,14 @@
 use crate::error::Error;
-//! Associated Types Implementation for CURSED Language
-//! 
-//! This module provides support for associated types in interfaces,
-//! enabling more expressive and flexible generic programming patterns.
+// Associated Types Implementation for CURSED Language
+// 
+// This module provides support for associated types in interfaces,
+// enabling more expressive and flexible generic programming patterns.
 
 use std::collections::{HashMap, HashSet};
 use std::sync::{Arc, RwLock};
 use tracing::{debug, error, info, warn, instrument};
 
-use crate::ast::crate::types::Type;
+use crate::ast::types::Type;
 use crate::ast::traits::TypeParameter;
 use crate::ast::declarations::GenericConstraint;
 use crate::error::CursedError;

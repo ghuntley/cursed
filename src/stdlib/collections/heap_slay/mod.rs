@@ -1,34 +1,34 @@
-//! # heap_slay (container/heap)
-//!
-//! The `heap_slay` module provides an implementation of the heap (priority queue) data structure.
-//! It supports insertion, removal, and extraction of the minimum or maximum element in logarithmic time.
-//! This implementation uses the collab approach, making it flexible for various element types.
-//!
-//! ## Core Features
-//!
-//! - **Interface-based Design**: Any type implementing the `Interface` collab can use heap operations
-//! - **Logarithmic Time Complexity**: O(log n) for all major operations (Push, Pop, Remove)
-//! - **Flexible Ordering**: Support for both min and max heaps through custom Less functions
-//! - **Memory Efficient**: In-place operations that maintain heap property
-//! - **Type Safety**: Strongly typed implementations for common use cases
-//!
-//! ## Usage Examples
-//!
-//! ```cursed
-//! import "stdlib::collections::heap_slay";
-//!
-//! // Basic IntHeap example
-//! let mut h = IntHeap::new();
-//! heap_slay::push(&mut h, 3);
-//! heap_slay::push(&mut h, 1);
-//! heap_slay::push(&mut h, 5);
-//! let min = heap_slay::pop(&mut h); // Returns 1
-//!
-//! // Priority queue example
-//! let mut pq = PriorityQueue::new();
-//! let item = Item { value: "task", priority: 5, index: 0 };
-//! heap_slay::push(&mut pq, item);
-//! ```
+// # heap_slay (container/heap)
+//
+// The `heap_slay` module provides an implementation of the heap (priority queue) data structure.
+// It supports insertion, removal, and extraction of the minimum or maximum element in logarithmic time.
+// This implementation uses the collab approach, making it flexible for various element types.
+//
+// ## Core Features
+//
+// - **Interface-based Design**: Any type implementing the `Interface` collab can use heap operations
+// - **Logarithmic Time Complexity**: O(log n) for all major operations (Push, Pop, Remove)
+// - **Flexible Ordering**: Support for both min and max heaps through custom Less functions
+// - **Memory Efficient**: In-place operations that maintain heap property
+// - **Type Safety**: Strongly typed implementations for common use cases
+//
+// ## Usage Examples
+//
+// ```cursed
+// import "stdlib::collections::heap_slay";
+//
+// // Basic IntHeap example
+// let mut h = IntHeap::new();
+// heap_slay::push(&mut h, 3);
+// heap_slay::push(&mut h, 1);
+// heap_slay::push(&mut h, 5);
+// let min = heap_slay::pop(&mut h); // Returns 1
+//
+// // Priority queue example
+// let mut pq = PriorityQueue::new();
+// let item = Item { value: "task", priority: 5, index: 0 };
+// heap_slay::push(&mut pq, item);
+// ```
 
 pub mod core;
 pub mod types;

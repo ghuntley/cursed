@@ -1,7 +1,7 @@
-//! Distributed Compilation Coordinator
-//!
-//! Main coordinator for managing distributed compilation across multiple worker nodes.
-//! Handles job distribution, result collection, and coordination with other subsystems.
+// Distributed Compilation Coordinator
+//
+// Main coordinator for managing distributed compilation across multiple worker nodes.
+// Handles job distribution, result collection, and coordination with other subsystems.
 
 use crate::error::{CursedError, Result};
 

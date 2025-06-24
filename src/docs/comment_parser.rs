@@ -1,6 +1,6 @@
-//! Documentation Comment Parser
-//! 
-//! Parses documentation comments from CURSED source code and extracts structured information.
+// Documentation Comment Parser
+// 
+// Parses documentation comments from CURSED source code and extracts structured information.
 
 use crate::error::{Error, SourceLocation};
 use crate::docs::generator::Example;

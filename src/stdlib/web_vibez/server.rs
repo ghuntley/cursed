@@ -419,7 +419,7 @@ impl ConnectionHandler {
                     
                     // Send error response
                     let error_response = HttpResponse {
-                        status: StatusCode::INTERNAL_SERVER_ERROR,
+                        status: StatusCode::InternalServerError,
                         headers: HashMap::new(),
                         body: b"Internal Server Error".to_vec(),
                         version: HttpVersion::Http1_1,
@@ -641,7 +641,7 @@ impl ConnectionHandler {
             None => {
                 // No route found - return 404
                 let mut response = ResponseContext::new();
-                response.set_status(StatusCode::NOT_FOUND);
+                response.set_status(StatusCode::NotFound);
                 response.set_body(b"Not Found".to_vec());
                 Ok(response)
             }

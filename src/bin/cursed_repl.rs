@@ -1,15 +1,15 @@
 use crate::error::Error;
 #!/usr/bin/env rust
-//! CURSED REPL - Interactive Read-Eval-Print Loop
-//! 
-//! Enhanced interactive shell for the CURSED programming language with:
-//! - Syntax highlighting for keywords, operators, literals, and comments
-//! - Multi-line input support with automatic indentation detection
-//! - Built-in command system for development tools
-//! - Tab completion for keywords, variables, and functions
-//! - Session management with variable persistence
-//! - Build system integration for project-aware features
-//! - Comprehensive error handling and recovery
+// CURSED REPL - Interactive Read-Eval-Print Loop
+// 
+// Enhanced interactive shell for the CURSED programming language with:
+// - Syntax highlighting for keywords, operators, literals, and comments
+// - Multi-line input support with automatic indentation detection
+// - Built-in command system for development tools
+// - Tab completion for keywords, variables, and functions
+// - Session management with variable persistence
+// - Build system integration for project-aware features
+// - Comprehensive error handling and recovery
 
 use clap::{Arg, ArgAction, Command};
 use std::process;

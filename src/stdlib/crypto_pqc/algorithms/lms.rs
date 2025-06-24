@@ -1,6 +1,6 @@
-//! LMS (Leighton-Micali Signature) Hash-based Signature Implementation
-//! 
-//! LMS is a stateful hash-based signature scheme providing strong security guarantees.
+// LMS (Leighton-Micali Signature) Hash-based Signature Implementation
+// 
+// LMS is a stateful hash-based signature scheme providing strong security guarantees.
 
 use crate::stdlib::crypto_pqc::{PqcResult, SecurityLevel, AlgorithmType};
 use super::DigitalSignature;

@@ -1,8 +1,8 @@
-//! Build Performance Profiler
-//! 
-//! Advanced build performance profiling and analysis system providing detailed
-//! insights into compilation bottlenecks, resource utilization, timing analysis,
-//! and optimization recommendations for improved developer productivity.
+// Build Performance Profiler
+// 
+// Advanced build performance profiling and analysis system providing detailed
+// insights into compilation bottlenecks, resource utilization, timing analysis,
+// and optimization recommendations for improved developer productivity.
 
 use crate::build_system::{BuildConfig, BuildTarget, BuildError, BuildResult, BuildStatistics};
 use crate::error::Error;

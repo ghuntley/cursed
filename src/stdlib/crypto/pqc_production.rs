@@ -1,59 +1,59 @@
-//! Production-Ready Post-Quantum Cryptography Module for CURSED
-//! 
-//! This module provides comprehensive post-quantum cryptographic algorithms that are believed
-//! to be secure against attacks by quantum computers. This implementation prioritizes:
-//! 
-//! - Real cryptographic functionality (no placeholders)
-//! - Constant-time operations where possible
-//! - Side-channel resistance
-//! - NIST standardization compliance
-//! - Hybrid classical-quantum schemes for transition
-//! - Production-ready error handling
-//! 
-//! # Quantum Threat Overview
-//! 
-//! Quantum computers pose a significant threat to current public-key cryptography:
-//! - Shor's algorithm can break RSA, ECDSA, and ECDH in polynomial time
-//! - Grover's algorithm halves the effective key length of symmetric algorithms
-//! - Large-scale quantum computers could be available within 10-20 years
-//! 
-//! # Post-Quantum Algorithms
-//! 
-//! ## NIST PQC Winners (2024):
-//! - **Kyber (ML-KEM)**: Module Lattice-based Key Encapsulation Mechanism
-//! - **Dilithium (ML-DSA)**: Module Lattice-based Digital Signature Algorithm
-//! - **SPHINCS+ (SLH-DSA)**: Stateless Hash-based Digital Signature Algorithm
-//! - **Falcon**: NTRU lattice-based compact signatures
-//! 
-//! ## Mathematical Foundations:
-//! - **Lattice-based**: LWE, Ring-LWE, Module-LWE hardness assumptions
-//! - **Hash-based**: One-way function and Merkle tree security
-//! - **Code-based**: Error-correcting code hardness (Classic McEliece)
-//! - **Multivariate**: Solving systems of multivariate polynomial equations
-//! - **Isogeny-based**: Supersingular isogeny graph traversal (SIKE - broken)
-//! 
-//! # Usage Examples
-//! 
-//! ```rust
-//! use cursed::stdlib::crypto::pqc_production::*;
-//! 
-//! // Kyber Key Encapsulation
-//! let (kyber_pk, kyber_sk) = KyberKem::keygen(SecurityLevel::Level3)?;
-//! let (ciphertext, shared_secret1) = KyberKem::encaps(&kyber_pk)?;
-//! let shared_secret2 = KyberKem::decaps(&kyber_sk, &ciphertext)?;
-//! assert_eq!(shared_secret1, shared_secret2);
-//! 
-//! // Dilithium Digital Signatures
-//! let (dil_pk, dil_sk) = DilithiumSigner::keygen(SecurityLevel::Level3)?;
-//! let message = b"Important message to sign";
-//! let signature = DilithiumSigner::sign(&dil_sk, message)?;
-//! let is_valid = DilithiumSigner::verify(&dil_pk, message, &signature)?;
-//! assert!(is_valid);
-//! 
-//! // Hybrid Classical-Quantum Key Exchange
-//! let hybrid_keys = HybridKeyExchange::generate_keypair(SecurityLevel::Level3)?;
-//! let shared_secret = HybridKeyExchange::perform_exchange(&hybrid_keys.public, &hybrid_keys.secret)?;
-//! ```
+// Production-Ready Post-Quantum Cryptography Module for CURSED
+// 
+// This module provides comprehensive post-quantum cryptographic algorithms that are believed
+// to be secure against attacks by quantum computers. This implementation prioritizes:
+// 
+// - Real cryptographic functionality (no placeholders)
+// - Constant-time operations where possible
+// - Side-channel resistance
+// - NIST standardization compliance
+// - Hybrid classical-quantum schemes for transition
+// - Production-ready error handling
+// 
+// # Quantum Threat Overview
+// 
+// Quantum computers pose a significant threat to current public-key cryptography:
+// - Shor's algorithm can break RSA, ECDSA, and ECDH in polynomial time
+// - Grover's algorithm halves the effective key length of symmetric algorithms
+// - Large-scale quantum computers could be available within 10-20 years
+// 
+// # Post-Quantum Algorithms
+// 
+// ## NIST PQC Winners (2024):
+// - **Kyber (ML-KEM)**: Module Lattice-based Key Encapsulation Mechanism
+// - **Dilithium (ML-DSA)**: Module Lattice-based Digital Signature Algorithm
+// - **SPHINCS+ (SLH-DSA)**: Stateless Hash-based Digital Signature Algorithm
+// - **Falcon**: NTRU lattice-based compact signatures
+// 
+// ## Mathematical Foundations:
+// - **Lattice-based**: LWE, Ring-LWE, Module-LWE hardness assumptions
+// - **Hash-based**: One-way function and Merkle tree security
+// - **Code-based**: Error-correcting code hardness (Classic McEliece)
+// - **Multivariate**: Solving systems of multivariate polynomial equations
+// - **Isogeny-based**: Supersingular isogeny graph traversal (SIKE - broken)
+// 
+// # Usage Examples
+// 
+// ```rust
+// use cursed::stdlib::crypto::pqc_production::*;
+// 
+// // Kyber Key Encapsulation
+// let (kyber_pk, kyber_sk) = KyberKem::keygen(SecurityLevel::Level3)?;
+// let (ciphertext, shared_secret1) = KyberKem::encaps(&kyber_pk)?;
+// let shared_secret2 = KyberKem::decaps(&kyber_sk, &ciphertext)?;
+// assert_eq!(shared_secret1, shared_secret2);
+// 
+// // Dilithium Digital Signatures
+// let (dil_pk, dil_sk) = DilithiumSigner::keygen(SecurityLevel::Level3)?;
+// let message = b"Important message to sign";
+// let signature = DilithiumSigner::sign(&dil_sk, message)?;
+// let is_valid = DilithiumSigner::verify(&dil_pk, message, &signature)?;
+// assert!(is_valid);
+// 
+// // Hybrid Classical-Quantum Key Exchange
+// let hybrid_keys = HybridKeyExchange::generate_keypair(SecurityLevel::Level3)?;
+// let shared_secret = HybridKeyExchange::perform_exchange(&hybrid_keys.public, &hybrid_keys.secret)?;
+// ```
 
 use std::collections::HashMap;
 use std::fmt;

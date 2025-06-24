@@ -1,7 +1,7 @@
-//! Error propagation AST nodes and parsing
-//!
-//! This module defines the AST structures for enhanced error propagation
-//! expressions including question mark operators, type assertions, and recovery.
+// Error propagation AST nodes and parsing
+//
+// This module defines the AST structures for enhanced error propagation
+// expressions including question mark operators, type assertions, and recovery.
 
 use crate::ast::traits::Expression;
 use std::fmt;

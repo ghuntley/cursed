@@ -1,7 +1,7 @@
-//! Key serialization utilities
-//! 
-//! Provides comprehensive key serialization functions for the CURSED stdlib.
-//! Supports PEM, DER, JWK, SSH, and raw formats for various key types.
+// Key serialization utilities
+// 
+// Provides comprehensive key serialization functions for the CURSED stdlib.
+// Supports PEM, DER, JWK, SSH, and raw formats for various key types.
 
 use crate::stdlib::value::Value;
 use crate::error::CursedError;

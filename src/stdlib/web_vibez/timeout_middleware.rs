@@ -596,7 +596,7 @@ impl Middleware for TimeoutMiddleware {
             if let Some(session_id) = session_data.as_string() {
                 let session_id_string = session_id.to_string();
                 if self.is_session_timed_out(&session_id_string) {
-                    response.set_status(StatusCode::UNAUTHORIZED);
+                    response.set_status(StatusCode::Unauthorized);
                     response.set_text("Session has expired");
                     return Err(MiddlewareError::Authentication("Session timeout".to_string()));
                 }

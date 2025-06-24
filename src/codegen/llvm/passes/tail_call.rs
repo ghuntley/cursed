@@ -13,7 +13,7 @@ use inkwell::{
     values::{FunctionValue, BasicValueEnum, InstructionValue, BasicValue, CallSiteValue},
     basic_block::BasicBlock,
     builder::Builder,
-    crate::types::BasicType,
+    types::BasicType,
 };
 
 use std::collections::{HashMap, HashSet};

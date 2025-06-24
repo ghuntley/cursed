@@ -1,37 +1,37 @@
-//! Standard logging convenience functions for the CURSED programming language
-//! 
-//! This module provides global logging functionality that operates on a shared
-//! default logger instance, offering convenient access to logging operations
-//! without needing to explicitly manage a logger instance.
-//! 
-//! # Functions
-//! 
-//! ## Output Functions
-//! - `spill(args...)` - Print arguments with newline
-//! - `spillf(format, args...)` - Formatted print with newline  
-//! - `fatal(args...)` - Print and exit with code 1
-//! - `fatalf(format, args...)` - Formatted print and exit with code 1
-//! - `shook(args...)` - Print and panic
-//! - `shookf(format, args...)` - Formatted print and panic
-//! 
-//! ## Configuration Functions
-//! - `set_flags(flags)` - Set default logger flags
-//! - `set_output(writer)` - Set default logger output destination
-//! - `set_prefix(prefix)` - Set default logger prefix
-//! - `flags()` - Get current flags
-//! - `prefix()` - Get current prefix
-//! - `writer()` - Get current writer (limited functionality)
-//! 
-//! # Thread Safety
-//! 
-//! All functions are thread-safe and can be called concurrently from multiple
-//! goroutines. The global logger instance is protected by a mutex to ensure
-//! serialized access.
-//! 
-//! # Error Handling
-//! 
-//! Functions that can fail return appropriate CURSED error types. Fatal functions
-//! and panic functions handle errors internally before terminating the program.
+// Standard logging convenience functions for the CURSED programming language
+// 
+// This module provides global logging functionality that operates on a shared
+// default logger instance, offering convenient access to logging operations
+// without needing to explicitly manage a logger instance.
+// 
+// # Functions
+// 
+// ## Output Functions
+// - `spill(args...)` - Print arguments with newline
+// - `spillf(format, args...)` - Formatted print with newline  
+// - `fatal(args...)` - Print and exit with code 1
+// - `fatalf(format, args...)` - Formatted print and exit with code 1
+// - `shook(args...)` - Print and panic
+// - `shookf(format, args...)` - Formatted print and panic
+// 
+// ## Configuration Functions
+// - `set_flags(flags)` - Set default logger flags
+// - `set_output(writer)` - Set default logger output destination
+// - `set_prefix(prefix)` - Set default logger prefix
+// - `flags()` - Get current flags
+// - `prefix()` - Get current prefix
+// - `writer()` - Get current writer (limited functionality)
+// 
+// # Thread Safety
+// 
+// All functions are thread-safe and can be called concurrently from multiple
+// goroutines. The global logger instance is protected by a mutex to ensure
+// serialized access.
+// 
+// # Error Handling
+// 
+// Functions that can fail return appropriate CURSED error types. Fatal functions
+// and panic functions handle errors internally before terminating the program.
 
 use std::sync::{Arc, Mutex};
 use std::io::{Write, stdout, stderr};

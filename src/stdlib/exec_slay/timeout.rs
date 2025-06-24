@@ -1,5 +1,5 @@
 use crate::error::Error;
-//! Timeout wrapper functions for command execution
+// Timeout wrapper functions for command execution
 
 use std::time::Duration;
 use crate::error::CursedError;

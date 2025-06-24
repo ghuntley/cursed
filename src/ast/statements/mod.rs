@@ -18,7 +18,7 @@ pub use module_statement::ModuleStatement;
 // Basic statements
 pub use basic_statements::{
     ExpressionStatement, ReturnStatement, BreakStatement, ContinueStatement,
-    ThrowStatement, TryStatement, CatchStatement, FinallyStatement
+    ThrowStatement, TryStatement, CatchStatement, FinallyStatement, PrintStatement
 };
 
 // Declaration statements

@@ -1,6 +1,6 @@
-//! API Documentation Extractor
-//! 
-//! Extracts comprehensive API documentation from the CURSED standard library and Rust source code.
+// API Documentation Extractor
+// 
+// Extracts comprehensive API documentation from the CURSED standard library and Rust source code.
 
 use crate::docs::generator::{ExtractedDocumentation, DocumentationItem, ItemKind, Visibility, Parameter, Example, SourceInfo};
 use crate::error::{Error, SourceLocation};

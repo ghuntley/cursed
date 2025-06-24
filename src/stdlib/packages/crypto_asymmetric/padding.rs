@@ -1,7 +1,7 @@
-//! Cryptographic padding schemes
-//! 
-//! Provides comprehensive padding schemes for asymmetric cryptography.
-//! Supports OAEP, PKCS#1 v1.5, and PSS padding with various hash algorithms.
+// Cryptographic padding schemes
+// 
+// Provides comprehensive padding schemes for asymmetric cryptography.
+// Supports OAEP, PKCS#1 v1.5, and PSS padding with various hash algorithms.
 
 use crate::stdlib::value::Value;
 use crate::error::CursedError;

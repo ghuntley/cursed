@@ -1,8 +1,8 @@
 use crate::error::Error;
-//! REPL Evaluation Engine for CURSED
-//! 
-//! Provides incremental compilation and execution capabilities
-//! for the CURSED REPL, managing execution context and state.
+// REPL Evaluation Engine for CURSED
+// 
+// Provides incremental compilation and execution capabilities
+// for the CURSED REPL, managing execution context and state.
 
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};

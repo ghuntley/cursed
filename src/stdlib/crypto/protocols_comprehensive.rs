@@ -1,53 +1,53 @@
-//! Comprehensive Cryptographic Protocols Suite for CURSED
-//! 
-//! This module provides a complete suite of production-ready cryptographic protocols
-//! that integrate all protocol implementations into a unified, easy-to-use interface.
-//! It serves as the main entry point for all cryptographic protocol operations.
-//! 
-//! # Protocol Suite Overview
-//! 
-//! ## Core Protocols
-//! - **Key Exchange**: X25519, ECDH, traditional Diffie-Hellman
-//! - **Authenticated Key Exchange**: ECDHE with Ed25519 signatures
-//! - **Secure Channels**: End-to-end encrypted communication with forward secrecy
-//! - **Challenge-Response Authentication**: Multi-round proof-of-work based authentication
-//! 
-//! ## Advanced Protocols  
-//! - **Multi-Party Computation**: Secure distributed computation with threshold schemes
-//! - **Distributed Key Generation**: Threshold key generation with Byzantine fault tolerance
-//! - **Zero-Knowledge Authentication**: Privacy-preserving identity verification
-//! - **Protocol Composition**: Framework for building complex protocol stacks
-//! 
-//! ## Security Features
-//! - **Perfect Forward Secrecy**: Automatic key rotation and ephemeral key management
-//! - **Replay Protection**: Sequence numbers and nonce-based anti-replay mechanisms
-//! - **Byzantine Fault Tolerance**: Protocols resilient to malicious participants
-//! - **Side-Channel Resistance**: Constant-time operations and secure memory handling
-//! 
-//! # Usage Examples
-//! 
-//! ```rust
-//! use cursed::stdlib::crypto::protocols_comprehensive::*;
-//! 
-//! // Basic key exchange
-//! let mut alice = ProtocolSuite::new(SecurityLevel::Level256);
-//! let mut bob = ProtocolSuite::new(SecurityLevel::Level256);
-//! 
-//! let (alice_public, bob_public) = alice.initiate_key_exchange(&mut bob)?;
-//! let shared_secret = alice.complete_key_exchange(bob_public)?;
-//! 
-//! // Secure channel establishment
-//! let mut channel = alice.create_secure_channel("channel_1", &shared_secret)?;
-//! let encrypted_message = channel.send(b"Hello, secure world!")?;
-//! let decrypted_message = channel.receive(&encrypted_message)?;
-//! 
-//! // Multi-party computation
-//! let mpc_result = alice.initiate_mpc_computation(
-//!     vec!["alice", "bob", "charlie"],
-//!     ComputationType::KeyGeneration,
-//!     threshold: 2
-//! )?;
-//! ```
+// Comprehensive Cryptographic Protocols Suite for CURSED
+// 
+// This module provides a complete suite of production-ready cryptographic protocols
+// that integrate all protocol implementations into a unified, easy-to-use interface.
+// It serves as the main entry point for all cryptographic protocol operations.
+// 
+// # Protocol Suite Overview
+// 
+// ## Core Protocols
+// - **Key Exchange**: X25519, ECDH, traditional Diffie-Hellman
+// - **Authenticated Key Exchange**: ECDHE with Ed25519 signatures
+// - **Secure Channels**: End-to-end encrypted communication with forward secrecy
+// - **Challenge-Response Authentication**: Multi-round proof-of-work based authentication
+// 
+// ## Advanced Protocols  
+// - **Multi-Party Computation**: Secure distributed computation with threshold schemes
+// - **Distributed Key Generation**: Threshold key generation with Byzantine fault tolerance
+// - **Zero-Knowledge Authentication**: Privacy-preserving identity verification
+// - **Protocol Composition**: Framework for building complex protocol stacks
+// 
+// ## Security Features
+// - **Perfect Forward Secrecy**: Automatic key rotation and ephemeral key management
+// - **Replay Protection**: Sequence numbers and nonce-based anti-replay mechanisms
+// - **Byzantine Fault Tolerance**: Protocols resilient to malicious participants
+// - **Side-Channel Resistance**: Constant-time operations and secure memory handling
+// 
+// # Usage Examples
+// 
+// ```rust
+// use cursed::stdlib::crypto::protocols_comprehensive::*;
+// 
+// // Basic key exchange
+// let mut alice = ProtocolSuite::new(SecurityLevel::Level256);
+// let mut bob = ProtocolSuite::new(SecurityLevel::Level256);
+// 
+// let (alice_public, bob_public) = alice.initiate_key_exchange(&mut bob)?;
+// let shared_secret = alice.complete_key_exchange(bob_public)?;
+// 
+// // Secure channel establishment
+// let mut channel = alice.create_secure_channel("channel_1", &shared_secret)?;
+// let encrypted_message = channel.send(b"Hello, secure world!")?;
+// let decrypted_message = channel.receive(&encrypted_message)?;
+// 
+// // Multi-party computation
+// let mpc_result = alice.initiate_mpc_computation(
+//     vec!["alice", "bob", "charlie"],
+//     ComputationType::KeyGeneration,
+//     threshold: 2
+// )?;
+// ```
 
 use std::collections::HashMap;
 use std::fmt;

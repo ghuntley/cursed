@@ -1,7 +1,7 @@
-//! Key agreement protocols
-//! 
-//! Provides comprehensive key agreement functions for the CURSED stdlib.
-//! Supports ECDH for P-256/P-384/P-521, X25519, X448, and RSA key exchange.
+// Key agreement protocols
+// 
+// Provides comprehensive key agreement functions for the CURSED stdlib.
+// Supports ECDH for P-256/P-384/P-521, X25519, X448, and RSA key exchange.
 
 use crate::stdlib::value::Value;
 use crate::error::CursedError;

@@ -134,32 +134,8 @@ impl std::str::FromStr for HttpMethod {
     }
 }
 
-/// Status codes for HTTP responses
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub struct StatusCode(pub u16);
+// Use the main StatusCode type from crate::web
 
-impl StatusCode {
-    pub const OK: StatusCode = StatusCode(200);
-    pub const CREATED: StatusCode = StatusCode(201);
-    pub const NO_CONTENT: StatusCode = StatusCode(204);
-    pub const BAD_REQUEST: StatusCode = StatusCode(400);
-    pub const UNAUTHORIZED: StatusCode = StatusCode(401);
-    pub const FORBIDDEN: StatusCode = StatusCode(403);
-    pub const NOT_FOUND: StatusCode = StatusCode(404);
-    pub const METHOD_NOT_ALLOWED: StatusCode = StatusCode(405);
-    pub const CONFLICT: StatusCode = StatusCode(409);
-    pub const TOO_MANY_REQUESTS: StatusCode = StatusCode(429);
-    pub const INTERNAL_SERVER_ERROR: StatusCode = StatusCode(500);
-    pub const NOT_IMPLEMENTED: StatusCode = StatusCode(501);
-    pub const BAD_GATEWAY: StatusCode = StatusCode(502);
-    pub const SERVICE_UNAVAILABLE: StatusCode = StatusCode(503);
-    pub const GATEWAY_TIMEOUT: StatusCode = StatusCode(504);
-}
-
-impl std::fmt::Display for StatusCode {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}", self.0)
-    }
-}
+// Display implementation is provided by the main StatusCode enum
 
 

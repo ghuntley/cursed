@@ -1,7 +1,7 @@
-//! Production-ready RSA-PSS Digital Signatures
-//! 
-//! Complete implementation of RSA-PSS (Probabilistic Signature Scheme)
-//! with support for multiple key sizes, salt lengths, and hash algorithms.
+// Production-ready RSA-PSS Digital Signatures
+// 
+// Complete implementation of RSA-PSS (Probabilistic Signature Scheme)
+// with support for multiple key sizes, salt lengths, and hash algorithms.
 
 use crate::stdlib::packages::crypto_signatures::{
     errors::{SignatureError, SignatureResult},

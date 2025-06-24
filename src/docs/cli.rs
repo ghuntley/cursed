@@ -1,6 +1,6 @@
-//! CLI Integration for Documentation Generation
-//! 
-//! Provides command-line interface for generating documentation from CURSED projects.
+// CLI Integration for Documentation Generation
+// 
+// Provides command-line interface for generating documentation from CURSED projects.
 
 use crate::docs::generator::{DocumentationGenerator, DocGeneratorConfig, DocFormat};
 use crate::error::Error;

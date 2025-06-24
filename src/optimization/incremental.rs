@@ -1,4 +1,4 @@
-//! Incremental compilation support for faster build times
+// Incremental compilation support for faster build times
 
 use crate::error::{Result, CursedError};
 pub use crate::optimization::metrics::CompilationUnit;

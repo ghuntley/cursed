@@ -1,7 +1,7 @@
-//! AST Documentation Extractors
-//! 
-//! This module provides comprehensive extractors for all CURSED language constructs,
-//! ensuring complete AST integration for accurate documentation generation.
+// AST Documentation Extractors
+// 
+// This module provides comprehensive extractors for all CURSED language constructs,
+// ensuring complete AST integration for accurate documentation generation.
 
 pub mod ast_extractor;
 pub mod comment_extractor;

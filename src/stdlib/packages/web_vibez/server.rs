@@ -15,7 +15,7 @@ use crate::stdlib::packages::web_vibez::{
     handler::Handler,
     middleware::MiddlewareChain,
     method::HttpMethod,
-    crate::types::{RequestBody, ContentType},
+    types::{RequestBody, ContentType},
     error::{WebError, WebResult, NetworkErrorKind},
     status::StatusCode,
 };

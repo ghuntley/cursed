@@ -1,7 +1,7 @@
-//! Project Template System
-//! 
-//! Provides templates for initializing new CURSED projects with proper
-//! structure, configuration files, and example code.
+// Project Template System
+// 
+// Provides templates for initializing new CURSED projects with proper
+// structure, configuration files, and example code.
 
 use crate::build_system::{BuildConfig, ProjectType};
 use crate::build_system::build_config::ConfigError;

@@ -1,0 +1,838 @@
+    Checking cursed v0.1.0 (/home/ghuntley/code/cursed)
+src/stdlib/signal_boost/mod.rs:3:1: error[E0255]: the name `Error` is defined multiple times: `Error` redefined here
+src/stdlib/errors.rs:16:1: error[E0255]: the name `ErrorSeverity` is defined multiple times: `ErrorSeverity` redefined here
+src/stdlib/http_core/response.rs:18:1: error[E0255]: the name `StatusCode` is defined multiple times: `StatusCode` redefined here
+src/stdlib/http_core/integration.rs:11:24: error[E0252]: the name `StatusCode` is defined multiple times: `StatusCode` reimported here
+src/stdlib/http_core/mod.rs:22:30: error[E0252]: the name `StatusCode` is defined multiple times: `StatusCode` reimported here
+src/stdlib/glowup_http/server.rs:7:59: error[E0252]: the name `StatusCode` is defined multiple times: `StatusCode` reimported here
+src/stdlib/glowup_http/response.rs:13:1: error[E0255]: the name `StatusCode` is defined multiple times: `StatusCode` redefined here
+src/stdlib/vibe_net/conn.rs:16:1: error[E0255]: the name `NetError` is defined multiple times: `NetError` redefined here
+src/error/debug_context.rs:8:21: error[E0432]: unresolved import `crate::runtime::debug_info`: could not find `debug_info` in `runtime`
+src/error/debug_context.rs:9:21: error[E0432]: unresolved import `crate::runtime::debug_manager`: could not find `debug_manager` in `runtime`
+src/codegen/llvm/main.rs:7:12: error[E0433]: failed to resolve: unresolved import: unresolved import, help: a similar path exists: `codegen::llvm::optimization`
+src/codegen/llvm/main.rs:8:12: error[E0433]: failed to resolve: unresolved import: unresolved import, help: a similar path exists: `codegen::llvm::optimization`
+src/codegen/llvm/main.rs:9:12: error[E0433]: failed to resolve: unresolved import: unresolved import, help: a similar path exists: `codegen::llvm::optimization`
+src/codegen/llvm/main.rs:11:12: error[E0433]: failed to resolve: unresolved import: unresolved import, help: a similar path exists: `codegen::llvm::optimization`
+src/codegen/llvm/main.rs:15:12: error[E0433]: failed to resolve: unresolved import: unresolved import, help: a similar path exists: `codegen::llvm::optimization`
+src/error/debug_context.rs:11:21: error[E0432]: unresolved import `crate::runtime::debug_runtime`: could not find `debug_runtime` in `runtime`
+src/codegen/llvm/main.rs:41:31: error[E0432]: unresolved imports `super::enhanced_codegen::EnhancedLlvmCodegen`, `super::enhanced_codegen::CodegenConfig`, `super::enhanced_codegen::CodegenStats`, `super::enhanced_codegen::CodegenResult`: no `EnhancedLlvmCodegen` in `codegen::llvm::enhanced_codegen`, no `CodegenConfig` in `codegen::llvm::enhanced_codegen`, no `CodegenStats` in `codegen::llvm::enhanced_codegen`, no `CodegenResult` in `codegen::llvm::enhanced_codegen`
+src/codegen/llvm/main.rs:48:34: error[E0432]: unresolved imports `super::variable_management::VariableManager`, `super::variable_management::VariableHandling`: no `VariableManager` in `codegen::llvm::variable_management`, no `VariableHandling` in `codegen::llvm::variable_management`
+src/codegen/llvm/main.rs:54:22: error[E0432]: unresolved imports `super::process::ProcessCompilation`, `super::process::ProcessControlOp`, `super::process::IpcChannelType`, `super::process::SharedMemoryOp`, `super::process::SignalOp`: no `ProcessCompilation` in `codegen::llvm::process`, no `ProcessControlOp` in `codegen::llvm::process`, no `IpcChannelType` in `codegen::llvm::process`, no `SharedMemoryOp` in `codegen::llvm::process`, no `SignalOp` in `codegen::llvm::process`
+src/codegen/llvm/main.rs:61:28: error[E0432]: unresolved imports `super::question_mark::QuestionMarkCompiler`, `super::question_mark::ErrorPropagationRuntime`, `super::question_mark::ErrorContext`: no `QuestionMarkCompiler` in `codegen::llvm::question_mark`, no `ErrorPropagationRuntime` in `codegen::llvm::question_mark`, no `ErrorContext` in `codegen::llvm::question_mark`
+src/codegen/llvm/main.rs:63:5: error[E0432]: unresolved imports `super::package_integration::LlvmPackageContext`, `super::package_integration::LlvmPackageConfig`, `super::package_integration::LlvmPackageError`, `super::package_integration::LlvmPackageIntegration`, `super::package_integration::CompiledPackageModule`, `super::package_integration::LlvmPackageStats`: no `LlvmPackageContext` in `codegen::llvm::package_integration`, no `LlvmPackageConfig` in `codegen::llvm::package_integration`, no `LlvmPackageError` in `codegen::llvm::package_integration`, no `LlvmPackageIntegration` in `codegen::llvm::package_integration`, no `CompiledPackageModule` in `codegen::llvm::package_integration`, no `LlvmPackageStats` in `codegen::llvm::package_integration`
+src/codegen/llvm/main.rs:74:27: error[E0432]: unresolved imports `super::optimization::OptimizationManager`, `super::optimization::OptimizationLevel`, `super::optimization::OptimizationConfig`, `super::optimization::OptimizationStats`, `super::optimization::utils`: no `OptimizationManager` in `codegen::llvm::optimization`, no `OptimizationLevel` in `codegen::llvm::optimization`, no `OptimizationConfig` in `codegen::llvm::optimization`, no `OptimizationStats` in `codegen::llvm::optimization`, no `utils` in `codegen::llvm::optimization`, help: a similar name exists in the module: `OptimizationDisabled`
+src/codegen/llvm/main.rs:92:5: error[E0432]: unresolved imports `super::template::TemplateCompiler`, `super::template::LlvmTemplateCompiler`, `super::template::TemplateCompilationContext`, `super::template::TemplateOptimizationLevel`, `super::template::CompiledTemplate`, `super::template::CompiledTemplateMetadata`, `super::template::TemplateCompilationStats`, `super::template::TemplateCompilationError`, `super::template::declare_template_runtime_functions`, `super::template::register_standard_filters`, `super::template::runtime`: no `TemplateCompiler` in `codegen::llvm::template`, no `LlvmTemplateCompiler` in `codegen::llvm::template`, no `TemplateCompilationContext` in `codegen::llvm::template`, no `TemplateOptimizationLevel` in `codegen::llvm::template`, no `CompiledTemplate` in `codegen::llvm::template`, no `CompiledTemplateMetadata` in `codegen::llvm::template`, no `TemplateCompilationStats` in `codegen::llvm::template`, no `TemplateCompilationError` in `codegen::llvm::template`, no `declare_template_runtime_functions` in `codegen::llvm::template`, no `register_standard_filters` in `codegen::llvm::template`
+src/codegen/llvm/main.rs:1349:29: error[E0432]: unresolved import `crate::runtime::panic`: could not find `panic` in `runtime`
+src/codegen/llvm/main.rs:1370:29: error[E0432]: unresolved import `crate::runtime::panic`: could not find `panic` in `runtime`
+src/codegen/llvm/main.rs:2573:29: error[E0432]: unresolved import `crate::runtime::panic`: could not find `panic` in `runtime`
+src/codegen/llvm/main.rs:2947:21: error[E0432]: unresolved import `crate::runtime::panic`: could not find `panic` in `runtime`
+src/codegen/llvm/optimization_engine.rs:7:27: error[E0432]: unresolved imports `super::optimization::OptimizationConfig`, `super::optimization::OptimizationLevel`, `super::optimization::OptimizationStats`: no `OptimizationConfig` in `codegen::llvm::optimization`, no `OptimizationLevel` in `codegen::llvm::optimization`, no `OptimizationStats` in `codegen::llvm::optimization`
+src/codegen/llvm/optimization_integration.rs:8:12: error[E0432]: unresolved import `crate::optimization`: unresolved import, help: a similar path exists: `codegen::llvm::optimization`
+src/codegen/llvm/channels.rs:18:17: error[E0433]: failed to resolve: `crate` in paths can only be used in start position: `crate` in paths can only be used in start position
+src/codegen/llvm/optimization_pipeline.rs:10:27: error[E0432]: unresolved imports `super::optimization::OptimizationLevel`, `super::optimization::OptimizationConfig`: no `OptimizationLevel` in `codegen::llvm::optimization`, no `OptimizationConfig` in `codegen::llvm::optimization`
+src/codegen/llvm/channels.rs:23:21: error[E0432]: unresolved import `crate::runtime::channels`: could not find `channels` in `runtime`
+src/codegen/llvm/database_integration.rs:14:5: error[E0432]: unresolved imports `crate::stdlib::database::llvm_integration::DatabaseLLVMIntegration`, `crate::stdlib::database::llvm_integration::DatabaseLLVMIntegrationImpl`, `crate::stdlib::database::llvm_integration::DatabaseFunction`: no `DatabaseLLVMIntegration` in `stdlib::database::llvm_integration`, no `DatabaseLLVMIntegrationImpl` in `stdlib::database::llvm_integration`, no `DatabaseFunction` in `stdlib::database::llvm_integration`
+src/codegen/llvm/database_integration.rs:239:13: error[E0432]: unresolved import `crate::stdlib::database::llvm_integration::ReturnType`: no `ReturnType` in `stdlib::database::llvm_integration`
+src/codegen/llvm/debug.rs:37:21: error[E0432]: unresolved import `crate::runtime::debug_info`: could not find `debug_info` in `runtime`
+src/codegen/llvm/debug_info.rs:8:21: error[E0432]: unresolved import `crate::runtime::debug_info`: could not find `debug_info` in `runtime`
+src/codegen/llvm/debug_metadata.rs:12:21: error[E0432]: unresolved import `crate::runtime::debug_info`: could not find `debug_info` in `runtime`
+src/codegen/llvm/error_handling.rs:11:21: error[E0432]: unresolved import `crate::runtime::error_handling`: could not find `error_handling` in `runtime`
+src/codegen/llvm/error_handling.rs:12:21: error[E0432]: unresolved import `crate::runtime::panic`: could not find `panic` in `runtime`
+src/codegen/llvm/error_propagation.rs:14:5: error[E0433]: failed to resolve: use of unresolved module or unlinked crate `inkwell`: use of unresolved module or unlinked crate `inkwell`
+src/codegen/llvm/error_propagation.rs:15:5: error[E0433]: failed to resolve: use of unresolved module or unlinked crate `inkwell`: use of unresolved module or unlinked crate `inkwell`
+src/codegen/llvm/error_propagation.rs:16:5: error[E0433]: failed to resolve: use of unresolved module or unlinked crate `inkwell`: use of unresolved module or unlinked crate `inkwell`
+src/codegen/llvm/error_propagation.rs:17:5: error[E0433]: failed to resolve: use of unresolved module or unlinked crate `inkwell`: use of unresolved module or unlinked crate `inkwell`
+src/codegen/llvm/error_propagation.rs:18:5: error[E0433]: failed to resolve: use of unresolved module or unlinked crate `inkwell`: use of unresolved module or unlinked crate `inkwell`
+src/codegen/llvm/error_handling.rs:13:21: error[E0432]: unresolved import `crate::runtime::stack_trace`: could not find `stack_trace` in `runtime`
+src/codegen/llvm/error_propagation.rs:19:5: error[E0432]: unresolved import `inkwell`: use of unresolved module or unlinked crate `inkwell`
+src/codegen/llvm/expression_compiler.rs:17:12: error[E0432]: unresolved import `crate::type_system`: unresolved import, help: a similar path exists: `codegen::llvm::type_system`
+src/codegen/llvm/expression_compiler.rs:19:5: error[E0432]: unresolved import `crate::codegen::llvm::variable_management::VariableManager`: no `VariableManager` in `codegen::llvm::variable_management`
+src/codegen/llvm/gc_integration.rs:13:43: error[E0432]: unresolved imports `crate::memory::gc::GcConfig`, `crate::memory::gc::Gc`: no `GcConfig` in `memory::gc`, no `Gc` in `memory::gc`
+src/codegen/llvm/gc_integration.rs:14:20: error[E0432]: unresolved import `crate::memory::object_id`: could not find `object_id` in `memory`
+src/codegen/llvm/goroutine.rs:15:5: error[E0433]: failed to resolve: use of unresolved module or unlinked crate `inkwell`: use of unresolved module or unlinked crate `inkwell`
+src/codegen/llvm/gc_integration.rs:15:21: error[E0432]: unresolved import `crate::runtime::goroutine`: could not find `goroutine` in `runtime`
+src/codegen/llvm/lto_integration.rs:8:12: error[E0433]: failed to resolve: unresolved import: unresolved import, help: a similar path exists: `codegen::llvm::optimization`
+src/codegen/llvm/goroutine.rs:15:5: error[E0432]: unresolved import `inkwell`: use of unresolved module or unlinked crate `inkwell`
+src/codegen/llvm/panic.rs:6:21: error[E0432]: unresolved import `crate::runtime::panic`: could not find `panic` in `runtime`
+src/codegen/llvm/panic.rs:7:21: error[E0432]: unresolved import `crate::runtime::recovery`: could not find `recovery` in `runtime`
+src/codegen/llvm/real_compilation.rs:23:12: error[E0433]: failed to resolve: unresolved import: unresolved import, help: a similar path exists: `codegen::llvm::optimization`
+src/codegen/llvm/real_compilation.rs:24:5: error[E0433]: failed to resolve: use of unresolved module or unlinked crate `inkwell`: use of unresolved module or unlinked crate `inkwell`
+src/codegen/llvm/real_compilation.rs:10:61: error[E0432]: unresolved import `crate::ast::statements::PrintStatement`: no `PrintStatement` in `ast::statements`, help: a similar name exists in the module: `PanicStatement`
+src/codegen/llvm/real_compilation.rs:492:20: error[E0433]: failed to resolve: unresolved import: unresolved import, help: a similar path exists: `codegen::llvm::optimization`
+src/codegen/llvm/real_compilation.rs:514:20: error[E0433]: failed to resolve: unresolved import: unresolved import, help: a similar path exists: `codegen::llvm::optimization`
+src/codegen/llvm/real_compilation.rs:532:20: error[E0433]: failed to resolve: unresolved import: unresolved import, help: a similar path exists: `codegen::llvm::optimization`
+src/codegen/llvm/real_optimization_integration.rs:8:12: error[E0433]: failed to resolve: unresolved import: unresolved import, help: a similar path exists: `codegen::llvm::optimization`
+src/codegen/llvm/real_optimization_integration.rs:10:12: error[E0433]: failed to resolve: unresolved import: unresolved import, help: a similar path exists: `codegen::llvm::optimization`
+src/codegen/llvm/type_system.rs:15:17: error[E0433]: failed to resolve: `crate` in paths can only be used in start position: `crate` in paths can only be used in start position
+src/codegen/llvm/real_compilation.rs:24:5: error[E0432]: unresolved import `inkwell`: use of unresolved module or unlinked crate `inkwell`
+src/codegen/llvm/web_vibez_integration.rs:8:5: error[E0433]: failed to resolve: use of unresolved module or unlinked crate `inkwell`: use of unresolved module or unlinked crate `inkwell`
+src/codegen/llvm/web_vibez_integration.rs:9:5: error[E0433]: failed to resolve: use of unresolved module or unlinked crate `inkwell`: use of unresolved module or unlinked crate `inkwell`
+src/codegen/llvm/web_vibez_integration.rs:10:5: error[E0433]: failed to resolve: use of unresolved module or unlinked crate `inkwell`: use of unresolved module or unlinked crate `inkwell`
+src/codegen/llvm/web_vibez_integration.rs:11:5: error[E0433]: failed to resolve: use of unresolved module or unlinked crate `inkwell`: use of unresolved module or unlinked crate `inkwell`
+src/codegen/llvm/web_vibez_integration.rs:12:5: error[E0433]: failed to resolve: use of unresolved module or unlinked crate `inkwell`: use of unresolved module or unlinked crate `inkwell`
+src/codegen/llvm/type_system.rs:18:12: error[E0432]: unresolved import `crate::type_system`: unresolved import, help: a similar path exists: `codegen::llvm::type_system`
+src/codegen/llvm/web_vibez_integration.rs:13:5: error[E0432]: unresolved import `inkwell`: use of unresolved module or unlinked crate `inkwell`
+src/codegen/llvm/web_vibez_integration.rs:17:20: error[E0432]: unresolved import `crate::memory::object_id`: could not find `object_id` in `memory`
+src/codegen/llvm/mod.rs:72:24: error[E0432]: unresolved imports `optimization::OptimizationConfig`, `optimization::OptimizationManager`, `optimization::LlvmOptimizer`: no `OptimizationConfig` in `codegen::llvm::optimization`, no `OptimizationManager` in `codegen::llvm::optimization`, no `LlvmOptimizer` in `codegen::llvm::optimization`, help: a similar name exists in the module: `OptimizationDisabled`
+src/codegen/llvm/mod.rs:84:5: error[E0432]: unresolved imports `performance_monitor::PerformanceMonitor`, `performance_monitor::MonitoringConfig`, `performance_monitor::CodeMetrics`, `performance_monitor::BaselineMetrics`, `performance_monitor::PerformanceReport`: no `PerformanceMonitor` in `codegen::llvm::performance_monitor`, no `MonitoringConfig` in `codegen::llvm::performance_monitor`, no `CodeMetrics` in `codegen::llvm::performance_monitor`, no `BaselineMetrics` in `codegen::llvm::performance_monitor`, no `PerformanceReport` in `codegen::llvm::performance_monitor`
+src/core/type_checker.rs:10:12: error[E0432]: unresolved import `crate::type_system`: unresolved import, help: a similar path exists: `codegen::llvm::type_system`
+src/core/performance_pipeline.rs:7:12: error[E0433]: failed to resolve: could not find `profiling` in the crate root: could not find `profiling` in the crate root
+src/stdlib/core.rs:14:12: error[E0433]: failed to resolve: `crate` in paths can only be used in start position: `crate` in paths can only be used in start position
+src/core/char.rs:2:12: error[E0432]: unresolved import `crate::object`: could not find `object` in the crate root
+src/stdlib/math/random.rs:6:5: error[E0432]: unresolved import `rand_chacha`: use of unresolved module or unlinked crate `rand_chacha`
+src/stdlib/math/random.rs:244:9: error[E0432]: unresolved import `rand_distr`: use of unresolved module or unlinked crate `rand_distr`
+src/stdlib/math/random.rs:266:9: error[E0432]: unresolved import `rand_distr`: use of unresolved module or unlinked crate `rand_distr`
+src/stdlib/math/random.rs:293:9: error[E0432]: unresolved import `rand_distr`: use of unresolved module or unlinked crate `rand_distr`
+src/stdlib/math/random.rs:316:9: error[E0432]: unresolved import `rand_distr`: use of unresolved module or unlinked crate `rand_distr`
+src/stdlib/math/random.rs:339:9: error[E0432]: unresolved import `rand_distr`: use of unresolved module or unlinked crate `rand_distr`
+src/stdlib/io/async_io.rs:9:21: error[E0432]: unresolved import `crate::runtime::r#async`: could not find `r#async` in `runtime`
+src/stdlib/signal_boost/context.rs:5:24: error[E0433]: failed to resolve: could not find `exec_vibez` in `stdlib`: could not find `exec_vibez` in `stdlib`
+src/stdlib/crypto/ed25519_keys.rs:1:12: error[E0432]: unresolved import `crate::crypto`: unresolved import, help: a similar path exists: `stdlib::crypto`
+src/stdlib/squish_core/gzip.rs:9:5: error[E0433]: failed to resolve: use of unresolved module or unlinked crate `flate2`: use of unresolved module or unlinked crate `flate2`
+src/stdlib/squish_core/gzip.rs:9:5: error[E0432]: unresolved import `flate2`: use of unresolved module or unlinked crate `flate2`
+src/stdlib/squish_core/zlib.rs:9:5: error[E0433]: failed to resolve: use of unresolved module or unlinked crate `flate2`: use of unresolved module or unlinked crate `flate2`
+src/stdlib/squish_core/zlib.rs:9:5: error[E0432]: unresolved import `flate2`: use of unresolved module or unlinked crate `flate2`
+src/stdlib/squish_core/flate.rs:9:5: error[E0433]: failed to resolve: use of unresolved module or unlinked crate `flate2`: use of unresolved module or unlinked crate `flate2`
+src/stdlib/squish_core/flate.rs:9:5: error[E0432]: unresolved import `flate2`: use of unresolved module or unlinked crate `flate2`
+src/stdlib/squish_core/bzip2.rs:10:5: error[E0433]: failed to resolve: use of unresolved module or unlinked crate `flate2`: use of unresolved module or unlinked crate `flate2`
+src/stdlib/squish_core/bzip2.rs:10:5: error[E0432]: unresolved import `flate2`: use of unresolved module or unlinked crate `flate2`
+src/stdlib/profiler/runtime_integration.rs:3:22: error[E0432]: unresolved imports `crate::runtime::GoroutineScheduler`, `crate::runtime::JitRuntime`: no `GoroutineScheduler` in `runtime`, no `JitRuntime` in `runtime`
+src/stdlib/vibecheck/goroutine.rs:6:21: error[E0432]: unresolved import `crate::runtime::goroutine`: could not find `goroutine` in `runtime`
+src/error/debug_context.rs:10:19: error[E0432]: unresolved import `crate::debug::enhanced_debug`: could not find `enhanced_debug` in `debug`
+src/error/error_propagation.rs:2:19: error[E0432]: unresolved import `crate::debug::source_location`: could not find `source_location` in `debug`
+src/error/types.rs:7:19: error[E0432]: unresolved import `crate::debug::source_location`: could not find `source_location` in `debug`
+src/ast/documentation.rs:16:5: error[E0432]: unresolved import `chrono`: no external crate `chrono`
+src/codegen/llvm/main.rs:29:5: error[E0433]: failed to resolve: use of unresolved module or unlinked crate `inkwell`: use of unresolved module or unlinked crate `inkwell`
+src/codegen/llvm/main.rs:67:12: error[E0433]: failed to resolve: could not find `result_crate` in `super`: could not find `result_crate` in `super`
+src/codegen/llvm/main.rs:104:9: error[E0433]: failed to resolve: use of unresolved module or unlinked crate `inkwell`: use of unresolved module or unlinked crate `inkwell`
+src/parser/async_await.rs:18:27: error[E0432]: unresolved import `crate::error::ParseError`: no `ParseError` in `error`, help: a similar name exists in the module: `CursedError`
+src/codegen/llvm/optimization_engine.rs:13:5: error[E0433]: failed to resolve: use of unresolved module or unlinked crate `inkwell`: use of unresolved module or unlinked crate `inkwell`
+src/codegen/llvm/main.rs:104:9: error[E0432]: unresolved import `inkwell`: use of unresolved module or unlinked crate `inkwell`
+src/codegen/llvm/optimization_passes.rs:13:5: error[E0433]: failed to resolve: use of unresolved module or unlinked crate `inkwell`: use of unresolved module or unlinked crate `inkwell`
+src/codegen/llvm/optimization_pipeline.rs:14:5: error[E0433]: failed to resolve: use of unresolved module or unlinked crate `rayon`: use of unresolved module or unlinked crate `rayon`
+src/codegen/llvm/async_await.rs:7:5: error[E0433]: failed to resolve: use of unresolved module or unlinked crate `inkwell`: use of unresolved module or unlinked crate `inkwell`
+src/codegen/llvm/control_flow.rs:12:5: error[E0433]: failed to resolve: use of unresolved module or unlinked crate `inkwell`: use of unresolved module or unlinked crate `inkwell`
+src/codegen/llvm/control_flow.rs:13:5: error[E0433]: failed to resolve: use of unresolved module or unlinked crate `inkwell`: use of unresolved module or unlinked crate `inkwell`
+src/codegen/llvm/control_flow.rs:14:5: error[E0433]: failed to resolve: use of unresolved module or unlinked crate `inkwell`: use of unresolved module or unlinked crate `inkwell`
+src/codegen/llvm/control_flow.rs:15:5: error[E0433]: failed to resolve: use of unresolved module or unlinked crate `inkwell`: use of unresolved module or unlinked crate `inkwell`
+src/codegen/llvm/control_flow.rs:16:5: error[E0433]: failed to resolve: use of unresolved module or unlinked crate `inkwell`: use of unresolved module or unlinked crate `inkwell`
+src/codegen/llvm/optimization_engine.rs:13:5: error[E0432]: unresolved import `inkwell`: use of unresolved module or unlinked crate `inkwell`
+src/codegen/llvm/database_integration.rs:7:5: error[E0433]: failed to resolve: use of unresolved module or unlinked crate `inkwell`: use of unresolved module or unlinked crate `inkwell`
+src/codegen/llvm/database_integration.rs:8:5: error[E0433]: failed to resolve: use of unresolved module or unlinked crate `inkwell`: use of unresolved module or unlinked crate `inkwell`
+src/codegen/llvm/database_integration.rs:9:5: error[E0433]: failed to resolve: use of unresolved module or unlinked crate `inkwell`: use of unresolved module or unlinked crate `inkwell`
+src/codegen/llvm/database_integration.rs:10:5: error[E0433]: failed to resolve: use of unresolved module or unlinked crate `inkwell`: use of unresolved module or unlinked crate `inkwell`
+src/codegen/llvm/control_flow.rs:17:5: error[E0432]: unresolved import `inkwell`: use of unresolved module or unlinked crate `inkwell`
+src/codegen/llvm/database_integration.rs:11:5: error[E0432]: unresolved import `inkwell`: use of unresolved module or unlinked crate `inkwell`
+src/codegen/llvm/database_integration.rs:222:13: error[E0432]: unresolved import `crate::stdlib::database::llvm_integration::ParameterType`: no `ParameterType` in `stdlib::database::llvm_integration`
+src/codegen/llvm/debug.rs:33:33: error[E0432]: unresolved imports `crate::debug::DebugInfo`, `crate::debug::DebugInfoManager`: no `DebugInfo` in `debug`, no `DebugInfoManager` in `debug`
+src/codegen/llvm/debug.rs:34:19: error[E0432]: unresolved import `crate::debug::dwarf_gen`: could not find `dwarf_gen` in `debug`
+src/codegen/llvm/debug.rs:39:5: error[E0433]: failed to resolve: use of unresolved module or unlinked crate `inkwell`: use of unresolved module or unlinked crate `inkwell`
+src/codegen/llvm/debug.rs:40:5: error[E0433]: failed to resolve: use of unresolved module or unlinked crate `inkwell`: use of unresolved module or unlinked crate `inkwell`
+src/codegen/llvm/debug.rs:41:5: error[E0433]: failed to resolve: use of unresolved module or unlinked crate `inkwell`: use of unresolved module or unlinked crate `inkwell`
+src/codegen/llvm/debug.rs:42:5: error[E0433]: failed to resolve: use of unresolved module or unlinked crate `inkwell`: use of unresolved module or unlinked crate `inkwell`
+src/codegen/llvm/debug.rs:43:5: error[E0433]: failed to resolve: use of unresolved module or unlinked crate `inkwell`: use of unresolved module or unlinked crate `inkwell`
+src/codegen/llvm/debug.rs:35:19: error[E0432]: unresolved import `crate::debug::debug_symbols`: could not find `debug_symbols` in `debug`
+src/codegen/llvm/debug_info.rs:14:5: error[E0433]: failed to resolve: use of unresolved module or unlinked crate `inkwell`: use of unresolved module or unlinked crate `inkwell`
+src/codegen/llvm/debug_info.rs:15:5: error[E0433]: failed to resolve: use of unresolved module or unlinked crate `inkwell`: use of unresolved module or unlinked crate `inkwell`
+src/codegen/llvm/debug_info.rs:16:5: error[E0433]: failed to resolve: use of unresolved module or unlinked crate `inkwell`: use of unresolved module or unlinked crate `inkwell`
+src/codegen/llvm/debug_info.rs:17:5: error[E0433]: failed to resolve: use of unresolved module or unlinked crate `inkwell`: use of unresolved module or unlinked crate `inkwell`
+src/codegen/llvm/debug_info.rs:9:19: error[E0432]: unresolved import `crate::debug::enhanced_debug`: could not find `enhanced_debug` in `debug`
+src/codegen/llvm/debug_integration.rs:2:20: error[E0432]: unresolved import `crate::debug::DebugInfoManager`: no `DebugInfoManager` in `debug`
+src/codegen/llvm/debug_metadata.rs:14:5: error[E0433]: failed to resolve: use of unresolved module or unlinked crate `inkwell`: use of unresolved module or unlinked crate `inkwell`
+src/codegen/llvm/debug_metadata.rs:15:5: error[E0433]: failed to resolve: use of unresolved module or unlinked crate `inkwell`: use of unresolved module or unlinked crate `inkwell`
+src/codegen/llvm/debug_metadata.rs:16:5: error[E0433]: failed to resolve: use of unresolved module or unlinked crate `inkwell`: use of unresolved module or unlinked crate `inkwell`
+src/codegen/llvm/debug_metadata.rs:17:5: error[E0433]: failed to resolve: use of unresolved module or unlinked crate `inkwell`: use of unresolved module or unlinked crate `inkwell`
+src/codegen/llvm/debug_metadata.rs:18:5: error[E0433]: failed to resolve: use of unresolved module or unlinked crate `inkwell`: use of unresolved module or unlinked crate `inkwell`
+src/codegen/llvm/debug_metadata.rs:10:49: error[E0432]: unresolved import `crate::debug::DebugInfoManager`: no `DebugInfoManager` in `debug`
+src/codegen/llvm/expression_compiler.rs:20:5: error[E0433]: failed to resolve: use of unresolved module or unlinked crate `inkwell`: use of unresolved module or unlinked crate `inkwell`
+src/codegen/llvm/debug_metadata.rs:26:5: error[E0432]: unresolved import `inkwell`: use of unresolved module or unlinked crate `inkwell`
+src/codegen/llvm/ipc.rs:9:5: error[E0433]: failed to resolve: use of unresolved module or unlinked crate `inkwell`: use of unresolved module or unlinked crate `inkwell`
+src/codegen/llvm/jit_compilation.rs:20:5: error[E0433]: failed to resolve: use of unresolved module or unlinked crate `inkwell`: use of unresolved module or unlinked crate `inkwell`
+src/codegen/llvm/expression_compiler.rs:20:5: error[E0432]: unresolved import `inkwell`: use of unresolved module or unlinked crate `inkwell`
+src/codegen/llvm/jit_engine.rs:12:5: error[E0433]: failed to resolve: use of unresolved module or unlinked crate `inkwell`: use of unresolved module or unlinked crate `inkwell`
+src/codegen/llvm/jit_compilation.rs:20:5: error[E0432]: unresolved import `inkwell`: use of unresolved module or unlinked crate `inkwell`
+src/codegen/llvm/lto_integration.rs:15:5: error[E0433]: failed to resolve: use of unresolved module or unlinked crate `inkwell`: use of unresolved module or unlinked crate `inkwell`
+src/codegen/llvm/jit_engine.rs:12:5: error[E0432]: unresolved import `inkwell`: use of unresolved module or unlinked crate `inkwell`
+src/codegen/llvm/lto_integration.rs:345:13: error[E0433]: failed to resolve: use of unresolved module or unlinked crate `inkwell`: use of unresolved module or unlinked crate `inkwell`
+src/codegen/llvm/lto_integration.rs:385:13: error[E0433]: failed to resolve: use of unresolved module or unlinked crate `inkwell`: use of unresolved module or unlinked crate `inkwell`
+src/codegen/llvm/osr.rs:12:5: error[E0433]: failed to resolve: use of unresolved module or unlinked crate `inkwell`: use of unresolved module or unlinked crate `inkwell`
+src/codegen/llvm/lto_integration.rs:15:5: error[E0432]: unresolved import `inkwell`: use of unresolved module or unlinked crate `inkwell`
+src/codegen/llvm/panic.rs:10:5: error[E0433]: failed to resolve: use of unresolved module or unlinked crate `inkwell`: use of unresolved module or unlinked crate `inkwell`
+src/codegen/llvm/panic.rs:11:5: error[E0433]: failed to resolve: use of unresolved module or unlinked crate `inkwell`: use of unresolved module or unlinked crate `inkwell`
+src/codegen/llvm/panic.rs:12:5: error[E0433]: failed to resolve: use of unresolved module or unlinked crate `inkwell`: use of unresolved module or unlinked crate `inkwell`
+src/codegen/llvm/panic.rs:13:5: error[E0433]: failed to resolve: use of unresolved module or unlinked crate `inkwell`: use of unresolved module or unlinked crate `inkwell`
+src/codegen/llvm/panic.rs:14:5: error[E0433]: failed to resolve: use of unresolved module or unlinked crate `inkwell`: use of unresolved module or unlinked crate `inkwell`
+src/codegen/llvm/panic.rs:15:5: error[E0433]: failed to resolve: use of unresolved module or unlinked crate `inkwell`: use of unresolved module or unlinked crate `inkwell`
+src/codegen/llvm/osr.rs:12:5: error[E0432]: unresolved import `inkwell`: use of unresolved module or unlinked crate `inkwell`
+src/codegen/llvm/process_execution.rs:46:5: error[E0433]: failed to resolve: use of unresolved module or unlinked crate `inkwell`: use of unresolved module or unlinked crate `inkwell`
+src/codegen/llvm/panic.rs:16:5: error[E0432]: unresolved import `inkwell`: use of unresolved module or unlinked crate `inkwell`
+src/codegen/llvm/process_execution.rs:46:5: error[E0432]: unresolved import `inkwell`: use of unresolved module or unlinked crate `inkwell`
+src/codegen/llvm/process_execution_ffi.rs:13:29: error[E0432]: unresolved import `crate::stdlib::process::core`: could not find `core` in `process`
+src/codegen/llvm/process_execution_ffi.rs:14:29: error[E0432]: unresolved import `crate::stdlib::process::exec_slay`: could not find `exec_slay` in `process`
+src/codegen/llvm/process_execution_ffi.rs:15:29: error[E0432]: unresolved import `crate::stdlib::process::exec_vibez`: could not find `exec_vibez` in `process`
+src/codegen/llvm/process_execution_ffi.rs:16:29: error[E0432]: unresolved import `crate::stdlib::process::background_tasks`: could not find `background_tasks` in `process`
+src/codegen/llvm/real_optimization_integration.rs:16:5: error[E0433]: failed to resolve: use of unresolved module or unlinked crate `inkwell`: use of unresolved module or unlinked crate `inkwell`
+src/codegen/llvm/process_execution_ffi.rs:17:29: error[E0432]: unresolved import `crate::stdlib::process::pipeline`: could not find `pipeline` in `process`
+src/codegen/llvm/stdlib_registry.rs:8:5: error[E0433]: failed to resolve: use of unresolved module or unlinked crate `inkwell`: use of unresolved module or unlinked crate `inkwell`
+src/codegen/llvm/stdlib_registry.rs:9:5: error[E0433]: failed to resolve: use of unresolved module or unlinked crate `inkwell`: use of unresolved module or unlinked crate `inkwell`
+src/codegen/llvm/stdlib_registry.rs:10:5: error[E0433]: failed to resolve: use of unresolved module or unlinked crate `inkwell`: use of unresolved module or unlinked crate `inkwell`
+src/codegen/llvm/stdlib_registry.rs:11:5: error[E0433]: failed to resolve: use of unresolved module or unlinked crate `inkwell`: use of unresolved module or unlinked crate `inkwell`
+src/codegen/llvm/real_optimization_integration.rs:16:5: error[E0432]: unresolved import `inkwell`: use of unresolved module or unlinked crate `inkwell`
+src/codegen/llvm/symbol_table.rs:8:5: error[E0433]: failed to resolve: use of unresolved module or unlinked crate `inkwell`: use of unresolved module or unlinked crate `inkwell`
+src/codegen/llvm/tiered_compilation.rs:12:5: error[E0433]: failed to resolve: use of unresolved module or unlinked crate `inkwell`: use of unresolved module or unlinked crate `inkwell`
+src/codegen/llvm/stdlib_registry.rs:12:5: error[E0432]: unresolved import `inkwell`: use of unresolved module or unlinked crate `inkwell`
+src/codegen/llvm/type_switch.rs:14:5: error[E0433]: failed to resolve: use of unresolved module or unlinked crate `inkwell`: use of unresolved module or unlinked crate `inkwell`
+src/codegen/llvm/type_switch.rs:15:5: error[E0433]: failed to resolve: use of unresolved module or unlinked crate `inkwell`: use of unresolved module or unlinked crate `inkwell`
+src/codegen/llvm/type_switch.rs:16:5: error[E0433]: failed to resolve: use of unresolved module or unlinked crate `inkwell`: use of unresolved module or unlinked crate `inkwell`
+src/codegen/llvm/type_switch.rs:17:5: error[E0433]: failed to resolve: use of unresolved module or unlinked crate `inkwell`: use of unresolved module or unlinked crate `inkwell`
+src/codegen/llvm/type_switch.rs:18:5: error[E0433]: failed to resolve: use of unresolved module or unlinked crate `inkwell`: use of unresolved module or unlinked crate `inkwell`
+src/codegen/llvm/tiered_compilation.rs:12:5: error[E0432]: unresolved import `inkwell`: use of unresolved module or unlinked crate `inkwell`
+src/core/performance_pipeline.rs:16:5: error[E0433]: failed to resolve: use of unresolved module or unlinked crate `rayon`: use of unresolved module or unlinked crate `rayon`
+src/codegen/llvm/type_switch.rs:19:5: error[E0432]: unresolved import `inkwell`: use of unresolved module or unlinked crate `inkwell`
+src/stdlib/math/big_mood.rs:15:5: error[E0432]: unresolved import `num_bigint`: use of unresolved module or unlinked crate `num_bigint`
+src/stdlib/math/big_mood.rs:16:5: error[E0432]: unresolved import `num_rational`: use of unresolved module or unlinked crate `num_rational`
+src/stdlib/math/big_mood.rs:17:5: error[E0432]: unresolved import `num_complex`: use of unresolved module or unlinked crate `num_complex`
+src/stdlib/math/big_mood.rs:273:13: error[E0432]: unresolved import `num_integer`: use of unresolved module or unlinked crate `num_integer`
+src/stdlib/math/big_mood.rs:1022:9: error[E0432]: unresolved import `num_integer`: use of unresolved module or unlinked crate `num_integer`
+src/stdlib/mod.rs:21:17: error[E0432]: unresolved import `crate::common::ParameterType`: no `ParameterType` in `common`
+src/stdlib/crypto/asymmetric.rs:16:5: error[E0433]: failed to resolve: use of unresolved module or unlinked crate `rsa`: use of unresolved module or unlinked crate `rsa`
+src/stdlib/crypto/asymmetric.rs:17:5: error[E0433]: failed to resolve: use of unresolved module or unlinked crate `rsa`: use of unresolved module or unlinked crate `rsa`
+src/stdlib/crypto/asymmetric.rs:15:9: error[E0432]: unresolved import `rsa`: use of unresolved module or unlinked crate `rsa`
+src/stdlib/crypto/asymmetric.rs:18:5: error[E0433]: failed to resolve: use of unresolved module or unlinked crate `p256`: use of unresolved module or unlinked crate `p256`
+src/stdlib/crypto/asymmetric.rs:18:5: error[E0432]: unresolved import `p256`: use of unresolved module or unlinked crate `p256`
+src/stdlib/crypto/asymmetric.rs:19:5: error[E0433]: failed to resolve: use of unresolved module or unlinked crate `p384`: use of unresolved module or unlinked crate `p384`
+src/stdlib/crypto/asymmetric.rs:19:5: error[E0432]: unresolved import `p384`: use of unresolved module or unlinked crate `p384`
+src/stdlib/crypto/asymmetric.rs:20:5: error[E0433]: failed to resolve: use of unresolved module or unlinked crate `k256`: use of unresolved module or unlinked crate `k256`
+src/stdlib/crypto/asymmetric.rs:20:5: error[E0432]: unresolved import `k256`: use of unresolved module or unlinked crate `k256`
+src/stdlib/crypto/asymmetric.rs:21:5: error[E0432]: unresolved import `ed25519_dalek`: use of unresolved module or unlinked crate `ed25519_dalek`
+src/stdlib/crypto/asymmetric.rs:25:5: error[E0432]: unresolved import `x25519_dalek`: use of unresolved module or unlinked crate `x25519_dalek`
+src/stdlib/crypto/asymmetric.rs:26:5: error[E0432]: unresolved import `signature`: use of unresolved module or unlinked crate `signature`
+src/stdlib/crypto/asymmetric.rs:29:5: error[E0432]: unresolved import `pem`: use of unresolved module or unlinked crate `pem`
+src/stdlib/crypto/asymmetric.rs:30:5: error[E0432]: unresolved import `der`: use of unresolved module or unlinked crate `der`
+src/stdlib/crypto/asymmetric.rs:31:5: error[E0432]: unresolved import `pkcs8`: use of unresolved module or unlinked crate `pkcs8`
+src/stdlib/crypto/asymmetric.rs:33:5: error[E0433]: failed to resolve: use of unresolved module or unlinked crate `rsa`: use of unresolved module or unlinked crate `rsa`
+src/stdlib/crypto/asymmetric.rs:34:5: error[E0433]: failed to resolve: use of unresolved module or unlinked crate `rsa`: use of unresolved module or unlinked crate `rsa`
+src/stdlib/crypto/certificates.rs:16:5: error[E0433]: failed to resolve: use of unresolved module or unlinked crate `x509_parser`: use of unresolved module or unlinked crate `x509_parser`
+src/stdlib/crypto/certificates.rs:17:5: error[E0433]: failed to resolve: use of unresolved module or unlinked crate `x509_parser`: use of unresolved module or unlinked crate `x509_parser`
+src/stdlib/crypto/certificates.rs:18:5: error[E0433]: failed to resolve: use of unresolved module or unlinked crate `x509_parser`: use of unresolved module or unlinked crate `x509_parser`
+src/stdlib/crypto/certificates.rs:19:5: error[E0433]: failed to resolve: use of unresolved module or unlinked crate `x509_parser`: use of unresolved module or unlinked crate `x509_parser`
+src/stdlib/crypto/certificates.rs:20:5: error[E0433]: failed to resolve: use of unresolved module or unlinked crate `x509_parser`: use of unresolved module or unlinked crate `x509_parser`
+src/stdlib/crypto/asymmetric.rs:32:5: error[E0432]: unresolved import `spki`: use of unresolved module or unlinked crate `spki`
+src/stdlib/crypto/certificates.rs:21:5: error[E0432]: unresolved import `der`: use of unresolved module or unlinked crate `der`
+src/stdlib/crypto/certificates.rs:22:5: error[E0432]: unresolved import `pem`: no external crate `pem`
+src/stdlib/crypto/certificates.rs:23:5: error[E0432]: unresolved import `sha1`: use of unresolved module or unlinked crate `sha1`
+src/stdlib/crypto/certificates.rs:929:13: error[E0433]: failed to resolve: use of unresolved module or unlinked crate `rsa`: use of unresolved module or unlinked crate `rsa`
+src/stdlib/crypto/certificates.rs:929:13: error[E0432]: unresolved import `rsa`: use of unresolved module or unlinked crate `rsa`
+src/stdlib/crypto/certificates.rs:991:13: error[E0433]: failed to resolve: use of unresolved module or unlinked crate `p256`: use of unresolved module or unlinked crate `p256`
+src/stdlib/crypto/certificates.rs:992:13: error[E0433]: failed to resolve: use of unresolved module or unlinked crate `p384`: use of unresolved module or unlinked crate `p384`
+src/stdlib/crypto/certificates.rs:993:13: error[E0433]: failed to resolve: use of unresolved module or unlinked crate `p521`: use of unresolved module or unlinked crate `p521`
+src/stdlib/crypto/certificates.rs:995:13: error[E0433]: failed to resolve: use of unresolved module or unlinked crate `ecdsa`: use of unresolved module or unlinked crate `ecdsa`
+src/stdlib/crypto/certificates.rs:931:13: error[E0432]: unresolved import `signature`: use of unresolved module or unlinked crate `signature`
+src/stdlib/crypto/certificates.rs:1133:13: error[E0432]: unresolved import `ed25519_dalek`: use of unresolved module or unlinked crate `ed25519_dalek`
+src/stdlib/crypto/pqc.rs:47:5: error[E0433]: failed to resolve: use of unresolved module or unlinked crate `pqcrypto_traits`: use of unresolved module or unlinked crate `pqcrypto_traits`
+src/stdlib/crypto/pqc.rs:48:5: error[E0433]: failed to resolve: use of unresolved module or unlinked crate `pqcrypto_traits`: use of unresolved module or unlinked crate `pqcrypto_traits`
+src/stdlib/crypto/certificates.rs:1134:13: error[E0432]: unresolved import `signature`: use of unresolved module or unlinked crate `signature`
+src/stdlib/crypto/pqc.rs:49:5: error[E0432]: unresolved import `pqcrypto_kyber`: use of unresolved module or unlinked crate `pqcrypto_kyber`
+src/stdlib/crypto/pqc.rs:50:5: error[E0432]: unresolved import `pqcrypto_dilithium`: use of unresolved module or unlinked crate `pqcrypto_dilithium`
+src/stdlib/crypto/pqc.rs:51:5: error[E0432]: unresolved import `pqcrypto_sphincsplus`: use of unresolved module or unlinked crate `pqcrypto_sphincsplus`
+src/stdlib/crypto/pqc.rs:52:5: error[E0432]: unresolved import `pqcrypto_falcon`: use of unresolved module or unlinked crate `pqcrypto_falcon`
+src/stdlib/crypto/pqc.rs:53:5: error[E0432]: unresolved import `pqcrypto_ntru`: use of unresolved module or unlinked crate `pqcrypto_ntru`
+src/stdlib/crypto/pqc.rs:57:5: error[E0433]: failed to resolve: use of unresolved module or unlinked crate `aes_gcm`: use of unresolved module or unlinked crate `aes_gcm`
+src/stdlib/crypto/pqc.rs:56:5: error[E0432]: unresolved import `aes_gcm`: use of unresolved module or unlinked crate `aes_gcm`
+src/stdlib/crypto/pqc_production.rs:66:5: error[E0432]: unresolved import `blake3`: use of unresolved module or unlinked crate `blake3`
+src/stdlib/crypto/pqc_production.rs:67:5: error[E0432]: unresolved import `zeroize`: use of unresolved module or unlinked crate `zeroize`
+src/stdlib/crypto/protocols_production.rs:38:5: error[E0432]: unresolved import `blake3`: use of unresolved module or unlinked crate `blake3`
+src/stdlib/crypto/protocols_production.rs:40:5: error[E0432]: unresolved import `hkdf`: use of unresolved module or unlinked crate `hkdf`
+src/stdlib/crypto/protocols_production.rs:42:5: error[E0433]: failed to resolve: use of unresolved module or unlinked crate `aes_gcm`: use of unresolved module or unlinked crate `aes_gcm`
+src/stdlib/crypto/protocols_production.rs:41:5: error[E0432]: unresolved import `aes_gcm`: use of unresolved module or unlinked crate `aes_gcm`
+src/stdlib/crypto/protocols_production.rs:44:5: error[E0433]: failed to resolve: use of unresolved module or unlinked crate `curve25519_dalek`: use of unresolved module or unlinked crate `curve25519_dalek`
+src/stdlib/crypto/protocols_production.rs:43:5: error[E0432]: unresolved import `chacha20poly1305`: use of unresolved module or unlinked crate `chacha20poly1305`
+src/stdlib/crypto/protocols_production.rs:45:5: error[E0432]: unresolved import `x25519_dalek`: use of unresolved module or unlinked crate `x25519_dalek`
+src/stdlib/crypto/protocols_production.rs:46:5: error[E0432]: unresolved import `ed25519_dalek`: use of unresolved module or unlinked crate `ed25519_dalek`
+src/stdlib/crypto/protocols_production.rs:303:13: error[E0433]: failed to resolve: use of unresolved module or unlinked crate `chacha20poly1305`: use of unresolved module or unlinked crate `chacha20poly1305`
+src/stdlib/crypto/protocols_production.rs:302:13: error[E0432]: unresolved import `chacha20poly1305`: use of unresolved module or unlinked crate `chacha20poly1305`
+src/stdlib/crypto/protocols_production.rs:325:13: error[E0433]: failed to resolve: use of unresolved module or unlinked crate `chacha20poly1305`: use of unresolved module or unlinked crate `chacha20poly1305`
+src/stdlib/crypto/protocols_production.rs:324:13: error[E0432]: unresolved import `chacha20poly1305`: use of unresolved module or unlinked crate `chacha20poly1305`
+src/stdlib/crypto/protocols_production.rs:362:13: error[E0432]: unresolved import `subtle`: use of unresolved module or unlinked crate `subtle`
+src/stdlib/crypto/protocols_production.rs:368:13: error[E0432]: unresolved import `zeroize`: use of unresolved module or unlinked crate `zeroize`
+src/stdlib/crypto/protocols_advanced.rs:30:5: error[E0433]: failed to resolve: use of unresolved module or unlinked crate `curve25519_dalek`: use of unresolved module or unlinked crate `curve25519_dalek`
+src/stdlib/crypto/protocols_advanced.rs:28:5: error[E0432]: unresolved import `blake3`: use of unresolved module or unlinked crate `blake3`
+src/stdlib/crypto/protocols_advanced.rs:31:5: error[E0432]: unresolved import `ed25519_dalek`: use of unresolved module or unlinked crate `ed25519_dalek`
+src/stdlib/crypto/protocols_enhanced.rs:30:5: error[E0432]: unresolved import `blake3`: use of unresolved module or unlinked crate `blake3`
+src/stdlib/crypto/protocols_comprehensive.rs:58:5: error[E0432]: unresolved import `ed25519_dalek`: use of unresolved module or unlinked crate `ed25519_dalek`
+src/stdlib/crypto/symmetric.rs:12:46: error[E0432]: unresolved imports `crate::stdlib::packages::crypto_random::CryptographicRng`, `crate::stdlib::packages::crypto_random::CsprngAlgorithm`, `crate::stdlib::packages::crypto_random::CsprngResult`, `crate::stdlib::packages::crypto_random::fill_random`: no `CryptographicRng` in `stdlib::packages::crypto_random`, no `CsprngAlgorithm` in `stdlib::packages::crypto_random`, no `CsprngResult` in `stdlib::packages::crypto_random`, no `fill_random` in `stdlib::packages::crypto_random`
+src/stdlib/crypto/symmetric.rs:13:43: error[E0432]: unresolved imports `crate::stdlib::packages::crypto_kdf::pbkdf2`, `crate::stdlib::packages::crypto_kdf::scrypt`, `crate::stdlib::packages::crypto_kdf::KdfResult`: no `pbkdf2` in `stdlib::packages::crypto_kdf`, no `scrypt` in `stdlib::packages::crypto_kdf`, no `KdfResult` in `stdlib::packages::crypto_kdf`, help: a similar name exists in the module: `Result`
+src/stdlib/crypto/symmetric.rs:14:48: error[E0432]: unresolved imports `crate::stdlib::packages::crypto_advanced::constant_time_compare`, `crate::stdlib::packages::crypto_advanced::SecureMemory`, `crate::stdlib::packages::crypto_advanced::ZeroOnDrop`: no `constant_time_compare` in `stdlib::packages::crypto_advanced`, no `SecureMemory` in `stdlib::packages::crypto_advanced`, no `ZeroOnDrop` in `stdlib::packages::crypto_advanced`
+src/stdlib/crypto/symmetric.rs:16:5: error[E0433]: failed to resolve: use of unresolved module or unlinked crate `aes_gcm`: use of unresolved module or unlinked crate `aes_gcm`
+src/stdlib/crypto/symmetric.rs:15:5: error[E0432]: unresolved import `aes_gcm`: use of unresolved module or unlinked crate `aes_gcm`
+src/stdlib/crypto/symmetric.rs:17:5: error[E0432]: unresolved import `aes`: use of unresolved module or unlinked crate `aes`
+src/stdlib/crypto/symmetric.rs:21:5: error[E0433]: failed to resolve: use of unresolved module or unlinked crate `chacha20`: use of unresolved module or unlinked crate `chacha20`
+src/stdlib/crypto/symmetric.rs:20:5: error[E0432]: unresolved import `chacha20`: use of unresolved module or unlinked crate `chacha20`
+src/stdlib/crypto/symmetric.rs:22:5: error[E0433]: failed to resolve: use of unresolved module or unlinked crate `chacha20poly1305`: use of unresolved module or unlinked crate `chacha20poly1305`
+src/stdlib/crypto/symmetric.rs:22:5: error[E0432]: unresolved import `chacha20poly1305`: use of unresolved module or unlinked crate `chacha20poly1305`
+src/stdlib/crypto/utils.rs:10:46: error[E0432]: unresolved imports `crate::stdlib::packages::crypto_random::CryptographicRng`, `crate::stdlib::packages::crypto_random::CsprngAlgorithm`, `crate::stdlib::packages::crypto_random::fill_random`: no `CryptographicRng` in `stdlib::packages::crypto_random`, no `CsprngAlgorithm` in `stdlib::packages::crypto_random`, no `fill_random` in `stdlib::packages::crypto_random`
+src/stdlib/crypto/llvm_integration.rs:10:5: error[E0433]: failed to resolve: use of unresolved module or unlinked crate `inkwell`: use of unresolved module or unlinked crate `inkwell`
+src/stdlib/crypto/utils.rs:11:48: error[E0432]: unresolved imports `crate::stdlib::packages::crypto_advanced::constant_time_compare`, `crate::stdlib::packages::crypto_advanced::SecureMemory`, `crate::stdlib::packages::crypto_advanced::clear_sensitive_data`: no `constant_time_compare` in `stdlib::packages::crypto_advanced`, no `SecureMemory` in `stdlib::packages::crypto_advanced`, no `clear_sensitive_data` in `stdlib::packages::crypto_advanced`
+src/stdlib/crypto/llvm_integration.rs:10:5: error[E0432]: unresolved import `inkwell`: use of unresolved module or unlinked crate `inkwell`
+src/stdlib/crypto/zk_enhanced.rs:48:5: error[E0432]: unresolved import `blake3`: use of unresolved module or unlinked crate `blake3`
+src/stdlib/crypto/zk_enhanced.rs:52:5: error[E0432]: unresolved import `ark_ff`: use of unresolved module or unlinked crate `ark_ff`
+src/stdlib/crypto/zk_enhanced.rs:54:5: error[E0433]: failed to resolve: use of unresolved module or unlinked crate `ark_std`: use of unresolved module or unlinked crate `ark_std`
+src/stdlib/crypto/zk_enhanced.rs:53:5: error[E0432]: unresolved import `ark_ec`: use of unresolved module or unlinked crate `ark_ec`
+src/stdlib/crypto/zk_enhanced.rs:55:5: error[E0432]: unresolved import `ark_bn254`: use of unresolved module or unlinked crate `ark_bn254`
+src/stdlib/crypto/zk_enhanced.rs:56:5: error[E0432]: unresolved import `ark_bls12_381`: use of unresolved module or unlinked crate `ark_bls12_381`
+src/stdlib/crypto/zk_enhanced.rs:58:5: error[E0433]: failed to resolve: use of unresolved module or unlinked crate `ark_relations`: use of unresolved module or unlinked crate `ark_relations`
+src/stdlib/crypto/zk_enhanced.rs:57:5: error[E0432]: unresolved import `ark_serialize`: use of unresolved module or unlinked crate `ark_serialize`
+src/stdlib/crypto/zk_enhanced.rs:63:5: error[E0433]: failed to resolve: use of unresolved module or unlinked crate `ark_r1cs_std`: use of unresolved module or unlinked crate `ark_r1cs_std`
+src/stdlib/crypto/zk_enhanced.rs:58:5: error[E0432]: unresolved import `ark_relations`: use of unresolved module or unlinked crate `ark_relations`
+src/stdlib/crypto/zk_enhanced.rs:63:5: error[E0432]: unresolved import `ark_r1cs_std`: use of unresolved module or unlinked crate `ark_r1cs_std`
+src/stdlib/crypto/zk_enhanced.rs:71:5: error[E0433]: failed to resolve: use of unresolved module or unlinked crate `ark_poly`: use of unresolved module or unlinked crate `ark_poly`
+src/stdlib/crypto/zk_enhanced.rs:70:5: error[E0432]: unresolved import `ark_groth16`: use of unresolved module or unlinked crate `ark_groth16`
+src/stdlib/crypto/zk_enhanced.rs:72:5: error[E0433]: failed to resolve: use of unresolved module or unlinked crate `ark_poly_commit`: use of unresolved module or unlinked crate `ark_poly_commit`
+src/stdlib/crypto/zk_enhanced.rs:72:5: error[E0432]: unresolved import `ark_poly_commit`: use of unresolved module or unlinked crate `ark_poly_commit`
+src/stdlib/crypto/format_conversions.rs:100:13: error[E0433]: failed to resolve: use of unresolved module or unlinked crate `rsa`: use of unresolved module or unlinked crate `rsa`
+src/stdlib/crypto/format_conversions.rs:130:13: error[E0433]: failed to resolve: use of unresolved module or unlinked crate `rsa`: use of unresolved module or unlinked crate `rsa`
+src/stdlib/crypto/zk_enhanced.rs:73:5: error[E0432]: unresolved import `ark_ec`: use of unresolved module or unlinked crate `ark_ec`
+src/stdlib/crypto/format_conversions.rs:348:13: error[E0433]: failed to resolve: use of unresolved module or unlinked crate `elliptic_curve`: use of unresolved module or unlinked crate `elliptic_curve`
+src/stdlib/crypto/format_conversions.rs:300:13: error[E0432]: unresolved import `rsa`: use of unresolved module or unlinked crate `rsa`
+src/stdlib/crypto/format_conversions.rs:352:21: error[E0432]: unresolved import `p256`: use of unresolved module or unlinked crate `p256`
+src/stdlib/crypto/format_conversions.rs:365:21: error[E0432]: unresolved import `p384`: use of unresolved module or unlinked crate `p384`
+src/stdlib/crypto/format_conversions.rs:378:21: error[E0432]: unresolved import `k256`: use of unresolved module or unlinked crate `k256`
+src/stdlib/crypto/format_conversions.rs:410:13: error[E0432]: unresolved import `der`: use of unresolved module or unlinked crate `der`
+src/stdlib/crypto/format_conversions.rs:443:13: error[E0432]: unresolved import `der`: use of unresolved module or unlinked crate `der`
+src/stdlib/crypto/x448_implementation.rs:161:13: error[E0432]: unresolved import `hkdf`: use of unresolved module or unlinked crate `hkdf`
+src/stdlib/crypto_pqc/algorithms/frodo_real.rs:20:5: error[E0432]: unresolved import `rand_chacha`: use of unresolved module or unlinked crate `rand_chacha`
+src/stdlib/crypto_pqc/algorithms/frodo_real.rs:22:5: error[E0433]: failed to resolve: use of unresolved module or unlinked crate `aes`: use of unresolved module or unlinked crate `aes`
+src/stdlib/crypto_pqc/algorithms/frodo_real.rs:21:5: error[E0432]: unresolved import `aes`: use of unresolved module or unlinked crate `aes`
+src/stdlib/crypto_pqc/hybrid.rs:23:5: error[E0432]: unresolved import `hkdf`: use of unresolved module or unlinked crate `hkdf`
+src/stdlib/crypto_pqc/hybrid.rs:26:5: error[E0432]: unresolved import `zeroize`: use of unresolved module or unlinked crate `zeroize`
+src/stdlib/crypto_pqc/hybrid.rs:34:5: error[E0432]: unresolved imports `crate::stdlib::packages::crypto_asymmetric::AsymmetricAlgorithm`, `crate::stdlib::packages::crypto_asymmetric::KeyGenerator`, `crate::stdlib::packages::crypto_asymmetric::rsa_generate_keypair`, `crate::stdlib::packages::crypto_asymmetric::ecc_generate_keypair`, `crate::stdlib::packages::crypto_asymmetric::EccCurve`, `crate::stdlib::packages::crypto_asymmetric::x25519_generate_keypair`, `crate::stdlib::packages::crypto_asymmetric::x25519_key_exchange`, `crate::stdlib::packages::crypto_asymmetric::ed25519_generate_keypair`: no `AsymmetricAlgorithm` in `stdlib::packages::crypto_asymmetric`, no `KeyGenerator` in `stdlib::packages::crypto_asymmetric`, no `rsa_generate_keypair` in `stdlib::packages::crypto_asymmetric`, no `ecc_generate_keypair` in `stdlib::packages::crypto_asymmetric`, no `EccCurve` in `stdlib::packages::crypto_asymmetric`, no `x25519_generate_keypair` in `stdlib::packages::crypto_asymmetric`, no `x25519_key_exchange` in `stdlib::packages::crypto_asymmetric`, no `ed25519_generate_keypair` in `stdlib::packages::crypto_asymmetric`
+src/stdlib/squish_core/mod.rs:24:5: error[E0432]: unresolved imports `utils::validate_compression_level`, `utils::convert_quality_to_level`, `utils::use_parallel_compression`, `utils::get_optimal_chunk_size`: no `validate_compression_level` in `stdlib::squish_core::utils`, no `convert_quality_to_level` in `stdlib::squish_core::utils`, no `use_parallel_compression` in `stdlib::squish_core::utils`, no `get_optimal_chunk_size` in `stdlib::squish_core::utils`
+src/stdlib/squish_core/mod.rs:45:5: error[E0432]: unresolved imports `utils::validate_compression_level`, `utils::convert_quality_to_level`, `utils::use_parallel_compression`, `utils::get_optimal_chunk_size`: no `validate_compression_level` in `stdlib::squish_core::utils`, no `convert_quality_to_level` in `stdlib::squish_core::utils`, no `use_parallel_compression` in `stdlib::squish_core::utils`, no `get_optimal_chunk_size` in `stdlib::squish_core::utils`, help: a similar name exists in the module: `validate_compressed_data`
+src/stdlib/embed_that/compression.rs:121:13: error[E0433]: failed to resolve: use of unresolved module or unlinked crate `flate2`: use of unresolved module or unlinked crate `flate2`
+src/stdlib/embed_that/compression.rs:136:13: error[E0433]: failed to resolve: use of unresolved module or unlinked crate `flate2`: use of unresolved module or unlinked crate `flate2`
+src/stdlib/squish_core/mod.rs:90:5: error[E0432]: unresolved imports `enhanced::EnhancedCompressor`, `enhanced::CompressionMode`, `enhanced::CompressionOptions`, `enhanced::fast_compressor`, `enhanced::max_compressor`, `enhanced::parallel_compressor`, `enhanced::smart_compress`, `enhanced::compress_with_mode`, `enhanced::ultra_compress`: no `EnhancedCompressor` in `stdlib::squish_core::enhanced`, no `CompressionMode` in `stdlib::squish_core::enhanced`, no `CompressionOptions` in `stdlib::squish_core::enhanced`, no `fast_compressor` in `stdlib::squish_core::enhanced`, no `max_compressor` in `stdlib::squish_core::enhanced`, no `parallel_compressor` in `stdlib::squish_core::enhanced`, no `smart_compress` in `stdlib::squish_core::enhanced`, no `compress_with_mode` in `stdlib::squish_core::enhanced`, no `ultra_compress` in `stdlib::squish_core::enhanced`
+src/stdlib/embed_that/compression.rs:198:13: error[E0433]: failed to resolve: use of unresolved module or unlinked crate `flate2`: use of unresolved module or unlinked crate `flate2`
+src/stdlib/embed_that/compression.rs:213:13: error[E0433]: failed to resolve: use of unresolved module or unlinked crate `flate2`: use of unresolved module or unlinked crate `flate2`
+src/stdlib/embed_that/compression.rs:136:13: error[E0432]: unresolved import `flate2`: use of unresolved module or unlinked crate `flate2`
+src/stdlib/embed_that/compression.rs:213:13: error[E0432]: unresolved import `flate2`: use of unresolved module or unlinked crate `flate2`
+src/stdlib/system/monitoring.rs:14:5: error[E0432]: unresolved import `sysinfo`: use of unresolved module or unlinked crate `sysinfo`
+src/stdlib/http_core/request.rs:11:5: error[E0432]: unresolved import `uuid`: use of unresolved module or unlinked crate `uuid`
+src/stdlib/glowup_http/client.rs:14:5: error[E0433]: failed to resolve: use of unresolved module or unlinked crate `tokio`: use of unresolved module or unlinked crate `tokio`
+src/stdlib/glowup_http/client.rs:8:5: error[E0432]: unresolved import `reqwest`: no external crate `reqwest`
+src/stdlib/oglogging/formatter.rs:2:5: error[E0432]: unresolved import `chrono`: use of unresolved module or unlinked crate `chrono`
+src/stdlib/sync/parallel.rs:7:88: error[E0432]: unresolved import `crate::stdlib::sync::primitives::CondVar`: no `CondVar` in `stdlib::sync::primitives`, help: a similar name exists in the module (notice the capitalization): `Condvar`
+src/stdlib/time/sleep.rs:2:57: error[E0432]: unresolved import `crate::stdlib::time::error::time_error`: no `time_error` in `stdlib::time::error`, help: a similar name exists in the module: `TimeError`
+src/stdlib/time/timezone.rs:2:57: error[E0432]: unresolved import `crate::stdlib::time::error::timezone_error`: no `timezone_error` in `stdlib::time::error`
+src/stdlib/time/relative.rs:2:57: error[E0432]: unresolved import `crate::stdlib::time::error::time_error`: no `time_error` in `stdlib::time::error`, help: a similar name exists in the module: `TimeError`
+src/stdlib/time/benchmarking.rs:2:57: error[E0432]: unresolved import `crate::stdlib::time::error::time_error`: no `time_error` in `stdlib::time::error`, help: a similar name exists in the module: `TimeError`
+src/stdlib/time/formatting.rs:2:57: error[E0432]: unresolved imports `crate::stdlib::time::error::parse_error`, `crate::stdlib::time::error::format_error`: no `parse_error` in `stdlib::time::error`, no `format_error` in `stdlib::time::error`
+src/stdlib/crypto/crypto_advanced/xchacha20_poly1305.rs:10:5: error[E0433]: failed to resolve: use of unresolved module or unlinked crate `chacha20poly1305`: use of unresolved module or unlinked crate `chacha20poly1305`
+src/stdlib/crypto/crypto_advanced/xchacha20_poly1305.rs:10:5: error[E0432]: unresolved import `chacha20poly1305`: use of unresolved module or unlinked crate `chacha20poly1305`
+src/stdlib/crypto/crypto_advanced/xchacha20_poly1305.rs:18:5: error[E0432]: unresolved import `zeroize`: use of unresolved module or unlinked crate `zeroize`
+src/stdlib/crypto/crypto_advanced/xchacha20_poly1305.rs:378:9: error[E0432]: unresolved import `hkdf`: use of unresolved module or unlinked crate `hkdf`
+src/stdlib/crypto/crypto_advanced/xchacha20_poly1305.rs:449:13: error[E0432]: unresolved import `subtle`: use of unresolved module or unlinked crate `subtle`
+src/codegen/llvm/optimization_pipeline.rs:17:5: error[E0433]: failed to resolve: use of unresolved module or unlinked crate `inkwell`: use of unresolved module or unlinked crate `inkwell`
+src/core/performance_pipeline.rs:15:5: error[E0433]: failed to resolve: use of unresolved module or unlinked crate `tokio`: use of unresolved module or unlinked crate `tokio`
+src/stdlib/regex_vibez/common.rs:4:5: error[E0432]: unresolved import `lazy_static`: use of unresolved module or unlinked crate `lazy_static`
+src/stdlib/signal_boost/core.rs:194:1: error[E0433]: failed to resolve: use of unresolved module or unlinked crate `lazy_static`: use of unresolved module or unlinked crate `lazy_static`
+src/stdlib/oglogging/standard.rs:49:1: error[E0433]: failed to resolve: use of unresolved module or unlinked crate `lazy_static`: use of unresolved module or unlinked crate `lazy_static`
+src/stdlib/oglogging/mod.rs:19:1: error[E0433]: failed to resolve: use of unresolved module or unlinked crate `lazy_static`: use of unresolved module or unlinked crate `lazy_static`
+src/stdlib/time/timezone.rs:90:1: error[E0433]: failed to resolve: use of unresolved module or unlinked crate `lazy_static`: use of unresolved module or unlinked crate `lazy_static`
+src/codegen/llvm/main.rs:148:29: error[E0433]: failed to resolve: use of unresolved module or unlinked crate `inkwell`: use of unresolved module or unlinked crate `inkwell`
+src/codegen/llvm/main.rs:149:45: error[E0433]: failed to resolve: use of unresolved module or unlinked crate `inkwell`: use of unresolved module or unlinked crate `inkwell`
+src/codegen/llvm/main.rs:150:46: error[E0433]: failed to resolve: use of unresolved module or unlinked crate `inkwell`: use of unresolved module or unlinked crate `inkwell`
+src/codegen/llvm/main.rs:159:26: error[E0106]: missing lifetime specifier: expected named lifetime parameter
+src/codegen/llvm/main.rs:165:41: error[E0433]: failed to resolve: unresolved import: unresolved import, help: a similar path exists: `codegen::llvm::optimization`
+src/codegen/llvm/main.rs:234:20: error[E0433]: failed to resolve: use of unresolved module or unlinked crate `inkwell`: use of unresolved module or unlinked crate `inkwell`
+src/codegen/llvm/main.rs:235:13: error[E0433]: failed to resolve: use of unresolved module or unlinked crate `inkwell`: use of unresolved module or unlinked crate `inkwell`
+src/codegen/llvm/main.rs:236:14: error[E0433]: failed to resolve: use of unresolved module or unlinked crate `inkwell`: use of unresolved module or unlinked crate `inkwell`
+src/codegen/llvm/main.rs:241:26: error[E0106]: missing lifetime specifier: expected named lifetime parameter
+src/codegen/llvm/main.rs:246:41: error[E0433]: failed to resolve: unresolved import: unresolved import, help: a similar path exists: `codegen::llvm::optimization`
+src/codegen/llvm/main.rs:261:48: error[E0433]: failed to resolve: could not find `Runtime` in `runtime`: could not find `Runtime` in `runtime`
+src/codegen/llvm/main.rs:282:43: error[E0433]: failed to resolve: unresolved import: unresolved import, help: a similar path exists: `codegen::llvm::optimization`
+src/codegen/llvm/main.rs:440:50: error[E0433]: failed to resolve: could not find `TemplateLexer` in `template`: could not find `TemplateLexer` in `template`
+src/codegen/llvm/main.rs:442:51: error[E0433]: failed to resolve: could not find `TemplateParser` in `template`: could not find `TemplateParser` in `template`
+src/codegen/llvm/main.rs:454:24: error[E0433]: failed to resolve: use of unresolved module or unlinked crate `inkwell`: use of unresolved module or unlinked crate `inkwell`
+src/codegen/llvm/main.rs:455:17: error[E0433]: failed to resolve: use of unresolved module or unlinked crate `inkwell`: use of unresolved module or unlinked crate `inkwell`
+src/codegen/llvm/main.rs:456:18: error[E0433]: failed to resolve: use of unresolved module or unlinked crate `inkwell`: use of unresolved module or unlinked crate `inkwell`
+src/codegen/llvm/main.rs:460:42: error[E0433]: failed to resolve: unresolved import: unresolved import, help: a similar path exists: `codegen::llvm::optimization`
+src/codegen/llvm/main.rs:461:43: error[E0433]: failed to resolve: unresolved import: unresolved import, help: a similar path exists: `codegen::llvm::optimization`
+src/codegen/llvm/main.rs:500:39: error[E0433]: failed to resolve: could not find `Runtime` in `runtime`: could not find `Runtime` in `runtime`
+src/codegen/llvm/main.rs:711:69: error[E0433]: failed to resolve: unresolved import: unresolved import, help: a similar path exists: `codegen::llvm::optimization`
+src/codegen/llvm/main.rs:793:70: error[E0433]: failed to resolve: unresolved import: unresolved import, help: a similar path exists: `codegen::llvm::optimization`
+src/codegen/llvm/main.rs:861:20: error[E0433]: failed to resolve: unresolved import: unresolved import, help: a similar path exists: `codegen::llvm::optimization`
+src/codegen/llvm/main.rs:898:65: error[E0433]: failed to resolve: use of unresolved module or unlinked crate `inkwell`: use of unresolved module or unlinked crate `inkwell`
+src/codegen/llvm/main.rs:903:66: error[E0433]: failed to resolve: use of unresolved module or unlinked crate `inkwell`: use of unresolved module or unlinked crate `inkwell`
+src/codegen/llvm/main.rs:908:49: error[E0433]: failed to resolve: use of unresolved module or unlinked crate `inkwell`: use of unresolved module or unlinked crate `inkwell`
+src/codegen/llvm/main.rs:1941:69: error[E0433]: failed to resolve: use of unresolved module or unlinked crate `inkwell`: use of unresolved module or unlinked crate `inkwell`
+src/codegen/llvm/main.rs:1946:62: error[E0433]: failed to resolve: use of unresolved module or unlinked crate `inkwell`: use of unresolved module or unlinked crate `inkwell`
+src/codegen/llvm/main.rs:2093:65: error[E0433]: failed to resolve: unresolved import: unresolved import, help: a similar path exists: `stdlib::crypto::package_manager`
+src/codegen/llvm/main.rs:2157:43: error[E0433]: failed to resolve: unresolved import: unresolved import, help: a similar path exists: `codegen::llvm::optimization`
+src/codegen/llvm/main.rs:2177:59: error[E0433]: failed to resolve: unresolved import: unresolved import, help: a similar path exists: `codegen::llvm::optimization`
+src/codegen/llvm/main.rs:2605:38: error[E0433]: failed to resolve: use of unresolved module or unlinked crate `inkwell`: use of unresolved module or unlinked crate `inkwell`
+src/codegen/llvm/main.rs:2611:38: error[E0433]: failed to resolve: use of unresolved module or unlinked crate `inkwell`: use of unresolved module or unlinked crate `inkwell`
+src/codegen/llvm/main.rs:2631:49: error[E0433]: failed to resolve: use of unresolved module or unlinked crate `inkwell`: use of unresolved module or unlinked crate `inkwell`
+src/codegen/llvm/main.rs:2734:25: error[E0433]: failed to resolve: use of unresolved module or unlinked crate `inkwell`: use of unresolved module or unlinked crate `inkwell`
+src/codegen/llvm/main.rs:2820:24: error[E0433]: failed to resolve: use of unresolved module or unlinked crate `inkwell`: use of unresolved module or unlinked crate `inkwell`
+src/codegen/llvm/main.rs:2821:17: error[E0433]: failed to resolve: use of unresolved module or unlinked crate `inkwell`: use of unresolved module or unlinked crate `inkwell`
+src/codegen/llvm/main.rs:2822:18: error[E0433]: failed to resolve: use of unresolved module or unlinked crate `inkwell`: use of unresolved module or unlinked crate `inkwell`
+src/codegen/llvm/main.rs:2848:30: error[E0433]: failed to resolve: use of unresolved module or unlinked crate `inkwell`: use of unresolved module or unlinked crate `inkwell`
+src/codegen/llvm/main.rs:2853:31: error[E0433]: failed to resolve: use of unresolved module or unlinked crate `inkwell`: use of unresolved module or unlinked crate `inkwell`
+src/codegen/llvm/main.rs:2858:36: error[E0433]: failed to resolve: use of unresolved module or unlinked crate `inkwell`: use of unresolved module or unlinked crate `inkwell`
+src/codegen/llvm/main.rs:3585:70: error[E0433]: failed to resolve: use of unresolved module or unlinked crate `inkwell`: use of unresolved module or unlinked crate `inkwell`
+src/codegen/llvm/main.rs:3596:70: error[E0433]: failed to resolve: use of unresolved module or unlinked crate `inkwell`: use of unresolved module or unlinked crate `inkwell`
+src/codegen/llvm/optimization_integration.rs:95:25: error[E0433]: failed to resolve: unresolved import: unresolved import, help: a similar path exists: `codegen::llvm::optimization`
+src/codegen/llvm/optimization_passes.rs:603:21: error[E0433]: failed to resolve: use of unresolved module or unlinked crate `inkwell`: use of unresolved module or unlinked crate `inkwell`
+src/codegen/llvm/optimization_passes.rs:604:21: error[E0433]: failed to resolve: use of unresolved module or unlinked crate `inkwell`: use of unresolved module or unlinked crate `inkwell`
+src/codegen/llvm/optimization_passes.rs:605:21: error[E0433]: failed to resolve: use of unresolved module or unlinked crate `inkwell`: use of unresolved module or unlinked crate `inkwell`
+src/codegen/llvm/optimization_passes.rs:606:21: error[E0433]: failed to resolve: use of unresolved module or unlinked crate `inkwell`: use of unresolved module or unlinked crate `inkwell`
+src/codegen/llvm/optimization_passes.rs:607:21: error[E0433]: failed to resolve: use of unresolved module or unlinked crate `inkwell`: use of unresolved module or unlinked crate `inkwell`
+src/codegen/llvm/channels.rs:34:14: error[E0106]: missing lifetime specifier: expected named lifetime parameter
+src/codegen/llvm/expression_compiler.rs:332:36: error[E0433]: failed to resolve: use of unresolved module or unlinked crate `inkwell`: use of unresolved module or unlinked crate `inkwell`
+src/codegen/llvm/expression_compiler.rs:845:13: error[E0433]: failed to resolve: use of unresolved module or unlinked crate `inkwell`: use of unresolved module or unlinked crate `inkwell`
+src/codegen/llvm/expression_compiler.rs:846:13: error[E0433]: failed to resolve: use of unresolved module or unlinked crate `inkwell`: use of unresolved module or unlinked crate `inkwell`
+src/codegen/llvm/expression_compiler.rs:847:13: error[E0433]: failed to resolve: use of unresolved module or unlinked crate `inkwell`: use of unresolved module or unlinked crate `inkwell`
+src/codegen/llvm/expression_compiler.rs:848:13: error[E0433]: failed to resolve: use of unresolved module or unlinked crate `inkwell`: use of unresolved module or unlinked crate `inkwell`
+src/codegen/llvm/expression_compiler.rs:849:13: error[E0433]: failed to resolve: use of unresolved module or unlinked crate `inkwell`: use of unresolved module or unlinked crate `inkwell`
+src/codegen/llvm/expression_compiler.rs:850:13: error[E0433]: failed to resolve: use of unresolved module or unlinked crate `inkwell`: use of unresolved module or unlinked crate `inkwell`
+src/codegen/llvm/goroutine.rs:300:28: error[E0433]: failed to resolve: use of unresolved module or unlinked crate `inkwell`: use of unresolved module or unlinked crate `inkwell`
+src/codegen/llvm/goroutine.rs:340:54: error[E0433]: failed to resolve: could not find `goroutine` in `runtime`: could not find `goroutine` in `runtime`
+src/codegen/llvm/jit_compilation.rs:582:9: error[E0433]: failed to resolve: use of unresolved module or unlinked crate `tokio`: use of unresolved module or unlinked crate `tokio`
+src/codegen/llvm/jit_engine.rs:110:36: error[E0433]: failed to resolve: use of unresolved module or unlinked crate `inkwell`: use of unresolved module or unlinked crate `inkwell`
+src/codegen/llvm/lto_integration.rs:54:36: error[E0433]: failed to resolve: use of unresolved module or unlinked crate `inkwell`: use of unresolved module or unlinked crate `inkwell`
+src/codegen/llvm/lto_integration.rs:344:44: error[E0433]: failed to resolve: use of unresolved module or unlinked crate `inkwell`: use of unresolved module or unlinked crate `inkwell`
+src/codegen/llvm/lto_integration.rs:344:91: error[E0433]: failed to resolve: use of unresolved module or unlinked crate `inkwell`: use of unresolved module or unlinked crate `inkwell`
+src/codegen/llvm/lto_integration.rs:380:23: error[E0433]: failed to resolve: use of unresolved module or unlinked crate `inkwell`: use of unresolved module or unlinked crate `inkwell`
+src/codegen/llvm/lto_integration.rs:381:19: error[E0433]: failed to resolve: use of unresolved module or unlinked crate `inkwell`: use of unresolved module or unlinked crate `inkwell`
+src/codegen/llvm/lto_integration.rs:382:29: error[E0433]: failed to resolve: use of unresolved module or unlinked crate `inkwell`: use of unresolved module or unlinked crate `inkwell`
+src/codegen/llvm/lto_integration.rs:382:68: error[E0433]: failed to resolve: use of unresolved module or unlinked crate `inkwell`: use of unresolved module or unlinked crate `inkwell`
+src/codegen/llvm/lto_integration.rs:384:24: error[E0433]: failed to resolve: use of unresolved module or unlinked crate `inkwell`: use of unresolved module or unlinked crate `inkwell`
+src/codegen/llvm/lto_integration.rs:448:23: error[E0433]: failed to resolve: use of unresolved module or unlinked crate `inkwell`: use of unresolved module or unlinked crate `inkwell`
+src/codegen/llvm/lto_integration.rs:449:19: error[E0433]: failed to resolve: use of unresolved module or unlinked crate `inkwell`: use of unresolved module or unlinked crate `inkwell`
+src/codegen/llvm/lto_integration.rs:450:29: error[E0433]: failed to resolve: use of unresolved module or unlinked crate `inkwell`: use of unresolved module or unlinked crate `inkwell`
+src/codegen/llvm/lto_integration.rs:450:68: error[E0433]: failed to resolve: use of unresolved module or unlinked crate `inkwell`: use of unresolved module or unlinked crate `inkwell`
+src/codegen/llvm/lto_integration.rs:452:24: error[E0433]: failed to resolve: use of unresolved module or unlinked crate `inkwell`: use of unresolved module or unlinked crate `inkwell`
+src/codegen/llvm/lto_integration.rs:481:16: error[E0433]: failed to resolve: use of unresolved module or unlinked crate `inkwell`: use of unresolved module or unlinked crate `inkwell`
+src/codegen/llvm/lto_integration.rs:482:29: error[E0433]: failed to resolve: use of unresolved module or unlinked crate `inkwell`: use of unresolved module or unlinked crate `inkwell`
+src/codegen/llvm/lto_integration.rs:482:68: error[E0433]: failed to resolve: use of unresolved module or unlinked crate `inkwell`: use of unresolved module or unlinked crate `inkwell`
+src/codegen/llvm/lto_integration.rs:483:17: error[E0433]: failed to resolve: use of unresolved module or unlinked crate `inkwell`: use of unresolved module or unlinked crate `inkwell`
+src/codegen/llvm/lto_integration.rs:513:47: error[E0433]: failed to resolve: use of unresolved module or unlinked crate `inkwell`: use of unresolved module or unlinked crate `inkwell`
+src/codegen/llvm/lto_integration.rs:513:92: error[E0433]: failed to resolve: use of unresolved module or unlinked crate `inkwell`: use of unresolved module or unlinked crate `inkwell`
+src/codegen/llvm/lto_integration.rs:533:49: error[E0433]: failed to resolve: use of unresolved module or unlinked crate `inkwell`: use of unresolved module or unlinked crate `inkwell`
+src/codegen/llvm/lto_integration.rs:533:96: error[E0433]: failed to resolve: use of unresolved module or unlinked crate `inkwell`: use of unresolved module or unlinked crate `inkwell`
+src/codegen/llvm/lto_integration.rs:536:63: error[E0433]: failed to resolve: use of unresolved module or unlinked crate `inkwell`: use of unresolved module or unlinked crate `inkwell`
+src/codegen/llvm/lto_integration.rs:538:43: error[E0433]: failed to resolve: use of unresolved module or unlinked crate `inkwell`: use of unresolved module or unlinked crate `inkwell`
+src/codegen/llvm/lto_integration.rs:543:62: error[E0433]: failed to resolve: use of unresolved module or unlinked crate `inkwell`: use of unresolved module or unlinked crate `inkwell`
+src/codegen/llvm/lto_integration.rs:545:39: error[E0433]: failed to resolve: use of unresolved module or unlinked crate `inkwell`: use of unresolved module or unlinked crate `inkwell`
+src/codegen/llvm/lto_integration.rs:549:60: error[E0433]: failed to resolve: use of unresolved module or unlinked crate `inkwell`: use of unresolved module or unlinked crate `inkwell`
+src/codegen/llvm/lto_integration.rs:551:39: error[E0433]: failed to resolve: use of unresolved module or unlinked crate `inkwell`: use of unresolved module or unlinked crate `inkwell`
+src/codegen/llvm/lto_integration.rs:558:48: error[E0433]: failed to resolve: use of unresolved module or unlinked crate `inkwell`: use of unresolved module or unlinked crate `inkwell`
+src/codegen/llvm/lto_integration.rs:565:36: error[E0433]: failed to resolve: use of unresolved module or unlinked crate `inkwell`: use of unresolved module or unlinked crate `inkwell`
+src/codegen/llvm/lto_integration.rs:573:52: error[E0433]: failed to resolve: use of unresolved module or unlinked crate `inkwell`: use of unresolved module or unlinked crate `inkwell`
+src/codegen/llvm/lto_integration.rs:583:41: error[E0433]: failed to resolve: use of unresolved module or unlinked crate `inkwell`: use of unresolved module or unlinked crate `inkwell`
+src/codegen/llvm/lto_integration.rs:587:38: error[E0433]: failed to resolve: use of unresolved module or unlinked crate `inkwell`: use of unresolved module or unlinked crate `inkwell`
+src/codegen/llvm/lto_integration.rs:594:44: error[E0433]: failed to resolve: use of unresolved module or unlinked crate `inkwell`: use of unresolved module or unlinked crate `inkwell`
+src/codegen/llvm/panic.rs:136:44: error[E0433]: failed to resolve: use of unresolved module or unlinked crate `inkwell`: use of unresolved module or unlinked crate `inkwell`
+src/codegen/llvm/panic.rs:204:32: error[E0433]: failed to resolve: use of unresolved module or unlinked crate `inkwell`: use of unresolved module or unlinked crate `inkwell`
+src/codegen/llvm/process_execution.rs:55:73: error[E0433]: failed to resolve: could not find `core` in `process`: could not find `core` in `process`
+src/codegen/llvm/process_execution.rs:58:74: error[E0433]: failed to resolve: could not find `core` in `process`: could not find `core` in `process`
+src/codegen/llvm/process_execution.rs:65:77: error[E0433]: failed to resolve: could not find `core` in `process`: could not find `core` in `process`
+src/codegen/llvm/process_execution.rs:707:28: error[E0433]: failed to resolve: use of unresolved module or unlinked crate `inkwell`: use of unresolved module or unlinked crate `inkwell`
+src/codegen/llvm/process_execution.rs:741:28: error[E0433]: failed to resolve: use of unresolved module or unlinked crate `inkwell`: use of unresolved module or unlinked crate `inkwell`
+src/codegen/llvm/process_execution.rs:793:56: error[E0433]: failed to resolve: could not find `core` in `process`: could not find `core` in `process`
+src/codegen/llvm/process_execution_ffi.rs:510:49: error[E0433]: failed to resolve: could not find `core` in `process`: could not find `core` in `process`
+src/codegen/llvm/process_execution_ffi.rs:554:83: error[E0433]: failed to resolve: could not find `core` in `process`: could not find `core` in `process`
+src/codegen/llvm/real_compilation.rs:84:40: error[E0433]: failed to resolve: use of unresolved module or unlinked crate `inkwell`: use of unresolved module or unlinked crate `inkwell`
+src/codegen/llvm/real_compilation.rs:513:41: error[E0433]: failed to resolve: use of unresolved module or unlinked crate `inkwell`: use of unresolved module or unlinked crate `inkwell`
+src/codegen/llvm/real_optimization_integration.rs:264:33: error[E0433]: failed to resolve: use of unresolved module or unlinked crate `inkwell`: use of unresolved module or unlinked crate `inkwell`
+src/codegen/llvm/real_optimization_integration.rs:475:50: error[E0433]: failed to resolve: use of unresolved module or unlinked crate `inkwell`: use of unresolved module or unlinked crate `inkwell`
+src/codegen/llvm/real_optimization_integration.rs:516:21: error[E0433]: failed to resolve: use of unresolved module or unlinked crate `inkwell`: use of unresolved module or unlinked crate `inkwell`
+src/codegen/llvm/real_optimization_integration.rs:523:21: error[E0433]: failed to resolve: use of unresolved module or unlinked crate `inkwell`: use of unresolved module or unlinked crate `inkwell`
+src/codegen/llvm/real_optimization_integration.rs:526:21: error[E0433]: failed to resolve: use of unresolved module or unlinked crate `inkwell`: use of unresolved module or unlinked crate `inkwell`
+src/codegen/llvm/real_optimization_integration.rs:552:29: error[E0433]: failed to resolve: use of unresolved module or unlinked crate `inkwell`: use of unresolved module or unlinked crate `inkwell`
+src/codegen/llvm/real_optimization_integration.rs:553:29: error[E0433]: failed to resolve: use of unresolved module or unlinked crate `inkwell`: use of unresolved module or unlinked crate `inkwell`
+src/codegen/llvm/real_optimization_integration.rs:595:39: error[E0433]: failed to resolve: use of unresolved module or unlinked crate `inkwell`: use of unresolved module or unlinked crate `inkwell`
+src/codegen/llvm/type_switch.rs:556:57: error[E0433]: failed to resolve: use of unresolved module or unlinked crate `inkwell`: use of unresolved module or unlinked crate `inkwell`
+src/codegen/llvm/type_switch.rs:777:52: error[E0433]: failed to resolve: use of unresolved module or unlinked crate `inkwell`: use of unresolved module or unlinked crate `inkwell`
+src/codegen/llvm/type_switch.rs:779:59: error[E0433]: failed to resolve: use of unresolved module or unlinked crate `inkwell`: use of unresolved module or unlinked crate `inkwell`
+src/codegen/llvm/type_switch.rs:785:59: error[E0433]: failed to resolve: use of unresolved module or unlinked crate `inkwell`: use of unresolved module or unlinked crate `inkwell`
+src/codegen/llvm/type_switch.rs:803:54: error[E0433]: failed to resolve: use of unresolved module or unlinked crate `inkwell`: use of unresolved module or unlinked crate `inkwell`
+src/codegen/llvm/type_switch.rs:908:41: error[E0433]: failed to resolve: use of unresolved module or unlinked crate `inkwell`: use of unresolved module or unlinked crate `inkwell`
+src/web/mod.rs:518:17: error[E0433]: failed to resolve: use of unresolved module or unlinked crate `chrono`: use of unresolved module or unlinked crate `chrono`
+src/web/mod.rs:621:18: error[E0433]: failed to resolve: use of unresolved module or unlinked crate `uuid`: use of unresolved module or unlinked crate `uuid`
+src/stdlib/io/async_io.rs:36:9: error[E0433]: failed to resolve: use of unresolved module or unlinked crate `tokio`: use of unresolved module or unlinked crate `tokio`
+src/stdlib/io/async_io.rs:44:9: error[E0433]: failed to resolve: use of unresolved module or unlinked crate `tokio`: use of unresolved module or unlinked crate `tokio`
+src/stdlib/io/async_io.rs:51:9: error[E0433]: failed to resolve: use of unresolved module or unlinked crate `tokio`: use of unresolved module or unlinked crate `tokio`
+src/stdlib/io/async_io.rs:58:9: error[E0433]: failed to resolve: use of unresolved module or unlinked crate `tokio`: use of unresolved module or unlinked crate `tokio`
+src/stdlib/io/async_io.rs:65:9: error[E0433]: failed to resolve: use of unresolved module or unlinked crate `tokio`: use of unresolved module or unlinked crate `tokio`
+src/stdlib/io/async_io.rs:93:9: error[E0433]: failed to resolve: use of unresolved module or unlinked crate `tokio`: use of unresolved module or unlinked crate `tokio`
+src/stdlib/io/async_io.rs:99:9: error[E0433]: failed to resolve: use of unresolved module or unlinked crate `tokio`: use of unresolved module or unlinked crate `tokio`
+src/stdlib/io/async_io.rs:105:9: error[E0433]: failed to resolve: use of unresolved module or unlinked crate `tokio`: use of unresolved module or unlinked crate `tokio`
+src/stdlib/io/async_io.rs:112:9: error[E0433]: failed to resolve: use of unresolved module or unlinked crate `tokio`: use of unresolved module or unlinked crate `tokio`
+src/stdlib/io/async_io.rs:119:9: error[E0433]: failed to resolve: use of unresolved module or unlinked crate `tokio`: use of unresolved module or unlinked crate `tokio`
+src/stdlib/io/async_io.rs:162:11: error[E0433]: failed to resolve: use of unresolved module or unlinked crate `tokio`: use of unresolved module or unlinked crate `tokio`
+src/stdlib/io/async_io.rs:169:47: error[E0433]: failed to resolve: could not find `r#async` in `runtime`: could not find `r#async` in `runtime`
+src/stdlib/io/async_io.rs:174:21: error[E0433]: failed to resolve: could not find `r#async` in `runtime`: could not find `r#async` in `runtime`
+src/stdlib/io/async_io.rs:289:9: error[E0433]: failed to resolve: use of unresolved module or unlinked crate `tokio`: use of unresolved module or unlinked crate `tokio`
+src/stdlib/crypto/asymmetric.rs:465:35: error[E0433]: failed to resolve: use of unresolved module or unlinked crate `rsa`: use of unresolved module or unlinked crate `rsa`
+src/stdlib/crypto/asymmetric.rs:469:35: error[E0433]: failed to resolve: use of unresolved module or unlinked crate `rsa`: use of unresolved module or unlinked crate `rsa`
+src/stdlib/crypto/asymmetric.rs:484:37: error[E0433]: failed to resolve: use of unresolved module or unlinked crate `rsa`: use of unresolved module or unlinked crate `rsa`
+src/stdlib/crypto/asymmetric.rs:485:27: error[E0433]: failed to resolve: use of unresolved module or unlinked crate `rsa`: use of unresolved module or unlinked crate `rsa`
+src/stdlib/crypto/asymmetric.rs:490:37: error[E0433]: failed to resolve: use of unresolved module or unlinked crate `rsa`: use of unresolved module or unlinked crate `rsa`
+src/stdlib/crypto/asymmetric.rs:491:27: error[E0433]: failed to resolve: use of unresolved module or unlinked crate `rsa`: use of unresolved module or unlinked crate `rsa`
+src/stdlib/crypto/asymmetric.rs:674:37: error[E0433]: failed to resolve: use of unresolved module or unlinked crate `elliptic_curve`: use of unresolved module or unlinked crate `elliptic_curve`
+src/stdlib/crypto/asymmetric.rs:678:37: error[E0433]: failed to resolve: use of unresolved module or unlinked crate `elliptic_curve`: use of unresolved module or unlinked crate `elliptic_curve`
+src/stdlib/crypto/certificates.rs:421:47: error[E0433]: failed to resolve: use of unresolved module or unlinked crate `x509_parser`: use of unresolved module or unlinked crate `x509_parser`
+src/stdlib/crypto/certificates.rs:457:51: error[E0433]: failed to resolve: use of unresolved module or unlinked crate `x509_parser`: use of unresolved module or unlinked crate `x509_parser`
+src/stdlib/crypto/certificates.rs:471:52: error[E0433]: failed to resolve: use of unresolved module or unlinked crate `x509_parser`: use of unresolved module or unlinked crate `x509_parser`
+src/stdlib/crypto/protocols_production.rs:451:26: error[E0433]: failed to resolve: use of unresolved module or unlinked crate `curve25519_dalek`: use of unresolved module or unlinked crate `curve25519_dalek`
+src/stdlib/crypto/protocols_comprehensive.rs:259:24: error[E0433]: failed to resolve: use of unresolved module or unlinked crate `ed25519_dalek`: use of unresolved module or unlinked crate `ed25519_dalek`
+src/stdlib/crypto/protocols_comprehensive.rs:294:27: error[E0433]: failed to resolve: use of unresolved module or unlinked crate `ed25519_dalek`: use of unresolved module or unlinked crate `ed25519_dalek`
+src/stdlib/crypto/protocols_comprehensive.rs:359:17: error[E0433]: failed to resolve: use of unresolved module or unlinked crate `curve25519_dalek`: use of unresolved module or unlinked crate `curve25519_dalek`
+src/stdlib/crypto/protocols_comprehensive.rs:379:21: error[E0433]: failed to resolve: use of unresolved module or unlinked crate `curve25519_dalek`: use of unresolved module or unlinked crate `curve25519_dalek`
+src/stdlib/crypto/protocols_comprehensive.rs:385:44: error[E0433]: failed to resolve: use of unresolved module or unlinked crate `curve25519_dalek`: use of unresolved module or unlinked crate `curve25519_dalek`
+src/stdlib/crypto/protocols_comprehensive.rs:387:39: error[E0433]: failed to resolve: use of unresolved module or unlinked crate `curve25519_dalek`: use of unresolved module or unlinked crate `curve25519_dalek`
+src/stdlib/crypto/symmetric.rs:465:26: error[E0433]: failed to resolve: use of unresolved module or unlinked crate `chacha20`: use of unresolved module or unlinked crate `chacha20`
+src/stdlib/crypto/symmetric.rs:505:26: error[E0433]: failed to resolve: use of unresolved module or unlinked crate `chacha20`: use of unresolved module or unlinked crate `chacha20`
+src/stdlib/crypto/symmetric.rs:554:21: error[E0433]: failed to resolve: use of unresolved module or unlinked crate `chacha20poly1305`: use of unresolved module or unlinked crate `chacha20poly1305`
+src/stdlib/crypto/symmetric.rs:558:13: error[E0433]: failed to resolve: use of unresolved module or unlinked crate `chacha20poly1305`: use of unresolved module or unlinked crate `chacha20poly1305`
+src/stdlib/crypto/symmetric.rs:560:13: error[E0433]: failed to resolve: use of unresolved module or unlinked crate `chacha20poly1305`: use of unresolved module or unlinked crate `chacha20poly1305`
+src/stdlib/crypto/symmetric.rs:621:21: error[E0433]: failed to resolve: use of unresolved module or unlinked crate `chacha20poly1305`: use of unresolved module or unlinked crate `chacha20poly1305`
+src/stdlib/crypto/symmetric.rs:629:13: error[E0433]: failed to resolve: use of unresolved module or unlinked crate `chacha20poly1305`: use of unresolved module or unlinked crate `chacha20poly1305`
+src/stdlib/crypto/symmetric.rs:631:13: error[E0433]: failed to resolve: use of unresolved module or unlinked crate `chacha20poly1305`: use of unresolved module or unlinked crate `chacha20poly1305`
+src/stdlib/crypto/llvm_integration.rs:184:75: error[E0433]: failed to resolve: use of unresolved module or unlinked crate `inkwell`: use of unresolved module or unlinked crate `inkwell`
+src/stdlib/embed_that/compression.rs:180:30: error[E0433]: failed to resolve: use of unresolved module or unlinked crate `brotli`: use of unresolved module or unlinked crate `brotli`
+src/stdlib/ipc/advanced_ipc.rs:1049:36: error[E0433]: failed to resolve: use of unresolved module or unlinked crate `uuid`: use of unresolved module or unlinked crate `uuid`
+src/stdlib/ipc/advanced_ipc.rs:1062:35: error[E0433]: failed to resolve: use of unresolved module or unlinked crate `uuid`: use of unresolved module or unlinked crate `uuid`
+src/stdlib/vibe_net/conn.rs:101:36: error[E0433]: failed to resolve: could not find `TcpSocket` in `net`: could not find `TcpSocket` in `net`
+src/ast/mod.rs:219:21: error[E0412]: cannot find type `EnumStatement` in this scope
+src/ast/mod.rs:223:25: error[E0412]: cannot find type `ConstantStatement` in this scope
+src/ast/mod.rs:225:26: error[E0412]: cannot find type `TypeAliasStatement` in this scope
+src/ast/mod.rs:231:23: error[E0412]: cannot find type `ModuleStatement` in this scope
+src/ast/mod.rs:239:20: error[E0412]: cannot find type `ForInStatement` in this scope
+src/ast/mod.rs:241:22: error[E0412]: cannot find type `DoWhileStatement` in this scope
+src/codegen/llvm/main.rs:153:45: error[E0412]: cannot find type `Runtime` in module `crate::runtime`: not found in `crate::runtime`
+src/codegen/llvm/main.rs:237:45: error[E0412]: cannot find type `Runtime` in module `crate::runtime`: not found in `crate::runtime`
+src/codegen/llvm/main.rs:264:69: error[E0412]: cannot find type `Runtime` in module `crate::runtime`: not found in `crate::runtime`
+src/codegen/llvm/main.rs:266:43: error[E0433]: failed to resolve: use of unresolved module or unlinked crate `inkwell`: use of unresolved module or unlinked crate `inkwell`
+src/codegen/llvm/main.rs:414:40: error[E0412]: cannot find type `TemplateAst` in module `crate::stdlib::template`: not found in `crate::stdlib::template`
+src/codegen/llvm/main.rs:457:49: error[E0412]: cannot find type `Runtime` in module `crate::runtime`: not found in `crate::runtime`
+src/codegen/llvm/main.rs:488:43: error[E0433]: failed to resolve: use of unresolved module or unlinked crate `inkwell`: use of unresolved module or unlinked crate `inkwell`
+src/codegen/llvm/main.rs:788:78: error[E0425]: cannot find value `coord_level` in this scope: not found in this scope
+src/codegen/llvm/main.rs:913:65: error[E0412]: cannot find type `Runtime` in module `crate::runtime`: not found in `crate::runtime`
+src/codegen/llvm/main.rs:1958:79: error[E0412]: cannot find type `GcConfig` in module `crate::memory::gc`: not found in `crate::memory::gc`
+src/codegen/llvm/main.rs:2156:58: error[E0433]: failed to resolve: unresolved import: unresolved import
+src/codegen/llvm/main.rs:2823:49: error[E0412]: cannot find type `Runtime` in module `crate::runtime`: not found in `crate::runtime`
+src/codegen/llvm/optimization_integration.rs:102:37: error[E0433]: failed to resolve: unresolved import: unresolved import
+src/codegen/llvm/optimization_passes.rs:60:62: error[E0412]: cannot find type `OptimizationLevel` in module `super::optimization`: not found in `super::optimization`
+src/codegen/llvm/optimization_passes.rs:79:38: error[E0433]: failed to resolve: could not find `OptimizationLevel` in `optimization`: could not find `OptimizationLevel` in `optimization`
+src/codegen/llvm/optimization_passes.rs:80:38: error[E0433]: failed to resolve: could not find `OptimizationLevel` in `optimization`: could not find `OptimizationLevel` in `optimization`
+src/codegen/llvm/optimization_passes.rs:105:66: error[E0412]: cannot find type `OptimizationLevel` in module `super::optimization`: not found in `super::optimization`
+src/codegen/llvm/optimization_passes.rs:155:50: error[E0412]: cannot find type `OptimizationLevel` in module `super::optimization`: not found in `super::optimization`
+src/codegen/llvm/optimization_passes.rs:168:54: error[E0433]: failed to resolve: could not find `OptimizationLevel` in `optimization`: could not find `OptimizationLevel` in `optimization`
+src/codegen/llvm/optimization_passes.rs:269:38: error[E0433]: failed to resolve: could not find `OptimizationLevel` in `optimization`: could not find `OptimizationLevel` in `optimization`
+src/codegen/llvm/optimization_passes.rs:270:38: error[E0433]: failed to resolve: could not find `OptimizationLevel` in `optimization`: could not find `OptimizationLevel` in `optimization`
+src/codegen/llvm/optimization_passes.rs:281:38: error[E0433]: failed to resolve: could not find `OptimizationLevel` in `optimization`: could not find `OptimizationLevel` in `optimization`
+src/codegen/llvm/optimization_passes.rs:292:38: error[E0433]: failed to resolve: could not find `OptimizationLevel` in `optimization`: could not find `OptimizationLevel` in `optimization`
+src/codegen/llvm/database_integration.rs:238:100: error[E0412]: cannot find type `ReturnType` in module `crate::stdlib::database::llvm_integration`: not found in `crate::stdlib::database::llvm_integration`
+src/codegen/llvm/expression_compiler.rs:742:28: error[E0433]: failed to resolve: unresolved import: unresolved import
+src/codegen/llvm/expression_compiler.rs:743:28: error[E0433]: failed to resolve: unresolved import: unresolved import
+src/codegen/llvm/expression_compiler.rs:744:28: error[E0433]: failed to resolve: unresolved import: unresolved import
+src/codegen/llvm/expression_compiler.rs:745:28: error[E0433]: failed to resolve: unresolved import: unresolved import
+src/codegen/llvm/expression_compiler.rs:746:28: error[E0433]: failed to resolve: unresolved import: unresolved import
+src/codegen/llvm/expression_compiler.rs:747:28: error[E0433]: failed to resolve: unresolved import: unresolved import
+src/codegen/llvm/function_registry.rs:264:54: error[E0532]: cannot match against a tuple struct which contains private fields: constructor is not visible here due to private fields
+src/codegen/llvm/function_registry.rs:265:50: error[E0532]: cannot match against a tuple struct which contains private fields: constructor is not visible here due to private fields
+src/codegen/llvm/function_registry.rs:268:35: error[E0532]: cannot match against a tuple struct which contains private fields: constructor is not visible here due to private fields
+src/codegen/llvm/goroutine.rs:24:59: error[E0433]: failed to resolve: could not find `goroutine` in `runtime`: could not find `goroutine` in `runtime`
+src/codegen/llvm/goroutine.rs:27:62: error[E0433]: failed to resolve: could not find `goroutine` in `runtime`: could not find `goroutine` in `runtime`
+src/codegen/llvm/goroutine.rs:34:63: error[E0433]: failed to resolve: could not find `goroutine` in `runtime`: could not find `goroutine` in `runtime`
+src/codegen/llvm/lto_integration.rs:580:17: error[E0433]: failed to resolve: use of unresolved module or unlinked crate `inkwell`: use of unresolved module or unlinked crate `inkwell`
+src/codegen/llvm/lto_integration.rs:590:17: error[E0433]: failed to resolve: use of unresolved module or unlinked crate `inkwell`: use of unresolved module or unlinked crate `inkwell`
+src/codegen/llvm/panic.rs:201:13: error[E0433]: failed to resolve: use of unresolved module or unlinked crate `inkwell`: use of unresolved module or unlinked crate `inkwell`
+src/core/performance_pipeline.rs:259:9: error[E0433]: failed to resolve: use of unresolved module or unlinked crate `rayon`: use of unresolved module or unlinked crate `rayon`
+src/stdlib/io/async_io.rs:15:12: error[E0433]: failed to resolve: use of unresolved module or unlinked crate `tokio`: use of unresolved module or unlinked crate `tokio`
+src/stdlib/io/async_io.rs:21:20: error[E0433]: failed to resolve: use of unresolved module or unlinked crate `tokio`: use of unresolved module or unlinked crate `tokio`
+src/stdlib/io/async_io.rs:28:20: error[E0433]: failed to resolve: use of unresolved module or unlinked crate `tokio`: use of unresolved module or unlinked crate `tokio`
+src/stdlib/io/async_io.rs:80:12: error[E0433]: failed to resolve: use of unresolved module or unlinked crate `tokio`: use of unresolved module or unlinked crate `tokio`
+src/stdlib/io/async_io.rs:86:22: error[E0433]: failed to resolve: use of unresolved module or unlinked crate `tokio`: use of unresolved module or unlinked crate `tokio`
+src/stdlib/io/async_io.rs:127:12: error[E0433]: failed to resolve: use of unresolved module or unlinked crate `tokio`: use of unresolved module or unlinked crate `tokio`
+src/stdlib/io/async_io.rs:133:24: error[E0433]: failed to resolve: use of unresolved module or unlinked crate `tokio`: use of unresolved module or unlinked crate `tokio`
+src/stdlib/io/async_io.rs:154:5: error[E0433]: failed to resolve: use of unresolved module or unlinked crate `tokio`: use of unresolved module or unlinked crate `tokio`
+src/stdlib/io/async_io.rs:215:9: error[E0433]: failed to resolve: use of unresolved module or unlinked crate `tokio`: use of unresolved module or unlinked crate `tokio`
+src/stdlib/io/async_io.rs:221:9: error[E0433]: failed to resolve: use of unresolved module or unlinked crate `tokio`: use of unresolved module or unlinked crate `tokio`
+src/stdlib/io/async_io.rs:227:9: error[E0433]: failed to resolve: use of unresolved module or unlinked crate `tokio`: use of unresolved module or unlinked crate `tokio`
+src/stdlib/io/async_io.rs:234:9: error[E0433]: failed to resolve: use of unresolved module or unlinked crate `tokio`: use of unresolved module or unlinked crate `tokio`
+src/stdlib/io/async_io.rs:241:9: error[E0433]: failed to resolve: use of unresolved module or unlinked crate `tokio`: use of unresolved module or unlinked crate `tokio`
+src/stdlib/io/async_io.rs:248:9: error[E0433]: failed to resolve: use of unresolved module or unlinked crate `tokio`: use of unresolved module or unlinked crate `tokio`
+src/stdlib/io/async_io.rs:255:9: error[E0433]: failed to resolve: use of unresolved module or unlinked crate `tokio`: use of unresolved module or unlinked crate `tokio`
+src/stdlib/io/async_io.rs:262:9: error[E0433]: failed to resolve: use of unresolved module or unlinked crate `tokio`: use of unresolved module or unlinked crate `tokio`
+src/stdlib/io/async_io.rs:269:9: error[E0433]: failed to resolve: use of unresolved module or unlinked crate `tokio`: use of unresolved module or unlinked crate `tokio`
+src/stdlib/io/async_io.rs:276:9: error[E0433]: failed to resolve: use of unresolved module or unlinked crate `tokio`: use of unresolved module or unlinked crate `tokio`
+src/stdlib/io/async_io.rs:282:9: error[E0433]: failed to resolve: use of unresolved module or unlinked crate `tokio`: use of unresolved module or unlinked crate `tokio`
+src/stdlib/io/async_io.rs:294:9: error[E0433]: failed to resolve: use of unresolved module or unlinked crate `tokio`: use of unresolved module or unlinked crate `tokio`
+src/stdlib/io/async_io.rs:306:18: error[E0433]: failed to resolve: use of unresolved module or unlinked crate `tokio`: use of unresolved module or unlinked crate `tokio`
+src/stdlib/io/async_io.rs:313:26: error[E0433]: failed to resolve: use of unresolved module or unlinked crate `tokio`: use of unresolved module or unlinked crate `tokio`
+src/stdlib/io/async_io.rs:381:16: error[E0433]: failed to resolve: use of unresolved module or unlinked crate `tokio`: use of unresolved module or unlinked crate `tokio`
+src/stdlib/errors.rs:502:13: error[E0532]: expected unit struct, unit variant or constant, found tuple variant `StdlibIoError::InvalidInput`
+src/stdlib/crypto/protocols_production.rs:543:23: error[E0412]: cannot find type `Ed25519Keypair` in this scope: not found in this scope
+src/stdlib/crypto/protocols_production.rs:559:34: error[E0412]: cannot find type `Ed25519Keypair` in this scope: not found in this scope
+src/stdlib/crypto/protocols_advanced.rs:46:15: error[E0412]: cannot find type `Ed25519Keypair` in this scope: not found in this scope
+src/stdlib/crypto/protocols_advanced.rs:91:26: error[E0412]: cannot find type `Ed25519Keypair` in this scope: not found in this scope
+src/stdlib/crypto/types.rs:21:32: error[E0412]: cannot find type `Error` in this scope: not found in this scope
+src/stdlib/crypto/types.rs:76:51: error[E0412]: cannot find type `Error` in this scope: not found in this scope
+src/stdlib/crypto/types.rs:86:86: error[E0412]: cannot find type `Error` in this scope: not found in this scope
+src/stdlib/crypto/types.rs:106:37: error[E0412]: cannot find type `Error` in this scope: not found in this scope
+src/stdlib/crypto/types.rs:126:54: error[E0412]: cannot find type `Error` in this scope: not found in this scope
+src/stdlib/crypto/types.rs:158:51: error[E0412]: cannot find type `Error` in this scope: not found in this scope
+src/stdlib/crypto/unified_api.rs:223:59: error[E0425]: cannot find function `init_crypto_advanced` in module `crate::stdlib::packages::crypto_advanced`: not found in `crate::stdlib::packages::crypto_advanced`
+src/stdlib/crypto/unified_api.rs:227:61: error[E0425]: cannot find function `init_crypto_asymmetric` in module `crate::stdlib::packages::crypto_asymmetric`: not found in `crate::stdlib::packages::crypto_asymmetric`
+src/stdlib/crypto/unified_api.rs:231:64: error[E0425]: cannot find function `init_crypto_hash_advanced` in module `crate::stdlib::packages::crypto_hash_advanced`: not found in `crate::stdlib::packages::crypto_hash_advanced`
+src/stdlib/crypto/unified_api.rs:235:61: error[E0425]: cannot find function `init_crypto_signatures` in module `crate::stdlib::packages::crypto_signatures`: not found in `crate::stdlib::packages::crypto_signatures`
+src/stdlib/crypto/unified_api.rs:239:54: error[E0425]: cannot find function `init_crypto_kdf` in module `crate::stdlib::packages::crypto_kdf`: not found in `crate::stdlib::packages::crypto_kdf`
+src/stdlib/crypto/unified_api.rs:243:57: error[E0425]: cannot find function `init_crypto_random` in module `crate::stdlib::packages::crypto_random`: not found in `crate::stdlib::packages::crypto_random`
+src/stdlib/crypto/unified_api.rs:247:54: error[E0425]: cannot find function `init_crypto_pki` in module `crate::stdlib::packages::crypto_pki`: not found in `crate::stdlib::packages::crypto_pki`
+src/stdlib/crypto/unified_api.rs:251:53: error[E0425]: cannot find function `init_crypto_zk` in module `crate::stdlib::packages::crypto_zk`: not found in `crate::stdlib::packages::crypto_zk`
+src/stdlib/crypto/unified_api.rs:255:54: error[E0425]: cannot find function `init_crypto_pqc` in module `crate::stdlib::packages::crypto_pqc`: not found in `crate::stdlib::packages::crypto_pqc`
+src/stdlib/crypto/unified_api.rs:259:60: error[E0425]: cannot find function `init_crypto_protocols` in module `crate::stdlib::packages::crypto_protocols`: not found in `crate::stdlib::packages::crypto_protocols`
+src/stdlib/crypto/package_manager.rs:242:59: error[E0425]: cannot find function `init_crypto_advanced` in module `crate::stdlib::packages::crypto_advanced`: not found in `crate::stdlib::packages::crypto_advanced`
+src/stdlib/crypto/package_manager.rs:286:61: error[E0425]: cannot find function `init_crypto_asymmetric` in module `crate::stdlib::packages::crypto_asymmetric`: not found in `crate::stdlib::packages::crypto_asymmetric`
+src/stdlib/crypto/package_manager.rs:318:64: error[E0425]: cannot find function `init_crypto_hash_advanced` in module `crate::stdlib::packages::crypto_hash_advanced`: not found in `crate::stdlib::packages::crypto_hash_advanced`
+src/stdlib/crypto/package_manager.rs:345:61: error[E0425]: cannot find function `init_crypto_signatures` in module `crate::stdlib::packages::crypto_signatures`: not found in `crate::stdlib::packages::crypto_signatures`
+src/stdlib/crypto/package_manager.rs:372:54: error[E0425]: cannot find function `init_crypto_kdf` in module `crate::stdlib::packages::crypto_kdf`: not found in `crate::stdlib::packages::crypto_kdf`
+src/stdlib/crypto/package_manager.rs:399:57: error[E0425]: cannot find function `init_crypto_random` in module `crate::stdlib::packages::crypto_random`: not found in `crate::stdlib::packages::crypto_random`
+src/stdlib/crypto/package_manager.rs:427:54: error[E0425]: cannot find function `init_crypto_pki` in module `crate::stdlib::packages::crypto_pki`: not found in `crate::stdlib::packages::crypto_pki`
+src/stdlib/crypto/package_manager.rs:454:53: error[E0425]: cannot find function `init_crypto_zk` in module `crate::stdlib::packages::crypto_zk`: not found in `crate::stdlib::packages::crypto_zk`
+src/stdlib/crypto/package_manager.rs:486:54: error[E0425]: cannot find function `init_crypto_pqc` in module `crate::stdlib::packages::crypto_pqc`: not found in `crate::stdlib::packages::crypto_pqc`
+src/stdlib/crypto/package_manager.rs:519:60: error[E0425]: cannot find function `init_crypto_protocols` in module `crate::stdlib::packages::crypto_protocols`: not found in `crate::stdlib::packages::crypto_protocols`
+src/stdlib/crypto/llvm_integration.rs:77:25: error[E0412]: cannot find type `CryptoPlatform` in this scope: not found in this scope
+src/stdlib/crypto/llvm_integration.rs:129:43: error[E0433]: failed to resolve: use of undeclared type `CryptoPlatform`: use of undeclared type `CryptoPlatform`
+src/stdlib/crypto/llvm_integration.rs:392:22: error[E0433]: failed to resolve: use of undeclared type `CryptoPlatform`: use of undeclared type `CryptoPlatform`
+src/stdlib/crypto/zk_enhanced.rs:1224:32: error[E0412]: cannot find type `PolynomialCommitment` in this scope: help: a struct with a similar name exists: `CursedPolynomialCommitment`
+src/stdlib/crypto/zk_enhanced.rs:2122:88: error[E0412]: cannot find type `PolynomialCommitment` in this scope
+src/stdlib/crypto/x448_implementation.rs:33:65: error[E0412]: cannot find type `Error` in this scope: not found in this scope
+src/stdlib/crypto/x448_implementation.rs:43:51: error[E0412]: cannot find type `Error` in this scope: not found in this scope
+src/stdlib/crypto/x448_implementation.rs:64:50: error[E0412]: cannot find type `Error` in this scope: not found in this scope
+src/stdlib/crypto/x448_implementation.rs:78:51: error[E0412]: cannot find type `Error` in this scope: not found in this scope
+src/stdlib/crypto/x448_implementation.rs:99:50: error[E0412]: cannot find type `Error` in this scope: not found in this scope
+src/stdlib/crypto/x448_implementation.rs:106:47: error[E0412]: cannot find type `Error` in this scope: not found in this scope
+src/stdlib/crypto/x448_implementation.rs:129:50: error[E0412]: cannot find type `Error` in this scope: not found in this scope
+src/stdlib/crypto/x448_implementation.rs:148:104: error[E0412]: cannot find type `Error` in this scope: not found in this scope
+src/stdlib/crypto/x448_implementation.rs:160:109: error[E0412]: cannot find type `Error` in this scope: not found in this scope
+src/stdlib/crypto/x448_implementation.rs:186:81: error[E0412]: cannot find type `Error` in this scope: not found in this scope
+src/stdlib/crypto/x448_implementation.rs:212:98: error[E0412]: cannot find type `Error` in this scope: not found in this scope
+src/stdlib/crypto/x448_implementation.rs:334:86: error[E0412]: cannot find type `Error` in this scope: not found in this scope
+src/stdlib/crypto/x448_implementation.rs:347:62: error[E0412]: cannot find type `Error` in this scope: not found in this scope
+src/stdlib/crypto/x448_implementation.rs:361:58: error[E0412]: cannot find type `Error` in this scope: not found in this scope
+src/stdlib/crypto/x448_implementation.rs:400:65: error[E0412]: cannot find type `Error` in this scope: not found in this scope
+src/stdlib/crypto/x448_implementation.rs:420:60: error[E0412]: cannot find type `Error` in this scope: not found in this scope
+src/stdlib/crypto/mod.rs:192:86: error[E0425]: cannot find function `init_crypto_asymmetric` in module `crate::stdlib::packages::crypto_asymmetric`: not found in `crate::stdlib::packages::crypto_asymmetric`
+src/stdlib/crypto/mod.rs:193:72: error[E0425]: cannot find function `init_crypto_pki` in module `crate::stdlib::packages::crypto_pki`: not found in `crate::stdlib::packages::crypto_pki`
+src/stdlib/crypto/mod.rs:194:82: error[E0425]: cannot find function `init_crypto_advanced` in module `crate::stdlib::packages::crypto_advanced`: not found in `crate::stdlib::packages::crypto_advanced`
+src/stdlib/crypto/mod.rs:195:92: error[E0425]: cannot find function `init_crypto_hash_advanced` in module `crate::stdlib::packages::crypto_hash_advanced`: not found in `crate::stdlib::packages::crypto_hash_advanced`
+src/stdlib/crypto/mod.rs:196:72: error[E0425]: cannot find function `init_crypto_kdf` in module `crate::stdlib::packages::crypto_kdf`: not found in `crate::stdlib::packages::crypto_kdf`
+src/stdlib/crypto/mod.rs:197:78: error[E0425]: cannot find function `init_crypto_random` in module `crate::stdlib::packages::crypto_random`: not found in `crate::stdlib::packages::crypto_random`
+src/stdlib/crypto/mod.rs:198:86: error[E0425]: cannot find function `init_crypto_signatures` in module `crate::stdlib::packages::crypto_signatures`: not found in `crate::stdlib::packages::crypto_signatures`
+src/stdlib/crypto/mod.rs:199:70: error[E0425]: cannot find function `init_crypto_zk` in module `crate::stdlib::packages::crypto_zk`: not found in `crate::stdlib::packages::crypto_zk`
+src/stdlib/crypto/mod.rs:200:72: error[E0425]: cannot find function `init_crypto_pqc` in module `crate::stdlib::packages::crypto_pqc`: not found in `crate::stdlib::packages::crypto_pqc`
+src/stdlib/crypto/mod.rs:201:84: error[E0425]: cannot find function `init_crypto_protocols` in module `crate::stdlib::packages::crypto_protocols`: not found in `crate::stdlib::packages::crypto_protocols`
+src/stdlib/crypto_pqc/benchmarks_real.rs:261:78: error[E0412]: cannot find type `RealSphincs` in module `sphincs_real`: not found in `sphincs_real`
+src/stdlib/crypto_pqc/benchmarks_real.rs:262:31: error[E0412]: cannot find type `SphincsPlusPublicKey` in module `sphincs_real`
+src/stdlib/crypto_pqc/benchmarks_real.rs:262:67: error[E0412]: cannot find type `SphincsPlusSecretKey` in module `sphincs_real`
+src/stdlib/crypto_pqc/benchmarks_real.rs:263:31: error[E0412]: cannot find type `SphincsPlusSignature` in module `sphincs_real`
+src/stdlib/crypto_pqc/benchmarks_real.rs:284:73: error[E0412]: cannot find type `RealMcEliece` in module `mceliece_real`: not found in `mceliece_real`
+src/stdlib/crypto_pqc/benchmarks_real.rs:285:32: error[E0412]: cannot find type `McEliecePublicKey` in module `mceliece_real`
+src/stdlib/crypto_pqc/benchmarks_real.rs:285:66: error[E0412]: cannot find type `McElieceSecretKey` in module `mceliece_real`
+src/stdlib/crypto_pqc/benchmarks_real.rs:286:32: error[E0412]: cannot find type `McElieceCiphertext` in module `mceliece_real`
+src/stdlib/crypto_pqc/benchmarks_real.rs:286:67: error[E0412]: cannot find type `McElieceSharedSecret` in module `mceliece_real`
+src/stdlib/signal_boost/core.rs:154:13: error[E0425]: cannot find value `NOTIFICATION_REGISTRY` in this scope: not found in this scope
+src/stdlib/signal_boost/core.rs:163:32: error[E0425]: cannot find value `NOTIFICATION_REGISTRY` in this scope: not found in this scope
+src/stdlib/signal_boost/core.rs:204:21: error[E0425]: cannot find value `NEXT_HANDLE_ID` in this scope: not found in this scope
+src/stdlib/signal_boost/core.rs:215:28: error[E0425]: cannot find value `NOTIFICATION_REGISTRY` in this scope: not found in this scope
+src/stdlib/signal_boost/core.rs:333:5: error[E0425]: cannot find value `SIGNALS_PROCESSED` in this scope: not found in this scope
+src/stdlib/signal_boost/core.rs:338:23: error[E0425]: cannot find value `SIGNAL_THREAD_STARTED` in this scope: not found in this scope
+src/stdlib/signal_boost/core.rs:359:28: error[E0425]: cannot find value `NOTIFICATION_REGISTRY` in this scope: not found in this scope
+src/stdlib/signal_boost/core.rs:394:20: error[E0425]: cannot find value `NOTIFICATION_REGISTRY` in this scope: not found in this scope
+src/stdlib/signal_boost/core.rs:407:9: error[E0425]: cannot find value `SIGNALS_PROCESSED` in this scope: not found in this scope
+src/stdlib/embed_that/template_integration.rs:12:69: error[E0404]: expected trait, found struct `TemplateEngine`: not a trait
+src/stdlib/embed_that/template_integration.rs:20:30: error[E0404]: expected trait, found struct `TemplateEngine`: not a trait
+src/stdlib/embed_that/template_integration.rs:50:47: error[E0425]: cannot find function `create_template_engine` in module `crate::stdlib::template`: not found in `crate::stdlib::template`
+src/stdlib/embed_that/template_integration.rs:83:67: error[E0404]: expected trait, found struct `TemplateEngine`: not a trait
+src/stdlib/embed_that/template_integration.rs:94:47: error[E0425]: cannot find function `create_template_engine` in module `crate::stdlib::template`: not found in `crate::stdlib::template`
+src/stdlib/embed_that/template_integration.rs:139:22: error[E0404]: expected trait, found struct `TemplateEngine`: not a trait
+src/stdlib/embed_that/template_integration.rs:153:30: error[E0404]: expected trait, found struct `TemplateEngine`: not a trait
+src/stdlib/embed_that/template_integration.rs:172:47: error[E0425]: cannot find function `create_template_engine` in module `crate::stdlib::template`: not found in `crate::stdlib::template`
+src/stdlib/embed_that/template_integration.rs:210:52: error[E0425]: cannot find function `create_template_engine` in module `crate::stdlib::template`: not found in `crate::stdlib::template`
+src/stdlib/embed_that/template_integration.rs:375:65: error[E0404]: expected trait, found struct `TemplateEngine`: not a trait
+src/stdlib/embed_that/template_integration.rs:382:26: error[E0404]: expected trait, found struct `TemplateEngine`: not a trait
+src/stdlib/embed_that/compression.rs:169:9: error[E0433]: failed to resolve: use of unresolved module or unlinked crate `brotli`: use of unresolved module or unlinked crate `brotli`
+src/stdlib/glowup_http/client.rs:648:18: error[E0433]: failed to resolve: use of undeclared type `HeaderMap`: use of undeclared type `HeaderMap`
+src/stdlib/glowup_http/handler.rs:192:41: error[E0412]: cannot find type `Path` in this scope: not found in this scope
+src/stdlib/glowup_http/request.rs:422:46: error[E0412]: cannot find type `Error` in this scope: not found in this scope
+src/stdlib/glowup_http/request.rs:429:46: error[E0412]: cannot find type `Error` in this scope: not found in this scope
+src/stdlib/oglogging/standard.rs:61:18: error[E0425]: cannot find value `STANDARD_LOGGER` in this scope: not found in this scope
+src/stdlib/oglogging/standard.rs:73:22: error[E0425]: cannot find value `STANDARD_LOGGER` in this scope: not found in this scope
+src/stdlib/oglogging/standard.rs:152:25: error[E0425]: cannot find value `STANDARD_LOGGER` in this scope: not found in this scope
+src/stdlib/oglogging/standard.rs:181:25: error[E0425]: cannot find value `STANDARD_LOGGER` in this scope: not found in this scope
+src/stdlib/oglogging/standard.rs:206:25: error[E0425]: cannot find value `STANDARD_LOGGER` in this scope: not found in this scope
+src/stdlib/oglogging/standard.rs:235:25: error[E0425]: cannot find value `STANDARD_LOGGER` in this scope: not found in this scope
+src/stdlib/oglogging/standard.rs:411:22: error[E0425]: cannot find value `STANDARD_LOGGER` in this scope: not found in this scope
+src/stdlib/oglogging/mod.rs:29:18: error[E0425]: cannot find value `STANDARD_LOGGER` in this scope: not found in this scope
+src/stdlib/oglogging/mod.rs:37:18: error[E0425]: cannot find value `STANDARD_LOGGER` in this scope: not found in this scope
+src/stdlib/oglogging/mod.rs:45:25: error[E0425]: cannot find value `STANDARD_LOGGER` in this scope: not found in this scope
+src/stdlib/oglogging/mod.rs:53:25: error[E0425]: cannot find value `STANDARD_LOGGER` in this scope: not found in this scope
+src/stdlib/oglogging/mod.rs:61:25: error[E0425]: cannot find value `STANDARD_LOGGER` in this scope: not found in this scope
+src/stdlib/oglogging/mod.rs:69:25: error[E0425]: cannot find value `STANDARD_LOGGER` in this scope: not found in this scope
+src/stdlib/oglogging/mod.rs:77:22: error[E0425]: cannot find value `STANDARD_LOGGER` in this scope: not found in this scope
+src/stdlib/oglogging/mod.rs:86:22: error[E0425]: cannot find value `STANDARD_LOGGER` in this scope: not found in this scope
+src/stdlib/oglogging/mod.rs:95:22: error[E0425]: cannot find value `STANDARD_LOGGER` in this scope: not found in this scope
+src/stdlib/oglogging/mod.rs:104:18: error[E0425]: cannot find value `STANDARD_LOGGER` in this scope: not found in this scope
+src/stdlib/oglogging/mod.rs:112:18: error[E0425]: cannot find value `STANDARD_LOGGER` in this scope: not found in this scope
+src/stdlib/regex_vibez/common.rs:125:10: error[E0425]: cannot find value `EMAIL_PATTERN` in this scope: not found in this scope
+src/stdlib/regex_vibez/common.rs:130:10: error[E0425]: cannot find value `URL_PATTERN` in this scope: not found in this scope
+src/stdlib/regex_vibez/common.rs:135:10: error[E0425]: cannot find value `DATE_PATTERN` in this scope: not found in this scope
+src/stdlib/regex_vibez/common.rs:140:10: error[E0425]: cannot find value `TIME_PATTERN` in this scope: not found in this scope
+src/stdlib/regex_vibez/common.rs:145:10: error[E0425]: cannot find value `USERNAME_PATTERN` in this scope: not found in this scope
+src/stdlib/regex_vibez/common.rs:150:10: error[E0425]: cannot find value `PASSWORD_PATTERN` in this scope: not found in this scope
+src/stdlib/regex_vibez/common.rs:155:10: error[E0425]: cannot find value `PHONE_PATTERN` in this scope: not found in this scope
+src/stdlib/regex_vibez/common.rs:160:10: error[E0425]: cannot find value `ZIP_CODE_PATTERN` in this scope: not found in this scope
+src/stdlib/regex_vibez/common.rs:165:10: error[E0425]: cannot find value `HASHTAG_PATTERN` in this scope: not found in this scope
+src/stdlib/regex_vibez/common.rs:170:10: error[E0425]: cannot find value `EMOJI_PATTERN` in this scope: not found in this scope
+src/stdlib/regex_vibez/common.rs:175:10: error[E0425]: cannot find value `IPV4_PATTERN` in this scope: not found in this scope
+src/stdlib/regex_vibez/common.rs:180:10: error[E0425]: cannot find value `IPV6_PATTERN` in this scope: not found in this scope
+src/stdlib/regex_vibez/common.rs:185:10: error[E0425]: cannot find value `CREDIT_CARD_PATTERN` in this scope: not found in this scope
+src/stdlib/regex_vibez/common.rs:190:10: error[E0425]: cannot find value `HEX_COLOR_PATTERN` in this scope: not found in this scope
+src/stdlib/regex_vibez/common.rs:195:10: error[E0425]: cannot find value `UUID_PATTERN` in this scope: not found in this scope
+src/stdlib/regex_vibez/common.rs:200:10: error[E0425]: cannot find value `HTML_TAG_PATTERN` in this scope: not found in this scope
+src/stdlib/regex_vibez/common.rs:205:10: error[E0425]: cannot find value `JSON_STRING_PATTERN` in this scope: not found in this scope
+src/stdlib/regex_vibez/common.rs:210:10: error[E0425]: cannot find value `BASE64_PATTERN` in this scope: not found in this scope
+src/stdlib/regex_vibez/common.rs:215:10: error[E0425]: cannot find value `MAC_ADDRESS_PATTERN` in this scope: not found in this scope
+src/stdlib/regex_vibez/common.rs:220:10: error[E0425]: cannot find value `SSN_PATTERN` in this scope: not found in this scope
+src/stdlib/regex_vibez/common.rs:225:10: error[E0425]: cannot find value `CURRENCY_PATTERN` in this scope: not found in this scope
+src/stdlib/regex_vibez/common.rs:230:10: error[E0425]: cannot find value `VERSION_PATTERN` in this scope: not found in this scope
+src/stdlib/regex_vibez/common.rs:246:30: error[E0425]: cannot find value `EMAIL_PATTERN` in this scope: not found in this scope
+src/stdlib/regex_vibez/common.rs:247:28: error[E0425]: cannot find value `URL_PATTERN` in this scope: not found in this scope
+src/stdlib/regex_vibez/common.rs:248:29: error[E0425]: cannot find value `DATE_PATTERN` in this scope: not found in this scope
+src/stdlib/regex_vibez/common.rs:249:29: error[E0425]: cannot find value `TIME_PATTERN` in this scope: not found in this scope
+src/stdlib/regex_vibez/common.rs:250:33: error[E0425]: cannot find value `USERNAME_PATTERN` in this scope: not found in this scope
+src/stdlib/regex_vibez/common.rs:251:33: error[E0425]: cannot find value `PASSWORD_PATTERN` in this scope: not found in this scope
+src/stdlib/regex_vibez/common.rs:252:30: error[E0425]: cannot find value `PHONE_PATTERN` in this scope: not found in this scope
+src/stdlib/regex_vibez/common.rs:253:33: error[E0425]: cannot find value `ZIP_CODE_PATTERN` in this scope: not found in this scope
+src/stdlib/regex_vibez/common.rs:254:32: error[E0425]: cannot find value `HASHTAG_PATTERN` in this scope: not found in this scope
+src/stdlib/regex_vibez/common.rs:255:30: error[E0425]: cannot find value `EMOJI_PATTERN` in this scope: not found in this scope
+src/stdlib/regex_vibez/common.rs:256:29: error[E0425]: cannot find value `IPV4_PATTERN` in this scope: not found in this scope
+src/stdlib/regex_vibez/common.rs:257:29: error[E0425]: cannot find value `IPV6_PATTERN` in this scope: not found in this scope
+src/stdlib/regex_vibez/common.rs:258:36: error[E0425]: cannot find value `CREDIT_CARD_PATTERN` in this scope: not found in this scope
+src/stdlib/regex_vibez/common.rs:259:34: error[E0425]: cannot find value `HEX_COLOR_PATTERN` in this scope: not found in this scope
+src/stdlib/regex_vibez/common.rs:260:29: error[E0425]: cannot find value `UUID_PATTERN` in this scope: not found in this scope
+src/stdlib/regex_vibez/common.rs:261:33: error[E0425]: cannot find value `HTML_TAG_PATTERN` in this scope: not found in this scope
+src/stdlib/regex_vibez/common.rs:262:36: error[E0425]: cannot find value `JSON_STRING_PATTERN` in this scope: not found in this scope
+src/stdlib/regex_vibez/common.rs:263:31: error[E0425]: cannot find value `BASE64_PATTERN` in this scope: not found in this scope
+src/stdlib/regex_vibez/common.rs:264:36: error[E0425]: cannot find value `MAC_ADDRESS_PATTERN` in this scope: not found in this scope
+src/stdlib/regex_vibez/common.rs:265:28: error[E0425]: cannot find value `SSN_PATTERN` in this scope: not found in this scope
+src/stdlib/regex_vibez/common.rs:266:33: error[E0425]: cannot find value `CURRENCY_PATTERN` in this scope: not found in this scope
+src/stdlib/regex_vibez/common.rs:267:32: error[E0425]: cannot find value `VERSION_PATTERN` in this scope: not found in this scope
+src/stdlib/vibe_net/mod.rs:52:48: error[E0412]: cannot find type `NetError` in this scope: not found in this scope
+src/stdlib/sync/collections.rs:964:57: error[E0412]: cannot find type `ChannelStatistics` in module `crate::stdlib::sync`: not found in `crate::stdlib::sync`
+src/stdlib/sync/collections.rs:965:26: error[E0422]: cannot find struct, variant or union type `ChannelStatistics` in module `crate::stdlib::sync`: not found in `crate::stdlib::sync`
+src/stdlib/time/sleep.rs:44:46: error[E0425]: cannot find function `now` in module `crate::stdlib::time::datetime`: not found in `crate::stdlib::time::datetime`
+src/stdlib/time/sleep.rs:45:51: error[E0425]: cannot find function `duration_between` in module `crate::stdlib::time::duration`: not found in `crate::stdlib::time::duration`
+src/stdlib/time/timezone.rs:136:5: error[E0425]: cannot find value `TIMEZONE_DATA` in this scope: not found in this scope
+src/stdlib/time/timezone.rs:147:5: error[E0425]: cannot find value `TIMEZONE_DATA` in this scope: not found in this scope
+src/stdlib/time/timezone.rs:183:5: error[E0425]: cannot find value `TIMEZONE_DATA` in this scope: not found in this scope
+src/stdlib/time/timezone.rs:255:5: error[E0425]: cannot find value `TIMEZONE_DATA` in this scope: not found in this scope
+src/stdlib/time/relative.rs:53:46: error[E0425]: cannot find function `now` in module `crate::stdlib::time::datetime`: not found in `crate::stdlib::time::datetime`
+src/stdlib/time/relative.rs:54:51: error[E0425]: cannot find function `duration_between` in module `crate::stdlib::time::duration`: not found in `crate::stdlib::time::duration`
+src/stdlib/time/relative.rs:186:46: error[E0425]: cannot find function `now` in module `crate::stdlib::time::datetime`: not found in `crate::stdlib::time::datetime`
+src/stdlib/time/relative.rs:187:51: error[E0425]: cannot find function `duration_between` in module `crate::stdlib::time::duration`: not found in `crate::stdlib::time::duration`
+src/stdlib/time/relative.rs:316:48: error[E0425]: cannot find function `today` in module `crate::stdlib::time::datetime`: not found in `crate::stdlib::time::datetime`
+src/stdlib/time/relative.rs:327:48: error[E0425]: cannot find function `today` in module `crate::stdlib::time::datetime`: not found in `crate::stdlib::time::datetime`
+src/stdlib/time/relative.rs:338:48: error[E0425]: cannot find function `today` in module `crate::stdlib::time::datetime`: not found in `crate::stdlib::time::datetime`
+src/stdlib/time/formatting.rs:449:36: error[E0425]: cannot find function `from_timestamp` in module `crate::stdlib::time::datetime`: not found in `crate::stdlib::time::datetime`
+src/ast/mod.rs:96:9: warning: ambiguous glob re-exports: the name `BlockExpression` in the type namespace is first re-exported here
+src/ast/mod.rs:105:9: warning: ambiguous glob re-exports: the name `ChannelSend` in the type namespace is first re-exported here
+src/ast/mod.rs:105:9: warning: ambiguous glob re-exports: the name `ChannelReceive` in the type namespace is first re-exported here
+src/ast/mod.rs:105:9: warning: ambiguous glob re-exports: the name `GoroutineSpawn` in the type namespace is first re-exported here
+src/codegen/llvm/database_integration.rs:351:1: warning: unused doc comment
+src/codegen/llvm/error_propagation.rs:738:1: warning: unused doc comment
+src/codegen/llvm/type_switch.rs:870:1: warning: unused doc comment
+src/stdlib/collections/mod.rs:31:9: warning: ambiguous glob re-exports: the name `MapIterator` in the type namespace is first re-exported here
+src/stdlib/collections/mod.rs:31:9: warning: ambiguous glob re-exports: the name `RangeIterator` in the type namespace is first re-exported here
+src/stdlib/collections/mod.rs:31:9: warning: ambiguous glob re-exports: the name `FilterIterator` in the type namespace is first re-exported here
+src/stdlib/collections/mod.rs:31:9: warning: ambiguous glob re-exports: the name `TakeIterator` in the type namespace is first re-exported here
+src/stdlib/collections/mod.rs:31:9: warning: ambiguous glob re-exports: the name `SkipIterator` in the type namespace is first re-exported here
+src/stdlib/collections/mod.rs:31:9: warning: ambiguous glob re-exports: the name `VecIterator` in the type namespace is first re-exported here
+src/stdlib/crypto_pqc/mod.rs:45:9: warning: ambiguous glob re-exports: the name `LmsPublicKey` in the type namespace is first re-exported here
+src/stdlib/crypto_pqc/mod.rs:45:9: warning: ambiguous glob re-exports: the name `LmsSecretKey` in the type namespace is first re-exported here
+src/stdlib/crypto_pqc/mod.rs:45:9: warning: ambiguous glob re-exports: the name `LmsSignature` in the type namespace is first re-exported here
+src/stdlib/crypto_pqc/mod.rs:46:9: warning: ambiguous glob re-exports: the name `XmssPublicKey` in the type namespace is first re-exported here
+src/stdlib/crypto_pqc/mod.rs:46:9: warning: ambiguous glob re-exports: the name `XmssSecretKey` in the type namespace is first re-exported here
+src/stdlib/crypto_pqc/mod.rs:46:9: warning: ambiguous glob re-exports: the name `XmssSignature` in the type namespace is first re-exported here
+src/stdlib/crypto_pqc/mod.rs:52:9: warning: ambiguous glob re-exports: the name `KyberPublicKey` in the type namespace is first re-exported here
+src/stdlib/crypto_pqc/mod.rs:52:9: warning: ambiguous glob re-exports: the name `KyberSecretKey` in the type namespace is first re-exported here
+src/stdlib/crypto_pqc/mod.rs:52:9: warning: ambiguous glob re-exports: the name `KyberCiphertext` in the type namespace is first re-exported here
+src/stdlib/crypto_pqc/mod.rs:52:9: warning: ambiguous glob re-exports: the name `KyberSharedSecret` in the type namespace is first re-exported here
+src/stdlib/crypto_pqc/mod.rs:53:9: warning: ambiguous glob re-exports: the name `DilithiumPublicKey` in the type namespace is first re-exported here
+src/stdlib/crypto_pqc/mod.rs:53:9: warning: ambiguous glob re-exports: the name `DilithiumSecretKey` in the type namespace is first re-exported here
+src/stdlib/crypto_pqc/mod.rs:53:9: warning: ambiguous glob re-exports: the name `DilithiumSignature` in the type namespace is first re-exported here
+src/stdlib/crypto_pqc/mod.rs:54:9: warning: ambiguous glob re-exports: the name `NtruPublicKey` in the type namespace is first re-exported here
+src/stdlib/crypto_pqc/mod.rs:54:9: warning: ambiguous glob re-exports: the name `NtruSecretKey` in the type namespace is first re-exported here
+src/stdlib/crypto_pqc/mod.rs:54:9: warning: ambiguous glob re-exports: the name `NtruCiphertext` in the type namespace is first re-exported here
+src/stdlib/crypto_pqc/mod.rs:55:9: warning: ambiguous glob re-exports: the name `FrodoPublicKey` in the type namespace is first re-exported here
+src/stdlib/crypto_pqc/mod.rs:55:9: warning: ambiguous glob re-exports: the name `FrodoSecretKey` in the type namespace is first re-exported here
+src/stdlib/crypto_pqc/mod.rs:55:9: warning: ambiguous glob re-exports: the name `FrodoCiphertext` in the type namespace is first re-exported here
+src/stdlib/crypto_pqc/mod.rs:55:9: warning: ambiguous glob re-exports: the name `FrodoSharedSecret` in the type namespace is first re-exported here
+src/stdlib/crypto_pqc/mod.rs:68:9: warning: ambiguous glob re-exports: the name `KeySizeBenchmark` in the type namespace is first re-exported here
+src/stdlib/crypto_pqc/mod.rs:69:9: warning: ambiguous glob re-exports: the name `BenchmarkResults` in the type namespace is first re-exported here
+src/stdlib/crypto_pqc/mod.rs:69:9: warning: ambiguous glob re-exports: the name `AttackComplexity` in the type namespace is first re-exported here
+src/stdlib/crypto_pqc/mod.rs:70:9: warning: ambiguous glob re-exports: the name `ClassicalAlgorithm` in the type namespace is first re-exported here
+src/stdlib/crypto_pqc/mod.rs:71:9: warning: ambiguous glob re-exports: the name `ThreatLevel` in the type namespace is first re-exported here
+src/stdlib/plug_vibes/mod.rs:33:9: warning: ambiguous glob re-exports: the name `is_running_as_plugin` in the value namespace is first re-exported here
+src/stdlib/plug_vibes/mod.rs:33:9: warning: ambiguous glob re-exports: the name `get_host_info` in the value namespace is first re-exported here
+src/stdlib/plug_vibes/mod.rs:33:9: warning: ambiguous glob re-exports: the name `get_plugin_api` in the value namespace is first re-exported here
+src/stdlib/plug_vibes/mod.rs:33:9: warning: ambiguous glob re-exports: the name `register_export` in the value namespace is first re-exported here
+src/stdlib/plug_vibes/mod.rs:33:9: warning: ambiguous glob re-exports: the name `register_hook` in the value namespace is first re-exported here
+src/stdlib/embed_that/core.rs:9:10: warning: type `tea` should have an upper camel case name: help: convert the identifier to upper camel case: `Tea`
+src/stdlib/embed_that/core.rs:10:10: warning: type `normie` should have an upper camel case name: help: convert the identifier to upper camel case: `Normie`
+src/stdlib/embed_that/core.rs:11:10: warning: type `lit` should have an upper camel case name: help: convert the identifier to upper camel case: `Lit`
+src/stdlib/embed_that/resource_loader.rs:162:11: warning: unexpected `cfg` condition value: `filesystem_embedding`
+src/stdlib/system/platform.rs:29:5: warning: variant `iOS` should have an upper camel case name: help: convert the identifier to upper camel case (notice the capitalization): `IOs`
+src/stdlib/glowup_http/client.rs:9:7: warning: unexpected `cfg` condition value: `multipart`
+src/stdlib/glowup_http/client.rs:221:19: warning: unexpected `cfg` condition value: `multipart`
+src/stdlib/glowup_http/client.rs:231:23: warning: unexpected `cfg` condition value: `multipart`
+src/stdlib/oglogging/standard.rs:44:1: warning: unused doc comment
+src/stdlib/vibe_net/security.rs:38:5: warning: variant `TLS_AES_128_GCM_SHA256` should have an upper camel case name: help: convert the identifier to upper camel case: `TlsAes128GcmSha256`
+src/stdlib/vibe_net/security.rs:39:5: warning: variant `TLS_AES_256_GCM_SHA384` should have an upper camel case name: help: convert the identifier to upper camel case: `TlsAes256GcmSha384`
+src/stdlib/vibe_net/security.rs:40:5: warning: variant `TLS_CHACHA20_POLY1305_SHA256` should have an upper camel case name: help: convert the identifier to upper camel case: `TlsChacha20Poly1305Sha256`
+src/stdlib/vibe_net/security.rs:41:5: warning: variant `TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256` should have an upper camel case name: help: convert the identifier to upper camel case: `TlsEcdheRsaWithAes128GcmSha256`
+src/stdlib/vibe_net/security.rs:42:5: warning: variant `TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384` should have an upper camel case name: help: convert the identifier to upper camel case: `TlsEcdheRsaWithAes256GcmSha384`
+src/stdlib/vibe_net/security.rs:43:5: warning: variant `TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256` should have an upper camel case name: help: convert the identifier to upper camel case: `TlsEcdheEcdsaWithAes128GcmSha256`
+src/stdlib/vibe_net/security.rs:44:5: warning: variant `TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384` should have an upper camel case name: help: convert the identifier to upper camel case: `TlsEcdheEcdsaWithAes256GcmSha384`
+src/stdlib/vibecheck/goroutine.rs:14:1: warning: unused doc comment: rustdoc does not generate documentation for macro invocations
+src/stdlib/vibecheck/version.rs:213:26: warning: unexpected `cfg` condition value: `gc`
+src/stdlib/vibecheck/version.rs:214:27: warning: unexpected `cfg` condition value: `jit`
+src/stdlib/vibecheck/version.rs:215:34: warning: unexpected `cfg` condition value: `goroutines`
+src/stdlib/vibecheck/version.rs:216:32: warning: unexpected `cfg` condition value: `channels`
+src/stdlib/vibecheck/version.rs:217:29: warning: unexpected `cfg` condition value: `r#async`
+src/stdlib/vibecheck/gc.rs:55:11: warning: unexpected `cfg` condition value: `gc`
+src/stdlib/sys_core/syscalls.rs:88:9: error: register `rax` conflicts with register `rax`: register `rax`
+src/stdlib/sys_core/syscalls.rs:104:9: error: register `rax` conflicts with register `rax`: register `rax`
+src/stdlib/sys_core/syscalls.rs:121:9: error: register `rax` conflicts with register `rax`: register `rax`
+src/stdlib/sys_core/syscalls.rs:139:9: error: register `rax` conflicts with register `rax`: register `rax`
+src/stdlib/sys_core/syscalls.rs:158:9: error: register `rax` conflicts with register `rax`: register `rax`
+src/stdlib/sys_core/syscalls.rs:178:9: error: register `rax` conflicts with register `rax`: register `rax`
+src/stdlib/sys_core/syscalls.rs:199:9: error: register `rax` conflicts with register `rax`: register `rax`
+src/stdlib/json_tea/encoder.rs:436:1: error[E0119]: conflicting implementations of trait `From<std::io::Error>` for type `error::CursedError`: conflicting implementation for `error::CursedError`
+src/parser/error_propagation.rs:62:21: error[E0277]: the trait bound `TypedErrorPropagation: ast::traits::Node` is not satisfied: the trait `ast::traits::Node` is not implemented for `TypedErrorPropagation`
+src/parser/error_propagation.rs:62:1: error[E0046]: not all trait items implemented, missing: `clone_box`: missing `clone_box` in implementation
+src/codegen/llvm/jit_compilation.rs:586:37: error[E0599]: no variant or associated item named `from_str` found for enum `error::CursedError` in the current scope: variant or associated item not found in `CursedError`
+src/core/performance_pipeline.rs:381:28: error[E0599]: no method named `into_par_iter` found for struct `Vec<CompilationJob>` in the current scope: method not found in `Vec<CompilationJob>`
+src/stdlib/collections/iterator_utils.rs:251:12: error[E0207]: the type parameter `T` is not constrained by the impl trait, self type, or predicates: unconstrained type parameter
+src/stdlib/glowup_http/client.rs:641:59: error[E0599]: no variant or associated item named `from_u16` found for enum `web::StatusCode` in the current scope: variant or associated item not found in `StatusCode`
+src/stdlib/glowup_http/client.rs:642:34: error[E0599]: no variant or associated item named `from_u16` found for enum `web::StatusCode` in the current scope: variant or associated item not found in `StatusCode`
+src/stdlib/crypto/zk_enhanced.rs:1266:37: error[E0433]: failed to resolve: use of undeclared type `PolynomialCommitment`: use of undeclared type `PolynomialCommitment`, help: a struct with a similar name exists: `CursedPolynomialCommitment`
+src/stdlib/crypto/zk_enhanced.rs:2131:5: error[E0433]: failed to resolve: use of undeclared type `PolynomialCommitment`: use of undeclared type `PolynomialCommitment`, help: a struct with a similar name exists: `CursedPolynomialCommitment`
+src/stdlib/crypto/certificates.rs:362:30: error[E0425]: cannot find function `parse_x509_certificate` in this scope: not found in this scope
+src/stdlib/crypto/symmetric.rs:715:9: error[E0425]: cannot find function `pbkdf2_hmac` in this scope: not found in this scope
+warning: `cursed` (lib) generated 66 warnings
+error: could not compile `cursed` (lib) due to 769 previous errors; 66 warnings emitted

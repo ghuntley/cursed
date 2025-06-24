@@ -1,11 +1,11 @@
 use crate::error::Error;
-//! Import Resolution System
-//!
-//! Handles resolution of imports including:
-//! - Standard library imports
-//! - Package imports from installed dependencies
-//! - Local file imports
-//! - Type imports and re-exports
+// Import Resolution System
+//
+// Handles resolution of imports including:
+// - Standard library imports
+// - Package imports from installed dependencies
+// - Local file imports
+// - Type imports and re-exports
 
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};

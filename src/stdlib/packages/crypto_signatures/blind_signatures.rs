@@ -1,6 +1,6 @@
-//! Blind Signatures
-//! 
-//! Blind signature implementation for CURSED crypto.
+// Blind Signatures
+// 
+// Blind signature implementation for CURSED crypto.
 
 /// Blind signature implementation
 pub struct BlindSignatures;

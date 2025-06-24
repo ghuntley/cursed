@@ -1,8 +1,8 @@
 use crate::error::Error;
-//! Syntax Highlighting for CURSED REPL
-//! 
-//! Provides real-time syntax highlighting for CURSED keywords,
-//! operators, literals, and comments using ANSI color codes.
+// Syntax Highlighting for CURSED REPL
+// 
+// Provides real-time syntax highlighting for CURSED keywords,
+// operators, literals, and comments using ANSI color codes.
 
 use std::collections::HashSet;
 use once_cell::sync::Lazy;

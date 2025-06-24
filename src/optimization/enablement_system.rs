@@ -1,11 +1,11 @@
 
-//! Optimization Enablement System for CURSED Compiler
-//! 
-//! Provides comprehensive optimization enablement with:
-//! - Advanced optimizations enabled by default
-//! - Optimization profiles for different use cases
-//! - Performance monitoring and measurement
-//! - Configuration system for user customization
+// Optimization Enablement System for CURSED Compiler
+// 
+// Provides comprehensive optimization enablement with:
+// - Advanced optimizations enabled by default
+// - Optimization profiles for different use cases
+// - Performance monitoring and measurement
+// - Configuration system for user customization
 
 use std::path::{Path, PathBuf};
 use std::time::{Duration, Instant};

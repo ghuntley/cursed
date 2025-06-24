@@ -365,7 +365,7 @@ impl DatabaseConnection for PostgreSqlConnection {
         
         // Convert parameters to PostgreSQL format
         let pg_params = convert_parameters_to_pg(parameters)?;
-        let param_refs: Vec<&(dyn tokio_postgres::crate::types::ToSql + Sync)> = 
+        let param_refs: Vec<&(dyn tokio_postgres::types::ToSql + Sync)> = 
             pg_params.iter().map(|p| p.as_ref()).collect();
         
         let rows = client.query(sql, &param_refs)
@@ -392,7 +392,7 @@ impl DatabaseConnection for PostgreSqlConnection {
         let mut client = self.client.lock().await;
         
         let pg_params = convert_parameters_to_pg(parameters)?;
-        let param_refs: Vec<&(dyn tokio_postgres::crate::types::ToSql + Sync)> = 
+        let param_refs: Vec<&(dyn tokio_postgres::types::ToSql + Sync)> = 
             pg_params.iter().map(|p| p.as_ref()).collect();
         
         let rows_affected = client.execute(sql, &param_refs)
@@ -505,7 +505,7 @@ impl SqlConnection for PostgreSqlConnection {
         let mut client = self.client.lock().await;
         
         let pg_params = convert_sql_values_to_pg(params)?;
-        let param_refs: Vec<&(dyn tokio_postgres::crate::types::ToSql + Sync)> = 
+        let param_refs: Vec<&(dyn tokio_postgres::types::ToSql + Sync)> = 
             pg_params.iter().map(|p| p.as_ref()).collect();
         
         let rows = client.query(sql, &param_refs)
@@ -542,7 +542,7 @@ impl SqlConnection for PostgreSqlConnection {
         let mut client = self.client.lock().await;
         
         let pg_params = convert_sql_values_to_pg(params)?;
-        let param_refs: Vec<&(dyn tokio_postgres::crate::types::ToSql + Sync)> = 
+        let param_refs: Vec<&(dyn tokio_postgres::types::ToSql + Sync)> = 
             pg_params.iter().map(|p| p.as_ref()).collect();
         
         let rows_affected = client.execute(sql, &param_refs)
@@ -667,36 +667,36 @@ impl SqlConnection for PostgreSqlConnection {
 
 // Helper functions for type conversion
 
-fn convert_parameters_to_pg(parameters: &[Parameter]) -> DbResult<Vec<Box<dyn tokio_postgres::crate::types::ToSql + Send + Sync>>> {
+fn convert_parameters_to_pg(parameters: &[Parameter]) -> DbResult<Vec<Box<dyn tokio_postgres::types::ToSql + Send + Sync>>> {
     let mut pg_params = Vec::new();
     
     for param in parameters {
         match param {
-            Parameter::String(s) => pg_params.push(Box::new(s.clone()) as Box<dyn tokio_postgres::crate::types::ToSql + Send + Sync>),
-            Parameter::Integer(i) => pg_params.push(Box::new(*i) as Box<dyn tokio_postgres::crate::types::ToSql + Send + Sync>),
-            Parameter::Float(f) => pg_params.push(Box::new(*f) as Box<dyn tokio_postgres::crate::types::ToSql + Send + Sync>),
-            Parameter::Boolean(b) => pg_params.push(Box::new(*b) as Box<dyn tokio_postgres::crate::types::ToSql + Send + Sync>),
-            Parameter::Null => pg_params.push(Box::new(Option::<String>::None) as Box<dyn tokio_postgres::crate::types::ToSql + Send + Sync>),
+            Parameter::String(s) => pg_params.push(Box::new(s.clone()) as Box<dyn tokio_postgres::types::ToSql + Send + Sync>),
+            Parameter::Integer(i) => pg_params.push(Box::new(*i) as Box<dyn tokio_postgres::types::ToSql + Send + Sync>),
+            Parameter::Float(f) => pg_params.push(Box::new(*f) as Box<dyn tokio_postgres::types::ToSql + Send + Sync>),
+            Parameter::Boolean(b) => pg_params.push(Box::new(*b) as Box<dyn tokio_postgres::types::ToSql + Send + Sync>),
+            Parameter::Null => pg_params.push(Box::new(Option::<String>::None) as Box<dyn tokio_postgres::types::ToSql + Send + Sync>),
         }
     }
     
     Ok(pg_params)
 }
 
-fn convert_sql_values_to_pg(values: &[SqlValue]) -> DbResult<Vec<Box<dyn tokio_postgres::crate::types::ToSql + Send + Sync>>> {
+fn convert_sql_values_to_pg(values: &[SqlValue]) -> DbResult<Vec<Box<dyn tokio_postgres::types::ToSql + Send + Sync>>> {
     let mut pg_params = Vec::new();
     
     for value in values {
         match value {
-            SqlValue::Text(s) => pg_params.push(Box::new(s.clone()) as Box<dyn tokio_postgres::crate::types::ToSql + Send + Sync>),
-            SqlValue::Integer(i) => pg_params.push(Box::new(*i) as Box<dyn tokio_postgres::crate::types::ToSql + Send + Sync>),
-            SqlValue::BigInt(i) => pg_params.push(Box::new(*i) as Box<dyn tokio_postgres::crate::types::ToSql + Send + Sync>),
-            SqlValue::Real(f) => pg_params.push(Box::new(*f) as Box<dyn tokio_postgres::crate::types::ToSql + Send + Sync>),
-            SqlValue::Double(f) => pg_params.push(Box::new(*f) as Box<dyn tokio_postgres::crate::types::ToSql + Send + Sync>),
-            SqlValue::Boolean(b) => pg_params.push(Box::new(*b) as Box<dyn tokio_postgres::crate::types::ToSql + Send + Sync>),
-            SqlValue::Null => pg_params.push(Box::new(Option::<String>::None) as Box<dyn tokio_postgres::crate::types::ToSql + Send + Sync>),
-            SqlValue::Uuid(u) => pg_params.push(Box::new(*u) as Box<dyn tokio_postgres::crate::types::ToSql + Send + Sync>),
-            SqlValue::Json(j) => pg_params.push(Box::new(j.clone()) as Box<dyn tokio_postgres::crate::types::ToSql + Send + Sync>),
+            SqlValue::Text(s) => pg_params.push(Box::new(s.clone()) as Box<dyn tokio_postgres::types::ToSql + Send + Sync>),
+            SqlValue::Integer(i) => pg_params.push(Box::new(*i) as Box<dyn tokio_postgres::types::ToSql + Send + Sync>),
+            SqlValue::BigInt(i) => pg_params.push(Box::new(*i) as Box<dyn tokio_postgres::types::ToSql + Send + Sync>),
+            SqlValue::Real(f) => pg_params.push(Box::new(*f) as Box<dyn tokio_postgres::types::ToSql + Send + Sync>),
+            SqlValue::Double(f) => pg_params.push(Box::new(*f) as Box<dyn tokio_postgres::types::ToSql + Send + Sync>),
+            SqlValue::Boolean(b) => pg_params.push(Box::new(*b) as Box<dyn tokio_postgres::types::ToSql + Send + Sync>),
+            SqlValue::Null => pg_params.push(Box::new(Option::<String>::None) as Box<dyn tokio_postgres::types::ToSql + Send + Sync>),
+            SqlValue::Uuid(u) => pg_params.push(Box::new(*u) as Box<dyn tokio_postgres::types::ToSql + Send + Sync>),
+            SqlValue::Json(j) => pg_params.push(Box::new(j.clone()) as Box<dyn tokio_postgres::types::ToSql + Send + Sync>),
             _ => return Err(DatabaseError::InvalidParameter(format!("Unsupported SQL value type: {:?}", value))),
         }
     }
@@ -704,7 +704,7 @@ fn convert_sql_values_to_pg(values: &[SqlValue]) -> DbResult<Vec<Box<dyn tokio_p
     Ok(pg_params)
 }
 
-fn convert_sql_value_to_pg(value: &SqlValue) -> DbResult<Box<dyn tokio_postgres::crate::types::ToSql + Send + Sync>> {
+fn convert_sql_value_to_pg(value: &SqlValue) -> DbResult<Box<dyn tokio_postgres::types::ToSql + Send + Sync>> {
     match value {
         SqlValue::Text(s) => Ok(Box::new(s.clone())),
         SqlValue::Integer(i) => Ok(Box::new(*i)),
@@ -720,7 +720,7 @@ fn convert_sql_value_to_pg(value: &SqlValue) -> DbResult<Box<dyn tokio_postgres:
 }
 
 fn convert_pg_value_to_sql_value(row: &Row, index: usize, column: &tokio_postgres::Column) -> DbResult<SqlValue> {
-    use tokio_postgres::crate::types::Type;
+    use tokio_postgres::types::Type;
     
     match column.type_() {
         &Type::TEXT | &Type::VARCHAR | &Type::CHAR | &Type::NAME => {
@@ -805,7 +805,7 @@ impl PreparedStatement for PostgreSqlPreparedStatement {
         let mut client = self.client.lock().await;
         
         let pg_params = convert_parameters_to_pg(parameters)?;
-        let param_refs: Vec<&(dyn tokio_postgres::crate::types::ToSql + Sync)> = 
+        let param_refs: Vec<&(dyn tokio_postgres::types::ToSql + Sync)> = 
             pg_params.iter().map(|p| p.as_ref()).collect();
         
         let rows_affected = client.execute(&self.statement, &param_refs)
@@ -825,7 +825,7 @@ impl PreparedStatement for PostgreSqlPreparedStatement {
         let mut client = self.client.lock().await;
         
         let pg_params = convert_parameters_to_pg(parameters)?;
-        let param_refs: Vec<&(dyn tokio_postgres::crate::types::ToSql + Sync)> = 
+        let param_refs: Vec<&(dyn tokio_postgres::types::ToSql + Sync)> = 
             pg_params.iter().map(|p| p.as_ref()).collect();
         
         let rows = client.query(&self.statement, &param_refs)

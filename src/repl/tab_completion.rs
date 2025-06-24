@@ -1,8 +1,8 @@
 use crate::error::Error;
-//! Tab Completion for CURSED REPL
-//! 
-//! Provides intelligent tab completion for CURSED keywords,
-//! variables, functions, and file paths.
+// Tab Completion for CURSED REPL
+// 
+// Provides intelligent tab completion for CURSED keywords,
+// variables, functions, and file paths.
 
 use std::collections::HashSet;
 use rustyline::completion::{Completer, FilenameCompleter, Pair};

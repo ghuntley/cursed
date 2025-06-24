@@ -1,11 +1,11 @@
 use crate::error::Error;
-//! Enhanced Auto-completion provider for CURSED language server
-//! 
-//! Provides intelligent context-aware code completion using CURSED's type system,
-//! AST analysis, and semantic information for keywords, variables, functions, types, etc.
+// Enhanced Auto-completion provider for CURSED language server
+// 
+// Provides intelligent context-aware code completion using CURSED's type system,
+// AST analysis, and semantic information for keywords, variables, functions, types, etc.
 
 use std::collections::HashMap;
-use tower_lsp::lsp_crate::types::*;
+use tower_lsp::lsp_types::*;
 use tracing::{debug, instrument, info};
 
 use crate::lexer::{Lexer, TokenType};

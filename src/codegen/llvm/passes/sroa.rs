@@ -14,7 +14,7 @@ use inkwell::{
     values::{FunctionValue, BasicValueEnum, InstructionValue, BasicValue, PointerValue, AggregateValue},
     basic_block::BasicBlock,
     builder::Builder,
-    crate::types::{BasicType, BasicTypeEnum, StructType, ArrayType, PointerType},
+    types::{BasicType, BasicTypeEnum, StructType, ArrayType, PointerType},
     AddressSpace,
 };
 

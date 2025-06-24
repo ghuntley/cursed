@@ -1,12 +1,12 @@
 use crate::error::Error;
-//! Enhanced SlayCommand implementation with comprehensive process management
-//! 
-//! This module provides advanced process management features including:
-//! - Resource monitoring and limiting
-//! - Process groups and pipelines  
-//! - Signal handling and graceful termination
-//! - Cross-platform compatibility
-//! - Advanced I/O operations
+// Enhanced SlayCommand implementation with comprehensive process management
+// 
+// This module provides advanced process management features including:
+// - Resource monitoring and limiting
+// - Process groups and pipelines  
+// - Signal handling and graceful termination
+// - Cross-platform compatibility
+// - Advanced I/O operations
 
 use std::collections::HashMap;
 use std::io::{self, Read, Write, BufReader, BufWriter};

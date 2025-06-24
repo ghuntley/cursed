@@ -1,7 +1,7 @@
-//! Enhanced error propagation compiler for CURSED language
-//!
-//! This module provides advanced LLVM IR generation for the `?` operator
-//! with context tracking and sophisticated error handling.
+// Enhanced error propagation compiler for CURSED language
+//
+// This module provides advanced LLVM IR generation for the `?` operator
+// with context tracking and sophisticated error handling.
 
 use crate::ast::expressions::ErrorPropagation;
 use crate::codegen::llvm::LlvmCodeGenerator;

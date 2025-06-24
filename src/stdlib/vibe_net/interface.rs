@@ -1,4 +1,4 @@
-//! Network interface information for VibeNet
+// Network interface information for VibeNet
 
 use crate::error::CursedError;
 use crate::error::Error;

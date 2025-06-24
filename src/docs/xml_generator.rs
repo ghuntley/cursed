@@ -1,6 +1,6 @@
-//! XML Documentation Generator
-//! 
-//! Generates comprehensive XML documentation compatible with various tools and IDEs.
+// XML Documentation Generator
+// 
+// Generates comprehensive XML documentation compatible with various tools and IDEs.
 
 use crate::docs::generator::{DocGeneratorConfig, ExtractedDocumentation, DocumentationItem, SearchIndexEntry};
 use crate::error::Error;

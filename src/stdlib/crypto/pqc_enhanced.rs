@@ -1,21 +1,21 @@
-//! Comprehensive Post-Quantum Cryptography Module for CURSED
-//! 
-//! This module provides production-ready implementations of post-quantum cryptographic algorithms
-//! that are believed to be secure against attacks by quantum computers.
-//! 
-//! # Algorithms Implemented
-//! 
-//! - **Kyber**: Key Encapsulation Mechanism (KEM) based on Module-LWE (REAL IMPLEMENTATION)
-//! - **Dilithium**: Digital signatures based on Module-LWE (REAL IMPLEMENTATION)  
-//! - **SPHINCS+**: Hash-based signatures (REAL IMPLEMENTATION)
-//! - **Falcon**: Compact signatures based on NTRU lattices (SIMULATION)
-//! - **NTRU**: Encryption based on NTRU lattices (SIMULATION)
-//! - **NewHope**: Ring-LWE based key exchange (SIMULATION)
-//! 
-//! # Security Assessment Framework
-//! 
-//! Includes comprehensive quantum resistance assessment tools and benchmarking
-//! capabilities for evaluating post-quantum cryptographic algorithms.
+// Comprehensive Post-Quantum Cryptography Module for CURSED
+// 
+// This module provides production-ready implementations of post-quantum cryptographic algorithms
+// that are believed to be secure against attacks by quantum computers.
+// 
+// # Algorithms Implemented
+// 
+// - **Kyber**: Key Encapsulation Mechanism (KEM) based on Module-LWE (REAL IMPLEMENTATION)
+// - **Dilithium**: Digital signatures based on Module-LWE (REAL IMPLEMENTATION)  
+// - **SPHINCS+**: Hash-based signatures (REAL IMPLEMENTATION)
+// - **Falcon**: Compact signatures based on NTRU lattices (SIMULATION)
+// - **NTRU**: Encryption based on NTRU lattices (SIMULATION)
+// - **NewHope**: Ring-LWE based key exchange (SIMULATION)
+// 
+// # Security Assessment Framework
+// 
+// Includes comprehensive quantum resistance assessment tools and benchmarking
+// capabilities for evaluating post-quantum cryptographic algorithms.
 
 use std::collections::HashMap;
 use std::fmt;

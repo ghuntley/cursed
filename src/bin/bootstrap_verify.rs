@@ -1,9 +1,9 @@
 use crate::error::Error;
-//! CURSED Bootstrap Verification Tool
-//!
-//! A command-line tool for verifying the CURSED compiler's self-hosting capabilities.
-//! This tool implements the comprehensive bootstrap verification process defined
-//! in the compiler specifications.
+// CURSED Bootstrap Verification Tool
+//
+// A command-line tool for verifying the CURSED compiler's self-hosting capabilities.
+// This tool implements the comprehensive bootstrap verification process defined
+// in the compiler specifications.
 
 use clap::{App, Arg};
 use std::path::PathBuf;

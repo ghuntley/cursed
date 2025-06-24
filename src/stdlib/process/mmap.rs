@@ -261,7 +261,7 @@ impl MmapHandle {
             use winapi::um::memoryapi::FlushViewOfFile;
             use winapi::um::fileapi::FlushFileBuffers;
 
-            let result = unsafe { FlushViewOfFile(self.ptr as *const winapi::ccrate::types::c_void, self.length) };
+            let result = unsafe { FlushViewOfFile(self.ptr as *const winapi::ctypes::c_void, self.length) };
             if result == 0 {
                 return Err(CursedError::Memory(format!(
                     "Failed to flush view of file: {}",
@@ -271,7 +271,7 @@ impl MmapHandle {
 
             // Also flush file buffers if we have a file handle
             if let Some(handle) = self.file_handle {
-                let result = unsafe { FlushFileBuffers(handle as *mut winapi::ccrate::types::c_void) };
+                let result = unsafe { FlushFileBuffers(handle as *mut winapi::ctypes::c_void) };
                 if result == 0 {
                     return Err(CursedError::Memory(format!(
                         "Failed to flush file buffers: {}",
@@ -321,7 +321,7 @@ impl MmapHandle {
             let mut old_protect = 0;
             let result = unsafe {
                 VirtualProtect(
-                    self.ptr as *mut winapi::ccrate::types::c_void,
+                    self.ptr as *mut winapi::ctypes::c_void,
                     self.length,
                     protect,
                     &mut old_protect,
@@ -364,7 +364,7 @@ impl MmapHandle {
         {
             use winapi::um::memoryapi::VirtualLock;
 
-            let result = unsafe { VirtualLock(self.ptr as *mut winapi::ccrate::types::c_void, self.length) };
+            let result = unsafe { VirtualLock(self.ptr as *mut winapi::ctypes::c_void, self.length) };
             if result == 0 {
                 return Err(CursedError::Memory(format!(
                     "Failed to lock pages: {}",
@@ -402,7 +402,7 @@ impl MmapHandle {
         {
             use winapi::um::memoryapi::VirtualUnlock;
 
-            let result = unsafe { VirtualUnlock(self.ptr as *mut winapi::ccrate::types::c_void, self.length) };
+            let result = unsafe { VirtualUnlock(self.ptr as *mut winapi::ctypes::c_void, self.length) };
             if result == 0 {
                 return Err(CursedError::Memory(format!(
                     "Failed to unlock pages: {}",
@@ -517,10 +517,10 @@ impl Drop for MmapHandle {
                 use winapi::um::handleapi::CloseHandle;
 
                 unsafe {
-                    UnmapViewOfFile(self.ptr as *const winapi::ccrate::types::c_void);
+                    UnmapViewOfFile(self.ptr as *const winapi::ctypes::c_void);
                     
                     if let Some(handle) = self.mapping_handle {
-                        CloseHandle(handle as *mut winapi::ccrate::types::c_void);
+                        CloseHandle(handle as *mut winapi::ctypes::c_void);
                     }
                 }
             }
@@ -625,7 +625,7 @@ impl MmapManager {
 
             let mapping_handle = unsafe {
                 CreateFileMappingW(
-                    file_handle as *mut winapi::ccrate::types::c_void,
+                    file_handle as *mut winapi::ctypes::c_void,
                     ptr::null_mut(),
                     protect,
                     ((config.offset + config.length as u64) >> 32) as u32,
@@ -654,7 +654,7 @@ impl MmapManager {
 
             let ptr = unsafe {
                 MapViewOfFile(
-                    mapping_handle as *mut winapi::ccrate::types::c_void,
+                    mapping_handle as *mut winapi::ctypes::c_void,
                     access,
                     (config.offset >> 32) as u32,
                     (config.offset & 0xFFFFFFFF) as u32,
@@ -664,7 +664,7 @@ impl MmapManager {
 
             if ptr.is_null() {
                 use winapi::um::handleapi::CloseHandle;
-                unsafe { CloseHandle(mapping_handle as *mut winapi::ccrate::types::c_void) };
+                unsafe { CloseHandle(mapping_handle as *mut winapi::ctypes::c_void) };
                 return Err(CursedError::Memory(format!(
                     "Failed to map view of file: {}",
                     std::io::Error::last_os_error()
@@ -754,7 +754,7 @@ impl MmapManager {
 
             let ptr = unsafe {
                 VirtualAlloc(
-                    config.addr_hint.unwrap_or(ptr::null_mut()) as *mut winapi::ccrate::types::c_void,
+                    config.addr_hint.unwrap_or(ptr::null_mut()) as *mut winapi::ctypes::c_void,
                     config.length,
                     MEM_COMMIT | MEM_RESERVE,
                     protect,

@@ -1,4 +1,4 @@
-//! Optimization configuration and level management
+// Optimization configuration and level management
 
 use serde::{Deserialize, Serialize};
 use std::fmt;

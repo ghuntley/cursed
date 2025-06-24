@@ -1,10 +1,10 @@
-//! Profile Data Analysis System
-//! 
-//! Analyzes collected profile data to identify optimization opportunities including:
-//! - Hot function analysis and inlining candidates
-//! - Branch prediction analysis for code layout
-//! - Loop analysis for unrolling and vectorization
-//! - Memory access pattern analysis for cache optimization
+// Profile Data Analysis System
+// 
+// Analyzes collected profile data to identify optimization opportunities including:
+// - Hot function analysis and inlining candidates
+// - Branch prediction analysis for code layout
+// - Loop analysis for unrolling and vectorization
+// - Memory access pattern analysis for cache optimization
 
 use crate::error::{Error, Result};
 use crate::optimization::pgo::{ProfileData, PgoSystemConfig};

@@ -1,7 +1,7 @@
-//! Public key cryptography utilities
-//! 
-//! Provides comprehensive public key operations for the CURSED stdlib.
-//! Supports key extraction, validation, format conversion, and fingerprinting.
+// Public key cryptography utilities
+// 
+// Provides comprehensive public key operations for the CURSED stdlib.
+// Supports key extraction, validation, format conversion, and fingerprinting.
 
 use crate::stdlib::value::Value;
 use crate::error::CursedError;

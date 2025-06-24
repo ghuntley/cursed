@@ -14,7 +14,7 @@ use inkwell::{
     values::{FunctionValue, BasicValueEnum, InstructionValue, BasicValue, IntValue, FloatValue},
     basic_block::BasicBlock,
     builder::Builder,
-    crate::types::BasicType,
+    types::BasicType,
     IntPredicate, FloatPredicate,
 };
 

@@ -1,10 +1,10 @@
 use crate::error::Error;
 #![cfg(windows)]
 
-//! Windows-specific process management and IPC implementation (simplified)
-//! 
-//! This module provides simplified placeholder implementations for Windows-specific functionality.
-//! Full implementation would require winapi dependency.
+// Windows-specific process management and IPC implementation (simplified)
+// 
+// This module provides simplified placeholder implementations for Windows-specific functionality.
+// Full implementation would require winapi dependency.
 
 use std::collections::HashMap;
 use crate::error::CursedError;

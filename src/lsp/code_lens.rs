@@ -1,11 +1,11 @@
-//! Code lens implementation for CURSED language
-//! 
-//! Provides contextual information overlays including reference counts,
-//! test execution status, performance metrics, and memory usage hints.
+// Code lens implementation for CURSED language
+// 
+// Provides contextual information overlays including reference counts,
+// test execution status, performance metrics, and memory usage hints.
 
 use std::collections::HashMap;
 use std::time::Duration;
-use tower_lsp::lsp_crate::types::*;
+use tower_lsp::lsp_types::*;
 use tracing::{debug, instrument};
 use serde_json::Value;
 

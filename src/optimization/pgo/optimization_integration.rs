@@ -1,10 +1,10 @@
-//! PGO Optimization Integration System
-//! 
-//! Integrates PGO optimization with the existing optimization pipeline including:
-//! - Performance metrics collection and analysis
-//! - Optimization effectiveness measurement
-//! - Regression detection and validation
-//! - Integration with existing LLVM optimization passes
+// PGO Optimization Integration System
+// 
+// Integrates PGO optimization with the existing optimization pipeline including:
+// - Performance metrics collection and analysis
+// - Optimization effectiveness measurement
+// - Regression detection and validation
+// - Integration with existing LLVM optimization passes
 
 use crate::error::{Error, Result};
 use crate::optimization::pgo::{ProfileData, ProfileAnalysisResult, PgoSystemConfig};

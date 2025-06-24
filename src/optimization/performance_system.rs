@@ -1,8 +1,8 @@
 use crate::error::Error;
-//! Performance system for comprehensive optimization management
-//!
-//! This module provides a unified interface for performance monitoring,
-//! optimization coordination, and system resource management.
+// Performance system for comprehensive optimization management
+//
+// This module provides a unified interface for performance monitoring,
+// optimization coordination, and system resource management.
 
 use super::metrics::{CompilationStatistics, SystemStatistics, ResourceStatistics, MetricsCollector};
 use super::compilation_speed::CompilationSpeedOptimizer;

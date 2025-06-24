@@ -1,8 +1,8 @@
 use crate::error::Error;
-//! Build Configuration System
-//! 
-//! Defines the configuration structure for CURSED projects including
-//! project metadata, build targets, profiles, and compilation settings.
+// Build Configuration System
+// 
+// Defines the configuration structure for CURSED projects including
+// project metadata, build targets, profiles, and compilation settings.
 
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;

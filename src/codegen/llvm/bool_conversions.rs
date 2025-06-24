@@ -1,11 +1,11 @@
-//! Bool conversion operations for LLVM code generation
-//!
-//! This module provides comprehensive bool conversion capabilities including:
-//! - Bool literal creation
-//! - Bool to primitive type conversions
-//! - Primitive types to bool conversions
-//! - Bool logical operations
-//! - Type checking utilities
+// Bool conversion operations for LLVM code generation
+//
+// This module provides comprehensive bool conversion capabilities including:
+// - Bool literal creation
+// - Bool to primitive type conversions
+// - Primitive types to bool conversions
+// - Bool logical operations
+// - Type checking utilities
 
 use crate::error::Error;
 

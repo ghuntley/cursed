@@ -1,4 +1,4 @@
-//! Protocol adapters for VibeNet
+// Protocol adapters for VibeNet
 
 use crate::error::CursedError;
 use crate::error::Error;

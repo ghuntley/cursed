@@ -16,7 +16,7 @@ use inkwell::{
     context::Context,
     module::Module,
     values::{FunctionValue, InstructionValue, StructValue, ArrayValue, BasicValueEnum, AggregateValueEnum},
-    crate::types::{StructType, ArrayType, BasicType, AnyType},
+    types::{StructType, ArrayType, BasicType, AnyType},
     basic_block::BasicBlock,
     builder::Builder,
 };

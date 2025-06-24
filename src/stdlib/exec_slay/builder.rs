@@ -1,5 +1,5 @@
 use crate::error::Error;
-//! SlayCommandBuilder implementation for fluent command building
+// SlayCommandBuilder implementation for fluent command building
 
 use std::time::Duration;
 use crate::error::CursedError;

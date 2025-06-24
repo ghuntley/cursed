@@ -11,7 +11,7 @@ use crate::stdlib::database::{
 };
 use crate::error::Error;
 use super::error::{PostgresError, PostgresErrorKind, PostgresResult};
-use super::crate::types::{map_postgres_value, prepare_parameters, extract_column_info, PostgresParam};
+use super::types::{map_postgres_value, prepare_parameters, extract_column_info, PostgresParam};
 
 /// PostgreSQL prepared statement wrapper
 #[derive(Debug)]
@@ -23,9 +23,9 @@ pub struct PostgresStatement {
     /// Statement statistics
     stats: Arc<std::sync::Mutex<StatementStats>>,
     /// Parameter types information
-    param_types: Vec<tokio_postgres::crate::types::Type>,
+    param_types: Vec<tokio_postgres::types::Type>,
     /// Column types information
-    column_types: Vec<tokio_postgres::crate::types::Type>,
+    column_types: Vec<tokio_postgres::types::Type>,
 }
 
 /// Statement execution statistics
@@ -72,7 +72,7 @@ impl PostgresStatement {
 
         // Convert parameters
         let params = self.convert_parameters(args)?;
-        let param_refs: Vec<&(dyn tokio_postgres::crate::types::ToSql + Sync)> = 
+        let param_refs: Vec<&(dyn tokio_postgres::types::ToSql + Sync)> = 
             params.iter().map(|p| p.as_ref()).collect();
 
         // Execute query
@@ -118,7 +118,7 @@ impl PostgresStatement {
 
         // Convert parameters
         let params = self.convert_parameters(args)?;
-        let param_refs: Vec<&(dyn tokio_postgres::crate::types::ToSql + Sync)> = 
+        let param_refs: Vec<&(dyn tokio_postgres::types::ToSql + Sync)> = 
             params.iter().map(|p| p.as_ref()).collect();
 
         // Execute statement
@@ -326,7 +326,7 @@ impl std::fmt::Display for StatementStats {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use tokio_postgres::crate::types::Type;
+    use tokio_postgres::types::Type;
 
     #[test]
     fn test_statement_info() {

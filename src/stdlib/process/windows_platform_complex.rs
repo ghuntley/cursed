@@ -18,7 +18,7 @@ use std::sync::{Arc, Mutex};
 use std::time::Duration;
 
 use tracing::{info, warn, error, debug, instrument};
-use winapi::ccrate::types::c_void;
+use winapi::ctypes::c_void;
 use winapi::shared::minwindef::{BOOL, DWORD, FALSE, TRUE};
 use winapi::shared::ntdef::{HANDLE, NULL};
 use winapi::shared::winerror::{ERROR_SUCCESS, ERROR_INSUFFICIENT_BUFFER};

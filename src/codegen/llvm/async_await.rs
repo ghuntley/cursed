@@ -7,7 +7,7 @@ use std::collections::HashMap;
 use inkwell::{
     context::Context,
     values::{BasicValueEnum, FunctionValue},
-    crate::types::{BasicTypeEnum, FunctionType},
+    types::{BasicTypeEnum, FunctionType},
     basic_block::BasicBlock,
 };
 

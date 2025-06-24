@@ -1,8 +1,8 @@
-//! Lock File Management for Reproducible Builds
-//!
-//! This module provides functionality for generating, reading, and validating
-//! lock files that ensure reproducible dependency resolution across different
-//! environments and time periods.
+// Lock File Management for Reproducible Builds
+//
+// This module provides functionality for generating, reading, and validating
+// lock files that ensure reproducible dependency resolution across different
+// environments and time periods.
 
 use crate::package_manager::{
     PackageManagerError,

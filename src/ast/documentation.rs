@@ -1,8 +1,8 @@
-//! AST Documentation Module
-//!
-//! Comprehensive documentation extraction and analysis for CURSED AST nodes.
-//! This module provides the core infrastructure for extracting documentation
-//! from AST nodes and building rich documentation metadata.
+// AST Documentation Module
+//
+// Comprehensive documentation extraction and analysis for CURSED AST nodes.
+// This module provides the core infrastructure for extracting documentation
+// from AST nodes and building rich documentation metadata.
 
 use crate::ast::traits::*;
 use crate::ast::*;

@@ -1,7 +1,7 @@
-//! Generic Type Information Extractor for CURSED Documentation
-//! 
-//! This module provides comprehensive extraction of generic type parameters,
-//! constraints, bounds, and variance information for documentation generation.
+// Generic Type Information Extractor for CURSED Documentation
+// 
+// This module provides comprehensive extraction of generic type parameters,
+// constraints, bounds, and variance information for documentation generation.
 
 use crate::ast::*;
 use crate::documentation::extractors::ast_node_support::{ExpressionType, Literal};

@@ -1,8 +1,8 @@
 use crate::error::Error;
-//! Profiling infrastructure for optimization analysis
-//! 
-//! Provides comprehensive profiling capabilities to measure performance
-//! characteristics and guide optimization decisions.
+// Profiling infrastructure for optimization analysis
+// 
+// Provides comprehensive profiling capabilities to measure performance
+// characteristics and guide optimization decisions.
 
 use std::time::{Duration, Instant};
 use std::collections::HashMap;

@@ -1,6 +1,6 @@
-//! HTML Documentation Generator
-//! 
-//! Generates comprehensive HTML documentation with navigation, search, and responsive design.
+// HTML Documentation Generator
+// 
+// Generates comprehensive HTML documentation with navigation, search, and responsive design.
 
 use crate::docs::generator::{DocGeneratorConfig, ExtractedDocumentation, DocumentationItem, SearchIndexEntry};
 use crate::error::Error;

@@ -1,7 +1,7 @@
-//! Benchmarking infrastructure for optimization system
-//! 
-//! Provides comprehensive benchmarking capabilities for measuring optimization
-//! effectiveness and performance improvements.
+// Benchmarking infrastructure for optimization system
+// 
+// Provides comprehensive benchmarking capabilities for measuring optimization
+// effectiveness and performance improvements.
 
 use std::time::{Duration, Instant};
 use std::collections::HashMap;

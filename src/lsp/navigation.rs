@@ -1,10 +1,10 @@
 use crate::error::Error;
-//! Navigation provider for CURSED language server
-//! 
-//! Provides go to definition, find references, hover information, etc.
+// Navigation provider for CURSED language server
+// 
+// Provides go to definition, find references, hover information, etc.
 
 use std::collections::HashMap;
-use tower_lsp::lsp_crate::types::*;
+use tower_lsp::lsp_types::*;
 use tracing::{debug, instrument};
 
 use crate::lexer::{Lexer, TokenType};

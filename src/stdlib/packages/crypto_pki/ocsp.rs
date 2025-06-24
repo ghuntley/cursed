@@ -4,7 +4,7 @@
 /// validation including request creation, response parsing, and status checking.
 
 use crate::stdlib::packages::crypto_pki::{
-    crate::types::{
+    types::{
         PkiResult, PkiError, X509Certificate, OcspConfig, CertId, 
         RevocationStatus, CertificateStatusInfo, BasicOcspResponse,
         OcspRequestInfo, SingleResponse
@@ -120,13 +120,13 @@ impl Default for OcspRequest {
 /// OCSP Response structure
 #[derive(Debug, Clone)]
 pub struct OcspResponse {
-    pub response_status: crate::stdlib::packages::crypto_pki::crate::types::OcspResponseStatus,
+    pub response_status: crate::stdlib::packages::crypto_pki::types::OcspResponseStatus,
     pub response_bytes: Option<BasicOcspResponse>,
 }
 
 impl OcspResponse {
     /// Create a new OCSP response
-    pub fn new(status: crate::stdlib::packages::crypto_pki::crate::types::OcspResponseStatus) -> Self {
+    pub fn new(status: crate::stdlib::packages::crypto_pki::types::OcspResponseStatus) -> Self {
         Self {
             response_status: status,
             response_bytes: None,
@@ -135,7 +135,7 @@ impl OcspResponse {
 
     /// Check if response is successful
     pub fn is_successful(&self) -> bool {
-        matches!(self.response_status, crate::stdlib::packages::crypto_pki::crate::types::OcspResponseStatus::Successful)
+        matches!(self.response_status, crate::stdlib::packages::crypto_pki::types::OcspResponseStatus::Successful)
     }
 
     /// Get single response for a certificate
@@ -377,9 +377,9 @@ pub fn parse_ocsp_response(data: &[u8]) -> OcspResult<OcspResponse> {
 
     // Simplified parsing - in production, use proper ASN.1 parser
     let status = if data[0] == 0 {
-        crate::stdlib::packages::crypto_pki::crate::types::OcspResponseStatus::Successful
+        crate::stdlib::packages::crypto_pki::types::OcspResponseStatus::Successful
     } else {
-        crate::stdlib::packages::crypto_pki::crate::types::OcspResponseStatus::InternalError
+        crate::stdlib::packages::crypto_pki::types::OcspResponseStatus::InternalError
     };
 
     let mut response = OcspResponse::new(status);

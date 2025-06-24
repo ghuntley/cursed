@@ -1,4 +1,4 @@
-//! Basic types needed for benchmarking functionality
+// Basic types needed for benchmarking functionality
 
 use serde::{Serialize, Deserialize};
 use std::time::Duration;

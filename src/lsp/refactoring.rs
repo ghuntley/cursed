@@ -1,10 +1,10 @@
-//! Advanced refactoring tools for CURSED language server
-//! 
-//! Provides comprehensive refactoring capabilities including rename symbol,
-//! extract function/variable, organize imports, and code transformation.
+// Advanced refactoring tools for CURSED language server
+// 
+// Provides comprehensive refactoring capabilities including rename symbol,
+// extract function/variable, organize imports, and code transformation.
 
 use std::collections::{HashMap, HashSet};
-use tower_lsp::lsp_crate::types::*;
+use tower_lsp::lsp_types::*;
 use tracing::{debug, instrument};
 
 use crate::lexer::{Lexer, Token, TokenType};

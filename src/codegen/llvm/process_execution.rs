@@ -45,7 +45,7 @@ pub struct ResourceLimitSpec {
 // Import real inkwell types for LLVM integration
 use inkwell::{
     values::{BasicValueEnum, FunctionValue, PointerValue, IntValue, ArrayValue},
-    crate::types::{BasicTypeEnum, IntType, PointerType, FunctionType, ArrayType},
+    types::{BasicTypeEnum, IntType, PointerType, FunctionType, ArrayType},
     basic_block::BasicBlock,
     AddressSpace,
     IntPredicate,

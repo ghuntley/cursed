@@ -1,8 +1,8 @@
 use crate::error::Error;
-//! Compiler pass management and orchestration
-//! 
-//! Provides infrastructure for managing and executing compiler optimization passes
-//! in the correct order with proper dependency handling.
+// Compiler pass management and orchestration
+// 
+// Provides infrastructure for managing and executing compiler optimization passes
+// in the correct order with proper dependency handling.
 
 use std::collections::{HashMap, VecDeque};
 use std::time::{Duration, Instant};

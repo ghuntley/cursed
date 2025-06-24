@@ -1,6 +1,6 @@
-//! JSON Documentation Generator
-//! 
-//! Generates comprehensive JSON documentation for API consumption and tooling integration.
+// JSON Documentation Generator
+// 
+// Generates comprehensive JSON documentation for API consumption and tooling integration.
 
 use crate::docs::generator::{DocGeneratorConfig, ExtractedDocumentation, SearchIndexEntry};
 use crate::error::Error;

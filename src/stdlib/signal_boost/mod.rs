@@ -1,4 +1,4 @@
-use crate::error::Error;
+use crate::error::Error as CursedError;
 // Module error types
 pub type Error = ModuleError;
 

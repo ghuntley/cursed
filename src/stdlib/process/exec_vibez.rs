@@ -28,7 +28,7 @@ use crate::stdlib::process::real_monitoring::{
 };
 
 // Re-export types from exec_vibez_types
-pub use crate::stdlib::process::exec_vibez_crate::types::{
+pub use crate::stdlib::process::exec_vibez_types::{
     VibezResult, ExecutionContext, EnhancedCmd, ResourceLimits, SecurityContext,
     ExecutionMode, Priority
 };

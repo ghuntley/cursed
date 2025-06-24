@@ -1,14 +1,14 @@
-//! X.509 Certificate Parser - Production Implementation
-//! 
-//! Complete X.509 certificate parsing with support for:
-//! - PEM and DER formats
-//! - All standard certificate extensions
-//! - Signature validation
-//! - ASN.1 parsing with proper error handling
+// X.509 Certificate Parser - Production Implementation
+// 
+// Complete X.509 certificate parsing with support for:
+// - PEM and DER formats
+// - All standard certificate extensions
+// - Signature validation
+// - ASN.1 parsing with proper error handling
 
 use crate::stdlib::packages::crypto_pki::{
     error::{PkiError, PkiResult, CertificateErrorCode},
-    crate::types::*,
+    types::*,
 };
 use std::collections::HashMap;
 use std::time::{SystemTime, UNIX_EPOCH, Duration};

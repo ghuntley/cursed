@@ -1,8 +1,8 @@
 
-//! Distributed Compilation System
-//! 
-//! Provides distributed compilation capabilities across multiple machines
-//! with work stealing, load balancing, and fault tolerance.
+// Distributed Compilation System
+// 
+// Provides distributed compilation capabilities across multiple machines
+// with work stealing, load balancing, and fault tolerance.
 
 use std::collections::{HashMap, VecDeque, HashSet};
 use std::sync::{Arc, Mutex, RwLock, atomic::{AtomicBool, Ordering}};

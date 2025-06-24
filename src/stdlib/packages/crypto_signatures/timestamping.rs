@@ -1,7 +1,7 @@
-//! Production-ready Secure Timestamping for Digital Signatures
-//! 
-//! Comprehensive timestamping implementation with RFC 3161 support,
-//! multiple timestamp authorities, and verification capabilities.
+// Production-ready Secure Timestamping for Digital Signatures
+// 
+// Comprehensive timestamping implementation with RFC 3161 support,
+// multiple timestamp authorities, and verification capabilities.
 
 use crate::stdlib::packages::crypto_signatures::{
     errors::{SignatureError, SignatureResult},

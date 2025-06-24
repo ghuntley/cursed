@@ -1,5 +1,5 @@
 use crate::error::Error;
-//! Package import resolution
+// Package import resolution
 
 use std::collections::HashMap;
 use std::path::PathBuf;

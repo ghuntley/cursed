@@ -1,5 +1,5 @@
 use crate::error::Error;
-//! Shell command execution utilities
+// Shell command execution utilities
 
 use std::collections::HashMap;
 use std::process::Command;

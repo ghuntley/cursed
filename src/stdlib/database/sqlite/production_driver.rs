@@ -14,7 +14,7 @@ use std::sync::{Arc, Mutex, RwLock};
 use std::collections::HashMap;
 use std::time::{SystemTime, Duration, Instant};
 use std::thread;
-use rusqlite::{Connection, OpenFlags, Statement, Transaction, Savepoint, crate::types::Value as SqliteValue, params};
+use rusqlite::{Connection, OpenFlags, Statement, Transaction, Savepoint, types::Value as SqliteValue, params};
 use super::{SqliteError, SqliteResult, SqliteConfig};
 use super::super::{
     DriverConn, DatabaseError, DatabaseErrorKind, SqlValue, TxOptions, 
@@ -936,7 +936,7 @@ fn convert_args_to_rusqlite_params(args: &[SqlValue]) -> Result<(), Error> {
     
     for arg in args {
         match arg {
-            SqlValue::Null => params.push(Box::new(rusqlite::crate::types::Null) as Box<dyn rusqlite::ToSql>),
+            SqlValue::Null => params.push(Box::new(rusqlite::types::Null) as Box<dyn rusqlite::ToSql>),
             SqlValue::Boolean(b) => params.push(Box::new(*b) as Box<dyn rusqlite::ToSql>),
             SqlValue::Integer(i) => params.push(Box::new(*i) as Box<dyn rusqlite::ToSql>),
             SqlValue::Float(f) => params.push(Box::new(*f) as Box<dyn rusqlite::ToSql>),

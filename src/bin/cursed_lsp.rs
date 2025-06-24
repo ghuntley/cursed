@@ -1,6 +1,6 @@
-//! CURSED Language Server Protocol binary
-//! 
-//! Provides IDE integration for the CURSED programming language
+// CURSED Language Server Protocol binary
+// 
+// Provides IDE integration for the CURSED programming language
 
 use clap::{Arg, ArgAction, Command};
 use cursed::lsp::{init_lsp_server, LspServer, LspServerBuilder, ServerMode};

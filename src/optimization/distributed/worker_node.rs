@@ -1,7 +1,7 @@
-//! Worker Node Management for Distributed Compilation
-//!
-//! Manages remote worker nodes that perform actual compilation tasks.
-//! Handles worker registration, capability detection, health monitoring, and task assignment.
+// Worker Node Management for Distributed Compilation
+//
+// Manages remote worker nodes that perform actual compilation tasks.
+// Handles worker registration, capability detection, health monitoring, and task assignment.
 
 use crate::error::{CursedError, Result};
 

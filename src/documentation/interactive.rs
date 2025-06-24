@@ -1,16 +1,16 @@
-//! # Interactive Documentation Features
-//!
-//! Interactive features for the CURSED documentation system including code playground,
-//! executable examples, API explorer, and real-time code execution capabilities.
-//!
-//! ## Features
-//!
-//! - **Code Playground**: Interactive code editor with syntax highlighting and execution
-//! - **Executable Examples**: Run documentation examples directly in the browser
-//! - **API Explorer**: Interactive testing of API functions and methods
-//! - **Syntax Highlighting**: Real-time syntax highlighting for CURSED code
-//! - **Code Folding**: Collapsible code sections for better readability
-//! - **Error Display**: Real-time error highlighting and explanations
+// # Interactive Documentation Features
+//
+// Interactive features for the CURSED documentation system including code playground,
+// executable examples, API explorer, and real-time code execution capabilities.
+//
+// ## Features
+//
+// - **Code Playground**: Interactive code editor with syntax highlighting and execution
+// - **Executable Examples**: Run documentation examples directly in the browser
+// - **API Explorer**: Interactive testing of API functions and methods
+// - **Syntax Highlighting**: Real-time syntax highlighting for CURSED code
+// - **Code Folding**: Collapsible code sections for better readability
+// - **Error Display**: Real-time error highlighting and explanations
 
 use crate::error::Error as CursedError;
 use crate::error::Error;

@@ -1,5 +1,5 @@
 use crate::error::Error;
-//! SlayCommand implementation for process execution
+// SlayCommand implementation for process execution
 
 use std::collections::HashMap;
 use std::ffi::OsStr;

@@ -1,17 +1,17 @@
-//! # Documentation Testing and Validation System
-//!
-//! Comprehensive testing and validation framework for CURSED documentation including
-//! automated testing of documentation examples, link checking, validation systems,
-//! and documentation coverage reporting.
-//!
-//! ## Features
-//!
-//! - **Example Testing**: Automated testing of code examples in documentation
-//! - **Link Validation**: Comprehensive link checking and validation
-//! - **Coverage Reporting**: Documentation coverage analysis and reporting
-//! - **CI/CD Integration**: Integration with continuous integration systems
-//! - **Quality Gates**: Documentation quality enforcement
-//! - **Performance Testing**: Documentation generation performance validation
+// # Documentation Testing and Validation System
+//
+// Comprehensive testing and validation framework for CURSED documentation including
+// automated testing of documentation examples, link checking, validation systems,
+// and documentation coverage reporting.
+//
+// ## Features
+//
+// - **Example Testing**: Automated testing of code examples in documentation
+// - **Link Validation**: Comprehensive link checking and validation
+// - **Coverage Reporting**: Documentation coverage analysis and reporting
+// - **CI/CD Integration**: Integration with continuous integration systems
+// - **Quality Gates**: Documentation quality enforcement
+// - **Performance Testing**: Documentation generation performance validation
 
 use crate::documentation::interactive::{CodeExecutionRequest, CodeExecutionResult, InteractiveDocumentation};
 use crate::error::Error as CursedError;

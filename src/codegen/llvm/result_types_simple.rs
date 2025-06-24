@@ -1,7 +1,7 @@
-//! Simplified LLVM IR generation for Result and Option types
-//!
-//! This module provides simplified LLVM code generation for Result<T, E> and Option<T> types,
-//! working with the current dummy type infrastructure.
+// Simplified LLVM IR generation for Result and Option types
+//
+// This module provides simplified LLVM code generation for Result<T, E> and Option<T> types,
+// working with the current dummy type infrastructure.
 
 use crate::codegen::llvm::LlvmCodeGenerator;
 use crate::error::Error;

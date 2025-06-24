@@ -1,12 +1,12 @@
-//! Error propagation runtime system for the CURSED programming language
-//! 
-//! This module provides the runtime infrastructure for the `?` operator,
-//! including error context management, propagation chains, and integration
-//! with CURSED's Result and Option types.
+// Error propagation runtime system for the CURSED programming language
+// 
+// This module provides the runtime infrastructure for the `?` operator,
+// including error context management, propagation chains, and integration
+// with CURSED's Result and Option types.
 
 use crate::error::{CursedError, SourceLocation};
 // use crate::runtime::value::Value;
-use crate::crate::types::result::{Result as CursedResult, Option as CursedOption};
+use crate::types::result::{Result as CursedResult, Option as CursedOption};
 
 use std::collections::{HashMap, VecDeque};
 use std::fmt;
@@ -550,7 +550,7 @@ mod tests {
     #[test]
     fn test_result_success_propagation() {
         let operator = ErrorPropagationOperator::new();
-        let result: crate::crate::types::result::Result<i32, String> = CursedResult::Ok(42);
+        let result: crate::types::result::Result<i32, String> = CursedResult::Ok(42);
         let location = SourceLocation::new(1, 5);
 
         let propagated = operator.apply_question_mark(result, location, None);
@@ -566,7 +566,7 @@ mod tests {
     #[test]
     fn test_result_error_propagation() {
         let operator = ErrorPropagationOperator::new();
-        let result: crate::crate::types::result::Result<i32, String> = CursedResult::Err("test error".to_string());
+        let result: crate::types::result::Result<i32, String> = CursedResult::Err("test error".to_string());
         let location = SourceLocation::new(1, 5);
 
         let propagated = operator.apply_question_mark(result, location, Some("test_function".to_string()));
@@ -661,7 +661,7 @@ mod tests {
     fn test_helper_functions() {
         let operator = helpers::create_default_propagator();
         
-        let result: crate::crate::types::result::Result<i32, String> = CursedResult::Ok(42);
+        let result: crate::types::result::Result<i32, String> = CursedResult::Ok(42);
         let propagated = helpers::propagate_result(&operator, result, 1, 5, Some("test"));
         assert!(propagated.is_ok());
 

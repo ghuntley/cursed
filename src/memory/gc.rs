@@ -2,13 +2,71 @@
 
 use crate::error::{Error, Result};
 
+/// Garbage collector configuration
+#[derive(Debug, Clone)]
+pub struct GcConfig {
+    pub heap_size: usize,
+    pub collection_threshold: usize,
+    pub enable_generational: bool,
+}
+
+impl Default for GcConfig {
+    fn default() -> Self {
+        Self {
+            heap_size: 1024 * 1024, // 1MB
+            collection_threshold: 1024,
+            enable_generational: false,
+        }
+    }
+}
+
+/// Smart pointer for garbage collected objects
+#[derive(Debug)]
+pub struct Gc<T> {
+    ptr: *mut T,
+}
+
+impl<T> Gc<T> {
+    pub fn new(value: T) -> Self {
+        // In a real implementation, this would allocate through the GC
+        let boxed = Box::new(value);
+        Self {
+            ptr: Box::into_raw(boxed),
+        }
+    }
+    
+    pub fn as_ref(&self) -> &T {
+        unsafe { &*self.ptr }
+    }
+}
+
+impl<T> Clone for Gc<T> {
+    fn clone(&self) -> Self {
+        Self { ptr: self.ptr }
+    }
+}
+
+impl<T> Drop for Gc<T> {
+    fn drop(&mut self) {
+        // In a real GC, this would just mark for collection
+        unsafe {
+            let _ = Box::from_raw(self.ptr);
+        }
+    }
+}
+
+unsafe impl<T: Send> Send for Gc<T> {}
+unsafe impl<T: Sync> Sync for Gc<T> {}
+
 pub struct GarbageCollector {
-    // Minimal implementation
+    pub config: GcConfig,
 }
 
 impl GarbageCollector {
     pub fn new() -> Self {
-        GarbageCollector {}
+        GarbageCollector {
+            config: GcConfig::default(),
+        }
     }
     
     pub fn collect(&mut self) -> Result<()> {

@@ -6,7 +6,7 @@ use std::fmt;
 
 use crate::stdlib::packages::web_vibez::{
     status::StatusCode,
-    crate::types::{Headers, ContentType, Cookie},
+    types::{Headers, ContentType, Cookie},
     error::{WebError, WebResult},
 };
 
@@ -39,7 +39,7 @@ impl HttpResponse {
 
     /// fr fr Create OK response - 200 status
     pub fn ok() -> Self {
-        Self::new(StatusCode::Ok)
+        Self::new(StatusCode::OK)
     }
 
     /// fr fr Create created response - 201 status
@@ -279,7 +279,7 @@ impl ResponseBuilder {
 
     /// fr fr Create OK response builder - 200 status
     pub fn ok() -> Self {
-        Self::new(StatusCode::Ok)
+        Self::new(StatusCode::OK)
     }
 
     /// fr fr Create created response builder - 201 status
@@ -456,7 +456,7 @@ mod tests {
     #[test]
     fn test_response_creation() {
         let resp = HttpResponse::ok();
-        assert_eq!(resp.status, StatusCode::Ok);
+        assert_eq!(resp.status, StatusCode::OK);
         assert!(resp.body.is_empty());
         assert_eq!(resp.version, "HTTP/1.1");
     }
@@ -485,7 +485,7 @@ mod tests {
             .text("Hello world")
             .build();
 
-        assert_eq!(resp.status, StatusCode::Ok);
+        assert_eq!(resp.status, StatusCode::OK);
         assert_eq!(resp.header("x-custom"), Some(&"value".to_string()));
         assert_eq!(resp.body_text().unwrap(), "Hello world");
     }

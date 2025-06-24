@@ -1,11 +1,11 @@
-//! PGO-Guided LLVM Optimization Passes
-//! 
-//! Implements LLVM optimization passes that use profile data to make
-//! intelligent optimization decisions including:
-//! - Function inlining based on call frequency
-//! - Branch layout optimization using branch probability data
-//! - Loop optimization guided by iteration statistics
-//! - Code layout optimization for cache efficiency
+// PGO-Guided LLVM Optimization Passes
+// 
+// Implements LLVM optimization passes that use profile data to make
+// intelligent optimization decisions including:
+// - Function inlining based on call frequency
+// - Branch layout optimization using branch probability data
+// - Loop optimization guided by iteration statistics
+// - Code layout optimization for cache efficiency
 
 use crate::error::{Error, Result};
 use crate::optimization::pgo::{ProfileAnalysisResult, OptimizationOpportunity, PgoSystemConfig};
@@ -19,7 +19,7 @@ use inkwell::{
     values::{FunctionValue, BasicValue, InstructionValue},
     basic_block::BasicBlock,
     builder::Builder,
-    crate::types::{BasicTypeEnum, IntType},
+    types::{BasicTypeEnum, IntType},
     IntPredicate,
 };
 

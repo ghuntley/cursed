@@ -77,6 +77,63 @@ impl StatusCode {
     pub fn as_u16(&self) -> u16 {
         *self as u16
     }
+
+    /// Create StatusCode from u16 value
+    pub fn from_u16(code: u16) -> Option<Self> {
+        match code {
+            100 => Some(StatusCode::Continue),
+            101 => Some(StatusCode::SwitchingProtocols),
+            102 => Some(StatusCode::Processing),
+            200 => Some(StatusCode::OK),
+            201 => Some(StatusCode::Created),
+            202 => Some(StatusCode::Accepted),
+            203 => Some(StatusCode::NonAuthoritativeInformation),
+            204 => Some(StatusCode::NoContent),
+            205 => Some(StatusCode::ResetContent),
+            206 => Some(StatusCode::PartialContent),
+            300 => Some(StatusCode::MultipleChoices),
+            301 => Some(StatusCode::MovedPermanently),
+            302 => Some(StatusCode::Found),
+            303 => Some(StatusCode::SeeOther),
+            304 => Some(StatusCode::NotModified),
+            305 => Some(StatusCode::UseProxy),
+            307 => Some(StatusCode::TemporaryRedirect),
+            308 => Some(StatusCode::PermanentRedirect),
+            400 => Some(StatusCode::BadRequest),
+            401 => Some(StatusCode::Unauthorized),
+            402 => Some(StatusCode::PaymentRequired),
+            403 => Some(StatusCode::Forbidden),
+            404 => Some(StatusCode::NotFound),
+            405 => Some(StatusCode::MethodNotAllowed),
+            406 => Some(StatusCode::NotAcceptable),
+            407 => Some(StatusCode::ProxyAuthenticationRequired),
+            408 => Some(StatusCode::RequestTimeout),
+            409 => Some(StatusCode::Conflict),
+            410 => Some(StatusCode::Gone),
+            411 => Some(StatusCode::LengthRequired),
+            412 => Some(StatusCode::PreconditionFailed),
+            413 => Some(StatusCode::PayloadTooLarge),
+            414 => Some(StatusCode::UriTooLong),
+            415 => Some(StatusCode::UnsupportedMediaType),
+            416 => Some(StatusCode::RangeNotSatisfiable),
+            417 => Some(StatusCode::ExpectationFailed),
+            418 => Some(StatusCode::ImATeapot),
+            422 => Some(StatusCode::UnprocessableEntity),
+            429 => Some(StatusCode::TooManyRequests),
+            500 => Some(StatusCode::InternalServerError),
+            501 => Some(StatusCode::NotImplemented),
+            502 => Some(StatusCode::BadGateway),
+            503 => Some(StatusCode::ServiceUnavailable),
+            504 => Some(StatusCode::GatewayTimeout),
+            505 => Some(StatusCode::HttpVersionNotSupported),
+            _ => None,
+        }
+    }
+
+    /// Alias for reason_phrase for compatibility
+    pub fn canonical_reason(&self) -> &'static str {
+        self.reason_phrase()
+    }
     
     pub fn reason_phrase(&self) -> &'static str {
         match self {

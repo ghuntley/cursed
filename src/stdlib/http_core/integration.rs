@@ -1,5 +1,5 @@
-use crate::web::StatusCode;
 use crate::error::Error;
+use crate::web::StatusCode;
 // Integration utilities for CURSED web_vibez package
 //
 // Higher-level utilities that combine multiple components for common use cases.
@@ -8,7 +8,7 @@ use std::collections::HashMap;
 use std::io::Write;
 
 use crate::stdlib::http_core::{
-    Request, Response, StatusCode, Method, ContentType, FormData,
+    Request, Response, Method, ContentType, FormData,
     HttpError, HttpResult, HttpValidator, ValidationRules
 };
 
@@ -79,7 +79,7 @@ impl HttpContext {
 
     /// Create OK response
     pub fn ok(&self) -> SecureResponseBuilder {
-        self.response(StatusCode::Ok)
+        self.response(StatusCode::OK)
     }
 
     /// Create error response
@@ -543,12 +543,12 @@ mod tests {
     #[test]
     fn test_secure_response_builder() {
         let validator = HttpValidator::new();
-        let response = SecureResponseBuilder::new(StatusCode::Ok, &validator)
+        let response = SecureResponseBuilder::new(StatusCode::OK, &validator)
             .text("Hello, World!")
             .header("X-Custom", "value")
             .build();
 
-        assert_eq!(response.status, StatusCode::Ok);
+        assert_eq!(response.status, StatusCode::OK);
         assert!(response.has_body());
     }
 

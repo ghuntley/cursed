@@ -13,7 +13,7 @@ use inkwell::{
     context::Context,
     module::Module,
     values::{FunctionValue, BasicValueEnum},
-    crate::types::{BasicTypeEnum, StructType},
+    types::{BasicTypeEnum, StructType},
     builder::Builder,
     basic_block::BasicBlock,
     AddressSpace,

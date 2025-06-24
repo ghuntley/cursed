@@ -1,8 +1,8 @@
-//! Comprehensive AST Extractor for CURSED Documentation
-//! 
-//! This module provides complete extraction methods for all CURSED language constructs,
-//! addressing gaps in the current implementation and ensuring accurate documentation
-//! generation from AST nodes.
+// Comprehensive AST Extractor for CURSED Documentation
+// 
+// This module provides complete extraction methods for all CURSED language constructs,
+// addressing gaps in the current implementation and ensuring accurate documentation
+// generation from AST nodes.
 
 use crate::ast::*;
 use crate::error::{Error, SourceLocation};

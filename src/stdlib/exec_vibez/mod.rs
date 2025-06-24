@@ -78,10 +78,6 @@ pub struct ModuleStatistics {
     pub streamers_active: usize,
 }
 
-
-pub type Error = Box<dyn std::error::Error + Send + Sync>;
-
-
 #[derive(Debug, Clone)]
 pub enum ContextError {
     InvalidContext(String),

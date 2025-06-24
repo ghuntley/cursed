@@ -1,7 +1,7 @@
-//! Compilation Cache for Distributed System
-//!
-//! Manages caching of compilation artifacts across the distributed system
-//! to avoid redundant compilation work and improve overall performance.
+// Compilation Cache for Distributed System
+//
+// Manages caching of compilation artifacts across the distributed system
+// to avoid redundant compilation work and improve overall performance.
 
 use crate::error::{Error as CursedError, Result};
 

@@ -1,7 +1,7 @@
-//! LLVM code generation for error propagation expressions
-//!
-//! This module provides LLVM code generation support for the enhanced error propagation
-//! system, including question mark expressions, type assertions, and error recovery.
+// LLVM code generation for error propagation expressions
+//
+// This module provides LLVM code generation support for the enhanced error propagation
+// system, including question mark expressions, type assertions, and error recovery.
 
 use crate::ast::traits::Expression;
 

@@ -11,7 +11,7 @@ use inkwell::{
     builder::Builder,
     context::Context,
     module::Module,
-    crate::types::{IntType, PointerType, VoidType, StructType},
+    types::{IntType, PointerType, VoidType, StructType},
     values::{FunctionValue, PointerValue},
     AddressSpace,
 };

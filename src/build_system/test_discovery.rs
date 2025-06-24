@@ -1,8 +1,8 @@
 use crate::error::Error;
-//! Test Discovery System
-//! 
-//! Discovers and analyzes test files in the project to identify test functions,
-//! test categories, and test metadata for execution.
+// Test Discovery System
+// 
+// Discovers and analyzes test files in the project to identify test functions,
+// test categories, and test metadata for execution.
 
 use std::collections::HashMap;
 use std::fs;

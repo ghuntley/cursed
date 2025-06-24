@@ -1,9 +1,9 @@
 use crate::error::Error;
-//! ExecSlay - Process execution module for CURSED
-//! 
-//! Provides utilities for running external commands with style and efficiency.
-//! Inspired by Go's os/exec package but with enhanced features for process management,
-//! input/output control, and resource monitoring.
+// ExecSlay - Process execution module for CURSED
+// 
+// Provides utilities for running external commands with style and efficiency.
+// Inspired by Go's os/exec package but with enhanced features for process management,
+// input/output control, and resource monitoring.
 
 use std::collections::HashMap;
 use std::io::{self, Read, Write};

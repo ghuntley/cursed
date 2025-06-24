@@ -12,7 +12,7 @@ use crate::stdlib::database::{
 };
 use crate::error::Error;
 use super::error::{PostgresError, PostgresErrorKind, PostgresResult};
-use super::crate::types::{map_postgres_value, prepare_parameters, extract_column_info};
+use super::types::{map_postgres_value, prepare_parameters, extract_column_info};
 use super::connection::ConnectionStats;
 
 /// PostgreSQL transaction wrapper
@@ -79,7 +79,7 @@ impl<'a> PostgresTransaction<'a> {
         let transaction = self.get_active_transaction()?;
         
         let params = prepare_parameters(args)?;
-        let param_refs: Vec<&(dyn tokio_postgres::crate::types::ToSql + Sync)> = 
+        let param_refs: Vec<&(dyn tokio_postgres::types::ToSql + Sync)> = 
             params.iter().map(|p| p.as_ref()).collect();
         
         let rows = transaction
@@ -122,7 +122,7 @@ impl<'a> PostgresTransaction<'a> {
         let transaction = self.get_active_transaction()?;
         
         let params = prepare_parameters(args)?;
-        let param_refs: Vec<&(dyn tokio_postgres::crate::types::ToSql + Sync)> = 
+        let param_refs: Vec<&(dyn tokio_postgres::types::ToSql + Sync)> = 
             params.iter().map(|p| p.as_ref()).collect();
         
         let rows_affected = transaction

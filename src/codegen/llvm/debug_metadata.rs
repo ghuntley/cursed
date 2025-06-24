@@ -1,8 +1,8 @@
-//! Simplified LLVM Debug Metadata Generation
-//! 
-//! This module provides simplified debug information generation that maintains
-//! compatibility with the CURSED compiler's LLVM backend. Full DWARF generation
-//! has been temporarily disabled due to LLVM API changes.
+// Simplified LLVM Debug Metadata Generation
+// 
+// This module provides simplified debug information generation that maintains
+// compatibility with the CURSED compiler's LLVM backend. Full DWARF generation
+// has been temporarily disabled due to LLVM API changes.
 
 // AST imports temporarily simplified due to type complexity
 // use crate::ast::traits::{Expression, Statement};

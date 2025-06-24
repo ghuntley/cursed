@@ -349,16 +349,16 @@ impl PackageDatabase {
         let package = stmt.query_row(params![name], |row| {
             let install_time_str: String = row.get(2)?;
             let install_time = DateTime::parse_from_rfc3339(&install_time_str)
-                .map_err(|e| rusqlite::Error::InvalidColumnType(2, format!("Invalid datetime: {}", e).into(), rusqlite::crate::types::Type::Text))?
+                .map_err(|e| rusqlite::Error::InvalidColumnType(2, format!("Invalid datetime: {}", e).into(), rusqlite::types::Type::Text))?
                 .with_timezone(&Utc);
             
             let metadata_json: String = row.get(4)?;
             let metadata: PackageMetadata = serde_json::from_str(&metadata_json)
-                .map_err(|e| rusqlite::Error::InvalidColumnType(4, format!("Invalid JSON: {}", e).into(), rusqlite::crate::types::Type::Text))?;
+                .map_err(|e| rusqlite::Error::InvalidColumnType(4, format!("Invalid JSON: {}", e).into(), rusqlite::types::Type::Text))?;
             
             let file_operations_json: String = row.get(5)?;
             let file_operations: Vec<FileOperation> = serde_json::from_str(&file_operations_json)
-                .map_err(|e| rusqlite::Error::InvalidColumnType(5, format!("Invalid JSON: {}", e).into(), rusqlite::crate::types::Type::Text))?;
+                .map_err(|e| rusqlite::Error::InvalidColumnType(5, format!("Invalid JSON: {}", e).into(), rusqlite::types::Type::Text))?;
             
             Ok(InstalledPackage {
                 name: row.get(0)?,
@@ -409,16 +409,16 @@ impl PackageDatabase {
         let package_iter = stmt.query_map([], |row| {
             let install_time_str: String = row.get(2)?;
             let install_time = DateTime::parse_from_rfc3339(&install_time_str)
-                .map_err(|e| rusqlite::Error::InvalidColumnType(2, format!("Invalid datetime: {}", e).into(), rusqlite::crate::types::Type::Text))?
+                .map_err(|e| rusqlite::Error::InvalidColumnType(2, format!("Invalid datetime: {}", e).into(), rusqlite::types::Type::Text))?
                 .with_timezone(&Utc);
             
             let metadata_json: String = row.get(4)?;
             let metadata: PackageMetadata = serde_json::from_str(&metadata_json)
-                .map_err(|e| rusqlite::Error::InvalidColumnType(4, format!("Invalid JSON: {}", e).into(), rusqlite::crate::types::Type::Text))?;
+                .map_err(|e| rusqlite::Error::InvalidColumnType(4, format!("Invalid JSON: {}", e).into(), rusqlite::types::Type::Text))?;
             
             let file_operations_json: String = row.get(5)?;
             let file_operations: Vec<FileOperation> = serde_json::from_str(&file_operations_json)
-                .map_err(|e| rusqlite::Error::InvalidColumnType(5, format!("Invalid JSON: {}", e).into(), rusqlite::crate::types::Type::Text))?;
+                .map_err(|e| rusqlite::Error::InvalidColumnType(5, format!("Invalid JSON: {}", e).into(), rusqlite::types::Type::Text))?;
             
             Ok(InstalledPackage {
                 name: row.get(0)?,
@@ -530,12 +530,12 @@ impl PackageDatabase {
         let history_iter = stmt.query_map(params_refs.as_slice(), |row| {
             let timestamp_str: String = row.get(4)?;
             let timestamp = DateTime::parse_from_rfc3339(&timestamp_str)
-                .map_err(|e| rusqlite::Error::InvalidColumnType(4, format!("Invalid datetime: {}", e).into(), rusqlite::crate::types::Type::Text))?
+                .map_err(|e| rusqlite::Error::InvalidColumnType(4, format!("Invalid datetime: {}", e).into(), rusqlite::types::Type::Text))?
                 .with_timezone(&Utc);
             
             let action_str: String = row.get(3)?;
             let action: InstallAction = serde_json::from_str(&format!("\"{}\"", action_str))
-                .map_err(|e| rusqlite::Error::InvalidColumnType(3, format!("Invalid action: {}", e).into(), rusqlite::crate::types::Type::Text))?;
+                .map_err(|e| rusqlite::Error::InvalidColumnType(3, format!("Invalid action: {}", e).into(), rusqlite::types::Type::Text))?;
             
             Ok(InstallationHistory {
                 id: row.get(0)?,

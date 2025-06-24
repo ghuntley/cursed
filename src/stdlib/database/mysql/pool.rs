@@ -9,7 +9,7 @@ use std::time::{Duration, Instant};
 use mysql::{Pool, PooledConn, OptsBuilder};
 
 use super::error::{MySqlError, MySqlResult};
-use super::crate::types::{parse_connection_string, MySqlConnectionInfo};
+use super::types::{parse_connection_string, MySqlConnectionInfo};
 
 /// fr fr MySQL connection pool configuration
 #[derive(Debug, Clone)]

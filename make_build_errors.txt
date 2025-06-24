@@ -1,0 +1,42 @@
+[36m🔧 Building CURSED compiler...[0m
+   Compiling aho-corasick v1.1.3
+   Compiling indexmap v2.9.0
+   Compiling regex-automata v0.1.10
+   Compiling addr2line v0.24.2
+   Compiling tracing-log v0.2.0
+   Compiling either v1.15.0
+   Compiling generic-array v0.14.7
+   Compiling getrandom v0.2.16
+   Compiling ppv-lite86 v0.2.21
+   Compiling object v0.36.7
+   Compiling is-terminal v0.4.16
+   Compiling parking_lot_core v0.9.11
+   Compiling clap_builder v4.5.40
+   Compiling dirs-sys v0.4.1
+   Compiling nix v0.27.1
+   Compiling num_cpus v1.17.0
+   Compiling glob v0.3.2
+   Compiling base64 v0.21.7
+   Compiling serde_derive v1.0.219
+   Compiling tracing-attributes v0.1.30
+   Compiling thiserror-impl v1.0.69
+   Compiling clap_derive v4.5.40
+   Compiling inkwell_internals v0.9.0
+   Compiling zstd-sys v2.0.15+zstd.1.5.7
+   Compiling llvm-sys v170.2.0
+error[E0432]: unresolved import `crate::error`
+ --> /home/ghuntley/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/either-1.15.0/src/into_either.rs:5:12
+  |
+5 | use crate::error::Error;
+  |            ^^^^^
+  |            |
+  |            unresolved import
+  |            help: a similar path exists: `core::error`
+
+   Compiling rand_core v0.6.4
+   Compiling dirs v5.0.1
+For more information about this error, try `rustc --explain E0432`.
+   Compiling parking_lot v0.12.4
+error: could not compile `either` (lib) due to 1 previous error
+warning: build failed, waiting for other jobs to finish...
+make: *** [Makefile:330: build] Error 101

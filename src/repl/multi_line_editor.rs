@@ -1,8 +1,8 @@
 use crate::error::Error;
-//! Multi-line Input Editor for CURSED REPL
-//! 
-//! Handles multi-line input with automatic indentation detection,
-//! bracket matching, and intelligent continuation detection.
+// Multi-line Input Editor for CURSED REPL
+// 
+// Handles multi-line input with automatic indentation detection,
+// bracket matching, and intelligent continuation detection.
 
 use std::io::{self, Write};
 

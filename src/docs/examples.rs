@@ -1,6 +1,6 @@
-//! Example Generation and Validation
-//! 
-//! Automatically generates and validates code examples for documentation.
+// Example Generation and Validation
+// 
+// Automatically generates and validates code examples for documentation.
 
 use crate::docs::generator::{Example, DocumentationItem};
 use crate::error::Error;

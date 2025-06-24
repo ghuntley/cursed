@@ -1,10 +1,10 @@
-//! Profile Instrumentation System
-//! 
-//! Provides code instrumentation for profile data collection including:
-//! - Counter instrumentation for call frequency tracking
-//! - Timing instrumentation for execution time measurement
-//! - Edge instrumentation for branch prediction analysis
-//! - Memory access instrumentation for cache behavior analysis
+// Profile Instrumentation System
+// 
+// Provides code instrumentation for profile data collection including:
+// - Counter instrumentation for call frequency tracking
+// - Timing instrumentation for execution time measurement
+// - Edge instrumentation for branch prediction analysis
+// - Memory access instrumentation for cache behavior analysis
 
 use crate::error::{Error, Result};
 use crate::optimization::pgo::PgoSystemConfig;
@@ -18,7 +18,7 @@ use inkwell::{
     values::{FunctionValue, InstructionValue, BasicValue, BasicValueEnum},
     basic_block::BasicBlock,
     builder::Builder,
-    crate::types::{IntType, PointerType, BasicTypeEnum},
+    types::{IntType, PointerType, BasicTypeEnum},
     AddressSpace,
     IntPredicate,
 };

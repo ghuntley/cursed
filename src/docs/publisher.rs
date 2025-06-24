@@ -1,7 +1,7 @@
-//! Documentation Publishing System
-//! 
-//! Provides automated documentation deployment, versioning, and CDN integration
-//! for the CURSED programming language documentation ecosystem.
+// Documentation Publishing System
+// 
+// Provides automated documentation deployment, versioning, and CDN integration
+// for the CURSED programming language documentation ecosystem.
 
 use crate::error::{CursedError, Result};
 use crate::docs::generator::DocumentationGenerator;

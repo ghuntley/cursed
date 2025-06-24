@@ -1,10 +1,10 @@
-//! # VibeNet - Network I/O Package
-//! 
-//! VibeNet provides a comprehensive networking library for the CURSED programming language,
-//! offering TCP/IP, UDP, domain name resolution, and socket programming capabilities.
-//! 
-//! This module is inspired by Go's net package but enhanced with modern usability,
-//! extended protocols, and performance optimizations tailored for CURSED applications.
+// # VibeNet - Network I/O Package
+// 
+// VibeNet provides a comprehensive networking library for the CURSED programming language,
+// offering TCP/IP, UDP, domain name resolution, and socket programming capabilities.
+// 
+// This module is inspired by Go's net package but enhanced with modern usability,
+// extended protocols, and performance optimizations tailored for CURSED applications.
 
 use std::collections::HashMap;
 use std::net::{IpAddr, Ipv4Addr, Ipv6Addr, SocketAddr, SocketAddrV4, SocketAddrV6};

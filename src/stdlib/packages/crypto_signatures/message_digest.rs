@@ -1,7 +1,7 @@
-//! Production-ready Message Digest Computation
-//! 
-//! Comprehensive message digest computation with support for multiple formats,
-//! streaming processing, digital signatures, and security validation.
+// Production-ready Message Digest Computation
+// 
+// Comprehensive message digest computation with support for multiple formats,
+// streaming processing, digital signatures, and security validation.
 
 use crate::stdlib::packages::crypto_signatures::{
     errors::{SignatureError, SignatureResult},

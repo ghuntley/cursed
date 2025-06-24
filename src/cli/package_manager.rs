@@ -1,8 +1,8 @@
 use crate::error::Error;
-//! Package Manager CLI Integration
-//! 
-//! Real implementation integrating package management commands with the CURSED CLI interface.
-//! Provides comprehensive package management functionality with progress reporting and robust error handling.
+// Package Manager CLI Integration
+// 
+// Real implementation integrating package management commands with the CURSED CLI interface.
+// Provides comprehensive package management functionality with progress reporting and robust error handling.
 
 use clap::{Arg, ArgAction, Command};
 use std::error::Error;
