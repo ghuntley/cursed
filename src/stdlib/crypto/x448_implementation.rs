@@ -436,6 +436,7 @@ pub fn x448_get_public_key(args: Vec<Value>) -> Result<(), Error> {
 #[cfg(test)]
 mod tests {
     use super::*;
+use crate::error::Error;
     
     #[test]
     fn test_x448_key_generation() {

@@ -9,6 +9,7 @@ use crate::stdlib::squish_core::core::{Reader as SquishReader, Writer as SquishW
 use std::io::{Read, Write, BufWriter, BufReader};
 use flate2::{Compression, read::DeflateDecoder, write::DeflateEncoder};
 use std::time::Instant;
+use crate::error::Error;
 
 /// BZIP2 reader that decompresses data on read
 /// Note: Currently uses DEFLATE internally for compatibility

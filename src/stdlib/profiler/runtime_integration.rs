@@ -3,6 +3,7 @@ use crate::stdlib::profiler::error::{ProfilerError, ProfilerResult, runtime_erro
 use crate::runtime::{GoroutineScheduler, JitRuntime};
 use std::sync::{Arc, Mutex, atomic::{AtomicBool, Ordering}};
 use std::time::{Duration, Instant};
+use crate::error::Error;
 
 /// Global profiler runtime state
 static PROFILER_RUNTIME_STATE: Mutex<Option<Arc<ProfilerRuntime>>> = Mutex::new(None);

@@ -327,6 +327,7 @@ pub type PostgresResult<T> = std::result::Result<T, PostgresError>;
 #[cfg(test)]
 mod tests {
     use super::*;
+use crate::error::Error;
 
     #[test]
     fn test_error_creation() {

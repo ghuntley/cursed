@@ -79,6 +79,7 @@ pub mod parser_support;
 
 // Core types module
 pub mod core_types;
+use crate::error::Error;
 
 // Re-export commonly used types
 pub use traits::{Node, Expression, Statement, TypeNode, GenericNode, Visitable, Visitor, Mutable, MutVisitor, Locatable, StatementExtensions, TypeParameter};

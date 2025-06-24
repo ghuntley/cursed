@@ -56,6 +56,7 @@ use std::path::{Path, PathBuf};
 use std::sync::{Arc, Mutex, RwLock};
 use std::fmt;
 use tracing::{debug, error, info, instrument, warn};
+use crate::error::Error;
 
 /// Comprehensive configuration for LLVM debug information generation
 #[derive(Debug, Clone)]

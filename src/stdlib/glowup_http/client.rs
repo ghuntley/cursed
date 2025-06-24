@@ -3,6 +3,7 @@ use crate::web::StatusCode;
 
 use crate::stdlib::glowup_http::error::{GlowUpError, GlowUpResult};
 use crate::stdlib::glowup_http::request::{VibeRequest, Method};
+use crate::error::Error;
 pub use crate::stdlib::glowup_http::response::VibeResponse;
 use reqwest;
 #[cfg(feature = "multipart")]

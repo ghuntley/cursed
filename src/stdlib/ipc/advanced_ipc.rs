@@ -16,6 +16,7 @@ use std::io::{self, Read, Write, BufReader, BufWriter};
 use std::path::{Path, PathBuf};
 use crate::error::CursedError;
 use super::{IpcError, IpcResult};
+use crate::error::Error;
 
 /// Advanced IPC manager with comprehensive features
 #[derive(Debug)]

@@ -29,6 +29,7 @@ pub mod enhanced;
 pub mod utils;
 pub mod security;
 pub mod monitoring;
+use crate::error::Error;
 
 // Re-export core types for convenient access
 pub use ip::{IPVibe, IPNetVibe, IPMaskVibe};

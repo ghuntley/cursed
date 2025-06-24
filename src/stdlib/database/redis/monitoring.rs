@@ -9,6 +9,7 @@ use std::time::{Duration, Instant};
 use tracing::{debug, info, instrument, warn};
 
 use super::DatabaseError;
+use crate::error::Error;
 
 /// Redis monitoring system
 #[derive(Debug)]

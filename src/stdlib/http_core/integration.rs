@@ -7,6 +7,7 @@ use std::collections::HashMap;
 use std::io::Write;
 
 use crate::stdlib::http_core::{
+use crate::error::Error;
     Request, Response, StatusCode, Method, ContentType, FormData,
     HttpError, HttpResult, HttpValidator, ValidationRules
 };

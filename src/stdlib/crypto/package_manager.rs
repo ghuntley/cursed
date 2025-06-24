@@ -752,6 +752,7 @@ pub fn initialize_crypto_ecosystem() -> UnifiedCryptoResult<()> {
 #[cfg(test)]
 mod tests {
     use super::*;
+use crate::error::Error;
 
     #[test]
     fn test_package_manager_creation() {

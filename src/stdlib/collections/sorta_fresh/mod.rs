@@ -15,13 +15,14 @@ use crate::stdlib::collections::CollectionsError;
 pub mod core;
 pub mod specialized;
 pub mod search;
+use crate::error::Error;
 
 pub use core::*;
 pub use specialized::*;
 pub use search::*;
 
-/// Result type for SortaFresh operations
-pub type SortaFreshResult<T> = std::result::Result<T, IoError>;
+/// Result type for SortaFresh operations  
+pub type SortaFreshResult<T> = std::result::Result<T, Error>;
 
 /// Core interface for sortable collections
 /// Equivalent to `Sortable` interface in the spec

@@ -12,6 +12,7 @@ use std::time::{Duration, Instant};
 use tracing::{info, instrument, warn};
 
 use inkwell::{
+use crate::error::Error;
     context::Context,
     module::Module,
     targets::{Target, TargetMachine, CodeModel, RelocMode, FileType},

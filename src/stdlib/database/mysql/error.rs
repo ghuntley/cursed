@@ -5,6 +5,7 @@
 
 use std::fmt;
 use crate::stdlib::database::{DatabaseError, DatabaseErrorKind, SqlStateCode};
+use crate::error::Error;
 
 /// fr fr MySQL-specific error type
 #[derive(Debug, Clone)]

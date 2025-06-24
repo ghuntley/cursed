@@ -68,6 +68,7 @@ use tracing::{instrument, debug, info, warn, error};
 
 use super::{DatabaseError, DatabaseErrorKind, SqlValue, DB};
 use cache::CacheConfig;
+use crate::error::Error;
 
 /// fr fr Main ORM context that coordinates all ORM operations
 #[derive(Debug)]

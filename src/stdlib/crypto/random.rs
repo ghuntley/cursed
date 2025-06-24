@@ -533,6 +533,7 @@ pub struct RandomnessQuality {
 #[cfg(test)]
 mod tests {
     use super::*;
+use crate::error::Error;
 
     #[test]
     fn test_secure_random_generation() {

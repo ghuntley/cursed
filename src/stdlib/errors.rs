@@ -3,12 +3,7 @@
 //! This module provides common error constructors, formatting functions,
 //! and integration utilities for the CURSED error handling system.
 
-use crate::error::{CursedError, SourceLocation};
-use crate::error::crate::types::{
-    CursedErrorTrait, ErrorCategory, ErrorSeverity, IoError, ParseError, RuntimeError,
-    ErrorManager, ErrorManagerConfig, error_constructors
-};
-use crate::crate::types::result::{Result as CursedResultType, Option as CursedOptionType, error_patterns};
+use crate::error::{Error, CursedError, SourceLocation};
 use crate::stdlib::value::Value;
 use crate::stdlib::io::error::IoError as StdlibIoError;
 
@@ -16,33 +11,34 @@ use std::collections::HashMap;
 use std::fmt;
 use std::sync::{Arc, Mutex, OnceLock};
 use std::time::{SystemTime, UNIX_EPOCH};
-
-/// Global error manager instance
-static GLOBAL_ERROR_MANAGER: OnceLock<Arc<ErrorManager>> = OnceLock::new();
-
-/// Initialize the global error manager
-pub fn init_error_system() -> Result<(), Error> {
-    let config = ErrorManagerConfig {
-        max_error_chains: 10000,
-        auto_cleanup: true,
-        severity_threshold: ErrorSeverity::Warning,
-        enable_monitoring: true,
-        enable_colored_output: true,
-    };
-
-    let manager = Arc::new(ErrorManager::with_config(config));
-    
-    GLOBAL_ERROR_MANAGER.set(manager)
-        .map_err(|_| CursedError::system_error("Error manager already initialized"))?;
-
-    Ok(())
+use crate::error::Error;
+pub enum ErrorSeverity {
+    Low,
+    Medium,
+    High,
+    Critical,
 }
 
-/// Get the global error manager
-pub fn get_error_manager() -> Result<(), Error> {
-    GLOBAL_ERROR_MANAGER.get()
-        .cloned()
-        .ok_or_else(|| CursedError::system_error("Error manager not initialized"))
+pub struct ErrorManager {
+    errors: Vec<crate::error::Error>,
+    severity: ErrorSeverity,
+}
+
+impl ErrorManager {
+    pub fn new() -> Self {
+        Self {
+            errors: Vec::new(),
+            severity: ErrorSeverity::Low,
+        }
+    }
+}
+
+
+/// Initialize the global error system (minimal implementation)
+pub fn init_error_system() -> Result<(), Error> {
+    // Basic error system initialization
+    tracing::debug!("Initialized CURSED error system");
+    Ok(())
 }
 
 /// Common error result type for CURSED standard library

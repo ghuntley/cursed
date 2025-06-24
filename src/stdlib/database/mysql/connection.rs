@@ -269,6 +269,7 @@ impl DriverConn for MySqlConnection {
 mod tests {
     use super::*;
     use crate::stdlib::database::SqlIsolationLevel;
+use crate::error::Error;
 
     #[test]
     fn test_connection_creation() {

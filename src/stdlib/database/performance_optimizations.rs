@@ -1012,6 +1012,7 @@ impl<K: Hash + Eq + Clone, V> LRUCache<K, V> {
 mod tests {
     use super::*;
     use tracing_test::traced_test;
+use crate::error::Error;
 
     #[traced_test]
     #[tokio::test]

@@ -15,6 +15,7 @@ use std::sync::{Arc, Mutex, Condvar};
 use std::time::{Duration, Instant, SystemTime};
 use std::thread;
 use super::{
+use crate::error::Error;
     DatabaseError, DatabaseErrorKind, Driver, DriverConn, 
     driver::get_driver, VibeContext
 };

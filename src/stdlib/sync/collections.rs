@@ -13,6 +13,7 @@ use std::time::{Duration, Instant};
 use std::hash::Hash;
 use std::sync::atomic::{AtomicPtr, AtomicU64, AtomicUsize as StdAtomicUsize, Ordering as StdOrdering};
 use std::ptr;
+use crate::error::Error;
 
 // Global channel statistics
 static CHANNEL_COUNT: StdAtomicUsize = StdAtomicUsize::new(0);

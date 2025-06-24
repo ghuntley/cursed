@@ -416,6 +416,7 @@ pub fn test_crypto(_args: Vec<Value>) -> Result<(), Error> {
 #[cfg(test)]
 mod tests {
     use super::*;
+use crate::error::Error;
 
     #[test]
     fn test_crypto_init() {

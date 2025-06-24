@@ -5,6 +5,7 @@
 
 use std::fmt::{Debug, Display};
 use std::any::Any;
+use crate::error::Error;
 
 /// Base trait that all AST nodes must implement
 /// 

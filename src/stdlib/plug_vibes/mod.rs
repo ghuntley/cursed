@@ -26,6 +26,7 @@ pub mod hooks;
 pub mod distribution;
 pub mod development;
 pub mod llvm_integration;
+use crate::error::Error;
 
 // Re-export core functionality
 pub use error::*;

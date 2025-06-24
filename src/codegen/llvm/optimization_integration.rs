@@ -6,6 +6,7 @@
 use crate::error::{Error, Result};
 
 use crate::optimization::{
+use crate::error::Error;
     OptimizationConfig, OptimizationManager, AdaptiveOptimizer, 
     IncrementalCompiler, BenchmarkSuite, PerformanceProfiler,
     OptimizationFeedback, OptimizationStrategy, OptimizationRecommendation,

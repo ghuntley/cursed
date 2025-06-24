@@ -10,6 +10,7 @@ use std::time::{Duration, Instant};
 use uuid::Uuid;
 
 use crate::stdlib::http_core::{
+use crate::error::Error;
     Headers, HeaderMap, Url, QueryParams, FormData, ContentType,
     Cookie, CookieJar, HttpError, HttpResult, HttpValidator
 };

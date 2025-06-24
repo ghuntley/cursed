@@ -59,6 +59,7 @@ use ed25519_dalek::{SigningKey as Ed25519SigningKey, VerifyingKey as Ed25519Veri
 
 use crate::error::CursedError;
 use crate::stdlib::value::Value;
+use crate::error::Error;
 
 // Re-export all protocol types
 pub use super::protocols_production::{

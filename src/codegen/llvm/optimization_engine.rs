@@ -11,6 +11,7 @@ use std::time::{Duration, Instant};
 use tracing::{debug, info, warn, instrument, span, Level};
 
 use inkwell::{
+use crate::error::Error;
     context::Context,
     module::Module,
     passes::PassManager,

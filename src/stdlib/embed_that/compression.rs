@@ -1,6 +1,7 @@
 use crate::stdlib::embed_that::core::{ThatFile, ThatFiles, tea, FileSystemVibe};
 use crate::stdlib::embed_that::error::{EmbedError, EmbedResult};
 use std::io::{Read, Write};
+use crate::error::Error;
 
 /// Compression support for embedded resources
 pub struct CompressionSupport;

@@ -10,6 +10,7 @@ use tracing::{debug, error, info, instrument, warn};
 use tokio::time::timeout;
 
 use super::{DatabaseError, RedisConfig};
+use crate::error::Error;
 
 /// Redis connection pool
 #[derive(Debug)]

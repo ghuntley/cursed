@@ -54,6 +54,23 @@ rustc-demangle = "0.1"  # For demangling Rust symbols
 # Essential utilities
 walkdir = "2.4"  # Recursive directory traversal
 glob = "0.3"    # For file path pattern matching
+dirs = "5.0"    # System directory utilities
+
+# Critical missing dependencies for compilation errors
+rand = "0.8"  # Random number generation (critical)
+regex = "1.10"  # Pattern matching (critical)
+sha3 = "0.10"  # SHA-3 cryptographic hashing (critical)
+hmac = "0.12"  # HMAC authentication codes (critical)
+base64 = "0.21"  # Base64 encoding/decoding (critical)
+tokio = { version = "1.0", features = ["rt", "rt-multi-thread", "macros", "io-util", "net", "time", "fs", "sync"] }  # Async runtime (critical)
+
+# Additional missing dependencies found in compilation
+libloading = "0.8"  # Dynamic library loading
+serde_yaml = "0.9"  # YAML serialization
+zstd = "0.13"  # ZSTD compression
+httpdate = "1.0"  # HTTP date formatting
+urlencoding = "2.1"  # URL encoding/decoding
+cbc = "0.1"  # CBC mode for block ciphers
 
 # DISABLED: Heavy dependencies that slow down compilation
 # Database drivers

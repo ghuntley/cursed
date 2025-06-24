@@ -11,6 +11,7 @@ use std::time::{Duration, Instant};
 use std::collections::VecDeque;
 use std::sync::atomic::{AtomicU64, AtomicUsize as StdAtomicUsize, AtomicBool as StdAtomicBool, Ordering as StdOrdering};
 use num_cpus;
+use crate::error::Error;
 
 // Global thread pool management
 static GLOBAL_POOL_INITIALIZED: StdAtomicBool = StdAtomicBool::new(false);

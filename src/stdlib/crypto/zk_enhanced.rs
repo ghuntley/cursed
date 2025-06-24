@@ -2430,6 +2430,7 @@ pub fn create_zk_vm_state(
 #[cfg(test)]
 mod tests {
     use super::*;
+use crate::error::Error;
 
     #[test]
     fn test_field_element_arithmetic() {

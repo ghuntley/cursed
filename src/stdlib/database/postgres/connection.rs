@@ -485,6 +485,7 @@ impl DriverConn for PostgresConnection {
 #[cfg(test)]
 mod tests {
     use super::*;
+use crate::error::Error;
 
     #[test]
     fn test_connection_stats() {

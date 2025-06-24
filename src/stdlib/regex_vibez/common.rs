@@ -2,6 +2,7 @@
 /// Pre-compiled regex patterns for common use cases
 use super::pattern::VibePattern;
 use lazy_static::lazy_static;
+use crate::error::Error;
 
 lazy_static! {
     /// Email regex pattern - validates common email formats

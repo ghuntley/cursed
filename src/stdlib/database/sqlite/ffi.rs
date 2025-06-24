@@ -768,6 +768,7 @@ extern "C" {
 #[cfg(test)]
 mod tests {
     use super::*;
+use crate::error::Error;
 
     #[test]
     fn test_result_code_conversion() {

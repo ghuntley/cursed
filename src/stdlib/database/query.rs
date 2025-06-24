@@ -6,6 +6,7 @@
 use std::collections::HashMap;
 use std::time::{Duration, Instant};
 use super::{DatabaseError, DatabaseErrorKind, SqlValue, VibeContext};
+use crate::error::Error;
 
 /// fr fr Context for query execution with metadata
 #[derive(Debug, Clone)]

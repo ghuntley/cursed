@@ -302,6 +302,7 @@ pub fn build_mysql_opts(dsn: &str, config: &MySqlConfig) -> MySqlResult<mysql::O
 #[cfg(test)]
 mod tests {
     use super::*;
+use crate::error::Error;
 
     #[test]
     fn test_mysql_driver_creation() {

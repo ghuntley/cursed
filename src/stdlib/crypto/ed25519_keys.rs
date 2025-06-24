@@ -4,6 +4,7 @@ use crate::crypto::Ed25519PublicKey;
 use crate::error::{Error, Result};
 use serde::{Serialize, Deserialize};
 use std::fmt;
+use crate::error::Error;
 
 /// Ed25519 public key
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]

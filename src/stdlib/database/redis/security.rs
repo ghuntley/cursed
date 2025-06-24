@@ -9,6 +9,7 @@ use tracing::{debug, error, info, instrument, warn};
 use serde::{Deserialize, Serialize};
 
 use super::DatabaseError;
+use crate::error::Error;
 
 /// Redis security manager
 #[derive(Debug)]

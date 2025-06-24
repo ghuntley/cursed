@@ -1,6 +1,7 @@
 /// Process signal management functions
 use crate::stdlib::signal_boost::core::BoostSignal;
 use crate::stdlib::signal_boost::error::{SignalBoostError, SignalBoostResult, system_error, permission_denied, not_supported};
+use crate::error::Error;
 
 /// Send a signal to a specific process
 pub fn signal_process(pid: u32, signal: BoostSignal) -> SignalBoostResult<()> {

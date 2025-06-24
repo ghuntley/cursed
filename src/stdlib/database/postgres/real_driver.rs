@@ -12,6 +12,7 @@ use deadpool_postgres::{Pool, PoolConfig, ManagerConfig, RecyclingMethod};
 use super::super::{Driver, DriverConn, DriverStmt, DriverTx, DatabaseError, DatabaseErrorKind, SqlValue, TxOptions};
 use super::super::driver::{QueryResult, ExecuteResult, ConnectionMetadata, DriverCapabilities};
 use super::{PostgresError, PostgresResult, PostgresConfig};
+use crate::error::Error;
 
 /// PostgreSQL driver with connection pooling
 pub struct RealPostgresDriver {

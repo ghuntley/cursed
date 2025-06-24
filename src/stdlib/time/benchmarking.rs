@@ -4,6 +4,7 @@ use crate::stdlib::time::duration::Duration;
 use crate::stdlib::time::datetime::Instant;
 use crate::stdlib::time::sleep::system_time_nanos;
 use std::collections::HashMap;
+use crate::error::Error;
 
 /// Benchmark result containing timing and statistical information
 #[derive(Debug, Clone)]

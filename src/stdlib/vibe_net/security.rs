@@ -9,6 +9,7 @@ use std::sync::{Arc, Mutex};
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 use crate::error::CursedError;
 use crate::stdlib::vibe_net::NetResult;
+use crate::error::Error;
 
 /// TLS configuration and certificate management
 pub struct TlsConfig {

@@ -219,6 +219,7 @@ impl Clone for MySqlStatement {
 mod tests {
     use super::*;
     use crate::stdlib::database::SqlValue;
+use crate::error::Error;
 
     #[test]
     fn test_parameter_counting() {

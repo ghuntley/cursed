@@ -8,6 +8,7 @@ use crate::stdlib::glowup_http::response::ResponderVibe;
 use std::sync::Arc;
 use std::time::Instant;
 use tracing::{info, debug, instrument};
+use crate::error::Error;
 
 /// Middleware function type
 pub type MiddlewareFunc = Arc<dyn Fn(HandlerFunc) -> HandlerFunc + Send + Sync>;

@@ -9,6 +9,7 @@ use std::io::{self, Write};
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
 use crate::stdlib::http_core::{
+use crate::error::Error;
     Headers, HeaderMap, ContentType, Cookie, CookieJar, HttpError, HttpResult
 };
 

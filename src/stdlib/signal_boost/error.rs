@@ -1,6 +1,7 @@
 /// Error handling for SignalBoost module
 use std::fmt;
 use crate::error::CursedError;
+use crate::error::Error;
 
 /// Result type for SignalBoost operations
 pub type SignalBoostResult<T> = std::result::Result<T, SignalBoostError>;

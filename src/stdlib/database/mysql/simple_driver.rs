@@ -8,6 +8,7 @@ use std::time::SystemTime;
 use super::super::{Driver, DriverConn, DriverStmt, DriverTx, DatabaseError, DatabaseErrorKind, SqlValue, TxOptions};
 use super::super::driver::{QueryResult, ExecuteResult, ConnectionMetadata, DriverCapabilities};
 use super::comprehensive_driver::{ComprehensiveMySqlDriver, MySqlConfig};
+use crate::error::Error;
 
 /// fr fr Simple MySQL driver that uses comprehensive implementation under the hood
 #[derive(Debug, Clone)]

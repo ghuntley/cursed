@@ -7,6 +7,7 @@
 use crate::error::{Error as CursedError, Error};
 use crate::runtime::debug_info::{DebugInfo, VariableInfo};
 use crate::debug::enhanced_debug::{
+use crate::error::Error;
     EnhancedDebugInfo, DebugInfoRegistry, SymbolMetadata, TypeDebugInfo, 
     ScopeInfo, SourceMap, SymbolType, TypeKind, FieldDebugInfo
 };

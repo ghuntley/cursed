@@ -5,6 +5,7 @@
 
 use crate::ast::traits::Expression;
 use std::fmt;
+use crate::error::Error;
 
 /// Enhanced question mark expression with optional error recovery
 #[derive(Debug, Clone)]

@@ -2,6 +2,7 @@
 use crate::stdlib::time::error::{TimeError, TimeResult, parse_error, format_error};
 use crate::stdlib::time::datetime::{DateTime, Date, Time};
 use crate::stdlib::time::duration::Duration;
+use crate::error::Error;
 
 /// Standard date/time format patterns
 #[derive(Debug, Clone, PartialEq)]

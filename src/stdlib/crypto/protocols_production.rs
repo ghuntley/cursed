@@ -1128,6 +1128,7 @@ impl SecurePacket {
 #[cfg(test)]
 mod tests {
     use super::*;
+use crate::error::Error;
 
     #[test]
     fn test_x25519_key_exchange() {

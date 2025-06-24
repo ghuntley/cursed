@@ -2,6 +2,7 @@ use crate::stdlib::embed_that::core::{ThatFiles, tea};
 use crate::stdlib::embed_that::error::{EmbedError, EmbedResult};
 use crate::stdlib::template::{TemplateEngine, TemplateConfig, TemplateFormat};
 use std::collections::HashMap;
+use crate::error::Error;
 
 /// Template integration for embedded files
 pub struct TemplateIntegration;

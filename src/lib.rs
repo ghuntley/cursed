@@ -1,3 +1,4 @@
+use crate::error::Error;
 /// CURSED Programming Language Library (Minimal Build)
 /// 
 /// A minimal implementation focusing on core compiler functionality:

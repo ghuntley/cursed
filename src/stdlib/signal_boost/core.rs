@@ -6,6 +6,7 @@ use std::thread;
 use std::time::Duration;
 use crate::stdlib::signal_boost::error::{SignalBoostError, SignalBoostResult};
 use super::context::VibeContext;
+use crate::error::Error;
 
 /// Operating system signal representation
 #[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]

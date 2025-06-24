@@ -6,6 +6,7 @@ use crate::stdlib::glowup_http::request::VibeRequest;
 use crate::stdlib::glowup_http::response::ResponderVibe;
 use std::sync::Arc;
 use tracing::{debug, instrument};
+use crate::error::Error;
 
 /// Primary trait for handling HTTP requests
 /// This follows the CURSED spec's `Handler` naming

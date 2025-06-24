@@ -35,6 +35,7 @@ pub mod hybrid;
 pub mod analysis;
 pub mod formats;
 pub mod agility;
+use crate::error::Error;
 
 // Re-export real implementations as primary API
 pub use algorithms::kyber_real::*;

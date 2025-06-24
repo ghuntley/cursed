@@ -10,6 +10,7 @@ use rusqlite::{Connection, OpenFlags, params, crate::types::Value as SqliteValue
 use super::{SqliteError, SqliteResult, SqliteConfig, SqliteStats};
 use super::super::{DriverConn, DatabaseError, SqlValue, TxOptions, DriverStmt, DriverTx};
 use super::super::driver::{QueryResult, ExecuteResult, ConnectionMetadata};
+use crate::error::Error;
 
 /// Real SQLite connection implementation
 #[derive(Debug)]
