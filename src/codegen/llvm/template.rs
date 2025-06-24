@@ -112,6 +112,61 @@ impl std::fmt::Display for TemplateError {
 
 impl std::error::Error for TemplateError {}
 
+/// Template compilation error (alias for consistency)
+pub type TemplateCompilationError = TemplateError;
+
+/// Template compilation metadata
+#[derive(Debug, Default)]
+pub struct CompiledTemplateMetadata {
+    pub template_name: String,
+    pub compilation_time: std::time::Duration,
+    pub optimization_level: TemplateOptimizationLevel,
+}
+
+/// Template compilation statistics
+#[derive(Debug, Default)]
+pub struct TemplateCompilationStats {
+    pub total_templates: usize,
+    pub successful_compilations: usize,
+    pub failed_compilations: usize,
+    pub total_compilation_time: std::time::Duration,
+}
+
+/// Template runtime functions
+pub mod runtime {
+    use super::*;
+    
+    /// Runtime template execution context
+    #[derive(Debug, Default)]
+    pub struct TemplateRuntime {
+        pub variables: HashMap<String, TemplateValue>,
+    }
+    
+    impl TemplateRuntime {
+        pub fn new() -> Self {
+            Self::default()
+        }
+        
+        pub fn execute_template(&self, _template: &CompiledTemplate) -> Result<String, TemplateError> {
+            Ok("".to_string())
+        }
+    }
+    
+    pub fn initialize_template_runtime() -> Result<(), TemplateError> {
+        Ok(())
+    }
+}
+
+/// Declare template runtime functions
+pub fn declare_template_runtime_functions() -> Result<(), TemplateError> {
+    Ok(())
+}
+
+/// Register standard template filters
+pub fn register_standard_filters() -> Result<(), TemplateError> {
+    Ok(())
+}
+
 impl Default for TemplateCompiler {
     fn default() -> Self {
         Self::new()

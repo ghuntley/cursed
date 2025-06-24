@@ -6,7 +6,7 @@
 
 use crate::error::{Error, Result};
 use crate::ast::{
-    Node, Expression, Statement, Function, Type
+    Node, Expression, Statement, FunctionDeclaration as Function, Type
 };
 use std::collections::{HashMap, HashSet, VecDeque};
 use std::hash::{Hash, Hasher};

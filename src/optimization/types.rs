@@ -7,6 +7,20 @@ use crate::error::Error;
 use std::collections::HashMap;
 use std::time::Duration;
 
+/// Optimization statistics summary
+#[derive(Debug, Clone, Default)]
+pub struct OptimizationStats {
+    pub passes_run: u32,
+    pub successful_optimizations: u32,
+    pub failed_optimizations: u32,
+    pub total_time: Duration,
+    pub memory_saved: u64,
+    pub code_size_reduction: i64,
+}
+
+/// Simple optimization result (alias for compatibility)
+pub type OptimizationResult = ComprehensiveOptimizationResult;
+
 /// Comprehensive optimization result containing all optimization metrics
 #[derive(Debug, Clone)]
 pub struct ComprehensiveOptimizationResult {

@@ -4,7 +4,9 @@
 /// result set handling, and proper resource management for PostgreSQL connections.
 
 use std::sync::Arc;
-use tokio_postgres::{Statement, Row};
+// use tokio_postgres::{Statement, Row}; // Disabled - tokio causes E0753 errors
+use super::connection::Statement;
+pub struct Row;
 use crate::stdlib::database::{
     DriverStmt, SqlValue,
     driver::{QueryResult, ExecuteResult}

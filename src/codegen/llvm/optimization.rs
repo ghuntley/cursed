@@ -48,11 +48,28 @@ impl OptimizationManager {
             stats: OptimizationStats::default(),
         }
     }
+}
+
+/// LLVM optimizer interface
+#[derive(Debug)]
+pub struct LlvmOptimizer {
+    pub config: OptimizationConfig,
+}
+
+impl LlvmOptimizer {
+    pub fn new(config: OptimizationConfig) -> Self {
+        Self { config }
+    }
     
     pub fn optimize(&mut self, _module: &inkwell::module::Module) -> Result<(), OptimizationError> {
         // Stub implementation
-        self.stats.passes_run += 1;
         Ok(())
+    }
+}
+
+impl Default for LlvmOptimizer {
+    fn default() -> Self {
+        Self::new(OptimizationConfig::default())
     }
 }
 

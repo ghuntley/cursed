@@ -88,6 +88,12 @@ pub mod type_disambiguation;
 // Core types - explicit exports to avoid conflicts
 pub use error::{ProcessError, ProcessResult};
 pub use core::{ProcessManager, ProcessHandle, ProcessConfig, ProcessGroup, ProcessState, ProcessInfo};
+pub use exec_slay::{SlayCommand, SlayOptions};
+pub use exec_vibez::{Cmd, ProcessContext};
+pub use background_tasks::{SlayTask};
+pub use pipeline::{SlayPipeline};
+
+// Submodules already declared above, no need to redeclare
 pub use info::{ProcessInfo as StdProcessInfo, SystemInfo, ProcessState as StdProcessState};
 pub use control::{ProcessController, ControlOptions};
 pub use enhanced_control::{EnhancedProcessController, EnhancedControlOptions};

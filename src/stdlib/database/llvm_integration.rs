@@ -29,12 +29,29 @@ pub enum ReturnType {
     Void,
 }
 
+/// Parameter type for database functions
+#[derive(Debug, Clone)]
+pub enum ParameterType {
+    String,
+    Integer,
+    Float,
+    Boolean,
+    Binary,
+    Null,
+}
+
 impl DatabaseLLVMIntegrationImpl {
     pub fn new() -> Self {
         Self {
             functions: HashMap::new(),
         }
     }
+}
+
+/// Register database functions for LLVM integration
+pub fn register_database_functions() -> Result<(), String> {
+    // Stub implementation for minimal build
+    Ok(())
 }
 
 impl DatabaseLLVMIntegration for DatabaseLLVMIntegrationImpl {

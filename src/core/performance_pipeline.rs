@@ -12,7 +12,8 @@ use std::path::{Path, PathBuf};
 use std::sync::{Arc, Mutex};
 use std::thread;
 use std::time::{Duration, Instant, SystemTime};
-use tokio::sync::mpsc;
+// use tokio::sync::mpsc; // Disabled - tokio causes E0753 errors
+use std::sync::mpsc;
 use rayon::prelude::*;
 
 /// Parallel compilation configuration

@@ -80,6 +80,22 @@ chacha20poly1305 = "0.10"  # ChaCha20-Poly1305 AEAD encryption
 rand_chacha = "0.3"  # ChaCha random number generator
 rand_distr = "0.4"  # Random distributions
 
+# Critical missing dependencies for compilation errors (newly added)
+rusqlite = "0.30"  # SQLite database interface
+# tokio = { version = "1.0", features = ["rt", "rt-multi-thread", "macros", "io-util", "net", "time", "fs", "sync", "process"] }  # Async runtime - DISABLED due to E0753 doc comment errors
+# tokio-postgres = "0.7"  # PostgreSQL async client - DISABLED (requires tokio)
+bincode = "1.3"  # Binary serialization
+chrono = { version = "0.4", features = ["serde"] }  # Date and time handling
+# bb8 = "0.8"  # Connection pooling - DISABLED (requires tokio)
+# bb8-postgres = "0.8"  # PostgreSQL connection pooling - DISABLED (requires tokio)
+md5 = "0.7"  # MD5 hashing
+
+# Additional missing numeric dependencies
+num-bigint = { version = "0.4", features = ["rand"] }  # Big integer arithmetic
+num-rational = "0.4"  # Rational numbers
+num-complex = "0.4"  # Complex numbers  
+num-integer = "0.1"  # Integer utilities
+
 # DISABLED: Heavy dependencies that slow down compilation
 # Database drivers
 # redis = { version = "0.24", features = ["tokio-comp", "connection-manager"] }

@@ -2036,3 +2036,6 @@ mod tests {
         assert_eq!(metrics.peak_cpu_usage, 30.0);
     }
 }
+
+/// Alias for compatibility
+pub type PerformanceMonitor = RealPerformanceMonitor;

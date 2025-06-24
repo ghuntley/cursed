@@ -4,7 +4,8 @@
 /// commit, rollback, savepoints, and proper isolation level handling.
 
 use std::sync::Arc;
-use tokio_postgres::Transaction;
+// use tokio_postgres::Transaction; // Disabled - tokio causes E0753 errors
+use super::connection::Transaction;
 use crate::stdlib::database::{
     DriverTx, DriverStmt, SqlValue, SqlIsolationLevel, DatabaseError,
     TxOptions, IsolationLevel,

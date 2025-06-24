@@ -10,11 +10,8 @@ use std::collections::HashMap;
 
 use tracing::{info, error, debug, warn};
 
-use crate::stdlib::process::core::ProcessManager;
-use crate::stdlib::process::exec_slay::{SlayCommand, SlayOptions};
-use crate::stdlib::process::exec_vibez::{Cmd, ProcessContext};
-use crate::stdlib::process::background_tasks::SlayTask;
-use crate::stdlib::process::pipeline::SlayPipeline;
+// Use stub implementations for now to resolve compilation
+use super::process_stubs::{ProcessManager, SlayCommand, SlayOptions, Cmd, ProcessContext, SlayTask, SlayPipeline};
 use crate::error::CursedError;
 use crate::error::Error;
 

@@ -76,3 +76,6 @@ impl From<&str> for Error {
 pub mod debug_context;
 pub mod error_propagation;
 pub mod types;
+
+// Re-export commonly used types from submodules
+pub use types::ParseError;

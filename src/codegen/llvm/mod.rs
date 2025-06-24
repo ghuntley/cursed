@@ -44,6 +44,7 @@ pub mod panic;
 pub mod process;
 pub mod process_execution;
 pub mod process_execution_ffi;
+pub mod process_stubs;
 pub mod process_ipc_integration;
 pub mod question_mark;
 pub mod real_compilation;

@@ -24,7 +24,7 @@ pub mod benchmarking;
 pub use config::{OptimizationConfig, OptimizationLevel};
 pub use real_llvm_passes::RealLlvmPassManager;
 pub use enhanced_llvm_passes_manager::EnhancedLlvmPassManager;
-pub use coordinator::{OptimizationCoordinator, CoordinatorConfig};
+pub use coordinator::{OptimizationCoordinator, CoordinatorConfiguration as CoordinatorConfig};
 pub use performance_monitor::PerformanceMonitor;
 pub use types::{OptimizationStats, OptimizationResult};
 pub use optimization_manager::{
