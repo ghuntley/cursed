@@ -192,10 +192,10 @@ struct NotificationEntry {
 
 // Global state for signal management
 lazy_static::lazy_static! {
-    static ref NOTIFICATION_REGISTRY: Mutex<HashMap<u64, NotificationEntry>> = Mutex::new(HashMap::new());
-    static ref NEXT_HANDLE_ID: AtomicU64 = AtomicU64::new(1);
-    static ref SIGNALS_PROCESSED: AtomicU64 = AtomicU64::new(0);
-    static ref SIGNAL_THREAD_STARTED: Mutex<bool> = Mutex::new(false);
+    pub static ref NOTIFICATION_REGISTRY: Mutex<HashMap<u64, NotificationEntry>> = Mutex::new(HashMap::new());
+    pub static ref NEXT_HANDLE_ID: AtomicU64 = AtomicU64::new(1);
+    pub static ref SIGNALS_PROCESSED: AtomicU64 = AtomicU64::new(0);
+    pub static ref SIGNAL_THREAD_STARTED: Mutex<bool> = Mutex::new(false);
 }
 
 /// Notify causes SignalBoost to relay incoming signals to the channel

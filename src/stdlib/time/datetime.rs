@@ -619,3 +619,13 @@ fn days_since_epoch_to_date(days: i64) -> TimeResult<(i32, u32, u32)> {
     
     Ok((year, month, day))
 }
+
+/// Get the current date and time
+pub fn now() -> TimeResult<DateTime> {
+    DateTime::now()
+}
+
+/// Get today's date (midnight)
+pub fn today() -> TimeResult<Date> {
+    Date::today()
+}

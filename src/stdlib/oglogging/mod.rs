@@ -17,7 +17,7 @@ pub use standard::*;
 
 // Global standard logger instance
 lazy_static::lazy_static! {
-    static ref STANDARD_LOGGER: Arc<Mutex<Logger>> = Arc::new(Mutex::new(
+    pub static ref STANDARD_LOGGER: Arc<Mutex<Logger>> = Arc::new(Mutex::new(
         Logger::new(Box::new(std::io::stdout()), String::new(), LstdFlags)
     ));
 }

@@ -8,6 +8,8 @@ pub mod basic_statements;
 pub mod declaration_statements;
 pub mod channel_statements;
 pub mod panic_statements;
+pub mod control_flow;
+pub mod variable;
 
 // Basic statement types
 pub use enum_statement::EnumStatement;
@@ -34,3 +36,9 @@ pub use channel_statements::{
 
 // Panic statements
 pub use panic_statements::{PanicStatement, RecoveryStatement};
+
+// Control flow statements
+pub use control_flow::{ForInStatement, DoWhileStatement};
+
+// Variable statements
+pub use variable::VariableStatement;
