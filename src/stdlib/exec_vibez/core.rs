@@ -220,7 +220,7 @@ impl ProcessLifecycle {
 
 // Global process lifecycle manager
 lazy_static! {
-    static ref PROCESS_LIFECYCLE: ProcessLifecycle = ProcessLifecycle::new();
+    pub static ref PROCESS_LIFECYCLE: ProcessLifecycle = ProcessLifecycle::new();
 }
 
 /// Get the global process lifecycle manager

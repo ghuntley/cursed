@@ -88,7 +88,7 @@ impl UtcOffset {
 
 // Predefined timezone data (simplified - in production would use a timezone database)
 lazy_static::lazy_static! {
-    static ref TIMEZONE_DATA: HashMap<&'static str, Timezone> = {
+    pub static ref TIMEZONE_DATA: HashMap<&'static str, Timezone> = {
         let mut map = HashMap::new();
         
         // UTC and common aliases

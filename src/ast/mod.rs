@@ -85,7 +85,7 @@ use crate::error::Error;
 pub use traits::{Node, Expression, Statement, TypeNode, GenericNode, Visitable, Visitor, Mutable, MutVisitor, Locatable, StatementExtensions, TypeParameter};
 pub use expressions::*;
 // Use explicit imports to avoid E0659 conflicts between statements and conditionals
-pub use statements::{ExpressionStatement, ReturnStatement, BreakStatement, ContinueStatement, ThrowStatement, TryStatement, CatchStatement, FinallyStatement, ImportStatement, PackageStatement, MutStatement, ConstStatement, AssignmentStatement, ChannelReceiveStatement, ChannelSendStatement, ChannelCloseStatement, LetStatement, FactsStatement};
+pub use statements::{ExpressionStatement, ReturnStatement, BreakStatement, ContinueStatement, ThrowStatement, TryStatement, CatchStatement, FinallyStatement, ImportStatement, PackageStatement, MutStatement, ConstStatement, AssignmentStatement, ChannelReceiveStatement, ChannelSendStatement, ChannelCloseStatement, LetStatement, FactsStatement, EnumStatement, ConstantStatement, TypeAliasStatement, ModuleStatement, ForInStatement, DoWhileStatement};
 pub use declarations::{FunctionStatement, FunctionDeclaration, SquadStatement, CollabStatement, GenericConstraint, AsyncFunctionStatement, AsyncFunctionDeclaration, StructDeclaration, InterfaceDeclaration};
 pub use literals::*;
 pub use operators::*;

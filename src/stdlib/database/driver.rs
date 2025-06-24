@@ -331,7 +331,7 @@ impl Default for DriverRegistry {
 
 /// fr fr Global driver registry instance
 lazy_static::lazy_static! {
-    static ref GLOBAL_DRIVER_REGISTRY: DriverRegistry = DriverRegistry::new();
+    pub static ref GLOBAL_DRIVER_REGISTRY: DriverRegistry = DriverRegistry::new();
 }
 
 /// slay Register a driver globally

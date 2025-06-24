@@ -6,6 +6,7 @@ use std::path::PathBuf;
 // Import local LLVM optimization module
 use super::optimization::{OptimizationManager, OptimizationConfig, OptimizationStats, utils as optimization_utils};
 use crate::common::optimization_level::OptimizationLevel as OptLevel;
+use crate::common::optimization_level::OptimizationLevel as CoordOptLevel;
 
 /// Optimization preset configurations
 #[derive(Debug, Clone, Copy)]
@@ -758,13 +759,21 @@ impl LlvmCodeGenerator {
         tracing::info!("Initializing comprehensive optimization coordinator");
         
         // Convert optimization level to coordinator config
-        let config = match self.optimization_config.optimization_level {
-            OptLevel::O0 => CoordinatorConfiguration::development(),
-            OptLevel::O1 => CoordinatorConfiguration::balanced(),
-            OptLevel::O2 => CoordinatorConfiguration::balanced(),
-            OptLevel::O3 => CoordinatorConfiguration::release(),
-            OptLevel::Os => CoordinatorConfiguration::balanced(),
-            OptLevel::Oz => CoordinatorConfiguration::release(),
+        let coord_level = match self.optimization_config.optimization_level {
+            OptLevel::O0 => CoordOptLevel::O0,
+            OptLevel::O1 => CoordOptLevel::O1,
+            OptLevel::O2 => CoordOptLevel::O2,
+            OptLevel::O3 => CoordOptLevel::O3,
+            OptLevel::Os => CoordOptLevel::Os,
+            OptLevel::Oz => CoordOptLevel::Oz,
+        };
+        
+        let config = if matches!(coord_level, CoordOptLevel::O0) {
+            CoordinatorConfiguration::development()
+        } else if matches!(coord_level, CoordOptLevel::O3) {
+            CoordinatorConfiguration::release()
+        } else {
+            CoordinatorConfiguration::balanced()
         };
         
         let mut coordinator = OptimizationCoordinator::new(config)?;

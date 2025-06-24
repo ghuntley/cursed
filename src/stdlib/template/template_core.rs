@@ -1,4 +1,9 @@
 use crate::error::Error;
+
+/// Create a new template engine with the given configuration
+pub fn create_template_engine(config: TemplateConfig) -> Result<TemplateEngine, TemplateError> {
+    Ok(TemplateEngine::new(config))
+}
 /// Core Template Engine - The heart of CURSED templating
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};

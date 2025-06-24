@@ -19,39 +19,8 @@ pub mod value;
 // Database
 pub mod database;
 
-// Packages
-pub mod packages {
-    pub mod crypto_asymmetric {
-        pub use crate::common::*;
-    }
-    pub mod crypto_pki {
-        pub use crate::common::*;
-    }
-    pub mod crypto_advanced {
-        pub use crate::common::*;
-    }
-    pub mod crypto_hash_advanced {
-        pub use crate::common::*;
-    }
-    pub mod crypto_kdf {
-        pub use crate::common::*;
-    }
-    pub mod crypto_random {
-        pub use crate::common::*;
-    }
-    pub mod crypto_signatures {
-        pub use crate::common::*;
-    }
-    pub mod crypto_zk {
-        pub use crate::common::*;
-    }
-    pub mod crypto_pqc {
-        pub use crate::common::*;
-    }
-    pub mod crypto_protocols {
-        pub use crate::common::*;
-    }
-}
+// Packages - actual package implementations
+pub mod packages;
 
 // Web framework
 pub mod web_vibez {
@@ -90,13 +59,7 @@ pub mod plug_vibes;
 pub mod embed_that;
 
 // Template system
-pub mod template {
-    pub use crate::common::*;
-    
-    pub struct TemplateEngine;
-    pub struct TemplateConfig;
-    pub enum TemplateFormat { Html, Text }
-}
+pub mod template;
 
 // System utilities
 pub mod system;
