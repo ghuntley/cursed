@@ -8,6 +8,7 @@ use crate::stdlib::squish_core::core::{Reader as SquishReader, Writer as SquishW
 use std::io::{Read, Write, BufWriter, BufReader};
 use flate2::{Compression, read::DeflateDecoder, write::DeflateEncoder};
 use std::time::Instant;
+use crate::error::Error;
 
 /// DEFLATE reader that decompresses raw deflate data on read
 pub struct FlateReader<R: Read> {

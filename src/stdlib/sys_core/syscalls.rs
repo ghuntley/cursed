@@ -1,5 +1,6 @@
 /// Direct system call interface
 use crate::stdlib::sys_core::error::{SysCoreResult, system_call_error, not_supported, invalid_argument};
+use crate::error::Error;
 
 /// System call identifier
 #[derive(Debug, Clone, Copy, PartialEq)]

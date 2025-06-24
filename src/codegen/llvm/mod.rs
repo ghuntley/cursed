@@ -58,6 +58,7 @@ pub mod type_switch;
 pub mod type_system;
 pub mod variable_management;
 pub mod web_vibez_integration;
+use crate::error::Error;
 
 // Re-export from main module
 pub use main::*;

@@ -5,6 +5,7 @@ use std::collections::HashMap;
 // In a real implementation, you would use the regex crate
 use crate::stdlib::csv::reader::Reader;
 use crate::stdlib::csv::error::{CsvError, CsvResult, schema_validation_error};
+use crate::error::Error;
 
 /// Column type definitions for validation
 #[derive(Debug, Clone, PartialEq)]

@@ -12,6 +12,7 @@ use tracing::{debug, error, info, instrument};
 
 use crate::error::CursedError;
 use super::error::DatabaseError;
+use crate::error::Error;
 
 pub mod config;
 pub mod connection;

@@ -4,6 +4,7 @@ use crate::stdlib::value::Value;
 use crate::error::CursedError;
 use super::formatter::format_log_entry;
 use super::flags::LstdFlags;
+use crate::error::Error;
 
 /// Logger represents an active logging object that outputs formatted text to a Writer.
 /// It can be used concurrently from multiple goroutines as it guarantees serialized

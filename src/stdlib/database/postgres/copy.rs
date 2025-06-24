@@ -431,6 +431,7 @@ impl CopyManager {
             // Send data to PostgreSQL
             unsafe {
                 use super::ffi::PQputCopyData;
+use crate::error::Error;
                 
                 let result = PQputCopyData(
                     conn.as_ptr(),

@@ -4,6 +4,7 @@
 
 use std::collections::HashMap;
 use super::{DatabaseError, DatabaseErrorKind, SqlValue, DB, SlayRows, SlayResult};
+use crate::error::Error;
 
 /// fr fr Base query builder
 #[derive(Debug, Clone)]

@@ -9,6 +9,7 @@ use crate::stdlib::glowup_http::middleware::MiddlewareFunc;
 use std::collections::HashMap;
 use std::sync::Arc;
 use tracing::{debug, instrument};
+use crate::error::Error;
 
 /// HTTP router and dispatcher
 /// This follows the CURSED spec's `VibeRouter` naming

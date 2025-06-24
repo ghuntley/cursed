@@ -1,3 +1,28 @@
+// Module error types
+pub type Error = ModuleError;
+
+#[derive(Debug, Clone)]
+pub enum ModuleError {
+    InvalidInput,
+    InvalidOperation,
+    OperationFailed(String),
+    ConfigurationError(String),
+    RuntimeError(String),
+}
+
+impl std::fmt::Display for ModuleError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            ModuleError::InvalidInput => write!(f, "Invalid input"),
+            ModuleError::InvalidOperation => write!(f, "Invalid operation"),
+            ModuleError::OperationFailed(msg) => write!(f, "Operation failed: {}", msg),
+            ModuleError::ConfigurationError(msg) => write!(f, "Configuration error: {}", msg),
+            ModuleError::RuntimeError(msg) => write!(f, "Runtime error: {}", msg),
+        }
+    }
+}
+
+impl std::error::Error for ModuleError {}
 /// SignalBoost - Enhanced signal handling for CURSED
 /// Provides comprehensive OS signal management with graceful shutdown patterns
 pub mod core;

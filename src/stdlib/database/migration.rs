@@ -4,6 +4,7 @@
 
 use std::collections::HashMap;
 use super::{DatabaseError, DatabaseErrorKind, DB};
+use crate::error::Error;
 
 /// fr fr Database migration definition
 #[derive(Debug, Clone)]

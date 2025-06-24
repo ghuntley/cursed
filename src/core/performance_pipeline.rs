@@ -13,6 +13,7 @@ use std::thread;
 use std::time::{Duration, Instant, SystemTime};
 use tokio::sync::mpsc;
 use rayon::prelude::*;
+use crate::error::Error;
 
 /// Parallel compilation configuration
 #[derive(Debug, Clone)]

@@ -11,6 +11,7 @@ use inkwell::values::FunctionValue;
 use inkwell::AddressSpace;
 
 use crate::stdlib::database::llvm_integration::{
+use crate::error::Error;
     DatabaseLLVMIntegration, DatabaseLLVMIntegrationImpl, DatabaseFunction
 };
 

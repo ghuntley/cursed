@@ -5,6 +5,7 @@
 
 use std::collections::HashMap;
 use inkwell::{
+use crate::error::Error;
     context::Context,
     values::{BasicValueEnum, FunctionValue},
     crate::types::{BasicTypeEnum, FunctionType},

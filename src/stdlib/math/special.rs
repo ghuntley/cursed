@@ -2,6 +2,7 @@
 
 use super::{MathError, MathResult, validate_float, domain_error, negative_input_error};
 use super::constants::{PI, E};
+use crate::error::Error;
 
 /// Factorial function for non-negative integers
 pub fn factorial(n: u64) -> MathResult<u64> {

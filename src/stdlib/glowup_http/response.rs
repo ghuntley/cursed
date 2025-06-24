@@ -6,6 +6,7 @@ use crate::stdlib::glowup_http::request::{HeaderMap, Cookie};
 use std::io::Write;
 use std::sync::{Arc, Mutex};
 use tracing::{debug, instrument};
+use crate::error::Error;
 
 /// HTTP status codes
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

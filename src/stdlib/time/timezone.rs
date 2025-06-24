@@ -2,6 +2,7 @@
 use crate::stdlib::time::error::{TimeError, TimeResult, timezone_error};
 use crate::stdlib::time::datetime::DateTime;
 use std::collections::HashMap;
+use crate::error::Error;
 
 /// Represents a timezone
 #[derive(Debug, Clone, PartialEq)]

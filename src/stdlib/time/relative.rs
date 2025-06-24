@@ -2,6 +2,7 @@
 use crate::stdlib::time::error::{TimeError, TimeResult, time_error};
 use crate::stdlib::time::datetime::{DateTime, Date, Weekday};
 use crate::stdlib::time::duration::Duration;
+use crate::error::Error;
 
 /// Represents relative time periods
 #[derive(Debug, Clone, PartialEq)]

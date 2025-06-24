@@ -1,5 +1,6 @@
 /// Async I/O operations for CURSED standard library
 use std::io::{self, Error as IoError, ErrorKind};
+use crate::error::Error;
 use std::path::Path;
 use std::pin::Pin;
 use std::task::{Context, Poll};

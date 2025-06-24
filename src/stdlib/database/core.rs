@@ -16,6 +16,7 @@ use std::time::{Duration, SystemTime};
 use crate::error::CursedError;
 use base64::Engine;
 use super::{
+use crate::error::Error;
     DatabaseError, DatabaseErrorKind, SqlValue, SqlIsolationLevel, VibeContext,
     Driver, ConnectionPool, driver
 };

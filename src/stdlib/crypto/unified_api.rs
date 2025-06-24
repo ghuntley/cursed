@@ -579,6 +579,7 @@ where
 #[cfg(test)]
 mod tests {
     use super::*;
+use crate::error::Error;
 
     #[test]
     fn test_unified_crypto_manager_creation() {

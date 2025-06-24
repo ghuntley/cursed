@@ -9,6 +9,7 @@ use std::time::{Duration, Instant};
 use tracing::{debug, error, info, instrument, warn};
 
 use super::{DatabaseError, RedisConnection};
+use crate::error::Error;
 
 /// Redis transaction manager
 #[derive(Debug)]

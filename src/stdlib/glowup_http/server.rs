@@ -12,6 +12,7 @@ use std::sync::{Arc, Mutex, atomic::{AtomicBool, AtomicU64, Ordering}};
 use std::thread::{self, JoinHandle};
 use std::time::{Duration, Instant};
 use tracing::{debug, info, warn, error, instrument, span, Level};
+use crate::error::Error;
 
 /// Configurable HTTP server
 /// This follows the CURSED spec's `VibeServer` naming

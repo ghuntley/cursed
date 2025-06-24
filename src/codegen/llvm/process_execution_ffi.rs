@@ -16,6 +16,7 @@ use crate::stdlib::process::exec_vibez::{Cmd, ProcessContext};
 use crate::stdlib::process::background_tasks::SlayTask;
 use crate::stdlib::process::pipeline::SlayPipeline;
 use crate::error::CursedError;
+use crate::error::Error;
 
 /// Convert a C string to a Rust string, handling null pointers
 unsafe fn c_str_to_string(ptr: *const c_char) -> Option<String> {

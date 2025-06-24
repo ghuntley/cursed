@@ -28,6 +28,7 @@ use aes::Aes256;
 use blake3::Hasher as Blake3Hasher;
 
 use crate::error::CursedError;
+use crate::error::Error;
 
 /// Post-Quantum Cryptography specific errors
 #[derive(Debug, Clone, PartialEq)]

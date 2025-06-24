@@ -468,6 +468,7 @@ pub extern "C" fn cursed_jwt_create(
 #[cfg(test)]
 mod tests {
     use super::*;
+use crate::error::Error;
 
     #[test]
     fn test_crypto_llvm_integration_creation() {

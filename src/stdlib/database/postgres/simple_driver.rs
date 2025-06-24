@@ -8,6 +8,7 @@ use std::time::SystemTime;
 use super::super::{Driver, DriverConn, DatabaseError, DatabaseErrorKind};
 use super::driver::PostgresDriver;
 use super::config::PostgresConnectionString;
+use crate::error::Error;
 
 /// Simple PostgreSQL driver (now redirects to full implementation)
 #[derive(Debug, Clone)]

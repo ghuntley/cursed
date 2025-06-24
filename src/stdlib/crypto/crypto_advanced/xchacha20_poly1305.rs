@@ -454,6 +454,7 @@ pub mod utils {
 mod tests {
     use super::*;
     use rand::thread_rng;
+use crate::error::Error;
 
     #[test]
     fn test_key_generation() {

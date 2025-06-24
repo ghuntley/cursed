@@ -19,6 +19,7 @@ use num_traits::{Zero, One, Pow, Signed, Float, ToPrimitive, FromPrimitive, Num}
 use rand::Rng;
 
 use crate::stdlib::math::{MathError, MathResult};
+use crate::error::Error;
 
 /// Arbitrary-precision integer type
 /// 

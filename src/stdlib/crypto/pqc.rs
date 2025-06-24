@@ -1487,6 +1487,7 @@ pub fn hex_to_bytes(hex: &str) -> PqcResult<Vec<u8>> {
 #[cfg(test)]
 mod tests {
     use super::*;
+use crate::error::Error;
 
     #[test]
     fn test_security_levels() {

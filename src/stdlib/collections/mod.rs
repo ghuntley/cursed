@@ -90,6 +90,7 @@ impl std::error::Error for CollectionsError {}
 #[cfg(test)]
 mod tests {
     use super::*;
+use crate::error::Error;
 
     #[test]
     fn test_collections_error_display() {

@@ -326,6 +326,7 @@ impl std::fmt::Display for StatementStats {
 mod tests {
     use super::*;
     use tokio_postgres::crate::types::Type;
+use crate::error::Error;
 
     #[test]
     fn test_statement_info() {

@@ -15,6 +15,7 @@ use crate::crate::stdlib::errors_simple::CursedError;
 use std::collections::HashMap;
 use std::any::Any;
 use std::panic;
+use crate::error::Error;
 
 /// Error type for Core operations
 pub type CoreError = CursedError;

@@ -2,6 +2,7 @@ use std::time::{SystemTime, UNIX_EPOCH};
 use chrono::{DateTime, Local, Utc, TimeZone};
 use crate::error::CursedError;
 use super::flags::*;
+use crate::error::Error;
 
 /// Format a log entry according to the specified flags
 pub fn format_log_entry(

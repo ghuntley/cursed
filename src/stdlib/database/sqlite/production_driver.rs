@@ -979,6 +979,7 @@ fn convert_rusqlite_value_to_sql_value(row: &rusqlite::Row, index: usize) -> Res
 mod tests {
     use super::*;
     use tempfile::tempdir;
+use crate::error::Error;
 
     #[test]
     fn test_production_connection_creation() {

@@ -4,6 +4,7 @@
 /// All memory management and error handling is done safely through these bindings.
 
 use std::ffi::{CStr, CString};
+use crate::error::Error;
 use std::os::raw::{c_char, c_int, c_uint, c_void};
 use std::ptr;
 

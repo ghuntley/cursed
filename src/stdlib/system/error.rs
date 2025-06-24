@@ -1,5 +1,6 @@
 /// Error handling for system operations
 use std::fmt;
+use crate::error::Error;
 use std::io;
 
 /// Result type for process operations

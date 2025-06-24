@@ -1593,6 +1593,7 @@ mod hex {
 #[cfg(test)]
 mod tests {
     use super::*;
+use crate::error::Error;
 
     #[test]
     fn test_distinguished_name() {

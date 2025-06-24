@@ -4,6 +4,7 @@ use crate::stdlib::time::duration::Duration;
 use crate::stdlib::time::datetime::{DateTime, Instant};
 use std::thread;
 use std::time::{SystemTime, UNIX_EPOCH};
+use crate::error::Error;
 
 /// Sleep for the specified duration
 pub fn sleep(duration: Duration) -> TimeResult<()> {

@@ -8,6 +8,7 @@ use crate::stdlib::squish_core::core::{Reader as SquishReader, Writer as SquishW
 use std::io::{Read, Write, BufWriter, BufReader};
 use flate2::{Compression, GzBuilder, read::GzDecoder, write::GzEncoder};
 use std::time::Instant;
+use crate::error::Error;
 
 /// GZIP reader that decompresses data on read
 pub struct GzipReader<R: Read> {

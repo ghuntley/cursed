@@ -24,6 +24,7 @@ use sha3::{Sha3_256, Shake128, Digest};
 use sha3::digest::{ExtendableOutput, Update, XofReader};
 use crate::stdlib::crypto_pqc::{PqcResult, PqcError, SecurityLevel, AlgorithmType};
 use super::{KeyEncapsulation, ParameterSet, AlgorithmPerformance, KeySizes};
+use crate::error::Error;
 
 /// FrodoKEM parameter sets with real mathematical parameters
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]

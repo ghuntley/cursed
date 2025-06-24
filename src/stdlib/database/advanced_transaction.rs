@@ -693,6 +693,7 @@ impl Default for RetryPolicy {
 mod tests {
     use super::*;
     use tracing_test::traced_test;
+use crate::error::Error;
 
     #[traced_test]
     #[tokio::test]

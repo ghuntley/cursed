@@ -17,6 +17,7 @@ pub mod value;
 // Database
 pub mod database {
     pub mod llvm_integration {
+use crate::error::Error;
         pub use crate::common::ParameterType;
     }
 }

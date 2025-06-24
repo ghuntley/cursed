@@ -15,6 +15,7 @@ pub mod form_data;
 pub mod error;
 pub mod validation;
 pub mod integration;
+use crate::error::Error;
 
 // Re-export main types for convenience
 pub use request::{Request, Method, RequestBuilder};

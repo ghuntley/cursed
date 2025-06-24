@@ -1,4 +1,5 @@
 use std::fmt;
+use crate::error::Error;
 use std::io;
 
 /// File system specific error types

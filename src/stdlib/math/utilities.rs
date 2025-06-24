@@ -3,6 +3,7 @@
 /// Provides advanced mathematical functions including number theory, combinatorics,
 /// special functions, numerical methods, sequences, and modular arithmetic.
 
+use crate::error::Error;
 use crate::stdlib::math::{MathError, MathResult, validate_float, domain_error, range_error, division_by_zero_error, negative_input_error};
 use std::collections::HashMap;
 

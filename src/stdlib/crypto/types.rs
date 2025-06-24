@@ -687,6 +687,7 @@ pub struct KeySizeRecommendations {
 #[cfg(test)]
 mod tests {
     use super::*;
+use crate::error::Error;
 
     #[test]
     fn test_ed25519_key_generation() {

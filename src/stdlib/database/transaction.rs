@@ -4,6 +4,7 @@
 
 use std::sync::{Arc, Mutex};
 use super::{DatabaseError, DatabaseErrorKind, TxOptions, DriverTx};
+use crate::error::Error;
 
 /// fr fr Transaction manager for coordinating database transactions
 #[derive(Debug)]

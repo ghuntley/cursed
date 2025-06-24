@@ -9,6 +9,7 @@ use mysql::{Pool, PooledConn, Conn, OptsBuilder, TxOpts};
 use mysql::prelude::*;
 use super::super::{Driver, DriverConn, DriverStmt, DriverTx, DatabaseError, DatabaseErrorKind, SqlValue, TxOptions};
 use super::super::driver::{QueryResult, ExecuteResult, ConnectionMetadata, DriverCapabilities};
+use crate::error::Error;
 
 /// MySQL error type
 #[derive(Debug, thiserror::Error)]

@@ -734,6 +734,7 @@ fn get_downloads_directory() -> Option<String> {
 #[cfg(test)]
 mod tests {
     use super::*;
+use crate::error::Error;
 
     #[test]
     fn test_system_info_gathering() {

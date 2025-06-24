@@ -493,6 +493,7 @@ pub extern "C" fn cursed_db_rollback(transaction: *mut std::os::raw::c_void) -> 
 /// fr fr Helper functions for type conversion between CURSED and C types
 pub mod type_conversion {
     use super::SqlValue;
+use crate::error::Error;
     
     /// slay Convert CURSED SqlValue to C-compatible representation
     pub fn sql_value_to_c(value: &SqlValue) -> *mut std::os::raw::c_void {

@@ -17,6 +17,7 @@ use crate::codegen::llvm::expression_compiler::{LlvmValue, LlvmType};
 use std::collections::HashMap;
 use std::sync::Arc;
 use tracing::{debug, error, info, instrument, warn};
+use crate::error::Error;
 
 /// LLVM integration for error handling
 pub trait ErrorHandlingCompiler<'ctx> {

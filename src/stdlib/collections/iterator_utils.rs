@@ -659,6 +659,7 @@ mod tests {
     use super::*;
     use crate::stdlib::collections::iterators::{range, VecIterator};
     use crate::stdlib::collections::iterators_simple::{SimpleIterator, SimpleIntoIterator};
+use crate::error::Error;
 
     #[test]
     fn test_partition() {

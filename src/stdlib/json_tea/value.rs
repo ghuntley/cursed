@@ -1,3 +1,6 @@
+use crate::error::Error;
+pub type JsonError = crate::error::Error;
+
 /*!
  * JSON Value Types
  * 

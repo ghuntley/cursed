@@ -7,6 +7,7 @@ use std::sync::{Arc, Mutex};
 use std::io::Write;
 use crate::stdlib::value::Value;
 use crate::error::CursedError;
+use crate::error::Error;
 
 // Re-export main types and functions
 pub use logger::{Logger, new_logger};

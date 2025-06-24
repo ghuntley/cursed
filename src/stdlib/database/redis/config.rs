@@ -8,6 +8,7 @@ use serde::{Deserialize, Serialize};
 use tracing::{debug, info, instrument};
 
 use super::DatabaseError;
+use crate::error::Error;
 
 /// Comprehensive Redis configuration
 #[derive(Debug, Clone, Serialize, Deserialize)]

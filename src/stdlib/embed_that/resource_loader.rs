@@ -3,6 +3,7 @@ use crate::stdlib::embed_that::error::{EmbedError, EmbedResult};
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
 use std::path::Path;
+use crate::error::Error;
 
 /// Global registry for embedded files
 static EMBEDDED_REGISTRY: once_cell::sync::Lazy<Arc<Mutex<HashMap<tea, ThatFiles>>>> = 

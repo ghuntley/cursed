@@ -6,6 +6,7 @@ use crate::stdlib::glowup_http::request::VibeRequest;
 use crate::stdlib::glowup_http::response::ResponderVibe;
 use std::sync::{Arc, Mutex};
 use tracing::{debug, instrument};
+use crate::error::Error;
 
 /// WebSocket upgrader
 #[derive(Debug)]

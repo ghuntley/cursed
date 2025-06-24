@@ -13,6 +13,7 @@
 
 use std::fmt::{self, Display};
 use crate::error::CursedError;
+use crate::error::Error;
 
 /// fr fr Categories of database errors for proper handling
 #[derive(Debug, Clone, PartialEq, Eq)]

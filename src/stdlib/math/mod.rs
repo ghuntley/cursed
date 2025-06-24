@@ -8,6 +8,7 @@
 /// library that's optimized for performance and ease of use.
 
 use std::fmt;
+use crate::error::Error;
 
 // Core mathematical modules
 pub mod basic;

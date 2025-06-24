@@ -7,6 +7,7 @@
 use crate::stdlib::value::Value;
 use std::io::{self, Write, stdout, stderr, stdin, BufRead};
 use std::fmt;
+use crate::error::Error;
 
 /// Print arguments to stdout without a newline
 /// Example: print("Hello", " ", "World")

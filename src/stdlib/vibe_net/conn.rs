@@ -12,6 +12,9 @@ use crate::error::CursedError;
 use super::addr::{AddrVibe, TCPAddrVibe, UDPAddrVibe, UnixAddrVibe};
 use super::error::{NetError, connection_failed_error, timeout_error};
 use super::NetResult;
+use crate::error::Error;
+pub type NetError = crate::error::Error;
+
 
 /// ConnVibe trait represents a generic network connection
 pub trait ConnVibe: Read + Write + Send + Sync {

@@ -3,6 +3,7 @@ use crate::stdlib::io::{IoResult, IoError};
 use std::collections::HashMap;
 use std::io::{Read, Cursor};
 use std::time::SystemTime;
+use crate::error::Error;
 
 /// Core type aliases for CURSED language compatibility
 pub type tea = String;  // String type in CURSED

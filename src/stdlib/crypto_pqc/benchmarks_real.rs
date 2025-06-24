@@ -7,6 +7,7 @@ use std::time::{Instant, Duration};
 use std::collections::HashMap;
 use crate::stdlib::crypto_pqc::{PqcResult, PqcError, SecurityLevel, AlgorithmType, AlgorithmFamily, StandardizationStatus};
 use crate::stdlib::crypto_pqc::algorithms::*;
+use crate::error::Error;
 
 /// Comprehensive benchmark results for a PQC algorithm
 #[derive(Debug, Clone)]

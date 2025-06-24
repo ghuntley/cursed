@@ -18,6 +18,7 @@ pub mod flate;
 pub mod bzip2;
 pub mod lzw;
 pub mod utils;
+use crate::error::Error;
 
 pub use utils::{
     validate_compression_level as is_valid_compression_level,

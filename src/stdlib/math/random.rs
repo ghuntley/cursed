@@ -7,6 +7,7 @@ use rand_chacha::ChaCha20Rng;
 use once_cell::sync::Lazy;
 
 use super::{MathError, MathResult, validate_float, domain_error};
+use crate::error::Error;
 
 /// Thread-safe random number generator
 static RNG: Lazy<Mutex<ChaCha20Rng>> = Lazy::new(|| Mutex::new(ChaCha20Rng::from_entropy()));

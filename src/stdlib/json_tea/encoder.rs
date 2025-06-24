@@ -1,3 +1,4 @@
+use crate::error::Error;
 /*!
  * JSON Encoder
  * 

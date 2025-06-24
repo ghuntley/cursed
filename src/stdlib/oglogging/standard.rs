@@ -39,6 +39,7 @@ use crate::stdlib::value::Value;
 use crate::error::CursedError;
 use super::logger::Logger;
 use super::flags::LstdFlags;
+use crate::error::Error;
 
 /// Global standard logger instance
 /// 

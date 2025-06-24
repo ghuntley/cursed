@@ -698,6 +698,7 @@ pub fn wait_for_changes<P: AsRef<Path>>(path: P, timeout: Duration) -> FsResult<
 #[cfg(test)]
 mod tests {
     use super::*;
+use crate::error::Error;
     use std::fs;
     use std::io::Write;
     

@@ -14,6 +14,7 @@ use std::collections::HashMap;
 use std::sync::{Arc, Mutex, RwLock};
 use std::time::Duration;
 use super::{DatabaseError, DatabaseErrorKind, SqlValue, TxOptions, VibeContext};
+use crate::error::Error;
 
 /// fr fr Result structure for query operations
 #[derive(Debug, Clone)]

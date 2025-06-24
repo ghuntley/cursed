@@ -1238,6 +1238,7 @@ pub fn create_mysql_driver_with_config(config: MySqlConfig) -> ComprehensiveMySq
 #[cfg(test)]
 mod tests {
     use super::*;
+use crate::error::Error;
 
     #[test]
     fn test_mysql_config_default() {

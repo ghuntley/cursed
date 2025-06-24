@@ -23,6 +23,7 @@ use crate::debug::SourceLocation;
 use crate::runtime::channels::{ChannelError, SendResult, ReceiveResult};
 use std::collections::HashMap;
 use tracing::{debug, error, info, instrument, warn};
+use crate::error::Error;
 
 /// LLVM channel operations compiler
 #[derive(Debug)]

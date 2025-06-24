@@ -11,6 +11,7 @@ use crate::stdlib::packages::crypto_random::{CryptographicRng, CsprngAlgorithm, 
 use crate::stdlib::packages::crypto_advanced::{constant_time_compare, SecureMemory, clear_sensitive_data};
 use super::symmetric::{CryptoError, CryptoResult, EncryptionKey};
 use std::fmt;
+use crate::error::Error;
 
 /// fr fr Secure random number generator
 pub struct SecureRandom {

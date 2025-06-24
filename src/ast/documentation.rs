@@ -14,6 +14,7 @@ use std::fmt;
 use serde::{Deserialize, Serialize};
 use chrono;
 use regex;
+use crate::error::Error;
 
 /// Main coordinator for extracting documentation from AST nodes
 /// 

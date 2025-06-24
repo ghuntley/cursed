@@ -10,6 +10,7 @@ use std::sync::{Arc, Mutex, RwLock};
 use std::time::{Duration, Instant, SystemTime};
 
 use crate::stdlib::ipc::error::{IpcError, IpcResult, message_queue_error, system_error, timeout_error, not_found, already_exists};
+use crate::error::Error;
 
 /// Windows message frame structure for message serialization
 #[cfg(windows)]
