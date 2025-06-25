@@ -125,6 +125,13 @@ fn build_minimal_cli() -> Command {
                         .action(ArgAction::SetTrue)
                         .help("Emit LLVM IR instead of object file")
                 )
+                .arg(
+                    Arg::new("executable")
+                        .short('e')
+                        .long("executable")
+                        .action(ArgAction::SetTrue)
+                        .help("Create executable instead of object file")
+                )
         )
 }
 
@@ -294,6 +301,7 @@ slay greet(name) {
 fn handle_compile_command(matches: &clap::ArgMatches) -> Result<(), Error> {
     let file = matches.get_one::<String>("file").unwrap();
     let emit_llvm = matches.get_flag("emit-llvm");
+    let executable = matches.get_flag("executable");
     
     println!("🔥 Compiling CURSED program: {}", file);
     
@@ -314,6 +322,15 @@ fn handle_compile_command(matches: &clap::ArgMatches) -> Result<(), Error> {
         println!("📄 Generating LLVM IR: {}", output);
         cursed::compile_to_llvm_ir(&program, file, output)?;
         println!("✅ LLVM IR generated: {}", output);
+    } else if executable {
+        // Generate executable
+        let output = matches.get_one::<String>("output")
+            .map(|s| s.as_str())
+            .unwrap_or("output");
+            
+        println!("🚀 Compiling to executable: {}", output);
+        cursed::compile_to_executable(&program, file, output)?;
+        println!("✅ Executable generated: {}", output);
     } else {
         // Generate object file
         let output = matches.get_one::<String>("output")
