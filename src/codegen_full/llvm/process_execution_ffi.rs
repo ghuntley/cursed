@@ -18,11 +18,7 @@ use crate::error::CursedError;
 unsafe fn c_str_to_string(ptr: *const c_char) -> Option<String> {
     if ptr.is_null() {
         return None;
-    }
-    
     match CStr::from_ptr(ptr).to_str() {
-        Ok(s) => Some(s.to_string()),
-        Err(_) => None,
     }
 }
 
@@ -32,8 +28,6 @@ unsafe fn c_str_array_to_vec(ptr: *const *const c_char, count: c_int) -> Vec<Str
     
     if ptr.is_null() || count <= 0 {
         return result;
-    }
-    
     for i in 0..count {
         let str_ptr = *ptr.offset(i as isize);
         if let Some(s) = c_str_to_string(str_ptr) {
@@ -42,55 +36,37 @@ unsafe fn c_str_array_to_vec(ptr: *const *const c_char, count: c_int) -> Vec<Str
     }
     
     result
-}
-
 /// Get process manager from raw pointer with safety checks
 unsafe fn get_process_manager(ptr: *mut c_void) -> Option<&'static mut ProcessManager> {
     if ptr.is_null() {
         error!("Process manager pointer is null");
         return None;
-    }
-    
     // Cast to ProcessManager with proper lifetime
     let manager = &mut *(ptr as *mut ProcessManager);
     Some(manager)
-}
-
 /// Execute a process using exec_slay functionality
 /// 
 /// # Safety
 /// All pointer parameters must be valid or null. String pointers must be null-terminated.
 #[no_mangle]
 pub unsafe extern "C" fn cursed_exec_slay(
-    manager_ptr: *mut c_void,
-    command: *const c_char,
-    args_array: *const *const c_char,
-    args_count: c_int,
-    options_ptr: *const c_void,
 ) -> c_int {
     debug!("cursed_exec_slay called");
     
     // Get process manager
     let manager = match get_process_manager(manager_ptr) {
-        Some(m) => m,
-        None => return -1,
-    };
     
     // Get command string
     let command_str = match c_str_to_string(command) {
-        Some(s) => s,
         None => {
             error!("Invalid command string");
             return -1;
         }
-    };
     
     // Get arguments
     let args = c_str_array_to_vec(args_array, args_count);
     
     debug!(
-        command = %command_str,
-        args_count = args.len(),
         "Executing exec_slay command"
     );
     
@@ -103,64 +79,44 @@ pub unsafe extern "C" fn cursed_exec_slay(
         // For now, we'll use default options
         let options = SlayOptions::default();
         slay_cmd = slay_cmd.with_options(options);
-    }
-    
     // Execute the command
     match slay_cmd.run() {
         Ok(exit_code) => {
             info!(
-                command = %command_str,
-                exit_code = exit_code,
                 "exec_slay command completed successfully"
             );
             exit_code
         }
         Err(e) => {
             error!(
-                command = %command_str,
-                error = %e,
                 "exec_slay command failed"
             );
             -1
         }
     }
-}
-
 /// Execute a process using exec_vibez functionality with enhanced features
 /// 
 /// # Safety
 /// All pointer parameters must be valid or null. String pointers must be null-terminated.
 #[no_mangle]
 pub unsafe extern "C" fn cursed_exec_vibez(
-    manager_ptr: *mut c_void,
-    command: *const c_char,
-    args_array: *const *const c_char,
-    args_count: c_int,
-    context_ptr: *const c_void,
 ) -> c_int {
     debug!("cursed_exec_vibez called");
     
     // Get process manager
     let manager = match get_process_manager(manager_ptr) {
-        Some(m) => m,
-        None => return -1,
-    };
     
     // Get command string
     let command_str = match c_str_to_string(command) {
-        Some(s) => s,
         None => {
             error!("Invalid command string");
             return -1;
         }
-    };
     
     // Get arguments
     let args = c_str_array_to_vec(args_array, args_count);
     
     debug!(
-        command = %command_str,
-        args_count = args.len(),
         "Executing exec_vibez command"
     );
     
@@ -173,58 +129,39 @@ pub unsafe extern "C" fn cursed_exec_vibez(
         // For now, we'll use default context
         let context = ProcessContext::default();
         vibez_cmd = vibez_cmd.with_context(context);
-    }
-    
     // Execute the command with vibez enhancements
     match vibez_cmd.run() {
         Ok(exit_code) => {
             info!(
-                command = %command_str,
-                exit_code = exit_code,
                 "exec_vibez command completed successfully"
             );
             exit_code
         }
         Err(e) => {
             error!(
-                command = %command_str,
-                error = %e,
                 "exec_vibez command failed"
             );
             -1
         }
     }
-}
-
 /// Spawn a process with full environment and options support
 /// 
 /// # Safety
 /// All pointer parameters must be valid or null. String pointers must be null-terminated.
 #[no_mangle]
 pub unsafe extern "C" fn cursed_process_spawn(
-    manager_ptr: *mut c_void,
-    command: *const c_char,
-    args_array: *const *const c_char,
-    args_count: c_int,
-    env_array: *const *const c_char,
-    env_count: c_int,
 ) -> c_int {
     debug!("cursed_process_spawn called");
     
     // Get process manager
     let manager = match get_process_manager(manager_ptr) {
-        Some(m) => m,
-        None => return -1,
-    };
     
     // Get command string
     let command_str = match c_str_to_string(command) {
-        Some(s) => s,
         None => {
             error!("Invalid command string");
             return -1;
         }
-    };
     
     // Get arguments
     let args = c_str_array_to_vec(args_array, args_count);
@@ -242,9 +179,6 @@ pub unsafe extern "C" fn cursed_process_spawn(
     }
     
     debug!(
-        command = %command_str,
-        args_count = args.len(),
-        env_count = env_map.len(),
         "Spawning process"
     );
     
@@ -254,16 +188,12 @@ pub unsafe extern "C" fn cursed_process_spawn(
     // Set environment variables
     for (key, value) in env_map {
         slay_cmd = slay_cmd.add_env(&key, &value);
-    }
-    
     // Start the process
     match slay_cmd.start() {
         Ok(()) => {
             if let Some(process) = slay_cmd.process() {
                 let pid = process.pid();
                 info!(
-                    command = %command_str,
-                    pid = pid,
                     "Process spawned successfully"
                 );
                 pid
@@ -274,31 +204,22 @@ pub unsafe extern "C" fn cursed_process_spawn(
         }
         Err(e) => {
             error!(
-                command = %command_str,
-                error = %e,
                 "Failed to spawn process"
             );
             -1
         }
     }
-}
-
 /// Wait for a process to complete and return its exit code
 /// 
 /// # Safety
 /// Process manager pointer must be valid.
 #[no_mangle]
 pub unsafe extern "C" fn cursed_process_wait(
-    manager_ptr: *mut c_void,
-    pid: c_int,
 ) -> c_int {
     debug!(pid = pid, "cursed_process_wait called");
     
     // Get process manager
     let manager = match get_process_manager(manager_ptr) {
-        Some(m) => m,
-        None => return -1,
-    };
     
     // In a real implementation, we would look up the process by PID
     // and wait for it to complete. For now, we simulate this.
@@ -313,25 +234,17 @@ pub unsafe extern "C" fn cursed_process_wait(
             -1
         }
     }
-}
-
 /// Send a signal to a process
 /// 
 /// # Safety
 /// Process manager pointer must be valid.
 #[no_mangle]
 pub unsafe extern "C" fn cursed_process_signal(
-    manager_ptr: *mut c_void,
-    pid: c_int,
-    signal: c_int,
 ) -> c_int {
     debug!(pid = pid, signal = signal, "cursed_process_signal called");
     
     // Get process manager
     let manager = match get_process_manager(manager_ptr) {
-        Some(m) => m,
-        None => return -1,
-    };
     
     match manager.send_signal_to_process(pid as u32, signal) {
         Ok(()) => {
@@ -343,31 +256,22 @@ pub unsafe extern "C" fn cursed_process_signal(
             -1
         }
     }
-}
-
 /// Terminate a process (gracefully or forcefully)
 /// 
 /// # Safety
 /// Process manager pointer must be valid.
 #[no_mangle]
 pub unsafe extern "C" fn cursed_process_terminate(
-    manager_ptr: *mut c_void,
-    pid: c_int,
-    force: bool,
 ) -> c_int {
     debug!(pid = pid, force = force, "cursed_process_terminate called");
     
     // Get process manager
     let manager = match get_process_manager(manager_ptr) {
-        Some(m) => m,
-        None => return -1,
-    };
     
     let result = if force {
         manager.kill_process(pid as u32)
     } else {
         manager.terminate_process(pid as u32)
-    };
     
     match result {
         Ok(()) => {
@@ -379,25 +283,17 @@ pub unsafe extern "C" fn cursed_process_terminate(
             -1
         }
     }
-}
-
 /// Execute a pipeline of commands
 /// 
 /// # Safety
 /// All pointer parameters must be valid or null. String pointers must be null-terminated.
 #[no_mangle]
 pub unsafe extern "C" fn cursed_process_pipeline(
-    manager_ptr: *mut c_void,
-    commands_array: *const *const c_char,
-    commands_count: c_int,
 ) -> *mut c_void {
     debug!(commands_count = commands_count, "cursed_process_pipeline called");
     
     // Get process manager
     let manager = match get_process_manager(manager_ptr) {
-        Some(m) => m,
-        None => return ptr::null_mut(),
-    };
     
     // Get command strings
     let command_strings = c_str_array_to_vec(commands_array, commands_count);
@@ -432,24 +328,17 @@ pub unsafe extern "C" fn cursed_process_pipeline(
             ptr::null_mut()
         }
     }
-}
-
 /// Run a command as a background task
 /// 
 /// # Safety
 /// All pointer parameters must be valid or null.
 #[no_mangle]
 pub unsafe extern "C" fn cursed_background_task(
-    manager_ptr: *mut c_void,
-    command_data: *const c_void,
 ) -> *mut c_void {
     debug!("cursed_background_task called");
     
     // Get process manager
     let manager = match get_process_manager(manager_ptr) {
-        Some(m) => m,
-        None => return ptr::null_mut(),
-    };
     
     // In a real implementation, we would deserialize the command from command_data
     // For now, we'll create a mock background task
@@ -469,26 +358,17 @@ pub unsafe extern "C" fn cursed_background_task(
             ptr::null_mut()
         }
     }
-}
-
 /// Configure I/O redirection for process execution
 /// 
 /// # Safety
 /// All pointer parameters must be valid or null. String pointers must be null-terminated.
 #[no_mangle]
 pub unsafe extern "C" fn cursed_io_redirection(
-    manager_ptr: *mut c_void,
-    stdin_path: *const c_char,
-    stdout_path: *const c_char,
-    stderr_path: *const c_char,
 ) -> *mut c_void {
     debug!("cursed_io_redirection called");
     
     // Get process manager
     let manager = match get_process_manager(manager_ptr) {
-        Some(m) => m,
-        None => return ptr::null_mut(),
-    };
     
     // Get file paths (if provided)
     let stdin_file = c_str_to_string(stdin_path);
@@ -496,9 +376,6 @@ pub unsafe extern "C" fn cursed_io_redirection(
     let stderr_file = c_str_to_string(stderr_path);
     
     debug!(
-        stdin = ?stdin_file,
-        stdout = ?stdout_file,
-        stderr = ?stderr_file,
         "Configuring I/O redirection"
     );
     
@@ -507,23 +384,15 @@ pub unsafe extern "C" fn cursed_io_redirection(
     
     if let Some(stdin) = stdin_file {
         io_config = io_config.stdin_file(&stdin);
-    }
-    
     if let Some(stdout) = stdout_file {
         io_config = io_config.stdout_file(&stdout);
-    }
-    
     if let Some(stderr) = stderr_file {
         io_config = io_config.stderr_file(&stderr);
-    }
-    
     info!("I/O redirection configuration created");
     
     // Return a handle to the I/O configuration
     let config_box = Box::new(io_config);
     Box::into_raw(config_box) as *mut c_void
-}
-
 /// Helper function to clean up allocated handles
 /// 
 /// # Safety
@@ -532,8 +401,6 @@ pub unsafe extern "C" fn cursed_io_redirection(
 pub unsafe extern "C" fn cursed_cleanup_handle(handle: *mut c_void, handle_type: c_int) {
     if handle.is_null() {
         return;
-    }
-    
     match handle_type {
         1 => {
             // Pipeline handle
@@ -554,5 +421,3 @@ pub unsafe extern "C" fn cursed_cleanup_handle(handle: *mut c_void, handle_type:
             warn!(handle_type = handle_type, "Unknown handle type for cleanup");
         }
     }
-}
-

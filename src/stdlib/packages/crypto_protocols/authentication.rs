@@ -16,103 +16,35 @@ pub enum AuthFactor {
     Inherence(Vec<u8>),   // Something you are (biometric)
     Location(String),     // Somewhere you are (IP, GPS)
     Time(SystemTime),     // Some time (time-based constraints)
-}
-
 /// Authentication methods
 #[derive(Debug, Clone, PartialEq)]
 pub enum AuthMethod {
-    Password,
-    Certificate,
     TOTP,              // Time-based One-Time Password
     HOTP,              // HMAC-based One-Time Password
-    Biometric,
-    SmartCard,
-    OAuth2,
-    SAML,
-    Kerberos,
-    PublicKey,
-}
-
 /// Multi-factor authentication configuration
 #[derive(Debug, Clone)]
 pub struct MfaConfig {
-    pub required_factors: Vec<AuthMethod>,
-    pub optional_factors: Vec<AuthMethod>,
-    pub minimum_factors: usize,
-    pub session_timeout: Duration,
-    pub lockout_threshold: usize,
-    pub lockout_duration: Duration,
-}
-
 /// Authentication challenge
 #[derive(Debug, Clone)]
 pub struct AuthChallenge {
-    pub challenge_id: String,
-    pub method: AuthMethod,
-    pub challenge_data: Vec<u8>,
-    pub created_at: SystemTime,
-    pub expires_at: SystemTime,
-    pub attempts: usize,
-}
-
 /// Authentication session
 #[derive(Debug, Clone)]
 pub struct AuthSession {
-    pub session_id: String,
-    pub user_id: String,
-    pub authenticated_factors: Vec<AuthMethod>,
-    pub required_factors: Vec<AuthMethod>,
-    pub created_at: SystemTime,
-    pub last_activity: SystemTime,
-    pub expires_at: SystemTime,
-    pub is_complete: bool,
-}
-
 /// Authentication result
 #[derive(Debug, Clone)]
 pub struct AuthResult {
-    pub success: bool,
-    pub session_id: Option<String>,
-    pub user_id: String,
-    pub factors_completed: Vec<AuthMethod>,
-    pub factors_remaining: Vec<AuthMethod>,
-    pub next_challenge: Option<AuthChallenge>,
-    pub error_message: Option<String>,
-}
-
 /// Multi-factor authentication manager
 #[derive(Debug)]
 pub struct AuthenticationManager {
-    sessions: Arc<Mutex<HashMap<String, AuthSession>>>,
-    challenges: Arc<Mutex<HashMap<String, AuthChallenge>>>,
-    failed_attempts: Arc<Mutex<HashMap<String, (usize, SystemTime)>>>,
-    secure_random: SecureRandom,
-    hash_manager: HashRegistry,
-    default_config: MfaConfig,
-}
-
 impl AuthenticationManager {
     /// Create new authentication manager
     pub fn new() -> AdvancedCryptoResult<Self> {
         let default_config = MfaConfig {
-            required_factors: vec![AuthMethod::Password],
-            optional_factors: vec![AuthMethod::TOTP, AuthMethod::Certificate],
-            minimum_factors: 1,
             session_timeout: Duration::from_secs(3600), // 1 hour
-            lockout_threshold: 5,
             lockout_duration: Duration::from_secs(900), // 15 minutes
-        };
 
         Ok(Self {
-            sessions: Arc::new(Mutex::new(HashMap::new())),
-            challenges: Arc::new(Mutex::new(HashMap::new())),
-            failed_attempts: Arc::new(Mutex::new(HashMap::new())),
-            secure_random: SecureRandom::new()?,
-            hash_manager: HashRegistry::new()?,
-            default_config,
         })
-    }
-
     /// Start authentication process
     pub fn start_authentication(&self, user_id: &str, config: Option<MfaConfig>) -> AdvancedCryptoResult<AuthResult> {
         let config = config.unwrap_or_else(|| self.default_config.clone());
@@ -120,37 +52,17 @@ impl AuthenticationManager {
         // Check if user is locked out
         if self.is_user_locked_out(user_id)? {
             return Ok(AuthResult {
-                success: false,
-                session_id: None,
-                user_id: user_id.to_string(),
-                factors_completed: vec![],
-                factors_remaining: vec![],
-                next_challenge: None,
-                error_message: Some("User account is temporarily locked".to_string()),
             });
-        }
-
         let session_id = self.generate_session_id()?;
         let now = SystemTime::now();
         
         let session = AuthSession {
-            session_id: session_id.clone(),
-            user_id: user_id.to_string(),
-            authenticated_factors: vec![],
-            required_factors: config.required_factors.clone(),
-            created_at: now,
-            last_activity: now,
-            expires_at: now + config.session_timeout,
-            is_complete: false,
-        };
 
         {
             let mut sessions = self.sessions.lock().map_err(|_| {
                 CursedError::system_error("Failed to acquire sessions lock".to_string())
             })?;
             sessions.insert(session_id.clone(), session);
-        }
-
         // Create first challenge
         let first_method = config.required_factors.first().cloned()
             .unwrap_or(AuthMethod::Password);
@@ -158,16 +70,7 @@ impl AuthenticationManager {
         let challenge = self.create_challenge(&session_id, first_method)?;
 
         Ok(AuthResult {
-            success: false,
-            session_id: Some(session_id),
-            user_id: user_id.to_string(),
-            factors_completed: vec![],
-            factors_remaining: config.required_factors,
-            next_challenge: Some(challenge),
-            error_message: None,
         })
-    }
-
     /// Respond to authentication challenge
     pub fn respond_to_challenge(&self, challenge_id: &str, response: &[u8]) -> AdvancedCryptoResult<AuthResult> {
         let challenge = {
@@ -178,13 +81,10 @@ impl AuthenticationManager {
             challenges.remove(challenge_id).ok_or_else(|| {
                 CursedError::runtime_error("Challenge not found or expired".to_string())
             })?
-        };
 
         // Check if challenge has expired
         if SystemTime::now() > challenge.expires_at {
             return Err(CursedError::runtime_error("Challenge has expired".to_string()));
-        }
-
         // Find associated session
         let session_id = self.find_session_for_challenge(&challenge)?;
         
@@ -196,7 +96,6 @@ impl AuthenticationManager {
             sessions.get_mut(&session_id).ok_or_else(|| {
                 CursedError::runtime_error("Session not found".to_string())
             })?.clone()
-        };
 
         // Verify challenge response
         let verification_result = self.verify_challenge_response(&challenge, response)?;
@@ -221,36 +120,19 @@ impl AuthenticationManager {
                     CursedError::system_error("Failed to acquire sessions lock".to_string())
                 })?;
                 sessions.insert(session_id.clone(), session.clone());
-            }
-
             // Create next challenge if needed
             let next_challenge = if !is_complete && !session.required_factors.is_empty() {
                 Some(self.create_challenge(&session_id, session.required_factors[0].clone())?)
             } else {
                 None
-            };
 
             Ok(AuthResult {
-                success: is_complete,
-                session_id: Some(session_id),
-                user_id: session.user_id,
-                factors_completed: session.authenticated_factors,
-                factors_remaining: session.required_factors,
-                next_challenge,
-                error_message: None,
             })
         } else {
             // Authentication failed
             self.record_failed_attempt(&session.user_id)?;
             
             Ok(AuthResult {
-                success: false,
-                session_id: Some(session_id),
-                user_id: session.user_id,
-                factors_completed: session.authenticated_factors,
-                factors_remaining: session.required_factors,
-                next_challenge: None,
-                error_message: Some("Authentication failed".to_string()),
             })
         }
     }
@@ -275,8 +157,6 @@ impl AuthenticationManager {
         })?;
         
         Ok(sessions.get(session_id).cloned())
-    }
-
     /// Generate TOTP code
     pub fn generate_totp(&self, secret: &[u8], time_step: Option<u64>) -> AdvancedCryptoResult<String> {
         let time_step = time_step.unwrap_or(30); // Default 30 second step
@@ -287,8 +167,6 @@ impl AuthenticationManager {
         
         let counter = current_time / time_step;
         self.generate_hotp(secret, counter)
-    }
-
     /// Generate HOTP code
     pub fn generate_hotp(&self, secret: &[u8], counter: u64) -> AdvancedCryptoResult<String> {
         use sha1::{Sha1, Digest};
@@ -311,8 +189,6 @@ impl AuthenticationManager {
         
         let otp = code % 1_000_000;
         Ok(format!("{:06}", otp))
-    }
-
     /// Verify TOTP code
     pub fn verify_totp(&self, secret: &[u8], code: &str, window: Option<u32>) -> AdvancedCryptoResult<bool> {
         let window = window.unwrap_or(1); // Allow ±1 time step by default
@@ -336,8 +212,6 @@ impl AuthenticationManager {
         }
         
         Ok(false)
-    }
-
     /// Clean up expired sessions and challenges
     pub fn cleanup_expired(&self) -> AdvancedCryptoResult<(usize, usize)> {
         let now = SystemTime::now();
@@ -349,7 +223,6 @@ impl AuthenticationManager {
             let initial_count = sessions.len();
             sessions.retain(|_, session| session.expires_at > now);
             initial_count - sessions.len()
-        };
         
         let challenges_cleaned = {
             let mut challenges = self.challenges.lock().map_err(|_| {
@@ -358,67 +231,45 @@ impl AuthenticationManager {
             let initial_count = challenges.len();
             challenges.retain(|_, challenge| challenge.expires_at > now);
             initial_count - challenges.len()
-        };
         
         Ok((sessions_cleaned, challenges_cleaned))
-    }
-
     // Private helper methods
 
     fn generate_session_id(&self) -> AdvancedCryptoResult<String> {
         let random_bytes = self.secure_random.generate_bytes(16)?;
         Ok(hex::encode(random_bytes))
-    }
-
     fn create_challenge(&self, session_id: &str, method: AuthMethod) -> AdvancedCryptoResult<AuthChallenge> {
         let challenge_id = self.generate_session_id()?;
         let challenge_data = self.generate_challenge_data(&method)?;
         let now = SystemTime::now();
         
         let challenge = AuthChallenge {
-            challenge_id: challenge_id.clone(),
-            method,
-            challenge_data,
-            created_at: now,
             expires_at: now + Duration::from_secs(300), // 5 minutes
-            attempts: 0,
-        };
         
         {
             let mut challenges = self.challenges.lock().map_err(|_| {
                 CursedError::system_error("Failed to acquire challenges lock".to_string())
             })?;
             challenges.insert(challenge_id, challenge.clone());
-        }
-        
         Ok(challenge)
-    }
-
     fn generate_challenge_data(&self, method: &AuthMethod) -> AdvancedCryptoResult<Vec<u8>> {
         match method {
-            AuthMethod::Password => Ok(b"Enter password".to_vec()),
             AuthMethod::TOTP => {
                 let nonce = self.secure_random.generate_bytes(16)?;
                 Ok(nonce)
-            },
-            AuthMethod::Certificate => Ok(b"Present certificate".to_vec()),
             AuthMethod::Biometric => {
                 let challenge = self.secure_random.generate_bytes(32)?;
                 Ok(challenge)
-            },
             _ => {
                 let generic_challenge = self.secure_random.generate_bytes(16)?;
                 Ok(generic_challenge)
             }
         }
-    }
-
     fn verify_challenge_response(&self, challenge: &AuthChallenge, response: &[u8]) -> AdvancedCryptoResult<bool> {
         match challenge.method {
             AuthMethod::Password => {
                 // In real implementation, would hash and compare with stored hash
                 Ok(!response.is_empty())
-            },
             AuthMethod::TOTP => {
                 // In real implementation, would verify TOTP code
                 if let Ok(code) = std::str::from_utf8(response) {
@@ -426,12 +277,9 @@ impl AuthenticationManager {
                 } else {
                     Ok(false)
                 }
-            },
             AuthMethod::Certificate => {
                 // In real implementation, would verify certificate
                 Ok(response.len() > 100) // Simplified check
-            },
-            _ => Ok(!response.is_empty()),
         }
     }
 
@@ -462,8 +310,6 @@ impl AuthenticationManager {
         }
         
         Ok(false)
-    }
-
     fn record_failed_attempt(&self, user_id: &str) -> AdvancedCryptoResult<()> {
         let mut failed_attempts = self.failed_attempts.lock().map_err(|_| {
             CursedError::system_error("Failed to acquire failed attempts lock".to_string())
@@ -485,17 +331,5 @@ impl Default for AuthenticationManager {
 impl fmt::Display for AuthMethod {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            AuthMethod::Password => write!(f, "Password"),
-            AuthMethod::Certificate => write!(f, "Certificate"),
-            AuthMethod::TOTP => write!(f, "TOTP"),
-            AuthMethod::HOTP => write!(f, "HOTP"),
-            AuthMethod::Biometric => write!(f, "Biometric"),
-            AuthMethod::SmartCard => write!(f, "Smart Card"),
-            AuthMethod::OAuth2 => write!(f, "OAuth 2.0"),
-            AuthMethod::SAML => write!(f, "SAML"),
-            AuthMethod::Kerberos => write!(f, "Kerberos"),
-            AuthMethod::PublicKey => write!(f, "Public Key"),
         }
     }
-}
-

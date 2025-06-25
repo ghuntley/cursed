@@ -28,55 +28,31 @@ use super::{DigitalSignature, ParameterSet, AlgorithmPerformance, KeySizes};
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum SphincsPlusParameterSet {
     /// SPHINCS+-128s (Small signatures, NIST Level 1)
-    Sphincs128s,
     /// SPHINCS+-192s (Small signatures, NIST Level 3)
-    Sphincs192s,
     /// SPHINCS+-256s (Small signatures, NIST Level 5)
-    Sphincs256s,
     /// SPHINCS+-128f (Fast signing, NIST Level 1)
-    Sphincs128f,
     /// SPHINCS+-192f (Fast signing, NIST Level 3)
-    Sphincs192f,
     /// SPHINCS+-256f (Fast signing, NIST Level 5)
-    Sphincs256f,
-}
-
 impl ParameterSet for SphincsPlusParameterSet {
     fn security_level(&self) -> SecurityLevel {
         match self {
-            SphincsPlusParameterSet::Sphincs128s | SphincsPlusParameterSet::Sphincs128f => SecurityLevel::Level1,
-            SphincsPlusParameterSet::Sphincs192s | SphincsPlusParameterSet::Sphincs192f => SecurityLevel::Level3,
-            SphincsPlusParameterSet::Sphincs256s | SphincsPlusParameterSet::Sphincs256f => SecurityLevel::Level5,
         }
     }
 
     fn public_key_size(&self) -> usize {
         match self {
-            SphincsPlusParameterSet::Sphincs128s | SphincsPlusParameterSet::Sphincs128f => 32,
-            SphincsPlusParameterSet::Sphincs192s | SphincsPlusParameterSet::Sphincs192f => 48,
-            SphincsPlusParameterSet::Sphincs256s | SphincsPlusParameterSet::Sphincs256f => 64,
         }
     }
 
     fn secret_key_size(&self) -> usize {
         match self {
-            SphincsPlusParameterSet::Sphincs128s | SphincsPlusParameterSet::Sphincs128f => 64,
-            SphincsPlusParameterSet::Sphincs192s | SphincsPlusParameterSet::Sphincs192f => 96,
-            SphincsPlusParameterSet::Sphincs256s | SphincsPlusParameterSet::Sphincs256f => 128,
         }
     }
 
     fn additional_sizes(&self) -> Vec<(&'static str, usize)> {
         let signature_size = match self {
             // Small signature variants (s)
-            SphincsPlusParameterSet::Sphincs128s => 7856,
-            SphincsPlusParameterSet::Sphincs192s => 16224,
-            SphincsPlusParameterSet::Sphincs256s => 29792,
             // Fast signature variants (f)
-            SphincsPlusParameterSet::Sphincs128f => 17088,
-            SphincsPlusParameterSet::Sphincs192f => 35664,
-            SphincsPlusParameterSet::Sphincs256f => 49856,
-        };
         vec![("signature", signature_size)]
     }
 }
@@ -84,48 +60,26 @@ impl ParameterSet for SphincsPlusParameterSet {
 impl fmt::Display for SphincsPlusParameterSet {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            SphincsPlusParameterSet::Sphincs128s => write!(f, "SPHINCS+-128s"),
-            SphincsPlusParameterSet::Sphincs192s => write!(f, "SPHINCS+-192s"),
-            SphincsPlusParameterSet::Sphincs256s => write!(f, "SPHINCS+-256s"),
-            SphincsPlusParameterSet::Sphincs128f => write!(f, "SPHINCS+-128f"),
-            SphincsPlusParameterSet::Sphincs192f => write!(f, "SPHINCS+-192f"),
-            SphincsPlusParameterSet::Sphincs256f => write!(f, "SPHINCS+-256f"),
         }
     }
-}
-
 impl SphincsPlusParameterSet {
     /// Check if this is a small signature variant
     pub fn is_small_signature(&self) -> bool {
-        matches!(self, 
             SphincsPlusParameterSet::Sphincs128s |
             SphincsPlusParameterSet::Sphincs192s |
             SphincsPlusParameterSet::Sphincs256s
         )
-    }
-
     /// Check if this is a fast signature variant
     pub fn is_fast_signature(&self) -> bool {
         !self.is_small_signature()
-    }
-
     /// Get the hash function size for this parameter set
     pub fn hash_size(&self) -> usize {
         match self {
-            SphincsPlusParameterSet::Sphincs128s | SphincsPlusParameterSet::Sphincs128f => 32,
-            SphincsPlusParameterSet::Sphincs192s | SphincsPlusParameterSet::Sphincs192f => 48,
-            SphincsPlusParameterSet::Sphincs256s | SphincsPlusParameterSet::Sphincs256f => 64,
         }
     }
-}
-
 /// SPHINCS+ public key
 #[derive(Debug, Clone)]
 pub struct SphincsPlusPublicKey {
-    pub parameter_set: SphincsPlusParameterSet,
-    pub key_data: Vec<u8>,
-}
-
 impl SphincsPlusPublicKey {
     /// Create a new SPHINCS+ public key
     pub fn new(parameter_set: SphincsPlusParameterSet, key_data: Vec<u8>) -> PqcResult<Self> {
@@ -136,18 +90,12 @@ impl SphincsPlusPublicKey {
             ));
         }
         Ok(Self { parameter_set, key_data })
-    }
-
     /// Get the parameter set
     pub fn parameter_set(&self) -> SphincsPlusParameterSet {
         self.parameter_set
-    }
-
     /// Get the key data
     pub fn as_bytes(&self) -> &[u8] {
         &self.key_data
-    }
-
     /// Get the security level
     pub fn security_level(&self) -> SecurityLevel {
         self.parameter_set.security_level()
@@ -157,10 +105,6 @@ impl SphincsPlusPublicKey {
 /// SPHINCS+ secret key
 #[derive(Debug, Clone)]
 pub struct SphincsPlusSecretKey {
-    pub parameter_set: SphincsPlusParameterSet,
-    pub key_data: Vec<u8>,
-}
-
 impl SphincsPlusSecretKey {
     /// Create a new SPHINCS+ secret key
     pub fn new(parameter_set: SphincsPlusParameterSet, key_data: Vec<u8>) -> PqcResult<Self> {
@@ -171,18 +115,12 @@ impl SphincsPlusSecretKey {
             ));
         }
         Ok(Self { parameter_set, key_data })
-    }
-
     /// Get the parameter set
     pub fn parameter_set(&self) -> SphincsPlusParameterSet {
         self.parameter_set
-    }
-
     /// Get the key data
     pub fn as_bytes(&self) -> &[u8] {
         &self.key_data
-    }
-
     /// Get the security level
     pub fn security_level(&self) -> SecurityLevel {
         self.parameter_set.security_level()
@@ -192,10 +130,6 @@ impl SphincsPlusSecretKey {
 /// SPHINCS+ signature
 #[derive(Debug, Clone)]
 pub struct SphincsPlusSignature {
-    pub parameter_set: SphincsPlusParameterSet,
-    pub data: Vec<u8>,
-}
-
 impl SphincsPlusSignature {
     /// Create a new SPHINCS+ signature
     pub fn new(parameter_set: SphincsPlusParameterSet, data: Vec<u8>) -> PqcResult<Self> {
@@ -211,13 +145,9 @@ impl SphincsPlusSignature {
             ));
         }
         Ok(Self { parameter_set, data })
-    }
-
     /// Get the signature data
     pub fn as_bytes(&self) -> &[u8] {
         &self.data
-    }
-
     /// Get the parameter set
     pub fn parameter_set(&self) -> SphincsPlusParameterSet {
         self.parameter_set
@@ -234,14 +164,8 @@ impl DigitalSignature for SphincsPlusSignature_ {
 
     fn keygen(security_level: SecurityLevel) -> PqcResult<(Self::PublicKey, Self::SecretKey)> {
         let parameter_set = match security_level {
-            SecurityLevel::Level1 => SphincsPlusParameterSet::Sphincs128s,
-            SecurityLevel::Level3 => SphincsPlusParameterSet::Sphincs192s,
-            SecurityLevel::Level5 => SphincsPlusParameterSet::Sphincs256s,
-        };
 
         Self::keygen_with_params(parameter_set)
-    }
-
     fn sign(secret_key: &Self::SecretKey, message: &[u8]) -> PqcResult<Self::Signature> {
         // In a real implementation, this would use the actual SPHINCS+ signing algorithm
         // For now, we'll use a placeholder that demonstrates the API structure
@@ -267,23 +191,17 @@ impl DigitalSignature for SphincsPlusSignature_ {
             
             // Generate next hash round
             current_hash = Self::hash_with_counter(&current_hash, signature_data.len(), hash_size)?;
-        }
-        
         // Truncate to exact signature size
         signature_data.truncate(signature_size);
 
         let signature = SphincsPlusSignature::new(parameter_set, signature_data)?;
         Ok(signature)
-    }
-
     fn verify(public_key: &Self::PublicKey, message: &[u8], signature: &Self::Signature) -> PqcResult<bool> {
         // Validate parameter set compatibility
         if public_key.parameter_set != signature.parameter_set {
             return Err(PqcError::ParameterValidation(
                 "Mismatched parameter sets between public key and signature".to_string()
             ));
-        }
-
         // In a real implementation, this would use the actual SPHINCS+ verification algorithm
         // For now, we'll use a placeholder that demonstrates the API structure
         
@@ -296,8 +214,6 @@ impl DigitalSignature for SphincsPlusSignature_ {
         // Check if signature starts with expected pattern
         let signature_start = &signature.data[..hash_size.min(signature.data.len())];
         Ok(signature_start == expected_start.as_slice())
-    }
-
     fn algorithm_type() -> AlgorithmType {
         AlgorithmType::Sphincs
     }
@@ -325,30 +241,16 @@ impl SphincsPlusSignature_ {
         let secret_key = SphincsPlusSecretKey::new(params, sec_key_data)?;
 
         Ok((public_key, secret_key))
-    }
-
     /// Generate a key pair optimized for fast signing
     pub fn keygen_fast(security_level: SecurityLevel) -> PqcResult<(SphincsPlusPublicKey, SphincsPlusSecretKey)> {
         let parameter_set = match security_level {
-            SecurityLevel::Level1 => SphincsPlusParameterSet::Sphincs128f,
-            SecurityLevel::Level3 => SphincsPlusParameterSet::Sphincs192f,
-            SecurityLevel::Level5 => SphincsPlusParameterSet::Sphincs256f,
-        };
 
         Self::keygen_with_params(parameter_set)
-    }
-
     /// Generate a key pair optimized for small signatures
     pub fn keygen_small(security_level: SecurityLevel) -> PqcResult<(SphincsPlusPublicKey, SphincsPlusSecretKey)> {
         let parameter_set = match security_level {
-            SecurityLevel::Level1 => SphincsPlusParameterSet::Sphincs128s,
-            SecurityLevel::Level3 => SphincsPlusParameterSet::Sphincs192s,
-            SecurityLevel::Level5 => SphincsPlusParameterSet::Sphincs256s,
-        };
 
         Self::keygen_with_params(parameter_set)
-    }
-
     /// Derive public key from secret key material
     fn derive_public_key(secret_key: &[u8], pub_key_size: usize, hash_size: usize) -> PqcResult<Vec<u8>> {
         let mut pub_key_data = Vec::with_capacity(pub_key_size);
@@ -365,8 +267,6 @@ impl SphincsPlusSignature_ {
         }
         
         Ok(pub_key_data)
-    }
-
     /// Hash message with secret key
     fn hash_message_with_key(secret_key: &SphincsPlusSecretKey, message: &[u8], hash_size: usize) -> PqcResult<Vec<u8>> {
         let key_material = &secret_key.key_data[..hash_size.min(secret_key.key_data.len())];
@@ -377,21 +277,17 @@ impl SphincsPlusSignature_ {
                 hasher.update(key_material);
                 hasher.update(message);
                 Ok(hasher.finalize().to_vec())
-            },
             48 => {
                 let mut hasher = Sha3_512::new();
                 hasher.update(key_material);
                 hasher.update(message);
                 let result = hasher.finalize();
                 Ok(result[..48].to_vec())
-            },
             64 => {
                 let mut hasher = Sha3_512::new();
                 hasher.update(key_material);
                 hasher.update(message);
                 Ok(hasher.finalize().to_vec())
-            },
-            _ => Err(PqcError::UnsupportedParameters(format!("Unsupported hash size: {}", hash_size))),
         }
     }
 
@@ -403,21 +299,17 @@ impl SphincsPlusSignature_ {
                 hasher.update(&public_key.key_data);
                 hasher.update(message);
                 Ok(hasher.finalize().to_vec())
-            },
             48 => {
                 let mut hasher = Sha3_512::new();
                 hasher.update(&public_key.key_data);
                 hasher.update(message);
                 let result = hasher.finalize();
                 Ok(result[..48].to_vec())
-            },
             64 => {
                 let mut hasher = Sha3_512::new();
                 hasher.update(&public_key.key_data);
                 hasher.update(message);
                 Ok(hasher.finalize().to_vec())
-            },
-            _ => Err(PqcError::UnsupportedParameters(format!("Unsupported hash size: {}", hash_size))),
         }
     }
 
@@ -428,19 +320,15 @@ impl SphincsPlusSignature_ {
                 let mut hasher = Sha3_256::new();
                 hasher.update(data);
                 Ok(hasher.finalize().to_vec())
-            },
             48 => {
                 let mut hasher = Sha3_512::new();
                 hasher.update(data);
                 let result = hasher.finalize();
                 Ok(result[..48].to_vec())
-            },
             64 => {
                 let mut hasher = Sha3_512::new();
                 hasher.update(data);
                 Ok(hasher.finalize().to_vec())
-            },
-            _ => Err(PqcError::UnsupportedParameters(format!("Unsupported hash size: {}", hash_size))),
         }
     }
 
@@ -454,21 +342,17 @@ impl SphincsPlusSignature_ {
                 hasher.update(data);
                 hasher.update(&counter_bytes);
                 Ok(hasher.finalize().to_vec())
-            },
             48 => {
                 let mut hasher = Sha3_512::new();
                 hasher.update(data);
                 hasher.update(&counter_bytes);
                 let result = hasher.finalize();
                 Ok(result[..48].to_vec())
-            },
             64 => {
                 let mut hasher = Sha3_512::new();
                 hasher.update(data);
                 hasher.update(&counter_bytes);
                 Ok(hasher.finalize().to_vec())
-            },
-            _ => Err(PqcError::UnsupportedParameters(format!("Unsupported hash size: {}", hash_size))),
         }
     }
 
@@ -477,28 +361,15 @@ impl SphincsPlusSignature_ {
         // These are approximate performance characteristics for reference
         let (keygen_ms, sign_ms, verify_ms, sign_throughput, verify_throughput) = match params {
             // Small signature variants (slower signing, smaller sigs)
-            SphincsPlusParameterSet::Sphincs128s => (1.0, 50.0, 1.0, 20.0, 1000.0),
-            SphincsPlusParameterSet::Sphincs192s => (2.0, 100.0, 2.0, 10.0, 500.0),
-            SphincsPlusParameterSet::Sphincs256s => (5.0, 200.0, 5.0, 5.0, 200.0),
             // Fast signature variants (faster signing, larger sigs)
-            SphincsPlusParameterSet::Sphincs128f => (1.0, 10.0, 1.0, 100.0, 1000.0),
-            SphincsPlusParameterSet::Sphincs192f => (2.0, 20.0, 2.0, 50.0, 500.0),
-            SphincsPlusParameterSet::Sphincs256f => (5.0, 40.0, 5.0, 25.0, 200.0),
-        };
 
         AlgorithmPerformance {
-            keygen_time_ms: keygen_ms,
             operation_time_ms: (sign_ms + verify_ms) / 2.0,
             key_sizes: KeySizes {
-                public_key: params.public_key_size(),
-                secret_key: params.secret_key_size(),
                 ciphertext_or_signature: params.additional_sizes()
                     .iter()
                     .find(|(name, _)| *name == "signature")
                     .map(|(_, size)| *size)
-                    .unwrap_or(0),
-                shared_secret: None,
-            },
             throughput_ops_per_sec: (sign_throughput + verify_throughput) / 2.0,
         }
     }
@@ -506,28 +377,12 @@ impl SphincsPlusSignature_ {
     /// Get all supported parameter sets
     pub fn supported_parameter_sets() -> Vec<SphincsPlusParameterSet> {
         vec![
-            SphincsPlusParameterSet::Sphincs128s,
-            SphincsPlusParameterSet::Sphincs192s,
-            SphincsPlusParameterSet::Sphincs256s,
-            SphincsPlusParameterSet::Sphincs128f,
-            SphincsPlusParameterSet::Sphincs192f,
-            SphincsPlusParameterSet::Sphincs256f,
         ]
-    }
-
     /// Get the recommended parameter set for a security level and optimization goal
     pub fn recommended_params(security_level: SecurityLevel, optimize_for_size: bool) -> SphincsPlusParameterSet {
         match (security_level, optimize_for_size) {
-            (SecurityLevel::Level1, true) => SphincsPlusParameterSet::Sphincs128s,
-            (SecurityLevel::Level1, false) => SphincsPlusParameterSet::Sphincs128f,
-            (SecurityLevel::Level3, true) => SphincsPlusParameterSet::Sphincs192s,
-            (SecurityLevel::Level3, false) => SphincsPlusParameterSet::Sphincs192f,
-            (SecurityLevel::Level5, true) => SphincsPlusParameterSet::Sphincs256s,
-            (SecurityLevel::Level5, false) => SphincsPlusParameterSet::Sphincs256f,
         }
     }
-}
-
 // Type alias for easier use
 pub type SphincsPlusAlgorithm = SphincsPlusSignature_;
 

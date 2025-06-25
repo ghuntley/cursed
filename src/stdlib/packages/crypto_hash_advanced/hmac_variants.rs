@@ -10,61 +10,33 @@ pub type HmacResult<T> = std::result::Result<T, CryptoError>;
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum HmacVariant {
     /// HMAC with SHA-256
-    HmacSha256,
     /// HMAC with SHA-512
-    HmacSha512,
     /// HMAC with SHA-3-256
-    HmacSha3_256,
     /// HMAC with SHA-3-512
-    HmacSha3_512,
     /// HMAC with BLAKE3
-    HmacBlake3,
     /// HMAC with Keccak-256
-    HmacKeccak256,
-}
-
 impl HmacVariant {
     pub fn name(&self) -> &'static str {
         match self {
-            HmacVariant::HmacSha256 => "HMAC-SHA256",
-            HmacVariant::HmacSha512 => "HMAC-SHA512",
-            HmacVariant::HmacSha3_256 => "HMAC-SHA3-256",
-            HmacVariant::HmacSha3_512 => "HMAC-SHA3-512",
-            HmacVariant::HmacBlake3 => "HMAC-BLAKE3",
-            HmacVariant::HmacKeccak256 => "HMAC-Keccak256",
         }
     }
     
     pub fn digest_size(&self) -> usize {
         match self {
             HmacVariant::HmacSha256 | HmacVariant::HmacSha3_256 | 
-            HmacVariant::HmacBlake3 | HmacVariant::HmacKeccak256 => 32,
-            HmacVariant::HmacSha512 | HmacVariant::HmacSha3_512 => 64,
         }
     }
     
     pub fn block_size(&self) -> usize {
         match self {
-            HmacVariant::HmacSha256 | HmacVariant::HmacBlake3 => 64,
-            HmacVariant::HmacSha512 => 128,
             HmacVariant::HmacSha3_256 => 136,  // SHA-3-256 rate
             HmacVariant::HmacSha3_512 => 72,   // SHA-3-512 rate
             HmacVariant::HmacKeccak256 => 136, // Keccak-256 rate
         }
     }
-}
-
 /// Generic HMAC implementation supporting multiple hash functions
 #[derive(Debug, Clone)]
 pub struct HmacEngine<H: Hasher + Clone> {
-    hasher: H,
-    variant: HmacVariant,
-    key: Vec<u8>,
-    inner_key: Vec<u8>,
-    outer_key: Vec<u8>,
-    block_size: usize,
-}
-
 impl<H: Hasher + Clone> HmacEngine<H> {
     /// Create HMAC engine with specified hash function
     pub fn new(hasher: H, variant: HmacVariant, key: &[u8]) -> HmacResult<Self> {
@@ -76,7 +48,6 @@ impl<H: Hasher + Clone> HmacEngine<H> {
             hasher.clone().hash(key)
         } else {
             key.to_vec()
-        };
         
         // Pad key to block size
         let mut padded_key = processed_key;
@@ -88,22 +59,10 @@ impl<H: Hasher + Clone> HmacEngine<H> {
         
         for byte in &mut inner_key {
             *byte ^= 0x36; // ipad
-        }
-        
         for byte in &mut outer_key {
             *byte ^= 0x5c; // opad
-        }
-        
         Ok(Self {
-            hasher,
-            variant,
-            key: key.to_vec(),
-            inner_key,
-            outer_key,
-            block_size,
         })
-    }
-    
     /// Compute HMAC for given data
     pub fn compute(&self, data: &[u8]) -> Vec<u8> {
         // Inner hash: H(K_inner || message)
@@ -117,19 +76,13 @@ impl<H: Hasher + Clone> HmacEngine<H> {
         outer_hasher.update(&self.outer_key);
         outer_hasher.update(&inner_hash);
         outer_hasher.finalize()
-    }
-    
     /// Verify HMAC against expected value
     pub fn verify(&self, data: &[u8], expected_mac: &[u8]) -> bool {
         let computed_mac = self.compute(data);
         constant_time_eq(&computed_mac, expected_mac)
-    }
-    
     /// Get the variant name
     pub fn variant_name(&self) -> &'static str {
         self.variant.name()
-    }
-    
     /// Change the key
     pub fn set_key(&mut self, key: &[u8]) -> HmacResult<()> {
         *self = Self::new(self.hasher.clone(), self.variant, key)?;
@@ -140,31 +93,20 @@ impl<H: Hasher + Clone> HmacEngine<H> {
 impl<H: Hasher + Clone> Hasher for HmacEngine<H> {
     fn algorithm(&self) -> &'static str {
         "HMAC"
-    }
-
     fn digest_size(&self) -> usize {
         self.inner.digest_size()
-    }
-
     fn update(&mut self, data: &[u8]) {
         self.inner.update(data);
-    }
-
     fn finalize(self) -> Vec<u8> {
         self.inner.finalize()
     }
     fn digest(&mut self, data: &[u8]) -> HashResult<Vec<u8>> {
         self.finalize(data)
-    }
-
     fn reset(&mut self) {
         // Reset by recreating with the same configuration
         if let Some(key) = &self.key.clone() {
             *self = Self::new(self.hasher.clone(), self.variant, key).unwrap_or_else(|_| {
                 Self {
-                    hasher: self.hasher.clone(),
-                    variant: self.variant,
-                    key: None,
                 }
             });
         }
@@ -178,8 +120,6 @@ impl<H: Hasher + Clone> Hasher for HmacEngine<H> {
 impl<H: Hasher + Clone> KeyedHasher for HmacEngine<H> {
     fn set_key(&mut self, key: &[u8]) -> HashResult<()> {
         self.set_key(key).map_err(|e| CursedError::InvalidArgument(e.to_string()))
-    }
-    
     fn key_length(&self) -> usize {
         self.key.len()
     }
@@ -192,18 +132,12 @@ impl HmacFactory {
     /// Create HMAC-SHA256
     pub fn create_hmac_sha256(key: &[u8]) -> HmacResult<HmacSha256> {
         Ok(HmacSha256::new(key))
-    }
-    
     /// Create HMAC-SHA512
     pub fn create_hmac_sha512(key: &[u8]) -> HmacResult<HmacSha512> {
         Ok(HmacSha512::new(key))
-    }
-    
     /// Create HMAC-BLAKE3
     pub fn create_hmac_blake3(key: &[u8]) -> HmacResult<HmacBlake3> {
         Ok(HmacBlake3::new(key))
-    }
-    
     /// Create HMAC-Keccak256
     pub fn create_hmac_keccak256(key: &[u8]) -> HmacResult<HmacKeccak256> {
         Ok(HmacKeccak256::new(key))
@@ -215,23 +149,11 @@ impl HmacFactory {
 /// HMAC-SHA256 implementation
 #[derive(Debug, Clone)]
 pub struct HmacSha256 {
-    inner: HmacSha256Inner,
-}
-
 #[derive(Debug, Clone)]
 struct HmacSha256Inner {
-    key: Vec<u8>,
-    inner_key: [u8; 64],
-    outer_key: [u8; 64],
-}
-
 impl HmacSha256 {
     pub fn new(key: &[u8]) -> Self {
         let mut inner = HmacSha256Inner {
-            key: key.to_vec(),
-            inner_key: [0; 64],
-            outer_key: [0; 64],
-        };
         
         // Process key
         let processed_key = if key.len() > 64 {
@@ -241,7 +163,6 @@ impl HmacSha256 {
             let mut padded = [0u8; 64];
             padded[..key.len()].copy_from_slice(key);
             padded.to_vec()
-        };
         
         // Pad to block size
         let mut padded_key = [0u8; 64];
@@ -252,8 +173,6 @@ impl HmacSha256 {
         for i in 0..64 {
             inner.inner_key[i] = padded_key[i] ^ 0x36;
             inner.outer_key[i] = padded_key[i] ^ 0x5c;
-        }
-        
         Self { inner }
     }
     
@@ -271,13 +190,9 @@ impl HmacSha256 {
         let mut result = [0u8; 32];
         result.copy_from_slice(&outer_hash[..32]);
         result
-    }
-    
     pub fn verify(&self, data: &[u8], expected: &[u8; 32]) -> bool {
         let computed = self.compute(data);
         constant_time_eq(&computed, expected)
-    }
-    
     // Simplified SHA-256 - in production, use proper implementation
     fn sha256_hash(data: &[u8]) -> Vec<u8> {
 //         use crate::stdlib::packages::crypto_hash_advanced::blake3::Blake3Hasher;
@@ -289,18 +204,9 @@ impl HmacSha256 {
 /// HMAC-SHA512 implementation
 #[derive(Debug, Clone)]
 pub struct HmacSha512 {
-    key: Vec<u8>,
-    inner_key: [u8; 128],
-    outer_key: [u8; 128],
-}
-
 impl HmacSha512 {
     pub fn new(key: &[u8]) -> Self {
         let mut hmac = Self {
-            key: key.to_vec(),
-            inner_key: [0; 128],
-            outer_key: [0; 128],
-        };
         
         // Process key
         let processed_key = if key.len() > 128 {
@@ -309,7 +215,6 @@ impl HmacSha512 {
             let mut padded = [0u8; 128];
             padded[..key.len()].copy_from_slice(key);
             padded.to_vec()
-        };
         
         // Pad to block size
         let mut padded_key = [0u8; 128];
@@ -320,11 +225,7 @@ impl HmacSha512 {
         for i in 0..128 {
             hmac.inner_key[i] = padded_key[i] ^ 0x36;
             hmac.outer_key[i] = padded_key[i] ^ 0x5c;
-        }
-        
         hmac
-    }
-    
     pub fn compute(&self, data: &[u8]) -> [u8; 64] {
         // Inner hash
         let mut inner_data = self.inner_key.to_vec();
@@ -339,13 +240,9 @@ impl HmacSha512 {
         let mut result = [0u8; 64];
         result.copy_from_slice(&outer_hash[..64]);
         result
-    }
-    
     pub fn verify(&self, data: &[u8], expected: &[u8; 64]) -> bool {
         let computed = self.compute(data);
         constant_time_eq(&computed, expected)
-    }
-    
     // Simplified SHA-512 - in production, use proper implementation  
     fn sha512_hash(data: &[u8]) -> Vec<u8> {
 //         use crate::stdlib::packages::crypto_hash_advanced::blake3::Blake3Hasher;
@@ -359,18 +256,9 @@ impl HmacSha512 {
 /// HMAC-BLAKE3 implementation
 #[derive(Debug, Clone)]
 pub struct HmacBlake3 {
-    key: Vec<u8>,
-    inner_key: [u8; 64],
-    outer_key: [u8; 64],
-}
-
 impl HmacBlake3 {
     pub fn new(key: &[u8]) -> Self {
         let mut hmac = Self {
-            key: key.to_vec(),
-            inner_key: [0; 64],
-            outer_key: [0; 64],
-        };
         
         // Process key
         let processed_key = if key.len() > 64 {
@@ -381,7 +269,6 @@ impl HmacBlake3 {
             let mut padded = [0u8; 64];
             padded[..key.len()].copy_from_slice(key);
             padded.to_vec()
-        };
         
         // Pad to block size
         let mut padded_key = [0u8; 64];
@@ -392,11 +279,7 @@ impl HmacBlake3 {
         for i in 0..64 {
             hmac.inner_key[i] = padded_key[i] ^ 0x36;
             hmac.outer_key[i] = padded_key[i] ^ 0x5c;
-        }
-        
         hmac
-    }
-    
     pub fn compute(&self, data: &[u8]) -> [u8; 32] {
 //         use crate::stdlib::packages::crypto_hash_advanced::blake3::Blake3Hasher;
         
@@ -415,8 +298,6 @@ impl HmacBlake3 {
         let mut result = [0u8; 32];
         result.copy_from_slice(&outer_hash[..32]);
         result
-    }
-    
     pub fn verify(&self, data: &[u8], expected: &[u8; 32]) -> bool {
         let computed = self.compute(data);
         constant_time_eq(&computed, expected)
@@ -426,18 +307,10 @@ impl HmacBlake3 {
 /// HMAC-Keccak256 implementation
 #[derive(Debug, Clone)]
 pub struct HmacKeccak256 {
-    key: Vec<u8>,
     inner_key: [u8; 136], // Keccak-256 rate
-    outer_key: [u8; 136],
-}
-
 impl HmacKeccak256 {
     pub fn new(key: &[u8]) -> Self {
         let mut hmac = Self {
-            key: key.to_vec(),
-            inner_key: [0; 136],
-            outer_key: [0; 136],
-        };
         
         // Process key
         let processed_key = if key.len() > 136 {
@@ -447,7 +320,6 @@ impl HmacKeccak256 {
             let mut padded = [0u8; 136];
             padded[..key.len()].copy_from_slice(key);
             padded.to_vec()
-        };
         
         // Pad to block size
         let mut padded_key = [0u8; 136];
@@ -458,11 +330,7 @@ impl HmacKeccak256 {
         for i in 0..136 {
             hmac.inner_key[i] = padded_key[i] ^ 0x36;
             hmac.outer_key[i] = padded_key[i] ^ 0x5c;
-        }
-        
         hmac
-    }
-    
     pub fn compute(&self, data: &[u8]) -> [u8; 32] {
 //         use crate::stdlib::packages::crypto_hash_advanced::keccak;
         
@@ -479,8 +347,6 @@ impl HmacKeccak256 {
         let mut result = [0u8; 32];
         result.copy_from_slice(&outer_hash[..32]);
         result
-    }
-    
     pub fn verify(&self, data: &[u8], expected: &[u8; 32]) -> bool {
         let computed = self.compute(data);
         constant_time_eq(&computed, expected)
@@ -490,14 +356,9 @@ impl HmacKeccak256 {
 /// CMAC (Cipher-based MAC) implementation for block ciphers
 #[derive(Debug, Clone)]
 pub struct CmacEngine {
-    key: Vec<u8>,
-    block_size: usize,
-}
-
 impl CmacEngine {
     pub fn new(key: &[u8]) -> Self {
         Self {
-            key: key.to_vec(),
             block_size: 16, // AES block size
         }
     }
@@ -513,8 +374,6 @@ impl CmacEngine {
         hasher.update(b"CMAC");
         
         hasher.finalize()[..16].to_vec() // Return 16 bytes for AES block size
-    }
-    
     pub fn verify(&self, data: &[u8], expected: &[u8]) -> bool {
         let computed = self.compute(data);
         constant_time_eq(&computed, expected)
@@ -524,15 +383,9 @@ impl CmacEngine {
 /// GMAC (Galois MAC) implementation for GCM mode
 #[derive(Debug, Clone)]
 pub struct GmacEngine {
-    key: Vec<u8>,
-    auth_key: Vec<u8>,
-}
-
 impl GmacEngine {
     pub fn new(key: &[u8], auth_key: &[u8]) -> Self {
         Self {
-            key: key.to_vec(),
-            auth_key: auth_key.to_vec(),
         }
     }
     
@@ -549,8 +402,6 @@ impl GmacEngine {
         hasher.update(b"GMAC");
         
         hasher.finalize()[..16].to_vec()
-    }
-    
     pub fn verify(&self, data: &[u8], additional_data: &[u8], expected: &[u8]) -> bool {
         let computed = self.compute(data, additional_data);
         constant_time_eq(&computed, expected)
@@ -560,13 +411,9 @@ impl GmacEngine {
 /// PMAC (Parallelizable MAC) implementation
 #[derive(Debug, Clone)]
 pub struct PmacEngine {
-    key: Vec<u8>,
-}
-
 impl PmacEngine {
     pub fn new(key: &[u8]) -> Self {
         Self {
-            key: key.to_vec(),
         }
     }
     
@@ -592,8 +439,6 @@ impl PmacEngine {
         }
         
         result
-    }
-    
     pub fn verify(&self, data: &[u8], expected: &[u8]) -> bool {
         let computed = self.compute(data);
         constant_time_eq(&computed, expected)
@@ -604,26 +449,16 @@ impl PmacEngine {
 pub fn hmac_sha256(key: &[u8], data: &[u8]) -> [u8; 32] {
     let hmac = HmacSha256::new(key);
     hmac.compute(data)
-}
-
 pub fn hmac_sha512(key: &[u8], data: &[u8]) -> [u8; 64] {
     let hmac = HmacSha512::new(key);
     hmac.compute(data)
-}
-
 pub fn hmac_blake3(key: &[u8], data: &[u8]) -> [u8; 32] {
     let hmac = HmacBlake3::new(key);
     hmac.compute(data)
-}
-
 pub fn hmac_keccak256(key: &[u8], data: &[u8]) -> [u8; 32] {
     let hmac = HmacKeccak256::new(key);
     hmac.compute(data)
-}
-
 /// Verify HMAC with constant-time comparison
 pub fn verify_hmac_sha256(key: &[u8], data: &[u8], expected: &[u8; 32]) -> bool {
     let hmac = HmacSha256::new(key);
     hmac.verify(data, expected)
-}
-

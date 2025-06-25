@@ -4,9 +4,6 @@ use super::secure_random::SecureRandom;
 
 /// Random string generator with customizable character sets
 pub struct RandomStrings {
-    secure_rng: SecureRandom,
-}
-
 /// Character set presets
 pub enum CharSet {
     Alphabetic,         // a-z, A-Z
@@ -23,126 +20,74 @@ pub enum CharSet {
     Symbols,            // Common symbols
     SafeSymbols,        // Safe symbols (no quotes or slashes)
     Custom(String),     // Custom character set
-}
-
 impl CharSet {
     /// Get the character set as a string
     pub fn as_str(&self) -> &str {
         match self {
-            CharSet::Alphabetic => "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz",
-            CharSet::Alphanumeric => "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789",
-            CharSet::AlphanumericLower => "abcdefghijklmnopqrstuvwxyz0123456789",
-            CharSet::AlphanumericUpper => "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789",
-            CharSet::Numeric => "0123456789",
-            CharSet::Hexadecimal => "0123456789abcdef",
-            CharSet::HexadecimalUpper => "0123456789ABCDEF",
             CharSet::Base64 => "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/",
-            CharSet::Base64Url => "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_",
             CharSet::Printable => " !\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~",
             CharSet::PrintableNoQuotes => " !#$%&()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~",
-            CharSet::Symbols => "!@#$%^&*()_+-=[]{}|;:,.<>?",
-            CharSet::SafeSymbols => "!@#$%^&*()_+-=[]{}|;:,.<>",
-            CharSet::Custom(chars) => chars,
         }
     }
-}
-
 impl RandomStrings {
     /// Create new random string generator
     pub fn new() -> AdvancedCryptoResult<Self> {
         Ok(Self {
-            secure_rng: SecureRandom::new()?,
         })
-    }
-    
     /// Generate random string with specified length and character set
     pub fn generate(&self, length: usize, charset: CharSet) -> AdvancedCryptoResult<String> {
         if length == 0 {
             return Ok(String::new());
-        }
-        
         let chars = charset.as_str();
         if chars.is_empty() {
             return Err("Character set cannot be empty".into());
-        }
-        
         let char_bytes = chars.as_bytes();
         let mut result = Vec::with_capacity(length);
         
         for _ in 0..length {
             let index = self.secure_rng.range_u64(0, char_bytes.len() as u64 - 1)?;
             result.push(char_bytes[index as usize]);
-        }
-        
         String::from_utf8(result).map_err(|e| e.to_string().into())
-    }
-    
     /// Generate alphabetic string (a-z, A-Z)
     pub fn alphabetic(&self, length: usize) -> AdvancedCryptoResult<String> {
         self.generate(length, CharSet::Alphabetic)
-    }
-    
     /// Generate alphanumeric string (a-z, A-Z, 0-9)
     pub fn alphanumeric(&self, length: usize) -> AdvancedCryptoResult<String> {
         self.generate(length, CharSet::Alphanumeric)
-    }
-    
     /// Generate lowercase alphanumeric string (a-z, 0-9)
     pub fn alphanumeric_lower(&self, length: usize) -> AdvancedCryptoResult<String> {
         self.generate(length, CharSet::AlphanumericLower)
-    }
-    
     /// Generate uppercase alphanumeric string (A-Z, 0-9)
     pub fn alphanumeric_upper(&self, length: usize) -> AdvancedCryptoResult<String> {
         self.generate(length, CharSet::AlphanumericUpper)
-    }
-    
     /// Generate numeric string (0-9)
     pub fn numeric(&self, length: usize) -> AdvancedCryptoResult<String> {
         self.generate(length, CharSet::Numeric)
-    }
-    
     /// Generate hexadecimal string (0-9, a-f)
     pub fn hexadecimal(&self, length: usize) -> AdvancedCryptoResult<String> {
         self.generate(length, CharSet::Hexadecimal)
-    }
-    
     /// Generate uppercase hexadecimal string (0-9, A-F)
     pub fn hexadecimal_upper(&self, length: usize) -> AdvancedCryptoResult<String> {
         self.generate(length, CharSet::HexadecimalUpper)
-    }
-    
     /// Generate base64 string
     pub fn base64(&self, length: usize) -> AdvancedCryptoResult<String> {
         self.generate(length, CharSet::Base64)
-    }
-    
     /// Generate base64url string
     pub fn base64url(&self, length: usize) -> AdvancedCryptoResult<String> {
         self.generate(length, CharSet::Base64Url)
-    }
-    
     /// Generate string with printable ASCII characters
     pub fn printable(&self, length: usize) -> AdvancedCryptoResult<String> {
         self.generate(length, CharSet::Printable)
-    }
-    
     /// Generate string with symbols
     pub fn symbols(&self, length: usize) -> AdvancedCryptoResult<String> {
         self.generate(length, CharSet::Symbols)
-    }
-    
     /// Generate password-style string with mixed character types
     pub fn password(&self, length: usize, include_symbols: bool) -> AdvancedCryptoResult<String> {
         if length == 0 {
             return Ok(String::new());
-        }
-        
         let mut charset = String::from("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789");
         if include_symbols {
             charset.push_str("!@#$%^&*()_+-=[]{}|;:,.<>?");
-        }
-        
         // Ensure at least one character from each required category
         let mut result = Vec::new();
         
@@ -166,21 +111,15 @@ impl RandomStrings {
             let symbols = "!@#$%^&*()_+-=[]{}|;:,.<>?";
             let idx = self.secure_rng.range_u64(0, symbols.len() as u64 - 1)?;
             result.push(symbols.as_bytes()[idx as usize]);
-        }
-        
         // Fill remaining positions
         let charset_bytes = charset.as_bytes();
         while result.len() < length {
             let idx = self.secure_rng.range_u64(0, charset_bytes.len() as u64 - 1)?;
             result.push(charset_bytes[idx as usize]);
-        }
-        
         // Shuffle the result to avoid predictable patterns
         self.secure_rng.shuffle(&mut result)?;
         
         String::from_utf8(result).map_err(|e| e.to_string().into())
-    }
-    
     /// Generate pronounceable password using syllable patterns
     pub fn pronounceable(&self, syllables: usize) -> AdvancedCryptoResult<String> {
         let consonants = ["b", "c", "d", "f", "g", "h", "j", "k", "l", "m", "n", "p", "q", "r", "s", "t", "v", "w", "x", "z"];
@@ -208,23 +147,14 @@ impl RandomStrings {
         // Capitalize first letter
         if let Some(first_char) = result.chars().next() {
             result = first_char.to_uppercase().collect::<String>() + &result[1..];
-        }
-        
         // Add some numbers for security
         let num = self.secure_rng.range_u32(10, 99)?;
         result.push_str(&num.to_string());
         
         Ok(result)
-    }
-    
     /// Generate mnemonic-style phrase
     pub fn mnemonic(&self, word_count: usize) -> AdvancedCryptoResult<String> {
         let words = [
-            "apple", "brave", "chair", "dance", "eagle", "field", "grape", "house",
-            "image", "juice", "knife", "light", "mouse", "night", "ocean", "phone",
-            "queen", "river", "stone", "table", "under", "voice", "water", "youth",
-            "zebra", "above", "beach", "cloud", "dream", "extra", "flame", "green",
-            "happy", "index", "joint", "known", "lucky", "magic", "noble", "orbit",
             "peace", "quick", "round", "space", "trust", "urban", "valid", "world"
         ];
         
@@ -232,17 +162,11 @@ impl RandomStrings {
         for _ in 0..word_count {
             let word = self.secure_rng.choose(&words)?.unwrap();
             selected_words.push(*word);
-        }
-        
         Ok(selected_words.join(" "))
-    }
-    
     /// Generate identifier (suitable for variable names, IDs)
     pub fn identifier(&self, length: usize) -> AdvancedCryptoResult<String> {
         if length == 0 {
             return Ok(String::new());
-        }
-        
         // First character must be a letter
         let first_chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
         let remaining_chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789_";
@@ -257,29 +181,19 @@ impl RandomStrings {
         for _ in 1..length {
             let idx = self.secure_rng.range_u64(0, remaining_chars.len() as u64 - 1)?;
             result.push(remaining_chars.as_bytes()[idx as usize]);
-        }
-        
         String::from_utf8(result).map_err(|e| e.to_string().into())
-    }
-    
     /// Generate filename-safe string
     pub fn filename(&self, length: usize) -> AdvancedCryptoResult<String> {
         // Safe characters for filenames across different operating systems
         let safe_chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_";
         self.generate(length, CharSet::Custom(safe_chars.to_string()))
-    }
-    
     /// Generate URL-safe string
     pub fn url_safe(&self, length: usize) -> AdvancedCryptoResult<String> {
         self.generate(length, CharSet::Base64Url)
-    }
-    
     /// Generate domain name
     pub fn domain_name(&self, length: usize) -> AdvancedCryptoResult<String> {
         if length < 4 {
             return Err("Domain name must be at least 4 characters long".into());
-        }
-        
         let tlds = ["com", "org", "net", "io", "dev", "app"];
         let tld = self.secure_rng.choose(&tlds)?.unwrap();
         
@@ -287,8 +201,6 @@ impl RandomStrings {
         let name = self.generate(name_length, CharSet::AlphanumericLower)?;
         
         Ok(format!("{}.{}", name, tld))
-    }
-    
     /// Generate email address
     pub fn email(&self, local_length: usize) -> AdvancedCryptoResult<String> {
         let domains = ["example.com", "test.org", "demo.net", "sample.io"];
@@ -297,20 +209,9 @@ impl RandomStrings {
         let local_part = self.generate(local_length, CharSet::AlphanumericLower)?;
         
         Ok(format!("{}@{}", local_part, domain))
-    }
-    
     /// Generate random words from a dictionary
     pub fn words(&self, count: usize) -> AdvancedCryptoResult<String> {
         let dictionary = [
-            "ability", "absence", "academy", "account", "accused", "achieve", "address", "advance",
-            "advisor", "airport", "alcohol", "analyst", "ancient", "animals", "anxiety", "anybody",
-            "applied", "arrange", "article", "assault", "attempt", "attract", "auction", "average",
-            "balance", "banking", "battery", "bedroom", "benefit", "bicycle", "brother", "builder",
-            "cabinet", "caliber", "camera", "camping", "caption", "carbon", "catalog", "ceiling",
-            "chamber", "chapter", "charity", "chicken", "circuit", "classic", "climate", "clothes",
-            "coastal", "college", "combine", "comfort", "command", "comment", "company", "concept",
-            "concern", "conduct", "confirm", "connect", "consist", "contact", "contain", "content",
-            "contest", "context", "control", "convert", "correct", "council", "counter", "country",
             "courage", "creator", "crystal", "culture", "current", "custody", "cutting", "dancing"
         ];
         
@@ -318,11 +219,7 @@ impl RandomStrings {
         for _ in 0..count {
             let word = self.secure_rng.choose(&dictionary)?.unwrap();
             words.push(*word);
-        }
-        
         Ok(words.join(" "))
-    }
-    
     /// Generate random sentence
     pub fn sentence(&self, word_count: usize) -> AdvancedCryptoResult<String> {
         let mut sentence = self.words(word_count)?;
@@ -330,14 +227,10 @@ impl RandomStrings {
         // Capitalize first letter
         if let Some(first_char) = sentence.chars().next() {
             sentence = first_char.to_uppercase().collect::<String>() + &sentence[1..];
-        }
-        
         // Add period
         sentence.push('.');
         
         Ok(sentence)
-    }
-    
     /// Generate multiple strings
     pub fn batch(&self, count: usize, length: usize, charset: CharSet) -> AdvancedCryptoResult<Vec<String>> {
         let mut strings = Vec::with_capacity(count);
@@ -345,8 +238,6 @@ impl RandomStrings {
             strings.push(self.generate(length, charset.clone())?);
         }
         Ok(strings)
-    }
-    
     /// Analyze character distribution in a string
     pub fn analyze(&self, text: &str) -> StringAnalysis {
         let mut char_freq = std::collections::HashMap::new();
@@ -380,57 +271,22 @@ impl RandomStrings {
             .unwrap_or((' ', 0));
         
         StringAnalysis {
-            length: total_chars,
-            unique_chars,
-            uppercase_count: uppercase,
-            lowercase_count: lowercase,
-            digit_count: digits,
-            symbol_count: symbols,
-            space_count: spaces,
-            most_common_char: most_common.0,
-            most_common_count: most_common.1,
-            char_frequencies: char_freq,
         }
     }
-}
-
 /// Clone implementation for CharSet
 impl Clone for CharSet {
     fn clone(&self) -> Self {
         match self {
-            CharSet::Custom(s) => CharSet::Custom(s.clone()),
             other => {
                 // For non-Custom variants, we can recreate them
                 match other.as_str() {
-                    "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz" => CharSet::Alphabetic,
-                    "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789" => CharSet::Alphanumeric,
-                    "abcdefghijklmnopqrstuvwxyz0123456789" => CharSet::AlphanumericLower,
-                    "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789" => CharSet::AlphanumericUpper,
-                    "0123456789" => CharSet::Numeric,
-                    "0123456789abcdef" => CharSet::Hexadecimal,
-                    "0123456789ABCDEF" => CharSet::HexadecimalUpper,
-                    _ => CharSet::Custom(other.as_str().to_string()),
                 }
             }
         }
     }
-}
-
 /// Analysis results for string data
 #[derive(Debug, Clone)]
 pub struct StringAnalysis {
-    pub length: usize,
-    pub unique_chars: usize,
-    pub uppercase_count: usize,
-    pub lowercase_count: usize,
-    pub digit_count: usize,
-    pub symbol_count: usize,
-    pub space_count: usize,
-    pub most_common_char: char,
-    pub most_common_count: usize,
-    pub char_frequencies: std::collections::HashMap<char, usize>,
-}
-
 impl Default for RandomStrings {
     fn default() -> Self {
         Self::new().expect("Failed to create default RandomStrings")
@@ -440,32 +296,18 @@ impl Default for RandomStrings {
 /// Global functions for convenient access to random string generation
 pub fn random_string(length: usize, charset: CharSet) -> AdvancedCryptoResult<String> {
     RandomStrings::new()?.generate(length, charset)
-}
-
 pub fn random_alphabetic(length: usize) -> AdvancedCryptoResult<String> {
     RandomStrings::new()?.alphabetic(length)
-}
-
 pub fn random_alphanumeric(length: usize) -> AdvancedCryptoResult<String> {
     RandomStrings::new()?.alphanumeric(length)
-}
-
 pub fn random_numeric(length: usize) -> AdvancedCryptoResult<String> {
     RandomStrings::new()?.numeric(length)
-}
-
 pub fn random_hexadecimal(length: usize) -> AdvancedCryptoResult<String> {
     RandomStrings::new()?.hexadecimal(length)
-}
-
 pub fn random_password(length: usize, include_symbols: bool) -> AdvancedCryptoResult<String> {
     RandomStrings::new()?.password(length, include_symbols)
-}
-
 pub fn random_identifier(length: usize) -> AdvancedCryptoResult<String> {
     RandomStrings::new()?.identifier(length)
-}
-
 pub fn random_filename(length: usize) -> AdvancedCryptoResult<String> {
     RandomStrings::new()?.filename(length)
 }

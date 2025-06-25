@@ -10,99 +10,49 @@ use std::sync::{Arc, Mutex};
 use std::ffi::CString;
 
 use inkwell::{
-    context::Context,
-    module::Module,
-    execution_engine::{ExecutionEngine, JitFunction},
-    targets::{Target, TargetMachine, RelocMode, CodeModel},
-    OptimizationLevel,
-};
+// };
 
 /// Main JIT execution engine for CURSED
 /// 
 /// Wraps LLVM's ExecutionEngine with CURSED-specific functionality
 /// including function caching, performance monitoring, and memory management.
 pub struct CursedJitEngine<'ctx> {
-    context: &'ctx Context,
-    execution_engine: ExecutionEngine<'ctx>,
-    compiled_functions: Arc<Mutex<HashMap<String, JitFunction<()>>>>,
-    module_cache: Arc<Mutex<HashMap<String, Module<'ctx>>>>,
-    config: JitEngineConfig,
-    stats: JitEngineStats,
-}
-
 /// Configuration for the JIT engine
 #[derive(Debug, Clone)]
 pub struct JitEngineConfig {
     /// Optimization level for JIT compilation
-    pub optimization_level: OptimizationLevel,
     /// Whether to enable function caching
-    pub enable_function_cache: bool,
     /// Whether to enable performance monitoring
-    pub enable_performance_monitoring: bool,
     /// Maximum number of cached functions
-    pub max_cached_functions: usize,
     /// Whether to enable debug information in JIT code
-    pub enable_debug_info: bool,
     /// Target CPU for optimization
-    pub target_cpu: Option<String>,
     /// Target features for optimization
-    pub target_features: Vec<String>,
-}
-
 /// Statistics for JIT engine performance
 #[derive(Debug, Default, Clone)]
 pub struct JitEngineStats {
     /// Total number of functions compiled
-    pub functions_compiled: u64,
     /// Total number of functions executed
-    pub functions_executed: u64,
     /// Total compilation time in milliseconds
-    pub compilation_time_ms: u64,
     /// Total execution time in milliseconds
-    pub execution_time_ms: u64,
     /// Number of cache hits
-    pub cache_hits: u64,
     /// Number of cache misses
-    pub cache_misses: u64,
     /// Memory used by compiled functions (bytes)
-    pub memory_usage_bytes: u64,
     /// Number of optimization passes performed
-    pub optimization_passes: u64,
-}
-
 /// CursedError types specific to JIT operations
 #[derive(Debug, Clone)]
 pub enum JitError {
     /// Failed to initialize LLVM execution engine
-    EngineInitializationFailed(String),
     /// Failed to compile function
-    CompilationFailed(String),
     /// Function not found in JIT engine
-    FunctionNotFound(String),
     /// Failed to execute JIT function
-    ExecutionFailed(String),
     /// Memory allocation failed
-    MemoryAllocationFailed(String),
     /// Invalid module or IR
-    InvalidModule(String),
     /// Target initialization failed
-    TargetInitializationFailed(String),
-}
-
 impl Default for JitEngineConfig {
     fn default() -> Self {
         Self {
-            optimization_level: OptimizationLevel::O2,
-            enable_function_cache: true,
-            enable_performance_monitoring: true,
-            max_cached_functions: 1000,
-            enable_debug_info: false,
-            target_cpu: None,
-            target_features: Vec::new(),
         }
     }
-}
-
 impl<'ctx> CursedJitEngine<'ctx> {
     /// Create a new JIT engine with the given context and configuration
     pub fn new(context: &'ctx Context, config: JitEngineConfig) -> crate::error::Result<()> {
@@ -119,20 +69,10 @@ impl<'ctx> CursedJitEngine<'ctx> {
             .map_err(|e| CursedError::from_str(&format!("Failed to create JIT execution engine: {}", e)))?;
 
         Ok(Self {
-            context,
-            execution_engine,
-            compiled_functions: Arc::new(Mutex::new(HashMap::new())),
-            module_cache: Arc::new(Mutex::new(HashMap::new())),
-            config,
-            stats: JitEngineStats::default(),
         })
-    }
-
     /// Create a new JIT engine with default configuration
     pub fn new_with_default_config(context: &'ctx Context) -> crate::error::Result<()> {
         Self::new(context, JitEngineConfig::default())
-    }
-
     /// Compile and load a function from LLVM IR
     /// 
     /// # Arguments
@@ -153,21 +93,16 @@ impl<'ctx> CursedJitEngine<'ctx> {
             }
             drop(cache);
             self.stats.cache_misses += 1;
-        }
-
         let module = if llvm_ir.trim().is_empty() || llvm_ir == "" {
             // Create a simple default function for testing
             self.create_default_function_module(function_name)?
         } else {
             // Parse and compile actual LLVM IR
             self.parse_and_compile_ir(function_name, llvm_ir)?
-        };
 
         // Verify module
         if let Err(errors) = module.verify() {
             return Err(CursedError::from_str(&format!("Module verification failed: {}", errors)));
-        }
-
         // Add module to execution engine
         self.execution_engine.add_module(&module).map_err(|e| {
             CursedError::from_str(&format!("Failed to add module to execution engine: {}", e))
@@ -178,15 +113,12 @@ impl<'ctx> CursedJitEngine<'ctx> {
             let function_ptr = unsafe {
                 self.execution_engine.get_function(function_name)
                     .map_err(|e| CursedError::from_str(&format!("Failed to get compiled function: {}", e)))?
-            };
             
             let mut cache = self.compiled_functions.lock().unwrap();
             cache.insert(function_name.to_string(), function_ptr);
             
             let mut module_cache = self.module_cache.lock().unwrap();
             module_cache.insert(function_name.to_string(), module);
-        }
-
         // Update statistics
         let compilation_time = start_time.elapsed();
         self.stats.functions_compiled += 1;
@@ -195,15 +127,9 @@ impl<'ctx> CursedJitEngine<'ctx> {
 
         if self.config.enable_performance_monitoring {
             tracing::info!(
-                function_name = function_name,
-                compilation_time_ms = compilation_time.as_millis(),
                 "JIT function compiled successfully"
             );
-        }
-
         Ok(())
-    }
-
     /// Create a default function module for testing purposes
     fn create_default_function_module(&self, function_name: &str) -> crate::error::Result<()> {
         let module = self.context.create_module(&format!("jit_module_{}", function_name));
@@ -221,8 +147,6 @@ impl<'ctx> CursedJitEngine<'ctx> {
         })?;
 
         Ok(module)
-    }
-
     /// Parse and compile LLVM IR code
     fn parse_and_compile_ir(&self, function_name: &str, llvm_ir: &str) -> crate::error::Result<()> {
         // Create module from IR string
@@ -245,11 +169,7 @@ impl<'ctx> CursedJitEngine<'ctx> {
             builder.build_return(Some(&return_value)).map_err(|e| {
                 CursedError::from_str(&format!("Failed to build return instruction: {}", e))
             })?;
-        }
-
         Ok(module)
-    }
-
     /// Parse function definition from LLVM IR
     fn parse_function_definition(&self, module: &Module, llvm_ir: &str) -> crate::error::Result<()> {
         // Basic IR parsing - in production this would use LLVM's IR parser
@@ -270,21 +190,16 @@ impl<'ctx> CursedJitEngine<'ctx> {
             i32_type.const_int(100, false)
         } else {
             i32_type.const_int(0, false)
-        };
         
         builder.build_return(Some(&return_value)).map_err(|e| {
             CursedError::from_str(&format!("Failed to build return instruction: {}", e))
         })?;
 
         Ok(())
-    }
-
     /// Estimate memory usage for a compiled function
     fn estimate_function_memory_usage(&self, _function_name: &str) -> u64 {
         // Rough estimate - in production this would be more sophisticated
         1024 // 1KB per function as a baseline estimate
-    }
-
     /// Get a compiled function for execution
     /// 
     /// # Arguments
@@ -333,16 +248,9 @@ impl<'ctx> CursedJitEngine<'ctx> {
 
         if self.config.enable_performance_monitoring {
             tracing::debug!(
-                function_name = function_name,
-                execution_time_ms = execution_time.as_millis(),
-                result = result,
                 "JIT function executed"
             );
-        }
-
         Ok(result)
-    }
-
     /// Check if a function is compiled and available
     pub fn has_function(&self, function_name: &str) -> bool {
         if self.config.enable_function_cache {
@@ -366,14 +274,10 @@ impl<'ctx> CursedJitEngine<'ctx> {
             
             let mut module_cache = self.module_cache.lock().unwrap();
             module_cache.remove(function_name);
-        }
-
         // Note: LLVM ExecutionEngine doesn't provide a direct way to remove functions
         // In a full implementation, we might need to recreate the engine or use ORC JIT layers
         
         Ok(())
-    }
-
     /// Clear all cached functions
     pub fn clear_cache(&mut self) -> crate::error::Result<()> {
         if self.config.enable_function_cache {
@@ -382,26 +286,16 @@ impl<'ctx> CursedJitEngine<'ctx> {
             
             let mut module_cache = self.module_cache.lock().unwrap();
             module_cache.clear();
-        }
-
         Ok(())
-    }
-
     /// Get current JIT engine statistics
     pub fn get_stats(&self) -> JitEngineStats {
         self.stats.clone()
-    }
-
     /// Reset statistics
     pub fn reset_stats(&mut self) {
         self.stats = JitEngineStats::default();
-    }
-
     /// Get memory usage of compiled functions
     pub fn get_memory_usage(&self) -> u64 {
         self.stats.memory_usage_bytes
-    }
-
     /// Get the number of cached functions
     pub fn get_cached_function_count(&self) -> usize {
         if self.config.enable_function_cache {
@@ -415,13 +309,9 @@ impl<'ctx> CursedJitEngine<'ctx> {
     /// Update JIT engine configuration
     pub fn update_config(&mut self, config: JitEngineConfig) {
         self.config = config;
-    }
-
     /// Get current configuration
     pub fn get_config(&self) -> &JitEngineConfig {
         &self.config
-    }
-
     /// Optimize all cached functions
     pub fn optimize_cached_functions(&mut self) -> crate::error::Result<()> {
         // In a full implementation, this would re-optimize cached functions
@@ -430,14 +320,9 @@ impl<'ctx> CursedJitEngine<'ctx> {
         
         if self.config.enable_performance_monitoring {
             tracing::info!(
-                cached_functions = self.get_cached_function_count(),
                 "Optimized cached functions"
             );
-        }
-        
         Ok(())
-    }
-
     /// Compile multiple functions from a module
     pub fn compile_module(&mut self, module_name: &str, llvm_ir: &str) -> crate::error::Result<()> {
         let start_time = std::time::Instant::now();
@@ -448,31 +333,18 @@ impl<'ctx> CursedJitEngine<'ctx> {
         
         for function_name in &function_names {
             self.compile_function(function_name, llvm_ir)?;
-        }
-
         let compilation_time = start_time.elapsed();
         if self.config.enable_performance_monitoring {
             tracing::info!(
-                module_name = module_name,
-                function_count = function_names.len(),
-                compilation_time_ms = compilation_time.as_millis(),
                 "JIT module compiled successfully"
             );
-        }
-
         Ok(function_names)
-    }
-
     /// Enable or disable function caching
     pub fn set_function_cache_enabled(&mut self, enabled: bool) {
         self.config.enable_function_cache = enabled;
-    }
-
     /// Enable or disable performance monitoring
     pub fn set_performance_monitoring_enabled(&mut self, enabled: bool) {
         self.config.enable_performance_monitoring = enabled;
-    }
-
     /// Set maximum number of cached functions
     pub fn set_max_cached_functions(&mut self, max_functions: usize) {
         self.config.max_cached_functions = max_functions;
@@ -487,8 +359,6 @@ impl<'ctx> CursedJitEngine<'ctx> {
             }
         }
     }
-}
-
 /// Helper functions for JIT engine management
 
 /// Create a new JIT engine with optimal configuration for the current system
@@ -500,49 +370,24 @@ pub fn create_optimized_jit_engine(context: &Context) -> crate::error::Result<()
     {
         config.optimization_level = OptimizationLevel::O0;
         config.enable_debug_info = true;
-    }
-    
     #[cfg(not(debug_assertions))]
     {
         config.optimization_level = OptimizationLevel::O3;
         config.enable_debug_info = false;
-    }
-    
     // Enable all performance features
     config.enable_function_cache = true;
     config.enable_performance_monitoring = true;
     config.max_cached_functions = 5000;
     
     CursedJitEngine::new(context, config)
-}
-
 /// Create a JIT engine for development/debugging
 pub fn create_debug_jit_engine(context: &Context) -> crate::error::Result<()> {
     let config = JitEngineConfig {
-        optimization_level: OptimizationLevel::O0,
-        enable_function_cache: true,
-        enable_performance_monitoring: true,
-        max_cached_functions: 100,
-        enable_debug_info: true,
-        target_cpu: None,
-        target_features: Vec::new(),
-    };
     
     CursedJitEngine::new(context, config)
-}
-
 /// Create a JIT engine for production use
 pub fn create_production_jit_engine(context: &Context) -> crate::error::Result<()> {
     let config = JitEngineConfig {
-        optimization_level: OptimizationLevel::O3,
-        enable_function_cache: true,
         enable_performance_monitoring: false, // Disable for performance
-        max_cached_functions: 10000,
-        enable_debug_info: false,
-        target_cpu: Some("native".to_string()),
-        target_features: vec!["sse4.2".to_string(), "avx2".to_string()],
-    };
     
     CursedJitEngine::new(context, config)
-}
-

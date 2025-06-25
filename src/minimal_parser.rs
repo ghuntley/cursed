@@ -4,34 +4,18 @@ use crate::minimal_ast::*;
 use crate::lexer::{Lexer, Token, TokenType};
 
 pub struct Parser {
-    lexer: Lexer,
-    current_token: Token,
-    peek_token: Token,
-    errors: Vec<String>,
-}
-
 impl Parser {
     pub fn new(mut lexer: Lexer) -> crate::error::Result<Self> {
         let current_token = lexer.next_token();
         let peek_token = lexer.next_token();
         
         Ok(Parser {
-            lexer,
-            current_token,
-            peek_token,
-            errors: Vec::new(),
         })
-    }
-    
     pub fn errors(&self) -> &Vec<String> {
         &self.errors
-    }
-    
     fn next_token(&mut self) {
         self.current_token = self.peek_token.clone();
         self.peek_token = self.lexer.next_token();
-    }
-    
     fn expect_peek(&mut self, token_type: TokenType) -> bool {
         if self.peek_token.token_type == token_type {
             self.next_token();
@@ -44,67 +28,43 @@ impl Parser {
     
     fn peek_error(&mut self, token_type: TokenType) {
         let msg = format!(
-            "expected next token to be {:?}, got {:?} instead",
             token_type, self.peek_token.token_type
         );
         self.errors.push(msg);
-    }
-    
     pub fn parse_program(&mut self) -> crate::error::Result<Program> {
         let mut program = Program {
-            statements: Vec::new(),
-        };
         
         while self.current_token.token_type != TokenType::Eof {
             if let Some(stmt) = self.parse_statement() {
                 program.statements.push(stmt);
             }
             self.next_token();
-        }
-        
         Ok(program)
-    }
-    
     fn parse_statement(&mut self) -> Option<Statement> {
         match self.current_token.token_type {
-            TokenType::Facts => self.parse_facts_statement(),
-            TokenType::Slay => self.parse_slay_statement(),
-            _ => self.parse_expression_statement(),
         }
     }
     
     fn parse_facts_statement(&mut self) -> Option<Statement> {
         if !self.expect_peek(TokenType::Identifier) {
             return None;
-        }
-        
         let name = self.current_token.literal.clone();
         
         // Check if this is a function declaration (facts main() {})
         if self.peek_token.token_type == TokenType::LeftParen {
             return self.parse_function_declaration(name);
-        }
-        
         if !self.expect_peek(TokenType::Assign) {
             return None;
-        }
-        
         self.next_token();
         let value = self.parse_expression()?;
         
         if self.peek_token.token_type == TokenType::Semicolon {
             self.next_token();
-        }
-        
         Some(Statement::Facts(name, value))
-    }
-    
     fn parse_function_declaration(&mut self, name: String) -> Option<Statement> {
         // We're at the identifier, next should be (
         if !self.expect_peek(TokenType::LeftParen) {
             return None;
-        }
-        
         let mut parameters = Vec::new();
         
         if self.peek_token.token_type != TokenType::RightParen {
@@ -120,53 +80,35 @@ impl Parser {
         
         if !self.expect_peek(TokenType::RightParen) {
             return None;
-        }
-        
         if !self.expect_peek(TokenType::LeftBrace) {
             return None;
-        }
-        
         let body = self.parse_block_statement();
         
         Some(Statement::Slay(name, parameters, body))
-    }
-    
     fn parse_slay_statement(&mut self) -> Option<Statement> {
         if !self.expect_peek(TokenType::Identifier) {
             return None;
-        }
-        
         let name = self.current_token.literal.clone();
         
         if !self.expect_peek(TokenType::LeftParen) {
             return None;
-        }
-        
         let parameters = self.parse_function_parameters();
         
         if !self.expect_peek(TokenType::LeftBrace) {
             return None;
-        }
-        
         let body = self.parse_block_statement();
         
         Some(Statement::Slay(name, parameters, body))
-    }
-    
     fn parse_function_parameters(&mut self) -> Vec<String> {
         let mut parameters = Vec::new();
         
         if self.peek_token.token_type == TokenType::RightParen {
             self.next_token();
             return parameters;
-        }
-        
         self.next_token();
         
         if self.current_token.token_type == TokenType::Identifier {
             parameters.push(self.current_token.literal.clone());
-        }
-        
         while self.peek_token.token_type == TokenType::Comma {
             self.next_token();
             self.next_token();
@@ -177,11 +119,7 @@ impl Parser {
         
         if !self.expect_peek(TokenType::RightParen) {
             return Vec::new();
-        }
-        
         parameters
-    }
-    
     fn parse_block_statement(&mut self) -> Vec<Statement> {
         let mut statements = Vec::new();
         
@@ -193,21 +131,13 @@ impl Parser {
                 statements.push(stmt);
             }
             self.next_token();
-        }
-        
         statements
-    }
-    
     fn parse_expression_statement(&mut self) -> Option<Statement> {
         let expr = self.parse_expression()?;
         
         if self.peek_token.token_type == TokenType::Semicolon {
             self.next_token();
-        }
-        
         Some(Statement::Expression(expr))
-    }
-    
     fn parse_expression(&mut self) -> Option<Expression> {
         match self.current_token.token_type {
             TokenType::Identifier => {
@@ -221,22 +151,17 @@ impl Parser {
                 } else {
                     Some(Expression::Identifier(ident))
                 }
-            },
             TokenType::Integer => {
                 if let Ok(value) = self.current_token.literal.parse::<i64>() {
                     Some(Expression::Integer(value))
                 } else {
                     None
                 }
-            },
             TokenType::Boolean => {
                 let value = self.current_token.literal == "true";
                 Some(Expression::Boolean(value))
-            },
             TokenType::String => {
                 Some(Expression::String(self.current_token.literal.clone()))
-            },
-            _ => None,
         }
     }
     
@@ -246,13 +171,9 @@ impl Parser {
         if self.peek_token.token_type == end {
             self.next_token();
             return args;
-        }
-        
         self.next_token();
         if let Some(expr) = self.parse_expression() {
             args.push(expr);
-        }
-        
         while self.peek_token.token_type == TokenType::Comma {
             self.next_token();
             self.next_token();
@@ -263,8 +184,6 @@ impl Parser {
         
         if !self.expect_peek(end) {
             return Vec::new();
-        }
-        
         args
     }
 }

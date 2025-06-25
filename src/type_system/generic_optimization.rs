@@ -15,168 +15,89 @@ use crate::ast::traits::TypeParameter;
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum InstantiationStrategy {
     /// Generate specialized code for each type combination (monomorphization)
-    Monomorphization,
     /// Use dynamic dispatch with vtables
-    DynamicDispatch,
     /// Use JIT compilation for hot paths
-    JustInTimeCompilation,
     /// Hybrid approach based on usage patterns
-    Adaptive,
-}
-
 /// Information about generic function usage
 #[derive(Debug, Clone)]
 pub struct GenericUsageInfo {
     /// Function or type name
-    pub name: String,
     /// Type instantiations and their usage counts
-    pub instantiations: HashMap<Vec<Type>, usize>,
     /// Total call count
-    pub total_calls: usize,
     /// Average execution time per call (in nanoseconds)
-    pub avg_execution_time: u64,
     /// Memory usage statistics
-    pub memory_usage: MemoryUsageStats,
-}
-
 /// Memory usage statistics for generic instantiations
 #[derive(Debug, Clone)]
 pub struct MemoryUsageStats {
     /// Total allocated bytes
-    pub total_allocated: usize,
     /// Peak memory usage
-    pub peak_usage: usize,
     /// Average object size
-    pub avg_object_size: usize,
     /// Fragmentation level (0.0 = no fragmentation, 1.0 = high fragmentation)
-    pub fragmentation_level: f64,
-}
-
 /// Optimization decision for a generic function
 #[derive(Debug, Clone)]
 pub struct OptimizationDecision {
     /// Chosen strategy
-    pub strategy: InstantiationStrategy,
     /// Reason for the decision
-    pub reason: String,
     /// Expected performance improvement
-    pub expected_improvement: f64,
     /// Memory overhead estimation
-    pub memory_overhead: usize,
-}
-
 /// Main optimization registry and decision engine
 #[derive(Debug)]
 pub struct GenericOptimizer {
     /// Usage statistics for generic functions
-    usage_stats: RwLock<HashMap<String, GenericUsageInfo>>,
     /// Optimization decisions cache
-    decisions_cache: RwLock<HashMap<String, OptimizationDecision>>,
     /// Configuration parameters
-    config: OptimizationConfig,
     /// JIT compilation state
-    jit_state: RwLock<JitCompilationState>,
-}
-
 /// Configuration for the optimization system
 #[derive(Debug, Clone)]
 pub struct OptimizationConfig {
     /// Threshold for monomorphization (number of instantiations)
-    pub monomorphization_threshold: usize,
     /// Threshold for JIT compilation (call count)
-    pub jit_threshold: usize,
     /// Maximum code size increase allowed for monomorphization
-    pub max_code_size_increase: f64,
     /// Memory usage threshold for switching strategies
-    pub memory_usage_threshold: usize,
     /// Enable adaptive optimization
-    pub enable_adaptive: bool,
     /// Profile collection interval (in milliseconds)
-    pub profile_interval: u64,
-}
-
 impl Default for OptimizationConfig {
     fn default() -> Self {
         Self {
-            monomorphization_threshold: 10,
-            jit_threshold: 1000,
-            max_code_size_increase: 2.0,
             memory_usage_threshold: 1024 * 1024, // 1MB
-            enable_adaptive: true,
-            profile_interval: 100,
         }
     }
-}
-
 /// JIT compilation state
 #[derive(Debug)]
 struct JitCompilationState {
     /// Functions currently being compiled
-    compiling: HashSet<String>,
     /// Compiled functions and their performance
-    compiled: HashMap<String, JitCompiledFunction>,
     /// Compilation failures
-    failures: HashMap<String, String>,
-}
-
 /// Information about JIT compiled functions
 #[derive(Debug, Clone)]
 struct JitCompiledFunction {
     /// Compilation timestamp
-    pub compiled_at: std::time::SystemTime,
     /// Execution time improvement ratio
-    pub speedup_ratio: f64,
     /// Memory usage after compilation
-    pub memory_usage: usize,
-}
-
 impl GenericOptimizer {
     /// Create a new optimizer with default configuration
     #[instrument]
     pub fn new() -> Self {
         Self::with_config(OptimizationConfig::default())
-    }
-
     /// Create a new optimizer with custom configuration
     #[instrument]
     pub fn with_config(config: OptimizationConfig) -> Self {
         debug!("Creating GenericOptimizer with config: {:?}", config);
         Self {
-            usage_stats: RwLock::new(HashMap::new()),
-            decisions_cache: RwLock::new(HashMap::new()),
-            config,
             jit_state: RwLock::new(JitCompilationState {
-                compiling: HashSet::new(),
-                compiled: HashMap::new(),
-                failures: HashMap::new(),
-            }),
         }
     }
 
     /// Record usage of a generic function
     #[instrument(skip(self))]
     pub fn record_usage(
-        &self,
-        function_name: &str,
-        type_args: &[Type],
-        execution_time: u64,
-        memory_usage: usize,
     ) -> crate::error::Result<()> {
         let mut stats = self.usage_stats.write()
             .map_err(|_| CursedError::system_error("Failed to acquire write lock"))?;
 
         let usage_info = stats.entry(function_name.to_string()).or_insert_with(|| {
             GenericUsageInfo {
-                name: function_name.to_string(),
-                instantiations: HashMap::new(),
-                total_calls: 0,
-                avg_execution_time: 0,
                 memory_usage: MemoryUsageStats {
-                    total_allocated: 0,
-                    peak_usage: 0,
-                    avg_object_size: 0,
-                    fragmentation_level: 0.0,
-                },
             }
         });
 
@@ -197,12 +118,9 @@ impl GenericOptimizer {
         usage_info.memory_usage.avg_object_size = 
             usage_info.memory_usage.total_allocated / usage_info.total_calls;
 
-        debug!("Recorded usage for {}: {} calls, avg time: {}ns", 
                function_name, usage_info.total_calls, usage_info.avg_execution_time);
 
         Ok(())
-    }
-
     /// Make optimization decision for a generic function
     #[instrument(skip(self))]
     pub fn make_optimization_decision(&self, function_name: &str) -> crate::error::Result<()> {
@@ -224,12 +142,8 @@ impl GenericOptimizer {
             let mut cache = self.decisions_cache.write()
                 .map_err(|_| CursedError::system_error("Failed to acquire write lock"))?;
             cache.insert(function_name.to_string(), decision.clone());
-        }
-
         info!("Made optimization decision for {}: {:?}", function_name, decision.strategy);
         Ok(decision)
-    }
-
     /// Internal analysis and decision logic
     #[instrument(skip(self))]
     fn analyze_and_decide(&self, function_name: &str) -> crate::error::Result<()> {
@@ -266,13 +180,9 @@ impl GenericOptimizer {
            usage_info.avg_execution_time > 10_000 && // > 10μs
            instantiation_count <= 5 {
             return Ok(OptimizationDecision {
-                strategy: InstantiationStrategy::JustInTimeCompilation,
-                reason: format!("Hot path with {} calls, {} instantiations", total_calls, instantiation_count),
                 expected_improvement: 3.0, // 3x speedup expected
                 memory_overhead: memory_usage / 10, // 10% overhead
             });
-        }
-
         // Monomorphization for frequently used functions with few instantiations
         if instantiation_count <= self.config.monomorphization_threshold && 
            total_calls >= 100 &&
@@ -280,11 +190,7 @@ impl GenericOptimizer {
             let code_size_increase = instantiation_count as f64 * 1.5; // Rough estimate
             if code_size_increase <= self.config.max_code_size_increase {
                 return Ok(OptimizationDecision {
-                    strategy: InstantiationStrategy::Monomorphization,
-                    reason: format!("Few instantiations ({}), frequent usage ({})", 
-                                   instantiation_count, total_calls),
                     expected_improvement: 1.5, // 50% speedup expected
-                    memory_overhead: (memory_usage as f64 * code_size_increase) as usize,
                 });
             }
         }
@@ -292,22 +198,14 @@ impl GenericOptimizer {
         // Dynamic dispatch for many instantiations
         if instantiation_count > self.config.monomorphization_threshold {
             return Ok(OptimizationDecision {
-                strategy: InstantiationStrategy::DynamicDispatch,
-                reason: format!("Many instantiations ({}), prefer runtime dispatch", instantiation_count),
                 expected_improvement: 1.0, // No performance improvement
                 memory_overhead: memory_usage / 20, // 5% overhead for vtables
             });
-        }
-
         // Default to adaptive strategy
         Ok(OptimizationDecision {
-            strategy: InstantiationStrategy::Adaptive,
-            reason: "Insufficient data for specific optimization".to_string(),
             expected_improvement: 1.2, // Modest improvement expected
             memory_overhead: memory_usage / 10,
         })
-    }
-
     /// Make static optimization decision based on configuration
     #[instrument(skip(self))]
     fn make_static_decision(&self, usage_info: &GenericUsageInfo) -> crate::error::Result<()> {
@@ -315,16 +213,9 @@ impl GenericOptimizer {
 
         if instantiation_count <= self.config.monomorphization_threshold {
             Ok(OptimizationDecision {
-                strategy: InstantiationStrategy::Monomorphization,
-                reason: "Static: few instantiations".to_string(),
-                expected_improvement: 1.3,
-                memory_overhead: usage_info.memory_usage.total_allocated * instantiation_count,
             })
         } else {
             Ok(OptimizationDecision {
-                strategy: InstantiationStrategy::DynamicDispatch,
-                reason: "Static: many instantiations".to_string(),
-                expected_improvement: 1.0,
                 memory_overhead: usage_info.memory_usage.total_allocated / 10,
             })
         }
@@ -342,13 +233,9 @@ impl GenericOptimizer {
         if jit_state.compiling.contains(&key) {
             debug!("JIT compilation already in progress for {}", key);
             return Ok(());
-        }
-
         if jit_state.compiled.contains_key(&key) {
             debug!("Function {} already JIT compiled", key);
             return Ok(());
-        }
-
         // Start compilation
         jit_state.compiling.insert(key.clone());
         info!("Starting JIT compilation for {}", key);
@@ -361,16 +248,9 @@ impl GenericOptimizer {
         });
 
         Ok(())
-    }
-
     /// Complete JIT compilation (called by the JIT compiler)
     #[instrument(skip(self))]
     pub fn complete_jit_compilation(
-        &self,
-        function_name: &str,
-        type_args: &[Type],
-        speedup_ratio: f64,
-        memory_usage: usize,
     ) -> crate::error::Result<()> {
         let mut jit_state = self.jit_state.write()
             .map_err(|_| CursedError::system_error("Failed to acquire write lock"))?;
@@ -382,15 +262,10 @@ impl GenericOptimizer {
 
         // Add to compiled functions
         jit_state.compiled.insert(key.clone(), JitCompiledFunction {
-            compiled_at: std::time::SystemTime::now(),
-            speedup_ratio,
-            memory_usage,
         });
 
         info!("Completed JIT compilation for {} with {}x speedup", key, speedup_ratio);
         Ok(())
-    }
-
     /// Mark JIT compilation as failed
     #[instrument(skip(self))]
     pub fn mark_jit_compilation_failed(&self, function_name: &str, type_args: &[Type], error: &str) -> crate::error::Result<()> {
@@ -407,8 +282,6 @@ impl GenericOptimizer {
 
         warn!("JIT compilation failed for {}: {}", key, error);
         Ok(())
-    }
-
     /// Get optimization statistics
     #[instrument(skip(self))]
     pub fn get_statistics(&self) -> crate::error::Result<()> {
@@ -431,18 +304,10 @@ impl GenericOptimizer {
         });
 
         Ok(OptimizationStatistics {
-            total_functions,
-            total_calls,
-            total_instantiations,
-            strategy_distribution: strategy_counts,
-            jit_compiled_functions: jit_state.compiled.len(),
-            jit_compilation_failures: jit_state.failures.len(),
             average_speedup: jit_state.compiled.values()
                 .map(|f| f.speedup_ratio)
                 .fold(0.0, |acc, x| acc + x) / jit_state.compiled.len().max(1) as f64,
         })
-    }
-
     /// Clear all optimization data (useful for testing)
     #[instrument(skip(self))]
     pub fn clear_all_data(&self) -> crate::error::Result<()> {
@@ -465,8 +330,6 @@ impl GenericOptimizer {
         }
         debug!("Cleared all optimization data");
         Ok(())
-    }
-
     /// Optimize generic instantiations in the type environment
     #[instrument(skip(self, _type_environment))]
     pub fn optimize_instantiations(&self, _type_environment: &mut crate::type_system::TypeEnvironment) -> crate::error::Result<()> {
@@ -496,15 +359,6 @@ impl GenericOptimizer {
 /// Statistics about the optimization system
 #[derive(Debug, Clone)]
 pub struct OptimizationStatistics {
-    pub total_functions: usize,
-    pub total_calls: usize,
-    pub total_instantiations: usize,
-    pub strategy_distribution: HashMap<InstantiationStrategy, usize>,
-    pub jit_compiled_functions: usize,
-    pub jit_compilation_failures: usize,
-    pub average_speedup: f64,
-}
-
 /// Trait for optimizing generic code
 pub trait GenericCodeOptimizer {
     /// Optimize a generic function based on usage patterns
@@ -515,8 +369,6 @@ pub trait GenericCodeOptimizer {
     
     /// Generate dynamic dispatch code
     fn generate_dynamic_dispatch_code(&self, function_name: &str) -> crate::error::Result<()>;
-}
-
 impl GenericCodeOptimizer for GenericOptimizer {
     #[instrument(skip(self))]
     fn optimize_function(&self, function_name: &str, usage_info: &GenericUsageInfo) -> crate::error::Result<()> {
@@ -532,8 +384,6 @@ impl GenericCodeOptimizer for GenericOptimizer {
         // This would generate actual specialized code in a real implementation
         let specialized_name = format!("{}_{:?}", function_name, type_args);
         Ok(format!("// Monomorphized version: {}", specialized_name))
-    }
-
     #[instrument(skip(self))]
     fn generate_dynamic_dispatch_code(&self, function_name: &str) -> crate::error::Result<()> {
         // This would generate vtable-based dispatch code in a real implementation
@@ -545,28 +395,18 @@ impl GenericCodeOptimizer for GenericOptimizer {
 #[derive(Debug)]
 pub struct MemoryLayoutOptimizer {
     /// Cache of optimized layouts
-    layout_cache: RwLock<HashMap<Vec<Type>, MemoryLayout>>,
-}
-
 /// Optimized memory layout information
 #[derive(Debug, Clone)]
 pub struct MemoryLayout {
     /// Total size in bytes
-    pub size: usize,
     /// Alignment requirement
-    pub alignment: usize,
     /// Field offsets
-    pub field_offsets: Vec<usize>,
     /// Padding bytes
-    pub padding: usize,
-}
-
 impl MemoryLayoutOptimizer {
     /// Create a new memory layout optimizer
     #[instrument]
     pub fn new() -> Self {
         Self {
-            layout_cache: RwLock::new(HashMap::new()),
         }
     }
 
@@ -591,11 +431,7 @@ impl MemoryLayoutOptimizer {
             let mut cache = self.layout_cache.write()
                 .map_err(|_| CursedError::system_error("Failed to acquire write lock"))?;
             cache.insert(type_args.to_vec(), layout.clone());
-        }
-
         Ok(layout)
-    }
-
     /// Compute the optimal memory layout
     #[instrument(skip(self))]
     fn compute_optimal_layout(&self, type_args: &[Type]) -> crate::error::Result<()> {
@@ -613,27 +449,16 @@ impl MemoryLayoutOptimizer {
             
             current_offset = aligned_offset + size;
             max_alignment = max_alignment.max(alignment);
-        }
-
         // Final alignment
         total_size = (current_offset + max_alignment - 1) & !(max_alignment - 1);
         let padding = total_size - current_offset;
 
         Ok(MemoryLayout {
-            size: total_size,
-            alignment: max_alignment,
-            field_offsets,
-            padding,
         })
-    }
-
     /// Get size and alignment for a type
     #[instrument(skip(self))]
     fn get_type_size_and_alignment(&self, type_ref: &Type) -> crate::error::Result<()> {
         match type_ref {
-            Type::Integer => Ok((8, 8)),
-            Type::Float => Ok((8, 8)),
-            Type::Boolean => Ok((1, 1)),
             Type::Character => Ok((4, 4)), // UTF-32
             Type::String => Ok((24, 8)), // Pointer + length + capacity
             Type::Array(_) => Ok((24, 8)), // Similar to string
@@ -651,5 +476,3 @@ impl MemoryLayoutOptimizer {
             _ => Ok((8, 8)), // Default pointer size
         }
     }
-}
-

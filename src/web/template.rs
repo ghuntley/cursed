@@ -9,19 +9,11 @@ use std::fmt;
 #[derive(Debug, Clone)]
 pub enum TemplateError {
     /// Template not found
-    NotFound(String),
     /// Template parsing error
-    Parse(String),
     /// Template rendering error
-    Render(String),
     /// Variable not found
-    VariableNotFound(String),
     /// Invalid template syntax
-    InvalidSyntax(String),
     /// I/O error
-    Io(String),
-}
-
 // impl fmt::Display for TemplateError {
 //     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
 //         match self {
@@ -46,24 +38,16 @@ pub enum TemplateError {
 /// Template context for variable substitution
 #[derive(Debug, Clone)]
 pub struct TemplateContext {
-    variables: HashMap<String, String>,
-}
-
 impl TemplateContext {
     pub fn new() -> Self {
         Self {
-            variables: HashMap::new(),
         }
     }
 
     pub fn set<K: Into<String>, V: Into<String>>(&mut self, key: K, value: V) {
         self.variables.insert(key.into(), value.into());
-    }
-
     pub fn get(&self, key: &str) -> Option<&String> {
         self.variables.get(key)
-    }
-
     pub fn from_map(variables: HashMap<String, String>) -> Self {
         Self { variables }
     }
@@ -73,8 +57,6 @@ impl TemplateContext {
             self.variables.insert(key.clone(), value.clone());
         }
     }
-}
-
 impl Default for TemplateContext {
     fn default() -> Self {
         Self::new()
@@ -84,48 +66,25 @@ impl Default for TemplateContext {
 /// Compiled template
 #[derive(Debug, Clone)]
 pub struct Template {
-    name: String,
-    content: String,
-    compiled: Vec<TemplateToken>,
-}
-
 /// Template tokens for compilation
 #[derive(Debug, Clone)]
 enum TemplateToken {
     /// Raw text content
-    Text(String),
     /// Variable substitution {{ variable }}
-    Variable(String),
     /// If condition {% if condition %}
-    If(String),
     /// Else clause {% else %}
-    Else,
     /// End if {% endif %}
-    EndIf,
     /// For loop {% for item in items %}
-    For { var: String, collection: String },
     /// End for {% endfor %}
-    EndFor,
-}
-
 impl Template {
     pub fn new(name: String, content: String) -> Result<Self, TemplateError> {
         let compiled = Self::compile(&content)?;
         Ok(Self {
-            name,
-            content,
-            compiled,
         })
-    }
-
     pub fn name(&self) -> &str {
         &self.name
-    }
-
     pub fn content(&self) -> &str {
         &self.content
-    }
-
     fn compile(content: &str) -> Result<Vec<TemplateToken>, TemplateError> {
         let mut tokens = Vec::new();
         let mut chars = content.chars().peekable();
@@ -139,8 +98,6 @@ impl Template {
                     if !current_text.is_empty() {
                         tokens.push(TemplateToken::Text(current_text.clone()));
                         current_text.clear();
-                    }
-                    
                     let mut var_name = String::new();
                     let mut found_end = false;
                     
@@ -151,12 +108,8 @@ impl Template {
                             break;
                         }
                         var_name.push(ch);
-                    }
-                    
                     if !found_end {
                         return Err(TemplateError::InvalidSyntax("Unclosed variable".to_string()));
-                    }
-                    
                     tokens.push(TemplateToken::Variable(var_name.trim().to_string()));
                 } else if chars.peek() == Some(&'%') {
                     // Control structure {% ... %}
@@ -164,8 +117,6 @@ impl Template {
                     if !current_text.is_empty() {
                         tokens.push(TemplateToken::Text(current_text.clone()));
                         current_text.clear();
-                    }
-                    
                     let mut control = String::new();
                     let mut found_end = false;
                     
@@ -176,12 +127,8 @@ impl Template {
                             break;
                         }
                         control.push(ch);
-                    }
-                    
                     if !found_end {
                         return Err(TemplateError::InvalidSyntax("Unclosed control structure".to_string()));
-                    }
-                    
                     let control = control.trim();
                     if control.starts_with("if ") {
                         tokens.push(TemplateToken::If(control[3..].trim().to_string()));
@@ -193,8 +140,6 @@ impl Template {
                         let parts: Vec<&str> = control[4..].split(" in ").collect();
                         if parts.len() == 2 {
                             tokens.push(TemplateToken::For {
-                                var: parts[0].trim().to_string(),
-                                collection: parts[1].trim().to_string(),
                             });
                         } else {
                             return Err(TemplateError::InvalidSyntax(format!("Invalid for loop: {}", control)));
@@ -214,11 +159,7 @@ impl Template {
 
         if !current_text.is_empty() {
             tokens.push(TemplateToken::Text(current_text));
-        }
-
         Ok(tokens)
-    }
-
     pub fn render(&self, context: &TemplateContext) -> Result<String, TemplateError> {
         let mut output = String::new();
         let mut token_index = 0;
@@ -244,9 +185,6 @@ impl Template {
                         token_index += 1;
                         while token_index < self.compiled.len() && depth > 0 {
                             match &self.compiled[token_index] {
-                                TemplateToken::If(_) => depth += 1,
-                                TemplateToken::EndIf => depth -= 1,
-                                TemplateToken::Else if depth == 1 => break,
                                 _ => {}
                             }
                             token_index += 1;
@@ -260,8 +198,6 @@ impl Template {
                     token_index += 1;
                     while token_index < self.compiled.len() && depth > 0 {
                         match &self.compiled[token_index] {
-                            TemplateToken::If(_) => depth += 1,
-                            TemplateToken::EndIf => depth -= 1,
                             _ => {}
                         }
                         token_index += 1;
@@ -277,8 +213,6 @@ impl Template {
                     token_index += 1;
                     while token_index < self.compiled.len() && depth > 0 {
                         match &self.compiled[token_index] {
-                            TemplateToken::For { .. } => depth += 1,
-                            TemplateToken::EndFor => depth -= 1,
                             _ => {}
                         }
                         token_index += 1;
@@ -290,8 +224,6 @@ impl Template {
                 }
             }
             token_index += 1;
-        }
-
         Ok(output)
     }
 }
@@ -299,9 +231,6 @@ impl Template {
 /// Template loader for loading templates from files
 #[derive(Debug)]
 pub struct TemplateLoader {
-    template_dir: String,
-}
-
 impl TemplateLoader {
     pub fn new(template_dir: String) -> Self {
         Self { template_dir }
@@ -318,15 +247,9 @@ impl TemplateLoader {
 /// Template cache for performance
 #[derive(Debug)]
 pub struct TemplateCache {
-    templates: HashMap<String, Template>,
-    loader: TemplateLoader,
-}
-
 impl TemplateCache {
     pub fn new(loader: TemplateLoader) -> Self {
         Self {
-            templates: HashMap::new(),
-            loader,
         }
     }
 
@@ -334,11 +257,7 @@ impl TemplateCache {
         if !self.templates.contains_key(name) {
             let template = self.loader.load(name)?;
             self.templates.insert(name.to_string(), template);
-        }
-        
         Ok(self.templates.get(name).unwrap())
-    }
-
     pub fn clear(&mut self) {
         self.templates.clear();
     }
@@ -347,9 +266,6 @@ impl TemplateCache {
 /// Template renderer combining engine and context
 #[derive(Debug)]
 pub struct TemplateRenderer {
-    cache: TemplateCache,
-}
-
 impl TemplateRenderer {
     pub fn new(template_dir: String) -> Self {
         let loader = TemplateLoader::new(template_dir);
@@ -366,27 +282,17 @@ impl TemplateRenderer {
 /// Template engine for managing templates
 #[derive(Debug)]
 pub struct TemplateEngine {
-    renderer: TemplateRenderer,
-    global_context: TemplateContext,
-}
-
 impl TemplateEngine {
     pub fn new(template_dir: String) -> Self {
         Self {
-            renderer: TemplateRenderer::new(template_dir),
-            global_context: TemplateContext::new(),
         }
     }
 
     pub fn set_global<K: Into<String>, V: Into<String>>(&mut self, key: K, value: V) {
         self.global_context.set(key, value);
-    }
-
     pub fn render(&mut self, template_name: &str, mut context: TemplateContext) -> Result<String, TemplateError> {
         context.merge(&self.global_context);
         self.renderer.render(template_name, &context)
-    }
-
     pub fn render_string(&self, template_content: &str, context: &TemplateContext) -> Result<String, TemplateError> {
         let template = Template::new("inline".to_string(), template_content.to_string())?;
         let mut merged_context = context.clone();

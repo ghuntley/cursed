@@ -15,152 +15,90 @@ use tracing::{debug, info, warn, instrument};
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct TestFunction {
     /// Name of the test function
-    pub name: String,
     
     /// Test file path
-    pub file_path: PathBuf,
     
     /// Line number where test is defined
-    pub line_number: usize,
     
     /// Test category (unit, integration, ignored, etc.)
-    pub category: TestCategory,
     
     /// Whether test should be ignored by default
-    pub ignored: bool,
     
     /// Whether this is a benchmark test
-    pub is_benchmark: bool,
     
     /// Test timeout in seconds (if specified)
-    pub timeout: Option<u64>,
     
     /// Test attributes and annotations
-    pub attributes: Vec<String>,
     
     /// Module path within the test file
-    pub module_path: String,
-}
-
 /// Test categories for organization and filtering
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub enum TestCategory {
     /// Unit tests (in lib.rs or mod tests)
-    Unit,
     
     /// Integration tests (in tests/ directory)
-    Integration,
     
     /// Documentation tests
-    Doc,
     
     /// Benchmark tests
-    Benchmark,
     
     /// Example tests
-    Example,
     
     /// Custom category
-    Custom(String),
-}
-
 /// Test discovery configuration
 #[derive(Debug, Clone)]
 pub struct TestDiscoveryConfig {
     /// Root directory to search for tests
-    pub root_dir: PathBuf,
     
     /// Include unit tests in src/
-    pub include_unit_tests: bool,
     
     /// Include integration tests in tests/
-    pub include_integration_tests: bool,
     
     /// Include documentation tests
-    pub include_doc_tests: bool,
     
     /// Include benchmark tests
-    pub include_benchmarks: bool,
     
     /// Include example tests
-    pub include_examples: bool,
     
     /// Custom test patterns to include
-    pub custom_patterns: Vec<String>,
     
     /// Files to exclude from discovery
-    pub exclude_patterns: Vec<String>,
-}
-
 impl Default for TestDiscoveryConfig {
     fn default() -> Self {
         Self {
-            root_dir: PathBuf::from("."),
-            include_unit_tests: true,
-            include_integration_tests: true,
-            include_doc_tests: false,
-            include_benchmarks: false,
-            include_examples: false,
-            custom_patterns: Vec::new(),
             exclude_patterns: vec![
                 "target/**".to_string(),
                 ".git/**".to_string(),
-                "*.bak".to_string(),
-            ],
         }
     }
-}
-
 /// Test discovery results
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct TestDiscoveryResult {
     /// All discovered test functions
-    pub tests: Vec<TestFunction>,
     
     /// Tests organized by category
-    pub tests_by_category: HashMap<TestCategory, Vec<TestFunction>>,
     
     /// Tests organized by file
-    pub tests_by_file: HashMap<PathBuf, Vec<TestFunction>>,
     
     /// Discovery statistics
-    pub statistics: TestDiscoveryStatistics,
-}
-
 /// Statistics about test discovery
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct TestDiscoveryStatistics {
     /// Total number of tests discovered
-    pub total_tests: usize,
     
     /// Number of unit tests
-    pub unit_tests: usize,
     
     /// Number of integration tests
-    pub integration_tests: usize,
     
     /// Number of ignored tests
-    pub ignored_tests: usize,
     
     /// Number of benchmark tests
-    pub benchmark_tests: usize,
     
     /// Number of files scanned
-    pub files_scanned: usize,
     
     /// Number of test files found
-    pub test_files_found: usize,
-}
-
 /// Main test discovery engine
 pub struct TestDiscovery {
-    config: TestDiscoveryConfig,
-    test_fn_regex: Regex,
-    benchmark_regex: Regex,
-    ignore_regex: Regex,
-    timeout_regex: Regex,
-}
-
 impl TestDiscovery {
     /// Create a new test discovery instance
     pub fn new(config: TestDiscoveryConfig) -> crate::error::Result<()> {
@@ -170,14 +108,7 @@ impl TestDiscovery {
         let timeout_regex = Regex::new(r"#\[timeout\((\d+)\)\]")?;
         
         Ok(TestDiscovery {
-            config,
-            test_fn_regex,
-            benchmark_regex,
-            ignore_regex,
-            timeout_regex,
         })
-    }
-    
     /// Discover all tests in the project
     #[instrument(skip(self))]
     pub fn discover_tests(&self) -> crate::error::Result<()> {
@@ -238,30 +169,13 @@ impl TestDiscovery {
         for test in &all_tests {
             tests_by_category.entry(test.category.clone()).or_default().push(test.clone());
             tests_by_file.entry(test.file_path.clone()).or_default().push(test.clone());
-        }
-        
         // Calculate statistics
         let statistics = TestDiscoveryStatistics {
-            total_tests: all_tests.len(),
-            unit_tests: all_tests.iter().filter(|t| t.category == TestCategory::Unit).count(),
-            integration_tests: all_tests.iter().filter(|t| t.category == TestCategory::Integration).count(),
-            ignored_tests: all_tests.iter().filter(|t| t.ignored).count(),
-            benchmark_tests: all_tests.iter().filter(|t| t.is_benchmark).count(),
-            files_scanned,
-            test_files_found,
-        };
         
-        info!("Test discovery completed. Found {} tests in {} files", 
               statistics.total_tests, statistics.test_files_found);
         
         Ok(TestDiscoveryResult {
-            tests: all_tests,
-            tests_by_category,
-            tests_by_file,
-            statistics,
         })
-    }
-    
     /// Discover integration tests in tests/ directory
     fn discover_integration_tests(&self, tests_dir: &Path) -> crate::error::Result<()> {
         let mut tests = Vec::new();
@@ -290,8 +204,6 @@ impl TestDiscovery {
         }
         
         Ok((tests, files_scanned, test_files_found))
-    }
-    
     /// Discover unit tests in src/ directory
     fn discover_unit_tests(&self, src_dir: &Path) -> crate::error::Result<()> {
         let mut tests = Vec::new();
@@ -320,8 +232,6 @@ impl TestDiscovery {
         }
         
         Ok((tests, files_scanned, test_files_found))
-    }
-    
     /// Discover benchmark tests in benches/ directory
     fn discover_benchmark_tests(&self, benches_dir: &Path) -> crate::error::Result<()> {
         let mut tests = Vec::new();
@@ -345,8 +255,6 @@ impl TestDiscovery {
         }
         
         Ok((tests, files_scanned, test_files_found))
-    }
-    
     /// Discover example tests in examples/ directory
     fn discover_example_tests(&self, examples_dir: &Path) -> crate::error::Result<()> {
         let mut tests = Vec::new();
@@ -370,8 +278,6 @@ impl TestDiscovery {
         }
         
         Ok((tests, files_scanned, test_files_found))
-    }
-    
     /// Parse a single test file to extract test functions
     fn parse_test_file(&self, file_path: &Path, default_category: TestCategory) -> crate::error::Result<()> {
         let content = fs::read_to_string(file_path)?;
@@ -393,19 +299,10 @@ impl TestDiscovery {
             }
             
             i += 1;
-        }
-        
         debug!("Found {} tests in {}", tests.len(), file_path.display());
         Ok(tests)
-    }
-    
     /// Parse a single test function from source lines
     fn parse_test_function(
-        &self,
-        lines: &[&str],
-        start_index: usize,
-        file_path: &Path,
-        default_category: TestCategory,
     ) -> crate::error::Result<()> {
         let mut attributes = Vec::new();
         let mut ignored = false;
@@ -420,12 +317,8 @@ impl TestDiscovery {
             
             if attr_line.contains("#[ignore]") {
                 ignored = true;
-            }
-            
             if attr_line.contains("#[bench]") {
                 is_benchmark = true;
-            }
-            
             if let Some(captures) = self.timeout_regex.captures(attr_line) {
                 if let Some(timeout_str) = captures.get(1) {
                     timeout = timeout_str.as_str().parse().ok();
@@ -433,8 +326,6 @@ impl TestDiscovery {
             }
             
             i += 1;
-        }
-        
         // Parse function declaration
         if i < lines.len() {
             let fn_line = lines[i].trim();
@@ -442,25 +333,11 @@ impl TestDiscovery {
             if let Some(captures) = self.test_fn_regex.captures(fn_line) {
                 if let Some(fn_name) = captures.get(1) {
                     let test_function = TestFunction {
-                        name: fn_name.as_str().to_string(),
-                        file_path: file_path.to_path_buf(),
-                        line_number: i + 1,
-                        category: if is_benchmark { TestCategory::Benchmark } else { default_category },
-                        ignored,
-                        is_benchmark,
-                        timeout,
-                        attributes,
-                        module_path: self.extract_module_path(file_path),
-                    };
                     
                     return Ok(Some(test_function));
                 }
             }
-        }
-        
         Ok(None)
-    }
-    
     /// Extract module path from file path
     fn extract_module_path(&self, file_path: &Path) -> String {
         // Convert file path to module path
@@ -468,7 +345,6 @@ impl TestDiscovery {
             rel
         } else {
             file_path
-        };
         
         let path_str = relative_path.to_string_lossy();
         let module_path = path_str
@@ -497,14 +373,10 @@ impl TestDiscovery {
         }
         
         false
-    }
-    
     /// Filter tests based on patterns
     pub fn filter_tests(&self, discovery_result: &TestDiscoveryResult, patterns: &[String]) -> Vec<TestFunction> {
         if patterns.is_empty() {
             return discovery_result.tests.clone();
-        }
-        
         let mut filtered_tests = Vec::new();
         
         for pattern in patterns {
@@ -519,8 +391,6 @@ impl TestDiscovery {
         }
         
         filtered_tests
-    }
-    
     /// Check if a test name matches a pattern
     fn matches_pattern(&self, name: &str, pattern: &str) -> bool {
         if pattern.contains('*') {
@@ -539,37 +409,21 @@ impl TestDiscovery {
 #[derive(Debug, Clone)]
 pub struct TestFilter {
     /// Test name patterns to include
-    pub include_patterns: Vec<String>,
     
     /// Test name patterns to exclude
-    pub exclude_patterns: Vec<String>,
     
     /// Include ignored tests
-    pub include_ignored: bool,
     
     /// Include only ignored tests
-    pub only_ignored: bool,
     
     /// Include benchmark tests
-    pub include_benchmarks: bool,
     
     /// Test categories to include
-    pub categories: Vec<TestCategory>,
-}
-
 impl Default for TestFilter {
     fn default() -> Self {
         Self {
-            include_patterns: Vec::new(),
-            exclude_patterns: Vec::new(),
-            include_ignored: false,
-            only_ignored: false,
-            include_benchmarks: false,
-            categories: vec![TestCategory::Unit, TestCategory::Integration],
         }
     }
-}
-
 impl TestFilter {
     /// Apply filter to test discovery results
     pub fn apply(&self, discovery_result: &TestDiscoveryResult) -> Vec<TestFunction> {
@@ -578,20 +432,14 @@ impl TestFilter {
         // Filter by categories
         if !self.categories.is_empty() {
             filtered_tests.retain(|test| self.categories.contains(&test.category));
-        }
-        
         // Filter by ignored status
         if self.only_ignored {
             filtered_tests.retain(|test| test.ignored);
         } else if !self.include_ignored {
             filtered_tests.retain(|test| !test.ignored);
-        }
-        
         // Filter by benchmark status
         if !self.include_benchmarks {
             filtered_tests.retain(|test| !test.is_benchmark);
-        }
-        
         // Apply include patterns
         if !self.include_patterns.is_empty() {
             filtered_tests.retain(|test| {
@@ -599,8 +447,6 @@ impl TestFilter {
                     test.name.contains(pattern) || test.module_path.contains(pattern)
                 })
             });
-        }
-        
         // Apply exclude patterns
         if !self.exclude_patterns.is_empty() {
             filtered_tests.retain(|test| {
@@ -608,8 +454,6 @@ impl TestFilter {
                     test.name.contains(pattern) || test.module_path.contains(pattern)
                 })
             });
-        }
-        
         filtered_tests
     }
 }

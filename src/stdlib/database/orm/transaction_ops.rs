@@ -16,27 +16,16 @@ use super::cache::QueryCache;
 #[derive(Debug)]
 pub struct TransactionalRepository<T: Entity> {
     /// Underlying repository
-    repository: Repository<T>,
     /// Current transaction if any
-    current_transaction: Arc<Mutex<Option<Arc<Tx>>>>,
     /// Transaction configuration
-    config: TransactionConfig,
-}
-
 impl<T: Entity> TransactionalRepository<T> {
     /// slay Create new transactional repository
     #[instrument(skip(db, query_cache, orm_config))]
     pub fn new(
-        db: Arc<DB>,
-        query_cache: Arc<Mutex<QueryCache>>,
-        orm_config: OrmConfig,
     ) -> Self {
         info!(entity = T::table_name(), "Creating transactional repository");
         
         Self {
-            repository: Repository::new(db, query_cache, orm_config),
-            current_transaction: Arc::new(Mutex::new(None)),
-            config: TransactionConfig::default(),
         }
     }
 
@@ -44,8 +33,6 @@ impl<T: Entity> TransactionalRepository<T> {
     #[instrument(skip(self, operation))]
     pub async fn with_transaction<F, R>(&self, operation: F) -> crate::error::Result<()>
     where
-        F: FnOnce(&Repository<T>) -> std::pin::Pin<Box<dyn std::future::Future<Output = crate::error::Result<()>> + Send>>,
-        R: Send,
     {
         info!(entity = T::table_name(), "Executing operation with transaction");
         
@@ -66,8 +53,6 @@ impl<T: Entity> TransactionalRepository<T> {
                 Err(error)
             }
         }
-    }
-
     /// periodt Begin new transaction
     #[instrument(skip(self))]
     pub async fn begin_transaction(&self) -> crate::error::Result<()> {
@@ -79,12 +64,8 @@ impl<T: Entity> TransactionalRepository<T> {
         // Store current transaction
         if let Ok(mut current_tx) = self.current_transaction.lock() {
             *current_tx = Some(tx.clone());
-        }
-        
         debug!("Transaction begun successfully");
         Ok(tx)
-    }
-
     /// bestie Commit transaction
     #[instrument(skip(self, tx))]
     pub async fn commit_transaction(&self, tx: Arc<Tx>) -> crate::error::Result<()> {
@@ -101,12 +82,8 @@ impl<T: Entity> TransactionalRepository<T> {
         // Clear current transaction
         if let Ok(mut current_tx) = self.current_transaction.lock() {
             *current_tx = None;
-        }
-        
         info!("Transaction committed");
         Ok(())
-    }
-
     /// yolo Rollback transaction
     #[instrument(skip(self, tx))]
     pub async fn rollback_transaction(&self, tx: Arc<Tx>) -> crate::error::Result<()> {
@@ -121,17 +98,11 @@ impl<T: Entity> TransactionalRepository<T> {
         // Clear current transaction
         if let Ok(mut current_tx) = self.current_transaction.lock() {
             *current_tx = None;
-        }
-        
         warn!("Transaction rolled back");
         Ok(())
-    }
-
     /// slay Get underlying repository
     pub fn repository(&self) -> &Repository<T> {
         &self.repository
-    }
-
     /// lit Check if currently in transaction
     #[instrument(skip(self))]
     pub fn is_in_transaction(&self) -> bool {
@@ -141,23 +112,14 @@ impl<T: Entity> TransactionalRepository<T> {
             false
         }
     }
-}
-
 /// fr fr Transaction scope for managing multiple operations
 #[derive(Debug)]
 pub struct TransactionScope {
     /// Database connection
-    db: Arc<DB>,
     /// Current transaction
-    transaction: Arc<Mutex<Option<Arc<Tx>>>>,
     /// Operations performed in this scope
-    operations: Arc<Mutex<Vec<TransactionOperation>>>,
     /// Scope configuration
-    config: TransactionConfig,
     /// Transaction state
-    state: Arc<Mutex<TransactionState>>,
-}
-
 impl TransactionScope {
     /// slay Create new transaction scope
     #[instrument(skip(db))]
@@ -165,11 +127,6 @@ impl TransactionScope {
         info!("Creating new transaction scope");
         
         Self {
-            db,
-            transaction: Arc::new(Mutex::new(None)),
-            operations: Arc::new(Mutex::new(Vec::new())),
-            config: TransactionConfig::default(),
-            state: Arc::new(Mutex::new(TransactionState::NotStarted)),
         }
     }
 
@@ -184,24 +141,17 @@ impl TransactionScope {
                 return Err(DatabaseError::validation_error("Transaction scope already started"));
             }
             *state = TransactionState::Active;
-        }
-        
         // Start transaction
         let tx = Arc::new(self.db.begin()?); // Use proper DB transaction
         
         if let Ok(mut transaction) = self.transaction.lock() {
             *transaction = Some(tx);
-        }
-        
         debug!("Transaction scope begun successfully");
         Ok(())
-    }
-
     /// periodt Execute operation within scope
     #[instrument(skip(self, operation))]
     pub async fn execute<F, R>(&self, operation_name: &str, operation: F) -> crate::error::Result<()>
     where
-        F: std::future::Future<Output = crate::error::Result<()>>,
     {
         debug!(operation = operation_name, "Executing operation in transaction scope");
         
@@ -215,12 +165,7 @@ impl TransactionScope {
         // Record operation
         if let Ok(mut operations) = self.operations.lock() {
             operations.push(TransactionOperation {
-                name: operation_name.to_string(),
-                timestamp: std::time::SystemTime::now(),
-                status: OperationStatus::InProgress,
             });
-        }
-        
         // Execute operation
         let result = operation.await;
         
@@ -228,20 +173,11 @@ impl TransactionScope {
         if let Ok(mut operations) = self.operations.lock() {
             if let Some(last_op) = operations.last_mut() {
                 last_op.status = match &result {
-                    Ok(_) => OperationStatus::Completed,
-                    Err(_) => OperationStatus::Failed,
-                };
             }
         }
         
         match &result {
-            Ok(_) => debug!(operation = operation_name, "Operation completed successfully"),
-            Err(error) => error!(operation = operation_name, error = %error, "Operation failed"),
-        }
-        
         result
-    }
-
     /// bestie Commit transaction scope
     #[instrument(skip(self))]
     pub async fn commit(&self) -> crate::error::Result<()> {
@@ -253,8 +189,6 @@ impl TransactionScope {
                 return Err(DatabaseError::validation_error("Transaction scope not active"));
             }
             *state = TransactionState::Committed;
-        }
-        
         // Commit transaction
         if let Ok(transaction) = self.transaction.lock() {
             if let Some(tx) = transaction.as_ref() {
@@ -266,8 +200,6 @@ impl TransactionScope {
         
         info!("Transaction scope committed successfully");
         Ok(())
-    }
-
     /// yolo Rollback transaction scope
     #[instrument(skip(self))]
     pub async fn rollback(&self) -> crate::error::Result<()> {
@@ -279,8 +211,6 @@ impl TransactionScope {
                 return Ok(()); // Nothing to rollback
             }
             *state = TransactionState::RolledBack;
-        }
-        
         // Rollback transaction
         if let Ok(transaction) = self.transaction.lock() {
             if let Some(tx) = transaction.as_ref() {
@@ -292,8 +222,6 @@ impl TransactionScope {
         
         warn!("Transaction scope rolled back");
         Ok(())
-    }
-
     /// slay Get transaction metrics
     #[instrument(skip(self))]
     pub fn metrics(&self) -> TransactionMetrics {
@@ -301,13 +229,11 @@ impl TransactionScope {
             ops.clone()
         } else {
             Vec::new()
-        };
         
         let state = if let Ok(state) = self.state.lock() {
             *state
         } else {
             TransactionState::NotStarted
-        };
         
         let completed_operations = operations.iter()
             .filter(|op| matches!(op.status, OperationStatus::Completed))
@@ -318,31 +244,16 @@ impl TransactionScope {
             .count();
         
         TransactionMetrics {
-            state,
-            total_operations: operations.len(),
-            completed_operations,
-            failed_operations,
-            start_time: operations.first().map(|op| op.timestamp),
-            end_time: operations.last().map(|op| op.timestamp),
         }
     }
-}
-
 /// fr fr Unit of Work pattern for tracking entity changes
 #[derive(Debug)]
 pub struct UnitOfWork {
     /// New entities to be inserted
-    new_entities: Arc<Mutex<HashMap<String, Vec<Box<dyn std::any::Any + Send + Sync>>>>>,
     /// Modified entities to be updated
-    dirty_entities: Arc<Mutex<HashMap<String, Vec<Box<dyn std::any::Any + Send + Sync>>>>>,
     /// Entities to be deleted
-    removed_entities: Arc<Mutex<HashMap<String, Vec<Box<dyn std::any::Any + Send + Sync>>>>>,
     /// Database connection
-    db: Arc<DB>,
     /// Transaction scope
-    transaction_scope: TransactionScope,
-}
-
 impl UnitOfWork {
     /// slay Create new unit of work
     #[instrument(skip(db))]
@@ -350,11 +261,6 @@ impl UnitOfWork {
         info!("Creating new unit of work");
         
         Self {
-            new_entities: Arc::new(Mutex::new(HashMap::new())),
-            dirty_entities: Arc::new(Mutex::new(HashMap::new())),
-            removed_entities: Arc::new(Mutex::new(HashMap::new())),
-            db: db.clone(),
-            transaction_scope: TransactionScope::new(db),
         }
     }
 
@@ -409,7 +315,6 @@ impl UnitOfWork {
         if let Ok(new_entities) = self.new_entities.lock() {
             for (entity_type, entities) in new_entities.iter() {
                 self.transaction_scope.execute(
-                    &format!("insert_{}", entity_type),
                     async {
                         // Process entity insertions
                         debug!(entity_type = entity_type, count = entities.len(), "Processing inserts");
@@ -423,7 +328,6 @@ impl UnitOfWork {
         if let Ok(dirty_entities) = self.dirty_entities.lock() {
             for (entity_type, entities) in dirty_entities.iter() {
                 self.transaction_scope.execute(
-                    &format!("update_{}", entity_type),
                     async {
                         // Process entity updates
                         debug!(entity_type = entity_type, count = entities.len(), "Processing updates");
@@ -437,7 +341,6 @@ impl UnitOfWork {
         if let Ok(removed_entities) = self.removed_entities.lock() {
             for (entity_type, entities) in removed_entities.iter() {
                 self.transaction_scope.execute(
-                    &format!("delete_{}", entity_type),
                     async {
                         // Process entity deletions
                         debug!(entity_type = entity_type, count = entities.len(), "Processing deletes");
@@ -455,8 +358,6 @@ impl UnitOfWork {
         
         info!("Unit of work committed successfully");
         Ok(())
-    }
-
     /// slay Rollback all changes
     #[instrument(skip(self))]
     pub async fn rollback(&self) -> crate::error::Result<()> {
@@ -470,8 +371,6 @@ impl UnitOfWork {
         
         warn!("Unit of work rolled back");
         Ok(())
-    }
-
     /// lit Clear all tracked entities
     #[instrument(skip(self))]
     fn clear_all(&self) {
@@ -479,12 +378,8 @@ impl UnitOfWork {
         
         if let Ok(mut new_entities) = self.new_entities.lock() {
             new_entities.clear();
-        }
-        
         if let Ok(mut dirty_entities) = self.dirty_entities.lock() {
             dirty_entities.clear();
-        }
-        
         if let Ok(mut removed_entities) = self.removed_entities.lock() {
             removed_entities.clear();
         }
@@ -506,113 +401,60 @@ impl UnitOfWork {
             .unwrap_or(0);
         
         UnitOfWorkStats {
-            new_entities: new_count,
-            dirty_entities: dirty_count,
-            removed_entities: removed_count,
-            transaction_metrics: self.transaction_scope.metrics(),
         }
     }
-}
-
 /// fr fr Transaction configuration
 #[derive(Debug, Clone)]
 pub struct TransactionConfig {
     /// Transaction timeout
-    pub timeout: std::time::Duration,
     /// Isolation level
-    pub isolation_level: super::super::SqlIsolationLevel,
     /// Read-only transaction
-    pub read_only: bool,
     /// Retry configuration
-    pub retry_config: RetryConfig,
-}
-
 impl Default for TransactionConfig {
     fn default() -> Self {
         Self {
-            timeout: std::time::Duration::from_secs(30),
-            isolation_level: super::super::SqlIsolationLevel::LevelReadCommitted,
-            read_only: false,
-            retry_config: RetryConfig::default(),
         }
     }
-}
-
 /// fr fr Retry configuration for transaction failures
 #[derive(Debug, Clone)]
 pub struct RetryConfig {
     /// Maximum retry attempts
-    pub max_attempts: usize,
     /// Retry delay
-    pub delay: std::time::Duration,
     /// Exponential backoff multiplier
-    pub backoff_multiplier: f64,
-}
-
 impl Default for RetryConfig {
     fn default() -> Self {
         Self {
-            max_attempts: 3,
-            delay: std::time::Duration::from_millis(100),
-            backoff_multiplier: 2.0,
         }
     }
-}
-
 /// fr fr Transaction state
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum TransactionState {
     /// Transaction not started
-    NotStarted,
     /// Transaction is active
-    Active,
     /// Transaction was committed
-    Committed,
     /// Transaction was rolled back
-    RolledBack,
     /// Transaction failed
-    Failed,
-}
-
 /// fr fr Transaction operation record
 #[derive(Debug, Clone)]
 pub struct TransactionOperation {
     /// Operation name
-    pub name: String,
     /// Operation timestamp
-    pub timestamp: std::time::SystemTime,
     /// Operation status
-    pub status: OperationStatus,
-}
-
 /// fr fr Operation status
 #[derive(Debug, Clone, PartialEq)]
 pub enum OperationStatus {
     /// Operation in progress
-    InProgress,
     /// Operation completed successfully
-    Completed,
     /// Operation failed
-    Failed,
-}
-
 /// fr fr Transaction metrics
 #[derive(Debug, Clone)]
 pub struct TransactionMetrics {
     /// Current transaction state
-    pub state: TransactionState,
     /// Total operations executed
-    pub total_operations: usize,
     /// Completed operations
-    pub completed_operations: usize,
     /// Failed operations
-    pub failed_operations: usize,
     /// Transaction start time
-    pub start_time: Option<std::time::SystemTime>,
     /// Transaction end time
-    pub end_time: Option<std::time::SystemTime>,
-}
-
 impl TransactionMetrics {
     /// Calculate success rate
     pub fn success_rate(&self) -> f64 {
@@ -631,20 +473,12 @@ impl TransactionMetrics {
             None
         }
     }
-}
-
 /// fr fr Unit of work statistics
 #[derive(Debug, Clone)]
 pub struct UnitOfWorkStats {
     /// Number of new entities
-    pub new_entities: usize,
     /// Number of dirty entities
-    pub dirty_entities: usize,
     /// Number of removed entities
-    pub removed_entities: usize,
     /// Transaction metrics
-    pub transaction_metrics: TransactionMetrics,
-}
-
 // Note: Tx implementation is provided by the core database module
 

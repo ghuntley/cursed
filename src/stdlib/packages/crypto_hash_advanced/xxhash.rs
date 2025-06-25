@@ -19,42 +19,17 @@ const PRIME64_5: u64 = 0x27D4EB2F165667C5;
 /// xxHash32 hasher implementation
 #[derive(Debug, Clone)]
 pub struct XxHash32 {
-    seed: u32,
-    v1: u32,
-    v2: u32,
-    v3: u32,
-    v4: u32,
-    total_len: u64,
-    memory: [u8; 16],
-    memsize: usize,
-}
-
 impl XxHash32 {
     pub fn new() -> Self {
         Self::with_seed(0)
-    }
-    
     pub fn with_seed(seed: u32) -> Self {
         let mut hasher = Self {
-            seed,
-            v1: seed.wrapping_add(PRIME32_1).wrapping_add(PRIME32_2),
-            v2: seed.wrapping_add(PRIME32_2),
-            v3: seed,
-            v4: seed.wrapping_sub(PRIME32_1),
-            total_len: 0,
-            memory: [0; 16],
-            memsize: 0,
-        };
         hasher.reset();
         hasher
-    }
-    
     fn xxh32_round(acc: u32, input: u32) -> u32 {
         acc.wrapping_add(input.wrapping_mul(PRIME32_2))
             .rotate_left(13)
             .wrapping_mul(PRIME32_1)
-    }
-    
     fn xxh32_finalize(mut h32: u32, len: u64) -> u32 {
         h32 = h32.wrapping_add(len as u32);
         
@@ -71,12 +46,8 @@ impl XxHash32 {
 impl Hasher for XxHash32 {
     fn algorithm(&self) -> &'static str {
         "xxHash32"
-    }
-    
     fn digest_size(&self) -> usize {
         4
-    }
-    
     fn update(&mut self, mut data: &[u8]) {
         self.total_len += data.len() as u64;
         
@@ -118,8 +89,6 @@ impl Hasher for XxHash32 {
             self.v4 = Self::xxh32_round(self.v4, input4);
             
             data = &data[16..];
-        }
-        
         // Store remaining bytes
         if !data.is_empty() {
             self.memory[..data.len()].copy_from_slice(data);
@@ -142,14 +111,10 @@ impl Hasher for XxHash32 {
                     .rotate_left(17)
                     .wrapping_mul(PRIME32_4);
                 remaining = &remaining[4..];
-            }
-            
             for &byte in remaining {
                 h32 = h32.wrapping_add((byte as u32).wrapping_mul(PRIME32_5))
                     .rotate_left(11)
                     .wrapping_mul(PRIME32_1);
-            }
-            
             h32
         } else {
             let mut h32 = self.seed.wrapping_add(PRIME32_5);
@@ -158,14 +123,9 @@ impl Hasher for XxHash32 {
                 h32 = h32.wrapping_add((byte as u32).wrapping_mul(PRIME32_5))
                     .rotate_left(11)
                     .wrapping_mul(PRIME32_1);
-            }
-            
             h32
-        };
         
         Self::xxh32_finalize(h32, self.total_len).to_le_bytes().to_vec()
-    }
-    
     fn reset(&mut self) {
         self.v1 = self.seed.wrapping_add(PRIME32_1).wrapping_add(PRIME32_2);
         self.v2 = self.seed.wrapping_add(PRIME32_2);
@@ -180,47 +140,20 @@ impl Hasher for XxHash32 {
 /// xxHash64 hasher implementation - preferred for 64-bit systems
 #[derive(Debug, Clone)]
 pub struct XxHash64 {
-    seed: u64,
-    v1: u64,
-    v2: u64,
-    v3: u64,
-    v4: u64,
-    total_len: u64,
-    memory: [u8; 32],
-    memsize: usize,
-}
-
 impl XxHash64 {
     pub fn new() -> Self {
         Self::with_seed(0)
-    }
-    
     pub fn with_seed(seed: u64) -> Self {
         let mut hasher = Self {
-            seed,
-            v1: seed.wrapping_add(PRIME64_1).wrapping_add(PRIME64_2),
-            v2: seed.wrapping_add(PRIME64_2),
-            v3: seed,
-            v4: seed.wrapping_sub(PRIME64_1),
-            total_len: 0,
-            memory: [0; 32],
-            memsize: 0,
-        };
         hasher.reset();
         hasher
-    }
-    
     fn xxh64_round(acc: u64, input: u64) -> u64 {
         acc.wrapping_add(input.wrapping_mul(PRIME64_2))
             .rotate_left(31)
             .wrapping_mul(PRIME64_1)
-    }
-    
     fn xxh64_merge_round(acc: u64, val: u64) -> u64 {
         let val = Self::xxh64_round(0, val);
         (acc ^ val).wrapping_mul(PRIME64_1).wrapping_add(PRIME64_4)
-    }
-    
     fn xxh64_finalize(mut h64: u64, len: u64) -> u64 {
         h64 = h64.wrapping_add(len);
         
@@ -237,12 +170,8 @@ impl XxHash64 {
 impl Hasher for XxHash64 {
     fn algorithm(&self) -> &'static str {
         "xxHash64"
-    }
-    
     fn digest_size(&self) -> usize {
         8
-    }
-    
     fn update(&mut self, mut data: &[u8]) {
         self.total_len += data.len() as u64;
         
@@ -253,20 +182,12 @@ impl Hasher for XxHash64 {
                 self.memory[self.memsize..self.memsize + fill].copy_from_slice(&data[..fill]);
                 
                 let input1 = u64::from_le_bytes([
-                    self.memory[0], self.memory[1], self.memory[2], self.memory[3],
-                    self.memory[4], self.memory[5], self.memory[6], self.memory[7],
                 ]);
                 let input2 = u64::from_le_bytes([
-                    self.memory[8], self.memory[9], self.memory[10], self.memory[11],
-                    self.memory[12], self.memory[13], self.memory[14], self.memory[15],
                 ]);
                 let input3 = u64::from_le_bytes([
-                    self.memory[16], self.memory[17], self.memory[18], self.memory[19],
-                    self.memory[20], self.memory[21], self.memory[22], self.memory[23],
                 ]);
                 let input4 = u64::from_le_bytes([
-                    self.memory[24], self.memory[25], self.memory[26], self.memory[27],
-                    self.memory[28], self.memory[29], self.memory[30], self.memory[31],
                 ]);
                 
                 self.v1 = Self::xxh64_round(self.v1, input1);
@@ -296,8 +217,6 @@ impl Hasher for XxHash64 {
             self.v4 = Self::xxh64_round(self.v4, input4);
             
             data = &data[32..];
-        }
-        
         // Store remaining bytes
         if !data.is_empty() {
             self.memory[..data.len()].copy_from_slice(data);
@@ -321,16 +240,12 @@ impl Hasher for XxHash64 {
             let mut remaining = &self.memory[..self.memsize];
             while remaining.len() >= 8 {
                 let input = u64::from_le_bytes([
-                    remaining[0], remaining[1], remaining[2], remaining[3],
-                    remaining[4], remaining[5], remaining[6], remaining[7],
                 ]);
                 h64 = (h64 ^ Self::xxh64_round(0, input))
                     .rotate_left(27)
                     .wrapping_mul(PRIME64_1)
                     .wrapping_add(PRIME64_4);
                 remaining = &remaining[8..];
-            }
-            
             while remaining.len() >= 4 {
                 let input = u32::from_le_bytes([remaining[0], remaining[1], remaining[2], remaining[3]]) as u64;
                 h64 = (h64 ^ (input.wrapping_mul(PRIME64_1)))
@@ -338,14 +253,10 @@ impl Hasher for XxHash64 {
                     .wrapping_mul(PRIME64_2)
                     .wrapping_add(PRIME64_3);
                 remaining = &remaining[4..];
-            }
-            
             for &byte in remaining {
                 h64 = (h64 ^ ((byte as u64).wrapping_mul(PRIME64_5)))
                     .rotate_left(11)
                     .wrapping_mul(PRIME64_1);
-            }
-            
             h64
         } else {
             let mut h64 = self.seed.wrapping_add(PRIME64_5);
@@ -357,20 +268,13 @@ impl Hasher for XxHash64 {
                     .rotate_left(17)
                     .wrapping_mul(PRIME64_4);
                 remaining = &remaining[4..];
-            }
-            
             for &byte in remaining {
                 h64 = h64.wrapping_add((byte as u64).wrapping_mul(PRIME64_5))
                     .rotate_left(11)
                     .wrapping_mul(PRIME64_1);
-            }
-            
             h64
-        };
         
         Self::xxh64_finalize(h64, self.total_len).to_le_bytes().to_vec()
-    }
-    
     fn reset(&mut self) {
         self.v1 = self.seed.wrapping_add(PRIME64_1).wrapping_add(PRIME64_2);
         self.v2 = self.seed.wrapping_add(PRIME64_2);
@@ -387,14 +291,8 @@ pub fn xxhash32(data: &[u8], seed: u32) -> u32 {
     let mut hasher = XxHash32::with_seed(seed);
     let hash_bytes = hasher.hash(data);
     u32::from_le_bytes([hash_bytes[0], hash_bytes[1], hash_bytes[2], hash_bytes[3]])
-}
-
 pub fn xxhash64(data: &[u8], seed: u64) -> u64 {
     let mut hasher = XxHash64::with_seed(seed);
     let hash_bytes = hasher.hash(data);
     u64::from_le_bytes([
-        hash_bytes[0], hash_bytes[1], hash_bytes[2], hash_bytes[3],
-        hash_bytes[4], hash_bytes[5], hash_bytes[6], hash_bytes[7],
     ])
-}
-

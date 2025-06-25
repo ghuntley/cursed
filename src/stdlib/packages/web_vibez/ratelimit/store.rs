@@ -24,42 +24,22 @@ pub trait RateLimitStore: Send + Sync {
     
     /// fr fr Get store statistics - monitoring
     async fn get_stats(&self) -> RateLimitResult<StoreStats>;
-}
-
 /// fr fr Store statistics - monitoring information
 #[derive(Debug, Clone)]
 pub struct StoreStats {
-    pub total_clients: u64,
-    pub active_clients: u64,
-    pub memory_usage: u64,
-    pub last_cleanup: u64,
-}
-
 /// fr fr In-memory rate limit store - fast local storage
 pub struct InMemoryStore {
-    clients: Arc<RwLock<HashMap<String, ClientState>>>,
-    stats: Arc<RwLock<StoreStats>>,
-}
-
 impl InMemoryStore {
     /// fr fr Create new in-memory store - local setup
     pub fn new() -> Self {
         Self {
-            clients: Arc::new(RwLock::new(HashMap::new())),
             stats: Arc::new(RwLock::new(StoreStats {
-                total_clients: 0,
-                active_clients: 0,
-                memory_usage: 0,
-                last_cleanup: current_timestamp(),
-            })),
         }
     }
 
     /// fr fr Get client count - monitoring
     pub fn client_count(&self) -> usize {
         self.clients.read().unwrap().len()
-    }
-
     /// fr fr Clear all clients - reset store
     pub fn clear(&self) {
         self.clients.write().unwrap().clear();
@@ -80,8 +60,6 @@ impl RateLimitStore for InMemoryStore {
     async fn get_client_state(&self, client_id: &str) -> RateLimitResult<ClientState> {
         let clients = self.clients.read().unwrap();
         Ok(clients.get(client_id).cloned().unwrap_or_default())
-    }
-
     async fn update_client_state(&self, client_id: &str, state: &ClientState) -> RateLimitResult<()> {
         let mut clients = self.clients.write().unwrap();
         let is_new = !clients.contains_key(client_id);
@@ -91,11 +69,7 @@ impl RateLimitStore for InMemoryStore {
             let mut stats = self.stats.write().unwrap();
             stats.total_clients += 1;
             stats.active_clients = clients.len() as u64;
-        }
-        
         Ok(())
-    }
-
     async fn reset_client(&self, client_id: &str) -> RateLimitResult<()> {
         let mut clients = self.clients.write().unwrap();
         clients.remove(client_id);
@@ -104,8 +78,6 @@ impl RateLimitStore for InMemoryStore {
         stats.active_clients = clients.len() as u64;
         
         Ok(())
-    }
-
     async fn cleanup_expired(&self, ttl: Duration) -> RateLimitResult<u64> {
         let now = current_timestamp();
         let expiry_threshold = now.saturating_sub(ttl.as_secs());
@@ -122,8 +94,6 @@ impl RateLimitStore for InMemoryStore {
         stats.last_cleanup = now;
         
         Ok(removed_count)
-    }
-
     async fn get_stats(&self) -> RateLimitResult<StoreStats> {
         Ok(self.stats.read().unwrap().clone())
     }
@@ -133,17 +103,10 @@ impl RateLimitStore for InMemoryStore {
 pub struct RedisStore {
     // In a real implementation, this would contain Redis connection
     // For now, we'll use in-memory as fallback with Redis-like interface
-    fallback: InMemoryStore,
-    redis_url: String,
-    connected: bool,
-}
-
 impl RedisStore {
     /// fr fr Create new Redis store - distributed setup
     pub fn new(redis_url: String) -> Self {
         Self {
-            fallback: InMemoryStore::new(),
-            redis_url,
             connected: false, // Placeholder - real implementation would connect
         }
     }
@@ -154,13 +117,9 @@ impl RedisStore {
         // For now, just mark as connected
         self.connected = true;
         Ok(())
-    }
-
     /// fr fr Check if connected to Redis - status check
     pub fn is_connected(&self) -> bool {
         self.connected
-    }
-
     /// fr fr Get Redis URL - configuration
     pub fn redis_url(&self) -> &str {
         &self.redis_url
@@ -215,71 +174,45 @@ impl RateLimitStore for RedisStore {
             Err(RateLimitError::StoreError("Redis not connected".to_string()))
         }
     }
-}
-
 /// fr fr Store backend enum - concrete implementations
 #[derive(Clone)]
 pub enum StoreBackend {
-    InMemory(Arc<InMemoryStore>),
-    Redis(Arc<RedisStore>),
-}
-
 impl StoreBackend {
     /// fr fr Get client state from store - retrieve current status
     pub async fn get_client_state(&self, client_id: &str) -> RateLimitResult<ClientState> {
         match self {
-            StoreBackend::InMemory(store) => store.get_client_state(client_id).await,
-            StoreBackend::Redis(store) => store.get_client_state(client_id).await,
         }
     }
     
     /// fr fr Update client state in store - persist changes
     pub async fn update_client_state(&self, client_id: &str, state: &ClientState) -> RateLimitResult<()> {
         match self {
-            StoreBackend::InMemory(store) => store.update_client_state(client_id, state).await,
-            StoreBackend::Redis(store) => store.update_client_state(client_id, state).await,
         }
     }
     
     /// fr fr Reset client state - administrative cleanup
     pub async fn reset_client(&self, client_id: &str) -> RateLimitResult<()> {
         match self {
-            StoreBackend::InMemory(store) => store.reset_client(client_id).await,
-            StoreBackend::Redis(store) => store.reset_client(client_id).await,
         }
     }
     
     /// fr fr Cleanup expired states - maintenance
     pub async fn cleanup_expired(&self, ttl: Duration) -> RateLimitResult<u64> {
         match self {
-            StoreBackend::InMemory(store) => store.cleanup_expired(ttl).await,
-            StoreBackend::Redis(store) => store.cleanup_expired(ttl).await,
         }
     }
     
     /// fr fr Get store statistics - monitoring
     pub async fn get_stats(&self) -> RateLimitResult<StoreStats> {
         match self {
-            StoreBackend::InMemory(store) => store.get_stats().await,
-            StoreBackend::Redis(store) => store.get_stats().await,
         }
     }
-}
-
 /// fr fr Distributed store - multiple backend coordination
 pub struct DistributedStore {
-    primary: StoreBackend,
-    replica: Option<StoreBackend>,
-    write_to_replica: bool,
-}
-
 impl DistributedStore {
     /// fr fr Create new distributed store - multiple backends
     pub fn new(primary: StoreBackend) -> Self {
         Self {
-            primary,
-            replica: None,
-            write_to_replica: false,
         }
     }
 
@@ -296,7 +229,6 @@ impl RateLimitStore for DistributedStore {
     async fn get_client_state(&self, client_id: &str) -> RateLimitResult<ClientState> {
         // Try primary first
         match self.primary.get_client_state(client_id).await {
-            Ok(state) => Ok(state),
             Err(_) => {
                 // Fallback to replica if available
                 if let Some(replica) = &self.replica {
@@ -320,28 +252,18 @@ impl RateLimitStore for DistributedStore {
         }
         
         primary_result
-    }
-
     async fn reset_client(&self, client_id: &str) -> RateLimitResult<()> {
         let primary_result = self.primary.reset_client(client_id).await;
         
         if let Some(replica) = &self.replica {
             let _ = replica.reset_client(client_id).await;
-        }
-        
         primary_result
-    }
-
     async fn cleanup_expired(&self, ttl: Duration) -> RateLimitResult<u64> {
         let primary_result = self.primary.cleanup_expired(ttl).await;
         
         if let Some(replica) = &self.replica {
             let _ = replica.cleanup_expired(ttl).await;
-        }
-        
         primary_result
-    }
-
     async fn get_stats(&self) -> RateLimitResult<StoreStats> {
         self.primary.get_stats().await
     }

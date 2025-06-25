@@ -30,185 +30,73 @@ use tracing::{info, warn, error, debug, instrument};
 use crate::error::CursedError;
 // use crate::stdlib::crypto_pqc::algorithms::kyber_real::{RealKyber, KyberParams, KyberPublicKey, KyberSecretKey, KyberCiphertext};
 // use crate::stdlib::crypto_pqc::algorithms::dilithium_real::{RealDilithium, DilithiumParams};
-// use crate::stdlib::packages::crypto_asymmetric::{
-    AsymmetricAlgorithm, KeyGenerator, rsa_generate_keypair, 
-    ecc_generate_keypair, EccCurve, x25519_generate_keypair, 
+// Placeholder imports disabled
     x25519_key_exchange, ed25519_generate_keypair
-};
+// };
 
 /// Production-ready hybrid key encapsulation mechanism
 #[derive(Debug, Clone)]
 pub struct HybridKem {
-    classical_algorithm: ClassicalAlgorithm,
-    pqc_algorithm: AlgorithmType,
-    security_level: SecurityLevel,
-    performance_cache: Arc<RwLock<PerformanceCache>>,
-    security_audit: Arc<Mutex<SecurityAuditLog>>,
-    config: HybridConfig,
-}
-
 /// Configuration for hybrid cryptography
 #[derive(Debug, Clone)]
 pub struct HybridConfig {
-    pub enable_performance_caching: bool,
-    pub enable_security_logging: bool,
-    pub max_cached_operations: usize,
-    pub key_derivation_iterations: u32,
-    pub secure_memory_zeroing: bool,
-    pub timing_attack_resistance: bool,
-}
-
 impl Default for HybridConfig {
     fn default() -> Self {
         Self {
-            enable_performance_caching: true,
-            enable_security_logging: true,
-            max_cached_operations: 1000,
-            key_derivation_iterations: 100_000,
-            secure_memory_zeroing: true,
-            timing_attack_resistance: true,
         }
     }
-}
-
 /// Performance caching for expensive operations
 #[derive(Debug, Clone)]
 pub struct PerformanceCache {
-    cached_key_pairs: HashMap<String, CachedKeyPair>,
-    operation_metrics: HashMap<String, OperationMetrics>,
-    cache_hits: u64,
-    cache_misses: u64,
-}
-
 #[derive(Debug, Clone)]
 pub struct CachedKeyPair {
-    timestamp: Instant,
     classical_keys: (Vec<u8>, Vec<u8>), // (public, secret)
     pqc_keys: (Vec<u8>, Vec<u8>), // (public, secret)
-    ttl: Duration,
-}
-
 #[derive(Debug, Clone)]
 pub struct OperationMetrics {
-    total_operations: u64,
-    average_duration_ms: f64,
-    success_rate: f64,
-    last_updated: Instant,
-}
-
 /// Security audit logging
 #[derive(Debug, Clone)]
 pub struct SecurityAuditLog {
-    events: Vec<SecurityEvent>,
-    max_events: usize,
-}
-
 #[derive(Debug, Clone)]
 pub struct SecurityEvent {
-    timestamp: Instant,
-    event_type: SecurityEventType,
-    details: String,
-    algorithm_info: Option<HybridAlgorithmInfo>,
-}
-
 #[derive(Debug, Clone)]
 pub enum SecurityEventType {
-    KeyGeneration,
-    Encapsulation,
-    Decapsulation,
-    KeyCombination,
-    SecurityViolation,
-    PerformanceAnomaly,
-}
-
 /// Classical cryptographic algorithms for hybrid use
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum ClassicalAlgorithm {
-    EcdhP256,
-    EcdhP384,
-    EcdhP521,
-    X25519,
-    Rsa2048,
-    Rsa3072,
-    Rsa4096,
-}
-
 /// Hybrid key pair containing both classical and PQC keys
 #[derive(Debug, Clone)]
 pub struct HybridKeyPair {
-    pub classical_public: Vec<u8>,
-    pub classical_secret: Vec<u8>,
-    pub pqc_public: Vec<u8>,
-    pub pqc_secret: Vec<u8>,
-    pub algorithm_info: HybridAlgorithmInfo,
-}
-
 /// Information about the hybrid algorithm combination
 #[derive(Debug, Clone)]
 pub struct HybridAlgorithmInfo {
-    pub classical: ClassicalAlgorithm,
-    pub pqc: AlgorithmType,
-    pub security_level: SecurityLevel,
-    pub key_combiner: KeyCombinerType,
-}
-
 /// Key combination strategies
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum KeyCombinerType {
     /// Concatenate shared secrets
-    Concatenation,
     /// XOR shared secrets
-    Xor,
     /// Use KDF to combine secrets
-    KdfCombination,
     /// Use HKDF for combination
-    HkdfCombination,
-}
-
 impl HybridKem {
     /// Create a new hybrid KEM with default configuration
     pub fn new(
-        classical_algorithm: ClassicalAlgorithm,
-        pqc_algorithm: AlgorithmType,
-        security_level: SecurityLevel,
     ) -> Self {
         Self::new_with_config(classical_algorithm, pqc_algorithm, security_level, HybridConfig::default())
-    }
-
     /// Create a new hybrid KEM with custom configuration
     #[instrument(skip(config))]
     pub fn new_with_config(
-        classical_algorithm: ClassicalAlgorithm,
-        pqc_algorithm: AlgorithmType,
-        security_level: SecurityLevel,
-        config: HybridConfig,
     ) -> Self {
         info!(
-            classical_alg = ?classical_algorithm,
-            pqc_alg = ?pqc_algorithm,
-            security_level = ?security_level,
             "Creating new hybrid KEM"
         );
 
         let performance_cache = Arc::new(RwLock::new(PerformanceCache {
-            cached_key_pairs: HashMap::new(),
-            operation_metrics: HashMap::new(),
-            cache_hits: 0,
-            cache_misses: 0,
         }));
 
         let security_audit = Arc::new(Mutex::new(SecurityAuditLog {
-            events: Vec::new(),
-            max_events: 10000,
         }));
 
         Self {
-            classical_algorithm,
-            pqc_algorithm,
-            security_level,
-            performance_cache,
-            security_audit,
-            config,
         }
     }
 
@@ -219,10 +107,7 @@ impl HybridKem {
         
         // Log security event
         if self.config.enable_security_logging {
-            self.log_security_event(SecurityEventType::KeyGeneration, 
                 "Starting hybrid key pair generation".to_string(), None);
-        }
-
         // Check cache first
         if self.config.enable_performance_caching {
             if let Some(cached) = self.get_cached_key_pair()? {
@@ -238,39 +123,21 @@ impl HybridKem {
         let (pqc_public, pqc_secret) = self.generate_real_pqc_keypair()?;
 
         let algorithm_info = HybridAlgorithmInfo {
-            classical: self.classical_algorithm,
-            pqc: self.pqc_algorithm,
-            security_level: self.security_level,
-            key_combiner: self.determine_optimal_key_combiner(),
-        };
 
         let key_pair = HybridKeyPair {
-            classical_public,
-            classical_secret,
-            pqc_public,
-            pqc_secret,
-            algorithm_info,
-        };
 
         // Cache the key pair if enabled
         if self.config.enable_performance_caching {
             self.cache_key_pair(&key_pair)?;
-        }
-
         // Update performance metrics
         let duration = start_time.elapsed();
         self.update_operation_metrics("keygen", duration, true);
 
         info!(
-            duration_ms = duration.as_millis(),
-            classical_alg = ?self.classical_algorithm,
-            pqc_alg = ?self.pqc_algorithm,
             "Hybrid key pair generation completed"
         );
 
         Ok(key_pair)
-    }
-
     /// Perform hybrid encapsulation
     pub fn encaps(&self, hybrid_public_key: &HybridKeyPair) -> PqcResult<(Vec<u8>, Vec<u8>)> {
         // Perform classical encapsulation (placeholder)
@@ -286,14 +153,9 @@ impl HybridKem {
         
         // Combine shared secrets
         let combined_shared_secret = self.combine_shared_secrets(
-            classical_shared_secret,
-            pqc_shared_secret,
-            hybrid_public_key.algorithm_info.key_combiner,
         )?;
 
         Ok((combined_ciphertext, combined_shared_secret))
-    }
-
     /// Perform hybrid decapsulation
     pub fn decaps(&self, hybrid_secret_key: &HybridKeyPair, ciphertext: &[u8]) -> PqcResult<Vec<u8>> {
         // Split combined ciphertext
@@ -309,14 +171,9 @@ impl HybridKem {
         
         // Combine shared secrets
         let combined_shared_secret = self.combine_shared_secrets(
-            classical_shared_secret,
-            pqc_shared_secret,
-            hybrid_secret_key.algorithm_info.key_combiner,
         )?;
 
         Ok(combined_shared_secret)
-    }
-
     /// Generate real classical cryptographic key pairs
     #[instrument(skip(self))]
     fn generate_real_classical_keypair(&self) -> PqcResult<(Vec<u8>, Vec<u8>)> {
@@ -327,37 +184,30 @@ impl HybridKem {
                 let keypair = ecc_generate_keypair(EccCurve::P256)
                     .map_err(|e| PqcError::KeyGenerationFailed(format!("ECDH P-256: {}", e)))?;
                 Ok((keypair.public_key, keypair.private_key))
-            },
             ClassicalAlgorithm::EcdhP384 => {
                 let keypair = ecc_generate_keypair(EccCurve::P384)
                     .map_err(|e| PqcError::KeyGenerationFailed(format!("ECDH P-384: {}", e)))?;
                 Ok((keypair.public_key, keypair.private_key))
-            },
             ClassicalAlgorithm::EcdhP521 => {
                 let keypair = ecc_generate_keypair(EccCurve::P521)
                     .map_err(|e| PqcError::KeyGenerationFailed(format!("ECDH P-521: {}", e)))?;
                 Ok((keypair.public_key, keypair.private_key))
-            },
             ClassicalAlgorithm::X25519 => {
                 let keypair = x25519_generate_keypair()
                     .map_err(|e| PqcError::KeyGenerationFailed(format!("X25519: {}", e)))?;
                 Ok((keypair.public_key, keypair.private_key))
-            },
             ClassicalAlgorithm::Rsa2048 => {
                 let keypair = rsa_generate_keypair(2048)
                     .map_err(|e| PqcError::KeyGenerationFailed(format!("RSA-2048: {}", e)))?;
                 Ok((keypair.public_key_pem.into_bytes(), keypair.private_key_pem.into_bytes()))
-            },
             ClassicalAlgorithm::Rsa3072 => {
                 let keypair = rsa_generate_keypair(3072)
                     .map_err(|e| PqcError::KeyGenerationFailed(format!("RSA-3072: {}", e)))?;
                 Ok((keypair.public_key_pem.into_bytes(), keypair.private_key_pem.into_bytes()))
-            },
             ClassicalAlgorithm::Rsa4096 => {
                 let keypair = rsa_generate_keypair(4096)
                     .map_err(|e| PqcError::KeyGenerationFailed(format!("RSA-4096: {}", e)))?;
                 Ok((keypair.public_key_pem.into_bytes(), keypair.private_key_pem.into_bytes()))
-            },
         }
     }
 
@@ -370,20 +220,13 @@ impl HybridKem {
             AlgorithmType::Kyber => {
                 let (pub_key, sec_key) = RealKyber::keygen(self.security_level)?;
                 Ok((pub_key.as_bytes(), sec_key.as_bytes()))
-            },
             AlgorithmType::Dilithium => {
                 let (pub_key, sec_key) = RealDilithium::keygen(self.security_level)?;
                 Ok((pub_key.as_bytes(), sec_key.as_bytes()))
-            },
             _ => {
                 // For other algorithms, use placeholder until implemented
                 warn!(algorithm = ?self.pqc_algorithm, "Using placeholder for unsupported PQC algorithm");
                 let size = match self.pqc_algorithm {
-                    AlgorithmType::Ntru => (800, 1600),
-                    AlgorithmType::FrodoKem => (1300, 2600),
-                    AlgorithmType::Sphincs => (1000, 2000),
-                    _ => (800, 1600),
-                };
                 
                 let mut public_key = vec![0u8; size.0];
                 let mut secret_key = vec![0u8; size.1];
@@ -393,8 +236,6 @@ impl HybridKem {
                 Ok((public_key, secret_key))
             }
         }
-    }
-
     /// Real classical encapsulation using key exchange mechanisms
     #[instrument(skip(self, public_key))]
     fn classical_encaps(&self, public_key: &[u8]) -> PqcResult<(Vec<u8>, Vec<u8>)> {
@@ -411,15 +252,9 @@ impl HybridKem {
                     .map_err(|e| PqcError::EncapsulationFailed(format!("X25519 key exchange: {}", e)))?;
                 
                 Ok((ephemeral_keypair.public_key, shared_secret))
-            },
             ClassicalAlgorithm::EcdhP256 | ClassicalAlgorithm::EcdhP384 | ClassicalAlgorithm::EcdhP521 => {
                 // For ECDH, we use a similar approach with ephemeral keys
                 let curve = match self.classical_algorithm {
-                    ClassicalAlgorithm::EcdhP256 => EccCurve::P256,
-                    ClassicalAlgorithm::EcdhP384 => EccCurve::P384,
-                    ClassicalAlgorithm::EcdhP521 => EccCurve::P521,
-                    _ => unreachable!(),
-                };
                 
                 let ephemeral_keypair = ecc_generate_keypair(curve)
                     .map_err(|e| PqcError::EncapsulationFailed(format!("ECDH ephemeral generation: {}", e)))?;
@@ -431,7 +266,6 @@ impl HybridKem {
                 let shared_secret = hasher.finalize().to_vec();
                 
                 Ok((ephemeral_keypair.public_key, shared_secret))
-            },
             ClassicalAlgorithm::Rsa2048 | ClassicalAlgorithm::Rsa3072 | ClassicalAlgorithm::Rsa4096 => {
                 // For RSA, generate a random session key and encrypt it
                 let mut session_key = vec![0u8; 32];
@@ -441,7 +275,6 @@ impl HybridKem {
                 // In a real implementation, you'd use RSA-OAEP encryption
                 warn!("RSA encapsulation using simplified approach - not production ready");
                 Ok((session_key.clone(), session_key))
-            },
         }
     }
 
@@ -453,10 +286,6 @@ impl HybridKem {
         match self.pqc_algorithm {
             AlgorithmType::Kyber => {
                 let params = match self.security_level {
-                    SecurityLevel::Level1 => KyberParams::Kyber512,
-                    SecurityLevel::Level3 => KyberParams::Kyber768,
-                    SecurityLevel::Level5 => KyberParams::Kyber1024,
-                };
                 
                 // Deserialize the Kyber public key
                 let kyber_public_key = KyberPublicKey::from_bytes(public_key, params)?;
@@ -465,13 +294,8 @@ impl HybridKem {
                 let (ciphertext, shared_secret) = RealKyber::encaps(&kyber_public_key)?;
                 
                 Ok((ciphertext.as_bytes(), shared_secret))
-            },
             AlgorithmType::Dilithium => {
                 let params = match self.security_level {
-                    SecurityLevel::Level1 => DilithiumParams::Dilithium2,
-                    SecurityLevel::Level3 => DilithiumParams::Dilithium3,
-                    SecurityLevel::Level5 => DilithiumParams::Dilithium5,
-                };
                 
                 // For signature schemes, we simulate encapsulation using key derivation
                 let mut hasher = Sha3_256::new();
@@ -482,19 +306,13 @@ impl HybridKem {
                 
                 // Use the shared secret as both ciphertext and shared secret
                 Ok((shared_secret.clone(), shared_secret))
-            },
             _ => {
                 // For other PQC algorithms, use secure placeholder
                 warn!(algorithm = ?self.pqc_algorithm, "Using secure placeholder for unsupported PQC encapsulation");
                 
                 // Generate realistic ciphertext and shared secret sizes
                 let (ct_size, ss_size) = match self.pqc_algorithm {
-                    AlgorithmType::Ntru => (1230, 32),
-                    AlgorithmType::FrodoKem => (1338, 32),
                     AlgorithmType::Sphincs => (49856, 32), // Signature size as ciphertext
-                    AlgorithmType::ClassicMcEliece => (208, 32),
-                    _ => (768, 32),
-                };
                 
                 let mut ciphertext = vec![0u8; ct_size];
                 let mut shared_secret = vec![0u8; ss_size];
@@ -516,8 +334,6 @@ impl HybridKem {
                 Ok((ciphertext, shared_secret))
             }
         }
-    }
-
     /// Real classical decapsulation
     #[instrument(skip(self, secret_key, ciphertext))]
     fn classical_decaps(&self, secret_key: &[u8], ciphertext: &[u8]) -> PqcResult<Vec<u8>> {
@@ -528,19 +344,16 @@ impl HybridKem {
                 let shared_secret = x25519_key_exchange(secret_key, ciphertext)
                     .map_err(|e| PqcError::DecapsulationFailed(format!("X25519 key exchange: {}", e)))?;
                 Ok(shared_secret)
-            },
             ClassicalAlgorithm::EcdhP256 | ClassicalAlgorithm::EcdhP384 | ClassicalAlgorithm::EcdhP521 => {
                 // Recreate the shared secret using the same hash
                 let mut hasher = Sha3_256::new();
                 hasher.update(secret_key);
                 hasher.update(ciphertext);
                 Ok(hasher.finalize().to_vec())
-            },
             ClassicalAlgorithm::Rsa2048 | ClassicalAlgorithm::Rsa3072 | ClassicalAlgorithm::Rsa4096 => {
                 // For RSA, return the "encrypted" session key directly
                 warn!("RSA decapsulation using simplified approach - not production ready");
                 Ok(ciphertext.to_vec())
-            },
         }
     }
 
@@ -552,10 +365,6 @@ impl HybridKem {
         match self.pqc_algorithm {
             AlgorithmType::Kyber => {
                 let params = match self.security_level {
-                    SecurityLevel::Level1 => KyberParams::Kyber512,
-                    SecurityLevel::Level3 => KyberParams::Kyber768,
-                    SecurityLevel::Level5 => KyberParams::Kyber1024,
-                };
                 
                 // Deserialize the Kyber secret key and ciphertext
                 let kyber_secret_key = KyberSecretKey::from_bytes(secret_key, params)?;
@@ -565,7 +374,6 @@ impl HybridKem {
                 let shared_secret = RealKyber::decaps(&kyber_secret_key, &kyber_ciphertext)?;
                 
                 Ok(shared_secret)
-            },
             AlgorithmType::Dilithium => {
                 // For signature schemes, reverse the encapsulation simulation
                 let mut hasher = Sha3_256::new();
@@ -574,7 +382,6 @@ impl HybridKem {
                 
                 // Return the ciphertext as shared secret (symmetric to encapsulation)
                 Ok(ciphertext.to_vec())
-            },
             _ => {
                 // For other PQC algorithms, use deterministic derivation
                 warn!(algorithm = ?self.pqc_algorithm, "Using secure placeholder for unsupported PQC decapsulation");
@@ -597,8 +404,6 @@ impl HybridKem {
                 Ok(shared_secret)
             }
         }
-    }
-
     fn combine_ciphertexts(&self, classical: Vec<u8>, pqc: Vec<u8>) -> PqcResult<Vec<u8>> {
         let mut combined = Vec::new();
         
@@ -609,44 +414,26 @@ impl HybridKem {
         combined.extend_from_slice(&pqc);
         
         Ok(combined)
-    }
-
     fn split_ciphertext(&self, combined: &[u8]) -> PqcResult<(Vec<u8>, Vec<u8>)> {
         if combined.len() < 8 {
             return Err(PqcError::InvalidCiphertext("Combined ciphertext too short".to_string()));
-        }
-
         let classical_len = u32::from_be_bytes([combined[0], combined[1], combined[2], combined[3]]) as usize;
         if combined.len() < 8 + classical_len {
             return Err(PqcError::InvalidCiphertext("Invalid classical ciphertext length".to_string()));
-        }
-
         let classical = combined[4..4 + classical_len].to_vec();
         
         let pqc_len_start = 4 + classical_len;
         let pqc_len = u32::from_be_bytes([
-            combined[pqc_len_start],
-            combined[pqc_len_start + 1],
-            combined[pqc_len_start + 2],
-            combined[pqc_len_start + 3],
         ]) as usize;
         
         if combined.len() < 8 + classical_len + pqc_len {
             return Err(PqcError::InvalidCiphertext("Invalid PQC ciphertext length".to_string()));
-        }
-
         let pqc = combined[pqc_len_start + 4..pqc_len_start + 4 + pqc_len].to_vec();
         
         Ok((classical, pqc))
-    }
-
     /// Enhanced key combination with proper cryptographic methods
     #[instrument(skip(self, classical, pqc))]
     fn combine_shared_secrets(
-        &self,
-        mut classical: Vec<u8>,
-        mut pqc: Vec<u8>,
-        combiner: KeyCombinerType,
     ) -> PqcResult<Vec<u8>> {
         debug!(combiner = ?combiner, "Combining shared secrets");
         
@@ -655,7 +442,6 @@ impl HybridKem {
                 let mut combined = classical;
                 combined.extend_from_slice(&pqc);
                 combined
-            },
             KeyCombinerType::Xor => {
                 if classical.len() != pqc.len() {
                     return Err(PqcError::InternalError("Shared secret lengths don't match for XOR".to_string()));
@@ -665,7 +451,6 @@ impl HybridKem {
                     .zip(pqc.iter())
                     .map(|(a, b)| a ^ b)
                     .collect()
-            },
             KeyCombinerType::KdfCombination => {
                 // Use HKDF as alternative to PBKDF2 for better portability
                 let salt = b"cursed_hybrid_kdf_salt_v1";
@@ -681,7 +466,6 @@ impl HybridKem {
                     .map_err(|e| PqcError::InternalError(format!("KDF failed: {}", e)))?;
                 
                 derived_key
-            },
             KeyCombinerType::HkdfCombination => {
                 // Use HKDF with SHA-256
                 let salt = b"cursed_hybrid_hkdf_salt_v1";
@@ -693,33 +477,20 @@ impl HybridKem {
                     .map_err(|e| PqcError::InternalError(format!("HKDF failed: {}", e)))?;
                 
                 okm
-            },
-        };
 
         // Secure memory zeroing if enabled
         if self.config.secure_memory_zeroing {
             classical.zeroize();
             pqc.zeroize();
-        }
-
         // Log security event
         if self.config.enable_security_logging {
             self.log_security_event(
-                SecurityEventType::KeyCombination,
-                format!("Combined secrets using {:?}", combiner),
                 None
             );
-        }
-
         Ok(combined)
-    }
-
     /// Determine optimal key combiner based on security level and algorithms
     fn determine_optimal_key_combiner(&self) -> KeyCombinerType {
         match self.security_level {
-            SecurityLevel::Level1 => KeyCombinerType::KdfCombination,
-            SecurityLevel::Level3 => KeyCombinerType::HkdfCombination,
-            SecurityLevel::Level5 => KeyCombinerType::HkdfCombination,
         }
     }
 
@@ -727,9 +498,6 @@ impl HybridKem {
     fn get_cached_key_pair(&self) -> PqcResult<Option<HybridKeyPair>> {
         if !self.config.enable_performance_caching {
             return Ok(None);
-        }
-
-        let cache_key = format!("{:?}_{:?}_{:?}", 
             self.classical_algorithm, self.pqc_algorithm, self.security_level);
         
         if let Ok(cache) = self.performance_cache.read() {
@@ -737,64 +505,33 @@ impl HybridKem {
                 if cached.timestamp.elapsed() < cached.ttl {
                     // Reconstruct key pair from cached data
                     let algorithm_info = HybridAlgorithmInfo {
-                        classical: self.classical_algorithm,
-                        pqc: self.pqc_algorithm,
-                        security_level: self.security_level,
-                        key_combiner: self.determine_optimal_key_combiner(),
-                    };
 
                     return Ok(Some(HybridKeyPair {
-                        classical_public: cached.classical_keys.0.clone(),
-                        classical_secret: cached.classical_keys.1.clone(),
-                        pqc_public: cached.pqc_keys.0.clone(),
-                        pqc_secret: cached.pqc_keys.1.clone(),
-                        algorithm_info,
                     }));
                 }
             }
-        }
-
         Ok(None)
-    }
-
     /// Cache key pair for performance optimization
     fn cache_key_pair(&self, key_pair: &HybridKeyPair) -> PqcResult<()> {
         if !self.config.enable_performance_caching {
             return Ok(());
-        }
-
-        let cache_key = format!("{:?}_{:?}_{:?}", 
             self.classical_algorithm, self.pqc_algorithm, self.security_level);
         
         let cached_pair = CachedKeyPair {
-            timestamp: Instant::now(),
-            classical_keys: (key_pair.classical_public.clone(), key_pair.classical_secret.clone()),
-            pqc_keys: (key_pair.pqc_public.clone(), key_pair.pqc_secret.clone()),
             ttl: Duration::from_secs(3600), // 1 hour TTL
-        };
 
         if let Ok(mut cache) = self.performance_cache.write() {
             // Enforce cache size limit
             if cache.cached_key_pairs.len() >= self.config.max_cached_operations {
                 cache.cached_key_pairs.clear();
                 warn!("Cache cleared due to size limit");
-            }
-            
             cache.cached_key_pairs.insert(cache_key, cached_pair);
-        }
-
         Ok(())
-    }
-
     /// Update operation metrics for performance monitoring
     fn update_operation_metrics(&self, operation: &str, duration: Duration, success: bool) {
         if let Ok(mut cache) = self.performance_cache.write() {
             let entry = cache.operation_metrics.entry(operation.to_string())
                 .or_insert_with(|| OperationMetrics {
-                    total_operations: 0,
-                    average_duration_ms: 0.0,
-                    success_rate: 1.0,
-                    last_updated: Instant::now(),
                 });
 
             entry.total_operations += 1;
@@ -811,14 +548,7 @@ impl HybridKem {
     fn log_security_event(&self, event_type: SecurityEventType, details: String, algorithm_info: Option<HybridAlgorithmInfo>) {
         if !self.config.enable_security_logging {
             return;
-        }
-
         let event = SecurityEvent {
-            timestamp: Instant::now(),
-            event_type,
-            details,
-            algorithm_info,
-        };
 
         if let Ok(mut audit) = self.security_audit.lock() {
             audit.events.push(event);
@@ -834,87 +564,33 @@ impl HybridKem {
 /// Hybrid migration strategy
 #[derive(Debug, Clone)]
 pub struct HybridMigrationStrategy {
-    pub phases: Vec<MigrationPhase>,
-    pub current_phase: usize,
-}
-
 /// Migration phase definition
 #[derive(Debug, Clone)]
 pub struct MigrationPhase {
-    pub name: String,
-    pub classical_weight: f64,
-    pub pqc_weight: f64,
-    pub minimum_security_level: SecurityLevel,
-    pub recommended_algorithms: Vec<(ClassicalAlgorithm, AlgorithmType)>,
-}
-
 impl HybridMigrationStrategy {
     /// Create a standard migration strategy
     pub fn standard() -> Self {
         let phases = vec![
             MigrationPhase {
-                name: "Classical Only".to_string(),
-                classical_weight: 1.0,
-                pqc_weight: 0.0,
-                minimum_security_level: SecurityLevel::Level1,
                 recommended_algorithms: vec![
-                    (ClassicalAlgorithm::EcdhP256, AlgorithmType::Kyber),
-                    (ClassicalAlgorithm::X25519, AlgorithmType::Kyber),
-                ],
-            },
             MigrationPhase {
-                name: "Early Adoption".to_string(),
-                classical_weight: 0.8,
-                pqc_weight: 0.2,
-                minimum_security_level: SecurityLevel::Level1,
                 recommended_algorithms: vec![
-                    (ClassicalAlgorithm::EcdhP256, AlgorithmType::Kyber),
-                    (ClassicalAlgorithm::X25519, AlgorithmType::Dilithium),
-                ],
-            },
             MigrationPhase {
-                name: "Hybrid Transition".to_string(),
-                classical_weight: 0.5,
-                pqc_weight: 0.5,
-                minimum_security_level: SecurityLevel::Level3,
                 recommended_algorithms: vec![
-                    (ClassicalAlgorithm::EcdhP384, AlgorithmType::Kyber),
-                    (ClassicalAlgorithm::EcdhP256, AlgorithmType::Dilithium),
-                ],
-            },
             MigrationPhase {
-                name: "PQC Primary".to_string(),
-                classical_weight: 0.2,
-                pqc_weight: 0.8,
-                minimum_security_level: SecurityLevel::Level3,
                 recommended_algorithms: vec![
-                    (ClassicalAlgorithm::EcdhP384, AlgorithmType::Kyber),
-                    (ClassicalAlgorithm::EcdhP521, AlgorithmType::Sphincs),
-                ],
-            },
             MigrationPhase {
-                name: "PQC Only".to_string(),
-                classical_weight: 0.0,
-                pqc_weight: 1.0,
-                minimum_security_level: SecurityLevel::Level5,
                 recommended_algorithms: vec![
                     (ClassicalAlgorithm::EcdhP521, AlgorithmType::Kyber), // Classical as backup only
-                    (ClassicalAlgorithm::EcdhP521, AlgorithmType::Sphincs),
-                ],
-            },
         ];
 
         Self {
-            phases,
-            current_phase: 0,
         }
     }
 
     /// Get the current migration phase
     pub fn current_phase(&self) -> Option<&MigrationPhase> {
         self.phases.get(self.current_phase)
-    }
-
     /// Advance to the next migration phase
     pub fn advance_phase(&mut self) -> PqcResult<()> {
         if self.current_phase < self.phases.len() - 1 {
@@ -934,19 +610,9 @@ impl HybridMigrationStrategy {
 /// Hybrid compatibility matrix
 #[derive(Debug, Clone)]
 pub struct HybridCompatibilityMatrix {
-    compatibility: HashMap<(ClassicalAlgorithm, AlgorithmType), CompatibilityRating>,
-}
-
 /// Compatibility rating for algorithm combinations
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum CompatibilityRating {
-    Excellent,
-    Good,
-    Acceptable,
-    Poor,
-    Incompatible,
-}
-
 impl HybridCompatibilityMatrix {
     /// Create a new compatibility matrix with default ratings
     pub fn new() -> Self {
@@ -954,28 +620,15 @@ impl HybridCompatibilityMatrix {
         
         // Define compatibility ratings
         let excellent_combinations = vec![
-            (ClassicalAlgorithm::X25519, AlgorithmType::Kyber),
-            (ClassicalAlgorithm::EcdhP256, AlgorithmType::Kyber),
-            (ClassicalAlgorithm::EcdhP384, AlgorithmType::Kyber),
-            (ClassicalAlgorithm::EcdhP256, AlgorithmType::Dilithium),
-            (ClassicalAlgorithm::EcdhP384, AlgorithmType::Dilithium),
         ];
 
         let good_combinations = vec![
-            (ClassicalAlgorithm::EcdhP521, AlgorithmType::Kyber),
-            (ClassicalAlgorithm::X25519, AlgorithmType::Dilithium),
-            (ClassicalAlgorithm::EcdhP256, AlgorithmType::Sphincs),
-            (ClassicalAlgorithm::Rsa2048, AlgorithmType::Kyber),
         ];
 
         for combo in excellent_combinations {
             compatibility.insert(combo, CompatibilityRating::Excellent);
-        }
-
         for combo in good_combinations {
             compatibility.insert(combo, CompatibilityRating::Good);
-        }
-
         Self { compatibility }
     }
 
@@ -985,8 +638,6 @@ impl HybridCompatibilityMatrix {
             .get(&(classical, pqc))
             .copied()
             .unwrap_or(CompatibilityRating::Acceptable)
-    }
-
     /// Get all excellent combinations
     pub fn get_excellent_combinations(&self) -> Vec<(ClassicalAlgorithm, AlgorithmType)> {
         self.compatibility
@@ -994,15 +645,9 @@ impl HybridCompatibilityMatrix {
             .filter(|(_, &rating)| rating == CompatibilityRating::Excellent)
             .map(|(combo, _)| *combo)
             .collect()
-    }
-
     /// Get recommended combinations for a security level
     pub fn get_recommended_for_security_level(&self, level: SecurityLevel) -> Vec<(ClassicalAlgorithm, AlgorithmType)> {
         let min_rating = match level {
-            SecurityLevel::Level1 => CompatibilityRating::Good,
-            SecurityLevel::Level3 => CompatibilityRating::Excellent,
-            SecurityLevel::Level5 => CompatibilityRating::Excellent,
-        };
 
         self.compatibility
             .iter()
@@ -1033,120 +678,47 @@ impl Default for HybridCompatibilityMatrix {
 /// Hybrid digital signature system combining classical and PQC signatures
 #[derive(Debug, Clone)]
 pub struct HybridSignature {
-    classical_algorithm: ClassicalSignatureAlgorithm,
-    pqc_algorithm: AlgorithmType,
-    security_level: SecurityLevel,
-    config: HybridConfig,
-    performance_cache: Arc<RwLock<PerformanceCache>>,
-    security_audit: Arc<Mutex<SecurityAuditLog>>,
-}
-
 /// Classical signature algorithms
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum ClassicalSignatureAlgorithm {
-    EcdsaP256,
-    EcdsaP384,
-    EcdsaP521,
-    Ed25519,
-    RsaPss2048,
-    RsaPss3072,
-    RsaPss4096,
-}
-
 /// Hybrid signature key pair
 #[derive(Debug, Clone)]
 pub struct HybridSignatureKeyPair {
-    pub classical_public: Vec<u8>,
-    pub classical_secret: Vec<u8>,
-    pub pqc_public: Vec<u8>,
-    pub pqc_secret: Vec<u8>,
-    pub algorithm_info: HybridSignatureAlgorithmInfo,
-}
-
 /// Information about the hybrid signature algorithm combination
 #[derive(Debug, Clone)]
 pub struct HybridSignatureAlgorithmInfo {
-    pub classical: ClassicalSignatureAlgorithm,
-    pub pqc: AlgorithmType,
-    pub security_level: SecurityLevel,
-    pub signature_combiner: SignatureCombinerType,
-}
-
 /// Signature combination strategies
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum SignatureCombinerType {
     /// Concatenate signatures
-    Concatenation,
     /// Use structured format with metadata
-    StructuredFormat,
     /// Use composite signature scheme
-    CompositeScheme,
-}
-
 /// Combined hybrid signature
 #[derive(Debug, Clone)]
 pub struct HybridSignatureResult {
-    pub classical_signature: Vec<u8>,
-    pub pqc_signature: Vec<u8>,
-    pub combined_signature: Vec<u8>,
-    pub metadata: HybridSignatureMetadata,
-}
-
 /// Metadata for hybrid signatures
 #[derive(Debug, Clone)]
 pub struct HybridSignatureMetadata {
-    pub timestamp: Instant,
-    pub classical_algorithm: ClassicalSignatureAlgorithm,
-    pub pqc_algorithm: AlgorithmType,
-    pub security_level: SecurityLevel,
-    pub combiner_type: SignatureCombinerType,
-    pub message_hash: Vec<u8>,
-}
-
 impl HybridSignature {
     /// Create a new hybrid signature system
     pub fn new(
-        classical_algorithm: ClassicalSignatureAlgorithm,
-        pqc_algorithm: AlgorithmType,
-        security_level: SecurityLevel,
     ) -> Self {
         Self::new_with_config(classical_algorithm, pqc_algorithm, security_level, HybridConfig::default())
-    }
-
     /// Create a new hybrid signature system with custom configuration
     #[instrument(skip(config))]
     pub fn new_with_config(
-        classical_algorithm: ClassicalSignatureAlgorithm,
-        pqc_algorithm: AlgorithmType,
-        security_level: SecurityLevel,
-        config: HybridConfig,
     ) -> Self {
         info!(
-            classical_alg = ?classical_algorithm,
-            pqc_alg = ?pqc_algorithm,
-            security_level = ?security_level,
             "Creating new hybrid signature system"
         );
 
         let performance_cache = Arc::new(RwLock::new(PerformanceCache {
-            cached_key_pairs: HashMap::new(),
-            operation_metrics: HashMap::new(),
-            cache_hits: 0,
-            cache_misses: 0,
         }));
 
         let security_audit = Arc::new(Mutex::new(SecurityAuditLog {
-            events: Vec::new(),
-            max_events: 10000,
         }));
 
         Self {
-            classical_algorithm,
-            pqc_algorithm,
-            security_level,
-            config,
-            performance_cache,
-            security_audit,
         }
     }
 
@@ -1157,10 +729,7 @@ impl HybridSignature {
         
         // Log security event
         if self.config.enable_security_logging {
-            self.log_security_event(SecurityEventType::KeyGeneration, 
                 "Starting hybrid signature key pair generation".to_string(), None);
-        }
-
         // Generate classical signature key pair
         let (classical_public, classical_secret) = self.generate_classical_signature_keypair()?;
         
@@ -1168,34 +737,18 @@ impl HybridSignature {
         let (pqc_public, pqc_secret) = self.generate_pqc_signature_keypair()?;
 
         let algorithm_info = HybridSignatureAlgorithmInfo {
-            classical: self.classical_algorithm,
-            pqc: self.pqc_algorithm,
-            security_level: self.security_level,
-            signature_combiner: self.determine_optimal_signature_combiner(),
-        };
 
         let key_pair = HybridSignatureKeyPair {
-            classical_public,
-            classical_secret,
-            pqc_public,
-            pqc_secret,
-            algorithm_info,
-        };
 
         // Update performance metrics
         let duration = start_time.elapsed();
         self.update_operation_metrics("signature_keygen", duration, true);
 
         info!(
-            duration_ms = duration.as_millis(),
-            classical_alg = ?self.classical_algorithm,
-            pqc_alg = ?self.pqc_algorithm,
             "Hybrid signature key pair generation completed"
         );
 
         Ok(key_pair)
-    }
-
     /// Sign a message using hybrid signatures
     #[instrument(skip(self, key_pair, message))]
     pub fn sign(&self, key_pair: &HybridSignatureKeyPair, message: &[u8]) -> PqcResult<HybridSignatureResult> {
@@ -1214,26 +767,11 @@ impl HybridSignature {
         
         // Combine signatures
         let combined_signature = self.combine_signatures(
-            &classical_signature,
-            &pqc_signature,
-            key_pair.algorithm_info.signature_combiner,
         )?;
 
         let metadata = HybridSignatureMetadata {
-            timestamp: Instant::now(),
-            classical_algorithm: self.classical_algorithm,
-            pqc_algorithm: self.pqc_algorithm,
-            security_level: self.security_level,
-            combiner_type: key_pair.algorithm_info.signature_combiner,
-            message_hash,
-        };
 
         let signature_result = HybridSignatureResult {
-            classical_signature,
-            pqc_signature,
-            combined_signature,
-            metadata,
-        };
 
         // Update performance metrics
         let duration = start_time.elapsed();
@@ -1243,14 +781,9 @@ impl HybridSignature {
         if self.config.enable_security_logging {
             self.log_security_event(
                 SecurityEventType::KeyGeneration, // TODO: Add SigningOperation
-                "Hybrid signature created".to_string(),
                 None
             );
-        }
-
         Ok(signature_result)
-    }
-
     /// Verify a hybrid signature
     #[instrument(skip(self, key_pair, message, signature))]
     pub fn verify(&self, key_pair: &HybridSignatureKeyPair, message: &[u8], signature: &HybridSignatureResult) -> PqcResult<bool> {
@@ -1263,8 +796,6 @@ impl HybridSignature {
         
         if message_hash != signature.metadata.message_hash {
             return Ok(false);
-        }
-
         // Verify classical signature
         let classical_valid = self.classical_verify(&key_pair.classical_public, message, &signature.classical_signature)?;
         
@@ -1282,14 +813,9 @@ impl HybridSignature {
         if self.config.enable_security_logging {
             self.log_security_event(
                 SecurityEventType::KeyGeneration, // TODO: Add VerificationOperation
-                format!("Hybrid signature verification: {}", if result { "VALID" } else { "INVALID" }),
                 None
             );
-        }
-
         Ok(result)
-    }
-
     /// Generate classical signature key pair
     #[instrument(skip(self))]
     fn generate_classical_signature_keypair(&self) -> PqcResult<(Vec<u8>, Vec<u8>)> {
@@ -1300,37 +826,30 @@ impl HybridSignature {
                 let keypair = ecc_generate_keypair(EccCurve::P256)
                     .map_err(|e| PqcError::KeyGenerationFailed(format!("ECDSA P-256: {}", e)))?;
                 Ok((keypair.public_key, keypair.private_key))
-            },
             ClassicalSignatureAlgorithm::EcdsaP384 => {
                 let keypair = ecc_generate_keypair(EccCurve::P384)
                     .map_err(|e| PqcError::KeyGenerationFailed(format!("ECDSA P-384: {}", e)))?;
                 Ok((keypair.public_key, keypair.private_key))
-            },
             ClassicalSignatureAlgorithm::EcdsaP521 => {
                 let keypair = ecc_generate_keypair(EccCurve::P521)
                     .map_err(|e| PqcError::KeyGenerationFailed(format!("ECDSA P-521: {}", e)))?;
                 Ok((keypair.public_key, keypair.private_key))
-            },
             ClassicalSignatureAlgorithm::Ed25519 => {
                 let keypair = ed25519_generate_keypair()
                     .map_err(|e| PqcError::KeyGenerationFailed(format!("Ed25519: {}", e)))?;
                 Ok((keypair.public_key, keypair.private_key))
-            },
             ClassicalSignatureAlgorithm::RsaPss2048 => {
                 let keypair = rsa_generate_keypair(2048)
                     .map_err(|e| PqcError::KeyGenerationFailed(format!("RSA-PSS-2048: {}", e)))?;
                 Ok((keypair.public_key_pem.into_bytes(), keypair.private_key_pem.into_bytes()))
-            },
             ClassicalSignatureAlgorithm::RsaPss3072 => {
                 let keypair = rsa_generate_keypair(3072)
                     .map_err(|e| PqcError::KeyGenerationFailed(format!("RSA-PSS-3072: {}", e)))?;
                 Ok((keypair.public_key_pem.into_bytes(), keypair.private_key_pem.into_bytes()))
-            },
             ClassicalSignatureAlgorithm::RsaPss4096 => {
                 let keypair = rsa_generate_keypair(4096)
                     .map_err(|e| PqcError::KeyGenerationFailed(format!("RSA-PSS-4096: {}", e)))?;
                 Ok((keypair.public_key_pem.into_bytes(), keypair.private_key_pem.into_bytes()))
-            },
         }
     }
 
@@ -1343,14 +862,9 @@ impl HybridSignature {
             AlgorithmType::Dilithium => {
                 let (pub_key, sec_key) = RealDilithium::keygen(self.security_level)?;
                 Ok((pub_key.as_bytes(), sec_key.as_bytes()))
-            },
             AlgorithmType::Sphincs => {
                 // Use secure placeholder until SPHINCS+ is implemented
                 let (pub_size, sec_size) = match self.security_level {
-                    SecurityLevel::Level1 => (32, 64),
-                    SecurityLevel::Level3 => (48, 96),
-                    SecurityLevel::Level5 => (64, 128),
-                };
                 
                 let mut public_key = vec![0u8; pub_size];
                 let mut secret_key = vec![0u8; sec_size];
@@ -1358,15 +872,10 @@ impl HybridSignature {
                 OsRng.fill_bytes(&mut secret_key);
                 
                 Ok((public_key, secret_key))
-            },
             _ => {
                 // For other algorithms, use placeholder until implemented
                 warn!(algorithm = ?self.pqc_algorithm, "Using placeholder for unsupported PQC signature algorithm");
                 let size = match self.pqc_algorithm {
-                    AlgorithmType::Lms => (64, 128),
-                    AlgorithmType::Xmss => (64, 132),
-                    _ => (64, 128),
-                };
                 
                 let mut public_key = vec![0u8; size.0];
                 let mut secret_key = vec![0u8; size.1];
@@ -1376,8 +885,6 @@ impl HybridSignature {
                 Ok((public_key, secret_key))
             }
         }
-    }
-
     /// Classical signature generation
     #[instrument(skip(self, secret_key, message))]
     fn classical_sign(&self, secret_key: &[u8], message: &[u8]) -> PqcResult<Vec<u8>> {
@@ -1395,14 +902,6 @@ impl HybridSignature {
         
         // Simulate different signature sizes for different algorithms
         let sig_size = match self.classical_algorithm {
-            ClassicalSignatureAlgorithm::EcdsaP256 => 64,
-            ClassicalSignatureAlgorithm::EcdsaP384 => 96,
-            ClassicalSignatureAlgorithm::EcdsaP521 => 132,
-            ClassicalSignatureAlgorithm::Ed25519 => 64,
-            ClassicalSignatureAlgorithm::RsaPss2048 => 256,
-            ClassicalSignatureAlgorithm::RsaPss3072 => 384,
-            ClassicalSignatureAlgorithm::RsaPss4096 => 512,
-        };
         
         let mut signature = vec![0u8; sig_size];
         let mut shake = Shake256::default();
@@ -1411,8 +910,6 @@ impl HybridSignature {
         reader.read(&mut signature);
         
         Ok(signature)
-    }
-
     /// PQC signature generation
     #[instrument(skip(self, secret_key, message))]
     fn pqc_sign(&self, secret_key: &[u8], message: &[u8]) -> PqcResult<Vec<u8>> {
@@ -1421,10 +918,6 @@ impl HybridSignature {
         match self.pqc_algorithm {
             AlgorithmType::Dilithium => {
                 let params = match self.security_level {
-                    SecurityLevel::Level1 => DilithiumParams::Dilithium2,
-                    SecurityLevel::Level3 => DilithiumParams::Dilithium3,
-                    SecurityLevel::Level5 => DilithiumParams::Dilithium5,
-                };
                 
                 // For now, use deterministic signing based on input
                 // TODO: Implement proper Dilithium signing when available
@@ -1435,10 +928,6 @@ impl HybridSignature {
                 let signature_hash = hasher.finalize();
                 
                 let sig_size = match params {
-                    DilithiumParams::Dilithium2 => 2420,
-                    DilithiumParams::Dilithium3 => 3293,
-                    DilithiumParams::Dilithium5 => 4595,
-                };
                 
                 let mut signature = vec![0u8; sig_size];
                 let mut shake = Shake256::default();
@@ -1447,21 +936,12 @@ impl HybridSignature {
                 reader.read(&mut signature);
                 
                 Ok(signature)
-            },
             _ => {
                 // For other PQC algorithms, use secure placeholder
                 warn!(algorithm = ?self.pqc_algorithm, "Using secure placeholder for unsupported PQC signing");
                 
                 let sig_size = match self.pqc_algorithm {
                     AlgorithmType::Sphincs => match self.security_level {
-                        SecurityLevel::Level1 => 7856,
-                        SecurityLevel::Level3 => 16224,
-                        SecurityLevel::Level5 => 29792,
-                    },
-                    AlgorithmType::Lms => 1252,
-                    AlgorithmType::Xmss => 2500,
-                    _ => 2048,
-                };
                 
                 let mut hasher = Sha3_512::new();
                 hasher.update(secret_key);
@@ -1479,8 +959,6 @@ impl HybridSignature {
                 Ok(signature)
             }
         }
-    }
-
     /// Classical signature verification
     #[instrument(skip(self, public_key, message, signature))]
     fn classical_verify(&self, public_key: &[u8], message: &[u8], signature: &[u8]) -> PqcResult<bool> {
@@ -1491,8 +969,6 @@ impl HybridSignature {
         
         // Compare signatures
         Ok(signature == expected_signature)
-    }
-
     /// PQC signature verification
     #[instrument(skip(self, public_key, message, signature))]
     fn pqc_verify(&self, public_key: &[u8], message: &[u8], signature: &[u8]) -> PqcResult<bool> {
@@ -1504,8 +980,6 @@ impl HybridSignature {
         
         // Compare signatures
         Ok(signature == expected_signature)
-    }
-
     /// Deterministic classical signing for verification
     fn classical_sign_deterministic(&self, key: &[u8], message: &[u8]) -> PqcResult<Vec<u8>> {
         let mut hasher = Sha3_256::new();
@@ -1517,14 +991,6 @@ impl HybridSignature {
         let signature_hash = hasher.finalize();
         
         let sig_size = match self.classical_algorithm {
-            ClassicalSignatureAlgorithm::EcdsaP256 => 64,
-            ClassicalSignatureAlgorithm::EcdsaP384 => 96,
-            ClassicalSignatureAlgorithm::EcdsaP521 => 132,
-            ClassicalSignatureAlgorithm::Ed25519 => 64,
-            ClassicalSignatureAlgorithm::RsaPss2048 => 256,
-            ClassicalSignatureAlgorithm::RsaPss3072 => 384,
-            ClassicalSignatureAlgorithm::RsaPss4096 => 512,
-        };
         
         let mut signature = vec![0u8; sig_size];
         let mut shake = Shake256::default();
@@ -1533,17 +999,11 @@ impl HybridSignature {
         reader.read(&mut signature);
         
         Ok(signature)
-    }
-
     /// Deterministic PQC signing for verification
     fn pqc_sign_deterministic(&self, key: &[u8], message: &[u8]) -> PqcResult<Vec<u8>> {
         match self.pqc_algorithm {
             AlgorithmType::Dilithium => {
                 let params = match self.security_level {
-                    SecurityLevel::Level1 => DilithiumParams::Dilithium2,
-                    SecurityLevel::Level3 => DilithiumParams::Dilithium3,
-                    SecurityLevel::Level5 => DilithiumParams::Dilithium5,
-                };
                 
                 let mut hasher = Sha3_512::new();
                 hasher.update(key);
@@ -1552,10 +1012,6 @@ impl HybridSignature {
                 let signature_hash = hasher.finalize();
                 
                 let sig_size = match params {
-                    DilithiumParams::Dilithium2 => 2420,
-                    DilithiumParams::Dilithium3 => 3293,
-                    DilithiumParams::Dilithium5 => 4595,
-                };
                 
                 let mut signature = vec![0u8; sig_size];
                 let mut shake = Shake256::default();
@@ -1564,18 +1020,9 @@ impl HybridSignature {
                 reader.read(&mut signature);
                 
                 Ok(signature)
-            },
             _ => {
                 let sig_size = match self.pqc_algorithm {
                     AlgorithmType::Sphincs => match self.security_level {
-                        SecurityLevel::Level1 => 7856,
-                        SecurityLevel::Level3 => 16224,
-                        SecurityLevel::Level5 => 29792,
-                    },
-                    AlgorithmType::Lms => 1252,
-                    AlgorithmType::Xmss => 2500,
-                    _ => 2048,
-                };
                 
                 let mut hasher = Sha3_512::new();
                 hasher.update(key);
@@ -1593,15 +1040,9 @@ impl HybridSignature {
                 Ok(signature)
             }
         }
-    }
-
     /// Combine signatures using the specified strategy
     #[instrument(skip(self, classical, pqc))]
     fn combine_signatures(
-        &self,
-        classical: &[u8],
-        pqc: &[u8],
-        combiner: SignatureCombinerType,
     ) -> PqcResult<Vec<u8>> {
         debug!(combiner = ?combiner, "Combining signatures");
         
@@ -1616,7 +1057,6 @@ impl HybridSignature {
                 combined.extend_from_slice(pqc);
                 
                 Ok(combined)
-            },
             SignatureCombinerType::StructuredFormat => {
                 // Create a structured format with metadata
                 let mut combined = Vec::new();
@@ -1637,7 +1077,6 @@ impl HybridSignature {
                 combined.extend_from_slice(pqc);
                 
                 Ok(combined)
-            },
             SignatureCombinerType::CompositeScheme => {
                 // Use a more sophisticated composite scheme
                 let mut hasher = Sha3_256::new();
@@ -1654,17 +1093,11 @@ impl HybridSignature {
                 combined.extend_from_slice(pqc);
                 
                 Ok(combined)
-            },
         }
     }
 
     /// Determine optimal signature combiner based on security level
     fn determine_optimal_signature_combiner(&self) -> SignatureCombinerType {
         match self.security_level {
-            SecurityLevel::Level1 => SignatureCombinerType::Concatenation,
-            SecurityLevel::Level3 => SignatureCombinerType::StructuredFormat,
-            SecurityLevel::Level5 => SignatureCombinerType::CompositeScheme,
         }
     }
-}
-

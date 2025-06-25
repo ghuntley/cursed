@@ -16,22 +16,6 @@ use crate::ast::*;
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum CursedSemanticTokenType {
     // Standard LSP types
-    Namespace,
-    Type,
-    Class,
-    Enum,
-    Interface,
-    Struct,
-    Function,
-    Variable,
-    Property,
-    Keyword,
-    Comment,
-    String,
-    Number,
-    Operator,
-    Parameter,
-    Macro,
     
     // CURSED-specific Gen Z slang types
     SlayKeyword,         // Function declarations
@@ -83,28 +67,10 @@ pub enum CursedSemanticTokenType {
     // Pattern matching
     MatchKeyword,        // Pattern matching
     WhenKeyword,         // When clauses
-}
-
 impl CursedSemanticTokenType {
     /// Convert to LSP semantic token type
     pub fn to_lsp_type(&self) -> SemanticTokenType {
         match self {
-            Self::Namespace => SemanticTokenType::NAMESPACE,
-            Self::Type => SemanticTokenType::TYPE,
-            Self::Class => SemanticTokenType::CLASS,
-            Self::Enum => SemanticTokenType::ENUM,
-            Self::Interface => SemanticTokenType::INTERFACE,
-            Self::Struct => SemanticTokenType::STRUCT,
-            Self::Function => SemanticTokenType::FUNCTION,
-            Self::Variable => SemanticTokenType::VARIABLE,
-            Self::Property => SemanticTokenType::PROPERTY,
-            Self::Keyword => SemanticTokenType::KEYWORD,
-            Self::Comment => SemanticTokenType::COMMENT,
-            Self::String => SemanticTokenType::STRING,
-            Self::Number => SemanticTokenType::NUMBER,
-            Self::Operator => SemanticTokenType::OPERATOR,
-            Self::Parameter => SemanticTokenType::PARAMETER,
-            Self::Macro => SemanticTokenType::MACRO,
             
             // Map CURSED-specific types to appropriate LSP types
             Self::SlayKeyword | Self::SusKeyword | Self::FactsKeyword |
@@ -116,88 +82,18 @@ impl CursedSemanticTokenType {
             Self::SquadKeyword | Self::CollabKeyword | Self::MapKeyword |
             Self::ArrayKeyword | Self::SliceKeyword | Self::ChanKeyword |
             Self::ImportKeyword | Self::PackageKeyword | Self::AsyncKeyword |
-            Self::AwaitKeyword | Self::MatchKeyword | Self::WhenKeyword => SemanticTokenType::KEYWORD,
             
-            Self::GenericParam => SemanticTokenType::TYPE_PARAMETER,
-            Self::ErrorPropagation => SemanticTokenType::OPERATOR,
-            Self::NilValue => SemanticTokenType::KEYWORD,
-            Self::Annotation | Self::Pragma => SemanticTokenType::DECORATOR,
-            Self::StringInterpolation | Self::FormatSpecifier => SemanticTokenType::STRING,
         }
     }
     
     /// Get token type index for semantic tokens encoding
     pub fn to_index(&self) -> u32 {
         match self {
-            Self::Namespace => 0,
-            Self::Type => 1,
-            Self::Class => 2,
-            Self::Enum => 3,
-            Self::Interface => 4,
-            Self::Struct => 5,
-            Self::Function => 6,
-            Self::Variable => 7,
-            Self::Property => 8,
-            Self::Keyword => 9,
-            Self::Comment => 10,
-            Self::String => 11,
-            Self::Number => 12,
-            Self::Operator => 13,
-            Self::Parameter => 14,
-            Self::Macro => 15,
-            Self::SlayKeyword => 16,
-            Self::SusKeyword => 17,
-            Self::FactsKeyword => 18,
-            Self::LowkeyKeyword => 19,
-            Self::HighkeyKeyword => 20,
-            Self::PeriodtKeyword => 21,
-            Self::BestieKeyword => 22,
-            Self::FlexKeyword => 23,
-            Self::YoloKeyword => 24,
-            Self::StanKeyword => 25,
-            Self::CrushKeyword => 26,
-            Self::SpillKeyword => 27,
-            Self::NoCapKeyword => 28,
-            Self::CapKeyword => 29,
-            Self::VibezKeyword => 30,
-            Self::SkrrKeyword => 31,
-            Self::YeetKeyword => 32,
-            Self::GurlKeyword => 33,
-            Self::SquadKeyword => 34,
-            Self::CollabKeyword => 35,
-            Self::MapKeyword => 36,
-            Self::ArrayKeyword => 37,
-            Self::SliceKeyword => 38,
-            Self::ChanKeyword => 39,
-            Self::ImportKeyword => 40,
-            Self::PackageKeyword => 41,
-            Self::GenericParam => 42,
-            Self::ErrorPropagation => 43,
-            Self::NilValue => 44,
-            Self::Annotation => 45,
-            Self::Pragma => 46,
-            Self::StringInterpolation => 47,
-            Self::FormatSpecifier => 48,
-            Self::AsyncKeyword => 49,
-            Self::AwaitKeyword => 50,
-            Self::MatchKeyword => 51,
-            Self::WhenKeyword => 52,
         }
     }
-}
-
 /// Semantic token modifiers for additional context
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum CursedSemanticTokenModifier {
-    Declaration,
-    Definition,
-    Readonly,
-    Static,
-    Deprecated,
-    Async,
-    Modification,
-    Documentation,
-    DefaultLibrary,
     
     // CURSED-specific modifiers
     Nullable,            // Nullable types
@@ -209,83 +105,28 @@ pub enum CursedSemanticTokenModifier {
     Immutable,           // Immutable data
     Reference,           // Reference types
     SlangKeyword,        // Gen Z slang keywords
-}
-
 impl CursedSemanticTokenModifier {
     /// Convert to LSP semantic token modifier
     pub fn to_lsp_modifier(&self) -> SemanticTokenModifier {
         match self {
-            Self::Declaration => SemanticTokenModifier::DECLARATION,
-            Self::Definition => SemanticTokenModifier::DEFINITION,
-            Self::Readonly => SemanticTokenModifier::READONLY,
-            Self::Static => SemanticTokenModifier::STATIC,
-            Self::Deprecated => SemanticTokenModifier::DEPRECATED,
-            Self::Async => SemanticTokenModifier::ASYNC,
-            Self::Modification => SemanticTokenModifier::MODIFICATION,
-            Self::Documentation => SemanticTokenModifier::DOCUMENTATION,
-            Self::DefaultLibrary => SemanticTokenModifier::DEFAULT_LIBRARY,
             
             // Map CURSED-specific modifiers to appropriate LSP modifiers
-            Self::Nullable => SemanticTokenModifier::READONLY,
-            Self::Generic => SemanticTokenModifier::ABSTRACT,
-            Self::Goroutine | Self::Channel | Self::Concurrent => SemanticTokenModifier::ASYNC,
-            Self::ErrorProne => SemanticTokenModifier::DEPRECATED,
-            Self::Immutable => SemanticTokenModifier::READONLY,
-            Self::Reference => SemanticTokenModifier::READONLY,
-            Self::SlangKeyword => SemanticTokenModifier::DEFAULT_LIBRARY,
         }
     }
     
     /// Get modifier bit for semantic tokens encoding
     pub fn to_bit(&self) -> u32 {
         match self {
-            Self::Declaration => 1 << 0,
-            Self::Definition => 1 << 1,
-            Self::Readonly => 1 << 2,
-            Self::Static => 1 << 3,
-            Self::Deprecated => 1 << 4,
-            Self::Async => 1 << 5,
-            Self::Modification => 1 << 6,
-            Self::Documentation => 1 << 7,
-            Self::DefaultLibrary => 1 << 8,
-            Self::Nullable => 1 << 9,
-            Self::Generic => 1 << 10,
-            Self::Goroutine => 1 << 11,
-            Self::Channel => 1 << 12,
-            Self::ErrorProne => 1 << 13,
-            Self::Concurrent => 1 << 14,
-            Self::Immutable => 1 << 15,
-            Self::Reference => 1 << 16,
-            Self::SlangKeyword => 1 << 17,
         }
     }
-}
-
 /// Semantic token with position and type information
 #[derive(Debug, Clone)]
 pub struct SemanticToken {
-    pub line: u32,
-    pub start: u32,
-    pub length: u32,
-    pub token_type: CursedSemanticTokenType,
-    pub modifiers: Vec<CursedSemanticTokenModifier>,
-}
-
 impl SemanticToken {
     /// Create a new semantic token
     pub fn new(
-        line: u32,
-        start: u32,
-        length: u32,
-        token_type: CursedSemanticTokenType,
-        modifiers: Vec<CursedSemanticTokenModifier>,
     ) -> Self {
         Self {
-            line,
-            start,
-            length,
-            token_type,
-            modifiers,
         }
     }
     
@@ -298,13 +139,8 @@ impl SemanticToken {
 /// Semantic highlighting provider for CURSED language
 pub struct SemanticHighlightingProvider {
     /// Token type legend for LSP
-    token_types: Vec<SemanticTokenType>,
     /// Token modifier legend for LSP
-    token_modifiers: Vec<SemanticTokenModifier>,
     /// Keyword mapping
-    keyword_map: HashMap<String, CursedSemanticTokenType>,
-}
-
 impl SemanticHighlightingProvider {
     /// Create a new semantic highlighting provider
     pub fn new() -> Self {
@@ -313,52 +149,17 @@ impl SemanticHighlightingProvider {
         let keyword_map = Self::build_keyword_map();
         
         Self {
-            token_types,
-            token_modifiers,
-            keyword_map,
         }
     }
     
     /// Build token types legend
     fn build_token_types() -> Vec<SemanticTokenType> {
         vec![
-            SemanticTokenType::NAMESPACE,
-            SemanticTokenType::TYPE,
-            SemanticTokenType::CLASS,
-            SemanticTokenType::ENUM,
-            SemanticTokenType::INTERFACE,
-            SemanticTokenType::STRUCT,
-            SemanticTokenType::FUNCTION,
-            SemanticTokenType::VARIABLE,
-            SemanticTokenType::PROPERTY,
-            SemanticTokenType::KEYWORD,
-            SemanticTokenType::COMMENT,
-            SemanticTokenType::STRING,
-            SemanticTokenType::NUMBER,
-            SemanticTokenType::OPERATOR,
-            SemanticTokenType::PARAMETER,
-            SemanticTokenType::MACRO,
-            SemanticTokenType::DECORATOR,
-            SemanticTokenType::TYPE_PARAMETER,
         ]
-    }
-    
     /// Build token modifiers legend
     fn build_token_modifiers() -> Vec<SemanticTokenModifier> {
         vec![
-            SemanticTokenModifier::DECLARATION,
-            SemanticTokenModifier::DEFINITION,
-            SemanticTokenModifier::READONLY,
-            SemanticTokenModifier::STATIC,
-            SemanticTokenModifier::DEPRECATED,
-            SemanticTokenModifier::ASYNC,
-            SemanticTokenModifier::MODIFICATION,
-            SemanticTokenModifier::DOCUMENTATION,
-            SemanticTokenModifier::DEFAULT_LIBRARY,
-            SemanticTokenModifier::ABSTRACT,
         ]
-    }
-    
     /// Build keyword mapping for CURSED Gen Z slang
     fn build_keyword_map() -> HashMap<String, CursedSemanticTokenType> {
         let mut map = HashMap::new();
@@ -417,13 +218,9 @@ impl SemanticHighlightingProvider {
         map.insert("when".to_string(), CursedSemanticTokenType::WhenKeyword);
         
         map
-    }
-    
     /// Get semantic tokens legend
     pub fn get_legend(&self) -> SemanticTokensLegend {
         SemanticTokensLegend {
-            token_types: self.token_types.clone(),
-            token_modifiers: self.token_modifiers.clone(),
         }
     }
     
@@ -446,8 +243,6 @@ impl SemanticHighlightingProvider {
                 Err(format!("Failed to tokenize content: {:?}", e))
             }
         }
-    }
-    
     /// Helper method to tokenize content
     fn tokenize_content(&self, content: &str) -> Result<Vec<Token>, String> {
         // Create a simple manual lexer for now until we resolve the Lexer::new issue
@@ -459,49 +254,20 @@ impl SemanticHighlightingProvider {
             let words: Vec<&str> = line.split_whitespace().collect();
             for (col, word) in words.iter().enumerate() {
                 let token_type = match *word {
-                    "slay" => TokenType::Slay,
-                    "sus" => TokenType::Sus,
-                    "facts" => TokenType::Facts,
-                    "lowkey" => TokenType::Lowkey,
-                    "highkey" => TokenType::Highkey,
-                    "periodt" => TokenType::Periodt,
-                    "bestie" => TokenType::Bestie,
-                    "flex" => TokenType::Flex,
-                    "yolo" => TokenType::Yolo,
-                    "stan" => TokenType::Stan,
                     "vibez" => TokenType::Yolo, // Return equivalent
                     "skrr" => TokenType::Ghosted, // Break equivalent
-                    "yeet" => TokenType::Yeet,
                     "spill" => TokenType::YeetError, // CursedError equivalent
-                    "no_cap" => TokenType::NoCap,
-                    "cap" => TokenType::Cap,
-                    "squad" => TokenType::Squad,
-                    "collab" => TokenType::Collab,
-                    "nil" => TokenType::NoCap,
-                    _ if word.starts_with('"') && word.ends_with('"') => TokenType::String,
-                    _ if word.chars().all(|c| c.is_numeric()) => TokenType::Integer,
-                    _ if word.contains('.') && word.chars().filter(|&c| c == '.').count() == 1 => TokenType::Float,
                     _ if word.starts_with("//") => TokenType::Comment,
-                    _ => TokenType::Identifier,
-                };
                 
                 let location = crate::error::SourceLocation {
-                    file: None,
-                    line: line_num + 1,
                     column: col * word.len() + col, // Approximate column
-                };
                 
                 tokens.push(Token {
-                    token_type,
-                    literal: word.to_string(),
-                    location,
                 });
             }
         }
         
         Ok(tokens)
-    }
-    
     /// Convert lexer token to semantic token
     fn token_to_semantic(&self, token: &Token) -> Option<SemanticToken> {
         let line = token.location.line as u32;
@@ -518,9 +284,6 @@ impl SemanticHighlightingProvider {
                 }
             }
             
-            TokenType::String => (CursedSemanticTokenType::String, vec![]),
-            TokenType::Integer | TokenType::Float => (CursedSemanticTokenType::Number, vec![]),
-            TokenType::Comment => (CursedSemanticTokenType::Comment, vec![]),
             
             // Operators
             TokenType::Plus | TokenType::Minus | TokenType::Multiply | TokenType::Divide |
@@ -530,20 +293,12 @@ impl SemanticHighlightingProvider {
             TokenType::BitwiseAnd | TokenType::BitwiseOr | TokenType::BitwiseXor |
             TokenType::LeftShift | TokenType::RightShift => {
                 (CursedSemanticTokenType::Operator, vec![])
-            }
-            
             // CursedError propagation operator
             TokenType::Question => {
                 (CursedSemanticTokenType::ErrorPropagation, vec![])
-            }
-            
             // Other tokens don't get semantic highlighting
-            _ => return None,
-        };
         
         Some(SemanticToken::new(line, start, length, token_type, modifiers))
-    }
-    
     /// Convert semantic tokens to LSP semantic tokens format
     pub fn encode_semantic_tokens(&self, tokens: Vec<SemanticToken>) -> SemanticTokens {
         let mut data = Vec::new();
@@ -556,7 +311,6 @@ impl SemanticHighlightingProvider {
                 token.start - last_start
             } else {
                 token.start
-            };
             
             data.push(delta_line);
             data.push(delta_start);
@@ -566,20 +320,13 @@ impl SemanticHighlightingProvider {
             
             last_line = token.line;
             last_start = token.start;
-        }
-        
         SemanticTokens {
-            result_id: None,
-            data,
         }
     }
     
     /// Get semantic tokens for a range
     #[instrument(skip(self, content))]
     pub fn get_semantic_tokens_range(
-        &self,
-        content: &str,
-        range: Range,
     ) -> Result<Vec<SemanticToken>, String> {
         debug!("Generating semantic tokens for range {:?}", range);
         

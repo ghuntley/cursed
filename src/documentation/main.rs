@@ -12,184 +12,82 @@ use serde::{Deserialize, Serialize};
 
 /// Main documentation system
 pub struct DocumentationSystem {
-    config: DocumentationConfig,
-}
-
 /// Complete documentation configuration
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct DocumentationConfig {
     /// Source directories to process
-    pub source_dirs: Vec<PathBuf>,
     /// Output directory for documentation
-    pub output_dir: PathBuf,
     /// Output formats to generate
-    pub output_formats: Vec<OutputFormat>,
     /// Project metadata
-    pub project: ProjectMetadata,
     /// Documentation options
-    pub options: DocOptions,
     /// Styling configuration
-    pub styling: StylingConfig,
-}
-
 /// Supported output formats
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum OutputFormat {
-    Html,
-    Markdown,
-    Json,
-    Xml,
-    LaTeX,
-}
-
 /// Project metadata
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ProjectMetadata {
-    pub name: String,
-    pub version: String,
-    pub description: Option<String>,
-    pub authors: Vec<String>,
-    pub homepage: Option<String>,
-    pub repository: Option<String>,
-    pub license: Option<String>,
-}
-
 /// Documentation generation options
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct DocOptions {
     /// Include private items
-    pub include_private: bool,
     /// Include source code
-    pub include_source: bool,
     /// Generate cross-references
-    pub generate_cross_refs: bool,
     /// Generate search index
-    pub generate_search_index: bool,
     /// Include examples
-    pub include_examples: bool,
     /// Maximum type recursion depth
-    pub max_type_depth: usize,
     /// Include dependencies
-    pub include_dependencies: bool,
-}
-
 /// Styling configuration
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct StylingConfig {
     /// Custom CSS files
-    pub custom_css: Vec<PathBuf>,
     /// Template directory
-    pub template_dir: Option<PathBuf>,
     /// Theme name
-    pub theme: String,
     /// Color overrides
-    pub colors: Option<HashMap<String, String>>,
     /// Custom favicon
-    pub favicon: Option<PathBuf>,
     /// Custom logo
-    pub logo: Option<PathBuf>,
-}
-
 /// Documentation generation result
 #[derive(Debug, Clone)]
 pub struct DocumentationResult {
     /// Number of files processed
-    pub files_processed: usize,
     /// Number of items documented
-    pub items_documented: usize,
     /// Generated output files
-    pub output_files: Vec<PathBuf>,
     /// Processing time in milliseconds
-    pub processing_time_ms: u64,
     /// Warnings generated
-    pub warnings: Vec<String>,
     /// Errors encountered (non-fatal)
-    pub errors: Vec<String>,
-}
-
 impl Default for DocumentationConfig {
     fn default() -> Self {
         Self {
-            source_dirs: vec![PathBuf::from(".")],
-            output_dir: PathBuf::from("docs"),
-            output_formats: vec![OutputFormat::Html],
-            project: ProjectMetadata::default(),
-            options: DocOptions::default(),
-            styling: StylingConfig::default(),
         }
     }
-}
-
 impl Default for ProjectMetadata {
     fn default() -> Self {
         Self {
-            name: "CURSED Project".to_string(),
-            version: "0.1.0".to_string(),
-            description: None,
-            authors: Vec::new(),
-            homepage: None,
-            repository: None,
-            license: None,
         }
     }
-}
-
 impl Default for DocOptions {
     fn default() -> Self {
         Self {
-            include_private: false,
-            include_source: true,
-            generate_cross_refs: true,
-            generate_search_index: true,
-            include_examples: true,
-            max_type_depth: 10,
-            include_dependencies: false,
         }
     }
-}
-
 impl Default for StylingConfig {
     fn default() -> Self {
         Self {
-            custom_css: Vec::new(),
-            template_dir: None,
-            theme: "auto".to_string(),
-            colors: None,
-            favicon: None,
-            logo: None,
         }
     }
-}
-
 impl std::fmt::Display for OutputFormat {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            OutputFormat::Html => write!(f, "html"),
-            OutputFormat::Markdown => write!(f, "markdown"),
-            OutputFormat::Json => write!(f, "json"),
-            OutputFormat::Xml => write!(f, "xml"),
-            OutputFormat::LaTeX => write!(f, "latex"),
         }
     }
-}
-
 impl DocumentationSystem {
     /// Create a new documentation system
     pub fn new(config: DocumentationConfig) -> crate::error::Result<()> {
         Ok(Self { config })
-    }
-
     /// Generate documentation for all configured formats
     pub async fn generate_all(&mut self) -> crate::error::Result<()> {
         let start_time = Instant::now();
         let mut result = DocumentationResult {
-            files_processed: 0,
-            items_documented: 0,
-            output_files: Vec::new(),
-            processing_time_ms: 0,
-            warnings: Vec::new(),
-            errors: Vec::new(),
-        };
 
         // Discover source files
         let source_files = self.discover_source_files()?;
@@ -205,18 +103,10 @@ impl DocumentationSystem {
                     result.errors.push(format!("Failed to generate {} documentation: {}", format, e));
                 }
             }
-        }
-
         result.processing_time_ms = start_time.elapsed().as_millis() as u64;
         Ok(result)
-    }
-
     /// Generate documentation for a specific format
     async fn generate_format(
-        &self,
-        source_files: &[PathBuf],
-        format: &OutputFormat,
-        result: &mut DocumentationResult,
     ) -> crate::error::Result<()> {
         let doc_config = self.build_doc_generator_config(format);
         let mut generator = DocumentationGenerator::new(doc_config);
@@ -266,29 +156,19 @@ impl DocumentationSystem {
         }
 
         Ok(generated_files)
-    }
-
     /// Discover source files in configured directories
     fn discover_source_files(&self) -> crate::error::Result<()> {
         let mut files = Vec::new();
 
         for source_dir in &self.config.source_dirs {
             self.scan_directory(source_dir, &mut files)?;
-        }
-
         files.sort();
         Ok(files)
-    }
-
     /// Recursively scan directory for CURSED source files
     fn scan_directory(&self, dir: &Path, files: &mut Vec<PathBuf>) -> crate::error::Result<()> {
         if !dir.exists() {
             return Err(CursedError::Io(std::io::Error::new(
-                std::io::ErrorKind::NotFound,
-                format!("Source directory not found: {}", dir.display()),
             )));
-        }
-
         for entry in std::fs::read_dir(dir).map_err(CursedError::Io)? {
             let entry = entry.map_err(CursedError::Io)?;
             let path = entry.path();
@@ -305,37 +185,15 @@ impl DocumentationSystem {
                     files.push(path);
                 }
             }
-        }
-
         Ok(())
-    }
-
     /// Build DocGeneratorConfig for a specific format
     fn build_doc_generator_config(&self, format: &OutputFormat) -> DocGeneratorConfig {
         let doc_format = match format {
-            OutputFormat::Html => DocFormat::Html,
-            OutputFormat::Markdown => DocFormat::Markdown,
-            OutputFormat::Json => DocFormat::Json,
             _ => DocFormat::Html, // Default fallback
-        };
 
         DocGeneratorConfig {
-            output_dir: self.config.output_dir.clone(),
-            format: doc_format,
-            include_examples: self.config.options.include_source,
-            include_private: self.config.options.include_private,
-            generate_cross_refs: self.config.options.generate_cross_refs,
-            custom_css: self.config.styling.custom_css.first().map(|p| p.display().to_string()),
-            template_dir: self.config.styling.template_dir.clone(),
-            title: self.config.project.name.clone(),
-            description: self.config.project.description.clone(),
-            version: Some(self.config.project.version.clone()),
-            authors: self.config.project.authors.clone(),
-            base_url: self.config.project.homepage.clone(),
         }
     }
-}
-
 /// Load configuration from file
 pub fn load_config(path: &Path) -> crate::error::Result<()> {
     let content = std::fs::read_to_string(path).map_err(CursedError::Io)?;
@@ -359,15 +217,10 @@ pub fn save_config(config: &DocumentationConfig, path: &Path) -> crate::error::R
         // Default to TOML
         toml::to_string_pretty(config)
             .map_err(|e| CursedError::ConfigurationError(format!("Failed to serialize config: {}", e)))?
-    };
 
     std::fs::write(path, content).map_err(CursedError::Io)?;
     Ok(())
-}
-
 /// Create a default configuration file
 pub fn create_default_config(path: &Path) -> crate::error::Result<()> {
     let config = DocumentationConfig::default();
     save_config(&config, path)
-}
-

@@ -16,8 +16,6 @@ fn main() {
     if args.len() < 2 {
         println!("Usage: {} <file.csd> | --version | --help", args[0]);
         process::exit(1);
-    }
-
     match args[1].as_str() {
         "--version" => {
             println!("CURSED {} - Minimal Build", cursed::VERSION);
@@ -41,8 +39,6 @@ fn main() {
 fn run_file(filename: &str) -> cursed::Result<()> {
     let source = fs::read_to_string(filename)
         .map_err(|e| cursed::CursedError {
-            message: format!("Failed to read file '{}': {}", filename, e),
-            location: None,
         })?;
     
     cursed::run(&source)

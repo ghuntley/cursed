@@ -1,9 +1,8 @@
 /// Script detection and analysis for Unicode text
 // use crate::stdlib::glyph_gang::error::{GlyphGangResult, script_detection_error};
-// use crate::stdlib::glyph_gang::ranges::{
-    LATIN, GREEK, CYRILLIC, HEBREW, ARABIC, DEVANAGARI, THAI,
+// Placeholder imports disabled
     HAN, HIRAGANA, KATAKANA, HANGUL
-};
+// };
 use crate::error::CursedError;
 use std::collections::HashMap;
 use once_cell::sync::Lazy;
@@ -11,21 +10,7 @@ use once_cell::sync::Lazy;
 /// Unicode script enumeration
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum Script {
-    Unknown,
-    Latin,
-    Greek,
-    Cyrillic,
-    Hebrew,
-    Arabic,
-    Devanagari,
-    Thai,
-    Han,
-    Hiragana,
-    Katakana,
-    Hangul,
     // Add more scripts as needed
-}
-
 /// Constants for scripts
 pub const SCRIPT_UNKNOWN: Script = Script::Unknown;
 pub const SCRIPT_LATIN: Script = Script::Latin;
@@ -63,15 +48,6 @@ static SCRIPT_LANGUAGES: Lazy<HashMap<Script, Vec<&'static str>>> = Lazy::new(||
     let mut languages = HashMap::new();
     
     languages.insert(Script::Latin, vec![
-        "English", "Spanish", "French", "German", "Italian", "Portuguese", 
-        "Dutch", "Polish", "Czech", "Slovak", "Hungarian", "Romanian", 
-        "Croatian", "Serbian", "Slovenian", "Estonian", "Latvian", 
-        "Lithuanian", "Albanian", "Basque", "Catalan", "Galician", 
-        "Irish", "Scottish Gaelic", "Welsh", "Breton", "Cornish", 
-        "Manx", "Icelandic", "Faroese", "Norwegian", "Swedish", "Danish", 
-        "Finnish", "Turkish", "Azerbaijani", "Uzbek", "Kazakh", 
-        "Kyrgyz", "Turkmen", "Tatar", "Bashkir", "Chuvash", "Yakut", 
-        "Vietnamese", "Indonesian", "Malay", "Tagalog", "Swahili", 
         "Yoruba", "Igbo", "Hausa", "Zulu", "Xhosa", "Afrikaans"
     ]);
     
@@ -80,11 +56,6 @@ static SCRIPT_LANGUAGES: Lazy<HashMap<Script, Vec<&'static str>>> = Lazy::new(||
     ]);
     
     languages.insert(Script::Cyrillic, vec![
-        "Russian", "Ukrainian", "Belarusian", "Bulgarian", "Macedonian", 
-        "Serbian", "Montenegrin", "Bosnian", "Croatian", "Czech", 
-        "Slovak", "Kazakh", "Kyrgyz", "Tajik", "Uzbek", "Mongolian", 
-        "Azerbaijani", "Turkmen", "Tatar", "Bashkir", "Chuvash", 
-        "Yakut", "Evenk", "Even", "Nanai", "Udmurt", "Mari", 
         "Komi", "Nenets", "Selkup", "Ossetian", "Abkhaz", "Georgian"
     ]);
     
@@ -93,15 +64,10 @@ static SCRIPT_LANGUAGES: Lazy<HashMap<Script, Vec<&'static str>>> = Lazy::new(||
     ]);
     
     languages.insert(Script::Arabic, vec![
-        "Arabic", "Persian", "Urdu", "Pashto", "Kurdish", "Sindhi", 
-        "Balochi", "Uyghur", "Kazakh", "Kyrgyz", "Uzbek", "Tajik", 
-        "Turkmen", "Azerbaijani", "Turkish", "Malay", "Hausa", 
         "Swahili", "Somali", "Oromo", "Amharic", "Tigrinya"
     ]);
     
     languages.insert(Script::Devanagari, vec![
-        "Hindi", "Marathi", "Nepali", "Sanskrit", "Konkani", "Sindhi", 
-        "Bhojpuri", "Maithili", "Magahi", "Awadhi", "Chhattisgarhi", 
         "Rajasthani", "Haryanvi", "Bhili", "Garhwali", "Kumaoni"
     ]);
     
@@ -170,14 +136,10 @@ fn get_character_script(ch: char) -> Script {
             Script::Unknown
         }
     }
-}
-
 /// Detect the primary script of a string
 pub fn detect_script(s: &str) -> Script {
     if s.is_empty() {
         return Script::Unknown;
-    }
-    
     let mut script_counts: HashMap<Script, usize> = HashMap::new();
     
     for ch in s.chars() {
@@ -193,16 +155,12 @@ pub fn detect_script(s: &str) -> Script {
         .max_by_key(|(_, count)| *count)
         .map(|(script, _)| script)
         .unwrap_or(Script::Unknown)
-}
-
 /// Get the name of a script
 pub fn get_script_name(script: Script) -> String {
     SCRIPT_NAMES
         .get(&script)
         .unwrap_or(&"Unknown")
         .to_string()
-}
-
 /// Get languages that use a specific script
 pub fn get_languages_by_script(script: Script) -> Vec<String> {
     SCRIPT_LANGUAGES
@@ -211,8 +169,6 @@ pub fn get_languages_by_script(script: Script) -> Vec<String> {
         .iter()
         .map(|&lang| lang.to_string())
         .collect()
-}
-
 /// Analyze script distribution in a string
 pub fn analyze_script_distribution(s: &str) -> HashMap<String, usize> {
     let mut distribution = HashMap::new();
@@ -221,11 +177,7 @@ pub fn analyze_script_distribution(s: &str) -> HashMap<String, usize> {
         let script = get_character_script(ch);
         let script_name = get_script_name(script);
         *distribution.entry(script_name).or_insert(0) += 1;
-    }
-    
     distribution
-}
-
 /// Check if a string contains mixed scripts
 pub fn is_mixed_script(s: &str) -> bool {
     let mut scripts_found = std::collections::HashSet::new();
@@ -238,18 +190,12 @@ pub fn is_mixed_script(s: &str) -> bool {
                 return true;
             }
         }
-    }
-    
     false
-}
-
 /// Get all characters belonging to a specific script from a string
 pub fn extract_script_characters(s: &str, target_script: Script) -> String {
     s.chars()
         .filter(|&ch| get_character_script(ch) == target_script)
         .collect()
-}
-
 /// Get script boundaries in a string (positions where script changes)
 pub fn get_script_boundaries(s: &str) -> Vec<(usize, Script)> {
     let mut boundaries = Vec::new();
@@ -262,14 +208,8 @@ pub fn get_script_boundaries(s: &str) -> Vec<(usize, Script)> {
         if script != Script::Unknown && script != current_script {
             boundaries.push((byte_pos, script));
             current_script = script;
-        }
-        
         byte_pos += ch.len_utf8();
-    }
-    
     boundaries
-}
-
 /// Segment text by script boundaries
 pub fn segment_by_script(s: &str) -> Vec<(String, Script)> {
     let boundaries = get_script_boundaries(s);
@@ -277,8 +217,6 @@ pub fn segment_by_script(s: &str) -> Vec<(String, Script)> {
     
     if boundaries.is_empty() {
         return vec![(s.to_string(), Script::Unknown)];
-    }
-    
     let mut last_pos = 0;
     
     for (i, &(pos, script)) in boundaries.iter().enumerate() {
@@ -288,18 +226,12 @@ pub fn segment_by_script(s: &str) -> Vec<(String, Script)> {
             segments.push((segment, prev_script));
         }
         last_pos = pos;
-    }
-    
     // Add the final segment
     if last_pos < s.len() {
         let segment = s[last_pos..].to_string();
         let last_script = boundaries.last().map(|(_, script)| *script).unwrap_or(Script::Unknown);
         segments.push((segment, last_script));
-    }
-    
     segments
-}
-
 /// Get detailed script analysis
 pub fn get_script_info(s: &str) -> HashMap<String, String> {
     let mut info = HashMap::new();
@@ -316,17 +248,11 @@ pub fn get_script_info(s: &str) -> HashMap<String, String> {
     // Add distribution details
     for (script_name, count) in distribution {
         info.insert(format!("{}_chars", script_name.to_lowercase()), count.to_string());
-    }
-    
     // Add languages for primary script
     let languages = get_languages_by_script(primary_script);
     if !languages.is_empty() {
         info.insert("possible_languages".to_string(), languages.join(", "));
-    }
-    
     info
-}
-
 /// Initialize script detection data
 pub fn initialize_script_data() -> GlyphGangResult<()> {
     // Force initialization of lazy statics
@@ -336,22 +262,12 @@ pub fn initialize_script_data() -> GlyphGangResult<()> {
     // Validate that data loaded correctly
     if SCRIPT_NAMES.is_empty() {
         return Err(script_detection_error("Failed to initialize script names", ""));
-    }
-    
     if SCRIPT_LANGUAGES.is_empty() {
         return Err(script_detection_error("Failed to initialize script languages", ""));
-    }
-    
     Ok(())
-}
-
 /// Get all available scripts
 pub fn get_available_scripts() -> Vec<Script> {
     SCRIPT_NAMES.keys().copied().collect()
-}
-
 /// Check if a script is supported
 pub fn is_script_supported(script: Script) -> bool {
     SCRIPT_NAMES.contains_key(&script)
-}
-

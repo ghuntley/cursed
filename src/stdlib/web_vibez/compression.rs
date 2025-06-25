@@ -8,13 +8,7 @@ use brotli::{CompressorWriter, Decompressor};
 /// Compression types supported
 #[derive(Debug, Clone, PartialEq)]
 pub enum CompressionType {
-    Gzip,
-    Deflate,
-    Brotli,
-    Zstd,
     Identity, // No compression
-}
-
 impl CompressionType {
     /// Parse compression type from Accept-Encoding header
     pub fn from_accept_encoding(accept_encoding: &str) -> Vec<(CompressionType, f32)> {
@@ -33,42 +27,22 @@ impl CompressionType {
                     .unwrap_or(1.0)
             } else {
                 1.0
-            };
 
             let compression_type = match name.to_lowercase().as_str() {
-                "gzip" => CompressionType::Gzip,
-                "deflate" => CompressionType::Deflate,
-                "br" => CompressionType::Brotli,
-                "zstd" => CompressionType::Zstd,
-                "*" => CompressionType::Identity,
-                "identity" => CompressionType::Identity,
-                _ => continue,
-            };
 
             encodings.push((compression_type, quality));
-        }
-
         // Sort by quality (descending)
         encodings.sort_by(|a, b| b.1.partial_cmp(&a.1).unwrap_or(std::cmp::Ordering::Equal));
         encodings
-    }
-
     /// Get the encoding name for HTTP headers
     pub fn header_name(&self) -> &'static str {
         match self {
-            CompressionType::Gzip => "gzip",
-            CompressionType::Deflate => "deflate",
-            CompressionType::Brotli => "br",
-            CompressionType::Zstd => "zstd",
-            CompressionType::Identity => "identity",
         }
     }
 
     /// Check if compression type is supported
     pub fn is_supported(&self) -> bool {
         !matches!(self, CompressionType::Identity)
-    }
-
     /// Get compression priority (higher = better, 0 = not supported)
     pub fn priority(&self) -> u8 {
         match self {
@@ -79,31 +53,19 @@ impl CompressionType {
             CompressionType::Identity => 0, // No compression
         }
     }
-}
-
 /// Response compressor configuration
 #[derive(Debug, Clone)]
 pub struct CompressionConfig {
     /// Compression level (0-11, varies by algorithm)
-    pub level: u8,
     /// Minimum size threshold for compression
-    pub min_size_threshold: usize,
     /// Maximum size threshold for compression (to avoid memory issues)
-    pub max_size_threshold: usize,
     /// Compressible content types
-    pub compressible_types: Vec<String>,
     /// Buffer size for streaming compression
-    pub buffer_size: usize,
     /// Enable/disable specific compression types
-    pub enabled_types: Vec<CompressionType>,
     /// Quality threshold for accepting compression
-    pub quality_threshold: f32,
-}
-
 impl Default for CompressionConfig {
     fn default() -> Self {
         Self {
-            level: 6,
             min_size_threshold: 1024,          // 1KB
             max_size_threshold: 10 * 1024 * 1024, // 10MB
             compressible_types: vec![
@@ -121,39 +83,22 @@ impl Default for CompressionConfig {
                 "text/csv".to_string(),
                 "application/x-font-ttf".to_string(),
                 "font/opentype".to_string(),
-            ],
             buffer_size: 64 * 1024, // 64KB
             enabled_types: vec![
-                CompressionType::Brotli,
-                CompressionType::Zstd,
-                CompressionType::Gzip,
-                CompressionType::Deflate,
-            ],
-            quality_threshold: 0.1,
         }
     }
-}
-
 /// Response compressor with production-ready implementations
 pub struct ResponseCompressor {
-    config: CompressionConfig,
-    stats: CompressionStats,
-}
-
 impl ResponseCompressor {
     /// Create new response compressor with default configuration
     pub fn new() -> Self {
         Self {
-            config: CompressionConfig::default(),
-            stats: CompressionStats::default(),
         }
     }
 
     /// Create with custom configuration
     pub fn with_config(config: CompressionConfig) -> Self {
         Self {
-            config,
-            stats: CompressionStats::default(),
         }
     }
 
@@ -161,32 +106,22 @@ impl ResponseCompressor {
     pub fn with_level(mut self, level: u8) -> Self {
         self.config.level = level.min(11);
         self
-    }
-
     /// Set minimum size threshold for compression
     pub fn with_threshold(mut self, threshold: usize) -> Self {
         self.config.min_size_threshold = threshold;
         self
-    }
-
     /// Set maximum size threshold for compression
     pub fn with_max_threshold(mut self, threshold: usize) -> Self {
         self.config.max_size_threshold = threshold;
         self
-    }
-
     /// Add compressible content type
     pub fn add_compressible_type(mut self, content_type: String) -> Self {
         self.config.compressible_types.push(content_type);
         self
-    }
-
     /// Enable specific compression types
     pub fn enable_types(mut self, types: Vec<CompressionType>) -> Self {
         self.config.enabled_types = types;
         self
-    }
-
     /// Check if content should be compressed
     pub fn should_compress(&self, content: &[u8], content_type: &str) -> bool {
         let content_len = content.len();
@@ -195,14 +130,10 @@ impl ResponseCompressor {
         if content_len < self.config.min_size_threshold 
             || content_len > self.config.max_size_threshold {
             return false;
-        }
-
         // Check if content type is compressible
         let content_type_base = content_type.split(';').next().unwrap_or("").trim().to_lowercase();
         self.config.compressible_types.iter()
             .any(|ct| ct.to_lowercase() == content_type_base)
-    }
-
     /// Select best compression type from Accept-Encoding header
     pub fn select_compression(&self, accept_encoding: &str) -> CompressionType {
         let encodings = CompressionType::from_accept_encoding(accept_encoding);
@@ -216,85 +147,38 @@ impl ResponseCompressor {
         }
 
         CompressionType::Identity
-    }
-
     /// Compress content using specified compression type
     pub fn compress(
-        &mut self,
-        content: &[u8],
-        compression_type: CompressionType,
     ) -> crate::error::Result<()> {
         let start_time = std::time::Instant::now();
         
         let result = match compression_type {
-            CompressionType::Gzip => self.gzip_compress(content),
-            CompressionType::Deflate => self.deflate_compress(content),
-            CompressionType::Brotli => self.brotli_compress(content),
-            CompressionType::Zstd => self.zstd_compress(content),
-            CompressionType::Identity => Ok(content.to_vec()),
-        };
 
         // Update statistics
         let duration = start_time.elapsed();
         self.stats.update_compression_stats(
-            compression_type.clone(),
-            content.len(),
-            result.as_ref().map(|r| r.len()).unwrap_or(0),
-            duration,
-            result.is_ok(),
         );
 
         result
-    }
-
     /// Decompress content
     pub fn decompress(
-        &mut self,
-        content: &[u8],
-        compression_type: CompressionType,
     ) -> crate::error::Result<()> {
         let start_time = std::time::Instant::now();
         
         let result = match compression_type {
-            CompressionType::Gzip => self.gzip_decompress(content),
-            CompressionType::Deflate => self.deflate_decompress(content),
-            CompressionType::Brotli => self.brotli_decompress(content),
-            CompressionType::Zstd => self.zstd_decompress(content),
-            CompressionType::Identity => Ok(content.to_vec()),
-        };
 
         // Update statistics
         let duration = start_time.elapsed();
         self.stats.update_decompression_stats(
-            compression_type,
-            content.len(),
-            result.as_ref().map(|r| r.len()).unwrap_or(0),
-            duration,
-            result.is_ok(),
         );
 
         result
-    }
-
     /// Compress response with automatic compression type selection
     pub fn compress_response(
-        &mut self,
-        content: &[u8],
-        content_type: &str,
-        accept_encoding: &str,
     ) -> CompressionResult {
         // Check if compression should be applied
         if !self.should_compress(content, content_type) {
             return CompressionResult {
-                content: content.to_vec(),
-                compression_type: CompressionType::Identity,
-                original_size: content.len(),
-                compressed_size: content.len(),
-                compression_ratio: 1.0,
-                compression_time: std::time::Duration::ZERO,
-            };
-        }
-
         // Select compression type
         let compression_type = self.select_compression(accept_encoding);
         
@@ -304,29 +188,15 @@ impl ResponseCompressor {
             Ok(compressed) => {
                 let compression_time = start_time.elapsed();
                 CompressionResult {
-                    content: compressed.clone(),
-                    compression_type,
-                    original_size: content.len(),
-                    compressed_size: compressed.len(),
                     compression_ratio: compressed.len() as f64 / content.len() as f64,
-                    compression_time,
                 }
-            },
             Err(_) => CompressionResult {
-                content: content.to_vec(),
-                compression_type: CompressionType::Identity,
-                original_size: content.len(),
-                compressed_size: content.len(),
-                compression_ratio: 1.0,
-                compression_time: start_time.elapsed(),
-            },
         }
     }
 
     /// GZIP compression using flate2
     fn gzip_compress(&self, data: &[u8]) -> crate::error::Result<()> {
         let mut encoder = GzEncoder::new(
-            Vec::new(),
             Compression::new(self.config.level.min(9) as u32)
         );
         
@@ -335,8 +205,6 @@ impl ResponseCompressor {
         
         encoder.finish()
             .map_err(|e| CompressionError::CompressionFailed(format!("GZIP finalization failed: {}", e)))
-    }
-
     /// GZIP decompression using flate2
     fn gzip_decompress(&self, data: &[u8]) -> crate::error::Result<()> {
         let mut decoder = GzDecoder::new(data);
@@ -346,12 +214,9 @@ impl ResponseCompressor {
             .map_err(|e| CompressionError::DecompressionFailed(format!("GZIP decompression failed: {}", e)))?;
         
         Ok(decompressed)
-    }
-
     /// Deflate compression using flate2
     fn deflate_compress(&self, data: &[u8]) -> crate::error::Result<()> {
         let mut encoder = DeflateEncoder::new(
-            Vec::new(),
             Compression::new(self.config.level.min(9) as u32)
         );
         
@@ -360,8 +225,6 @@ impl ResponseCompressor {
         
         encoder.finish()
             .map_err(|e| CompressionError::CompressionFailed(format!("Deflate finalization failed: {}", e)))
-    }
-
     /// Deflate decompression using flate2
     fn deflate_decompress(&self, data: &[u8]) -> crate::error::Result<()> {
         let mut decoder = DeflateDecoder::new(data);
@@ -371,20 +234,14 @@ impl ResponseCompressor {
             .map_err(|e| CompressionError::DecompressionFailed(format!("Deflate decompression failed: {}", e)))?;
         
         Ok(decompressed)
-    }
-
     /// Brotli compression using brotli crate
     fn brotli_compress(&self, data: &[u8]) -> crate::error::Result<()> {
         let mut compressed = Vec::new();
         let params = brotli::enc::BrotliEncoderParams {
-            quality: self.config.level.min(11) as i32,
             ..Default::default()
-        };
         
         {
             let mut compressor = CompressorWriter::with_params(
-                &mut compressed,
-                self.config.buffer_size,
                 &params
             );
             
@@ -393,11 +250,7 @@ impl ResponseCompressor {
             
             compressor.flush()
                 .map_err(|e| CompressionError::CompressionFailed(format!("Brotli flush failed: {}", e)))?;
-        }
-        
         Ok(compressed)
-    }
-
     /// Brotli decompression using brotli crate
     fn brotli_decompress(&self, data: &[u8]) -> crate::error::Result<()> {
         let mut decompressed = Vec::new();
@@ -407,38 +260,26 @@ impl ResponseCompressor {
             let mut buffer = [0u8; 4096];
             match decompressor.read(&mut buffer) {
                 Ok(0) => break, // EOF
-                Ok(n) => decompressed.extend_from_slice(&buffer[..n]),
                 Err(e) => return Err(CompressionError::DecompressionFailed(
                     format!("Brotli decompression failed: {}", e)
-                )),
             }
         }
         
         Ok(decompressed)
-    }
-
     /// Zstandard compression using zstd crate
     fn zstd_compress(&self, data: &[u8]) -> crate::error::Result<()> {
         zstd::encode_all(data, self.config.level.min(22) as i32)
             .map_err(|e| CompressionError::CompressionFailed(format!("Zstd compression failed: {}", e)))
-    }
-
     /// Zstandard decompression using zstd crate
     fn zstd_decompress(&self, data: &[u8]) -> crate::error::Result<()> {
         zstd::decode_all(data)
             .map_err(|e| CompressionError::DecompressionFailed(format!("Zstd decompression failed: {}", e)))
-    }
-
     /// Get compression statistics
     pub fn get_stats(&self) -> &CompressionStats {
         &self.stats
-    }
-
     /// Reset compression statistics
     pub fn reset_stats(&mut self) {
         self.stats = CompressionStats::default();
-    }
-
     /// Get configuration
     pub fn get_config(&self) -> &CompressionConfig {
         &self.config
@@ -454,14 +295,6 @@ impl Default for ResponseCompressor {
 /// Compression result with detailed metrics
 #[derive(Debug)]
 pub struct CompressionResult {
-    pub content: Vec<u8>,
-    pub compression_type: CompressionType,
-    pub original_size: usize,
-    pub compressed_size: usize,
-    pub compression_ratio: f64,
-    pub compression_time: std::time::Duration,
-}
-
 impl CompressionResult {
     /// Get compression savings percentage
     pub fn savings_percentage(&self) -> f64 {
@@ -475,13 +308,9 @@ impl CompressionResult {
     /// Check if compression was effective (default: at least 10% reduction)
     pub fn is_effective(&self) -> bool {
         self.is_effective_with_threshold(0.9)
-    }
-
     /// Check if compression was effective with custom threshold
     pub fn is_effective_with_threshold(&self, threshold: f64) -> bool {
         self.compression_ratio < threshold
-    }
-
     /// Get compression throughput in MB/s
     pub fn throughput_mbps(&self) -> f64 {
         if self.compression_time.is_zero() {
@@ -499,18 +328,10 @@ impl CompressionResult {
         
         if self.compression_type != CompressionType::Identity {
             headers.push((
-                "Content-Encoding".to_string(),
-                self.compression_type.header_name().to_string(),
             ));
             headers.push((
-                "Vary".to_string(),
-                "Accept-Encoding".to_string(),
             ));
-        }
-
         headers.push((
-            "Content-Length".to_string(),
-            self.compressed_size.to_string(),
         ));
 
         headers
@@ -520,15 +341,6 @@ impl CompressionResult {
 /// Compression errors
 #[derive(Debug)]
 pub enum CompressionError {
-    UnsupportedType,
-    InvalidData,
-    CompressionFailed(String),
-    DecompressionFailed(String),
-    ConfigurationError(String),
-    BufferTooSmall,
-    SizeLimitExceeded,
-}
-
 // impl std::fmt::Display for CompressionError {
 //     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
 //         match self {
@@ -548,35 +360,10 @@ pub enum CompressionError {
 /// Comprehensive compression statistics
 #[derive(Debug, Default)]
 pub struct CompressionStats {
-    pub total_compressions: u64,
-    pub total_decompressions: u64,
-    pub total_bytes_compressed: u64,
-    pub total_bytes_decompressed: u64,
-    pub total_compression_time: std::time::Duration,
-    pub total_decompression_time: std::time::Duration,
-    pub compression_failures: u64,
-    pub decompression_failures: u64,
-    pub algorithm_stats: HashMap<String, AlgorithmStats>,
-}
-
 #[derive(Debug, Default)]
 pub struct AlgorithmStats {
-    pub compressions: u64,
-    pub decompressions: u64,
-    pub input_bytes: u64,
-    pub output_bytes: u64,
-    pub total_time: std::time::Duration,
-    pub failures: u64,
-}
-
 impl CompressionStats {
     fn update_compression_stats(
-        &mut self,
-        algorithm: CompressionType,
-        input_size: usize,
-        output_size: usize,
-        duration: std::time::Duration,
-        success: bool,
     ) {
         self.total_compressions += 1;
         self.total_compression_time += duration;
@@ -585,8 +372,6 @@ impl CompressionStats {
             self.total_bytes_compressed += input_size as u64;
         } else {
             self.compression_failures += 1;
-        }
-
         let algo_name = algorithm.header_name().to_string();
         let stats = self.algorithm_stats.entry(algo_name).or_default();
         stats.compressions += 1;
@@ -601,12 +386,6 @@ impl CompressionStats {
     }
 
     fn update_decompression_stats(
-        &mut self,
-        algorithm: CompressionType,
-        input_size: usize,
-        output_size: usize,
-        duration: std::time::Duration,
-        success: bool,
     ) {
         self.total_decompressions += 1;
         self.total_decompression_time += duration;
@@ -615,8 +394,6 @@ impl CompressionStats {
             self.total_bytes_decompressed += output_size as u64;
         } else {
             self.decompression_failures += 1;
-        }
-
         let algo_name = algorithm.header_name().to_string();
         let stats = self.algorithm_stats.entry(algo_name).or_default();
         stats.decompressions += 1;
@@ -661,28 +438,12 @@ impl CompressionStats {
             (self.total_compressions - self.compression_failures) as f64 / self.total_compressions as f64
         }
     }
-}
-
 /// Streaming compressor for large responses with memory efficiency
 pub struct StreamingCompressor {
-    compression_type: CompressionType,
-    buffer: Vec<u8>,
-    buffer_size: usize,
-    compressor: ResponseCompressor,
-    total_input: usize,
-    total_output: usize,
-}
-
 impl StreamingCompressor {
     /// Create new streaming compressor
     pub fn new(compression_type: CompressionType, buffer_size: usize) -> Self {
         Self {
-            compression_type,
-            buffer: Vec::with_capacity(buffer_size),
-            buffer_size,
-            compressor: ResponseCompressor::new(),
-            total_input: 0,
-            total_output: 0,
         }
     }
 
@@ -690,12 +451,6 @@ impl StreamingCompressor {
     pub fn with_config(compression_type: CompressionType, config: CompressionConfig) -> Self {
         let buffer_size = config.buffer_size;
         Self {
-            compression_type,
-            buffer: Vec::with_capacity(buffer_size),
-            buffer_size,
-            compressor: ResponseCompressor::with_config(config),
-            total_input: 0,
-            total_output: 0,
         }
     }
 
@@ -715,56 +470,35 @@ impl StreamingCompressor {
     pub fn flush(&mut self) -> crate::error::Result<()> {
         if self.buffer.is_empty() {
             return Ok(Vec::new());
-        }
-
         let compressed = self.compressor.compress(&self.buffer, self.compression_type.clone())?;
         self.total_output += compressed.len();
         self.buffer.clear();
         Ok(compressed)
-    }
-
     /// Finish compression and return final data
     pub fn finish(mut self) -> crate::error::Result<()> {
         self.flush()
-    }
-
     /// Get compression statistics
     pub fn get_stats(&self) -> (usize, usize, f64) {
         let ratio = if self.total_input == 0 {
             1.0
         } else {
             self.total_output as f64 / self.total_input as f64
-        };
         (self.total_input, self.total_output, ratio)
     }
 }
 
 /// Middleware for automatic response compression with advanced features
 pub struct CompressionMiddleware {
-    compressor: ResponseCompressor,
-    enabled: bool,
-    force_compression: bool,
-    vary_header: bool,
-}
-
 impl CompressionMiddleware {
     /// Create new compression middleware
     pub fn new() -> Self {
         Self {
-            compressor: ResponseCompressor::new(),
-            enabled: true,
-            force_compression: false,
-            vary_header: true,
         }
     }
 
     /// Create with custom configuration
     pub fn with_config(config: CompressionConfig) -> Self {
         Self {
-            compressor: ResponseCompressor::with_config(config),
-            enabled: true,
-            force_compression: false,
-            vary_header: true,
         }
     }
 
@@ -772,36 +506,23 @@ impl CompressionMiddleware {
     pub fn enabled(mut self, enabled: bool) -> Self {
         self.enabled = enabled;
         self
-    }
-
     /// Force compression even for small content
     pub fn force_compression(mut self, force: bool) -> Self {
         self.force_compression = force;
         self
-    }
-
     /// Control Vary header addition
     pub fn vary_header(mut self, vary: bool) -> Self {
         self.vary_header = vary;
         self
-    }
-
     /// Set compression level
     pub fn with_level(mut self, level: u8) -> Self {
         self.compressor = self.compressor.with_level(level);
         self
-    }
-
     /// Process response for compression
     pub fn process_response(
-        &mut self,
-        content: &[u8],
-        headers: &mut HashMap<String, String>,
     ) -> Vec<u8> {
         if !self.enabled {
             return content.to_vec();
-        }
-
         let content_type = headers.get("Content-Type")
             .cloned()
             .unwrap_or_else(|| "text/plain".to_string());
@@ -815,42 +536,29 @@ impl CompressionMiddleware {
             true
         } else {
             self.compressor.should_compress(content, &content_type)
-        };
 
         if !should_compress {
             if self.vary_header {
                 headers.insert("Vary".to_string(), "Accept-Encoding".to_string());
             }
             return content.to_vec();
-        }
-
         let result = self.compressor.compress_response(content, &content_type, &accept_encoding);
 
         // Update headers
         for (key, value) in result.get_headers() {
             headers.insert(key, value);
-        }
-
         // Add performance metrics as headers (optional)
         if result.compression_type != CompressionType::Identity {
             headers.insert(
-                "X-Compression-Ratio".to_string(),
                 format!("{:.3}", result.compression_ratio)
             );
             headers.insert(
-                "X-Compression-Time".to_string(),
                 format!("{}ms", result.compression_time.as_millis())
             );
-        }
-
         result.content
-    }
-
     /// Get compression statistics
     pub fn get_stats(&self) -> &CompressionStats {
         self.compressor.get_stats()
-    }
-
     /// Reset statistics
     pub fn reset_stats(&mut self) {
         self.compressor.reset_stats();
@@ -873,10 +581,6 @@ pub mod benchmark {
         let mut results = BenchmarkResults::default();
         
         for algorithm in &[
-            CompressionType::Gzip,
-            CompressionType::Deflate,
-            CompressionType::Brotli,
-            CompressionType::Zstd,
         ] {
             let mut compressor = ResponseCompressor::new();
             let mut total_time = std::time::Duration::ZERO;
@@ -890,8 +594,6 @@ pub mod benchmark {
                         total_time += start.elapsed();
                         total_compressed_size += compressed.len();
                         successful_iterations += 1;
-                    },
-                    Err(_) => continue,
                 }
             }
 
@@ -902,11 +604,7 @@ pub mod benchmark {
                 let throughput = data.len() as f64 / avg_time.as_secs_f64() / (1024.0 * 1024.0);
 
                 results.algorithm_results.insert(
-                    algorithm.header_name().to_string(),
                     AlgorithmBenchmark {
-                        compression_ratio: ratio,
-                        avg_compression_time: avg_time,
-                        throughput_mbps: throughput,
                         success_rate: successful_iterations as f64 / iterations as f64,
                     }
                 );
@@ -914,53 +612,33 @@ pub mod benchmark {
         }
 
         results
-    }
-
     #[derive(Debug, Default)]
     pub struct BenchmarkResults {
-        pub algorithm_results: HashMap<String, AlgorithmBenchmark>,
-    }
-
     #[derive(Debug)]
     pub struct AlgorithmBenchmark {
-        pub compression_ratio: f64,
-        pub avg_compression_time: std::time::Duration,
-        pub throughput_mbps: f64,
-        pub success_rate: f64,
-    }
-
     impl BenchmarkResults {
         /// Get the best algorithm for compression ratio
         pub fn best_compression_ratio(&self) -> Option<(&String, &AlgorithmBenchmark)> {
             self.algorithm_results.iter()
                 .min_by(|a, b| a.1.compression_ratio.partial_cmp(&b.1.compression_ratio).unwrap())
-        }
-
         /// Get the fastest algorithm
         pub fn fastest_algorithm(&self) -> Option<(&String, &AlgorithmBenchmark)> {
             self.algorithm_results.iter()
                 .max_by(|a, b| a.1.throughput_mbps.partial_cmp(&b.1.throughput_mbps).unwrap())
         }
     }
-}
-
 
 impl CompressionManager {
     /// Create a new compression manager with default settings
     pub fn new() -> Self {
         Self {
-            compression_level: CompressionLevel::Default,
             buffer_size: 32768, // 32KB buffer
-            stats: CompressionStats::default(),
         }
     }
 
     /// Create a compression manager with custom level
     pub fn with_level(level: CompressionLevel) -> Self {
         Self {
-            compression_level: level,
-            buffer_size: 32768,
-            stats: CompressionStats::default(),
         }
     }
 
@@ -968,20 +646,12 @@ impl CompressionManager {
     pub fn with_buffer_size(mut self, size: usize) -> Self {
         self.buffer_size = size;
         self
-    }
-
     /// Compress data using the specified algorithm
     pub fn compress(&mut self, data: &[u8], compression_type: CompressionType) -> crate::error::Result<()> {
         let start_time = std::time::Instant::now();
         let original_size = data.len();
 
         let result = match compression_type {
-            CompressionType::Gzip => self.compress_gzip(data),
-            CompressionType::Deflate => self.compress_deflate(data),
-            CompressionType::Brotli => self.compress_brotli(data),
-            CompressionType::Zstd => self.compress_zstd(data),
-            CompressionType::Identity => Ok(data.to_vec()),
-        };
 
         match result {
             Ok(compressed) => {
@@ -994,19 +664,11 @@ impl CompressionManager {
                 Err(e)
             }
         }
-    }
-
     /// Decompress data using the specified algorithm
     pub fn decompress(&mut self, data: &[u8], compression_type: CompressionType) -> crate::error::Result<()> {
         let start_time = std::time::Instant::now();
 
         let result = match compression_type {
-            CompressionType::Gzip => self.decompress_gzip(data),
-            CompressionType::Deflate => self.decompress_deflate(data),
-            CompressionType::Brotli => self.decompress_brotli(data),
-            CompressionType::Zstd => self.decompress_zstd(data),
-            CompressionType::Identity => Ok(data.to_vec()),
-        };
 
         match result {
             Ok(decompressed) => {
@@ -1019,31 +681,21 @@ impl CompressionManager {
                 Err(e)
             }
         }
-    }
-
     /// Get compression statistics
     pub fn get_stats(&self) -> &CompressionStats {
         &self.stats
-    }
-
     /// Reset compression statistics
     pub fn reset_stats(&mut self) {
         self.stats = CompressionStats::default();
-    }
-
     // Private compression methods
     fn compress_gzip(&self, data: &[u8]) -> crate::error::Result<()> {
         let mut encoder = GzEncoder::new(Vec::new(), self.compression_level.into());
         encoder.write_all(data).map_err(|e| CompressionError::CompressionFailed(e.to_string()))?;
         encoder.finish().map_err(|e| CompressionError::CompressionFailed(e.to_string()))
-    }
-
     fn compress_deflate(&self, data: &[u8]) -> crate::error::Result<()> {
         let mut encoder = DeflateEncoder::new(Vec::new(), self.compression_level.into());
         encoder.write_all(data).map_err(|e| CompressionError::CompressionFailed(e.to_string()))?;
         encoder.finish().map_err(|e| CompressionError::CompressionFailed(e.to_string()))
-    }
-
     fn compress_brotli(&self, data: &[u8]) -> crate::error::Result<()> {
         let mut output = Vec::new();
         let mut compressor = CompressorWriter::new(&mut output, self.buffer_size, 6, 22);
@@ -1051,8 +703,6 @@ impl CompressionManager {
         compressor.flush().map_err(|e| CompressionError::CompressionFailed(e.to_string()))?;
         drop(compressor);
         Ok(output)
-    }
-
     fn compress_zstd(&self, data: &[u8]) -> crate::error::Result<()> {
         // Mock implementation for zstd - in production would use actual zstd library
         let mut output = Vec::with_capacity(data.len());
@@ -1060,29 +710,21 @@ impl CompressionManager {
         output.extend_from_slice(&(data.len() as u32).to_le_bytes());
         output.extend_from_slice(data);
         Ok(output)
-    }
-
     fn decompress_gzip(&self, data: &[u8]) -> crate::error::Result<()> {
         let mut decoder = GzDecoder::new(data);
         let mut output = Vec::new();
         decoder.read_to_end(&mut output).map_err(|e| CompressionError::DecompressionFailed(e.to_string()))?;
         Ok(output)
-    }
-
     fn decompress_deflate(&self, data: &[u8]) -> crate::error::Result<()> {
         let mut decoder = DeflateDecoder::new(data);
         let mut output = Vec::new();
         decoder.read_to_end(&mut output).map_err(|e| CompressionError::DecompressionFailed(e.to_string()))?;
         Ok(output)
-    }
-
     fn decompress_brotli(&self, data: &[u8]) -> crate::error::Result<()> {
         let mut decoder = Decompressor::new(data, self.buffer_size);
         let mut output = Vec::new();
         decoder.read_to_end(&mut output).map_err(|e| CompressionError::DecompressionFailed(e.to_string()))?;
         Ok(output)
-    }
-
     fn decompress_zstd(&self, data: &[u8]) -> crate::error::Result<()> {
         // Mock implementation for zstd decompression
         if data.len() < 8 || &data[0..4] != b"ZSTD" {
@@ -1107,29 +749,19 @@ impl Default for CompressionManager {
 /// High-level compression engine for web requests
 #[derive(Debug, Clone)]
 pub struct CompressionEngine {
-    compressor: CompressionManager,
-    config: CompressionConfig,
-}
-
 impl CompressionEngine {
     /// Create a new compression engine with configuration
     pub fn new(config: CompressionConfig) -> Self {
         Self {
-            compressor: CompressionManager::new(),
-            config,
         }
     }
 
     /// Compress data using configured compression type
     pub fn compress(&mut self, data: &[u8]) -> crate::error::Result<()> {
         self.compressor.compress(data, self.config.compression_type)
-    }
-
     /// Decompress data using detected compression type  
     pub fn decompress(&mut self, data: &[u8]) -> crate::error::Result<()> {
         self.compressor.decompress(data, self.config.compression_type)
-    }
-
     /// Get compression statistics
     pub fn stats(&self) -> &CompressionStats {
         &self.compressor.stats

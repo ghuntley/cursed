@@ -12,10 +12,6 @@ use std::fmt;
 /// Complex number with 64-bit floating point components
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct Complex64 {
-    pub real: f64,
-    pub imag: f64,
-}
-
 impl Complex64 {
     /// Create a new complex number
     pub fn new(real: f64, imag: f64) -> Self {
@@ -46,8 +42,6 @@ impl Complex64 {
     pub fn one() -> Self {
         Complex64 { real: 1.0, imag: 0.0 }
     }
-}
-
 impl fmt::Display for Complex64 {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         if self.imag >= 0.0 {
@@ -56,25 +50,17 @@ impl fmt::Display for Complex64 {
             write!(f, "{}{}i", self.real, self.imag)
         }
     }
-}
-
 /// Create a complex number from real and imaginary parts
 pub fn complex(real: f64, imag: f64) -> MathResult<Complex64> {
     validate_float("complex", "real", real)?;
     validate_float("complex", "imag", imag)?;
     Ok(Complex64::new(real, imag))
-}
-
 /// Extract real part of a complex number
 pub fn real(z: Complex64) -> f64 {
     z.real
-}
-
 /// Extract imaginary part of a complex number
 pub fn imag(z: Complex64) -> f64 {
     z.imag
-}
-
 /// Compute absolute value (modulus) of a complex number
 pub fn abs(z: Complex64) -> MathResult<f64> {
     validate_float("abs", "real", z.real)?;
@@ -82,28 +68,20 @@ pub fn abs(z: Complex64) -> MathResult<f64> {
     
     // Use hypot for numerical stability
     Ok((z.real * z.real + z.imag * z.imag).sqrt())
-}
-
 /// Compute phase (argument) of a complex number
 pub fn phase(z: Complex64) -> MathResult<f64> {
     validate_float("phase", "real", z.real)?;
     validate_float("phase", "imag", z.imag)?;
     
     Ok(z.imag.atan2(z.real))
-}
-
 /// Compute complex conjugate
 pub fn conj(z: Complex64) -> Complex64 {
     Complex64::new(z.real, -z.imag)
-}
-
 /// Convert complex number to polar coordinates (r, θ)
 pub fn polar(z: Complex64) -> MathResult<(f64, f64)> {
     let r = abs(z)?;
     let theta = phase(z)?;
     Ok((r, theta))
-}
-
 /// Create complex number from polar coordinates (r, θ)
 pub fn rect(r: f64, theta: f64) -> MathResult<Complex64> {
     validate_float("rect", "r", r)?;
@@ -111,14 +89,8 @@ pub fn rect(r: f64, theta: f64) -> MathResult<Complex64> {
     
     if r < 0.0 {
         return Err(MathError::NegativeInput {
-            function: "rect".to_string(),
-            value: r,
         });
-    }
-    
     Ok(Complex64::new(r * theta.cos(), r * theta.sin()))
-}
-
 /// Compute e^z for complex z
 pub fn exp(z: Complex64) -> MathResult<Complex64> {
     validate_float("exp", "real", z.real)?;
@@ -126,11 +98,7 @@ pub fn exp(z: Complex64) -> MathResult<Complex64> {
     
     let exp_real = z.real.exp();
     Ok(Complex64::new(
-        exp_real * z.imag.cos(),
-        exp_real * z.imag.sin(),
     ))
-}
-
 /// Compute natural logarithm of complex number
 pub fn log(z: Complex64) -> MathResult<Complex64> {
     validate_float("log", "real", z.real)?;
@@ -138,24 +106,15 @@ pub fn log(z: Complex64) -> MathResult<Complex64> {
     
     if z.real == 0.0 && z.imag == 0.0 {
         return Err(MathError::DomainError {
-            function: "log".to_string(),
-            value: 0.0,
-            message: "logarithm of zero is undefined".to_string(),
         });
-    }
-    
     let r = abs(z)?;
     let theta = phase(z)?;
     Ok(Complex64::new(r.ln(), theta))
-}
-
 /// Compute base-10 logarithm of complex number
 pub fn log10(z: Complex64) -> MathResult<Complex64> {
     let ln_z = log(z)?;
     let ln_10 = 10.0_f64.ln();
     Ok(Complex64::new(ln_z.real / ln_10, ln_z.imag / ln_10))
-}
-
 /// Compute x^y for complex numbers
 pub fn pow(x: Complex64, y: Complex64) -> MathResult<Complex64> {
     validate_float("pow", "x.real", x.real)?;
@@ -166,23 +125,14 @@ pub fn pow(x: Complex64, y: Complex64) -> MathResult<Complex64> {
     if x.real == 0.0 && x.imag == 0.0 {
         if y.real == 0.0 && y.imag == 0.0 {
             return Err(MathError::DomainError {
-                function: "pow".to_string(),
-                value: 0.0,
-                message: "0^0 is undefined".to_string(),
             });
         }
         return Ok(Complex64::zero());
-    }
-    
     // x^y = exp(y * ln(x))
     let ln_x = log(x)?;
     let y_ln_x = Complex64::new(
-        y.real * ln_x.real - y.imag * ln_x.imag,
-        y.real * ln_x.imag + y.imag * ln_x.real,
     );
     exp(y_ln_x)
-}
-
 /// Compute square root of complex number
 pub fn sqrt(z: Complex64) -> MathResult<Complex64> {
     validate_float("sqrt", "real", z.real)?;
@@ -191,8 +141,6 @@ pub fn sqrt(z: Complex64) -> MathResult<Complex64> {
     let r = abs(z)?;
     let theta = phase(z)?;
     rect(r.sqrt(), theta / 2.0)
-}
-
 /// Compute sine of complex number
 pub fn sin(z: Complex64) -> MathResult<Complex64> {
     validate_float("sin", "real", z.real)?;
@@ -200,11 +148,7 @@ pub fn sin(z: Complex64) -> MathResult<Complex64> {
     
     // sin(z) = sin(x)cosh(y) + i*cos(x)sinh(y)
     Ok(Complex64::new(
-        z.real.sin() * z.imag.cosh(),
-        z.real.cos() * z.imag.sinh(),
     ))
-}
-
 /// Compute cosine of complex number
 pub fn cos(z: Complex64) -> MathResult<Complex64> {
     validate_float("cos", "real", z.real)?;
@@ -212,11 +156,7 @@ pub fn cos(z: Complex64) -> MathResult<Complex64> {
     
     // cos(z) = cos(x)cosh(y) - i*sin(x)sinh(y)
     Ok(Complex64::new(
-        z.real.cos() * z.imag.cosh(),
-        -z.real.sin() * z.imag.sinh(),
     ))
-}
-
 /// Compute tangent of complex number
 pub fn tan(z: Complex64) -> MathResult<Complex64> {
     let sin_z = sin(z)?;
@@ -225,16 +165,9 @@ pub fn tan(z: Complex64) -> MathResult<Complex64> {
     // Check for division by zero
     if cos_z.real == 0.0 && cos_z.imag == 0.0 {
         return Err(MathError::DomainError {
-            function: "tan".to_string(),
-            value: z.real,
-            message: "tangent is undefined at this point".to_string(),
         });
-    }
-    
     // tan(z) = sin(z) / cos(z)
     complex_div(sin_z, cos_z)
-}
-
 /// Compute hyperbolic sine of complex number
 pub fn sinh(z: Complex64) -> MathResult<Complex64> {
     validate_float("sinh", "real", z.real)?;
@@ -242,11 +175,7 @@ pub fn sinh(z: Complex64) -> MathResult<Complex64> {
     
     // sinh(z) = sinh(x)cos(y) + i*cosh(x)sin(y)
     Ok(Complex64::new(
-        z.real.sinh() * z.imag.cos(),
-        z.real.cosh() * z.imag.sin(),
     ))
-}
-
 /// Compute hyperbolic cosine of complex number
 pub fn cosh(z: Complex64) -> MathResult<Complex64> {
     validate_float("cosh", "real", z.real)?;
@@ -254,11 +183,7 @@ pub fn cosh(z: Complex64) -> MathResult<Complex64> {
     
     // cosh(z) = cosh(x)cos(y) + i*sinh(x)sin(y)
     Ok(Complex64::new(
-        z.real.cosh() * z.imag.cos(),
-        z.real.sinh() * z.imag.sin(),
     ))
-}
-
 /// Compute hyperbolic tangent of complex number
 pub fn tanh(z: Complex64) -> MathResult<Complex64> {
     let sinh_z = sinh(z)?;
@@ -267,15 +192,8 @@ pub fn tanh(z: Complex64) -> MathResult<Complex64> {
     // Check for division by zero
     if cosh_z.real == 0.0 && cosh_z.imag == 0.0 {
         return Err(MathError::DomainError {
-            function: "tanh".to_string(),
-            value: z.real,
-            message: "hyperbolic tangent is undefined at this point".to_string(),
         });
-    }
-    
     complex_div(sinh_z, cosh_z)
-}
-
 /// Compute inverse sine of complex number
 pub fn asin(z: Complex64) -> MathResult<Complex64> {
     // asin(z) = -i * ln(iz + sqrt(1 - z^2))
@@ -290,8 +208,6 @@ pub fn asin(z: Complex64) -> MathResult<Complex64> {
     let ln_result = log(sum)?;
     let neg_i = Complex64::new(0.0, -1.0);
     complex_mul(neg_i, ln_result)
-}
-
 /// Compute inverse cosine of complex number
 pub fn acos(z: Complex64) -> MathResult<Complex64> {
     // acos(z) = -i * ln(z + i * sqrt(1 - z^2))
@@ -306,8 +222,6 @@ pub fn acos(z: Complex64) -> MathResult<Complex64> {
     let ln_result = log(sum)?;
     let neg_i = Complex64::new(0.0, -1.0);
     complex_mul(neg_i, ln_result)
-}
-
 /// Compute inverse tangent of complex number
 pub fn atan(z: Complex64) -> MathResult<Complex64> {
     // atan(z) = (i/2) * ln((i+z)/(i-z))
@@ -319,17 +233,10 @@ pub fn atan(z: Complex64) -> MathResult<Complex64> {
     
     if i_minus_z.real == 0.0 && i_minus_z.imag == 0.0 {
         return Err(MathError::DomainError {
-            function: "atan".to_string(),
-            value: z.real,
-            message: "arctangent is undefined at this point".to_string(),
         });
-    }
-    
     let ratio = complex_div(i_plus_z, i_minus_z)?;
     let ln_result = log(ratio)?;
     complex_mul(half_i, ln_result)
-}
-
 /// Compute inverse hyperbolic sine of complex number
 pub fn asinh(z: Complex64) -> MathResult<Complex64> {
     // asinh(z) = ln(z + sqrt(z^2 + 1))
@@ -339,8 +246,6 @@ pub fn asinh(z: Complex64) -> MathResult<Complex64> {
     let sqrt_term = sqrt(under_sqrt)?;
     let sum = complex_add(z, sqrt_term)?;
     log(sum)
-}
-
 /// Compute inverse hyperbolic cosine of complex number
 pub fn acosh(z: Complex64) -> MathResult<Complex64> {
     // acosh(z) = ln(z + sqrt(z^2 - 1))
@@ -350,8 +255,6 @@ pub fn acosh(z: Complex64) -> MathResult<Complex64> {
     let sqrt_term = sqrt(under_sqrt)?;
     let sum = complex_add(z, sqrt_term)?;
     log(sum)
-}
-
 /// Compute inverse hyperbolic tangent of complex number
 pub fn atanh(z: Complex64) -> MathResult<Complex64> {
     // atanh(z) = (1/2) * ln((1+z)/(1-z))
@@ -363,53 +266,33 @@ pub fn atanh(z: Complex64) -> MathResult<Complex64> {
     
     if one_minus_z.real == 0.0 && one_minus_z.imag == 0.0 {
         return Err(MathError::DomainError {
-            function: "atanh".to_string(),
-            value: z.real,
-            message: "inverse hyperbolic tangent is undefined at this point".to_string(),
         });
-    }
-    
     let ratio = complex_div(one_plus_z, one_minus_z)?;
     let ln_result = log(ratio)?;
     complex_mul(half, ln_result)
-}
-
 // Helper functions for complex arithmetic
 
 /// Add two complex numbers
 fn complex_add(a: Complex64, b: Complex64) -> MathResult<Complex64> {
     Ok(Complex64::new(a.real + b.real, a.imag + b.imag))
-}
-
 /// Subtract two complex numbers
 fn complex_sub(a: Complex64, b: Complex64) -> MathResult<Complex64> {
     Ok(Complex64::new(a.real - b.real, a.imag - b.imag))
-}
-
 /// Multiply two complex numbers
 fn complex_mul(a: Complex64, b: Complex64) -> MathResult<Complex64> {
     Ok(Complex64::new(
-        a.real * b.real - a.imag * b.imag,
-        a.real * b.imag + a.imag * b.real,
     ))
-}
-
 /// Divide two complex numbers
 fn complex_div(a: Complex64, b: Complex64) -> MathResult<Complex64> {
     let denom = b.real * b.real + b.imag * b.imag;
     
     if denom == 0.0 {
         return Err(MathError::DivisionByZero {
-            function: "complex_div".to_string(),
         });
-    }
-    
     Ok(Complex64::new(
         (a.real * b.real + a.imag * b.imag) / denom,
         (a.imag * b.real - a.real * b.imag) / denom,
     ))
-}
-
 /// Vector sum of complex numbers
 pub fn vector_sum(vector: &[Complex64]) -> MathResult<Complex64> {
     let mut sum = Complex64::zero();
@@ -417,21 +300,15 @@ pub fn vector_sum(vector: &[Complex64]) -> MathResult<Complex64> {
         sum = complex_add(sum, z)?;
     }
     Ok(sum)
-}
-
 /// Vector product of complex numbers
 pub fn vector_product(vector: &[Complex64]) -> MathResult<Complex64> {
     if vector.is_empty() {
         return Ok(Complex64::zero());
-    }
-    
     let mut product = Complex64::one();
     for &z in vector {
         product = complex_mul(product, z)?;
     }
     Ok(product)
-}
-
 /// Simple 2x2 complex matrix multiplication
 pub fn matrix_mul_2x2(a: [[Complex64; 2]; 2], b: [[Complex64; 2]; 2]) -> MathResult<[[Complex64; 2]; 2]> {
     let mut result = [[Complex64::zero(); 2]; 2];
@@ -448,26 +325,17 @@ pub fn matrix_mul_2x2(a: [[Complex64; 2]; 2], b: [[Complex64; 2]; 2]) -> MathRes
     }
     
     Ok(result)
-}
-
 /// Calculate determinant of 2x2 complex matrix
 pub fn determinant_2x2(matrix: [[Complex64; 2]; 2]) -> MathResult<Complex64> {
     let ad = complex_mul(matrix[0][0], matrix[1][1])?;
     let bc = complex_mul(matrix[0][1], matrix[1][0])?;
     complex_sub(ad, bc)
-}
-
 /// Find approximate roots of quadratic polynomial with complex coefficients
 /// For polynomial az^2 + bz + c = 0
 pub fn quadratic_roots(a: Complex64, b: Complex64, c: Complex64) -> MathResult<(Complex64, Complex64)> {
     if a.real == 0.0 && a.imag == 0.0 {
         return Err(MathError::DomainError {
-            function: "quadratic_roots".to_string(),
-            value: 0.0,
-            message: "leading coefficient cannot be zero".to_string(),
         });
-    }
-    
     // discriminant = b^2 - 4ac
     let b_squared = complex_mul(b, b)?;
     let four_a = Complex64::new(4.0, 0.0);
@@ -487,14 +355,10 @@ pub fn quadratic_roots(a: Complex64, b: Complex64, c: Complex64) -> MathResult<(
     let root2 = complex_div(root2_num, two_a_val)?;
     
     Ok((root1, root2))
-}
-
 /// Evaluate polynomial at complex point
 pub fn evaluate_polynomial(coefficients: &[Complex64], z: Complex64) -> MathResult<Complex64> {
     if coefficients.is_empty() {
         return Ok(Complex64::zero());
-    }
-    
     let mut result = coefficients[0];
     let mut z_power = Complex64::one();
     
@@ -502,8 +366,4 @@ pub fn evaluate_polynomial(coefficients: &[Complex64], z: Complex64) -> MathResu
         z_power = complex_mul(z_power, z)?;
         let term = complex_mul(coeff, z_power)?;
         result = complex_add(result, term)?;
-    }
-    
     Ok(result)
-}
-

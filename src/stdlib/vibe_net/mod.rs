@@ -52,44 +52,28 @@ pub type NetResult<T> = std::result::Result<T, NetError>;
 
 /// Context type for cancellation and timeouts
 pub struct VibeContext {
-    deadline: Option<SystemTime>,
-    cancelled: Arc<Mutex<bool>>,
-}
-
 impl VibeContext {
     pub fn new() -> Self {
         Self {
-            deadline: None,
-            cancelled: Arc::new(Mutex::new(false)),
         }
     }
     
     pub fn with_deadline(deadline: SystemTime) -> Self {
         Self {
-            deadline: Some(deadline),
-            cancelled: Arc::new(Mutex::new(false)),
         }
     }
     
     pub fn with_timeout(timeout: Duration) -> Self {
         Self {
-            deadline: Some(SystemTime::now() + timeout),
-            cancelled: Arc::new(Mutex::new(false)),
         }
     }
     
     pub fn is_cancelled(&self) -> bool {
         *self.cancelled.lock().unwrap()
-    }
-    
     pub fn cancel(&self) {
         *self.cancelled.lock().unwrap() = true;
-    }
-    
     pub fn deadline(&self) -> Option<SystemTime> {
         self.deadline
-    }
-    
     pub fn is_expired(&self) -> bool {
         if let Some(deadline) = self.deadline {
             SystemTime::now() > deadline
@@ -97,8 +81,6 @@ impl VibeContext {
             false
         }
     }
-}
-
 // High-Level Networking Functions
 
 /// Dial connects to the address on the named network
@@ -112,8 +94,6 @@ impl VibeContext {
 pub fn dial(network: &str, address: &str) -> NetResult<Box<dyn ConnVibe>> {
     let dialer = DialerVibe::new();
     dialer.dial(network, address)
-}
-
 /// DialTimeout connects to the address with a timeout
 /// 
 /// # Arguments
@@ -127,8 +107,6 @@ pub fn dial_timeout(network: &str, address: &str, timeout: Duration) -> NetResul
     let mut dialer = DialerVibe::new();
     dialer.set_timeout(timeout);
     dialer.dial(network, address)
-}
-
 /// Listen announces on the local network address
 /// 
 /// # Arguments
@@ -182,8 +160,6 @@ pub fn listen_packet(network: &str, address: &str) -> NetResult<Box<dyn PacketCo
 /// A resolved TCP address or an error
 pub fn resolve_tcp_addr(network: &str, address: &str) -> NetResult<TCPAddrVibe> {
     TCPAddrVibe::resolve(network, address)
-}
-
 /// ResolveUDPAddr resolves a UDP address
 /// 
 /// # Arguments
@@ -194,8 +170,6 @@ pub fn resolve_tcp_addr(network: &str, address: &str) -> NetResult<TCPAddrVibe> 
 /// A resolved UDP address or an error
 pub fn resolve_udp_addr(network: &str, address: &str) -> NetResult<UDPAddrVibe> {
     UDPAddrVibe::resolve(network, address)
-}
-
 /// ResolveUnixAddr resolves a Unix address
 /// 
 /// # Arguments
@@ -206,8 +180,6 @@ pub fn resolve_udp_addr(network: &str, address: &str) -> NetResult<UDPAddrVibe> 
 /// A resolved Unix address or an error
 pub fn resolve_unix_addr(network: &str, address: &str) -> NetResult<UnixAddrVibe> {
     UnixAddrVibe::resolve(network, address)
-}
-
 /// DialTCP connects to the TCP address
 /// 
 /// # Arguments
@@ -219,8 +191,6 @@ pub fn resolve_unix_addr(network: &str, address: &str) -> NetResult<UnixAddrVibe
 /// A TCP connection or an error
 pub fn dial_tcp(network: &str, laddr: Option<&TCPAddrVibe>, raddr: &TCPAddrVibe) -> NetResult<TCPConnVibe> {
     TCPConnVibe::dial(network, laddr, raddr)
-}
-
 /// DialUDP connects to the UDP address
 /// 
 /// # Arguments
@@ -232,8 +202,6 @@ pub fn dial_tcp(network: &str, laddr: Option<&TCPAddrVibe>, raddr: &TCPAddrVibe)
 /// A UDP connection or an error
 pub fn dial_udp(network: &str, laddr: Option<&UDPAddrVibe>, raddr: &UDPAddrVibe) -> NetResult<UDPConnVibe> {
     UDPConnVibe::dial(network, laddr, raddr)
-}
-
 /// DialUnix connects to the Unix address
 /// 
 /// # Arguments
@@ -245,8 +213,6 @@ pub fn dial_udp(network: &str, laddr: Option<&UDPAddrVibe>, raddr: &UDPAddrVibe)
 /// A Unix connection or an error
 pub fn dial_unix(network: &str, laddr: Option<&UnixAddrVibe>, raddr: &UnixAddrVibe) -> NetResult<UnixConnVibe> {
     UnixConnVibe::dial(network, laddr, raddr)
-}
-
 // DNS and Host Resolution Functions
 
 /// LookupHost looks up the given host using the local resolver
@@ -259,8 +225,6 @@ pub fn dial_unix(network: &str, laddr: Option<&UnixAddrVibe>, raddr: &UnixAddrVi
 pub fn lookup_host(host: &str) -> NetResult<Vec<String>> {
     let resolver = DNSResolverVibe::new();
     resolver.lookup_host(host)
-}
-
 /// LookupIP looks up host using the local resolver
 /// 
 /// # Arguments
@@ -271,8 +235,6 @@ pub fn lookup_host(host: &str) -> NetResult<Vec<String>> {
 pub fn lookup_ip(host: &str) -> NetResult<Vec<IPVibe>> {
     let resolver = DNSResolverVibe::new();
     resolver.lookup_ip(host)
-}
-
 /// LookupPort looks up the port for the given network and service
 /// 
 /// # Arguments
@@ -284,8 +246,6 @@ pub fn lookup_ip(host: &str) -> NetResult<Vec<IPVibe>> {
 pub fn lookup_port(network: &str, service: &str) -> NetResult<i32> {
     let resolver = DNSResolverVibe::new();
     resolver.lookup_port(network, service)
-}
-
 /// LookupCNAME returns the canonical name for the given host
 /// 
 /// # Arguments
@@ -296,8 +256,6 @@ pub fn lookup_port(network: &str, service: &str) -> NetResult<i32> {
 pub fn lookup_cname(host: &str) -> NetResult<String> {
     let resolver = DNSResolverVibe::new();
     resolver.lookup_cname(host)
-}
-
 /// LookupSRV tries to resolve an SRV query of the given service, protocol, and domain name
 /// 
 /// # Arguments
@@ -310,8 +268,6 @@ pub fn lookup_cname(host: &str) -> NetResult<String> {
 pub fn lookup_srv(service: &str, proto: &str, name: &str) -> NetResult<(String, Vec<SRVVibe>)> {
     let resolver = DNSResolverVibe::new();
     resolver.lookup_srv(service, proto, name)
-}
-
 /// LookupMX returns the DNS MX records for the given domain name
 /// 
 /// # Arguments
@@ -322,8 +278,6 @@ pub fn lookup_srv(service: &str, proto: &str, name: &str) -> NetResult<(String, 
 pub fn lookup_mx(name: &str) -> NetResult<Vec<MXVibe>> {
     let resolver = DNSResolverVibe::new();
     resolver.lookup_mx(name)
-}
-
 /// LookupNS returns the DNS NS records for the given domain name
 /// 
 /// # Arguments
@@ -334,8 +288,6 @@ pub fn lookup_mx(name: &str) -> NetResult<Vec<MXVibe>> {
 pub fn lookup_ns(name: &str) -> NetResult<Vec<NSVibe>> {
     let resolver = DNSResolverVibe::new();
     resolver.lookup_ns(name)
-}
-
 /// LookupTXT returns the DNS TXT records for the given domain name
 /// 
 /// # Arguments
@@ -346,8 +298,6 @@ pub fn lookup_ns(name: &str) -> NetResult<Vec<NSVibe>> {
 pub fn lookup_txt(name: &str) -> NetResult<Vec<String>> {
     let resolver = DNSResolverVibe::new();
     resolver.lookup_txt(name)
-}
-
 /// LookupAddr performs a reverse lookup for the given address
 /// 
 /// # Arguments
@@ -358,22 +308,16 @@ pub fn lookup_txt(name: &str) -> NetResult<Vec<String>> {
 pub fn lookup_addr(addr: &str) -> NetResult<Vec<String>> {
     let resolver = DNSResolverVibe::new();
     resolver.lookup_addr(addr)
-}
-
 // Enhanced IPv6 Support Functions
 
 /// IsIPv6Enabled returns whether IPv6 is enabled on this system
 pub fn is_ipv6_enabled() -> bool {
     // Implementation would check system IPv6 support
     true // Placeholder - would need actual system check
-}
-
 /// PreferIPv6 returns whether IPv6 is preferred over IPv4
 pub fn prefer_ipv6() -> bool {
     // Implementation would check system preferences
     false // Placeholder - would need actual preference check
-}
-
 /// SetPreferIPv6 sets whether to prefer IPv6 over IPv4
 /// 
 /// # Arguments
@@ -381,8 +325,6 @@ pub fn prefer_ipv6() -> bool {
 pub fn set_prefer_ipv6(prefer: bool) {
     // Implementation would set system preference
     // This is a placeholder - would need actual preference setting
-}
-
 /// IPv6InterfaceAddrs returns a list of the system's IPv6 interface addresses
 /// 
 /// # Returns
@@ -390,8 +332,6 @@ pub fn set_prefer_ipv6(prefer: bool) {
 pub fn ipv6_interface_addrs() -> NetResult<Vec<IPVibe>> {
     // Implementation would query system interfaces
     Ok(vec![]) // Placeholder - would need actual interface querying
-}
-
 // Network Interface Functions
 
 /// Interfaces returns a list of the system's network interfaces
@@ -400,8 +340,6 @@ pub fn ipv6_interface_addrs() -> NetResult<Vec<IPVibe>> {
 /// A list of network interfaces or an error
 pub fn interfaces() -> NetResult<Vec<InterfaceVibe>> {
     InterfaceVibe::list()
-}
-
 /// InterfaceByIndex returns the interface specified by index
 /// 
 /// # Arguments
@@ -411,8 +349,6 @@ pub fn interfaces() -> NetResult<Vec<InterfaceVibe>> {
 /// The network interface or an error
 pub fn interface_by_index(index: i32) -> NetResult<InterfaceVibe> {
     InterfaceVibe::by_index(index)
-}
-
 /// InterfaceByName returns the interface specified by name
 /// 
 /// # Arguments
@@ -422,8 +358,6 @@ pub fn interface_by_index(index: i32) -> NetResult<InterfaceVibe> {
 /// The network interface or an error
 pub fn interface_by_name(name: &str) -> NetResult<InterfaceVibe> {
     InterfaceVibe::by_name(name)
-}
-
 // Module initialization and utility functions
 
 /// Initialize the vibe_net module
@@ -431,13 +365,9 @@ pub fn init() -> NetResult<()> {
     // Perform any necessary initialization
     // This could include setting up global state, checking system capabilities, etc.
     Ok(())
-}
-
 /// Get version information for the vibe_net module
 pub fn version() -> &'static str {
     "1.0.0"
-}
-
 /// Get information about supported features
 pub fn features() -> HashMap<String, bool> {
     let mut features = HashMap::new();
@@ -483,5 +413,3 @@ pub fn features() -> HashMap<String, bool> {
     features.insert("performance_tracking".to_string(), true);
     
     features
-}
-

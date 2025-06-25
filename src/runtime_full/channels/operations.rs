@@ -27,19 +27,14 @@ impl<T> ChannelSender<T> {
         if data.state != ChannelState::Open {
             error!("Attempted to send on closed channel");
             return Err(ChannelError::Closed);
-        }
-        
         // Fast path: try direct send to waiting receiver
         if let Some(waiting_receiver) = data.waiting_receivers.pop_front() {
             trace!("Direct send to waiting receiver");
             self.deliver_to_receiver(waiting_receiver, value);
             return Ok(());
-        }
-        
         // Buffered channel: try to add to buffer
         if data.capacity > 0 {
             if data.buffer.len() < data.capacity {
-                debug!(buffer_len = data.buffer.len(), capacity = data.capacity, 
                        "Adding value to buffer");
                 data.buffer.push_back(value);
                 self.condvar().notify_one();
@@ -54,10 +49,6 @@ impl<T> ChannelSender<T> {
         let completed = Arc::new(std::sync::atomic::AtomicBool::new(false));
         
         let waiting_sender = WaitingSender {
-            value,
-            notify: notify.clone(),
-            completed: completed.clone(),
-        };
         
         data.waiting_senders.push_back(waiting_sender);
         
@@ -71,15 +62,9 @@ impl<T> ChannelSender<T> {
                 // Remove ourselves from waiting list if still there
                 guard.waiting_senders.retain(|ws| !Arc::ptr_eq(&ws.completed, &completed));
                 return Err(ChannelError::Closed);
-            }
-            
             guard = notify.wait(guard).unwrap();
-        }
-        
         info!("Blocking send completed successfully");
         Ok(())
-    }
-
     /// Non-blocking send operation: try_send
     /// Returns immediately with result
     #[instrument(skip(self, value))]
@@ -87,9 +72,6 @@ impl<T> ChannelSender<T> {
         self.increment_operation_count();
         
         let data_arc = match self.channel().upgrade() {
-            Some(arc) => arc,
-            None => return SendResult::Closed(value),
-        };
         
         let mut data = data_arc.lock().unwrap();
         
@@ -97,28 +79,20 @@ impl<T> ChannelSender<T> {
         if data.state != ChannelState::Open {
             debug!("try_send on closed channel");
             return SendResult::Closed(value);
-        }
-        
         // Try direct send to waiting receiver
         if let Some(waiting_receiver) = data.waiting_receivers.pop_front() {
             trace!("try_send: direct send to waiting receiver");
             self.deliver_to_receiver(waiting_receiver, value);
             return SendResult::Sent;
-        }
-        
         // For buffered channels, try to add to buffer
         if data.capacity > 0 && data.buffer.len() < data.capacity {
             debug!(buffer_len = data.buffer.len(), "try_send: added to buffer");
             data.buffer.push_back(value);
             self.condvar().notify_one();
             return SendResult::Sent;
-        }
-        
         // Would block
         debug!("try_send would block");
         SendResult::WouldBlock(value)
-    }
-
     /// Send with timeout
     /// Blocks for up to the specified duration
     #[instrument(skip(self, value))]
@@ -126,9 +100,6 @@ impl<T> ChannelSender<T> {
         self.increment_operation_count();
         
         let data_arc = match self.channel().upgrade() {
-            Some(arc) => arc,
-            None => return SendResult::Closed(value),
-        };
         
         let mut data = data_arc.lock().unwrap();
         
@@ -136,32 +107,22 @@ impl<T> ChannelSender<T> {
         if data.state != ChannelState::Open {
             debug!("send_timeout on closed channel");
             return SendResult::Closed(value);
-        }
-        
         // Try fast path first
         if let Some(waiting_receiver) = data.waiting_receivers.pop_front() {
             trace!("send_timeout: direct send to waiting receiver");
             self.deliver_to_receiver(waiting_receiver, value);
             return SendResult::Sent;
-        }
-        
         // For buffered channels, try buffer
         if data.capacity > 0 && data.buffer.len() < data.capacity {
             debug!("send_timeout: added to buffer");
             data.buffer.push_back(value);
             self.condvar().notify_one();
             return SendResult::Sent;
-        }
-        
         // Must wait with timeout
         let notify = Arc::new(Condvar::new());
         let completed = Arc::new(std::sync::atomic::AtomicBool::new(false));
         
         let waiting_sender = WaitingSender {
-            value,
-            notify: notify.clone(),
-            completed: completed.clone(),
-        };
         
         data.waiting_senders.push_back(waiting_sender);
         
@@ -177,13 +138,9 @@ impl<T> ChannelSender<T> {
                 guard.waiting_senders.retain(|ws| !Arc::ptr_eq(&ws.completed, &completed));
                 // We need to extract the value from the waiting sender that was removed
                 return SendResult::Closed(self.extract_value_from_waiting_senders(&mut guard, &completed));
-            }
-            
             let remaining = timeout.saturating_sub(start_time.elapsed());
             if remaining.is_zero() {
                 break;
-            }
-            
             let (new_guard, timeout_result) = notify.wait_timeout(guard, remaining).unwrap();
             guard = new_guard;
             
@@ -218,11 +175,7 @@ impl<T> ChannelSender<T> {
             
             // Wake up all waiting operations
             self.condvar().notify_all();
-        }
-        
         Ok(())
-    }
-
     /// Helper to deliver value to a waiting receiver
     fn deliver_to_receiver(&self, waiting_receiver: WaitingReceiver<T>, value: T) {
         if let Ok(mut result) = waiting_receiver.result.lock() {
@@ -249,8 +202,6 @@ impl<T> ChannelSender<T> {
             self.operation_count().fetch_add(1, Ordering::Relaxed);
         }
     }
-}
-
 /// Receive operations for channels
 impl<T> ChannelReceiver<T> {
     /// Blocking receive operation: value := <-ch
@@ -273,12 +224,8 @@ impl<T> ChannelReceiver<T> {
                 data.buffer.push_back(waiting_sender.value);
                 waiting_sender.completed.store(true, Ordering::Release);
                 waiting_sender.notify.notify_one();
-            }
-            
             self.condvar().notify_one();
             return Ok(value);
-        }
-        
         // Try direct receive from waiting sender (unbuffered case)
         if let Some(waiting_sender) = data.waiting_senders.pop_front() {
             trace!("Direct receive from waiting sender");
@@ -286,24 +233,16 @@ impl<T> ChannelReceiver<T> {
             waiting_sender.completed.store(true, Ordering::Release);
             waiting_sender.notify.notify_one();
             return Ok(value);
-        }
-        
         // Check if channel is closed and drained
         if data.state != ChannelState::Open && data.buffer.is_empty() && data.waiting_senders.is_empty() {
             debug!("Receive on closed and drained channel");
             return Err(ChannelError::Closed);
-        }
-        
         // Must block: add to waiting receivers
         let result_mutex = Arc::new(Mutex::new(None));
         let notify = Arc::new(Condvar::new());
         let completed = Arc::new(std::sync::atomic::AtomicBool::new(false));
         
         let waiting_receiver = WaitingReceiver {
-            result: result_mutex.clone(),
-            notify: notify.clone(),
-            completed: completed.clone(),
-        };
         
         data.waiting_receivers.push_back(waiting_receiver);
         
@@ -319,19 +258,13 @@ impl<T> ChannelReceiver<T> {
                 // Remove ourselves from waiting list
                 guard.waiting_receivers.retain(|wr| !Arc::ptr_eq(&wr.completed, &completed));
                 return Err(ChannelError::Closed);
-            }
-            
             guard = notify.wait(guard).unwrap();
-        }
-        
         // Get the result
         let result = result_mutex.lock().unwrap().take()
             .ok_or(ChannelError::InvalidState)?;
         
         info!("Blocking receive completed successfully");
         Ok(result)
-    }
-
     /// Non-blocking receive operation: try_receive
     /// Returns immediately with result
     #[instrument(skip(self))]
@@ -339,9 +272,6 @@ impl<T> ChannelReceiver<T> {
         self.increment_operation_count();
         
         let data_arc = match self.channel().upgrade() {
-            Some(arc) => arc,
-            None => return ReceiveResult::Closed,
-        };
         
         let mut data = data_arc.lock().unwrap();
         
@@ -354,12 +284,8 @@ impl<T> ChannelReceiver<T> {
                 data.buffer.push_back(waiting_sender.value);
                 waiting_sender.completed.store(true, Ordering::Release);
                 waiting_sender.notify.notify_one();
-            }
-            
             self.condvar().notify_one();
             return ReceiveResult::Received(value);
-        }
-        
         // Try direct receive from waiting sender
         if let Some(waiting_sender) = data.waiting_senders.pop_front() {
             trace!("try_receive: direct receive from waiting sender");
@@ -367,19 +293,13 @@ impl<T> ChannelReceiver<T> {
             waiting_sender.completed.store(true, Ordering::Release);
             waiting_sender.notify.notify_one();
             return ReceiveResult::Received(value);
-        }
-        
         // Check if channel is closed and drained
         if data.state != ChannelState::Open {
             debug!("try_receive on closed channel");
             return ReceiveResult::Closed;
-        }
-        
         // Would block
         debug!("try_receive would block");
         ReceiveResult::WouldBlock
-    }
-
     /// Receive with timeout
     /// Blocks for up to the specified duration
     #[instrument(skip(self))]
@@ -387,9 +307,6 @@ impl<T> ChannelReceiver<T> {
         self.increment_operation_count();
         
         let data_arc = match self.channel().upgrade() {
-            Some(arc) => arc,
-            None => return ReceiveResult::Closed,
-        };
         
         let mut data = data_arc.lock().unwrap();
         
@@ -401,36 +318,24 @@ impl<T> ChannelReceiver<T> {
                 data.buffer.push_back(waiting_sender.value);
                 waiting_sender.completed.store(true, Ordering::Release);
                 waiting_sender.notify.notify_one();
-            }
-            
             self.condvar().notify_one();
             return ReceiveResult::Received(value);
-        }
-        
         if let Some(waiting_sender) = data.waiting_senders.pop_front() {
             trace!("receive_timeout: direct receive from waiting sender");
             let value = waiting_sender.value;
             waiting_sender.completed.store(true, Ordering::Release);
             waiting_sender.notify.notify_one();
             return ReceiveResult::Received(value);
-        }
-        
         // Check if channel is closed and drained
         if data.state != ChannelState::Open {
             debug!("receive_timeout on closed channel");
             return ReceiveResult::Closed;
-        }
-        
         // Must wait with timeout
         let result_mutex = Arc::new(Mutex::new(None));
         let notify = Arc::new(Condvar::new());
         let completed = Arc::new(std::sync::atomic::AtomicBool::new(false));
         
         let waiting_receiver = WaitingReceiver {
-            result: result_mutex.clone(),
-            notify: notify.clone(),
-            completed: completed.clone(),
-        };
         
         data.waiting_receivers.push_back(waiting_receiver);
         
@@ -447,13 +352,9 @@ impl<T> ChannelReceiver<T> {
                 && guard.waiting_senders.is_empty() {
                 guard.waiting_receivers.retain(|wr| !Arc::ptr_eq(&wr.completed, &completed));
                 return ReceiveResult::Closed;
-            }
-            
             let remaining = timeout.saturating_sub(start_time.elapsed());
             if remaining.is_zero() {
                 break;
-            }
-            
             let (new_guard, timeout_result) = notify.wait_timeout(guard, remaining).unwrap();
             guard = new_guard;
             
@@ -479,43 +380,26 @@ impl<T> ChannelReceiver<T> {
     #[instrument(skip(self))]
     pub fn is_empty(&self) -> bool {
         let data_arc = match self.channel().upgrade() {
-            Some(arc) => arc,
-            None => return true,
-        };
         
         let data = data_arc.lock().unwrap();
         data.buffer.is_empty() && data.waiting_senders.is_empty()
-    }
-
     /// Check if channel is closed
     #[instrument(skip(self))]
     pub fn is_closed(&self) -> bool {
         let data_arc = match self.channel().upgrade() {
-            Some(arc) => arc,
-            None => return true,
-        };
         
         let data = data_arc.lock().unwrap();
         data.state != ChannelState::Open
-    }
-
     /// Get number of pending messages in buffer
     #[instrument(skip(self))]
     pub fn len(&self) -> usize {
         let data_arc = match self.channel().upgrade() {
-            Some(arc) => arc,
-            None => return 0,
-        };
         
         let data = data_arc.lock().unwrap();
         data.buffer.len()
-    }
-
     /// Increment operation counter for statistics
     fn increment_operation_count(&self) {
         unsafe {
             self.operation_count().fetch_add(1, Ordering::Relaxed);
         }
     }
-}
-

@@ -29,41 +29,27 @@ use std::sync::Arc;
 /// Create a new CSV reader with default configuration
 pub fn new_reader<R: io::Read>(reader: R) -> Reader<R> {
     Reader::new(reader)
-}
-
 /// Create a new CSV writer with default configuration
 pub fn new_writer<W: io::Write>(writer: W) -> Writer<W> {
     Writer::new(writer)
-}
-
 /// Create a new column-based CSV reader
 pub fn new_column_reader<R: io::Read>(reader: R) -> ColumnReader<R> {
     ColumnReader::new(reader)
-}
-
 /// Create a new CSV streamer for processing large files
 pub fn new_streamer<R: io::Read>(reader: R) -> Streamer<R> {
     Streamer::new(reader)
-}
-
 /// Create a new schema validator
 pub fn new_schema() -> Schema {
     Schema::new()
-}
-
 /// Create a new CSV transformer
 pub fn new_transformer<R: io::Read>(reader: R) -> Transformer<R> {
     Transformer::new(reader)
-}
-
 /// Quick function to read all records from a CSV string
 pub fn read_all_from_string(csv_data: &str) -> CsvResult<Vec<Vec<String>>> {
     use std::io::Cursor;
     let cursor = Cursor::new(csv_data);
     let mut reader = new_reader(cursor);
     reader.read_all()
-}
-
 /// Quick function to write records to a CSV string
 pub fn write_all_to_string(records: &[Vec<String>]) -> CsvResult<String> {
     use std::io::Cursor;
@@ -75,15 +61,9 @@ pub fn write_all_to_string(records: &[Vec<String>]) -> CsvResult<String> {
         writer.flush()?;
     }
     String::from_utf8(buf).map_err(|e| CsvError::InvalidUtf8(e))
-}
-
 /// Validate CSV data against a schema
 pub fn validate_csv_data<R: io::Read>(reader: R, schema: &Schema) -> ValidationResult {
     schema.validate(reader)
-}
-
 /// Transform CSV data using a transformer
 pub fn transform_csv_data<R: io::Read>(reader: R, transformer: &mut Transformer<R>) -> CsvResult<Vec<Vec<String>>> {
     transformer.transform()
-}
-

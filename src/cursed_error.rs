@@ -6,10 +6,6 @@ use crate::error::CursedError;
 /// Main CURSED error type - a wrapper around the core CursedError enum
 #[derive(Debug, Clone)]
 pub struct CursedError {
-    pub error: CursedError,
-    pub context: Option<String>,
-}
-
 impl CursedError {
     pub fn new(error: CursedError) -> Self {
         Self { error, context: None }

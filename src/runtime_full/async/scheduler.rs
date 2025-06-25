@@ -12,42 +12,20 @@ use crate::runtime::goroutine::{GoroutineScheduler, SafePoint};
 #[derive(Debug, Clone)]
 pub struct SchedulerConfig {
     /// Maximum number of tasks in ready queue
-    pub max_ready_queue_size: usize,
     /// Task scheduling quantum (time slice)
-    pub scheduling_quantum: Duration,
     /// Enable priority-based scheduling
-    pub enable_priority_scheduling: bool,
     /// Work stealing threshold
-    pub work_stealing_threshold: usize,
     /// Integration with goroutine scheduler
-    pub goroutine_integration: bool,
-}
-
 impl Default for SchedulerConfig {
     fn default() -> Self {
         Self {
-            max_ready_queue_size: 10000,
-            scheduling_quantum: Duration::from_millis(10),
-            enable_priority_scheduling: true,
-            work_stealing_threshold: 100,
-            goroutine_integration: true,
         }
     }
-}
-
 /// Work-stealing queue for load balancing between async workers
 pub struct WorkStealingQueue<T> {
-    local_queue: VecDeque<T>,
-    steal_queue: VecDeque<T>,
-    total_size: usize,
-}
-
 impl<T> WorkStealingQueue<T> {
     pub fn new() -> Self {
         Self {
-            local_queue: VecDeque::new(),
-            steal_queue: VecDeque::new(),
-            total_size: 0,
         }
     }
 
@@ -55,8 +33,6 @@ impl<T> WorkStealingQueue<T> {
     pub fn push_local(&mut self, item: T) {
         self.local_queue.push_back(item);
         self.total_size += 1;
-    }
-
     /// Pop a task from the local queue (LIFO for cache efficiency)
     pub fn pop_local(&mut self) -> Option<T> {
         if let Some(item) = self.local_queue.pop_back() {
@@ -73,17 +49,11 @@ impl<T> WorkStealingQueue<T> {
         if let Some(item) = self.local_queue.pop_front() {
             self.total_size -= 1;
             return Some(item);
-        }
-
         // Try the steal queue
         if let Some(item) = self.steal_queue.pop_front() {
             self.total_size -= 1;
             return Some(item);
-        }
-
         None
-    }
-
     /// Move half of local queue to steal queue for better stealing
     pub fn prepare_for_stealing(&mut self) {
         let half = self.local_queue.len() / 2;
@@ -92,12 +62,8 @@ impl<T> WorkStealingQueue<T> {
                 self.steal_queue.push_back(item);
             }
         }
-    }
-
     pub fn len(&self) -> usize {
         self.total_size
-    }
-
     pub fn is_empty(&self) -> bool {
         self.total_size == 0
     }
@@ -111,72 +77,35 @@ impl<T> Default for WorkStealingQueue<T> {
 
 /// Task scheduler entry
 struct SchedulerTask {
-    task_id: TaskId,
-    priority: TaskPriority,
-    created_at: Instant,
-    last_poll: Option<Instant>,
-    poll_count: u64,
-}
-
 /// Priority-based task queue
 struct PriorityTaskQueue {
-    critical: VecDeque<SchedulerTask>,
-    high: VecDeque<SchedulerTask>,
-    normal: VecDeque<SchedulerTask>,
-    low: VecDeque<SchedulerTask>,
-    total_size: usize,
-}
-
 impl PriorityTaskQueue {
     pub fn new() -> Self {
         Self {
-            critical: VecDeque::new(),
-            high: VecDeque::new(),
-            normal: VecDeque::new(),
-            low: VecDeque::new(),
-            total_size: 0,
         }
     }
 
     pub fn push(&mut self, task: SchedulerTask) {
         match task.priority {
-            TaskPriority::Critical => self.critical.push_back(task),
-            TaskPriority::High => self.high.push_back(task),
-            TaskPriority::Normal => self.normal.push_back(task),
-            TaskPriority::Low => self.low.push_back(task),
         }
         self.total_size += 1;
-    }
-
     pub fn pop(&mut self) -> Option<SchedulerTask> {
         // Check queues in priority order
         if let Some(task) = self.critical.pop_front() {
             self.total_size -= 1;
             return Some(task);
-        }
-
         if let Some(task) = self.high.pop_front() {
             self.total_size -= 1;
             return Some(task);
-        }
-
         if let Some(task) = self.normal.pop_front() {
             self.total_size -= 1;
             return Some(task);
-        }
-
         if let Some(task) = self.low.pop_front() {
             self.total_size -= 1;
             return Some(task);
-        }
-
         None
-    }
-
     pub fn len(&self) -> usize {
         self.total_size
-    }
-
     pub fn is_empty(&self) -> bool {
         self.total_size == 0
     }
@@ -184,50 +113,19 @@ impl PriorityTaskQueue {
 
 /// Async scheduler that coordinates with goroutine scheduler
 pub struct AsyncScheduler {
-    config: SchedulerConfig,
-    ready_queue: Arc<Mutex<PriorityTaskQueue>>,
-    work_stealing_queues: Arc<Mutex<HashMap<ThreadId, WorkStealingQueue<SchedulerTask>>>>,
-    waiting_tasks: Arc<Mutex<HashMap<TaskId, SchedulerTask>>>,
-    goroutine_scheduler: Option<Arc<GoroutineScheduler>>,
-    scheduler_condvar: Arc<Condvar>,
-    worker_threads: Vec<thread::JoinHandle<()>>,
-    shutdown_signal: Arc<Mutex<bool>>,
-    statistics: Arc<Mutex<SchedulerStatistics>>,
-}
-
 /// Scheduler statistics
 #[derive(Debug, Clone, Default)]
 pub struct SchedulerStatistics {
-    pub total_tasks_scheduled: u64,
-    pub tasks_completed: u64,
-    pub tasks_preempted: u64,
-    pub work_steal_attempts: u64,
-    pub work_steal_successes: u64,
-    pub average_task_time: Duration,
-    pub scheduler_overhead: Duration,
-}
-
 impl AsyncScheduler {
     /// Create a new async scheduler
     pub fn new(config: SchedulerConfig) -> Self {
         Self {
-            config,
-            ready_queue: Arc::new(Mutex::new(PriorityTaskQueue::new())),
-            work_stealing_queues: Arc::new(Mutex::new(HashMap::new())),
-            waiting_tasks: Arc::new(Mutex::new(HashMap::new())),
-            goroutine_scheduler: None,
-            scheduler_condvar: Arc::new(Condvar::new()),
-            worker_threads: Vec::new(),
-            shutdown_signal: Arc::new(Mutex::new(false)),
-            statistics: Arc::new(Mutex::new(SchedulerStatistics::default())),
         }
     }
 
     /// Set the goroutine scheduler for integration
     pub fn set_goroutine_scheduler(&mut self, scheduler: Arc<GoroutineScheduler>) {
         self.goroutine_scheduler = Some(scheduler);
-    }
-
     /// Start the scheduler with worker threads
     pub fn start(&mut self, num_workers: usize) {
         for worker_id in 0..num_workers {
@@ -244,15 +142,6 @@ impl AsyncScheduler {
                 .name(format!("async-scheduler-{}", worker_id))
                 .spawn(move || {
                     Self::worker_loop(
-                        worker_id,
-                        ready_queue,
-                        work_stealing_queues,
-                        waiting_tasks,
-                        scheduler_condvar,
-                        shutdown_signal,
-                        statistics,
-                        config,
-                        goroutine_scheduler,
                     );
                 })
                 .expect("Failed to spawn scheduler worker");
@@ -264,12 +153,6 @@ impl AsyncScheduler {
     /// Schedule a task
     pub fn schedule_task(&self, task_id: TaskId, priority: TaskPriority) {
         let scheduler_task = SchedulerTask {
-            task_id,
-            priority,
-            created_at: Instant::now(),
-            last_poll: None,
-            poll_count: 0,
-        };
 
         let mut ready_queue = self.ready_queue.lock().unwrap();
         ready_queue.push(scheduler_task);
@@ -278,12 +161,8 @@ impl AsyncScheduler {
         {
             let mut stats = self.statistics.lock().unwrap();
             stats.total_tasks_scheduled += 1;
-        }
-
         // Notify workers
         self.scheduler_condvar.notify_one();
-    }
-
     /// Mark a task as waiting
     pub fn mark_task_waiting(&self, task_id: TaskId) {
         let mut ready_queue = self.ready_queue.lock().unwrap();
@@ -292,16 +171,8 @@ impl AsyncScheduler {
         // Move task from ready to waiting if it exists
         // For now, we'll just add it to waiting
         let scheduler_task = SchedulerTask {
-            task_id,
-            priority: TaskPriority::Normal,
-            created_at: Instant::now(),
-            last_poll: Some(Instant::now()),
-            poll_count: 1,
-        };
 
         waiting_tasks.insert(task_id, scheduler_task);
-    }
-
     /// Wake up a waiting task
     pub fn wake_task(&self, task_id: TaskId) {
         let mut waiting_tasks = self.waiting_tasks.lock().unwrap();
@@ -321,16 +192,12 @@ impl AsyncScheduler {
     /// Get scheduler statistics
     pub fn statistics(&self) -> SchedulerStatistics {
         self.statistics.lock().unwrap().clone()
-    }
-
     /// Shutdown the scheduler
     pub fn shutdown(&mut self) {
         // Signal shutdown
         {
             let mut shutdown = self.shutdown_signal.lock().unwrap();
             *shutdown = true;
-        }
-
         // Notify all workers
         self.scheduler_condvar.notify_all();
 
@@ -342,15 +209,6 @@ impl AsyncScheduler {
 
     /// Worker thread main loop
     fn worker_loop(
-        worker_id: usize,
-        ready_queue: Arc<Mutex<PriorityTaskQueue>>,
-        work_stealing_queues: Arc<Mutex<HashMap<ThreadId, WorkStealingQueue<SchedulerTask>>>>,
-        waiting_tasks: Arc<Mutex<HashMap<TaskId, SchedulerTask>>>,
-        scheduler_condvar: Arc<Condvar>,
-        shutdown_signal: Arc<Mutex<bool>>,
-        statistics: Arc<Mutex<SchedulerStatistics>>,
-        config: SchedulerConfig,
-        goroutine_scheduler: Option<Arc<GoroutineScheduler>>,
     ) {
         let thread_id = thread::current().id();
 
@@ -358,8 +216,6 @@ impl AsyncScheduler {
         {
             let mut queues = work_stealing_queues.lock().unwrap();
             queues.insert(thread_id, WorkStealingQueue::new());
-        }
-
         loop {
             // Check for shutdown
             {
@@ -381,7 +237,6 @@ impl AsyncScheduler {
                 } else {
                     queue.pop()
                 }
-            };
 
             if let Some(mut scheduler_task) = task {
                 let start_time = Instant::now();
@@ -404,8 +259,6 @@ impl AsyncScheduler {
             } else {
                 // Try work stealing
                 Self::try_work_stealing(&work_stealing_queues, thread_id, &statistics);
-            }
-
             // Coordinate with goroutine scheduler for GC safe points
             if let Some(ref goroutine_sched) = goroutine_scheduler {
                 if config.goroutine_integration {
@@ -417,9 +270,6 @@ impl AsyncScheduler {
 
     /// Execute a scheduler task
     fn execute_scheduler_task(
-        task: &mut SchedulerTask,
-        _config: &SchedulerConfig,
-        _goroutine_scheduler: &Option<Arc<GoroutineScheduler>>,
     ) {
         task.last_poll = Some(Instant::now());
         task.poll_count += 1;
@@ -427,13 +277,8 @@ impl AsyncScheduler {
         // Here we would actually poll the real Task
         // For now, we'll just simulate some work
         thread::sleep(Duration::from_micros(100));
-    }
-
     /// Try to steal work from other workers
     fn try_work_stealing(
-        work_stealing_queues: &Arc<Mutex<HashMap<ThreadId, WorkStealingQueue<SchedulerTask>>>>,
-        current_thread: ThreadId,
-        statistics: &Arc<Mutex<SchedulerStatistics>>,
     ) {
         let mut queues = work_stealing_queues.lock().unwrap();
         let mut stats = statistics.lock().unwrap();
@@ -460,8 +305,6 @@ impl AsyncScheduler {
             Ok(())
         }
     }
-}
-
 impl Drop for AsyncScheduler {
     fn drop(&mut self) {
         self.shutdown();
@@ -470,15 +313,9 @@ impl Drop for AsyncScheduler {
 
 /// Create a scheduler with goroutine integration
 pub fn create_integrated_scheduler(
-    config: SchedulerConfig,
-    goroutine_scheduler: Option<Arc<GoroutineScheduler>>,
 ) -> AsyncScheduler {
     let mut scheduler = AsyncScheduler::new(config);
     
     if let Some(goroutine_sched) = goroutine_scheduler {
         scheduler.set_goroutine_scheduler(goroutine_sched);
-    }
-    
     scheduler
-}
-

@@ -6,37 +6,17 @@ use regex::Regex;
 
 /// Input sanitizer for cleaning user input
 pub struct InputSanitizer {
-    config: SanitizerConfig,
-}
-
 #[derive(Debug, Clone)]
 pub struct SanitizerConfig {
-    pub allow_html: bool,
-    pub allowed_tags: Vec<String>,
-    pub allowed_attributes: Vec<String>,
-    pub max_length: Option<usize>,
-    pub strip_whitespace: bool,
-    pub escape_quotes: bool,
-}
-
 impl Default for SanitizerConfig {
     fn default() -> Self {
         Self {
-            allow_html: false,
-            allowed_tags: Vec::from([]),
-            allowed_attributes: Vec::from([]),
-            max_length: Some(1000),
-            strip_whitespace: true,
-            escape_quotes: true,
         }
     }
-}
-
 impl InputSanitizer {
     /// Create new input sanitizer with default config
     pub fn new() -> Self {
         Self {
-            config: SanitizerConfig::default(),
         }
     }
 
@@ -59,23 +39,15 @@ impl InputSanitizer {
         // Strip whitespace
         if self.config.strip_whitespace {
             result = result.trim().to_string();
-        }
-
         // Handle HTML
         if !self.config.allow_html {
             result = self.escape_html(&result);
         } else {
             result = self.filter_html(&result);
-        }
-
         // Escape quotes
         if self.config.escape_quotes {
             result = result.replace('"', "&quot;").replace('\'', "&#x27;");
-        }
-
         result
-    }
-
     /// Sanitize for SQL to prevent injection
     pub fn sanitize_sql(&self, input: &str) -> String {
         input
@@ -86,8 +58,6 @@ impl InputSanitizer {
             .replace("*/", "")
             .replace("xp_", "")
             .replace("sp_", "")
-    }
-
     /// Sanitize filename to prevent path traversal
     pub fn sanitize_filename(&self, filename: &str) -> String {
         filename
@@ -104,8 +74,6 @@ impl InputSanitizer {
             .chars()
             .filter(|c| !c.is_control())
             .collect()
-    }
-
     /// Escape HTML entities
     fn escape_html(&self, input: &str) -> String {
         input
@@ -114,8 +82,6 @@ impl InputSanitizer {
             .replace('>', "&gt;")
             .replace('"', "&quot;")
             .replace('\'', "&#x27;")
-    }
-
     /// Filter HTML to allowed tags only
     fn filter_html(&self, input: &str) -> String {
         // Simple HTML filtering - remove disallowed tags
@@ -147,23 +113,15 @@ impl InputSanitizer {
                     break;
                 }
             }
-        }
-
         result
-    }
-
     /// Validate email format
     pub fn validate_email(&self, email: &str) -> bool {
         let email = email.trim();
         if email.is_empty() || email.len() > 254 {
             return false;
-        }
-
         let parts: Vec<&str> = email.split('@').collect();
         if parts.len() != 2 {
             return false;
-        }
-
         let local = parts[0];
         let domain = parts[1];
 
@@ -174,8 +132,6 @@ impl InputSanitizer {
             && domain.contains('.') 
             && !domain.starts_with('.') 
             && !domain.ends_with('.')
-    }
-
     /// Validate URL format
     pub fn validate_url(&self, url: &str) -> bool {
         url.starts_with("http://") || url.starts_with("https://")
@@ -190,16 +146,10 @@ impl Default for InputSanitizer {
 
 /// XSS protection utilities
 pub struct XssProtector {
-    strict_mode: bool,
-    content_security_policy: Option<String>,
-}
-
 impl XssProtector {
     /// Create new XSS protector
     pub fn new() -> Self {
         Self {
-            strict_mode: true,
-            content_security_policy: Some("default-src 'self'".to_string()),
         }
     }
 
@@ -207,63 +157,31 @@ impl XssProtector {
     pub fn strict(mut self) -> Self {
         self.strict_mode = true;
         self
-    }
-
     /// Set Content Security Policy
     pub fn with_csp(mut self, csp: String) -> Self {
         self.content_security_policy = Some(csp);
         self
-    }
-
     /// Get security headers for XSS protection
     pub fn get_security_headers(&self) -> Vec<(String, String)> {
         let mut headers = vec![
-            ("X-XSS-Protection".to_string(), "1; mode=block".to_string()),
-            ("X-Content-Type-Options".to_string(), "nosniff".to_string()),
-            ("X-Frame-Options".to_string(), "DENY".to_string()),
-            ("Referrer-Policy".to_string(), "strict-origin-when-cross-origin".to_string()),
         ];
 
         if let Some(csp) = &self.content_security_policy {
             headers.push(("Content-Security-Policy".to_string(), csp.clone()));
-        }
-
         if self.strict_mode {
-            headers.push(("Strict-Transport-Security".to_string(), 
                          "max-age=31536000; includeSubDomains".to_string()));
-        }
-
         headers
-    }
-
     /// Check if content contains potential XSS
     pub fn detect_xss(&self, content: &str) -> bool {
         let dangerous_patterns = [
-            "<script",
-            "javascript:",
-            "vbscript:",
-            "onload=",
-            "onerror=",
-            "onclick=",
-            "onmouseover=",
-            "onfocus=",
-            "onblur=",
-            "eval(",
-            "document.cookie",
-            "document.write",
-            "innerHTML",
         ];
 
         let content_lower = content.to_lowercase();
         dangerous_patterns.iter().any(|pattern| content_lower.contains(pattern))
-    }
-
     /// Sanitize content to prevent XSS
     pub fn sanitize_content(&self, content: &str) -> String {
         let sanitizer = InputSanitizer::new();
         sanitizer.sanitize(content)
-    }
-
     /// Encode output for safe HTML insertion
     pub fn encode_output(&self, output: &str) -> String {
         output
@@ -273,8 +191,6 @@ impl XssProtector {
             .replace('"', "&quot;")
             .replace('\'', "&#x27;")
             .replace('/', "&#x2F;")
-    }
-
     /// Encode for JavaScript string context
     pub fn encode_js_string(&self, input: &str) -> String {
         input
@@ -286,8 +202,6 @@ impl XssProtector {
             .replace('\t', "\\t")
             .replace('\u{08}', "\\b")
             .replace('\u{0C}', "\\f")
-    }
-
     /// Encode for CSS context
     pub fn encode_css(&self, input: &str) -> String {
         input
@@ -300,8 +214,6 @@ impl XssProtector {
                 }
             })
             .collect()
-    }
-
     /// Encode for URL context
     pub fn encode_url(&self, input: &str) -> String {
         input
@@ -325,25 +237,10 @@ impl Default for XssProtector {
 
 /// Input validation utilities
 pub struct InputValidator {
-    rules: HashMap<String, ValidationRule>,
-    compiled_patterns: HashMap<String, Regex>,
-}
-
 #[derive(Debug, Clone)]
 pub struct ValidationRule {
-    pub required: bool,
-    pub min_length: Option<usize>,
-    pub max_length: Option<usize>,
-    pub pattern: Option<String>,
-    pub custom_validator: Option<String>,
-}
-
 #[derive(Debug)]
 pub struct ValidationError {
-    pub field: String,
-    pub message: String,
-}
-
 // impl fmt::Display for ValidationError {
 //     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
 //         write!(f, "{}: {}", self.field, self.message)
@@ -356,64 +253,35 @@ impl InputValidator {
     /// Create new input validator
     pub fn new() -> Self {
         Self {
-            rules: HashMap::new(),
-            compiled_patterns: HashMap::new(),
         }
     }
 
     /// Add validation rule for field
     pub fn add_rule(&mut self, field: String, rule: ValidationRule) {
         self.rules.insert(field, rule);
-    }
-
     /// Add required field rule
     pub fn required(&mut self, field: &str) -> &mut Self {
         self.rules.insert(
-            field.to_string(),
             ValidationRule {
-                required: true,
-                min_length: None,
-                max_length: None,
-                pattern: None,
-                custom_validator: None,
-            },
         );
         self
-    }
-
     /// Add length validation rule
     pub fn length(&mut self, field: &str, min: Option<usize>, max: Option<usize>) -> &mut Self {
         // Get or create the validation rule for this field
         if !self.rules.contains_key(field) {
             self.rules.insert(field.to_string(), ValidationRule {
-                required: false,
-                min_length: None,
-                max_length: None,
-                pattern: None,
-                custom_validator: None,
             });
-        }
-        
         // Safe to unwrap because we just ensured the key exists
         let rule = self.rules.get_mut(field).unwrap();
         rule.min_length = min;
         rule.max_length = max;
         self
-    }
-
     /// Add pattern validation rule
     pub fn pattern(&mut self, field: &str, pattern: &str) -> &mut Self {
         // Get or create the validation rule for this field
         if !self.rules.contains_key(field) {
             self.rules.insert(field.to_string(), ValidationRule {
-                required: false,
-                min_length: None,
-                max_length: None,
-                pattern: None,
-                custom_validator: None,
             });
-        }
-        
         // Safe to unwrap because we just ensured the key exists
         let rule = self.rules.get_mut(field).unwrap();
         rule.pattern = Some(pattern.to_string());
@@ -422,34 +290,15 @@ impl InputValidator {
         if let Err(e) = self.compile_pattern(pattern) {
             // Log warning but don't fail - will be handled during validation
             eprintln!("Warning: Failed to compile regex pattern '{}' for field '{}': {}", pattern, field, e);
-        }
-
         self
-    }
-
     /// Compile and cache a regex pattern
     fn compile_pattern(&mut self, pattern: &str) -> Result<&Regex, String> {
         if let Some(compiled) = self.compiled_patterns.get(pattern) {
             return Ok(compiled);
-        }
-
         // Handle built-in patterns with improved regex patterns
         let regex_pattern = match pattern {
-            "email" => r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$",
             "url" => r"^https?://[a-zA-Z0-9.-]+(?:\.[a-zA-Z]{2,})+(?:/[^\s]*)?$",
-            "phone" => r"^\+?[\d\s\-\(\)]{10,}$",
-            "numeric" => r"^\d+$",
-            "alphanumeric" => r"^[a-zA-Z0-9]+$",
-            "alpha" => r"^[a-zA-Z]+$",
-            "password_strong" => r"^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$",
-            "ipv4" => r"^(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$",
-            "credit_card" => r"^\d{4}[-\s]?\d{4}[-\s]?\d{4}[-\s]?\d{4}$",
-            "postal_code" => r"^[A-Z0-9\s\-]{3,10}$",
-            "hex_color" => r"^#[0-9A-Fa-f]{6}$",
-            "username" => r"^[a-zA-Z0-9_]{3,20}$",
-            "slug" => r"^[a-z0-9]+(?:-[a-z0-9]+)*$",
             _ => pattern, // Use as-is for custom regex patterns
-        };
 
         // Validate and compile the regex pattern
         match Regex::new(regex_pattern) {
@@ -458,7 +307,6 @@ impl InputValidator {
                 // Safe to unwrap because we just inserted it
                 Ok(self.compiled_patterns.get(pattern).unwrap())
             }
-            Err(e) => Err(format!("Invalid regex pattern '{}': {}", pattern, e)),
         }
     }
 
@@ -472,8 +320,6 @@ impl InputValidator {
                 if let Some(min_len) = rule.min_length {
                     if value.len() < min_len {
                         errors.push(ValidationError {
-                            field: field.clone(),
-                            message: format!("Must be at least {} characters", min_len),
                         });
                     }
                 }
@@ -481,8 +327,6 @@ impl InputValidator {
                 if let Some(max_len) = rule.max_length {
                     if value.len() > max_len {
                         errors.push(ValidationError {
-                            field: field.clone(),
-                            message: format!("Must be at most {} characters", max_len),
                         });
                     }
                 }
@@ -491,15 +335,11 @@ impl InputValidator {
                 if let Some(pattern) = &rule.pattern {
                     if !self.matches_pattern(value, pattern) {
                         errors.push(ValidationError {
-                            field: field.clone(),
-                            message: "Invalid format".to_string(),
                         });
                     }
                 }
             } else if rule.required {
                 errors.push(ValidationError {
-                    field: field.clone(),
-                    message: "Field is required".to_string(),
                 });
             }
         }
@@ -516,8 +356,6 @@ impl InputValidator {
         // Try to get compiled regex pattern first
         if let Some(regex) = self.compiled_patterns.get(pattern) {
             return regex.is_match(value);
-        }
-
         // Fallback to basic pattern matching for built-in patterns
         match pattern {
             "email" => {
@@ -528,9 +366,6 @@ impl InputValidator {
                 let sanitizer = InputSanitizer::new();
                 sanitizer.validate_url(value)
             }
-            "numeric" => value.chars().all(|c| c.is_ascii_digit()),
-            "alphanumeric" => value.chars().all(|c| c.is_alphanumeric()),
-            "alpha" => value.chars().all(|c| c.is_alphabetic()),
             "phone" => {
                 // Basic phone validation - at least 10 digits with optional formatting
                 let digit_count = value.chars().filter(|c| c.is_ascii_digit()).count();
@@ -565,7 +400,6 @@ impl InputValidator {
             _ => {
                 // Try to compile pattern on-demand for custom regex
                 match Regex::new(pattern) {
-                    Ok(regex) => regex.is_match(value),
                     Err(e) => {
                         // Invalid regex pattern - log warning and fail validation
                         eprintln!("Warning: Invalid regex pattern '{}' used in validation: {}", pattern, e);
@@ -574,36 +408,19 @@ impl InputValidator {
                 }
             }
         }
-    }
-
     /// Validate a single value against a pattern with detailed error information
     pub fn validate_pattern(&mut self, value: &str, pattern: &str) -> Result<bool, String> {
         // Compile pattern first to catch regex errors
         match self.compile_pattern(pattern) {
-            Ok(regex) => Ok(regex.is_match(value)),
-            Err(e) => Err(e),
         }
     }
 
     /// Get list of available built-in patterns
     pub fn get_builtin_patterns() -> Vec<(&'static str, &'static str)> {
         vec![
-            ("email", "Valid email address"),
             ("url", "Valid HTTP/HTTPS URL"),
-            ("phone", "Phone number with optional country code"),
-            ("numeric", "Numbers only"),
-            ("alphanumeric", "Letters and numbers only"),
-            ("alpha", "Letters only"),
-            ("password_strong", "Strong password (8+ chars, mixed case, number, special char)"),
-            ("ipv4", "IPv4 address"),
-            ("credit_card", "Credit card number (with optional separators)"),
             ("postal_code", "Postal/ZIP code"),
-            ("hex_color", "Hexadecimal color code"),
-            ("username", "Username (3-20 chars, letters, numbers, underscore)"),
-            ("slug", "URL slug (lowercase letters, numbers, hyphens)"),
         ]
-    }
-
     /// Test a pattern against sample values for validation
     pub fn test_pattern(&mut self, pattern: &str, test_values: &[(&str, bool)]) -> Result<Vec<String>, String> {
         let mut results = Vec::new();
@@ -615,7 +432,6 @@ impl InputValidator {
             let actual = self.matches_pattern(value, pattern);
             if actual != *expected {
                 results.push(format!(
-                    "Pattern '{}' failed for value '{}': expected {}, got {}",
                     pattern, value, expected, actual
                 ));
             }
@@ -636,14 +452,6 @@ impl SecurityHeaders {
     /// Create new security headers with safe defaults
     pub fn new() -> Self {
         Self {
-            x_frame_options: Some("DENY".to_string()),
-            x_content_type_options: Some("nosniff".to_string()),
-            x_xss_protection: Some("1; mode=block".to_string()),
-            strict_transport_security: Some("max-age=31536000; includeSubDomains".to_string()),
-            content_security_policy: Some("default-src 'self'".to_string()),
-            referrer_policy: Some("strict-origin-when-cross-origin".to_string()),
-            permissions_policy: None,
-            custom_headers: HashMap::new(),
         }
     }
 
@@ -671,15 +479,9 @@ impl SecurityHeaders {
         }
         if let Some(val) = &self.permissions_policy {
             headers.push(("Permissions-Policy".to_string(), val.clone()));
-        }
-        
         for (key, value) in &self.custom_headers {
             headers.push((key.clone(), value.clone()));
-        }
-        
         headers
-    }
-
     /// Set custom header
     pub fn set_custom_header(&mut self, name: String, value: String) {
         self.custom_headers.insert(name, value);
@@ -695,44 +497,10 @@ impl Default for SecurityHeaders {
 /// Content Security Policy configuration and management
 #[derive(Debug, Clone)]
 pub struct ContentSecurityPolicy {
-    pub default_src: Vec<String>,
-    pub script_src: Vec<String>,
-    pub style_src: Vec<String>,
-    pub img_src: Vec<String>,
-    pub connect_src: Vec<String>,
-    pub font_src: Vec<String>,
-    pub object_src: Vec<String>,
-    pub media_src: Vec<String>,
-    pub frame_src: Vec<String>,
-    pub sandbox: Vec<String>,
-    pub report_uri: Option<String>,
-    pub report_to: Option<String>,
-    pub require_trusted_types_for: Vec<String>,
-    pub trusted_types: Vec<String>,
-    pub upgrade_insecure_requests: bool,
-    pub block_all_mixed_content: bool,
-}
-
 impl ContentSecurityPolicy {
     /// Create new CSP with safe defaults
     pub fn new() -> Self {
         Self {
-            default_src: vec!["'self'".to_string()],
-            script_src: vec!["'self'".to_string()],
-            style_src: vec!["'self'".to_string(), "'unsafe-inline'".to_string()],
-            img_src: vec!["'self'".to_string(), "data:".to_string()],
-            connect_src: vec!["'self'".to_string()],
-            font_src: vec!["'self'".to_string()],
-            object_src: vec!["'none'".to_string()],
-            media_src: vec!["'self'".to_string()],
-            frame_src: vec!["'none'".to_string()],
-            sandbox: Vec::new(),
-            report_uri: None,
-            report_to: None,
-            require_trusted_types_for: Vec::new(),
-            trusted_types: Vec::new(),
-            upgrade_insecure_requests: true,
-            block_all_mixed_content: false,
         }
     }
 
@@ -787,11 +555,7 @@ impl ContentSecurityPolicy {
         }
         if self.block_all_mixed_content {
             directives.push("block-all-mixed-content".to_string());
-        }
-        
         directives.join("; ")
-    }
-
     /// Allow unsafe inline scripts (use cautiously)
     pub fn allow_unsafe_inline_scripts(&mut self) {
         if !self.script_src.contains(&"'unsafe-inline'".to_string()) {
@@ -819,8 +583,6 @@ impl ContentSecurityPolicy {
             self.style_src.push(domain);
         }
     }
-}
-
 impl Default for ContentSecurityPolicy {
     fn default() -> Self {
         Self::new()

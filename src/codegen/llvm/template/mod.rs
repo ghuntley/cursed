@@ -7,7 +7,5 @@ pub use parser::TemplateParser;
 
 // Re-export from parent template module
 pub use super::{
-    CompiledTemplate, CompiledTemplateMetadata, TemplateCompilationStats,
-    TemplateCompilationContext, TemplateCompilationError,
     declare_template_runtime_functions, register_standard_filters, runtime
-};
+// };

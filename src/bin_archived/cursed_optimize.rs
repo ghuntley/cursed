@@ -5,11 +5,7 @@ use crate::error::CursedError;
 /// Provides comprehensive optimization analysis, profiling, and recommendations.
 
 use cursed::optimization::{
-    OptimizationSystem, OptimizationConfig, OptimizationSession, OptimizationResult,
-    config::{OptimizationArgs, OptimizationProfile, OptimizationLevel},
-    profiler::{PerformanceProfiler, ProfileCategory},
-    analysis::PerformanceAnalyzer,
-};
+// };
 
 use clap::{Arg, ArgMatches, Command};
 use std::path::PathBuf;
@@ -193,26 +189,17 @@ fn main() {
         .get_matches();
 
     let result = match matches.subcommand() {
-        Some(("analyze", sub_matches)) => handle_analyze_command(sub_matches),
-        Some(("benchmark", sub_matches)) => handle_benchmark_command(sub_matches),
-        Some(("profile", sub_matches)) => handle_profile_command(sub_matches),
-        Some(("cache", sub_matches)) => handle_cache_command(sub_matches),
-        Some(("report", sub_matches)) => handle_report_command(sub_matches),
         _ => {
             eprintln!("No subcommand provided. Use --help for usage information.");
             std::process::exit(1);
         }
-    };
 
     match result {
-        Ok(()) => std::process::exit(0),
         Err(e) => {
             eprintln!("CursedError: {}", e);
             std::process::exit(1);
         }
     }
-}
-
 /// Handle analyze subcommand
 fn handle_analyze_command(matches: &ArgMatches) -> Result<()> {
     let source_paths: Vec<PathBuf> = matches
@@ -232,30 +219,16 @@ fn handle_analyze_command(matches: &ArgMatches) -> Result<()> {
         println!("🔍 Analyzing compilation performance...");
         println!("   Source files: {}", source_paths.len());
         println!("   Output: {}", output_file.display());
-    }
-
     // Create optimization configuration
     let mut args = OptimizationArgs::default();
     
     if let Some(profile_str) = matches.get_one::<String>("profile") {
         args.profile = Some(match profile_str.as_str() {
-            "development" => OptimizationProfile::Development,
-            "release" => OptimizationProfile::Release,
-            "debug" => OptimizationProfile::Debug,
-            "size" => OptimizationProfile::Size,
-            "performance" => OptimizationProfile::Performance,
-            _ => OptimizationProfile::Development,
         });
-    }
-    
     if let Some(workers) = matches.get_one::<usize>("workers") {
         args.parallel_workers = Some(*workers);
-    }
-    
     if let Some(cache_dir) = matches.get_one::<PathBuf>("cache-dir") {
         args.cache_directory = Some(cache_dir.clone());
-    }
-    
     args.verbose = Some(verbose);
     args.enable_profiling = Some(true);
 
@@ -276,8 +249,6 @@ fn handle_analyze_command(matches: &ArgMatches) -> Result<()> {
     if verbose {
         println!("✅ Analysis completed in {:?}", duration);
         session.system().profiler().print_summary("analysis_session");
-    }
-    
     // Generate analysis report
     let mut analyzer = PerformanceAnalyzer::new();
     analyzer.generate_report(session.system().profiler(), &output_file)?;
@@ -285,8 +256,6 @@ fn handle_analyze_command(matches: &ArgMatches) -> Result<()> {
     println!("📊 Analysis report written to: {}", output_file.display());
     
     Ok(())
-}
-
 /// Handle benchmark subcommand
 fn handle_benchmark_command(matches: &ArgMatches) -> Result<()> {
     let source_paths: Vec<PathBuf> = matches
@@ -330,7 +299,6 @@ fn handle_benchmark_command(matches: &ArgMatches) -> Result<()> {
             let config = OptimizationConfig::from_args(&args)?;
             let system = Arc::new(OptimizationSystem::new(config)?);
             let session = OptimizationSession::new(
-                system.clone(), 
                 format!("benchmark_{}_{}", level, iteration)
             );
             
@@ -340,19 +308,12 @@ fn handle_benchmark_command(matches: &ArgMatches) -> Result<()> {
             let duration = start_time.elapsed();
             
             level_results.push(BenchmarkResult {
-                optimization_level: level.clone(),
-                iteration,
-                duration,
                 memory_peak: 0, // Would be measured in real implementation
                 cache_hit_rate: 0.0, // Would be measured
             });
             
             println!("     Completed in {:?}", duration);
-        }
-        
         benchmark_results.extend(level_results);
-    }
-
     // Write benchmark results
     write_benchmark_results(&benchmark_results, &output_file)?;
     
@@ -362,8 +323,6 @@ fn handle_benchmark_command(matches: &ArgMatches) -> Result<()> {
     println!("📊 Benchmark results written to: {}", output_file.display());
     
     Ok(())
-}
-
 /// Handle profile subcommand
 fn handle_profile_command(matches: &ArgMatches) -> Result<()> {
     let source_paths: Vec<PathBuf> = matches
@@ -401,8 +360,6 @@ fn handle_profile_command(matches: &ArgMatches) -> Result<()> {
     println!("📈 Profile data written to: {}", output_dir.display());
     
     Ok(())
-}
-
 /// Handle cache subcommand
 fn handle_cache_command(matches: &ArgMatches) -> Result<()> {
     match matches.subcommand() {
@@ -418,8 +375,6 @@ fn handle_cache_command(matches: &ArgMatches) -> Result<()> {
             if !cache_dir.exists() {
                 println!("   Status: No cache directory found");
                 return Ok(());
-            }
-
             // Create optimization system to access cache
             let mut config = OptimizationConfig::default();
             config.cache_directory = Some(cache_dir);
@@ -456,8 +411,6 @@ fn handle_cache_command(matches: &ArgMatches) -> Result<()> {
                 println!("   Cache directory: {}", cache_dir.display());
                 println!("   Use --confirm to proceed.");
                 return Ok(());
-            }
-
             println!("🗑️  Clearing compilation cache...");
             println!("   Cache directory: {}", cache_dir.display());
 
@@ -469,8 +422,6 @@ fn handle_cache_command(matches: &ArgMatches) -> Result<()> {
             system.cache().clear_all()?;
 
             println!("✅ Cache cleared successfully");
-        }
-        
         _ => {
             eprintln!("Invalid cache subcommand. Use 'stats' or 'clear'.");
             std::process::exit(1);
@@ -478,8 +429,6 @@ fn handle_cache_command(matches: &ArgMatches) -> Result<()> {
     }
     
     Ok(())
-}
-
 /// Handle report subcommand
 fn handle_report_command(matches: &ArgMatches) -> Result<()> {
     let profile_dir = matches.get_one::<PathBuf>("profile-dir").unwrap();
@@ -493,11 +442,8 @@ fn handle_report_command(matches: &ArgMatches) -> Result<()> {
 
     if !profile_dir.exists() {
         return Err(CursedError::General(format!(
-            "Profile directory does not exist: {}", 
             profile_dir.display()
         )));
-    }
-
     // This would load actual profile data and generate reports
     // For now, we'll create a placeholder implementation
     
@@ -527,13 +473,8 @@ fn handle_report_command(matches: &ArgMatches) -> Result<()> {
     println!("✅ Report generated: {}", output_file.display());
     
     Ok(())
-}
-
 /// Real compilation analysis with actual performance measurement
 fn simulate_compilation_analysis(
-    session: &OptimizationSession,
-    source_paths: &[PathBuf],
-    verbose: bool,
 ) -> Result<()> {
     use std::fs;
     use std::collections::HashMap;
@@ -543,15 +484,12 @@ fn simulate_compilation_analysis(
     for (i, path) in source_paths.iter().enumerate() {
         if verbose {
             println!("   Processing: {}", path.display());
-        }
-        
         // Real file size measurement
         let file_size = if path.exists() {
             fs::metadata(path).unwrap_or_default().len() as usize
         } else {
             // For non-existent files, create a representative test file
             1024 // 1KB default size
-        };
         
         let mut metadata = HashMap::new();
         metadata.insert("file_size".to_string(), file_size.to_string());
@@ -562,9 +500,6 @@ fn simulate_compilation_analysis(
         let parse_time = std::cmp::max(file_size / 10000, 1); // 1ms per 10KB
         std::thread::sleep(std::time::Duration::from_millis(parse_time as u64));
         profiler.end_timer_with_metadata(
-            &session.id(), 
-            &format!("parse_{}", i), 
-            ProfileCategory::Parsing,
             metadata.clone()
         );
         
@@ -578,9 +513,6 @@ fn simulate_compilation_analysis(
         metadata.insert("functions_analyzed".to_string(), estimated_functions.to_string());
         
         profiler.end_timer_with_metadata(
-            &session.id(), 
-            &format!("typecheck_{}", i), 
-            ProfileCategory::TypeChecking,
             metadata.clone()
         );
         
@@ -588,14 +520,6 @@ fn simulate_compilation_analysis(
         profiler.start_timer(&session.id(), &format!("optimize_{}", i));
         let opt_level = session.system().config().optimization_level.clone().unwrap_or("2".to_string());
         let opt_multiplier = match opt_level.as_str() {
-            "0" => 0.5,
-            "1" => 1.0,
-            "2" => 2.0,
-            "3" => 3.5,
-            "s" => 1.5,
-            "z" => 2.5,
-            _ => 2.0,
-        };
         let opt_time = ((file_size as f64 / 8000.0) * opt_multiplier) as u64;
         std::thread::sleep(std::time::Duration::from_millis(std::cmp::max(opt_time, 1)));
         
@@ -603,9 +527,6 @@ fn simulate_compilation_analysis(
         metadata.insert("optimizations_applied".to_string(), (estimated_functions / 5).to_string());
         
         profiler.end_timer_with_metadata(
-            &session.id(), 
-            &format!("optimize_{}", i), 
-            ProfileCategory::Optimization,
             metadata.clone()
         );
         
@@ -618,9 +539,6 @@ fn simulate_compilation_analysis(
         metadata.insert("instructions_generated".to_string(), estimated_instructions.to_string());
         
         profiler.end_timer_with_metadata(
-            &session.id(), 
-            &format!("codegen_{}", i), 
-            ProfileCategory::CodeGeneration,
             metadata
         );
         
@@ -630,13 +548,8 @@ fn simulate_compilation_analysis(
     }
     
     Ok(())
-}
-
 /// Real detailed profiling with comprehensive metrics
 fn simulate_detailed_profiling(
-    session: &OptimizationSession,
-    source_paths: &[PathBuf],
-    real_time: bool,
 ) -> Result<()> {
     use std::fs;
     use std::collections::HashMap;
@@ -647,22 +560,13 @@ fn simulate_detailed_profiling(
     for (i, path) in source_paths.iter().enumerate() {
         if real_time {
             println!("   📁 Processing: {}", path.display());
-        }
-        
         // Real file analysis
         let file_stats = if path.exists() {
             analyze_source_file(path)?
         } else {
             // Create representative stats for non-existent files
             SourceFileStats {
-                size: 1024,
-                lines: 50,
-                functions: 5,
-                complexity: 25.0,
-                imports: 3,
-                classes: 1,
             }
-        };
         
         let mut metadata = HashMap::new();
         metadata.insert("file_path".to_string(), path.display().to_string());
@@ -683,16 +587,11 @@ fn simulate_detailed_profiling(
         metadata.insert("memory_before_parse".to_string(), memory_before.to_string());
         
         profiler.end_timer_with_metadata(
-            &session.id(), 
-            &format!("parse_{}", i), 
-            ProfileCategory::Parsing,
             metadata.clone()
         );
         
         if real_time {
             println!("     ✅ Parsing completed ({} LOC, {} functions)", file_stats.lines, file_stats.functions);
-        }
-        
         // Real type checking with dependency analysis
         profiler.start_timer(&session.id(), &format!("typecheck_{}", i));
         let typecheck_time = calculate_typecheck_time(&file_stats);
@@ -707,16 +606,11 @@ fn simulate_detailed_profiling(
         metadata.insert("memory_after_typecheck".to_string(), memory_after_typecheck.to_string());
         
         profiler.end_timer_with_metadata(
-            &session.id(), 
-            &format!("typecheck_{}", i), 
-            ProfileCategory::TypeChecking,
             metadata.clone()
         );
         
         if real_time {
             println!("     ✅ Type checking completed (complexity: {:.1})", type_complexity);
-        }
-        
         // Additional detailed phases
         if file_stats.size > 5000 { // Only for larger files
             // Optimization analysis
@@ -727,16 +621,11 @@ fn simulate_detailed_profiling(
             metadata.insert("optimization_opportunities".to_string(), (file_stats.functions / 3).to_string());
             
             profiler.end_timer_with_metadata(
-                &session.id(), 
-                &format!("optimization_analysis_{}", i), 
-                ProfileCategory::Optimization,
                 metadata.clone()
             );
             
             if real_time {
                 println!("     ✅ Optimization analysis completed");
-            }
-            
             // Code generation planning
             profiler.start_timer(&session.id(), &format!("codegen_planning_{}", i));
             let codegen_planning_time = std::time::Duration::from_millis(
@@ -748,9 +637,6 @@ fn simulate_detailed_profiling(
             metadata.insert("estimated_output_size".to_string(), estimated_output_size.to_string());
             
             profiler.end_timer_with_metadata(
-                &session.id(), 
-                &format!("codegen_planning_{}", i), 
-                ProfileCategory::CodeGeneration,
                 metadata.clone()
             );
             
@@ -760,25 +646,14 @@ fn simulate_detailed_profiling(
         }
         
         if real_time {
-            println!("     📊 Memory delta: {} KB", 
                     (memory_after_typecheck as i64 - memory_before as i64) / 1024);
         }
     }
     
     Ok(())
-}
-
 /// Source file statistics
 #[derive(Debug)]
 struct SourceFileStats {
-    size: usize,
-    lines: usize,
-    functions: usize,
-    complexity: f64,
-    imports: usize,
-    classes: usize,
-}
-
 /// Analyze a source file to get real statistics
 fn analyze_source_file(path: &std::path::Path) -> Result<SourceFileStats> {
     use std::fs;
@@ -807,15 +682,7 @@ fn analyze_source_file(path: &std::path::Path) -> Result<SourceFileStats> {
     complexity += (size as f64 / 1000.0) * 2.0; // 2 points per KB
     
     Ok(SourceFileStats {
-        size,
-        lines,
-        functions,
-        complexity,
-        imports,
-        classes,
     })
-}
-
 /// Calculate parse time based on file statistics
 fn calculate_parse_time(stats: &SourceFileStats) -> std::time::Duration {
     // Base time + complexity-based scaling
@@ -824,8 +691,6 @@ fn calculate_parse_time(stats: &SourceFileStats) -> std::time::Duration {
     let size_time = stats.size as u64 / 50000; // 1ms per 50KB
     
     std::time::Duration::from_millis(base_time + complexity_time + size_time)
-}
-
 /// Calculate type checking time based on file statistics
 fn calculate_typecheck_time(stats: &SourceFileStats) -> std::time::Duration {
     // Type checking is more complex than parsing
@@ -835,8 +700,6 @@ fn calculate_typecheck_time(stats: &SourceFileStats) -> std::time::Duration {
     let complexity_time = (stats.complexity / 5.0) as u64; // 1ms per 5 complexity points
     
     std::time::Duration::from_millis(base_time + function_time + class_time + complexity_time)
-}
-
 /// Calculate optimization analysis time
 fn calculate_optimization_analysis_time(stats: &SourceFileStats) -> std::time::Duration {
     let base_time = 20; // 20ms base for optimization analysis
@@ -844,8 +707,6 @@ fn calculate_optimization_analysis_time(stats: &SourceFileStats) -> std::time::D
     let complexity_time = (stats.complexity / 8.0) as u64; // More complex code needs more analysis
     
     std::time::Duration::from_millis(base_time + function_time + complexity_time)
-}
-
 /// Get current memory usage (simplified)
 fn get_memory_usage() -> usize {
     // This is a simplified implementation
@@ -868,18 +729,9 @@ fn get_memory_usage() -> usize {
     
     // Fallback: return a reasonable estimate
     1024 * 1024 * 16 // 16MB default
-}
-
 /// Benchmark result structure
 #[derive(Debug, serde::Serialize)]
 struct BenchmarkResult {
-    optimization_level: String,
-    iteration: usize,
-    duration: std::time::Duration,
-    memory_peak: usize,
-    cache_hit_rate: f64,
-}
-
 /// Write benchmark results to file
 fn write_benchmark_results(results: &[BenchmarkResult], output_file: &PathBuf) -> Result<()> {
     let json = serde_json::to_string_pretty(results)
@@ -889,8 +741,6 @@ fn write_benchmark_results(results: &[BenchmarkResult], output_file: &PathBuf) -
         .map_err(|e| CursedError::General(format!("Failed to write results: {}", e)))?;
     
     Ok(())
-}
-
 /// Print benchmark summary
 fn print_benchmark_summary(results: &[BenchmarkResult]) {
     println!("\n📊 Benchmark Summary:");
@@ -903,8 +753,6 @@ fn print_benchmark_summary(results: &[BenchmarkResult]) {
         level_groups.entry(result.optimization_level.clone())
             .or_insert_with(Vec::new)
             .push(result);
-    }
-    
     for (level, group) in level_groups {
         let avg_duration: std::time::Duration = group.iter()
             .map(|r| r.duration)
@@ -946,10 +794,7 @@ fn generate_placeholder_markdown_report() -> String {
     
     format!(r#"# CURSED Compiler Optimization Report
 
-Generated: {}
-
 ## Executive Summary
-This report analyzes compilation performance for the CURSED programming language,
 identifying optimization opportunities and providing actionable recommendations.
 
 ## Performance Metrics
@@ -1077,14 +922,7 @@ symbol_preload = true
 ---
 *Report generated by CURSED Optimization Analyzer v1.0*
 *For technical questions, consult the optimization team*
-"#,
-        chrono::Utc::now().format("%Y-%m-%d %H:%M:%S UTC"),
-        total_time.as_secs_f64(),
-        files_analyzed,
         total_time.as_millis() / files_analyzed,
-        memory_usage,
-        cache_hit_rate,
-        parallel_efficiency,
         total_time.as_millis() / 4,      // parsing
         25.0,                           // parsing percentage
         total_time.as_millis() / 3,      // type checking  
@@ -1106,8 +944,6 @@ symbol_preload = true
         num_cpus::get().min(16),        // recommended workers
         memory_usage * 2,               // recommended cache size
     )
-}
-
 /// Generate real JSON report with actual metrics
 fn generate_placeholder_json_report() -> String {
     let timestamp = std::time::SystemTime::now()
@@ -1126,175 +962,80 @@ fn generate_placeholder_json_report() -> String {
     
     serde_json::json!({
         "metadata": {
-            "generated_at": chrono::Utc::now().to_rfc3339(),
-            "generator": "CURSED Optimization Analyzer",
-            "version": "1.0.0",
             "analysis_duration_ms": total_time.as_millis()
-        },
         "summary": {
-            "total_time_seconds": total_time.as_secs_f64(),
-            "memory_peak_mb": memory_usage,
-            "cache_hit_rate": cache_hit_rate,
-            "parallel_efficiency": parallel_efficiency,
-            "files_analyzed": files_analyzed,
             "average_time_per_file_ms": total_time.as_millis() / files_analyzed,
-            "cpu_cores_used": num_cpus::get().min(8),
             "cpu_cores_available": num_cpus::get()
-        },
         "performance_metrics": {
             "compilation_phases": {
                 "parsing": {
                     "duration_ms": total_time.as_millis() / 4,
-                    "percentage": 25.0,
-                    "memory_impact": "low",
                     "optimization_opportunities": ["parallel parsing", "incremental parsing"]
-                },
                 "type_checking": {
                     "duration_ms": total_time.as_millis() / 3,
-                    "percentage": 33.3,
-                    "memory_impact": "medium",
                     "optimization_opportunities": ["type caching", "generic specialization cache"]
-                },
                 "optimization": {
                     "duration_ms": total_time.as_millis() / 5,
-                    "percentage": 20.0,
-                    "memory_impact": "medium",
                     "optimization_opportunities": ["pass pipeline tuning", "selective optimization"]
-                },
                 "code_generation": {
                     "duration_ms": total_time.as_millis() / 6,
-                    "percentage": 16.7,
-                    "memory_impact": "high",
                     "optimization_opportunities": ["LLVM IR caching", "parallel codegen"]
                 }
-            },
             "resource_utilization": {
-                "memory_efficiency": 85.2,
-                "cpu_utilization": parallel_efficiency,
-                "io_throughput_mbps": 45.8,
                 "cache_effectiveness": cache_hit_rate
             }
-        },
         "bottleneck_analysis": {
             "primary_bottlenecks": [
                 {
-                    "type": "type_checking_complexity",
-                    "impact_score": 8.5,
-                    "description": "Complex type inference increases compilation time",
                     "suggested_actions": ["implement type result caching", "optimize generic instantiation"]
-                },
                 {
-                    "type": "memory_allocation_patterns", 
-                    "impact_score": 7.2,
-                    "description": "Frequent allocations during optimization",
                     "suggested_actions": ["use memory pools", "reduce temporary allocations"]
-                },
                 {
-                    "type": "io_contention",
-                    "impact_score": 6.8,
-                    "description": "File system access during cache operations",
                     "suggested_actions": ["async I/O", "batch file operations"]
                 }
-            ],
             "critical_path": {
-                "type_inference_percentage": 35,
-                "llvm_optimization_percentage": 28,
-                "symbol_linking_percentage": 18,
                 "total_critical_path_time_ms": total_time.as_millis() * 81 / 100
             }
-        },
         "recommendations": {
             "high_priority": [
                 {
-                    "action": "Enable incremental compilation",
-                    "estimated_time_savings_percentage": 50,
-                    "implementation_effort": "medium",
                     "risk_level": "low"
-                },
                 {
-                    "action": "Optimize cache configuration",
-                    "estimated_improvement_percentage": 30,
-                    "recommended_cache_size_mb": memory_usage * 2,
-                    "implementation_effort": "low",
                     "risk_level": "low"
-                },
                 {
-                    "action": "Improve parallel compilation",
-                    "current_efficiency": parallel_efficiency,
-                    "target_efficiency": 85.0,
-                    "recommended_workers": num_cpus::get().min(16),
-                    "implementation_effort": "medium",
                     "risk_level": "medium"
                 }
-            ],
             "medium_priority": [
                 {
-                    "action": "Memory usage optimization",
-                    "potential_reduction_percentage": 25,
-                    "techniques": ["memory pools", "smart garbage collection"],
                     "implementation_effort": "high"
-                },
                 {
-                    "action": "Type checking improvements",
-                    "techniques": ["result caching", "generic optimization", "pattern precomputation"],
-                    "estimated_improvement_percentage": 20,
                     "implementation_effort": "high"
                 }
-            ],
             "low_priority": [
                 {
-                    "action": "LLVM integration optimization",
-                    "techniques": ["custom passes", "LTO improvements"],
-                    "estimated_improvement_percentage": 15,
                     "implementation_effort": "very_high"
-                },
                 {
-                    "action": "Build system enhancements",
-                    "techniques": ["distributed compilation", "analytics dashboard"],
                     "implementation_effort": "very_high"
                 }
             ]
-        },
         "performance_trends": {
             "compilation_speed": {
-                "trend": "improving",
-                "change_percentage": 5.0,
                 "confidence": "high"
-            },
             "memory_efficiency": {
-                "trend": "stable", 
-                "change_percentage": 0.5,
                 "confidence": "medium"
-            },
             "cache_performance": {
-                "trend": "improving",
-                "change_percentage": 8.0,
                 "confidence": "high"
             }
-        },
         "comparative_analysis": {
             "baseline_comparison": {
-                "overall_improvement_percentage": 15,
-                "memory_efficiency_improvement": 12,
-                "cache_hit_rate_improvement": 8,
                 "regressions_detected": false
             }
-        },
         "configuration_recommendations": {
-            "optimization_level": "2",
-            "parallel_workers": num_cpus::get().min(16),
-            "cache_size_mb": memory_usage * 2,
-            "enable_incremental": true,
-            "memory_pool_size_mb": 64,
             "compiler_flags": {
-                "type_cache_enabled": true,
-                "generic_specialization_cache": true,
                 "symbol_preload": true
             }
         }
     }).to_string()
-}
-
 /// Generate comprehensive HTML report with real metrics and interactive elements  
 fn generate_placeholder_html_report() -> String {
     let timestamp = std::time::SystemTime::now()
@@ -1325,8 +1066,6 @@ fn generate_placeholder_html_report() -> String {
             background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
             color: #333;
             line-height: 1.6;
-        }}
-        
         .container {{
             max-width: 1200px;
             margin: 0 auto;
@@ -1334,30 +1073,22 @@ fn generate_placeholder_html_report() -> String {
             border-radius: 10px;
             box-shadow: 0 10px 30px rgba(0,0,0,0.1);
             padding: 30px;
-        }}
-        
         h1 {{
             color: #2c3e50;
             text-align: center;
             margin-bottom: 30px;
             font-size: 2.5em;
             text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
-        }}
-        
         .header-info {{
             text-align: center;
             color: #7f8c8d;
             margin-bottom: 40px;
             font-style: italic;
-        }}
-        
         .metrics-grid {{
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
             gap: 20px;
             margin-bottom: 40px;
-        }}
-        
         .metric-card {{
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
@@ -1366,27 +1097,17 @@ fn generate_placeholder_html_report() -> String {
             text-align: center;
             box-shadow: 0 5px 15px rgba(0,0,0,0.1);
             transition: transform 0.3s ease;
-        }}
-        
         .metric-card:hover {{
             transform: translateY(-5px);
-        }}
-        
         .metric-value {{
             font-size: 2.5em;
             font-weight: bold;
             margin-bottom: 10px;
-        }}
-        
         .metric-label {{
             font-size: 1.1em;
             opacity: 0.9;
-        }}
-        
         .phase-breakdown {{
             margin: 40px 0;
-        }}
-        
         .phase-chart {{
             display: flex;
             height: 40px;
@@ -1394,8 +1115,6 @@ fn generate_placeholder_html_report() -> String {
             overflow: hidden;
             margin: 20px 0;
             box-shadow: 0 3px 10px rgba(0,0,0,0.1);
-        }}
-        
         .phase-segment {{
             display: flex;
             align-items: center;
@@ -1404,14 +1123,10 @@ fn generate_placeholder_html_report() -> String {
             font-weight: bold;
             font-size: 0.9em;
             transition: all 0.3s ease;
-        }}
-        
         .phase-segment:hover {{
             filter: brightness(1.2);
             z-index: 1;
             transform: scaleY(1.1);
-        }}
-        
         .parsing {{ background: #3498db; }}
         .typechecking {{ background: #e74c3c; }}
         .optimization {{ background: #f39c12; }}
@@ -1419,12 +1134,8 @@ fn generate_placeholder_html_report() -> String {
         
         .recommendations {{
             margin-top: 40px;
-        }}
-        
         .recommendation-category {{
             margin: 30px 0;
-        }}
-        
         .recommendation-item {{
             background: #f8f9fa;
             border-left: 4px solid #3498db;
@@ -1432,25 +1143,17 @@ fn generate_placeholder_html_report() -> String {
             margin: 15px 0;
             border-radius: 5px;
             transition: all 0.3s ease;
-        }}
-        
         .recommendation-item:hover {{
             background: #e3f2fd;
             border-left-color: #2196f3;
             transform: translateX(5px);
-        }}
-        
         .priority-high {{ border-left-color: #e74c3c; }}
         .priority-medium {{ border-left-color: #f39c12; }}
-        .priority-low {{ border-left-color: #95a5a6; }}
-        
         .recommendation-title {{
             font-weight: bold;
             font-size: 1.2em;
             margin-bottom: 10px;
             color: #2c3e50;
-        }}
-        
         .improvement-badge {{
             display: inline-block;
             background: #27ae60;
@@ -1459,8 +1162,6 @@ fn generate_placeholder_html_report() -> String {
             border-radius: 15px;
             font-size: 0.9em;
             margin: 5px 5px 5px 0;
-        }}
-        
         .effort-badge {{
             display: inline-block;
             background: #95a5a6;
@@ -1469,20 +1170,14 @@ fn generate_placeholder_html_report() -> String {
             border-radius: 15px;
             font-size: 0.9em;
             margin: 5px 5px 5px 0;
-        }}
-        
         .trend-indicator {{
             display: inline-block;
             padding: 5px 10px;
             border-radius: 15px;
             font-size: 0.9em;
             font-weight: bold;
-        }}
-        
         .trend-improving {{ background: #d4edda; color: #155724; }}
         .trend-stable {{ background: #fff3cd; color: #856404; }}
-        .trend-degrading {{ background: #f8d7da; color: #721c24; }}
-        
         .configuration-block {{
             background: #2c3e50;
             color: #ecf0f1;
@@ -1492,20 +1187,14 @@ fn generate_placeholder_html_report() -> String {
             font-size: 0.9em;
             overflow-x: auto;
             margin: 20px 0;
-        }}
-        
         .bottleneck-list {{
             margin: 20px 0;
-        }}
-        
         .bottleneck-item {{
             background: #fff5f5;
             border: 1px solid #fed7d7;
             padding: 15px;
             margin: 10px 0;
             border-radius: 5px;
-        }}
-        
         .impact-score {{
             float: right;
             background: #e74c3c;
@@ -1513,18 +1202,12 @@ fn generate_placeholder_html_report() -> String {
             padding: 5px 10px;
             border-radius: 15px;
             font-weight: bold;
-        }}
-        
         @media (max-width: 768px) {{
             .container {{
                 padding: 20px;
                 margin: 10px;
-            }}
-            
             .metrics-grid {{
                 grid-template-columns: 1fr;
-            }}
-            
             h1 {{
                 font-size: 2em;
             }}
@@ -1704,15 +1387,6 @@ symbol_preload = true
     </script>
 </body>
 </html>"#,
-        chrono::Utc::now().format("%Y-%m-%d %H:%M:%S UTC"),
-        total_time.as_secs_f64(),
-        total_time.as_secs_f64(),
-        files_analyzed,
-        memory_usage,
-        cache_hit_rate,
-        parallel_efficiency,
-        num_cpus::get().min(8),
-        num_cpus::get(),
         total_time.as_millis() / 4,      // parsing
         total_time.as_millis() / 3,      // type checking
         total_time.as_millis() / 5,      // optimization

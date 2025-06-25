@@ -13,54 +13,17 @@ use std::any::Any;
 /// Async function declaration (slay async name(params) return_type { body })
 #[derive(Debug, Clone)]
 pub struct AsyncFunctionStatement {
-    pub token: String,
-    pub name: Identifier,
-    pub parameters: Vec<Parameter>,
-    pub return_type: Option<Box<dyn Expression>>,
-    pub body: BlockStatement,
-    pub type_parameters: Vec<TypeParameter>,
-    pub generic_constraints: Vec<GenericConstraint>,
     pub is_async: bool, // Always true for async functions
-}
-
 impl AsyncFunctionStatement {
     pub fn new(
-        token: String,
-        name: Identifier,
-        parameters: Vec<Parameter>,
-        return_type: Option<Box<dyn Expression>>,
-        body: BlockStatement,
     ) -> Self {
         Self {
-            token,
-            name,
-            parameters,
-            return_type,
-            body,
-            type_parameters: Vec::new(),
-            generic_constraints: Vec::new(),
-            is_async: true,
         }
     }
 
     pub fn with_generics(
-        token: String,
-        name: Identifier,
-        parameters: Vec<Parameter>,
-        return_type: Option<Box<dyn Expression>>,
-        body: BlockStatement,
-        type_parameters: Vec<TypeParameter>,
-        generic_constraints: Vec<GenericConstraint>,
     ) -> Self {
         Self {
-            token,
-            name,
-            parameters,
-            return_type,
-            body,
-            type_parameters,
-            generic_constraints,
-            is_async: true,
         }
     }
 
@@ -97,14 +60,10 @@ impl Node for AsyncFunctionStatement {
         
         if let Some(ret_type) = &self.return_type {
             result.push_str(&format!(" -> {}", ret_type.string()));
-        }
-        
         result.push(' ');
         result.push_str(&self.body.string());
         
         result
-    }
-
     fn token_literal(&self) -> String {
         self.token.clone()
     }
@@ -113,18 +72,8 @@ impl Node for AsyncFunctionStatement {
 impl Statement for AsyncFunctionStatement {
     fn as_any(&self) -> &dyn std::any::Any {
         self
-    }
-    
     fn clone_box(&self) -> Box<dyn Statement> {
         Box::new(AsyncFunctionStatement {
-            token: self.token.clone(),
-            name: self.to_string().clone(),
-            parameters: self.parameters.clone(),
-            return_type: self.return_type.as_ref().map(|t| t.clone_box()),
-            body: self.body.clone(),
-            type_parameters: self.type_parameters.clone(),
-            generic_constraints: self.generic_constraints.clone(),
-            is_async: self.is_async,
         })
     }
 }

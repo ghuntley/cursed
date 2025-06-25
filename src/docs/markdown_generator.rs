@@ -9,13 +9,9 @@ use std::path::Path;
 
 /// Markdown documentation generator
 pub struct MarkdownGenerator {
-    config: DocGeneratorConfig,
-}
-
 impl MarkdownGenerator {
     pub fn new(config: &DocGeneratorConfig) -> Self {
         Self {
-            config: config.clone(),
         }
     }
 
@@ -30,17 +26,11 @@ impl MarkdownGenerator {
         
         if let Some(description) = &self.config.description {
             content.push_str(&format!("{}\n\n", description));
-        }
-        
         // Project information
         if let Some(version) = &self.config.version {
             content.push_str(&format!("**Version:** {}\n\n", version));
-        }
-        
         if !self.config.authors.is_empty() {
             content.push_str(&format!("**Authors:** {}\n\n", self.config.authors.join(", ")));
-        }
-        
         // Table of contents
         content.push_str("## Table of Contents\n\n");
         for doc in docs {
@@ -55,8 +45,6 @@ impl MarkdownGenerator {
             
             if let Some(package) = &doc.package_name {
                 content.push_str(&format!("**Package:** {}\n\n", package));
-            }
-            
             content.push_str(&format!("**File:** `{}`\n\n", doc.file_path.display()));
             content.push_str(&format!("**Items:** {}\n\n", doc.items.len()));
             
@@ -75,8 +63,6 @@ impl MarkdownGenerator {
                 content.push_str(&format!("- Interfaces: {}\n", interfaces_count));
             }
             content.push_str("\n");
-        }
-        
         // Statistics
         let total_items: usize = docs.iter().map(|d| d.items.len()).sum();
         let total_functions = docs.iter().map(|d| d.items.iter().filter(|i| matches!(i.kind, crate::docs::generator::ItemKind::Function)).count()).sum::<usize>();
@@ -104,8 +90,6 @@ impl MarkdownGenerator {
         
         fs::write(readme_path, content).map_err(CursedError::Io)?;
         Ok(())
-    }
-
     /// Generate documentation for a single module
     pub fn generate_module_doc(&self, doc: &ExtractedDocumentation, output_dir: &Path) -> crate::error::Result<()> {
         let module_path = output_dir.join(self.get_module_filename(&doc.module_name));
@@ -117,8 +101,6 @@ impl MarkdownGenerator {
         
         if let Some(package) = &doc.package_name {
             content.push_str(&format!("**Package:** {}\n\n", package));
-        }
-        
         // Module information
         content.push_str("## Module Information\n\n");
         content.push_str(&format!("- **File:** `{}`\n", doc.file_path.display()));
@@ -134,8 +116,6 @@ impl MarkdownGenerator {
                 content.push_str(&format!("- `{}`\n", import));
             }
             content.push_str("\n");
-        }
-        
         // Table of contents
         content.push_str("## Table of Contents\n\n");
         
@@ -148,55 +128,38 @@ impl MarkdownGenerator {
         
         for item in &doc.items {
             match item.kind {
-                crate::docs::generator::ItemKind::Function => functions.push(item),
-                crate::docs::generator::ItemKind::Struct => structs.push(item),
-                crate::docs::generator::ItemKind::Interface => interfaces.push(item),
-                crate::docs::generator::ItemKind::Variable => variables.push(item),
-                crate::docs::generator::ItemKind::Constant => constants.push(item),
                 _ => {}
             }
-        }
-        
         if !functions.is_empty() {
             content.push_str("### Functions\n\n");
             for func in &functions {
                 content.push_str(&format!("- [{0}](#{1})\n", func.name, self.generate_anchor(&func.name)));
             }
             content.push_str("\n");
-        }
-        
         if !structs.is_empty() {
             content.push_str("### Structs\n\n");
             for struct_item in &structs {
                 content.push_str(&format!("- [{0}](#{1})\n", struct_item.name, self.generate_anchor(&struct_item.name)));
             }
             content.push_str("\n");
-        }
-        
         if !interfaces.is_empty() {
             content.push_str("### Interfaces\n\n");
             for interface in &interfaces {
                 content.push_str(&format!("- [{0}](#{1})\n", interface.name, self.generate_anchor(&interface.name)));
             }
             content.push_str("\n");
-        }
-        
         if !constants.is_empty() {
             content.push_str("### Constants\n\n");
             for constant in &constants {
                 content.push_str(&format!("- [{0}](#{1})\n", constant.name, self.generate_anchor(&constant.name)));
             }
             content.push_str("\n");
-        }
-        
         if !variables.is_empty() {
             content.push_str("### Variables\n\n");
             for variable in &variables {
                 content.push_str(&format!("- [{0}](#{1})\n", variable.name, self.generate_anchor(&variable.name)));
             }
             content.push_str("\n");
-        }
-        
         // Generate sections for each type
         if !functions.is_empty() {
             content.push_str("## Functions\n\n");
@@ -235,8 +198,6 @@ impl MarkdownGenerator {
         
         fs::write(module_path, content).map_err(CursedError::Io)?;
         Ok(())
-    }
-
     /// Generate documentation for a single item
     fn generate_item_documentation(&self, item: &DocumentationItem) -> crate::error::Result<()> {
         let mut content = String::new();
@@ -249,15 +210,11 @@ impl MarkdownGenerator {
             content.push_str("```cursed\n");
             content.push_str(signature);
             content.push_str("\n```\n\n");
-        }
-        
         // Summary and description
         content.push_str(&format!("{}\n\n", item.summary));
         
         if !item.description.is_empty() && item.description != item.summary {
             content.push_str(&format!("{}\n\n", item.description));
-        }
-        
         // Parameters
         if !item.parameters.is_empty() {
             content.push_str("#### Parameters\n\n");
@@ -266,22 +223,14 @@ impl MarkdownGenerator {
             
             for param in &item.parameters {
                 content.push_str(&format!(
-                    "| `{}` | `{}` | {} | {} |\n",
-                    param.name,
-                    param.type_name.as_deref().unwrap_or("unknown"),
-                    param.description,
                     param.default_value.as_deref().unwrap_or("None")
                 ));
             }
             content.push_str("\n");
-        }
-        
         // Return type
         if let Some(return_type) = &item.return_type {
             content.push_str("#### Returns\n\n");
             content.push_str(&format!("`{}`\n\n", return_type));
-        }
-        
         // Examples
         if !item.examples.is_empty() {
             content.push_str("#### Examples\n\n");
@@ -303,8 +252,6 @@ impl MarkdownGenerator {
                     content.push_str("\n```\n\n");
                 }
             }
-        }
-        
         // Source code
         if self.config.include_examples && item.source_code.is_some() {
             content.push_str("<details>\n");
@@ -313,19 +260,13 @@ impl MarkdownGenerator {
             content.push_str(item.source_code.as_ref().unwrap());
             content.push_str("\n```\n\n");
             content.push_str("</details>\n\n");
-        }
-        
         // Add separator
         content.push_str("---\n\n");
         
         Ok(content)
-    }
-
     /// Get filename for module documentation
     fn get_module_filename(&self, module_name: &str) -> String {
         format!("{}.md", module_name.replace("::", "_").to_lowercase())
-    }
-
     /// Generate anchor link for markdown
     fn generate_anchor(&self, name: &str) -> String {
         name.to_lowercase()

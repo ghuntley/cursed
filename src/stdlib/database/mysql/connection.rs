@@ -10,10 +10,9 @@ use std::time::SystemTime;
 use mysql::{Pool, PooledConn, Row};
 use mysql::prelude::*;
 
-// use crate::stdlib::database::{
-    DriverConn, DatabaseError, SqlValue, TxOptions,
+// Placeholder imports disabled
     driver::{QueryResult, ExecuteResult, ConnectionMetadata, DriverStmt, DriverTx}
-};
+// };
 use crate::error::CursedError;
 use super::error::{MySqlError, MySqlResult};
 use super::types::{convert_from_sql_value, extract_value_by_index, get_column_info};
@@ -25,19 +24,11 @@ use super::transaction::MySqlTransaction;
 #[derive(Debug)]
 pub struct MySqlConnection {
     /// Connection pool for managing MySQL connections
-    pool: Arc<Pool>,
     /// Data source name (connection string)
-    dsn: String,
     /// Connection configuration
-    config: MySqlConfig,
     /// Unique connection identifier
-    connection_id: String,
     /// Timestamp when connection was created
-    connected_at: SystemTime,
     /// Connection metadata cache
-    metadata_cache: Option<ConnectionMetadata>,
-}
-
 impl MySqlConnection {
     /// Create a new MySQL connection with pool
     pub fn new(pool: Arc<Pool>, dsn: String, config: MySqlConfig) -> MySqlResult<Self> {
@@ -45,21 +36,11 @@ impl MySqlConnection {
         let connected_at = SystemTime::now();
 
         Ok(Self {
-            pool,
-            dsn,
-            config,
-            connection_id,
-            connected_at,
-            metadata_cache: None,
         })
-    }
-
     /// Get a connection from the pool
     fn get_pooled_connection(&self) -> MySqlResult<PooledConn> {
         self.pool.get_conn()
             .map_err(|e| MySqlError::pool_error(&format!("Failed to get connection from pool: {}", e)))
-    }
-
     /// Execute a query and convert the result to QueryResult
     fn execute_query_internal(&self, query: &str, args: &[SqlValue]) -> MySqlResult<QueryResult> {
         let mut conn = self.get_pooled_connection()?;
@@ -79,13 +60,10 @@ impl MySqlConnection {
             // Prepared statement with parameters
             conn.exec(query, mysql_params)
                 .map_err(|e| MySqlError::query_error(&format!("Prepared query execution failed: {}", e), Some(query)))?
-        };
 
         // Convert result to QueryResult
         if rows.is_empty() {
             return Ok(QueryResult::new(Vec::new(), Vec::new(), Vec::new()));
-        }
-
         // Get column information from first row
         let (column_names, column_types) = get_column_info(&rows[0]);
 
@@ -98,11 +76,7 @@ impl MySqlConnection {
                 row_values.push(value);
             }
             result_rows.push(row_values);
-        }
-
         Ok(QueryResult::new(column_names, column_types, result_rows))
-    }
-
     /// Execute a command and return the execution result
     fn execute_command_internal(&self, query: &str, args: &[SqlValue]) -> MySqlResult<ExecuteResult> {
         let mut conn = self.get_pooled_connection()?;
@@ -122,18 +96,13 @@ impl MySqlConnection {
             // Prepared statement execution
             conn.exec_drop(query, mysql_params)
                 .map_err(|e| MySqlError::query_error(&format!("Prepared command execution failed: {}", e), Some(query)))?;
-        }
-
         // Get execution statistics
         let affected_rows = conn.affected_rows() as i64;
         let last_insert_id = {
             let id = conn.last_insert_id();
             if id > 0 { Some(id as i64) } else { None }
-        };
 
         Ok(ExecuteResult::new(last_insert_id, affected_rows))
-    }
-
     /// Build connection metadata
     fn build_metadata(&self) -> MySqlResult<ConnectionMetadata> {
         let mut conn = self.get_pooled_connection()?;
@@ -147,11 +116,6 @@ impl MySqlConnection {
         // Parse DSN for metadata
         let conn_info = super::types::parse_connection_string(&self.dsn)
             .unwrap_or_else(|_| super::types::MySqlConnectionInfo {
-                host: "localhost".to_string(),
-                port: 3306,
-                user: "unknown".to_string(),
-                password: String::new(),
-                database: "unknown".to_string(),
             });
 
         // Build additional info
@@ -163,16 +127,7 @@ impl MySqlConnection {
         
         if let Some(ref timezone) = self.config.timezone {
             additional_info.insert("timezone".to_string(), timezone.clone());
-        }
-
         Ok(ConnectionMetadata {
-            server_version,
-            database_name: conn_info.database,
-            server_host: conn_info.host,
-            server_port: conn_info.port,
-            username: conn_info.user,
-            connected_at: self.connected_at,
-            additional_info,
         })
     }
 }
@@ -180,58 +135,38 @@ impl MySqlConnection {
 impl DriverConn for MySqlConnection {
     fn prepare(&self, query: &str) -> crate::error::Result<()> {
         let statement = MySqlStatement::new(
-            Arc::clone(&self.pool),
-            query.to_string(),
             self.config.clone()
         ).map_err(|e| e.to_database_error())?;
 
         Ok(Box::new(statement))
-    }
-
     fn query(&self, query: &str, args: &[SqlValue]) -> crate::error::Result<()> {
         self.execute_query_internal(query, args)
             .map_err(|e| e.to_database_error())
-    }
-
     fn execute(&self, query: &str, args: &[SqlValue]) -> crate::error::Result<()> {
         self.execute_command_internal(query, args)
             .map_err(|e| e.to_database_error())
-    }
-
     fn begin_transaction(&self, opts: TxOptions) -> crate::error::Result<()> {
         let transaction = MySqlTransaction::new(
-            Arc::clone(&self.pool),
-            opts,
             self.config.clone()
         ).map_err(|e| e.to_database_error())?;
 
         Ok(Box::new(transaction))
-    }
-
     fn ping(&self) -> crate::error::Result<()> {
         let mut conn = self.get_pooled_connection()
             .map_err(|e| e.to_database_error())?;
 
         conn.query_drop("SELECT 1")
             .map_err(|e| DatabaseError::connection_error(&format!("Ping failed: {}", e)))
-    }
-
     fn close(&self) -> crate::error::Result<()> {
         // Connection pool handles cleanup automatically
         // Individual connections are returned to the pool when dropped
         Ok(())
-    }
-
     fn is_alive(&self) -> bool {
         self.ping().is_ok()
-    }
-
     fn metadata(&self) -> ConnectionMetadata {
         // Try to use cached metadata first
         if let Some(ref cached) = self.metadata_cache {
             return cached.clone();
-        }
-
         // Build metadata if not cached
         match self.build_metadata() {
             Ok(metadata) => {
@@ -242,13 +177,6 @@ impl DriverConn for MySqlConnection {
             Err(_) => {
                 // Return default metadata on error
                 ConnectionMetadata {
-                    server_version: "Unknown".to_string(),
-                    database_name: "Unknown".to_string(),
-                    server_host: "localhost".to_string(),
-                    server_port: 3306,
-                    username: "Unknown".to_string(),
-                    connected_at: self.connected_at,
-                    additional_info: HashMap::new(),
                 }
             }
         }
@@ -256,12 +184,6 @@ impl DriverConn for MySqlConnection {
 
     fn clone(&self) -> Box<dyn DriverConn> {
         Box::new(MySqlConnection {
-            pool: Arc::clone(&self.pool),
-            dsn: self.dsn.clone(),
-            config: self.config.clone(),
-            connection_id: uuid::Uuid::new_v4().to_string(),
-            connected_at: SystemTime::now(),
-            metadata_cache: None,
         })
     }
 }

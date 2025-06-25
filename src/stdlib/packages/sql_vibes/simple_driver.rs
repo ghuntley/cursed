@@ -6,48 +6,26 @@ use std::collections::HashMap;
 /// fr fr Simple database connection that actually works
 #[derive(Debug)]
 pub struct SimpleConnection {
-    connection_string: String,
-    is_open: bool,
-}
-
 impl SimpleConnection {
     /// sus Create new simple connection
     pub fn new(connection_string: String) -> SqlResult<Self> {
         if connection_string.is_empty() {
             return Err(SqlError::connection("Connection string cannot be empty - that's sus bestie".to_string()));
-        }
-        
         Ok(Self {
-            connection_string,
-            is_open: true,
         })
-    }
-    
     /// facts Execute a simple query
     pub fn execute_query(&mut self, sql: &str, params: &[Parameter]) -> SqlResult<ResultSet> {
         if !self.is_open {
             return Err(SqlError::connection("Connection is closed - can't execute queries bestie".to_string()));
-        }
-        
         // Basic validation
         if sql.trim().is_empty() {
             return Err(SqlError::query("SQL cannot be empty - that's not it chief".to_string()));
-        }
-        
         // Create mock result for demonstration
         if sql.trim().to_uppercase().starts_with("SELECT") {
             let columns = Vec::from(["id".to_string(), "name".to_string(), "value".to_string()]);
             let rows = vec![
                 Row::new(vec![
-                    SqlValue::Integer(1),
-                    SqlValue::String("Mock Row 1".to_string()),
-                    SqlValue::String("Test Value 1".to_string()),
-                ]),
                 Row::new(vec![
-                    SqlValue::Integer(2),
-                    SqlValue::String("Mock Row 2".to_string()),
-                    SqlValue::String("Test Value 2".to_string()),
-                ]),
             ];
             Ok(ResultSet::new(columns, rows))
         } else {
@@ -59,12 +37,8 @@ impl SimpleConnection {
     pub fn execute_statement(&mut self, sql: &str, params: &[Parameter]) -> SqlResult<u64> {
         if !self.is_open {
             return Err(SqlError::connection("Connection is closed - can't execute statements bestie".to_string()));
-        }
-        
         if sql.trim().is_empty() {
             return Err(SqlError::query("SQL cannot be empty - that's not it chief".to_string()));
-        }
-        
         // Mock implementation - return number of affected rows
         if sql.trim().to_uppercase().starts_with("INSERT") {
             Ok(1) // Mock: inserted 1 row
@@ -79,14 +53,10 @@ impl SimpleConnection {
     /// highkey Check if connection is alive
     pub fn is_alive(&self) -> bool {
         self.is_open
-    }
-    
     /// periodt Close the connection
     pub fn close(&mut self) -> SqlResult<()> {
         self.is_open = false;
         Ok(())
-    }
-    
     /// bestie Get connection info
     pub fn connection_info(&self) -> HashMap<String, String> {
         let mut info = HashMap::new();
@@ -99,12 +69,8 @@ impl SimpleConnection {
 /// fr fr Simple connection helper functions
 pub fn connect(connection_string: &str) -> SqlResult<SimpleConnection> {
     SimpleConnection::new(connection_string.to_string())
-}
-
 pub fn quick_query(connection_string: &str, sql: &str) -> SqlResult<ResultSet> {
     let mut conn = connect(connection_string)?;
     let result = conn.execute_query(sql, &[]);
     conn.close()?;
     result
-}
-

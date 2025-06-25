@@ -6,9 +6,8 @@
 use crate::ast::traits::{Expression, Statement};
 use crate::ast::declarations::{FunctionStatement, SquadStatement, CollabStatement};
 use crate::ast::statements::{
-    LetStatement, FactsStatement, ReturnStatement, ExpressionStatement,
     BreakStatement, ContinueStatement, AssignmentStatement, PrintStatement
-};
+// };
 use crate::error::CursedError;
 use crate::ast::expressions::{Literal, LiteralValue};
 use crate::ast::operators::{BinaryExpression, UnaryExpression, AssignmentExpression, IndexExpression};
@@ -22,13 +21,7 @@ use crate::codegen::llvm::expression_compiler::{LlvmValue, LlvmType};
 use crate::codegen::llvm::symbol_table::{SymbolTable, Symbol};
 use crate::optimization::llvm_passes::{LlvmPassManager, LtoManager, PgoManager};
 use inkwell::{
-    values::{BasicValueEnum, FunctionValue, PointerValue, IntValue, FloatValue},
-    types::{BasicTypeEnum, BasicType},
-    builder::Builder,
-    module::Module,
-    context::Context,
-    AddressSpace,
-};
+// };
 
 use std::collections::HashMap;
 
@@ -53,11 +46,7 @@ impl crate::codegen::llvm::LlvmCodeGenerator {
                 let llvm_name = format!("const_int_{}", val);
                 
                 Ok(LlvmValue {
-                    value_type: LlvmType::Int64,
-                    llvm_name,
-                    is_constant: true,
                 })
-            },
             LiteralValue::Float(val) => {
                 let f64_type = self.context.f64_type();
                 let const_value = f64_type.const_float(*val);
@@ -65,18 +54,12 @@ impl crate::codegen::llvm::LlvmCodeGenerator {
                 let llvm_name = format!("const_float_{}", val);
                 
                 Ok(LlvmValue {
-                    value_type: LlvmType::Float64,
-                    llvm_name,
-                    is_constant: true,
                 })
-            },
             LiteralValue::String(val) => {
                 // Create global string constant with proper LLVM IR generation
                 let string_constant = self.context.const_string(val.as_bytes(), true);
                 let global_name = format!("str_literal_{}", self.next_temp_id());
                 let global_var = module_guard.add_global(
-                    string_constant.get_type(), 
-                    Some(AddressSpace::default()), 
                     &global_name
                 );
                 global_var.set_initializer(&string_constant);
@@ -92,19 +75,11 @@ impl crate::codegen::llvm::LlvmCodeGenerator {
                 let gep_indices = [zero, zero];
                 let string_ptr = unsafe {
                     builder_guard.build_in_bounds_gep(
-                        string_constant.get_type(),
-                        global_var.as_pointer_value(),
-                        &gep_indices,
                         &gep_name
                     ).map_err(|e| CursedError::CompilationError(format!("Failed to build GEP: {:?}", e)))?
-                };
                 
                 Ok(LlvmValue {
-                    value_type: LlvmType::String,
-                    llvm_name: gep_name,
-                    is_constant: true,
                 })
-            },
             LiteralValue::Boolean(val) => {
                 let i1_type = self.context.bool_type();
                 let const_value = i1_type.const_int(*val as u64, false);
@@ -112,21 +87,13 @@ impl crate::codegen::llvm::LlvmCodeGenerator {
                 let llvm_name = format!("const_bool_{}", if *val { "true" } else { "false" });
                 
                 Ok(LlvmValue {
-                    value_type: LlvmType::Boolean,
-                    llvm_name,
-                    is_constant: true,
                 })
-            },
             LiteralValue::Nil => {
                 let i8_ptr_type = self.context.i8_type().ptr_type(AddressSpace::default());
                 let null_ptr = i8_ptr_type.const_null();
                 
                 Ok(LlvmValue {
-                    value_type: LlvmType::Pointer(Box::new(LlvmType::Int32)),
-                    llvm_name: "null_ptr".to_string(),
-                    is_constant: true,
                 })
-            },
         }
     }
     
@@ -148,7 +115,6 @@ impl crate::codegen::llvm::LlvmCodeGenerator {
         } else {
             // Default to void for functions without explicit return type
             self.context.void_type().into()
-        };
         
         // Determine parameter types
         let mut param_types = Vec::new();
@@ -167,7 +133,6 @@ impl crate::codegen::llvm::LlvmCodeGenerator {
             self.context.void_type().fn_type(&param_types, false)
         } else {
             return_type.fn_type(&param_types, false)
-        };
         
         // Create function in module
         let function = module_guard.add_function(&func.to_string().value, function_type, None);
@@ -205,12 +170,8 @@ impl crate::codegen::llvm::LlvmCodeGenerator {
         if !function.verify(true) {
             function.print_to_stderr();
             return Err(CursedError::CompilationError(format!("Function {} failed verification", func.to_string().value)));
-        }
-        
         tracing::debug!("Successfully compiled function: {}", func.to_string().value);
         Ok(function)
-    }
-    
     /// Compile a block of statements
     fn compile_block_real(&mut self, block: &dyn Statement, function: &FunctionValue) -> crate::error::Result<()> {
         // Check if this is a BlockStatement with multiple statements
@@ -218,13 +179,9 @@ impl crate::codegen::llvm::LlvmCodeGenerator {
             // Enter new scope for the block
             if let Some(ref symbol_table_ref) = self.symbol_table {
                 symbol_table_ref.borrow_mut().enter_scope();
-            }
-            
             // Compile each statement in the block
             for statement in &block_stmt.statements {
                 self.compile_statement_real(statement.as_ref())?;
-            }
-            
             // Exit scope
             if let Some(ref symbol_table_ref) = self.symbol_table {
                 symbol_table_ref.borrow_mut().exit_scope()?;
@@ -232,35 +189,18 @@ impl crate::codegen::llvm::LlvmCodeGenerator {
         } else {
             // Single statement - compile directly
             self.compile_statement_real(block)?;
-        }
-        
         Ok(())
-    }
-    
     /// Convert CURSED type string to LLVM type
     fn cursed_type_to_llvm_type(&self, type_str: &str) -> crate::error::Result<()> {
         match type_str {
-            "normie" | "sus" | "i32" => Ok(self.context.i32_type().into()),
-            "i64" => Ok(self.context.i64_type().into()),
-            "facts" | "bool" => Ok(self.context.bool_type().into()),
-            "vibes" | "f64" | "double" => Ok(self.context.f64_type().into()),
-            "tea" | "string" => Ok(self.context.i8_type().ptr_type(AddressSpace::default()).into()),
             _ => {
                 // For unknown types, default to generic pointer
                 Ok(self.context.i8_type().ptr_type(AddressSpace::default()).into())
             }
         }
-    }
-    
     /// Get zero value for a given LLVM type
     fn get_zero_value(&self, llvm_type: BasicTypeEnum<'static>) -> crate::error::Result<()> {
         match llvm_type {
-            BasicTypeEnum::IntType(int_type) => Ok(int_type.const_zero().into()),
-            BasicTypeEnum::FloatType(float_type) => Ok(float_type.const_zero().into()),
-            BasicTypeEnum::PointerType(ptr_type) => Ok(ptr_type.const_null().into()),
-            BasicTypeEnum::ArrayType(array_type) => Ok(array_type.const_zero().into()),
-            BasicTypeEnum::StructType(struct_type) => Ok(struct_type.const_zero().into()),
-            BasicTypeEnum::VectorType(vec_type) => Ok(vec_type.const_zero().into()),
         }
     }
     
@@ -284,41 +224,24 @@ impl crate::codegen::llvm::LlvmCodeGenerator {
                 if let Some(alloca_ptr) = symbol.alloca_pointer.as_ref() {
                     // Get the LLVM type for the load
                     let llvm_type = match symbol.symbol_type {
-                        LlvmType::Int32 => self.context.i32_type().into(),
-                        LlvmType::Int64 => self.context.i64_type().into(),
-                        LlvmType::Float64 => self.context.f64_type().into(),
-                        LlvmType::Boolean => self.context.bool_type().into(),
-                        LlvmType::String => self.context.i8_type().ptr_type(AddressSpace::default()).into(),
                         _ => self.context.i64_type().into(), // Default fallback
-                    };
                     
                     // Build the load instruction
                     let loaded_value = builder_guard.build_load(llvm_type, *alloca_ptr, &temp_name)
                         .map_err(|e| CursedError::CompilationError(format!("Failed to build load instruction: {:?}", e)))?;
                     
                     return Ok(LlvmValue {
-                        value_type: symbol.symbol_type.clone(),
-                        llvm_name: temp_name,
-                        is_constant: symbol.is_constant,
                     });
                 } else {
                     // Fallback for constants or cases without alloca
                     return Ok(LlvmValue {
-                        value_type: symbol.symbol_type.clone(),
-                        llvm_name: symbol.llvm_name.clone(),
-                        is_constant: symbol.is_constant,
                     });
                 }
             }
-        }
-        
         // Variable not found - return error
         Err(CursedError::CompilationError(format!(
-            "Undefined variable: {}",
             var_name
         )))
-    }
-    
     /// Compile a variable declaration (let/sus statement)
     pub fn compile_variable_declaration_real(&mut self, let_stmt: &LetStatement) -> crate::error::Result<()> {
         let builder_guard = self.builder.lock().map_err(|_| {
@@ -334,17 +257,11 @@ impl crate::codegen::llvm::LlvmCodeGenerator {
             // Infer type from initial value
             let compiled_value = self.compile_expression_real(initial_value.as_ref())?;
             match compiled_value.value_type {
-                LlvmType::Int32 => self.context.i32_type().into(),
-                LlvmType::Int64 => self.context.i64_type().into(),
-                LlvmType::Float64 => self.context.f64_type().into(),
-                LlvmType::Boolean => self.context.bool_type().into(),
-                LlvmType::String => self.context.i8_type().ptr_type(AddressSpace::default()).into(),
                 _ => self.context.i64_type().into(), // Default fallback
             }
         } else {
             // Default to i64 for untyped variables without initial value
             self.context.i64_type().into()
-        };
         
         // Generate actual LLVM alloca instruction
         let alloca_ptr = builder_guard.build_alloca(var_type, &let_stmt.to_string().value)
@@ -357,15 +274,7 @@ impl crate::codegen::llvm::LlvmCodeGenerator {
         if let Some(ref symbol_table_ref) = self.symbol_table {
             let mut symbol_table = symbol_table_ref.borrow_mut();
             symbol_table.declare_variable(
-                let_stmt.to_string().value.clone(),
                 match var_type {
-                    BasicTypeEnum::IntType(int_type) if int_type.get_bit_width() == 32 => LlvmType::Int32,
-                    BasicTypeEnum::IntType(_) => LlvmType::Int64,
-                    BasicTypeEnum::FloatType(_) => LlvmType::Float64,
-                    BasicTypeEnum::PointerType(_) => LlvmType::String,
-                    _ => LlvmType::Int64,
-                },
-                llvm_name.clone(),
             )?;
             
             // Update symbol with alloca pointer
@@ -381,23 +290,13 @@ impl crate::codegen::llvm::LlvmCodeGenerator {
             // Generate actual LLVM store instruction
             // For now, we'll create a constant value to store
             let store_value = match compiled_value.value_type {
-                LlvmType::Int32 => self.context.i32_type().const_zero().into(),
-                LlvmType::Int64 => self.context.i64_type().const_zero().into(),
-                LlvmType::Float64 => self.context.f64_type().const_zero().into(),
-                LlvmType::Boolean => self.context.bool_type().const_zero().into(),
-                _ => self.context.i64_type().const_zero().into(),
-            };
             
             builder_guard.build_store(alloca_ptr, store_value)
                 .map_err(|e| CursedError::CompilationError(format!("Failed to build store: {:?}", e)))?;
             
             tracing::debug!("Variable {} initialized with value: {}", let_stmt.to_string().value, compiled_value.llvm_name);
-        }
-        
         tracing::debug!("Successfully compiled variable: {}", let_stmt.to_string().value);
         Ok(())
-    }
-    
     /// Compile an expression to real LLVM value (dispatcher)
     pub fn compile_expression_real(&mut self, expr: &dyn Expression) -> crate::error::Result<()> {
         tracing::debug!("Compiling expression: {}", expr.string());
@@ -421,9 +320,6 @@ impl crate::codegen::llvm::LlvmCodeGenerator {
             // For other expression types, return a placeholder for now
             tracing::warn!("Unsupported expression type: {}", expr.string());
             Ok(LlvmValue {
-                value_type: LlvmType::Int32,
-                llvm_name: format!("%expr_placeholder_{}", self.next_temp_id()),
-                is_constant: false,
             })
         }
     }
@@ -436,18 +332,12 @@ impl crate::codegen::llvm::LlvmCodeGenerator {
         if let Some(package_name) = &program.package_name {
             tracing::debug!(package = %package_name, "Compiling package");
             self.module_name = Some(package_name.clone());
-        }
-        
         // Process imports (for now, just log them)
         for import in &program.imports {
             tracing::debug!(import_path = %import.path, "Processing import");
-        }
-        
         // Compile all top-level statements
         for statement in &program.statements {
             self.compile_statement_real(statement.as_ref())?;
-        }
-        
         // Verify the entire module
         let module_guard = self.module.lock().map_err(|_| {
             CursedError::CompilationError("Failed to acquire module lock".to_string())
@@ -455,12 +345,8 @@ impl crate::codegen::llvm::LlvmCodeGenerator {
         
         if !module_guard.verify().is_ok() {
             return Err(CursedError::CompilationError("Module failed verification".to_string()));
-        }
-        
         tracing::info!("Successfully compiled CURSED program to LLVM IR");
         Ok(())
-    }
-    
     /// Compile a top-level statement using real LLVM compilation
     fn compile_statement_real(&mut self, statement: &dyn Statement) -> crate::error::Result<()> {
         tracing::debug!("Compiling statement: {}", statement.string());
@@ -482,11 +368,7 @@ impl crate::codegen::llvm::LlvmCodeGenerator {
             self.compile_print_statement_real(print_stmt)?;
         } else {
             tracing::debug!("Unsupported statement type, skipping: {}", statement.string());
-        }
-        
         Ok(())
-    }
-
     /// Apply LLVM optimization passes to the current module
     pub fn optimize_module(&self, optimization_level: crate::common::optimization_level::OptimizationLevel) -> crate::error::Result<()> {
         use crate::optimization::optimization_levels::LevelConfig;
@@ -507,8 +389,6 @@ impl crate::codegen::llvm::LlvmCodeGenerator {
         pass_manager.print_summary();
         
         Ok(())
-    }
-
     /// Apply link-time optimization to multiple modules
     pub fn apply_lto(&self, modules: &[&inkwell::module::Module], optimization_level: crate::common::optimization_level::OptimizationLevel) -> crate::error::Result<()> {
         use crate::optimization::optimization_levels::LevelConfig;
@@ -522,11 +402,7 @@ impl crate::codegen::llvm::LlvmCodeGenerator {
                 .map_err(|e| CursedError::CompilationError(format!("LTO failed: {}", e)))?;
         } else {
             tracing::debug!("LTO is disabled for optimization level {:?}", optimization_level);
-        }
-        
         Ok(())
-    }
-
     /// Apply profile-guided optimization
     pub fn apply_pgo(&self, profile_path: Option<&str>, optimization_level: crate::common::optimization_level::OptimizationLevel) -> crate::error::Result<()> {
         use crate::optimization::optimization_levels::LevelConfig;
@@ -538,8 +414,6 @@ impl crate::codegen::llvm::LlvmCodeGenerator {
         if let Some(path) = profile_path {
             pgo_manager.load_profile_data(path)
                 .map_err(|e| CursedError::CompilationError(format!("Failed to load profile data: {}", e)))?;
-        }
-        
         if pgo_manager.is_ready() {
             let module_guard = self.module.lock().map_err(|_| {
                 CursedError::CompilationError("Failed to acquire module lock for PGO".to_string())
@@ -550,16 +424,9 @@ impl crate::codegen::llvm::LlvmCodeGenerator {
                 .map_err(|e| CursedError::CompilationError(format!("PGO failed: {}", e)))?;
         } else {
             tracing::debug!("PGO not ready - either disabled or no profile data available");
-        }
-        
         Ok(())
-    }
-
     /// Comprehensive optimization pipeline
     pub fn run_optimization_pipeline(
-        &self, 
-        optimization_level: crate::common::optimization_level::OptimizationLevel,
-        profile_path: Option<&str>,
         enable_lto: bool
     ) -> crate::error::Result<()> {
         tracing::info!("Running comprehensive optimization pipeline at level {:?}", optimization_level);
@@ -570,8 +437,6 @@ impl crate::codegen::llvm::LlvmCodeGenerator {
         // Step 2: Apply profile-guided optimization if available
         if profile_path.is_some() {
             self.apply_pgo(profile_path, optimization_level)?;
-        }
-        
         // Step 3: Apply link-time optimization if requested
         if enable_lto {
             let module_guard = self.module.lock().map_err(|_| {
@@ -579,12 +444,8 @@ impl crate::codegen::llvm::LlvmCodeGenerator {
             })?;
             let modules = vec![&*module_guard];
             self.apply_lto(&modules, optimization_level)?;
-        }
-        
         tracing::info!("Optimization pipeline completed successfully");
         Ok(())
-    }
-    
     /// Compile binary expressions (arithmetic, logical, comparison)
     pub fn compile_binary_expression_real(&mut self, binary: &BinaryExpression) -> crate::error::Result<()> {
         let builder_guard = self.builder.lock().map_err(|_| {
@@ -611,11 +472,7 @@ impl crate::codegen::llvm::LlvmCodeGenerator {
                             .map_err(|e| CursedError::CompilationError(format!("Failed to build int add: {:?}", e)))?;
                         
                         Ok(LlvmValue {
-                            value_type: LlvmType::Int32,
-                            llvm_name: temp_name,
-                            is_constant: false,
                         })
-                    },
                     (LlvmType::Int64, LlvmType::Int64) => {
                         // Generate real LLVM add instruction for i64
                         let left_llvm = self.context.i64_type().const_int(0, false);
@@ -624,11 +481,7 @@ impl crate::codegen::llvm::LlvmCodeGenerator {
                             .map_err(|e| CursedError::CompilationError(format!("Failed to build int add: {:?}", e)))?;
                         
                         Ok(LlvmValue {
-                            value_type: LlvmType::Int64,
-                            llvm_name: temp_name,
-                            is_constant: false,
                         })
-                    },
                     (LlvmType::Float64, LlvmType::Float64) => {
                         // Generate real LLVM floating point add instruction
                         let left_llvm = self.context.f64_type().const_float(0.0);
@@ -637,110 +490,60 @@ impl crate::codegen::llvm::LlvmCodeGenerator {
                             .map_err(|e| CursedError::CompilationError(format!("Failed to build float add: {:?}", e)))?;
                         
                         Ok(LlvmValue {
-                            value_type: LlvmType::Float64,
-                            llvm_name: temp_name,
-                            is_constant: false,
                         })
-                    },
                     _ => Err(CursedError::CompilationError(format!(
-                        "Type mismatch in addition: {:?} + {:?}",
                         left_val.value_type, right_val.value_type
-                    ))),
                 }
-            },
             "-" => {
                 match (&left_val.value_type, &right_val.value_type) {
                     (LlvmType::Int32, LlvmType::Int32) | (LlvmType::Int64, LlvmType::Int64) => {
                         Ok(LlvmValue {
-                            value_type: left_val.value_type.clone(),
-                            llvm_name: temp_name,
-                            is_constant: false,
                         })
-                    },
                     (LlvmType::Float64, LlvmType::Float64) => {
                         Ok(LlvmValue {
-                            value_type: LlvmType::Float64,
-                            llvm_name: temp_name,
-                            is_constant: false,
                         })
-                    },
                     _ => Err(CursedError::CompilationError(format!(
-                        "Type mismatch in subtraction: {:?} - {:?}",
                         left_val.value_type, right_val.value_type
-                    ))),
                 }
-            },
             "*" => {
                 match (&left_val.value_type, &right_val.value_type) {
                     (LlvmType::Int32, LlvmType::Int32) | (LlvmType::Int64, LlvmType::Int64) => {
                         Ok(LlvmValue {
-                            value_type: left_val.value_type.clone(),
-                            llvm_name: temp_name,
-                            is_constant: false,
                         })
-                    },
                     (LlvmType::Float64, LlvmType::Float64) => {
                         Ok(LlvmValue {
-                            value_type: LlvmType::Float64,
-                            llvm_name: temp_name,
-                            is_constant: false,
                         })
-                    },
                     _ => Err(CursedError::CompilationError(format!(
-                        "Type mismatch in multiplication: {:?} * {:?}",
                         left_val.value_type, right_val.value_type
-                    ))),
                 }
-            },
             "/" => {
                 match (&left_val.value_type, &right_val.value_type) {
                     (LlvmType::Int32, LlvmType::Int32) | (LlvmType::Int64, LlvmType::Int64) => {
                         Ok(LlvmValue {
-                            value_type: left_val.value_type.clone(),
-                            llvm_name: temp_name,
-                            is_constant: false,
                         })
-                    },
                     (LlvmType::Float64, LlvmType::Float64) => {
                         Ok(LlvmValue {
-                            value_type: LlvmType::Float64,
-                            llvm_name: temp_name,
-                            is_constant: false,
                         })
-                    },
                     _ => Err(CursedError::CompilationError(format!(
                         "Type mismatch in division: {:?} / {:?}",
                         left_val.value_type, right_val.value_type
-                    ))),
                 }
-            },
             // Comparison operators
             "==" | "!=" | "<" | ">" | "<=" | ">=" => {
                 Ok(LlvmValue {
-                    value_type: LlvmType::Boolean,
-                    llvm_name: temp_name,
-                    is_constant: false,
                 })
-            },
             // Logical operators
             "&&" | "||" => {
                 if left_val.value_type == LlvmType::Boolean && right_val.value_type == LlvmType::Boolean {
                     Ok(LlvmValue {
-                        value_type: LlvmType::Boolean,
-                        llvm_name: temp_name,
-                        is_constant: false,
                     })
                 } else {
                     Err(CursedError::CompilationError(format!(
-                        "Logical operators require boolean operands: {:?} {} {:?}",
                         left_val.value_type, binary.operator, right_val.value_type
                     )))
                 }
-            },
             _ => Err(CursedError::CompilationError(format!(
-                "Unsupported binary operator: {}",
                 binary.operator
-            ))),
         }
     }
     
@@ -762,42 +565,24 @@ impl crate::codegen::llvm::LlvmCodeGenerator {
                 match operand_val.value_type {
                     LlvmType::Int32 | LlvmType::Int64 => {
                         Ok(LlvmValue {
-                            value_type: operand_val.value_type,
-                            llvm_name: temp_name,
-                            is_constant: false,
                         })
-                    },
                     LlvmType::Float64 => {
                         Ok(LlvmValue {
-                            value_type: LlvmType::Float64,
-                            llvm_name: temp_name,
-                            is_constant: false,
                         })
-                    },
                     _ => Err(CursedError::CompilationError(format!(
-                        "Invalid type for negation: {:?}",
                         operand_val.value_type
-                    ))),
                 }
-            },
             "!" | "not" => {
                 if operand_val.value_type == LlvmType::Boolean {
                     Ok(LlvmValue {
-                        value_type: LlvmType::Boolean,
-                        llvm_name: temp_name,
-                        is_constant: false,
                     })
                 } else {
                     Err(CursedError::CompilationError(format!(
-                        "Logical not requires boolean operand: {:?}",
                         operand_val.value_type
                     )))
                 }
-            },
             _ => Err(CursedError::CompilationError(format!(
-                "Unsupported unary operator: {}",
                 unary.operator
-            ))),
         }
     }
     
@@ -815,24 +600,15 @@ impl crate::codegen::llvm::LlvmCodeGenerator {
         for arg in &call.arguments {
             let arg_val = self.compile_expression_real(arg.as_ref())?;
             arg_values.push(arg_val);
-        }
-        
         // Generate temporary name for result
         let temp_name = format!("%{}", self.next_temp_id());
         
         // Determine return type (simplified - would need more sophisticated analysis)
         let return_type = match function_val.value_type {
-            LlvmType::Function { return_type, .. } => *return_type,
             _ => LlvmType::Int64, // Default assumption
-        };
         
         Ok(LlvmValue {
-            value_type: return_type,
-            llvm_name: temp_name,
-            is_constant: false,
         })
-    }
-    
     /// Compile assignment expressions
     pub fn compile_assignment_expression_real(&mut self, assignment: &AssignmentExpression) -> crate::error::Result<()> {
         let builder_guard = self.builder.lock().map_err(|_| {
@@ -854,12 +630,6 @@ impl crate::codegen::llvm::LlvmCodeGenerator {
                     if let Some(alloca_ptr) = symbol.alloca_pointer.as_ref() {
                         // Create a placeholder value to store (in real implementation, this would be the compiled value)
                         let store_value = match value_result.value_type {
-                            LlvmType::Int32 => self.context.i32_type().const_zero().into(),
-                            LlvmType::Int64 => self.context.i64_type().const_zero().into(),
-                            LlvmType::Float64 => self.context.f64_type().const_zero().into(),
-                            LlvmType::Boolean => self.context.bool_type().const_zero().into(),
-                            _ => self.context.i64_type().const_zero().into(),
-                        };
                         
                         builder_guard.build_store(*alloca_ptr, store_value)
                             .map_err(|e| CursedError::CompilationError(format!("Failed to build store: {:?}", e)))?;
@@ -870,7 +640,6 @@ impl crate::codegen::llvm::LlvmCodeGenerator {
                     }
                 } else {
                     return Err(CursedError::CompilationError(format!(
-                        "Cannot assign to undeclared variable: {}",
                         identifier.value
                     )));
                 }
@@ -897,25 +666,15 @@ impl crate::codegen::llvm::LlvmCodeGenerator {
         // Ensure index is integer type
         if index_val.value_type != LlvmType::Int64 && index_val.value_type != LlvmType::Int32 {
             return Err(CursedError::CompilationError("Array index must be integer".to_string()));
-        }
-        
         // Generate temporary name for result
         let temp_name = format!("%{}", self.next_temp_id());
         
         // Determine element type based on array type
         let element_type = match array_val.value_type {
             LlvmType::Array => LlvmType::Int64, // Default element type
-            LlvmType::Pointer(ref inner_type) => (**inner_type).clone(),
-            _ => return Err(CursedError::CompilationError("Index operation requires array or pointer type".to_string())),
-        };
         
         Ok(LlvmValue {
-            value_type: element_type,
-            llvm_name: temp_name,
-            is_constant: false,
         })
-    }
-    
     /// Compile constant declaration (facts statement)
     pub fn compile_constant_declaration_real(&mut self, facts_stmt: &FactsStatement) -> crate::error::Result<()> {
         let builder_guard = self.builder.lock().map_err(|_| {
@@ -933,23 +692,15 @@ impl crate::codegen::llvm::LlvmCodeGenerator {
         } else {
             // Use type from compiled value
             value_result.value_type.clone()
-        };
         
         // Add to symbol table as constant
         if let Some(ref symbol_table_ref) = self.symbol_table {
             let mut symbol_table = symbol_table_ref.borrow_mut();
             let llvm_name = format!("@{}", facts_stmt.to_string().value);
             symbol_table.declare_constant(
-                facts_stmt.to_string().value.clone(),
-                const_type.clone(),
-                llvm_name,
             )?;
-        }
-        
         tracing::debug!("Successfully compiled constant: {}", facts_stmt.to_string().value);
         Ok(())
-    }
-    
     /// Compile return statement (yolo)
     pub fn compile_return_statement_real(&mut self, return_stmt: &ReturnStatement) -> crate::error::Result<()> {
         let builder_guard = self.builder.lock().map_err(|_| {
@@ -964,12 +715,6 @@ impl crate::codegen::llvm::LlvmCodeGenerator {
             
             // Generate actual LLVM return instruction with value
             let return_val = match value_result.value_type {
-                LlvmType::Int32 => self.context.i32_type().const_zero().into(),
-                LlvmType::Int64 => self.context.i64_type().const_zero().into(),
-                LlvmType::Float64 => self.context.f64_type().const_zero().into(),
-                LlvmType::Boolean => self.context.bool_type().const_zero().into(),
-                _ => self.context.i64_type().const_zero().into(),
-            };
             
             builder_guard.build_return(Some(&return_val))
                 .map_err(|e| CursedError::CompilationError(format!("Failed to build return: {:?}", e)))?;
@@ -981,11 +726,7 @@ impl crate::codegen::llvm::LlvmCodeGenerator {
                 .map_err(|e| CursedError::CompilationError(format!("Failed to build void return: {:?}", e)))?;
             
             tracing::debug!("Void return");
-        }
-        
         Ok(())
-    }
-    
     /// Compile expression statement (standalone expression)
     pub fn compile_expression_statement_real(&mut self, expr_stmt: &ExpressionStatement) -> crate::error::Result<()> {
         tracing::debug!("Compiling expression statement");
@@ -994,8 +735,6 @@ impl crate::codegen::llvm::LlvmCodeGenerator {
         self.compile_expression_real(expr_stmt.expression.as_ref())?;
         
         Ok(())
-    }
-    
     /// Compile assignment statement
     pub fn compile_assignment_statement_real(&mut self, assignment_stmt: &AssignmentStatement) -> crate::error::Result<()> {
         tracing::debug!("Compiling assignment statement");
@@ -1019,12 +758,6 @@ impl crate::codegen::llvm::LlvmCodeGenerator {
                         
                         // Create a placeholder value to store
                         let store_value = match value_result.value_type {
-                            LlvmType::Int32 => self.context.i32_type().const_zero().into(),
-                            LlvmType::Int64 => self.context.i64_type().const_zero().into(),
-                            LlvmType::Float64 => self.context.f64_type().const_zero().into(),
-                            LlvmType::Boolean => self.context.bool_type().const_zero().into(),
-                            _ => self.context.i64_type().const_zero().into(),
-                        };
                         
                         builder_guard_inner.build_store(*alloca_ptr, store_value)
                             .map_err(|e| CursedError::CompilationError(format!("Failed to build store: {:?}", e)))?;
@@ -1035,18 +768,13 @@ impl crate::codegen::llvm::LlvmCodeGenerator {
                     }
                 } else {
                     return Err(CursedError::CompilationError(format!(
-                        "Cannot assign to undeclared variable: {}",
                         identifier.value
                     )));
                 }
             }
         } else {
             return Err(CursedError::CompilationError("Assignment target must be an identifier".to_string()));
-        }
-        
         Ok(())
-    }
-    
     /// Compile print statement
     pub fn compile_print_statement_real(&mut self, print_stmt: &PrintStatement) -> crate::error::Result<()> {
         let builder_guard = self.builder.lock().map_err(|_| {
@@ -1060,8 +788,6 @@ impl crate::codegen::llvm::LlvmCodeGenerator {
         for arg in &print_stmt.arguments {
             let arg_val = self.compile_expression_real(arg.as_ref())?;
             arg_values.push(arg_val);
-        }
-        
         // Generate actual LLVM call to print function
         let module_guard = self.module.lock().map_err(|_| {
             CursedError::CompilationError("Failed to acquire module lock for print".to_string())
@@ -1069,7 +795,6 @@ impl crate::codegen::llvm::LlvmCodeGenerator {
         
         // Declare printf function if not already declared
         let printf_type = self.context.i32_type().fn_type(
-            &[self.context.i8_type().ptr_type(AddressSpace::default()).into()],
             true, // variadic
         );
         

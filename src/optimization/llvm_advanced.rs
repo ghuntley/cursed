@@ -12,121 +12,57 @@ use std::sync::{Arc, Mutex};
 use std::time::{Duration, Instant};
 
 use inkwell::{
-    context::Context,
-    module::Module,
-    values::{FunctionValue, BasicValue, BasicValueEnum, InstructionValue},
-    basic_block::BasicBlock,
-    builder::Builder,
-    passes::{PassManager},
-    OptimizationLevel as InkwellOptLevel,
-    targets::{Target, TargetMachine, InitializationConfig, TargetTriple},
-    AddressSpace,
-};
+// };
 
 /// Loop information for optimization
 #[derive(Debug, Clone)]
 pub struct LoopInfo<'ctx> {
     /// Loop header block
-    pub header: BasicBlock<'ctx>,
     /// Loop preheader block (if any)
-    pub preheader: Option<BasicBlock<'ctx>>,
     /// Blocks that form the loop body
-    pub body_blocks: Vec<BasicBlock<'ctx>>,
     /// Blocks that exit the loop
-    pub exit_blocks: Vec<BasicBlock<'ctx>>,
     /// Induction variables in the loop
-    pub induction_variables: Vec<InstructionValue<'ctx>>,
-}
-
 /// Constant value for propagation
 #[derive(Debug, Clone, PartialEq)]
 pub enum ConstantValue {
     /// Integer constant
-    Int(i64),
     /// Floating point constant
-    Float(f64),
     /// Boolean constant
-    Bool(bool),
-}
-
 /// Configuration for advanced optimization passes
 #[derive(Debug, Clone)]
 pub struct AdvancedOptimizationConfig {
     /// Base optimization configuration
-    pub base: OptimizationConfig,
     /// Enable function inlining
-    pub enable_inlining: bool,
     /// Maximum inline function size
-    pub max_inline_size: usize,
     /// Enable loop optimization
-    pub enable_loop_optimization: bool,
     /// Maximum loop unroll count
-    pub max_unroll_count: usize,
     /// Enable dead code elimination
-    pub enable_dead_code_elimination: bool,
     /// Enable constant propagation
-    pub enable_constant_propagation: bool,
     /// Enable common subexpression elimination
-    pub enable_cse: bool,
     /// Enable tail call optimization
-    pub enable_tail_calls: bool,
     /// Enable memory optimization
-    pub enable_memory_optimization: bool,
     /// Enable interprocedural optimization
-    pub enable_ipo: bool,
     /// Enable profile-guided optimization
-    pub enable_pgo: bool,
     /// Optimization timeout
-    pub timeout: Duration,
-}
-
 impl Default for AdvancedOptimizationConfig {
     fn default() -> Self {
         Self {
-            base: OptimizationConfig::default(),
-            enable_inlining: true,
-            max_inline_size: 1000,
-            enable_loop_optimization: true,
-            max_unroll_count: 8,
-            enable_dead_code_elimination: true,
-            enable_constant_propagation: true,
-            enable_cse: true,
-            enable_tail_calls: true,
-            enable_memory_optimization: true,
-            enable_ipo: true,
-            enable_pgo: false,
-            timeout: Duration::from_secs(30),
         }
     }
-}
-
 /// Statistics for optimization passes
 #[derive(Debug, Clone, Default)]
 pub struct OptimizationStatistics {
     /// Functions inlined
-    pub functions_inlined: usize,
     /// Instructions eliminated
-    pub instructions_eliminated: usize,
     /// Loops unrolled
-    pub loops_unrolled: usize,
     /// Constants propagated
-    pub constants_propagated: usize,
     /// Dead code blocks removed
-    pub dead_blocks_removed: usize,
     /// Common subexpressions eliminated
-    pub cse_eliminations: usize,
     /// Tail calls optimized
-    pub tail_calls_optimized: usize,
     /// Memory accesses optimized
-    pub memory_optimizations: usize,
     /// Total optimization time
-    pub optimization_time: Duration,
     /// Code size before optimization
-    pub code_size_before: usize,
     /// Code size after optimization
-    pub code_size_after: usize,
-}
-
 impl OptimizationStatistics {
     /// Calculate code size reduction percentage
     pub fn size_reduction_percent(&self) -> f64 {
@@ -153,42 +89,16 @@ impl OptimizationStatistics {
 
 /// Advanced optimization manager
 pub struct AdvancedOptimizationManager {
-    config: AdvancedOptimizationConfig,
-    stats: Arc<Mutex<OptimizationStatistics>>,
-    pipeline: OptimizationPipeline,
-    function_inliner: FunctionInliner,
-    loop_optimizer: LoopOptimizer,
-    dead_code_eliminator: DeadCodeEliminator,
-    constant_propagator: ConstantPropagator,
-    cse_eliminator: CommonSubexpressionEliminator,
-    tail_call_optimizer: TailCallOptimizer,
-    memory_optimizer: MemoryOptimizer,
-}
-
 impl AdvancedOptimizationManager {
     /// Create a new advanced optimization manager
     pub fn new(config: &OptimizationConfig) -> Result<Self> {
         let advanced_config = AdvancedOptimizationConfig {
-            base: config.clone(),
             ..Default::default()
-        };
 
         let stats = Arc::new(Mutex::new(OptimizationStatistics::default()));
 
         Ok(Self {
-            config: advanced_config.clone(),
-            stats: stats.clone(),
-            pipeline: OptimizationPipeline::new(advanced_config.clone())?,
-            function_inliner: FunctionInliner::new(advanced_config.clone(), stats.clone()),
-            loop_optimizer: LoopOptimizer::new(advanced_config.clone(), stats.clone()),
-            dead_code_eliminator: DeadCodeEliminator::new(advanced_config.clone(), stats.clone()),
-            constant_propagator: ConstantPropagator::new(advanced_config.clone(), stats.clone()),
-            cse_eliminator: CommonSubexpressionEliminator::new(advanced_config.clone(), stats.clone()),
-            tail_call_optimizer: TailCallOptimizer::new(advanced_config.clone(), stats.clone()),
-            memory_optimizer: MemoryOptimizer::new(advanced_config.clone(), stats.clone()),
         })
-    }
-
     /// Run advanced optimization passes on a module
     pub fn optimize_module<'ctx>(&self, module: &Module<'ctx>, context: &'ctx Context) -> Result<()> {
         let start_time = Instant::now();
@@ -198,17 +108,8 @@ impl AdvancedOptimizationManager {
         {
             let mut stats = self.stats.lock().unwrap();
             stats.code_size_before = initial_size;
-        }
-
         // Run optimization pipeline
         self.pipeline.run_optimization_passes(module, context, &[
-            Box::new(&self.function_inliner),
-            Box::new(&self.constant_propagator),
-            Box::new(&self.dead_code_eliminator),
-            Box::new(&self.cse_eliminator),
-            Box::new(&self.loop_optimizer),
-            Box::new(&self.tail_call_optimizer),
-            Box::new(&self.memory_optimizer),
         ])?;
 
         // Record final code size and optimization time
@@ -219,23 +120,15 @@ impl AdvancedOptimizationManager {
             let mut stats = self.stats.lock().unwrap();
             stats.code_size_after = final_size;
             stats.optimization_time = optimization_time;
-        }
-
         Ok(())
-    }
-
     /// Get optimization statistics
     pub fn get_statistics(&self) -> OptimizationStatistics {
         self.stats.lock().unwrap().clone()
-    }
-
     /// Update configuration
     pub fn update_config(&mut self, config: AdvancedOptimizationConfig) -> Result<()> {
         self.config = config.clone();
         self.pipeline.update_config(config.clone())?;
         Ok(())
-    }
-
     /// Print optimization summary
     pub fn print_summary(&self) {
         let stats = self.get_statistics();
@@ -251,9 +144,6 @@ impl AdvancedOptimizationManager {
         println!("   CSE eliminations: {}", stats.cse_eliminations);
         println!("   Tail calls optimized: {}", stats.tail_calls_optimized);
         println!("   Memory optimizations: {}", stats.memory_optimizations);
-        println!("   Code size: {} -> {} bytes ({:.1}% reduction)", 
-                 stats.code_size_before, 
-                 stats.code_size_after,
                  stats.size_reduction_percent());
         println!("   Optimization time: {:?}", stats.optimization_time);
     }
@@ -264,33 +154,17 @@ pub trait OptimizationPass {
     fn name(&self) -> &'static str;
     fn run<'ctx>(&self, module: &Module<'ctx>, context: &'ctx Context) -> Result<bool>;
     fn is_enabled(&self) -> bool;
-}
-
 /// Optimization pipeline coordinator
 pub struct OptimizationPipeline {
-    config: AdvancedOptimizationConfig,
-    pass_manager: Option<PassManager<Module<'static>>>,
-}
-
 impl OptimizationPipeline {
     pub fn new(config: AdvancedOptimizationConfig) -> Result<Self> {
         Ok(Self {
-            config,
-            pass_manager: None,
         })
-    }
-
     pub fn update_config(&mut self, config: AdvancedOptimizationConfig) -> Result<()> {
         self.config = config;
         Ok(())
-    }
-
     /// Run optimization passes in order
     pub fn run_optimization_passes<'ctx>(
-        &self,
-        module: &Module<'ctx>,
-        context: &'ctx Context,
-        passes: &[Box<&dyn OptimizationPass>],
     ) -> Result<()> {
         let mut any_changes = true;
         let mut iteration = 0;
@@ -316,17 +190,9 @@ impl OptimizationPipeline {
 
 /// Function inlining optimization
 pub struct FunctionInliner {
-    config: AdvancedOptimizationConfig,
-    stats: Arc<Mutex<OptimizationStatistics>>,
-    inline_candidates: HashSet<String>,
-}
-
 impl FunctionInliner {
     pub fn new(config: AdvancedOptimizationConfig, stats: Arc<Mutex<OptimizationStatistics>>) -> Self {
         Self {
-            config,
-            stats,
-            inline_candidates: HashSet::new(),
         }
     }
 
@@ -335,8 +201,6 @@ impl FunctionInliner {
         // Skip if function has no body
         if function.get_first_basic_block().is_none() {
             return false;
-        }
-
         // Calculate function size (instruction count)
         let mut instruction_count = 0;
         let mut block = function.get_first_basic_block();
@@ -348,12 +212,8 @@ impl FunctionInliner {
                 instruction = instruction.unwrap().get_next_instruction();
             }
             block = bb.get_next_basic_block();
-        }
-
         // Only inline small functions
         instruction_count <= self.config.max_inline_size
-    }
-
     /// Perform function inlining with real IR manipulation
     fn inline_function_calls<'ctx>(&self, module: &Module<'ctx>) -> Result<usize> {
         let mut inlined_count = 0;
@@ -371,23 +231,17 @@ impl FunctionInliner {
         for function in module.get_functions() {
             if function.get_first_basic_block().is_none() {
                 continue;
-            }
-
             let mut blocks_to_process = Vec::new();
             let mut block = function.get_first_basic_block();
             while let Some(bb) = block {
                 blocks_to_process.push(bb);
                 block = bb.get_next_basic_block();
-            }
-
             for bb in blocks_to_process {
                 let mut instructions_to_process = Vec::new();
                 let mut instruction = bb.get_first_instruction();
                 while let Some(instr) = instruction {
                     instructions_to_process.push(instr);
                     instruction = instr.get_next_instruction();
-                }
-
                 for instr in instructions_to_process {
                     if instr.get_opcode() == inkwell::values::InstructionOpcode::Call {
                         if let Some(called_function) = self.get_called_function(&instr) {
@@ -400,23 +254,15 @@ impl FunctionInliner {
                     }
                 }
             }
-        }
-
         Ok(inlined_count)
-    }
-
     /// Get the function being called by a call instruction
     fn get_called_function<'ctx>(&self, call_instr: &InstructionValue<'ctx>) -> Option<FunctionValue<'ctx>> {
         if call_instr.get_opcode() != inkwell::values::InstructionOpcode::Call {
             return None;
-        }
-
         // Get the called value (function)
         let num_operands = call_instr.get_num_operands();
         if num_operands == 0 {
             return None;
-        }
-
         // The last operand is typically the function being called
         if let Some(operand) = call_instr.get_operand(num_operands - 1) {
             if let Some(function) = operand.left() {
@@ -424,23 +270,13 @@ impl FunctionInliner {
                     return Some(function_value);
                 }
             }
-        }
-
         None
-    }
-
     /// Inline a specific function call
     fn inline_function_call<'ctx>(
-        &self,
-        call_instr: &InstructionValue<'ctx>,
-        called_function: FunctionValue<'ctx>,
-        context: &'ctx Context,
     ) -> Result<bool> {
         // Only inline small functions without recursion
         if !self.is_safe_to_inline(called_function) {
             return Ok(false);
-        }
-
         let builder = context.create_builder();
         
         // Position builder before the call instruction
@@ -458,23 +294,15 @@ impl FunctionInliner {
         }
 
         Ok(false)
-    }
-
     /// Check if function is safe to inline
     fn is_safe_to_inline<'ctx>(&self, function: FunctionValue<'ctx>) -> bool {
         // Don't inline recursive functions
         if self.is_recursive_function(function) {
             return false;
-        }
-
         // Don't inline functions with complex control flow
         if self.has_complex_control_flow(function) {
             return false;
-        }
-
         true
-    }
-
     /// Check if function is recursive
     fn is_recursive_function<'ctx>(&self, function: FunctionValue<'ctx>) -> bool {
         let mut block = function.get_first_basic_block();
@@ -493,8 +321,6 @@ impl FunctionInliner {
             block = bb.get_next_basic_block();
         }
         false
-    }
-
     /// Check if function has complex control flow
     fn has_complex_control_flow<'ctx>(&self, function: FunctionValue<'ctx>) -> bool {
         let mut block_count = 0;
@@ -515,50 +341,29 @@ impl FunctionInliner {
             }
             
             block = bb.get_next_basic_block();
-        }
-
         // Consider complex if more than 3 blocks or 2 branches
         block_count > 3 || branch_count > 2
-    }
-
     /// Clone function body inline (simplified implementation)
     fn clone_function_body_inline<'ctx>(
-        &self,
-        builder: &Builder<'ctx>,
-        function: FunctionValue<'ctx>,
-        call_instr: &InstructionValue<'ctx>,
     ) -> Result<bool> {
         // For simplicity, only inline single-block functions
         if let Some(entry_block) = function.get_first_basic_block() {
             if entry_block.get_next_basic_block().is_some() {
                 return Ok(false); // Multi-block functions not supported in this simplified implementation
-            }
-
             // Clone instructions from the function body
             let mut instruction = entry_block.get_first_instruction();
             while let Some(instr) = instruction {
                 // Skip the return instruction
                 if instr.get_opcode() == inkwell::values::InstructionOpcode::Return {
                     break;
-                }
-
                 // Clone the instruction (simplified - real implementation would need value mapping)
                 self.clone_instruction(builder, &instr)?;
                 
                 instruction = instr.get_next_instruction();
-            }
-
             return Ok(true);
-        }
-
         Ok(false)
-    }
-
     /// Clone an instruction (simplified implementation)
     fn clone_instruction<'ctx>(
-        &self,
-        builder: &Builder<'ctx>,
-        instruction: &InstructionValue<'ctx>,
     ) -> Result<()> {
         // This is a simplified implementation - real cloning would need proper value mapping
         // For now, we just track that we would clone the instruction
@@ -584,23 +389,15 @@ impl FunctionInliner {
 impl OptimizationPass for FunctionInliner {
     fn name(&self) -> &'static str {
         "function-inliner"
-    }
-
     fn run<'ctx>(&self, module: &Module<'ctx>, _context: &'ctx Context) -> Result<bool> {
         if !self.is_enabled() {
             return Ok(false);
-        }
-
         let inlined = self.inline_function_calls(module)?;
         
         if inlined > 0 {
             let mut stats = self.stats.lock().unwrap();
             stats.functions_inlined += inlined;
-        }
-
         Ok(inlined > 0)
-    }
-
     fn is_enabled(&self) -> bool {
         self.config.enable_inlining
     }
@@ -608,10 +405,6 @@ impl OptimizationPass for FunctionInliner {
 
 /// Loop optimization
 pub struct LoopOptimizer {
-    config: AdvancedOptimizationConfig,
-    stats: Arc<Mutex<OptimizationStatistics>>,
-}
-
 impl LoopOptimizer {
     pub fn new(config: AdvancedOptimizationConfig, stats: Arc<Mutex<OptimizationStatistics>>) -> Self {
         Self { config, stats }
@@ -623,11 +416,7 @@ impl LoopOptimizer {
 
         for function in module.get_functions() {
             optimized_count += self.optimize_function_loops(function)?;
-        }
-
         Ok(optimized_count)
-    }
-
     /// Optimize loops in a specific function
     fn optimize_function_loops<'ctx>(&self, function: FunctionValue<'ctx>) -> Result<usize> {
         let mut optimized = 0;
@@ -644,8 +433,6 @@ impl LoopOptimizer {
         }
 
         Ok(optimized)
-    }
-
     /// Detect natural loops using dominance and back edges
     fn detect_natural_loops<'ctx>(&self, function: FunctionValue<'ctx>) -> Result<Vec<LoopInfo<'ctx>>> {
         let mut loops = Vec::new();
@@ -671,66 +458,38 @@ impl LoopOptimizer {
         }
         
         Ok(loops)
-    }
-    
     /// Perform DFS to build block ordering
     fn dfs_block_ordering<'ctx>(
-        &self,
-        function: FunctionValue<'ctx>,
-        visited: &mut HashSet<usize>,
-        block_order: &mut Vec<BasicBlock<'ctx>>,
     ) -> Result<()> {
         if let Some(entry_block) = function.get_first_basic_block() {
             self.dfs_visit_block(entry_block, visited, block_order)?;
         }
         Ok(())
-    }
-    
     /// Visit block during DFS
     fn dfs_visit_block<'ctx>(
-        &self,
-        block: BasicBlock<'ctx>,
-        visited: &mut HashSet<usize>,
-        block_order: &mut Vec<BasicBlock<'ctx>>,
     ) -> Result<()> {
         let block_addr = block.get_address();
         if visited.contains(&block_addr) {
             return Ok(());
-        }
-        
         visited.insert(block_addr);
         block_order.push(block);
         
         // Visit successors (simplified - real implementation would follow actual CFG edges)
         if let Some(next_block) = block.get_next_basic_block() {
             self.dfs_visit_block(next_block, visited, block_order)?;
-        }
-        
         Ok(())
-    }
-    
     /// Analyze branch instruction for loop patterns
     fn analyze_branch_for_loop<'ctx>(
-        &self,
-        block: BasicBlock<'ctx>,
-        terminator: &InstructionValue<'ctx>,
     ) -> Result<Option<LoopInfo<'ctx>>> {
         // Look for conditional branches that might create loops
         if terminator.get_opcode() == inkwell::values::InstructionOpcode::Br {
             // Simple heuristic: if block appears to branch to an earlier block
             if self.has_loop_pattern(block) {
                 return Ok(Some(LoopInfo {
-                    header: block,
-                    preheader: None,
-                    body_blocks: vec![block],
-                    exit_blocks: Vec::new(),
-                    induction_variables: Vec::new(),
                 }));
             }
         }
         Ok(None)
-    }
-    
     /// Check if block has loop pattern characteristics
     fn has_loop_pattern<'ctx>(&self, block: BasicBlock<'ctx>) -> bool {
         // Look for induction variable patterns
@@ -754,18 +513,10 @@ impl LoopOptimizer {
                 _ => {}
             }
             instruction = instr.get_next_instruction();
-        }
-        
         // Simple heuristic: loop likely if has PHI, increment, and comparison
         has_phi && has_increment && has_comparison
-    }
-    
     /// Optimize a single loop
     fn optimize_single_loop<'ctx>(
-        &self,
-        function: FunctionValue<'ctx>,
-        loop_info: &LoopInfo<'ctx>,
-        context: &'ctx Context,
     ) -> Result<bool> {
         let mut optimized = false;
         
@@ -779,24 +530,16 @@ impl LoopOptimizer {
         // Try loop invariant code motion
         if self.hoist_loop_invariants(loop_info, context)? {
             optimized = true;
-        }
-        
         Ok(optimized)
-    }
-    
     /// Check if loop should be unrolled
     fn should_unroll_loop<'ctx>(&self, loop_info: &LoopInfo<'ctx>) -> bool {
         // Only unroll small loops
         loop_info.body_blocks.len() <= 2 && 
         self.estimate_loop_iterations(loop_info) <= self.config.max_unroll_count
-    }
-    
     /// Estimate loop iteration count
     fn estimate_loop_iterations<'ctx>(&self, loop_info: &LoopInfo<'ctx>) -> usize {
         // Simple heuristic - real implementation would analyze bounds
         4
-    }
-    
     /// Unroll a loop
     fn unroll_loop<'ctx>(&self, loop_info: &LoopInfo<'ctx>, context: &'ctx Context) -> Result<bool> {
         // Simplified unrolling - duplicate loop body a few times
@@ -806,16 +549,9 @@ impl LoopOptimizer {
         // For now, just mark that we would unroll (real implementation would clone blocks)
         if iterations > 1 && iterations <= 4 {
             return Ok(true);
-        }
-        
         Ok(false)
-    }
-    
     /// Hoist loop invariant code
     fn hoist_loop_invariants<'ctx>(
-        &self,
-        loop_info: &LoopInfo<'ctx>,
-        context: &'ctx Context,
     ) -> Result<bool> {
         let mut hoisted = false;
         
@@ -832,8 +568,6 @@ impl LoopOptimizer {
         }
         
         Ok(hoisted)
-    }
-    
     /// Check if instruction is loop invariant
     fn is_loop_invariant<'ctx>(&self, instruction: &InstructionValue<'ctx>, loop_info: &LoopInfo<'ctx>) -> bool {
         // Simple heuristic: constant operations that don't use PHI nodes
@@ -875,23 +609,15 @@ impl LoopOptimizer {
 impl OptimizationPass for LoopOptimizer {
     fn name(&self) -> &'static str {
         "loop-optimizer"
-    }
-
     fn run<'ctx>(&self, module: &Module<'ctx>, _context: &'ctx Context) -> Result<bool> {
         if !self.is_enabled() {
             return Ok(false);
-        }
-
         let optimized = self.optimize_loops(module)?;
         
         if optimized > 0 {
             let mut stats = self.stats.lock().unwrap();
             stats.loops_unrolled += optimized;
-        }
-
         Ok(optimized > 0)
-    }
-
     fn is_enabled(&self) -> bool {
         self.config.enable_loop_optimization
     }
@@ -899,10 +625,6 @@ impl OptimizationPass for LoopOptimizer {
 
 /// Dead code elimination
 pub struct DeadCodeEliminator {
-    config: AdvancedOptimizationConfig,
-    stats: Arc<Mutex<OptimizationStatistics>>,
-}
-
 impl DeadCodeEliminator {
     pub fn new(config: AdvancedOptimizationConfig, stats: Arc<Mutex<OptimizationStatistics>>) -> Self {
         Self { config, stats }
@@ -914,11 +636,7 @@ impl DeadCodeEliminator {
 
         for function in module.get_functions() {
             eliminated += self.eliminate_dead_code_in_function(function)?;
-        }
-
         Ok(eliminated)
-    }
-
     /// Eliminate dead code in a specific function
     fn eliminate_dead_code_in_function<'ctx>(&self, function: FunctionValue<'ctx>) -> Result<usize> {
         let mut eliminated = 0;
@@ -930,8 +648,6 @@ impl DeadCodeEliminator {
         eliminated += self.eliminate_dead_instructions(function)?;
 
         Ok(eliminated)
-    }
-
     /// Eliminate unreachable basic blocks
     fn eliminate_unreachable_blocks<'ctx>(&self, function: FunctionValue<'ctx>) -> Result<usize> {
         let mut eliminated = 0;
@@ -947,8 +663,6 @@ impl DeadCodeEliminator {
                 blocks_to_remove.push(bb);
             }
             block = bb.get_next_basic_block();
-        }
-        
         // Remove unreachable blocks
         for block in blocks_to_remove {
             // Before removing, ensure no instructions refer to values in this block
@@ -957,11 +671,7 @@ impl DeadCodeEliminator {
             // Remove the block (in real implementation)
             // For now, just count it
             eliminated += 1;
-        }
-
         Ok(eliminated)
-    }
-    
     /// Eliminate dead instructions (unused values)
     fn eliminate_dead_instructions<'ctx>(&self, function: FunctionValue<'ctx>) -> Result<usize> {
         let mut eliminated = 0;
@@ -979,13 +689,8 @@ impl DeadCodeEliminator {
         }
         
         Ok(eliminated)
-    }
-    
     /// Eliminate dead instructions in a single block
     fn eliminate_dead_instructions_in_block<'ctx>(
-        &self,
-        block: BasicBlock<'ctx>,
-        changed: &mut bool,
     ) -> Result<usize> {
         let mut eliminated = 0;
         let mut instructions_to_remove = Vec::new();
@@ -997,55 +702,35 @@ impl DeadCodeEliminator {
                 instructions_to_remove.push(instr);
             }
             instruction = instr.get_next_instruction();
-        }
-        
         // Remove dead instructions
         for instr in instructions_to_remove {
             // In real implementation, would actually remove the instruction
             eliminated += 1;
             *changed = true;
-        }
-        
         Ok(eliminated)
-    }
-    
     /// Check if instruction is dead (has no uses)
     fn is_dead_instruction<'ctx>(&self, instruction: &InstructionValue<'ctx>) -> bool {
         // Don't remove instructions with side effects
         if self.has_side_effects(instruction) {
             return false;
-        }
-        
         // Check if instruction has any uses
         if instruction.get_num_uses() == 0 {
             return true;
-        }
-        
         false
-    }
-    
     /// Check if instruction has side effects
     fn has_side_effects<'ctx>(&self, instruction: &InstructionValue<'ctx>) -> bool {
         match instruction.get_opcode() {
             // Memory operations have side effects
-            inkwell::values::InstructionOpcode::Store => true,
-            inkwell::values::InstructionOpcode::Call => true,
-            inkwell::values::InstructionOpcode::Invoke => true,
             
             // Terminator instructions are necessary
-            inkwell::values::InstructionOpcode::Return => true,
-            inkwell::values::InstructionOpcode::Br => true,
-            inkwell::values::InstructionOpcode::Switch => true,
             
             // Arithmetic and loads are usually side-effect free
             inkwell::values::InstructionOpcode::Add |
             inkwell::values::InstructionOpcode::Sub |
             inkwell::values::InstructionOpcode::Mul |
             inkwell::values::InstructionOpcode::SDiv |
-            inkwell::values::InstructionOpcode::Load => false,
             
             // Conservative default
-            _ => true,
         }
     }
     
@@ -1054,8 +739,6 @@ impl DeadCodeEliminator {
         // Remove PHI node entries that reference this block
         // This would be done in real implementation
         Ok(())
-    }
-
     /// Find reachable basic blocks using proper CFG traversal
     fn find_reachable_blocks<'ctx>(&self, function: FunctionValue<'ctx>) -> HashSet<usize> {
         let mut reachable = HashSet::new();
@@ -1065,8 +748,6 @@ impl DeadCodeEliminator {
         if let Some(entry_block) = function.get_first_basic_block() {
             worklist.push(entry_block);
             reachable.insert(entry_block.get_address());
-        }
-
         // BFS traversal following actual control flow
         while let Some(block) = worklist.pop() {
             // Get successors from terminator instruction
@@ -1083,8 +764,6 @@ impl DeadCodeEliminator {
         }
 
         reachable
-    }
-    
     /// Get successor blocks from a terminator instruction
     fn get_successor_blocks<'ctx>(&self, terminator: &InstructionValue<'ctx>) -> Vec<BasicBlock<'ctx>> {
         let mut successors = Vec::new();
@@ -1128,23 +807,15 @@ impl DeadCodeEliminator {
 impl OptimizationPass for DeadCodeEliminator {
     fn name(&self) -> &'static str {
         "dead-code-eliminator"
-    }
-
     fn run<'ctx>(&self, module: &Module<'ctx>, _context: &'ctx Context) -> Result<bool> {
         if !self.is_enabled() {
             return Ok(false);
-        }
-
         let eliminated = self.eliminate_dead_code(module)?;
         
         if eliminated > 0 {
             let mut stats = self.stats.lock().unwrap();
             stats.dead_blocks_removed += eliminated;
-        }
-
         Ok(eliminated > 0)
-    }
-
     fn is_enabled(&self) -> bool {
         self.config.enable_dead_code_elimination
     }
@@ -1152,10 +823,6 @@ impl OptimizationPass for DeadCodeEliminator {
 
 /// Constant propagation
 pub struct ConstantPropagator {
-    config: AdvancedOptimizationConfig,
-    stats: Arc<Mutex<OptimizationStatistics>>,
-}
-
 impl ConstantPropagator {
     pub fn new(config: AdvancedOptimizationConfig, stats: Arc<Mutex<OptimizationStatistics>>) -> Self {
         Self { config, stats }
@@ -1167,11 +834,7 @@ impl ConstantPropagator {
 
         for function in module.get_functions() {
             propagated += self.propagate_constants_in_function(function)?;
-        }
-
         Ok(propagated)
-    }
-
     /// Propagate constants in a specific function
     fn propagate_constants_in_function<'ctx>(&self, function: FunctionValue<'ctx>) -> Result<usize> {
         let mut propagated = 0;
@@ -1198,13 +861,8 @@ impl ConstantPropagator {
         }
 
         Ok(propagated)
-    }
-    
     /// Collect constant values throughout the function
     fn collect_constant_values<'ctx>(
-        &self,
-        function: FunctionValue<'ctx>,
-        constants: &mut HashMap<String, ConstantValue>,
     ) -> Result<()> {
         let mut block = function.get_first_basic_block();
         while let Some(bb) = block {
@@ -1216,13 +874,8 @@ impl ConstantPropagator {
             block = bb.get_next_basic_block();
         }
         Ok(())
-    }
-    
     /// Analyze instruction to extract constant information
     fn analyze_instruction_for_constants<'ctx>(
-        &self,
-        instruction: &InstructionValue<'ctx>,
-        constants: &mut HashMap<String, ConstantValue>,
     ) -> Result<()> {
         match instruction.get_opcode() {
             inkwell::values::InstructionOpcode::Store => {
@@ -1247,13 +900,8 @@ impl ConstantPropagator {
             _ => {}
         }
         Ok(())
-    }
-
     /// Propagate constants in a specific basic block
     fn propagate_constants_in_block<'ctx>(
-        &self,
-        block: BasicBlock<'ctx>,
-        constants: &HashMap<String, ConstantValue>,
     ) -> Result<usize> {
         let mut propagated = 0;
         let mut instructions_to_replace = Vec::new();
@@ -1264,8 +912,6 @@ impl ConstantPropagator {
                 instructions_to_replace.push((instr, replacement));
             }
             instruction = instr.get_next_instruction();
-        }
-
         // Apply constant replacements
         for (old_instr, new_value) in instructions_to_replace {
             if self.replace_instruction_with_constant(old_instr, new_value)? {
@@ -1274,13 +920,8 @@ impl ConstantPropagator {
         }
 
         Ok(propagated)
-    }
-    
     /// Try to replace instruction with constant
     fn try_constant_replacement<'ctx>(
-        &self,
-        instruction: &InstructionValue<'ctx>,
-        constants: &HashMap<String, ConstantValue>,
     ) -> Result<Option<ConstantValue>> {
         match instruction.get_opcode() {
             inkwell::values::InstructionOpcode::Load => {
@@ -1303,13 +944,8 @@ impl ConstantPropagator {
             _ => {}
         }
         Ok(None)
-    }
-    
     /// Replace instruction with constant value
     fn replace_instruction_with_constant<'ctx>(
-        &self,
-        instruction: InstructionValue<'ctx>,
-        constant: ConstantValue,
     ) -> Result<bool> {
         // In real implementation, would create constant and replace all uses
         // For now, just track that we would replace
@@ -1317,8 +953,6 @@ impl ConstantPropagator {
             return Ok(true);
         }
         Ok(false)
-    }
-    
     /// Extract store instruction information
     fn extract_store_info<'ctx>(&self, instruction: &InstructionValue<'ctx>) -> Option<(String, BasicValueEnum<'ctx>)> {
         if instruction.get_opcode() == inkwell::values::InstructionOpcode::Store {
@@ -1338,8 +972,6 @@ impl ConstantPropagator {
             }
         }
         None
-    }
-    
     /// Get constant value from a BasicValueEnum
     fn get_constant_value<'ctx>(&self, value: &BasicValueEnum<'ctx>) -> Option<ConstantValue> {
         if value.is_int_value() {
@@ -1354,13 +986,8 @@ impl ConstantPropagator {
             }
         }
         None
-    }
-    
     /// Evaluate arithmetic operations with constant operands
     fn evaluate_constant_arithmetic<'ctx>(
-        &self,
-        instruction: &InstructionValue<'ctx>,
-        constants: &HashMap<String, ConstantValue>,
     ) -> Option<ConstantValue> {
         if instruction.get_num_operands() >= 2 {
             let left_val = self.get_operand_constant_value(instruction, 0, constants)?;
@@ -1369,33 +996,22 @@ impl ConstantPropagator {
             match instruction.get_opcode() {
                 inkwell::values::InstructionOpcode::Add => {
                     match (left_val, right_val) {
-                        (ConstantValue::Int(a), ConstantValue::Int(b)) => Some(ConstantValue::Int(a + b)),
-                        (ConstantValue::Float(a), ConstantValue::Float(b)) => Some(ConstantValue::Float(a + b)),
-                        _ => None,
                     }
                 }
                 inkwell::values::InstructionOpcode::Sub => {
                     match (left_val, right_val) {
-                        (ConstantValue::Int(a), ConstantValue::Int(b)) => Some(ConstantValue::Int(a - b)),
-                        (ConstantValue::Float(a), ConstantValue::Float(b)) => Some(ConstantValue::Float(a - b)),
-                        _ => None,
                     }
                 }
                 inkwell::values::InstructionOpcode::Mul => {
                     match (left_val, right_val) {
-                        (ConstantValue::Int(a), ConstantValue::Int(b)) => Some(ConstantValue::Int(a * b)),
-                        (ConstantValue::Float(a), ConstantValue::Float(b)) => Some(ConstantValue::Float(a * b)),
-                        _ => None,
                     }
                 }
                 inkwell::values::InstructionOpcode::SDiv => {
                     match (left_val, right_val) {
                         (ConstantValue::Int(a), ConstantValue::Int(b)) if b != 0 => Some(ConstantValue::Int(a / b)),
                         (ConstantValue::Float(a), ConstantValue::Float(b)) if b != 0.0 => Some(ConstantValue::Float(a / b)),
-                        _ => None,
                     }
                 }
-                _ => None,
             }
         } else {
             None
@@ -1404,18 +1020,12 @@ impl ConstantPropagator {
     
     /// Get constant value for operand
     fn get_operand_constant_value<'ctx>(
-        &self,
-        instruction: &InstructionValue<'ctx>,
-        operand_index: u32,
-        constants: &HashMap<String, ConstantValue>,
     ) -> Option<ConstantValue> {
         if let Some(operand) = instruction.get_operand(operand_index) {
             if let Some(value) = operand.left() {
                 // Try direct constant
                 if let Some(const_val) = self.get_constant_value(&value) {
                     return Some(const_val);
-                }
-                
                 // Try lookup in constants map
                 if let Some(name) = self.get_value_name(&value) {
                     if let Some(const_val) = constants.get(&name) {
@@ -1425,21 +1035,15 @@ impl ConstantPropagator {
             }
         }
         None
-    }
-    
     /// Get name of a value (simplified)
     fn get_value_name<'ctx>(&self, value: &BasicValueEnum<'ctx>) -> Option<String> {
         // In real implementation, would get actual LLVM value name
         // For now, use address as identifier
         Some(format!("val_{:p}", value))
-    }
-    
     /// Get name of an instruction (simplified)
     fn get_instruction_name<'ctx>(&self, instruction: &InstructionValue<'ctx>) -> Option<String> {
         // In real implementation, would get actual LLVM instruction name
         Some(format!("instr_{:p}", instruction))
-    }
-    
     /// Get load address from load instruction
     fn get_load_address<'ctx>(&self, instruction: &InstructionValue<'ctx>) -> Option<String> {
         if instruction.get_opcode() == inkwell::values::InstructionOpcode::Load {
@@ -1456,23 +1060,15 @@ impl ConstantPropagator {
 impl OptimizationPass for ConstantPropagator {
     fn name(&self) -> &'static str {
         "constant-propagator"
-    }
-
     fn run<'ctx>(&self, module: &Module<'ctx>, _context: &'ctx Context) -> Result<bool> {
         if !self.is_enabled() {
             return Ok(false);
-        }
-
         let propagated = self.propagate_constants(module)?;
         
         if propagated > 0 {
             let mut stats = self.stats.lock().unwrap();
             stats.constants_propagated += propagated;
-        }
-
         Ok(propagated > 0)
-    }
-
     fn is_enabled(&self) -> bool {
         self.config.enable_constant_propagation
     }
@@ -1480,10 +1076,6 @@ impl OptimizationPass for ConstantPropagator {
 
 /// Common subexpression elimination
 pub struct CommonSubexpressionEliminator {
-    config: AdvancedOptimizationConfig,
-    stats: Arc<Mutex<OptimizationStatistics>>,
-}
-
 impl CommonSubexpressionEliminator {
     pub fn new(config: AdvancedOptimizationConfig, stats: Arc<Mutex<OptimizationStatistics>>) -> Self {
         Self { config, stats }
@@ -1495,11 +1087,7 @@ impl CommonSubexpressionEliminator {
 
         for function in module.get_functions() {
             eliminated += self.eliminate_cse_in_function(function)?;
-        }
-
         Ok(eliminated)
-    }
-
     /// Eliminate CSE in a specific function
     fn eliminate_cse_in_function<'ctx>(&self, function: FunctionValue<'ctx>) -> Result<usize> {
         let mut eliminated = 0;
@@ -1509,16 +1097,9 @@ impl CommonSubexpressionEliminator {
         while let Some(bb) = block {
             eliminated += self.analyze_block_for_cse(bb, &mut expressions)?;
             block = bb.get_next_basic_block();
-        }
-
         Ok(eliminated)
-    }
-
     /// Analyze block for common subexpression elimination
     fn analyze_block_for_cse<'ctx>(
-        &self,
-        block: BasicBlock<'ctx>,
-        expressions: &mut HashMap<String, String>,
     ) -> Result<usize> {
         let mut eliminated = 0;
 
@@ -1535,8 +1116,6 @@ impl CommonSubexpressionEliminator {
                 _ => {}
             }
             instruction = instr.get_next_instruction();
-        }
-
         Ok(eliminated)
     }
 }
@@ -1544,23 +1123,15 @@ impl CommonSubexpressionEliminator {
 impl OptimizationPass for CommonSubexpressionEliminator {
     fn name(&self) -> &'static str {
         "cse-eliminator"
-    }
-
     fn run<'ctx>(&self, module: &Module<'ctx>, _context: &'ctx Context) -> Result<bool> {
         if !self.is_enabled() {
             return Ok(false);
-        }
-
         let eliminated = self.eliminate_common_subexpressions(module)?;
         
         if eliminated > 0 {
             let mut stats = self.stats.lock().unwrap();
             stats.cse_eliminations += eliminated;
-        }
-
         Ok(eliminated > 0)
-    }
-
     fn is_enabled(&self) -> bool {
         self.config.enable_cse
     }
@@ -1568,10 +1139,6 @@ impl OptimizationPass for CommonSubexpressionEliminator {
 
 /// Tail call optimization
 pub struct TailCallOptimizer {
-    config: AdvancedOptimizationConfig,
-    stats: Arc<Mutex<OptimizationStatistics>>,
-}
-
 impl TailCallOptimizer {
     pub fn new(config: AdvancedOptimizationConfig, stats: Arc<Mutex<OptimizationStatistics>>) -> Self {
         Self { config, stats }
@@ -1583,11 +1150,7 @@ impl TailCallOptimizer {
 
         for function in module.get_functions() {
             optimized += self.optimize_tail_calls_in_function(function)?;
-        }
-
         Ok(optimized)
-    }
-
     /// Optimize tail calls in a specific function
     fn optimize_tail_calls_in_function<'ctx>(&self, function: FunctionValue<'ctx>) -> Result<usize> {
         let mut optimized = 0;
@@ -1596,11 +1159,7 @@ impl TailCallOptimizer {
         while let Some(bb) = block {
             optimized += self.analyze_block_for_tail_calls(bb)?;
             block = bb.get_next_basic_block();
-        }
-
         Ok(optimized)
-    }
-
     /// Analyze block for tail call optimization opportunities
     fn analyze_block_for_tail_calls<'ctx>(&self, block: BasicBlock<'ctx>) -> Result<usize> {
         let mut optimized = 0;
@@ -1617,8 +1176,6 @@ impl TailCallOptimizer {
                 }
             }
             instruction = instr.get_next_instruction();
-        }
-
         Ok(optimized)
     }
 }
@@ -1626,23 +1183,15 @@ impl TailCallOptimizer {
 impl OptimizationPass for TailCallOptimizer {
     fn name(&self) -> &'static str {
         "tail-call-optimizer"
-    }
-
     fn run<'ctx>(&self, module: &Module<'ctx>, _context: &'ctx Context) -> Result<bool> {
         if !self.is_enabled() {
             return Ok(false);
-        }
-
         let optimized = self.optimize_tail_calls(module)?;
         
         if optimized > 0 {
             let mut stats = self.stats.lock().unwrap();
             stats.tail_calls_optimized += optimized;
-        }
-
         Ok(optimized > 0)
-    }
-
     fn is_enabled(&self) -> bool {
         self.config.enable_tail_calls
     }
@@ -1650,10 +1199,6 @@ impl OptimizationPass for TailCallOptimizer {
 
 /// Memory optimization
 pub struct MemoryOptimizer {
-    config: AdvancedOptimizationConfig,
-    stats: Arc<Mutex<OptimizationStatistics>>,
-}
-
 impl MemoryOptimizer {
     pub fn new(config: AdvancedOptimizationConfig, stats: Arc<Mutex<OptimizationStatistics>>) -> Self {
         Self { config, stats }
@@ -1665,11 +1210,7 @@ impl MemoryOptimizer {
 
         for function in module.get_functions() {
             optimized += self.optimize_memory_in_function(function)?;
-        }
-
         Ok(optimized)
-    }
-
     /// Optimize memory usage in a specific function
     fn optimize_memory_in_function<'ctx>(&self, function: FunctionValue<'ctx>) -> Result<usize> {
         let mut optimized = 0;
@@ -1678,11 +1219,7 @@ impl MemoryOptimizer {
         while let Some(bb) = block {
             optimized += self.analyze_block_for_memory_optimization(bb)?;
             block = bb.get_next_basic_block();
-        }
-
         Ok(optimized)
-    }
-
     /// Analyze block for memory optimization opportunities
     fn analyze_block_for_memory_optimization<'ctx>(&self, block: BasicBlock<'ctx>) -> Result<usize> {
         let mut optimized = 0;
@@ -1697,8 +1234,6 @@ impl MemoryOptimizer {
                 _ => {}
             }
             instruction = instr.get_next_instruction();
-        }
-
         Ok(optimized)
     }
 }
@@ -1706,23 +1241,15 @@ impl MemoryOptimizer {
 impl OptimizationPass for MemoryOptimizer {
     fn name(&self) -> &'static str {
         "memory-optimizer"
-    }
-
     fn run<'ctx>(&self, module: &Module<'ctx>, _context: &'ctx Context) -> Result<bool> {
         if !self.is_enabled() {
             return Ok(false);
-        }
-
         let optimized = self.optimize_memory(module)?;
         
         if optimized > 0 {
             let mut stats = self.stats.lock().unwrap();
             stats.memory_optimizations += optimized;
-        }
-
         Ok(optimized > 0)
-    }
-
     fn is_enabled(&self) -> bool {
         self.config.enable_memory_optimization
     }
@@ -1735,15 +1262,6 @@ pub mod utils {
     /// Create advanced optimization configuration for development
     pub fn dev_config() -> AdvancedOptimizationConfig {
         AdvancedOptimizationConfig {
-            enable_inlining: false,
-            enable_loop_optimization: false,
-            enable_dead_code_elimination: true,
-            enable_constant_propagation: true,
-            enable_cse: false,
-            enable_tail_calls: false,
-            enable_memory_optimization: false,
-            enable_ipo: false,
-            enable_pgo: false,
             ..Default::default()
         }
     }
@@ -1751,17 +1269,6 @@ pub mod utils {
     /// Create advanced optimization configuration for release
     pub fn release_config() -> AdvancedOptimizationConfig {
         AdvancedOptimizationConfig {
-            enable_inlining: true,
-            max_inline_size: 2000,
-            enable_loop_optimization: true,
-            max_unroll_count: 16,
-            enable_dead_code_elimination: true,
-            enable_constant_propagation: true,
-            enable_cse: true,
-            enable_tail_calls: true,
-            enable_memory_optimization: true,
-            enable_ipo: true,
-            enable_pgo: false,
             ..Default::default()
         }
     }
@@ -1769,9 +1276,6 @@ pub mod utils {
     /// Create configuration with profile-guided optimization
     pub fn pgo_config() -> AdvancedOptimizationConfig {
         AdvancedOptimizationConfig {
-            enable_pgo: true,
             ..release_config()
         }
     }
-}
-

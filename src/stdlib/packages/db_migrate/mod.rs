@@ -17,5 +17,3 @@ pub use version::{SchemaVersion, VersionManager};
 // pub fn init_db_migrate() -> crate::stdlib::packages::db_core::error::DatabaseResult<()> {
     println!("🔄 db_migrate package initialized - schema migrations ready bestie!");
     Ok(())
-}
-

@@ -5,10 +5,8 @@ use std::time::Duration;
 use std::thread;
 
 use crate::runtime::r#async::{
-    AsyncExecutor, ExecutorConfig, ExecutorStatistics,
-    Future, TaskHandle, TaskPriority,
     Promise, PromiseResolver, PromiseRejecter, FutureError, FutureResult
-};
+// };
 
 use crate::runtime::goroutine::{GoroutineScheduler, SchedulerConfig};
 
@@ -20,63 +18,27 @@ static RUNTIME_INIT: Once = Once::new();
 #[derive(Debug, Clone)]
 pub struct AsyncRuntimeConfig {
     /// Executor configuration
-    pub executor_config: ExecutorConfig,
     /// Enable integration with goroutine scheduler
-    pub integrate_with_goroutines: bool,
     /// Number of async worker threads
-    pub async_worker_threads: usize,
     /// Runtime statistics collection interval
-    pub stats_collection_interval: Duration,
-}
-
 impl Default for AsyncRuntimeConfig {
     fn default() -> Self {
         Self {
-            executor_config: ExecutorConfig::default(),
-            integrate_with_goroutines: true,
-            async_worker_threads: num_cpus::get().max(2),
-            stats_collection_interval: Duration::from_secs(5),
         }
     }
-}
-
 /// Runtime statistics for monitoring
 #[derive(Debug, Clone)]
 pub struct RuntimeStatistics {
-    pub executor_stats: ExecutorStatistics,
-    pub active_futures: usize,
-    pub completed_futures: usize,
-    pub failed_futures: usize,
-    pub runtime_uptime: Duration,
-    pub memory_usage: usize,
-    pub goroutine_integration_active: bool,
-}
-
 impl Default for RuntimeStatistics {
     fn default() -> Self {
         Self {
-            executor_stats: ExecutorStatistics::default(),
-            active_futures: 0,
-            completed_futures: 0,
-            failed_futures: 0,
-            runtime_uptime: Duration::ZERO,
-            memory_usage: 0,
-            goroutine_integration_active: false,
         }
     }
-}
-
 /// Runtime coordinator for managing async/goroutine integration
 pub struct RuntimeCoordinator {
-    goroutine_scheduler: Option<Arc<GoroutineScheduler>>,
-    integration_active: bool,
-}
-
 impl RuntimeCoordinator {
     pub fn new() -> Self {
         Self {
-            goroutine_scheduler: None,
-            integration_active: false,
         }
     }
 
@@ -84,13 +46,9 @@ impl RuntimeCoordinator {
     pub fn set_goroutine_scheduler(&mut self, scheduler: Arc<GoroutineScheduler>) {
         self.goroutine_scheduler = Some(scheduler);
         self.integration_active = true;
-    }
-
     /// Check if goroutine integration is active
     pub fn is_integration_active(&self) -> bool {
         self.integration_active
-    }
-
     /// Coordinate with goroutine scheduler for GC safe points
     pub fn coordinate_gc_safe_point(&self) -> crate::error::Result<()> {
         if let Some(scheduler) = &self.goroutine_scheduler {
@@ -99,28 +57,12 @@ impl RuntimeCoordinator {
             Ok(())
         }
     }
-}
-
 /// Main async runtime for CURSED
 pub struct AsyncRuntime {
-    config: AsyncRuntimeConfig,
-    executor: Mutex<Option<AsyncExecutor>>,
-    coordinator: Mutex<RuntimeCoordinator>,
-    statistics: Mutex<RuntimeStatistics>,
-    start_time: std::time::Instant,
-    shutdown: Mutex<bool>,
-}
-
 impl AsyncRuntime {
     /// Create a new async runtime with the given configuration
     pub fn new(config: AsyncRuntimeConfig) -> Self {
         Self {
-            config,
-            executor: Mutex::new(None),
-            coordinator: Mutex::new(RuntimeCoordinator::new()),
-            statistics: Mutex::new(RuntimeStatistics::default()),
-            start_time: std::time::Instant::now(),
-            shutdown: Mutex::new(false),
         }
     }
 
@@ -132,16 +74,10 @@ impl AsyncRuntime {
             let mut executor = AsyncExecutor::new(self.config.executor_config.clone());
             executor.start();
             *executor_opt = Some(executor);
-        }
-
         // Initialize goroutine integration if enabled
         if self.config.integrate_with_goroutines {
             self.initialize_goroutine_integration()?;
-        }
-
         Ok(())
-    }
-
     /// Initialize goroutine integration
     fn initialize_goroutine_integration(&self) -> crate::error::Result<()> {
         // Try to get the global goroutine scheduler
@@ -150,13 +86,9 @@ impl AsyncRuntime {
             coordinator.set_goroutine_scheduler(scheduler);
         }
         Ok(())
-    }
-
     /// Spawn a future on the runtime
     pub fn spawn<F>(&self, future: F) -> TaskHandle<F::Output>
     where
-        F: Future + Send + 'static,
-        F::Output: Send + 'static,
     {
         let executor = self.executor.lock().unwrap();
         if let Some(ref executor) = *executor {
@@ -170,8 +102,6 @@ impl AsyncRuntime {
     /// Spawn a future with specific priority
     pub fn spawn_with_priority<F>(&self, future: F, priority: TaskPriority) -> TaskHandle<F::Output>
     where
-        F: Future + Send + 'static,
-        F::Output: Send + 'static,
     {
         let executor = self.executor.lock().unwrap();
         if let Some(ref executor) = *executor {
@@ -184,7 +114,6 @@ impl AsyncRuntime {
     /// Block on a future until completion
     pub fn block_on<F>(&self, future: F) -> F::Output
     where
-        F: Future,
     {
         let executor = self.executor.lock().unwrap();
         if let Some(ref executor) = *executor {
@@ -198,13 +127,7 @@ impl AsyncRuntime {
 
     /// Spawn a future with a resolver/rejecter pair (for Promise integration)
     pub fn spawn_with_resolver<F, T>(
-        &self,
-        future: F,
-        resolver: PromiseResolver<T>,
-        rejecter: PromiseRejecter<T>,
     ) where
-        F: Future<Output = T> + Send + 'static,
-        T: Send + 'static,
     {
         let handle = self.spawn(async move {
             future.await
@@ -221,19 +144,9 @@ impl AsyncRuntime {
                 }
             }
         });
-    }
-
     /// Spawn a promise chain operation
     pub fn spawn_chain<F, T, U>(
-        &self,
-        promise: Promise<T>,
-        chain_fn: F,
-        resolver: PromiseResolver<U>,
-        rejecter: PromiseRejecter<U>,
     ) where
-        F: FnOnce(T) -> U + Send + 'static,
-        T: Clone + Send + 'static,
-        U: Send + 'static,
     {
         self.spawn(async move {
             match promise.await {
@@ -246,18 +159,9 @@ impl AsyncRuntime {
                 }
             }
         });
-    }
-
     /// Spawn a promise catch operation
     pub fn spawn_catch<F, T>(
-        &self,
-        promise: Promise<T>,
-        catch_fn: F,
-        resolver: PromiseResolver<T>,
-        rejecter: PromiseRejecter<T>,
     ) where
-        F: FnOnce(FutureError) -> T + Send + 'static,
-        T: Clone + Send + 'static,
     {
         self.spawn(async move {
             match promise.await {
@@ -270,19 +174,9 @@ impl AsyncRuntime {
                 }
             }
         });
-    }
-
     /// Spawn a promise map operation
     pub fn spawn_map<F, T, U>(
-        &self,
-        promise: Promise<T>,
-        map_fn: F,
-        resolver: PromiseResolver<U>,
-        rejecter: PromiseRejecter<U>,
     ) where
-        F: FnOnce(T) -> FutureResult<U> + Send + 'static,
-        T: Clone + Send + 'static,
-        U: Send + 'static,
     {
         self.spawn(async move {
             match promise.await {
@@ -301,8 +195,6 @@ impl AsyncRuntime {
                 }
             }
         });
-    }
-
     /// Get runtime statistics
     pub fn statistics(&self) -> RuntimeStatistics {
         let mut stats = self.statistics.lock().unwrap();
@@ -312,15 +204,11 @@ impl AsyncRuntime {
         let executor = self.executor.lock().unwrap();
         if let Some(ref executor) = *executor {
             stats.executor_stats = executor.statistics();
-        }
-
         // Update coordinator status
         let coordinator = self.coordinator.lock().unwrap();
         stats.goroutine_integration_active = coordinator.is_integration_active();
 
         stats.clone()
-    }
-
     /// Shutdown the runtime
     pub fn shutdown(&self) {
         let mut shutdown = self.shutdown.lock().unwrap();
@@ -333,13 +221,9 @@ impl AsyncRuntime {
                 executor.shutdown();
             }
         }
-    }
-
     /// Check if the runtime is shut down
     pub fn is_shutdown(&self) -> bool {
         *self.shutdown.lock().unwrap()
-    }
-
     /// Coordinate with goroutine scheduler for GC
     pub fn coordinate_gc(&self) -> crate::error::Result<()> {
         let coordinator = self.coordinator.lock().unwrap();
@@ -362,15 +246,11 @@ pub fn initialize_global_async_runtime() -> crate::error::Result<()> {
         if let Err(e) = runtime.initialize() {
             eprintln!("Failed to initialize async runtime: {}", e);
             return;
-        }
-
         unsafe {
             GLOBAL_ASYNC_RUNTIME = Some(runtime);
         }
     });
     Ok(())
-}
-
 /// Get the global async runtime
 pub fn get_global_async_runtime() -> Option<Arc<AsyncRuntime>> {
     unsafe { GLOBAL_ASYNC_RUNTIME.clone() }
@@ -383,13 +263,9 @@ pub fn shutdown_global_async_runtime() {
             runtime.shutdown();
         }
     }
-}
-
 /// Spawn a future on the global runtime
 pub fn spawn_global<F>(future: F) -> TaskHandle<F::Output>
 where
-    F: Future + Send + 'static,
-    F::Output: Send + 'static,
 {
     if let Some(runtime) = get_global_async_runtime() {
         runtime.spawn(future)
@@ -401,7 +277,6 @@ where
 /// Block on a future using the global runtime
 pub fn block_on_global<F>(future: F) -> F::Output
 where
-    F: Future,
 {
     if let Some(runtime) = get_global_async_runtime() {
         runtime.block_on(future)
@@ -415,5 +290,3 @@ where
 /// Get global runtime statistics
 pub fn get_global_runtime_statistics() -> Option<RuntimeStatistics> {
     get_global_async_runtime().map(|runtime| runtime.statistics())
-}
-

@@ -11,15 +11,9 @@ use std::collections::HashMap;
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum ProtocolType {
     /// Key exchange protocol
-    KeyExchange,
     /// Authentication protocol
-    Authentication,
     /// Secure messaging protocol
-    SecureMessaging,
     /// Digital contract protocol
-    DigitalContract,
-}
-
 /// Generic protocol trait
 pub trait PqcProtocol {
     type Config;
@@ -35,14 +29,9 @@ pub trait PqcProtocol {
 
     /// Finalize the protocol and get the result
     fn finalize(state: Self::State) -> PqcResult<Self::Result>;
-}
-
 /// Key exchange protocol using PQC algorithms
 pub struct PqcKeyExchange {
-    security_level: SecurityLevel,
 //     algorithm_preference: Vec<crate::stdlib::crypto_pqc::AlgorithmType>,
-}
-
 impl PqcKeyExchange {
     /// Create a new key exchange protocol
     pub fn new(security_level: SecurityLevel) -> Self {
@@ -53,8 +42,6 @@ impl PqcKeyExchange {
         ];
 
         Self {
-            security_level,
-            algorithm_preference,
         }
     }
 
@@ -68,10 +55,7 @@ impl PqcKeyExchange {
 
 /// Authentication protocol using PQC signatures
 pub struct PqcAuthentication {
-    security_level: SecurityLevel,
 //     signature_algorithm: crate::stdlib::crypto_pqc::AlgorithmType,
-}
-
 impl PqcAuthentication {
     /// Create a new authentication protocol
     pub fn new(security_level: SecurityLevel) -> Self {
@@ -79,11 +63,8 @@ impl PqcAuthentication {
 //             SecurityLevel::Level1 => crate::stdlib::crypto_pqc::AlgorithmType::Dilithium,
 //             SecurityLevel::Level3 => crate::stdlib::crypto_pqc::AlgorithmType::Dilithium,
 //             SecurityLevel::Level5 => crate::stdlib::crypto_pqc::AlgorithmType::Sphincs,
-        };
 
         Self {
-            security_level,
-            signature_algorithm,
         }
     }
 
@@ -92,8 +73,6 @@ impl PqcAuthentication {
         // In a real implementation, this would create a signature
         // For now, return a placeholder signature
         Ok(message.to_vec())
-    }
-
     /// Verify authentication (placeholder implementation)
     pub fn verify(&self, message: &[u8], signature: &[u8]) -> PqcResult<bool> {
         // In a real implementation, this would verify the signature
@@ -105,64 +84,33 @@ impl PqcAuthentication {
 /// Protocol registry for managing available protocols
 #[derive(Debug, Clone)]
 pub struct ProtocolRegistry {
-    protocols: HashMap<String, ProtocolInfo>,
-}
-
 /// Information about a protocol
 #[derive(Debug, Clone)]
 pub struct ProtocolInfo {
-    pub name: String,
-    pub protocol_type: ProtocolType,
-    pub security_level: SecurityLevel,
 //     pub algorithms_used: Vec<crate::stdlib::crypto_pqc::AlgorithmType>,
-    pub description: String,
-}
-
 impl ProtocolRegistry {
     /// Create a new protocol registry
     pub fn new() -> Self {
         let mut registry = Self {
-            protocols: HashMap::new(),
-        };
 
         // Register default protocols
         registry.register_default_protocols();
         registry
-    }
-
     /// Register default protocols
     fn register_default_protocols(&mut self) {
         let protocols = vec![
             ProtocolInfo {
-                name: "pqc_key_exchange".to_string(),
-                protocol_type: ProtocolType::KeyExchange,
-                security_level: SecurityLevel::Level3,
                 algorithms_used: vec![
 //                     crate::stdlib::crypto_pqc::AlgorithmType::Kyber,
 //                     crate::stdlib::crypto_pqc::AlgorithmType::Dilithium,
-                ],
-                description: "Post-quantum key exchange with authentication".to_string(),
-            },
             ProtocolInfo {
-                name: "pqc_secure_messaging".to_string(),
-                protocol_type: ProtocolType::SecureMessaging,
-                security_level: SecurityLevel::Level3,
                 algorithms_used: vec![
 //                     crate::stdlib::crypto_pqc::AlgorithmType::Kyber,
 //                     crate::stdlib::crypto_pqc::AlgorithmType::Sphincs,
-                ],
-                description: "End-to-end encrypted messaging with PQC".to_string(),
-            },
             ProtocolInfo {
-                name: "pqc_digital_contract".to_string(),
-                protocol_type: ProtocolType::DigitalContract,
-                security_level: SecurityLevel::Level5,
                 algorithms_used: vec![
 //                     crate::stdlib::crypto_pqc::AlgorithmType::Dilithium,
 //                     crate::stdlib::crypto_pqc::AlgorithmType::Sphincs,
-                ],
-                description: "Digital contract signing with PQC signatures".to_string(),
-            },
         ];
 
         for protocol in protocols {
@@ -173,26 +121,18 @@ impl ProtocolRegistry {
     /// Register a new protocol
     pub fn register_protocol(&mut self, protocol: ProtocolInfo) {
         self.protocols.insert(protocol.name.clone(), protocol);
-    }
-
     /// Get protocol information
     pub fn get_protocol(&self, name: &str) -> Option<&ProtocolInfo> {
         self.protocols.get(name)
-    }
-
     /// List all registered protocols
     pub fn list_protocols(&self) -> Vec<&ProtocolInfo> {
         self.protocols.values().collect()
-    }
-
     /// List protocols by type
     pub fn list_protocols_by_type(&self, protocol_type: ProtocolType) -> Vec<&ProtocolInfo> {
         self.protocols
             .values()
             .filter(|p| p.protocol_type == protocol_type)
             .collect()
-    }
-
     /// List protocols by security level
     pub fn list_protocols_by_security_level(&self, security_level: SecurityLevel) -> Vec<&ProtocolInfo> {
         self.protocols

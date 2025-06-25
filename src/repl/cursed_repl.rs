@@ -12,27 +12,12 @@ use rustyline::config::Configurer;
 use rustyline::history::DefaultHistory;
 
 use crate::repl::{
-    ReplConfig, ReplState, InputType, ReplOutput, ReplResult,
-    SyntaxHighlighter, CommandSystem, SessionManager, TabCompletion,
     MultiLineEditor, BuildIntegration, ReplEvaluator
-};
+// };
 
 
 /// Main CURSED REPL structure
 pub struct CursedRepl {
-    config: ReplConfig,
-    state: ReplState,
-    editor: DefaultEditor,
-    syntax_highlighter: SyntaxHighlighter,
-    command_system: CommandSystem,
-    session_manager: SessionManager,
-    multi_line_editor: MultiLineEditor,
-    build_integration: BuildIntegration,
-    evaluator: ReplEvaluator,
-    current_input: String,
-    line_number: usize,
-}
-
 impl CursedRepl {
     /// Create a new CURSED REPL instance
     pub fn new() -> Self {
@@ -52,20 +37,7 @@ impl CursedRepl {
         // Try to initialize LLVM code generation
         if let Err(e) = evaluator.initialize_codegen() {
             eprintln!("Warning: Could not initialize LLVM codegen: {}", e);
-        }
-
         Self {
-            config,
-            state: ReplState::Interactive,
-            editor,
-            syntax_highlighter: SyntaxHighlighter::new(),
-            command_system: CommandSystem::new(),
-            session_manager: SessionManager::new(),
-            multi_line_editor: MultiLineEditor::new(),
-            build_integration: BuildIntegration::new(),
-            evaluator,
-            current_input: String::new(),
-            line_number: 1,
         }
     }
 
@@ -73,38 +45,26 @@ impl CursedRepl {
     pub fn with_verbose(mut self, verbose: bool) -> Self {
         self.config.verbose = verbose;
         self
-    }
-
     /// Configure REPL with history support
     pub fn with_history(mut self, enable: bool) -> Self {
         self.config.enable_history = enable;
         self
-    }
-
     /// Configure REPL with syntax highlighting
     pub fn with_syntax_highlighting(mut self, enable: bool) -> Self {
         self.config.enable_syntax_highlighting = enable;
         self
-    }
-
     /// Configure REPL timeout
     pub fn with_timeout(mut self, timeout: Duration) -> Self {
         self.config.timeout = timeout;
         self
-    }
-
     /// Set working directory for project context
     pub fn with_working_directory(mut self, dir: &str) -> ReplResult<Self> {
         let path = PathBuf::from(dir);
         if !path.exists() {
             return Err(CursedError::repl_error(format!("Directory does not exist: {}", dir)));
-        }
-        
         self.config.working_directory = Some(path.clone());
         self.build_integration.set_working_directory(path)?;
         Ok(self)
-    }
-
     /// Load and execute a CURSED file
     pub fn load_file(&mut self, file_path: &str) -> ReplResult<()> {
         let content = std::fs::read_to_string(file_path)
@@ -112,17 +72,11 @@ impl CursedRepl {
 
         if self.config.verbose {
             println!("📁 Loading file: {}", file_path);
-        }
-
         self.execute_code(&content)?;
         
         if self.config.verbose {
             println!("✅ File loaded successfully");
-        }
-
         Ok(())
-    }
-
     /// Start the interactive REPL loop
     pub fn run(&mut self) -> ReplResult<()> {
         self.setup()?;
@@ -161,11 +115,7 @@ impl CursedRepl {
                     self.current_input.clear();
                 }
             }
-        }
-
         Ok(())
-    }
-
     /// Setup REPL environment
     fn setup(&mut self) -> ReplResult<()> {
         // Initialize history
@@ -185,11 +135,7 @@ impl CursedRepl {
         // Setup build integration if in project directory
         if let Some(ref working_dir) = self.config.working_directory {
             self.build_integration.scan_project(working_dir)?;
-        }
-
         Ok(())
-    }
-
     /// Print welcome message
     fn print_welcome(&self) {
         println!("🔥 CURSED REPL v{}", crate::VERSION);
@@ -198,18 +144,13 @@ impl CursedRepl {
         
         if let Some(ref dir) = self.config.working_directory {
             println!("📁 Working directory: {}", dir.display());
-        }
-        
         println!();
-    }
-
     /// Handle interactive input
     fn handle_interactive_input(&mut self) -> ReplResult<()> {
         let prompt = if self.current_input.is_empty() {
             &self.config.prompt
         } else {
             &self.config.continuation_prompt
-        };
 
         let readline = self.editor.readline(prompt);
         
@@ -233,8 +174,6 @@ impl CursedRepl {
         }
 
         Ok(())
-    }
-
     /// Handle multi-line input
     fn handle_multiline_input(&mut self) -> ReplResult<()> {
         let line = self.multi_line_editor.read_line(&self.config.continuation_prompt)?;
@@ -248,35 +187,23 @@ impl CursedRepl {
         } else {
             self.current_input.push_str(&line);
             self.current_input.push('\n');
-        }
-
         Ok(())
-    }
-
     /// Parse input string into InputType
     fn parse_input(&self, line: &str) -> InputType {
         let trimmed = line.trim();
         
         if trimmed.is_empty() {
             return InputType::Empty;
-        }
-
         if trimmed.starts_with(':') {
             // Built-in command
             let parts: Vec<&str> = trimmed[1..].split_whitespace().collect();
             if parts.is_empty() {
                 return InputType::Empty;
-            }
-            
             let command = parts[0].to_string();
             let args = parts[1..].iter().map(|s| s.to_string()).collect();
             return InputType::Command(command, args);
-        }
-
         // CURSED code
         InputType::Code(line.to_string())
-    }
-
     /// Handle parsed input
     fn handle_input(&mut self, input: InputType) -> ReplResult<()> {
         match input {
@@ -318,15 +245,12 @@ impl CursedRepl {
                     ReplOutput::success(output).with_timing(execution_time)
                 } else {
                     ReplOutput::success(output)
-                };
                 
                 self.print_output(&formatted_output);
                 
                 // Handle special commands
                 if command == "exit" || command == "quit" {
                     self.state = ReplState::Exiting;
-                }
-                
                 Ok(())
             }
             Err(e) => {
@@ -335,8 +259,6 @@ impl CursedRepl {
                 Ok(())
             }
         }
-    }
-
     /// Execute CURSED code
     fn execute_code(&mut self, code: &str) -> ReplResult<()> {
         // Apply syntax highlighting if enabled
@@ -344,12 +266,9 @@ impl CursedRepl {
             self.syntax_highlighter.highlight(code)
         } else {
             code.to_string()
-        };
 
         if self.config.verbose {
             println!("🔥 Executing: {}", highlighted_code);
-        }
-
         // Use the evaluator to parse and execute the code
         match self.evaluator.evaluate(code, &mut self.session_manager) {
             Ok(output) => {
@@ -367,8 +286,6 @@ impl CursedRepl {
                 Ok(())
             }
         }
-    }
-
     /// Update tab completion with current session state
     fn update_tab_completion(&mut self) {
         // Get variables and functions from evaluator
@@ -385,8 +302,6 @@ impl CursedRepl {
         // Update tab completion (when implemented)
         // self.tab_completion.update_variables(variables);
         // self.tab_completion.update_functions(functions);
-    }
-
     /// Print formatted output
     fn print_output(&self, output: &ReplOutput) {
         if output.is_error {
@@ -396,8 +311,6 @@ impl CursedRepl {
             print!("CursedError: {}", output.content);
         } else {
             print!("{}", output.content);
-        }
-
         if let Some(duration) = output.execution_time {
             if self.config.verbose {
                 print!(" ({}ms)", duration.as_millis());
@@ -405,8 +318,6 @@ impl CursedRepl {
         }
 
         println!();
-    }
-
     /// Cleanup REPL resources
     fn cleanup(&mut self) -> ReplResult<()> {
         // Save history
@@ -427,8 +338,6 @@ impl CursedRepl {
             println!("👋 Thanks for using CURSED! Keep it fire! 🔥");
         } else {
             println!("Goodbye!");
-        }
-
         Ok(())
     }
 }

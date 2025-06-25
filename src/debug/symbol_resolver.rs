@@ -12,29 +12,17 @@ use std::path::PathBuf;
 /// Symbol resolver for managing and resolving symbols
 pub struct SymbolResolver {
     /// Symbol metadata by qualified name
-    symbols: Arc<RwLock<HashMap<String, ResolvedSymbol>>>,
     /// Symbol indices for fast lookup
-    symbol_indices: Arc<RwLock<SymbolIndices>>,
     /// Type information registry
-    types: Arc<RwLock<HashMap<String, TypeDebugInfo>>>,
-}
-
 impl SymbolResolver {
     /// Create new symbol resolver
     pub fn new() -> Self {
         SymbolResolver {
-            symbols: Arc::new(RwLock::new(HashMap::new())),
-            symbol_indices: Arc::new(RwLock::new(SymbolIndices::new())),
-            types: Arc::new(RwLock::new(HashMap::new())),
         }
     }
 
     /// Register symbol with metadata
     pub fn register_symbol(
-        &self,
-        qualified_name: String,
-        metadata: SymbolMetadata,
-        location: SymbolLocation,
     ) -> crate::error::Result<()> {
         let resolved_symbol = ResolvedSymbol::new(qualified_name.clone(), metadata, location);
 
@@ -42,25 +30,17 @@ impl SymbolResolver {
             let mut symbols = self.symbols.write()
                 .map_err(|_| CursedError::Runtime("Failed to acquire symbols lock".to_string()))?;
             symbols.insert(qualified_name.clone(), resolved_symbol.clone());
-        }
-
         {
             let mut indices = self.symbol_indices.write()
                 .map_err(|_| CursedError::Runtime("Failed to acquire symbol indices lock".to_string()))?;
             indices.add_symbol(qualified_name, &resolved_symbol);
-        }
-
         Ok(())
-    }
-
     /// Resolve symbol by qualified name
     pub fn resolve_symbol(&self, qualified_name: &str) -> crate::error::Result<()> {
         let symbols = self.symbols.read()
             .map_err(|_| CursedError::Runtime("Failed to acquire symbols lock".to_string()))?;
 
         Ok(symbols.get(qualified_name).cloned())
-    }
-
     /// Find symbols by pattern
     pub fn find_symbols(&self, pattern: &str) -> crate::error::Result<()> {
         let symbols = self.symbols.read()
@@ -73,8 +53,6 @@ impl SymbolResolver {
             .collect();
 
         Ok(matches)
-    }
-
     /// Find symbols by type
     pub fn find_symbols_by_type(&self, symbol_type: SymbolType) -> crate::error::Result<()> {
         let indices = self.symbol_indices.read()
@@ -129,8 +107,6 @@ impl SymbolResolver {
             .collect();
 
         Ok(matches)
-    }
-
     /// Register type information
     pub fn register_type(&self, type_name: String, type_info: TypeDebugInfo) -> crate::error::Result<()> {
         let mut types = self.types.write()
@@ -138,16 +114,12 @@ impl SymbolResolver {
 
         types.insert(type_name, type_info);
         Ok(())
-    }
-
     /// Resolve type information
     pub fn resolve_type(&self, type_name: &str) -> crate::error::Result<()> {
         let types = self.types.read()
             .map_err(|_| CursedError::Runtime("Failed to acquire types lock".to_string()))?;
 
         Ok(types.get(type_name).cloned())
-    }
-
     /// Get symbol completion suggestions
     pub fn get_completions(&self, prefix: &str, max_results: usize) -> crate::error::Result<()> {
         let symbols = self.symbols.read()
@@ -179,8 +151,6 @@ impl SymbolResolver {
         });
 
         Ok(completions)
-    }
-
     /// Get symbol statistics
     pub fn get_statistics(&self) -> crate::error::Result<()> {
         let symbols = self.symbols.read()
@@ -195,16 +165,6 @@ impl SymbolResolver {
         // Count by type
         for symbol in symbols.values() {
             match symbol.metadata.symbol_type {
-                SymbolType::Function => stats.function_count += 1,
-                SymbolType::Variable => stats.variable_count += 1,
-                SymbolType::Type => stats.type_symbol_count += 1,
-                SymbolType::Interface => stats.interface_count += 1,
-                SymbolType::Struct => stats.struct_count += 1,
-                SymbolType::Constant => stats.constant_count += 1,
-                SymbolType::Module => stats.module_count += 1,
-                SymbolType::Unknown => stats.unknown_count += 1,
-            }
-
             // Count Gen Z keywords
             if symbol.metadata.attributes.contains_key("gen_z_keyword") {
                 stats.gen_z_keyword_count += 1;
@@ -212,28 +172,20 @@ impl SymbolResolver {
         }
 
         Ok(stats)
-    }
-
     /// Clear all symbols
     pub fn clear(&self) -> crate::error::Result<()> {
         {
             let mut symbols = self.symbols.write()
                 .map_err(|_| CursedError::Runtime("Failed to acquire symbols lock".to_string()))?;
             symbols.clear();
-        }
-
         {
             let mut indices = self.symbol_indices.write()
                 .map_err(|_| CursedError::Runtime("Failed to acquire symbol indices lock".to_string()))?;
             indices.clear();
-        }
-
         {
             let mut types = self.types.write()
                 .map_err(|_| CursedError::Runtime("Failed to acquire types lock".to_string()))?;
             types.clear();
-        }
-
         Ok(())
     }
 }
@@ -242,28 +194,18 @@ impl SymbolResolver {
 #[derive(Debug, Clone)]
 pub struct ResolvedSymbol {
     /// Qualified symbol name
-    pub qualified_name: String,
     /// Symbol metadata
-    pub metadata: SymbolMetadata,
     /// Symbol location
-    pub location: SymbolLocation,
-}
-
 impl ResolvedSymbol {
     /// Create new resolved symbol
     pub fn new(qualified_name: String, metadata: SymbolMetadata, location: SymbolLocation) -> Self {
         ResolvedSymbol {
-            qualified_name,
-            metadata,
-            location,
         }
     }
 
     /// Get simple (unqualified) name
     pub fn simple_name(&self) -> &str {
         self.qualified_name.split("::").last().unwrap_or(&self.qualified_name)
-    }
-
     /// Get module name
     pub fn module_name(&self) -> Option<String> {
         let parts: Vec<&str> = self.qualified_name.split("::").collect();
@@ -277,8 +219,6 @@ impl ResolvedSymbol {
     /// Check if symbol has Gen Z keyword
     pub fn has_gen_z_keyword(&self) -> bool {
         self.metadata.attributes.contains_key("gen_z_keyword")
-    }
-
     /// Get Gen Z keyword if present
     pub fn get_gen_z_keyword(&self) -> Option<&String> {
         self.metadata.attributes.get("gen_z_keyword")
@@ -289,23 +229,13 @@ impl ResolvedSymbol {
 #[derive(Debug, Clone)]
 pub struct SymbolLocation {
     /// File path
-    pub file_path: PathBuf,
     /// Line number
-    pub line: u32,
     /// Column number
-    pub column: u32,
     /// Symbol range (start, end) in characters
-    pub range: Option<(u32, u32)>,
-}
-
 impl SymbolLocation {
     /// Create new symbol location
     pub fn new(file_path: PathBuf, line: u32, column: u32) -> Self {
         SymbolLocation {
-            file_path,
-            line,
-            column,
-            range: None,
         }
     }
 
@@ -313,37 +243,23 @@ impl SymbolLocation {
     pub fn with_range(mut self, start: u32, end: u32) -> Self {
         self.range = Some((start, end));
         self
-    }
-
     /// Get location string
     pub fn to_string(&self) -> String {
         if let Some(file_name) = self.file_path.file_name() {
-            format!("{}:{}:{}", 
-                file_name.to_string_lossy(),
-                self.line,
                 self.column
             )
         } else {
             format!("{}:{}", self.line, self.column)
         }
     }
-}
-
 /// Symbol completion information
 #[derive(Debug, Clone)]
 pub struct SymbolCompletion {
     /// Symbol name
-    pub name: String,
     /// Symbol type
-    pub symbol_type: SymbolType,
     /// Completion detail (type signature, etc.)
-    pub detail: Option<String>,
     /// Documentation
-    pub documentation: Option<String>,
     /// Gen Z keyword if applicable
-    pub gen_z_keyword: Option<String>,
-}
-
 impl SymbolCompletion {
     /// Create completion from resolved symbol
     pub fn from_symbol(symbol: &ResolvedSymbol) -> Self {
@@ -357,36 +273,19 @@ impl SymbolCompletion {
             SymbolType::Variable => {
                 symbol.metadata.attributes.get("type").cloned()
             }
-            _ => None,
-        };
 
         SymbolCompletion {
-            name: symbol.simple_name().to_string(),
-            symbol_type: symbol.metadata.symbol_type.clone(),
-            detail,
-            documentation: symbol.metadata.documentation.clone(),
-            gen_z_keyword: symbol.metadata.attributes.get("gen_z_keyword").cloned(),
         }
     }
-}
-
 /// Symbol indices for fast lookup
 #[derive(Debug)]
 struct SymbolIndices {
     /// Symbols by type
-    pub by_type: HashMap<SymbolType, Vec<String>>,
     /// Symbols by file
-    pub by_file: HashMap<PathBuf, Vec<String>>,
     /// Symbols by visibility
-    pub by_visibility: HashMap<SymbolVisibility, Vec<String>>,
-}
-
 impl SymbolIndices {
     fn new() -> Self {
         SymbolIndices {
-            by_type: HashMap::new(),
-            by_file: HashMap::new(),
-            by_visibility: HashMap::new(),
         }
     }
 
@@ -408,8 +307,6 @@ impl SymbolIndices {
             .entry(symbol.metadata.visibility.clone())
             .or_insert_with(Vec::new)
             .push(qualified_name);
-    }
-
     fn clear(&mut self) {
         self.by_type.clear();
         self.by_file.clear();
@@ -420,44 +317,13 @@ impl SymbolIndices {
 /// Symbol resolver statistics
 #[derive(Debug, Clone)]
 pub struct SymbolStatistics {
-    pub total_symbols: usize,
-    pub total_types: usize,
-    pub function_count: usize,
-    pub variable_count: usize,
-    pub type_symbol_count: usize,
-    pub interface_count: usize,
-    pub struct_count: usize,
-    pub constant_count: usize,
-    pub module_count: usize,
-    pub unknown_count: usize,
-    pub gen_z_keyword_count: usize,
-}
-
 impl SymbolStatistics {
     fn new() -> Self {
         SymbolStatistics {
-            total_symbols: 0,
-            total_types: 0,
-            function_count: 0,
-            variable_count: 0,
-            type_symbol_count: 0,
-            interface_count: 0,
-            struct_count: 0,
-            constant_count: 0,
-            module_count: 0,
-            unknown_count: 0,
-            gen_z_keyword_count: 0,
         }
     }
-}
-
 impl std::fmt::Display for SymbolStatistics {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "Symbols: {} total, {} functions, {} variables, {} types, {} Gen Z keywords",
-            self.total_symbols,
-            self.function_count,
-            self.variable_count,
-            self.type_symbol_count,
             self.gen_z_keyword_count
         )
     }

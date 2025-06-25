@@ -57,28 +57,16 @@ pub struct ChannelType {
     pub element_type: Box<dyn TypeNode>, // Type of elements in the channel
     pub is_buffered: bool,               // Whether this is a buffered channel
     pub buffer_capacity: Option<Box<dyn Expression>>, // Buffer size for buffered channels
-}
-
 impl ChannelType {
     pub fn new(token: Token, element_type: Box<dyn TypeNode>) -> Self {
         Self {
-            token,
-            element_type,
-            is_buffered: false,
-            buffer_capacity: None,
         }
     }
     
     pub fn new_buffered(token: Token, element_type: Box<dyn TypeNode>, capacity: Box<dyn Expression>) -> Self {
         Self {
-            token,
-            element_type,
-            is_buffered: true,
-            buffer_capacity: Some(capacity),
         }
     }
-}
-
 impl Node for ChannelType {
     fn string(&self) -> String {
         if self.is_buffered {
@@ -100,13 +88,9 @@ impl Node for ChannelType {
 impl TypeNode for ChannelType {
     fn type_name(&self) -> String {
         format!("channel<{}>", self.element_type.type_name())
-    }
-    
     fn is_generic(&self) -> bool {
         // Channel type is generic if its element type is generic
         self.element_type.is_generic()
-    }
-    
     fn size_hint(&self) -> Option<usize> {
         // Channels are reference types, so size is pointer size
         Some(std::mem::size_of::<*const u8>())
@@ -120,26 +104,16 @@ pub struct ChannelMake {
     pub token: Token,                                 // The 'make' token
     pub channel_type: ChannelType,                   // Type specification
     pub capacity: Option<Box<dyn Expression>>,       // Optional buffer capacity
-}
-
 impl ChannelMake {
     pub fn new(token: Token, channel_type: ChannelType) -> Self {
         Self {
-            token,
-            channel_type,
-            capacity: None,
         }
     }
     
     pub fn new_with_capacity(token: Token, channel_type: ChannelType, capacity: Box<dyn Expression>) -> Self {
         Self {
-            token,
-            channel_type,
-            capacity: Some(capacity),
         }
     }
-}
-
 impl Node for ChannelMake {
     fn string(&self) -> String {
         if let Some(capacity) = &self.capacity {
@@ -157,8 +131,6 @@ impl Node for ChannelMake {
 impl Expression for ChannelMake {
     fn as_any(&self) -> &dyn Any {
         self
-    }
-    
     fn clone_box(&self) -> Box<dyn Expression> {
         Box::new(self.clone())
     }
@@ -171,23 +143,14 @@ pub struct ChannelSend {
     pub token: Token,                    // The '<-' token
     pub channel: Box<dyn Expression>,   // Channel expression
     pub value: Box<dyn Expression>,     // Value to send
-}
-
 impl ChannelSend {
     pub fn new(token: Token, channel: Box<dyn Expression>, value: Box<dyn Expression>) -> Self {
         Self {
-            token,
-            channel,
-            value,
         }
     }
-}
-
 impl Node for ChannelSend {
     fn string(&self) -> String {
         format!("{} <- {}", self.channel.string(), self.value.string())
-    }
-    
     fn token_literal(&self) -> String {
         self.token.literal.clone()
     }
@@ -196,8 +159,6 @@ impl Node for ChannelSend {
 impl Expression for ChannelSend {
     fn as_any(&self) -> &dyn Any {
         self
-    }
-    
     fn clone_box(&self) -> Box<dyn Expression> {
         Box::new(self.clone())
     }
@@ -206,8 +167,6 @@ impl Expression for ChannelSend {
 impl Statement for ChannelSend {
     fn as_any(&self) -> &dyn Any {
         self
-    }
-    
     fn clone_box(&self) -> Box<dyn Statement> {
         Box::new(self.clone())
     }
@@ -219,22 +178,14 @@ impl Statement for ChannelSend {
 pub struct ChannelReceive {
     pub token: Token,                    // The '<-' token
     pub channel: Box<dyn Expression>,   // Channel expression
-}
-
 impl ChannelReceive {
     pub fn new(token: Token, channel: Box<dyn Expression>) -> Self {
         Self {
-            token,
-            channel,
         }
     }
-}
-
 impl Node for ChannelReceive {
     fn string(&self) -> String {
         format!("<-{}", self.channel.string())
-    }
-    
     fn token_literal(&self) -> String {
         self.token.literal.clone()
     }
@@ -243,8 +194,6 @@ impl Node for ChannelReceive {
 impl Expression for ChannelReceive {
     fn as_any(&self) -> &dyn Any {
         self
-    }
-    
     fn clone_box(&self) -> Box<dyn Expression> {
         Box::new(self.clone())
     }
@@ -258,24 +207,14 @@ pub struct ChannelReceiveOk {
     pub channel: Box<dyn Expression>,   // Channel expression
     pub value_name: String,              // Variable name for the value
     pub ok_name: String,                 // Variable name for the ok flag
-}
-
 impl ChannelReceiveOk {
     pub fn new(token: Token, channel: Box<dyn Expression>, value_name: String, ok_name: String) -> Self {
         Self {
-            token,
-            channel,
-            value_name,
-            ok_name,
         }
     }
-}
-
 impl Node for ChannelReceiveOk {
     fn string(&self) -> String {
         format!("{}, {} := <-{}", self.value_name, self.ok_name, self.channel.string())
-    }
-    
     fn token_literal(&self) -> String {
         self.token.literal.clone()
     }
@@ -284,8 +223,6 @@ impl Node for ChannelReceiveOk {
 impl Statement for ChannelReceiveOk {
     fn as_any(&self) -> &dyn Any {
         self
-    }
-    
     fn clone_box(&self) -> Box<dyn Statement> {
         Box::new(self.clone())
     }
@@ -297,22 +234,14 @@ impl Statement for ChannelReceiveOk {
 pub struct ChannelClose {
     pub token: Token,                    // The 'close' token
     pub channel: Box<dyn Expression>,   // Channel expression
-}
-
 impl ChannelClose {
     pub fn new(token: Token, channel: Box<dyn Expression>) -> Self {
         Self {
-            token,
-            channel,
         }
     }
-}
-
 impl Node for ChannelClose {
     fn string(&self) -> String {
         format!("close({})", self.channel.string())
-    }
-    
     fn token_literal(&self) -> String {
         self.token.literal.clone()
     }
@@ -321,8 +250,6 @@ impl Node for ChannelClose {
 impl Expression for ChannelClose {
     fn as_any(&self) -> &dyn Any {
         self
-    }
-    
     fn clone_box(&self) -> Box<dyn Expression> {
         Box::new(self.clone())
     }
@@ -331,8 +258,6 @@ impl Expression for ChannelClose {
 impl Statement for ChannelClose {
     fn as_any(&self) -> &dyn Any {
         self
-    }
-    
     fn clone_box(&self) -> Box<dyn Statement> {
         Box::new(self.clone())
     }
@@ -344,22 +269,14 @@ impl Statement for ChannelClose {
 pub struct ChannelLen {
     pub token: Token,                    // The 'len' token
     pub channel: Box<dyn Expression>,   // Channel expression
-}
-
 impl ChannelLen {
     pub fn new(token: Token, channel: Box<dyn Expression>) -> Self {
         Self {
-            token,
-            channel,
         }
     }
-}
-
 impl Node for ChannelLen {
     fn string(&self) -> String {
         format!("len({})", self.channel.string())
-    }
-    
     fn token_literal(&self) -> String {
         self.token.literal.clone()
     }
@@ -368,8 +285,6 @@ impl Node for ChannelLen {
 impl Expression for ChannelLen {
     fn as_any(&self) -> &dyn Any {
         self
-    }
-    
     fn clone_box(&self) -> Box<dyn Expression> {
         Box::new(self.clone())
     }
@@ -381,22 +296,14 @@ impl Expression for ChannelLen {
 pub struct ChannelCap {
     pub token: Token,                    // The 'cap' token
     pub channel: Box<dyn Expression>,   // Channel expression
-}
-
 impl ChannelCap {
     pub fn new(token: Token, channel: Box<dyn Expression>) -> Self {
         Self {
-            token,
-            channel,
         }
     }
-}
-
 impl Node for ChannelCap {
     fn string(&self) -> String {
         format!("cap({})", self.channel.string())
-    }
-    
     fn token_literal(&self) -> String {
         self.token.literal.clone()
     }
@@ -405,8 +312,6 @@ impl Node for ChannelCap {
 impl Expression for ChannelCap {
     fn as_any(&self) -> &dyn Any {
         self
-    }
-    
     fn clone_box(&self) -> Box<dyn Expression> {
         Box::new(self.clone())
     }
@@ -418,62 +323,33 @@ impl Expression for ChannelCap {
 pub enum SelectCase {
     /// Receive case: mood value := <-channel:
     Receive {
-        token: Token,
-        channel: Box<dyn Expression>,
         variable: Option<String>,          // Optional variable name
-    },
     /// Receive with ok case: mood value, ok := <-channel:
     ReceiveOk {
-        token: Token,
-        channel: Box<dyn Expression>,
-        value_var: String,
-        ok_var: String,
-    },
     /// Send case: mood channel <- value:
     Send {
-        token: Token,
-        channel: Box<dyn Expression>,
-        value: Box<dyn Expression>,
-    },
     /// Default case: basic:
     Default {
-        token: Token,
-    },
-}
-
 impl SelectCase {
     pub fn new_receive(token: Token, channel: Box<dyn Expression>, variable: Option<String>) -> Self {
         SelectCase::Receive {
-            token,
-            channel,
-            variable,
         }
     }
     
     pub fn new_receive_ok(token: Token, channel: Box<dyn Expression>, value_var: String, ok_var: String) -> Self {
         SelectCase::ReceiveOk {
-            token,
-            channel,
-            value_var,
-            ok_var,
         }
     }
     
     pub fn new_send(token: Token, channel: Box<dyn Expression>, value: Box<dyn Expression>) -> Self {
         SelectCase::Send {
-            token,
-            channel,
-            value,
         }
     }
     
     pub fn new_default(token: Token) -> Self {
         SelectCase::Default {
-            token,
         }
     }
-}
-
 impl Node for SelectCase {
     fn string(&self) -> String {
         match self {
@@ -494,18 +370,13 @@ impl Node for SelectCase {
                 "basic:".to_string()
             }
         }
-    }
-    
     fn token_literal(&self) -> String {
         match self {
             SelectCase::Receive { token, .. } |
             SelectCase::ReceiveOk { token, .. } |
             SelectCase::Send { token, .. } |
-            SelectCase::Default { token } => token.literal.clone(),
         }
     }
-}
-
 /// Select statement (vibe_check { mood ... })
 /// Represents a select statement for multi-channel operations
 #[derive(Debug, Clone)]
@@ -513,14 +384,9 @@ pub struct SelectStatement {
     pub token: Token,                              // The 'vibe_check' token
     pub cases: Vec<SelectCase>,                    // List of select cases
     pub case_bodies: Vec<Vec<Box<dyn Statement>>>, // Corresponding case bodies
-}
-
 impl SelectStatement {
     pub fn new(token: Token) -> Self {
         Self {
-            token,
-            cases: Vec::new(),
-            case_bodies: Vec::new(),
         }
     }
     
@@ -543,8 +409,6 @@ impl Node for SelectStatement {
         
         result.push('}');
         result
-    }
-    
     fn token_literal(&self) -> String {
         self.token.literal.clone()
     }
@@ -553,8 +417,6 @@ impl Node for SelectStatement {
 impl Statement for SelectStatement {
     fn as_any(&self) -> &dyn Any {
         self
-    }
-    
     fn clone_box(&self) -> Box<dyn Statement> {
         Box::new(self.clone())
     }
@@ -568,40 +430,24 @@ pub struct ChannelRange {
     pub variable: String,                // Variable name for received values
     pub channel: Box<dyn Expression>,   // Channel expression
     pub body: Vec<Box<dyn Statement>>,   // Loop body statements
-}
-
 impl ChannelRange {
     pub fn new(token: Token, variable: String, channel: Box<dyn Expression>) -> Self {
         Self {
-            token,
-            variable,
-            channel,
-            body: Vec::new(),
         }
     }
     
     pub fn with_body(token: Token, variable: String, channel: Box<dyn Expression>, body: Vec<Box<dyn Statement>>) -> Self {
         Self {
-            token,
-            variable,
-            channel,
-            body,
         }
     }
-}
-
 impl Node for ChannelRange {
     fn string(&self) -> String {
         let mut result = format!("flex {} := <-{} {{\n", self.variable, self.channel.string());
         
         for stmt in &self.body {
             result.push_str(&format!("    {}\n", stmt.string()));
-        }
-        
         result.push('}');
         result
-    }
-    
     fn token_literal(&self) -> String {
         self.token.literal.clone()
     }
@@ -610,8 +456,6 @@ impl Node for ChannelRange {
 impl Statement for ChannelRange {
     fn as_any(&self) -> &dyn Any {
         self
-    }
-    
     fn clone_box(&self) -> Box<dyn Statement> {
         Box::new(self.clone())
     }
@@ -624,38 +468,24 @@ pub struct GoroutineSpawn {
     pub token: Token,                         // The 'stan' token
     pub body: Vec<Box<dyn Statement>>,        // Goroutine body statements
     pub captures: Vec<String>,                // Variables captured by the goroutine
-}
-
 impl GoroutineSpawn {
     pub fn new(token: Token, body: Vec<Box<dyn Statement>>) -> Self {
         Self {
-            token,
-            body,
-            captures: Vec::new(),
         }
     }
     
     pub fn with_captures(token: Token, body: Vec<Box<dyn Statement>>, captures: Vec<String>) -> Self {
         Self {
-            token,
-            body,
-            captures,
         }
     }
-}
-
 impl Node for GoroutineSpawn {
     fn string(&self) -> String {
         let mut result = String::from("stan {\n");
         
         for stmt in &self.body {
             result.push_str(&format!("    {}\n", stmt.string()));
-        }
-        
         result.push('}');
         result
-    }
-    
     fn token_literal(&self) -> String {
         self.token.literal.clone()
     }
@@ -664,8 +494,6 @@ impl Node for GoroutineSpawn {
 impl Expression for GoroutineSpawn {
     fn as_any(&self) -> &dyn Any {
         self
-    }
-    
     fn clone_box(&self) -> Box<dyn Expression> {
         Box::new(self.clone())
     }
@@ -674,8 +502,6 @@ impl Expression for GoroutineSpawn {
 impl Statement for GoroutineSpawn {
     fn as_any(&self) -> &dyn Any {
         self
-    }
-    
     fn clone_box(&self) -> Box<dyn Statement> {
         Box::new(self.clone())
     }
@@ -687,22 +513,14 @@ impl Statement for GoroutineSpawn {
 pub struct ChannelTimeout {
     pub token: Token,                    // The function token (time.After)
     pub duration: Box<dyn Expression>,  // Duration expression
-}
-
 impl ChannelTimeout {
     pub fn new(token: Token, duration: Box<dyn Expression>) -> Self {
         Self {
-            token,
-            duration,
         }
     }
-}
-
 impl Node for ChannelTimeout {
     fn string(&self) -> String {
         format!("time.After({})", self.duration.string())
-    }
-    
     fn token_literal(&self) -> String {
         self.token.literal.clone()
     }
@@ -711,8 +529,6 @@ impl Node for ChannelTimeout {
 impl Expression for ChannelTimeout {
     fn as_any(&self) -> &dyn Any {
         self
-    }
-    
     fn clone_box(&self) -> Box<dyn Expression> {
         Box::new(self.clone())
     }

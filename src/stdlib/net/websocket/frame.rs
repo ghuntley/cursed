@@ -8,50 +8,20 @@ use crate::error::CursedError;
 /// WebSocket frame opcodes
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Opcode {
-    Continuation = 0x0,
-    Text = 0x1,
-    Binary = 0x2,
-    Close = 0x8,
-    Ping = 0x9,
-    Pong = 0xA,
-}
-
 /// WebSocket frame types
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum FrameType {
-    Text,
-    Binary,
-    Close,
-    Ping,
-    Pong,
-    Continuation,
-}
-
 /// WebSocket frame
 #[derive(Debug, Clone)]
 pub struct WebSocketFrame {
-    pub fin: bool,
-    pub opcode: Opcode,
-    pub masked: bool,
-    pub payload: Vec<u8>,
-}
-
 impl WebSocketFrame {
     pub fn text(data: String) -> Self {
         Self {
-            fin: true,
-            opcode: Opcode::Text,
-            masked: true,
-            payload: data.into_bytes(),
         }
     }
     
     pub fn binary(data: Vec<u8>) -> Self {
         Self {
-            fin: true,
-            opcode: Opcode::Binary,
-            masked: true,
-            payload: data,
         }
     }
     
@@ -61,28 +31,16 @@ impl WebSocketFrame {
         payload.extend_from_slice(reason.as_bytes());
         
         Self {
-            fin: true,
-            opcode: Opcode::Close,
-            masked: true,
-            payload,
         }
     }
     
     pub fn ping(data: Vec<u8>) -> Self {
         Self {
-            fin: true,
-            opcode: Opcode::Ping,
-            masked: true,
-            payload: data,
         }
     }
     
     pub fn pong(data: Vec<u8>) -> Self {
         Self {
-            fin: true,
-            opcode: Opcode::Pong,
-            masked: true,
-            payload: data,
         }
     }
     
@@ -101,8 +59,6 @@ impl WebSocketFrame {
         let mut second_byte = 0u8;
         if self.masked {
             second_byte |= 0x80;
-        }
-        
         if payload_len < 126 {
             second_byte |= payload_len as u8;
             frame.push(second_byte);
@@ -114,8 +70,6 @@ impl WebSocketFrame {
             second_byte |= 127;
             frame.push(second_byte);
             frame.extend_from_slice(&(payload_len as u64).to_be_bytes());
-        }
-        
         // Masking key and payload
         if self.masked {
             let mask = [0x12, 0x34, 0x56, 0x78]; // Simplified mask
@@ -127,11 +81,7 @@ impl WebSocketFrame {
             }
         } else {
             frame.extend_from_slice(&self.payload);
-        }
-        
         Ok(frame)
-    }
-    
     pub fn from_socket(socket: &TcpSocket) -> NetResult<Self> {
         // Read frame header
         let mut header = [0u8; 2];
@@ -139,14 +89,6 @@ impl WebSocketFrame {
         
         let fin = (header[0] & 0x80) != 0;
         let opcode = match header[0] & 0x0F {
-            0x0 => Opcode::Continuation,
-            0x1 => Opcode::Text,
-            0x2 => Opcode::Binary,
-            0x8 => Opcode::Close,
-            0x9 => Opcode::Ping,
-            0xA => Opcode::Pong,
-            _ => return Err(websocket_error("Invalid opcode", None, None)),
-        };
         
         let masked = (header[1] & 0x80) != 0;
         let mut payload_len = (header[1] & 0x7F) as u64;
@@ -160,8 +102,6 @@ impl WebSocketFrame {
             let mut len_bytes = [0u8; 8];
             socket.read_exact(&mut len_bytes)?;
             payload_len = u64::from_be_bytes(len_bytes);
-        }
-        
         // Masking key
         let mask = if masked {
             let mut mask_bytes = [0u8; 4];
@@ -169,7 +109,6 @@ impl WebSocketFrame {
             Some(mask_bytes)
         } else {
             None
-        };
         
         // Payload
         let mut payload = vec![0u8; payload_len as usize];
@@ -183,21 +122,9 @@ impl WebSocketFrame {
         }
         
         Ok(Self {
-            fin,
-            opcode,
-            masked,
-            payload,
         })
-    }
-    
     pub fn frame_type(&self) -> FrameType {
         match self.opcode {
-            Opcode::Text => FrameType::Text,
-            Opcode::Binary => FrameType::Binary,
-            Opcode::Close => FrameType::Close,
-            Opcode::Ping => FrameType::Ping,
-            Opcode::Pong => FrameType::Pong,
-            Opcode::Continuation => FrameType::Continuation,
         }
     }
     

@@ -7,143 +7,66 @@
 use crate::error::CursedError;
 use crate::ast::Program;
 use crate::codegen::llvm::{
-    LlvmCodeGenerator, 
-    jit_engine::{CursedJitEngine, JitEngineConfig, JitEngineStats},
-    osr::{OSRManager, OSRConfig, OSRStats, StackFrame, VariableValue, VariableValueType, DeoptimizationReason},
-    tiered_compilation::{TieredCompilationManager, TieredCompilationConfig, TieredCompilationStats, CompilationTier},
-};
+// };
 
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
 use std::time::{Duration, Instant};
 
 use inkwell::{
-    context::Context,
-    module::Module,
-    OptimizationLevel,
-};
+// };
 
 /// JIT compilation interface that bridges CURSED AST compilation with JIT execution
 pub struct JitCompilationInterface<'ctx> {
-    context: &'ctx Context,
-    jit_engine: CursedJitEngine<'ctx>,
-    codegen: LlvmCodeGenerator,
-    hot_path_detector: HotPathDetector,
-    compilation_cache: Arc<Mutex<HashMap<String, CompiledFunction>>>,
-    osr_manager: OSRManager<'ctx>,
-    tiered_manager: TieredCompilationManager<'ctx>,
-    config: JitCompilationConfig,
-    stats: JitCompilationStats,
-}
-
 /// Configuration for JIT compilation behavior
 #[derive(Debug, Clone)]
 pub struct JitCompilationConfig {
     /// Minimum execution count before considering hot path optimization
-    pub hot_path_threshold: u64,
     /// Maximum time to spend on compilation before giving up
-    pub compilation_timeout: Duration,
     /// Whether to enable dynamic recompilation of hot paths
-    pub enable_dynamic_recompilation: bool,
     /// Whether to enable background compilation
-    pub enable_background_compilation: bool,
     /// Optimization level for hot path compilation
-    pub hot_path_optimization_level: OptimizationLevel,
     /// Optimization level for regular compilation
-    pub regular_optimization_level: OptimizationLevel,
     /// Maximum number of functions to compile in parallel
-    pub max_parallel_compilations: usize,
     /// Whether to enable profiling-guided optimization
-    pub enable_pgo: bool,
     /// Whether to enable OSR (On-Stack Replacement)
-    pub enable_osr: bool,
     /// Whether to enable tiered compilation
-    pub enable_tiered_compilation: bool,
     /// OSR configuration
-    pub osr_config: OSRConfig,
     /// Tiered compilation configuration
-    pub tiered_config: TieredCompilationConfig,
-}
-
 /// Statistics for JIT compilation performance
 #[derive(Debug, Default, Clone)]
 pub struct JitCompilationStats {
     /// Total number of functions compiled via JIT
-    pub total_jit_compilations: u64,
     /// Number of hot path optimizations performed
-    pub hot_path_optimizations: u64,
     /// Number of background compilations
-    pub background_compilations: u64,
     /// Total time spent in JIT compilation
-    pub total_compilation_time: Duration,
     /// Average compilation time per function
-    pub avg_compilation_time: Duration,
     /// Number of compilation timeouts
-    pub compilation_timeouts: u64,
     /// Number of compilation failures
-    pub compilation_failures: u64,
     /// Performance improvement from JIT optimization (as percentage)
-    pub performance_improvement_percent: f64,
     /// OSR statistics
-    pub osr_stats: OSRStats,
     /// Tiered compilation statistics
-    pub tiered_stats: TieredCompilationStats,
-}
-
 /// Represents a compiled function with metadata
 #[derive(Debug, Clone)]
 pub struct CompiledFunction {
     /// Function name
-    pub name: String,
     /// LLVM IR code
-    pub llvm_ir: String,
     /// Compilation timestamp
-    pub compiled_at: Instant,
     /// Number of executions
-    pub execution_count: u64,
     /// Total execution time
-    pub total_execution_time: Duration,
     /// Whether this is a hot path optimized version
-    pub is_hot_path_optimized: bool,
     /// Optimization level used for compilation
-    pub optimization_level: OptimizationLevel,
-}
-
 /// Hot path detection and optimization
 pub struct HotPathDetector {
-    execution_counts: Arc<Mutex<HashMap<String, u64>>>,
-    execution_times: Arc<Mutex<HashMap<String, Duration>>>,
-    hot_path_threshold: u64,
-    optimization_candidates: Arc<Mutex<Vec<String>>>,
-}
-
 impl Default for JitCompilationConfig {
     fn default() -> Self {
         Self {
-            hot_path_threshold: 100,
-            compilation_timeout: Duration::from_secs(30),
-            enable_dynamic_recompilation: true,
-            enable_background_compilation: true,
-            hot_path_optimization_level: OptimizationLevel::O3,
-            regular_optimization_level: OptimizationLevel::O2,
-            max_parallel_compilations: 4,
-            enable_pgo: false,
-            enable_osr: true,
-            enable_tiered_compilation: true,
-            osr_config: OSRConfig::default(),
-            tiered_config: TieredCompilationConfig::default(),
         }
     }
-}
-
 impl HotPathDetector {
     /// Create a new hot path detector
     pub fn new(hot_path_threshold: u64) -> Self {
         Self {
-            execution_counts: Arc::new(Mutex::new(HashMap::new())),
-            execution_times: Arc::new(Mutex::new(HashMap::new())),
-            hot_path_threshold,
-            optimization_candidates: Arc::new(Mutex::new(Vec::new())),
         }
     }
 
@@ -152,13 +75,9 @@ impl HotPathDetector {
         {
             let mut counts = self.execution_counts.lock().unwrap();
             *counts.entry(function_name.to_string()).or_insert(0) += 1;
-        }
-
         {
             let mut times = self.execution_times.lock().unwrap();
             *times.entry(function_name.to_string()).or_insert(Duration::ZERO) += execution_time;
-        }
-
         // Check if this function should be considered for optimization
         if self.is_hot_path(function_name) {
             let mut candidates = self.optimization_candidates.lock().unwrap();
@@ -166,26 +85,18 @@ impl HotPathDetector {
                 candidates.push(function_name.to_string());
             }
         }
-    }
-
     /// Check if a function is a hot path
     pub fn is_hot_path(&self, function_name: &str) -> bool {
         let counts = self.execution_counts.lock().unwrap();
         counts.get(function_name).unwrap_or(&0) >= &self.hot_path_threshold
-    }
-
     /// Get optimization candidates
     pub fn get_optimization_candidates(&self) -> Vec<String> {
         let candidates = self.optimization_candidates.lock().unwrap();
         candidates.clone()
-    }
-
     /// Clear optimization candidates
     pub fn clear_optimization_candidates(&self) {
         let mut candidates = self.optimization_candidates.lock().unwrap();
         candidates.clear();
-    }
-
     /// Get execution statistics for a function
     pub fn get_execution_stats(&self, function_name: &str) -> (u64, Duration) {
         let counts = self.execution_counts.lock().unwrap();
@@ -195,8 +106,6 @@ impl HotPathDetector {
         let time = times.get(function_name).unwrap_or(&Duration::ZERO);
         
         (*count, *time)
-    }
-
     /// Get all hot path functions
     pub fn get_hot_paths(&self) -> Vec<String> {
         let counts = self.execution_counts.lock().unwrap();
@@ -210,37 +119,17 @@ impl HotPathDetector {
 impl<'ctx> JitCompilationInterface<'ctx> {
     /// Create a new JIT compilation interface
     pub fn new(
-        context: &'ctx Context,
-        jit_engine: CursedJitEngine<'ctx>,
-        codegen: LlvmCodeGenerator,
-        config: JitCompilationConfig,
     ) -> crate::error::Result<()> {
         let hot_path_detector = HotPathDetector::new(config.hot_path_threshold);
         let osr_manager = OSRManager::new(context, config.osr_config.clone());
         let tiered_manager = TieredCompilationManager::new(context, config.tiered_config.clone())?;
         
         Ok(Self {
-            context,
-            jit_engine,
-            codegen,
-            hot_path_detector,
-            compilation_cache: Arc::new(Mutex::new(HashMap::new())),
-            osr_manager,
-            tiered_manager,
-            config,
-            stats: JitCompilationStats::default(),
         })
-    }
-
     /// Create with default configuration
     pub fn new_with_default_config(
-        context: &'ctx Context,
-        jit_engine: CursedJitEngine<'ctx>,
-        codegen: LlvmCodeGenerator,
     ) -> crate::error::Result<()> {
         Self::new(context, jit_engine, codegen, JitCompilationConfig::default())
-    }
-
     /// Compile a CURSED function for JIT execution
     pub fn compile_function(&mut self, function_name: &str, source: &str) -> crate::error::Result<()> {
         let start_time = Instant::now();
@@ -248,10 +137,7 @@ impl<'ctx> JitCompilationInterface<'ctx> {
         // Register function with tiered compilation manager
         if self.config.enable_tiered_compilation {
             self.tiered_manager.register_function(function_name)?;
-        }
-
         tracing::info!(
-            function_name = function_name,
             "Starting JIT compilation"
         );
 
@@ -276,7 +162,6 @@ impl<'ctx> JitCompilationInterface<'ctx> {
             self.config.hot_path_optimization_level
         } else {
             self.config.regular_optimization_level
-        };
 
         // Compile function in JIT engine
         self.jit_engine.compile_function(function_name, &llvm_ir)
@@ -284,20 +169,10 @@ impl<'ctx> JitCompilationInterface<'ctx> {
 
         // Store in compilation cache
         let compiled_function = CompiledFunction {
-            name: function_name.to_string(),
-            llvm_ir,
-            compiled_at: Instant::now(),
-            execution_count: 0,
-            total_execution_time: Duration::ZERO,
-            is_hot_path_optimized: self.hot_path_detector.is_hot_path(function_name),
-            optimization_level,
-        };
 
         {
             let mut cache = self.compilation_cache.lock().unwrap();
             cache.insert(function_name.to_string(), compiled_function);
-        }
-
         // Update statistics
         let compilation_time = start_time.elapsed();
         self.stats.total_jit_compilations += 1;
@@ -306,18 +181,11 @@ impl<'ctx> JitCompilationInterface<'ctx> {
 
         if self.hot_path_detector.is_hot_path(function_name) {
             self.stats.hot_path_optimizations += 1;
-        }
-
         tracing::info!(
-            function_name = function_name,
-            compilation_time_ms = compilation_time.as_millis(),
-            optimization_level = ?optimization_level,
             "JIT compilation completed successfully"
         );
 
         Ok(())
-    }
-
     /// Execute a JIT-compiled function
     pub fn execute_function(&mut self, function_name: &str) -> crate::error::Result<()> {
         let start_time = Instant::now();
@@ -325,7 +193,6 @@ impl<'ctx> JitCompilationInterface<'ctx> {
         // Check for OSR opportunity before execution
         if self.config.enable_osr && self.osr_manager.should_trigger_osr(function_name, self.get_execution_count(function_name)) {
             tracing::info!(
-                function_name = function_name,
                 "OSR opportunity detected before execution"
             );
             
@@ -334,13 +201,10 @@ impl<'ctx> JitCompilationInterface<'ctx> {
             if let Ok(osr_success) = self.osr_manager.perform_osr_transition(function_name, &stack_frame) {
                 if osr_success {
                     tracing::info!(
-                        function_name = function_name,
                         "OSR transition successful, executing optimized version"
                     );
                 }
             }
-        }
-
         // Execute the function
         let result = self.jit_engine.execute_function(function_name)?;
         
@@ -352,8 +216,6 @@ impl<'ctx> JitCompilationInterface<'ctx> {
         // Record execution for tiered compilation
         if self.config.enable_tiered_compilation {
             self.tiered_manager.record_execution(function_name, execution_time)?;
-        }
-
         // Update function statistics in cache
         {
             let mut cache = self.compilation_cache.lock().unwrap();
@@ -369,8 +231,6 @@ impl<'ctx> JitCompilationInterface<'ctx> {
             if let Some(func) = self.compilation_cache.lock().unwrap().get(function_name) {
                 if !func.is_hot_path_optimized {
                     tracing::info!(
-                        function_name = function_name,
-                        execution_count = func.execution_count,
                         "Function identified as hot path, scheduling recompilation"
                     );
                     
@@ -383,19 +243,13 @@ impl<'ctx> JitCompilationInterface<'ctx> {
         }
 
         tracing::debug!(
-            function_name = function_name,
-            execution_time_ms = execution_time.as_millis(),
-            result = result,
             "JIT function executed"
         );
 
         Ok(result)
-    }
-
     /// Schedule background recompilation for hot path optimization
     fn schedule_background_recompilation(&mut self, function_name: &str) -> crate::error::Result<()> {
         tracing::info!(
-            function_name = function_name,
             "Scheduling background recompilation for hot path optimization"
         );
 
@@ -407,7 +261,6 @@ impl<'ctx> JitCompilationInterface<'ctx> {
             } else {
                 return Err(CursedError::from_str(&format!("Function '{}' not found in cache", function_name)));
             }
-        };
 
         // Recompile with aggressive optimization
         self.jit_engine.remove_function(function_name)?;
@@ -427,13 +280,10 @@ impl<'ctx> JitCompilationInterface<'ctx> {
         self.stats.background_compilations += 1;
 
         tracing::info!(
-            function_name = function_name,
             "Background recompilation completed"
         );
 
         Ok(())
-    }
-
     /// Compile a complete CURSED program for JIT execution
     pub fn compile_program(&mut self, program: &Program) -> crate::error::Result<()> {
         let start_time = Instant::now();
@@ -453,23 +303,15 @@ impl<'ctx> JitCompilationInterface<'ctx> {
             let llvm_ir = self.codegen.generate_ir("")?;
             self.jit_engine.compile_function(&function_name, &llvm_ir)?;
             compiled_functions.push(function_name);
-        }
-
         let compilation_time = start_time.elapsed();
         tracing::info!(
-            function_count = compiled_functions.len(),
-            compilation_time_ms = compilation_time.as_millis(),
             "Program JIT compilation completed"
         );
 
         Ok(compiled_functions)
-    }
-
     /// Get hot path optimization candidates
     pub fn get_optimization_candidates(&self) -> Vec<String> {
         self.hot_path_detector.get_optimization_candidates()
-    }
-
     /// Optimize hot path functions
     pub fn optimize_hot_paths(&mut self) -> crate::error::Result<()> {
         let candidates = self.hot_path_detector.get_optimization_candidates();
@@ -477,7 +319,6 @@ impl<'ctx> JitCompilationInterface<'ctx> {
 
         for function_name in candidates {
             tracing::info!(
-                function_name = function_name,
                 "Optimizing hot path function"
             );
 
@@ -489,7 +330,6 @@ impl<'ctx> JitCompilationInterface<'ctx> {
                 } else {
                     continue;
                 }
-            };
 
             // Only optimize if not already at highest level
             if current_optimization != OptimizationLevel::O3 {
@@ -516,66 +356,45 @@ impl<'ctx> JitCompilationInterface<'ctx> {
         self.hot_path_detector.clear_optimization_candidates();
 
         tracing::info!(
-            optimized_count = optimized_count,
             "Hot path optimization completed"
         );
 
         Ok(optimized_count)
-    }
-
     /// Check if a function is available for execution
     pub fn has_function(&self, function_name: &str) -> bool {
         self.jit_engine.has_function(function_name)
-    }
-
     /// Get execution statistics for a function
     pub fn get_function_stats(&self, function_name: &str) -> Option<(u64, Duration, bool)> {
         let cache = self.compilation_cache.lock().unwrap();
         cache.get(function_name).map(|func| {
             (func.execution_count, func.total_execution_time, func.is_hot_path_optimized)
         })
-    }
-
     /// Get all hot path functions
     pub fn get_hot_paths(&self) -> Vec<String> {
         self.hot_path_detector.get_hot_paths()
-    }
-
     /// Get JIT compilation statistics
     pub fn get_stats(&self) -> JitCompilationStats {
         let mut stats = self.stats.clone();
         stats.osr_stats = self.osr_manager.get_stats();
         stats.tiered_stats = self.tiered_manager.get_stats();
         stats
-    }
-
     /// Get JIT engine statistics
     pub fn get_engine_stats(&self) -> JitEngineStats {
         self.jit_engine.get_stats()
-    }
-
     /// Reset all statistics
     pub fn reset_stats(&mut self) {
         self.stats = JitCompilationStats::default();
         self.jit_engine.reset_stats();
-    }
-
     /// Update configuration
     pub fn update_config(&mut self, config: JitCompilationConfig) {
         self.config = config;
-    }
-
     /// Get current configuration
     pub fn get_config(&self) -> &JitCompilationConfig {
         &self.config
-    }
-
     /// Perform background optimization of hot paths
     pub async fn background_optimize(&mut self) -> crate::error::Result<()> {
         if !self.config.enable_background_compilation {
             return Ok(());
-        }
-
         tracing::info!("Starting background optimization");
 
         // Run optimization in background
@@ -588,14 +407,8 @@ impl<'ctx> JitCompilationInterface<'ctx> {
         self.stats.background_compilations += 1;
 
         Ok(())
-    }
-
     /// Compile function with specific optimization level
     pub fn compile_function_with_optimization(
-        &mut self,
-        function_name: &str,
-        source: &str,
-        optimization_level: OptimizationLevel,
     ) -> crate::error::Result<()> {
         // Temporarily update config
         let original_level = self.config.regular_optimization_level;
@@ -607,13 +420,9 @@ impl<'ctx> JitCompilationInterface<'ctx> {
         self.config.regular_optimization_level = original_level;
 
         result
-    }
-
     /// Get memory usage of compiled functions
     pub fn get_memory_usage(&self) -> u64 {
         self.jit_engine.get_memory_usage()
-    }
-
     /// Clear compilation cache
     pub fn clear_cache(&mut self) -> crate::error::Result<()> {
         {
@@ -621,47 +430,31 @@ impl<'ctx> JitCompilationInterface<'ctx> {
             cache.clear();
         }
         self.jit_engine.clear_cache()
-    }
-
     /// Get compiled function count
     pub fn get_compiled_function_count(&self) -> usize {
         let cache = self.compilation_cache.lock().unwrap();
         cache.len()
-    }
-
     /// Profile function execution
     pub fn profile_function_execution(&mut self, function_name: &str, iterations: u32) -> crate::error::Result<()> {
         if !self.has_function(function_name) {
             return Err(CursedError::from_str(&format!("Function '{}' not found", function_name)));
-        }
-
         let start_time = Instant::now();
         
         for _ in 0..iterations {
             self.execute_function(function_name)?;
-        }
-        
         let total_time = start_time.elapsed();
         let avg_time = total_time / iterations;
 
         tracing::info!(
-            function_name = function_name,
-            iterations = iterations,
-            total_time_ms = total_time.as_millis(),
-            avg_time_us = avg_time.as_micros(),
             "Function profiling completed"
         );
 
         Ok(avg_time)
-    }
-
     /// Execute CURSED code directly in REPL context
     pub fn execute_repl_code(&mut self, code: &str) -> crate::error::Result<()> {
         let function_name = format!("repl_expr_{}", self.generate_unique_id());
         
         tracing::debug!(
-            function_name = function_name,
-            code = code,
             "Executing REPL code"
         );
 
@@ -676,15 +469,10 @@ impl<'ctx> JitCompilationInterface<'ctx> {
         // Clean up temporary function unless it's being cached for optimization
         if !self.hot_path_detector.is_hot_path(&function_name) {
             let _ = self.jit_engine.remove_function(&function_name);
-        }
-
         Ok(result)
-    }
-
     /// Compile and cache a function for later execution
     pub fn compile_and_cache_function(&mut self, name: &str, source: &str) -> crate::error::Result<()> {
         tracing::info!(
-            function_name = name,
             "Compiling and caching function for later execution"
         );
 
@@ -696,13 +484,10 @@ impl<'ctx> JitCompilationInterface<'ctx> {
         self.compile_function(name, &llvm_ir)?;
 
         tracing::info!(
-            function_name = name,
             "Function compiled and cached successfully"
         );
 
         Ok(())
-    }
-
     /// Generate unique ID for temporary functions
     fn generate_unique_id(&self) -> u64 {
         use std::time::{SystemTime, UNIX_EPOCH};
@@ -710,20 +495,14 @@ impl<'ctx> JitCompilationInterface<'ctx> {
             .duration_since(UNIX_EPOCH)
             .unwrap_or_default()
             .as_nanos() as u64
-    }
-
     /// List all available functions in the JIT engine
     pub fn list_functions(&self) -> Vec<String> {
         let cache = self.compilation_cache.lock().unwrap();
         cache.keys().cloned().collect()
-    }
-
     /// Get detailed function information
     pub fn get_function_info(&self, function_name: &str) -> Option<CompiledFunction> {
         let cache = self.compilation_cache.lock().unwrap();
         cache.get(function_name).cloned()
-    }
-
     /// Generate performance report for all functions
     pub fn generate_performance_report(&self) -> String {
         let cache = self.compilation_cache.lock().unwrap();
@@ -758,8 +537,6 @@ impl<'ctx> JitCompilationInterface<'ctx> {
             report.push_str(&format!("  Optimized: {}\n", func.is_hot_path_optimized));
             report.push_str(&format!("  Opt level: {:?}\n", func.optimization_level));
             report.push('\n');
-        }
-
         // Hot path information
         let hot_paths = self.get_hot_paths();
         if !hot_paths.is_empty() {
@@ -770,16 +547,9 @@ impl<'ctx> JitCompilationInterface<'ctx> {
         }
 
         report
-    }
-
     /// Convert compilation tier to optimization level
     fn tier_to_optimization_level(&self, tier: CompilationTier) -> OptimizationLevel {
         match tier {
-            CompilationTier::Interpreter => OptimizationLevel::O0,
-            CompilationTier::BasicJIT => OptimizationLevel::O1,
-            CompilationTier::OptimizedJIT => OptimizationLevel::O2,
-            CompilationTier::HighlyOptimizedJIT => OptimizationLevel::O3,
-            CompilationTier::SpeculativeJIT => OptimizationLevel::O3,
         }
     }
 
@@ -787,8 +557,6 @@ impl<'ctx> JitCompilationInterface<'ctx> {
     fn get_execution_count(&self, function_name: &str) -> u64 {
         let cache = self.compilation_cache.lock().unwrap();
         cache.get(function_name).map(|f| f.execution_count).unwrap_or(0)
-    }
-
     /// Create current stack frame for OSR
     fn create_current_stack_frame(&self, function_name: &str) -> crate::error::Result<()> {
         // In a production implementation, this would capture the actual stack state
@@ -797,42 +565,22 @@ impl<'ctx> JitCompilationInterface<'ctx> {
         
         // Add some mock local variables
         local_variables.insert(
-            "local_0".to_string(),
             VariableValue {
-                name: "local_0".to_string(),
-                value: VariableValueType::Integer(42),
-                type_name: "i32".to_string(),
-                is_live: true,
             }
         );
         
         local_variables.insert(
-            "local_1".to_string(),
             VariableValue {
-                name: "local_1".to_string(),
-                value: VariableValueType::Float(3.14),
-                type_name: "f64".to_string(),
-                is_live: true,
             }
         );
 
         Ok(StackFrame {
-            function_name: function_name.to_string(),
-            local_variables,
-            return_address: Some(0x1000),
-            frame_pointer: Some(0x2000),
-            stack_pointer: Some(0x3000),
         })
-    }
-
     /// Prepare OSR for a function
     pub fn prepare_osr_for_function(&mut self, function_name: &str) -> crate::error::Result<()> {
         if !self.config.enable_osr {
             return Ok(());
-        }
-
         tracing::info!(
-            function_name = function_name,
             "Preparing OSR for function"
         );
 
@@ -844,17 +592,11 @@ impl<'ctx> JitCompilationInterface<'ctx> {
         // This would require deeper integration with the LLVM code generation
         
         Ok(())
-    }
-
     /// Trigger deoptimization for a function
     pub fn trigger_deoptimization(&mut self, function_name: &str, reason: DeoptimizationReason) -> crate::error::Result<()> {
         if !self.config.enable_osr {
             return Ok(());
-        }
-
         tracing::warn!(
-            function_name = function_name,
-            reason = ?reason,
             "Triggering deoptimization for function"
         );
 
@@ -864,24 +606,15 @@ impl<'ctx> JitCompilationInterface<'ctx> {
         if self.config.enable_tiered_compilation {
             // Would implement tier demotion logic here
             tracing::info!(
-                function_name = function_name,
                 "Function demoted due to deoptimization"
             );
-        }
-
         Ok(())
-    }
-
     /// Get OSR manager (for advanced usage)
     pub fn get_osr_manager(&self) -> &OSRManager<'ctx> {
         &self.osr_manager
-    }
-
     /// Get tiered compilation manager (for advanced usage)
     pub fn get_tiered_manager(&self) -> &TieredCompilationManager<'ctx> {
         &self.tiered_manager
-    }
-
     /// Generate comprehensive performance report
     pub fn generate_comprehensive_report(&self) -> String {
         let mut report = String::from("🚀 Comprehensive JIT Performance Report\n");
@@ -910,8 +643,6 @@ impl<'ctx> JitCompilationInterface<'ctx> {
                 report.push_str(&format!("  Success rate: {:.2}%\n", success_rate));
             }
             report.push('\n');
-        }
-
         // Tiered compilation statistics
         if self.config.enable_tiered_compilation {
             report.push_str("🎯 Tiered Compilation Statistics:\n");
@@ -921,8 +652,6 @@ impl<'ctx> JitCompilationInterface<'ctx> {
             report.push_str(&format!("  Total promotions: {}\n", stats.tiered_stats.total_promotions));
             report.push_str(&format!("  Total demotions: {}\n", stats.tiered_stats.total_demotions));
             report.push('\n');
-        }
-
         // Hot path information
         let hot_paths = self.get_hot_paths();
         if !hot_paths.is_empty() {
@@ -935,8 +664,6 @@ impl<'ctx> JitCompilationInterface<'ctx> {
                 }
             }
             report.push('\n');
-        }
-
         // Configuration summary
         report.push_str("⚙️ Configuration:\n");
         report.push_str(&format!("  OSR enabled: {}\n", self.config.enable_osr));
@@ -953,51 +680,19 @@ impl<'ctx> JitCompilationInterface<'ctx> {
 
 /// Create a JIT compilation interface with optimal settings
 pub fn create_optimized_jit_interface<'ctx>(
-    context: &'ctx Context,
 ) -> crate::error::Result<()> {
     let jit_engine = crate::codegen::llvm::jit_engine::create_optimized_jit_engine(context)?;
     let codegen = LlvmCodeGenerator::new()?;
     
     let config = JitCompilationConfig {
-        hot_path_threshold: 50,
-        compilation_timeout: Duration::from_secs(60),
-        enable_dynamic_recompilation: true,
-        enable_background_compilation: true,
-        hot_path_optimization_level: OptimizationLevel::O3,
-        regular_optimization_level: OptimizationLevel::O2,
-        max_parallel_compilations: num_cpus::get(),
-        enable_pgo: true,
-        enable_osr: true,
-        enable_tiered_compilation: true,
-        osr_config: OSRConfig::default(),
-        tiered_config: TieredCompilationConfig::default(),
-    };
     
     JitCompilationInterface::new(context, jit_engine, codegen, config)
-}
-
 /// Create a JIT compilation interface for development
 pub fn create_debug_jit_interface<'ctx>(
-    context: &'ctx Context,
 ) -> crate::error::Result<()> {
     let jit_engine = crate::codegen::llvm::jit_engine::create_debug_jit_engine(context)?;
     let codegen = LlvmCodeGenerator::new()?;
     
     let config = JitCompilationConfig {
-        hot_path_threshold: 10,
-        compilation_timeout: Duration::from_secs(10),
-        enable_dynamic_recompilation: false,
-        enable_background_compilation: false,
-        hot_path_optimization_level: OptimizationLevel::O2,
-        regular_optimization_level: OptimizationLevel::O0,
-        max_parallel_compilations: 1,
-        enable_pgo: false,
-        enable_osr: false,
-        enable_tiered_compilation: false,
-        osr_config: OSRConfig::default(),
-        tiered_config: TieredCompilationConfig::default(),
-    };
     
     JitCompilationInterface::new(context, jit_engine, codegen, config)
-}
-

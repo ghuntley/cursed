@@ -13,47 +13,17 @@ use std::time::{Duration, SystemTime};
 /// Detailed information about a goroutine
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct GoroutineData {
-    pub id: u64,
-    pub state: String,
-    pub waiting_for: String,
-    pub waiting_time: Duration,
-    pub stack_trace: String,
-    pub labels: HashMap<String, String>,
-    pub created_by: String,
-    pub created_at: SystemTime,
-    pub cpu_time: Duration,
-}
-
 impl Default for GoroutineData {
     fn default() -> Self {
         Self {
-            id: 0,
-            state: "unknown".to_string(),
-            waiting_for: "".to_string(),
-            waiting_time: Duration::from_secs(0),
-            stack_trace: "".to_string(),
-            labels: HashMap::new(),
-            created_by: "unknown".to_string(),
-            created_at: SystemTime::now(),
-            cpu_time: Duration::from_secs(0),
         }
     }
-}
-
 static GOROUTINE_MANAGER: Mutex<Option<GoroutineManager>> = Mutex::new(None);
 
 struct GoroutineManager {
-    goroutines: HashMap<u64, GoroutineData>,
-    next_id: u64,
-    current_labels: HashMap<String, String>,
-}
-
 impl GoroutineManager {
     fn new() -> Self {
         Self {
-            goroutines: HashMap::new(),
-            next_id: 1,
-            current_labels: HashMap::new(),
         }
     }
     
@@ -64,16 +34,10 @@ impl GoroutineManager {
         data.id = id;
         self.goroutines.insert(id, data);
         id
-    }
-    
     fn get_goroutine(&self, id: u64) -> Option<&GoroutineData> {
         self.goroutines.get(&id)
-    }
-    
     fn set_label(&mut self, key: String, value: String) {
         self.current_labels.insert(key, value);
-    }
-    
     fn get_goroutines_by_label(&self, key: &str, value: &str) -> Vec<u64> {
         self.goroutines
             .iter()
@@ -82,8 +46,6 @@ impl GoroutineManager {
             })
             .map(|(id, _)| *id)
             .collect()
-    }
-    
     fn get_goroutines_by_state(&self, state: &str) -> Vec<u64> {
         self.goroutines
             .iter()
@@ -102,39 +64,21 @@ pub fn initialize() -> ChaosResult<()> {
         
         // Register the main goroutine
         let main_goroutine = GoroutineData {
-            id: 1,
-            state: "running".to_string(),
-            waiting_for: "".to_string(),
-            waiting_time: Duration::from_secs(0),
-            stack_trace: "main.main()".to_string(),
-            labels: HashMap::new(),
-            created_by: "runtime".to_string(),
-            created_at: SystemTime::now(),
-            cpu_time: Duration::from_millis(0),
-        };
         manager.register_goroutine(main_goroutine);
         
         *manager_guard = Some(manager);
-    }
-    
     Ok(())
-}
-
 pub fn cleanup() -> ChaosResult<()> {
     let mut manager_guard = GOROUTINE_MANAGER.lock()
         .map_err(|e| system_error(&format!("Lock error during cleanup: {}", e)))?;
     
     *manager_guard = None;
     Ok(())
-}
-
 /// Returns a formatted stack trace of the goroutine that calls it
 pub fn stack_trace() -> ChaosResult<String> {
     // Get stack trace from vibecheck
     let stack = vibecheck::stack();
     Ok(stack)
-}
-
 /// Returns a stack trace of goroutine IDs
 pub fn all_goroutine_ids() -> ChaosResult<Vec<u64>> {
     let manager_guard = GOROUTINE_MANAGER.lock()
@@ -164,8 +108,6 @@ pub fn all_goroutine_stacks() -> ChaosResult<String> {
             .map_err(|e| goroutine_error(&format!("Failed to serialize stacks: {}", e)))
     } else {
         let default_stacks = HashMap::from([
-            (1u64, "main.main()".to_string()),
-            (2u64, "runtime.gc()".to_string()),
         ]);
         serde_json::to_string_pretty(&default_stacks)
             .map_err(|e| goroutine_error(&format!("Failed to serialize stacks: {}", e)))
@@ -180,11 +122,7 @@ pub fn callers(skip: i32, pc: &mut [usize]) -> ChaosResult<i32> {
     
     for i in 0..count {
         pc[i] = 0x1000000 + (i * 0x1000) + (skip as usize * 0x100);
-    }
-    
     Ok(count as i32)
-}
-
 /// Gets the file and line number for a PC
 pub fn pc_to_file_and_line(pc: usize) -> ChaosResult<(String, i32)> {
     // In a real implementation, this would use debug info to resolve the PC
@@ -201,24 +139,15 @@ pub fn pc_to_file_and_line(pc: usize) -> ChaosResult<(String, i32)> {
     let line = ((pc % 0x1000) / 0x10) as i32 + 1;
     
     Ok((files[file_index].to_string(), line))
-}
-
 /// Gets the function name for a PC
 pub fn pc_to_func_name(pc: usize) -> ChaosResult<String> {
     // In a real implementation, this would use debug info to resolve the PC
     // For simulation, create realistic function names
     let functions = vec![
-        "main::main",
-        "chaos_mode::goroutines::stack_trace",
-        "runtime::scheduler::yield_now",
-        "gc::collector::mark_and_sweep",
-        "vibecheck::update_stats",
     ];
     
     let func_index = (pc / 0x2000) % functions.len();
     Ok(functions[func_index].to_string())
-}
-
 /// Gets the call stack of a goroutine
 pub fn goroutine_stack(id: u64) -> ChaosResult<String> {
     let manager_guard = GOROUTINE_MANAGER.lock()
@@ -250,15 +179,6 @@ pub fn goroutine_info(id: u64) -> ChaosResult<GoroutineData> {
     } else {
         // Return default goroutine info
         Ok(GoroutineData {
-            id,
-            state: "running".to_string(),
-            waiting_for: "".to_string(),
-            waiting_time: Duration::from_secs(0),
-            stack_trace: format!("goroutine {} [running]:\nmain.main()", id),
-            labels: HashMap::new(),
-            created_by: "unknown".to_string(),
-            created_at: SystemTime::now(),
-            cpu_time: Duration::from_millis(100),
         })
     }
 }
@@ -298,14 +218,8 @@ pub fn goroutines_by_state(state: String) -> ChaosResult<Vec<u64>> {
     } else {
         // Return simulated goroutines by state
         match state.as_str() {
-            "running" => Ok(vec![1]),
-            "waiting" => Ok(vec![2, 3]),
-            "blocked" => Ok(vec![]),
-            _ => Ok(vec![]),
         }
     }
-}
-
 /// Kills a specific goroutine (for debugging purposes only)
 pub fn kill_goroutine(id: u64) -> ChaosResult<String> {
     let mut manager_guard = GOROUTINE_MANAGER.lock()

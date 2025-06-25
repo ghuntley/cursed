@@ -32,63 +32,26 @@ use crate::error::CursedError;
 #[derive(Debug)]
 pub struct RealHeapBlock {
     /// System-allocated memory pointer
-    ptr: NonNull<u8>,
     /// Total block size
-    size: usize,
     /// Layout used for system allocation
-    layout: Layout,
     /// Free list for this block
     free_list: BTreeMap<usize, FreeChunk>, // offset -> chunk
     /// Allocated chunks for tracking
     allocated_chunks: HashMap<usize, AllocatedChunk>, // offset -> chunk
     /// Block ID for debugging
-    id: u32,
     /// Usage statistics
-    stats: BlockStatistics,
-}
-
 /// Free memory chunk within a block
 #[derive(Debug, Clone)]
 struct FreeChunk {
-    offset: usize,
-    size: usize,
-    prev_chunk: Option<usize>,
-    next_chunk: Option<usize>,
-}
-
 /// Allocated memory chunk within a block
 #[derive(Debug, Clone)]
 struct AllocatedChunk {
-    offset: usize,
-    size: usize,
-    object_id: Option<ObjectId>,
-    allocated_at: Instant,
-}
-
 /// Block usage statistics
 #[derive(Debug, Clone)]
 struct BlockStatistics {
-    total_allocations: u64,
-    total_deallocations: u64,
-    bytes_allocated: usize,
-    bytes_deallocated: usize,
-    current_usage: usize,
-    fragmentation_score: f64,
-    largest_free_chunk: usize,
-    free_chunk_count: usize,
-}
-
 impl BlockStatistics {
     fn new() -> Self {
         Self {
-            total_allocations: 0,
-            total_deallocations: 0,
-            bytes_allocated: 0,
-            bytes_deallocated: 0,
-            current_usage: 0,
-            fragmentation_score: 0.0,
-            largest_free_chunk: 0,
-            free_chunk_count: 0,
         }
     }
     
@@ -100,8 +63,6 @@ impl BlockStatistics {
             self.fragmentation_score = 0.0;
         }
     }
-}
-
 impl RealHeapBlock {
     /// Create a new real heap block
     #[instrument]
@@ -116,18 +77,12 @@ impl RealHeapBlock {
         let ptr = unsafe { alloc(layout) };
         if ptr.is_null() {
             return Err(format!("Failed to allocate {} bytes from system", actual_size));
-        }
-        
         let non_null_ptr = NonNull::new(ptr)
             .ok_or("System allocator returned null pointer")?;
         
         // Initialize with one large free chunk
         let mut free_list = BTreeMap::new();
         free_list.insert(0, FreeChunk {
-            offset: 0,
-            size: actual_size,
-            prev_chunk: None,
-            next_chunk: None,
         });
         
         let mut stats = BlockStatistics::new();
@@ -137,16 +92,7 @@ impl RealHeapBlock {
         debug!("Created real heap block {} at {:p} with {} bytes", id, ptr, actual_size);
         
         Ok(Self {
-            ptr: non_null_ptr,
-            size: actual_size,
-            layout,
-            free_list,
-            allocated_chunks: HashMap::new(),
-            id,
-            stats,
         })
-    }
-    
     /// Allocate memory within this block using advanced algorithms
     #[instrument(skip(self))]
     pub fn allocate(&mut self, size: usize, alignment: usize, object_id: Option<ObjectId>) -> Result<NonNull<u8>, String> {
@@ -165,10 +111,6 @@ impl RealHeapBlock {
             .ok_or("Free chunk disappeared during allocation")?;
         
         self.allocated_chunks.insert(chunk_offset, AllocatedChunk {
-            offset: chunk_offset,
-            size: aligned_size,
-            object_id,
-            allocated_at: Instant::now(),
         });
         
         // Update statistics
@@ -181,14 +123,10 @@ impl RealHeapBlock {
         let ptr = unsafe {
             NonNull::new(self.ptr.as_ptr().add(chunk_offset))
                 .ok_or("Computed null pointer during allocation")?
-        };
         
-        debug!("Block {} allocated {} bytes at offset {} (ptr {:p})", 
                self.id, aligned_size, chunk_offset, ptr.as_ptr());
         
         Ok(ptr)
-    }
-    
     /// Deallocate memory and coalesce with adjacent free chunks
     #[instrument(skip(self))]
     pub fn deallocate(&mut self, ptr: NonNull<u8>) -> Result<usize, String> {
@@ -204,11 +142,6 @@ impl RealHeapBlock {
         
         // Create new free chunk
         let free_chunk = FreeChunk {
-            offset,
-            size,
-            prev_chunk: None,
-            next_chunk: None,
-        };
         
         // Insert into free list
         self.free_list.insert(offset, free_chunk);
@@ -225,8 +158,6 @@ impl RealHeapBlock {
         debug!("Block {} deallocated {} bytes at offset {}", self.id, size, offset);
         
         Ok(size)
-    }
-    
     /// Find best-fit chunk for allocation
     fn find_best_fit_chunk(&self, size: usize, alignment: usize) -> Result<usize, String> {
         let mut best_offset = None;
@@ -243,13 +174,9 @@ impl RealHeapBlock {
                     best_offset = Some(aligned_offset);
                 }
             }
-        }
-        
         best_offset.ok_or_else(|| {
             format!("No suitable free chunk found for {} bytes with {}-byte alignment", size, alignment)
         })
-    }
-    
     /// Split a chunk if it's larger than needed
     fn split_chunk_if_needed(&mut self, offset: usize, needed_size: usize) -> Result<(), String> {
         if let Some(chunk) = self.free_list.get(&offset).cloned() {
@@ -259,28 +186,17 @@ impl RealHeapBlock {
                 
                 // Update original chunk
                 self.free_list.insert(offset, FreeChunk {
-                    offset,
-                    size: needed_size,
-                    prev_chunk: chunk.prev_chunk,
-                    next_chunk: Some(remainder_offset),
                 });
                 
                 // Create remainder chunk
                 self.free_list.insert(remainder_offset, FreeChunk {
-                    offset: remainder_offset,
-                    size: remainder_size,
-                    prev_chunk: Some(offset),
-                    next_chunk: chunk.next_chunk,
                 });
                 
-                debug!("Split chunk at offset {} into {} and {} bytes", 
                        offset, needed_size, remainder_size);
             }
         }
         
         Ok(())
-    }
-    
     /// Coalesce adjacent free chunks to reduce fragmentation
     fn coalesce_free_chunks(&mut self, offset: usize) -> Result<(), String> {
         let mut current_offset = offset;
@@ -291,16 +207,12 @@ impl RealHeapBlock {
         // Coalesce with previous chunks
         loop {
             let chunk = match self.free_list.get(&current_offset).cloned() {
-                Some(chunk) => chunk,
-                None => break,
-            };
             
             if let Some(prev_offset) = chunk.prev_chunk {
                 let should_coalesce = if let Some(prev_chunk) = self.free_list.get(&prev_offset) {
                     prev_offset + prev_chunk.size == current_offset
                 } else {
                     false
-                };
                 
                 if should_coalesce {
                     // Adjacent - coalesce
@@ -312,8 +224,6 @@ impl RealHeapBlock {
                 }
             }
             break;
-        }
-        
         // Find and coalesce with next chunks
         let mut next_offset = current_offset + coalesced_size;
         while let Some(next_chunk) = self.free_list.get(&next_offset).cloned() {
@@ -329,10 +239,7 @@ impl RealHeapBlock {
         
         // Update the coalesced chunk
         self.free_list.insert(current_offset, FreeChunk {
-            offset: current_offset,
-            size: coalesced_size,
             prev_chunk: None, // Will be updated by link_free_chunks
-            next_chunk: None,
         });
         
         // Relink the free chunk chain
@@ -341,8 +248,6 @@ impl RealHeapBlock {
         debug!("Coalesced chunks starting at offset {} into {} bytes", current_offset, coalesced_size);
         
         Ok(())
-    }
-    
     /// Link free chunks in order
     fn link_free_chunks(&mut self) {
         let mut sorted_offsets: Vec<_> = self.free_list.keys().cloned().collect();
@@ -355,8 +260,6 @@ impl RealHeapBlock {
                 chunk.next_chunk = if i < sorted_offsets.len() - 1 { Some(sorted_offsets[i + 1]) } else { None };
             }
         }
-    }
-    
     /// Update fragmentation statistics
     fn update_fragmentation_stats(&mut self) {
         let total_free: usize = self.free_list.values().map(|c| c.size).sum();
@@ -364,8 +267,6 @@ impl RealHeapBlock {
         
         self.stats.free_chunk_count = self.free_list.len();
         self.stats.update_fragmentation(total_free, largest_free);
-    }
-    
     /// Convert pointer to offset within block
     fn ptr_to_offset(&self, ptr: NonNull<u8>) -> Result<usize, String> {
         let ptr_addr = ptr.as_ptr() as usize;
@@ -373,29 +274,19 @@ impl RealHeapBlock {
         
         if ptr_addr < base_addr || ptr_addr >= base_addr + self.size {
             return Err(format!("Pointer {:p} not within block bounds", ptr.as_ptr()));
-        }
-        
         Ok(ptr_addr - base_addr)
-    }
-    
     /// Align size to alignment boundary
     fn align_size(&self, size: usize, alignment: usize) -> usize {
         (size + alignment - 1) & !(alignment - 1)
-    }
-    
     /// Align offset to alignment boundary
     fn align_offset(&self, offset: usize, alignment: usize) -> usize {
         (offset + alignment - 1) & !(alignment - 1)
-    }
-    
     /// Check if pointer belongs to this block
     pub fn contains_ptr(&self, ptr: *const u8) -> bool {
         let addr = ptr as usize;
         let start = self.ptr.as_ptr() as usize;
         let end = start + self.size;
         addr >= start && addr < end
-    }
-    
     /// Get block utilization percentage
     pub fn utilization(&self) -> f64 {
         if self.size == 0 {
@@ -408,13 +299,9 @@ impl RealHeapBlock {
     /// Get fragmentation score
     pub fn fragmentation_score(&self) -> f64 {
         self.stats.fragmentation_score
-    }
-    
     /// Get free space
     pub fn free_space(&self) -> usize {
         self.size - self.stats.current_usage
-    }
-    
     /// Check if can allocate size
     pub fn can_allocate(&self, size: usize, alignment: usize) -> bool {
         let aligned_size = self.align_size(size, alignment);
@@ -429,8 +316,6 @@ impl RealHeapBlock {
         }
         
         false
-    }
-    
     /// Get block statistics
     pub fn get_statistics(&self) -> BlockStatistics {
         self.stats.clone()
@@ -441,14 +326,10 @@ impl RealHeapBlock {
 // 1. NonNull<u8> points to heap-allocated memory owned by this block
 // 2. All data structures are self-contained
 // 3. Access will be coordinated through external synchronization
-unsafe impl Send for RealHeapBlock {}
-
 // Safety: RealHeapBlock is safe to share between threads because:
 // 1. All mutations will be coordinated through external locks
 // 2. The memory pointer is stable once allocated
 // 3. Internal data structures don't contain raw pointers to shared data
-unsafe impl Sync for RealHeapBlock {}
-
 impl Drop for RealHeapBlock {
     fn drop(&mut self) {
         unsafe {
@@ -464,104 +345,43 @@ impl Drop for RealHeapBlock {
 /// algorithms integrated with the existing GC infrastructure.
 pub struct RealHeapManager {
     /// Configuration
-    config: RealHeapConfig,
     /// Active heap blocks
-    blocks: RwLock<Vec<RealHeapBlock>>,
     /// Next block ID
-    next_block_id: AtomicU32,
     /// Metadata manager
-    metadata_manager: Arc<MetadataManager>,
     /// Object registry for GC integration
-    object_registry: SharedObjectRegistry,
     /// Memory profiler (optional)
-    profiler: Option<Arc<MemoryProfiler>>,
     /// Global statistics
-    statistics: Mutex<RealHeapStatistics>,
     /// Memory pressure tracking
-    pressure_monitor: Mutex<MemoryPressureMonitor>,
-}
-
 /// Configuration for real heap manager
 #[derive(Debug, Clone)]
 pub struct RealHeapConfig {
     /// Initial block size
-    pub initial_block_size: usize,
     /// Maximum number of blocks
-    pub max_blocks: usize,
     /// Block growth factor
-    pub growth_factor: f64,
     /// Fragmentation threshold for triggering compaction
-    pub fragmentation_threshold: f64,
     /// Memory pressure threshold
-    pub pressure_threshold: f64,
     /// Enable automatic compaction
-    pub auto_compaction: bool,
     /// Minimum free space percentage
-    pub min_free_space: f64,
-}
-
 impl Default for RealHeapConfig {
     fn default() -> Self {
         Self {
             initial_block_size: 2 * 1024 * 1024, // 2MB
-            max_blocks: 32,
-            growth_factor: 1.5,
-            fragmentation_threshold: 0.4,
-            pressure_threshold: 0.85,
-            auto_compaction: true,
-            min_free_space: 0.15,
         }
     }
-}
-
 /// Global heap statistics
 #[derive(Debug, Clone)]
 pub struct RealHeapStatistics {
-    pub total_blocks: usize,
-    pub total_capacity: usize,
-    pub total_used: usize,
-    pub total_free: usize,
-    pub overall_fragmentation: f64,
-    pub total_allocations: u64,
-    pub total_deallocations: u64,
-    pub allocation_failures: u64,
-    pub compaction_events: u64,
-    pub average_block_utilization: f64,
-}
-
 impl RealHeapStatistics {
     fn new() -> Self {
         Self {
-            total_blocks: 0,
-            total_capacity: 0,
-            total_used: 0,
-            total_free: 0,
-            overall_fragmentation: 0.0,
-            total_allocations: 0,
-            total_deallocations: 0,
-            allocation_failures: 0,
-            compaction_events: 0,
-            average_block_utilization: 0.0,
         }
     }
-}
-
 /// Memory pressure monitoring
 #[derive(Debug)]
 struct MemoryPressureMonitor {
-    current_pressure: f64,
-    recent_failures: VecDeque<Instant>,
-    last_compaction: Option<Instant>,
-    pressure_history: VecDeque<(Instant, f64)>,
-}
-
 impl MemoryPressureMonitor {
     fn new() -> Self {
         Self {
-            current_pressure: 0.0,
-            recent_failures: VecDeque::new(),
-            last_compaction: None,
-            pressure_history: VecDeque::new(),
         }
     }
     
@@ -570,7 +390,6 @@ impl MemoryPressureMonitor {
             stats.total_used as f64 / stats.total_capacity as f64
         } else {
             0.0
-        };
         
         let failure_rate = self.calculate_failure_rate();
         let fragmentation_factor = stats.overall_fragmentation;
@@ -601,8 +420,6 @@ impl MemoryPressureMonitor {
                 break;
             }
         }
-    }
-    
     fn calculate_failure_rate(&self) -> f64 {
         let now = Instant::now();
         let window = Duration::from_secs(30);
@@ -614,13 +431,9 @@ impl MemoryPressureMonitor {
         
         // Normalize to failures per second
         recent_failures as f64 / window.as_secs() as f64
-    }
-    
     fn should_trigger_compaction(&self, threshold: f64) -> bool {
         if self.current_pressure < threshold {
             return false;
-        }
-        
         // Don't compact too frequently
         if let Some(last_compaction) = self.last_compaction {
             if last_compaction.elapsed() < Duration::from_secs(10) {
@@ -629,8 +442,6 @@ impl MemoryPressureMonitor {
         }
         
         true
-    }
-    
     fn record_compaction(&mut self) {
         self.last_compaction = Some(Instant::now());
     }
@@ -642,40 +453,24 @@ impl RealHeapManager {
     /// Create a new real heap manager
     #[instrument]
     pub fn new(config: RealHeapConfig, object_registry: SharedObjectRegistry) -> Result<Self, String> {
-        info!("Creating real heap manager with {:.2} MB initial block size", 
               config.initial_block_size as f64 / (1024.0 * 1024.0));
         
         let metadata_manager = Arc::new(MetadataManager::new(8)?);
         
         Ok(Self {
-            config,
-            blocks: RwLock::new(Vec::new()),
-            next_block_id: AtomicU32::new(1),
-            metadata_manager,
-            object_registry,
-            profiler: None,
-            statistics: Mutex::new(RealHeapStatistics::new()),
-            pressure_monitor: Mutex::new(MemoryPressureMonitor::new()),
         })
-    }
-    
     /// Set memory profiler
     pub fn set_profiler(&mut self, profiler: Arc<MemoryProfiler>) {
         info!("Enabling memory profiling for real heap manager");
         self.profiler = Some(profiler);
-    }
-    
     /// Allocate memory with real heap algorithms
     #[instrument(skip(self))]
     pub fn allocate(&self, size: usize, alignment: usize, type_name: &str) -> Result<(ObjectId, NonNull<u8>), String> {
         if size == 0 {
             return Err("Cannot allocate zero bytes".to_string());
-        }
-        
         let start_time = Instant::now();
         let actual_alignment = alignment.max(8);
         
-        debug!("Real heap allocating {} bytes for {} with {}-byte alignment", 
                size, type_name, actual_alignment);
         
         // Check memory pressure first
@@ -685,12 +480,10 @@ impl RealHeapManager {
         let allocation_result = self.try_allocate_in_existing_blocks(size, actual_alignment)?;
         
         let (block_ptr, object_id) = match allocation_result {
-            Some((ptr, object_id)) => (ptr, object_id),
             None => {
                 // Need to create a new block
                 self.allocate_new_block_and_allocate(size, actual_alignment)?
             }
-        };
         
         // Initialize object metadata
         let layout = MemoryLayout::calculate(size, actual_alignment);
@@ -713,14 +506,9 @@ impl RealHeapManager {
         // Profile the allocation
         if let Some(profiler) = &self.profiler {
             let _ = profiler.track_allocation(size, object_ptr.as_ptr() as u64, Vec::new());
-        }
-        
-        debug!("Real heap allocated object {} with {} bytes at {:p}", 
                object_id, size, object_ptr.as_ptr());
         
         Ok((object_id, object_ptr))
-    }
-    
     /// Deallocate memory with proper cleanup
     #[instrument(skip(self))]
     pub fn deallocate(&self, object_id: ObjectId, ptr: NonNull<u8>) -> Result<(), String> {
@@ -746,8 +534,6 @@ impl RealHeapManager {
         
         if !found_block {
             return Err(format!("Could not find block containing pointer {:p}", ptr.as_ptr()));
-        }
-        
         // Remove object metadata
         self.metadata_manager.remove_metadata(ptr)?;
         
@@ -757,13 +543,9 @@ impl RealHeapManager {
         // Profile the deallocation
         if let Some(profiler) = &self.profiler {
             let _ = profiler.track_deallocation(ptr.as_ptr() as u64, Vec::new());
-        }
-        
         debug!("Real heap deallocated object {} with {} bytes", object_id, size);
         
         Ok(())
-    }
-    
     /// Internal allocation within blocks
     fn allocate_internal(&self, size: usize, alignment: usize) -> Result<NonNull<u8>, String> {
         let mut blocks = self.blocks.write()
@@ -776,13 +558,9 @@ impl RealHeapManager {
                     return Ok(ptr);
                 }
             }
-        }
-        
         // Need new block
         drop(blocks);
         self.create_new_block_and_allocate(size, alignment)
-    }
-    
     /// Try to allocate in existing blocks
     fn try_allocate_in_existing_blocks(&self, size: usize, alignment: usize) 
         -> Result<Option<(NonNull<u8>, ObjectId)>, String> {
@@ -798,11 +576,7 @@ impl RealHeapManager {
                     return Ok(Some((ptr, object_id)));
                 }
             }
-        }
-        
         Ok(None)
-    }
-    
     /// Allocate new block and perform allocation
     fn allocate_new_block_and_allocate(&self, size: usize, alignment: usize) 
         -> Result<(NonNull<u8>, ObjectId), String> {
@@ -822,16 +596,10 @@ impl RealHeapManager {
             if blocks.len() >= self.config.max_blocks {
                 warn!("Maximum number of blocks ({}) reached", self.config.max_blocks);
                 return Err("Maximum number of heap blocks reached".to_string());
-            }
-            
             blocks.push(new_block);
-        }
-        
         info!("Created new heap block {} with {} bytes", block_id, block_size);
         
         Ok((ptr, object_id))
-    }
-    
     /// Create new block and allocate
     fn create_new_block_and_allocate(&self, size: usize, alignment: usize) -> Result<NonNull<u8>, String> {
         let block_id = self.next_block_id.fetch_add(1, Ordering::Relaxed);
@@ -845,11 +613,7 @@ impl RealHeapManager {
             let mut blocks = self.blocks.write()
                 .map_err(|_| "Failed to acquire write lock on blocks")?;
             blocks.push(new_block);
-        }
-        
         Ok(ptr)
-    }
-    
     /// Calculate size for new block
     fn calculate_new_block_size(&self, min_size: usize) -> Result<usize, String> {
         let base_size = self.config.initial_block_size;
@@ -866,8 +630,6 @@ impl RealHeapManager {
         let calculated_size = (base_size as f64 * growth_multiplier) as usize;
         
         Ok(calculated_size.max(required_size))
-    }
-    
     /// Check and handle memory pressure
     fn check_and_handle_pressure(&self) -> Result<(), String> {
         let stats = self.get_statistics()?;
@@ -888,8 +650,6 @@ impl RealHeapManager {
         }
         
         Ok(())
-    }
-    
     /// Trigger heap compaction
     #[instrument(skip(self))]
     pub fn trigger_compaction(&self) -> Result<(), String> {
@@ -902,8 +662,6 @@ impl RealHeapManager {
             let mut pressure_monitor = self.pressure_monitor.lock()
                 .map_err(|_| "Failed to acquire pressure monitor lock")?;
             pressure_monitor.record_compaction();
-        }
-        
         // Compact each block
         let mut blocks = self.blocks.write()
             .map_err(|_| "Failed to acquire write lock on blocks")?;
@@ -916,21 +674,15 @@ impl RealHeapManager {
             // between blocks, which requires GC integration
             let after_free = block.free_space();
             total_reclaimed += after_free.saturating_sub(before_free);
-        }
-        
         // Update statistics
         {
             let mut stats = self.statistics.lock()
                 .map_err(|_| "Failed to acquire statistics lock")?;
             stats.compaction_events += 1;
-        }
-        
         let duration = start_time.elapsed();
         info!("Heap compaction completed in {:?}, reclaimed {} bytes", duration, total_reclaimed);
         
         Ok(())
-    }
-    
     /// Update allocation statistics
     fn update_allocation_statistics(&self, size: usize, start_time: Instant) -> Result<(), String> {
         let mut stats = self.statistics.lock()
@@ -942,8 +694,6 @@ impl RealHeapManager {
         self.update_global_statistics(&mut stats)?;
         
         Ok(())
-    }
-    
     /// Update deallocation statistics
     fn update_deallocation_statistics(&self, size: usize) -> Result<(), String> {
         let mut stats = self.statistics.lock()
@@ -955,8 +705,6 @@ impl RealHeapManager {
         self.update_global_statistics(&mut stats)?;
         
         Ok(())
-    }
-    
     /// Update global statistics from blocks
     fn update_global_statistics(&self, stats: &mut RealHeapStatistics) -> Result<(), String> {
         let blocks = self.blocks.read()
@@ -973,7 +721,6 @@ impl RealHeapManager {
             total_fragmentation / blocks.len() as f64
         } else {
             0.0
-        };
         
         // Calculate average utilization
         let total_utilization: f64 = blocks.iter().map(|b| b.utilization()).sum();
@@ -981,11 +728,8 @@ impl RealHeapManager {
             total_utilization / blocks.len() as f64
         } else {
             0.0
-        };
         
         Ok(())
-    }
-    
     /// Get heap statistics
     pub fn get_statistics(&self) -> Result<RealHeapStatistics, String> {
         let mut stats = self.statistics.lock()
@@ -994,8 +738,6 @@ impl RealHeapManager {
         self.update_global_statistics(&mut stats)?;
         
         Ok(stats.clone())
-    }
-    
     /// Check if pointer is valid
     pub fn is_valid_pointer(&self, ptr: *const u8) -> bool {
         if let Ok(blocks) = self.blocks.read() {
@@ -1037,17 +779,8 @@ unsafe impl Sync for RealHeapManager {}
 impl From<RealHeapStatistics> for crate::memory::heap_manager::HeapStats {
     fn from(real_stats: RealHeapStatistics) -> Self {
         Self {
-            total_blocks: real_stats.total_blocks,
-            total_capacity: real_stats.total_capacity,
-            total_used: real_stats.total_used,
-            total_free: real_stats.total_free,
-            average_utilization: real_stats.average_block_utilization,
             active_objects: 0, // Would need object count from metadata manager
             object_registry_count: 0, // Would need registry count
-            fragmentation_ratio: real_stats.overall_fragmentation,
             memory_pressure: crate::memory::heap_manager::MemoryPressure::Low, // Convert pressure level
-            metrics: crate::memory::heap_manager::AllocationMetrics::default(),
         }
     }
-}
-

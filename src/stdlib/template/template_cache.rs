@@ -14,277 +14,144 @@ use super::template_syntax::{TemplateAst, TemplateNode};
 #[derive(Debug, Clone)]
 pub enum CacheEntryType {
     /// Template source AST
-    TemplateAst(TemplateAst),
     /// Rendered output content
-    RenderedOutput(String),
     /// Reusable template component
-    Component(TemplateComponent),
     /// Partial template fragment
-    Fragment(String),
-}
-
 /// Template component for caching
 #[derive(Debug, Clone)]
 pub struct TemplateComponent {
-    pub name: String,
-    pub ast: TemplateAst,
-    pub dependencies: Vec<String>,
-    pub parameters: HashMap<String, String>,
-}
-
 /// Multi-level template cache entry
 #[derive(Debug, Clone)]
 pub struct CacheEntry {
     /// Cache entry type and data
-    pub entry_type: CacheEntryType,
     /// Creation timestamp
-    pub created_at: Instant,
     /// Last access timestamp
-    pub last_accessed: Instant,
     /// Access count for statistics
-    pub access_count: u64,
     /// Template source hash for invalidation
-    pub source_hash: u64,
     /// File modification time (if applicable)
-    pub file_modified: Option<SystemTime>,
     /// Entry size in bytes
-    pub size: usize,
     /// Cache level (0=source, 1=rendered, 2=component, 3=fragment)
-    pub level: u8,
     /// Dependency keys for cache invalidation
-    pub dependencies: HashSet<String>,
     /// Compression flag
-    pub is_compressed: bool,
-}
-
 /// Multi-level cache statistics
 #[derive(Debug, Clone)]
 pub struct CacheStats {
     /// Number of cache hits per level
-    pub hits: HashMap<u8, u64>,
     /// Number of cache misses per level  
-    pub misses: HashMap<u8, u64>,
     /// Number of cache evictions per level
-    pub evictions: HashMap<u8, u64>,
     /// Total number of entries per level
-    pub entries: HashMap<u8, usize>,
     /// Memory usage estimate per level (in bytes)
-    pub memory_usage: HashMap<u8, usize>,
     /// Cache hit ratio per level (0.0 to 1.0)
-    pub hit_ratio: HashMap<u8, f64>,
     /// Cache warming operations
-    pub warming_operations: u64,
     /// Background operations count
-    pub background_operations: u64,
     /// Compression ratio (compressed_size / original_size)
-    pub compression_ratio: f64,
     /// Total cache operations
-    pub total_operations: u64,
-}
-
 /// Cache eviction policy
 #[derive(Debug, Clone)]
 pub enum EvictionPolicy {
     /// Least Recently Used
-    Lru,
     /// Least Frequently Used
-    Lfu,
     /// Time-based expiration
-    Ttl(Duration),
     /// First In, First Out
-    Fifo,
     /// Random eviction
-    Random,
-}
-
 /// Cache persistence type
 #[derive(Debug, Clone)]
 pub enum CachePersistence {
     /// Memory-only cache
-    Memory,
     /// Disk-based cache with path
-    Disk(PathBuf),
     /// Hybrid memory + disk cache
-    Hybrid { memory_limit: usize, disk_path: PathBuf },
-}
-
 /// Cache level configuration
 #[derive(Debug, Clone)]
 pub struct CacheLevelConfig {
     /// Maximum entries for this level
-    pub max_entries: usize,
     /// Maximum memory for this level
-    pub max_memory: usize,
     /// TTL for this level
-    pub ttl: Option<Duration>,
     /// Enable compression for this level
-    pub enable_compression: bool,
     /// Eviction policy for this level
-    pub eviction_policy: EvictionPolicy,
-}
-
 /// Comprehensive template cache configuration
 #[derive(Debug, Clone)]
 pub struct CacheConfig {
     /// Per-level cache configuration
-    pub level_configs: HashMap<u8, CacheLevelConfig>,
     /// Global maximum entries across all levels
-    pub global_max_entries: usize,
     /// Global maximum memory usage (in bytes)
-    pub global_max_memory: usize,
     /// Enable cache statistics
-    pub enable_stats: bool,
     /// Auto-refresh interval for file-based templates
-    pub auto_refresh_interval: Option<Duration>,
     /// Cache persistence strategy
-    pub persistence: CachePersistence,
     /// Enable background cache warming
-    pub enable_warming: bool,
     /// Preload commonly used templates
-    pub enable_preloading: bool,
     /// Enable hot reload in development
-    pub enable_hot_reload: bool,
     /// Development mode settings
-    pub development_mode: bool,
     /// Parallel cache operations thread count
-    pub parallel_threads: usize,
     /// Cache dependency tracking
-    pub track_dependencies: bool,
     /// Compression algorithm
-    pub compression_algorithm: CompressionAlgorithm,
-}
-
 /// Compression algorithm options
 #[derive(Debug, Clone)]
 pub enum CompressionAlgorithm {
     /// No compression
-    None,
     /// Fast LZ4 compression
-    Lz4,
     /// Balanced compression
-    Zstd,
     /// High compression ratio
-    Gzip,
-}
-
 impl Default for CacheConfig {
     fn default() -> Self {
         let mut level_configs = HashMap::new();
         
         // Level 0: Template AST cache
         level_configs.insert(0, CacheLevelConfig {
-            max_entries: 500,
             max_memory: 50 * 1024 * 1024, // 50 MB
             ttl: Some(Duration::from_secs(3600)), // 1 hour
-            enable_compression: false,
-            eviction_policy: EvictionPolicy::Lru,
         });
         
         // Level 1: Rendered output cache  
         level_configs.insert(1, CacheLevelConfig {
-            max_entries: 1000,
             max_memory: 100 * 1024 * 1024, // 100 MB
             ttl: Some(Duration::from_secs(300)), // 5 minutes
-            enable_compression: true,
-            eviction_policy: EvictionPolicy::Lru,
         });
         
         // Level 2: Component cache
         level_configs.insert(2, CacheLevelConfig {
-            max_entries: 200,
             max_memory: 20 * 1024 * 1024, // 20 MB
             ttl: Some(Duration::from_secs(1800)), // 30 minutes
-            enable_compression: false,
-            eviction_policy: EvictionPolicy::Lfu,
         });
         
         // Level 3: Fragment cache
         level_configs.insert(3, CacheLevelConfig {
-            max_entries: 2000,
             max_memory: 50 * 1024 * 1024, // 50 MB
             ttl: Some(Duration::from_secs(600)), // 10 minutes
-            enable_compression: true,
-            eviction_policy: EvictionPolicy::Lru,
         });
 
         Self {
-            level_configs,
-            global_max_entries: 2000,
             global_max_memory: 200 * 1024 * 1024, // 200 MB
-            enable_stats: true,
-            auto_refresh_interval: Some(Duration::from_secs(60)),
-            persistence: CachePersistence::Memory,
-            enable_warming: true,
-            enable_preloading: false,
-            enable_hot_reload: false,
-            development_mode: false,
-            parallel_threads: 4,
-            track_dependencies: true,
-            compression_algorithm: CompressionAlgorithm::Lz4,
         }
     }
-}
-
 /// Background operation types
 #[derive(Debug, Clone)]
 pub enum BackgroundOperation {
     /// Warm up specific templates
-    WarmUp(Vec<String>),
     /// Preload templates
-    Preload(Vec<String>),
     /// Cleanup expired entries
-    Cleanup,
     /// Compress uncompressed entries
-    Compress,
     /// Refresh file-based templates
-    Refresh,
-}
-
 /// Multi-level high-performance template cache
 #[derive(Debug)]
 pub struct TemplateCache {
     /// Multi-level cache entries
-    entries: Arc<AsyncRwLock<HashMap<String, CacheEntry>>>,
     /// Cache configuration
-    config: Arc<CacheConfig>,
     /// Cache statistics
-    stats: Arc<RwLock<CacheStats>>,
     /// LRU access order per level
-    access_order: Arc<RwLock<HashMap<u8, VecDeque<String>>>>,
     /// Background operation queue
-    operation_queue: Arc<Mutex<VecDeque<BackgroundOperation>>>,
     /// Dependency graph for invalidation
-    dependencies: Arc<RwLock<HashMap<String, HashSet<String>>>>,
     /// File watcher for hot reload
-    file_watchers: Arc<RwLock<HashMap<String, SystemTime>>>,
     /// Preloaded template keys
-    preloaded_keys: Arc<RwLock<HashSet<String>>>,
     /// Background task handle
-    background_handle: Arc<Mutex<Option<tokio::task::JoinHandle<()>>>>,
-}
-
 impl TemplateCache {
     /// Create a new template cache with default configuration
     pub fn new(max_entries: usize) -> Self {
         let mut config = CacheConfig::default();
         config.global_max_entries = max_entries;
         Self::with_config(config)
-    }
-
     /// Create a new template cache with custom configuration
     pub fn with_config(config: CacheConfig) -> Self {
         let mut initial_stats = CacheStats {
-            hits: HashMap::new(),
-            misses: HashMap::new(),
-            evictions: HashMap::new(),
-            entries: HashMap::new(),
-            memory_usage: HashMap::new(),
-            hit_ratio: HashMap::new(),
-            warming_operations: 0,
-            background_operations: 0,
-            compression_ratio: 1.0,
-            total_operations: 0,
-        };
 
         // Initialize per-level stats
         for level in 0..4 {
@@ -294,33 +161,15 @@ impl TemplateCache {
             initial_stats.entries.insert(level, 0);
             initial_stats.memory_usage.insert(level, 0);
             initial_stats.hit_ratio.insert(level, 0.0);
-        }
-
         let mut initial_access_order = HashMap::new();
         for level in 0..4 {
             initial_access_order.insert(level, VecDeque::new());
-        }
-
         let cache = Self {
-            entries: Arc::new(AsyncRwLock::new(HashMap::new())),
-            config: Arc::new(config),
-            stats: Arc::new(RwLock::new(initial_stats)),
-            access_order: Arc::new(RwLock::new(initial_access_order)),
-            operation_queue: Arc::new(Mutex::new(VecDeque::new())),
-            dependencies: Arc::new(RwLock::new(HashMap::new())),
-            file_watchers: Arc::new(RwLock::new(HashMap::new())),
-            preloaded_keys: Arc::new(RwLock::new(HashSet::new())),
-            background_handle: Arc::new(Mutex::new(None)),
-        };
 
         // Start background processing if enabled
         if cache.config.enable_warming {
             cache.start_background_processing();
-        }
-
         cache
-    }
-
     /// Get a template from the cache (async for multi-level support)
     #[instrument(skip(self))]
     pub async fn get(&self, key: &str) -> Option<CacheEntryType> {
@@ -331,8 +180,6 @@ impl TemplateCache {
             debug!(key = key, "Template file has been modified, invalidating cache");
             self.invalidate_template(key).await;
             return None;
-        }
-        
         let entries = self.entries.read().await;
         let entry = entries.get(key)?;
         
@@ -346,8 +193,6 @@ impl TemplateCache {
             *stats.hits.entry(level).or_insert(0) += 1;
             stats.total_operations += 1;
             self.update_hit_ratio_for_level(&mut stats, level);
-        }
-
         // Update LRU order
         if let Ok(mut access_order) = self.access_order.write() {
             if let Some(level_order) = access_order.get_mut(&level) {
@@ -358,14 +203,10 @@ impl TemplateCache {
 
         debug!(key = key, level = level, "Cache hit");
         Some(entry_type)
-    }
-
     /// Get template AST specifically (backward compatibility)
     #[instrument(skip(self))]
     pub async fn get_template(&self, key: &str) -> Option<TemplateAst> {
         match self.get(key).await? {
-            CacheEntryType::TemplateAst(ast) => Some(ast),
-            _ => None,
         }
     }
 
@@ -373,8 +214,6 @@ impl TemplateCache {
     #[instrument(skip(self))]
     pub async fn get_rendered(&self, key: &str) -> Option<String> {
         match self.get(key).await? {
-            CacheEntryType::RenderedOutput(output) => Some(output),
-            _ => None,
         }
     }
 
@@ -382,8 +221,6 @@ impl TemplateCache {
     #[instrument(skip(self))]
     pub async fn get_component(&self, key: &str) -> Option<TemplateComponent> {
         match self.get(key).await? {
-            CacheEntryType::Component(component) => Some(component),
-            _ => None,
         }
     }
 
@@ -391,8 +228,6 @@ impl TemplateCache {
     #[instrument(skip(self))]
     pub async fn get_fragment(&self, key: &str) -> Option<String> {
         match self.get(key).await? {
-            CacheEntryType::Fragment(fragment) => Some(fragment),
-            _ => None,
         }
     }
 
@@ -400,27 +235,19 @@ impl TemplateCache {
     #[instrument(skip(self, ast))]
     pub async fn put_template(&self, key: String, ast: TemplateAst, source_hash: u64) -> crate::error::Result<()> {
         self.put_entry(key, CacheEntryType::TemplateAst(ast), 0, source_hash, Vec::new()).await
-    }
-
     /// Put rendered output into the cache (level 1)
     #[instrument(skip(self, output))]
     pub async fn put_rendered(&self, key: String, output: String, source_hash: u64) -> crate::error::Result<()> {
         self.put_entry(key, CacheEntryType::RenderedOutput(output), 1, source_hash, Vec::new()).await
-    }
-
     /// Put component into the cache (level 2)
     #[instrument(skip(self, component))]
     pub async fn put_component(&self, key: String, component: TemplateComponent, source_hash: u64) -> crate::error::Result<()> {
         let dependencies = component.dependencies.clone();
         self.put_entry(key, CacheEntryType::Component(component), 2, source_hash, dependencies).await
-    }
-
     /// Put fragment into the cache (level 3)
     #[instrument(skip(self, fragment))]
     pub async fn put_fragment(&self, key: String, fragment: String, source_hash: u64) -> crate::error::Result<()> {
         self.put_entry(key, CacheEntryType::Fragment(fragment), 3, source_hash, Vec::new()).await
-    }
-
     /// Generic method to put any entry type into the cache
     #[instrument(skip(self, entry_type))]
     async fn put_entry(&self, key: String, entry_type: CacheEntryType, level: u8, source_hash: u64, dependencies: Vec<String>) -> crate::error::Result<()> {
@@ -431,7 +258,6 @@ impl TemplateCache {
             let current_level_entries = {
                 let entries = self.entries.read().await;
                 entries.values().filter(|e| e.level == level).count()
-            };
 
             if current_level_entries >= level_config.max_entries {
                 self.evict_entry_for_level(level).await?;
@@ -443,32 +269,16 @@ impl TemplateCache {
             self.compress_entry_type(entry_type).await?
         } else {
             entry_type
-        };
 
         let mut dep_set = HashSet::new();
         for dep in dependencies {
             dep_set.insert(dep);
-        }
-
         let entry = CacheEntry {
-            entry_type: compressed_entry_type,
-            created_at: Instant::now(),
-            last_accessed: Instant::now(),
-            access_count: 0,
-            source_hash,
-            file_modified: None,
-            size,
-            level,
-            dependencies: dep_set.clone(),
-            is_compressed: self.should_compress(&CacheEntryType::Fragment("".to_string()), level),
-        };
 
         // Insert entry
         {
             let mut entries = self.entries.write().await;
             entries.insert(key.clone(), entry);
-        }
-
         // Update dependency tracking
         if self.config.track_dependencies && !dep_set.is_empty() {
             if let Ok(mut deps) = self.dependencies.write() {
@@ -476,43 +286,29 @@ impl TemplateCache {
                     deps.entry(dep).or_insert_with(HashSet::new).insert(key.clone());
                 }
             }
-        }
-
         // Update LRU order
         if let Ok(mut access_order) = self.access_order.write() {
             access_order.entry(level).or_insert_with(VecDeque::new).push_back(key.clone());
-        }
-
         // Update statistics
         if let Ok(mut stats) = self.stats.write() {
             *stats.entries.entry(level).or_insert(0) += 1;
             let current_memory = stats.memory_usage.entry(level).or_insert(0);
             *current_memory += size;
             stats.total_operations += 1;
-        }
-
         debug!(key = key, level = level, "Cache put completed");
         Ok(())
-    }
-
     /// Backward compatibility method
     #[instrument(skip(self, ast))]
     pub async fn put(&self, key: String, ast: TemplateAst, source_hash: u64) -> crate::error::Result<()> {
         self.put_template(key, ast, source_hash).await
-    }
-
     /// Get detailed cache statistics
     pub fn detailed_stats(&self) -> Option<CacheStats> {
         self.stats.read().ok().map(|stats| stats.clone())
-    }
-
     /// Legacy eviction method (not used in new implementation)
     fn evict_entry(&self, _entries: &mut HashMap<String, CacheEntry>) -> crate::error::Result<()> {
         // This method is kept for backward compatibility but not used
         // The new implementation uses evict_entry_for_level
         Ok(())
-    }
-
     /// Legacy methods (kept for compatibility but not used)
     fn find_lru_key(&self, _entries: &HashMap<String, CacheEntry>) -> Option<String> { None }
     fn find_lfu_key(&self, _entries: &HashMap<String, CacheEntry>) -> Option<String> { None }
@@ -520,30 +316,22 @@ impl TemplateCache {
     fn find_fifo_key(&self) -> Option<String> { None }
     fn find_random_key(&self, _entries: &HashMap<String, CacheEntry>) -> Option<String> { None }
     fn update_hit_ratio(&self, _stats: &mut CacheStats) { }
-    fn estimate_memory_usage(&self, _entries: &HashMap<String, CacheEntry>) -> usize { 0 }
-
     /// Advanced helper methods for multi-level caching
     
     fn estimate_entry_size(&self, entry_type: &CacheEntryType) -> usize {
         match entry_type {
-            CacheEntryType::TemplateAst(ast) => self.estimate_ast_size(ast),
-            CacheEntryType::RenderedOutput(output) => output.len(),
             CacheEntryType::Component(comp) => {
                 comp.name.len() + self.estimate_ast_size(&comp.ast) + 
                 comp.dependencies.iter().map(|d| d.len()).sum::<usize>()
             }
-            CacheEntryType::Fragment(fragment) => fragment.len(),
         }
     }
 
     fn estimate_ast_size(&self, ast: &TemplateAst) -> usize {
         // More sophisticated AST size estimation
         ast.nodes.iter().map(|node| match node {
-            TemplateNode::Text(text) => text.len(),
             _ => 50, // Default estimate for other node types
         }).sum::<usize>() + 50 // Base overhead
-    }
-
     fn should_compress(&self, entry_type: &CacheEntryType, level: u8) -> bool {
         if let Some(level_config) = self.config.level_configs.get(&level) {
             level_config.enable_compression && self.estimate_entry_size(entry_type) > 1024
@@ -569,12 +357,6 @@ impl TemplateCache {
     async fn evict_entry_for_level(&self, level: u8) -> crate::error::Result<()> {
         if let Some(level_config) = self.config.level_configs.get(&level) {
             let key_to_evict = match &level_config.eviction_policy {
-                EvictionPolicy::Lru => self.find_lru_key_for_level(level).await,
-                EvictionPolicy::Lfu => self.find_lfu_key_for_level(level).await,
-                EvictionPolicy::Ttl(duration) => self.find_expired_key_for_level(level, *duration).await,
-                EvictionPolicy::Fifo => self.find_fifo_key_for_level(level).await,
-                EvictionPolicy::Random => self.find_random_key_for_level(level).await,
-            };
 
             if let Some(key) = key_to_evict {
                 debug!(key = key, level = level, "Evicting cache entry");
@@ -587,24 +369,18 @@ impl TemplateCache {
             }
         }
         Ok(())
-    }
-
     async fn find_lru_key_for_level(&self, level: u8) -> Option<String> {
         let entries = self.entries.read().await;
         entries.iter()
             .filter(|(_, entry)| entry.level == level)
             .min_by_key(|(_, entry)| entry.last_accessed)
             .map(|(key, _)| key.clone())
-    }
-
     async fn find_lfu_key_for_level(&self, level: u8) -> Option<String> {
         let entries = self.entries.read().await;
         entries.iter()
             .filter(|(_, entry)| entry.level == level)
             .min_by_key(|(_, entry)| entry.access_count)
             .map(|(key, _)| key.clone())
-    }
-
     async fn find_expired_key_for_level(&self, level: u8, ttl: Duration) -> Option<String> {
         let now = Instant::now();
         let entries = self.entries.read().await;
@@ -612,8 +388,6 @@ impl TemplateCache {
             .filter(|(_, entry)| entry.level == level)
             .find(|(_, entry)| now.duration_since(entry.created_at) > ttl)
             .map(|(key, _)| key.clone())
-    }
-
     async fn find_fifo_key_for_level(&self, level: u8) -> Option<String> {
         if let Ok(access_order) = self.access_order.read() {
             access_order.get(&level)?.front().cloned()
@@ -651,11 +425,8 @@ impl TemplateCache {
             hits as f64 / total as f64
         } else {
             0.0
-        };
         
         stats.hit_ratio.insert(level, ratio);
-    }
-
     /// Remove entry asynchronously
     async fn remove_async(&self, key: &str) -> Option<CacheEntryType> {
         debug!(key = key, "Async cache remove");
@@ -663,7 +434,6 @@ impl TemplateCache {
         let entry = {
             let mut entries = self.entries.write().await;
             entries.remove(key)?
-        };
 
         let level = entry.level;
         let entry_type = entry.entry_type;
@@ -686,8 +456,6 @@ impl TemplateCache {
         }
 
         Some(entry_type)
-    }
-
 
 
     /// Advanced cache management methods
@@ -721,8 +489,6 @@ impl TemplateCache {
     pub async fn invalidate_dependencies(&self, dependencies: &[String]) {
         if !self.config.track_dependencies {
             return;
-        }
-
         let mut keys_to_invalidate = HashSet::new();
         
         if let Ok(deps) = self.dependencies.read() {
@@ -731,8 +497,6 @@ impl TemplateCache {
                     keys_to_invalidate.extend(dependent_keys.clone());
                 }
             }
-        }
-
         for key in keys_to_invalidate {
             self.remove_async(&key).await;
         }
@@ -767,8 +531,6 @@ impl TemplateCache {
                 watchers.insert(template_name.to_string(), SystemTime::now());
             }
         }
-    }
-
     /// Cleanup expired entries asynchronously
     #[instrument(skip(self))]
     pub async fn cleanup_expired(&self) {
@@ -785,16 +547,12 @@ impl TemplateCache {
                                 expired_keys.push(key.clone());
                             }
                         }
-                    }
-
                     for key in expired_keys {
                         self.remove_async(&key).await;
                     }
                 }
             }
         }
-    }
-
     /// Start background processing
     fn start_background_processing(&self) {
         let cache_clone = self.clone();
@@ -815,12 +573,9 @@ impl TemplateCache {
                     } else {
                         Vec::new()
                     }
-                };
                 
                 for operation in operations {
                     cache_clone.process_background_operation(operation).await;
-                }
-                
                 // Cleanup expired entries
                 cache_clone.cleanup_expired().await;
                 
@@ -867,15 +622,11 @@ impl TemplateCache {
                 self.refresh_file_based_templates().await;
             }
         }
-    }
-
     /// Compress uncompressed entries
     async fn compress_uncompressed_entries(&self) {
         // This would compress entries that weren't compressed on insertion
         // Implementation depends on actual compression algorithm
         debug!("Compressing uncompressed entries");
-    }
-
     /// Refresh file-based templates
     async fn refresh_file_based_templates(&self) {
         use std::fs;
@@ -922,8 +673,6 @@ impl TemplateCache {
                 }
             }
         }
-    }
-
     /// Check if a template file has been modified since caching
     async fn is_file_modified(&self, template_name: &str) -> bool {
         use std::fs;
@@ -950,8 +699,6 @@ impl TemplateCache {
         
         // If no cached timestamp, consider it modified
         false
-    }
-
     /// Invalidate a cached template entry
     async fn invalidate_template(&self, template_name: &str) {
         // Remove from cache
@@ -962,11 +709,7 @@ impl TemplateCache {
         // Remove from file watchers
         if let Ok(mut watchers) = self.file_watchers.write() {
             watchers.remove(template_name);
-        }
-        
         debug!("Invalidated cache entry for template: {}", template_name);
-    }
-
     /// Start background cleanup task (legacy compatibility)
     pub fn start_cleanup_task(&self) -> tokio::task::JoinHandle<()> {
         let cache_clone = self.clone();
@@ -983,19 +726,8 @@ impl TemplateCache {
 impl Clone for TemplateCache {
     fn clone(&self) -> Self {
         Self {
-            entries: Arc::clone(&self.entries),
-            config: Arc::clone(&self.config),
-            stats: Arc::clone(&self.stats),
-            access_order: Arc::clone(&self.access_order),
-            operation_queue: Arc::clone(&self.operation_queue),
-            dependencies: Arc::clone(&self.dependencies),
-            file_watchers: Arc::clone(&self.file_watchers),
-            preloaded_keys: Arc::clone(&self.preloaded_keys),
-            background_handle: Arc::clone(&self.background_handle),
         }
     }
-}
-
 impl Default for TemplateCache {
     fn default() -> Self {
         Self::new(1000)
@@ -1009,15 +741,11 @@ impl TemplateCache {
     pub fn get_sync(&self, key: &str) -> Option<TemplateAst> {
         let rt = tokio::runtime::Handle::try_current().ok()?;
         rt.block_on(self.get_template(key))
-    }
-
     /// Synchronous remove method
     #[instrument(skip(self))]
     pub fn remove(&self, key: &str) -> Option<TemplateAst> {
         let rt = tokio::runtime::Handle::try_current().ok()?;
         match rt.block_on(self.remove_async(key))? {
-            CacheEntryType::TemplateAst(ast) => Some(ast),
-            _ => None,
         }
     }
 
@@ -1029,8 +757,6 @@ impl TemplateCache {
         {
             let mut entries = self.entries.write().await;
             entries.clear();
-        }
-
         if let Ok(mut access_order) = self.access_order.write() {
             for level_order in access_order.values_mut() {
                 level_order.clear();
@@ -1046,8 +772,6 @@ impl TemplateCache {
 
         if let Ok(mut deps) = self.dependencies.write() {
             deps.clear();
-        }
-
         if let Ok(mut watchers) = self.file_watchers.write() {
             watchers.clear();
         }
@@ -1067,31 +791,21 @@ impl TemplateCache {
     pub async fn contains(&self, key: &str) -> bool {
         let entries = self.entries.read().await;
         entries.contains_key(key)
-    }
-
     /// Get all cache keys
     pub async fn keys(&self) -> Vec<String> {
         let entries = self.entries.read().await;
         entries.keys().cloned().collect()
-    }
-
     /// Invalidate cache entry
     #[instrument(skip(self))]
     pub async fn invalidate(&self, key: &str) {
         debug!(key = key, "Invalidating cache entry");
         self.remove_async(key).await;
-    }
-
     /// Get cache configuration
     pub fn config(&self) -> &CacheConfig {
         &self.config
-    }
-
     /// Update cache configuration
     pub fn update_config(&mut self, new_config: CacheConfig) {
         self.config = Arc::new(new_config);
-    }
-
     /// Get total memory usage across all levels
     pub fn total_memory_usage(&self) -> usize {
         if let Ok(stats) = self.stats.read() {
@@ -1114,13 +828,9 @@ impl TemplateCache {
     pub fn set_development_mode(&mut self, enabled: bool) {
         Arc::make_mut(&mut self.config).development_mode = enabled;
         Arc::make_mut(&mut self.config).enable_hot_reload = enabled;
-    }
-
     /// Warm up cache with specific templates
     pub async fn warm_up(&self, template_keys: Vec<String>) {
         self.queue_background_operation(BackgroundOperation::WarmUp(template_keys)).await;
-    }
-
     /// Preload templates
     pub async fn preload(&self, template_keys: Vec<String>) {
         self.queue_background_operation(BackgroundOperation::Preload(template_keys)).await;
@@ -1147,8 +857,6 @@ impl CacheKeyGenerator {
         }
         
         format!("template_{:x}", hasher.finish())
-    }
-
     /// Generate a hash for template source
     pub fn hash_source(source: &str) -> u64 {
         let mut hasher = std::collections::hash_map::DefaultHasher::new();

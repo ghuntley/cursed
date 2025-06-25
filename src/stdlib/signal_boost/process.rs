@@ -18,17 +18,14 @@ pub fn signal_process(pid: u32, signal: BoostSignal) -> SignalBoostResult<()> {
                         return Err(SignalBoostError::General(
                             format!("Process {} not found", pid)
                         ));
-                    },
                     Some(libc::EPERM) => {
                         return Err(permission_denied(
                             &format!("Permission denied to signal process {}", pid)
                         ));
-                    },
                     Some(libc::EINVAL) => {
                         return Err(SignalBoostError::InvalidSignal(
                             format!("Invalid signal {} for process {}", signal.name(), pid)
                         ));
-                    },
                     _ => {
                         return Err(system_error(
                             &format!("Failed to signal process {}: {}", pid, error)
@@ -37,8 +34,6 @@ pub fn signal_process(pid: u32, signal: BoostSignal) -> SignalBoostResult<()> {
                 }
             }
         }
-    }
-    
     #[cfg(windows)]
     {
         // Windows signal handling
@@ -47,7 +42,6 @@ pub fn signal_process(pid: u32, signal: BoostSignal) -> SignalBoostResult<()> {
                 // SIGINT - Use GenerateConsoleCtrlEvent
                 unsafe {
                     if winapi::um::wincon::GenerateConsoleCtrlEvent(
-                        winapi::um::wincon::CTRL_C_EVENT, 
                         pid
                     ) == 0 {
                         return Err(system_error(
@@ -55,7 +49,6 @@ pub fn signal_process(pid: u32, signal: BoostSignal) -> SignalBoostResult<()> {
                         ));
                     }
                 }
-            },
             15 => {
                 // SIGTERM - Use TerminateProcess
                 use winapi::um::processthreadsapi::{OpenProcess, TerminateProcess};
@@ -68,8 +61,6 @@ pub fn signal_process(pid: u32, signal: BoostSignal) -> SignalBoostResult<()> {
                         return Err(system_error(
                             &format!("Failed to open process {}", pid)
                         ));
-                    }
-                    
                     let result = TerminateProcess(handle, 1);
                     CloseHandle(handle);
                     
@@ -79,19 +70,14 @@ pub fn signal_process(pid: u32, signal: BoostSignal) -> SignalBoostResult<()> {
                         ));
                     }
                 }
-            },
             _ => {
                 return Err(not_supported(
                     &format!("Signal {} not supported on Windows", signal.name())
                 ));
             }
         }
-    }
-    
     tracing::info!("Sent signal {} to process {}", signal, pid);
     Ok(())
-}
-
 /// Send a signal to a process group
 pub fn signal_group(pgid: u32, signal: BoostSignal) -> SignalBoostResult<()> {
     validate_signal(signal)?;
@@ -106,19 +92,13 @@ pub fn signal_group(pgid: u32, signal: BoostSignal) -> SignalBoostResult<()> {
                 ));
             }
         }
-    }
-    
     #[cfg(windows)]
     {
         // Windows doesn't have process groups in the same way
         // We would need to enumerate child processes and signal them individually
         return Err(not_supported("Process group signaling not fully supported on Windows"));
-    }
-    
     tracing::info!("Sent signal {} to process group {}", signal, pgid);
     Ok(())
-}
-
 /// Broadcast a signal to all processes (requires appropriate permissions)
 pub fn broadcast(signal: BoostSignal) -> SignalBoostResult<()> {
     validate_signal(signal)?;
@@ -132,7 +112,6 @@ pub fn broadcast(signal: BoostSignal) -> SignalBoostResult<()> {
                 match error.raw_os_error() {
                     Some(libc::EPERM) => {
                         return Err(permission_denied("Permission denied to broadcast signal"));
-                    },
                     _ => {
                         return Err(system_error(
                             &format!("Failed to broadcast signal {}: {}", signal.name(), error)
@@ -141,17 +120,11 @@ pub fn broadcast(signal: BoostSignal) -> SignalBoostResult<()> {
                 }
             }
         }
-    }
-    
     #[cfg(windows)]
     {
         return Err(not_supported("Signal broadcasting not supported on Windows"));
-    }
-    
     tracing::warn!("Broadcasted signal {} to all processes", signal);
     Ok(())
-}
-
 /// Get processes that would receive a signal
 pub fn get_targets(signal: BoostSignal) -> SignalBoostResult<Vec<u32>> {
     validate_signal(signal)?;
@@ -182,9 +155,7 @@ pub fn get_targets(signal: BoostSignal) -> SignalBoostResult<Vec<u32>> {
         use winapi::um::winnt::PROCESS_QUERY_INFORMATION;
         use winapi::um::handleapi::CloseHandle;
         use winapi::um::tlhelp32::{
-            CreateToolhelp32Snapshot, Process32First, Process32Next, 
             PROCESSENTRY32, TH32CS_SNAPPROCESS
-        };
         
         unsafe {
             let snapshot = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
@@ -201,23 +172,15 @@ pub fn get_targets(signal: BoostSignal) -> SignalBoostResult<Vec<u32>> {
                         if !handle.is_null() {
                             targets.push(pid);
                             CloseHandle(handle);
-                        }
-                        
                         if Process32Next(snapshot, &mut entry) == 0 {
                             break;
                         }
                     }
-                }
-                
                 CloseHandle(snapshot);
             }
         }
-    }
-    
     tracing::debug!("Found {} potential targets for signal {}", targets.len(), signal);
     Ok(targets)
-}
-
 /// Check if we can signal a specific process
 fn can_signal_process(pid: u32, signal: BoostSignal) -> bool {
     #[cfg(unix)]
@@ -252,8 +215,6 @@ pub fn kill_process(pid: u32) -> SignalBoostResult<()> {
     #[cfg(unix)]
     {
 //         signal_process(pid, crate::stdlib::signal_boost::core::SIGKILL)
-    }
-    
     #[cfg(windows)]
     {
 //         signal_process(pid, crate::stdlib::signal_boost::core::SIGTERM)
@@ -263,28 +224,18 @@ pub fn kill_process(pid: u32) -> SignalBoostResult<()> {
 /// Terminate a process gracefully (sends SIGTERM)
 pub fn terminate_process(pid: u32) -> SignalBoostResult<()> {
 //     signal_process(pid, crate::stdlib::signal_boost::core::SIGTERM)
-}
-
 /// Interrupt a process (sends SIGINT)
 pub fn interrupt_process(pid: u32) -> SignalBoostResult<()> {
 //     signal_process(pid, crate::stdlib::signal_boost::core::SIGINT)
-}
-
 /// Send SIGHUP to a process (commonly used for configuration reload)
 pub fn hangup_process(pid: u32) -> SignalBoostResult<()> {
 //     signal_process(pid, crate::stdlib::signal_boost::core::SIGHUP)
-}
-
 /// Send SIGUSR1 to a process
 pub fn user_signal_1(pid: u32) -> SignalBoostResult<()> {
 //     signal_process(pid, crate::stdlib::signal_boost::core::SIGUSR1)
-}
-
 /// Send SIGUSR2 to a process
 pub fn user_signal_2(pid: u32) -> SignalBoostResult<()> {
 //     signal_process(pid, crate::stdlib::signal_boost::core::SIGUSR2)
-}
-
 /// Get the current process ID
 pub fn get_current_pid() -> u32 {
     #[cfg(unix)]
@@ -296,22 +247,16 @@ pub fn get_current_pid() -> u32 {
     {
         unsafe { winapi::um::processthreadsapi::GetCurrentProcessId() }
     }
-}
-
 /// Get the parent process ID
 pub fn get_parent_pid() -> SignalBoostResult<u32> {
     #[cfg(unix)]
     {
         Ok(unsafe { libc::getppid() as u32 })
-    }
-    
     #[cfg(windows)]
     {
         // Windows requires more complex logic to get parent PID
         use winapi::um::tlhelp32::{
-            CreateToolhelp32Snapshot, Process32First, Process32Next,
             PROCESSENTRY32, TH32CS_SNAPPROCESS
-        };
         use winapi::um::handleapi::CloseHandle;
         
         let current_pid = get_current_pid();
@@ -320,8 +265,6 @@ pub fn get_parent_pid() -> SignalBoostResult<u32> {
             let snapshot = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
             if snapshot == winapi::um::handleapi::INVALID_HANDLE_VALUE {
                 return Err(system_error("Failed to create process snapshot"));
-            }
-            
             let mut entry: PROCESSENTRY32 = std::mem::zeroed();
             entry.dwSize = std::mem::size_of::<PROCESSENTRY32>() as u32;
             
@@ -330,17 +273,11 @@ pub fn get_parent_pid() -> SignalBoostResult<u32> {
                     if entry.th32ProcessID == current_pid {
                         CloseHandle(snapshot);
                         return Ok(entry.th32ParentProcessID);
-                    }
-                    
                     if Process32Next(snapshot, &mut entry) == 0 {
                         break;
                     }
                 }
-            }
-            
             CloseHandle(snapshot);
-        }
-        
         Err(SignalBoostError::General("Parent process not found".to_string()))
     }
 }
@@ -380,16 +317,12 @@ fn validate_signal(signal: BoostSignal) -> SignalBoostResult<()> {
         ));
     }
     Ok(())
-}
-
 /// Validate process ID
 fn validate_pid(pid: u32) -> SignalBoostResult<()> {
     if pid == 0 {
         return Err(SignalBoostError::InvalidSignal(
             "Cannot signal process 0".to_string()
         ));
-    }
-    
     #[cfg(unix)]
     {
         if pid == 1 {
@@ -398,8 +331,6 @@ fn validate_pid(pid: u32) -> SignalBoostResult<()> {
     }
     
     Ok(())
-}
-
 /// Signal multiple processes
 pub fn signal_processes(pids: &[u32], signal: BoostSignal) -> SignalBoostResult<()> {
     let mut results = Vec::new();
@@ -407,11 +338,7 @@ pub fn signal_processes(pids: &[u32], signal: BoostSignal) -> SignalBoostResult<
     for &pid in pids {
         let result = signal_process(pid, signal);
         results.push(result.map_err(|e| e));
-    }
-    
     Ok(results)
-}
-
 /// Find processes by name
 pub fn find_processes_by_name(name: &str) -> SignalBoostResult<Vec<u32>> {
     let mut matching_pids = Vec::new();
@@ -433,14 +360,10 @@ pub fn find_processes_by_name(name: &str) -> SignalBoostResult<Vec<u32>> {
                 }
             }
         }
-    }
-    
     #[cfg(windows)]
     {
         use winapi::um::tlhelp32::{
-            CreateToolhelp32Snapshot, Process32First, Process32Next,
             PROCESSENTRY32, TH32CS_SNAPPROCESS
-        };
         use winapi::um::handleapi::CloseHandle;
         
         unsafe {
@@ -456,20 +379,12 @@ pub fn find_processes_by_name(name: &str) -> SignalBoostResult<Vec<u32>> {
                         
                         if process_name == name {
                             matching_pids.push(entry.th32ProcessID);
-                        }
-                        
                         if Process32Next(snapshot, &mut entry) == 0 {
                             break;
                         }
                     }
-                }
-                
                 CloseHandle(snapshot);
             }
         }
-    }
-    
     tracing::debug!("Found {} processes named '{}'", matching_pids.len(), name);
     Ok(matching_pids)
-}
-

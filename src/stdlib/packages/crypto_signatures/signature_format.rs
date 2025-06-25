@@ -13,85 +13,44 @@ use std::fmt;
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub enum SignatureFormat {
     /// Raw binary signature
-    Raw,
     /// Base64 encoded signature
-    Base64,
     /// Hexadecimal encoded signature
-    Hex,
     /// ASN.1 DER encoded signature
-    Der,
     /// PEM encoded signature
-    Pem,
     /// PKCS#7 signature format
-    Pkcs7,
     /// Compact signature format (for compact curves)
-    Compact,
-}
-
 /// Signature encoding options
 #[derive(Debug, Clone)]
 pub struct EncodingOptions {
-    pub format: SignatureFormat,
-    pub line_breaks: bool,
-    pub header_footer: bool,
-    pub mime_type: Option<String>,
-}
-
 impl Default for EncodingOptions {
     fn default() -> Self {
         Self {
-            format: SignatureFormat::Base64,
-            line_breaks: false,
-            header_footer: false,
-            mime_type: None,
         }
     }
-}
-
 /// Signature metadata
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct SignatureMetadata {
-    pub algorithm: String,
-    pub key_id: Option<String>,
-    pub timestamp: Option<i64>,
-    pub digest_algorithm: Option<String>,
-    pub format: SignatureFormat,
-    pub size: usize,
-}
-
 /// Encoded signature with metadata
 #[derive(Debug, Clone)]
 pub struct EncodedSignature {
-    pub data: Vec<u8>,
-    pub encoding: String,
-    pub metadata: SignatureMetadata,
-}
-
 /// Production-ready signature format utilities
 pub struct SignatureFormatHandler {
-    default_options: EncodingOptions,
-}
-
 impl SignatureFormatHandler {
     /// Create a new signature format handler
     pub fn new() -> Self {
         Self {
-            default_options: EncodingOptions::default(),
         }
     }
 
     /// Create with custom default options
     pub fn with_options(options: EncodingOptions) -> Self {
         Self {
-            default_options: options,
         }
     }
 
     /// Encode signature using default options
     pub fn encode(&self, signature: &[u8]) -> SignatureResult<String> {
         self.encode_with_options(signature, &self.default_options)
-    }
-
     /// Encode signature with specific options
     pub fn encode_with_options(&self, signature: &[u8], options: &EncodingOptions) -> SignatureResult<String> {
         match options.format {
@@ -126,7 +85,6 @@ impl SignatureFormatHandler {
                 
                 if options.header_footer {
                     Ok(format!(
-                        "-----BEGIN SIGNATURE-----\n{}\n-----END SIGNATURE-----",
                         formatted
                     ))
                 } else {
@@ -153,8 +111,6 @@ impl SignatureFormatHandler {
     /// Decode signature using default format
     pub fn decode(&self, encoded: &str) -> SignatureResult<Vec<u8>> {
         self.decode_with_format(encoded, &self.default_options.format)
-    }
-
     /// Decode signature with specified format
     pub fn decode_with_format(&self, encoded: &str, format: &SignatureFormat) -> SignatureResult<Vec<u8>> {
         match format {
@@ -186,17 +142,10 @@ impl SignatureFormatHandler {
                 self.decode_pkcs7_signature(&pkcs7_data)
             }
         }
-    }
-
     /// Auto-detect signature format and decode
     pub fn auto_decode(&self, encoded: &str) -> SignatureResult<(Vec<u8>, SignatureFormat)> {
         // Try different formats in order of likelihood
         let formats = [
-            SignatureFormat::Base64,
-            SignatureFormat::Hex,
-            SignatureFormat::Pem,
-            SignatureFormat::Der,
-            SignatureFormat::Pkcs7,
         ];
 
         for format in &formats {
@@ -206,45 +155,23 @@ impl SignatureFormatHandler {
         }
 
         Err(SignatureError::Format("Unable to auto-detect signature format".to_string()))
-    }
-
     /// Create signature metadata
     pub fn create_metadata(
-        &self,
-        signature: &[u8],
-        algorithm: &str,
-        format: SignatureFormat,
     ) -> SignatureMetadata {
         SignatureMetadata {
-            algorithm: algorithm.to_string(),
-            key_id: None,
-            timestamp: Some(chrono::Utc::now().timestamp()),
-            digest_algorithm: None,
-            format,
-            size: signature.len(),
         }
     }
 
     /// Encode signature with metadata
     pub fn encode_with_metadata(
-        &self,
-        signature: &[u8],
-        metadata: &SignatureMetadata,
     ) -> SignatureResult<EncodedSignature> {
         let options = EncodingOptions {
-            format: metadata.format.clone(),
             ..self.default_options.clone()
-        };
 
         let encoding = self.encode_with_options(signature, &options)?;
 
         Ok(EncodedSignature {
-            data: signature.to_vec(),
-            encoding,
-            metadata: metadata.clone(),
         })
-    }
-
     /// Validate signature format
     pub fn validate_format(&self, signature: &[u8], expected_format: &SignatureFormat) -> SignatureResult<bool> {
         match expected_format {
@@ -264,13 +191,10 @@ impl SignatureFormatHandler {
             _ => {
                 // For encoded formats, try to decode and see if it works
                 let encoded = self.encode_with_options(signature, &EncodingOptions {
-                    format: expected_format.clone(),
                     ..Default::default()
                 })?;
                 
                 match self.decode_with_format(&encoded, expected_format) {
-                    Ok(decoded) => Ok(decoded == signature),
-                    Err(_) => Ok(false),
                 }
             }
         }
@@ -286,8 +210,6 @@ impl SignatureFormatHandler {
             .map(|chunk| chunk.iter().collect::<String>())
             .collect::<Vec<String>>()
             .join("\n")
-    }
-
     fn extract_pem_data(&self, pem: &str) -> SignatureResult<String> {
         let lines: Vec<&str> = pem.split("\n").collect();
         let mut data_lines = Vec::new();
@@ -338,13 +260,9 @@ impl SignatureFormatHandler {
         der.extend(signature);
         
         Ok(der)
-    }
-
     fn decode_der_signature(&self, der_data: &[u8]) -> SignatureResult<Vec<u8>> {
         if der_data.len() < 4 {
             return Err(SignatureError::Format("DER data too short".to_string()));
-        }
-
         let mut pos = 0;
         
         // Check SEQUENCE tag
@@ -377,11 +295,7 @@ impl SignatureFormatHandler {
         let signature_len = length - 1; // Subtract 1 for unused bits indicator
         if pos + signature_len > der_data.len() {
             return Err(SignatureError::Format("Invalid DER signature length".to_string()));
-        }
-        
         Ok(der_data[pos..pos + signature_len].to_vec())
-    }
-
     fn encode_der_length(&self, length: usize) -> Vec<u8> {
         if length < 128 {
             vec![length as u8]
@@ -398,8 +312,6 @@ impl SignatureFormatHandler {
     fn decode_der_length(&self, data: &[u8], pos: usize) -> SignatureResult<(usize, usize)> {
         if pos >= data.len() {
             return Err(SignatureError::Format("Unexpected end of DER data".to_string()));
-        }
-
         let first_byte = data[pos];
         if first_byte & 0x80 == 0 {
             // Short form
@@ -409,13 +321,9 @@ impl SignatureFormatHandler {
             let length_bytes = (first_byte & 0x7f) as usize;
             if length_bytes == 0 || pos + length_bytes >= data.len() {
                 return Err(SignatureError::Format("Invalid DER length encoding".to_string()));
-            }
-
             let mut length = 0usize;
             for i in 1..=length_bytes {
                 length = (length << 8) | (data[pos + i] as usize);
-            }
-
             Ok((length, pos + length_bytes + 1))
         }
     }
@@ -450,16 +358,12 @@ impl SignatureFormatHandler {
         pkcs7.splice(content_start..content_start + 3, length_bytes);
         
         Ok(pkcs7)
-    }
-
     fn decode_pkcs7_signature(&self, pkcs7_data: &[u8]) -> SignatureResult<Vec<u8>> {
         // Simplified PKCS#7 decoding
         // This is a basic implementation - real PKCS#7 is much more complex
         
         if pkcs7_data.len() < 20 {
             return Err(SignatureError::Format("PKCS#7 data too short".to_string()));
-        }
-
         // Look for OCTET STRING containing the signature
         for i in 0..pkcs7_data.len().saturating_sub(2) {
             if pkcs7_data[i] == 0x04 { // OCTET STRING tag
@@ -468,26 +372,16 @@ impl SignatureFormatHandler {
                     return Ok(pkcs7_data[pos..pos + length].to_vec());
                 }
             }
-        }
-
         Err(SignatureError::Format("No signature found in PKCS#7 data".to_string()))
-    }
-
     fn validate_der_signature(&self, signature: &[u8]) -> SignatureResult<bool> {
         // Basic DER validation
         if signature.len() < 4 {
             return Ok(false);
-        }
-
         // Check if it starts with SEQUENCE tag
         if signature[0] != 0x30 {
             return Ok(false);
-        }
-
         // Try to decode and see if it's valid
         match self.decode_der_signature(signature) {
-            Ok(_) => Ok(true),
-            Err(_) => Ok(false),
         }
     }
 
@@ -495,21 +389,13 @@ impl SignatureFormatHandler {
         // Basic PKCS#7 validation
         if signature.len() < 20 {
             return Ok(false);
-        }
-
         // Check if it starts with SEQUENCE tag
         if signature[0] != 0x30 {
             return Ok(false);
-        }
-
         // Try to decode and see if it's valid
         match self.decode_pkcs7_signature(signature) {
-            Ok(_) => Ok(true),
-            Err(_) => Ok(false),
         }
     }
-}
-
 impl Default for SignatureFormatHandler {
     fn default() -> Self {
         Self::new()
@@ -519,17 +405,8 @@ impl Default for SignatureFormatHandler {
 impl fmt::Display for SignatureFormat {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            SignatureFormat::Raw => write!(f, "Raw"),
-            SignatureFormat::Base64 => write!(f, "Base64"),
-            SignatureFormat::Hex => write!(f, "Hex"),
-            SignatureFormat::Der => write!(f, "DER"),
-            SignatureFormat::Pem => write!(f, "PEM"),
-            SignatureFormat::Pkcs7 => write!(f, "PKCS#7"),
-            SignatureFormat::Compact => write!(f, "Compact"),
         }
     }
-}
-
 /// Convenience functions for common operations
 pub mod utils {
     use super::*;
@@ -537,25 +414,17 @@ pub mod utils {
     /// Quick base64 encoding
     pub fn encode_base64(signature: &[u8]) -> String {
         BASE64_STANDARD.encode(signature)
-    }
-
     /// Quick base64 decoding
     pub fn decode_base64(encoded: &str) -> SignatureResult<Vec<u8>> {
         BASE64_STANDARD.decode(encoded)
             .map_err(|e| SignatureError::Format(format!("Base64 decode error: {}", e)))
-    }
-
     /// Quick hex encoding
     pub fn encode_hex(signature: &[u8]) -> String {
         hex::encode(signature)
-    }
-
     /// Quick hex decoding
     pub fn decode_hex(encoded: &str) -> SignatureResult<Vec<u8>> {
         hex::decode(encoded)
             .map_err(|e| SignatureError::Format(format!("Hex decode error: {}", e)))
-    }
-
     /// Convert signature to PEM format
     pub fn to_pem(signature: &[u8]) -> String {
         let base64_data = encode_base64(signature);
@@ -568,11 +437,8 @@ pub mod utils {
             .join("\n");
         
         format!(
-            "-----BEGIN SIGNATURE-----\n{}\n-----END SIGNATURE-----",
             formatted
         )
-    }
-
     /// Parse PEM format signature
     pub fn from_pem(pem: &str) -> SignatureResult<Vec<u8>> {
         let handler = SignatureFormatHandler::new();

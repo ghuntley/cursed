@@ -16,5 +16,3 @@ pub use manager::{PoolManager, PoolStats};
 // pub fn init_db_pool() -> crate::stdlib::packages::db_core::error::DatabaseResult<()> {
     println!("🏊 db_pool package initialized - connection pooling ready bestie!");
     Ok(())
-}
-

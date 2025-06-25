@@ -26,44 +26,26 @@ pub use super::{DigitalSignature, ParameterSet, AlgorithmPerformance, KeySizes};
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum DilithiumParameterSet {
     /// Dilithium2 (NIST Level 2, ~128-bit security)
-    Dilithium2,
     /// Dilithium3 (NIST Level 3, 192-bit security)
-    Dilithium3,
     /// Dilithium5 (NIST Level 5, 256-bit security)
-    Dilithium5,
-}
-
 impl ParameterSet for DilithiumParameterSet {
     fn security_level(&self) -> SecurityLevel {
         match self {
-            DilithiumParameterSet::Dilithium2 => SecurityLevel::Level1,
-            DilithiumParameterSet::Dilithium3 => SecurityLevel::Level3,
-            DilithiumParameterSet::Dilithium5 => SecurityLevel::Level5,
         }
     }
 
     fn public_key_size(&self) -> usize {
         match self {
-            DilithiumParameterSet::Dilithium2 => 1312,
-            DilithiumParameterSet::Dilithium3 => 1952,
-            DilithiumParameterSet::Dilithium5 => 2592,
         }
     }
 
     fn secret_key_size(&self) -> usize {
         match self {
-            DilithiumParameterSet::Dilithium2 => 2528,
-            DilithiumParameterSet::Dilithium3 => 4000,
-            DilithiumParameterSet::Dilithium5 => 4864,
         }
     }
 
     fn additional_sizes(&self) -> Vec<(&'static str, usize)> {
         let signature_size = match self {
-            DilithiumParameterSet::Dilithium2 => 2420,
-            DilithiumParameterSet::Dilithium3 => 3293,
-            DilithiumParameterSet::Dilithium5 => 4595,
-        };
         vec![("signature", signature_size)]
     }
 }
@@ -71,20 +53,11 @@ impl ParameterSet for DilithiumParameterSet {
 impl fmt::Display for DilithiumParameterSet {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            DilithiumParameterSet::Dilithium2 => write!(f, "Dilithium2"),
-            DilithiumParameterSet::Dilithium3 => write!(f, "Dilithium3"),
-            DilithiumParameterSet::Dilithium5 => write!(f, "Dilithium5"),
         }
     }
-}
-
 /// Dilithium public key
 #[derive(Debug, Clone)]
 pub struct DilithiumPublicKey {
-    pub parameter_set: DilithiumParameterSet,
-    pub key_data: Vec<u8>,
-}
-
 impl DilithiumPublicKey {
     /// Create a new Dilithium public key
     pub fn new(parameter_set: DilithiumParameterSet, key_data: Vec<u8>) -> PqcResult<Self> {
@@ -95,18 +68,12 @@ impl DilithiumPublicKey {
             ));
         }
         Ok(Self { parameter_set, key_data })
-    }
-
     /// Get the parameter set
     pub fn parameter_set(&self) -> DilithiumParameterSet {
         self.parameter_set
-    }
-
     /// Get the key data
     pub fn as_bytes(&self) -> &[u8] {
         &self.key_data
-    }
-
     /// Get the security level
     pub fn security_level(&self) -> SecurityLevel {
         self.parameter_set.security_level()
@@ -116,10 +83,6 @@ impl DilithiumPublicKey {
 /// Dilithium secret key
 #[derive(Debug, Clone)]
 pub struct DilithiumSecretKey {
-    pub parameter_set: DilithiumParameterSet,
-    pub key_data: Vec<u8>,
-}
-
 impl DilithiumSecretKey {
     /// Create a new Dilithium secret key
     pub fn new(parameter_set: DilithiumParameterSet, key_data: Vec<u8>) -> PqcResult<Self> {
@@ -130,18 +93,12 @@ impl DilithiumSecretKey {
             ));
         }
         Ok(Self { parameter_set, key_data })
-    }
-
     /// Get the parameter set
     pub fn parameter_set(&self) -> DilithiumParameterSet {
         self.parameter_set
-    }
-
     /// Get the key data
     pub fn as_bytes(&self) -> &[u8] {
         &self.key_data
-    }
-
     /// Get the security level
     pub fn security_level(&self) -> SecurityLevel {
         self.parameter_set.security_level()
@@ -151,10 +108,6 @@ impl DilithiumSecretKey {
 /// Dilithium signature
 #[derive(Debug, Clone)]
 pub struct DilithiumSignature {
-    pub parameter_set: DilithiumParameterSet,
-    pub data: Vec<u8>,
-}
-
 impl DilithiumSignature {
     /// Create a new Dilithium signature
     pub fn new(parameter_set: DilithiumParameterSet, data: Vec<u8>) -> PqcResult<Self> {
@@ -170,13 +123,9 @@ impl DilithiumSignature {
             ));
         }
         Ok(Self { parameter_set, data })
-    }
-
     /// Get the signature data
     pub fn as_bytes(&self) -> &[u8] {
         &self.data
-    }
-
     /// Get the parameter set
     pub fn parameter_set(&self) -> DilithiumParameterSet {
         self.parameter_set
@@ -193,14 +142,8 @@ impl DigitalSignature for Dilithium {
 
     fn keygen(security_level: SecurityLevel) -> PqcResult<(Self::PublicKey, Self::SecretKey)> {
         let parameter_set = match security_level {
-            SecurityLevel::Level1 => DilithiumParameterSet::Dilithium2,
-            SecurityLevel::Level3 => DilithiumParameterSet::Dilithium3,
-            SecurityLevel::Level5 => DilithiumParameterSet::Dilithium5,
-        };
 
         Self::keygen_with_params(parameter_set)
-    }
-
     fn sign(secret_key: &Self::SecretKey, message: &[u8]) -> PqcResult<Self::Signature> {
         // In a real implementation, this would use the actual Dilithium signing algorithm
         // For now, we'll use a placeholder that demonstrates the API structure
@@ -224,8 +167,6 @@ impl DigitalSignature for Dilithium {
         let mut signature_data = Vec::with_capacity(signature_size);
         for i in 0..signature_size {
             signature_data.push(hash_result[i % hash_result.len()]);
-        }
-        
         // XOR with some secret key material for variation
         for (i, byte) in secret_key.key_data.iter().enumerate() {
             if i < signature_data.len() {
@@ -235,16 +176,12 @@ impl DigitalSignature for Dilithium {
 
         let signature = DilithiumSignature::new(parameter_set, signature_data)?;
         Ok(signature)
-    }
-
     fn verify(public_key: &Self::PublicKey, message: &[u8], signature: &Self::Signature) -> PqcResult<bool> {
         // Validate parameter set compatibility
         if public_key.parameter_set != signature.parameter_set {
             return Err(PqcError::ParameterValidation(
                 "Mismatched parameter sets between public key and signature".to_string()
             ));
-        }
-
         // In a real implementation, this would use the actual Dilithium verification algorithm
         // For now, we'll use a placeholder that demonstrates the API structure
         
@@ -261,8 +198,6 @@ impl DigitalSignature for Dilithium {
         let mut expected_start = Vec::with_capacity(32);
         for i in 0..32.min(signature.data.len()) {
             expected_start.push(hash_result[i % hash_result.len()]);
-        }
-        
         // XOR with public key material (matching signing process)
         for (i, byte) in public_key.key_data.iter().enumerate() {
             if i < expected_start.len() {
@@ -272,8 +207,6 @@ impl DigitalSignature for Dilithium {
         
         // Simple verification: check if first 32 bytes match expected pattern
         Ok(signature_start == expected_start.as_slice())
-    }
-
     fn algorithm_type() -> AlgorithmType {
         AlgorithmType::Dilithium
     }
@@ -302,8 +235,6 @@ impl Dilithium {
         // Fill public key with repeated hash pattern
         for (i, byte) in pub_key_data.iter_mut().enumerate() {
             *byte = hash_result[i % hash_result.len()];
-        }
-        
         // Add some randomness to public key
         let mut additional_randomness = vec![0u8; 32];
         OsRng.fill_bytes(&mut additional_randomness);
@@ -317,30 +248,18 @@ impl Dilithium {
         let secret_key = DilithiumSecretKey::new(params, sec_key_data)?;
 
         Ok((public_key, secret_key))
-    }
-
     /// Get performance characteristics for a parameter set
     pub fn performance_characteristics(params: DilithiumParameterSet) -> AlgorithmPerformance {
         // These are approximate performance characteristics for reference
         let (keygen_ms, sign_ms, verify_ms, sign_throughput, verify_throughput) = match params {
-            DilithiumParameterSet::Dilithium2 => (0.2, 0.1, 0.05, 10000.0, 20000.0),
-            DilithiumParameterSet::Dilithium3 => (0.3, 0.15, 0.07, 7000.0, 15000.0),
-            DilithiumParameterSet::Dilithium5 => (0.5, 0.25, 0.12, 4000.0, 8000.0),
-        };
 
         AlgorithmPerformance {
-            keygen_time_ms: keygen_ms,
             operation_time_ms: (sign_ms + verify_ms) / 2.0, // Average of sign and verify
             key_sizes: KeySizes {
-                public_key: params.public_key_size(),
-                secret_key: params.secret_key_size(),
                 ciphertext_or_signature: params.additional_sizes()
                     .iter()
                     .find(|(name, _)| *name == "signature")
                     .map(|(_, size)| *size)
-                    .unwrap_or(0),
-                shared_secret: None,
-            },
             throughput_ops_per_sec: (sign_throughput + verify_throughput) / 2.0,
         }
     }
@@ -352,15 +271,11 @@ impl Dilithium {
             return Err(PqcError::InvalidKey(
                 format!("Invalid public key size: expected {}, got {}", expected_size, key.key_data.len())
             ));
-        }
-        
         // Additional validation could be added here
         // - Check if key data is within valid range
         // - Verify key format compliance
         
         Ok(())
-    }
-
     /// Validate a Dilithium secret key
     pub fn validate_secret_key(key: &DilithiumSecretKey) -> PqcResult<()> {
         let expected_size = key.parameter_set.secret_key_size();
@@ -368,13 +283,9 @@ impl Dilithium {
             return Err(PqcError::InvalidKey(
                 format!("Invalid secret key size: expected {}, got {}", expected_size, key.key_data.len())
             ));
-        }
-        
         // Additional validation could be added here
         
         Ok(())
-    }
-
     /// Validate a Dilithium signature
     pub fn validate_signature(signature: &DilithiumSignature) -> PqcResult<()> {
         let expected_size = signature.parameter_set.additional_sizes()
@@ -387,33 +298,19 @@ impl Dilithium {
             return Err(PqcError::InvalidSignature(
                 format!("Invalid signature size: expected {}, got {}", expected_size, signature.data.len())
             ));
-        }
-        
         Ok(())
-    }
-
     /// Get all supported parameter sets
     pub fn supported_parameter_sets() -> Vec<DilithiumParameterSet> {
         vec![
-            DilithiumParameterSet::Dilithium2,
-            DilithiumParameterSet::Dilithium3,
-            DilithiumParameterSet::Dilithium5,
         ]
-    }
-
     /// Get the recommended parameter set for a security level
     pub fn recommended_params(security_level: SecurityLevel) -> DilithiumParameterSet {
         match security_level {
-            SecurityLevel::Level1 => DilithiumParameterSet::Dilithium2,
-            SecurityLevel::Level3 => DilithiumParameterSet::Dilithium3,
-            SecurityLevel::Level5 => DilithiumParameterSet::Dilithium5,
         }
     }
 
     /// Sign a message with additional context
     pub fn sign_with_context(
-        secret_key: &DilithiumSecretKey, 
-        message: &[u8], 
         context: &[u8]
     ) -> PqcResult<DilithiumSignature> {
         // Combine message and context
@@ -422,13 +319,8 @@ impl Dilithium {
         combined_data.extend_from_slice(context);
         
         Self::sign(secret_key, &combined_data)
-    }
-
     /// Verify a signature with additional context
     pub fn verify_with_context(
-        public_key: &DilithiumPublicKey, 
-        message: &[u8], 
-        context: &[u8],
         signature: &DilithiumSignature
     ) -> PqcResult<bool> {
         // Combine message and context

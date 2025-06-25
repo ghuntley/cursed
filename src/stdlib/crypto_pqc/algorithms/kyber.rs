@@ -29,46 +29,27 @@ pub use super::{KeyEncapsulation, ParameterSet, AlgorithmPerformance, KeySizes};
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum KyberParameterSet {
     /// Kyber-512 (NIST Level 1, 128-bit security)
-    Kyber512,
     /// Kyber-768 (NIST Level 3, 192-bit security)
-    Kyber768,
     /// Kyber-1024 (NIST Level 5, 256-bit security)
-    Kyber1024,
-}
-
 impl ParameterSet for KyberParameterSet {
     fn security_level(&self) -> SecurityLevel {
         match self {
-            KyberParameterSet::Kyber512 => SecurityLevel::Level1,
-            KyberParameterSet::Kyber768 => SecurityLevel::Level3,
-            KyberParameterSet::Kyber1024 => SecurityLevel::Level5,
         }
     }
 
     fn public_key_size(&self) -> usize {
         match self {
-            KyberParameterSet::Kyber512 => 800,
-            KyberParameterSet::Kyber768 => 1184,
-            KyberParameterSet::Kyber1024 => 1568,
         }
     }
 
     fn secret_key_size(&self) -> usize {
         match self {
-            KyberParameterSet::Kyber512 => 1632,
-            KyberParameterSet::Kyber768 => 2400,
-            KyberParameterSet::Kyber1024 => 3168,
         }
     }
 
     fn additional_sizes(&self) -> Vec<(&'static str, usize)> {
         let ciphertext_size = match self {
-            KyberParameterSet::Kyber512 => 768,
-            KyberParameterSet::Kyber768 => 1088,
-            KyberParameterSet::Kyber1024 => 1568,
-        };
         vec![
-            ("ciphertext", ciphertext_size),
             ("shared_secret", 32), // All Kyber variants use 32-byte shared secrets
         ]
     }
@@ -77,20 +58,11 @@ impl ParameterSet for KyberParameterSet {
 impl fmt::Display for KyberParameterSet {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            KyberParameterSet::Kyber512 => write!(f, "Kyber-512"),
-            KyberParameterSet::Kyber768 => write!(f, "Kyber-768"),
-            KyberParameterSet::Kyber1024 => write!(f, "Kyber-1024"),
         }
     }
-}
-
 /// Kyber public key
 #[derive(Debug, Clone)]
 pub struct KyberPublicKey {
-    pub parameter_set: KyberParameterSet,
-    pub key_data: Vec<u8>,
-}
-
 impl KyberPublicKey {
     /// Create a new Kyber public key
     pub fn new(parameter_set: KyberParameterSet, key_data: Vec<u8>) -> PqcResult<Self> {
@@ -101,18 +73,12 @@ impl KyberPublicKey {
             ));
         }
         Ok(Self { parameter_set, key_data })
-    }
-
     /// Get the parameter set
     pub fn parameter_set(&self) -> KyberParameterSet {
         self.parameter_set
-    }
-
     /// Get the key data
     pub fn as_bytes(&self) -> &[u8] {
         &self.key_data
-    }
-
     /// Get the security level
     pub fn security_level(&self) -> SecurityLevel {
         self.parameter_set.security_level()
@@ -122,10 +88,6 @@ impl KyberPublicKey {
 /// Kyber secret key
 #[derive(Debug, Clone)]
 pub struct KyberSecretKey {
-    pub parameter_set: KyberParameterSet,
-    pub key_data: Vec<u8>,
-}
-
 impl KyberSecretKey {
     /// Create a new Kyber secret key
     pub fn new(parameter_set: KyberParameterSet, key_data: Vec<u8>) -> PqcResult<Self> {
@@ -136,18 +98,12 @@ impl KyberSecretKey {
             ));
         }
         Ok(Self { parameter_set, key_data })
-    }
-
     /// Get the parameter set
     pub fn parameter_set(&self) -> KyberParameterSet {
         self.parameter_set
-    }
-
     /// Get the key data
     pub fn as_bytes(&self) -> &[u8] {
         &self.key_data
-    }
-
     /// Get the security level
     pub fn security_level(&self) -> SecurityLevel {
         self.parameter_set.security_level()
@@ -157,10 +113,6 @@ impl KyberSecretKey {
 /// Kyber ciphertext
 #[derive(Debug, Clone)]
 pub struct KyberCiphertext {
-    pub parameter_set: KyberParameterSet,
-    pub data: Vec<u8>,
-}
-
 impl KyberCiphertext {
     /// Create a new Kyber ciphertext
     pub fn new(parameter_set: KyberParameterSet, data: Vec<u8>) -> PqcResult<Self> {
@@ -176,8 +128,6 @@ impl KyberCiphertext {
             ));
         }
         Ok(Self { parameter_set, data })
-    }
-
     /// Get the ciphertext data
     pub fn as_bytes(&self) -> &[u8] {
         &self.data
@@ -187,9 +137,6 @@ impl KyberCiphertext {
 /// Kyber shared secret
 #[derive(Debug, Clone)]
 pub struct KyberSharedSecret {
-    pub data: Vec<u8>,
-}
-
 impl KyberSharedSecret {
     /// Create a new shared secret
     pub fn new(data: Vec<u8>) -> PqcResult<Self> {
@@ -199,13 +146,9 @@ impl KyberSharedSecret {
             ));
         }
         Ok(Self { data })
-    }
-
     /// Get the shared secret data
     pub fn as_bytes(&self) -> &[u8] {
         &self.data
-    }
-
     /// Get the shared secret as a fixed-size array
     pub fn as_array(&self) -> [u8; 32] {
         let mut array = [0u8; 32];
@@ -225,14 +168,8 @@ impl KeyEncapsulation for Kyber {
 
     fn keygen(security_level: SecurityLevel) -> PqcResult<(Self::PublicKey, Self::SecretKey)> {
         let parameter_set = match security_level {
-            SecurityLevel::Level1 => KyberParameterSet::Kyber512,
-            SecurityLevel::Level3 => KyberParameterSet::Kyber768,
-            SecurityLevel::Level5 => KyberParameterSet::Kyber1024,
-        };
 
         Self::keygen_with_params(parameter_set)
-    }
-
     fn encaps(public_key: &Self::PublicKey) -> PqcResult<(Self::Ciphertext, Self::SharedSecret)> {
         // In a real implementation, this would use the actual Kyber encapsulation algorithm
         // For now, we'll use a placeholder that demonstrates the API structure
@@ -271,16 +208,12 @@ impl KeyEncapsulation for Kyber {
         let shared_secret = KyberSharedSecret::new(shared_secret_data)?;
 
         Ok((ciphertext, shared_secret))
-    }
-
     fn decaps(secret_key: &Self::SecretKey, ciphertext: &Self::Ciphertext) -> PqcResult<Self::SharedSecret> {
         // Validate parameter set compatibility
         if secret_key.parameter_set != ciphertext.parameter_set {
             return Err(PqcError::ParameterValidation(
                 "Mismatched parameter sets between secret key and ciphertext".to_string()
             ));
-        }
-
         // In a real implementation, this would use the actual Kyber decapsulation algorithm
         // For now, we'll use a placeholder that demonstrates the API structure
         
@@ -292,8 +225,6 @@ impl KeyEncapsulation for Kyber {
         
         let shared_secret = KyberSharedSecret::new(hash_result.to_vec())?;
         Ok(shared_secret)
-    }
-
     fn algorithm_type() -> AlgorithmType {
         AlgorithmType::Kyber
     }
@@ -332,31 +263,17 @@ impl Kyber {
         let secret_key = KyberSecretKey::new(params, sec_key_data)?;
 
         Ok((public_key, secret_key))
-    }
-
     /// Get performance characteristics for a parameter set
     pub fn performance_characteristics(params: KyberParameterSet) -> AlgorithmPerformance {
         // These are approximate performance characteristics for reference
         let (keygen_ms, operation_ms, throughput) = match params {
-            KyberParameterSet::Kyber512 => (0.1, 0.05, 20000.0),
-            KyberParameterSet::Kyber768 => (0.15, 0.07, 15000.0),
-            KyberParameterSet::Kyber1024 => (0.2, 0.1, 10000.0),
-        };
 
         AlgorithmPerformance {
-            keygen_time_ms: keygen_ms,
-            operation_time_ms: operation_ms,
             key_sizes: KeySizes {
-                public_key: params.public_key_size(),
-                secret_key: params.secret_key_size(),
                 ciphertext_or_signature: params.additional_sizes()
                     .iter()
                     .find(|(name, _)| *name == "ciphertext")
                     .map(|(_, size)| *size)
-                    .unwrap_or(0),
-                shared_secret: Some(32),
-            },
-            throughput_ops_per_sec: throughput,
         }
     }
 
@@ -367,15 +284,11 @@ impl Kyber {
             return Err(PqcError::InvalidKey(
                 format!("Invalid public key size: expected {}, got {}", expected_size, key.key_data.len())
             ));
-        }
-        
         // Additional validation could be added here
         // - Check if key data is within valid range
         // - Verify key format compliance
         
         Ok(())
-    }
-
     /// Validate a Kyber secret key
     pub fn validate_secret_key(key: &KyberSecretKey) -> PqcResult<()> {
         let expected_size = key.parameter_set.secret_key_size();
@@ -383,31 +296,17 @@ impl Kyber {
             return Err(PqcError::InvalidKey(
                 format!("Invalid secret key size: expected {}, got {}", expected_size, key.key_data.len())
             ));
-        }
-        
         // Additional validation could be added here
         // - Check if key components are valid
         // - Verify key structure
         
         Ok(())
-    }
-
     /// Get all supported parameter sets
     pub fn supported_parameter_sets() -> Vec<KyberParameterSet> {
         vec![
-            KyberParameterSet::Kyber512,
-            KyberParameterSet::Kyber768,
-            KyberParameterSet::Kyber1024,
         ]
-    }
-
     /// Get the recommended parameter set for a security level
     pub fn recommended_params(security_level: SecurityLevel) -> KyberParameterSet {
         match security_level {
-            SecurityLevel::Level1 => KyberParameterSet::Kyber512,
-            SecurityLevel::Level3 => KyberParameterSet::Kyber768,
-            SecurityLevel::Level5 => KyberParameterSet::Kyber1024,
         }
     }
-}
-

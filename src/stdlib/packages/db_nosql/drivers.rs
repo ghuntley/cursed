@@ -9,8 +9,6 @@ use std::any::Any;
 pub trait NoSqlDriver: Send + Sync {
     /// slay Connect to NoSQL database
     async fn connect(&self, connection_string: &str) -> crate::error::Result<()>;
-}
-
 /// fr fr NoSQL connection trait
 #[async_trait]
 pub trait NoSqlConnection: Send + Sync {

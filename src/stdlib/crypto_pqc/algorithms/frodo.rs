@@ -14,46 +14,27 @@ use super::{KeyEncapsulation, ParameterSet, AlgorithmPerformance, KeySizes};
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum FrodoParameterSet {
     /// FrodoKEM-640 (NIST Level 1)
-    Frodo640,
     /// FrodoKEM-976 (NIST Level 3)
-    Frodo976,
     /// FrodoKEM-1344 (NIST Level 5)
-    Frodo1344,
-}
-
 impl ParameterSet for FrodoParameterSet {
     fn security_level(&self) -> SecurityLevel {
         match self {
-            FrodoParameterSet::Frodo640 => SecurityLevel::Level1,
-            FrodoParameterSet::Frodo976 => SecurityLevel::Level3,
-            FrodoParameterSet::Frodo1344 => SecurityLevel::Level5,
         }
     }
 
     fn public_key_size(&self) -> usize {
         match self {
-            FrodoParameterSet::Frodo640 => 9616,
-            FrodoParameterSet::Frodo976 => 15632,
-            FrodoParameterSet::Frodo1344 => 21520,
         }
     }
 
     fn secret_key_size(&self) -> usize {
         match self {
-            FrodoParameterSet::Frodo640 => 19888,
-            FrodoParameterSet::Frodo976 => 31296,
-            FrodoParameterSet::Frodo1344 => 43088,
         }
     }
 
     fn additional_sizes(&self) -> Vec<(&'static str, usize)> {
         let ciphertext_size = match self {
-            FrodoParameterSet::Frodo640 => 9720,
-            FrodoParameterSet::Frodo976 => 15744,
-            FrodoParameterSet::Frodo1344 => 21632,
-        };
         vec![
-            ("ciphertext", ciphertext_size),
             ("shared_secret", 16), // All FrodoKEM variants use 16-byte shared secrets
         ]
     }
@@ -62,30 +43,15 @@ impl ParameterSet for FrodoParameterSet {
 /// FrodoKEM public key (placeholder)
 #[derive(Debug, Clone)]
 pub struct FrodoPublicKey {
-    pub parameter_set: FrodoParameterSet,
-    pub key_data: Vec<u8>,
-}
-
 /// FrodoKEM secret key (placeholder)
 #[derive(Debug, Clone)]
 pub struct FrodoSecretKey {
-    pub parameter_set: FrodoParameterSet,
-    pub key_data: Vec<u8>,
-}
-
 /// FrodoKEM ciphertext (placeholder)
 #[derive(Debug, Clone)]
 pub struct FrodoCiphertext {
-    pub parameter_set: FrodoParameterSet,
-    pub data: Vec<u8>,
-}
-
 /// FrodoKEM shared secret (placeholder)
 #[derive(Debug, Clone)]
 pub struct FrodoSharedSecret {
-    pub data: Vec<u8>,
-}
-
 /// FrodoKEM implementation (placeholder)
 pub struct FrodoKem;
 
@@ -97,14 +63,8 @@ impl KeyEncapsulation for FrodoKem {
 
     fn keygen(security_level: SecurityLevel) -> PqcResult<(Self::PublicKey, Self::SecretKey)> {
         let parameter_set = match security_level {
-            SecurityLevel::Level1 => FrodoParameterSet::Frodo640,
-            SecurityLevel::Level3 => FrodoParameterSet::Frodo976,
-            SecurityLevel::Level5 => FrodoParameterSet::Frodo1344,
-        };
 
         Self::keygen_with_params(parameter_set)
-    }
-
     fn encaps(public_key: &Self::PublicKey) -> PqcResult<(Self::Ciphertext, Self::SharedSecret)> {
         // Placeholder implementation
         use rand::RngCore;
@@ -126,8 +86,6 @@ impl KeyEncapsulation for FrodoKem {
         let shared_secret = FrodoSharedSecret { data: shared_secret_data };
 
         Ok((ciphertext, shared_secret))
-    }
-
     fn decaps(secret_key: &Self::SecretKey, ciphertext: &Self::Ciphertext) -> PqcResult<Self::SharedSecret> {
         // Placeholder implementation
         let mut hasher = Sha3_256::new();
@@ -137,8 +95,6 @@ impl KeyEncapsulation for FrodoKem {
         
         let shared_secret = FrodoSharedSecret { data: hash_result[..16].to_vec() };
         Ok(shared_secret)
-    }
-
     fn algorithm_type() -> AlgorithmType {
         AlgorithmType::FrodoKem
     }

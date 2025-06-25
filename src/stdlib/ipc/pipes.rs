@@ -13,39 +13,23 @@ use std::os::unix::io::{AsRawFd, RawFd};
 /// Configuration for named pipe creation
 #[derive(Debug, Clone)]
 pub struct PipeConfig {
-    pub path: PathBuf,
-    pub mode: PipeMode,
-    pub permissions: u32,
-    pub buffer_size: usize,
-    pub timeout: Option<Duration>,
-}
-
 impl PipeConfig {
     pub fn new<P: AsRef<Path>>(path: P) -> Self {
         Self {
-            path: path.as_ref().to_path_buf(),
-            mode: PipeMode::ReadWrite,
             permissions: 0o600, // Owner read/write only by default
             buffer_size: 8192,  // 8KB buffer
-            timeout: None,
         }
     }
 
     pub fn with_mode(mut self, mode: PipeMode) -> Self {
         self.mode = mode;
         self
-    }
-
     pub fn with_permissions(mut self, permissions: u32) -> Self {
         self.permissions = permissions;
         self
-    }
-
     pub fn with_buffer_size(mut self, size: usize) -> Self {
         self.buffer_size = size;
         self
-    }
-
     pub fn with_timeout(mut self, timeout: Duration) -> Self {
         self.timeout = Some(timeout);
         self
@@ -55,17 +39,9 @@ impl PipeConfig {
 /// Pipe access mode
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum PipeMode {
-    ReadOnly,
-    WriteOnly,
-    ReadWrite,
-}
-
 /// Handle to a named pipe
 #[derive(Debug, Clone)]
 pub struct PipeHandle {
-    path: String,
-}
-
 impl PipeHandle {
     pub fn new(path: String) -> Self {
         Self { path }
@@ -78,20 +54,12 @@ impl PipeHandle {
 
 /// Named pipe for inter-process communication
 pub struct NamedPipe {
-    config: PipeConfig,
-    reader: Option<BufReader<File>>,
-    writer: Option<BufWriter<File>>,
     #[cfg(unix)]
-    fd: Option<RawFd>,
-}
-
 impl NamedPipe {
     /// Create a new named pipe
     pub fn create<P: AsRef<Path>>(path: P) -> IpcResult<Self> {
         let config = PipeConfig::new(path);
         Self::create_with_config(config)
-    }
-
     /// Create a named pipe with custom configuration
     pub fn create_with_config(config: PipeConfig) -> IpcResult<Self> {
         #[cfg(unix)]
@@ -106,8 +74,6 @@ impl NamedPipe {
                     return Err(IpcError::System(errno, format!("Failed to create FIFO: {}", config.path.display())));
                 }
             }
-        }
-
         #[cfg(not(unix))]
         {
             // On non-Unix systems, create a regular file as fallback
@@ -118,12 +84,7 @@ impl NamedPipe {
         }
 
         let mut pipe = Self {
-            config,
-            reader: None,
-            writer: None,
             #[cfg(unix)]
-            fd: None,
-        };
 
         pipe.open()?;
         
@@ -132,28 +93,17 @@ impl NamedPipe {
 //         crate::stdlib::ipc::register_pipe(pipe.config.path.to_string_lossy().to_string(), handle)?;
         
         Ok(pipe)
-    }
-
     /// Open an existing named pipe
     pub fn open<P: AsRef<Path>>(path: P) -> IpcResult<Self> {
         let config = PipeConfig::new(path);
         
         if !config.path.exists() {
             return Err(IpcError::NotFound(format!("Pipe does not exist: {}", config.path.display())));
-        }
-
         let mut pipe = Self {
-            config,
-            reader: None,
-            writer: None,
             #[cfg(unix)]
-            fd: None,
-        };
 
         pipe.open()?;
         Ok(pipe)
-    }
-
     /// Open the pipe for reading/writing based on configuration
     fn open(&mut self) -> IpcResult<()> {
         match self.config.mode {
@@ -165,8 +115,6 @@ impl NamedPipe {
                 #[cfg(unix)]
                 {
                     self.fd = Some(file.as_raw_fd());
-                }
-                
                 self.reader = Some(BufReader::with_capacity(self.config.buffer_size, file));
             }
             PipeMode::WriteOnly => {
@@ -177,8 +125,6 @@ impl NamedPipe {
                 #[cfg(unix)]
                 {
                     self.fd = Some(file.as_raw_fd());
-                }
-                
                 self.writer = Some(BufWriter::with_capacity(self.config.buffer_size, file));
             }
             PipeMode::ReadWrite => {
@@ -194,16 +140,12 @@ impl NamedPipe {
                 #[cfg(unix)]
                 {
                     self.fd = Some(read_file.as_raw_fd());
-                }
-                
                 self.reader = Some(BufReader::with_capacity(self.config.buffer_size, read_file));
                 self.writer = Some(BufWriter::with_capacity(self.config.buffer_size, write_file));
             }
         }
         
         Ok(())
-    }
-
     /// Write data to the pipe
     pub fn write(&mut self, data: &[u8]) -> IpcResult<usize> {
         match &mut self.writer {
@@ -219,20 +161,14 @@ impl NamedPipe {
                 Err(IpcError::InvalidOperation("Pipe not open for writing".to_string()))
             }
         }
-    }
-
     /// Write a string to the pipe
     pub fn write_string(&mut self, s: &str) -> IpcResult<usize> {
         self.write(s.as_bytes())
-    }
-
     /// Write a line to the pipe (adds newline)
     pub fn write_line(&mut self, s: &str) -> IpcResult<usize> {
         let mut total = self.write(s.as_bytes())?;
         total += self.write(b"\n")?;
         Ok(total)
-    }
-
     /// Read data from the pipe
     pub fn read(&mut self, buffer: &mut [u8]) -> IpcResult<usize> {
         match &mut self.reader {
@@ -248,8 +184,6 @@ impl NamedPipe {
                 Err(IpcError::InvalidOperation("Pipe not open for reading".to_string()))
             }
         }
-    }
-
     /// Read a line from the pipe
     pub fn read_line(&mut self) -> IpcResult<String> {
         match &mut self.reader {
@@ -282,8 +216,6 @@ impl NamedPipe {
                 Err(IpcError::InvalidOperation("Pipe not open for reading".to_string()))
             }
         }
-    }
-
     /// Read all available data as a string
     pub fn read_string(&mut self) -> IpcResult<String> {
         match &mut self.reader {
@@ -291,7 +223,6 @@ impl NamedPipe {
 //                 crate::stdlib::ipc::increment_operations();
                 let mut content = String::new();
                 match std::io::Read::read_to_string(reader, &mut content) {
-                    Ok(_) => Ok(content),
                     Err(e) => {
 //                         crate::stdlib::ipc::increment_failed_operations();
                         Err(IpcError::from(e))
@@ -303,8 +234,6 @@ impl NamedPipe {
                 Err(IpcError::InvalidOperation("Pipe not open for reading".to_string()))
             }
         }
-    }
-
     /// Flush any pending writes
     pub fn flush(&mut self) -> IpcResult<()> {
         if let Some(writer) = &mut self.writer {
@@ -317,13 +246,9 @@ impl NamedPipe {
     /// Get the pipe path
     pub fn path(&self) -> &Path {
         &self.config.path
-    }
-
     /// Check if pipe is open for reading
     pub fn can_read(&self) -> bool {
         self.reader.is_some()
-    }
-
     /// Check if pipe is open for writing
     pub fn can_write(&self) -> bool {
         self.writer.is_some()
@@ -340,13 +265,9 @@ impl Drop for NamedPipe {
 /// Create a named pipe
 pub fn create_named_pipe<P: AsRef<Path>>(path: P) -> IpcResult<NamedPipe> {
     NamedPipe::create(path)
-}
-
 /// Open an existing named pipe
 pub fn open_named_pipe<P: AsRef<Path>>(path: P) -> IpcResult<NamedPipe> {
     NamedPipe::open(path)
-}
-
 /// Remove a named pipe
 pub fn remove_named_pipe<P: AsRef<Path>>(path: P) -> IpcResult<()> {
     let path = path.as_ref();
@@ -354,5 +275,3 @@ pub fn remove_named_pipe<P: AsRef<Path>>(path: P) -> IpcResult<()> {
         std::fs::remove_file(path).map_err(IpcError::from)?;
     }
     Ok(())
-}
-

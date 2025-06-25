@@ -11,39 +11,21 @@ use std::os::unix::net::{UnixStream, UnixListener};
 /// Socket configuration
 #[derive(Debug, Clone)]
 pub struct SocketConfig {
-    pub address: SocketAddress,
-    pub socket_type: SocketType,
-    pub buffer_size: usize,
-    pub timeout: Option<Duration>,
-    pub permissions: u32,
-}
-
 impl SocketConfig {
     pub fn new(address: SocketAddress) -> Self {
         Self {
-            address,
-            socket_type: SocketType::Stream,
-            buffer_size: 8192,
-            timeout: None,
-            permissions: 0o600,
         }
     }
 
     pub fn with_type(mut self, socket_type: SocketType) -> Self {
         self.socket_type = socket_type;
         self
-    }
-
     pub fn with_buffer_size(mut self, size: usize) -> Self {
         self.buffer_size = size;
         self
-    }
-
     pub fn with_timeout(mut self, timeout: Duration) -> Self {
         self.timeout = Some(timeout);
         self
-    }
-
     pub fn with_permissions(mut self, permissions: u32) -> Self {
         self.permissions = permissions;
         self
@@ -54,60 +36,34 @@ impl SocketConfig {
 #[derive(Debug, Clone, PartialEq)]
 pub enum SocketAddress {
     /// Filesystem path-based socket
-    Path(PathBuf),
     /// Abstract namespace socket (Linux only)
-    Abstract(String),
-}
-
 impl SocketAddress {
     pub fn from_path<P: AsRef<Path>>(path: P) -> Self {
         SocketAddress::Path(path.as_ref().to_path_buf())
-    }
-
     pub fn from_abstract<S: AsRef<str>>(name: S) -> Self {
         SocketAddress::Abstract(name.as_ref().to_string())
-    }
-
     pub fn as_path(&self) -> Option<&Path> {
         match self {
-            SocketAddress::Path(path) => Some(path),
-            SocketAddress::Abstract(_) => None,
         }
     }
 
     pub fn as_abstract(&self) -> Option<&str> {
         match self {
-            SocketAddress::Path(_) => None,
-            SocketAddress::Abstract(name) => Some(name),
         }
     }
-}
-
 /// Socket type
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum SocketType {
     /// Stream socket (reliable, ordered)
-    Stream,
     /// Datagram socket (unreliable, unordered)
-    Datagram,
-}
-
 /// Unix domain socket wrapper
 pub struct UnixSocket {
-    config: SocketConfig,
     #[cfg(unix)]
-    stream: Option<UnixStream>,
-    reader: Option<BufReader<Box<dyn Read + Send>>>,
-    writer: Option<BufWriter<Box<dyn Write + Send>>>,
-}
-
 impl UnixSocket {
     /// Connect to a Unix domain socket
     pub fn connect(address: SocketAddress) -> IpcResult<Self> {
         let config = SocketConfig::new(address);
         Self::connect_with_config(config)
-    }
-
     /// Connect with custom configuration
     pub fn connect_with_config(config: SocketConfig) -> IpcResult<Self> {
         #[cfg(unix)]
@@ -130,22 +86,13 @@ impl UnixSocket {
                         return Err(IpcError::InvalidOperation("Abstract sockets not supported on this platform".to_string()));
                     }
                 }
-            };
 
             // Set timeout if specified
             if let Some(timeout) = config.timeout {
                 stream.set_read_timeout(Some(timeout)).map_err(IpcError::from)?;
                 stream.set_write_timeout(Some(timeout)).map_err(IpcError::from)?;
-            }
-
             Ok(Self {
-                config,
-                stream: Some(stream),
-                reader: None,
-                writer: None,
             })
-        }
-
         #[cfg(not(unix))]
         {
             Err(IpcError::InvalidOperation("Unix domain sockets not supported on this platform".to_string()))
@@ -180,18 +127,12 @@ impl UnixSocket {
                         return Err(IpcError::InvalidOperation("Abstract sockets not supported on this platform".to_string()));
                     }
                 }
-            };
 
             // Register with IPC registry
             let addr_str = match &address {
-                SocketAddress::Path(path) => path.to_string_lossy().to_string(),
-                SocketAddress::Abstract(name) => format!("@{}", name),
-            };
 //             crate::stdlib::ipc::register_socket(addr_str, address)?;
 
             Ok(listener)
-        }
-
         #[cfg(not(unix))]
         {
             Err(IpcError::InvalidOperation("Unix domain sockets not supported on this platform".to_string()))
@@ -215,8 +156,6 @@ impl UnixSocket {
                     Err(IpcError::InvalidOperation("Socket not connected".to_string()))
                 }
             }
-        }
-
         #[cfg(not(unix))]
         {
             Err(IpcError::InvalidOperation("Unix domain sockets not supported on this platform".to_string()))
@@ -226,8 +165,6 @@ impl UnixSocket {
     /// Send a string through the socket
     pub fn send_string(&mut self, s: &str) -> IpcResult<usize> {
         self.send(s.as_bytes())
-    }
-
     /// Receive data from the socket
     pub fn receive(&mut self, buffer: &mut [u8]) -> IpcResult<usize> {
         #[cfg(unix)]
@@ -245,8 +182,6 @@ impl UnixSocket {
                     Err(IpcError::InvalidOperation("Socket not connected".to_string()))
                 }
             }
-        }
-
         #[cfg(not(unix))]
         {
             Err(IpcError::InvalidOperation("Unix domain sockets not supported on this platform".to_string()))
@@ -259,8 +194,6 @@ impl UnixSocket {
         let size = self.receive(&mut buffer)?;
         buffer.truncate(size);
         String::from_utf8(buffer).map_err(|e| IpcError::InvalidInput(format!("Invalid UTF-8: {}", e)))
-    }
-
     /// Shutdown the socket
     pub fn shutdown(&mut self) -> IpcResult<()> {
         #[cfg(unix)]
@@ -270,36 +203,25 @@ impl UnixSocket {
             }
         }
         Ok(())
-    }
-
     /// Get the socket address
     pub fn address(&self) -> &SocketAddress {
         &self.config.address
-    }
-
     /// Check if socket is connected
     pub fn is_connected(&self) -> bool {
         #[cfg(unix)]
         {
             self.stream.is_some()
-        }
-
         #[cfg(not(unix))]
         {
             false
         }
     }
-}
-
 impl Drop for UnixSocket {
     fn drop(&mut self) {
         let _ = self.shutdown();
         
         // Unregister from IPC registry
         let addr_str = match &self.config.address {
-            SocketAddress::Path(path) => path.to_string_lossy().to_string(),
-            SocketAddress::Abstract(name) => format!("@{}", name),
-        };
 //         let _ = crate::stdlib::ipc::unregister_socket(&addr_str);
     }
 }
@@ -311,22 +233,10 @@ pub fn create_socket_pair() -> IpcResult<(UnixSocket, UnixSocket)> {
         let (stream1, stream2) = UnixStream::pair().map_err(IpcError::from)?;
         
         let socket1 = UnixSocket {
-            config: SocketConfig::new(SocketAddress::Abstract("pair1".to_string())),
-            stream: Some(stream1),
-            reader: None,
-            writer: None,
-        };
         
         let socket2 = UnixSocket {
-            config: SocketConfig::new(SocketAddress::Abstract("pair2".to_string())),
-            stream: Some(stream2),
-            reader: None,
-            writer: None,
-        };
         
         Ok((socket1, socket2))
-    }
-
     #[cfg(not(unix))]
     {
         Err(IpcError::InvalidOperation("Socket pairs not supported on this platform".to_string()))
@@ -340,5 +250,3 @@ pub fn remove_socket<P: AsRef<Path>>(path: P) -> IpcResult<()> {
         std::fs::remove_file(path).map_err(IpcError::from)?;
     }
     Ok(())
-}
-

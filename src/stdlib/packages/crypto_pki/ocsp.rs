@@ -3,14 +3,10 @@
 /// This module provides comprehensive OCSP functionality for real-time certificate
 /// validation including request creation, response parsing, and status checking.
 
-// use crate::stdlib::packages::crypto_pki::{
+// Placeholder imports disabled
     types::{
-        PkiResult, PkiError, X509Certificate, OcspConfig, CertId, 
-        RevocationStatus, CertificateStatusInfo, BasicOcspResponse,
         OcspRequestInfo, SingleResponse
-    },
-    ocsp_client::OcspClient,
-};
+// };
 use std::collections::HashMap;
 use std::sync::{Arc, RwLock};
 use std::time::{Duration, SystemTime};
@@ -19,25 +15,14 @@ use std::time::{Duration, SystemTime};
 #[derive(Debug, Clone, PartialEq)]
 pub enum OcspError {
     /// Network communication error
-    NetworkError(String),
     /// Invalid OCSP request
-    InvalidRequest(String),
     /// Invalid OCSP response
-    InvalidResponse(String),
     /// OCSP responder error
-    ResponderError(String),
     /// Signature verification failed
-    SignatureVerificationFailed(String),
     /// Certificate not found in response
-    CertificateNotFound(String),
     /// Response expired or not yet valid
-    ResponseTimeInvalid(String),
     /// Nonce mismatch
-    NonceMismatch(String),
     /// General OCSP error
-    General(String),
-}
-
 // impl std::fmt::Display for OcspError {
 //     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
 //         match self {
@@ -68,18 +53,10 @@ pub type OcspResult<T> = std::result::Result<T, OcspError>;
 /// OCSP Request structure
 #[derive(Debug, Clone)]
 pub struct OcspRequest {
-    pub request_list: Vec<OcspRequestInfo>,
-    pub request_extensions: Option<HashMap<String, Vec<u8>>>,
-    pub nonce: Option<Vec<u8>>,
-}
-
 impl OcspRequest {
     /// Create a new OCSP request
     pub fn new() -> Self {
         Self {
-            request_list: Vec::new(),
-            request_extensions: None,
-            nonce: None,
         }
     }
 
@@ -89,19 +66,12 @@ impl OcspRequest {
             .map_err(|e| OcspError::InvalidRequest(e.to_string()))?;
         
         let request_info = OcspRequestInfo {
-            cert_id,
-            single_request_extensions: None,
-        };
         
         self.request_list.push(request_info);
         Ok(())
-    }
-
     /// Set nonce for the request
     pub fn set_nonce(&mut self, nonce: Vec<u8>) {
         self.nonce = Some(nonce);
-    }
-
     /// Add request extension
     pub fn add_extension(&mut self, oid: String, value: Vec<u8>) {
         if self.request_extensions.is_none() {
@@ -121,29 +91,20 @@ impl Default for OcspRequest {
 #[derive(Debug, Clone)]
 pub struct OcspResponse {
 //     pub response_status: crate::stdlib::packages::crypto_pki::types::OcspResponseStatus,
-    pub response_bytes: Option<BasicOcspResponse>,
-}
-
 impl OcspResponse {
     /// Create a new OCSP response
 //     pub fn new(status: crate::stdlib::packages::crypto_pki::types::OcspResponseStatus) -> Self {
         Self {
-            response_status: status,
-            response_bytes: None,
         }
     }
 
     /// Check if response is successful
     pub fn is_successful(&self) -> bool {
 //         matches!(self.response_status, crate::stdlib::packages::crypto_pki::types::OcspResponseStatus::Successful)
-    }
-
     /// Get single response for a certificate
     pub fn get_single_response(&self, cert_id: &CertId) -> Option<&SingleResponse> {
         self.response_bytes.as_ref()?.responses.iter()
             .find(|response| self.cert_ids_match(&response.cert_id, cert_id))
-    }
-
     /// Check if certificate IDs match
     fn cert_ids_match(&self, id1: &CertId, id2: &CertId) -> bool {
         id1.hash_algorithm == id2.hash_algorithm
@@ -162,25 +123,12 @@ pub type OcspSingleResponse = SingleResponse;
 /// OCSP Response Cache
 #[derive(Debug)]
 pub struct OcspCache {
-    cache: Arc<RwLock<HashMap<String, CachedOcspResponse>>>,
-    max_size: usize,
-    default_ttl: Duration,
-}
-
 #[derive(Debug, Clone)]
 struct CachedOcspResponse {
-    response: CertificateStatusInfo,
-    cached_at: SystemTime,
-    expires_at: SystemTime,
-}
-
 impl OcspCache {
     /// Create a new OCSP cache
     pub fn new(max_size: usize, default_ttl: Duration) -> Self {
         Self {
-            cache: Arc::new(RwLock::new(HashMap::new())),
-            max_size,
-            default_ttl,
         }
     }
 
@@ -207,10 +155,6 @@ impl OcspCache {
                 .unwrap_or_else(|| SystemTime::now() + self.default_ttl);
             
             let cached_response = CachedOcspResponse {
-                response,
-                cached_at: SystemTime::now(),
-                expires_at,
-            };
             
             cache.insert(cache_key, cached_response);
         }
@@ -223,8 +167,6 @@ impl OcspCache {
         hasher.update(&cert.serial_number);
         hasher.update(issuer.subject.as_bytes());
         hex::encode(hasher.finalize())
-    }
-
     /// Cleanup expired entries
     fn cleanup_cache(&self, cache: &mut HashMap<String, CachedOcspResponse>) {
         let now = SystemTime::now();
@@ -240,8 +182,6 @@ impl OcspCache {
                 cache.remove(key);
             }
         }
-    }
-
     /// Clear all cached entries
     pub fn clear(&self) {
         if let Ok(mut cache) = self.cache.write() {
@@ -259,17 +199,11 @@ impl OcspCache {
                 .count();
             
             OcspCacheStats {
-                total_entries,
-                valid_entries: total_entries - expired_entries,
-                expired_entries,
-                max_size: self.max_size,
             }
         } else {
             OcspCacheStats::default()
         }
     }
-}
-
 impl Default for OcspCache {
     fn default() -> Self {
         Self::new(1000, Duration::from_secs(3600)) // 1000 entries, 1 hour TTL
@@ -279,18 +213,8 @@ impl Default for OcspCache {
 /// OCSP Cache statistics
 #[derive(Debug, Clone, Default)]
 pub struct OcspCacheStats {
-    pub total_entries: usize,
-    pub valid_entries: usize,
-    pub expired_entries: usize,
-    pub max_size: usize,
-}
-
 /// High-level OCSP Validator
 pub struct OcspValidator {
-    client: OcspClient,
-    cache: Option<OcspCache>,
-}
-
 impl OcspValidator {
     /// Create a new OCSP validator
     pub fn new(config: OcspConfig) -> Self {
@@ -299,7 +223,6 @@ impl OcspValidator {
             Some(OcspCache::default())
         } else {
             None
-        };
         
         Self { client, cache }
     }
@@ -308,17 +231,11 @@ impl OcspValidator {
     pub fn with_cache(config: OcspConfig, cache: OcspCache) -> Self {
         let client = OcspClient::new(config);
         Self {
-            client,
-            cache: Some(cache),
         }
     }
 
     /// Validate certificate status via OCSP
     pub async fn validate_certificate(
-        &self,
-        cert: &X509Certificate,
-        issuer: &X509Certificate,
-        responder_url: Option<&str>,
     ) -> OcspResult<CertificateStatusInfo> {
         // Check cache first if available
         if let Some(cache) = &self.cache {
@@ -338,24 +255,16 @@ impl OcspValidator {
         if let Some(cache) = &self.cache {
             let cache_key = cache.generate_cache_key(cert, issuer);
             cache.put(cache_key, status_info.clone());
-        }
-
         Ok(status_info)
-    }
-
     /// Get cache statistics (if caching is enabled)
     pub fn cache_stats(&self) -> Option<OcspCacheStats> {
         self.cache.as_ref().map(|cache| cache.stats())
-    }
-
     /// Clear cache (if caching is enabled)  
     pub fn clear_cache(&self) {
         if let Some(cache) = &self.cache {
             cache.clear();
         }
     }
-}
-
 impl Default for OcspValidator {
     fn default() -> Self {
         Self::new(OcspConfig::default())
@@ -367,20 +276,15 @@ pub fn create_ocsp_request(cert: &X509Certificate, issuer: &X509Certificate) -> 
     let mut request = OcspRequest::new();
     request.add_certificate(cert, issuer)?;
     Ok(request)
-}
-
 /// Parse OCSP response from DER-encoded bytes
 pub fn parse_ocsp_response(data: &[u8]) -> OcspResult<OcspResponse> {
     if data.is_empty() {
         return Err(OcspError::InvalidResponse("Empty response data".to_string()));
-    }
-
     // Simplified parsing - in production, use proper ASN.1 parser
     let status = if data[0] == 0 {
 //         crate::stdlib::packages::crypto_pki::types::OcspResponseStatus::Successful
     } else {
 //         crate::stdlib::packages::crypto_pki::types::OcspResponseStatus::InternalError
-    };
 
     let mut response = OcspResponse::new(status);
 
@@ -388,47 +292,18 @@ pub fn parse_ocsp_response(data: &[u8]) -> OcspResult<OcspResponse> {
         // Mock basic response for demonstration
         let now = SystemTime::now();
         let cert_id = CertId {
-            hash_algorithm: "SHA-1".to_string(),
-            issuer_name_hash: vec![0; 20],
-            issuer_key_hash: vec![0; 20],
-            serial_number: vec![1, 2, 3, 4],
-        };
 
         let single_response = SingleResponse {
-            cert_id,
-            cert_status: RevocationStatus::Good,
-            this_update: now,
-            next_update: Some(now + Duration::from_secs(86400)),
-            single_extensions: None,
-        };
 
         let basic_response = BasicOcspResponse {
-            tbs_response_data: data[..data.len().min(100)].to_vec(),
-            signature_algorithm: "SHA256withRSA".to_string(),
-            signature: vec![0; 256],
-            certs: None,
-            responses: vec![single_response],
-            responder_id: "MockResponder".to_string(),
-            produced_at: now,
-            response_extensions: None,
-        };
 
         response.response_bytes = Some(basic_response);
-    }
-
     Ok(response)
-}
-
 /// Check OCSP status for a certificate (high-level convenience function)
 pub async fn check_ocsp_status(
-    cert: &X509Certificate,
-    issuer: &X509Certificate,
-    responder_url: Option<&str>,
 ) -> OcspResult<RevocationStatus> {
     let validator = OcspValidator::default();
     let status_info = validator
         .validate_certificate(cert, issuer, responder_url)
         .await?;
     Ok(status_info.status)
-}
-

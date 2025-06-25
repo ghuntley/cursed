@@ -8,53 +8,31 @@ use crate::error::CursedError;
 pub fn factorial(n: u64) -> MathResult<u64> {
     if n > 20 {
         return Err(MathError::IntegerOverflow {
-            function: "factorial".to_string(),
-            value: n as i64,
         });
-    }
-    
     let mut result = 1u64;
     for i in 2..=n {
         result = result.checked_mul(i).ok_or_else(|| MathError::IntegerOverflow {
-            function: "factorial".to_string(),
-            value: i as i64,
         })?;
-    }
-    
     Ok(result)
-}
-
 /// Factorial function returning f64 for larger values
 pub fn factorial_f64(n: f64) -> MathResult<f64> {
     validate_float("factorial_f64", "n", n)?;
     
     if n < 0.0 || n.fract() != 0.0 {
         return Err(domain_error("factorial_f64", n, "factorial requires non-negative integer"));
-    }
-    
     if n > 170.0 {
         return Err(MathError::Overflow {
-            function: "factorial_f64".to_string(),
-            value: n,
         });
-    }
-    
     let mut result = 1.0;
     for i in 2..=(n as u64) {
         result *= i as f64;
-    }
-    
     Ok(result)
-}
-
 /// Gamma function Γ(x) (generalization of factorial)
 pub fn gamma(x: f64) -> MathResult<f64> {
     validate_float("gamma", "x", x)?;
     
     if x <= 0.0 && x.fract() == 0.0 {
         return Err(domain_error("gamma", x, "gamma function undefined for non-positive integers"));
-    }
-    
     // Use the reflection formula for negative values
     if x < 0.0 {
         let sin_pi_x = (PI * x).sin();
@@ -63,14 +41,10 @@ pub fn gamma(x: f64) -> MathResult<f64> {
         }
         let gamma_1_minus_x = gamma(1.0 - x)?;
         return Ok(PI / (sin_pi_x * gamma_1_minus_x));
-    }
-    
     // Stirling's approximation for large values
     if x > 100.0 {
         let ln_gamma_val = ln_gamma_stirling(x);
         return Ok(ln_gamma_val.exp());
-    }
-    
     // Use the recurrence relation to reduce to [1, 2)
     let mut result = 1.0;
     let mut z = x;
@@ -78,34 +52,21 @@ pub fn gamma(x: f64) -> MathResult<f64> {
     while z >= 2.0 {
         z -= 1.0;
         result *= z;
-    }
-    
     while z < 1.0 {
         result /= z;
         z += 1.0;
-    }
-    
     // Approximate gamma(z) for z in [1, 2) using series expansion
     let gamma_1_to_2 = gamma_series(z);
     Ok(result * gamma_1_to_2)
-}
-
 /// Logarithm of gamma function using Stirling's approximation
 fn ln_gamma_stirling(x: f64) -> f64 {
     let ln_sqrt_2pi = 0.9189385332046727; // ln(sqrt(2π))
     (x - 0.5) * x.ln() - x + ln_sqrt_2pi + 1.0 / (12.0 * x)
-}
-
 /// Gamma function series expansion for z in [1, 2)
 fn gamma_series(z: f64) -> f64 {
     // Coefficients for the series expansion around z = 1
     const COEFFS: &[f64] = &[
-        1.0,
         -0.5772156649015329,  // -γ (Euler-Mascheroni constant)
-        0.9817428834481432,
-        -0.4903791047811464,
-        0.23993225071782414,
-        -0.11914349488244314,
     ];
     
     let dt = z - 1.0;
@@ -115,11 +76,7 @@ fn gamma_series(z: f64) -> f64 {
     for &coeff in COEFFS {
         result += coeff * dt_pow;
         dt_pow *= dt;
-    }
-    
     result
-}
-
 /// Beta function B(x, y) = Γ(x)Γ(y)/Γ(x+y)
 pub fn beta(x: f64, y: f64) -> MathResult<f64> {
     validate_float("beta", "x", x)?;
@@ -127,25 +84,17 @@ pub fn beta(x: f64, y: f64) -> MathResult<f64> {
     
     if x <= 0.0 || y <= 0.0 {
         return Err(domain_error("beta", x.min(y), "beta function requires positive arguments"));
-    }
-    
     let gamma_x = gamma(x)?;
     let gamma_y = gamma(y)?;
     let gamma_xy = gamma(x + y)?;
     
     Ok(gamma_x * gamma_y / gamma_xy)
-}
-
 /// Binomial coefficient "n choose k"
 pub fn binomial(n: u64, k: u64) -> MathResult<u64> {
     if k > n {
         return Ok(0);
-    }
-    
     if k == 0 || k == n {
         return Ok(1);
-    }
-    
     // Use symmetry: C(n,k) = C(n,n-k)
     let k = k.min(n - k);
     
@@ -155,14 +104,8 @@ pub fn binomial(n: u64, k: u64) -> MathResult<u64> {
             .checked_mul(n - i)
             .and_then(|r| r.checked_div(i + 1))
             .ok_or_else(|| MathError::IntegerOverflow {
-                function: "binomial".to_string(),
-                value: n as i64,
             })?;
-    }
-    
     Ok(result)
-}
-
 /// Binomial coefficient for large values (returns f64)
 pub fn binomial_f64(n: f64, k: f64) -> MathResult<f64> {
     validate_float("binomial_f64", "n", n)?;
@@ -170,37 +113,23 @@ pub fn binomial_f64(n: f64, k: f64) -> MathResult<f64> {
     
     if k < 0.0 || n < 0.0 || k > n {
         return Ok(0.0);
-    }
-    
     if k.fract() != 0.0 || n.fract() != 0.0 {
         return Err(domain_error("binomial_f64", k, "binomial coefficient requires integer arguments"));
-    }
-    
     // Use the gamma function: C(n,k) = Γ(n+1) / (Γ(k+1) * Γ(n-k+1))
     let gamma_n_plus_1 = gamma(n + 1.0)?;
     let gamma_k_plus_1 = gamma(k + 1.0)?;
     let gamma_n_minus_k_plus_1 = gamma(n - k + 1.0)?;
     
     Ok(gamma_n_plus_1 / (gamma_k_plus_1 * gamma_n_minus_k_plus_1))
-}
-
 /// Number of permutations P(n, k) = n! / (n-k)!
 pub fn permutations(n: u64, k: u64) -> MathResult<u64> {
     if k > n {
         return Ok(0);
-    }
-    
     let mut result = 1u64;
     for i in 0..k {
         result = result.checked_mul(n - i).ok_or_else(|| MathError::IntegerOverflow {
-            function: "permutations".to_string(),
-            value: n as i64,
         })?;
-    }
-    
     Ok(result)
-}
-
 /// CursedError function erf(x)
 pub fn erf(x: f64) -> MathResult<f64> {
     validate_float("erf", "x", x)?;
@@ -220,24 +149,18 @@ pub fn erf(x: f64) -> MathResult<f64> {
     let y = 1.0 - (((((a5 * t + a4) * t) + a3) * t + a2) * t + a1) * t * (-x * x).exp();
     
     Ok(sign * y)
-}
-
 /// Complementary error function erfc(x) = 1 - erf(x)
 pub fn erfc(x: f64) -> MathResult<f64> {
     validate_float("erfc", "x", x)?;
     
     let erf_val = erf(x)?;
     Ok(1.0 - erf_val)
-}
-
 /// Inverse error function
 pub fn erf_inv(x: f64) -> MathResult<f64> {
     validate_float("erf_inv", "x", x)?;
     
     if x <= -1.0 || x >= 1.0 {
         return Err(domain_error("erf_inv", x, "inverse error function domain is (-1, 1)"));
-    }
-    
     // Approximation using rational functions
     // This is a simplified implementation
     if x.abs() <= 0.7 {
@@ -293,8 +216,6 @@ pub fn bessel_y0(x: f64) -> MathResult<f64> {
     
     if x <= 0.0 {
         return Err(domain_error("bessel_y0", x, "Bessel Y0 requires positive argument"));
-    }
-    
     // Simplified implementation for Y₀(x)
     if x < 1.0 {
         let j0_val = bessel_j0(x)?;
@@ -312,8 +233,6 @@ pub fn bessel_y1(x: f64) -> MathResult<f64> {
     
     if x <= 0.0 {
         return Err(domain_error("bessel_y1", x, "Bessel Y1 requires positive argument"));
-    }
-    
     // Simplified implementation for Y₁(x)
     if x < 1.0 {
         let j1_val = bessel_j1(x)?;
@@ -329,30 +248,18 @@ pub fn bessel_y1(x: f64) -> MathResult<f64> {
 pub fn fibonacci(n: u64) -> MathResult<u64> {
     if n > 93 {
         return Err(MathError::IntegerOverflow {
-            function: "fibonacci".to_string(),
-            value: n as i64,
         });
-    }
-    
     if n <= 1 {
         return Ok(n);
-    }
-    
     let mut a = 0u64;
     let mut b = 1u64;
     
     for _ in 2..=n {
         let next = a.checked_add(b).ok_or_else(|| MathError::IntegerOverflow {
-            function: "fibonacci".to_string(),
-            value: n as i64,
         })?;
         a = b;
         b = next;
-    }
-    
     Ok(b)
-}
-
 /// Lucas number
 pub fn lucas(n: u64) -> MathResult<u64> {
     if n == 0 {
@@ -360,43 +267,25 @@ pub fn lucas(n: u64) -> MathResult<u64> {
     }
     if n == 1 {
         return Ok(1);
-    }
-    
     if n > 92 {
         return Err(MathError::IntegerOverflow {
-            function: "lucas".to_string(),
-            value: n as i64,
         });
-    }
-    
     let mut a = 2u64;
     let mut b = 1u64;
     
     for _ in 2..=n {
         let next = a.checked_add(b).ok_or_else(|| MathError::IntegerOverflow {
-            function: "lucas".to_string(),
-            value: n as i64,
         })?;
         a = b;
         b = next;
-    }
-    
     Ok(b)
-}
-
 /// Catalan number
 pub fn catalan(n: u64) -> MathResult<u64> {
     if n > 33 {
         return Err(MathError::IntegerOverflow {
-            function: "catalan".to_string(),
-            value: n as i64,
         });
-    }
-    
     if n == 0 {
         return Ok(1);
-    }
-    
     // C_n = (2n)! / ((n+1)! * n!)
     // Or equivalently: C_n = C(2n, n) / (n+1)
     let binom_2n_n = binomial(2 * n, n)?;

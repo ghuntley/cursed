@@ -21,16 +21,10 @@ pub trait KeyDerivationFunction {
     fn validate_inputs(&self, password: &[u8], salt: &[u8], output_length: usize) -> KdfResult<()> {
         if password.is_empty() {
             return Err(KdfError::InvalidInput("Password cannot be empty".to_string()));
-        }
-        
         if salt.len() < 8 {
             return Err(KdfError::InvalidInput("Salt must be at least 8 bytes".to_string()));
-        }
-        
         if output_length == 0 || output_length > 1024 * 1024 {
             return Err(KdfError::InvalidInput("Output length must be between 1 and 1MB".to_string()));
-        }
-        
         Ok(())
     }
 }
@@ -45,8 +39,6 @@ pub trait PasswordHasher {
     
     /// Generate secure salt
     fn generate_salt(&self) -> KdfResult<Vec<u8>>;
-}
-
 /// fr fr Trait for configurable KDF parameters
 pub trait Configurable {
     /// Configuration type
@@ -60,8 +52,6 @@ pub trait Configurable {
     
     /// Validate configuration
     fn validate_config(config: &Self::Config) -> KdfResult<()>;
-}
-
 /// fr fr Trait for memory-hard functions
 pub trait MemoryHard {
     /// Get memory usage in bytes
@@ -73,12 +63,8 @@ pub trait MemoryHard {
     /// Check if function is memory-hard
     fn is_memory_hard(&self) -> bool {
         self.memory_usage() > 1024 * 1024 // > 1MB
-    }
-    
     /// Estimate processing time in milliseconds
     fn estimate_time(&self) -> f64;
-}
-
 /// fr fr Trait for parallel processing support
 pub trait ParallelSupport {
     /// Check if parallel processing is supported
@@ -89,12 +75,8 @@ pub trait ParallelSupport {
         std::thread::available_parallelism()
             .map(|n| n.get())
             .unwrap_or(1)
-    }
-    
     /// Process with specified thread count
     fn process_parallel(&self, password: &[u8], salt: &[u8], threads: usize) -> KdfResult<Vec<u8>>;
-}
-
 /// fr fr Trait for security assessment
 pub trait SecurityAssessment {
     /// Get security level in bits
@@ -103,12 +85,8 @@ pub trait SecurityAssessment {
     /// Check if configuration meets minimum security requirements
     fn meets_security_requirements(&self, min_level: u32) -> bool {
         self.security_level() >= min_level
-    }
-    
     /// Get resistance to various attack types
     fn attack_resistance(&self) -> AttackResistance;
-}
-
 /// fr fr Attack resistance information
 #[derive(Debug, Clone)]
 pub struct AttackResistance {
@@ -119,36 +97,18 @@ pub struct AttackResistance {
     pub asic_attack: u32,      // Bits of resistance
     pub side_channel: bool,    // Resistant to side-channel attacks
     pub timing_attack: bool,   // Resistant to timing attacks
-}
-
 impl AttackResistance {
     /// slay Create attack resistance with defaults
     pub fn new() -> Self {
         Self {
-            brute_force: 128,
-            dictionary: 80,
-            rainbow_table: 80,
-            gpu_attack: 64,
-            asic_attack: 32,
-            side_channel: false,
-            timing_attack: false,
         }
     }
     
     /// bestie High-security resistance profile
     pub fn high_security() -> Self {
         Self {
-            brute_force: 256,
-            dictionary: 128,
-            rainbow_table: 128,
-            gpu_attack: 128,
-            asic_attack: 80,
-            side_channel: true,
-            timing_attack: true,
         }
     }
-}
-
 impl Default for AttackResistance {
     fn default() -> Self {
         Self::new()
@@ -162,20 +122,9 @@ pub trait Benchmarkable {
     
     /// Run performance test
     fn performance_test(&self, iterations: usize) -> PerformanceResult;
-}
-
 /// fr fr Performance test results
 #[derive(Debug, Clone)]
 pub struct PerformanceResult {
-    pub iterations: usize,
-    pub total_time_ms: u64,
-    pub average_time_ms: f64,
-    pub min_time_ms: u64,
-    pub max_time_ms: u64,
-    pub memory_usage_bytes: usize,
-    pub throughput_ops_per_sec: f64,
-}
-
 impl PerformanceResult {
     /// slay Create new performance result
     pub fn new(iterations: usize, times_ms: &[u64], memory_usage: usize) -> Self {
@@ -187,20 +136,10 @@ impl PerformanceResult {
             1000.0 / average_time // ops per second
         } else {
             0.0
-        };
         
         Self {
-            iterations,
-            total_time_ms: total_time,
-            average_time_ms: average_time,
-            min_time_ms: min_time,
-            max_time_ms: max_time,
-            memory_usage_bytes: memory_usage,
-            throughput_ops_per_sec: throughput,
         }
     }
-}
-
 /// fr fr Trait for constant-time operations
 pub trait ConstantTime {
     /// Check if operations are constant-time
@@ -210,13 +149,9 @@ pub trait ConstantTime {
     fn constant_time_eq(&self, a: &[u8], b: &[u8]) -> bool {
         if a.len() != b.len() {
             return false;
-        }
-        
         let mut result = 0u8;
         for (x, y) in a.iter().zip(b.iter()) {
             result |= x ^ y;
-        }
-        
         result == 0
     }
 }
@@ -233,69 +168,47 @@ pub trait UnifiedKdf:
     /// Get algorithm version
     fn algorithm_version(&self) -> &'static str {
         "1.0"
-    }
-    
     /// Check compatibility with other implementations
     fn is_compatible_with(&self, other_name: &str, other_version: &str) -> bool {
         self.algorithm_name() == other_name && self.algorithm_version() == other_version
-    }
-    
     /// Get configuration as string
     fn get_config_string(&self) -> String;
     
     /// Update configuration from string
     fn update_config_string(&mut self, config: &str) -> KdfResult<()>;
-}
-
 /// fr fr KDF engine wrapper to unify different engine types
 #[derive(Debug)]
 pub struct KdfEngineWrapper {
-    engine: KdfEngineType,
-    config: String,
-}
-
 #[derive(Debug)]
 enum KdfEngineType {
 //     Pbkdf2(crate::stdlib::packages::crypto_kdf::pbkdf2::Pbkdf2Engine),
 //     Argon2(crate::stdlib::packages::crypto_kdf::argon2::Argon2Engine),
 //     Scrypt(crate::stdlib::packages::crypto_kdf::scrypt::ScryptEngine),
 //     Hkdf(crate::stdlib::packages::crypto_kdf::hkdf::HkdfEngine),
-}
-
 impl KdfEngineWrapper {
     /// Create PBKDF2 wrapper
 //     pub fn new_pbkdf2(engine: crate::stdlib::packages::crypto_kdf::pbkdf2::Pbkdf2Engine) -> Self {
         Self {
-            engine: KdfEngineType::Pbkdf2(engine),
-            config: "pbkdf2_default".to_string(),
         }
     }
     
     /// Create Argon2 wrapper  
 //     pub fn new_argon2(engine: crate::stdlib::packages::crypto_kdf::argon2::Argon2Engine) -> Self {
         Self {
-            engine: KdfEngineType::Argon2(engine),
-            config: "argon2_default".to_string(),
         }
     }
     
     /// Create Scrypt wrapper
 //     pub fn new_scrypt(engine: crate::stdlib::packages::crypto_kdf::scrypt::ScryptEngine) -> Self {
         Self {
-            engine: KdfEngineType::Scrypt(engine),
-            config: "scrypt_default".to_string(),
         }
     }
     
     /// Create HKDF wrapper
 //     pub fn new_hkdf(engine: crate::stdlib::packages::crypto_kdf::hkdf::HkdfEngine) -> Self {
         Self {
-            engine: KdfEngineType::Hkdf(engine),
-            config: "hkdf_default".to_string(),
         }
     }
-}
-
 impl KeyDerivationFunction for KdfEngineWrapper {
     type Config = String;
     
@@ -330,8 +243,6 @@ impl KeyDerivationFunction for KdfEngineWrapper {
                     .map_err(|e| KdfError::CryptographicError(format!("HKDF expand error: {}", e)))
             }
         }
-    }
-    
     fn config(&self) -> &Self::Config {
         &self.config
     }
@@ -342,12 +253,8 @@ impl Configurable for KdfEngineWrapper {
     
     fn config(&self) -> &Self::Config {
         &self.config
-    }
-    
     fn with_config(config: Self::Config) -> KdfResult<Self> where Self: Sized {
         Self::create_engine_from_config(&config)
-    }
-    
     /// bestie Create engine from configuration string
     fn create_engine_from_config(config: &Self::Config) -> KdfResult<Self> where Self: Sized {
         // Parse configuration format: "algorithm:param1=value1,param2=value2"
@@ -377,7 +284,6 @@ impl Configurable for KdfEngineWrapper {
 //                 let engine = crate::stdlib::packages::crypto_kdf::hkdf::HkdfEngine::new();
                 Ok(KdfEngineWrapper::new_hkdf(engine))
             }
-            _ => Err(KdfError::InvalidConfig(format!("Unknown algorithm in config: {}", algorithm))),
         }
     }
     
@@ -385,77 +291,47 @@ impl Configurable for KdfEngineWrapper {
         // Basic validation of config format
         if config.is_empty() {
             return Err(KdfError::InvalidConfig("Empty configuration string".to_string()));
-        }
-        
         let parts: Vec<&str> = config.splitn(2, ':').collect();
         let algorithm = parts[0].trim();
         
         match algorithm.to_lowercase().as_str() {
-            "pbkdf2" | "argon2" | "argon2i" | "argon2d" | "argon2id" | "scrypt" | "hkdf" => Ok(()),
-            _ => Err(KdfError::InvalidConfig(format!("Unsupported algorithm: {}", algorithm))),
         }
     }
-}
-
 impl SecurityAssessment for KdfEngineWrapper {
     fn security_level(&self) -> u32 {
         match &self.engine {
-            KdfEngineType::Pbkdf2(_) => 128,
-            KdfEngineType::Argon2(_) => 256,
-            KdfEngineType::Scrypt(_) => 192,
-            KdfEngineType::Hkdf(_) => 128,
         }
     }
     
     fn attack_resistance(&self) -> AttackResistance {
         match &self.engine {
-            KdfEngineType::Pbkdf2(_) => AttackResistance::new(),
-            KdfEngineType::Argon2(_) => AttackResistance::high_security(),
             KdfEngineType::Scrypt(_) => {
                 let mut resistance = AttackResistance::new();
                 resistance.gpu_attack = 128;
                 resistance.asic_attack = 80;
                 resistance
             }
-            KdfEngineType::Hkdf(_) => AttackResistance::new(),
         }
     }
-}
-
 impl ConstantTime for KdfEngineWrapper {
     fn is_constant_time(&self) -> bool {
         match &self.engine {
-            KdfEngineType::Pbkdf2(_) => true,
             KdfEngineType::Argon2(_) => false, // Argon2d is not constant-time
-            KdfEngineType::Scrypt(_) => true,
-            KdfEngineType::Hkdf(_) => true,
         }
     }
-}
-
 impl UnifiedKdf for KdfEngineWrapper {
     fn algorithm_name(&self) -> &'static str {
         match &self.engine {
-            KdfEngineType::Pbkdf2(_) => "PBKDF2",
-            KdfEngineType::Argon2(_) => "Argon2", 
-            KdfEngineType::Scrypt(_) => "scrypt",
-            KdfEngineType::Hkdf(_) => "HKDF",
         }
     }
     
     fn algorithm_version(&self) -> &'static str {
         match &self.engine {
-            KdfEngineType::Pbkdf2(_) => "RFC2898",
-            KdfEngineType::Argon2(_) => "v1.3",
-            KdfEngineType::Scrypt(_) => "RFC7914", 
-            KdfEngineType::Hkdf(_) => "RFC5869",
         }
     }
     
     fn get_config_string(&self) -> String {
         self.config.clone()
-    }
-    
     fn update_config_string(&mut self, config: &str) -> KdfResult<()> {
         self.config = config.to_string();
         Ok(())
@@ -470,8 +346,6 @@ impl KdfFactory {
     /// slay Create KDF by algorithm name
     pub fn create_kdf(algorithm: &str) -> KdfResult<Box<dyn UnifiedKdf<Config = String>>> {
         Self::create_kdf_with_config(algorithm, "")
-    }
-    
     /// bestie Create KDF by algorithm name with configuration
     pub fn create_kdf_with_config(algorithm: &str, config: &str) -> KdfResult<Box<dyn UnifiedKdf<Config = String>>> {
         match algorithm.to_lowercase().as_str() {
@@ -496,7 +370,6 @@ impl KdfFactory {
 //                 let engine = crate::stdlib::packages::crypto_kdf::hkdf::HkdfEngine::new();
                 Ok(Box::new(KdfEngineWrapper::new_hkdf(engine)))
             }
-            _ => Err(KdfError::InvalidConfig(format!("Unknown algorithm: {}", algorithm))),
         }
     }
     
@@ -504,8 +377,6 @@ impl KdfFactory {
 //     fn parse_pbkdf2_config(config: &str) -> KdfResult<crate::stdlib::packages::crypto_kdf::pbkdf2::Pbkdf2Config> {
         if config.is_empty() {
 //             return Ok(crate::stdlib::packages::crypto_kdf::pbkdf2::Pbkdf2Config::new());
-        }
-        
 //         let mut pbkdf2_config = crate::stdlib::packages::crypto_kdf::pbkdf2::Pbkdf2Config::new();
         
         // Parse configuration string format: "iterations=100000,output_len=32,hash=sha256"
@@ -513,8 +384,6 @@ impl KdfFactory {
             let parts: Vec<&str> = pair.split('=').collect();
             if parts.len() != 2 {
                 continue;
-            }
-            
             match parts[0].trim() {
                 "iterations" => {
                     pbkdf2_config.iterations = parts[1].trim().parse()
@@ -527,10 +396,6 @@ impl KdfFactory {
                 "hash" => {
 //                     use crate::stdlib::packages::crypto_hash_advanced::hmac::HmacAlgorithm;
                     pbkdf2_config.hash_algorithm = match parts[1].trim().to_lowercase().as_str() {
-                        "sha256" => HmacAlgorithm::Sha256,
-                        "sha512" => HmacAlgorithm::Sha512,
-                        _ => return Err(KdfError::InvalidConfig("Invalid hash algorithm".to_string())),
-                    };
                 }
                 _ => {} // Ignore unknown parameters
             }
@@ -540,8 +405,6 @@ impl KdfFactory {
             .map_err(|e| KdfError::InvalidConfig(format!("PBKDF2 validation error: {}", e)))?;
         
         Ok(pbkdf2_config)
-    }
-    
     /// vibes Parse Argon2 configuration from string
 //     fn parse_argon2_config(algorithm: &str, config: &str) -> KdfResult<crate::stdlib::packages::crypto_kdf::argon2::Argon2Config> {
 //         let mut argon2_config = crate::stdlib::packages::crypto_kdf::argon2::Argon2Config::new();
@@ -549,23 +412,14 @@ impl KdfFactory {
         // Set variant based on algorithm name
 //         use crate::stdlib::packages::crypto_kdf::argon2::Argon2Variant;
         argon2_config.variant = match algorithm.to_lowercase().as_str() {
-            "argon2i" => Argon2Variant::Argon2i,
-            "argon2d" => Argon2Variant::Argon2d,
-            "argon2id" | "argon2" => Argon2Variant::Argon2id,
-            _ => Argon2Variant::Argon2id,
-        };
         
         if config.is_empty() {
             return Ok(argon2_config);
-        }
-        
         // Parse configuration string format: "memory=65536,time=3,parallelism=4,output_len=32"
         for pair in config.split(',') {
             let parts: Vec<&str> = pair.split('=').collect();
             if parts.len() != 2 {
                 continue;
-            }
-            
             match parts[0].trim() {
                 "memory" => {
                     argon2_config.memory_cost = parts[1].trim().parse()
@@ -592,14 +446,10 @@ impl KdfFactory {
         }
         
         Ok(argon2_config)
-    }
-    
     /// periodt Parse Scrypt configuration from string
 //     fn parse_scrypt_config(config: &str) -> KdfResult<crate::stdlib::packages::crypto_kdf::scrypt::ScryptConfig> {
         if config.is_empty() {
 //             return Ok(crate::stdlib::packages::crypto_kdf::scrypt::ScryptConfig::new());
-        }
-        
 //         let mut scrypt_config = crate::stdlib::packages::crypto_kdf::scrypt::ScryptConfig::new();
         
         // Parse configuration string format: "n=32768,r=8,p=1,output_len=32"
@@ -607,8 +457,6 @@ impl KdfFactory {
             let parts: Vec<&str> = pair.split('=').collect();
             if parts.len() != 2 {
                 continue;
-            }
-            
             match parts[0].trim() {
                 "n" => {
                     scrypt_config.n = parts[1].trim().parse()
@@ -634,25 +482,15 @@ impl KdfFactory {
             .map_err(|e| KdfError::InvalidConfig(format!("Scrypt validation error: {}", e)))?;
         
         Ok(scrypt_config)
-    }
-    
     /// bestie List available algorithms
     pub fn available_algorithms() -> Vec<&'static str> {
         vec!["pbkdf2", "argon2", "argon2i", "argon2d", "argon2id", "scrypt", "hkdf"]
-    }
-    
     /// vibes Get algorithm recommendations for use case
     pub fn recommend_algorithm(use_case: &str) -> &'static str {
         match use_case.to_lowercase().as_str() {
-            "password" | "authentication" => "argon2id",
-            "key_derivation" | "encryption" => "hkdf",
-            "legacy" | "compatibility" => "pbkdf2",
-            "memory_hard" | "slow" => "scrypt",
             _ => "argon2id", // Default recommendation
         }
     }
-}
-
 /// fr fr KDF utilities and helpers
 #[derive(Debug)]
 pub struct KdfUtils;
@@ -664,13 +502,9 @@ impl KdfUtils {
         
         if length == 0 || length > 1024 {
             return Err(KdfError::InvalidInput("Salt length must be between 1 and 1024 bytes".to_string()));
-        }
-        
         let mut salt = vec![0u8; length];
         rand::thread_rng().fill_bytes(&mut salt);
         Ok(salt)
-    }
-    
     /// vibes Validate password strength
     pub fn validate_password_strength(password: &[u8]) -> PasswordStrength {
         let length = password.len();
@@ -692,22 +526,15 @@ impl KdfUtils {
             PasswordStrength::Good
         } else {
             PasswordStrength::Strong
-        };
         
         strength
-    }
-    
     /// periodt Calculate entropy of input
     pub fn calculate_entropy(data: &[u8]) -> f64 {
         if data.is_empty() {
             return 0.0;
-        }
-        
         let mut counts = [0u32; 256];
         for &byte in data {
             counts[byte as usize] += 1;
-        }
-        
         let length = data.len() as f64;
         let mut entropy = 0.0;
         
@@ -719,19 +546,13 @@ impl KdfUtils {
         }
         
         entropy
-    }
-    
     /// facts Secure memory comparison
     pub fn secure_compare(a: &[u8], b: &[u8]) -> bool {
         if a.len() != b.len() {
             return false;
-        }
-        
         let mut result = 0u8;
         for (x, y) in a.iter().zip(b.iter()) {
             result |= x ^ y;
-        }
-        
         result == 0
     }
 }
@@ -739,29 +560,13 @@ impl KdfUtils {
 /// fr fr Password strength assessment
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum PasswordStrength {
-    Weak,
-    Fair,
-    Good,
-    Strong,
-}
-
 impl PasswordStrength {
     pub fn score(&self) -> u32 {
         match self {
-            PasswordStrength::Weak => 1,
-            PasswordStrength::Fair => 2,
-            PasswordStrength::Good => 3,
-            PasswordStrength::Strong => 4,
         }
     }
     
     pub fn description(&self) -> &'static str {
         match self {
-            PasswordStrength::Weak => "Weak - Use longer password with mixed characters",
-            PasswordStrength::Fair => "Fair - Add more character types or length",
-            PasswordStrength::Good => "Good - Strong enough for most purposes",
-            PasswordStrength::Strong => "Strong - Excellent password strength",
         }
     }
-}
-

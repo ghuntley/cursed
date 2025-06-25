@@ -34,61 +34,35 @@ pub trait FunctionCompilation {
     
     /// Get or create function in module
     fn get_or_create_function(&mut self, name: &str, func_type: &str) -> String;
-}
-
 /// LLVM function context for managing local variables and scopes
 #[derive(Debug, Clone)]
 pub struct FunctionContext {
     /// Function name
-    pub name: String,
     /// Local variables mapping (name -> LLVM value)
-    pub locals: HashMap<String, String>,
     /// Parameter list
-    pub parameters: Vec<String>,
     /// Return type
-    pub return_type: String,
     /// Function LLVM type
-    pub function_type: String,
     /// Current basic block
-    pub current_block: String,
     /// Function entry block
-    pub entry_block: String,
     /// Next temporary variable counter
-    pub temp_counter: usize,
-}
-
 impl FunctionContext {
     /// Create new function context
     pub fn new(name: String, return_type: String) -> Self {
         Self {
-            name: name.clone(),
-            locals: HashMap::new(),
-            parameters: Vec::new(),
-            return_type,
-            function_type: String::new(),
-            current_block: format!("{}_entry", name),
-            entry_block: format!("{}_entry", name),
-            temp_counter: 0,
         }
     }
     
     /// Add local variable
     pub fn add_local(&mut self, name: String, llvm_value: String) {
         self.locals.insert(name, llvm_value);
-    }
-    
     /// Get local variable
     pub fn get_local(&self, name: &str) -> Option<&String> {
         self.locals.get(name)
-    }
-    
     /// Generate next temporary variable name
     pub fn next_temp(&mut self) -> String {
         let temp = format!("%temp{}", self.temp_counter);
         self.temp_counter += 1;
         temp
-    }
-    
     /// Add parameter
     pub fn add_parameter(&mut self, param_name: String) {
         self.parameters.push(param_name);
@@ -108,13 +82,9 @@ impl crate::codegen::llvm::LlvmCodeGenerator {
     /// Get current function context
     fn current_function(&mut self) -> Option<&mut FunctionContext> {
         self.function_stack().last_mut()
-    }
-    
     /// Push new function context
     fn push_function_context(&mut self, context: FunctionContext) {
         self.function_stack().push(context);
-    }
-    
     /// Pop function context
     fn pop_function_context(&mut self) -> Option<FunctionContext> {
         self.function_stack().pop()
@@ -139,7 +109,6 @@ impl FunctionCompilation for crate::codegen::llvm::LlvmCodeGenerator {
             self.map_cursed_type_to_llvm(&ret_type.string())
         } else {
             "void".to_string()
-        };
         
         // Generate function type
         let func_type = self.generate_function_type(&func.parameters, func.return_type.as_ref());
@@ -154,8 +123,6 @@ impl FunctionCompilation for crate::codegen::llvm::LlvmCodeGenerator {
             let param_name = format!("%{}", param.to_string());
             context.add_parameter(param_name.clone());
             context.add_local(param.to_string().clone(), param_name);
-        }
-        
         self.push_function_context(context);
         
         // Generate LLVM IR
@@ -166,7 +133,6 @@ impl FunctionCompilation for crate::codegen::llvm::LlvmCodeGenerator {
             "declare"
         } else {
             "define"
-        };
         
         ir.push_str(&format!("\n; Function: {} (slay keyword)\n", func_name));
         ir.push_str(&format!("{} {} @{}({}) {{\n", linkage, return_type, func_name, args));
@@ -183,11 +149,8 @@ impl FunctionCompilation for crate::codegen::llvm::LlvmCodeGenerator {
                 let alloca = format!("  %{}_addr = alloca {}, align 8\n", param.to_string(), param_type);
                 ir.push_str(&alloca);
                 
-                let store = format!("  store {} %{}, {}* %{}_addr, align 8\n", 
                     param_type, param.to_string(), param_type, param.to_string());
                 ir.push_str(&store);
-            }
-            
             // Compile function body
             let body_ir = self.compile_block_statement(&func.body)?;
             ir.push_str(&body_ir);
@@ -204,14 +167,10 @@ impl FunctionCompilation for crate::codegen::llvm::LlvmCodeGenerator {
             }
             
             ir.push_str("}\n");
-        }
-        
         self.pop_function_context();
         
         debug!("Function '{}' compiled successfully", func_name);
         Ok(ir)
-    }
-    
     #[instrument(skip(self, call))]
     fn compile_function_call(&mut self, call: &CallExpression) -> crate::error::Result<()> {
         let func_name = call.function.string();
@@ -228,13 +187,10 @@ impl FunctionCompilation for crate::codegen::llvm::LlvmCodeGenerator {
             let arg_ir = self.compile_expression_body(arg)?;
             arg_types.push(LlvmType::Int32); // Simplified - would infer actual type
             arg_llvm_names.push("%temp_arg".to_string()); // Simplified
-        }
-        
         // Look up function signature in registry
         let function_signature = self.lookup_function_with_args(&func_name, &arg_types)
             .ok_or_else(|| {
                 CursedError::CompilationError(format!(
-                    "Function '{}' not found or no matching overload for {} arguments",
                     func_name, arg_types.len()
                 ))
             })?;
@@ -250,22 +206,11 @@ impl FunctionCompilation for crate::codegen::llvm::LlvmCodeGenerator {
         
         // Generate the actual LLVM call instruction
         if function_signature.return_type == LlvmType::Void {
-            ir.push_str(&format!("  call {} @{}({})\n", 
-                function_signature.return_type.to_llvm_string(),
-                func_name,
                 args_str));
         } else {
-            ir.push_str(&format!("  {} = call {} @{}({})\n", 
-                call_result_temp,
-                function_signature.return_type.to_llvm_string(),
-                func_name,
                 args_str));
-        }
-        
         debug!("Function call '{}' compiled successfully", func_name);
         Ok(ir)
-    }
-    
     fn compile_return_statement(&mut self, ret: &ReturnStatement) -> crate::error::Result<()> {
         let mut ir = String::new();
         
@@ -282,17 +227,12 @@ impl FunctionCompilation for crate::codegen::llvm::LlvmCodeGenerator {
                 context.return_type.clone()
             } else {
                 "i32".to_string()
-            };
             
             ir.push_str(&format!("  ret {} {}\n", return_type, value_ref));
         } else {
             // Return void (yolo with no value)
             ir.push_str("  ret void\n");
-        }
-        
         Ok(ir)
-    }
-    
     fn generate_function_type(&self, params: &[crate::ast::expressions::Parameter], return_type: Option<&Box<dyn Expression>>) -> String {
         let param_types: Vec<String> = params.iter()
             .map(|p| {
@@ -305,11 +245,8 @@ impl FunctionCompilation for crate::codegen::llvm::LlvmCodeGenerator {
             self.map_cursed_type_to_llvm(&rt.string())
         } else {
             "void".to_string()
-        };
         
         format!("{} ({})", ret_type, param_types.join(", "))
-    }
-    
     fn generate_function_arguments(&self, params: &[crate::ast::expressions::Parameter]) -> String {
         params.iter()
             .map(|p| {
@@ -319,8 +256,6 @@ impl FunctionCompilation for crate::codegen::llvm::LlvmCodeGenerator {
             })
             .collect::<Vec<_>>()
             .join(", ")
-    }
-    
     fn generate_call_arguments(&mut self, args: &[Box<dyn Expression>]) -> crate::error::Result<()> {
         let mut arg_strings = Vec::new();
         
@@ -333,11 +268,7 @@ impl FunctionCompilation for crate::codegen::llvm::LlvmCodeGenerator {
             let arg_value = "%arg_val"; // Simplified
             
             arg_strings.push(format!("{} {}", arg_type, arg_value));
-        }
-        
         Ok(arg_strings.join(", "))
-    }
-    
     fn allocate_local_variable(&mut self, name: &str, var_type: &str) -> crate::error::Result<()> {
         let llvm_type = self.map_cursed_type_to_llvm(var_type);
         let alloca_name = format!("%{}_addr", name);
@@ -345,12 +276,8 @@ impl FunctionCompilation for crate::codegen::llvm::LlvmCodeGenerator {
         // Add to current function context
         if let Some(context) = self.current_function() {
             context.add_local(name.to_string(), alloca_name.clone());
-        }
-        
         let ir = format!("  {} = alloca {}, align 8\n", alloca_name, llvm_type);
         Ok(ir)
-    }
-    
     fn get_or_create_function(&mut self, name: &str, func_type: &str) -> String {
         // For now, just return the function name
         // In a full implementation, this would check if the function exists in the module
@@ -363,13 +290,7 @@ impl crate::codegen::llvm::LlvmCodeGenerator {
     /// Map CURSED types to LLVM types
     fn map_cursed_type_to_llvm(&self, cursed_type: &str) -> String {
         match cursed_type {
-            "int" | "i32" => "i32".to_string(),
-            "i64" => "i64".to_string(),
-            "float" | "f32" => "float".to_string(),
-            "f64" | "double" => "double".to_string(),
-            "bool" => "i1".to_string(),
             "string" | "str" => "i8*".to_string(), // Pointer to char array
-            "void" => "void".to_string(),
             "any" => "i8*".to_string(), // Generic pointer for dynamic types
             _ => "i8*".to_string(), // Default to generic pointer
         }
@@ -386,16 +307,10 @@ impl crate::codegen::llvm::LlvmCodeGenerator {
             // Try to compile different statement types
             let stmt_ir = self.compile_statement_dispatch(statement.as_ref())?;
             ir.push_str(&stmt_ir);
-        }
-        
         // If the block is empty, add a comment
         if block.statements.is_empty() {
             ir.push_str("  ; Empty block\n");
-        }
-        
         Ok(ir)
-    }
-    
     /// Dispatch statement compilation to appropriate handler
     fn compile_statement_dispatch(&mut self, stmt: &dyn Statement) -> crate::error::Result<()> {
         use crate::ast::{LetStatement, FactsStatement, ExpressionStatement, ReturnStatement};
@@ -427,7 +342,6 @@ impl crate::codegen::llvm::LlvmCodeGenerator {
             self.infer_type_from_expression(value.as_ref())?
         } else {
             "i8*".to_string() // Default to generic pointer
-        };
         
         let mut ir = String::new();
         
@@ -441,14 +355,9 @@ impl crate::codegen::llvm::LlvmCodeGenerator {
             ir.push_str(&value_ir);
             
             // Store the value
-            let store_ir = format!("  store {} %temp_val, {}* %{}_addr, align 8\n", 
                 var_type, var_type, var_name);
             ir.push_str(&store_ir);
-        }
-        
         Ok(ir)
-    }
-    
     /// Compile a facts statement (constant declaration)
     fn compile_facts_statement(&mut self, facts_stmt: &crate::ast::FactsStatement) -> crate::error::Result<()> {
         let const_name = &facts_stmt.to_string().value;
@@ -458,7 +367,6 @@ impl crate::codegen::llvm::LlvmCodeGenerator {
             self.map_cursed_type_to_llvm(&type_annotation.string())
         } else {
             self.infer_type_from_expression(facts_stmt.value.as_ref())?
-        };
         
         let mut ir = String::new();
         
@@ -470,20 +378,15 @@ impl crate::codegen::llvm::LlvmCodeGenerator {
         let alloca_ir = format!("  %{}_addr = alloca {}, align 8\n", const_name, const_type);
         ir.push_str(&alloca_ir);
         
-        let store_ir = format!("  store {} %temp_val, {}* %{}_addr, align 8\n", 
             const_type, const_type, const_name);
         ir.push_str(&store_ir);
         
         Ok(ir)
-    }
-    
     /// Compile an expression statement
     fn compile_expression_statement(&mut self, expr_stmt: &crate::ast::ExpressionStatement) -> crate::error::Result<()> {
         // Compile the expression and discard the result
         let expr_ir = self.compile_expression_body(&expr_stmt.expression)?;
         Ok(expr_ir)
-    }
-    
     /// Infer LLVM type from expression
     fn infer_type_from_expression(&self, expr: &dyn crate::ast::traits::Expression) -> crate::error::Result<()> {
         use crate::ast::expressions::{Literal, LiteralValue};
@@ -491,11 +394,6 @@ impl crate::codegen::llvm::LlvmCodeGenerator {
         // Try to infer type from literal values
         if let Some(literal) = expr.as_any().downcast_ref::<Literal>() {
             match &literal.value {
-                LiteralValue::Integer(_) => Ok("i64".to_string()),
-                LiteralValue::Float(_) => Ok("double".to_string()),
-                LiteralValue::String(_) => Ok("i8*".to_string()),
-                LiteralValue::Boolean(_) => Ok("i1".to_string()),
-                LiteralValue::Nil => Ok("i8*".to_string()),
             }
         } else {
             // For complex expressions, default to generic pointer
@@ -524,11 +422,7 @@ impl crate::codegen::llvm::LlvmCodeGenerator {
         } else {
             // For unknown expression types, generate a placeholder
             ir.push_str(&format!("  ; Expression: {} (placeholder)\n  %temp_val = add i32 0, 0\n", expr.string()));
-        }
-        
         Ok(ir)
-    }
-    
     /// Compile a literal expression
     fn compile_literal_expression(&mut self, literal: &crate::ast::expressions::Literal) -> crate::error::Result<()> {
         use crate::ast::expressions::LiteralValue;
@@ -536,27 +430,21 @@ impl crate::codegen::llvm::LlvmCodeGenerator {
         match &literal.value {
             LiteralValue::Integer(val) => {
                 Ok(format!("  ; Integer literal: {}\n  %temp_val = add i64 {}, 0\n", val, val))
-            },
             LiteralValue::Float(val) => {
                 Ok(format!("  ; Float literal: {}\n  %temp_val = fadd double {}, 0.0\n", val, val))
-            },
             LiteralValue::String(val) => {
                 // Generate a global string constant
                 let string_id = format!("str_{}", self.get_next_string_id());
                 let escaped_string = val.escape_default().to_string();
                 
                 Ok(format!(
-                    "  ; String literal: \"{}\"\n  %temp_val = getelementptr inbounds [{} x i8], [{} x i8]* @{}, i32 0, i32 0\n",
                     val, val.len() + 1, val.len() + 1, string_id
                 ))
-            },
             LiteralValue::Boolean(val) => {
                 let bool_val = if *val { 1 } else { 0 };
                 Ok(format!("  ; Boolean literal: {}\n  %temp_val = add i1 {}, 0\n", val, bool_val))
-            },
             LiteralValue::Nil => {
                 Ok("  ; Nil literal\n  %temp_val = add i8* null, 0\n".to_string())
-            },
         }
     }
     
@@ -578,12 +466,8 @@ impl crate::codegen::llvm::LlvmCodeGenerator {
                     return Ok(format!("  ; Parameter reference: {}\n  %temp_val = add i8* %{}, 0\n", var_name, var_name));
                 }
             }
-        }
-        
         // Default to global variable
         Ok(format!("  ; Global variable: {}\n  %temp_val = load i8*, i8** @{}\n", var_name, var_name))
-    }
-    
     /// Compile a binary expression
     fn compile_binary_expression(&mut self, binary: &crate::ast::operators::BinaryExpression) -> crate::error::Result<()> {
         let mut ir = String::new();
@@ -600,28 +484,12 @@ impl crate::codegen::llvm::LlvmCodeGenerator {
         
         // Generate operation based on operator
         let op_ir = match binary.operator.as_str() {
-            "+" => "  %temp_val = add i32 %left_val, %right_val\n",
-            "-" => "  %temp_val = sub i32 %left_val, %right_val\n",
-            "*" => "  %temp_val = mul i32 %left_val, %right_val\n",
             "/" => "  %temp_val = sdiv i32 %left_val, %right_val\n",
-            "%" => "  %temp_val = srem i32 %left_val, %right_val\n",
-            "==" => "  %temp_val = icmp eq i32 %left_val, %right_val\n",
-            "!=" => "  %temp_val = icmp ne i32 %left_val, %right_val\n",
-            "<" => "  %temp_val = icmp slt i32 %left_val, %right_val\n",
-            ">" => "  %temp_val = icmp sgt i32 %left_val, %right_val\n",
-            "<=" => "  %temp_val = icmp sle i32 %left_val, %right_val\n",
-            ">=" => "  %temp_val = icmp sge i32 %left_val, %right_val\n",
-            "&&" => "  %temp_val = and i1 %left_val, %right_val\n",
-            "||" => "  %temp_val = or i1 %left_val, %right_val\n",
-            _ => "  ; Unknown operator\n  %temp_val = add i32 0, 0\n",
-        };
         
         ir.push_str(&format!("  ; Binary operation: {}\n", binary.operator));
         ir.push_str(op_ir);
         
         Ok(ir)
-    }
-    
     /// Compile a call expression
     fn compile_call_expression(&mut self, call: &crate::ast::calls::CallExpression) -> crate::error::Result<()> {
         let func_name = call.function.string();
@@ -637,8 +505,6 @@ impl crate::codegen::llvm::LlvmCodeGenerator {
             let arg_temp = format!("%arg_{}", i);
             args_ir.push_str(&format!("  {} = add i32 %temp_val, 0\n", arg_temp));
             arg_values.push(format!("i32 {}", arg_temp));
-        }
-        
         let args_str = arg_values.join(", ");
         
         let mut ir = String::new();
@@ -647,8 +513,6 @@ impl crate::codegen::llvm::LlvmCodeGenerator {
         ir.push_str(&format!("  %temp_val = call i32 @{}({})\n", func_name, args_str));
         
         Ok(ir)
-    }
-    
     /// Get next string ID for global string constants
     fn get_next_string_id(&mut self) -> u64 {
         if let Some(context) = self.current_function() {
@@ -658,5 +522,3 @@ impl crate::codegen::llvm::LlvmCodeGenerator {
             0
         }
     }
-}
-

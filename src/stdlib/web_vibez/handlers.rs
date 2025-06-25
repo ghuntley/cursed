@@ -24,16 +24,11 @@ use std::pin::Pin;
 pub trait RequestHandler: Send + Sync {
     /// Handle an HTTP request
     fn handle<'a>(
-        &'a self,
-        context: &'a RequestContext,
-        response: &'a mut ResponseContext,
     ) -> Pin<Box<dyn Future<Output = crate::error::Result<()>> + Send + '_>>;
 
     /// Get handler name for debugging
     fn name(&self) -> &'static str {
         "Unknown"
-    }
-
     /// Get handler description
     fn description(&self) -> String {
         format!("Handler: {}", self.name())
@@ -51,35 +46,20 @@ impl std::fmt::Debug for dyn RequestHandler {
 #[derive(Debug)]
 pub struct RouteHandler {
     /// The actual request handler
-    handler: Arc<dyn RequestHandler>,
     /// Handler metadata
-    metadata: HashMap<String, String>,
-}
-
 impl RouteHandler {
     pub fn new(handler: Arc<dyn RequestHandler>) -> Self {
         Self {
-            handler,
-            metadata: HashMap::new(),
         }
     }
 
     pub fn with_metadata(mut self, key: &str, value: &str) -> Self {
         self.metadata.insert(key.to_string(), value.to_string());
         self
-    }
-
     #[instrument(skip(self, context, response))]
     pub async fn execute(
-        &self,
-        context: &RequestContext,
-        response: &mut ResponseContext,
     ) -> crate::error::Result<()> {
         debug!(
-            handler = self.handler.name(),
-            request_id = %context.request_id,
-            method = %context.method,
-            path = %context.path,
             "Executing handler"
         );
 
@@ -87,24 +67,13 @@ impl RouteHandler {
 
         if let Err(ref e) = result {
             debug!(
-                handler = self.handler.name(),
-                request_id = %context.request_id,
-                error = %e,
                 "Handler execution failed"
             );
         } else {
             debug!(
-                handler = self.handler.name(),
-                request_id = %context.request_id,
-                status = %response.status,
-                response_size = response.body.len(),
                 "Handler execution completed"
             );
-        }
-
         result
-    }
-
     pub fn get_metadata(&self, key: &str) -> Option<&str> {
         self.metadata.get(key).map(|s| s.as_str())
     }
@@ -113,38 +82,23 @@ impl RouteHandler {
 /// Static response handler - returns fixed content
 #[derive(Debug)]
 pub struct StaticHandler {
-    content: String,
-    content_type: String,
-    status: StatusCode,
-}
-
 impl StaticHandler {
     pub fn new(content: &str) -> Self {
         Self {
-            content: content.to_string(),
             content_type: "text/plain; charset=utf-8".to_string(),
-            status: StatusCode::OK,
         }
     }
 
     pub fn with_content_type(mut self, content_type: &str) -> Self {
         self.content_type = content_type.to_string();
         self
-    }
-
     pub fn with_status(mut self, status: StatusCode) -> Self {
         self.status = status;
         self
-    }
-
     pub fn json(content: &str) -> Self {
         Self::new(content).with_content_type("application/json")
-    }
-
     pub fn html(content: &str) -> Self {
         Self::new(content).with_content_type("text/html; charset=utf-8")
-    }
-
     pub fn not_found() -> Self {
         Self::new("Not Found")
             .with_status(StatusCode::NotFound)
@@ -154,9 +108,6 @@ impl StaticHandler {
 
 impl RequestHandler for StaticHandler {
     fn handle<'a>(
-        &'a self,
-        _context: &'a RequestContext,
-        response: &'a mut ResponseContext,
     ) -> Pin<Box<dyn Future<Output = crate::error::Result<()>> + Send + '_>> {
         let status = self.status;
         let content_type = self.content_type.clone();
@@ -168,12 +119,8 @@ impl RequestHandler for StaticHandler {
             response.set_body_string(&content);
             Ok(())
         })
-    }
-
     fn name(&self) -> &'static str {
         "Static"
-    }
-
     fn description(&self) -> String {
         format!("Static handler: {} bytes, {}", self.content.len(), self.content_type)
     }
@@ -182,9 +129,6 @@ impl RequestHandler for StaticHandler {
 /// JSON API handler for REST endpoints
 pub struct JsonApiHandler {
     /// Handler function for different HTTP methods
-    handlers: HashMap<String, Box<dyn Fn(&RequestContext) -> crate::error::Result<()> + Send + Sync>>,
-}
-
 impl std::fmt::Debug for JsonApiHandler {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("JsonApiHandler")
@@ -196,37 +140,26 @@ impl std::fmt::Debug for JsonApiHandler {
 impl JsonApiHandler {
     pub fn new() -> Self {
         Self {
-            handlers: HashMap::new(),
         }
     }
 
     pub fn on_get<F>(mut self, handler: F) -> Self
     where
-        F: Fn(&RequestContext) -> crate::error::Result<()> + Send + Sync + 'static,
     {
         self.handlers.insert("GET".to_string(), Box::new(handler));
         self
-    }
-
     pub fn on_post<F>(mut self, handler: F) -> Self
     where
-        F: Fn(&RequestContext) -> crate::error::Result<()> + Send + Sync + 'static,
     {
         self.handlers.insert("POST".to_string(), Box::new(handler));
         self
-    }
-
     pub fn on_put<F>(mut self, handler: F) -> Self
     where
-        F: Fn(&RequestContext) -> crate::error::Result<()> + Send + Sync + 'static,
     {
         self.handlers.insert("PUT".to_string(), Box::new(handler));
         self
-    }
-
     pub fn on_delete<F>(mut self, handler: F) -> Self
     where
-        F: Fn(&RequestContext) -> crate::error::Result<()> + Send + Sync + 'static,
     {
         self.handlers.insert("DELETE".to_string(), Box::new(handler));
         self
@@ -235,9 +168,6 @@ impl JsonApiHandler {
 
 impl RequestHandler for JsonApiHandler {
     fn handle<'a>(
-        &'a self,
-        context: &'a RequestContext,
-        response: &'a mut ResponseContext,
     ) -> Pin<Box<dyn Future<Output = crate::error::Result<()>> + Send + '_>> {
         Box::pin(async move {
         let method_str = context.method.to_string();
@@ -252,7 +182,6 @@ impl RequestHandler for JsonApiHandler {
                 Err(e) => {
                     // Convert handler error to JSON error response
                     let error_response = serde_json::json!({
-                        "error": e.to_string(),
                         "status": "error"
                     });
                     response.set_json(&error_response)
@@ -263,22 +192,15 @@ impl RequestHandler for JsonApiHandler {
         } else {
             // Method not supported
             let error_response = serde_json::json!({
-                "error": format!("Method {} not supported", method_str),
                 "status": "error"
             });
             response.set_json(&error_response)
                 .map_err(|e| HandlerError::Serialization(format!("CursedError JSON serialization error: {}", e)))?;
             response.set_status(StatusCode::MethodNotAllowed);
-        }
-
         Ok(())
         })
-    }
-
     fn name(&self) -> &'static str {
         "JsonApi"
-    }
-
     fn description(&self) -> String {
         let methods: Vec<String> = self.handlers.keys().cloned().collect();
         format!("JSON API handler supporting methods: {}", methods.join(", "))
@@ -288,13 +210,8 @@ impl RequestHandler for JsonApiHandler {
 /// Template handler for rendering dynamic content
 pub struct TemplateHandler {
     /// Template content with placeholders
-    template: String,
     /// Content type for response
-    content_type: String,
     /// Data provider function
-    data_provider: Option<Arc<dyn Fn(&RequestContext) -> HashMap<String, String> + Send + Sync>>,
-}
-
 impl std::fmt::Debug for TemplateHandler {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("TemplateHandler")
@@ -308,25 +225,18 @@ impl std::fmt::Debug for TemplateHandler {
 impl TemplateHandler {
     pub fn new(template: &str) -> Self {
         Self {
-            template: template.to_string(),
             content_type: "text/html; charset=utf-8".to_string(),
-            data_provider: None,
         }
     }
 
     pub fn with_content_type(mut self, content_type: &str) -> Self {
         self.content_type = content_type.to_string();
         self
-    }
-
     pub fn with_data_provider<F>(mut self, provider: F) -> Self
     where
-        F: Fn(&RequestContext) -> HashMap<String, String> + Send + Sync + 'static,
     {
         self.data_provider = Some(Arc::new(provider));
         self
-    }
-
     /// Simple template substitution
     fn render_template(&self, template: &str, data: &HashMap<String, String>) -> String {
         let mut result = template.to_string();
@@ -334,17 +244,12 @@ impl TemplateHandler {
         for (key, value) in data {
             let placeholder = format!("{{{{{}}}}}", key);
             result = result.replace(&placeholder, value);
-        }
-        
         result
     }
 }
 
 impl RequestHandler for TemplateHandler {
     fn handle<'a>(
-        &'a self,
-        context: &'a RequestContext,
-        response: &'a mut ResponseContext,
     ) -> Pin<Box<dyn Future<Output = crate::error::Result<()>> + Send + '_>> {
         Box::pin(async move {
         let mut data = HashMap::new();
@@ -352,13 +257,9 @@ impl RequestHandler for TemplateHandler {
         // Add route parameters to template data
         for (key, value) in &context.route_params {
             data.insert(key.clone(), value.clone());
-        }
-        
         // Add query parameters to template data
         for (key, value) in &context.query_params {
             data.insert(format!("query_{}", key), value.clone());
-        }
-        
         // Add request metadata
         data.insert("method".to_string(), context.method.to_string());
         data.insert("path".to_string(), context.path.clone());
@@ -368,8 +269,6 @@ impl RequestHandler for TemplateHandler {
         if let Some(provider) = &self.data_provider {
             let provided_data = provider(context);
             data.extend(provided_data);
-        }
-        
         let rendered = self.render_template(&self.template, &data);
         
         response.set_status(StatusCode::OK);
@@ -378,12 +277,8 @@ impl RequestHandler for TemplateHandler {
         
         Ok(())
         })
-    }
-
     fn name(&self) -> &'static str {
         "Template"
-    }
-
     fn description(&self) -> String {
         format!("Template handler: {} characters, {}", self.template.len(), self.content_type)
     }
@@ -393,18 +288,11 @@ impl RequestHandler for TemplateHandler {
 #[derive(Debug)]
 pub struct FileHandler {
     /// File path to serve
-    file_path: PathBuf,
     /// Content type (auto-detected if None)
-    content_type: Option<String>,
     /// Cache duration
-    cache_duration: Option<std::time::Duration>,
-}
-
 impl FileHandler {
     pub fn new(file_path: PathBuf) -> Self {
         Self {
-            file_path,
-            content_type: None,
             cache_duration: Some(std::time::Duration::from_secs(3600)), // 1 hour default
         }
     }
@@ -412,19 +300,13 @@ impl FileHandler {
     pub fn with_content_type(mut self, content_type: &str) -> Self {
         self.content_type = Some(content_type.to_string());
         self
-    }
-
     pub fn with_cache_duration(mut self, duration: Option<std::time::Duration>) -> Self {
         self.cache_duration = duration;
         self
-    }
-
     /// Detect content type from file extension
     fn detect_content_type(&self) -> String {
         if let Some(content_type) = &self.content_type {
             return content_type.clone();
-        }
-
         if let Some(extension) = self.file_path.extension().and_then(|ext| ext.to_str()) {
             match extension.to_lowercase().as_str() {
                 "html" | "htm" => "text/html; charset=utf-8".to_string(),
@@ -443,13 +325,8 @@ impl FileHandler {
             "application/octet-stream".to_string()
         }
     }
-}
-
 impl RequestHandler for FileHandler {
     fn handle<'a>(
-        &'a self,
-        _context: &'a RequestContext,
-        response: &'a mut ResponseContext,
     ) -> Pin<Box<dyn Future<Output = crate::error::Result<()>> + Send + '_>> {
         Box::pin(async move {
         let content = std::fs::read(&self.file_path)
@@ -464,16 +341,10 @@ impl RequestHandler for FileHandler {
         // Set cache headers if specified
         if let Some(cache_duration) = self.cache_duration {
             response.set_cache_control(cache_duration.as_secs() as u32, true);
-        }
-
         Ok(())
         })
-    }
-
     fn name(&self) -> &'static str {
         "File"
-    }
-
     fn description(&self) -> String {
         format!("File handler: {:?}", self.file_path)
     }
@@ -483,23 +354,15 @@ impl RequestHandler for FileHandler {
 #[derive(Debug)]
 pub struct RedirectHandler {
     /// Target URL for redirect
-    target_url: String,
     /// Whether redirect is permanent (301) or temporary (302)
-    permanent: bool,
-}
-
 impl RedirectHandler {
     pub fn temporary(target_url: &str) -> Self {
         Self {
-            target_url: target_url.to_string(),
-            permanent: false,
         }
     }
 
     pub fn permanent(target_url: &str) -> Self {
         Self {
-            target_url: target_url.to_string(),
-            permanent: true,
         }
     }
 
@@ -512,9 +375,6 @@ impl RedirectHandler {
 
 impl RequestHandler for RedirectHandler {
     fn handle<'a>(
-        &'a self,
-        context: &'a RequestContext,
-        response: &'a mut ResponseContext,
     ) -> Pin<Box<dyn Future<Output = crate::error::Result<()>> + Send + '_>> {
         Box::pin(async move {
         let mut target_url = self.target_url.clone();
@@ -523,18 +383,12 @@ impl RequestHandler for RedirectHandler {
         for (key, value) in &context.route_params {
             let placeholder = format!("{{{}}}", key);
             target_url = target_url.replace(&placeholder, value);
-        }
-
         response.set_redirect(&target_url, self.permanent);
         
         Ok(())
         })
-    }
-
     fn name(&self) -> &'static str {
         "Redirect"
-    }
-
     fn description(&self) -> String {
         let redirect_type = if self.permanent { "permanent" } else { "temporary" };
         format!("Redirect handler: {} to {}", redirect_type, self.target_url)
@@ -545,19 +399,11 @@ impl RequestHandler for RedirectHandler {
 #[derive(Debug)]
 pub struct ProxyHandler {
     /// Target base URL for proxying
-    target_base_url: String,
     /// Headers to add to proxied requests
-    additional_headers: HashMap<String, String>,
     /// Whether to preserve host header
-    preserve_host: bool,
     /// Request timeout for proxied requests
-    timeout: std::time::Duration,
     /// HTTP client for making requests
-    client: reqwest::Client,
     /// Headers to remove from proxied responses
-    filtered_response_headers: std::collections::HashSet<String>,
-}
-
 impl ProxyHandler {
     pub fn new(target_base_url: &str) -> Self {
         let client = reqwest::Client::builder()
@@ -575,35 +421,21 @@ impl ProxyHandler {
         filtered_headers.insert("proxy-authorization".to_lowercase());
 
         Self {
-            target_base_url: target_base_url.to_string(),
-            additional_headers: HashMap::new(),
-            preserve_host: false,
-            timeout: std::time::Duration::from_secs(30),
-            client,
-            filtered_response_headers: filtered_headers,
         }
     }
 
     pub fn with_header(mut self, name: &str, value: &str) -> Self {
         self.additional_headers.insert(name.to_string(), value.to_string());
         self
-    }
-
     pub fn preserve_host(mut self, preserve: bool) -> Self {
         self.preserve_host = preserve;
         self
-    }
-
     pub fn with_timeout(mut self, timeout: std::time::Duration) -> Self {
         self.timeout = timeout;
         self
-    }
-
     pub fn with_client(mut self, client: reqwest::Client) -> Self {
         self.client = client;
         self
-    }
-
     /// Build the target URL from base URL and request path
     fn build_target_url(&self, path: &str, query: &str) -> crate::error::Result<()> {
         let base = self.target_base_url.trim_end_matches('/');
@@ -613,15 +445,12 @@ impl ProxyHandler {
             format!("{}{}", base, path)
         } else {
             format!("{}{}?{}", base, path, query)
-        };
 
         // Validate the URL
         reqwest::Url::parse(&url)
             .map_err(|e| HandlerError::Configuration(format!("Invalid proxy target URL: {}", e)))?;
 
         Ok(url)
-    }
-
     /// Build headers for the proxied request
     fn build_request_headers(&self, context: &RequestContext) -> reqwest::header::HeaderMap {
         let mut headers = reqwest::header::HeaderMap::new();
@@ -633,14 +462,11 @@ impl ProxyHandler {
             // Skip connection-related headers
             if !self.should_filter_request_header(&header_name) {
                 if let (Ok(name), Ok(value)) = (
-                    reqwest::header::HeaderName::from_bytes(name.as_bytes()),
                     reqwest::header::HeaderValue::from_str(value)
                 ) {
                     headers.insert(name, value);
                 }
             }
-        }
-
         // Handle host header preservation
         if !self.preserve_host {
             if let Ok(target_url) = reqwest::Url::parse(&self.target_base_url) {
@@ -655,7 +481,6 @@ impl ProxyHandler {
         // Add additional headers
         for (name, value) in &self.additional_headers {
             if let (Ok(name), Ok(value)) = (
-                reqwest::header::HeaderName::from_str(name),
                 reqwest::header::HeaderValue::from_str(value)
             ) {
                 headers.insert(name, value);
@@ -665,22 +490,13 @@ impl ProxyHandler {
         // Add X-Forwarded headers for proxy transparency
         if let Ok(forwarded_for) = reqwest::header::HeaderValue::from_str(&context.client_ip.as_ref().unwrap_or(&"unknown".to_string())) {
             headers.insert("x-forwarded-for", forwarded_for);
-        }
-        
         if let Ok(forwarded_proto) = reqwest::header::HeaderValue::from_str("http") {
             headers.insert("x-forwarded-proto", forwarded_proto);
-        }
-
         headers
-    }
-
     /// Check if a request header should be filtered out
     fn should_filter_request_header(&self, header_name: &str) -> bool {
-        matches!(header_name.to_lowercase().as_str(),
             "connection" | "upgrade" | "proxy-connection" | "proxy-authenticate" | "proxy-authorization"
         )
-    }
-
     /// Copy response headers from target to client response
     fn copy_response_headers(&self, target_response: &reqwest::Response, response: &mut ResponseContext) {
         for (name, value) in target_response.headers() {
@@ -694,13 +510,8 @@ impl ProxyHandler {
             }
         }
     }
-}
-
 impl RequestHandler for ProxyHandler {
     fn handle<'a>(
-        &'a self,
-        context: &'a RequestContext,
-        response: &'a mut ResponseContext,
     ) -> Pin<Box<dyn Future<Output = crate::error::Result<()>> + Send + '_>> {
         Box::pin(async move {
         // Build target URL with query parameters
@@ -712,9 +523,6 @@ impl RequestHandler for ProxyHandler {
         let target_url = self.build_target_url(&context.path, &query_string)?;
         
         debug!(
-            source_path = %context.path,
-            target_url = %target_url,
-            method = %context.method,
             "Starting proxy request"
         );
 
@@ -727,11 +535,8 @@ impl RequestHandler for ProxyHandler {
         // Add request body if present
         if !context.body.is_empty() {
             request_builder = request_builder.body(context.body.clone());
-        }
-
         // Execute the proxied request
         let target_response = match request_builder.send().await {
-            Ok(resp) => resp,
             Err(e) => {
                 let error_msg = if e.is_timeout() {
                     format!("Proxy request timeout after {:?}", self.timeout)
@@ -739,17 +544,13 @@ impl RequestHandler for ProxyHandler {
                     format!("Failed to connect to target server: {}", e)
                 } else {
                     format!("Proxy request failed: {}", e)
-                };
                 
                 debug!(
-                    target_url = %target_url,
-                    error = %e,
                     "Proxy request failed"
                 );
                 
                 return Err(HandlerError::Network(error_msg));
             }
-        };
 
         // Convert response status
         let status_code = target_response.status().as_u16();
@@ -760,37 +561,25 @@ impl RequestHandler for ProxyHandler {
 
         // Get response body
         let response_body = match target_response.bytes().await {
-            Ok(bytes) => bytes.to_vec(),
             Err(e) => {
                 debug!(
-                    target_url = %target_url,
-                    error = %e,
                     "Failed to read response body"
                 );
                 return Err(HandlerError::Network(format!("Failed to read proxy response body: {}", e)));
             }
-        };
 
         // Set final response
         response.set_status(status);
         response.set_body(response_body);
 
         debug!(
-            source_path = %context.path,
-            target_url = %target_url,
-            status = status_code,
-            response_size = response.body.len(),
             "Proxy request completed"
         );
         
         Ok(())
         })
-    }
-
     fn name(&self) -> &'static str {
         "Proxy"
-    }
-
     fn description(&self) -> String {
         format!("Proxy handler to: {}", self.target_base_url)
     }
@@ -802,16 +591,6 @@ impl ProxyHandler {
 //         use crate::stdlib::web_vibez::HttpMethod;
         
         let method_str = match method {
-            HttpMethod::GET => "GET",
-            HttpMethod::POST => "POST",
-            HttpMethod::PUT => "PUT",
-            HttpMethod::DELETE => "DELETE",
-            HttpMethod::HEAD => "HEAD",
-            HttpMethod::OPTIONS => "OPTIONS",
-            HttpMethod::PATCH => "PATCH",
-            HttpMethod::TRACE => "TRACE",
-            HttpMethod::CONNECT => "CONNECT",
-        };
 
         reqwest::Method::from_bytes(method_str.as_bytes())
             .map_err(|e| HandlerError::Configuration(format!("Invalid HTTP method: {}", e)))
@@ -821,11 +600,7 @@ impl ProxyHandler {
 /// Composite handler that can delegate to different handlers based on conditions
 pub struct CompositeHandler {
     /// Default handler
-    default_handler: Arc<dyn RequestHandler>,
     /// Conditional handlers
-    conditional_handlers: Vec<(Box<dyn Fn(&RequestContext) -> bool + Send + Sync>, Arc<dyn RequestHandler>)>,
-}
-
 impl std::fmt::Debug for CompositeHandler {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("CompositeHandler")
@@ -838,39 +613,27 @@ impl std::fmt::Debug for CompositeHandler {
 impl CompositeHandler {
     pub fn new(default_handler: Arc<dyn RequestHandler>) -> Self {
         Self {
-            default_handler,
-            conditional_handlers: Vec::new(),
         }
     }
 
     pub fn add_condition<F>(mut self, condition: F, handler: Arc<dyn RequestHandler>) -> Self
     where
-        F: Fn(&RequestContext) -> bool + Send + Sync + 'static,
     {
         self.conditional_handlers.push((Box::new(condition), handler));
         self
-    }
-
     pub fn on_method(self, method: &str, handler: Arc<dyn RequestHandler>) -> Self {
         let method = method.to_string();
         self.add_condition(move |ctx| ctx.method.to_string() == method, handler)
-    }
-
     pub fn on_header(self, header_name: &str, header_value: &str, handler: Arc<dyn RequestHandler>) -> Self {
         let header_name = header_name.to_lowercase();
         let header_value = header_value.to_string();
         self.add_condition(
-            move |ctx| ctx.header(&header_name).map_or(false, |v| v == header_value),
-            handler,
         )
     }
 }
 
 impl RequestHandler for CompositeHandler {
     fn handle<'a>(
-        &'a self,
-        context: &'a RequestContext,
-        response: &'a mut ResponseContext,
     ) -> Pin<Box<dyn Future<Output = crate::error::Result<()>> + Send + '_>> {
         Box::pin(async move {
         // Check conditional handlers first
@@ -885,16 +648,10 @@ impl RequestHandler for CompositeHandler {
         debug!(handler = self.default_handler.name(), "Using default handler");
         self.default_handler.handle(context, response).await
         })
-    }
-
     fn name(&self) -> &'static str {
         "Composite"
-    }
-
     fn description(&self) -> String {
         format!(
-            "Composite handler with {} conditions, default: {}",
-            self.conditional_handlers.len(),
             self.default_handler.name()
         )
     }

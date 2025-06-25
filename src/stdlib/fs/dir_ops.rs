@@ -10,29 +10,19 @@ pub fn create_dir(path: &str) -> FsResult<()> {
     
     if path.exists() {
         return Err(FsError::AlreadyExists(path.to_string_lossy().to_string()));
-    }
-    
     fs::create_dir(path).map_err(FsError::from)
-}
-
 /// Create a directory and all of its parent directories as needed
 pub fn create_dir_all(path: &str) -> FsResult<()> {
     let path = Path::new(path);
     fs::create_dir_all(path).map_err(FsError::from)
-}
-
 /// Remove an empty directory
 pub fn remove_dir(path: &str) -> FsResult<()> {
     let path = Path::new(path);
     
     if !path.exists() {
         return Err(FsError::NotFound(path.to_string_lossy().to_string()));
-    }
-    
     if !path.is_dir() {
         return Err(FsError::NotADirectory(path.to_string_lossy().to_string()));
-    }
-    
     fs::remove_dir(path).map_err(|e| {
         match e.kind() {
             std::io::ErrorKind::Other => {
@@ -42,35 +32,23 @@ pub fn remove_dir(path: &str) -> FsResult<()> {
             _ => FsError::from(e)
         }
     })
-}
-
 /// Remove a directory and all its contents recursively
 pub fn remove_dir_all(path: &str) -> FsResult<()> {
     let path = Path::new(path);
     
     if !path.exists() {
         return Err(FsError::NotFound(path.to_string_lossy().to_string()));
-    }
-    
     if !path.is_dir() {
         return Err(FsError::NotADirectory(path.to_string_lossy().to_string()));
-    }
-    
     fs::remove_dir_all(path).map_err(FsError::from)
-}
-
 /// List the contents of a directory
 pub fn list_dir(path: &str) -> FsResult<Vec<DirEntry>> {
     let path = Path::new(path);
     
     if !path.exists() {
         return Err(FsError::NotFound(path.to_string_lossy().to_string()));
-    }
-    
     if !path.is_dir() {
         return Err(FsError::NotADirectory(path.to_string_lossy().to_string()));
-    }
-    
     let entries = fs::read_dir(path).map_err(FsError::from)?;
     let mut result = Vec::new();
     
@@ -78,26 +56,18 @@ pub fn list_dir(path: &str) -> FsResult<Vec<DirEntry>> {
         let entry = entry.map_err(FsError::from)?;
         let dir_entry = DirEntry::from_std_entry(entry)?;
         result.push(dir_entry);
-    }
-    
     // Sort entries by name for consistent ordering
     result.sort_by(|a, b| a.name.cmp(&b.name));
     
     Ok(result)
-}
-
 /// List only files in a directory
 pub fn list_files(path: &str) -> FsResult<Vec<DirEntry>> {
     let entries = list_dir(path)?;
     Ok(entries.into_iter().filter(|entry| entry.is_file).collect())
-}
-
 /// List only directories in a directory
 pub fn list_dirs(path: &str) -> FsResult<Vec<DirEntry>> {
     let entries = list_dir(path)?;
     Ok(entries.into_iter().filter(|entry| entry.is_dir).collect())
-}
-
 /// Copy a directory and all its contents recursively
 pub fn copy_dir_all(from: &str, to: &str) -> FsResult<()> {
     let from_path = Path::new(from);
@@ -105,12 +75,8 @@ pub fn copy_dir_all(from: &str, to: &str) -> FsResult<()> {
     
     if !from_path.exists() {
         return Err(FsError::NotFound(from_path.to_string_lossy().to_string()));
-    }
-    
     if !from_path.is_dir() {
         return Err(FsError::NotADirectory(from_path.to_string_lossy().to_string()));
-    }
-    
     // Create destination directory
     create_dir_all(&to_path.to_string_lossy())?;
     
@@ -124,7 +90,6 @@ pub fn copy_dir_all(from: &str, to: &str) -> FsResult<()> {
         
         if entry_path.is_dir() {
             copy_dir_all(
-                &entry_path.to_string_lossy(),
                 &dest_path.to_string_lossy()
             )?;
         } else {
@@ -133,8 +98,6 @@ pub fn copy_dir_all(from: &str, to: &str) -> FsResult<()> {
     }
     
     Ok(())
-}
-
 /// Walk a directory tree recursively and call a function for each entry
 pub fn walk_dir<F>(path: &str, mut callback: F) -> FsResult<()>
 where
@@ -142,7 +105,6 @@ where
 {
     fn walk_recursive<F>(path: &str, callback: &mut F) -> FsResult<()>
     where
-        F: FnMut(&DirEntry) -> FsResult<bool>,
     {
         let entries = list_dir(path)?;
         
@@ -155,15 +117,10 @@ where
         }
         
         Ok(())
-    }
-    
     walk_recursive(path, &mut callback)
-}
-
 /// Find all files matching a pattern in a directory tree
 pub fn find_files<F>(path: &str, predicate: F) -> FsResult<Vec<DirEntry>>
 where
-    F: Fn(&DirEntry) -> bool,
 {
     let mut results = Vec::new();
     
@@ -175,20 +132,14 @@ where
     })?;
     
     Ok(results)
-}
-
 /// Get the total size of a directory and all its contents
 pub fn dir_size(path: &str) -> FsResult<u64> {
     let path = Path::new(path);
     
     if !path.exists() {
         return Err(FsError::NotFound(path.to_string_lossy().to_string()));
-    }
-    
     if !path.is_dir() {
         return Err(FsError::NotADirectory(path.to_string_lossy().to_string()));
-    }
-    
     let mut total_size = 0u64;
     
     walk_dir(&path.to_string_lossy(), |entry| {
@@ -197,20 +148,14 @@ pub fn dir_size(path: &str) -> FsResult<u64> {
     })?;
     
     Ok(total_size)
-}
-
 /// Count the number of files and directories in a directory tree
 pub fn count_entries(path: &str) -> FsResult<(usize, usize)> {
     let path = Path::new(path);
     
     if !path.exists() {
         return Err(FsError::NotFound(path.to_string_lossy().to_string()));
-    }
-    
     if !path.is_dir() {
         return Err(FsError::NotADirectory(path.to_string_lossy().to_string()));
-    }
-    
     let mut file_count = 0usize;
     let mut dir_count = 0usize;
     
@@ -224,5 +169,3 @@ pub fn count_entries(path: &str) -> FsResult<(usize, usize)> {
     })?;
     
     Ok((file_count, dir_count))
-}
-

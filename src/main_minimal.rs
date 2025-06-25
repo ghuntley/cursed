@@ -20,25 +20,17 @@ fn main() {
     let matches = app.get_matches();
 
     let result = match matches.subcommand() {
-        Some(("run", sub_matches)) => handle_run_command(sub_matches),
-        Some(("check", sub_matches)) => handle_check_command(sub_matches),
-        Some(("format", sub_matches)) => handle_format_command(sub_matches),
-        Some(("tokenize", sub_matches)) => handle_tokenize_command(sub_matches),
         _ => {
             eprintln!("No subcommand provided. Use --help for usage information.");
             process::exit(1);
         }
-    };
 
     match result {
-        Ok(_) => process::exit(0),
         Err(e) => {
             eprintln!("CursedError: {}", e);
             process::exit(1);
         }
     }
-}
-
 fn build_minimal_cli() -> Command {
     Command::new("cursed")
         .about("CURSED Programming Language - Truly Minimal Build")
@@ -100,8 +92,6 @@ fn build_minimal_cli() -> Command {
                         .value_name("FILE")
                 )
         )
-}
-
 fn handle_run_command(matches: &clap::ArgMatches) -> crate::error::Result<()> {
     let file = matches.get_one::<String>("file").unwrap();
     
@@ -110,15 +100,11 @@ fn handle_run_command(matches: &clap::ArgMatches) -> crate::error::Result<()> {
     // Check if file exists
     if !std::path::Path::new(file).exists() {
         return Err(format!("File not found: {}", file).into());
-    }
-
     // Parse the file
     cursed::run_file(file)?;
     
     println!("✅ Program parsed successfully!");
     Ok(())
-}
-
 fn handle_check_command(matches: &clap::ArgMatches) -> crate::error::Result<()> {
     let file = matches.get_one::<String>("file").unwrap();
     
@@ -127,16 +113,12 @@ fn handle_check_command(matches: &clap::ArgMatches) -> crate::error::Result<()> 
     // Check if file exists
     if !std::path::Path::new(file).exists() {
         return Err(format!("File not found: {}", file).into());
-    }
-
     // Read and check source
     let source = std::fs::read_to_string(file)?;
     cursed::check(&source)?;
     
     println!("✅ Check completed successfully!");
     Ok(())
-}
-
 fn handle_format_command(matches: &clap::ArgMatches) -> crate::error::Result<()> {
     let file_opt = matches.get_one::<String>("file");
     let check_only = matches.get_flag("check");
@@ -147,8 +129,6 @@ fn handle_format_command(matches: &clap::ArgMatches) -> crate::error::Result<()>
         // Check if file exists
         if !std::path::Path::new(file).exists() {
             return Err(format!("File not found: {}", file).into());
-        }
-
         // Read and format source
         let source = std::fs::read_to_string(file)?;
         let formatted = cursed::format(&source)?;
@@ -173,11 +153,7 @@ fn handle_format_command(matches: &clap::ArgMatches) -> crate::error::Result<()>
         
         let formatted = cursed::format(&source)?;
         println!("{}", formatted);
-    }
-    
     Ok(())
-}
-
 fn handle_tokenize_command(matches: &clap::ArgMatches) -> crate::error::Result<()> {
     let file = matches.get_one::<String>("file").unwrap();
     
@@ -186,8 +162,6 @@ fn handle_tokenize_command(matches: &clap::ArgMatches) -> crate::error::Result<(
     // Check if file exists
     if !std::path::Path::new(file).exists() {
         return Err(format!("File not found: {}", file).into());
-    }
-
     // Read and tokenize source
     let source = std::fs::read_to_string(file)?;
     let tokens = cursed::tokenize(&source)?;
@@ -195,7 +169,5 @@ fn handle_tokenize_command(matches: &clap::ArgMatches) -> crate::error::Result<(
     println!("Found {} tokens:", tokens.len());
     for (i, token) in tokens.iter().enumerate() {
         println!("  {}: {:?} '{}'", i + 1, token.token_type, token.literal);
-    }
-    
     Ok(())
 }

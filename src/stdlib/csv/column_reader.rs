@@ -9,113 +9,58 @@ use std::str::FromStr;
 /// Typed values that can be extracted from CSV fields
 #[derive(Debug, Clone, PartialEq)]
 pub enum TypedValue {
-    String(String),
-    Integer(i64),
-    Float(f64),
-    Boolean(bool),
-    Null,
-}
-
 impl TypedValue {
     /// Get the string representation of the value
     pub fn as_string(&self) -> String {
         match self {
-            TypedValue::String(s) => s.clone(),
-            TypedValue::Integer(i) => i.to_string(),
-            TypedValue::Float(f) => f.to_string(),
-            TypedValue::Boolean(b) => b.to_string(),
-            TypedValue::Null => "".to_string(),
         }
     }
     
     /// Get the value as an integer if possible
     pub fn as_integer(&self) -> Option<i64> {
         match self {
-            TypedValue::Integer(i) => Some(*i),
-            TypedValue::Float(f) => Some(*f as i64),
-            TypedValue::String(s) => s.parse().ok(),
-            TypedValue::Boolean(b) => Some(if *b { 1 } else { 0 }),
-            TypedValue::Null => None,
         }
     }
     
     /// Get the value as a float if possible
     pub fn as_float(&self) -> Option<f64> {
         match self {
-            TypedValue::Float(f) => Some(*f),
-            TypedValue::Integer(i) => Some(*i as f64),
-            TypedValue::String(s) => s.parse().ok(),
-            TypedValue::Boolean(b) => Some(if *b { 1.0 } else { 0.0 }),
-            TypedValue::Null => None,
         }
     }
     
     /// Get the value as a boolean if possible
     pub fn as_boolean(&self) -> Option<bool> {
         match self {
-            TypedValue::Boolean(b) => Some(*b),
-            TypedValue::Integer(i) => Some(*i != 0),
-            TypedValue::Float(f) => Some(*f != 0.0),
             TypedValue::String(s) => {
                 match s.to_lowercase().as_str() {
-                    "true" | "yes" | "1" | "on" | "based" => Some(true),
-                    "false" | "no" | "0" | "off" | "cap" => Some(false),
-                    _ => None,
                 }
-            },
-            TypedValue::Null => Some(false),
         }
     }
-}
-
 /// Column-based CSV reader that provides access to fields by column name
 pub struct ColumnReader<R: io::Read> {
     /// Underlying CSV reader
-    reader: Reader<R>,
     
     /// Column name to index mapping
-    column_map: HashMap<String, usize>,
     
     /// Header row
-    header: Vec<String>,
     
     /// Current record
-    current_record: Option<Vec<String>>,
     
     /// Whether header has been read
-    header_read: bool,
     
     /// Current line number for error reporting
-    line_number: usize,
     
     /// CursedError state
-    error: Option<CsvError>,
-}
-
 impl<R: io::Read> ColumnReader<R> {
     /// Create a new column reader
     pub fn new(reader: R) -> Self {
         Self {
-            reader: Reader::new(reader),
-            column_map: HashMap::new(),
-            header: Vec::new(),
-            current_record: None,
-            header_read: false,
-            line_number: 0,
-            error: None,
         }
     }
     
     /// Create a new column reader with custom CSV reader configuration
     pub fn with_reader(reader: Reader<R>) -> Self {
         Self {
-            reader,
-            column_map: HashMap::new(),
-            header: Vec::new(),
-            current_record: None,
-            header_read: false,
-            line_number: 0,
-            error: None,
         }
     }
     
@@ -123,8 +68,6 @@ impl<R: io::Read> ColumnReader<R> {
     pub fn read_header(&mut self) -> CsvResult<()> {
         if self.header_read {
             return Ok(());
-        }
-        
         match self.reader.read() {
             Ok(Some(header)) => {
                 self.header = header.clone();
@@ -137,24 +80,18 @@ impl<R: io::Read> ColumnReader<R> {
                         return Err(err);
                     }
                     self.column_map.insert(column_name.clone(), index);
-                }
-                
                 self.header_read = true;
                 self.line_number = 1;
                 Ok(())
-            },
             Ok(None) => {
                 let err = invalid_header("no header found in CSV");
                 self.error = Some(err.clone());
                 Err(err)
-            },
             Err(e) => {
                 self.error = Some(e.clone());
                 Err(e)
             }
         }
-    }
-    
     /// Move to the next record
     pub fn next(&mut self) -> bool {
         if !self.header_read {
@@ -169,19 +106,15 @@ impl<R: io::Read> ColumnReader<R> {
                 self.current_record = Some(record);
                 self.line_number += 1;
                 true
-            },
             Ok(None) => {
                 self.current_record = None;
                 false
-            },
             Err(e) => {
                 self.error = Some(e);
                 self.current_record = None;
                 false
             }
         }
-    }
-    
     /// Get a field value by column name
     pub fn get(&self, column_name: &str) -> CsvResult<String> {
         if let Some(record) = &self.current_record {
@@ -205,67 +138,44 @@ impl<R: io::Read> ColumnReader<R> {
         
         if value.is_empty() {
             return Ok(0); // Default for empty fields
-        }
-        
         value.parse::<i64>().map_err(|_| {
             let column_index = self.column_map.get(column_name).unwrap_or(&0);
             type_conversion_error(column_name, "integer", &value, self.line_number, *column_index + 1)
         })
-    }
-    
     /// Get a field value as a float
     pub fn get_float(&self, column_name: &str) -> CsvResult<f64> {
         let value = self.get(column_name)?;
         
         if value.is_empty() {
             return Ok(0.0); // Default for empty fields
-        }
-        
         value.parse::<f64>().map_err(|_| {
             let column_index = self.column_map.get(column_name).unwrap_or(&0);
             type_conversion_error(column_name, "float", &value, self.line_number, *column_index + 1)
         })
-    }
-    
     /// Get a field value as a boolean
     pub fn get_bool(&self, column_name: &str) -> CsvResult<bool> {
         let value = self.get(column_name)?;
         
         if value.is_empty() {
             return Ok(false); // Default for empty fields
-        }
-        
         match value.to_lowercase().as_str() {
-            "true" | "yes" | "1" | "on" | "based" => Ok(true),
-            "false" | "no" | "0" | "off" | "cap" => Ok(false),
             _ => {
                 let column_index = self.column_map.get(column_name).unwrap_or(&0);
                 Err(type_conversion_error(column_name, "boolean", &value, self.line_number, *column_index + 1))
             }
         }
-    }
-    
     /// Get a field value as a typed value
     pub fn get_typed(&self, column_name: &str) -> CsvResult<TypedValue> {
         let value = self.get(column_name)?;
         
         if value.is_empty() {
             return Ok(TypedValue::Null);
-        }
-        
         // Try to parse as different types
         if let Ok(int_val) = value.parse::<i64>() {
             return Ok(TypedValue::Integer(int_val));
-        }
-        
         if let Ok(float_val) = value.parse::<f64>() {
             return Ok(TypedValue::Float(float_val));
-        }
-        
         match value.to_lowercase().as_str() {
-            "true" | "yes" | "1" | "on" | "based" => Ok(TypedValue::Boolean(true)),
-            "false" | "no" | "0" | "off" | "cap" => Ok(TypedValue::Boolean(false)),
-            _ => Ok(TypedValue::String(value)),
         }
     }
     
@@ -279,10 +189,7 @@ impl<R: io::Read> ColumnReader<R> {
                     record[index].clone()
                 } else {
                     String::new()
-                };
                 result.insert(column_name.clone(), value);
-            }
-            
             Ok(result)
         } else {
             Err(CsvError::General("no current record".to_string()))
@@ -307,19 +214,13 @@ impl<R: io::Read> ColumnReader<R> {
                             TypedValue::Float(float_val)
                         } else {
                             match value.to_lowercase().as_str() {
-                                "true" | "yes" | "1" | "on" | "based" => TypedValue::Boolean(true),
-                                "false" | "no" | "0" | "off" | "cap" => TypedValue::Boolean(false),
-                                _ => TypedValue::String(value.clone()),
                             }
                         }
                     }
                 } else {
                     TypedValue::Null
-                };
                 
                 result.insert(column_name.clone(), typed_value);
-            }
-            
             Ok(result)
         } else {
             Err(CsvError::General("no current record".to_string()))
@@ -329,49 +230,31 @@ impl<R: io::Read> ColumnReader<R> {
     /// Get the header columns
     pub fn columns(&self) -> &[String] {
         &self.header
-    }
-    
     /// Check if a column exists
     pub fn has_column(&self, column_name: &str) -> bool {
         self.column_map.contains_key(column_name)
-    }
-    
     /// Get the current record as a vector
     pub fn current_record(&self) -> Option<&Vec<String>> {
         self.current_record.as_ref()
-    }
-    
     /// Get any error that occurred
     pub fn err(&self) -> Option<&CsvError> {
         self.error.as_ref()
-    }
-    
     /// Get the current line number
     pub fn line_number(&self) -> usize {
         self.line_number
-    }
-    
     /// Check if header has been read
     pub fn has_header(&self) -> bool {
         self.header_read
-    }
-    
     /// Get access to the underlying reader
     pub fn reader(&mut self) -> &mut Reader<R> {
         &mut self.reader
-    }
-    
     /// Configure the underlying reader
     pub fn comma(mut self, c: char) -> Self {
         self.reader = self.reader.comma(c);
         self
-    }
-    
     pub fn comment(mut self, c: char) -> Self {
         self.reader = self.reader.comment(c);
         self
-    }
-    
     pub fn trim_leading_space(mut self, enable: bool) -> Self {
         self.reader = self.reader.trim_leading_space(enable);
         self

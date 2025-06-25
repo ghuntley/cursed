@@ -23,46 +23,25 @@ use tracing::{debug, info, warn, instrument};
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 pub enum RoutePriority {
     /// Highest priority - exact static matches
-    Exact = 0,
     /// High priority - patterns with parameters
-    Parameterized = 1,
     /// Medium priority - patterns with single wildcards
-    Wildcard = 2,
     /// Low priority - patterns with multi-segment wildcards
-    CatchAll = 3,
     /// Lowest priority - fallback routes
-    Fallback = 4,
-}
-
 /// A registered route in the router
 #[derive(Debug, Clone)]
 pub struct Route {
     /// HTTP method for this route
-    pub method: HttpMethod,
     /// Route pattern (e.g., "/users/:id")
-    pub pattern: String,
     /// Compiled route pattern for efficient matching
-    pub compiled_pattern: RoutePattern,
     /// Handler for this route
-    pub handler: Arc<dyn RequestHandler>,
     /// Route-specific middleware
-    pub middleware: Vec<Arc<dyn Middleware>>,
     /// Route priority
-    pub priority: RoutePriority,
     /// Route name for debugging and reverse routing
-    pub name: Option<String>,
     /// Route metadata
-    pub metadata: HashMap<String, String>,
-}
-
 impl Route {
     /// Create a new route
     #[instrument(skip(handler, middleware))]
     pub fn new(
-        method: HttpMethod,
-        pattern: &str,
-        handler: Arc<dyn RequestHandler>,
-        middleware: Vec<Arc<dyn Middleware>>,
     ) -> crate::error::Result<()> {
         let compiled_pattern = RoutePattern::compile(pattern)
             .map_err(|e| RouterError::InvalidPattern(pattern.to_string(), e))?;
@@ -70,17 +49,7 @@ impl Route {
         let priority = Self::calculate_priority(&compiled_pattern);
         
         Ok(Route {
-            method,
-            pattern: pattern.to_string(),
-            compiled_pattern,
-            handler,
-            middleware,
-            priority,
-            name: None,
-            metadata: HashMap::new(),
         })
-    }
-
     /// Calculate route priority based on pattern complexity
     fn calculate_priority(pattern: &RoutePattern) -> RoutePriority {
         if pattern.has_wildcards {
@@ -100,8 +69,6 @@ impl Route {
     pub fn with_name(mut self, name: &str) -> Self {
         self.name = Some(name.to_string());
         self
-    }
-
     /// Add metadata to the route
     pub fn with_metadata(mut self, key: &str, value: &str) -> Self {
         self.metadata.insert(key.to_string(), value.to_string());
@@ -113,26 +80,14 @@ impl Route {
 #[derive(Debug)]
 pub struct RouteGroup {
     /// Base path prefix for all routes in this group
-    pub prefix: String,
     /// Group-level middleware applied to all routes
-    pub middleware: Vec<Arc<dyn Middleware>>,
     /// Routes in this group
-    pub routes: Vec<Route>,
     /// Nested subgroups
-    pub subgroups: HashMap<String, RouteGroup>,
     /// Group name for debugging
-    pub name: Option<String>,
-}
-
 impl RouteGroup {
     /// Create a new route group
     pub fn new(prefix: &str) -> Self {
         Self {
-            prefix: prefix.to_string(),
-            middleware: Vec::new(),
-            routes: Vec::new(),
-            subgroups: HashMap::new(),
-            name: None,
         }
     }
 
@@ -140,14 +95,10 @@ impl RouteGroup {
     pub fn with_middleware(mut self, middleware: Arc<dyn Middleware>) -> Self {
         self.middleware.push(middleware);
         self
-    }
-
     /// Set group name
     pub fn with_name(mut self, name: &str) -> Self {
         self.name = Some(name.to_string());
         self
-    }
-
     /// Add a route to this group
     pub fn add_route(&mut self, mut route: Route) {
         // Prepend group prefix to route pattern
@@ -155,39 +106,29 @@ impl RouteGroup {
             let full_pattern = format!("{}{}", self.prefix.trim_end_matches('/'), &route.pattern);
             route.pattern = full_pattern.clone();
             route.compiled_pattern = RoutePattern::compile(&full_pattern).unwrap();
-        }
-        
         // Add group middleware to route
         let mut combined_middleware = self.middleware.clone();
         combined_middleware.extend(route.middleware.clone());
         route.middleware = combined_middleware;
         
         self.routes.push(route);
-    }
-
     /// Add a subgroup to this group
     pub fn add_subgroup(&mut self, name: &str, mut subgroup: RouteGroup) {
         // Update subgroup prefix to include parent prefix
         if !self.prefix.is_empty() {
             subgroup.prefix = format!("{}{}", self.prefix.trim_end_matches('/'), &subgroup.prefix);
-        }
-        
         // Add parent middleware to subgroup
         let mut combined_middleware = self.middleware.clone();
         combined_middleware.extend(subgroup.middleware.clone());
         subgroup.middleware = combined_middleware;
         
         self.subgroups.insert(name.to_string(), subgroup);
-    }
-
     /// Get all routes including from subgroups
     pub fn all_routes(&self) -> Vec<Route> {
         let mut all_routes = self.routes.clone();
         
         for subgroup in self.subgroups.values() {
             all_routes.extend(subgroup.all_routes());
-        }
-        
         all_routes
     }
 }
@@ -196,84 +137,40 @@ impl RouteGroup {
 #[derive(Debug)]
 pub struct MatchedRoute {
     /// The matched route
-    pub route: Route,
     /// Route match details with parameters
-    pub route_match: RouteMatch,
     /// Combined middleware chain for this route
-    pub middleware_chain: MiddlewareChain,
-}
-
 /// High-performance HTTP router
 #[derive(Debug)]
 pub struct Router {
     /// Route matchers for each HTTP method
-    matchers: HashMap<HttpMethod, RouteMatcher>,
     /// All registered routes
-    routes: Vec<Route>,
     /// Route groups
-    groups: HashMap<String, RouteGroup>,
     /// Global middleware applied to all routes
-    global_middleware: Vec<Arc<dyn Middleware>>,
     /// Router configuration
-    config: RouterConfig,
     /// Performance statistics
-    pub stats: RouterStats,
-}
-
 /// Router configuration
 #[derive(Debug, Clone)]
 pub struct RouterConfig {
     /// Maximum size for route cache per method
-    pub max_cache_size_per_method: usize,
     /// Enable route debugging
-    pub debug_mode: bool,
     /// Case sensitive route matching
-    pub case_sensitive: bool,
     /// Strict slash matching (/path vs /path/)
-    pub strict_slash: bool,
     /// Maximum route priority conflicts to report
-    pub max_priority_conflicts: usize,
-}
-
 impl Default for RouterConfig {
     fn default() -> Self {
         Self {
-            max_cache_size_per_method: 1000,
-            debug_mode: false,
-            case_sensitive: true,
-            strict_slash: false,
-            max_priority_conflicts: 10,
         }
     }
-}
-
 /// Router performance statistics
 #[derive(Debug, Default)]
 pub struct RouterStats {
-    pub total_routes: usize,
-    pub total_lookups: u64,
-    pub successful_matches: u64,
-    pub failed_matches: u64,
-    pub average_lookup_time_ns: u64,
-    pub cache_hit_rate: f64,
-    pub priority_conflicts: u32,
-}
-
 impl Router {
     /// Create a new router
     pub fn new() -> Self {
         Self::with_config(RouterConfig::default())
-    }
-
     /// Create a new router with custom configuration
     pub fn with_config(config: RouterConfig) -> Self {
         Self {
-            matchers: HashMap::new(),
-            routes: Vec::new(),
-            groups: HashMap::new(),
-            global_middleware: Vec::new(),
-            config,
-            stats: RouterStats::default(),
         }
     }
 
@@ -282,16 +179,9 @@ impl Router {
     pub fn use_middleware(&mut self, middleware: Arc<dyn Middleware>) {
         debug!("Adding global middleware");
         self.global_middleware.push(middleware);
-    }
-
     /// Register a new route
     #[instrument(skip(self, handler, middleware))]
     pub fn add_route(
-        &mut self,
-        method: HttpMethod,
-        pattern: &str,
-        handler: Arc<dyn RequestHandler>,
-        middleware: Vec<Arc<dyn Middleware>>,
     ) -> crate::error::Result<()> {
         let route = Route::new(method, pattern, handler, middleware)?;
         
@@ -316,44 +206,22 @@ impl Router {
         
         info!(method = %method, pattern = %pattern, "Route registered");
         Ok(())
-    }
-
     /// Convenience method for GET routes
     pub fn get(
-        &mut self,
-        pattern: &str,
-        handler: Arc<dyn RequestHandler>,
     ) -> crate::error::Result<()> {
         self.add_route(HttpMethod::GET, pattern, handler, Vec::from([]))
-    }
-
     /// Convenience method for POST routes
     pub fn post(
-        &mut self,
-        pattern: &str,
-        handler: Arc<dyn RequestHandler>,
     ) -> crate::error::Result<()> {
         self.add_route(HttpMethod::POST, pattern, handler, Vec::from([]))
-    }
-
     /// Convenience method for PUT routes
     pub fn put(
-        &mut self,
-        pattern: &str,
-        handler: Arc<dyn RequestHandler>,
     ) -> crate::error::Result<()> {
         self.add_route(HttpMethod::PUT, pattern, handler, Vec::from([]))
-    }
-
     /// Convenience method for DELETE routes
     pub fn delete(
-        &mut self,
-        pattern: &str,
-        handler: Arc<dyn RequestHandler>,
     ) -> crate::error::Result<()> {
         self.add_route(HttpMethod::DELETE, pattern, handler, Vec::from([]))
-    }
-
     /// Add a route group
     #[instrument(skip(self, group))]
     pub fn add_group(&mut self, name: &str, group: RouteGroup) {
@@ -365,8 +233,6 @@ impl Router {
         
         self.groups.insert(name.to_string(), group);
         info!(name = %name, "Route group added");
-    }
-
     /// Find a matching route for the given method and path
     #[instrument(skip(self))]
     pub fn find_route(&mut self, method: HttpMethod, path: &str) -> Option<MatchedRoute> {
@@ -378,7 +244,6 @@ impl Router {
             path.to_string()
         } else {
             path.to_lowercase()
-        };
         
         let matcher = self.matchers.get_mut(&method)?;
         let route_match = matcher.find_match(&normalized_path)?;
@@ -404,35 +269,20 @@ impl Router {
         self.stats.cache_hit_rate = matcher_stats.cache_hits as f64 / matcher_stats.total_lookups as f64;
         
         debug!(
-            method = %method,
-            path = %path,
-            pattern = %route.pattern,
-            elapsed_ns = elapsed_ns,
             "Route matched successfully"
         );
         
         Some(MatchedRoute {
-            route,
-            route_match,
-            middleware_chain,
         })
-    }
-
     /// Handle a request through the router
     #[instrument(skip(self, context))]
     pub async fn handle_request(
-        &mut self,
-        method: HttpMethod,
-        path: &str,
-        mut context: RequestContext,
     ) -> HandlerResult {
         match self.find_route(method, path) {
             Some(matched_route) => {
                 // Add route parameters to context
                 for (key, value) in matched_route.route_match.params() {
                     context.add_param(key, value);
-                }
-                
                 // Execute middleware chain and handler
                 let response_context = ResponseContext::new();
                 matched_route.middleware_chain
@@ -449,49 +299,34 @@ impl Router {
                 Ok(response)
             }
         }
-    }
-
     /// Check for route priority conflicts
     fn check_priority_conflicts(&mut self, new_route: &Route) {
         if self.stats.priority_conflicts >= self.config.max_priority_conflicts as u32 {
             return;
-        }
-        
         for existing_route in &self.routes {
             if existing_route.method == new_route.method 
                 && existing_route.priority == new_route.priority
                 && patterns_could_conflict(&existing_route.pattern, &new_route.pattern) {
                 
                 warn!(
-                    existing_pattern = %existing_route.pattern,
-                    new_pattern = %new_route.pattern,
-                    priority = ?new_route.priority,
                     "Potential route priority conflict detected"
                 );
                 
                 self.stats.priority_conflicts += 1;
             }
         }
-    }
-
     /// Get router statistics
     pub fn get_stats(&self) -> &RouterStats {
         &self.stats
-    }
-
     /// Clear all route caches
     pub fn clear_caches(&mut self) {
         for matcher in self.matchers.values_mut() {
             matcher.clear_cache();
         }
         info!("Route caches cleared");
-    }
-
     /// Get all registered routes
     pub fn get_routes(&self) -> &[Route] {
         &self.routes
-    }
-
     /// Get route groups
     pub fn get_groups(&self) -> &HashMap<String, RouteGroup> {
         &self.groups
@@ -507,8 +342,6 @@ fn patterns_could_conflict(pattern1: &str, pattern2: &str) -> bool {
     
     if segments1.len() != segments2.len() {
         return false;
-    }
-    
     for (seg1, seg2) in segments1.iter().zip(segments2.iter()) {
         // If both are static and different, no conflict
         if !seg1.starts_with(':') && !seg1.starts_with('*') 
@@ -519,8 +352,6 @@ fn patterns_could_conflict(pattern1: &str, pattern2: &str) -> bool {
     }
     
     true
-}
-
 impl Default for Router {
     fn default() -> Self {
         Self::new()

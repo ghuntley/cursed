@@ -11,39 +11,20 @@ use std::io;
 #[derive(Debug, Clone)]
 pub enum SquishError {
     /// IO operation failed
-    IoError(String),
     /// Compression operation failed
-    CompressionError(String),
     /// Decompression operation failed
-    DecompressionError(String),
     /// Invalid input data
-    InvalidInput(String),
     /// Unsupported compression format
-    UnsupportedFormat(String),
     /// Invalid compression level
-    InvalidCompressionLevel(i32),
     /// Corrupted data detected
-    CorruptedData(String),
     /// Buffer too small for operation
     BufferTooSmall {
-        required: usize,
-        available: usize,
-    },
     /// Compression ratio too low
     CompressionRatioTooLow {
-        expected: f64,
-        actual: f64,
-    },
     /// Operation timeout
-    Timeout(String),
     /// Dictionary not found or invalid
-    InvalidDictionary(String),
     /// Memory allocation failed
-    OutOfMemory(String),
     /// Generic error with message
-    Generic(String),
-}
-
 // impl fmt::Display for SquishError {
 //     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
 //         match self {
@@ -88,12 +69,6 @@ pub type SquishResult<T> = std::result::Result<T, SquishError>;
 /// Specific error type for compression operations
 #[derive(Debug, Clone)]
 pub struct CompressionError {
-    pub algorithm: String,
-    pub level: Option<i32>,
-    pub input_size: usize,
-    pub message: String,
-}
-
 // impl fmt::Display for CompressionError {
 //     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
 //         write!(f, "Compression error [{}]: {} (input size: {} bytes", 
@@ -110,12 +85,6 @@ pub struct CompressionError {
 /// Specific error type for decompression operations
 #[derive(Debug, Clone)]
 pub struct DecompressionError {
-    pub algorithm: String,
-    pub input_size: usize,
-    pub bytes_processed: usize,
-    pub message: String,
-}
-
 // impl fmt::Display for DecompressionError {
 //     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
 //         write!(f, "Decompression error [{}]: {} (input size: {} bytes, processed: {} bytes)", 
@@ -130,38 +99,24 @@ impl SquishError {
     /// Create an IO error
     pub fn io_error(msg: impl Into<String>) -> Self {
         SquishError::IoError(msg.into())
-    }
-
     /// Create a compression error
     pub fn compression_error(msg: impl Into<String>) -> Self {
         SquishError::CompressionError(msg.into())
-    }
-
     /// Create a decompression error
     pub fn decompression_error(msg: impl Into<String>) -> Self {
         SquishError::DecompressionError(msg.into())
-    }
-
     /// Create an invalid input error
     pub fn invalid_input(msg: impl Into<String>) -> Self {
         SquishError::InvalidInput(msg.into())
-    }
-
     /// Create an unsupported format error
     pub fn unsupported_format(msg: impl Into<String>) -> Self {
         SquishError::UnsupportedFormat(msg.into())
-    }
-
     /// Create an invalid level error
     pub fn invalid_level(level: i32) -> Self {
         SquishError::InvalidCompressionLevel(level)
-    }
-
     /// Create a corrupted data error
     pub fn corrupted_data(msg: impl Into<String>) -> Self {
         SquishError::CorruptedData(msg.into())
-    }
-
     /// Create a buffer too small error
     pub fn buffer_too_small(required: usize, available: usize) -> Self {
         SquishError::BufferTooSmall { required, available }
@@ -175,18 +130,12 @@ impl SquishError {
     /// Create a timeout error
     pub fn timeout(msg: impl Into<String>) -> Self {
         SquishError::Timeout(msg.into())
-    }
-
     /// Create an invalid dictionary error
     pub fn invalid_dictionary(msg: impl Into<String>) -> Self {
         SquishError::InvalidDictionary(msg.into())
-    }
-
     /// Create an out of memory error
     pub fn out_of_memory(msg: impl Into<String>) -> Self {
         SquishError::OutOfMemory(msg.into())
-    }
-
     /// Create a generic error
     pub fn generic(msg: impl Into<String>) -> Self {
         SquishError::Generic(msg.into())
@@ -196,15 +145,9 @@ impl SquishError {
 /// Create a not supported error (convenience function)
 pub fn not_supported_error(msg: impl Into<String>) -> SquishError {
     SquishError::UnsupportedFormat(msg.into())
-}
-
 /// Create an IO error (convenience function)
 pub fn io_error(msg: impl Into<String>) -> SquishError {
     SquishError::IoError(msg.into())
-}
-
 /// Create a general error (convenience function)
 pub fn general_error(msg: impl Into<String>) -> SquishError {
     SquishError::Generic(msg.into())
-}
-

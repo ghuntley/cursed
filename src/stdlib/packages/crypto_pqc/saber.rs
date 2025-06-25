@@ -13,8 +13,6 @@ use std::fmt;
 /// fr fr SABER configuration parameters
 #[derive(Debug, Clone)]
 pub struct SaberConfig {
-    pub variant: SaberVariant,
-    pub security_level: SaberSecurityLevel,
     pub l: usize,           // Module dimension
     pub n: usize,           // Polynomial degree
     pub q: u32,             // Modulus q
@@ -24,71 +22,49 @@ pub struct SaberConfig {
     pub epsilon_q: usize,   // Log2(q)
     pub epsilon_p: usize,   // Log2(p)
     pub epsilon_t: usize,   // Log2(t)
-}
-
 impl SaberConfig {
     /// slay Create SABER config with secure defaults (LightSaber)
     pub fn new() -> Self {
         Self::lightsaber()
-    }
-    
     /// bestie LightSaber parameters (NIST Level 1)
     pub fn lightsaber() -> Self {
         Self {
-            variant: SaberVariant::LightSaber,
-            security_level: SaberSecurityLevel::Level128,
             l: 2,         // Module dimension
             n: 256,       // Polynomial degree
             q: 8192,      // 2^13
             p: 1024,      // 2^10
             t: 4,         // 2^2
             mu: 256,      // Message length
-            epsilon_q: 13,
-            epsilon_p: 10,
-            epsilon_t: 2,
         }
     }
     
     /// vibes Saber parameters (NIST Level 3)
     pub fn saber() -> Self {
         Self {
-            variant: SaberVariant::Saber,
-            security_level: SaberSecurityLevel::Level192,
             l: 3,         // Module dimension
             n: 256,       // Polynomial degree
             q: 8192,      // 2^13
             p: 1024,      // 2^10
             t: 8,         // 2^3
             mu: 256,      // Message length
-            epsilon_q: 13,
-            epsilon_p: 10,
-            epsilon_t: 3,
         }
     }
     
     /// periodt FireSaber parameters (NIST Level 5)
     pub fn firesaber() -> Self {
         Self {
-            variant: SaberVariant::FireSaber,
-            security_level: SaberSecurityLevel::Level256,
             l: 4,         // Module dimension
             n: 256,       // Polynomial degree
             q: 8192,      // 2^13
             p: 1024,      // 2^10
             t: 16,        // 2^4
             mu: 256,      // Message length
-            epsilon_q: 13,
-            epsilon_p: 10,
-            epsilon_t: 4,
         }
     }
     
     /// sus Create SABER config for specific variant
     pub fn with_variant(variant: SaberVariant) -> Self {
         match variant {
-            SaberVariant::LightSaber => Self::lightsaber(),
-            SaberVariant::Saber => Self::saber(),
-            SaberVariant::FireSaber => Self::firesaber(),
         }
     }
     
@@ -96,61 +72,35 @@ impl SaberConfig {
     pub fn validate(&self) -> crate::error::Result<()> {
         if self.l == 0 || self.l > 10 {
             return Err(SaberError::InvalidConfig("l must be between 1 and 10".to_string()));
-        }
-        
         if self.n == 0 || !self.n.is_power_of_two() || self.n > 1024 {
             return Err(SaberError::InvalidConfig("n must be power of 2 between 1 and 1024".to_string()));
-        }
-        
         if !self.q.is_power_of_two() || self.q < 256 {
             return Err(SaberError::InvalidConfig("q must be power of 2 >= 256".to_string()));
-        }
-        
         if !self.p.is_power_of_two() || self.p >= self.q {
             return Err(SaberError::InvalidConfig("p must be power of 2 and < q".to_string()));
-        }
-        
         if !self.t.is_power_of_two() || self.t < 2 {
             return Err(SaberError::InvalidConfig("t must be power of 2 >= 2".to_string()));
-        }
-        
         if self.mu == 0 || self.mu > 512 {
             return Err(SaberError::InvalidConfig("mu must be between 1 and 512".to_string()));
-        }
-        
         // Verify logarithm consistency
         if (1u32 << self.epsilon_q) != self.q {
             return Err(SaberError::InvalidConfig("epsilon_q doesn't match q".to_string()));
-        }
-        
         if (1u32 << self.epsilon_p) != self.p {
             return Err(SaberError::InvalidConfig("epsilon_p doesn't match p".to_string()));
-        }
-        
         if (1u32 << self.epsilon_t) != self.t {
             return Err(SaberError::InvalidConfig("epsilon_t doesn't match t".to_string()));
-        }
-        
         Ok(())
-    }
-    
     /// yolo Calculate public key size
     pub fn public_key_size(&self) -> usize {
         self.l * self.n * self.epsilon_p / 8 // In bytes
-    }
-    
     /// stan Calculate private key size
     pub fn private_key_size(&self) -> usize {
         self.l * self.n * self.epsilon_q / 8 // In bytes
-    }
-    
     /// bestie Calculate ciphertext size
     pub fn ciphertext_size(&self) -> usize {
         let ct_size = self.l * self.n * self.epsilon_p / 8;
         let cm_size = self.mu * self.epsilon_t / 8;
         ct_size + cm_size
-    }
-    
     /// vibes Calculate shared secret size
     pub fn shared_secret_size(&self) -> usize {
         32 // 256 bits for all variants
@@ -169,52 +119,30 @@ pub enum SaberVariant {
     LightSaber, // NIST Level 1 security
     Saber,      // NIST Level 3 security
     FireSaber,  // NIST Level 5 security
-}
-
 impl SaberVariant {
     pub fn name(&self) -> &'static str {
         match self {
-            SaberVariant::LightSaber => "LightSaber",
-            SaberVariant::Saber => "Saber",
-            SaberVariant::FireSaber => "FireSaber",
         }
     }
     
     pub fn parameter_set(&self) -> &'static str {
         match self {
-            SaberVariant::LightSaber => "LightSaber-KEM",
-            SaberVariant::Saber => "Saber-KEM",
-            SaberVariant::FireSaber => "FireSaber-KEM",
         }
     }
-}
-
 /// fr fr SABER security levels
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum SaberSecurityLevel {
     Level128, // 128-bit classical security (NIST Level 1)
     Level192, // 192-bit classical security (NIST Level 3)
     Level256, // 256-bit classical security (NIST Level 5)
-}
-
 impl SaberSecurityLevel {
     pub fn bits(&self) -> u32 {
         match self {
-            SaberSecurityLevel::Level128 => 128,
-            SaberSecurityLevel::Level192 => 192,
-            SaberSecurityLevel::Level256 => 256,
         }
     }
-}
-
 /// fr fr SABER engine
 #[derive(Debug)]
 pub struct SaberEngine {
-    config: SaberConfig,
-    rng: Box<dyn LatticeRng>,
-    polynomial_ring: SaberPolynomialRing,
-}
-
 impl SaberEngine {
     /// slay Create new SABER engine
     pub fn new(config: SaberConfig) -> crate::error::Result<()> {
@@ -225,12 +153,7 @@ impl SaberEngine {
         let polynomial_ring = SaberPolynomialRing::new(config.n, config.q);
         
         Ok(Self {
-            config,
-            rng,
-            polynomial_ring,
         })
-    }
-    
     /// bestie Generate SABER key pair
     pub fn generate_keypair(&mut self) -> crate::error::Result<()> {
         let l = self.config.l;
@@ -254,22 +177,11 @@ impl SaberEngine {
         
         // Step 5: Serialize public key (A is public parameter, only store b)
         let public_key = SaberPublicKey {
-            b: public_b,
-            config: self.config.clone(),
-        };
         
         let private_key = SaberPrivateKey {
-            s: secret_s,
-            config: self.config.clone(),
-        };
         
         Ok(SaberKeyPair {
-            public_key,
-            private_key,
-            config: self.config.clone(),
         })
-    }
-    
     /// vibes Encapsulate (generate shared secret and ciphertext)
     pub fn encapsulate(&mut self, public_key: &SaberPublicKey) -> crate::error::Result<()> {
         let l = self.config.l;
@@ -309,8 +221,6 @@ impl SaberEngine {
         let ciphertext = self.serialize_ciphertext(&u, &v)?;
         
         Ok((shared_secret, ciphertext))
-    }
-    
     /// periodt Decapsulate (recover shared secret from ciphertext)
     pub fn decapsulate(&mut self, ciphertext: &[u8], private_key: &SaberPrivateKey) -> crate::error::Result<()> {
         let l = self.config.l;
@@ -332,8 +242,6 @@ impl SaberEngine {
         let shared_secret = self.derive_shared_secret(&recovered_message)?;
         
         Ok(shared_secret)
-    }
-    
     /// sus Sample uniform matrix A
     fn sample_uniform_matrix(&mut self, rows: usize, cols: usize, n: usize, modulus: u32) -> crate::error::Result<()> {
         let mut matrix = Vec::new();
@@ -345,11 +253,7 @@ impl SaberEngine {
                 row.push(poly);
             }
             matrix.push(row);
-        }
-        
         Ok(matrix)
-    }
-    
     /// facts Sample uniform polynomial
     fn sample_uniform_polynomial(&mut self, degree: usize, modulus: u32) -> crate::error::Result<()> {
         let mut coefficients = Vec::with_capacity(degree);
@@ -357,11 +261,7 @@ impl SaberEngine {
         for _ in 0..degree {
             let coeff = (self.rng.next_u32() % modulus) as i32;
             coefficients.push(coeff);
-        }
-        
         Ok(SaberPolynomial::new(coefficients, modulus))
-    }
-    
     /// yolo Sample secret vector from centered binomial distribution
     fn sample_secret_vector(&mut self, length: usize, degree: usize) -> crate::error::Result<()> {
         let mut vector = Vec::new();
@@ -369,11 +269,7 @@ impl SaberEngine {
         for _ in 0..length {
             let poly = self.sample_centered_binomial_polynomial(degree)?;
             vector.push(poly);
-        }
-        
         Ok(vector)
-    }
-    
     /// stan Sample centered binomial polynomial
     fn sample_centered_binomial_polynomial(&mut self, degree: usize) -> crate::error::Result<()> {
         let mut coefficients = Vec::with_capacity(degree);
@@ -385,28 +281,18 @@ impl SaberEngine {
             let b = (self.rng.next_u32() & 1) as i32;
             let coeff = a - b; // Results in {-1, 0, 1}
             coefficients.push(coeff);
-        }
-        
         Ok(SaberPolynomial::new(coefficients, self.config.q))
-    }
-    
     /// bestie Sample noise vector
     fn sample_noise_vector(&mut self, length: usize, degree: usize) -> crate::error::Result<()> {
         // For SABER, noise is sampled from centered binomial distribution
         self.sample_secret_vector(length, degree)
-    }
-    
     /// vibes Sample noise scalar (single polynomial)
     fn sample_noise_scalar(&mut self, degree: usize) -> crate::error::Result<()> {
         self.sample_centered_binomial_polynomial(degree)
-    }
-    
     /// periodt Matrix-vector multiplication
     fn matrix_vector_multiply(&self, matrix: &[Vec<SaberPolynomial>], vector: &[SaberPolynomial]) -> crate::error::Result<()> {
         if matrix[0].len() != vector.len() {
             return Err(SaberError::DimensionError("Matrix-vector dimensions don't match".to_string()));
-        }
-        
         let mut result = Vec::new();
         
         for row in matrix {
@@ -415,20 +301,12 @@ impl SaberEngine {
             for (matrix_elem, vector_elem) in row.iter().zip(vector.iter()) {
                 let product = self.polynomial_ring.multiply(matrix_elem, vector_elem)?;
                 sum = self.polynomial_ring.add(&sum, &product)?;
-            }
-            
             result.push(sum);
-        }
-        
         Ok(result)
-    }
-    
     /// sus Matrix transpose-vector multiplication
     fn matrix_transpose_vector_multiply(&self, matrix: &[Vec<SaberPolynomial>], vector: &[SaberPolynomial]) -> crate::error::Result<()> {
         if matrix.len() != vector.len() {
             return Err(SaberError::DimensionError("Matrix transpose-vector dimensions don't match".to_string()));
-        }
-        
         let cols = matrix[0].len();
         let mut result = Vec::new();
         
@@ -438,56 +316,34 @@ impl SaberEngine {
             for (i, vector_elem) in vector.iter().enumerate() {
                 let product = self.polynomial_ring.multiply(&matrix[i][j], vector_elem)?;
                 sum = self.polynomial_ring.add(&sum, &product)?;
-            }
-            
             result.push(sum);
-        }
-        
         Ok(result)
-    }
-    
     /// facts Vector dot product
     fn vector_dot_product(&self, vector1: &[SaberPolynomial], vector2: &[SaberPolynomial]) -> crate::error::Result<()> {
         if vector1.len() != vector2.len() {
             return Err(SaberError::DimensionError("Vector dimensions don't match".to_string()));
-        }
-        
         let mut result = SaberPolynomial::zero(self.config.n, self.config.q);
         
         for (elem1, elem2) in vector1.iter().zip(vector2.iter()) {
             let product = self.polynomial_ring.multiply(elem1, elem2)?;
             result = self.polynomial_ring.add(&result, &product)?;
-        }
-        
         Ok(result)
-    }
-    
     /// yolo Add vectors
     fn add_vectors(&self, vector1: &[SaberPolynomial], vector2: &[SaberPolynomial]) -> crate::error::Result<()> {
         if vector1.len() != vector2.len() {
             return Err(SaberError::DimensionError("Vector dimensions don't match".to_string()));
-        }
-        
         let mut result = Vec::new();
         
         for (elem1, elem2) in vector1.iter().zip(vector2.iter()) {
             let sum = self.polynomial_ring.add(elem1, elem2)?;
             result.push(sum);
-        }
-        
         Ok(result)
-    }
-    
     /// stan Add polynomials
     fn add_polynomials(&self, poly1: &SaberPolynomial, poly2: &SaberPolynomial) -> crate::error::Result<()> {
         self.polynomial_ring.add(poly1, poly2)
-    }
-    
     /// bestie Subtract polynomials
     fn subtract_polynomials(&self, poly1: &SaberPolynomial, poly2: &SaberPolynomial) -> crate::error::Result<()> {
         self.polynomial_ring.subtract(poly1, poly2)
-    }
-    
     /// vibes Round vector from Z_q to Z_p
     fn round_vector(&self, vector: &[SaberPolynomial], from_mod: u32, to_mod: u32) -> crate::error::Result<()> {
         let mut result = Vec::new();
@@ -495,11 +351,7 @@ impl SaberEngine {
         for poly in vector {
             let rounded = self.round_polynomial(poly, from_mod, to_mod)?;
             result.push(rounded);
-        }
-        
         Ok(result)
-    }
-    
     /// periodt Round polynomial from one modulus to another
     fn round_polynomial(&self, poly: &SaberPolynomial, from_mod: u32, to_mod: u32) -> crate::error::Result<()> {
         let scale_factor = from_mod / to_mod;
@@ -508,11 +360,7 @@ impl SaberEngine {
         for &coeff in &poly.coefficients {
             let rounded = ((coeff as u32 + scale_factor / 2) / scale_factor) % to_mod;
             rounded_coeffs.push(rounded as i32);
-        }
-        
         Ok(SaberPolynomial::new(rounded_coeffs, to_mod))
-    }
-    
     /// sus Generate random message
     fn generate_random_message(&mut self, length_bits: usize) -> crate::error::Result<()> {
         let length_bytes = (length_bits + 7) / 8;
@@ -520,11 +368,7 @@ impl SaberEngine {
         
         for byte in &mut message {
             *byte = (self.rng.next_u32() & 0xFF) as u8;
-        }
-        
         Ok(message)
-    }
-    
     /// facts Scale message for encoding
     fn scale_message(&self, message: &[u8], q: u32, t: u32) -> crate::error::Result<()> {
         let scale_factor = q / t;
@@ -549,8 +393,6 @@ impl SaberEngine {
         coefficients.resize(self.config.n, 0);
         
         Ok(SaberPolynomial::new(coefficients, q))
-    }
-    
     /// yolo Recover message from polynomial
     fn recover_message(&self, poly: &SaberPolynomial, q: u32, t: u32) -> crate::error::Result<()> {
         let scale_factor = q / t;
@@ -561,8 +403,6 @@ impl SaberEngine {
             let normalized = ((coeff as u32) + threshold) / scale_factor;
             let bit = (normalized % 2) as u8;
             bits.push(bit);
-        }
-        
         // Convert bits to bytes
         let mut message = Vec::new();
         for chunk in bits.chunks(8) {
@@ -571,11 +411,7 @@ impl SaberEngine {
                 byte |= bit << i;
             }
             message.push(byte);
-        }
-        
         Ok(message)
-    }
-    
     /// stan Derive shared secret from message
     fn derive_shared_secret(&self, message: &[u8]) -> crate::error::Result<()> {
         // Use a simple hash of the message as shared secret
@@ -587,11 +423,7 @@ impl SaberEngine {
         let mut secret = vec![0u8; 32];
         for (i, &byte) in hash_input.iter().enumerate() {
             secret[i % 32] ^= byte.wrapping_add(i as u8);
-        }
-        
         Ok(secret)
-    }
-    
     /// bestie Serialize ciphertext
     fn serialize_ciphertext(&self, u: &[SaberPolynomial], v: &SaberPolynomial) -> crate::error::Result<()> {
         let mut ciphertext = Vec::new();
@@ -600,15 +432,11 @@ impl SaberEngine {
         for poly in u {
             let poly_bytes = self.serialize_polynomial(poly)?;
             ciphertext.extend(poly_bytes);
-        }
-        
         // Serialize v polynomial
         let v_bytes = self.serialize_polynomial(v)?;
         ciphertext.extend(v_bytes);
         
         Ok(ciphertext)
-    }
-    
     /// vibes Deserialize ciphertext
     fn deserialize_ciphertext(&self, ciphertext: &[u8]) -> crate::error::Result<()> {
         let poly_size = self.config.n * self.config.epsilon_p / 8;
@@ -616,8 +444,6 @@ impl SaberEngine {
         
         if ciphertext.len() < u_size + poly_size {
             return Err(SaberError::InvalidCiphertext("Ciphertext too short".to_string()));
-        }
-        
         // Deserialize u vector
         let mut u = Vec::new();
         for i in 0..self.config.l {
@@ -625,16 +451,12 @@ impl SaberEngine {
             let end = start + poly_size;
             let poly = self.deserialize_polynomial(&ciphertext[start..end], self.config.p)?;
             u.push(poly);
-        }
-        
         // Deserialize v polynomial
         let v_start = u_size;
         let v_end = v_start + poly_size;
         let v = self.deserialize_polynomial(&ciphertext[v_start..v_end], self.config.t)?;
         
         Ok((u, v))
-    }
-    
     /// periodt Serialize polynomial
     fn serialize_polynomial(&self, poly: &SaberPolynomial) -> crate::error::Result<()> {
         let mut bytes = Vec::new();
@@ -643,28 +465,18 @@ impl SaberEngine {
         for &coeff in &poly.coefficients {
             let normalized = ((coeff % poly.modulus as i32) + poly.modulus as i32) % poly.modulus as i32;
             bytes.extend_from_slice(&(normalized as u16).to_le_bytes());
-        }
-        
         Ok(bytes)
-    }
-    
     /// sus Deserialize polynomial
     fn deserialize_polynomial(&self, bytes: &[u8], modulus: u32) -> crate::error::Result<()> {
         let expected_len = self.config.n * 2; // 2 bytes per coefficient
         if bytes.len() != expected_len {
             return Err(SaberError::InvalidCiphertext("Invalid polynomial serialization".to_string()));
-        }
-        
         let mut coefficients = Vec::new();
         
         for chunk in bytes.chunks_exact(2) {
             let coeff = u16::from_le_bytes([chunk[0], chunk[1]]) as i32;
             coefficients.push(coeff % modulus as i32);
-        }
-        
         Ok(SaberPolynomial::new(coefficients, modulus))
-    }
-    
     /// facts Get configuration
     pub fn get_config(&self) -> &SaberConfig {
         &self.config
@@ -674,27 +486,17 @@ impl SaberEngine {
 /// fr fr SABER polynomial representation
 #[derive(Debug, Clone)]
 pub struct SaberPolynomial {
-    pub coefficients: Vec<i32>,
-    pub degree: usize,
-    pub modulus: u32,
-}
-
 impl SaberPolynomial {
     /// slay Create new SABER polynomial
     pub fn new(coefficients: Vec<i32>, modulus: u32) -> Self {
         let degree = coefficients.len();
         Self {
-            coefficients,
-            degree,
-            modulus,
         }
     }
     
     /// bestie Create zero polynomial
     pub fn zero(degree: usize, modulus: u32) -> Self {
         Self::new(vec![0; degree], modulus)
-    }
-    
     /// vibes Check if polynomial is zero
     pub fn is_zero(&self) -> bool {
         self.coefficients.iter().all(|&c| c == 0)
@@ -704,10 +506,6 @@ impl SaberPolynomial {
 /// fr fr SABER polynomial ring operations
 #[derive(Debug)]
 pub struct SaberPolynomialRing {
-    degree: usize,
-    modulus: u32,
-}
-
 impl SaberPolynomialRing {
     /// slay Create new polynomial ring
     pub fn new(degree: usize, modulus: u32) -> Self {
@@ -718,22 +516,16 @@ impl SaberPolynomialRing {
     pub fn add(&self, a: &SaberPolynomial, b: &SaberPolynomial) -> crate::error::Result<()> {
         if a.degree != b.degree {
             return Err(SaberError::DimensionError("Polynomial degrees don't match".to_string()));
-        }
-        
         let result_coeffs = a.coefficients.iter()
             .zip(b.coefficients.iter())
             .map(|(&a_i, &b_i)| (a_i + b_i) % self.modulus as i32)
             .collect();
         
         Ok(SaberPolynomial::new(result_coeffs, self.modulus))
-    }
-    
     /// vibes Subtract polynomials
     pub fn subtract(&self, a: &SaberPolynomial, b: &SaberPolynomial) -> crate::error::Result<()> {
         if a.degree != b.degree {
             return Err(SaberError::DimensionError("Polynomial degrees don't match".to_string()));
-        }
-        
         let result_coeffs = a.coefficients.iter()
             .zip(b.coefficients.iter())
             .map(|(&a_i, &b_i)| {
@@ -743,14 +535,10 @@ impl SaberPolynomialRing {
             .collect();
         
         Ok(SaberPolynomial::new(result_coeffs, self.modulus))
-    }
-    
     /// periodt Multiply polynomials modulo x^n + 1
     pub fn multiply(&self, a: &SaberPolynomial, b: &SaberPolynomial) -> crate::error::Result<()> {
         if a.degree != b.degree {
             return Err(SaberError::DimensionError("Polynomial degrees don't match".to_string()));
-        }
-        
         let mut result = vec![0i32; self.degree];
         
         for (i, &a_i) in a.coefficients.iter().enumerate() {
@@ -776,24 +564,15 @@ impl SaberPolynomialRing {
 /// fr fr SABER key pair
 #[derive(Debug)]
 pub struct SaberKeyPair {
-    pub public_key: SaberPublicKey,
-    pub private_key: SaberPrivateKey,
-    pub config: SaberConfig,
-}
-
 impl SaberKeyPair {
     /// slay Generate new SABER key pair
     pub fn generate(config: &SaberConfig) -> crate::error::Result<()> {
         let mut engine = SaberEngine::new(config.clone())?;
         engine.generate_keypair()
-    }
-    
     /// bestie Encapsulate shared secret
     pub fn encapsulate(&self) -> crate::error::Result<()> {
         let mut engine = SaberEngine::new(self.config.clone())?;
         engine.encapsulate(&self.public_key)
-    }
-    
     /// vibes Decapsulate shared secret
     pub fn decapsulate(&self, ciphertext: &[u8]) -> crate::error::Result<()> {
         let mut engine = SaberEngine::new(self.config.clone())?;
@@ -804,30 +583,12 @@ impl SaberKeyPair {
 /// fr fr SABER public key
 #[derive(Debug, Clone)]
 pub struct SaberPublicKey {
-    pub b: Vec<SaberPolynomial>,
-    pub config: SaberConfig,
-}
-
 /// fr fr SABER private key
 #[derive(Debug, Clone)]
 pub struct SaberPrivateKey {
-    pub s: Vec<SaberPolynomial>,
-    pub config: SaberConfig,
-}
-
 /// fr fr SABER errors
 #[derive(Debug, Clone)]
 pub enum SaberError {
-    InvalidConfig(String),
-    InitializationError(String),
-    KeyGenerationError(String),
-    EncapsulationError(String),
-    DecapsulationError(String),
-    DimensionError(String),
-    InvalidCiphertext(String),
-    PolynomialError(String),
-}
-
 // impl fmt::Display for SaberError {
 //     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
 //         match self {
@@ -874,8 +635,6 @@ impl SaberUtils {
         let modulus_factor = log_q - log_p;
         
         dimension_factor * 15.0 - modulus_factor * 5.0
-    }
-    
     /// bestie Validate SABER parameters for production
     pub fn validate_for_production(config: &SaberConfig) -> crate::error::Result<()> {
         let security_bits = Self::estimate_security_level(config);
@@ -887,63 +646,25 @@ impl SaberUtils {
         if security_bits < 128.0 {
             warnings.push("Security level below 128 bits".to_string());
             recommendations.push("Use higher security variant".to_string());
-        }
-        
         if config.n < 256 {
             warnings.push("Small polynomial degree may affect security".to_string());
-        }
-        
         if config.l < 2 {
             warnings.push("Small module dimension may be vulnerable".to_string());
-        }
-        
         let key_sizes = (config.public_key_size(), config.private_key_size());
         if key_sizes.0 > 10000 || key_sizes.1 > 10000 {
             warnings.push("Large key sizes may affect performance".to_string());
-        }
-        
         recommendations.push("Use constant-time implementations".to_string());
         recommendations.push("Implement proper random number generation".to_string());
         recommendations.push("Consider NTT optimizations for performance".to_string());
         
         Ok(SaberSecurityValidation {
-            is_secure,
-            estimated_security_bits: security_bits,
-            public_key_size: key_sizes.0,
-            private_key_size: key_sizes.1,
-            ciphertext_size: config.ciphertext_size(),
-            shared_secret_size: config.shared_secret_size(),
-            variant: config.variant,
-            parameter_set: config.variant.parameter_set().to_string(),
-            warnings,
-            recommendations,
         })
-    }
-    
     /// vibes Compare SABER variants
     pub fn compare_variants() -> Vec<VariantComparison> {
         vec![
             VariantComparison {
-                variant: SaberVariant::LightSaber,
-                security_level: SaberSecurityLevel::Level128,
-                public_key_size: SaberConfig::lightsaber().public_key_size(),
-                ciphertext_size: SaberConfig::lightsaber().ciphertext_size(),
-                performance_tier: "Fast",
-            },
             VariantComparison {
-                variant: SaberVariant::Saber,
-                security_level: SaberSecurityLevel::Level192,
-                public_key_size: SaberConfig::saber().public_key_size(),
-                ciphertext_size: SaberConfig::saber().ciphertext_size(),
-                performance_tier: "Medium",
-            },
             VariantComparison {
-                variant: SaberVariant::FireSaber,
-                security_level: SaberSecurityLevel::Level256,
-                public_key_size: SaberConfig::firesaber().public_key_size(),
-                ciphertext_size: SaberConfig::firesaber().ciphertext_size(),
-                performance_tier: "Slow",
-            },
         ]
     }
 }
@@ -951,25 +672,6 @@ impl SaberUtils {
 /// fr fr SABER security validation result
 #[derive(Debug, Clone)]
 pub struct SaberSecurityValidation {
-    pub is_secure: bool,
-    pub estimated_security_bits: f64,
-    pub public_key_size: usize,
-    pub private_key_size: usize,
-    pub ciphertext_size: usize,
-    pub shared_secret_size: usize,
-    pub variant: SaberVariant,
-    pub parameter_set: String,
-    pub warnings: Vec<String>,
-    pub recommendations: Vec<String>,
-}
-
 /// fr fr Variant comparison result
 #[derive(Debug, Clone)]
 pub struct VariantComparison {
-    pub variant: SaberVariant,
-    pub security_level: SaberSecurityLevel,
-    pub public_key_size: usize,
-    pub ciphertext_size: usize,
-    pub performance_tier: &'static str,
-}
-

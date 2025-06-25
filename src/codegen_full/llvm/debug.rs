@@ -48,7 +48,7 @@ use inkwell::types::{BasicTypeEnum, FunctionType};
 // TODO: Update to use correct LLVM debug APIs when available
 //
 // The following imports were causing compilation failures:
-// use inkwell::debug_info::{
+// Placeholder imports disabled
 //     DebugInfoBuilder, DICompileUnit, DIFile, DISubprogram, DIScope, DIType, DILocation,
 //     DILexicalBlock, AsDIScope, DIFlagsConstants
 // };
@@ -63,106 +63,51 @@ use tracing::{debug, error, info, instrument, warn};
 #[derive(Debug, Clone)]
 pub struct LlvmDebugConfig {
     /// Enable debug information generation
-    pub enabled: bool,
     /// Generate source line information
-    pub generate_line_info: bool,
     /// Generate variable debug information
-    pub generate_variable_info: bool,
     /// Generate function parameter information
-    pub generate_parameter_info: bool,
     /// Optimize debug information for size
-    pub optimize_debug_info: bool,
     /// Debug information level (0-3)
-    pub debug_level: u32,
     /// Include type information in debug output
-    pub include_types: bool,
     /// Generate debug information for inlined functions
-    pub debug_inlines: bool,
     /// Producer string for debug metadata
-    pub producer: String,
-}
-
 impl Default for LlvmDebugConfig {
     fn default() -> Self {
         Self {
-            enabled: true,
-            generate_line_info: true,
-            generate_variable_info: true,
-            generate_parameter_info: true,
-            optimize_debug_info: false,
-            debug_level: 2,
-            include_types: true,
-            debug_inlines: true,
-            producer: "CURSED Compiler v1.0".to_string(),
         }
     }
-}
-
 /// Simplified debug information builder (placeholder implementation)
 /// 
 /// NOTE: This is a simplified version that maintains the interface while providing
 /// basic debug functionality. Full DWARF generation requires LLVM API updates.
 pub struct LlvmDebugBuilder<'ctx> {
     /// LLVM context reference
-    context: &'ctx Context,
     /// Configuration
-    config: LlvmDebugConfig,
     /// Current location context
-    current_location: Option<SourceLocation>,
     /// Source file tracking
-    source_files: HashMap<PathBuf, String>,
     /// Function debug info cache (simplified)
-    function_debug_info: HashMap<String, String>,
     /// Variable debug info for current scope (simplified)
-    variable_debug_info: HashMap<String, String>,
-}
-
 impl<'ctx> LlvmDebugBuilder<'ctx> {
     /// Create a new LLVM debug builder with simplified functionality
     #[instrument(skip(context, module), fields(file = %file_path.display()))]
     pub fn new(
-        context: &'ctx Context,
-        module: &Module<'ctx>,
-        file_path: &Path,
-        config: LlvmDebugConfig,
     ) -> crate::error::Result<()> {
         info!("Creating simplified LLVM debug builder (DWARF generation disabled)");
 
         let mut builder = Self {
-            context,
-            config,
-            current_location: None,
-            source_files: HashMap::new(),
-            function_debug_info: HashMap::new(),
-            variable_debug_info: HashMap::new(),
-        };
 
         // Register the source file
         builder.source_files.insert(file_path.to_path_buf(), "main".to_string());
 
         debug!("Simplified debug builder initialized");
         Ok(builder)
-    }
-
     /// Create debug information for a function (simplified)
     #[instrument(skip(self, function), fields(name = %name, line = %line))]
     pub fn create_function_debug(
-        &mut self,
-        function: FunctionValue<'ctx>,
-        name: &str,
-        file_path: &Path,
-        line: u32,
-        column: u32,
         // NOTE: These parameters are kept for interface compatibility but not used
-        _return_type: Option<()>,
-        _parameter_types: &[()],
-        _is_local: bool,
-        _is_definition: bool,
     ) -> crate::error::Result<()> {
         if !self.config.enabled {
             return Ok(());
-        }
-
         debug!("Creating simplified function debug information");
 
         // Store basic function debug info
@@ -171,103 +116,59 @@ impl<'ctx> LlvmDebugBuilder<'ctx> {
 
         info!(function = %name, "Simplified function debug information created");
         Ok(())
-    }
-
     /// Create debug information for a variable (simplified)
     #[instrument(skip(self, storage), fields(name = %name, type_name = %type_name))]
     pub fn create_variable_debug(
-        &mut self,
-        name: &str,
-        type_name: &str,
-        storage: PointerValue<'ctx>,
-        file_path: &Path,
-        line: u32,
-        column: u32,
-        is_parameter: bool,
-        parameter_index: Option<u32>,
     ) -> crate::error::Result<()> {
         if !self.config.enabled || (!self.config.generate_variable_info && !is_parameter) {
             return Ok(());
-        }
-
         debug!("Creating simplified variable debug information");
 
         // Store basic variable debug info
-        let debug_info = format!("Variable: {} ({}) at {}:{}:{}", 
                                 name, type_name, file_path.display(), line, column);
         self.variable_debug_info.insert(name.to_string(), debug_info);
 
         info!(variable = %name, is_param = %is_parameter, "Simplified variable debug information created");
         Ok(())
-    }
-
     /// Enter a new lexical scope (simplified)
     #[instrument(skip(self))]
     pub fn enter_lexical_scope(
-        &mut self,
-        _file: (),
-        line: u32,
-        column: u32,
     ) -> crate::error::Result<()> {
         debug!(line = %line, column = %column, "Entered lexical scope (simplified)");
         Ok(())
-    }
-
     /// Exit the current lexical scope (simplified)
     #[instrument(skip(self))]
     pub fn exit_lexical_scope(&mut self) {
         debug!("Exited lexical scope (simplified)");
-    }
-
     /// Set debug location for an instruction (simplified)
     #[instrument(skip(self, instruction))]
     pub fn set_debug_location<T>(&self, instruction: T, _location: ())
     where
-        T: std::fmt::Debug,
     {
         debug!("Debug location set for instruction (simplified)");
-    }
-
     /// Finalize debug information (simplified)
     #[instrument(skip(self))]
     pub fn finalize(self) -> crate::error::Result<()> {
         info!("Finalizing simplified LLVM debug information");
         debug!("Debug information finalization complete (simplified)");
         Ok(())
-    }
-
     /// Get statistics about generated debug information
     pub fn statistics(&self) -> LlvmDebugStatistics {
         LlvmDebugStatistics {
-            functions: self.function_debug_info.len(),
-            variables: self.variable_debug_info.len(),
             types: 0, // Simplified - no type tracking
-            files: self.source_files.len(),
             scopes: 1, // Simplified - single scope
         }
     }
-}
-
 /// Simplified LLVM debug generator
 pub struct LlvmDebugGenerator<'ctx> {
     /// Debug builder for simplified functionality
-    builder: LlvmDebugBuilder<'ctx>,
     /// Current compilation context
-    current_function: Option<String>,
     /// Source location tracking
-    source_locations: HashMap<String, SourceLocation>,
     /// Integration with CURSED debug system
-    dwarf_generator: DwarfGenerator,
-}
-
 impl<'ctx> LlvmDebugGenerator<'ctx> {
     /// Create a new LLVM debug generator with simplified functionality
     #[instrument(skip(context, module), fields(producer = %producer))]
     pub fn new(
-        context: &'ctx Context,
-        module: &'ctx Module<'ctx>,
-        source_file: &Path,
-        producer: &str,
     ) -> crate::error::Result<()> {
         let mut config = LlvmDebugConfig::default();
         config.producer = producer.to_string();
@@ -278,30 +179,15 @@ impl<'ctx> LlvmDebugGenerator<'ctx> {
         dwarf_generator.set_compile_unit(source_file.to_path_buf(), producer.to_string());
 
         Ok(Self {
-            builder,
-            current_function: None,
-            source_locations: HashMap::new(),
-            dwarf_generator,
         })
-    }
-
     /// Generate function debug information (simplified)
     #[instrument(skip(self, function), fields(name = %name, line = %line))]
     pub fn generate_function_debug(
-        &mut self,
-        function: FunctionValue<'ctx>,
-        name: &str,
-        file_path: &Path,
-        line: u32,
     ) -> crate::error::Result<()> {
         debug!("Generating simplified function debug information");
 
         // Create simplified LLVM debug info
         let _result = self.builder.create_function_debug(
-            function,
-            name,
-            file_path,
-            line,
             1, // column
             None, // return_type (simplified)
             &[], // parameter_types (simplified)
@@ -319,16 +205,9 @@ impl<'ctx> LlvmDebugGenerator<'ctx> {
 
         info!(function = %name, "Simplified function debug information generated");
         Ok(())
-    }
-
     /// Generate variable debug information (simplified)
     #[instrument(skip(self, value), fields(name = %name, line = %line))]
     pub fn generate_variable_debug(
-        &mut self,
-        name: &str,
-        value: BasicValueEnum<'ctx>,
-        line: u32,
-        column: u32,
     ) -> crate::error::Result<()> {
         debug!("Generating simplified variable debug information");
 
@@ -337,14 +216,8 @@ impl<'ctx> LlvmDebugGenerator<'ctx> {
             let file_path = PathBuf::from("unknown.csd"); // Simplified
 
             let _result = self.builder.create_variable_debug(
-                name,
                 "auto", // Type inference (simplified)
-                pointer_value,
-                &file_path,
-                line,
-                column,
                 false, // Not a parameter
-                None,
             )?;
 
             // Add to DWARF generator
@@ -353,11 +226,7 @@ impl<'ctx> LlvmDebugGenerator<'ctx> {
             self.dwarf_generator.add_symbols(vec![symbol]);
 
             info!(variable = %name, "Simplified variable debug information generated");
-        }
-
         Ok(())
-    }
-
     /// Finalize debug information generation (simplified)
     #[instrument(skip(self))]
     pub fn finalize(self) -> crate::error::Result<()> {
@@ -377,62 +246,35 @@ impl<'ctx> LlvmDebugGenerator<'ctx> {
 /// Simplified LLVM debug manager
 pub struct LlvmDebugManager<'ctx> {
     /// Debug generator for simplified output
-    generator: Option<LlvmDebugGenerator<'ctx>>,
     /// Configuration
-    config: LlvmDebugConfig,
     /// Integration with CURSED debug system
-    debug_info_manager: DebugInfoManager,
-}
-
 impl<'ctx> LlvmDebugManager<'ctx> {
     /// Create a new debug manager (simplified)
     #[instrument(skip(context, module), fields(debug_enabled = %debug_enabled))]
     pub fn new(
-        context: &'ctx Context,
-        module: &'ctx Module<'ctx>,
-        source_file: &Path,
-        debug_enabled: bool,
     ) -> crate::error::Result<()> {
         let config = LlvmDebugConfig {
-            enabled: debug_enabled,
             ..Default::default()
-        };
 
         let generator = if debug_enabled {
             Some(LlvmDebugGenerator::new(
-                context,
-                module,
-                source_file,
-                &config.producer,
             )?)
         } else {
             None
-        };
 
         Ok(Self {
-            generator,
-            config,
-            debug_info_manager: DebugInfoManager::new(),
         })
-    }
-
     /// Add function debug information
     #[instrument(skip(self, debug_info), fields(name = %name))]
     pub fn add_function_debug(&mut self, name: String, debug_info: DebugInfo) -> crate::error::Result<()> {
         if !self.config.enabled {
             return Ok(());
-        }
-
         self.debug_info_manager.add_function_debug(name, debug_info)
-    }
-
     /// Generate complete debug information
     #[instrument(skip(self))]
     pub fn generate_debug_metadata(&mut self) -> crate::error::Result<()> {
         if !self.config.enabled {
             return Ok(String::new());
-        }
-
         if let Some(generator) = self.generator.take() {
             generator.finalize()
         } else {
@@ -443,8 +285,6 @@ impl<'ctx> LlvmDebugManager<'ctx> {
     /// Check if debug information is enabled
     pub fn is_enabled(&self) -> bool {
         self.config.enabled
-    }
-
     /// Update configuration
     pub fn update_config(&mut self, config: LlvmDebugConfig) {
         self.config = config;
@@ -454,18 +294,9 @@ impl<'ctx> LlvmDebugManager<'ctx> {
 /// Statistics about generated LLVM debug information
 #[derive(Debug, Clone)]
 pub struct LlvmDebugStatistics {
-    pub functions: usize,
-    pub variables: usize,
-    pub types: usize,
-    pub files: usize,
-    pub scopes: usize,
-}
-
 impl fmt::Display for LlvmDebugStatistics {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(
-            f,
-            "LLVM Debug Stats: {} functions, {} variables, {} types, {} files, {} scopes",
             self.functions, self.variables, self.types, self.files, self.scopes
         )
     }
@@ -474,50 +305,27 @@ impl fmt::Display for LlvmDebugStatistics {
 /// Enhanced debug information builder for CURSED compilation (simplified)
 pub struct CursedDebugBuilder<'ctx> {
     /// LLVM debug builder
-    llvm_builder: LlvmDebugBuilder<'ctx>,
     /// Configuration
-    config: LlvmDebugConfig,
-}
-
 impl<'ctx> CursedDebugBuilder<'ctx> {
     /// Create a new CURSED debug builder (simplified)
     #[instrument(skip(context, module), fields(file = %file_path.display()))]
     pub fn new(
-        context: &'ctx Context,
-        module: &'ctx Module<'ctx>,
-        file_path: &Path,
-        config: LlvmDebugConfig,
     ) -> crate::error::Result<()> {
         let llvm_builder = LlvmDebugBuilder::new(context, module, file_path, config.clone())?;
 
         Ok(Self {
-            llvm_builder,
-            config,
         })
-    }
-
     /// Set up debug information for a CURSED function (simplified)
     #[instrument(skip(self, function), fields(name = %name))]
     pub fn setup_cursed_function(
-        &mut self,
-        function: FunctionValue<'ctx>,
-        name: &str,
-        file_path: &Path,
-        line: u32,
         parameters: &[(&str, &str)], // (name, type)
     ) -> crate::error::Result<()> {
         if !self.config.enabled {
             return Ok(());
-        }
-
         debug!("Setting up simplified debug info for CURSED function");
 
         // Create simplified function debug info
         let _result = self.llvm_builder.create_function_debug(
-            function,
-            name,
-            file_path,
-            line,
             1, // column
             None, // return_type (simplified)
             &[], // param_types (simplified)
@@ -531,21 +339,11 @@ impl<'ctx> CursedDebugBuilder<'ctx> {
             let storage = unsafe { PointerValue::new(std::ptr::null_mut()) };
 
             self.llvm_builder.create_variable_debug(
-                param_name,
-                param_type,
-                storage,
-                file_path,
-                line,
                 (i + 1) as u32, // column based on parameter index
                 true, // Is parameter
-                Some((i + 1) as u32),
             )?;
-        }
-
         info!(function = %name, param_count = %parameters.len(), "Simplified CURSED function debug setup complete");
         Ok(())
-    }
-
     /// Finalize the debug builder
     #[instrument(skip(self))]
     pub fn finalize(self) -> crate::error::Result<()> {

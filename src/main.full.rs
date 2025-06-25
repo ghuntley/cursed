@@ -35,32 +35,17 @@ async fn main() {
     let matches = app.get_matches();
 
     let result = match matches.subcommand() {
-        Some(("run", sub_matches)) => handle_run_command(sub_matches).await,
-        Some(("build", sub_matches)) => handle_build_command(sub_matches).await,
-        Some(("check", sub_matches)) => handle_check_command(sub_matches).await,
-        Some(("format", sub_matches)) => handle_format_command(sub_matches).await,
-        Some(("doc", sub_matches)) | Some(("docs", sub_matches)) => handle_doc_command(sub_matches).await,
-        Some(("package", sub_matches)) => handle_package_command(sub_matches).await,
-        Some(("optimize", sub_matches)) => handle_optimize_command(sub_matches).await,
-        Some(("test", sub_matches)) => handle_test_command(sub_matches).await,
-        Some(("repl", sub_matches)) => handle_repl_command(sub_matches).await,
-        Some(("watch", sub_matches)) => handle_watch_command(sub_matches).await,
-        Some(("bootstrap", sub_matches)) => handle_bootstrap_command(sub_matches).await,
         _ => {
             eprintln!("No subcommand provided. Use --help for usage information.");
             process::exit(1);
         }
-    };
 
     match result {
-        Ok(_) => process::exit(0),
         Err(e) => {
             eprintln!("CursedError: {}", e);
             process::exit(1);
         }
     }
-}
-
 /// Setup signal handlers for graceful shutdown
 async fn setup_signal_handlers() {
         // TODO: implement
@@ -76,8 +61,6 @@ async fn setup_signal_handlers() {
             }
         }
     });
-}
-
 fn build_cli() -> Command {
     Command::new("cursed")
         .about("CURSED Programming Language - Gen Z slang meets Go-like grammar")
@@ -527,8 +510,6 @@ fn build_cli() -> Command {
         .subcommand(
             bootstrap::bootstrap_command()
         )
-}
-
 async fn handle_run_command(matches: &clap::ArgMatches) -> crate::error::Result<()> {
     let file = matches.get_one::<String>("file").unwrap();
     let _args = matches.get_many::<String>("args");
@@ -564,20 +545,14 @@ async fn handle_single_run_command(file: &str) -> crate::error::Result<()> {
     // Check if file exists
     if !std::path::Path::new(file).exists() {
         return Err(format!("File not found: {}", file).into());
-    }
-
     // Execute the file
     cursed::run_file(file)?;
     
     println!("✅ Program executed successfully!");
     Ok(())
-}
-
 async fn handle_run_command_with_optimization_enablement(matches: &clap::ArgMatches) -> crate::error::Result<()> {
     use cursed::optimization::{
-        OptimizationEnablementSystem, OptimizationProfile, 
         enablement_system::cli::parse_optimization_profile
-    };
     
     let file = matches.get_one::<String>("file").unwrap();
     let opt_profile_str = matches.get_one::<String>("opt-profile").unwrap();
@@ -593,8 +568,6 @@ async fn handle_run_command_with_optimization_enablement(matches: &clap::ArgMatc
     // Check if file exists
     if !std::path::Path::new(file).exists() {
         return Err(format!("File not found: {}", file).into());
-    }
-    
     // Parse optimization profile
     let opt_profile = parse_optimization_profile(opt_profile_str);
     
@@ -604,8 +577,6 @@ async fn handle_run_command_with_optimization_enablement(matches: &clap::ArgMatc
     // Override PGO setting if specified
     if enable_pgo {
         optimization_system.config.enable_pgo_when_available = true;
-    }
-    
     // Override parallel optimization if specified
     if let Some(jobs_str) = parallel_opt {
         let jobs: usize = jobs_str.parse().unwrap_or(0);
@@ -619,13 +590,6 @@ async fn handle_run_command_with_optimization_enablement(matches: &clap::ArgMatc
     if let Some(report_format) = performance_report {
         use cursed::optimization::PerformanceReportFormat;
         optimization_system.config.performance_monitoring.report_format = match report_format.as_str() {
-            "detailed" => PerformanceReportFormat::Detailed,
-            "json" => PerformanceReportFormat::Json,
-            "none" => PerformanceReportFormat::None,
-            _ => PerformanceReportFormat::Summary,
-        };
-    }
-    
     // Read source code
     let source_code = std::fs::read_to_string(file)?;
     
@@ -636,10 +600,6 @@ async fn handle_run_command_with_optimization_enablement(matches: &clap::ArgMatc
     
     // Apply optimizations
     let optimization_results = optimization_system.apply_optimizations(
-        &source_code,
-        &opt_profile,
-        target_cpu.map(|s| s.as_str()),
-        &features,
     )?;
     
     // Execute the optimized program
@@ -668,19 +628,7 @@ async fn handle_run_command_with_optimization_enablement(matches: &clap::ArgMatc
     
     println!("✅ Program executed successfully with optimizations!");
     Ok(())
-}
-
 async fn handle_single_run_command_with_options(
-    file: &str,
-    opt_level: &str,
-    profile: bool,
-    time_passes: bool,
-    jobs: &str,
-    target_cpu: Option<&str>,
-    target_features: Option<&str>,
-    enable_lto: bool,
-    enhanced_passes: bool,
-    disable_enhanced_passes: bool,
 ) -> crate::error::Result<()> {
     use cursed::common::OptimizationLevel;
     use cursed::codegen::llvm::optimization::utils::create_config_from_args;
@@ -694,14 +642,11 @@ async fn handle_single_run_command_with_options(
         " (standard passes)"
     } else {
         ""
-    };
     println!("🚀 Running CURSED program: {} (O{}{})", file, opt_level, passes_info);
     
     // Check if file exists
     if !std::path::Path::new(file).exists() {
         return Err(format!("File not found: {}", file).into());
-    }
-
     // Create performance monitor if requested
     let mut performance_monitor = if profile || time_passes {
         let mut config = ReportConfig::default();
@@ -712,7 +657,6 @@ async fn handle_single_run_command_with_options(
         Some(PerformanceMonitor::with_config(config))
     } else {
         None
-    };
 
     // Parse optimization configuration
     let features: Vec<String> = target_features
@@ -720,10 +664,6 @@ async fn handle_single_run_command_with_options(
         .unwrap_or_default();
     
     let opt_config = create_config_from_args(
-        Some(opt_level),
-        target_cpu,
-        &features,
-        enable_lto,
     )?;
 
     // Parse parallel configuration
@@ -732,16 +672,11 @@ async fn handle_single_run_command_with_options(
         utils::production_config()
     } else {
         utils::dev_config()
-    };
     
     if num_jobs > 0 {
         parallel_config.num_threads = num_jobs;
-    }
-
     if let Some(ref mut monitor) = performance_monitor {
         monitor.start_phase(CompilationPhase::Total)?;
-    }
-
     // Determine which passes to use
     let use_enhanced = if disable_enhanced_passes {
         false
@@ -749,7 +684,6 @@ async fn handle_single_run_command_with_options(
         true
     } else {
         true // Default to enhanced passes
-    };
     
     // Execute the file with optimization
     cursed::run_file_enhanced(file, opt_config, use_enhanced)?;
@@ -768,8 +702,6 @@ async fn handle_single_run_command_with_options(
     
     println!("✅ Program executed successfully!");
     Ok(())
-}
-
 async fn handle_watch_run_command(matches: &clap::ArgMatches) -> crate::error::Result<()> {
     let file = matches.get_one::<String>("file").unwrap();
     let patterns = matches.get_many::<String>("watch-pattern")
@@ -787,8 +719,6 @@ async fn handle_watch_run_command(matches: &clap::ArgMatches) -> crate::error::R
     // Run initially
     if let Err(e) = handle_single_run_command(file).await {
         eprintln!("Initial run failed: {}", e);
-    }
-
     // Simplified watch implementation - demonstrate interface
     println!("🔧 File watching infrastructure ready");
     println!("   (Real file watching implementation will be integrated here)");
@@ -799,12 +729,8 @@ async fn handle_watch_run_command(matches: &clap::ArgMatches) -> crate::error::R
     while !SHUTDOWN.load(Ordering::SeqCst) {
         interval.tick().await;
         // In a real implementation, file change events would trigger re-execution here
-    }
-
     println!("✅ Watch stopped");
     Ok(())
-}
-
 async fn handle_build_command(matches: &clap::ArgMatches) -> crate::error::Result<()> {
     let file = matches.get_one::<String>("file").unwrap();
     let output = matches.get_one::<String>("output");
@@ -829,9 +755,7 @@ async fn handle_build_command(matches: &clap::ArgMatches) -> crate::error::Resul
 
 async fn handle_build_command_with_optimization_enablement(matches: &clap::ArgMatches) -> crate::error::Result<()> {
     use cursed::optimization::{
-        OptimizationEnablementSystem, OptimizationProfile, 
         enablement_system::cli::parse_optimization_profile
-    };
     
     let file = matches.get_one::<String>("file").unwrap();
     let output = matches.get_one::<String>("output");
@@ -849,13 +773,9 @@ async fn handle_build_command_with_optimization_enablement(matches: &clap::ArgMa
     
     if let Some(out) = output {
         println!("   Output file: {}", out);
-    }
-    
     // Check if file exists
     if !std::path::Path::new(file).exists() {
         return Err(format!("File not found: {}", file).into());
-    }
-    
     // Parse optimization profile
     let opt_profile = parse_optimization_profile(opt_profile_str);
     
@@ -865,8 +785,6 @@ async fn handle_build_command_with_optimization_enablement(matches: &clap::ArgMa
     // Override PGO setting if specified
     if enable_pgo {
         optimization_system.config.enable_pgo_when_available = true;
-    }
-    
     // Override parallel optimization if specified
     if let Some(jobs_str) = parallel_opt {
         let jobs: usize = jobs_str.parse().unwrap_or(0);
@@ -880,13 +798,6 @@ async fn handle_build_command_with_optimization_enablement(matches: &clap::ArgMa
     if let Some(report_format) = performance_report {
         use cursed::optimization::PerformanceReportFormat;
         optimization_system.config.performance_monitoring.report_format = match report_format.as_str() {
-            "detailed" => PerformanceReportFormat::Detailed,
-            "json" => PerformanceReportFormat::Json,
-            "none" => PerformanceReportFormat::None,
-            _ => PerformanceReportFormat::Summary,
-        };
-    }
-    
     // Read source code
     let source_code = std::fs::read_to_string(file)?;
     
@@ -897,10 +808,6 @@ async fn handle_build_command_with_optimization_enablement(matches: &clap::ArgMa
     
     // Apply optimizations
     let optimization_results = optimization_system.apply_optimizations(
-        &source_code,
-        &opt_profile,
-        target_cpu.map(|s| s.as_str()),
-        &features,
     )?;
     
     // Build based on emit type
@@ -951,32 +858,19 @@ async fn handle_build_command_with_optimization_enablement(matches: &clap::ArgMa
     }
     
     Ok(())
-}
-
 async fn handle_single_build_command(
-    file: &str, 
-    output: Option<&String>, 
-    emit: &str, 
-    optimize: bool,
-    opt_level: &str,
 ) -> crate::error::Result<()> {
     println!("🔨 Building CURSED program: {}", file);
     
     if optimize {
         println!("   Optimizations: enabled");
-    }
-    
     println!("   Output type: {}", emit);
     
     if let Some(out) = output {
         println!("   Output file: {}", out);
-    }
-
     // Check if file exists
     if !std::path::Path::new(file).exists() {
         return Err(format!("File not found: {}", file).into());
-    }
-
     // Read and compile source
     let source = std::fs::read_to_string(file)?;
     
@@ -1003,8 +897,6 @@ async fn handle_single_build_command(
     }
 
     Ok(())
-}
-
 async fn handle_watch_build_command(matches: &clap::ArgMatches) -> crate::error::Result<()> {
     let file = matches.get_one::<String>("file").unwrap();
     let output = matches.get_one::<String>("output");
@@ -1026,8 +918,6 @@ async fn handle_watch_build_command(matches: &clap::ArgMatches) -> crate::error:
     let opt_level = matches.get_one::<String>("opt-level").unwrap();
     if let Err(e) = handle_single_build_command(file, output, emit, optimize, opt_level).await {
         eprintln!("Initial build failed: {}", e);
-    }
-
     // Simplified watch implementation - demonstrate interface
     println!("🔧 File watching infrastructure ready");
     println!("   (Real file watching implementation will be integrated here)");
@@ -1038,12 +928,8 @@ async fn handle_watch_build_command(matches: &clap::ArgMatches) -> crate::error:
     while !SHUTDOWN.load(Ordering::SeqCst) {
         interval.tick().await;
         // In a real implementation, file change events would trigger rebuild here
-    }
-
     println!("✅ Watch stopped");
     Ok(())
-}
-
 async fn handle_check_command(matches: &clap::ArgMatches) -> crate::error::Result<()> {
     let file = matches.get_one::<String>("file").unwrap();
     let watch = matches.get_flag("watch");
@@ -1061,16 +947,12 @@ async fn handle_single_check_command(file: &str) -> crate::error::Result<()> {
     // Check if file exists
     if !std::path::Path::new(file).exists() {
         return Err(format!("File not found: {}", file).into());
-    }
-
     // Read and check source
     let source = std::fs::read_to_string(file)?;
     cursed::check(&source)?;
     
     println!("✅ No errors found!");
     Ok(())
-}
-
 async fn handle_watch_check_command(matches: &clap::ArgMatches) -> crate::error::Result<()> {
     let file = matches.get_one::<String>("file").unwrap();
     let patterns = matches.get_many::<String>("watch-pattern")
@@ -1088,8 +970,6 @@ async fn handle_watch_check_command(matches: &clap::ArgMatches) -> crate::error:
     // Check initially
     if let Err(e) = handle_single_check_command(file).await {
         eprintln!("Initial check failed: {}", e);
-    }
-
     // Simplified watch implementation - demonstrate interface
     println!("🔧 File watching infrastructure ready");
     println!("   (Real file watching implementation will be integrated here)");
@@ -1100,12 +980,8 @@ async fn handle_watch_check_command(matches: &clap::ArgMatches) -> crate::error:
     while !SHUTDOWN.load(Ordering::SeqCst) {
         interval.tick().await;
         // In a real implementation, file change events would trigger re-check here
-    }
-
     println!("✅ Watch stopped");
     Ok(())
-}
-
 async fn handle_format_command(matches: &clap::ArgMatches) -> crate::error::Result<()> {
     let file = matches.get_one::<String>("file");
     let check_only = matches.get_flag("check");
@@ -1117,8 +993,6 @@ async fn handle_format_command(matches: &clap::ArgMatches) -> crate::error::Resu
         // Check if file exists
         if !std::path::Path::new(file_path).exists() {
             return Err(format!("File not found: {}", file_path).into());
-        }
-
         // Read and format source
         let source = std::fs::read_to_string(file_path)?;
         let formatted = cursed::format(&source)?;
@@ -1138,15 +1012,8 @@ async fn handle_format_command(matches: &clap::ArgMatches) -> crate::error::Resu
         }
     } else {
         handle_directory_formatting(".", check_only, write_file).await?;
-    }
-
     Ok(())
-}
-
 async fn handle_directory_formatting(
-    dir_path: &str,
-    check_only: bool,
-    write_file: bool,
 ) -> crate::error::Result<()> {
     use walkdir::WalkDir;
     
@@ -1156,12 +1023,8 @@ async fn handle_directory_formatting(
     let path = std::path::Path::new(dir_path);
     if !path.exists() {
         return Err(format!("Directory not found: {}", dir_path).into());
-    }
-    
     if !path.is_dir() {
         return Err(format!("Path is not a directory: {}", dir_path).into());
-    }
-
     let mut files_found = 0;
     let mut files_processed = 0;
     let mut files_needing_format = 0;
@@ -1197,7 +1060,6 @@ async fn handle_directory_formatting(
                                 println!("      ❌ File needs formatting");
                             } else if write_file {
                                 match std::fs::write(file_path, formatted) {
-                                    Ok(_) => println!("      ✅ File formatted and written"),
                                     Err(e) => {
                                         let error_msg = format!("Failed to write {}: {}", file_path_str, e);
                                         println!("      🔥 {}", error_msg);
@@ -1224,8 +1086,6 @@ async fn handle_directory_formatting(
                 errors.push(error_msg);
             }
         }
-    }
-
     // Print summary
     println!("\n📊 Formatting Summary:");
     println!("   Files found: {}", files_found);
@@ -1241,30 +1101,18 @@ async fn handle_directory_formatting(
 
     if check_only && files_needing_format > 0 {
         return Err(format!("{} files need formatting", files_needing_format).into());
-    }
-
     if files_found == 0 {
         println!("   ℹ️  No .csd files found in directory");
     } else {
         println!("✅ Directory formatting completed successfully!");
-    }
-
     Ok(())
-}
-
 async fn handle_doc_command(matches: &clap::ArgMatches) -> crate::error::Result<()> {
     // Use the enhanced documentation system
     documentation::handle_documentation_command(matches).await.map_err(|e| e.into())
-}
-
 async fn handle_package_command(matches: &clap::ArgMatches) -> crate::error::Result<()> {
     package_manager::handle_package_command(matches)
-}
-
 async fn handle_optimize_command(matches: &clap::ArgMatches) -> crate::error::Result<()> {
     optimization_commands::handle_optimization_command(matches).await
-}
-
 async fn handle_test_command(matches: &clap::ArgMatches) -> crate::error::Result<()> {
     use cursed::testing::{TestConfig, TestRunnerBuilder, ReportFormat};
     
@@ -1280,7 +1128,6 @@ async fn handle_test_command(matches: &clap::ArgMatches) -> crate::error::Result
 }
 
 async fn handle_single_test_command(
-    pattern: Option<&String>, 
     verbose: bool
 ) -> crate::error::Result<()> {
     println!("🧪 Running CURSED tests");
@@ -1293,12 +1140,8 @@ async fn handle_single_test_command(
     if let Some(pat) = pattern {
         test_config.test_patterns.push(pat.clone());
         println!("   Pattern: {}", pat);
-    }
-    
     if verbose {
         println!("   Verbose mode enabled");
-    }
-
     // Create and configure test runner
     let mut runner = TestRunnerBuilder::new()
         .with_config(test_config)
@@ -1323,8 +1166,6 @@ async fn handle_single_test_command(
     }
 
     Ok(())
-}
-
 async fn handle_watch_test_command(matches: &clap::ArgMatches) -> crate::error::Result<()> {
     let pattern = matches.get_one::<String>("pattern");
     let verbose = matches.get_flag("verbose");
@@ -1346,8 +1187,6 @@ async fn handle_watch_test_command(matches: &clap::ArgMatches) -> crate::error::
     // Run tests initially
     if let Err(e) = handle_single_test_command(pattern, verbose).await {
         eprintln!("Initial test run failed: {}", e);
-    }
-
     // Simplified watch implementation - demonstrate interface
     println!("🔧 File watching infrastructure ready");
     println!("   (Real file watching implementation will be integrated here)");
@@ -1358,12 +1197,8 @@ async fn handle_watch_test_command(matches: &clap::ArgMatches) -> crate::error::
     while !SHUTDOWN.load(Ordering::SeqCst) {
         interval.tick().await;
         // In a real implementation, file change events would trigger test re-execution here
-    }
-
     println!("✅ Watch stopped");
     Ok(())
-}
-
 async fn handle_repl_command(matches: &clap::ArgMatches) -> crate::error::Result<()> {
     use cursed::repl::CursedRepl;
     
@@ -1395,12 +1230,8 @@ async fn handle_repl_command(matches: &clap::ArgMatches) -> crate::error::Result
             Err(e.into())
         }
     }
-}
-
 async fn handle_bootstrap_command(matches: &clap::ArgMatches) -> crate::error::Result<()> {
     bootstrap::handle_bootstrap_command(matches).await.map_err(|e| Box::new(e) as Box<dyn std::error::CursedError>)
-}
-
 async fn handle_watch_command(matches: &clap::ArgMatches) -> crate::error::Result<()> {
     let command = matches.get_one::<String>("command").unwrap();
     let path = matches.get_one::<String>("path").unwrap();
@@ -1431,14 +1262,10 @@ async fn handle_watch_command(matches: &clap::ArgMatches) -> crate::error::Resul
     let watch_path = std::path::Path::new(path);
     if !watch_path.exists() {
         return Err(format!("Watch path does not exist: {}", path).into());
-    }
-
     // Run initial command if requested
     if run_initial {
         println!("🚀 Running initial command...");
         run_watch_command(command, clear_screen).await?;
-    }
-
     // Simplified watch implementation - demonstrate interface
     println!("🔧 File watching infrastructure ready");
     println!("   (Real file watching implementation will be integrated here)");
@@ -1458,13 +1285,9 @@ async fn handle_watch_command(matches: &clap::ArgMatches) -> crate::error::Resul
 
     println!("✅ Watch stopped");
     Ok(())
-}
-
 async fn run_watch_command(command: &str, clear_screen: bool) -> crate::error::Result<()> {
     if clear_screen {
         print!("\x1B[2J\x1B[1;1H"); // Clear screen and move cursor to top
-    }
-
     match command {
         "build" => {
             println!("🔨 Running build command...");

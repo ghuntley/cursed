@@ -8,8 +8,6 @@ use std::future::Future as StdFuture;
 /// Sleep for the specified duration
 pub async fn sleep(duration: Duration) {
     runtime_delay(duration).await
-}
-
 /// Sleep until the specified instant
 pub async fn sleep_until(deadline: Instant) {
     let now = Instant::now();
@@ -21,26 +19,14 @@ pub async fn sleep_until(deadline: Instant) {
 /// Create an interval timer that fires repeatedly
 pub fn interval(duration: Duration) -> Interval {
     Interval::new(duration)
-}
-
 /// Create a future that completes after the specified duration
 pub fn after(duration: Duration) -> impl Future<Output = ()> {
     runtime_delay(duration)
-}
-
 /// Interval timer that fires repeatedly
 pub struct Interval {
-    duration: Duration,
-    next_deadline: Instant,
-    cancelled: bool,
-}
-
 impl Interval {
     pub fn new(duration: Duration) -> Self {
         Self {
-            duration,
-            next_deadline: Instant::now() + duration,
-            cancelled: false,
         }
     }
 
@@ -48,28 +34,18 @@ impl Interval {
     pub async fn tick(&mut self) -> crate::error::Result<()> {
         if self.cancelled {
             return Err(AsyncError::Runtime("Interval cancelled".to_string()));
-        }
-
         let now = Instant::now();
         if now < self.next_deadline {
             sleep(self.next_deadline - now).await;
-        }
-
         // Update next deadline
         self.next_deadline = Instant::now() + self.duration;
         Ok(())
-    }
-
     /// Cancel the interval
     pub fn cancel(&mut self) {
         self.cancelled = true;
-    }
-
     /// Check if the interval is cancelled
     pub fn is_cancelled(&self) -> bool {
         self.cancelled
-    }
-
     /// Reset the interval with a new duration
     pub fn reset(&mut self, duration: Duration) {
         self.duration = duration;
@@ -80,31 +56,19 @@ impl Interval {
 
 /// Timeout wrapper for futures
 pub struct Timeout<F> {
-    future: Option<F>,
-    timeout_duration: Duration,
-}
-
 impl<F> Timeout<F>
 where
-    F: Future,
 {
     pub fn new(duration: Duration, future: F) -> Self {
         Self {
-            future: Some(future),
-            timeout_duration: duration,
         }
     }
-}
-
 impl<F> Future for Timeout<F>
 where
-    F: Future,
 {
     type Output = crate::error::Result<()>;
 
     fn poll(
-        self: std::pin::Pin<&mut Self>,
-        cx: &mut std::task::Context<'_>,
     ) -> std::task::Poll<Self::Output> {
         let this = unsafe { self.get_unchecked_mut() };
 
@@ -124,18 +88,14 @@ where
                     this.future = None;
                     std::task::Poll::Ready(Err(err.into()))
                 }
-                std::task::Poll::Pending => std::task::Poll::Pending,
             }
         } else {
             std::task::Poll::Ready(Err(AsyncError::Runtime("Future already completed".to_string())))
         }
     }
-}
-
 // Implement standard Future trait for Timeout to support .await syntax
 impl<F> StdFuture for Timeout<F>
 where
-    F: Future,
 {
     type Output = crate::error::Result<()>;
 
@@ -152,39 +112,22 @@ pub mod timeout_utils {
     /// Add a timeout to any future
     pub fn with_timeout<F>(duration: Duration, future: F) -> Timeout<F>
     where
-        F: Future,
     {
         Timeout::new(duration, future)
-    }
-
     /// Race a future against a timeout
     pub async fn race_timeout<F, T>(
-        duration: Duration,
-        future: F,
     ) -> crate::error::Result<()>
     where
-        F: Future<Output = T>,
     {
         with_timeout(duration, future).await
-    }
-
     /// Apply timeout with custom error message
     pub async fn timeout_with_message<F, T>(
-        duration: Duration,
-        future: F,
-        message: &str,
     ) -> crate::error::Result<()>
     where
-        F: Future<Output = T>,
     {
         match with_timeout(duration, future).await {
-            Ok(result) => Ok(result),
-            Err(AsyncError::Timeout) => Err(AsyncError::Runtime(message.to_string())),
-            Err(other) => Err(other),
         }
     }
-}
-
 /// Deadline utilities
 pub mod deadline {
     use super::*;
@@ -192,18 +135,12 @@ pub mod deadline {
     /// Create a deadline from now + duration
     pub fn from_now(duration: Duration) -> Instant {
         Instant::now() + duration
-    }
-
     /// Create a deadline at a specific instant
     pub fn at(instant: Instant) -> Instant {
         instant
-    }
-
     /// Check if a deadline has passed
     pub fn has_passed(deadline: Instant) -> bool {
         Instant::now() >= deadline
-    }
-
     /// Get time remaining until deadline
     pub fn time_remaining(deadline: Instant) -> Option<Duration> {
         let now = Instant::now();
@@ -220,8 +157,6 @@ pub mod deadline {
             sleep(duration).await;
         }
     }
-}
-
 /// Rate limiting utilities
 pub mod rate_limit {
     use super::*;
@@ -229,19 +164,9 @@ pub mod rate_limit {
 
     /// Simple rate limiter
     pub struct RateLimiter {
-        max_per_interval: usize,
-        interval: Duration,
-        tokens: Arc<Mutex<usize>>,
-        last_refill: Arc<Mutex<Instant>>,
-    }
-
     impl RateLimiter {
         pub fn new(max_per_interval: usize, interval: Duration) -> Self {
             Self {
-                max_per_interval,
-                interval,
-                tokens: Arc::new(Mutex::new(max_per_interval)),
-                last_refill: Arc::new(Mutex::new(Instant::now())),
             }
         }
 
@@ -257,8 +182,6 @@ pub mod rate_limit {
                     if now.duration_since(*last_refill) >= self.interval {
                         *tokens = self.max_per_interval;
                         *last_refill = now;
-                    }
-
                     // Try to consume a token
                     if *tokens > 0 {
                         *tokens -= 1;
@@ -281,8 +204,6 @@ pub mod rate_limit {
             if now.duration_since(*last_refill) >= self.interval {
                 *tokens = self.max_per_interval;
                 *last_refill = now;
-            }
-
             // Try to consume a token
             if *tokens > 0 {
                 *tokens -= 1;
@@ -291,15 +212,9 @@ pub mod rate_limit {
                 false
             }
         }
-    }
-
     impl Clone for RateLimiter {
         fn clone(&self) -> Self {
             Self {
-                max_per_interval: self.max_per_interval,
-                interval: self.interval,
-                tokens: self.tokens.clone(),
-                last_refill: self.last_refill.clone(),
             }
         }
     }

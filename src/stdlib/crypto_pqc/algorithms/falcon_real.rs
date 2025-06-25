@@ -29,37 +29,25 @@ const FALCON_Q: u64 = 12289; // Prime modulus
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum FalconParams {
     /// FALCON-512: n=512, q=12289, σ=165.736
-    Falcon512,
     /// FALCON-1024: n=1024, q=12289, σ=168.388
-    Falcon1024,
-}
-
 impl FalconParams {
     fn n(&self) -> usize {
         match self {
-            FalconParams::Falcon512 => 512,
-            FalconParams::Falcon1024 => 1024,
         }
     }
 
     fn sigma(&self) -> f64 {
         match self {
-            FalconParams::Falcon512 => 165.736,
-            FalconParams::Falcon1024 => 168.388,
         }
     }
 
     fn beta_sqr(&self) -> f64 {
         match self {
-            FalconParams::Falcon512 => 34034726.0,
-            FalconParams::Falcon1024 => 70265242.0,
         }
     }
 
     fn sig_bytelen(&self) -> usize {
         match self {
-            FalconParams::Falcon512 => 690,
-            FalconParams::Falcon1024 => 1330,
         }
     }
 
@@ -71,19 +59,13 @@ impl FalconParams {
 impl ParameterSet for FalconParams {
     fn security_level(&self) -> SecurityLevel {
         match self {
-            FalconParams::Falcon512 => SecurityLevel::Level1,
-            FalconParams::Falcon1024 => SecurityLevel::Level5,
         }
     }
 
     fn public_key_size(&self) -> usize {
         1 + (14 * self.n() / 8) // log(q) ≈ 14 bits per coefficient + header
-    }
-
     fn secret_key_size(&self) -> usize {
         1 + self.n() / 4 + self.n() / 8 // Compact representation of NTRU polynomials
-    }
-
     fn additional_sizes(&self) -> Vec<(&'static str, usize)> {
         vec![("signature", self.sig_bytelen())]
     }
@@ -92,19 +74,11 @@ impl ParameterSet for FalconParams {
 impl fmt::Display for FalconParams {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            FalconParams::Falcon512 => write!(f, "FALCON-512"),
-            FalconParams::Falcon1024 => write!(f, "FALCON-1024"),
         }
     }
-}
-
 /// Complex number for FFT operations
 #[derive(Debug, Clone, Copy)]
 struct Complex {
-    re: f64,
-    im: f64,
-}
-
 impl Complex {
     fn new(re: f64, im: f64) -> Self {
         Self { re, im }
@@ -112,27 +86,15 @@ impl Complex {
 
     fn zero() -> Self {
         Self::new(0.0, 0.0)
-    }
-
     fn add(&self, other: &Self) -> Self {
         Self::new(self.re + other.re, self.im + other.im)
-    }
-
     fn sub(&self, other: &Self) -> Self {
         Self::new(self.re - other.re, self.im - other.im)
-    }
-
     fn mul(&self, other: &Self) -> Self {
         Self::new(
-            self.re * other.re - self.im * other.im,
-            self.re * other.im + self.im * other.re,
         )
-    }
-
     fn conj(&self) -> Self {
         Self::new(self.re, -self.im)
-    }
-
     fn norm_sqr(&self) -> f64 {
         self.re * self.re + self.im * self.im
     }
@@ -141,13 +103,9 @@ impl Complex {
 /// Polynomial over integers
 #[derive(Debug, Clone)]
 pub struct FalconPolynomial {
-    coeffs: Vec<i32>,
-}
-
 impl FalconPolynomial {
     fn new(size: usize) -> Self {
         Self {
-            coeffs: vec![0; size],
         }
     }
 
@@ -157,8 +115,6 @@ impl FalconPolynomial {
 
     fn len(&self) -> usize {
         self.coeffs.len()
-    }
-
     /// Reduce modulo q
     fn mod_q(&mut self) {
         for coeff in &mut self.coeffs {
@@ -173,8 +129,6 @@ impl FalconPolynomial {
             result.coeffs[i] = self.coeffs[i] + other.coeffs[i];
         }
         result
-    }
-
     /// Subtract two polynomials
     fn sub(&self, other: &Self) -> Self {
         let mut result = Self::new(self.len());
@@ -182,8 +136,6 @@ impl FalconPolynomial {
             result.coeffs[i] = self.coeffs[i] - other.coeffs[i];
         }
         result
-    }
-
     /// Polynomial multiplication using NTT
     fn mul(&self, other: &Self) -> Self {
         let n = self.len();
@@ -195,23 +147,15 @@ impl FalconPolynomial {
         
         for i in 0..n {
             a_ntt[i] = a_ntt[i].mul(&b_ntt[i]);
-        }
-        
         ifft(&mut a_ntt);
         
         let mut result = Self::new(n);
         for i in 0..n {
             result.coeffs[i] = a_ntt[i].re.round() as i32;
-        }
-        
         result
-    }
-
     /// Convert to complex representation for FFT
     fn to_complex(&self) -> Vec<Complex> {
         self.coeffs.iter().map(|&x| Complex::new(x as f64, 0.0)).collect()
-    }
-
     /// Sample from discrete Gaussian distribution
     fn gaussian_sample(n: usize, sigma: f64, seed: &[u8]) -> Self {
         let mut result = Self::new(n);
@@ -231,16 +175,10 @@ impl FalconPolynomial {
             // Box-Muller transform approximation
             let gaussian = sigma * ((-2.0 * uniform.ln()).sqrt() * (2.0 * std::f64::consts::PI * uniform).cos());
             result.coeffs[i] = gaussian.round() as i32;
-        }
-        
         result
-    }
-
     /// L2 norm squared
     fn norm_sqr(&self) -> f64 {
         self.coeffs.iter().map(|&x| (x as f64) * (x as f64)).sum()
-    }
-
     /// Infinity norm
     fn infinity_norm(&self) -> i32 {
         self.coeffs.iter().map(|&x| x.abs()).max().unwrap_or(0)
@@ -252,8 +190,6 @@ fn fft(a: &mut [Complex]) {
     let n = a.len();
     if n <= 1 {
         return;
-    }
-
     // Bit-reversal permutation
     let mut j = 0;
     for i in 1..n {
@@ -299,8 +235,6 @@ fn ifft(a: &mut [Complex]) {
     // Conjugate input
     for x in a.iter_mut() {
         *x = x.conj();
-    }
-    
     fft(a);
     
     // Conjugate output and scale
@@ -315,12 +249,6 @@ fn ifft(a: &mut [Complex]) {
 /// NTRU polynomials for key generation
 #[derive(Debug, Clone)]
 struct NtruKey {
-    f: FalconPolynomial,
-    g: FalconPolynomial,
-    big_f: FalconPolynomial,
-    big_g: FalconPolynomial,
-}
-
 impl NtruKey {
     /// Generate NTRU key pair
     fn generate(n: usize, seed: &[u8]) -> Self {
@@ -347,8 +275,6 @@ impl NtruKey {
             let byte_idx = (i * 2) % hash.len();
             let val = hash[byte_idx] as i8;
             poly.coeffs[i] = val as i32;
-        }
-        
         poly
     }
 }
@@ -356,10 +282,6 @@ impl NtruKey {
 /// FALCON public key
 #[derive(Debug, Clone)]
 pub struct FalconPublicKey {
-    pub params: FalconParams,
-    pub h: FalconPolynomial,
-}
-
 impl FalconPublicKey {
     pub fn new(params: FalconParams, h: FalconPolynomial) -> Self {
         Self { params, h }
@@ -367,8 +289,6 @@ impl FalconPublicKey {
 
     pub fn security_level(&self) -> SecurityLevel {
         self.params.security_level()
-    }
-
     pub fn as_bytes(&self) -> Vec<u8> {
         let mut bytes = Vec::with_capacity(self.params.public_key_size());
         bytes.push(self.params as u8);
@@ -377,8 +297,6 @@ impl FalconPublicKey {
         for &coeff in &self.h.coeffs {
             let normalized = (coeff % FALCON_Q as i32 + FALCON_Q as i32) % FALCON_Q as i32;
             bytes.extend_from_slice(&(normalized as u16).to_le_bytes());
-        }
-        
         bytes
     }
 }
@@ -386,16 +304,9 @@ impl FalconPublicKey {
 /// FALCON secret key
 #[derive(Debug, Clone)]
 pub struct FalconSecretKey {
-    pub params: FalconParams,
-    pub ntru_key: NtruKey,
-    pub tree: LdlTree,
-}
-
 impl FalconSecretKey {
     pub fn security_level(&self) -> SecurityLevel {
         self.params.security_level()
-    }
-
     pub fn as_bytes(&self) -> Vec<u8> {
         let mut bytes = Vec::with_capacity(self.params.secret_key_size());
         bytes.push(self.params as u8);
@@ -403,8 +314,6 @@ impl FalconSecretKey {
         // Encode NTRU polynomials (simplified)
         for &coeff in &self.ntru_key.f.coeffs {
             bytes.push((coeff & 0xFF) as u8);
-        }
-        
         bytes
     }
 }
@@ -413,13 +322,9 @@ impl FalconSecretKey {
 #[derive(Debug, Clone)]
 struct LdlTree {
     /// Leaves of the tree (simplified representation)
-    leaves: Vec<f64>,
-}
-
 impl LdlTree {
     fn new(n: usize) -> Self {
         Self {
-            leaves: vec![1.0; n],
         }
     }
 
@@ -449,8 +354,6 @@ impl LdlTree {
             }
             
             result[i] = sample;
-        }
-        
         result
     }
 }
@@ -458,10 +361,6 @@ impl LdlTree {
 /// FALCON signature
 #[derive(Debug, Clone)]
 pub struct FalconSignature {
-    pub params: FalconParams,
-    pub signature: Vec<u8>,
-}
-
 impl FalconSignature {
     pub fn new(params: FalconParams, signature: Vec<u8>) -> Self {
         Self { params, signature }
@@ -482,14 +381,8 @@ impl DigitalSignature for RealFalcon {
 
     fn keygen(security_level: SecurityLevel) -> PqcResult<(Self::PublicKey, Self::SecretKey)> {
         let params = match security_level {
-            SecurityLevel::Level1 => FalconParams::Falcon512,
-            SecurityLevel::Level3 => FalconParams::Falcon1024,
-            SecurityLevel::Level5 => FalconParams::Falcon1024,
-        };
 
         Self::keygen_with_params(params)
-    }
-
     fn sign(secret_key: &Self::SecretKey, message: &[u8]) -> PqcResult<Self::Signature> {
         let params = secret_key.params;
         let n = params.n();
@@ -510,8 +403,6 @@ impl DigitalSignature for RealFalcon {
                 val = (val << 8) | byte as u32;
             }
             target[i] = (val as f64) / (u32::MAX as f64) * sigma;
-        }
-        
         let mut attempts = 0;
         const MAX_ATTEMPTS: usize = 1000;
         
@@ -533,33 +424,21 @@ impl DigitalSignature for RealFalcon {
                 // Simple encoding (production would use compression)
                 for &coeff in &s1.coeffs {
                     sig_bytes.extend_from_slice(&coeff.to_le_bytes());
-                }
-                
                 // Truncate to expected size
                 sig_bytes.resize(params.sig_bytelen(), 0);
                 
                 return Ok(FalconSignature::new(params, sig_bytes));
-            }
-            
             attempts += 1;
-        }
-        
         Err(PqcError::SigningFailed("Max attempts exceeded".to_string()))
-    }
-
     fn verify(public_key: &Self::PublicKey, message: &[u8], signature: &Self::Signature) -> PqcResult<bool> {
         if public_key.params != signature.params {
             return Err(PqcError::ParameterValidation("Parameter mismatch".to_string()));
-        }
-
         let params = public_key.params;
         let n = params.n();
         
         // Decode signature
         if signature.signature.len() < n * 4 {
             return Ok(false);
-        }
-        
         let mut s1_coeffs = vec![0i32; n];
         for i in 0..n {
             let byte_start = i * 4;
@@ -574,8 +453,6 @@ impl DigitalSignature for RealFalcon {
         // Check signature norm bound
         if s1.norm_sqr() > params.beta_sqr() {
             return Ok(false);
-        }
-        
         // Verify signature equation: s1 + s2*h ≡ c (mod q)
         // For this simplified version, we'll just check the norm
         
@@ -595,8 +472,6 @@ impl DigitalSignature for RealFalcon {
         let sig_sum: u32 = s1.coeffs.iter().map(|&x| x.abs() as u32).sum();
         
         Ok((hash_sum ^ sig_sum) % 1000 < 100) // Simplified verification
-    }
-
     fn algorithm_type() -> AlgorithmType {
         AlgorithmType::Dilithium // Note: Using Dilithium temporarily - FALCON should be added to AlgorithmType enum
     }
@@ -629,38 +504,21 @@ impl RealFalcon {
         
         let public_key = FalconPublicKey::new(params, h);
         let secret_key = FalconSecretKey {
-            params,
-            ntru_key,
-            tree,
-        };
         
         Ok((public_key, secret_key))
-    }
-
     pub fn performance_characteristics(params: FalconParams) -> AlgorithmPerformance {
         let (keygen_ms, sign_ms, verify_ms, sign_throughput, verify_throughput) = match params {
-            FalconParams::Falcon512 => (4.0, 8.0, 0.2, 125.0, 5000.0),
-            FalconParams::Falcon1024 => (12.0, 25.0, 0.4, 40.0, 2500.0),
-        };
 
         AlgorithmPerformance {
-            keygen_time_ms: keygen_ms,
             operation_time_ms: (sign_ms + verify_ms) / 2.0,
             key_sizes: KeySizes {
-                public_key: params.public_key_size(),
-                secret_key: params.secret_key_size(),
                 ciphertext_or_signature: params.additional_sizes()
                     .iter()
                     .find(|(name, _)| *name == "signature")
                     .map(|(_, size)| *size)
-                    .unwrap_or(0),
-                shared_secret: None,
-            },
             throughput_ops_per_sec: (sign_throughput + verify_throughput) / 2.0,
         }
     }
-}
-
 /// Modular inverse using extended Euclidean algorithm
 fn mod_inverse(a: i32, m: i32) -> i32 {
     fn extended_gcd(a: i64, b: i64) -> (i64, i64, i64) {
@@ -671,9 +529,5 @@ fn mod_inverse(a: i32, m: i32) -> i32 {
         let x = y1 - (b / a) * x1;
         let y = x1;
         (gcd, x, y)
-    }
-    
     let (_, x, _) = extended_gcd(a as i64, m as i64);
     ((x % m as i64 + m as i64) % m as i64) as i32
-}
-

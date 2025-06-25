@@ -30,96 +30,59 @@ use crate::error::CursedError;
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum FrodoParams {
     /// FrodoKEM-640-AES: n=640, q=32768, B=2
-    Frodo640Aes,
     /// FrodoKEM-976-AES: n=976, q=65536, B=3
-    Frodo976Aes,
     /// FrodoKEM-1344-AES: n=1344, q=65536, B=4
-    Frodo1344Aes,
-}
-
 impl FrodoParams {
     fn n(&self) -> usize {
         match self {
-            FrodoParams::Frodo640Aes => 640,
-            FrodoParams::Frodo976Aes => 976,
-            FrodoParams::Frodo1344Aes => 1344,
         }
     }
 
     fn q(&self) -> u16 {
         match self {
-            FrodoParams::Frodo640Aes => 32768,
-            FrodoParams::Frodo976Aes => 65536,
-            FrodoParams::Frodo1344Aes => 65536,
         }
     }
 
     fn log_q(&self) -> usize {
         match self {
-            FrodoParams::Frodo640Aes => 15,
-            FrodoParams::Frodo976Aes => 16,
-            FrodoParams::Frodo1344Aes => 16,
         }
     }
 
     fn b(&self) -> usize {
         match self {
-            FrodoParams::Frodo640Aes => 2,
-            FrodoParams::Frodo976Aes => 3,
-            FrodoParams::Frodo1344Aes => 4,
         }
     }
 
     fn n_bar(&self) -> usize {
         match self {
-            FrodoParams::Frodo640Aes => 8,
-            FrodoParams::Frodo976Aes => 8,
-            FrodoParams::Frodo1344Aes => 8,
         }
     }
 
     fn m_bar(&self) -> usize {
         match self {
-            FrodoParams::Frodo640Aes => 8,
-            FrodoParams::Frodo976Aes => 8,
-            FrodoParams::Frodo1344Aes => 8,
         }
     }
 
     fn extract_bits(&self) -> usize {
         match self {
-            FrodoParams::Frodo640Aes => 2,
-            FrodoParams::Frodo976Aes => 3,
-            FrodoParams::Frodo1344Aes => 4,
         }
     }
-}
-
 impl ParameterSet for FrodoParams {
     fn security_level(&self) -> SecurityLevel {
         match self {
-            FrodoParams::Frodo640Aes => SecurityLevel::Level1,
-            FrodoParams::Frodo976Aes => SecurityLevel::Level3,
-            FrodoParams::Frodo1344Aes => SecurityLevel::Level5,
         }
     }
 
     fn public_key_size(&self) -> usize {
         32 + self.n() * self.n_bar() * 2 // seed + B matrix
-    }
-
     fn secret_key_size(&self) -> usize {
         32 + self.n() * self.n_bar() * 2 // s + S matrix
-    }
-
     fn additional_sizes(&self) -> Vec<(&'static str, usize)> {
         let c1_size = self.n() * self.m_bar() * 2;
         let c2_size = self.m_bar() * self.m_bar() * 2;
         let ciphertext_size = c1_size + c2_size;
         
         vec![
-            ("ciphertext", ciphertext_size),
-            ("shared_secret", 32),
         ]
     }
 }
@@ -127,29 +90,14 @@ impl ParameterSet for FrodoParams {
 impl fmt::Display for FrodoParams {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            FrodoParams::Frodo640Aes => write!(f, "FrodoKEM-640-AES"),
-            FrodoParams::Frodo976Aes => write!(f, "FrodoKEM-976-AES"),
-            FrodoParams::Frodo1344Aes => write!(f, "FrodoKEM-1344-AES"),
         }
     }
-}
-
 /// Matrix over Z_q
 #[derive(Debug, Clone)]
 pub struct FrodoMatrix {
-    data: Vec<Vec<u16>>,
-    rows: usize,
-    cols: usize,
-    q: u16,
-}
-
 impl FrodoMatrix {
     fn new(rows: usize, cols: usize, q: u16) -> Self {
         Self {
-            data: vec![vec![0; cols]; rows],
-            rows,
-            cols,
-            q,
         }
     }
 
@@ -176,8 +124,6 @@ impl FrodoMatrix {
         }
         
         matrix
-    }
-
     /// Sample matrix from error distribution
     fn sample_error(rows: usize, cols: usize, q: u16, chi_table: &[u16], seed: &[u8]) -> Self {
         let mut matrix = Self::new(rows, cols, q);
@@ -196,14 +142,10 @@ impl FrodoMatrix {
         }
         
         matrix
-    }
-
     /// Matrix multiplication modulo q
     fn multiply(&self, other: &Self) -> PqcResult<Self> {
         if self.cols != other.rows {
             return Err(PqcError::InternalError("Matrix dimension mismatch".to_string()));
-        }
-        
         let mut result = Self::new(self.rows, other.cols, self.q);
         
         for i in 0..self.rows {
@@ -217,14 +159,10 @@ impl FrodoMatrix {
         }
         
         Ok(result)
-    }
-
     /// Matrix addition modulo q
     fn add(&self, other: &Self) -> PqcResult<Self> {
         if self.rows != other.rows || self.cols != other.cols {
             return Err(PqcError::InternalError("Matrix dimension mismatch".to_string()));
-        }
-        
         let mut result = Self::new(self.rows, self.cols, self.q);
         
         for i in 0..self.rows {
@@ -235,14 +173,10 @@ impl FrodoMatrix {
         }
         
         Ok(result)
-    }
-
     /// Matrix subtraction modulo q
     fn subtract(&self, other: &Self) -> PqcResult<Self> {
         if self.rows != other.rows || self.cols != other.cols {
             return Err(PqcError::InternalError("Matrix dimension mismatch".to_string()));
-        }
-        
         let mut result = Self::new(self.rows, self.cols, self.q);
         
         for i in 0..self.rows {
@@ -253,8 +187,6 @@ impl FrodoMatrix {
         }
         
         Ok(result)
-    }
-
     /// Transpose matrix
     fn transpose(&self) -> Self {
         let mut result = Self::new(self.cols, self.rows, self.q);
@@ -266,8 +198,6 @@ impl FrodoMatrix {
         }
         
         result
-    }
-
     /// Convert to bytes
     fn to_bytes(&self) -> Vec<u8> {
         let mut bytes = Vec::new();
@@ -277,14 +207,10 @@ impl FrodoMatrix {
             }
         }
         bytes
-    }
-
     /// Convert from bytes
     fn from_bytes(bytes: &[u8], rows: usize, cols: usize, q: u16) -> PqcResult<Self> {
         if bytes.len() < rows * cols * 2 {
             return Err(PqcError::InvalidKey("Insufficient matrix data".to_string()));
-        }
-        
         let mut data = vec![vec![0; cols]; rows];
         let mut idx = 0;
         
@@ -297,8 +223,6 @@ impl FrodoMatrix {
         }
         
         Ok(Self::from_data(data, q))
-    }
-
     /// Pack matrix with specified number of bits per element
     fn pack(&self, bits_per_element: usize) -> Vec<u8> {
         let mut bits = Vec::new();
@@ -310,8 +234,6 @@ impl FrodoMatrix {
                     bits.push(((val >> k) & 1) as u8);
                 }
             }
-        }
-        
         // Pack bits into bytes
         let mut bytes = Vec::new();
         for chunk in bits.chunks(8) {
@@ -320,11 +242,7 @@ impl FrodoMatrix {
                 byte |= bit << i;
             }
             bytes.push(byte);
-        }
-        
         bytes
-    }
-
     /// Unpack matrix from packed format
     fn unpack(bytes: &[u8], rows: usize, cols: usize, bits_per_element: usize, q: u16) -> PqcResult<Self> {
         // Unpack bytes to bits
@@ -338,8 +256,6 @@ impl FrodoMatrix {
         let needed_bits = rows * cols * bits_per_element;
         if bits.len() < needed_bits {
             return Err(PqcError::InvalidCiphertext("Insufficient packed data".to_string()));
-        }
-        
         let mut matrix = Self::new(rows, cols, q);
         let mut bit_idx = 0;
         
@@ -364,10 +280,6 @@ impl FrodoMatrix {
 fn generate_chi_table(params: FrodoParams) -> Vec<u16> {
     // Simplified error distribution - in practice would use proper discrete Gaussian
     let std_dev = match params {
-        FrodoParams::Frodo640Aes => 2.8,
-        FrodoParams::Frodo976Aes => 2.3,
-        FrodoParams::Frodo1344Aes => 1.4,
-    };
     
     let mut table = Vec::new();
     let table_size = 65536;
@@ -378,11 +290,7 @@ fn generate_chi_table(params: FrodoParams) -> Vec<u16> {
         let val = (x.round() as i16).wrapping_abs() as u16;
         let clamped = val.min((params.q() / 2) - 1);
         table.push(clamped);
-    }
-    
     table
-}
-
 /// Generate A matrix using AES in counter mode
 fn generate_matrix_a(params: FrodoParams, seed: &[u8]) -> FrodoMatrix {
     let n = params.n();
@@ -409,16 +317,9 @@ fn generate_matrix_a(params: FrodoParams, seed: &[u8]) -> FrodoMatrix {
     }
     
     matrix
-}
-
 /// FrodoKEM public key
 #[derive(Debug, Clone)]
 pub struct FrodoPublicKey {
-    pub params: FrodoParams,
-    pub seed_a: [u8; 16],
-    pub b: FrodoMatrix,
-}
-
 impl FrodoPublicKey {
     pub fn new(params: FrodoParams, seed_a: [u8; 16], b: FrodoMatrix) -> Self {
         Self { params, seed_a, b }
@@ -426,20 +327,14 @@ impl FrodoPublicKey {
 
     pub fn security_level(&self) -> SecurityLevel {
         self.params.security_level()
-    }
-
     pub fn as_bytes(&self) -> Vec<u8> {
         let mut bytes = Vec::new();
         bytes.extend_from_slice(&self.seed_a);
         bytes.extend_from_slice(&self.b.to_bytes());
         bytes
-    }
-
     pub fn from_bytes(params: FrodoParams, data: &[u8]) -> PqcResult<Self> {
         if data.len() < 16 {
             return Err(PqcError::InvalidKey("Insufficient data for seed".to_string()));
-        }
-        
         let mut seed_a = [0u8; 16];
         seed_a.copy_from_slice(&data[..16]);
         
@@ -452,11 +347,6 @@ impl FrodoPublicKey {
 /// FrodoKEM secret key
 #[derive(Debug, Clone)]
 pub struct FrodoSecretKey {
-    pub params: FrodoParams,
-    pub s: [u8; 32],
-    pub s_matrix: FrodoMatrix,
-}
-
 impl FrodoSecretKey {
     pub fn new(params: FrodoParams, s: [u8; 32], s_matrix: FrodoMatrix) -> Self {
         Self { params, s, s_matrix }
@@ -464,20 +354,14 @@ impl FrodoSecretKey {
 
     pub fn security_level(&self) -> SecurityLevel {
         self.params.security_level()
-    }
-
     pub fn as_bytes(&self) -> Vec<u8> {
         let mut bytes = Vec::new();
         bytes.extend_from_slice(&self.s);
         bytes.extend_from_slice(&self.s_matrix.to_bytes());
         bytes
-    }
-
     pub fn from_bytes(params: FrodoParams, data: &[u8]) -> PqcResult<Self> {
         if data.len() < 32 {
             return Err(PqcError::InvalidKey("Insufficient data for secret".to_string()));
-        }
-        
         let mut s = [0u8; 32];
         s.copy_from_slice(&data[..32]);
         
@@ -490,11 +374,6 @@ impl FrodoSecretKey {
 /// FrodoKEM ciphertext
 #[derive(Debug, Clone)]
 pub struct FrodoCiphertext {
-    pub params: FrodoParams,
-    pub c1: FrodoMatrix,
-    pub c2: FrodoMatrix,
-}
-
 impl FrodoCiphertext {
     pub fn new(params: FrodoParams, c1: FrodoMatrix, c2: FrodoMatrix) -> Self {
         Self { params, c1, c2 }
@@ -505,15 +384,11 @@ impl FrodoCiphertext {
         bytes.extend_from_slice(&self.c1.pack(self.params.log_q()));
         bytes.extend_from_slice(&self.c2.pack(self.params.log_q()));
         bytes
-    }
-
     pub fn from_bytes(params: FrodoParams, data: &[u8]) -> PqcResult<Self> {
         let c1_size = params.n() * params.m_bar() * params.log_q() / 8;
         
         if data.len() < c1_size {
             return Err(PqcError::InvalidCiphertext("Insufficient data for c1".to_string()));
-        }
-        
         let c1 = FrodoMatrix::unpack(&data[..c1_size], params.n(), params.m_bar(), params.log_q(), params.q())?;
         let c2 = FrodoMatrix::unpack(&data[c1_size..], params.m_bar(), params.m_bar(), params.log_q(), params.q())?;
         
@@ -524,9 +399,6 @@ impl FrodoCiphertext {
 /// FrodoKEM shared secret
 #[derive(Debug, Clone)]
 pub struct FrodoSharedSecret {
-    pub data: [u8; 32],
-}
-
 impl FrodoSharedSecret {
     pub fn new(data: [u8; 32]) -> Self {
         Self { data }
@@ -548,14 +420,8 @@ impl KeyEncapsulation for RealFrodo {
 
     fn keygen(security_level: SecurityLevel) -> PqcResult<(Self::PublicKey, Self::SecretKey)> {
         let params = match security_level {
-            SecurityLevel::Level1 => FrodoParams::Frodo640Aes,
-            SecurityLevel::Level3 => FrodoParams::Frodo976Aes,
-            SecurityLevel::Level5 => FrodoParams::Frodo1344Aes,
-        };
 
         Self::keygen_with_params(params)
-    }
-
     fn encaps(public_key: &Self::PublicKey) -> PqcResult<(Self::Ciphertext, Self::SharedSecret)> {
         let params = public_key.params;
         
@@ -591,8 +457,6 @@ impl KeyEncapsulation for RealFrodo {
                     v.data[i][j] = (bit as u16) * (params.q() / 2);
                 }
             }
-        }
-        
         // Compute C2 = S' * B + E'' + Encode(μ)
         let s_prime_b = s_prime.multiply(&public_key.b)?;
         let c2_temp = s_prime_b.add(&e_double_prime)?;
@@ -610,13 +474,9 @@ impl KeyEncapsulation for RealFrodo {
         let shared_secret = FrodoSharedSecret::new(shared_secret_data);
         
         Ok((ciphertext, shared_secret))
-    }
-
     fn decaps(secret_key: &Self::SecretKey, ciphertext: &Self::Ciphertext) -> PqcResult<Self::SharedSecret> {
         if secret_key.params != ciphertext.params {
             return Err(PqcError::ParameterValidation("Parameter mismatch".to_string()));
-        }
-        
         let params = secret_key.params;
         
         // Compute M = C2 - S * C1
@@ -638,8 +498,6 @@ impl KeyEncapsulation for RealFrodo {
                     mu[byte_idx] |= bit << bit_pos;
                 }
             }
-        }
-        
         // Derive shared secret
         let mut hasher = Sha3_256::new();
         hasher.update(&mu);
@@ -648,8 +506,6 @@ impl KeyEncapsulation for RealFrodo {
         shared_secret_data.copy_from_slice(&shared_secret_hash[..32]);
         
         Ok(FrodoSharedSecret::new(shared_secret_data))
-    }
-
     fn algorithm_type() -> AlgorithmType {
         AlgorithmType::FrodoKem
     }
@@ -679,30 +535,16 @@ impl RealFrodo {
         let secret_key = FrodoSecretKey::new(params, s, s_matrix);
         
         Ok((public_key, secret_key))
-    }
-
     pub fn performance_characteristics(params: FrodoParams) -> AlgorithmPerformance {
         let (keygen_ms, encaps_ms, decaps_ms, encaps_throughput, decaps_throughput) = match params {
-            FrodoParams::Frodo640Aes => (12.5, 14.2, 14.8, 70.0, 68.0),
-            FrodoParams::Frodo976Aes => (35.2, 39.1, 40.3, 26.0, 25.0),
-            FrodoParams::Frodo1344Aes => (87.4, 94.2, 96.8, 11.0, 10.0),
-        };
 
         AlgorithmPerformance {
-            keygen_time_ms: keygen_ms,
             operation_time_ms: (encaps_ms + decaps_ms) / 2.0,
             key_sizes: KeySizes {
-                public_key: params.public_key_size(),
-                secret_key: params.secret_key_size(),
                 ciphertext_or_signature: params.additional_sizes()
                     .iter()
                     .find(|(name, _)| *name == "ciphertext")
                     .map(|(_, size)| *size)
-                    .unwrap_or(0),
-                shared_secret: Some(32),
-            },
             throughput_ops_per_sec: (encaps_throughput + decaps_throughput) / 2.0,
         }
     }
-}
-

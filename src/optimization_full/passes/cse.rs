@@ -7,7 +7,7 @@
 use crate::error::{CursedError, Result};
 use crate::ast::{
     Node, Expression, Statement, FunctionDeclaration as Function, Type
-};
+// };
 use std::collections::{HashMap, HashSet, VecDeque};
 use std::hash::{Hash, Hasher};
 use std::time::{Duration, Instant};
@@ -16,18 +16,9 @@ use std::fmt;
 /// Else branch representation for if statements
 #[derive(Debug, Clone, PartialEq)]
 pub enum ElseBranch {
-    Block(Vec<Statement>),
-    If(Box<IfStatement>),
-}
-
 /// If statement representation
 #[derive(Debug, Clone, PartialEq)]
 pub struct IfStatement {
-    pub condition: Expression,
-    pub then_branch: Vec<Statement>,
-    pub else_branch: Option<ElseBranch>,
-}
-
 /// Value number assigned to expressions for CSE analysis
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct ValueNumber(usize);
@@ -35,8 +26,6 @@ pub struct ValueNumber(usize);
 impl ValueNumber {
     pub fn new(id: usize) -> Self {
         Self(id)
-    }
-    
     pub fn id(&self) -> usize {
         self.0
     }
@@ -45,92 +34,35 @@ impl ValueNumber {
 /// Expression signature for value numbering
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum ExpressionSignature {
-    Literal(LiteralValue),
-    Variable(String),
     Binary {
-        op: BinaryOperator,
-        left: ValueNumber,
-        right: ValueNumber,
-    },
     Unary {
-        op: UnaryOperator,
-        operand: ValueNumber,
-    },
     FunctionCall {
-        name: String,
-        args: Vec<ValueNumber>,
-    },
     ArrayAccess {
-        array: ValueNumber,
-        index: ValueNumber,
-    },
     FieldAccess {
-        object: ValueNumber,
-        field: String,
-    },
-}
-
 /// Simplified literal value for hashing
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum LiteralValue {
-    Integer(i64),
     Float(String), // Store as string to handle floating point equality
-    Boolean(bool),
-    String(String),
-    Null,
-}
-
 impl From<&Literal> for LiteralValue {
     fn from(literal: &Literal) -> Self {
         match literal {
-            Literal::Integer(i) => LiteralValue::Integer(*i),
-            Literal::Float(f) => LiteralValue::Float(f.to_string()),
-            Literal::Boolean(b) => LiteralValue::Boolean(*b),
-            Literal::String(s) => LiteralValue::String(s.clone()),
-            Literal::Null => LiteralValue::Null,
             _ => LiteralValue::Null, // Fallback for other literal types
         }
     }
-}
-
 /// Basic block for control flow analysis
 #[derive(Debug, Clone)]
 pub struct BasicBlock {
-    pub id: usize,
-    pub statements: Vec<Statement>,
-    pub successors: Vec<usize>,
-    pub predecessors: Vec<usize>,
-    pub dominators: HashSet<usize>,
-    pub immediate_dominator: Option<usize>,
-}
-
 impl BasicBlock {
     pub fn new(id: usize) -> Self {
         Self {
-            id,
-            statements: Vec::new(),
-            successors: Vec::new(),
-            predecessors: Vec::new(),
-            dominators: HashSet::new(),
-            immediate_dominator: None,
         }
     }
-}
-
 /// Control Flow Graph for dominance analysis
 #[derive(Debug)]
 pub struct ControlFlowGraph {
-    pub blocks: HashMap<usize, BasicBlock>,
-    pub entry_block: usize,
-    pub exit_blocks: HashSet<usize>,
-}
-
 impl ControlFlowGraph {
     pub fn new(entry_block: usize) -> Self {
         Self {
-            blocks: HashMap::new(),
-            entry_block,
-            exit_blocks: HashSet::new(),
         }
     }
     
@@ -157,13 +89,9 @@ impl ControlFlowGraph {
             for &block_id in &block_ids {
                 if block_id == self.entry_block {
                     continue;
-                }
-                
                 let predecessors = self.blocks[&block_id].predecessors.clone();
                 if predecessors.is_empty() {
                     continue;
-                }
-                
                 // Intersection of dominators of all predecessors
                 let mut new_dominators = self.blocks[&predecessors[0]].dominators.clone();
                 for &pred_id in &predecessors[1..] {
@@ -171,8 +99,6 @@ impl ControlFlowGraph {
                         .intersection(&self.blocks[&pred_id].dominators)
                         .cloned()
                         .collect();
-                }
-                
                 // Add self
                 new_dominators.insert(block_id);
                 
@@ -181,19 +107,13 @@ impl ControlFlowGraph {
                     changed = true;
                 }
             }
-        }
-        
         // Compute immediate dominators
         self.compute_immediate_dominators();
-    }
-    
     /// Compute immediate dominators
     fn compute_immediate_dominators(&mut self) {
         for &block_id in self.blocks.keys().cloned().collect().iter() {
             if block_id == self.entry_block {
                 continue;
-            }
-            
             let dominators = self.blocks[&block_id].dominators.clone();
             let mut candidates: Vec<usize> = dominators
                 .iter()
@@ -214,8 +134,6 @@ impl ControlFlowGraph {
                 self.blocks.get_mut(&block_id).unwrap().immediate_dominator = Some(candidates[0]);
             }
         }
-    }
-    
     /// Check if block1 dominates block2
     pub fn dominates(&self, block1: usize, block2: usize) -> bool {
         self.blocks.get(&block2)
@@ -228,31 +146,15 @@ impl ControlFlowGraph {
 #[derive(Debug)]
 pub struct CseContext {
     /// Maps expression signatures to value numbers
-    pub value_table: HashMap<ExpressionSignature, ValueNumber>,
     /// Maps value numbers to their first computed location (block, statement)
-    pub value_locations: HashMap<ValueNumber, (usize, usize)>,
     /// Maps value numbers to generated temporary variable names
-    pub temp_variables: HashMap<ValueNumber, String>,
     /// Counter for generating unique value numbers
-    pub next_value_number: usize,
     /// Counter for generating unique temporary variable names
-    pub next_temp_id: usize,
     /// Control flow graph for dominance analysis
-    pub cfg: ControlFlowGraph,
     /// Available expressions at each program point
-    pub available_expressions: HashMap<(usize, usize), HashSet<ValueNumber>>,
-}
-
 impl CseContext {
     pub fn new(entry_block: usize) -> Self {
         Self {
-            value_table: HashMap::new(),
-            value_locations: HashMap::new(),
-            temp_variables: HashMap::new(),
-            next_value_number: 0,
-            next_temp_id: 0,
-            cfg: ControlFlowGraph::new(entry_block),
-            available_expressions: HashMap::new(),
         }
     }
     
@@ -287,8 +189,6 @@ impl CseContext {
             // If in same block, check statement order
             if def_block == block {
                 return def_stmt < stmt;
-            }
-            
             // Check if definition dominates current location
             return self.cfg.dominates(def_block, block);
         }
@@ -298,26 +198,15 @@ impl CseContext {
 
 /// Complete Common Subexpression Elimination Pass
 pub struct CommonSubexpressionEliminationPass {
-    eliminated_count: usize,
-    global_cse: bool,
-    debug_mode: bool,
-}
-
 impl CommonSubexpressionEliminationPass {
     pub fn new() -> Self {
         Self {
-            eliminated_count: 0,
-            global_cse: true,
-            debug_mode: false,
         }
     }
     
     /// Create CSE pass with configuration
     pub fn with_config(global_cse: bool, debug_mode: bool) -> Self {
         Self {
-            eliminated_count: 0,
-            global_cse,
-            debug_mode,
         }
     }
     
@@ -327,25 +216,17 @@ impl CommonSubexpressionEliminationPass {
         
         for module in &mut program.modules {
             self.eliminate_in_module(module)?;
-        }
-        
         Ok(self.eliminated_count)
-    }
-    
     /// Perform CSE on a module
     fn eliminate_in_module(&mut self, module: &mut Module) -> Result<()> {
         for function in &mut module.functions {
             self.eliminate_in_function(function)?;
         }
         Ok(())
-    }
-    
     /// Perform CSE on a function
     fn eliminate_in_function(&mut self, function: &mut Function) -> Result<()> {
         if self.debug_mode {
             println!("CSE: Processing function '{}'", function.name);
-        }
-        
         // Build control flow graph
         let mut context = CseContext::new(0);
         self.build_cfg(&function.body, &mut context)?;
@@ -359,16 +240,9 @@ impl CommonSubexpressionEliminationPass {
         } else {
             // Local CSE within basic blocks
             self.local_cse_elimination(&mut function.body, &mut context)?;
-        }
-        
         if self.debug_mode {
-            println!("CSE: Eliminated {} expressions in function '{}'", 
                     self.eliminated_count, function.name);
-        }
-        
         Ok(())
-    }
-    
     /// Build control flow graph from statements
     fn build_cfg(&self, statements: &[Box<dyn Statement>], context: &mut CseContext) -> Result<()> {
         let mut current_block = BasicBlock::new(0);
@@ -403,8 +277,6 @@ impl CommonSubexpressionEliminationPass {
         }
         
         Ok(())
-    }
-    
     /// Perform global CSE elimination
     fn global_cse_elimination(&mut self, statements: &mut Vec<Statement>, context: &mut CseContext) -> Result<()> {
         // First pass: build value numbering table
@@ -414,8 +286,6 @@ impl CommonSubexpressionEliminationPass {
         self.perform_eliminations(statements, context, 0, 0)?;
         
         Ok(())
-    }
-    
     /// Perform local CSE elimination within basic blocks
     fn local_cse_elimination(&mut self, statements: &mut Vec<Statement>, context: &mut CseContext) -> Result<()> {
         // Process each basic block independently
@@ -427,11 +297,7 @@ impl CommonSubexpressionEliminationPass {
             
             // Perform eliminations within this block
             self.perform_eliminations(statements, &mut local_context, block_id, 0)?;
-        }
-        
         Ok(())
-    }
-    
     /// Build value numbering table for expressions
     fn build_value_numbering(&mut self, statements: &[dyn Statement], context: &mut CseContext, block_id: usize, start_stmt: usize) -> Result<()> {
         for (stmt_idx, statement) in statements.iter().enumerate() {
@@ -439,8 +305,6 @@ impl CommonSubexpressionEliminationPass {
             self.number_expressions_in_statement(statement, context, block_id, stmt_pos)?;
         }
         Ok(())
-    }
-    
     /// Assign value numbers to expressions in a statement
     fn number_expressions_in_statement(&mut self, statement: &dyn Statement, context: &mut CseContext, block_id: usize, stmt_idx: usize) -> Result<()> {
         match statement {
@@ -493,8 +357,6 @@ impl CommonSubexpressionEliminationPass {
             _ => {}
         }
         Ok(())
-    }
-    
     /// Assign value number to an expression
     fn number_expression(&mut self, expr: &dyn Expression, context: &mut CseContext, block_id: usize, stmt_idx: usize) -> Result<ValueNumber> {
         let signature = match expr {
@@ -508,16 +370,11 @@ impl CommonSubexpressionEliminationPass {
                 let left_vn = self.number_expression(&binary_expr.left, context, block_id, stmt_idx)?;
                 let right_vn = self.number_expression(&binary_expr.right, context, block_id, stmt_idx)?;
                 ExpressionSignature::Binary {
-                    op: binary_expr.operator.clone(),
-                    left: left_vn,
-                    right: right_vn,
                 }
             }
             Expression::Unary(unary_expr) => {
                 let operand_vn = self.number_expression(&unary_expr.operand, context, block_id, stmt_idx)?;
                 ExpressionSignature::Unary {
-                    op: unary_expr.operator.clone(),
-                    operand: operand_vn,
                 }
             }
             Expression::FunctionCall(call_expr) => {
@@ -526,16 +383,12 @@ impl CommonSubexpressionEliminationPass {
                     arg_vns.push(self.number_expression(arg, context, block_id, stmt_idx)?);
                 }
                 ExpressionSignature::FunctionCall {
-                    name: call_expr.function_name.clone(),
-                    args: arg_vns,
                 }
             }
             Expression::ArrayAccess(access_expr) => {
                 let array_vn = self.number_expression(&access_expr.array, context, block_id, stmt_idx)?;
                 let index_vn = self.number_expression(&access_expr.index, context, block_id, stmt_idx)?;
                 ExpressionSignature::ArrayAccess {
-                    array: array_vn,
-                    index: index_vn,
                 }
             }
             _ => {
@@ -545,18 +398,13 @@ impl CommonSubexpressionEliminationPass {
                 context.value_locations.insert(vn, (block_id, stmt_idx));
                 return Ok(vn);
             }
-        };
         
         let vn = context.get_value_number(signature);
         
         // Record location if this is the first occurrence
         if !context.value_locations.contains_key(&vn) {
             context.value_locations.insert(vn, (block_id, stmt_idx));
-        }
-        
         Ok(vn)
-    }
-    
     /// Perform actual CSE eliminations
     fn perform_eliminations(&mut self, statements: &mut Vec<Statement>, context: &mut CseContext, block_id: usize, start_stmt: usize) -> Result<()> {
         // Track which expressions have been computed and can be reused
@@ -571,7 +419,6 @@ impl CommonSubexpressionEliminationPass {
             self.eliminate_in_statement(statement, context, block_id, stmt_pos, &mut computed_expressions, &mut temp_declarations)?;
             
             if self.debug_mode && self.eliminated_count > original_count {
-                println!("CSE: Eliminated {} expressions in statement at {}:{}",
                         self.eliminated_count - original_count, block_id, stmt_pos);
             }
         }
@@ -581,11 +428,7 @@ impl CommonSubexpressionEliminationPass {
             let mut new_statements = temp_declarations;
             new_statements.extend(statements.drain(..));
             *statements = new_statements;
-        }
-        
         Ok(())
-    }
-    
     /// Eliminate common subexpressions in a statement
     fn eliminate_in_statement(&mut self, statement: &mut Statement, context: &mut CseContext, block_id: usize, stmt_idx: usize, computed: &mut HashSet<ValueNumber>, temp_decls: &mut Vec<Statement>) -> Result<()> {
         match statement {
@@ -638,8 +481,6 @@ impl CommonSubexpressionEliminationPass {
             _ => {}
         }
         Ok(())
-    }
-    
     /// Eliminate common subexpressions in an expression
     fn eliminate_in_expression(&mut self, expr: &mut Expression, context: &mut CseContext, block_id: usize, stmt_idx: usize, computed: &mut HashSet<ValueNumber>, temp_decls: &mut Vec<Statement>) -> Result<()> {
         // First, recursively process subexpressions
@@ -661,8 +502,6 @@ impl CommonSubexpressionEliminationPass {
                 self.eliminate_in_expression(&mut access_expr.index, context, block_id, stmt_idx, computed, temp_decls)?;
             }
             _ => {}
-        }
-        
         // Try to eliminate this expression
         let expr_vn = self.number_expression(expr, context, block_id, stmt_idx)?;
         
@@ -672,14 +511,11 @@ impl CommonSubexpressionEliminationPass {
             if def_block == block_id && def_stmt == stmt_idx {
                 computed.insert(expr_vn);
                 return Ok(());
-            }
-            
             // Check if the expression is available (dominates current location)
             if context.is_available(expr_vn, block_id, stmt_idx) && computed.contains(&expr_vn) {
                 // Replace with temporary variable
                 let temp_name = context.get_temp_variable(expr_vn);
                 *expr = Expression::Variable(Variable {
-                    name: temp_name.clone(),
                     var_type: None, // Type inference will handle this
                 });
                 
@@ -694,10 +530,7 @@ impl CommonSubexpressionEliminationPass {
                 
                 // Create temporary variable declaration
                 let temp_decl = Statement::VariableDeclaration(VariableDeclaration {
-                    name: temp_name.clone(),
                     var_type: None, // Type inference will handle this
-                    initializer: Some(expr.clone()),
-                    is_mutable: false,
                 });
                 
                 temp_decls.push(temp_decl);
@@ -705,8 +538,6 @@ impl CommonSubexpressionEliminationPass {
                 
                 // Replace current expression with variable reference
                 *expr = Expression::Variable(Variable {
-                    name: temp_name,
-                    var_type: None,
                 });
             }
         }
@@ -718,21 +549,9 @@ impl CommonSubexpressionEliminationPass {
 /// Statistics and analysis for CSE pass
 #[derive(Debug, Clone)]
 pub struct CseStatistics {
-    pub expressions_analyzed: usize,
-    pub expressions_eliminated: usize,
-    pub temp_variables_created: usize,
-    pub basic_blocks_processed: usize,
-    pub elimination_rate: f64,
-}
-
 impl CseStatistics {
     pub fn new() -> Self {
         Self {
-            expressions_analyzed: 0,
-            expressions_eliminated: 0,
-            temp_variables_created: 0,
-            basic_blocks_processed: 0,
-            elimination_rate: 0.0,
         }
     }
     
@@ -741,8 +560,6 @@ impl CseStatistics {
             self.elimination_rate = (self.expressions_eliminated as f64) / (self.expressions_analyzed as f64) * 100.0;
         }
     }
-}
-
 impl fmt::Display for CseStatistics {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "CSE Statistics:\n")?;

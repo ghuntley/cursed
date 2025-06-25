@@ -73,7 +73,6 @@ pub fn assert_no_error(t: &mut VibeTest, err: Result<(), &str>, message: &str) {
 /// fr fr Assert that an error is a specific error
 pub fn assert_error_is(t: &mut VibeTest, err: Result<(), &str>, target: &str, message: &str) {
     match err {
-        Ok(()) => t.fail_vibe(&format!("Assert error is failed: {}. Expected error '{}', got success", message, target)),
         Err(e) => {
             if e != target {
                 t.fail_vibe(&format!("Assert error is failed: {}. Expected error '{}', got '{}'", message, target, e));
@@ -85,7 +84,6 @@ pub fn assert_error_is(t: &mut VibeTest, err: Result<(), &str>, target: &str, me
 /// fr fr Assert that an error contains a specific substring
 pub fn assert_error_contains(t: &mut VibeTest, err: Result<(), &str>, contains: &str, message: &str) {
     match err {
-        Ok(()) => t.fail_vibe(&format!("Assert error contains failed: {}. Expected error containing '{}', got success", message, contains)),
         Err(e) => {
             if !e.contains(contains) {
                 t.fail_vibe(&format!("Assert error contains failed: {}. Expected error containing '{}', got '{}'", message, contains, e));
@@ -204,10 +202,7 @@ pub fn assert_has_suffix(t: &mut VibeTest, str: &str, suffix: &str, message: &st
 pub fn assert_matches_regex(t: &mut VibeTest, str: &str, pattern: &str, message: &str) {
     // Simple pattern matching - in a real implementation would use regex crate
     let matches = match pattern {
-        r"\d+" => str.chars().all(|c| c.is_ascii_digit()),
-        r"\w+" => str.chars().all(|c| c.is_alphanumeric()),
         _ => str.contains(pattern), // Fallback to simple contains
-    };
     
     if !matches {
         t.fail_vibe(&format!("Assert matches regex failed: {}. String '{}' does not match pattern '{}'", message, str, pattern));
@@ -240,14 +235,11 @@ pub fn assert_shooks<F: FnOnce() + std::panic::UnwindSafe>(t: &mut VibeTest, fn_
 pub fn assert_shooks_with_value<F: FnOnce() + std::panic::UnwindSafe>(t: &mut VibeTest, _value: &str, fn_: F, message: &str) {
     let result = std::panic::catch_unwind(fn_);
     match result {
-        Ok(_) => t.fail_vibe(&format!("Assert shooks with value failed: {}. Expected function to panic, but it completed normally", message)),
         Err(_panic_info) => {
             // In a real implementation, we'd check if the panic message contains the expected value
             // For now, we just check that it panicked
         }
     }
-}
-
 /// fr fr Assert that a function does not panic
 pub fn assert_no_shook<F: FnOnce() + std::panic::UnwindSafe>(t: &mut VibeTest, fn_: F, message: &str) {
     let result = std::panic::catch_unwind(fn_);

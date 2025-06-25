@@ -16,8 +16,6 @@ fn parse_http_date(date_str: &str) -> Option<u64> {
     // Try parsing with httpdate crate first (most efficient)
     if let Ok(system_time) = httpdate::parse_http_date(date_str) {
         return system_time.duration_since(UNIX_EPOCH).ok().map(|d| d.as_secs());
-    }
-    
     // Fall back to chrono parsing for additional formats
     let formats = [
         "%a, %d %b %Y %H:%M:%S GMT",         // RFC 1123: "Sun, 06 Nov 1994 08:49:37 GMT"
@@ -32,8 +30,6 @@ fn parse_http_date(date_str: &str) -> Option<u64> {
     for format in &formats {
         if let Ok(parsed) = DateTime::parse_from_str(date_str, format) {
             return Some(parsed.timestamp() as u64);
-        }
-        
         // Try parsing as UTC
         if let Ok(parsed) = chrono::NaiveDateTime::parse_from_str(date_str, format) {
             return Some(parsed.and_utc().timestamp() as u64);
@@ -41,29 +37,14 @@ fn parse_http_date(date_str: &str) -> Option<u64> {
     }
     
     None
-}
-
 
 
 /// HTTP client for making requests
 pub struct HttpClient {
-    base_url: Option<String>,
-    default_headers: HashMap<String, String>,
-    timeout: Duration,
-    follow_redirects: bool,
-    max_redirects: usize,
-    user_agent: String,
-}
-
 impl HttpClient {
     /// Create new HTTP client
     pub fn new() -> Self {
         Self {
-            base_url: None,
-            default_headers: HashMap::new(),
-            timeout: Duration::from_secs(30),
-            follow_redirects: true,
-            max_redirects: 10,
             user_agent: "CURSED-WebVibez/1.0".to_string(),
         }
     }
@@ -72,74 +53,48 @@ impl HttpClient {
     pub fn with_base_url(mut self, base_url: String) -> Self {
         self.base_url = Some(base_url);
         self
-    }
-
     /// Set default headers
     pub fn with_headers(mut self, headers: HashMap<String, String>) -> Self {
         self.default_headers = headers;
         self
-    }
-
     /// Add default header
     pub fn with_header(mut self, key: String, value: String) -> Self {
         self.default_headers.insert(key, value);
         self
-    }
-
     /// Set request timeout
     pub fn with_timeout(mut self, timeout: Duration) -> Self {
         self.timeout = timeout;
         self
-    }
-
     /// Set redirect behavior
     pub fn with_redirects(mut self, follow: bool, max_redirects: usize) -> Self {
         self.follow_redirects = follow;
         self.max_redirects = max_redirects;
         self
-    }
-
     /// Set user agent
     pub fn with_user_agent(mut self, user_agent: String) -> Self {
         self.user_agent = user_agent;
         self
-    }
-
     /// Make GET request
     pub fn get(&self, url: &str) -> RequestBuilder {
         self.request("GET", url)
-    }
-
     /// Make POST request
     pub fn post(&self, url: &str) -> RequestBuilder {
         self.request("POST", url)
-    }
-
     /// Make PUT request
     pub fn put(&self, url: &str) -> RequestBuilder {
         self.request("PUT", url)
-    }
-
     /// Make DELETE request
     pub fn delete(&self, url: &str) -> RequestBuilder {
         self.request("DELETE", url)
-    }
-
     /// Make PATCH request
     pub fn patch(&self, url: &str) -> RequestBuilder {
         self.request("PATCH", url)
-    }
-
     /// Make HEAD request
     pub fn head(&self, url: &str) -> RequestBuilder {
         self.request("HEAD", url)
-    }
-
     /// Make OPTIONS request
     pub fn options(&self, url: &str) -> RequestBuilder {
         self.request("OPTIONS", url)
-    }
-
     /// Create request builder
     pub fn request(&self, method: &str, url: &str) -> RequestBuilder {
         let full_url = if let Some(base_url) = &self.base_url {
@@ -161,23 +116,13 @@ impl HttpClient {
             }
         } else {
             url.to_string()
-        };
 
         let mut headers = self.default_headers.clone();
         headers.insert("User-Agent".to_string(), self.user_agent.clone());
 
         RequestBuilder {
-            method: method.to_string(),
-            url: full_url,
-            headers,
-            body: None,
-            timeout: self.timeout,
-            follow_redirects: self.follow_redirects,
-            max_redirects: self.max_redirects,
         }
     }
-}
-
 impl Default for HttpClient {
     fn default() -> Self {
         Self::new()
@@ -186,30 +131,17 @@ impl Default for HttpClient {
 
 /// HTTP request builder
 pub struct RequestBuilder {
-    method: String,
-    url: String,
-    headers: HashMap<String, String>,
-    body: Option<Vec<u8>>,
-    timeout: Duration,
-    follow_redirects: bool,
-    max_redirects: usize,
-}
-
 impl RequestBuilder {
     /// Add header to request
     pub fn header(mut self, key: String, value: String) -> Self {
         self.headers.insert(key, value);
         self
-    }
-
     /// Add multiple headers
     pub fn headers(mut self, headers: HashMap<String, String>) -> Self {
         for (key, value) in headers {
             self.headers.insert(key, value);
         }
         self
-    }
-
     /// Set request body (raw bytes)
     pub fn body(mut self, body: Vec<u8>) -> Self {
         let body_len = body.len();
@@ -219,16 +151,12 @@ impl RequestBuilder {
         }
         self.headers.insert("Content-Length".to_string(), body_len.to_string());
         self
-    }
-
     /// Set JSON body
     pub fn json(mut self, json: &str) -> Self {
         self.body = Some(json.as_bytes().to_vec());
         self.headers.insert("Content-Type".to_string(), "application/json".to_string());
         self.headers.insert("Content-Length".to_string(), json.len().to_string());
         self
-    }
-
     /// Set form data body
     pub fn form(mut self, form_data: &HashMap<String, String>) -> Self {
         let body = self.encode_form_data(form_data);
@@ -236,36 +164,26 @@ impl RequestBuilder {
         self.headers.insert("Content-Type".to_string(), "application/x-www-form-urlencoded".to_string());
         self.headers.insert("Content-Length".to_string(), body.len().to_string());
         self
-    }
-
     /// Set text body
     pub fn text(mut self, text: &str) -> Self {
         self.body = Some(text.as_bytes().to_vec());
         self.headers.insert("Content-Type".to_string(), "text/plain".to_string());
         self.headers.insert("Content-Length".to_string(), text.len().to_string());
         self
-    }
-
     /// Set request timeout
     pub fn timeout(mut self, timeout: Duration) -> Self {
         self.timeout = timeout;
         self
-    }
-
     /// Set basic authentication
     pub fn basic_auth(mut self, username: &str, password: &str) -> Self {
         let credentials = format!("{}:{}", username, password);
         let encoded = base64_encode(credentials.as_bytes());
         self.headers.insert("Authorization".to_string(), format!("Basic {}", encoded));
         self
-    }
-
     /// Set bearer token authentication
     pub fn bearer_token(mut self, token: &str) -> Self {
         self.headers.insert("Authorization".to_string(), format!("Bearer {}", token));
         self
-    }
-
     /// Execute the request
     pub fn send(self) -> crate::error::Result<()> {
         // Use async runtime to execute the HTTP request
@@ -273,8 +191,6 @@ impl RequestBuilder {
             .map_err(|e| HttpError::Other(format!("Failed to create async runtime: {}", e)))?;
         
         runtime.block_on(self.send_async())
-    }
-
     /// Execute the request asynchronously
     async fn send_async(self) -> crate::error::Result<()> {
         // Validate URL
@@ -310,8 +226,6 @@ impl RequestBuilder {
         // Add body if present
         if let Some(body) = self.body {
             request_builder = request_builder.body(body);
-        }
-
         // Send the request
         let start_time = SystemTime::now();
         let response = request_builder.send().await
@@ -351,14 +265,7 @@ impl RequestBuilder {
             .to_vec();
 
         Ok(HttpResponse {
-            status,
-            headers: response_headers,
-            body,
-            url,
-            request_duration,
         })
-    }
-
     /// Encode form data as URL-encoded string
     fn encode_form_data(&self, form_data: &HashMap<String, String>) -> String {
         form_data
@@ -366,63 +273,36 @@ impl RequestBuilder {
             .map(|(key, value)| format!("{}={}", url_encode(key), url_encode(value)))
             .collect::<Vec<_>>()
             .join("&")
-    }
-
-
-}
 
 /// HTTP response
 #[derive(Debug)]
 pub struct HttpResponse {
-    pub status: u16,
-    pub headers: HashMap<String, String>,
-    pub body: Vec<u8>,
-    pub url: String,
-    pub request_duration: Duration,
-}
-
 impl HttpResponse {
     /// Check if response is successful (2xx status)
     pub fn is_success(&self) -> bool {
         (200..300).contains(&self.status)
-    }
-
     /// Check if response is client error (4xx status)
     pub fn is_client_error(&self) -> bool {
         (400..500).contains(&self.status)
-    }
-
     /// Check if response is server error (5xx status)
     pub fn is_server_error(&self) -> bool {
         (500..600).contains(&self.status)
-    }
-
     /// Get response body as string
     pub fn text(&self) -> crate::error::Result<()> {
         String::from_utf8(self.body.clone())
-    }
-
     /// Get response body as bytes
     pub fn bytes(&self) -> &[u8] {
         &self.body
-    }
-
     /// Get header value
     pub fn header(&self, name: &str) -> Option<&String> {
         self.headers.get(name)
-    }
-
     /// Get content type
     pub fn content_type(&self) -> Option<&String> {
         self.header("Content-Type")
-    }
-
     /// Get content length
     pub fn content_length(&self) -> Option<usize> {
         self.header("Content-Length")
             .and_then(|s| s.parse().ok())
-    }
-
     /// Parse JSON response (simplified)
     pub fn json(&self) -> crate::error::Result<()> {
         // In a real implementation, this would parse JSON using a proper parser
@@ -439,13 +319,9 @@ impl HttpResponse {
     /// Check if response has specific header
     pub fn has_header(&self, name: &str) -> bool {
         self.headers.contains_key(name)
-    }
-
     /// Get all header names
     pub fn header_names(&self) -> Vec<&String> {
         self.headers.keys().collect()
-    }
-
     /// Get response cookies (simplified)
     pub fn cookies(&self) -> Vec<Cookie> {
         let mut cookies = Vec::new();
@@ -456,8 +332,6 @@ impl HttpResponse {
                     cookies.push(cookie);
                 }
             }
-        }
-        
         cookies
     }
 }
@@ -465,20 +339,6 @@ impl HttpResponse {
 /// HTTP errors
 #[derive(Debug)]
 pub enum HttpError {
-    NetworkError(String),
-    TimeoutError,
-    InvalidUrl(String),
-    InvalidResponse,
-    InvalidJson,
-    TooManyRedirects,
-    AuthenticationFailed,
-    TlsError(String),
-    ConnectionError(String),
-    RequestError(String),
-    ResponseError(String),
-    Other(String),
-}
-
 // impl std::fmt::Display for HttpError {
 //     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
 //         match self {
@@ -503,40 +363,17 @@ pub enum HttpError {
 /// Cookie structure
 #[derive(Debug, Clone)]
 pub struct Cookie {
-    pub name: String,
-    pub value: String,
-    pub domain: Option<String>,
-    pub path: Option<String>,
-    pub secure: bool,
-    pub http_only: bool,
-    pub expires: Option<u64>,
-    pub max_age: Option<u64>,
-}
-
 impl Cookie {
     /// Parse cookie from Set-Cookie header value
     pub fn parse(cookie_str: &str) -> Option<Self> {
         let parts: Vec<&str> = cookie_str.split(';').collect();
         if parts.is_empty() {
             return None;
-        }
-
         // Parse name=value
         let name_value: Vec<&str> = parts[0].trim().splitn(2, '=').collect();
         if name_value.len() != 2 {
             return None;
-        }
-
         let mut cookie = Cookie {
-            name: name_value[0].trim().to_string(),
-            value: name_value[1].trim().to_string(),
-            domain: None,
-            path: None,
-            secure: false,
-            http_only: false,
-            expires: None,
-            max_age: None,
-        };
 
         // Parse attributes
         for part in &parts[1..] {
@@ -547,20 +384,13 @@ impl Cookie {
                 cookie.http_only = true;
             } else if let Some((key, value)) = part.split_once('=') {
                 match key.trim().to_lowercase().as_str() {
-                    "domain" => cookie.domain = Some(value.trim().to_string()),
-                    "path" => cookie.path = Some(value.trim().to_string()),
-                    "max-age" => cookie.max_age = value.trim().parse().ok(),
                     "expires" => {
                         cookie.expires = parse_http_date(value.trim());
                     }
                     _ => {}
                 }
             }
-        }
-
         Some(cookie)
-    }
-
     /// Convert cookie to string for Cookie header
     pub fn to_header_value(&self) -> String {
         format!("{}={}", self.name, self.value)
@@ -569,27 +399,12 @@ impl Cookie {
 
 /// Connection pool for reusing connections
 pub struct ConnectionPool {
-    connections: HashMap<String, Vec<Connection>>,
-    max_connections_per_host: usize,
-    connection_timeout: Duration,
-    idle_timeout: Duration,
-}
-
 #[derive(Debug)]
 struct Connection {
-    host: String,
-    created_at: SystemTime,
-    last_used: SystemTime,
-    is_active: bool,
-}
-
 impl ConnectionPool {
     /// Create new connection pool
     pub fn new() -> Self {
         Self {
-            connections: HashMap::new(),
-            max_connections_per_host: 10,
-            connection_timeout: Duration::from_secs(30),
             idle_timeout: Duration::from_secs(300), // 5 minutes
         }
     }
@@ -598,8 +413,6 @@ impl ConnectionPool {
     pub fn with_max_connections(mut self, max: usize) -> Self {
         self.max_connections_per_host = max;
         self
-    }
-
     /// Get connection for host
     pub fn get_connection(&mut self, host: &str) -> Option<Connection> {
         self.cleanup_idle_connections();
@@ -612,13 +425,7 @@ impl ConnectionPool {
 
         // Create new connection if none available
         Some(Connection {
-            host: host.to_string(),
-            created_at: SystemTime::now(),
-            last_used: SystemTime::now(),
-            is_active: true,
         })
-    }
-
     /// Return connection to pool
     pub fn return_connection(&mut self, mut connection: Connection) {
         connection.last_used = SystemTime::now();
@@ -639,25 +446,15 @@ impl ConnectionPool {
             connections.retain(|conn| {
                 now.duration_since(conn.last_used).unwrap_or_default() < self.idle_timeout
             });
-        }
-        
         self.connections.retain(|_, connections| !connections.is_empty());
-    }
-
     /// Get pool statistics
     pub fn stats(&self) -> PoolStats {
         let total_connections: usize = self.connections.values().map(|v| v.len()).sum();
         let total_hosts = self.connections.len();
 
         PoolStats {
-            total_connections,
-            total_hosts,
-            max_connections_per_host: self.max_connections_per_host,
-            idle_timeout_seconds: self.idle_timeout.as_secs(),
         }
     }
-}
-
 impl Default for ConnectionPool {
     fn default() -> Self {
         Self::new()
@@ -667,17 +464,9 @@ impl Default for ConnectionPool {
 /// Connection pool statistics
 #[derive(Debug)]
 pub struct PoolStats {
-    pub total_connections: usize,
-    pub total_hosts: usize,
-    pub max_connections_per_host: usize,
-    pub idle_timeout_seconds: u64,
-}
-
 /// URL encoding using the urlencoding crate
 fn url_encode(input: &str) -> String {
     urlencoding::encode(input).to_string()
-}
-
 /// Simple base64 encoding
 fn base64_encode(input: &[u8]) -> String {
     const CHARS: &[u8] = b"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
@@ -687,16 +476,10 @@ fn base64_encode(input: &[u8]) -> String {
         let mut buf = [0u8; 3];
         for (i, &byte) in chunk.iter().enumerate() {
             buf[i] = byte;
-        }
-        
         let b = ((buf[0] as u32) << 16) | ((buf[1] as u32) << 8) | (buf[2] as u32);
         
         result.push(CHARS[((b >> 18) & 0x3F) as usize] as char);
         result.push(CHARS[((b >> 12) & 0x3F) as usize] as char);
         result.push(if chunk.len() > 1 { CHARS[((b >> 6) & 0x3F) as usize] as char } else { '=' });
         result.push(if chunk.len() > 2 { CHARS[(b & 0x3F) as usize] as char } else { '=' });
-    }
-    
     result
-}
-

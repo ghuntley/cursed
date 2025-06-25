@@ -12,25 +12,13 @@ use crate::lexer::{Lexer, TokenType};
 /// Navigation provider for the LSP server
 pub struct NavigationProvider {
     /// Symbol cache for quick lookups
-    symbol_cache: std::sync::RwLock<HashMap<String, Vec<SymbolInfo>>>,
-}
-
 /// Symbol information for navigation
 #[derive(Debug, Clone)]
 struct SymbolInfo {
-    name: String,
-    kind: SymbolKind,
-    location: Location,
-    definition_location: Option<Location>,
-    documentation: Option<String>,
-    type_info: Option<String>,
-}
-
 impl NavigationProvider {
     /// Create a new navigation provider
     pub fn new() -> Self {
         Self {
-            symbol_cache: std::sync::RwLock::new(HashMap::new()),
         }
     }
 
@@ -45,10 +33,6 @@ impl NavigationProvider {
         if let Some(content_str) = hover_content {
             Some(Hover {
                 contents: HoverContents::Markup(MarkupContent {
-                    kind: MarkupKind::Markdown,
-                    value: content_str,
-                }),
-                range: Some(self.get_word_range(content, position, &word)),
             })
         } else {
             None
@@ -58,10 +42,6 @@ impl NavigationProvider {
     /// Get definition location
     #[instrument(skip(self, content))]
     pub async fn get_definition(
-        &self,
-        content: &str,
-        position: Position,
-        uri: &Url,
     ) -> Option<GotoDefinitionResponse> {
         debug!("Getting definition at {:?}", position);
         
@@ -78,10 +58,6 @@ impl NavigationProvider {
     /// Find all references to symbol
     #[instrument(skip(self, content))]
     pub async fn find_references(
-        &self,
-        content: &str,
-        position: Position,
-        uri: &Url,
     ) -> Vec<Location> {
         debug!("Finding references at {:?}", position);
         
@@ -100,15 +76,11 @@ impl NavigationProvider {
 
         if line_index >= lines.len() {
             return None;
-        }
-
         let line = lines[line_index];
         let chars: Vec<char> = line.chars().collect();
 
         if char_index >= chars.len() {
             return None;
-        }
-
         // Find word boundaries
         let mut start = char_index;
         let mut end = char_index;
@@ -116,13 +88,9 @@ impl NavigationProvider {
         // Move start backward
         while start > 0 && (chars[start - 1].is_alphanumeric() || chars[start - 1] == '_') {
             start -= 1;
-        }
-
         // Move end forward
         while end < chars.len() && (chars[end].is_alphanumeric() || chars[end] == '_') {
             end += 1;
-        }
-
         if start < end {
             Some(chars[start..end].iter().collect())
         } else {
@@ -140,60 +108,33 @@ impl NavigationProvider {
             if let Some(word_start) = line.find(word) {
                 return Range {
                     start: Position {
-                        line: position.line,
-                        character: word_start as u32,
-                    },
                     end: Position {
-                        line: position.line,
-                        character: (word_start + word.len()) as u32,
-                    },
-                };
             }
         }
 
         // Fallback to single character range
         Range {
-            start: position,
             end: Position {
-                line: position.line,
-                character: position.character + 1,
-            },
         }
     }
 
     /// Get symbol hover content
     fn get_symbol_hover_content(
-        &self,
-        content: &str,
-        symbol: &str,
-        position: Position,
     ) -> Option<String> {
         // Check if it's a built-in function
         if let Some(builtin_info) = self.get_builtin_function_info(symbol) {
             return Some(builtin_info);
-        }
-
         // Check if it's a keyword
         if let Some(keyword_info) = self.get_keyword_info(symbol) {
             return Some(keyword_info);
-        }
-
         // Check if it's a user-defined symbol
         if let Some(user_info) = self.get_user_symbol_info(content, symbol, position) {
             return Some(user_info);
-        }
-
         None
-    }
-
     /// Get built-in function information
     fn get_builtin_function_info(&self, symbol: &str) -> Option<String> {
         let builtins = HashMap::from([
             // Core I/O functions
-            ("print", "```cursed\nslay print(value: any)\n```\n\nPrints a value to stdout without a newline.\n\n**Example:**\n```cursed\nprint(\"Hello\")\nprint(42)\n```"),
-            ("println", "```cursed\nslay println(value: any)\n```\n\nPrints a value to stdout with a newline.\n\n**Example:**\n```cursed\nprintln(\"Hello World!\")\n```"),
-            ("eprint", "```cursed\nslay eprint(value: any)\n```\n\nPrints a value to stderr without a newline.\n\n**Example:**\n```cursed\neprint(\"CursedError: \")\n```"),
-            ("eprintln", "```cursed\nslay eprintln(value: any)\n```\n\nPrints a value to stderr with a newline.\n\n**Example:**\n```cursed\neprintln(\"Fatal error occurred!\")\n```"),
             
             // Type conversion functions
             ("len", "```cursed\nslay len(collection: array|string|map|slice) -> int\n```\n\nReturns the length of a collection or string.\n\n**Example:**\n```cursed\nfacts arr = [1, 2, 3]\nprintln(len(arr)) // 3\n```"),
@@ -204,8 +145,6 @@ impl NavigationProvider {
             ("type", "```cursed\nslay type(value: any) -> string\n```\n\nReturns the type name of a value.\n\n**Example:**\n```cursed\nprintln(type(42)) // \"int\"\nprintln(type(\"hello\")) // \"string\"\n```"),
             
             // Control flow functions
-            ("panic", "```cursed\nslay panic(message: string)\n```\n\nTerminates the program with an error message.\n\n**Example:**\n```cursed\nlowkey critical_error {\n    panic(\"Something went terribly wrong!\")\n}\n```"),
-            ("assert", "```cursed\nslay assert(condition: bool, message?: string)\n```\n\nAsserts that a condition is true, panics if false.\n\n**Example:**\n```cursed\nassert(len(arr) > 0, \"Array must not be empty\")\n```"),
             ("unreachable", "```cursed\nslay unreachable() -> never\n```\n\nMarks code as unreachable. Panics if reached.\n\n**Example:**\n```cursed\nvibe_check state {\n    mood \"valid\":\n        bounce \"OK\"\n    basic:\n        unreachable() // This should never happen\n}\n```"),
             
             // Collection functions
@@ -217,15 +156,11 @@ impl NavigationProvider {
             ("delete", "```cursed\nslay delete(map: map[K]V, key: K)\n```\n\nDeletes a key from a map.\n\n**Example:**\n```cursed\nsus m = {\"a\": 1, \"b\": 2}\ndelete(m, \"a\") // m is now {\"b\": 2}\n```"),
             
             // Concurrency functions
-            ("spawn", "```cursed\nslay spawn(function: () -> any)\n```\n\nSpawns a new goroutine to execute the given function.\n\n**Example:**\n```cursed\nspawn {\n    println(\"Running in goroutine!\")\n}\n```"),
             ("yield", "```cursed\nslay yield()\n```\n\nYields execution to the scheduler.\n\n**Example:**\n```cursed\nperiodt true {\n    println(\"Working...\")\n    yield() // Let other goroutines run\n}\n```"),
             ("sleep", "```cursed\nslay sleep(duration: int)\n```\n\nSleeps for the specified duration in milliseconds.\n\n**Example:**\n```cursed\nsleep(1000) // Sleep for 1 second\n```"),
             
             // Channel functions
             ("make_channel", "```cursed\nslay make_channel(buffer_size?: int) -> chan T\n```\n\nCreates a new channel.\n\n**Example:**\n```cursed\nfacts ch = make_channel(10) // Buffered channel\nfacts unbuffered = make_channel() // Unbuffered channel\n```"),
-            ("send", "```cursed\nslay send(channel: chan T, value: T)\n```\n\nSends a value to a channel.\n\n**Example:**\n```cursed\nfacts ch = make_channel()\nsend(ch, \"hello\")\n```"),
-            ("recv", "```cursed\nslay recv(channel: chan T) -> T\n```\n\nReceives a value from a channel.\n\n**Example:**\n```cursed\nfacts value = recv(ch)\n```"),
-            ("close", "```cursed\nslay close(channel: chan T)\n```\n\nCloses a channel.\n\n**Example:**\n```cursed\nclose(ch)\n```"),
             
             // Math functions
             ("abs", "```cursed\nslay abs(value: int|float) -> int|float\n```\n\nReturns the absolute value.\n\n**Example:**\n```cursed\nfacts result = abs(-42) // 42\n```"),
@@ -235,55 +170,34 @@ impl NavigationProvider {
             ("pow", "```cursed\nslay pow(base: float, exponent: float) -> float\n```\n\nReturns base raised to the power of exponent.\n\n**Example:**\n```cursed\nfacts result = pow(2.0, 3.0) // 8.0\n```"),
             
             // String functions
-            ("format", "```cursed\nslay format(template: string, ...args: any) -> string\n```\n\nFormats a string with arguments.\n\n**Example:**\n```cursed\nfacts msg = format(\"Hello, {}! You are {} years old.\", name, age)\n```"),
             ("split", "```cursed\nslay split(string: string, delimiter: string) -> []string\n```\n\nSplits a string by delimiter.\n\n**Example:**\n```cursed\nfacts parts = split(\"a,b,c\", \",\") // [\"a\", \"b\", \"c\"]\n```"),
             ("join", "```cursed\nslay join(strings: []string, delimiter: string) -> string\n```\n\nJoins strings with delimiter.\n\n**Example:**\n```cursed\nfacts result = join([\"a\", \"b\", \"c\"], \",\") // \"a,b,c\"\n```"),
             ("trim", "```cursed\nslay trim(string: string) -> string\n```\n\nTrims whitespace from both ends.\n\n**Example:**\n```cursed\nfacts clean = trim(\"  hello  \") // \"hello\"\n```"),
             ("replace", "```cursed\nslay replace(string: string, old: string, new: string) -> string\n```\n\nReplaces all occurrences of old with new.\n\n**Example:**\n```cursed\nfacts result = replace(\"hello world\", \"world\", \"CURSED\") // \"hello CURSED\"\n```"),
             
             // CursedError handling functions
-            ("try", "```cursed\nslay try(expression: T) -> crate::error::Result<()>\n```\n\nTries an expression and returns a Result.\n\n**Example:**\n```cursed\nfacts result = try(risky_operation())\n```"),
-            ("unwrap", "```cursed\nslay unwrap(result: Result<T, E>) -> T\n```\n\nUnwraps a Result or panics.\n\n**Example:**\n```cursed\nfacts value = unwrap(result)\n```"),
-            ("expect", "```cursed\nslay expect(result: Result<T, E>, message: string) -> T\n```\n\nUnwraps a Result or panics with message.\n\n**Example:**\n```cursed\nfacts value = expect(result, \"Failed to parse number\")\n```"),
         ]);
 
         builtins.get(symbol).map(|info| info.to_string())
-    }
-
     /// Get keyword information
     fn get_keyword_info(&self, symbol: &str) -> Option<String> {
         let keywords = HashMap::from([
             ("slay", "**slay** - Function declaration keyword\n\nDeclares a new function in CURSED.\n\n```cursed\nslay functionName(params) -> returnType {\n    // function body\n}\n```"),
-            ("yolo", "**yolo** - Async function declaration keyword\n\nDeclares an asynchronous function in CURSED.\n\n```cursed\nyolo asyncFunction() {\n    await someAsyncOperation()\n}\n```"),
-            ("facts", "**facts** - Immutable variable declaration\n\nDeclares an immutable variable (constant).\n\n```cursed\nfacts pi = 3.14159\nfacts name: string = \"CURSED\"\n```"),
-            ("sus", "**sus** - Mutable variable declaration\n\nDeclares a mutable variable.\n\n```cursed\nsus counter = 0\nsus name: string = \"changeable\"\n```"),
             ("lowkey", "**lowkey** - If statement\n\nConditional execution keyword.\n\n```cursed\nlowkey condition {\n    // execute if true\n}\n```"),
             ("highkey", "**highkey** - Else statement\n\nElse clause for conditional statements.\n\n```cursed\nlowkey condition {\n    // if true\n} highkey {\n    // if false\n}\n```"),
             ("periodt", "**periodt** - Loop statement\n\nGeneral loop construct.\n\n```cursed\nperiodt condition {\n    // loop body\n}\n```"),
             ("bestie", "**bestie** - For loop\n\nIterates over collections.\n\n```cursed\nbestie item in collection {\n    // process item\n}\n```"),
             ("flex", "**flex** - While loop\n\nConditional loop.\n\n```cursed\nflex condition {\n    // loop body\n}\n```"),
-            ("squad", "**squad** - Struct declaration\n\nDefines a new struct type.\n\n```cursed\nsquad Person {\n    name: string,\n    age: int,\n}\n```"),
-            ("collab", "**collab** - Interface declaration\n\nDefines a new interface.\n\n```cursed\ncollab Drawable {\n    draw() -> void,\n}\n```"),
-            ("vibes", "**vibes** - Enum declaration\n\nDefines an enumeration.\n\n```cursed\nvibes Color {\n    Red,\n    Green,\n    Blue,\n}\n```"),
-            ("bounce", "**bounce** - Return statement\n\nReturns a value from a function.\n\n```cursed\nbounce result\n```"),
             ("yeet", "**yeet** - Throw/panic statement\n\nThrows an error or panics.\n\n```cursed\nyeet \"Something went wrong!\"\n```"),
             ("vibe_check", "**vibe_check** - Switch statement\n\nMulti-way conditional.\n\n```cursed\nvibe_check value {\n    mood case1:\n        // handle case1\n    basic:\n        // default case\n}\n```"),
             ("mood", "**mood** - Case statement\n\nCase clause in switch statements.\n\n```cursed\nmood value:\n    // handle this case\n```"),
             ("basic", "**basic** - Default case\n\nDefault clause in switch statements.\n\n```cursed\nbasic:\n    // default handling\n```"),
-            ("chan", "**chan** - Channel type\n\nDeclares a channel for goroutine communication.\n\n```cursed\nfacts ch: chan int = make(chan int)\n```"),
             ("use", "**use** - Import statement\n\nImports modules or packages.\n\n```cursed\nuse \"std/fmt\"\nuse \"./mymodule\"\n```"),
-            ("await", "**await** - Await async operation\n\nWaits for an async operation to complete.\n\n```cursed\nfacts result = await asyncFunction()\n```"),
         ]);
 
         keywords.get(symbol).map(|info| info.to_string())
-    }
-
     /// Get user-defined symbol information
     fn get_user_symbol_info(
-        &self,
-        content: &str,
-        symbol: &str,
-        _position: Position,
     ) -> Option<String> {
         let lines: Vec<&str> = content.split("\n").collect();
 
@@ -294,13 +208,10 @@ impl NavigationProvider {
                     let mutability = if is_mutable { "mutable" } else { "immutable" };
                     let type_str = var_type.unwrap_or_else(|| "inferred".to_string());
                     return Some(format!(
-                        "**{}** - {} variable\n\n```cursed\n{}\n```\n\nType: `{}`\nDefined at line {}",
                         symbol, mutability, line.trim(), type_str, line_num + 1
                     ));
                 }
             }
-        }
-
         // Look for function declarations
         for (line_num, line) in lines.iter().enumerate() {
             if let Some((func_name, params, return_type)) = self.extract_function_info(line) {
@@ -309,20 +220,15 @@ impl NavigationProvider {
                         format!("{}({}) -> {}", func_name, params, return_type)
                     } else {
                         format!("{}({})", func_name, params)
-                    };
                     return Some(format!(
-                        "**{}** - user-defined function\n\n```cursed\n{}\n```\n\nDefined at line {}",
                         symbol, signature, line_num + 1
                     ));
                 }
             }
-        }
-
         // Look for struct declarations
         for (line_num, line) in lines.iter().enumerate() {
             if line.contains("squad") && line.contains(symbol) {
                 return Some(format!(
-                    "**{}** - struct type\n\n```cursed\n{}\n```\n\nDefined at line {}",
                     symbol, line.trim(), line_num + 1
                 ));
             }
@@ -332,15 +238,12 @@ impl NavigationProvider {
         for (line_num, line) in lines.iter().enumerate() {
             if line.contains("collab") && line.contains(symbol) {
                 return Some(format!(
-                    "**{}** - interface type\n\n```cursed\n{}\n```\n\nDefined at line {}",
                     symbol, line.trim(), line_num + 1
                 ));
             }
         }
 
         None
-    }
-
     /// Find symbol definition location
     fn find_symbol_definition(&self, content: &str, symbol: &str, uri: &Url) -> Option<Location> {
         let lines: Vec<&str> = content.split("\n").collect();
@@ -351,17 +254,9 @@ impl NavigationProvider {
                 if var_name == symbol {
                     if let Some(name_start) = line.find(&var_name) {
                         return Some(Location {
-                            uri: uri.clone(),
                             range: Range {
                                 start: Position {
-                                    line: line_num as u32,
-                                    character: name_start as u32,
-                                },
                                 end: Position {
-                                    line: line_num as u32,
-                                    character: (name_start + var_name.len()) as u32,
-                                },
-                            },
                         });
                     }
                 }
@@ -374,17 +269,9 @@ impl NavigationProvider {
                 if func_name == symbol {
                     if let Some(name_start) = line.find(&func_name) {
                         return Some(Location {
-                            uri: uri.clone(),
                             range: Range {
                                 start: Position {
-                                    line: line_num as u32,
-                                    character: name_start as u32,
-                                },
                                 end: Position {
-                                    line: line_num as u32,
-                                    character: (name_start + func_name.len()) as u32,
-                                },
-                            },
                         });
                     }
                 }
@@ -397,25 +284,13 @@ impl NavigationProvider {
                 && line.contains(symbol) {
                 if let Some(name_start) = line.find(symbol) {
                     return Some(Location {
-                        uri: uri.clone(),
                         range: Range {
                             start: Position {
-                                line: line_num as u32,
-                                character: name_start as u32,
-                            },
                             end: Position {
-                                line: line_num as u32,
-                                character: (name_start + symbol.len()) as u32,
-                            },
-                        },
                     });
                 }
             }
-        }
-
         None
-    }
-
     /// Find all references to a symbol
     fn find_symbol_references(&self, content: &str, symbol: &str, uri: &Url) -> Vec<Location> {
         let mut references = Vec::new();
@@ -434,33 +309,19 @@ impl NavigationProvider {
                         let end_pos = actual_pos + symbol.len();
                         end_pos >= line.len() || 
                         !line.chars().nth(end_pos).unwrap_or(' ').is_alphanumeric()
-                    };
                     before_ok && after_ok
-                };
 
                 if is_word_boundary {
                     references.push(Location {
-                        uri: uri.clone(),
                         range: Range {
                             start: Position {
-                                line: line_num as u32,
-                                character: actual_pos as u32,
-                            },
                             end: Position {
-                                line: line_num as u32,
-                                character: (actual_pos + symbol.len()) as u32,
-                            },
-                        },
                     });
-                }
-
                 search_pos = actual_pos + 1;
             }
         }
 
         references
-    }
-
     /// Extract variable information from a line
     fn extract_variable_info(&self, line: &str) -> Option<(String, Option<String>, bool)> {
         if let Some(facts_pos) = line.find("facts") {
@@ -513,15 +374,12 @@ impl NavigationProvider {
                         line[arrow_pos + 2..].split('{').next()?.trim().to_string()
                     } else {
                         String::new()
-                    };
                     
                     return Some((func_name, params, return_type));
                 }
             }
         }
         None
-    }
-
     /// Infer type from value
     fn infer_type_from_value(&self, value: &str) -> Option<String> {
         let value = value.trim();
@@ -542,8 +400,6 @@ impl NavigationProvider {
             None
         }
     }
-}
-
 impl Default for NavigationProvider {
     fn default() -> Self {
         Self::new()

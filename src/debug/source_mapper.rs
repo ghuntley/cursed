@@ -12,17 +12,11 @@ use std::sync::{Arc, RwLock};
 /// Source mapper for handling source map operations
 pub struct SourceMapper {
     /// Source content cache
-    source_cache: Arc<RwLock<HashMap<PathBuf, String>>>,
     /// Line mapping cache
-    line_cache: Arc<RwLock<HashMap<PathBuf, Vec<String>>>>,
-}
-
 impl SourceMapper {
     /// Create new source mapper
     pub fn new() -> Self {
         SourceMapper {
-            source_cache: Arc::new(RwLock::new(HashMap::new())),
-            line_cache: Arc::new(RwLock::new(HashMap::new())),
         }
     }
 
@@ -37,29 +31,17 @@ impl SourceMapper {
             let mut source_cache = self.source_cache.write()
                 .map_err(|_| CursedError::Runtime("Failed to acquire source cache lock".to_string()))?;
             source_cache.insert(file_path.to_path_buf(), content);
-        }
-
         {
             let mut line_cache = self.line_cache.write()
                 .map_err(|_| CursedError::Runtime("Failed to acquire line cache lock".to_string()))?;
             line_cache.insert(file_path.to_path_buf(), lines);
-        }
-
         Ok(())
-    }
-
     /// Get source snippet around a line
     pub fn get_source_snippet(
-        &self,
-        file_path: &Path,
-        line: u32,
-        context_lines: u32,
     ) -> crate::error::Result<()> {
         // Ensure file is loaded
         if !self.is_file_cached(file_path) {
             self.load_source_file(file_path)?;
-        }
-
         let line_cache = self.line_cache.read()
             .map_err(|_| CursedError::Runtime("Failed to acquire line cache lock".to_string()))?;
 
@@ -70,15 +52,11 @@ impl SourceMapper {
 
             if start_line >= lines.len() {
                 return Err(CursedError::Runtime("Line number out of range".to_string()));
-            }
-
             let mut snippet = String::new();
             for (i, line_content) in lines[start_line..end_line].iter().enumerate() {
                 let line_number = start_line + i + 1;
                 let marker = if line_number == line as usize { ">" } else { " " };
                 snippet.push_str(&format!("{} {:4} | {}\n", marker, line_number, line_content));
-            }
-
             Ok(snippet)
         } else {
             Err(CursedError::Runtime("Source file not found in cache".to_string()))
@@ -89,8 +67,6 @@ impl SourceMapper {
     pub fn get_line(&self, file_path: &Path, line: u32) -> crate::error::Result<()> {
         if !self.is_file_cached(file_path) {
             self.load_source_file(file_path)?;
-        }
-
         let line_cache = self.line_cache.read()
             .map_err(|_| CursedError::Runtime("Failed to acquire line cache lock".to_string()))?;
 
@@ -121,31 +97,21 @@ impl SourceMapper {
             .map_err(|_| CursedError::Runtime("Failed to acquire source cache lock".to_string()))?;
 
         Ok(cache.keys().cloned().collect())
-    }
-
     /// Clear cache
     pub fn clear_cache(&self) -> crate::error::Result<()> {
         {
             let mut source_cache = self.source_cache.write()
                 .map_err(|_| CursedError::Runtime("Failed to acquire source cache lock".to_string()))?;
             source_cache.clear();
-        }
-
         {
             let mut line_cache = self.line_cache.write()
                 .map_err(|_| CursedError::Runtime("Failed to acquire line cache lock".to_string()))?;
             line_cache.clear();
-        }
-
         Ok(())
-    }
-
     /// Get file line count
     pub fn get_line_count(&self, file_path: &Path) -> crate::error::Result<()> {
         if !self.is_file_cached(file_path) {
             self.load_source_file(file_path)?;
-        }
-
         let line_cache = self.line_cache.read()
             .map_err(|_| CursedError::Runtime("Failed to acquire line cache lock".to_string()))?;
 
@@ -158,15 +124,9 @@ impl SourceMapper {
 
     /// Find lines containing pattern
     pub fn find_pattern(
-        &self,
-        file_path: &Path,
-        pattern: &str,
-        case_sensitive: bool,
     ) -> crate::error::Result<()> {
         if !self.is_file_cached(file_path) {
             self.load_source_file(file_path)?;
-        }
-
         let line_cache = self.line_cache.read()
             .map_err(|_| CursedError::Runtime("Failed to acquire line cache lock".to_string()))?;
 
@@ -178,7 +138,6 @@ impl SourceMapper {
                     line.contains(pattern)
                 } else {
                     line.to_lowercase().contains(&pattern.to_lowercase())
-                };
 
                 if matches_pattern {
                     matches.push((i as u32 + 1, line.clone()));
@@ -193,20 +152,12 @@ impl SourceMapper {
 
     /// Get source excerpt with highlighted pattern
     pub fn get_highlighted_excerpt(
-        &self,
-        file_path: &Path,
-        line: u32,
-        column: u32,
-        length: u32,
-        context_lines: u32,
     ) -> crate::error::Result<()> {
         let snippet = self.get_source_snippet(file_path, line, context_lines)?;
         
         // TODO: Add highlighting logic for the specific column and length
         // For now, just return the snippet with a marker
         let highlighted = snippet.replace(
-            &format!(" {:4} |", line),
-            &format!(">{:4} |", line),
         );
 
         Ok(highlighted)
@@ -217,26 +168,14 @@ impl SourceMapper {
 #[derive(Debug, Clone)]
 pub struct EnhancedSourceLocation {
     /// File path
-    pub file_path: PathBuf,
     /// Line number (1-based)
-    pub line: u32,
     /// Column number (1-based)
-    pub column: u32,
     /// Length of the location
-    pub length: Option<u32>,
     /// Source excerpt
-    pub excerpt: Option<String>,
-}
-
 impl EnhancedSourceLocation {
     /// Create new enhanced source location
     pub fn new(file_path: PathBuf, line: u32, column: u32) -> Self {
         EnhancedSourceLocation {
-            file_path,
-            line,
-            column,
-            length: None,
-            excerpt: None,
         }
     }
 
@@ -244,20 +183,13 @@ impl EnhancedSourceLocation {
     pub fn with_length(mut self, length: u32) -> Self {
         self.length = Some(length);
         self
-    }
-
     /// Add source excerpt
     pub fn with_excerpt(mut self, excerpt: String) -> Self {
         self.excerpt = Some(excerpt);
         self
-    }
-
     /// Generate source location string
     pub fn to_string(&self) -> String {
         if let Some(file_name) = self.file_path.file_name() {
-            format!("{}:{}:{}", 
-                file_name.to_string_lossy(),
-                self.line,
                 self.column
             )
         } else {
@@ -267,9 +199,6 @@ impl EnhancedSourceLocation {
 
     /// Get full path string
     pub fn full_path_string(&self) -> String {
-        format!("{}:{}:{}", 
-            self.file_path.display(),
-            self.line,
             self.column
         )
     }
@@ -287,8 +216,6 @@ impl SourceMappingUtils {
         for (i, ch) in source.char_indices() {
             if i >= offset {
                 break;
-            }
-            
             if ch == '\n' {
                 line += 1;
                 column = 1;
@@ -298,8 +225,6 @@ impl SourceMappingUtils {
         }
         
         (line, column)
-    }
-
     /// Calculate byte offset from line and column
     pub fn line_column_to_offset(source: &str, target_line: u32, target_column: u32) -> Option<usize> {
         let mut line = 1;
@@ -308,8 +233,6 @@ impl SourceMappingUtils {
         for (i, ch) in source.char_indices() {
             if line == target_line && column == target_column {
                 return Some(i);
-            }
-            
             if ch == '\n' {
                 line += 1;
                 column = 1;
@@ -329,8 +252,6 @@ impl SourceMappingUtils {
     /// Validate line and column against source
     pub fn validate_location(source: &str, line: u32, column: u32) -> bool {
         Self::line_column_to_offset(source, line, column).is_some()
-    }
-
     /// Get word boundaries at location
     pub fn get_word_boundaries(source: &str, line: u32, column: u32) -> Option<(u32, u32)> {
         if let Some(offset) = Self::line_column_to_offset(source, line, column) {
@@ -338,20 +259,14 @@ impl SourceMappingUtils {
             
             if offset >= chars.len() {
                 return None;
-            }
-            
             // Find word start
             let mut start = offset;
             while start > 0 && (chars[start - 1].is_alphanumeric() || chars[start - 1] == '_') {
                 start -= 1;
-            }
-            
             // Find word end
             let mut end = offset;
             while end < chars.len() && (chars[end].is_alphanumeric() || chars[end] == '_') {
                 end += 1;
-            }
-            
             let (start_line, start_column) = Self::offset_to_line_column(source, start);
             let (end_line, end_column) = Self::offset_to_line_column(source, end);
             
@@ -365,5 +280,3 @@ impl SourceMappingUtils {
             None
         }
     }
-}
-

@@ -12,37 +12,20 @@ pub type SignatureResult<T> = std::result::Result<T, SignatureError>;
 #[derive(Debug, Clone)]
 pub enum SignatureError {
     /// Invalid private key format or content
-    InvalidPrivateKey(String),
     /// Invalid public key format or content
-    InvalidPublicKey(String),
     /// Invalid signature format or content
-    InvalidSignature(String),
     /// Message too large for signature algorithm
-    MessageTooLarge(String),
     /// Signature verification failed
-    VerificationFailed(String),
     /// Unsupported signature algorithm
-    UnsupportedAlgorithm(String),
     /// Invalid key size for algorithm
-    InvalidKeySize(String),
     /// Key generation failed
-    KeyGenerationFailed(String),
     /// Invalid hash algorithm for signature
-    InvalidHashAlgorithm(String),
     /// Invalid input parameter or data
-    InvalidInput(String),
     /// Timestamp service error
-    TimestampError(String),
     /// Multi-signature threshold not met
-    ThresholdNotMet(String),
     /// Invalid multi-signature configuration
-    InvalidMultiSigConfig(String),
     /// Cryptographic operation failed
-    CryptographicError(String),
     /// Internal error in signature system
-    Internal(String),
-}
-
 // impl fmt::Display for SignatureError {
 //     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
 //         match self {
@@ -106,18 +89,12 @@ impl SignatureError {
     /// Create an invalid key error
     pub fn invalid_key(msg: &str) -> Self {
         SignatureError::InvalidPrivateKey(msg.to_string())
-    }
-    
     /// Create a verification failed error
     pub fn verification_failed(msg: &str) -> Self {
         SignatureError::VerificationFailed(msg.to_string())
-    }
-    
     /// Create an unsupported algorithm error
     pub fn unsupported_algorithm(algorithm: &str) -> Self {
         SignatureError::UnsupportedAlgorithm(format!("Algorithm '{}' is not supported", algorithm))
-    }
-    
     /// Create an internal error
     pub fn internal(msg: &str) -> Self {
         SignatureError::Internal(msg.to_string())
@@ -127,38 +104,21 @@ impl SignatureError {
 /// Signature operation statistics for monitoring
 #[derive(Debug, Clone, Default)]
 pub struct SignatureStats {
-    pub signatures_generated: u64,
-    pub signatures_verified: u64,
-    pub verification_failures: u64,
-    pub key_generations: u64,
-    pub total_operations: u64,
-}
-
 impl SignatureStats {
     pub fn new() -> Self {
         Self::default()
-    }
-    
     pub fn increment_signatures(&mut self) {
         self.signatures_generated += 1;
         self.total_operations += 1;
-    }
-    
     pub fn increment_verifications(&mut self) {
         self.signatures_verified += 1;
         self.total_operations += 1;
-    }
-    
     pub fn increment_failures(&mut self) {
         self.verification_failures += 1;
         self.total_operations += 1;
-    }
-    
     pub fn increment_key_gen(&mut self) {
         self.key_generations += 1;
         self.total_operations += 1;
-    }
-    
     pub fn success_rate(&self) -> f64 {
         if self.signatures_verified + self.verification_failures == 0 {
             0.0

@@ -17,34 +17,18 @@ use super::{CollectionsError, CollectionsResult};
 /// Trie node for efficient string operations
 #[derive(Debug)]
 struct TrieNode<T> {
-    children: HashMap<char, TrieNode<T>>,
-    value: Option<T>,
-    is_end_of_word: bool,
-}
-
 impl<T> TrieNode<T> {
     fn new() -> Self {
         Self {
-            children: HashMap::new(),
-            value: None,
-            is_end_of_word: false,
         }
     }
-}
-
 /// Trie data structure for efficient prefix-based operations
 #[derive(Debug)]
 pub struct Trie<T> {
-    root: TrieNode<T>,
-    size: usize,
-}
-
 impl<T> Trie<T> {
     /// Creates a new empty trie
     pub fn new() -> Self {
         Self {
-            root: TrieNode::new(),
-            size: 0,
         }
     }
     
@@ -54,23 +38,17 @@ impl<T> Trie<T> {
         
         for ch in key.chars() {
             current = current.children.entry(ch).or_insert_with(TrieNode::new);
-        }
-        
         if !current.is_end_of_word {
             self.size += 1;
             current.is_end_of_word = true;
         }
         current.value = Some(value);
-    }
-    
     /// Searches for a key in the trie
     pub fn get(&self, key: &str) -> Option<&T> {
         let mut current = &self.root;
         
         for ch in key.chars() {
             current = current.children.get(&ch)?;
-        }
-        
         if current.is_end_of_word {
             current.value.as_ref()
         } else {
@@ -81,8 +59,6 @@ impl<T> Trie<T> {
     /// Checks if a key exists in the trie
     pub fn contains(&self, key: &str) -> bool {
         self.get(key).is_some()
-    }
-    
     /// Finds all keys with the given prefix
     pub fn keys_with_prefix(&self, prefix: &str) -> Vec<String> {
         let mut current = &self.root;
@@ -100,8 +76,6 @@ impl<T> Trie<T> {
         let mut results = Vec::new();
         self.collect_keys(current, prefix.to_string(), &mut results);
         results
-    }
-    
     /// Finds the longest prefix of the given string that exists in the trie
     pub fn longest_prefix(&self, text: &str) -> Option<String> {
         let mut current = &self.root;
@@ -122,8 +96,6 @@ impl<T> Trie<T> {
         }
         
         longest
-    }
-    
     /// Removes a key from the trie
     pub fn remove(&mut self, key: &str) -> bool {
         if self.remove_recursive(&mut self.root, key, 0) {
@@ -137,19 +109,13 @@ impl<T> Trie<T> {
     /// Returns the number of keys in the trie
     pub fn len(&self) -> usize {
         self.size
-    }
-    
     /// Checks if the trie is empty
     pub fn is_empty(&self) -> bool {
         self.size == 0
-    }
-    
     /// Helper function to collect all keys from a node
     fn collect_keys(&self, node: &TrieNode<T>, prefix: String, results: &mut Vec<String>) {
         if node.is_end_of_word {
             results.push(prefix.clone());
-        }
-        
         for (&ch, child) in &node.children {
             let mut new_prefix = prefix.clone();
             new_prefix.push(ch);
@@ -166,8 +132,6 @@ impl<T> Trie<T> {
                 return node.children.is_empty();
             }
             return false;
-        }
-        
         let ch = key.chars().nth(index).unwrap();
         if let Some(child) = node.children.get_mut(&ch) {
             let should_delete_child = self.remove_recursive(child, key, index + 1);
@@ -195,33 +159,20 @@ impl<T> Default for Trie<T> {
 /// Graph representation using adjacency list
 #[derive(Debug, Clone)]
 pub struct Graph<T> {
-    vertices: HashMap<usize, T>,
     edges: HashMap<usize, Vec<(usize, f64)>>, // (destination, weight)
-    next_id: usize,
-    directed: bool,
-}
-
 impl<T> Graph<T> {
     /// Creates a new graph
     pub fn new(directed: bool) -> Self {
         Self {
-            vertices: HashMap::new(),
-            edges: HashMap::new(),
-            next_id: 0,
-            directed,
         }
     }
     
     /// Creates a new directed graph
     pub fn new_directed() -> Self {
         Self::new(true)
-    }
-    
     /// Creates a new undirected graph
     pub fn new_undirected() -> Self {
         Self::new(false)
-    }
-    
     /// Adds a vertex to the graph
     pub fn add_vertex(&mut self, data: T) -> usize {
         let id = self.next_id;
@@ -229,44 +180,28 @@ impl<T> Graph<T> {
         self.vertices.insert(id, data);
         self.edges.insert(id, Vec::new());
         id
-    }
-    
     /// Adds an edge between two vertices
     pub fn add_edge(&mut self, from: usize, to: usize, weight: f64) -> CollectionsResult<()> {
         if !self.vertices.contains_key(&from) || !self.vertices.contains_key(&to) {
             return Err(CollectionsError::InvalidOperation {
-                operation: "add_edge".to_string(),
-                reason: "Vertex not found".to_string(),
             });
-        }
-        
         self.edges.get_mut(&from).unwrap().push((to, weight));
         
         if !self.directed {
             self.edges.get_mut(&to).unwrap().push((from, weight));
-        }
-        
         Ok(())
-    }
-    
     /// Gets the data for a vertex
     pub fn get_vertex(&self, id: usize) -> Option<&T> {
         self.vertices.get(&id)
-    }
-    
     /// Gets all neighbors of a vertex
     pub fn neighbors(&self, id: usize) -> Option<&Vec<(usize, f64)>> {
         self.edges.get(&id)
-    }
-    
     /// Performs depth-first search from a starting vertex
     pub fn dfs(&self, start: usize) -> Vec<usize> {
         let mut visited = HashSet::new();
         let mut result = Vec::new();
         self.dfs_recursive(start, &mut visited, &mut result);
         result
-    }
-    
     /// Performs breadth-first search from a starting vertex
     pub fn bfs(&self, start: usize) -> Vec<usize> {
         let mut visited = HashSet::new();
@@ -290,8 +225,6 @@ impl<T> Graph<T> {
         }
         
         result
-    }
-    
     /// Finds shortest path using Dijkstra's algorithm
     pub fn shortest_path(&self, start: usize, end: usize) -> Option<(Vec<usize>, f64)> {
         let mut distances: HashMap<usize, f64> = HashMap::new();
@@ -308,12 +241,8 @@ impl<T> Graph<T> {
         while let Some(Reverse((dist, u))) = heap.pop() {
             if u == end {
                 break;
-            }
-            
             if dist > distances[&u] {
                 continue;
-            }
-            
             if let Some(neighbors) = self.edges.get(&u) {
                 for &(v, weight) in neighbors {
                     let alt = distances[&u] + weight;
@@ -329,8 +258,6 @@ impl<T> Graph<T> {
         // Reconstruct path
         if !previous.contains_key(&end) && start != end {
             return None;
-        }
-        
         let mut path = Vec::new();
         let mut current = end;
         
@@ -342,8 +269,6 @@ impl<T> Graph<T> {
         path.reverse();
         
         Some((path, distances[&end]))
-    }
-    
     /// Checks if the graph has cycles (for directed graphs)
     pub fn has_cycle(&self) -> bool {
         let mut visited = HashSet::new();
@@ -355,16 +280,10 @@ impl<T> Graph<T> {
                     return true;
                 }
             }
-        }
-        
         false
-    }
-    
     /// Returns the number of vertices
     pub fn vertex_count(&self) -> usize {
         self.vertices.len()
-    }
-    
     /// Returns the number of edges
     pub fn edge_count(&self) -> usize {
         if self.directed {
@@ -390,10 +309,6 @@ impl<T> Graph<T> {
     
     /// Helper for cycle detection
     fn has_cycle_recursive(
-        &self,
-        vertex: usize,
-        visited: &mut HashSet<usize>,
-        rec_stack: &mut HashSet<usize>,
     ) -> bool {
         visited.insert(vertex);
         rec_stack.insert(vertex);
@@ -408,8 +323,6 @@ impl<T> Graph<T> {
                     return true;
                 }
             }
-        }
-        
         rec_stack.remove(&vertex);
         false
     }
@@ -422,12 +335,6 @@ impl<T> Graph<T> {
 /// Bloom filter for approximate membership testing
 #[derive(Debug, Clone)]
 pub struct BloomFilter {
-    bit_array: Vec<bool>,
-    size: usize,
-    hash_functions: usize,
-    items_count: usize,
-}
-
 impl BloomFilter {
     /// Creates a new Bloom filter
     pub fn new(expected_items: usize, false_positive_rate: f64) -> Self {
@@ -435,10 +342,6 @@ impl BloomFilter {
         let hash_functions = Self::optimal_hash_functions(size, expected_items);
         
         Self {
-            bit_array: vec![false; size],
-            size,
-            hash_functions,
-            items_count: 0,
         }
     }
     
@@ -450,8 +353,6 @@ impl BloomFilter {
             self.bit_array[index] = true;
         }
         self.items_count += 1;
-    }
-    
     /// Tests if an item might be in the set
     pub fn contains<T: Hash>(&self, item: &T) -> bool {
         for i in 0..self.hash_functions {
@@ -462,45 +363,31 @@ impl BloomFilter {
             }
         }
         true
-    }
-    
     /// Estimates the current false positive rate
     pub fn false_positive_rate(&self) -> f64 {
         let bits_set = self.bit_array.iter().filter(|&&b| b).count() as f64;
         let ratio = bits_set / self.size as f64;
         ratio.powi(self.hash_functions as i32)
-    }
-    
     /// Returns the number of items added
     pub fn len(&self) -> usize {
         self.items_count
-    }
-    
     /// Checks if the filter is empty
     pub fn is_empty(&self) -> bool {
         self.items_count == 0
-    }
-    
     /// Clears the filter
     pub fn clear(&mut self) {
         self.bit_array.fill(false);
         self.items_count = 0;
-    }
-    
     /// Computes optimal bit array size
     fn optimal_size(expected_items: usize, false_positive_rate: f64) -> usize {
         let ln2 = std::f64::consts::LN_2;
         let size = -(expected_items as f64 * false_positive_rate.ln()) / (ln2 * ln2);
         size.ceil() as usize
-    }
-    
     /// Computes optimal number of hash functions
     fn optimal_hash_functions(size: usize, expected_items: usize) -> usize {
         let ratio = size as f64 / expected_items as f64;
         let hash_functions = ratio * std::f64::consts::LN_2;
         hash_functions.ceil() as usize
-    }
-    
     /// Hashes an item with a specific seed
     fn hash_item<T: Hash>(&self, item: &T, seed: usize) -> usize {
         let mut hasher = std::collections::hash_map::DefaultHasher::new();
@@ -517,10 +404,6 @@ impl BloomFilter {
 /// 2D point representation
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct Point2D {
-    pub x: f64,
-    pub y: f64,
-}
-
 impl Point2D {
     pub fn new(x: f64, y: f64) -> Self {
         Self { x, y }
@@ -536,12 +419,6 @@ impl Point2D {
 /// 2D bounding rectangle
 #[derive(Debug, Clone, Copy)]
 pub struct Rectangle {
-    pub x: f64,
-    pub y: f64,
-    pub width: f64,
-    pub height: f64,
-}
-
 impl Rectangle {
     pub fn new(x: f64, y: f64, width: f64, height: f64) -> Self {
         Self { x, y, width, height }
@@ -552,8 +429,6 @@ impl Rectangle {
             && point.x <= self.x + self.width
             && point.y >= self.y
             && point.y <= self.y + self.height
-    }
-    
     pub fn intersects(&self, other: &Rectangle) -> bool {
         !(self.x > other.x + other.width
             || self.x + self.width < other.x
@@ -566,31 +441,14 @@ impl Rectangle {
 #[derive(Debug)]
 enum QuadTreeNode<T> {
     Leaf {
-        points: Vec<(Point2D, T)>,
-    },
     Internal {
-        northwest: Box<QuadTreeNode<T>>,
-        northeast: Box<QuadTreeNode<T>>,
-        southwest: Box<QuadTreeNode<T>>,
-        southeast: Box<QuadTreeNode<T>>,
-    },
-}
-
 /// QuadTree for efficient spatial queries
 #[derive(Debug)]
 pub struct QuadTree<T> {
-    root: QuadTreeNode<T>,
-    boundary: Rectangle,
-    capacity: usize,
-}
-
 impl<T: Clone> QuadTree<T> {
     /// Creates a new QuadTree
     pub fn new(boundary: Rectangle, capacity: usize) -> Self {
         Self {
-            root: QuadTreeNode::Leaf { points: Vec::new() },
-            boundary,
-            capacity,
         }
     }
     
@@ -598,41 +456,23 @@ impl<T: Clone> QuadTree<T> {
     pub fn insert(&mut self, point: Point2D, data: T) -> bool {
         if !self.boundary.contains(&point) {
             return false;
-        }
-        
         self.insert_recursive(&mut self.root, &self.boundary, point, data)
-    }
-    
     /// Queries points within a rectangle
     pub fn query_range(&self, range: &Rectangle) -> Vec<(Point2D, &T)> {
         let mut results = Vec::new();
         self.query_recursive(&self.root, &self.boundary, range, &mut results);
         results
-    }
-    
     /// Finds the nearest point to a given point
     pub fn nearest_neighbor(&self, point: &Point2D) -> Option<(Point2D, &T)> {
         let mut best = None;
         let mut best_distance = f64::INFINITY;
         
         self.nearest_recursive(
-            &self.root,
-            &self.boundary,
-            point,
-            &mut best,
-            &mut best_distance,
         );
         
         best
-    }
-    
     /// Recursive insertion
     fn insert_recursive(
-        &mut self,
-        node: &mut QuadTreeNode<T>,
-        boundary: &Rectangle,
-        point: Point2D,
-        data: T,
     ) -> bool {
         match node {
             QuadTreeNode::Leaf { points } => {
@@ -640,15 +480,9 @@ impl<T: Clone> QuadTree<T> {
                 
                 if points.len() > self.capacity {
                     self.subdivide(node, boundary);
-                }
-                
                 true
             }
             QuadTreeNode::Internal {
-                northwest,
-                northeast,
-                southwest,
-                southeast,
             } => {
                 let mid_x = boundary.x + boundary.width / 2.0;
                 let mid_y = boundary.y + boundary.height / 2.0;
@@ -656,8 +490,6 @@ impl<T: Clone> QuadTree<T> {
                 if point.x <= mid_x && point.y <= mid_y {
                     // Northwest
                     let nw_boundary = Rectangle::new(
-                        boundary.x,
-                        boundary.y,
                         boundary.width / 2.0,
                         boundary.height / 2.0,
                     );
@@ -665,8 +497,6 @@ impl<T: Clone> QuadTree<T> {
                 } else if point.x > mid_x && point.y <= mid_y {
                     // Northeast
                     let ne_boundary = Rectangle::new(
-                        mid_x,
-                        boundary.y,
                         boundary.width / 2.0,
                         boundary.height / 2.0,
                     );
@@ -674,8 +504,6 @@ impl<T: Clone> QuadTree<T> {
                 } else if point.x <= mid_x && point.y > mid_y {
                     // Southwest
                     let sw_boundary = Rectangle::new(
-                        boundary.x,
-                        mid_y,
                         boundary.width / 2.0,
                         boundary.height / 2.0,
                     );
@@ -683,8 +511,6 @@ impl<T: Clone> QuadTree<T> {
                 } else {
                     // Southeast
                     let se_boundary = Rectangle::new(
-                        mid_x,
-                        mid_y,
                         boundary.width / 2.0,
                         boundary.height / 2.0,
                     );
@@ -724,29 +550,15 @@ impl<T: Clone> QuadTree<T> {
                         se_points.push((point, data));
                     }
                 }
-            }
-            
             *node = QuadTreeNode::Internal {
-                northwest: nw,
-                northeast: ne,
-                southwest: sw,
-                southeast: se,
-            };
         }
     }
     
     /// Recursive range query
     fn query_recursive(
-        &self,
-        node: &QuadTreeNode<T>,
-        boundary: &Rectangle,
-        range: &Rectangle,
-        results: &mut Vec<(Point2D, &T)>,
     ) {
         if !boundary.intersects(range) {
             return;
-        }
-        
         match node {
             QuadTreeNode::Leaf { points } => {
                 for (point, data) in points {
@@ -756,35 +568,23 @@ impl<T: Clone> QuadTree<T> {
                 }
             }
             QuadTreeNode::Internal {
-                northwest,
-                northeast,
-                southwest,
-                southeast,
             } => {
                 let mid_x = boundary.x + boundary.width / 2.0;
                 let mid_y = boundary.y + boundary.height / 2.0;
                 
                 let nw_boundary = Rectangle::new(
-                    boundary.x,
-                    boundary.y,
                     boundary.width / 2.0,
                     boundary.height / 2.0,
                 );
                 let ne_boundary = Rectangle::new(
-                    mid_x,
-                    boundary.y,
                     boundary.width / 2.0,
                     boundary.height / 2.0,
                 );
                 let sw_boundary = Rectangle::new(
-                    boundary.x,
-                    mid_y,
                     boundary.width / 2.0,
                     boundary.height / 2.0,
                 );
                 let se_boundary = Rectangle::new(
-                    mid_x,
-                    mid_y,
                     boundary.width / 2.0,
                     boundary.height / 2.0,
                 );
@@ -795,16 +595,8 @@ impl<T: Clone> QuadTree<T> {
                 self.query_recursive(southeast, &se_boundary, range, results);
             }
         }
-    }
-    
     /// Recursive nearest neighbor search
     fn nearest_recursive(
-        &self,
-        node: &QuadTreeNode<T>,
-        boundary: &Rectangle,
-        target: &Point2D,
-        best: &mut Option<(Point2D, &T)>,
-        best_distance: &mut f64,
     ) {
         match node {
             QuadTreeNode::Leaf { points } => {
@@ -817,10 +609,6 @@ impl<T: Clone> QuadTree<T> {
                 }
             }
             QuadTreeNode::Internal {
-                northwest,
-                northeast,
-                southwest,
-                southeast,
             } => {
                 let mid_x = boundary.x + boundary.width / 2.0;
                 let mid_y = boundary.y + boundary.height / 2.0;
@@ -869,25 +657,15 @@ impl<T: Clone> QuadTree<T> {
 /// Creates a new string trie
 pub fn string_trie<T>() -> Trie<T> {
     Trie::new()
-}
-
 /// Creates a new directed graph
 pub fn directed_graph<T>() -> Graph<T> {
     Graph::new_directed()
-}
-
 /// Creates a new undirected graph
 pub fn undirected_graph<T>() -> Graph<T> {
     Graph::new_undirected()
-}
-
 /// Creates a bloom filter for the given parameters
 pub fn bloom_filter(expected_items: usize, false_positive_rate: f64) -> BloomFilter {
     BloomFilter::new(expected_items, false_positive_rate)
-}
-
 /// Creates a new quadtree for 2D spatial indexing
 pub fn quadtree<T: Clone>(boundary: Rectangle, capacity: usize) -> QuadTree<T> {
     QuadTree::new(boundary, capacity)
-}
-

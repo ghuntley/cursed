@@ -7,18 +7,10 @@ use tracing::{debug, instrument};
 
 /// LLVM code generator with debug information support
 pub struct LlvmDebugCodeGenerator {
-    debug_manager: DebugInfoManager,
-    current_module: Option<String>,
-    current_function: Option<String>,
-}
-
 impl LlvmDebugCodeGenerator {
     /// Create a new debug-enabled LLVM code generator
     pub fn new(debug_config: DebugConfig) -> Self {
         Self {
-            debug_manager: DebugInfoManager::new(),
-            current_module: None,
-            current_function: None,
         }
     }
 
@@ -27,14 +19,9 @@ impl LlvmDebugCodeGenerator {
     pub fn initialize_debug_info(&mut self, file: PathBuf, producer: String) -> crate::error::Result<()> {
         debug!(file = ?file, producer = %producer, "Initializing debug info for LLVM");
         self.debug_manager.initialize_compilation_unit(file, producer)
-    }
-
     /// Begin generating code for a function with debug information
     #[instrument(skip(self))]
     pub fn begin_function_with_debug(
-        &mut self,
-        name: String,
-        location: SourceLocation,
     ) -> crate::error::Result<()> {
         debug!(function = %name, location = ?location, "Beginning function with debug info");
         
@@ -46,22 +33,16 @@ impl LlvmDebugCodeGenerator {
         
         // Function declaration with debug attributes
         ir.push_str(&format!(
-            "define i32 @{}() !dbg !{} {{\n",
-            name,
             self.get_next_metadata_id()
         ));
         
         // Add debug location for function entry
         ir.push_str(&format!(
-            "  call void @llvm.dbg.declare(metadata i8* null, metadata !{}, metadata !DIExpression()){}",
-            self.get_next_metadata_id() + 1,
             self.debug_manager.generate_debug_location(&location.clone().into())
         ));
         ir.push('\n');
         
         Ok(ir)
-    }
-
     /// End function generation with debug information
     #[instrument(skip(self))]
     pub fn end_function_with_debug(&mut self) -> crate::error::Result<()> {
@@ -72,15 +53,9 @@ impl LlvmDebugCodeGenerator {
         
         // Close function
         Ok("}\n".to_string())
-    }
-
     /// Generate variable declaration with debug information
     #[instrument(skip(self))]
     pub fn generate_variable_with_debug(
-        &mut self,
-        name: String,
-        type_name: String,
-        location: SourceLocation,
     ) -> crate::error::Result<()> {
         debug!(name = %name, type_name = %type_name, location = ?location, "Generating variable with debug");
         
@@ -96,23 +71,14 @@ impl LlvmDebugCodeGenerator {
         
         // Add debug declare intrinsic
         ir.push_str(&format!(
-            "  call void @llvm.dbg.declare(metadata i32* %{}, metadata !{}, metadata !DIExpression()){}",
-            name,
-            self.get_next_metadata_id(),
             self.debug_manager.generate_debug_location(&location.clone().into())
         ));
         ir.push('\n');
         
         Ok(ir)
-    }
-
     /// Generate assignment with debug information
     #[instrument(skip(self))]
     pub fn generate_assignment_with_debug(
-        &mut self,
-        variable: String,
-        value: String,
-        location: SourceLocation,
     ) -> crate::error::Result<()> {
         debug!(variable = %variable, value = %value, location = ?location, "Generating assignment with debug");
         
@@ -123,15 +89,9 @@ impl LlvmDebugCodeGenerator {
         ir.push('\n');
         
         Ok(ir)
-    }
-
     /// Generate function call with debug information
     #[instrument(skip(self))]
     pub fn generate_call_with_debug(
-        &mut self,
-        function: String,
-        args: Vec<String>,
-        location: SourceLocation,
     ) -> crate::error::Result<()> {
         debug!(function = %function, args = ?args, location = ?location, "Generating call with debug");
         
@@ -143,14 +103,9 @@ impl LlvmDebugCodeGenerator {
         ir.push('\n');
         
         Ok(ir)
-    }
-
     /// Generate return statement with debug information
     #[instrument(skip(self))]
     pub fn generate_return_with_debug(
-        &mut self,
-        value: Option<String>,
-        location: SourceLocation,
     ) -> crate::error::Result<()> {
         debug!(value = ?value, location = ?location, "Generating return with debug");
         
@@ -164,8 +119,6 @@ impl LlvmDebugCodeGenerator {
         ir.push('\n');
         
         Ok(ir)
-    }
-
     /// Generate debug metadata for the entire module
     #[instrument(skip(self))]
     pub fn generate_debug_metadata(&mut self) -> crate::error::Result<()> {
@@ -189,40 +142,25 @@ impl LlvmDebugCodeGenerator {
         metadata.push_str("!4 = !{!\"CURSED Compiler with Debug Support\"}\n");
         
         Ok(metadata)
-    }
-
     /// Set current source location for subsequent operations
     pub fn set_current_location(&mut self, location: SourceLocation) {
         self.debug_manager.set_current_location(location.into());
-    }
-
     /// Get current source location
     pub fn current_location(&self) -> Option<&SourceLocation> {
         // Return None since our debug manager returns owned values not references
         None
-    }
-
     /// Generate line table for the module
     pub fn generate_line_table(&self) -> Vec<(u32, String)> {
         self.debug_manager.generate_line_table()
-    }
-
     /// Check if debug information is enabled
     pub fn debug_enabled(&self) -> bool {
         self.debug_manager.is_enabled()
-    }
-
     /// Get debug statistics
     pub fn debug_statistics(&self) -> String {
         format!("{}", self.debug_manager.statistics())
-    }
-
     /// Generate a complete LLVM module with debug information
     #[instrument(skip(self))]
     pub fn generate_module_with_debug(
-        &mut self,
-        module_name: String,
-        functions: Vec<(String, SourceLocation)>,
     ) -> crate::error::Result<()> {
         debug!(module = %module_name, function_count = functions.len(), "Generating module with debug");
         
@@ -242,14 +180,10 @@ impl LlvmDebugCodeGenerator {
             module_ir.push_str("  ret i32 0\n");
             module_ir.push_str(&self.end_function_with_debug()?);
             module_ir.push('\n');
-        }
-        
         // Generate debug metadata
         module_ir.push_str(&self.generate_debug_metadata()?);
         
         Ok(module_ir)
-    }
-
     /// Generate debugging utilities
     pub fn generate_debug_utilities(&self) -> String {
         let mut utilities = String::new();
@@ -272,37 +206,25 @@ impl LlvmDebugCodeGenerator {
         utilities.push_str("}\n\n");
         
         utilities
-    }
-
     /// Validate debug information
     pub fn validate_debug_info(&self) -> Result<(), Vec<String>> {
         self.debug_manager.validate()
-    }
-
     /// Clear all debug information
     pub fn clear_debug_info(&mut self) {
         self.debug_manager.clear();
         self.current_module = None;
         self.current_function = None;
-    }
-
     /// Get a simplified metadata ID (in a real implementation, this would be more sophisticated)
     fn get_next_metadata_id(&self) -> usize {
         // This is a simplified implementation
         // In a real compiler, metadata IDs would be managed more carefully
         10 + self.debug_manager.statistics().symbol_count
-    }
-
     /// Update debug configuration
     pub fn update_debug_config(&mut self, config: DebugConfig) {
         self.debug_manager.update_config(config);
-    }
-
     /// Get debug configuration
     pub fn debug_config(&self) -> DebugConfig {
         self.debug_manager.config()
-    }
-
     /// Generate debug-aware optimization hints
     pub fn generate_optimization_hints(&self) -> String {
         let mut hints = String::new();
@@ -313,8 +235,6 @@ impl LlvmDebugCodeGenerator {
         } else {
             hints.push_str("; Full debug information enabled\n");
             hints.push_str("attributes #0 = { nounwind }\n");
-        }
-        
         hints
     }
 }

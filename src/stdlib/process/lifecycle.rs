@@ -10,9 +10,9 @@ use std::sync::{Arc, Mutex, Weak};
 use std::thread;
 use std::time::{Duration, Instant};
 
-// use crate::stdlib::process::error::{
+// Placeholder imports disabled
     ProcessError, ProcessResult, timeout_error, execution_failed, invalid_state, system_error
-};
+// };
 
 // use crate::stdlib::process::core::{ProcessConfig};
 // use crate::stdlib::process::info::{ProcessInfo as StdProcessInfo, ProcessState as StdProcessState};
@@ -22,120 +22,61 @@ use crate::runtime::process::{ProcessInfo as RuntimeProcessInfo, ProcessStatus a
 #[derive(Debug, Clone)]
 pub enum LifecycleEvent {
     /// Process spawned successfully
-    Spawned { pid: u32, timestamp: Instant },
     /// Process started execution
-    Started { pid: u32, timestamp: Instant },
     /// Process is running normally
-    Running { pid: u32, timestamp: Instant },
     /// Process terminated normally
-    Terminated { pid: u32, exit_code: i32, timestamp: Instant },
     /// Process was killed
-    Killed { pid: u32, signal: Option<i32>, timestamp: Instant },
     /// Process failed to start
-    Failed { pid: u32, error: String, timestamp: Instant },
     /// Process timed out
-    TimedOut { pid: u32, timeout: Duration, timestamp: Instant },
     /// Process is being cleaned up
-    Cleanup { pid: u32, timestamp: Instant },
-}
-
 impl LifecycleEvent {
     /// Get the process ID associated with this event
     pub fn pid(&self) -> u32 {
         match self {
-            LifecycleEvent::Spawned { pid, .. } => *pid,
-            LifecycleEvent::Started { pid, .. } => *pid,
-            LifecycleEvent::Running { pid, .. } => *pid,
-            LifecycleEvent::Terminated { pid, .. } => *pid,
-            LifecycleEvent::Killed { pid, .. } => *pid,
-            LifecycleEvent::Failed { pid, .. } => *pid,
-            LifecycleEvent::TimedOut { pid, .. } => *pid,
-            LifecycleEvent::Cleanup { pid, .. } => *pid,
         }
     }
     
     /// Get the timestamp when this event occurred
     pub fn timestamp(&self) -> Instant {
         match self {
-            LifecycleEvent::Spawned { timestamp, .. } => *timestamp,
-            LifecycleEvent::Started { timestamp, .. } => *timestamp,
-            LifecycleEvent::Running { timestamp, .. } => *timestamp,
-            LifecycleEvent::Terminated { timestamp, .. } => *timestamp,
-            LifecycleEvent::Killed { timestamp, .. } => *timestamp,
-            LifecycleEvent::Failed { timestamp, .. } => *timestamp,
-            LifecycleEvent::TimedOut { timestamp, .. } => *timestamp,
-            LifecycleEvent::Cleanup { timestamp, .. } => *timestamp,
         }
     }
-}
-
 /// RuntimeProcessInfo lifecycle manager
 #[derive(Debug)]
 pub struct ProcessLifecycleManager {
     /// Active processes being managed
-    active_processes: Arc<Mutex<HashMap<u32, ManagedProcess>>>,
     /// Maximum number of concurrent processes
-    max_concurrent: usize,
     /// Default timeout for process operations
-    default_timeout: Duration,
     /// Cleanup thread handle
-    cleanup_thread: Option<thread::JoinHandle<()>>,
     /// Shutdown flag
-    shutdown_flag: Arc<Mutex<bool>>,
-}
-
 /// Managed process wrapper
 #[derive(Debug)]
 struct ManagedProcess {
     /// RuntimeProcessInfo instance
-    process: Process,
     /// Spawn time
-    spawn_time: Instant,
     /// Expected termination time (if timeout set)
-    timeout_at: Option<Instant>,
     /// Lifecycle state
-    state: ProcessLifecycleState,
     /// Parent manager reference (weak to avoid cycles)
-    manager: Weak<Mutex<HashMap<u32, ManagedProcess>>>,
-}
-
 /// RuntimeProcessInfo lifecycle states
 #[derive(Debug, Clone, PartialEq)]
 pub enum ProcessLifecycleState {
     /// RuntimeProcessInfo is starting up
-    Starting,
     /// RuntimeProcessInfo is running normally
-    Running,
     /// RuntimeProcessInfo is being terminated
-    Terminating,
     /// RuntimeProcessInfo has completed successfully
-    Completed(ExitStatus),
     /// RuntimeProcessInfo failed during execution
-    Failed(ProcessError),
     /// RuntimeProcessInfo was terminated due to timeout
-    TimedOut,
     /// RuntimeProcessInfo was forcibly killed
-    Killed,
-}
-
 impl ProcessLifecycleManager {
     /// Create a new process lifecycle manager
     pub fn new() -> Self {
         Self::with_config(100, Duration::from_secs(300))
-    }
-
     /// Create a new process lifecycle manager with custom configuration
     pub fn with_config(max_concurrent: usize, default_timeout: Duration) -> Self {
         let active_processes = Arc::new(Mutex::new(HashMap::new()));
         let shutdown_flag = Arc::new(Mutex::new(false));
         
         let manager = Self {
-            active_processes: active_processes.clone(),
-            max_concurrent,
-            default_timeout,
-            cleanup_thread: None,
-            shutdown_flag: shutdown_flag.clone(),
-        };
         
         // Start cleanup thread
         let cleanup_active = active_processes.clone();
@@ -145,7 +86,6 @@ impl ProcessLifecycleManager {
         });
         
         Self {
-            cleanup_thread: Some(cleanup_handle),
             ..manager
         }
     }
@@ -157,7 +97,6 @@ impl ProcessLifecycleManager {
             let active = self.active_processes.lock().unwrap();
             if active.len() >= self.max_concurrent {
                 return Err(system_error(
-                    "Maximum concurrent processes reached",
                     Some("Process limit exceeded".to_string())
                 ));
             }
@@ -174,27 +113,15 @@ impl ProcessLifecycleManager {
 
         // Create managed process
         let managed = ManagedProcess {
-            process,
-            spawn_time: Instant::now(),
-            timeout_at,
-            state: ProcessLifecycleState::Starting,
-            manager: Arc::downgrade(&self.active_processes),
-        };
 
         // Add to active processes
         {
             let mut active = self.active_processes.lock().unwrap();
             active.insert(pid, managed);
-        }
-
         Ok(pid)
-    }
-
     /// Wait for a process to complete
     pub fn wait(&self, pid: u32) -> ProcessResult<ExitStatus> {
         self.wait_with_timeout(pid, None)
-    }
-
     /// Wait for a process to complete with timeout
     pub fn wait_with_timeout(&self, pid: u32, timeout: Option<Duration>) -> ProcessResult<ExitStatus> {
         let start_time = Instant::now();
@@ -205,15 +132,10 @@ impl ProcessLifecycleManager {
             let state = {
                 let active = self.active_processes.lock().unwrap();
                 match active.get(&pid) {
-                    Some(managed) => managed.state.clone(),
-                    None => return Err(invalid_state(&format!("Process {} not found", pid))),
                 }
-            };
 
             // Check final states
             match state {
-                ProcessLifecycleState::Completed(exit_status) => return Ok(exit_status),
-                ProcessLifecycleState::Failed(error) => return Err(error),
                 ProcessLifecycleState::TimedOut => {
                     return Err(timeout_error(&format!("Process {} timed out", pid)));
                 }
@@ -250,16 +172,12 @@ impl ProcessLifecycleManager {
                     // Clone process for termination (we can't move it out of the HashMap)
                     managed.process.clone()
                 }
-                None => return Err(invalid_state(&format!("Process {} not found", pid))),
             }
-        };
 
         // Try graceful termination first
         if let Err(_) = process.terminate() {
             // Graceful termination failed, try kill
             process.kill()?;
-        }
-
         // Wait for termination with grace period
         let start = Instant::now();
         while start.elapsed() < grace_period {
@@ -268,14 +186,10 @@ impl ProcessLifecycleManager {
                 return Ok(());
             }
             thread::sleep(Duration::from_millis(100));
-        }
-
         // Force kill if still running
         process.kill()?;
         self.mark_process_killed(pid);
         Ok(())
-    }
-
     /// Kill a process immediately
     pub fn kill(&self, pid: u32) -> ProcessResult<()> {
         let mut process = {
@@ -285,21 +199,15 @@ impl ProcessLifecycleManager {
                     managed.state = ProcessLifecycleState::Terminating;
                     managed.process.clone()
                 }
-                None => return Err(invalid_state(&format!("Process {} not found", pid))),
             }
-        };
 
         process.kill()?;
         self.mark_process_killed(pid);
         Ok(())
-    }
-
     /// Get process information
     pub fn get_process_info(&self, pid: u32) -> ProcessResult<ProcessInfo> {
         let active = self.active_processes.lock().unwrap();
         match active.get(&pid) {
-            Some(managed) => managed.process.get_info(),
-            None => Err(invalid_state(&format!("Process {} not found", pid))),
         }
     }
 
@@ -307,8 +215,6 @@ impl ProcessLifecycleManager {
     pub fn get_process_state(&self, pid: u32) -> ProcessResult<ProcessLifecycleState> {
         let active = self.active_processes.lock().unwrap();
         match active.get(&pid) {
-            Some(managed) => Ok(managed.state.clone()),
-            None => Err(invalid_state(&format!("Process {} not found", pid))),
         }
     }
 
@@ -316,20 +222,15 @@ impl ProcessLifecycleManager {
     pub fn list_active_processes(&self) -> Vec<u32> {
         let active = self.active_processes.lock().unwrap();
         active.keys().copied().collect()
-    }
-
     /// Get the number of active processes
     pub fn active_process_count(&self) -> usize {
         let active = self.active_processes.lock().unwrap();
         active.len()
-    }
-
     /// Terminate all active processes
     pub fn terminate_all(&self, grace_period: Option<Duration>) -> ProcessResult<()> {
         let pids: Vec<u32> = {
             let active = self.active_processes.lock().unwrap();
             active.keys().copied().collect()
-        };
 
         for pid in pids {
             if let Err(e) = self.terminate(pid, grace_period) {
@@ -338,16 +239,12 @@ impl ProcessLifecycleManager {
         }
 
         Ok(())
-    }
-
     /// Shutdown the lifecycle manager
     pub fn shutdown(&mut self) -> ProcessResult<()> {
         // Set shutdown flag
         {
             let mut shutdown = self.shutdown_flag.lock().unwrap();
             *shutdown = true;
-        }
-
         // Terminate all processes
         self.terminate_all(Some(Duration::from_secs(5)))?;
 
@@ -356,11 +253,7 @@ impl ProcessLifecycleManager {
             handle.join().map_err(|_| {
                 system_error("Failed to join cleanup thread", None)
             })?;
-        }
-
         Ok(())
-    }
-
     /// Mark a process as killed
     fn mark_process_killed(&self, pid: u32) {
         let mut active = self.active_processes.lock().unwrap();
@@ -371,27 +264,20 @@ impl ProcessLifecycleManager {
 
     /// Cleanup loop for background thread
     fn cleanup_loop(
-        active_processes: Arc<Mutex<HashMap<u32, ManagedProcess>>>,
-        shutdown_flag: Arc<Mutex<bool>>,
     ) {
         while !*shutdown_flag.lock().unwrap() {
             let pids_to_check: Vec<u32> = {
                 let active = active_processes.lock().unwrap();
                 active.keys().copied().collect()
-            };
 
             for pid in pids_to_check {
                 Self::check_process_status(&active_processes, pid);
-            }
-
             thread::sleep(Duration::from_secs(1));
         }
     }
 
     /// Check and update process status
     fn check_process_status(
-        active_processes: &Arc<Mutex<HashMap<u32, ManagedProcess>>>,
-        pid: u32,
     ) {
         let should_remove = {
             let mut active = active_processes.lock().unwrap();
@@ -441,15 +327,12 @@ impl ProcessLifecycleManager {
                 }
                 None => false, // RuntimeProcessInfo not found, nothing to do
             }
-        };
 
         if should_remove {
             let mut active = active_processes.lock().unwrap();
             active.remove(&pid);
         }
     }
-}
-
 impl Default for ProcessLifecycleManager {
     fn default() -> Self {
         Self::new()
@@ -462,29 +345,17 @@ impl Drop for ProcessLifecycleManager {
             eprintln!("CursedError during ProcessLifecycleManager shutdown: {}", e);
         }
     }
-}
-
 /// RuntimeProcessInfo lifecycle statistics
 #[derive(Debug, Clone)]
 pub struct ProcessLifecycleStats {
     /// Total processes spawned
-    pub total_spawned: u64,
     /// Currently active processes
-    pub active_count: usize,
     /// Processes completed successfully
-    pub completed_count: u64,
     /// Processes that failed
-    pub failed_count: u64,
     /// Processes that timed out
-    pub timeout_count: u64,
     /// Processes that were killed
-    pub killed_count: u64,
     /// Average process runtime
-    pub average_runtime: Duration,
     /// Maximum concurrent processes reached
-    pub max_concurrent_reached: usize,
-}
-
 impl ProcessLifecycleManager {
     /// Get lifecycle statistics
     pub fn get_statistics(&self) -> ProcessLifecycleStats {
@@ -494,14 +365,5 @@ impl ProcessLifecycleManager {
         // Here we provide a basic implementation
         ProcessLifecycleStats {
             total_spawned: 0, // Would be tracked in a production implementation
-            active_count: active.len(),
-            completed_count: 0,
-            failed_count: 0,
-            timeout_count: 0,
-            killed_count: 0,
-            average_runtime: Duration::from_secs(0),
-            max_concurrent_reached: active.len(),
         }
     }
-}
-

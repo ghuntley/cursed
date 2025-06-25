@@ -20,36 +20,15 @@ use std::collections::HashMap;
 /// IPC connection specification for compilation
 #[derive(Debug, Clone)]
 pub struct IpcConnectionSpec {
-    pub name: String,
-    pub connection_type: String,
-    pub parameters: HashMap<String, String>,
-}
-
 /// Security specification for process compilation
 #[derive(Debug, Clone)]
 pub struct SecuritySpec {
-    pub enable_privilege_drop: bool,
-    pub isolation_level: String,
-    pub allowed_operations: Vec<String>,
-}
-
 /// Resource limit specification for process compilation
 #[derive(Debug, Clone)]
 pub struct ResourceLimitSpec {
-    pub max_memory: Option<u64>,
-    pub max_cpu_time: Option<u64>,
-    pub max_open_files: Option<u32>,
-    pub max_processes: Option<u32>,
-}
-
 // Import real inkwell types for LLVM integration
 use inkwell::{
-    values::{BasicValueEnum, FunctionValue, PointerValue, IntValue, ArrayValue},
-    types::{BasicTypeEnum, IntType, PointerType, FunctionType, ArrayType},
-    basic_block::BasicBlock,
-    AddressSpace,
-    IntPredicate,
-};
+// };
 
 /// Runtime process execution manager reference for LLVM integration
 // static mut RUNTIME_PROCESS_MANAGER: Option<*mut crate::stdlib::process::core::ProcessManager> = None;
@@ -109,8 +88,6 @@ pub trait ProcessExecutionCompiler<'ctx> {
     
     /// Declare runtime FFI functions in the module
     fn declare_process_execution_runtime_functions(&mut self) -> crate::error::Result<()>;
-}
-
 /// Implementation of ProcessExecutionCompiler for the real LLVM code generator
 impl<'ctx> ProcessExecutionCompiler<'ctx> for crate::codegen::llvm::LlvmCodeGeneratorReal<'ctx> {
     fn compile_exec_slay(&mut self, command: &str, args: &[String], options: Option<&dyn Expression>) -> crate::error::Result<()> {
@@ -139,18 +116,10 @@ impl<'ctx> ProcessExecutionCompiler<'ctx> for crate::codegen::llvm::LlvmCodeGene
                 .into_pointer_value()
         } else {
             self.context().i8_type().ptr_type(AddressSpace::Generic).const_null()
-        };
         
         // Call cursed_exec_slay(manager_ptr, command_str, args_array, args_count, options_ptr)
         let exec_call_result = self.builder().build_call(
-            exec_slay_fn,
             &[
-                manager_ptr.into(),
-                command_str.into(),
-                args_array.into(),
-                args_count.into(),
-                options_ptr.into(),
-            ],
             "exec_slay_result"
         );
         
@@ -158,14 +127,10 @@ impl<'ctx> ProcessExecutionCompiler<'ctx> for crate::codegen::llvm::LlvmCodeGene
             .ok_or_else(|| CursedError::Compile("Failed to get exec_slay result".to_string()))?;
         
         tracing::info!(
-            command = %command,
-            args_count = args.len(),
             "Successfully compiled exec_slay"
         );
         
         Ok(result)
-    }
-    
     fn compile_exec_vibez(&mut self, command: &str, args: &[String], context: Option<&dyn Expression>) -> crate::error::Result<()> {
         tracing::info!("Compiling exec_vibez process execution");
         
@@ -192,18 +157,10 @@ impl<'ctx> ProcessExecutionCompiler<'ctx> for crate::codegen::llvm::LlvmCodeGene
                 .into_pointer_value()
         } else {
             self.context().i8_type().ptr_type(AddressSpace::Generic).const_null()
-        };
         
         // Call cursed_exec_vibez(manager_ptr, command_str, args_array, args_count, context_ptr)
         let exec_call_result = self.builder().build_call(
-            exec_vibez_fn,
             &[
-                manager_ptr.into(),
-                command_str.into(),
-                args_array.into(),
-                args_count.into(),
-                context_ptr.into(),
-            ],
             "exec_vibez_result"
         );
         
@@ -211,14 +168,10 @@ impl<'ctx> ProcessExecutionCompiler<'ctx> for crate::codegen::llvm::LlvmCodeGene
             .ok_or_else(|| CursedError::Compile("Failed to get exec_vibez result".to_string()))?;
         
         tracing::info!(
-            command = %command,
-            args_count = args.len(),
             "Successfully compiled exec_vibez"
         );
         
         Ok(result)
-    }
-    
     fn compile_process_spawn(&mut self, command: &str, args: &[String], env: Option<&HashMap<String, String>>) -> crate::error::Result<()> {
         tracing::info!("Compiling process spawn");
         
@@ -251,19 +204,10 @@ impl<'ctx> ProcessExecutionCompiler<'ctx> for crate::codegen::llvm::LlvmCodeGene
             let null_ptr = self.context().i8_type().ptr_type(AddressSpace::Generic).const_null();
             let zero_count = self.context().i32_type().const_int(0, false);
             (null_ptr, zero_count)
-        };
         
         // Call cursed_process_spawn(manager_ptr, command_str, args_array, args_count, env_array, env_count)
         let spawn_call_result = self.builder().build_call(
-            spawn_fn,
             &[
-                manager_ptr.into(),
-                command_str.into(),
-                args_array.into(),
-                args_count.into(),
-                env_array.into(),
-                env_count.into(),
-            ],
             "process_pid"
         );
         
@@ -272,14 +216,10 @@ impl<'ctx> ProcessExecutionCompiler<'ctx> for crate::codegen::llvm::LlvmCodeGene
             .ok_or_else(|| CursedError::Compile("Failed to get process spawn result".to_string()))?;
         
         tracing::info!(
-            command = %command,
-            args_count = args.len(),
             "Successfully compiled process spawn"
         );
         
         Ok(pid)
-    }
-    
     fn compile_process_wait(&mut self, pid_expr: &dyn Expression) -> crate::error::Result<()> {
         tracing::info!("Compiling process wait");
         
@@ -298,11 +238,7 @@ impl<'ctx> ProcessExecutionCompiler<'ctx> for crate::codegen::llvm::LlvmCodeGene
         
         // Call cursed_process_wait(manager_ptr, pid)
         let wait_call_result = self.builder().build_call(
-            wait_fn,
             &[
-                manager_ptr.into(),
-                pid_value.into(),
-            ],
             "wait_result"
         );
         
@@ -312,8 +248,6 @@ impl<'ctx> ProcessExecutionCompiler<'ctx> for crate::codegen::llvm::LlvmCodeGene
         
         tracing::info!("Successfully compiled process wait");
         Ok(exit_code)
-    }
-    
     fn compile_process_signal(&mut self, pid_expr: &dyn Expression, signal: i32) -> crate::error::Result<()> {
         tracing::info!(signal = signal, "Compiling process signal");
         
@@ -333,12 +267,7 @@ impl<'ctx> ProcessExecutionCompiler<'ctx> for crate::codegen::llvm::LlvmCodeGene
         
         // Call cursed_process_signal(manager_ptr, pid, signal)
         let signal_call_result = self.builder().build_call(
-            signal_fn,
             &[
-                manager_ptr.into(),
-                pid_value.into(),
-                signal_value.into(),
-            ],
             "signal_result"
         );
         
@@ -348,8 +277,6 @@ impl<'ctx> ProcessExecutionCompiler<'ctx> for crate::codegen::llvm::LlvmCodeGene
         
         tracing::info!(signal = signal, "Successfully compiled process signal");
         Ok(result)
-    }
-    
     fn compile_process_terminate(&mut self, pid_expr: &dyn Expression, force: bool) -> crate::error::Result<()> {
         tracing::info!(force = force, "Compiling process terminate");
         
@@ -369,12 +296,7 @@ impl<'ctx> ProcessExecutionCompiler<'ctx> for crate::codegen::llvm::LlvmCodeGene
         
         // Call cursed_process_terminate(manager_ptr, pid, force)
         let terminate_call_result = self.builder().build_call(
-            terminate_fn,
             &[
-                manager_ptr.into(),
-                pid_value.into(),
-                force_value.into(),
-            ],
             "terminate_result"
         );
         
@@ -384,8 +306,6 @@ impl<'ctx> ProcessExecutionCompiler<'ctx> for crate::codegen::llvm::LlvmCodeGene
         
         tracing::info!(force = force, "Successfully compiled process terminate");
         Ok(result)
-    }
-    
     fn compile_process_pipeline(&mut self, commands: &[(&str, &[String])]) -> crate::error::Result<()> {
         tracing::info!("Compiling process pipeline");
         
@@ -405,21 +325,13 @@ impl<'ctx> ProcessExecutionCompiler<'ctx> for crate::codegen::llvm::LlvmCodeGene
                 cmd.to_string()
             } else {
                 format!("{} {}", cmd, args.join(" "))
-            };
             command_strings.push(full_command);
-        }
-        
         let commands_array = self.create_string_array(&command_strings)?;
         let commands_count = self.context().i32_type().const_int(commands.len() as u64, false);
         
         // Call cursed_process_pipeline(manager_ptr, commands_array, commands_count)
         let pipeline_call_result = self.builder().build_call(
-            pipeline_fn,
             &[
-                manager_ptr.into(),
-                commands_array.into(),
-                commands_count.into(),
-            ],
             "pipeline_handle"
         );
         
@@ -429,8 +341,6 @@ impl<'ctx> ProcessExecutionCompiler<'ctx> for crate::codegen::llvm::LlvmCodeGene
         
         tracing::info!(commands_count = commands.len(), "Successfully compiled process pipeline");
         Ok(handle)
-    }
-    
     fn compile_background_task(&mut self, command_expr: &dyn Expression) -> crate::error::Result<()> {
         tracing::info!("Compiling background task");
         
@@ -448,11 +358,7 @@ impl<'ctx> ProcessExecutionCompiler<'ctx> for crate::codegen::llvm::LlvmCodeGene
         
         // Call cursed_background_task(manager_ptr, command_value)
         let bg_call_result = self.builder().build_call(
-            bg_task_fn,
             &[
-                manager_ptr.into(),
-                command_value.into(),
-            ],
             "bg_task_handle"
         );
         
@@ -462,8 +368,6 @@ impl<'ctx> ProcessExecutionCompiler<'ctx> for crate::codegen::llvm::LlvmCodeGene
         
         tracing::info!("Successfully compiled background task");
         Ok(handle)
-    }
-    
     fn compile_io_redirection(&mut self, stdin: Option<&str>, stdout: Option<&str>, stderr: Option<&str>) -> crate::error::Result<()> {
         tracing::info!("Compiling I/O redirection");
         
@@ -481,29 +385,20 @@ impl<'ctx> ProcessExecutionCompiler<'ctx> for crate::codegen::llvm::LlvmCodeGene
             self.create_global_string(path)
         } else {
             self.context().i8_type().ptr_type(AddressSpace::Generic).const_null()
-        };
         
         let stdout_str = if let Some(path) = stdout {
             self.create_global_string(path)
         } else {
             self.context().i8_type().ptr_type(AddressSpace::Generic).const_null()
-        };
         
         let stderr_str = if let Some(path) = stderr {
             self.create_global_string(path)
         } else {
             self.context().i8_type().ptr_type(AddressSpace::Generic).const_null()
-        };
         
         // Call cursed_io_redirection(manager_ptr, stdin_str, stdout_str, stderr_str)
         let io_call_result = self.builder().build_call(
-            io_redirect_fn,
             &[
-                manager_ptr.into(),
-                stdin_str.into(),
-                stdout_str.into(),
-                stderr_str.into(),
-            ],
             "io_config"
         );
         
@@ -513,8 +408,6 @@ impl<'ctx> ProcessExecutionCompiler<'ctx> for crate::codegen::llvm::LlvmCodeGene
         
         tracing::info!("Successfully compiled I/O redirection");
         Ok(config)
-    }
-    
     fn declare_process_execution_runtime_functions(&mut self) -> crate::error::Result<()> {
         let i8_type = self.context().i8_type();
         let i8_ptr_type = i8_type.ptr_type(AddressSpace::Generic);
@@ -532,8 +425,6 @@ impl<'ctx> ProcessExecutionCompiler<'ctx> for crate::codegen::llvm::LlvmCodeGene
                 i8_ptr_type.into(), // options_ptr
             ], false);
             self.module().add_function("cursed_exec_slay", exec_slay_fn_type, None);
-        }
-        
         // Declare cursed_exec_vibez(manager_ptr, command_str, args_array, args_count, context_ptr) -> i32
         if self.module().get_function("cursed_exec_vibez").is_none() {
             let exec_vibez_fn_type = i32_type.fn_type(&[
@@ -544,8 +435,6 @@ impl<'ctx> ProcessExecutionCompiler<'ctx> for crate::codegen::llvm::LlvmCodeGene
                 i8_ptr_type.into(), // context_ptr
             ], false);
             self.module().add_function("cursed_exec_vibez", exec_vibez_fn_type, None);
-        }
-        
         // Declare cursed_process_spawn(manager_ptr, command_str, args_array, args_count, env_array, env_count) -> i32
         if self.module().get_function("cursed_process_spawn").is_none() {
             let spawn_fn_type = i32_type.fn_type(&[
@@ -557,8 +446,6 @@ impl<'ctx> ProcessExecutionCompiler<'ctx> for crate::codegen::llvm::LlvmCodeGene
                 i32_type.into(),    // env_count
             ], false);
             self.module().add_function("cursed_process_spawn", spawn_fn_type, None);
-        }
-        
         // Declare cursed_process_wait(manager_ptr, pid) -> i32
         if self.module().get_function("cursed_process_wait").is_none() {
             let wait_fn_type = i32_type.fn_type(&[
@@ -566,8 +453,6 @@ impl<'ctx> ProcessExecutionCompiler<'ctx> for crate::codegen::llvm::LlvmCodeGene
                 i32_type.into(),    // pid
             ], false);
             self.module().add_function("cursed_process_wait", wait_fn_type, None);
-        }
-        
         // Declare cursed_process_signal(manager_ptr, pid, signal) -> i32
         if self.module().get_function("cursed_process_signal").is_none() {
             let signal_fn_type = i32_type.fn_type(&[
@@ -576,8 +461,6 @@ impl<'ctx> ProcessExecutionCompiler<'ctx> for crate::codegen::llvm::LlvmCodeGene
                 i32_type.into(),    // signal
             ], false);
             self.module().add_function("cursed_process_signal", signal_fn_type, None);
-        }
-        
         // Declare cursed_process_terminate(manager_ptr, pid, force) -> i32
         if self.module().get_function("cursed_process_terminate").is_none() {
             let terminate_fn_type = i32_type.fn_type(&[
@@ -586,8 +469,6 @@ impl<'ctx> ProcessExecutionCompiler<'ctx> for crate::codegen::llvm::LlvmCodeGene
                 bool_type.into(),   // force
             ], false);
             self.module().add_function("cursed_process_terminate", terminate_fn_type, None);
-        }
-        
         // Declare cursed_process_pipeline(manager_ptr, commands_array, commands_count) -> ptr
         if self.module().get_function("cursed_process_pipeline").is_none() {
             let pipeline_fn_type = i8_ptr_type.fn_type(&[
@@ -596,8 +477,6 @@ impl<'ctx> ProcessExecutionCompiler<'ctx> for crate::codegen::llvm::LlvmCodeGene
                 i32_type.into(),    // commands_count
             ], false);
             self.module().add_function("cursed_process_pipeline", pipeline_fn_type, None);
-        }
-        
         // Declare cursed_background_task(manager_ptr, command_value) -> ptr
         if self.module().get_function("cursed_background_task").is_none() {
             let bg_task_fn_type = i8_ptr_type.fn_type(&[
@@ -605,8 +484,6 @@ impl<'ctx> ProcessExecutionCompiler<'ctx> for crate::codegen::llvm::LlvmCodeGene
                 i8_ptr_type.into(), // command_value
             ], false);
             self.module().add_function("cursed_background_task", bg_task_fn_type, None);
-        }
-        
         // Declare cursed_io_redirection(manager_ptr, stdin_str, stdout_str, stderr_str) -> ptr
         if self.module().get_function("cursed_io_redirection").is_none() {
             let io_redirect_fn_type = i8_ptr_type.fn_type(&[
@@ -616,12 +493,8 @@ impl<'ctx> ProcessExecutionCompiler<'ctx> for crate::codegen::llvm::LlvmCodeGene
                 i8_ptr_type.into(), // stderr_str
             ], false);
             self.module().add_function("cursed_io_redirection", io_redirect_fn_type, None);
-        }
-        
         tracing::info!("Successfully declared process execution runtime functions");
         Ok(())
-    }
-    
     fn compile_unified_process_ipc(&mut self, command: &str, args: &[String], ipc_connections: &[IpcConnectionSpec]) -> crate::error::Result<()> {
         tracing::info!("Compiling unified process IPC");
         
@@ -639,8 +512,6 @@ impl<'ctx> ProcessExecutionCompiler<'ctx> for crate::codegen::llvm::LlvmCodeGene
         
         // For now, return a placeholder success value
         Ok(self.context().i32_type().const_int(0, false).into())
-    }
-
     fn compile_ipc_connection(&mut self, source_process: &dyn Expression, target_process: &dyn Expression, connection_type: &str, name: &str) -> crate::error::Result<()> {
         tracing::info!("Compiling IPC connection");
         
@@ -654,8 +525,6 @@ impl<'ctx> ProcessExecutionCompiler<'ctx> for crate::codegen::llvm::LlvmCodeGene
         
         // For now, return a placeholder success value
         Ok(self.context().i32_type().const_int(0, false).into())
-    }
-
     fn compile_security_context(&mut self, process: &dyn Expression, _security_settings: &SecuritySpec) -> crate::error::Result<()> {
         tracing::info!("Compiling security context");
         
@@ -664,8 +533,6 @@ impl<'ctx> ProcessExecutionCompiler<'ctx> for crate::codegen::llvm::LlvmCodeGene
         
         // For now, return a placeholder success value
         Ok(self.context().i32_type().const_int(0, false).into())
-    }
-
     fn compile_resource_limits(&mut self, process: &dyn Expression, _limits: &ResourceLimitSpec) -> crate::error::Result<()> {
         tracing::info!("Compiling resource limits");
         
@@ -690,14 +557,10 @@ impl<'ctx> crate::codegen::llvm::LlvmCodeGeneratorReal<'ctx> {
         let i8_ptr_type = self.context().i8_type().ptr_type(AddressSpace::Generic);
         let manager_ptr_int = self.context().i64_type().const_int(manager_ptr_raw as u64, false);
         let manager_ptr = self.builder().build_int_to_ptr(
-            manager_ptr_int,
-            i8_ptr_type,
             "process_manager_ptr"
         );
         
         Ok(manager_ptr)
-    }
-    
     /// Create a global string constant
     fn create_global_string(&self, text: &str) -> PointerValue<'ctx> {
         let string_value = self.context().const_string(text.as_bytes(), true);
@@ -710,18 +573,12 @@ impl<'ctx> crate::codegen::llvm::LlvmCodeGeneratorReal<'ctx> {
         // Get pointer to the string data
         let i8_ptr_type = self.context().i8_type().ptr_type(AddressSpace::Generic);
         self.builder().build_bitcast(
-            global.as_pointer_value(),
-            i8_ptr_type,
             "str_ptr"
         )
-    }
-    
     /// Create an array of string pointers
     fn create_string_array(&self, strings: &[String]) -> crate::error::Result<()> {
         if strings.is_empty() {
             return Ok(self.context().i8_type().ptr_type(AddressSpace::Generic).const_null());
-        }
-        
         let i8_ptr_type = self.context().i8_type().ptr_type(AddressSpace::Generic);
         
         // Create string constants
@@ -729,8 +586,6 @@ impl<'ctx> crate::codegen::llvm::LlvmCodeGeneratorReal<'ctx> {
         for s in strings {
             let str_ptr = self.create_global_string(s);
             string_ptrs.push(str_ptr);
-        }
-        
         // Create array type and global
         let array_type = i8_ptr_type.array_type(strings.len() as u32);
         let array_value = i8_ptr_type.const_array(&string_ptrs);
@@ -742,8 +597,6 @@ impl<'ctx> crate::codegen::llvm::LlvmCodeGeneratorReal<'ctx> {
         
         // Return pointer to array
         let array_ptr = self.builder().build_bitcast(
-            global.as_pointer_value(),
-            i8_ptr_type.ptr_type(AddressSpace::Generic),
             "str_array_ptr"
         );
         
@@ -755,35 +608,20 @@ impl<'ctx> crate::codegen::llvm::LlvmCodeGeneratorReal<'ctx> {
 
 /// Initialize process execution runtime integration
 pub fn initialize_process_execution_runtime<'ctx>(
-    generator: &mut impl ProcessExecutionCompiler<'ctx>,
 ) -> crate::error::Result<()> {
     // Declare all necessary functions for process execution
     generator.declare_process_execution_runtime_functions()?;
     
     tracing::info!("Process execution runtime successfully initialized for LLVM compilation");
     Ok(())
-}
-
 /// Compile exec_slay command helper
 pub fn compile_exec_slay_command<'ctx>(
-    generator: &mut impl ProcessExecutionCompiler<'ctx>,
-    command: &str,
-    args: &[String],
-    options: Option<&dyn Expression>,
 ) -> crate::error::Result<()> {
     generator.compile_exec_slay(command, args, options)
-}
-
 /// Compile exec_vibez command helper
 pub fn compile_exec_vibez_command<'ctx>(
-    generator: &mut impl ProcessExecutionCompiler<'ctx>,
-    command: &str,
-    args: &[String],
-    context: Option<&dyn Expression>,
 ) -> crate::error::Result<()> {
     generator.compile_exec_vibez(command, args, context)
-}
-
 /// Runtime integration for process execution
 pub mod runtime_integration {
     use super::*;
@@ -796,21 +634,15 @@ pub mod runtime_integration {
         
         tracing::info!("Runtime process manager initialized");
         Ok(manager_ptr)
-    }
-    
     /// Clean up the runtime process manager
     pub fn cleanup_process_manager() -> crate::error::Result<()> {
         if let Some(manager_ptr) = get_runtime_process_manager() {
             unsafe {
                 let _manager = Box::from_raw(manager_ptr);
                 // ProcessManager destructor will handle cleanup
-            }
-            
             // Clear the global reference
             set_runtime_process_manager(std::ptr::null_mut());
             tracing::info!("Runtime process manager cleaned up");
-        }
-        
         Ok(())
     }
 }

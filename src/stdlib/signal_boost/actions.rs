@@ -11,78 +11,50 @@ pub type SignalAction = Arc<dyn Fn(BoostSignal) -> bool + Send + Sync>;
 /// Create a signal action from a function
 pub fn create_action<F>(action: F) -> SignalAction
 where
-    F: Fn(BoostSignal) -> bool + Send + Sync + 'static,
 {
     Arc::new(action)
-}
-
 /// Ignore the signal (do nothing)
 pub fn ignore_action() -> SignalAction {
     create_action(|signal| {
         tracing::debug!("Ignoring signal: {}", signal);
         true
     })
-}
-
 /// Exit the program immediately
 pub fn exit_action() -> SignalAction {
     create_action(|signal| {
         tracing::info!("Exiting due to signal: {}", signal);
         process::exit(0);
     })
-}
-
 /// Exit the program with a specific exit code
 pub fn exit_with_code_action(code: i32) -> SignalAction {
     create_action(move |signal| {
         tracing::info!("Exiting with code {} due to signal: {}", code, signal);
         process::exit(code);
     })
-}
-
 /// Log the signal using tracing
 pub fn log_action(level: LogLevel) -> SignalAction {
     create_action(move |signal| {
         match level {
-            LogLevel::Trace => tracing::trace!("Signal received: {}", signal),
-            LogLevel::Debug => tracing::debug!("Signal received: {}", signal),
-            LogLevel::Info => tracing::info!("Signal received: {}", signal),
-            LogLevel::Warn => tracing::warn!("Signal received: {}", signal),
-            LogLevel::CursedError => tracing::error!("Signal received: {}", signal),
         }
         true
     })
-}
-
 /// Log level for signal logging
 #[derive(Debug, Clone, Copy)]
 pub enum LogLevel {
-    Trace,
-    Debug,
-    Info,
-    Warn,
-    CursedError,
-}
-
 /// Custom action using a logger-like interface
 pub fn custom_log_action<F>(logger: F) -> SignalAction
 where
-    F: Fn(&str) + Send + Sync + 'static,
 {
     create_action(move |signal| {
         logger(&format!("Signal received: {}", signal));
         true
     })
-}
-
 /// "Shook" action - logs that the signal shook the application
 pub fn shook_action() -> SignalAction {
     create_action(|signal| {
         tracing::warn!("Application shook by signal: {} 😱", signal);
         true
     })
-}
-
 /// Chain multiple actions together
 pub fn chain_actions(actions: Vec<SignalAction>) -> SignalAction {
     create_action(move |signal| {
@@ -94,12 +66,9 @@ pub fn chain_actions(actions: Vec<SignalAction>) -> SignalAction {
         }
         all_handled
     })
-}
-
 /// Conditional action - only execute if predicate is true
 pub fn conditional_action<P>(predicate: P, action: SignalAction) -> SignalAction
 where
-    P: Fn(BoostSignal) -> bool + Send + Sync + 'static,
 {
     create_action(move |signal| {
         if predicate(signal) {
@@ -108,8 +77,6 @@ where
             false
         }
     })
-}
-
 /// Rate-limited action - only execute once per duration
 pub fn rate_limited_action(action: SignalAction, duration: std::time::Duration) -> SignalAction {
     use std::sync::Mutex;
@@ -125,15 +92,12 @@ pub fn rate_limited_action(action: SignalAction, duration: std::time::Duration) 
             Some(last_time) if now.duration_since(last_time) < duration => {
                 tracing::debug!("Rate limiting signal action for {}", signal);
                 false
-            },
             _ => {
                 *last = Some(now);
                 action(signal)
             }
         }
     })
-}
-
 /// Counting action - tracks how many times a signal has been received
 pub fn counting_action(action: SignalAction) -> (SignalAction, Arc<std::sync::atomic::AtomicUsize>) {
     use std::sync::atomic::{AtomicUsize, Ordering};
@@ -147,8 +111,6 @@ pub fn counting_action(action: SignalAction) -> (SignalAction, Arc<std::sync::at
     });
     
     (counting, counter)
-}
-
 /// Delayed action - execute after a delay
 pub fn delayed_action(action: SignalAction, delay: std::time::Duration) -> SignalAction {
     create_action(move |signal| {
@@ -159,16 +121,12 @@ pub fn delayed_action(action: SignalAction, delay: std::time::Duration) -> Signa
         });
         true
     })
-}
-
 /// Retry action - retry the action if it fails
 pub fn retry_action(action: SignalAction, max_retries: usize, retry_delay: std::time::Duration) -> SignalAction {
     create_action(move |signal| {
         for attempt in 0..=max_retries {
             if action(signal) {
                 return true;
-            }
-            
             if attempt < max_retries {
                 tracing::warn!("Signal action failed, retrying in {:?} (attempt {}/{})", 
                               retry_delay, attempt + 1, max_retries);
@@ -179,8 +137,6 @@ pub fn retry_action(action: SignalAction, max_retries: usize, retry_delay: std::
         tracing::error!("Signal action failed after {} retries for signal {}", max_retries, signal);
         false
     })
-}
-
 /// Memory pressure action - only execute if memory usage is below threshold
 pub fn memory_pressure_action(action: SignalAction, max_memory_mb: usize) -> SignalAction {
     create_action(move |signal| {
@@ -190,13 +146,10 @@ pub fn memory_pressure_action(action: SignalAction, max_memory_mb: usize) -> Sig
         if estimated_memory < max_memory_mb {
             action(signal)
         } else {
-            tracing::warn!("Skipping signal action due to memory pressure: {}MB > {}MB", 
                           estimated_memory, max_memory_mb);
             false
         }
     })
-}
-
 /// Get estimated memory usage (simplified implementation)
 fn get_estimated_memory_usage() -> usize {
     // In a real implementation, this would check actual memory usage
@@ -204,8 +157,6 @@ fn get_estimated_memory_usage() -> usize {
     use std::sync::atomic::{AtomicUsize, Ordering};
     static SIMULATED_MEMORY: AtomicUsize = AtomicUsize::new(50);
     SIMULATED_MEMORY.load(Ordering::SeqCst)
-}
-
 /// Thread-safe action - ensure only one instance runs at a time
 pub fn thread_safe_action(action: SignalAction) -> SignalAction {
     use std::sync::Mutex;
@@ -217,15 +168,12 @@ pub fn thread_safe_action(action: SignalAction) -> SignalAction {
             Ok(_guard) => {
                 tracing::debug!("Executing thread-safe action for signal {}", signal);
                 action(signal)
-            },
             Err(_) => {
                 tracing::warn!("Thread-safe action already running for signal {}", signal);
                 false
             }
         }
     })
-}
-
 /// Async action wrapper - execute action in background thread
 pub fn async_action(action: SignalAction) -> SignalAction {
     create_action(move |signal| {
@@ -236,8 +184,6 @@ pub fn async_action(action: SignalAction) -> SignalAction {
         });
         true
     })
-}
-
 /// File-writing action - write signal information to a file
 pub fn file_writer_action(file_path: String) -> SignalAction {
     use std::fs::OpenOptions;
@@ -262,25 +208,19 @@ pub fn file_writer_action(file_path: String) -> SignalAction {
                     tracing::error!("Failed to write signal {} to file {}", signal, file_path);
                     false
                 }
-            },
             Err(err) => {
                 tracing::error!("Failed to open file {}: {}", file_path, err);
                 false
             }
         }
     })
-}
-
 /// Environment variable action - set an environment variable when signal is received
 pub fn env_var_action(var_name: String, var_value: String) -> SignalAction {
     create_action(move |signal| {
         std::env::set_var(&var_name, &var_value);
-        tracing::info!("Set environment variable {}={} due to signal {}", 
                       var_name, var_value, signal);
         true
     })
-}
-
 /// Command execution action - run a command when signal is received
 pub fn command_action(command: String, args: Vec<String>) -> SignalAction {
     create_action(move |signal| {
@@ -298,15 +238,12 @@ pub fn command_action(command: String, args: Vec<String>) -> SignalAction {
                     tracing::error!("Command '{}' failed with status: {}", command, status);
                     false
                 }
-            },
             Err(err) => {
                 tracing::error!("Failed to execute command '{}': {}", command, err);
                 false
             }
         }
     })
-}
-
 /// Network notification action - send HTTP request when signal is received
 pub fn network_notification_action(url: String, timeout_secs: u64) -> SignalAction {
     create_action(move |signal| {
@@ -324,5 +261,3 @@ pub fn network_notification_action(url: String, timeout_secs: u64) -> SignalActi
         
         true
     })
-}
-

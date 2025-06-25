@@ -16,233 +16,105 @@ use std::process::{Command, Stdio};
 #[derive(Debug)]
 pub struct EnhancedOutputGenerator {
     /// Configuration for output generation
-    config: OutputConfig,
     /// Template manager
-    template_manager: TemplateManager,
     /// Hosting integrations
-    hosting_integrations: HostingIntegrations,
-}
-
 /// Configuration for enhanced output formats
 #[derive(Debug, Clone)]
 pub struct OutputConfig {
     /// Enable PDF generation
-    pub enable_pdf: bool,
     /// Enable responsive HTML templates
-    pub enable_responsive_html: bool,
     /// Enable API documentation generation
-    pub enable_api_docs: bool,
     /// Enable hosting platform integration
-    pub enable_hosting_integration: bool,
     /// PDF generation engine
-    pub pdf_engine: PdfEngine,
     /// HTML template theme
-    pub html_theme: HtmlTheme,
     /// API documentation format
-    pub api_format: ApiDocFormat,
     /// Hosting platforms to integrate with
-    pub hosting_platforms: Vec<HostingPlatform>,
     /// Custom CSS/styling options
-    pub custom_styling: Option<CustomStyling>,
     /// Output directory structure
-    pub output_structure: OutputStructure,
-}
-
 impl Default for OutputConfig {
     fn default() -> Self {
         Self {
-            enable_pdf: true,
-            enable_responsive_html: true,
-            enable_api_docs: true,
             enable_hosting_integration: false, // Disabled by default for security
-            pdf_engine: PdfEngine::Puppeteer,
-            html_theme: HtmlTheme::Modern,
-            api_format: ApiDocFormat::OpenApi,
-            hosting_platforms: vec![HostingPlatform::GitHubPages],
-            custom_styling: None,
-            output_structure: OutputStructure::Organized,
         }
     }
-}
-
 /// PDF generation engines
 #[derive(Debug, Clone)]
 pub enum PdfEngine {
     /// Use Puppeteer (Chrome headless) for PDF generation
-    Puppeteer,
     /// Use wkhtmltopdf for PDF generation
-    WkHtmlToPdf,
     /// Use Pandoc for PDF generation
-    Pandoc,
     /// Use Prince XML for professional PDF generation
-    Prince,
-}
-
 /// HTML themes
 #[derive(Debug, Clone)]
 pub enum HtmlTheme {
     /// Modern responsive theme with dark mode support
-    Modern,
     /// Classic documentation theme
-    Classic,
     /// Minimal clean theme
-    Minimal,
     /// Material design theme
-    Material,
     /// Custom theme from CSS files
-    Custom(PathBuf),
-}
-
 /// API documentation formats
 #[derive(Debug, Clone)]
 pub enum ApiDocFormat {
     /// OpenAPI 3.0 specification
-    OpenApi,
     /// API Blueprint format
-    ApiBlueprint,
     /// Swagger 2.0 specification
-    Swagger,
     /// RAML specification
-    Raml,
     /// Custom format
-    Custom(String),
-}
-
 /// Hosting platforms
 #[derive(Debug, Clone)]
 pub enum HostingPlatform {
     /// GitHub Pages
-    GitHubPages,
     /// GitLab Pages
-    GitLabPages,
     /// Netlify
-    Netlify,
     /// Vercel
-    Vercel,
     /// AWS S3
-    AwsS3,
     /// Custom hosting configuration
-    Custom(HostingConfig),
-}
-
 /// Custom hosting configuration
 #[derive(Debug, Clone)]
 pub struct HostingConfig {
-    pub name: String,
-    pub upload_command: String,
-    pub base_url: String,
-    pub deployment_script: Option<PathBuf>,
-}
-
 /// Custom styling configuration
 #[derive(Debug, Clone)]
 pub struct CustomStyling {
-    pub css_files: Vec<PathBuf>,
-    pub color_scheme: ColorScheme,
-    pub typography: Typography,
-    pub layout_options: LayoutOptions,
-}
-
 /// Color scheme configuration
 #[derive(Debug, Clone)]
 pub struct ColorScheme {
-    pub primary_color: String,
-    pub secondary_color: String,
-    pub accent_color: String,
-    pub background_color: String,
-    pub text_color: String,
-    pub code_background: String,
-}
-
 impl Default for ColorScheme {
     fn default() -> Self {
         Self {
-            primary_color: "#007bff".to_string(),
-            secondary_color: "#6c757d".to_string(),
-            accent_color: "#28a745".to_string(),
-            background_color: "#ffffff".to_string(),
-            text_color: "#212529".to_string(),
-            code_background: "#f8f9fa".to_string(),
         }
     }
-}
-
 /// Typography configuration
 #[derive(Debug, Clone)]
 pub struct Typography {
-    pub font_family: String,
-    pub heading_font: String,
-    pub code_font: String,
-    pub base_font_size: String,
-    pub line_height: String,
-}
-
 impl Default for Typography {
     fn default() -> Self {
         Self {
-            font_family: "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif".to_string(),
-            heading_font: "inherit".to_string(),
-            code_font: "'Monaco', 'Consolas', monospace".to_string(),
-            base_font_size: "16px".to_string(),
-            line_height: "1.6".to_string(),
         }
     }
-}
-
 /// Layout options
 #[derive(Debug, Clone)]
 pub struct LayoutOptions {
-    pub sidebar_width: String,
-    pub content_max_width: String,
-    pub enable_sticky_nav: bool,
-    pub enable_breadcrumbs: bool,
-    pub enable_search: bool,
-}
-
 impl Default for LayoutOptions {
     fn default() -> Self {
         Self {
-            sidebar_width: "300px".to_string(),
-            content_max_width: "1200px".to_string(),
-            enable_sticky_nav: true,
-            enable_breadcrumbs: true,
-            enable_search: true,
         }
     }
-}
-
 /// Output directory structure
 #[derive(Debug, Clone)]
 pub enum OutputStructure {
     /// Organized structure with separate directories for different formats
-    Organized,
     /// Flat structure with all files in one directory
-    Flat,
     /// Custom structure defined by user
-    Custom(HashMap<String, PathBuf>),
-}
-
 /// Template manager for generating various output formats
 #[derive(Debug)]
 pub struct TemplateManager {
     /// HTML templates
-    html_templates: HashMap<String, String>,
     /// CSS stylesheets
-    stylesheets: HashMap<String, String>,
     /// JavaScript files
-    scripts: HashMap<String, String>,
     /// Template variables
-    variables: HashMap<String, String>,
-}
-
 impl Default for TemplateManager {
     fn default() -> Self {
         let mut manager = Self {
-            html_templates: HashMap::new(),
-            stylesheets: HashMap::new(),
-            scripts: HashMap::new(),
-            variables: HashMap::new(),
-        };
         manager.load_default_templates();
         manager
     }
@@ -252,77 +124,34 @@ impl Default for TemplateManager {
 #[derive(Debug)]
 pub struct HostingIntegrations {
     /// GitHub Pages configuration
-    github_pages: Option<GitHubPagesConfig>,
     /// Netlify configuration
-    netlify: Option<NetlifyConfig>,
     /// Custom hosting configurations
-    custom_configs: HashMap<String, HostingConfig>,
-}
-
 impl Default for HostingIntegrations {
     fn default() -> Self {
         Self {
-            github_pages: None,
-            netlify: None,
-            custom_configs: HashMap::new(),
         }
     }
-}
-
 /// GitHub Pages configuration
 #[derive(Debug, Clone)]
 pub struct GitHubPagesConfig {
-    pub repository: String,
-    pub branch: String,
-    pub path: PathBuf,
-    pub custom_domain: Option<String>,
-}
-
 /// Netlify configuration
 #[derive(Debug, Clone)]
 pub struct NetlifyConfig {
-    pub site_id: String,
-    pub build_command: String,
-    pub publish_directory: PathBuf,
-    pub environment_variables: HashMap<String, String>,
-}
-
 /// PDF generation result
 #[derive(Debug)]
 pub struct PdfGenerationResult {
-    pub success: bool,
-    pub output_path: PathBuf,
-    pub file_size: usize,
-    pub page_count: Option<usize>,
-    pub generation_time: std::time::Duration,
-    pub error_message: Option<String>,
-}
-
 /// API documentation generation result
 #[derive(Debug)]
 pub struct ApiDocumentationResult {
-    pub success: bool,
-    pub format: ApiDocFormat,
-    pub output_files: Vec<PathBuf>,
-    pub specification_file: Option<PathBuf>,
-    pub validation_results: Vec<String>,
-}
-
 impl EnhancedOutputGenerator {
     /// Create a new enhanced output generator
     pub fn new(config: OutputConfig) -> Self {
         Self {
-            config,
-            template_manager: TemplateManager::default(),
-            hosting_integrations: HostingIntegrations::default(),
         }
     }
 
     /// Generate all enhanced output formats
     pub fn generate_all_formats(
-        &mut self,
-        documentation: &ExtractedDocumentation,
-        output_dir: &Path,
     ) -> crate::error::Result<()> {
         let mut results = GenerationResults::default();
 
@@ -332,26 +161,16 @@ impl EnhancedOutputGenerator {
         // Generate responsive HTML
         if self.config.enable_responsive_html {
             results.html_result = Some(self.generate_responsive_html(documentation, output_dir)?);
-        }
-
         // Generate PDF documentation
         if self.config.enable_pdf {
             results.pdf_result = Some(self.generate_pdf_documentation(documentation, output_dir)?);
-        }
-
         // Generate API documentation
         if self.config.enable_api_docs {
             results.api_result = Some(self.generate_api_documentation(documentation, output_dir)?);
-        }
-
         // Deploy to hosting platforms
         if self.config.enable_hosting_integration {
             results.hosting_results = self.deploy_to_hosting_platforms(output_dir)?;
-        }
-
         Ok(results)
-    }
-
     /// Create the output directory structure
     fn create_output_structure(&self, base_dir: &Path) -> crate::error::Result<()> {
         match &self.config.output_structure {
@@ -374,18 +193,10 @@ impl EnhancedOutputGenerator {
             }
         }
         Ok(())
-    }
-
     /// Generate responsive HTML documentation
     fn generate_responsive_html(
-        &self,
-        documentation: &ExtractedDocumentation,
-        output_dir: &Path,
     ) -> crate::error::Result<()> {
         let html_dir = match &self.config.output_structure {
-            OutputStructure::Organized => output_dir.join("html"),
-            _ => output_dir.to_path_buf(),
-        };
 
         // Generate main index page
         let index_html = self.generate_responsive_index(documentation)?;
@@ -401,25 +212,15 @@ impl EnhancedOutputGenerator {
             fs::write(&file_path, page_html)
                 .map_err(|e| CursedError::SystemError(format!("Failed to write HTML file: {}", e)))?;
             generated_files.push(file_path);
-        }
-
         // Generate CSS and JavaScript assets
         self.generate_assets(&html_dir)?;
 
         // Generate search index
         if self.config.custom_styling.as_ref().map_or(true, |s| s.layout_options.enable_search) {
             self.generate_search_index(documentation, &html_dir)?;
-        }
-
         Ok(HtmlGenerationResult {
-            success: true,
-            output_directory: html_dir,
-            generated_files,
             total_pages: documentation.items.len() + 1, // +1 for index
-            theme_used: self.config.html_theme.clone(),
         })
-    }
-
     /// Generate responsive index page
     fn generate_responsive_index(&self, documentation: &ExtractedDocumentation) -> crate::error::Result<()> {
         let template = self.template_manager.html_templates.get("responsive_index")
@@ -439,8 +240,6 @@ impl EnhancedOutputGenerator {
             .replace("{{SEARCH_INDEX}}", "search_index.json");
 
         Ok(html)
-    }
-
     /// Generate navigation for responsive design
     fn generate_navigation(&self, documentation: &ExtractedDocumentation) -> String {
         let mut nav_html = String::new();
@@ -449,24 +248,12 @@ impl EnhancedOutputGenerator {
         // Group items by category
         for item in &documentation.items {
             let category = match item.kind {
-                crate::docs::generator::ItemKind::Function => "Functions",
-                crate::docs::generator::ItemKind::Struct => "Structures",
-                crate::docs::generator::ItemKind::Interface => "Interfaces",
-                crate::docs::generator::ItemKind::Module => "Modules",
-                crate::docs::generator::ItemKind::Enum => "Enums",
-                crate::docs::generator::ItemKind::Constant => "Constants",
-                crate::docs::generator::ItemKind::Variable => "Variables",
-                crate::docs::generator::ItemKind::Type => "Types",
-            };
             categories.entry(category.to_string()).or_insert_with(Vec::new).push(item);
-        }
-
         // Generate navigation HTML
         for (category, items) in categories {
             nav_html.push_str(&format!(
                 r#"<div class="nav-category">
                     <h3 class="nav-category-title">{}</h3>
-                    <ul class="nav-items">"#,
                 category
             ));
 
@@ -475,17 +262,10 @@ impl EnhancedOutputGenerator {
                     r#"<li class="nav-item">
                         <a href="{}.html" class="nav-link">{}</a>
                     </li>"#,
-                    self.sanitize_filename(&item.name),
                     item.name
                 ));
-            }
-
             nav_html.push_str("</ul></div>");
-        }
-
         nav_html
-    }
-
     /// Generate index page content
     fn generate_index_content(&self, documentation: &ExtractedDocumentation) -> String {
         let stats = self.calculate_documentation_stats(documentation);
@@ -543,33 +323,18 @@ slay main() {{
                     <p>Built-in goroutines with 'stan' keyword for easy parallelism.</p>
                 </div>
             </div>"#,
-            stats.function_count,
-            stats.struct_count,
-            stats.interface_count,
             stats.module_count
         )
-    }
-
     /// Calculate documentation statistics
     fn calculate_documentation_stats(&self, documentation: &ExtractedDocumentation) -> DocumentationStats {
         let mut stats = DocumentationStats::default();
         
         for item in &documentation.items {
             match item.kind {
-                crate::docs::generator::ItemKind::Function => stats.function_count += 1,
-                crate::docs::generator::ItemKind::Struct => stats.struct_count += 1,
-                crate::docs::generator::ItemKind::Interface => stats.interface_count += 1,
-                crate::docs::generator::ItemKind::Module => stats.module_count += 1,
-                crate::docs::generator::ItemKind::Enum => stats.enum_count += 1,
-                crate::docs::generator::ItemKind::Constant => stats.constant_count += 1,
-                crate::docs::generator::ItemKind::Variable => stats.variable_count += 1,
-                crate::docs::generator::ItemKind::Type => stats.type_count += 1,
             }
         }
         
         stats
-    }
-
     /// Generate individual item page
     fn generate_item_page(&self, item: &DocumentationItem, documentation: &ExtractedDocumentation) -> crate::error::Result<()> {
         let template = self.template_manager.html_templates.get("item_page")
@@ -592,20 +357,9 @@ slay main() {{
             .replace("{{JAVASCRIPT}}", &js);
 
         Ok(html)
-    }
-
     /// Generate breadcrumbs for navigation
     fn generate_breadcrumbs(&self, item: &DocumentationItem) -> String {
         let category = match item.kind {
-            crate::docs::generator::ItemKind::Function => "Functions",
-            crate::docs::generator::ItemKind::Struct => "Structures",
-            crate::docs::generator::ItemKind::Interface => "Interfaces",
-            crate::docs::generator::ItemKind::Module => "Modules",
-            crate::docs::generator::ItemKind::Enum => "Enums",
-            crate::docs::generator::ItemKind::Constant => "Constants",
-            crate::docs::generator::ItemKind::Variable => "Variables",
-            crate::docs::generator::ItemKind::Type => "Types",
-        };
 
         format!(
             r#"<nav class="breadcrumbs">
@@ -617,8 +371,6 @@ slay main() {{
             </nav>"#,
             category, item.name
         )
-    }
-
     /// Generate content for an individual item
     fn generate_item_content(&self, item: &DocumentationItem) -> String {
         let mut content = format!(
@@ -650,8 +402,6 @@ slay main() {{
                 ));
             }
             content.push_str("</ul></div>");
-        }
-
         // Add examples if any
         if !item.examples.is_empty() {
             content.push_str("<div class=\"item-examples\"><h3>Examples</h3>");
@@ -664,21 +414,16 @@ slay main() {{
                 ));
             }
             content.push_str("</div>");
-        }
-
         // Add source location
         content.push_str(&format!(
             r#"<div class="source-info">
                 <h3>Source</h3>
                 <p>Defined in <code>{}</code> at line {}</p>
             </div>"#,
-            item.source_info.file.as_ref().map(|f| f.display().to_string()).unwrap_or_else(|| "unknown".to_string()),
             item.source_info.line
         ));
 
         content
-    }
-
     /// Generate related items section
     fn generate_related_items(&self, item: &DocumentationItem, documentation: &ExtractedDocumentation) -> String {
         let related: Vec<&DocumentationItem> = documentation.items.iter()
@@ -688,40 +433,27 @@ slay main() {{
 
         if related.is_empty() {
             return String::new();
-        }
-
         let mut content = String::from(r#"<div class="related-items"><h3>Related Items</h3><ul>"#);
         for related_item in related {
             content.push_str(&format!(
                 r#"<li><a href="{}.html">{}</a></li>"#,
-                self.sanitize_filename(&related_item.name),
                 related_item.name
             ));
         }
         content.push_str("</ul></div>");
         content
-    }
-
     /// Generate CSS for the selected theme
     fn get_css_for_theme(&self) -> String {
         match &self.config.html_theme {
-            HtmlTheme::Modern => self.template_manager.stylesheets.get("modern").cloned().unwrap_or_default(),
-            HtmlTheme::Classic => self.template_manager.stylesheets.get("classic").cloned().unwrap_or_default(),
-            HtmlTheme::Minimal => self.template_manager.stylesheets.get("minimal").cloned().unwrap_or_default(),
-            HtmlTheme::Material => self.template_manager.stylesheets.get("material").cloned().unwrap_or_default(),
             HtmlTheme::Custom(path) => {
                 fs::read_to_string(path).unwrap_or_else(|_| {
                     self.template_manager.stylesheets.get("modern").cloned().unwrap_or_default()
                 })
             }
         }
-    }
-
     /// Get JavaScript for interactive features
     fn get_javascript(&self) -> String {
         self.template_manager.scripts.get("main").cloned().unwrap_or_default()
-    }
-
     /// Generate static assets (CSS, JS, images)
     fn generate_assets(&self, html_dir: &Path) -> crate::error::Result<()> {
         let assets_dir = html_dir.join("assets");
@@ -739,24 +471,15 @@ slay main() {{
             .map_err(|e| CursedError::SystemError(format!("Failed to write JavaScript: {}", e)))?;
 
         Ok(())
-    }
-
     /// Generate search index for client-side search
     fn generate_search_index(&self, documentation: &ExtractedDocumentation, output_dir: &Path) -> crate::error::Result<()> {
         let mut search_entries = Vec::new();
         
         for item in &documentation.items {
             search_entries.push(serde_json::json!({
-                "name": item.name,
-                "type": format!("{:?}", item.kind),
-                "description": item.description,
-                "url": format!("{}.html", self.sanitize_filename(&item.name)),
                 "keywords": [item.name.clone()]
             }));
-        }
-
         let search_index = serde_json::json!({
-            "version": "1.0",
             "entries": search_entries
         });
 
@@ -767,20 +490,12 @@ slay main() {{
             .map_err(|e| CursedError::SystemError(format!("Failed to write search index: {}", e)))?;
 
         Ok(())
-    }
-
     /// Generate PDF documentation
     fn generate_pdf_documentation(
-        &self,
-        documentation: &ExtractedDocumentation,
-        output_dir: &Path,
     ) -> crate::error::Result<()> {
         let start_time = std::time::Instant::now();
         
         let pdf_dir = match &self.config.output_structure {
-            OutputStructure::Organized => output_dir.join("pdf"),
-            _ => output_dir.to_path_buf(),
-        };
 
         // Generate HTML for PDF conversion
         let pdf_html = self.generate_pdf_html(documentation)?;
@@ -791,11 +506,6 @@ slay main() {{
         let output_path = pdf_dir.join("documentation.pdf");
         
         let result = match &self.config.pdf_engine {
-            PdfEngine::Puppeteer => self.generate_pdf_with_puppeteer(&temp_html_path, &output_path),
-            PdfEngine::WkHtmlToPdf => self.generate_pdf_with_wkhtmltopdf(&temp_html_path, &output_path),
-            PdfEngine::Pandoc => self.generate_pdf_with_pandoc(&temp_html_path, &output_path),
-            PdfEngine::Prince => self.generate_pdf_with_prince(&temp_html_path, &output_path),
-        };
 
         // Clean up temp file
         let _ = fs::remove_file(&temp_html_path);
@@ -809,21 +519,10 @@ slay main() {{
                     .unwrap_or(0);
 
                 Ok(PdfGenerationResult {
-                    success: true,
-                    output_path,
-                    file_size,
                     page_count: None, // Would need additional tooling to determine
-                    generation_time,
-                    error_message: None,
                 })
             }
             Err(e) => Ok(PdfGenerationResult {
-                success: false,
-                output_path,
-                file_size: 0,
-                page_count: None,
-                generation_time,
-                error_message: Some(e.to_string()),
             })
         }
     }
@@ -895,137 +594,73 @@ slay main() {{
                     html.push_str(&format!("<li><strong>{}</strong>: {}</li>", param.name, param.description));
                 }
                 html.push_str("</ul></div>");
-            }
-
             if !item.examples.is_empty() {
                 html.push_str("<div class=\"examples\"><h3>Examples</h3>");
                 for example in &item.examples {
                     html.push_str(&format!("<pre><code>{}</code></pre>", html_escape::encode_text(&example.code)));
                 }
                 html.push_str("</div>");
-            }
-
             html.push_str("</div>");
-        }
-
         html.push_str("</body></html>");
         Ok(html)
-    }
-
     /// Generate PDF using Puppeteer
     fn generate_pdf_with_puppeteer(&self, html_path: &Path, output_path: &Path) -> crate::error::Result<()> {
         let output = Command::new("npx")
             .args(&[
-                "puppeteer",
-                "pdf",
-                &html_path.to_string_lossy(),
-                &output_path.to_string_lossy(),
-                "--format", "A4",
-                "--margin-top", "20mm",
-                "--margin-bottom", "20mm",
-                "--margin-left", "20mm",
-                "--margin-right", "20mm",
-                "--print-background",
             ])
             .output()
             .map_err(|e| CursedError::SystemError(format!("Failed to execute Puppeteer: {}", e)))?;
 
         if !output.status.success() {
             return Err(CursedError::SystemError(format!(
-                "Puppeteer PDF generation failed: {}",
                 String::from_utf8_lossy(&output.stderr)
             )));
-        }
-
         Ok(())
-    }
-
     /// Generate PDF using wkhtmltopdf
     fn generate_pdf_with_wkhtmltopdf(&self, html_path: &Path, output_path: &Path) -> crate::error::Result<()> {
         let output = Command::new("wkhtmltopdf")
             .args(&[
-                "--page-size", "A4",
-                "--margin-top", "20mm",
-                "--margin-bottom", "20mm",
-                "--margin-left", "20mm",
-                "--margin-right", "20mm",
-                "--enable-local-file-access",
-                &html_path.to_string_lossy(),
-                &output_path.to_string_lossy(),
             ])
             .output()
             .map_err(|e| CursedError::SystemError(format!("Failed to execute wkhtmltopdf: {}", e)))?;
 
         if !output.status.success() {
             return Err(CursedError::SystemError(format!(
-                "wkhtmltopdf failed: {}",
                 String::from_utf8_lossy(&output.stderr)
             )));
-        }
-
         Ok(())
-    }
-
     /// Generate PDF using Pandoc
     fn generate_pdf_with_pandoc(&self, html_path: &Path, output_path: &Path) -> crate::error::Result<()> {
         let output = Command::new("pandoc")
             .args(&[
-                &html_path.to_string_lossy(),
-                "-o", &output_path.to_string_lossy(),
-                "--pdf-engine=xelatex",
-                "-V", "geometry:margin=20mm",
             ])
             .output()
             .map_err(|e| CursedError::SystemError(format!("Failed to execute Pandoc: {}", e)))?;
 
         if !output.status.success() {
             return Err(CursedError::SystemError(format!(
-                "Pandoc PDF generation failed: {}",
                 String::from_utf8_lossy(&output.stderr)
             )));
-        }
-
         Ok(())
-    }
-
     /// Generate PDF using Prince XML
     fn generate_pdf_with_prince(&self, html_path: &Path, output_path: &Path) -> crate::error::Result<()> {
         let output = Command::new("prince")
             .args(&[
-                &html_path.to_string_lossy(),
-                "-o", &output_path.to_string_lossy(),
-                "--media=print",
             ])
             .output()
             .map_err(|e| CursedError::SystemError(format!("Failed to execute Prince: {}", e)))?;
 
         if !output.status.success() {
             return Err(CursedError::SystemError(format!(
-                "Prince PDF generation failed: {}",
                 String::from_utf8_lossy(&output.stderr)
             )));
-        }
-
         Ok(())
-    }
-
     /// Generate API documentation
     fn generate_api_documentation(
-        &self,
-        documentation: &ExtractedDocumentation,
-        output_dir: &Path,
     ) -> crate::error::Result<()> {
         let api_dir = match &self.config.output_structure {
-            OutputStructure::Organized => output_dir.join("api"),
-            _ => output_dir.to_path_buf(),
-        };
 
         match &self.config.api_format {
-            ApiDocFormat::OpenApi => self.generate_openapi_spec(documentation, &api_dir),
-            ApiDocFormat::ApiBlueprint => self.generate_api_blueprint(documentation, &api_dir),
-            ApiDocFormat::Swagger => self.generate_swagger_spec(documentation, &api_dir),
-            ApiDocFormat::Raml => self.generate_raml_spec(documentation, &api_dir),
-            ApiDocFormat::Custom(format) => self.generate_custom_api_format(documentation, &api_dir, format),
         }
     }
 
@@ -1046,14 +681,7 @@ slay main() {{
             .map_err(|e| CursedError::SystemError(format!("Failed to write Swagger UI: {}", e)))?;
 
         Ok(ApiDocumentationResult {
-            success: true,
-            format: ApiDocFormat::OpenApi,
-            output_files: vec![ui_file],
-            specification_file: Some(spec_file),
-            validation_results: vec!["OpenAPI specification generated successfully".to_string()],
         })
-    }
-
     /// Build OpenAPI specification from documentation
     fn build_openapi_spec(&self, documentation: &ExtractedDocumentation) -> crate::error::Result<()> {
         let mut paths = serde_json::Map::new();
@@ -1078,43 +706,26 @@ slay main() {{
         components.insert("schemas".to_string(), serde_json::Value::Object(schemas));
 
         let spec = serde_json::json!({
-            "openapi": "3.0.0",
             "info": {
-                "title": "CURSED API Documentation",
-                "description": "API documentation generated from CURSED source code",
                 "version": "1.0.0"
-            },
-            "paths": paths,
             "components": components
         });
 
         Ok(spec)
-    }
-
     /// Convert function to OpenAPI path specification
     fn function_to_openapi_path(&self, item: &DocumentationItem) -> crate::error::Result<()> {
         let mut parameters = Vec::new();
         
         for param in &item.parameters {
             parameters.push(serde_json::json!({
-                "name": param.name,
-                "in": "query",
-                "description": param.description,
-                "required": false,
                 "schema": {
                     "type": "string"
                 }
             }));
-        }
-
         Ok(serde_json::json!({
             "get": {
-                "summary": item.name.clone(),
-                "description": item.description,
-                "parameters": parameters,
                 "responses": {
                     "200": {
-                        "description": "Successful response",
                         "content": {
                             "application/json": {
                                 "schema": {
@@ -1126,8 +737,6 @@ slay main() {{
                 }
             }
         }))
-    }
-
     /// Convert struct to OpenAPI schema
     fn struct_to_openapi_schema(&self, item: &DocumentationItem) -> crate::error::Result<()> {
         let mut properties = serde_json::Map::new();
@@ -1135,18 +744,11 @@ slay main() {{
         // Extract properties from parameters (representing struct fields)
         for param in &item.parameters {
             properties.insert(param.name.clone(), serde_json::json!({
-                "type": "string",
                 "description": param.description
             }));
-        }
-
         Ok(serde_json::json!({
-            "type": "object",
-            "description": item.description,
             "properties": properties
         }))
-    }
-
     /// Generate Swagger UI HTML
     fn generate_swagger_ui_html(&self) -> String {
         r#"<!DOCTYPE html>
@@ -1170,23 +772,15 @@ slay main() {{
         window.onload = function() {
             const ui = SwaggerUIBundle({
                 url: './openapi.json',
-                dom_id: '#swagger-ui',
-                deepLinking: true,
                 presets: [
-                    SwaggerUIBundle.presets.apis,
                     SwaggerUIStandalonePreset
-                ],
                 plugins: [
                     SwaggerUIBundle.plugins.DownloadUrl
-                ],
                 layout: "StandaloneLayout"
             });
-        };
     </script>
 </body>
 </html>"#.to_string()
-    }
-
     /// Generate API Blueprint documentation
     fn generate_api_blueprint(&self, documentation: &ExtractedDocumentation, output_dir: &Path) -> crate::error::Result<()> {
         // Placeholder implementation for API Blueprint
@@ -1199,12 +793,8 @@ This is the API documentation for the CURSED programming language, generated fro
 
 ## Functions
 
-{}
-
 ## Data Structures
 
-{}"#,
-            self.generate_blueprint_functions(documentation),
             self.generate_blueprint_structures(documentation)
         );
 
@@ -1213,14 +803,7 @@ This is the API documentation for the CURSED programming language, generated fro
             .map_err(|e| CursedError::SystemError(format!("Failed to write API Blueprint: {}", e)))?;
 
         Ok(ApiDocumentationResult {
-            success: true,
-            format: ApiDocFormat::ApiBlueprint,
-            output_files: vec![blueprint_file.clone()],
-            specification_file: Some(blueprint_file),
-            validation_results: vec!["API Blueprint generated successfully".to_string()],
         })
-    }
-
     /// Generate function documentation for API Blueprint
     fn generate_blueprint_functions(&self, documentation: &ExtractedDocumentation) -> String {
         let mut content = String::new();
@@ -1230,25 +813,16 @@ This is the API documentation for the CURSED programming language, generated fro
                 content.push_str(&format!(
                     r#"### {} [GET /{name}]
 
-{description}
-
 + Response 200 (application/json)
 
         {{
             "result": "success"
-        }}
-
-"#,
-                    item.name,
-                    name = item.name,
                     description = item.description
                 ));
             }
         }
         
         content
-    }
-
     /// Generate structure documentation for API Blueprint
     fn generate_blueprint_structures(&self, documentation: &ExtractedDocumentation) -> String {
         let mut content = String::new();
@@ -1258,32 +832,19 @@ This is the API documentation for the CURSED programming language, generated fro
                 content.push_str(&format!(
                     r#"## {} (object)
 
-{description}
-
-"#,
-                    item.name,
                     description = item.description
                 ));
             }
         }
         
         content
-    }
-
     /// Generate Swagger 2.0 specification
     fn generate_swagger_spec(&self, documentation: &ExtractedDocumentation, output_dir: &Path) -> crate::error::Result<()> {
         // Similar to OpenAPI but using Swagger 2.0 format
         let spec = serde_json::json!({
-            "swagger": "2.0",
             "info": {
-                "title": "CURSED API Documentation",
-                "description": "API documentation generated from CURSED source code",
                 "version": "1.0.0"
-            },
-            "host": "api.cursed.dev",
             "basePath": "/v1",
-            "schemes": ["https"],
-            "paths": {},
             "definitions": {}
         });
 
@@ -1295,14 +856,7 @@ This is the API documentation for the CURSED programming language, generated fro
             .map_err(|e| CursedError::SystemError(format!("Failed to write Swagger spec: {}", e)))?;
 
         Ok(ApiDocumentationResult {
-            success: true,
-            format: ApiDocFormat::Swagger,
-            output_files: vec![spec_file.clone()],
-            specification_file: Some(spec_file),
-            validation_results: vec!["Swagger 2.0 specification generated successfully".to_string()],
         })
-    }
-
     /// Generate RAML specification
     fn generate_raml_spec(&self, documentation: &ExtractedDocumentation, output_dir: &Path) -> crate::error::Result<()> {
         let raml_content = format!(
@@ -1314,10 +868,6 @@ baseUri: https://api.cursed.dev/v1
 
 types:
 {}
-
-{}
-"#,
-            self.generate_raml_types(documentation),
             self.generate_raml_endpoints(documentation)
         );
 
@@ -1326,14 +876,7 @@ types:
             .map_err(|e| CursedError::SystemError(format!("Failed to write RAML spec: {}", e)))?;
 
         Ok(ApiDocumentationResult {
-            success: true,
-            format: ApiDocFormat::Raml,
-            output_files: vec![raml_file.clone()],
-            specification_file: Some(raml_file),
-            validation_results: vec!["RAML specification generated successfully".to_string()],
         })
-    }
-
     /// Generate RAML type definitions
     fn generate_raml_types(&self, documentation: &ExtractedDocumentation) -> String {
         let mut content = String::new();
@@ -1341,15 +884,12 @@ types:
         for item in &documentation.items {
             if let crate::docs::generator::ItemKind::Struct = item.kind {
                 content.push_str(&format!(
-                    "  {}:\n    description: {}\n    type: object\n\n",
                     item.name, item.description
                 ));
             }
         }
         
         content
-    }
-
     /// Generate RAML endpoints
     fn generate_raml_endpoints(&self, documentation: &ExtractedDocumentation) -> String {
         let mut content = String::new();
@@ -1366,21 +906,16 @@ types:
           application/json:
             type: object
 
-"#,
                     item.name, item.description
                 ));
             }
         }
         
         content
-    }
-
     /// Generate custom API format
     fn generate_custom_api_format(&self, documentation: &ExtractedDocumentation, output_dir: &Path, format: &str) -> crate::error::Result<()> {
         // Placeholder for custom format implementation
         let custom_content = format!(
-            "# Custom API Documentation Format: {}\n\nGenerated from CURSED source code\n\nTotal items: {}",
-            format,
             documentation.items.len()
         );
 
@@ -1389,49 +924,19 @@ types:
             .map_err(|e| CursedError::SystemError(format!("Failed to write custom API format: {}", e)))?;
 
         Ok(ApiDocumentationResult {
-            success: true,
-            format: ApiDocFormat::Custom(format.to_string()),
-            output_files: vec![custom_file.clone()],
-            specification_file: Some(custom_file),
-            validation_results: vec![format!("Custom format '{}' generated successfully", format)],
         })
-    }
-
     /// Deploy to hosting platforms
     fn deploy_to_hosting_platforms(&mut self, output_dir: &Path) -> crate::error::Result<()> {
         let mut results = HashMap::new();
 
         for platform in &self.config.hosting_platforms.clone() {
             let result = match platform {
-                HostingPlatform::GitHubPages => self.deploy_to_github_pages(output_dir),
-                HostingPlatform::GitLabPages => self.deploy_to_gitlab_pages(output_dir),
-                HostingPlatform::Netlify => self.deploy_to_netlify(output_dir),
-                HostingPlatform::Vercel => self.deploy_to_vercel(output_dir),
-                HostingPlatform::AwsS3 => self.deploy_to_aws_s3(output_dir),
-                HostingPlatform::Custom(config) => self.deploy_to_custom_platform(output_dir, config),
-            };
 
             let platform_name = match platform {
-                HostingPlatform::GitHubPages => "github_pages",
-                HostingPlatform::GitLabPages => "gitlab_pages",
-                HostingPlatform::Netlify => "netlify",
-                HostingPlatform::Vercel => "vercel",
-                HostingPlatform::AwsS3 => "aws_s3",
-                HostingPlatform::Custom(config) => &config.name,
-            };
 
             results.insert(platform_name.to_string(), result.unwrap_or_else(|e| DeploymentResult {
-                success: false,
-                platform: platform_name.to_string(),
-                url: None,
-                deployment_time: std::time::Duration::from_secs(0),
-                error_message: Some(e.to_string()),
             }));
-        }
-
         Ok(results)
-    }
-
     /// Deploy to GitHub Pages
     fn deploy_to_github_pages(&self, output_dir: &Path) -> crate::error::Result<()> {
         let start_time = std::time::Instant::now();
@@ -1465,14 +970,8 @@ jobs:
             .map_err(|e| CursedError::SystemError(format!("Failed to write GitHub Pages config: {}", e)))?;
 
         Ok(DeploymentResult {
-            success: true,
-            platform: "GitHub Pages".to_string(),
             url: Some("https://your-username.github.io/your-repo".to_string()),
-            deployment_time: start_time.elapsed(),
-            error_message: None,
         })
-    }
-
     /// Deploy to GitLab Pages
     fn deploy_to_gitlab_pages(&self, output_dir: &Path) -> crate::error::Result<()> {
         let start_time = std::time::Instant::now();
@@ -1493,14 +992,8 @@ jobs:
             .map_err(|e| CursedError::SystemError(format!("Failed to write GitLab CI config: {}", e)))?;
 
         Ok(DeploymentResult {
-            success: true,
-            platform: "GitLab Pages".to_string(),
             url: Some("https://your-username.gitlab.io/your-repo".to_string()),
-            deployment_time: start_time.elapsed(),
-            error_message: None,
         })
-    }
-
     /// Deploy to Netlify
     fn deploy_to_netlify(&self, output_dir: &Path) -> crate::error::Result<()> {
         let start_time = std::time::Instant::now();
@@ -1522,26 +1015,18 @@ jobs:
             .map_err(|e| CursedError::SystemError(format!("Failed to write Netlify config: {}", e)))?;
 
         Ok(DeploymentResult {
-            success: true,
-            platform: "Netlify".to_string(),
             url: Some("https://your-site.netlify.app".to_string()),
-            deployment_time: start_time.elapsed(),
-            error_message: None,
         })
-    }
-
     /// Deploy to Vercel
     fn deploy_to_vercel(&self, output_dir: &Path) -> crate::error::Result<()> {
         let start_time = std::time::Instant::now();
         
         let vercel_json = serde_json::json!({
-            "version": 2,
             "builds": [
                 {
                     "src": "docs/**/*",
                     "use": "@vercel/static"
                 }
-            ],
             "routes": [
                 {
                     "src": "/(.*)",
@@ -1557,14 +1042,8 @@ jobs:
             .map_err(|e| CursedError::SystemError(format!("Failed to write Vercel config: {}", e)))?;
 
         Ok(DeploymentResult {
-            success: true,
-            platform: "Vercel".to_string(),
             url: Some("https://your-project.vercel.app".to_string()),
-            deployment_time: start_time.elapsed(),
-            error_message: None,
         })
-    }
-
     /// Deploy to AWS S3
     fn deploy_to_aws_s3(&self, output_dir: &Path) -> crate::error::Result<()> {
         let start_time = std::time::Instant::now();
@@ -1580,14 +1059,8 @@ aws cloudfront create-invalidation --distribution-id YOUR_DISTRIBUTION_ID --path
             .map_err(|e| CursedError::SystemError(format!("Failed to write AWS deployment script: {}", e)))?;
 
         Ok(DeploymentResult {
-            success: true,
-            platform: "AWS S3".to_string(),
             url: Some("https://your-bucket-name.s3-website-region.amazonaws.com".to_string()),
-            deployment_time: start_time.elapsed(),
-            error_message: None,
         })
-    }
-
     /// Deploy to custom platform
     fn deploy_to_custom_platform(&self, output_dir: &Path, config: &HostingConfig) -> crate::error::Result<()> {
         let start_time = std::time::Instant::now();
@@ -1602,24 +1075,12 @@ aws cloudfront create-invalidation --distribution-id YOUR_DISTRIBUTION_ID --path
 
             if !output.status.success() {
                 return Ok(DeploymentResult {
-                    success: false,
-                    platform: config.name.clone(),
-                    url: None,
-                    deployment_time: start_time.elapsed(),
-                    error_message: Some(String::from_utf8_lossy(&output.stderr).to_string()),
                 });
             }
         }
 
         Ok(DeploymentResult {
-            success: true,
-            platform: config.name.clone(),
-            url: Some(config.base_url.clone()),
-            deployment_time: start_time.elapsed(),
-            error_message: None,
         })
-    }
-
     /// Sanitize filename for safe file system operations
     fn sanitize_filename(&self, name: &str) -> String {
         name.chars()
@@ -1761,8 +1222,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             });
         });
-    }
-    
     // Mobile navigation toggle
     const sidebar = document.querySelector('.sidebar');
     const content = document.querySelector('.content');
@@ -1795,41 +1254,13 @@ document.addEventListener('DOMContentLoaded', function() {
 /// Documentation statistics
 #[derive(Debug, Default)]
 pub struct DocumentationStats {
-    pub function_count: usize,
-    pub struct_count: usize,
-    pub interface_count: usize,
-    pub module_count: usize,
-    pub enum_count: usize,
-    pub constant_count: usize,
-    pub variable_count: usize,
-    pub type_count: usize,
-}
-
 /// HTML generation result
 #[derive(Debug)]
 pub struct HtmlGenerationResult {
-    pub success: bool,
-    pub output_directory: PathBuf,
-    pub generated_files: Vec<PathBuf>,
-    pub total_pages: usize,
-    pub theme_used: HtmlTheme,
-}
-
 /// Deployment result
 #[derive(Debug)]
 pub struct DeploymentResult {
-    pub success: bool,
-    pub platform: String,
-    pub url: Option<String>,
-    pub deployment_time: std::time::Duration,
-    pub error_message: Option<String>,
-}
-
 /// Overall generation results
 #[derive(Debug, Default)]
 pub struct GenerationResults {
-    pub html_result: Option<HtmlGenerationResult>,
-    pub pdf_result: Option<PdfGenerationResult>,
-    pub api_result: Option<ApiDocumentationResult>,
-    pub hosting_results: HashMap<String, DeploymentResult>,
 }

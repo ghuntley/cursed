@@ -17,9 +17,6 @@ impl KeyFormatConverter {
     /// Convert key to PEM format
     pub fn to_pem(key: &PqcKey) -> PqcResult<String> {
         let label = match key.key_type {
-            KeyType::Public => format!("{:?} PUBLIC KEY", key.algorithm),
-            KeyType::Secret => format!("{:?} PRIVATE KEY", key.algorithm),
-        };
 
         let encoded = BASE64.encode(&key.key_data);
         let mut pem = format!("-----BEGIN {}-----\n", label);
@@ -28,20 +25,14 @@ impl KeyFormatConverter {
         for chunk in encoded.as_bytes().chunks(64) {
             pem.push_str(&String::from_utf8_lossy(chunk));
             pem.push('\n');
-        }
-        
         pem.push_str(&format!("-----END {}-----\n", label));
         Ok(pem)
-    }
-
     /// Parse key from PEM format
     pub fn from_pem(pem_data: &str) -> PqcResult<PqcKey> {
         let lines: Vec<&str> = pem_data.split("\n").collect();
         
         if lines.len() < 3 {
             return Err(PqcError::FormatError("Invalid PEM format".to_string()));
-        }
-
         let begin_line = lines[0];
         let end_line = lines[lines.len() - 1];
 
@@ -52,14 +43,10 @@ impl KeyFormatConverter {
         let expected_end = begin_line.replace("BEGIN", "END");
         if end_line != expected_end {
             return Err(PqcError::FormatError("PEM header/footer mismatch".to_string()));
-        }
-
         // Extract and decode base64 content
         let mut base64_content = String::new();
         for line in &lines[1..lines.len()-1] {
             base64_content.push_str(line.trim());
-        }
-
         let key_data = BASE64.decode(&base64_content)
             .map_err(|e| PqcError::FormatError(format!("Base64 decode error: {}", e)))?;
 
@@ -67,14 +54,10 @@ impl KeyFormatConverter {
         key.metadata.format = KeyFormat::Pem;
         
         Ok(key)
-    }
-
     /// Parse PEM header to extract algorithm and key type
     fn parse_pem_header(header: &str) -> PqcResult<(AlgorithmType, KeyType)> {
         if !header.starts_with("-----BEGIN ") || !header.ends_with("-----") {
             return Err(PqcError::FormatError("Invalid PEM header format".to_string()));
-        }
-
         let content = &header[11..header.len()-5]; // Remove "-----BEGIN " and "-----"
         
         let (algorithm, key_type) = if content.ends_with(" PUBLIC KEY") {
@@ -85,28 +68,11 @@ impl KeyFormatConverter {
             (Self::parse_algorithm(alg_str)?, KeyType::Secret)
         } else {
             return Err(PqcError::FormatError("Unrecognized PEM key type".to_string()));
-        };
 
         Ok((algorithm, key_type))
-    }
-
     /// Parse algorithm from string
     fn parse_algorithm(alg_str: &str) -> PqcResult<AlgorithmType> {
         match alg_str {
-            "Kyber" => Ok(AlgorithmType::Kyber),
-            "Dilithium" => Ok(AlgorithmType::Dilithium),
-            "Ntru" => Ok(AlgorithmType::Ntru),
-            "FrodoKem" => Ok(AlgorithmType::FrodoKem),
-            "Sphincs" => Ok(AlgorithmType::Sphincs),
-            "Lms" => Ok(AlgorithmType::Lms),
-            "Xmss" => Ok(AlgorithmType::Xmss),
-            "Rainbow" => Ok(AlgorithmType::Rainbow),
-            "GeMSS" => Ok(AlgorithmType::GeMSS),
-            "ClassicMcEliece" => Ok(AlgorithmType::ClassicMcEliece),
-            "Bike" => Ok(AlgorithmType::Bike),
-            "Hqc" => Ok(AlgorithmType::Hqc),
-            "Sike" => Ok(AlgorithmType::Sike),
-            _ => Err(PqcError::FormatError(format!("Unknown algorithm: {}", alg_str))),
         }
     }
 
@@ -128,73 +94,32 @@ impl KeyFormatConverter {
         der.extend_from_slice(&key.key_data);
         
         Ok(der)
-    }
-
     /// Parse key from DER format
     pub fn from_der(der_data: &[u8]) -> PqcResult<PqcKey> {
         if der_data.len() < 7 {
             return Err(PqcError::FormatError("DER data too short".to_string()));
-        }
-
         let algorithm = match der_data[0] {
-            0 => AlgorithmType::Kyber,
-            1 => AlgorithmType::Dilithium,
-            2 => AlgorithmType::Ntru,
-            3 => AlgorithmType::FrodoKem,
-            4 => AlgorithmType::Sphincs,
-            5 => AlgorithmType::Lms,
-            6 => AlgorithmType::Xmss,
-            7 => AlgorithmType::Rainbow,
-            8 => AlgorithmType::GeMSS,
-            9 => AlgorithmType::ClassicMcEliece,
-            10 => AlgorithmType::Bike,
-            11 => AlgorithmType::Hqc,
-            12 => AlgorithmType::Sike,
-            _ => return Err(PqcError::FormatError("Unknown algorithm in DER".to_string())),
-        };
 
         let security_level = match der_data[1] {
-            0 => SecurityLevel::Level1,
-            1 => SecurityLevel::Level3,
-            2 => SecurityLevel::Level5,
-            _ => return Err(PqcError::FormatError("Unknown security level in DER".to_string())),
-        };
 
         let key_type = match der_data[2] {
-            0 => KeyType::Public,
-            1 => KeyType::Secret,
-            _ => return Err(PqcError::FormatError("Unknown key type in DER".to_string())),
-        };
 
         let key_len = u32::from_be_bytes([der_data[3], der_data[4], der_data[5], der_data[6]]) as usize;
         
         if der_data.len() < 7 + key_len {
             return Err(PqcError::FormatError("DER key data truncated".to_string()));
-        }
-
         let key_data = der_data[7..7 + key_len].to_vec();
         
         let mut key = PqcKey::new(algorithm, security_level, key_type, key_data);
         key.metadata.format = KeyFormat::Der;
         
         Ok(key)
-    }
-
     /// Convert key to JWK format
     pub fn to_jwk(key: &PqcKey) -> PqcResult<String> {
         let jwk = PqcJwk {
-            kty: "PQC".to_string(),
-            alg: format!("{:?}", key.algorithm),
-            security_level: format!("{:?}", key.security_level),
-            key_type: format!("{:?}", key.key_type),
-            key_data: BASE64.encode(&key.key_data),
-            key_id: Some(key.metadata.key_id.clone()),
-        };
 
         serde_json::to_string_pretty(&jwk)
             .map_err(|e| PqcError::FormatError(format!("JWK serialization error: {}", e)))
-    }
-
     /// Parse key from JWK format
     pub fn from_jwk(jwk_data: &str) -> PqcResult<PqcKey> {
         let jwk: PqcJwk = serde_json::from_str(jwk_data)
@@ -202,22 +127,11 @@ impl KeyFormatConverter {
 
         if jwk.kty != "PQC" {
             return Err(PqcError::FormatError("Not a PQC JWK".to_string()));
-        }
-
         let algorithm = Self::parse_algorithm(&jwk.alg)?;
         
         let security_level = match jwk.security_level.as_str() {
-            "Level1" => SecurityLevel::Level1,
-            "Level3" => SecurityLevel::Level3,
-            "Level5" => SecurityLevel::Level5,
-            _ => return Err(PqcError::FormatError("Unknown security level in JWK".to_string())),
-        };
 
         let key_type = match jwk.key_type.as_str() {
-            "Public" => KeyType::Public,
-            "Secret" => KeyType::Secret,
-            _ => return Err(PqcError::FormatError("Unknown key type in JWK".to_string())),
-        };
 
         let key_data = BASE64.decode(&jwk.key_data)
             .map_err(|e| PqcError::FormatError(format!("JWK key data decode error: {}", e)))?;
@@ -227,17 +141,11 @@ impl KeyFormatConverter {
         
         if let Some(key_id) = jwk.key_id {
             key.metadata.key_id = key_id;
-        }
-        
         Ok(key)
-    }
-
     /// Convert key to CURSED native format
     pub fn to_cursed_native(key: &PqcKey) -> PqcResult<String> {
         serde_json::to_string_pretty(key)
             .map_err(|e| PqcError::FormatError(format!("CURSED native serialization error: {}", e)))
-    }
-
     /// Parse key from CURSED native format
     pub fn from_cursed_native(data: &str) -> PqcResult<PqcKey> {
         let mut key: PqcKey = serde_json::from_str(data)
@@ -251,15 +159,7 @@ impl KeyFormatConverter {
 /// JWK representation for PQC keys
 #[derive(Debug, Serialize, Deserialize)]
 struct PqcJwk {
-    kty: String,
-    alg: String,
-    security_level: String,
-    key_type: String,
-    key_data: String,
     #[serde(skip_serializing_if = "Option::is_none")]
-    key_id: Option<String>,
-}
-
 /// Batch format converter for multiple keys
 pub struct BatchFormatConverter;
 
@@ -270,29 +170,14 @@ impl BatchFormatConverter {
         
         for key in keys {
             let converted = match target_format {
-                KeyFormat::Pem => KeyFormatConverter::to_pem(key)?,
-                KeyFormat::Jwk => KeyFormatConverter::to_jwk(key)?,
-                KeyFormat::CursedNative => KeyFormatConverter::to_cursed_native(key)?,
                 KeyFormat::Der => {
                     let der_bytes = KeyFormatConverter::to_der(key)?;
                     BASE64.encode(&der_bytes)
-                },
-                KeyFormat::Raw => BASE64.encode(&key.key_data),
-            };
             results.push(converted);
-        }
-        
         Ok(results)
-    }
-
     /// Create a key bundle with multiple formats
     pub fn create_key_bundle(key: &PqcKey) -> PqcResult<KeyBundle> {
         Ok(KeyBundle {
-            pem: KeyFormatConverter::to_pem(key)?,
-            der: BASE64.encode(&KeyFormatConverter::to_der(key)?),
-            jwk: KeyFormatConverter::to_jwk(key)?,
-            cursed_native: KeyFormatConverter::to_cursed_native(key)?,
-            raw: BASE64.encode(&key.key_data),
         })
     }
 }
@@ -300,13 +185,6 @@ impl BatchFormatConverter {
 /// Key bundle containing multiple formats
 #[derive(Debug, Serialize, Deserialize)]
 pub struct KeyBundle {
-    pub pem: String,
-    pub der: String,
-    pub jwk: String,
-    pub cursed_native: String,
-    pub raw: String,
-}
-
 /// Format validation utilities
 pub struct FormatValidator;
 
@@ -317,8 +195,6 @@ impl FormatValidator {
         
         if lines.len() < 3 {
             return false;
-        }
-
         let begin_line = lines[0];
         let end_line = lines[lines.len() - 1];
 
@@ -327,21 +203,15 @@ impl FormatValidator {
         end_line.starts_with("-----END ") &&
         end_line.ends_with("-----") &&
         begin_line.replace("BEGIN", "END") == end_line
-    }
-
     /// Validate JWK format
     pub fn validate_jwk(jwk_data: &str) -> bool {
         match serde_json::from_str::<PqcJwk>(jwk_data) {
-            Ok(jwk) => jwk.kty == "PQC",
-            Err(_) => false,
         }
     }
 
     /// Validate CURSED native format
     pub fn validate_cursed_native(data: &str) -> bool {
         serde_json::from_str::<PqcKey>(data).is_ok()
-    }
-
     /// Detect format from content
     pub fn detect_format(data: &str) -> Option<KeyFormat> {
         if Self::validate_pem(data) {
@@ -354,5 +224,3 @@ impl FormatValidator {
             None
         }
     }
-}
-

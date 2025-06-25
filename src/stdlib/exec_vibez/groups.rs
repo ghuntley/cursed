@@ -20,43 +20,23 @@ static ACTIVE_GROUPS: AtomicUsize = AtomicUsize::new(0);
 #[derive(Debug, Clone)]
 pub struct ProcessGroupOptions {
     /// Maximum number of concurrent processes
-    pub max_concurrent: Option<usize>,
     /// Default timeout for all processes in the group
-    pub default_timeout: Option<Duration>,
     /// Whether to stop all processes if one fails
-    pub fail_fast: bool,
     /// Whether to wait for all processes to complete
-    pub wait_all: bool,
-}
-
 impl Default for ProcessGroupOptions {
     fn default() -> Self {
         Self {
-            max_concurrent: None,
-            default_timeout: None,
-            fail_fast: false,
-            wait_all: true,
         }
     }
-}
-
 /// Manages a group of related processes
 #[derive(Debug)]
 pub struct ProcessGroup {
     /// Group ID
-    id: usize,
     /// Commands to execute
-    commands: Vec<Cmd>,
     /// Running processes
-    processes: Arc<Mutex<HashMap<usize, Process>>>,
     /// Process states for completed processes
-    states: Arc<Mutex<HashMap<usize, ProcessState>>>,
     /// Group configuration
-    options: ProcessGroupOptions,
     /// Group start time
-    start_time: Option<Instant>,
-}
-
 impl ProcessGroup {
     /// Create a new process group
     pub fn new() -> Self {
@@ -64,12 +44,6 @@ impl ProcessGroup {
         ACTIVE_GROUPS.fetch_add(1, Ordering::Relaxed);
         
         Self {
-            id,
-            commands: Vec::new(),
-            processes: Arc::new(Mutex::new(HashMap::new())),
-            states: Arc::new(Mutex::new(HashMap::new())),
-            options: ProcessGroupOptions::default(),
-            start_time: None,
         }
     }
     
@@ -78,26 +52,18 @@ impl ProcessGroup {
         let mut group = Self::new();
         group.options = options;
         group
-    }
-    
     /// Add a command to the group
     pub fn add_command(&mut self, cmd: Cmd) -> &mut Self {
         self.commands.push(cmd);
         self
-    }
-    
     /// Set all commands for the group
     pub fn set_commands(&mut self, commands: Vec<Cmd>) -> &mut Self {
         self.commands = commands;
         self
-    }
-    
     /// Start all processes in the group
     pub fn start_all(&mut self) -> ExecResult<()> {
         if self.commands.is_empty() {
             return Err(invalid_arguments("No commands in process group"));
-        }
-        
         self.start_time = Some(Instant::now());
         
         // Apply concurrency limits if specified
@@ -115,8 +81,6 @@ impl ProcessGroup {
             // Apply default timeout if specified
             if let Some(timeout) = self.options.default_timeout {
                 cmd.set_timeout(timeout);
-            }
-            
             match cmd.start() {
                 Ok(process) => {
                     processes.insert(index, process);
@@ -128,11 +92,7 @@ impl ProcessGroup {
                     tracing::warn!("Failed to start command {}: {}", index, e);
                 }
             }
-        }
-        
         Ok(())
-    }
-    
     fn start_with_concurrency_limit(&mut self, max_concurrent: usize) -> ExecResult<()> {
         let mut running = 0;
         let mut command_index = 0;
@@ -145,8 +105,6 @@ impl ProcessGroup {
                     // Apply default timeout if specified
                     if let Some(timeout) = self.options.default_timeout {
                         cmd.set_timeout(timeout);
-                    }
-                    
                     match cmd.start() {
                         Ok(process) => {
                             processes.insert(command_index, process);
@@ -196,19 +154,14 @@ impl ProcessGroup {
         }
         
         Ok(())
-    }
-    
     /// Wait for all processes to complete
     pub fn wait_all(&mut self) -> ExecResult<Vec<ProcessState>> {
         if !self.options.wait_all {
             return Ok(Vec::new());
-        }
-        
         let mut results = Vec::new();
         let processes = {
             let mut p = self.processes.lock().unwrap();
             std::mem::take(&mut *p)
-        };
         
         for (index, process) in processes {
             match process.wait() {
@@ -223,17 +176,11 @@ impl ProcessGroup {
                     tracing::warn!("Process {} failed: {}", index, e);
                 }
             }
-        }
-        
         Ok(results)
-    }
-    
     /// Run all processes and wait for completion
     pub fn run(&mut self) -> ExecResult<Vec<ProcessState>> {
         self.start_all()?;
         self.wait_all()
-    }
-    
     /// Kill all running processes
     pub fn kill_all(&self) -> ExecResult<()> {
         let processes = self.processes.lock().unwrap();
@@ -245,34 +192,22 @@ impl ProcessGroup {
         }
         
         Ok(())
-    }
-    
     /// Get the number of running processes
     pub fn running_count(&self) -> usize {
         let processes = self.processes.lock().unwrap();
         processes.values().filter(|p| p.is_running()).count()
-    }
-    
     /// Get the number of completed processes
     pub fn completed_count(&self) -> usize {
         self.states.lock().unwrap().len()
-    }
-    
     /// Get all process states
     pub fn get_states(&self) -> Vec<ProcessState> {
         self.states.lock().unwrap().values().cloned().collect()
-    }
-    
     /// Check if all processes have completed
     pub fn all_completed(&self) -> bool {
         self.running_count() == 0 && self.completed_count() == self.commands.len()
-    }
-    
     /// Get group runtime
     pub fn runtime(&self) -> Option<Duration> {
         self.start_time.map(|start| start.elapsed())
-    }
-    
     /// Get group ID
     pub fn id(&self) -> usize {
         self.id
@@ -288,22 +223,14 @@ impl Drop for ProcessGroup {
             tracing::warn!("Failed to cleanup process group {}: {}", self.id, e);
         }
     }
-}
-
 /// Create a new process group
 pub fn new_process_group() -> ProcessGroup {
     ProcessGroup::new()
-}
-
 /// Get the number of active process groups
 pub fn get_active_group_count() -> usize {
     ACTIVE_GROUPS.load(Ordering::Relaxed)
-}
-
 /// Generate a unique group ID
 fn generate_group_id() -> usize {
     use std::sync::atomic::AtomicUsize;
     static COUNTER: AtomicUsize = AtomicUsize::new(1);
     COUNTER.fetch_add(1, Ordering::Relaxed)
-}
-

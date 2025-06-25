@@ -10,37 +10,16 @@ use std::collections::HashMap;
 /// Benchmark result for a single operation
 #[derive(Debug, Clone)]
 pub struct BenchmarkResult {
-    pub algorithm: AlgorithmType,
-    pub security_level: SecurityLevel,
-    pub operation: String,
-    pub duration: Duration,
-    pub operations_per_second: f64,
-    pub memory_used: Option<usize>,
-    pub key_sizes: Option<KeySizeBenchmark>,
-}
-
 /// Key size benchmark information
 #[derive(Debug, Clone)]
 pub struct KeySizeBenchmark {
-    pub public_key_size: usize,
-    pub secret_key_size: usize,
-    pub ciphertext_or_signature_size: usize,
-    pub shared_secret_size: Option<usize>,
-}
-
 /// Comprehensive benchmark suite
 #[derive(Debug, Clone)]
 pub struct BenchmarkSuite {
-    pub results: Vec<BenchmarkResult>,
-    pub comparison_matrix: HashMap<String, HashMap<String, f64>>,
-}
-
 impl BenchmarkSuite {
     /// Create a new benchmark suite
     pub fn new() -> Self {
         Self {
-            results: Vec::new(),
-            comparison_matrix: HashMap::new(),
         }
     }
 
@@ -48,8 +27,6 @@ impl BenchmarkSuite {
     pub fn add_result(&mut self, result: BenchmarkResult) {
         self.results.push(result);
         self.update_comparison_matrix();
-    }
-
     /// Update the comparison matrix
     fn update_comparison_matrix(&mut self) {
         self.comparison_matrix.clear();
@@ -70,24 +47,18 @@ impl BenchmarkSuite {
             .iter()
             .filter(|r| r.algorithm == algorithm)
             .collect()
-    }
-
     /// Get results for a specific security level
     pub fn get_results_for_security_level(&self, level: SecurityLevel) -> Vec<&BenchmarkResult> {
         self.results
             .iter()
             .filter(|r| r.security_level == level)
             .collect()
-    }
-
     /// Get the fastest algorithm for a given operation
     pub fn get_fastest_algorithm(&self, operation: &str) -> Option<&BenchmarkResult> {
         self.results
             .iter()
             .filter(|r| r.operation == operation)
             .max_by(|a, b| a.operations_per_second.partial_cmp(&b.operations_per_second).unwrap())
-    }
-
     /// Get algorithms sorted by performance for a given operation
     pub fn get_algorithms_by_performance(&self, operation: &str) -> Vec<&BenchmarkResult> {
         let mut results: Vec<&BenchmarkResult> = self.results
@@ -97,8 +68,6 @@ impl BenchmarkSuite {
         
         results.sort_by(|a, b| b.operations_per_second.partial_cmp(&a.operations_per_second).unwrap());
         results
-    }
-
     /// Generate a performance report
     pub fn generate_report(&self) -> String {
         let mut report = String::new();
@@ -122,22 +91,16 @@ impl BenchmarkSuite {
             for result in alg_results {
                 report.push_str(&format!(
                     "  {}: {:.2} ops/sec ({:.2}ms per op)\n",
-                    result.operation,
-                    result.operations_per_second,
                     result.duration.as_millis()
                 ));
                 
                 if let Some(key_sizes) = &result.key_sizes {
                     report.push_str(&format!(
-                        "    Public key: {} bytes, Secret key: {} bytes\n",
-                        key_sizes.public_key_size,
                         key_sizes.secret_key_size
                     ));
                 }
             }
             report.push('\n');
-        }
-
         // Performance comparison
         report.push_str("Performance Comparison\n");
         report.push_str("=====================\n");
@@ -155,17 +118,12 @@ impl BenchmarkSuite {
             for (i, result) in sorted_results.iter().enumerate() {
                 report.push_str(&format!(
                     "  {}. {:?} ({:?}): {:.2} ops/sec\n",
-                    i + 1,
-                    result.algorithm,
-                    result.security_level,
                     result.operations_per_second
                 ));
             }
         }
 
         report
-    }
-
     /// Export results to CSV format
     pub fn export_csv(&self) -> String {
         let mut csv = String::new();
@@ -174,26 +132,13 @@ impl BenchmarkSuite {
         for result in &self.results {
             let duration_ms = result.duration.as_millis();
             let (pub_size, sec_size, ct_size) = if let Some(sizes) = &result.key_sizes {
-                (sizes.public_key_size.to_string(), 
-                 sizes.secret_key_size.to_string(),
                  sizes.ciphertext_or_signature_size.to_string())
             } else {
                 ("N/A".to_string(), "N/A".to_string(), "N/A".to_string())
-            };
             
             csv.push_str(&format!(
-                "{:?},{:?},{},{},{:.2},{},{},{}\n",
-                result.algorithm,
-                result.security_level,
-                result.operation,
-                duration_ms,
-                result.operations_per_second,
-                pub_size,
-                sec_size,
                 ct_size
             ));
-        }
-        
         csv
     }
 }
@@ -206,16 +151,10 @@ impl Default for BenchmarkSuite {
 
 /// Benchmark runner for PQC algorithms
 pub struct PqcBenchmarkRunner {
-    iterations: usize,
-    warmup_iterations: usize,
-}
-
 impl PqcBenchmarkRunner {
     /// Create a new benchmark runner
     pub fn new() -> Self {
         Self {
-            iterations: 100,
-            warmup_iterations: 10,
         }
     }
 
@@ -223,24 +162,17 @@ impl PqcBenchmarkRunner {
     pub fn with_iterations(mut self, iterations: usize) -> Self {
         self.iterations = iterations;
         self
-    }
-
     /// Set the number of warmup iterations
     pub fn with_warmup(mut self, warmup_iterations: usize) -> Self {
         self.warmup_iterations = warmup_iterations;
         self
-    }
-
     /// Benchmark a closure
     pub fn benchmark<F>(&self, name: &str, mut operation: F) -> Duration
     where
-        F: FnMut() -> PqcResult<()>,
     {
         // Warmup
         for _ in 0..self.warmup_iterations {
             let _ = operation();
-        }
-
         // Actual benchmark
         let start = Instant::now();
         for _ in 0..self.iterations {
@@ -249,8 +181,6 @@ impl PqcBenchmarkRunner {
         let total_duration = start.elapsed();
 
         total_duration / self.iterations as u32
-    }
-
     /// Benchmark Kyber operations
     pub fn benchmark_kyber(&self, security_level: SecurityLevel) -> PqcResult<Vec<BenchmarkResult>> {
 //         use crate::stdlib::crypto_pqc::algorithms::kyber::{Kyber, KeyEncapsulation};
@@ -270,20 +200,9 @@ impl PqcBenchmarkRunner {
         
         // Get key sizes
         let key_sizes = KeySizeBenchmark {
-            public_key_size: public_key.as_bytes().len(),
-            secret_key_size: secret_key.as_bytes().len(),
             ciphertext_or_signature_size: 0, // Will be updated after encapsulation
-            shared_secret_size: Some(32),
-        };
 
         results.push(BenchmarkResult {
-            algorithm: AlgorithmType::Kyber,
-            security_level,
-            operation: "keygen".to_string(),
-            duration: keygen_duration,
-            operations_per_second: keygen_ops_per_sec,
-            memory_used: None,
-            key_sizes: Some(key_sizes.clone()),
         });
 
         // Benchmark encapsulation
@@ -300,13 +219,6 @@ impl PqcBenchmarkRunner {
         key_sizes_with_ct.ciphertext_or_signature_size = ciphertext.as_bytes().len();
 
         results.push(BenchmarkResult {
-            algorithm: AlgorithmType::Kyber,
-            security_level,
-            operation: "encaps".to_string(),
-            duration: encaps_duration,
-            operations_per_second: encaps_ops_per_sec,
-            memory_used: None,
-            key_sizes: Some(key_sizes_with_ct.clone()),
         });
 
         // Benchmark decapsulation
@@ -318,18 +230,9 @@ impl PqcBenchmarkRunner {
         let decaps_ops_per_sec = 1.0 / decaps_duration.as_secs_f64();
 
         results.push(BenchmarkResult {
-            algorithm: AlgorithmType::Kyber,
-            security_level,
-            operation: "decaps".to_string(),
-            duration: decaps_duration,
-            operations_per_second: decaps_ops_per_sec,
-            memory_used: None,
-            key_sizes: Some(key_sizes_with_ct),
         });
 
         Ok(results)
-    }
-
     /// Benchmark Dilithium operations
     pub fn benchmark_dilithium(&self, security_level: SecurityLevel) -> PqcResult<Vec<BenchmarkResult>> {
 //         use crate::stdlib::crypto_pqc::algorithms::dilithium::{Dilithium, DigitalSignature};
@@ -350,20 +253,9 @@ impl PqcBenchmarkRunner {
         
         // Get key sizes
         let key_sizes = KeySizeBenchmark {
-            public_key_size: public_key.as_bytes().len(),
-            secret_key_size: secret_key.as_bytes().len(),
             ciphertext_or_signature_size: 0, // Will be updated after signing
-            shared_secret_size: None,
-        };
 
         results.push(BenchmarkResult {
-            algorithm: AlgorithmType::Dilithium,
-            security_level,
-            operation: "keygen".to_string(),
-            duration: keygen_duration,
-            operations_per_second: keygen_ops_per_sec,
-            memory_used: None,
-            key_sizes: Some(key_sizes.clone()),
         });
 
         // Benchmark signing
@@ -380,13 +272,6 @@ impl PqcBenchmarkRunner {
         key_sizes_with_sig.ciphertext_or_signature_size = signature.as_bytes().len();
 
         results.push(BenchmarkResult {
-            algorithm: AlgorithmType::Dilithium,
-            security_level,
-            operation: "sign".to_string(),
-            duration: sign_duration,
-            operations_per_second: sign_ops_per_sec,
-            memory_used: None,
-            key_sizes: Some(key_sizes_with_sig.clone()),
         });
 
         // Benchmark verification
@@ -398,18 +283,9 @@ impl PqcBenchmarkRunner {
         let verify_ops_per_sec = 1.0 / verify_duration.as_secs_f64();
 
         results.push(BenchmarkResult {
-            algorithm: AlgorithmType::Dilithium,
-            security_level,
-            operation: "verify".to_string(),
-            duration: verify_duration,
-            operations_per_second: verify_ops_per_sec,
-            memory_used: None,
-            key_sizes: Some(key_sizes_with_sig),
         });
 
         Ok(results)
-    }
-
     /// Run comprehensive benchmarks for all algorithms
     pub fn run_comprehensive_benchmark(&self) -> PqcResult<BenchmarkSuite> {
         let mut suite = BenchmarkSuite::new();
@@ -423,18 +299,12 @@ impl PqcBenchmarkRunner {
                     for result in results {
                         suite.add_result(result);
                     }
-                },
-                Err(e) => println!("Failed to benchmark Kyber: {}", e),
-            }
-
             // Benchmark Dilithium
             match self.benchmark_dilithium(security_level) {
                 Ok(results) => {
                     for result in results {
                         suite.add_result(result);
                     }
-                },
-                Err(e) => println!("Failed to benchmark Dilithium: {}", e),
             }
         }
 

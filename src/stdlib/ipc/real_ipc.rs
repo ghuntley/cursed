@@ -27,88 +27,30 @@ use std::os::unix::io::{AsRawFd, FromRawFd, IntoRawFd};
 /// Real IPC manager with connection pooling and resource management
 #[derive(Debug)]
 pub struct RealIpcManager {
-    config: IpcConfig,
-    connections: Arc<RwLock<HashMap<String, Arc<IpcConnection>>>>,
-    message_queues: Arc<RwLock<HashMap<String, Arc<Mutex<MessageQueue>>>>>,
-    shared_segments: Arc<RwLock<HashMap<String, Arc<Mutex<SharedMemory>>>>>,
-    cleanup_thread: Option<thread::JoinHandle<()>>,
-    shutdown_signal: Arc<(Mutex<bool>, Condvar)>,
-}
-
 /// IPC connection wrapper for different communication types
 #[derive(Debug)]
 pub enum IpcConnection {
-    NamedPipe(NamedPipeConnection),
-    UnixSocket(UnixSocketConnection),
-    MessageQueue(MessageQueueConnection),
-    SharedMemory(SharedMemoryConnection),
-    MemoryMappedFile(MemoryMappedConnection),
-}
-
 /// Named pipe connection with buffered I/O
 #[derive(Debug)]
 pub struct NamedPipeConnection {
-    name: String,
     #[cfg(unix)]
-    fd: Option<i32>,
     #[cfg(windows)]
-    handle: Option<*mut std::ffi::c_void>,
-    reader: Option<Arc<Mutex<BufReader<Box<dyn Read + Send>>>>>,
-    writer: Option<Arc<Mutex<BufWriter<Box<dyn Write + Send>>>>>,
-    created_time: SystemTime,
-    last_activity: Mutex<SystemTime>,
-    is_server: bool,
-}
-
 /// Unix domain socket connection
 #[derive(Debug)]
 pub struct UnixSocketConnection {
-    path: PathBuf,
     #[cfg(unix)]
-    stream: Option<Arc<Mutex<UnixStream>>>,
     #[cfg(unix)]
-    listener: Option<Arc<Mutex<UnixListener>>>,
-    connection_pool: Arc<Mutex<VecDeque<UnixStream>>>,
-    max_connections: usize,
-    created_time: SystemTime,
-    is_server: bool,
-}
-
 /// Message queue connection with priority handling
 #[derive(Debug)]
 pub struct MessageQueueConnection {
-    name: String,
-    queue: Arc<Mutex<PriorityMessageQueue>>,
-    subscribers: Arc<Mutex<Vec<mpsc::Sender<Message>>>>,
-    created_time: SystemTime,
-    max_messages: usize,
-    max_message_size: usize,
-}
-
 /// Shared memory connection with synchronization
 #[derive(Debug)]
 pub struct SharedMemoryConnection {
-    name: String,
-    memory: Arc<Mutex<SharedMemory>>,
-    lock: Arc<(Mutex<bool>, Condvar)>,
-    created_time: SystemTime,
-    access_count: Arc<Mutex<usize>>,
-}
-
 /// Memory-mapped file connection
 #[derive(Debug)]
 pub struct MemoryMappedConnection {
-    path: PathBuf,
     #[cfg(unix)]
-    fd: Option<i32>,
     #[cfg(windows)]
-    handle: Option<std::ptr::NonNull<std::ffi::c_void>>,
-    mapping: Option<std::ptr::NonNull<u8>>,
-    size: usize,
-    created_time: SystemTime,
-    read_only: bool,
-}
-
 // Safety: MemoryMappedConnection is safe to send between threads
 // The raw pointers are managed properly and protected by the owning structure
 unsafe impl Send for MemoryMappedConnection {}
@@ -117,47 +59,15 @@ unsafe impl Sync for MemoryMappedConnection {}
 /// Priority message queue implementation
 #[derive(Debug)]
 pub struct PriorityMessageQueue {
-    high_priority: VecDeque<Message>,
-    normal_priority: VecDeque<Message>,
-    low_priority: VecDeque<Message>,
-    max_messages: usize,
-    total_messages: usize,
-}
-
 /// IPC message with metadata
 #[derive(Debug, Clone)]
 pub struct IpcMessage {
-    pub id: u64,
-    pub sender_id: u32,
-    pub priority: MessagePriority,
-    pub timestamp: SystemTime,
-    pub data: Vec<u8>,
-    pub message_type: String,
-    pub reply_to: Option<String>,
-    pub ttl: Option<Duration>,
-}
-
 /// Message priority levels
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 pub enum MessagePriority {
-    Low = 0,
-    Normal = 1,
-    High = 2,
-    Critical = 3,
-}
-
 /// IPC statistics for monitoring
 #[derive(Debug, Clone)]
 pub struct IpcStats {
-    pub connections_active: usize,
-    pub messages_sent: u64,
-    pub messages_received: u64,
-    pub bytes_transferred: u64,
-    pub errors_count: u64,
-    pub uptime: Duration,
-    pub memory_usage: usize,
-}
-
 impl RealIpcManager {
     /// Create new IPC manager
     pub fn new(config: IpcConfig) -> IpcResult<Self> {
@@ -170,29 +80,18 @@ impl RealIpcManager {
             
             loop {
                 let result = cvar.wait_timeout(
-                    lock.lock().unwrap(),
                     Duration::from_secs(60)
                 ).unwrap();
                 
                 if *result.0 {
                     break; // Shutdown requested
-                }
-                
                 // Perform periodic cleanup
                 // This would clean up expired connections, etc.
             }
         });
         
         Ok(Self {
-            config,
-            connections: Arc::new(RwLock::new(HashMap::new())),
-            message_queues: Arc::new(RwLock::new(HashMap::new())),
-            shared_segments: Arc::new(RwLock::new(HashMap::new())),
-            cleanup_thread: Some(cleanup_thread),
-            shutdown_signal,
         })
-    }
-
     /// Create named pipe connection
     pub fn create_named_pipe(&self, name: &str, is_server: bool) -> IpcResult<Arc<IpcConnection>> {
         let connection = NamedPipeConnection::new(name, is_server, &self.config)?;
@@ -203,8 +102,6 @@ impl RealIpcManager {
         connections.insert(name.to_string(), arc_connection.clone());
         
         Ok(arc_connection)
-    }
-
     /// Create Unix domain socket connection
     #[cfg(unix)]
     pub fn create_unix_socket<P: AsRef<Path>>(&self, path: P, is_server: bool) -> IpcResult<Arc<IpcConnection>> {
@@ -217,8 +114,6 @@ impl RealIpcManager {
         connections.insert(path_str, arc_connection.clone());
         
         Ok(arc_connection)
-    }
-
     /// Create message queue
     pub fn create_message_queue(&self, name: &str) -> IpcResult<Arc<IpcConnection>> {
         let connection = MessageQueueConnection::new(name, &self.config)?;
@@ -229,8 +124,6 @@ impl RealIpcManager {
         connections.insert(name.to_string(), arc_connection.clone());
         
         Ok(arc_connection)
-    }
-
     /// Create shared memory segment
     pub fn create_shared_memory(&self, name: &str, size: usize) -> IpcResult<Arc<IpcConnection>> {
         let connection = SharedMemoryConnection::new(name, size, &self.config)?;
@@ -241,8 +134,6 @@ impl RealIpcManager {
         connections.insert(name.to_string(), arc_connection.clone());
         
         Ok(arc_connection)
-    }
-
     /// Create memory-mapped file
     pub fn create_memory_mapped_file<P: AsRef<Path>>(&self, path: P, size: usize, read_only: bool) -> IpcResult<Arc<IpcConnection>> {
         let connection = MemoryMappedConnection::new(path, size, read_only, &self.config)?;
@@ -254,8 +145,6 @@ impl RealIpcManager {
         connections.insert(path_str, arc_connection.clone());
         
         Ok(arc_connection)
-    }
-
     /// Get connection by name
     pub fn get_connection(&self, name: &str) -> IpcResult<Arc<IpcConnection>> {
         let connections = self.connections.read()
@@ -264,8 +153,6 @@ impl RealIpcManager {
         connections.get(name)
             .cloned()
             .ok_or_else(|| not_found("connection", name, "IPC connection not found"))
-    }
-
     /// Remove connection
     pub fn remove_connection(&self, name: &str) -> IpcResult<()> {
         let mut connections = self.connections.write()
@@ -273,24 +160,16 @@ impl RealIpcManager {
         
         connections.remove(name);
         Ok(())
-    }
-
     /// Get IPC statistics
     pub fn get_stats(&self) -> IpcResult<IpcStats> {
         let connections = self.connections.read()
             .map_err(|_| ipc_error("lock", "Failed to acquire connections lock"))?;
         
         Ok(IpcStats {
-            connections_active: connections.len(),
             messages_sent: 0, // Would be tracked in real implementation
-            messages_received: 0,
-            bytes_transferred: 0,
-            errors_count: 0,
             uptime: Duration::from_secs(0), // Would track actual uptime
             memory_usage: 0, // Would calculate actual memory usage
         })
-    }
-
     /// Shutdown IPC manager
     pub fn shutdown(&mut self) -> IpcResult<()> {
         // Signal cleanup thread to stop
@@ -299,13 +178,9 @@ impl RealIpcManager {
             let mut shutdown = lock.lock().unwrap();
             *shutdown = true;
             cvar.notify_all();
-        }
-        
         // Wait for cleanup thread
         if let Some(handle) = self.cleanup_thread.take() {
             handle.join().map_err(|_| ipc_error("shutdown", "Failed to join cleanup thread"))?;
-        }
-        
         // Close all connections
         let mut connections = self.connections.write()
             .map_err(|_| ipc_error("lock", "Failed to acquire connections lock"))?;
@@ -329,7 +204,6 @@ impl NamedPipeConnection {
             // Create named pipe (FIFO)
             let result = unsafe {
                 libc::mkfifo(pipe_path_c.as_ptr(), 0o666)
-            };
             
             if result < 0 {
                 let errno = std::io::Error::last_os_error().raw_os_error().unwrap_or(-1);
@@ -347,24 +221,12 @@ impl NamedPipeConnection {
             unsafe {
                 libc::open(pipe_path_c.as_ptr(), libc::O_RDWR)
             }
-        };
         
         if fd < 0 {
             let errno = std::io::Error::last_os_error().raw_os_error().unwrap_or(-1);
             return Err(system_error(errno, "open", "Failed to open named pipe"));
-        }
-        
         Ok(Self {
-            name: name.to_string(),
-            fd: Some(fd),
-            reader: None,
-            writer: None,
-            created_time: SystemTime::now(),
-            last_activity: Mutex::new(SystemTime::now()),
-            is_server,
         })
-    }
-
     #[cfg(windows)]
     pub fn new(name: &str, is_server: bool, config: &IpcConfig) -> IpcResult<Self> {
         use std::ffi::CString;
@@ -382,9 +244,6 @@ impl NamedPipeConnection {
             // Create named pipe server
             unsafe {
                 CreateNamedPipeA(
-                    pipe_name_c.as_ptr(),
-                    PIPE_ACCESS_DUPLEX,
-                    PIPE_TYPE_BYTE | PIPE_READMODE_BYTE | PIPE_WAIT,
                     1, // Max instances
                     4096, // Out buffer size
                     4096, // In buffer size
@@ -396,55 +255,30 @@ impl NamedPipeConnection {
             // Connect to existing named pipe
             unsafe {
                 CreateFileA(
-                    pipe_name_c.as_ptr(),
-                    GENERIC_READ | GENERIC_WRITE,
-                    FILE_SHARE_READ | FILE_SHARE_WRITE,
-                    ptr::null_mut(),
-                    OPEN_EXISTING,
-                    0,
-                    ptr::null_mut(),
                 )
             }
-        };
         
         if handle == INVALID_HANDLE_VALUE {
             let error_code = unsafe { winapi::um::errhandlingapi::GetLastError() };
             return Err(system_error(
-                error_code as i32,
                 "CreateNamedPipe/CreateFile",
                 "Failed to create/open named pipe"
             ));
-        }
-        
         Ok(Self {
-            name: name.to_string(),
-            handle: Some(handle as *mut std::ffi::c_void),
-            reader: None,
-            writer: None,
-            created_time: SystemTime::now(),
-            last_activity: Mutex::new(SystemTime::now()),
-            is_server,
         })
-    }
-
     pub fn write(&self, data: &[u8]) -> IpcResult<usize> {
         #[cfg(unix)]
         {
             if let Some(fd) = self.fd {
                 let result = unsafe {
                     libc::write(fd, data.as_ptr() as *const libc::c_void, data.len())
-                };
                 
                 if result < 0 {
                     let errno = std::io::Error::last_os_error().raw_os_error().unwrap_or(-1);
                     return Err(system_error(errno, "write", "Failed to write to named pipe"));
-                }
-                
                 // Update last activity
                 if let Ok(mut last_activity) = self.last_activity.lock() {
                     *last_activity = SystemTime::now();
-                }
-                
                 Ok(result as usize)
             } else {
                 Err(ipc_error("write", "Named pipe not open"))
@@ -460,53 +294,34 @@ impl NamedPipeConnection {
                 let mut bytes_written: u32 = 0;
                 let result = unsafe {
                     WriteFile(
-                        handle as winapi::um::winnt::HANDLE,
-                        data.as_ptr() as *const winapi::ctypes::c_void,
-                        data.len() as u32,
-                        &mut bytes_written,
-                        ptr::null_mut(),
                     )
-                };
                 
                 if result == 0 {
                     let error_code = unsafe { winapi::um::errhandlingapi::GetLastError() };
                     return Err(system_error(
-                        error_code as i32,
-                        "WriteFile",
                         "Failed to write to named pipe"
                     ));
-                }
-                
                 // Update last activity
                 if let Ok(mut last_activity) = self.last_activity.lock() {
                     *last_activity = SystemTime::now();
-                }
-                
                 Ok(bytes_written as usize)
             } else {
                 Err(ipc_error("write", "Named pipe not open"))
             }
         }
-    }
-
     pub fn read(&self, buffer: &mut [u8]) -> IpcResult<usize> {
         #[cfg(unix)]
         {
             if let Some(fd) = self.fd {
                 let result = unsafe {
                     libc::read(fd, buffer.as_mut_ptr() as *mut libc::c_void, buffer.len())
-                };
                 
                 if result < 0 {
                     let errno = std::io::Error::last_os_error().raw_os_error().unwrap_or(-1);
                     return Err(system_error(errno, "read", "Failed to read from named pipe"));
-                }
-                
                 // Update last activity
                 if let Ok(mut last_activity) = self.last_activity.lock() {
                     *last_activity = SystemTime::now();
-                }
-                
                 Ok(result as usize)
             } else {
                 Err(ipc_error("read", "Named pipe not open"))
@@ -522,28 +337,16 @@ impl NamedPipeConnection {
                 let mut bytes_read: u32 = 0;
                 let result = unsafe {
                     ReadFile(
-                        handle as winapi::um::winnt::HANDLE,
-                        buffer.as_mut_ptr() as *mut winapi::ctypes::c_void,
-                        buffer.len() as u32,
-                        &mut bytes_read,
-                        ptr::null_mut(),
                     )
-                };
                 
                 if result == 0 {
                     let error_code = unsafe { winapi::um::errhandlingapi::GetLastError() };
                     return Err(system_error(
-                        error_code as i32,
-                        "ReadFile",
                         "Failed to read from named pipe"
                     ));
-                }
-                
                 // Update last activity
                 if let Ok(mut last_activity) = self.last_activity.lock() {
                     *last_activity = SystemTime::now();
-                }
-                
                 Ok(bytes_read as usize)
             } else {
                 Err(ipc_error("read", "Named pipe not open"))
@@ -559,15 +362,11 @@ impl Drop for NamedPipeConnection {
             if let Some(fd) = self.fd.take() {
                 unsafe {
                     libc::close(fd);
-                }
-                
                 if self.is_server {
                     let pipe_path = format!("/tmp/{}", self.name);
                     let _ = std::fs::remove_file(&pipe_path);
                 }
             }
-        }
-        
         #[cfg(windows)]
         {
             if let Some(handle) = self.handle.take() {
@@ -577,8 +376,6 @@ impl Drop for NamedPipeConnection {
             }
         }
     }
-}
-
 #[cfg(unix)]
 impl UnixSocketConnection {
     pub fn new<P: AsRef<Path>>(path: P, is_server: bool, config: &IpcConfig) -> IpcResult<Self> {
@@ -589,32 +386,17 @@ impl UnixSocketConnection {
             if path.exists() {
                 std::fs::remove_file(&path)
                     .map_err(|e| ipc_error("remove_socket", &e.to_string()))?;
-            }
-            
             let listener = UnixListener::bind(&path)
                 .map_err(|e| ipc_error("bind", &e.to_string()))?;
             
             Ok(Self {
-                path,
-                stream: None,
-                listener: Some(Arc::new(Mutex::new(listener))),
-                connection_pool: Arc::new(Mutex::new(VecDeque::new())),
                 max_connections: 10, // Configurable
-                created_time: SystemTime::now(),
-                is_server: true,
             })
         } else {
             let stream = UnixStream::connect(&path)
                 .map_err(|e| ipc_error("connect", &e.to_string()))?;
             
             Ok(Self {
-                path,
-                stream: Some(Arc::new(Mutex::new(stream))),
-                listener: None,
-                connection_pool: Arc::new(Mutex::new(VecDeque::new())),
-                max_connections: 1,
-                created_time: SystemTime::now(),
-                is_server: false,
             })
         }
     }
@@ -658,27 +440,15 @@ impl UnixSocketConnection {
             Err(ipc_error("receive", "No client stream available"))
         }
     }
-}
-
 impl MessageQueueConnection {
     pub fn new(name: &str, config: &IpcConfig) -> IpcResult<Self> {
         let queue = PriorityMessageQueue::new(config.max_queue_size);
         
         Ok(Self {
-            name: name.to_string(),
-            queue: Arc::new(Mutex::new(queue)),
-            subscribers: Arc::new(Mutex::new(Vec::new())),
-            created_time: SystemTime::now(),
-            max_messages: config.max_queue_size,
-            max_message_size: config.max_message_size,
         })
-    }
-
     pub fn send(&self, message: IpcMessage) -> IpcResult<()> {
         if message.data.len() > self.max_message_size {
             return Err(ipc_error("send", "Message size exceeds limit"));
-        }
-
         let mut queue = self.queue.lock()
             .map_err(|_| ipc_error("lock", "Failed to acquire queue lock"))?;
         
@@ -690,17 +460,8 @@ impl MessageQueueConnection {
         
         for subscriber in subscribers.iter() {
             let msg = Message {
-                id: message.id,
-                data: message.data.clone(),
-                priority: message.priority as u8,
-                timestamp: message.timestamp,
-            };
             let _ = subscriber.send(msg); // Ignore errors for disconnected subscribers
-        }
-        
         Ok(())
-    }
-
     pub fn receive(&self, timeout: Option<Duration>) -> IpcResult<IpcMessage> {
         let start = Instant::now();
         
@@ -742,14 +503,7 @@ impl SharedMemoryConnection {
             .map_err(|e| ipc_error("create_shared_memory", &e.to_string()))?;
         
         Ok(Self {
-            name: name.to_string(),
-            memory: Arc::new(Mutex::new(memory)),
-            lock: Arc::new((Mutex::new(false), Condvar::new())),
-            created_time: SystemTime::now(),
-            access_count: Arc::new(Mutex::new(0)),
         })
-    }
-
     pub fn write(&self, offset: usize, data: &[u8]) -> IpcResult<usize> {
         let _guard = self.acquire_lock()?;
         
@@ -758,8 +512,6 @@ impl SharedMemoryConnection {
         
         memory.write(offset, data)
             .map_err(|e| ipc_error("write", &e.to_string()))
-    }
-
     pub fn read(&self, offset: usize, buffer: &mut [u8]) -> IpcResult<usize> {
         let _guard = self.acquire_lock()?;
         
@@ -768,8 +520,6 @@ impl SharedMemoryConnection {
         
         memory.read(offset, buffer)
             .map_err(|e| ipc_error("read", &e.to_string()))
-    }
-
     fn acquire_lock(&self) -> IpcResult<std::sync::MutexGuard<bool>> {
         let (lock, _) = &*self.lock;
         lock.lock().map_err(|_| ipc_error("acquire_lock", "Failed to acquire shared memory lock"))
@@ -790,22 +540,17 @@ impl MemoryMappedConnection {
             libc::O_RDONLY
         } else {
             libc::O_RDWR | libc::O_CREAT
-        };
         
         let fd = unsafe {
             libc::open(path_c.as_ptr(), flags, 0o666)
-        };
         
         if fd < 0 {
             let errno = std::io::Error::last_os_error().raw_os_error().unwrap_or(-1);
             return Err(system_error(errno, "open", "Failed to open memory-mapped file"));
-        }
-        
         // Set file size if creating
         if !read_only {
             let result = unsafe {
                 libc::ftruncate(fd, size as i64)
-            };
             
             if result < 0 {
                 let errno = std::io::Error::last_os_error().raw_os_error().unwrap_or(-1);
@@ -819,62 +564,31 @@ impl MemoryMappedConnection {
             libc::PROT_READ
         } else {
             libc::PROT_READ | libc::PROT_WRITE
-        };
         
         let mapping = unsafe {
             libc::mmap(
-                std::ptr::null_mut(),
-                size,
-                prot,
-                libc::MAP_SHARED,
-                fd,
                 0
             )
-        };
         
         if mapping == libc::MAP_FAILED {
             let errno = std::io::Error::last_os_error().raw_os_error().unwrap_or(-1);
             unsafe { libc::close(fd); }
             return Err(system_error(errno, "mmap", "Failed to map file"));
-        }
-        
         Ok(Self {
-            path,
-            fd: Some(fd),
-            mapping: std::ptr::NonNull::new(mapping as *mut u8),
-            size,
-            created_time: SystemTime::now(),
-            read_only,
         })
-    }
-
     #[cfg(windows)]
     pub fn new<P: AsRef<Path>>(path: P, size: usize, read_only: bool, config: &IpcConfig) -> IpcResult<Self> {
         // Windows memory-mapped file implementation would go here
         Ok(Self {
-            path: path.as_ref().to_path_buf(),
-            handle: None,
-            mapping: None,
-            size,
-            created_time: SystemTime::now(),
-            read_only,
         })
-    }
-
     pub fn write(&self, offset: usize, data: &[u8]) -> IpcResult<usize> {
         if self.read_only {
             return Err(ipc_error("write", "Memory-mapped file is read-only"));
-        }
-
         if offset + data.len() > self.size {
             return Err(ipc_error("write", "Write would exceed file size"));
-        }
-
         if let Some(mapping) = self.mapping {
             unsafe {
                 std::ptr::copy_nonoverlapping(
-                    data.as_ptr(),
-                    mapping.as_ptr().add(offset),
                     data.len()
                 );
             }
@@ -887,16 +601,12 @@ impl MemoryMappedConnection {
     pub fn read(&self, offset: usize, buffer: &mut [u8]) -> IpcResult<usize> {
         if offset >= self.size {
             return Err(ipc_error("read", "Read offset beyond file size"));
-        }
-
         let available = self.size - offset;
         let to_read = buffer.len().min(available);
 
         if let Some(mapping) = self.mapping {
             unsafe {
                 std::ptr::copy_nonoverlapping(
-                    mapping.as_ptr().add(offset),
-                    buffer.as_mut_ptr(),
                     to_read
                 );
             }
@@ -905,8 +615,6 @@ impl MemoryMappedConnection {
             Err(ipc_error("read", "File not mapped"))
         }
     }
-}
-
 impl Drop for MemoryMappedConnection {
     fn drop(&mut self) {
         #[cfg(unix)]
@@ -924,24 +632,15 @@ impl Drop for MemoryMappedConnection {
             }
         }
     }
-}
-
 impl PriorityMessageQueue {
     pub fn new(max_messages: usize) -> Self {
         Self {
-            high_priority: VecDeque::new(),
-            normal_priority: VecDeque::new(),
-            low_priority: VecDeque::new(),
-            max_messages,
-            total_messages: 0,
         }
     }
 
     pub fn push(&mut self, message: IpcMessage) -> IpcResult<()> {
         if self.total_messages >= self.max_messages {
             return Err(ipc_error("push", "Message queue is full"));
-        }
-
         match message.priority {
             MessagePriority::Critical | MessagePriority::High => {
                 self.high_priority.push_back(message);
@@ -956,31 +655,19 @@ impl PriorityMessageQueue {
 
         self.total_messages += 1;
         Ok(())
-    }
-
     pub fn pop(&mut self) -> Option<IpcMessage> {
         if let Some(message) = self.high_priority.pop_front() {
             self.total_messages -= 1;
             return Some(message);
-        }
-
         if let Some(message) = self.normal_priority.pop_front() {
             self.total_messages -= 1;
             return Some(message);
-        }
-
         if let Some(message) = self.low_priority.pop_front() {
             self.total_messages -= 1;
             return Some(message);
-        }
-
         None
-    }
-
     pub fn len(&self) -> usize {
         self.total_messages
-    }
-
     pub fn is_empty(&self) -> bool {
         self.total_messages == 0
     }
@@ -995,15 +682,11 @@ pub fn initialize_real_ipc(config: IpcConfig) -> IpcResult<()> {
     IPC_MANAGER.set(Arc::new(Mutex::new(manager)))
         .map_err(|_| ipc_error("initialize", "IPC manager already initialized"))?;
     Ok(())
-}
-
 /// Get global IPC manager
 pub fn get_ipc_manager() -> IpcResult<Arc<Mutex<RealIpcManager>>> {
     IPC_MANAGER.get()
         .cloned()
         .ok_or_else(|| ipc_error("get_manager", "IPC manager not initialized"))
-}
-
 /// Cleanup global IPC resources
 pub fn cleanup_real_ipc() -> IpcResult<()> {
     if let Some(manager) = IPC_MANAGER.get() {
@@ -1012,5 +695,3 @@ pub fn cleanup_real_ipc() -> IpcResult<()> {
         manager.shutdown()?;
     }
     Ok(())
-}
-

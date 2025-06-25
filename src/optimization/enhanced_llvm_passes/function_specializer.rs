@@ -10,52 +10,28 @@ use std::sync::{Arc, Mutex};
 use tracing::{debug, trace};
 
 use inkwell::{
-    values::{FunctionValue, BasicValue, BasicValueEnum, CallSiteValue},
-    types::{BasicType, FunctionType},
-    module::Module,
-    builder::Builder,
-    context::Context,
-};
+// };
 
 use crate::optimization::enhanced_llvm_passes_manager::EnhancedOptimizationStatistics;
 
 /// Function specializer for creating optimized versions of functions
 pub struct FunctionSpecializer<'ctx> {
-    context_lifetime: std::marker::PhantomData<&'ctx ()>,
-    statistics: Arc<Mutex<EnhancedOptimizationStatistics>>,
-    specialization_threshold: usize,
-    call_site_analysis: CallSiteAnalysis,
-}
-
 /// Call site analysis for determining specialization opportunities
 #[derive(Debug, Default)]
 struct CallSiteAnalysis {
     /// Function name -> call sites with constant arguments
-    constant_call_sites: HashMap<String, Vec<CallSiteInfo>>,
     /// Function name -> call frequency
-    call_frequencies: HashMap<String, usize>,
     /// Function name -> hot call sites (frequently called)
-    hot_call_sites: HashMap<String, Vec<CallSiteInfo>>,
-}
-
 /// Information about a call site
 #[derive(Debug, Clone)]
 struct CallSiteInfo {
     /// Arguments that are constants
-    constant_args: Vec<usize>,
     /// Estimated call frequency
-    frequency: usize,
     /// Location information for debugging
-    location: String,
-}
-
 impl<'ctx> FunctionSpecializer<'ctx> {
     pub fn new(statistics: Arc<Mutex<EnhancedOptimizationStatistics>>) -> Self {
         Self {
-            context_lifetime: std::marker::PhantomData,
-            statistics,
             specialization_threshold: 10, // Minimum call frequency for specialization
-            call_site_analysis: CallSiteAnalysis::default(),
         }
     }
     
@@ -72,20 +48,15 @@ impl<'ctx> FunctionSpecializer<'ctx> {
         // Phase 3: Create specialized versions
         for candidate in candidates {
             self.create_specialized_function(module, &candidate)?;
-        }
-        
         // Phase 4: Update call sites to use specialized versions
         self.update_call_sites(module)?;
         
         let mut stats = self.statistics.lock().unwrap();
         stats.functions_specialized += self.call_site_analysis.constant_call_sites.len();
         
-        debug!("Function specialization completed, {} functions specialized", 
                self.call_site_analysis.constant_call_sites.len());
         
         Ok(())
-    }
-    
     /// Analyze call sites in the module
     fn analyze_call_sites(&mut self, module: &Module<'ctx>) -> Result<()> {
         trace!("Analyzing call sites for specialization opportunities");
@@ -93,8 +64,6 @@ impl<'ctx> FunctionSpecializer<'ctx> {
         for function in module.get_functions() {
             if function.get_first_basic_block().is_none() {
                 continue;
-            }
-            
             let mut block = function.get_first_basic_block();
             while let Some(bb) = block {
                 let mut instruction = bb.get_first_instruction();
@@ -109,8 +78,6 @@ impl<'ctx> FunctionSpecializer<'ctx> {
         }
         
         Ok(())
-    }
-    
     /// Analyze a specific call instruction
     fn analyze_call_instruction(&mut self, instruction: &InstructionValue<'ctx>) -> Result<()> {
         if let Some(call_site) = CallSiteValue::try_from(*instruction).ok() {
@@ -126,8 +93,6 @@ impl<'ctx> FunctionSpecializer<'ctx> {
                                 .entry(function_name.clone())
                                 .or_insert_with(Vec::new)
                                 .push(call_info.clone());
-                        }
-                        
                         // Update call frequency
                         *self.call_site_analysis.call_frequencies
                             .entry(function_name.clone())
@@ -143,11 +108,7 @@ impl<'ctx> FunctionSpecializer<'ctx> {
                     }
                 }
             }
-        }
-        
         Ok(())
-    }
-    
     /// Analyze arguments of a call site
     fn analyze_call_arguments(&self, call_site: CallSiteValue<'ctx>) -> Result<CallSiteInfo> {
         let mut constant_args = Vec::new();
@@ -158,15 +119,10 @@ impl<'ctx> FunctionSpecializer<'ctx> {
                     constant_args.push(i as usize);
                 }
             }
-        }
-        
         Ok(CallSiteInfo {
-            constant_args,
             frequency: 1, // Base frequency, will be updated during analysis
             location: "unknown".to_string(), // Could be enhanced with debug info
         })
-    }
-    
     /// Check if a value is a constant
     fn is_constant_value(&self, value: &BasicValueEnum<'ctx>) -> bool {
         match value {
@@ -182,7 +138,6 @@ impl<'ctx> FunctionSpecializer<'ctx> {
                 // Check if it's a constant pointer (e.g., global variable)
                 ptr_val.is_const()
             }
-            _ => false,
         }
     }
     
@@ -211,9 +166,6 @@ impl<'ctx> FunctionSpecializer<'ctx> {
                 if let Some(&frequency) = self.call_site_analysis.call_frequencies.get(function_name) {
                     if frequency >= self.specialization_threshold && !call_sites.is_empty() {
                         candidates.push(SpecializationCandidate {
-                            function,
-                            call_sites: call_sites.clone(),
-                            total_frequency: frequency,
                         });
                     }
                 }
@@ -222,11 +174,8 @@ impl<'ctx> FunctionSpecializer<'ctx> {
         
         debug!("Identified {} specialization candidates", candidates.len());
         Ok(candidates)
-    }
-    
     /// Create a specialized version of a function
     fn create_specialized_function(&self, module: &Module<'ctx>, candidate: &SpecializationCandidate<'ctx>) -> Result<()> {
-        debug!("Creating specialized version of function {}", 
                candidate.function.get_name().to_str().unwrap_or("unnamed"));
         
         // For each unique set of constant arguments, create a specialized version
@@ -234,11 +183,7 @@ impl<'ctx> FunctionSpecializer<'ctx> {
         
         for (pattern, _call_sites) in unique_constant_patterns {
             self.create_function_variant(module, candidate.function, &pattern)?;
-        }
-        
         Ok(())
-    }
-    
     /// Group call sites by constant argument patterns
     fn group_constant_patterns(&self, call_sites: &[CallSiteInfo]) -> HashMap<Vec<usize>, Vec<CallSiteInfo>> {
         let mut patterns = HashMap::new();
@@ -247,16 +192,9 @@ impl<'ctx> FunctionSpecializer<'ctx> {
             patterns.entry(call_site.constant_args.clone())
                    .or_insert_with(Vec::new)
                    .push(call_site.clone());
-        }
-        
         patterns
-    }
-    
     /// Create a specialized function variant
     fn create_function_variant(
-        &self, 
-        module: &Module<'ctx>, 
-        original_function: FunctionValue<'ctx>,
         constant_arg_positions: &[usize]
     ) -> Result<FunctionValue<'ctx>> {
         let original_name = original_function.get_name().to_str().unwrap_or("unnamed");
@@ -279,12 +217,8 @@ impl<'ctx> FunctionSpecializer<'ctx> {
         
         trace!("Created specialized function: {}", specialized_name);
         Ok(specialized_function)
-    }
-    
     /// Compute parameter types for specialized function
     fn compute_specialized_param_types(
-        &self, 
-        original_type: FunctionType<'ctx>,
         constant_positions: &[usize]
     ) -> Result<Vec<BasicTypeEnum<'ctx>>> {
         let mut new_types = Vec::new();
@@ -297,13 +231,8 @@ impl<'ctx> FunctionSpecializer<'ctx> {
         }
         
         Ok(new_types)
-    }
-    
     /// Clone function body with constant substitution
     fn clone_function_body(
-        &self,
-        original: FunctionValue<'ctx>,
-        specialized: FunctionValue<'ctx>,
         _constant_positions: &[usize]
     ) -> Result<()> {
         // This is a complex operation that would require:
@@ -318,8 +247,6 @@ impl<'ctx> FunctionSpecializer<'ctx> {
         
         debug!("Function body cloning is a complex operation - implementation needed");
         Ok(())
-    }
-    
     /// Update call sites to use specialized versions
     fn update_call_sites(&self, _module: &Module<'ctx>) -> Result<()> {
         // This would involve:
@@ -335,8 +262,3 @@ impl<'ctx> FunctionSpecializer<'ctx> {
 /// Candidate for function specialization
 #[derive(Debug)]
 struct SpecializationCandidate<'ctx> {
-    function: FunctionValue<'ctx>,
-    call_sites: Vec<CallSiteInfo>,
-    total_frequency: usize,
-}
-

@@ -34,8 +34,6 @@ pub fn init_web_vibez() {
     }
     // Register built-in functions with the dot registry
     register_builtin_functions();
-}
-
 /// fr fr Register built-in web functions with the CURSED stdlib
 fn register_builtin_functions() {
         // TODO: implement
@@ -49,8 +47,6 @@ fn register_builtin_functions() {
     // Implementation will be added when we integrate with the main stdlib
     
     println!("🌐 web_vibez package initialized - ready to serve some content bestie!");
-}
-
 /// fr fr Quick server builder for common use cases - convenience function
 pub fn quick_server(port: u16) -> WebResult<HttpServer> {
     use std::net::{SocketAddr, IpAddr, Ipv4Addr};
@@ -59,28 +55,18 @@ pub fn quick_server(port: u16) -> WebResult<HttpServer> {
     let config = ServerConfig::new(addr);
     
     Ok(HttpServer::new(config))
-}
-
 /// fr fr Create basic CORS middleware - permissive setup for development
 pub fn dev_cors() -> CorsMiddleware {
     CorsMiddleware::permissive()
-}
-
 /// fr fr Create production CORS middleware - secure setup
 pub fn prod_cors(allowed_origins: Vec<String>) -> CorsMiddleware {
     CorsMiddleware::new()
         .allowed_origins(allowed_origins)
         .allow_credentials(true)
-}
-
 /// fr fr Create basic router with common middleware - quick setup
 pub fn basic_router() -> Router {
     Router::new()
-}
-
 /// fr fr Create router with common middleware applied - production ready
 pub fn production_router() -> Router {
     Router::new()
         // Add common production routes like health checks
-}
-

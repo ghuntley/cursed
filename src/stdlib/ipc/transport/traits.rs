@@ -25,8 +25,6 @@ pub trait Transport: Send + Sync + std::fmt::Debug {
     
     /// Get transport name for debugging and logging
     fn name(&self) -> &'static str;
-}
-
 /// Transport connection trait for active connections
 pub trait TransportConnection: Send + Sync + std::fmt::Debug {
     /// Read data from the connection
@@ -55,8 +53,6 @@ pub trait TransportConnection: Send + Sync + std::fmt::Debug {
     
     /// Clone the connection for use in multiple threads
     fn try_clone(&self) -> IpcResult<Box<dyn TransportConnection>>;
-}
-
 /// Transport listener trait for accepting connections
 pub trait TransportListener: Send + Sync + std::fmt::Debug {
     type Connection: TransportConnection;
@@ -72,8 +68,6 @@ pub trait TransportListener: Send + Sync + std::fmt::Debug {
     
     /// Close the listener
     fn close(&mut self) -> IpcResult<()>;
-}
-
 /// Stream-based transport for reliable, ordered communication
 pub trait StreamTransport: Transport {
     /// Maximum message size for this transport
@@ -95,24 +89,17 @@ pub trait DatagramTransport: Transport {
     
     /// Maximum datagram size for this transport
     fn max_datagram_size(&self) -> usize;
-}
-
 /// Serializable data for transport
 pub trait Serializable {
     /// Serialize the data to bytes
     fn serialize(&self) -> IpcResult<Vec<u8>>;
-}
-
 /// Deserializable data from transport
 pub trait Deserializable: Sized {
     /// Deserialize the data from bytes
     fn deserialize(data: &[u8]) -> IpcResult<Self>;
-}
-
 /// High-level message transport combining serialization with transport
 pub trait MessageTransport<T>: Transport 
 where 
-    T: Serializable + Deserializable + Send + Sync,
 {
     /// Send a serialized message
     fn send_message(&self, address: &str, message: &T) -> IpcResult<()> {
@@ -121,8 +108,6 @@ where
         connection.write(&data)?;
         connection.flush()?;
         Ok(())
-    }
-    
     /// Receive and deserialize a message
     fn receive_message(&self, listener: &mut Self::Listener) -> IpcResult<T> {
         let mut connection = listener.accept()?;
@@ -136,11 +121,7 @@ where
 /// Implement MessageTransport for any Transport
 impl<Trans, T> MessageTransport<T> for Trans 
 where 
-    Trans: Transport,
-    T: Serializable + Deserializable + Send + Sync,
 {
-}
-
 /// Transport configuration trait
 pub trait TransportConfig: Clone + std::fmt::Debug {
     /// Validate the configuration
@@ -154,8 +135,6 @@ pub trait TransportConfig: Clone + std::fmt::Debug {
     
     /// Get buffer size settings
     fn buffer_size(&self) -> usize;
-}
-
 /// Transport statistics trait
 pub trait TransportStatistics: Clone + std::fmt::Debug {
     /// Get the number of bytes sent
@@ -178,8 +157,6 @@ pub trait TransportStatistics: Clone + std::fmt::Debug {
     
     /// Reset statistics
     fn reset(&mut self);
-}
-
 /// Transport pool trait for connection management
 pub trait TransportPool<T: TransportConnection>: Send + Sync + std::fmt::Debug {
     /// Get a connection from the pool
@@ -196,5 +173,3 @@ pub trait TransportPool<T: TransportConnection>: Send + Sync + std::fmt::Debug {
     
     /// Close all connections in the pool
     fn close_all(&mut self) -> IpcResult<()>;
-}
-

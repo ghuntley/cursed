@@ -31,23 +31,15 @@ pub const LstdFlags: i32 = Ldate | Ltime;
 /// Check if a specific flag is set
 pub fn has_flag(flags: i32, flag: i32) -> bool {
     (flags & flag) != 0
-}
-
 /// Set a specific flag
 pub fn set_flag(flags: i32, flag: i32) -> i32 {
     flags | flag
-}
-
 /// Clear a specific flag
 pub fn clear_flag(flags: i32, flag: i32) -> i32 {
     flags & !flag
-}
-
 /// Toggle a specific flag
 pub fn toggle_flag(flags: i32, flag: i32) -> i32 {
     flags ^ flag
-}
-
 /// Get a human-readable description of the flags
 pub fn describe_flags(flags: i32) -> String {
     let mut parts = Vec::new();
@@ -72,8 +64,6 @@ pub fn describe_flags(flags: i32) -> String {
     }
     if has_flag(flags, Lmsgprefix) {
         parts.push("Lmsgprefix");
-    }
-    
     if parts.is_empty() {
         "No flags".to_string()
     } else {
@@ -86,16 +76,10 @@ pub fn validate_flags(flags: i32) -> Result<(), String> {
     // Check for mutually exclusive flags
     if has_flag(flags, Llongfile) && has_flag(flags, Lshortfile) {
         return Err("Cannot use both Llongfile and Lshortfile flags".to_string());
-    }
-    
     // Lmicroseconds implies Ltime
     if has_flag(flags, Lmicroseconds) && !has_flag(flags, Ltime) {
         return Err("Lmicroseconds flag requires Ltime flag".to_string());
-    }
-    
     Ok(())
-}
-
 /// Common flag combinations
 pub mod presets {
     use super::*;
@@ -117,5 +101,3 @@ pub mod presets {
     
     /// Production logging with UTC time
     pub const PRODUCTION: i32 = LstdFlags | LUTC | Lshortfile;
-}
-

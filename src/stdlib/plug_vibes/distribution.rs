@@ -12,103 +12,38 @@ use std::io::{self, Write};
 /// Distribution configuration
 #[derive(Debug, Clone)]
 pub struct DistributionConfig {
-    pub max_download_size: u64,
-    pub verify_checksums: bool,
-    pub allow_updates: bool,
-    pub repositories: Vec<String>,
-    pub cache_dir: Option<String>,
-}
-
 impl Default for DistributionConfig {
     fn default() -> Self {
         Self {
             max_download_size: 100 * 1024 * 1024, // 100MB
-            verify_checksums: true,
-            allow_updates: true,
-            repositories: vec![],
-            cache_dir: None,
         }
     }
-}
-
 /// Plugin package for distribution
 pub struct PluginPackage {
-    pub metadata: PackageMetadata,
-    pub content: Vec<u8>,
-    pub signature: Option<Vec<u8>>,
-    pub checksums: HashMap<String, String>,
-}
-
 /// Package metadata
 #[derive(Debug, Clone)]
 pub struct PackageMetadata {
-    pub name: String,
-    pub version: Version,
-    pub description: String,
-    pub author: String,
-    pub license: String,
-    pub homepage: Option<String>,
-    pub repository: Option<String>,
-    pub keywords: Vec<String>,
-    pub categories: Vec<String>,
-    pub dependencies: HashMap<String, String>,
-    pub files: Vec<PackageFile>,
-    pub install_scripts: InstallScripts,
-    pub target_platforms: Vec<String>,
-    pub min_host_version: Option<Version>,
-    pub max_host_version: Option<Version>,
-}
-
 /// File in the package
 #[derive(Debug, Clone)]
 pub struct PackageFile {
-    pub path: String,
-    pub size: u64,
-    pub checksum: String,
-    pub executable: bool,
-    pub install_path: Option<String>,
-}
-
 /// Installation scripts
 #[derive(Debug, Clone, Default)]
 pub struct InstallScripts {
-    pub pre_install: Option<String>,
-    pub post_install: Option<String>,
-    pub pre_uninstall: Option<String>,
-    pub post_uninstall: Option<String>,
-}
-
 /// Package repository configuration
 #[derive(Debug, Clone)]
 pub struct Repository {
-    pub name: String,
-    pub url: String,
-    pub auth: Option<AuthInfo>,
-    pub trusted: bool,
-    pub enabled: bool,
-}
-
 impl Repository {
     pub fn new(name: &str, url: &str) -> Self {
         Self {
-            name: name.to_string(),
-            url: url.to_string(),
-            auth: None,
-            trusted: false,
-            enabled: true,
         }
     }
 
     pub fn with_auth(mut self, auth: AuthInfo) -> Self {
         self.auth = Some(auth);
         self
-    }
-
     pub fn trusted(mut self) -> Self {
         self.trusted = true;
         self
-    }
-
     pub fn disabled(mut self) -> Self {
         self.enabled = false;
         self
@@ -117,20 +52,10 @@ impl Repository {
 
 /// Package manager for plugin distribution
 pub struct PackageManager {
-    repositories: Vec<Repository>,
-    cache_dir: PathBuf,
-    install_dir: PathBuf,
-    verify_signatures: bool,
-}
-
 impl PackageManager {
     /// Create a new package manager
     pub fn new(cache_dir: PathBuf, install_dir: PathBuf) -> Self {
         Self {
-            repositories: Vec::new(),
-            cache_dir,
-            install_dir,
-            verify_signatures: true,
         }
     }
 
@@ -141,12 +66,8 @@ impl PackageManager {
             return Err(PluginError::distribution_error(&format!(
                 "Repository {} already exists", repository.name
             )));
-        }
-
         self.repositories.push(repository);
         Ok(())
-    }
-
     /// Remove a repository
     pub fn remove_repository(&mut self, name: &str) -> PluginResult<()> {
         let initial_len = self.repositories.len();
@@ -156,21 +77,13 @@ impl PackageManager {
             return Err(PluginError::distribution_error(&format!(
                 "Repository {} not found", name
             )));
-        }
-        
         Ok(())
-    }
-
     /// List all repositories
     pub fn list_repositories(&self) -> &[Repository] {
         &self.repositories
-    }
-
     /// Enable signature verification
     pub fn set_signature_verification(&mut self, verify: bool) {
         self.verify_signatures = verify;
-    }
-
     /// Create cache and install directories if they don't exist
     pub fn ensure_directories(&self) -> PluginResult<()> {
         fs::create_dir_all(&self.cache_dir).map_err(|e| {
@@ -191,14 +104,10 @@ pub fn pack_plugin(plugin_dir: &str, output_path: &str) -> PluginResult<()> {
     
     if !plugin_path.exists() {
         return Err(PluginError::plugin_not_found(plugin_dir));
-    }
-
     if !plugin_path.is_dir() {
         return Err(PluginError::distribution_error(&format!(
             "{} is not a directory", plugin_dir
         )));
-    }
-
     // Read package metadata
     let metadata_path = plugin_path.join("package.json");
     let metadata = if metadata_path.exists() {
@@ -206,25 +115,17 @@ pub fn pack_plugin(plugin_dir: &str, output_path: &str) -> PluginResult<()> {
     } else {
         // Generate basic metadata from plugin info
         generate_metadata_from_plugin(plugin_path)?
-    };
 
     // Collect all files
     let files = collect_package_files(plugin_path)?;
 
     // Create package
     let package = PluginPackage {
-        metadata,
-        content: create_package_archive(&files)?,
-        signature: None,
-        checksums: calculate_checksums(&files)?,
-    };
 
     // Write package to output
     write_package(&package, output_path)?;
 
     Ok(())
-}
-
 /// Unpack a plugin package to a directory
 pub fn unpack_plugin(package_path: &str, output_dir: &str) -> PluginResult<()> {
     let package = read_package(package_path)?;
@@ -244,11 +145,7 @@ pub fn unpack_plugin(package_path: &str, output_dir: &str) -> PluginResult<()> {
     // Run post-install scripts if any
     if let Some(ref post_install) = package.metadata.install_scripts.post_install {
         run_install_script(post_install, output_path)?;
-    }
-
     Ok(())
-}
-
 /// Verify package integrity and signatures
 pub fn verify_package(package_path: &str) -> PluginResult<bool> {
     let package = read_package(package_path)?;
@@ -256,19 +153,13 @@ pub fn verify_package(package_path: &str) -> PluginResult<bool> {
     // Verify checksums
     if let Err(_) = verify_package_integrity(&package) {
         return Ok(false);
-    }
-
     // Verify signature if present
     if package.signature.is_some() {
         // In a real implementation, verify the signature
         // For now, assume signature is valid
         return Ok(true);
-    }
-
     // Package is valid if checksums match (no signature required)
     Ok(true)
-}
-
 /// List remote plugins from a repository
 pub fn list_remote_plugins(repo_url: &str) -> PluginResult<Vec<PlugInfo>> {
     // In a real implementation, this would make HTTP requests to the repository
@@ -276,13 +167,8 @@ pub fn list_remote_plugins(repo_url: &str) -> PluginResult<Vec<PlugInfo>> {
     
     // For now, return an empty list
     Ok(Vec::new())
-}
-
 /// Download a plugin from a repository
 pub fn download_plugin(
-    repo_url: &str,
-    plugin_name: &str,
-    version: &Version,
 ) -> PluginResult<String> {
     // In a real implementation, this would:
     // 1. Construct the download URL
@@ -299,19 +185,12 @@ pub fn download_plugin(
     })?;
 
     Ok(cache_path)
-}
-
 /// Publish a plugin package to a repository
 pub fn publish_plugin(
-    repo_url: &str,
-    package_path: &str,
-    auth: &AuthInfo,
 ) -> PluginResult<()> {
     // Verify package before publishing
     if !verify_package(package_path)? {
         return Err(PluginError::distribution_error("Package verification failed"));
-    }
-
     // In a real implementation, this would:
     // 1. Read the package file
     // 2. Authenticate with the repository
@@ -321,15 +200,9 @@ pub fn publish_plugin(
     // For now, just validate that the files exist
     if !Path::new(package_path).exists() {
         return Err(PluginError::plugin_not_found(package_path));
-    }
-
     if auth.username.is_empty() {
         return Err(PluginError::distribution_error("Authentication required for publishing"));
-    }
-
     Ok(())
-}
-
 // Helper functions
 
 fn read_package_metadata(metadata_path: &Path) -> PluginResult<PackageMetadata> {
@@ -340,24 +213,7 @@ fn read_package_metadata(metadata_path: &Path) -> PluginResult<PackageMetadata> 
     // In a real implementation, parse JSON metadata
     // For now, create dummy metadata
     Ok(PackageMetadata {
-        name: "unknown".to_string(),
-        version: Version::new(1, 0, 0),
-        description: "Plugin package".to_string(),
-        author: "Unknown".to_string(),
-        license: "MIT".to_string(),
-        homepage: None,
-        repository: None,
-        keywords: Vec::new(),
-        categories: Vec::new(),
-        dependencies: HashMap::new(),
-        files: Vec::new(),
-        install_scripts: InstallScripts::default(),
-        target_platforms: vec!["linux".to_string(), "windows".to_string(), "macos".to_string()],
-        min_host_version: None,
-        max_host_version: None,
     })
-}
-
 fn generate_metadata_from_plugin(plugin_path: &Path) -> PluginResult<PackageMetadata> {
     // Try to extract metadata from plugin binary
     // For now, create basic metadata
@@ -367,30 +223,11 @@ fn generate_metadata_from_plugin(plugin_path: &Path) -> PluginResult<PackageMeta
         .to_string();
 
     Ok(PackageMetadata {
-        name,
-        version: Version::new(1, 0, 0),
-        description: "Auto-generated package metadata".to_string(),
-        author: "Unknown".to_string(),
-        license: "Unknown".to_string(),
-        homepage: None,
-        repository: None,
-        keywords: Vec::new(),
-        categories: Vec::new(),
-        dependencies: HashMap::new(),
-        files: Vec::new(),
-        install_scripts: InstallScripts::default(),
-        target_platforms: vec!["linux".to_string()],
-        min_host_version: None,
-        max_host_version: None,
     })
-}
-
 fn collect_package_files(plugin_path: &Path) -> PluginResult<Vec<(PathBuf, Vec<u8>)>> {
     let mut files = Vec::new();
     
     fn collect_files_recursive(
-        dir: &Path, 
-        base: &Path, 
         files: &mut Vec<(PathBuf, Vec<u8>)>
     ) -> io::Result<()> {
         for entry in fs::read_dir(dir)? {
@@ -406,15 +243,11 @@ fn collect_package_files(plugin_path: &Path) -> PluginResult<Vec<(PathBuf, Vec<u
             }
         }
         Ok(())
-    }
-
     collect_files_recursive(plugin_path, plugin_path, &mut files).map_err(|e| {
         PluginError::distribution_error(&format!("Failed to collect files: {}", e))
     })?;
 
     Ok(files)
-}
-
 fn create_package_archive(files: &[(PathBuf, Vec<u8>)]) -> PluginResult<Vec<u8>> {
     // In a real implementation, create a proper archive (tar, zip, etc.)
     // For now, just concatenate all file contents
@@ -425,11 +258,7 @@ fn create_package_archive(files: &[(PathBuf, Vec<u8>)]) -> PluginResult<Vec<u8>>
         archive.push(0); // null terminator
         archive.extend_from_slice(&(content.len() as u64).to_le_bytes());
         archive.extend_from_slice(content);
-    }
-
     Ok(archive)
-}
-
 fn calculate_checksums(files: &[(PathBuf, Vec<u8>)]) -> PluginResult<HashMap<String, String>> {
     let mut checksums = HashMap::new();
     
@@ -438,11 +267,7 @@ fn calculate_checksums(files: &[(PathBuf, Vec<u8>)]) -> PluginResult<HashMap<Str
         // For now, use a simple checksum
         let checksum = format!("{:x}", content.len() ^ content.iter().map(|&b| b as usize).sum::<usize>());
         checksums.insert(path.to_string_lossy().to_string(), checksum);
-    }
-
     Ok(checksums)
-}
-
 fn write_package(package: &PluginPackage, output_path: &str) -> PluginResult<()> {
     let mut file = fs::File::create(output_path).map_err(|e| {
         PluginError::distribution_error(&format!("Failed to create package file: {}", e))
@@ -455,8 +280,6 @@ fn write_package(package: &PluginPackage, output_path: &str) -> PluginResult<()>
     })?;
 
     Ok(())
-}
-
 fn read_package(package_path: &str) -> PluginResult<PluginPackage> {
     let content = fs::read(package_path).map_err(|e| {
         PluginError::distribution_error(&format!("Failed to read package: {}", e))
@@ -466,34 +289,11 @@ fn read_package(package_path: &str) -> PluginResult<PluginPackage> {
     // For now, create a dummy package
     Ok(PluginPackage {
         metadata: PackageMetadata {
-            name: "test".to_string(),
-            version: Version::new(1, 0, 0),
-            description: "Test package".to_string(),
-            author: "Test".to_string(),
-            license: "MIT".to_string(),
-            homepage: None,
-            repository: None,
-            keywords: Vec::new(),
-            categories: Vec::new(),
-            dependencies: HashMap::new(),
-            files: Vec::new(),
-            install_scripts: InstallScripts::default(),
-            target_platforms: Vec::new(),
-            min_host_version: None,
-            max_host_version: None,
-        },
-        content,
-        signature: None,
-        checksums: HashMap::new(),
     })
-}
-
 fn verify_package_integrity(_package: &PluginPackage) -> PluginResult<()> {
     // In a real implementation, verify checksums and signatures
     // For now, always pass
     Ok(())
-}
-
 fn extract_package_content(_package: &PluginPackage, _output_path: &Path) -> PluginResult<()> {
     // In a real implementation, extract the archive to the output directory
     // For now, just create a dummy file
@@ -503,15 +303,9 @@ fn extract_package_content(_package: &PluginPackage, _output_path: &Path) -> Plu
     })?;
 
     Ok(())
-}
-
 fn run_install_script(_script: &str, _install_path: &Path) -> PluginResult<()> {
     // In a real implementation, execute the install script
     // For now, just validate the script exists
     if _script.is_empty() {
         return Err(PluginError::distribution_error("Empty install script"));
-    }
-
     Ok(())
-}
-

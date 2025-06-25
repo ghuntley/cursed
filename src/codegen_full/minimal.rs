@@ -10,22 +10,12 @@ use inkwell::OptimizationLevel;
 use std::collections::HashMap;
 
 pub struct MinimalCodegen<'ctx> {
-    context: &'ctx Context,
-    module: Module<'ctx>,
-    builder: Builder<'ctx>,
-    variables: HashMap<String, PointerValue<'ctx>>,
-}
-
 impl<'ctx> MinimalCodegen<'ctx> {
     pub fn new(context: &'ctx Context, module_name: &str) -> Self {
         let module = context.create_module(module_name);
         let builder = context.create_builder();
         
         Self {
-            context,
-            module,
-            builder,
-            variables: HashMap::new(),
         }
     }
     
@@ -41,8 +31,6 @@ impl<'ctx> MinimalCodegen<'ctx> {
         // Compile all statements
         for statement in &program.statements {
             self.compile_statement(statement)?;
-        }
-        
         // Return 0 from main
         let zero = i32_type.const_int(0, false);
         self.builder.build_return(Some(&zero)).map_err(|e| {
@@ -50,8 +38,6 @@ impl<'ctx> MinimalCodegen<'ctx> {
         })?;
         
         Ok(())
-    }
-    
     fn compile_statement(&mut self, statement: &Statement) -> crate::error::Result<()> {
         match statement {
             Statement::Facts(name, expr) => {
@@ -71,7 +57,6 @@ impl<'ctx> MinimalCodegen<'ctx> {
                 } else {
                     let void_type = self.context.void_type();
                     (void_type.fn_type(&[], false), false)
-                };
                 
                 let function = self.module.add_function(name, fn_type, None);
                 let basic_block = self.context.append_basic_block(function, "entry");
@@ -102,8 +87,6 @@ impl<'ctx> MinimalCodegen<'ctx> {
                             self.compile_statement(stmt)?;
                         }
                     }
-                }
-                
                 // Build return
                 if returns_value && name == "main" {
                     // For main function, return 0
@@ -115,13 +98,9 @@ impl<'ctx> MinimalCodegen<'ctx> {
                     self.builder.build_return(None).map_err(|e| {
                         CursedError::Compile(format!("Failed to build return: {}", e))
                     })?;
-                }
-                
                 // Restore insertion point
                 if let Some(block) = old_insertion_point {
                     self.builder.position_at_end(block);
-                }
-                
                 Ok(())
             }
             Statement::Expression(expr) => {
@@ -129,8 +108,6 @@ impl<'ctx> MinimalCodegen<'ctx> {
                 Ok(())
             }
         }
-    }
-    
     fn compile_expression(&mut self, expression: &Expression) -> crate::error::Result<BasicValueEnum<'ctx>> {
         match expression {
             Expression::String(s) => {
@@ -162,18 +139,12 @@ impl<'ctx> MinimalCodegen<'ctx> {
                 Ok(int_value.into())
             }
         }
-    }
-    
     pub fn emit_llvm_ir(&self) -> String {
         self.module.print_to_string().to_string()
-    }
-    
     pub fn write_to_file(&self, filename: &str) -> crate::error::Result<()> {
         self.module.print_to_file(filename).map_err(|e| {
             CursedError::Compile(format!("Failed to write LLVM IR to file: {}", e))
         })
-    }
-    
     pub fn compile_to_object_file(&self, target_triple: &str, filename: &str) -> crate::error::Result<()> {
         Target::initialize_all(&InitializationConfig::default());
         
@@ -181,12 +152,6 @@ impl<'ctx> MinimalCodegen<'ctx> {
             .map_err(|e| CursedError::Compile(format!("Failed to create target: {}", e)))?;
             
         let target_machine = target.create_target_machine(
-            &TargetTriple::create(target_triple),
-            "",
-            "",
-            OptimizationLevel::Default,
-            RelocMode::Default,
-            CodeModel::Default,
         ).ok_or_else(|| CursedError::Compile("Failed to create target machine".to_string()))?;
         
         target_machine.write_to_file(&self.module, FileType::Object, filename.as_ref())
@@ -200,8 +165,6 @@ pub fn compile_cursed_to_llvm(program: &Program, module_name: &str) -> crate::er
     
     codegen.compile_program(program)?;
     Ok(codegen.emit_llvm_ir())
-}
-
 pub fn compile_cursed_to_object(program: &Program, module_name: &str, output_file: &str) -> crate::error::Result<()> {
     let context = Context::create();
     let mut codegen = MinimalCodegen::new(&context, module_name);
@@ -211,8 +174,6 @@ pub fn compile_cursed_to_object(program: &Program, module_name: &str, output_fil
     // Get the target triple for the current platform
     let target_triple = TargetMachine::get_default_triple();
     codegen.compile_to_object_file(target_triple.as_str().to_str().unwrap(), output_file)
-}
-
 pub fn compile_cursed_to_executable(program: &Program, module_name: &str, output_file: &str) -> crate::error::Result<()> {
     let context = Context::create();
     let mut codegen = MinimalCodegen::new(&context, module_name);

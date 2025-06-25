@@ -15,8 +15,6 @@ pub const BLAKE3_CHUNK_LEN: usize = 1024;
 
 /// fr fr BLAKE3 initialization vectors (first 8 words of SHA-256 state)
 const IV: [u32; 8] = [
-    0x6A09E667, 0xBB67AE85, 0x3C6EF372, 0xA54FF53A,
-    0x510E527F, 0x9B05688C, 0x1F83D9AB, 0x5BE0CD19,
 ];
 
 /// fr fr BLAKE3 flags for different modes
@@ -34,40 +32,22 @@ pub enum Blake3Mode {
     Regular,    // Standard hashing
     Keyed,      // Keyed hashing (MAC)
     DeriveKey,  // Key derivation
-}
-
 impl Blake3Mode {
     pub fn name(&self) -> &'static str {
         match self {
-            Blake3Mode::Regular => "BLAKE3",
-            Blake3Mode::Keyed => "BLAKE3-Keyed",
-            Blake3Mode::DeriveKey => "BLAKE3-KDF",
         }
     }
     
     pub fn flag(&self) -> u8 {
         match self {
-            Blake3Mode::Regular => 0,
-            Blake3Mode::Keyed => KEYED_HASH,
-            Blake3Mode::DeriveKey => DERIVE_KEY_CONTEXT,
         }
     }
-}
-
 /// fr fr BLAKE3 compression state
 #[derive(Debug, Clone)]
 struct Blake3State {
-    h: [u32; 8],
-    t: u64,
-    flags: u8,
-}
-
 impl Blake3State {
     fn new(key: &[u32; 8], flags: u8) -> Self {
         Self {
-            h: *key,
-            t: 0,
-            flags,
         }
     }
     
@@ -92,13 +72,6 @@ impl Blake3State {
     
     fn blake3_compress(&self, v: &mut [u32; 16], m: &[u32; 16]) {
         const SIGMA: [[usize; 16]; 7] = [
-            [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15],
-            [2, 6, 3, 10, 7, 0, 4, 13, 1, 11, 12, 5, 9, 14, 15, 8],
-            [3, 4, 10, 12, 13, 2, 7, 14, 6, 5, 9, 0, 11, 15, 8, 1],
-            [10, 7, 12, 9, 14, 3, 13, 15, 4, 0, 11, 2, 5, 8, 1, 6],
-            [12, 13, 9, 11, 15, 10, 14, 8, 7, 2, 5, 3, 0, 1, 6, 4],
-            [9, 14, 11, 5, 8, 12, 15, 1, 13, 3, 0, 10, 2, 6, 4, 7],
-            [11, 15, 5, 0, 1, 9, 8, 6, 14, 10, 2, 12, 3, 4, 7, 13],
         ];
         
         for round in 0..7 {
@@ -127,8 +100,6 @@ impl Blake3State {
         v[d] = (v[d] ^ v[a]).rotate_right(8);
         v[c] = v[c].wrapping_add(v[d]);
         v[b] = (v[b] ^ v[c]).rotate_right(7);
-    }
-    
     fn words_from_le_bytes(bytes: &[u8; 64]) -> [u32; 16] {
         let mut words = [0u32; 16];
         for (i, chunk) in bytes.chunks_exact(4).enumerate() {
@@ -141,21 +112,9 @@ impl Blake3State {
 /// fr fr BLAKE3 chunk state for processing 1024-byte chunks
 #[derive(Debug, Clone)]
 struct Blake3ChunkState {
-    state: Blake3State,
-    chunk_counter: u64,
-    buf: [u8; 64],
-    buf_len: usize,
-    blocks_compressed: u8,
-}
-
 impl Blake3ChunkState {
     fn new(key: &[u32; 8], chunk_counter: u64, flags: u8) -> Self {
         Self {
-            state: Blake3State::new(key, flags),
-            chunk_counter,
-            buf: [0; 64],
-            buf_len: 0,
-            blocks_compressed: 0,
         }
     }
     
@@ -176,16 +135,12 @@ impl Blake3ChunkState {
                 let mut flags = self.state.flags;
                 if self.blocks_compressed == 0 {
                     flags |= CHUNK_START;
-                }
-                
                 self.state.t = self.chunk_counter * BLAKE3_CHUNK_LEN as u64 + (self.blocks_compressed as u64 * 64);
                 self.state.compress(&self.buf, 64, flags);
                 self.blocks_compressed += 1;
                 self.buf_len = 0;
             }
         }
-    }
-    
     fn finalize(&mut self, output: &mut [u8]) {
         let mut flags = self.state.flags;
         if self.blocks_compressed == 0 {
@@ -204,35 +159,19 @@ impl Blake3ChunkState {
             chunk[..take].copy_from_slice(&bytes[..take]);
         }
     }
-}
-
 /// fr fr BLAKE3 hasher with support for different modes
 #[derive(Debug, Clone)]
 pub struct Blake3Hasher {
-    key: [u32; 8],
-    mode: Blake3Mode,
-    chunk_state: Blake3ChunkState,
-    cv_stack: Vec<[u8; 32]>,
-    cv_stack_len: usize,
-}
-
 impl Blake3Hasher {
     /// slay Create new BLAKE3 hasher in regular mode
     pub fn new() -> Self {
         Self::new_with_mode(Blake3Mode::Regular)
-    }
-    
     /// bestie Create new BLAKE3 hasher with specific mode
     pub fn new_with_mode(mode: Blake3Mode) -> Self {
         let key = IV;
         let flags = mode.flag();
         
         Self {
-            key,
-            mode,
-            chunk_state: Blake3ChunkState::new(&key, 0, flags),
-            cv_stack: Vec::with_capacity(10),
-            cv_stack_len: 0,
         }
     }
     
@@ -241,14 +180,7 @@ impl Blake3Hasher {
         let mut key_words = [0u32; 8];
         for (i, chunk) in key.chunks_exact(4).enumerate() {
             key_words[i] = u32::from_le_bytes([chunk[0], chunk[1], chunk[2], chunk[3]]);
-        }
-        
         Self {
-            key: key_words,
-            mode: Blake3Mode::Keyed,
-            chunk_state: Blake3ChunkState::new(&key_words, 0, KEYED_HASH),
-            cv_stack: Vec::with_capacity(10),
-            cv_stack_len: 0,
         }
     }
     
@@ -262,14 +194,7 @@ impl Blake3Hasher {
         let mut key_words = [0u32; 8];
         for (i, chunk) in context_hash.chunks_exact(4).enumerate() {
             key_words[i] = u32::from_le_bytes([chunk[0], chunk[1], chunk[2], chunk[3]]);
-        }
-        
         Self {
-            key: key_words,
-            mode: Blake3Mode::DeriveKey,
-            chunk_state: Blake3ChunkState::new(&key_words, 0, DERIVE_KEY_CONTEXT),
-            cv_stack: Vec::with_capacity(10),
-            cv_stack_len: 0,
         }
     }
     
@@ -289,12 +214,8 @@ impl Blake3Hasher {
                 
                 // Start new chunk
                 self.chunk_state = Blake3ChunkState::new(
-                    &self.key,
-                    self.cv_stack_len as u64,
                     self.mode.flag()
                 );
-            }
-            
             // Update current chunk
             let chunk_space = BLAKE3_CHUNK_LEN - (self.chunk_state.blocks_compressed as usize * 64 + self.chunk_state.buf_len);
             let take = chunk_space.min(input.len() - input_offset);
@@ -308,8 +229,6 @@ impl Blake3Hasher {
         let mut output = [0u8; 32];
         self.finalize_variable(&mut output);
         output
-    }
-    
     /// slay Finalize with variable output length
     pub fn finalize_variable(mut self, output: &mut [u8]) {
         // Finalize current chunk
@@ -377,8 +296,6 @@ impl Blake3Hasher {
             chunk.copy_from_slice(&bytes);
         }
         result
-    }
-    
     fn merge_cv_stack(&self) -> [u8; 32] {
         let mut stack = self.cv_stack.clone();
         
@@ -387,11 +304,7 @@ impl Blake3Hasher {
             let left = stack.pop().unwrap();
             let merged = self.merge_cvs(&left, &right);
             stack.push(merged);
-        }
-        
         stack[0]
-    }
-    
     fn extract_output(&self, state: &Blake3State, output: &mut [u8]) {
         let mut offset = 0;
         let mut counter = 0u64;
@@ -407,8 +320,6 @@ impl Blake3Hasher {
             let take = 64.min(output.len() - offset);
             for (i, byte) in output[offset..offset + take].iter_mut().enumerate() {
                 *byte = (block_state.h[i / 4] >> ((i % 4) * 8)) as u8;
-            }
-            
             offset += take;
             counter += 1;
         }
@@ -419,15 +330,11 @@ impl Blake3Hasher {
         let mut hasher = Self::new();
         hasher.update(data);
         hasher.finalize_fixed()
-    }
-    
     /// vibes Keyed hash in one shot
     pub fn keyed_hash(key: &[u8; 32], data: &[u8]) -> [u8; 32] {
         let mut hasher = Self::new_keyed(key);
         hasher.update(data);
         hasher.finalize_fixed()
-    }
-    
     /// yolo Key derivation in one shot
     pub fn derive_key(context: &str, key_material: &[u8], output_len: usize) -> Vec<u8> {
         let mut hasher = Self::new_derive_key(context);
@@ -451,20 +358,14 @@ impl Blake3Utils {
     /// bestie Convert hash bytes to hex string
     pub fn to_hex(bytes: &[u8]) -> String {
         bytes.iter().map(|b| format!("{:02x}", b)).collect()
-    }
-    
     /// vibes Hash string with BLAKE3
     pub fn blake3_string(s: &str) -> String {
         let hash = Blake3Hasher::hash(s.as_bytes());
         Self::to_hex(&hash)
-    }
-    
     /// periodt Keyed hash string with BLAKE3
     pub fn blake3_keyed_string(key: &[u8; 32], s: &str) -> String {
         let hash = Blake3Hasher::keyed_hash(key, s.as_bytes());
         Self::to_hex(&hash)
-    }
-    
     /// facts Generate random BLAKE3 key
     pub fn generate_key() -> [u8; 32] {
         use rand::RngCore;
@@ -480,38 +381,21 @@ impl Blake3Utils {
 pub fn blake3(args: Vec<Value>) -> crate::error::Result<()> {
     if args.is_empty() {
         return Err(CursedError::Runtime("BLAKE3 requires input data".to_string()));
-    }
-    
     let data = match &args[0] {
-        Value::String(s) => s.as_bytes(),
-        _ => return Err(CursedError::Runtime("BLAKE3 input must be a string".to_string())),
-    };
     
     let hash = Blake3Hasher::hash(data);
     Ok(Value::String(Blake3Utils::to_hex(&hash)))
-}
-
 /// slay BLAKE3 keyed hash function
 pub fn blake3_keyed(args: Vec<Value>) -> crate::error::Result<()> {
     if args.len() < 2 {
         return Err(CursedError::Runtime("BLAKE3 keyed hash requires key and data".to_string()));
-    }
-    
     let key_str = match &args[0] {
-        Value::String(s) => s,
-        _ => return Err(CursedError::Runtime("BLAKE3 key must be a string".to_string())),
-    };
     
     let data = match &args[1] {
-        Value::String(s) => s.as_bytes(),
-        _ => return Err(CursedError::Runtime("BLAKE3 input must be a string".to_string())),
-    };
     
     // Convert hex key to bytes
     if key_str.len() != 64 {
         return Err(CursedError::Runtime("BLAKE3 key must be 64 hex characters (32 bytes)".to_string()));
-    }
-    
     let mut key = [0u8; 32];
     for (i, chunk) in key_str.as_bytes().chunks(2).enumerate() {
         if i >= 32 {
@@ -524,47 +408,26 @@ pub fn blake3_keyed(args: Vec<Value>) -> crate::error::Result<()> {
                 return Err(CursedError::Runtime("Invalid hex character in BLAKE3 key".to_string()));
             }
         }
-    }
-    
     let hash = Blake3Hasher::keyed_hash(&key, data);
     Ok(Value::String(Blake3Utils::to_hex(&hash)))
-}
-
 /// slay BLAKE3 key derivation function
 pub fn blake3_derive_key(args: Vec<Value>) -> crate::error::Result<()> {
     if args.len() < 3 {
         return Err(CursedError::Runtime("BLAKE3 KDF requires context, key material, and output length".to_string()));
-    }
-    
     let context = match &args[0] {
-        Value::String(s) => s,
-        _ => return Err(CursedError::Runtime("BLAKE3 KDF context must be a string".to_string())),
-    };
     
     let key_material = match &args[1] {
-        Value::String(s) => s.as_bytes(),
-        _ => return Err(CursedError::Runtime("BLAKE3 KDF key material must be a string".to_string())),
-    };
     
     let output_len = match &args[2] {
-        Value::Number(n) => *n as usize,
-        _ => return Err(CursedError::Runtime("BLAKE3 KDF output length must be a number".to_string())),
-    };
     
     if output_len == 0 || output_len > 1024 {
         return Err(CursedError::Runtime("BLAKE3 KDF output length must be between 1 and 1024 bytes".to_string()));
-    }
-    
     let derived_key = Blake3Hasher::derive_key(context, key_material, output_len);
     Ok(Value::String(Blake3Utils::to_hex(&derived_key)))
-}
-
 /// slay Generate BLAKE3 key
 pub fn blake3_generate_key(_args: Vec<Value>) -> crate::error::Result<()> {
     let key = Blake3Utils::generate_key();
     Ok(Value::String(Blake3Utils::to_hex(&key)))
-}
-
 /// slay Create streaming BLAKE3 hasher
 pub fn create_blake3_hasher(args: Vec<Value>) -> crate::error::Result<()> {
     let mode = if args.is_empty() {
@@ -572,22 +435,12 @@ pub fn create_blake3_hasher(args: Vec<Value>) -> crate::error::Result<()> {
     } else {
         match &args[0] {
             Value::String(s) => match s.as_str() {
-                "regular" => Blake3Mode::Regular,
-                "keyed" => Blake3Mode::Keyed,
-                "derive_key" => Blake3Mode::DeriveKey,
-                _ => Blake3Mode::Regular,
-            },
-            _ => Blake3Mode::Regular,
         }
-    };
     
     let mut result = HashMap::new();
     result.insert("algorithm".to_string(), Value::String(mode.name().to_string()));
-    result.insert("hasher_id".to_string(), Value::String(format!("blake3_hasher_{:x}", 
             std::ptr::addr_of!(*self) as usize)));
     result.insert("output_size".to_string(), Value::Number(32.0));
     result.insert("variable_output".to_string(), Value::bool(true));
     
     Ok(Value::Object(result))
-}
-

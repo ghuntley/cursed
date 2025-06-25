@@ -4,19 +4,9 @@ use crate::error_types::CursedError;
 /// Template lexer for processing LLVM code templates
 #[derive(Debug)]
 pub struct TemplateLexer {
-    pub source: String,
-    pub position: usize,
-    pub line: u32,
-    pub column: u32,
-}
-
 impl TemplateLexer {
     pub fn new(source: String) -> Self {
         Self {
-            source,
-            position: 0,
-            line: 1,
-            column: 1,
         }
     }
 
@@ -26,19 +16,13 @@ impl TemplateLexer {
         while !self.is_at_end() {
             let token = self.next_token()?;
             tokens.push(token);
-        }
-        
         tokens.push(TemplateToken::Eof);
         Ok(tokens)
-    }
-
     fn next_token(&mut self) -> crate::error_types::Result<TemplateToken> {
         self.skip_whitespace();
         
         if self.is_at_end() {
             return Ok(TemplateToken::Eof);
-        }
-
         let start = self.position;
         let ch = self.advance();
 
@@ -59,16 +43,11 @@ impl TemplateLexer {
                 self.advance(); // consume '}'
                 Ok(TemplateToken::CloseStatement)
             }
-            '"' => self.string_literal(),
-            c if c.is_ascii_alphabetic() || c == '_' => self.identifier(),
-            c if c.is_ascii_digit() => self.number(),
             _ => {
                 let text = self.source[start..self.position].to_string();
                 Ok(TemplateToken::Text(text))
             }
         }
-    }
-
     fn string_literal(&mut self) -> crate::error_types::Result<TemplateToken> {
         let mut value = String::new();
         
@@ -76,17 +55,10 @@ impl TemplateLexer {
             if ch == '"' {
                 self.advance(); // consume closing quote
                 break;
-            }
-            
             if ch == '\\' {
                 self.advance(); // consume backslash
                 if let Some(escaped) = self.peek() {
                     match escaped {
-                        'n' => value.push('\n'),
-                        't' => value.push('\t'),
-                        'r' => value.push('\r'),
-                        '\\' => value.push('\\'),
-                        '"' => value.push('"'),
                         _ => {
                             value.push('\\');
                             value.push(escaped);
@@ -101,8 +73,6 @@ impl TemplateLexer {
         }
         
         Ok(TemplateToken::String(value))
-    }
-
     fn identifier(&mut self) -> crate::error_types::Result<TemplateToken> {
         let start = self.position - 1;
         
@@ -118,21 +88,8 @@ impl TemplateLexer {
         
         // Check for keywords
         let token = match text.as_str() {
-            "if" => TemplateToken::If,
-            "else" => TemplateToken::Else,
-            "endif" => TemplateToken::EndIf,
-            "for" => TemplateToken::For,
-            "endfor" => TemplateToken::EndFor,
-            "include" => TemplateToken::Include,
-            "extends" => TemplateToken::Extends,
-            "block" => TemplateToken::Block,
-            "endblock" => TemplateToken::EndBlock,
-            _ => TemplateToken::Identifier(text),
-        };
         
         Ok(token)
-    }
-
     fn number(&mut self) -> crate::error_types::Result<TemplateToken> {
         let start = self.position - 1;
         
@@ -149,8 +106,6 @@ impl TemplateLexer {
             .map_err(|_| CursedError::Parse(format!("Invalid number: {}", text)))?;
         
         Ok(TemplateToken::Number(value))
-    }
-
     fn skip_whitespace(&mut self) {
         while let Some(ch) = self.peek() {
             if ch.is_whitespace() {
@@ -165,19 +120,13 @@ impl TemplateLexer {
                 break;
             }
         }
-    }
-
     fn advance(&mut self) -> char {
         let ch = self.source.chars().nth(self.position).unwrap_or('\0');
         self.position += 1;
         self.column += 1;
         ch
-    }
-
     fn peek(&self) -> Option<char> {
         self.source.chars().nth(self.position)
-    }
-
     fn is_at_end(&self) -> bool {
         self.position >= self.source.len()
     }
@@ -193,47 +142,13 @@ pub enum TemplateToken {
     CloseStatement,  // %}
 
     // Keywords
-    If,
-    Else,
-    EndIf,
-    For,
-    EndFor,
-    Include,
-    Extends,
-    Block,
-    EndBlock,
 
     // Literals
-    String(String),
-    Number(i64),
-    Identifier(String),
-    Text(String),
 
     // Special
-    Eof,
-}
-
 impl std::fmt::Display for TemplateToken {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            TemplateToken::OpenExpression => write!(f, "{{{{"),
-            TemplateToken::CloseExpression => write!(f, "}}}}"),
-            TemplateToken::OpenStatement => write!(f, "{{%"),
-            TemplateToken::CloseStatement => write!(f, "%}}"),
-            TemplateToken::If => write!(f, "if"),
-            TemplateToken::Else => write!(f, "else"),
-            TemplateToken::EndIf => write!(f, "endif"),
-            TemplateToken::For => write!(f, "for"),
-            TemplateToken::EndFor => write!(f, "endfor"),
-            TemplateToken::Include => write!(f, "include"),
-            TemplateToken::Extends => write!(f, "extends"),
-            TemplateToken::Block => write!(f, "block"),
-            TemplateToken::EndBlock => write!(f, "endblock"),
-            TemplateToken::String(s) => write!(f, "\"{}\"", s),
-            TemplateToken::Number(n) => write!(f, "{}", n),
-            TemplateToken::Identifier(id) => write!(f, "{}", id),
-            TemplateToken::Text(text) => write!(f, "{}", text),
-            TemplateToken::Eof => write!(f, "EOF"),
         }
     }
 }

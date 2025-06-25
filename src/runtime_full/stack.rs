@@ -4,8 +4,6 @@ use crate::error::{CursedError, Result};
 
 pub struct RuntimeStack {
     // Minimal implementation
-}
-
 impl RuntimeStack {
     pub fn new() -> Self {
         RuntimeStack {}
@@ -13,8 +11,6 @@ impl RuntimeStack {
     
     pub fn push_frame(&mut self) -> Result<()> {
         Ok(())
-    }
-    
     pub fn pop_frame(&mut self) -> Result<()> {
         Ok(())
     }

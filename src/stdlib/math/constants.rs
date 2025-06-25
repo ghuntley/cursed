@@ -275,27 +275,14 @@ pub const STANDARD_GRAVITY: f64 = 9.80665;
 
 /// Array of fundamental mathematical constants
 pub const FUNDAMENTAL_CONSTANTS: [(&str, f64); 6] = [
-    ("PI", PI),
-    ("E", E),
-    ("TAU", TAU),
-    ("PHI", PHI),
-    ("EULER_GAMMA", EULER_GAMMA),
-    ("SQRT_2", SQRT_2),
 ];
 
 /// Array of physical constants with their units
 pub const PHYSICAL_CONSTANTS: [(&str, f64, &str); 12] = [
     ("SPEED_OF_LIGHT", SPEED_OF_LIGHT, "m/s"),
-    ("PLANCK", PLANCK, "J⋅s"),
-    ("HBAR", HBAR, "J⋅s"),
-    ("AVOGADRO", AVOGADRO, "mol⁻¹"),
     ("BOLTZMANN", BOLTZMANN, "J/K"),
     ("GAS_CONSTANT", GAS_CONSTANT, "J/(mol⋅K)"),
     ("GRAVITATIONAL", GRAVITATIONAL, "m³/(kg⋅s²)"),
-    ("ELEMENTARY_CHARGE", ELEMENTARY_CHARGE, "C"),
-    ("ELECTRON_MASS", ELECTRON_MASS, "kg"),
-    ("PROTON_MASS", PROTON_MASS, "kg"),
-    ("FINE_STRUCTURE", FINE_STRUCTURE, "dimensionless"),
     ("STANDARD_GRAVITY", STANDARD_GRAVITY, "m/s²"),
 ];
 
@@ -329,23 +316,15 @@ pub const COMMON_FRACTIONS: [(&str, f64); 10] = [
 pub fn is_close_to_constant(value: f64, constant: f64, tolerance: Option<f64>) -> bool {
     let tol = tolerance.unwrap_or(EPSILON * 10.0);
     (value - constant).abs() < tol
-}
-
 /// Check if a value is approximately π
 pub fn is_approximately_pi(value: f64) -> bool {
     is_close_to_constant(value, PI, Some(1e-4))
-}
-
 /// Check if a value is approximately e
 pub fn is_approximately_e(value: f64) -> bool {
     is_close_to_constant(value, E, Some(1e-4))
-}
-
 /// Check if a value is approximately the golden ratio φ
 pub fn is_approximately_phi(value: f64) -> bool {
     is_close_to_constant(value, PHI, Some(1e-4))
-}
-
 /// Find the closest mathematical constant to a given value
 /// 
 /// # Arguments
@@ -366,51 +345,33 @@ pub fn find_closest_constant(value: f64) -> Option<(&'static str, f64, f64)> {
     }
     
     closest
-}
-
 // Note: angle conversion functions are available in the trigonometry module
 // as degrees_to_radians() and radians_to_degrees()
 
 /// Convert Fahrenheit to Celsius
 pub fn fahrenheit_to_celsius(fahrenheit: f64) -> f64 {
     (fahrenheit - FAHRENHEIT_OFFSET) * FAHRENHEIT_SCALE
-}
-
 /// Convert Celsius to Fahrenheit
 pub fn celsius_to_fahrenheit(celsius: f64) -> f64 {
     celsius * CELSIUS_SCALE + FAHRENHEIT_OFFSET
-}
-
 /// Convert inches to centimeters
 pub fn inches_to_cm(inches: f64) -> f64 {
     inches * INCH_TO_CM
-}
-
 /// Convert centimeters to inches
 pub fn cm_to_inches(cm: f64) -> f64 {
     cm * CM_TO_INCH
-}
-
 /// Convert miles to kilometers
 pub fn miles_to_km(miles: f64) -> f64 {
     miles * MILE_TO_KM
-}
-
 /// Convert kilometers to miles
 pub fn km_to_miles(km: f64) -> f64 {
     km * KM_TO_MILE
-}
-
 /// Convert pounds to kilograms
 pub fn pounds_to_kg(pounds: f64) -> f64 {
     pounds * POUND_TO_KG
-}
-
 /// Convert kilograms to pounds
 pub fn kg_to_pounds(kg: f64) -> f64 {
     kg * KG_TO_POUND
-}
-
 /// Get all fundamental constants as a formatted string
 pub fn list_fundamental_constants() -> String {
     let mut result = String::from("Fundamental Mathematical Constants:\n");
@@ -418,8 +379,6 @@ pub fn list_fundamental_constants() -> String {
         result.push_str(&format!("  {} = {:.15}\n", name, value));
     }
     result
-}
-
 /// Get all physical constants as a formatted string with units
 pub fn list_physical_constants() -> String {
     let mut result = String::from("Physical Constants:\n");
@@ -427,8 +386,6 @@ pub fn list_physical_constants() -> String {
         result.push_str(&format!("  {} = {:.6e} {}\n", name, value, unit));
     }
     result
-}
-
 /// Validate that a calculated value matches a known constant within tolerance
 /// 
 /// # Arguments
@@ -440,9 +397,6 @@ pub fn list_physical_constants() -> String {
 /// # Returns
 /// Result indicating if the validation passed
 pub fn validate_constant_calculation(
-    calculated: f64, 
-    expected_constant: f64, 
-    tolerance: f64,
     description: &str
 ) -> Result<(), String> {
     let diff = (calculated - expected_constant).abs();
@@ -450,7 +404,6 @@ pub fn validate_constant_calculation(
         Ok(())
     } else {
         Err(format!(
-            "Validation failed for {}: calculated={:.15}, expected={:.15}, difference={:.2e}, tolerance={:.2e}",
             description, calculated, expected_constant, diff, tolerance
         ))
     }

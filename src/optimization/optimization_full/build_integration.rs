@@ -2,14 +2,8 @@
 
 use crate::error::{CursedError, Result};
 use crate::optimization::{
-    coordinator::{OptimizationCoordinator, OptimizationCoordinatorConfig, OptimizationCoordinatorResult},
-    metrics::CompilationUnit,
     performance_integration::{
-        PerformanceIntegrationSystem, PerformanceIntegrationConfig, 
-        IntegratedOptimizationResults, PerformanceTargets,
-    },
-    config::{OptimizationConfig, OptimizationProfile, OptimizationLevel},
-};
+// };
 use std::path::{Path, PathBuf};
 use std::time::{Duration, Instant};
 use std::collections::HashMap;
@@ -19,53 +13,17 @@ use serde::{Deserialize, Serialize};
 /// Build context information
 #[derive(Debug, Clone)]
 pub struct BuildContext {
-    pub project_root: PathBuf,
-    pub source_files: Vec<PathBuf>,
-    pub output_directory: PathBuf,
-    pub target_triple: String,
-    pub debug_mode: bool,
-    pub release_mode: bool,
-    pub verbose: bool,
-}
-
 /// Build optimization result with enhanced performance metrics
 #[derive(Debug, Clone)]
 pub struct BuildOptimizationResult {
-    pub success: bool,
-    pub compilation_time: Duration,
-    pub optimization_time: Duration,
-    pub total_time: Duration,
-    pub files_compiled: usize,
-    pub files_cached: usize,
-    pub cache_hit_rate: f64,
-    pub parallel_efficiency: f64,
-    pub size_reduction_bytes: i64,
-    pub warnings: Vec<String>,
-    pub errors: Vec<String>,
-    pub performance_summary: String,
     // Enhanced performance integration results
-    pub optimization_profile_used: Option<OptimizationProfile>,
-    pub performance_improvements: Option<crate::optimization::performance_integration::PerformanceImprovements>,
-    pub optimization_recommendations: Vec<crate::optimization::performance_integration::OptimizationRecommendation>,
-    pub adaptive_optimization_enabled: bool,
-}
-
 /// Enhanced build system integration for CURSED with performance optimization
 pub struct BuildOptimizer {
-    coordinator: OptimizationCoordinator,
-    performance_system: Option<PerformanceIntegrationSystem>,
-    context: BuildContext,
-    compilation_cache: HashMap<PathBuf, CompilationUnit>,
-    enable_performance_integration: bool,
-}
-
 impl BuildOptimizer {
     /// Create a new build optimizer
     #[instrument(skip(context))]
     pub fn new(context: BuildContext) -> Result<Self> {
         Self::new_with_performance_integration(context, true)
-    }
-    
     /// Create a new build optimizer with optional performance integration
     #[instrument(skip(context))]
     pub fn new_with_performance_integration(context: BuildContext, enable_performance: bool) -> Result<Self> {
@@ -84,17 +42,9 @@ impl BuildOptimizer {
             Some(PerformanceIntegrationSystem::new(perf_config, opt_config)?)
         } else {
             None
-        };
         
         Ok(Self {
-            coordinator,
-            performance_system,
-            context,
-            compilation_cache: HashMap::new(),
-            enable_performance_integration: enable_performance,
         })
-    }
-    
     /// Create optimization configuration from build context
     fn create_optimization_config(context: &BuildContext) -> Result<OptimizationCoordinatorConfig> {
         let mut config = OptimizationCoordinatorConfig::default();
@@ -116,8 +66,6 @@ impl BuildOptimizer {
             config.llvm_config.enable_vectorization = true;
             config.llvm_config.enable_loop_unrolling = true;
             config.llvm_config.enable_function_inlining = true;
-        }
-        
         // Enable profiling in verbose mode
         config.enable_profiling = context.verbose;
         config.enable_analysis = true;
@@ -133,11 +81,7 @@ impl BuildOptimizer {
             config.parallel_config.max_parallel_jobs = Some((num_cpus::get() / 2).max(1));
         } else {
             config.enable_parallel = false;
-        }
-        
         Ok(config)
-    }
-    
     /// Create performance integration configuration from build context
     fn create_performance_config(context: &BuildContext) -> Result<PerformanceIntegrationConfig> {
         let mut config = PerformanceIntegrationConfig::default();
@@ -149,28 +93,16 @@ impl BuildOptimizer {
             config.enable_automatic_reporting = false;
             config.target_improvements = PerformanceTargets {
                 compilation_time_reduction: 50.0, // Prioritize fast compilation
-                runtime_performance_improvement: 10.0,
-                memory_usage_reduction: 10.0,
-                binary_size_reduction: 5.0,
-            };
         } else if context.release_mode {
             config.enable_adaptive_optimization = true;
             config.enable_performance_monitoring = true;
             config.enable_automatic_reporting = context.verbose;
             config.enable_pgo = true;
             config.target_improvements = PerformanceTargets {
-                compilation_time_reduction: 20.0,
                 runtime_performance_improvement: 40.0, // Prioritize runtime performance
-                memory_usage_reduction: 25.0,
-                binary_size_reduction: 20.0,
-            };
-        }
-        
         // Set output directories
         if context.verbose {
             config.report_output_dir = Some(context.project_root.join(".cursed_reports"));
-        }
-        
         // Adjust based on project size
         let source_count = context.source_files.len();
         if source_count > 100 {
@@ -185,11 +117,7 @@ impl BuildOptimizer {
             config.max_parallel_workers = 2;
             config.cache_size_limit_mb = 1024; // 1GB for small projects
             config.optimization_threshold_seconds = 15.0;
-        }
-        
         Ok(config)
-    }
-    
     /// Create modern optimization configuration for performance integration
     fn create_modern_optimization_config(context: &BuildContext) -> Result<OptimizationConfig> {
         let mut config = OptimizationConfig::default();
@@ -204,8 +132,6 @@ impl BuildOptimizer {
             config.profile_guided = true;
         } else {
             config.optimization_level = OptimizationLevel::O2;
-        }
-        
         // Configure parallel compilation
         let source_count = context.source_files.len();
         config.enable_parallel = source_count > 5;
@@ -215,7 +141,6 @@ impl BuildOptimizer {
             (num_cpus::get() / 2).max(1)
         } else {
             2
-        };
         
         // Configure incremental compilation
         config.enable_incremental = true;
@@ -230,14 +155,10 @@ impl BuildOptimizer {
         if context.verbose {
             config.profile_output_dir = Some(context.project_root.join(".cursed_profiles"));
             config.report_output_dir = Some(context.project_root.join(".cursed_reports"));
-        }
-        
         // Set target-specific optimizations
         config.target_cpu = Some("native".to_string());
         
         Ok(config)
-    }
-    
     /// Optimize a complete build with optional performance integration
     #[instrument(skip(self))]
     pub fn optimize_build(&mut self) -> Result<BuildOptimizationResult> {
@@ -255,9 +176,6 @@ impl BuildOptimizer {
     /// Optimize build using the enhanced performance integration system
     #[instrument(skip(self, performance_system))]
     fn optimize_build_with_performance_integration(
-        &mut self,
-        performance_system: &mut PerformanceIntegrationSystem,
-        start_time: Instant,
     ) -> Result<BuildOptimizationResult> {
         info!("Using performance integration system for optimization");
         
@@ -279,46 +197,17 @@ impl BuildOptimizer {
         
         // Enhanced performance summary
         let performance_summary = format!(
-            "Performance Integration: {} compilation, {:.1}% parallel efficiency, {:.1}% cache hit rate. {:.1}% runtime improvement estimated.",
-            format_duration(integration_result.compilation_time),
-            integration_result.parallel_efficiency * 100.0,
-            integration_result.cache_hit_rate * 100.0,
             integration_result.performance_improvements.runtime_improvement_estimate
         );
         
         let result = BuildOptimizationResult {
-            success: artifact_result.success,
-            compilation_time: integration_result.compilation_time,
-            optimization_time: total_time - integration_result.compilation_time,
-            total_time,
-            files_compiled: self.context.source_files.len(),
-            files_cached: ((integration_result.cache_hit_rate * self.context.source_files.len() as f64) as usize),
-            cache_hit_rate: integration_result.cache_hit_rate,
-            parallel_efficiency: integration_result.parallel_efficiency,
-            size_reduction_bytes: (integration_result.performance_improvements.binary_size_reduction * 1024.0) as i64,
-            warnings,
-            errors,
-            performance_summary,
             // Enhanced fields
-            optimization_profile_used: Some(integration_result.optimization_profile),
-            performance_improvements: Some(integration_result.performance_improvements),
-            optimization_recommendations: integration_result.recommendations,
-            adaptive_optimization_enabled: self.enable_performance_integration,
-        };
         
         info!(
-            success = result.success,
-            total_time = ?total_time,
-            files_compiled = result.files_compiled,
-            cache_hit_rate = result.cache_hit_rate,
-            parallel_efficiency = result.parallel_efficiency,
-            optimization_profile = ?result.optimization_profile_used,
             "Enhanced build optimization completed"
         );
         
         Ok(result)
-    }
-    
     /// Legacy optimization build method
     #[instrument(skip(self))]
     fn optimize_build_legacy(&mut self, start_time: Instant) -> Result<BuildOptimizationResult> {
@@ -356,36 +245,13 @@ impl BuildOptimizer {
         errors.extend(artifact_result.errors);
         
         let result = BuildOptimizationResult {
-            success: optimization_result.compilation_successful && artifact_result.success,
-            compilation_time,
-            optimization_time,
-            total_time,
-            files_compiled: optimization_result.units_compiled,
-            files_cached: optimization_result.units_from_cache,
-            cache_hit_rate,
-            parallel_efficiency,
-            size_reduction_bytes: size_reduction,
-            warnings,
-            errors,
-            performance_summary,
             // Enhanced fields (empty for legacy)
-            optimization_profile_used: None,
-            performance_improvements: None,
-            optimization_recommendations: Vec::new(),
-            adaptive_optimization_enabled: false,
-        };
         
         info!(
-            success = result.success,
-            total_time = ?total_time,
-            files_compiled = result.files_compiled,
-            cache_hit_rate = result.cache_hit_rate,
             "Legacy build optimization completed"
         );
         
         Ok(result)
-    }
-    
     /// Discover compilation units from source files
     fn discover_compilation_units(&mut self) -> Result<Vec<CompilationUnit>> {
         let mut units = Vec::new();
@@ -394,14 +260,10 @@ impl BuildOptimizer {
             if !source_file.exists() {
                 warn!("Source file does not exist: {:?}", source_file);
                 continue;
-            }
-            
             // Check cache first
             if let Some(cached_unit) = self.compilation_cache.get(source_file) {
                 units.push(cached_unit.clone());
                 continue;
-            }
-            
             // Create compilation unit
             let mut unit = CompilationUnit::new(
                 source_file.file_stem()
@@ -416,22 +278,14 @@ impl BuildOptimizer {
             let dependencies = self.analyze_file_dependencies(source_file)?;
             for dep in dependencies {
                 unit.add_dependency(dep);
-            }
-            
             // Estimate size
             if let Ok(metadata) = std::fs::metadata(source_file) {
                 unit.estimated_size_bytes = metadata.len() as usize;
-            }
-            
             // Cache the unit
             self.compilation_cache.insert(source_file.clone(), unit.clone());
             units.push(unit);
-        }
-        
         debug!("Discovered {} compilation units", units.len());
         Ok(units)
-    }
-    
     /// Analyze dependencies for a source file
     fn analyze_file_dependencies(&self, source_file: &Path) -> Result<Vec<String>> {
         let content = std::fs::read_to_string(source_file).map_err(|e| {
@@ -457,11 +311,7 @@ impl BuildOptimizer {
                     dependencies.push(module_name);
                 }
             }
-        }
-        
         Ok(dependencies)
-    }
-    
     /// Extract module name from import statement
     fn extract_import_module(&self, line: &str) -> Option<String> {
         // import "module::path" or import module::path
@@ -474,8 +324,6 @@ impl BuildOptimizer {
             }
         }
         None
-    }
-    
     /// Extract module name from use statement  
     fn extract_use_module(&self, line: &str) -> Option<String> {
         // use module::path;
@@ -485,8 +333,6 @@ impl BuildOptimizer {
             return Some(module_path.replace("::", "_"));
         }
         None
-    }
-    
     /// Generate build artifacts
     fn generate_build_artifacts(&self, units: &[CompilationUnit]) -> Result<ArtifactResult> {
         debug!("Generating build artifacts for {} units", units.len());
@@ -500,8 +346,6 @@ impl BuildOptimizer {
             std::fs::create_dir_all(&self.context.output_directory).map_err(|e| {
                 CursedError::optimization_error(&format!("Failed to create output directory: {}", e))
             })?;
-        }
-        
         // Generate artifacts for each unit
         for unit in units {
             match self.generate_unit_artifact(unit) {
@@ -513,8 +357,6 @@ impl BuildOptimizer {
                     success = false;
                 }
             }
-        }
-        
         // Generate final executable or library
         if success {
             match self.link_final_artifact(units) {
@@ -526,15 +368,8 @@ impl BuildOptimizer {
                     success = false;
                 }
             }
-        }
-        
         Ok(ArtifactResult {
-            success,
-            warnings,
-            errors,
         })
-    }
-    
     /// Generate artifact for a single compilation unit
     fn generate_unit_artifact(&self, unit: &CompilationUnit) -> Result<Vec<String>> {
         let mut warnings = Vec::new();
@@ -561,16 +396,10 @@ impl BuildOptimizer {
         // Check for potential issues
         if unit.estimated_size_bytes > 1_000_000 {
             warnings.push(format!("Unit {} is very large ({} bytes)", unit.name, unit.estimated_size_bytes));
-        }
-        
         // Validate object file structure
         if metadata.len() < 64 {
             warnings.push(format!("Object file {} is unusually small", unit.name));
-        }
-        
         Ok(warnings)
-    }
-    
     /// Create proper object file content with basic ELF structure
     fn create_object_file_content(&self, unit: &CompilationUnit) -> Result<Vec<u8>> {
         let mut content = Vec::new();
@@ -615,30 +444,21 @@ impl BuildOptimizer {
         // Add basic sections (simplified)
         // .text section with placeholder code
         let text_content = format!(
-            "; Object file for {}\n.text\nglobal _start\n_start:\n    nop\n    ret\n",
             unit.name
         );
         
         // Pad to align content
         while content.len() % 8 != 0 {
             content.push(0);
-        }
-        
         content.extend_from_slice(text_content.as_bytes());
         
         // Add metadata as comment
         let metadata = format!(
-            "\n; Compilation unit: {}\n; Source files: {}\n; Dependencies: {}\n; Size: {} bytes\n",
-            unit.name,
-            unit.source_files.join(", "),
-            unit.dependencies.join(", "),
             unit.estimated_size_bytes
         );
         content.extend_from_slice(metadata.as_bytes());
         
         Ok(content)
-    }
-    
     /// Link final artifact
     fn link_final_artifact(&self, units: &[CompilationUnit]) -> Result<Vec<String>> {
         let mut warnings = Vec::new();
@@ -648,7 +468,6 @@ impl BuildOptimizer {
             "debug_output"
         } else {
             "release_output"
-        };
         
         let output_path = self.context.output_directory.join(output_name);
         
@@ -673,25 +492,15 @@ impl BuildOptimizer {
             let mut perms = std::fs::metadata(&output_path)?.permissions();
             perms.set_mode(0o755);
             std::fs::set_permissions(&output_path, perms)?;
-        }
-        
         // Generate warnings based on link characteristics
         if units.len() > 100 {
             warnings.push("Large number of compilation units may impact link time".to_string());
-        }
-        
         if link_time > Duration::from_secs(10) {
             warnings.push(format!("Linking took {:.2}s, consider enabling incremental linking", link_time.as_secs_f64()));
-        }
-        
         let binary_size = linked_binary.len();
         if binary_size > 50 * 1024 * 1024 {
             warnings.push(format!("Large binary size: {:.1}MB", binary_size as f64 / (1024.0 * 1024.0)));
-        }
-        
         Ok(warnings)
-    }
-    
     /// Perform actual linking of object files
     fn perform_linking(&self, units: &[CompilationUnit], output_path: &Path) -> Result<Vec<u8>> {
         let mut linked_binary = Vec::new();
@@ -730,8 +539,6 @@ impl BuildOptimizer {
         // Program header for LOAD segment
         while linked_binary.len() < 64 {
             linked_binary.push(0);
-        }
-        
         // PT_LOAD program header
         linked_binary.extend_from_slice(&[0x01, 0x00, 0x00, 0x00]); // PT_LOAD
         linked_binary.extend_from_slice(&[0x05, 0x00, 0x00, 0x00]); // PF_R | PF_X
@@ -745,8 +552,6 @@ impl BuildOptimizer {
         // Pad to page boundary
         while linked_binary.len() < 0x1000 {
             linked_binary.push(0);
-        }
-        
         // Add simple program that calls exit
         // This creates a minimal but valid executable
         linked_binary.extend_from_slice(&[
@@ -757,9 +562,6 @@ impl BuildOptimizer {
         
         // Add unit information as comments in a custom section
         let unit_info = units.iter()
-            .map(|unit| format!("Unit: {}, Files: {}, Deps: {}", 
-                unit.name, 
-                unit.source_files.join(","), 
                 unit.dependencies.join(",")))
             .collect::<Vec<_>>()
             .join("\n");
@@ -769,11 +571,7 @@ impl BuildOptimizer {
         // Ensure minimum size for a valid executable
         while linked_binary.len() < 4096 {
             linked_binary.push(0);
-        }
-        
         Ok(linked_binary)
-    }
-    
     /// Calculate size reduction from optimizations
     fn calculate_size_reduction(&self, units: &[CompilationUnit]) -> i64 {
         let mut total_original = 0i64;
@@ -788,12 +586,9 @@ impl BuildOptimizer {
                     .unwrap_or(unit.estimated_size_bytes)
             } else {
                 unit.estimated_size_bytes
-            };
             
             total_original += unit.estimated_size_bytes as i64;
             total_optimized += actual_size as i64;
-        }
-        
         // Apply optimization-specific reductions
         let optimization_factor = if self.context.release_mode {
             0.75 // 25% reduction in release mode
@@ -801,23 +596,14 @@ impl BuildOptimizer {
             0.95 // 5% reduction in debug mode
         } else {
             0.85 // 15% reduction in default mode
-        };
         
         let final_optimized = (total_optimized as f64 * optimization_factor) as i64;
         total_original - final_optimized
-    }
-    
     /// Generate performance summary
     fn generate_performance_summary(&self, result: &OptimizationCoordinatorResult) -> String {
         format!(
-            "Optimization Summary: {} units compiled in {:.2?} with {:.1}% parallel efficiency. Cache hit rate: {:.1}%.",
-            result.units_compiled,
-            result.total_time,
-            result.parallel_efficiency * 100.0,
             result.cache_hit_rate * 100.0
         )
-    }
-    
     /// Clean build cache and temporary files
     pub fn clean(&mut self) -> Result<()> {
         info!("Cleaning build cache and temporary files");
@@ -831,94 +617,38 @@ impl BuildOptimizer {
             std::fs::remove_dir_all(&cache_dir).map_err(|e| {
                 CursedError::optimization_error(&format!("Failed to remove cache directory: {}", e))
             })?;
-        }
-        
         // Remove output directory
         if self.context.output_directory.exists() {
             std::fs::remove_dir_all(&self.context.output_directory).map_err(|e| {
                 CursedError::optimization_error(&format!("Failed to remove output directory: {}", e))
             })?;
-        }
-        
         info!("Build cache and temporary files cleaned");
         Ok(())
-    }
-    
     /// Get optimization statistics
     pub fn get_statistics(&self) -> OptimizationStatistics {
         let coordinator_stats = self.coordinator.get_statistics();
         
         OptimizationStatistics {
-            total_compilations: coordinator_stats.total_compilations,
-            successful_compilations: coordinator_stats.successful_compilations,
-            average_compilation_time: coordinator_stats.average_compilation_time,
-            cache_enabled: coordinator_stats.cache_enabled,
-            incremental_enabled: coordinator_stats.incremental_enabled,
-            parallel_enabled: coordinator_stats.parallel_enabled,
-            cached_units: self.compilation_cache.len(),
         }
     }
-}
-
 /// Result from artifact generation
 #[derive(Debug, Clone)]
 struct ArtifactResult {
-    success: bool,
-    warnings: Vec<String>,
-    errors: Vec<String>,
-}
-
 /// Build optimization statistics
 #[derive(Debug, Clone)]
 pub struct OptimizationStatistics {
-    pub total_compilations: usize,
-    pub successful_compilations: usize,
-    pub average_compilation_time: Duration,
-    pub cache_enabled: bool,
-    pub incremental_enabled: bool,
-    pub parallel_enabled: bool,
-    pub cached_units: usize,
-}
-
 /// Create a build optimizer from CLI arguments
 pub fn create_build_optimizer_from_args(
-    project_root: PathBuf,
-    source_files: Vec<PathBuf>,
-    output_dir: Option<PathBuf>,
-    target: Option<String>,
-    debug: bool,
-    release: bool,
-    verbose: bool,
 ) -> Result<BuildOptimizer> {
     create_build_optimizer_from_args_with_performance(
         project_root, source_files, output_dir, target, debug, release, verbose, true
     )
-}
-
 /// Create a build optimizer from CLI arguments with performance integration option
 pub fn create_build_optimizer_from_args_with_performance(
-    project_root: PathBuf,
-    source_files: Vec<PathBuf>,
-    output_dir: Option<PathBuf>,
-    target: Option<String>,
-    debug: bool,
-    release: bool,
-    verbose: bool,
-    enable_performance: bool,
 ) -> Result<BuildOptimizer> {
     let context = BuildContext {
-        project_root: project_root.clone(),
-        source_files,
-        output_directory: output_dir.unwrap_or_else(|| project_root.join("target")),
-        target_triple: target.unwrap_or_else(|| "native".to_string()),
-        debug_mode: debug,
-        release_mode: release,
-        verbose,
-    };
     
     BuildOptimizer::new_with_performance_integration(context, enable_performance)
-}
-
 /// Format duration for display
 fn format_duration(duration: Duration) -> String {
     let secs = duration.as_secs();

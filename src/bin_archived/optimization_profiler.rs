@@ -6,10 +6,8 @@ use crate::error::CursedError;
 
 use clap::{Arg, App, SubCommand};
 use cursed::optimization::{
-    OptimizationEngine, OptimizationConfig, OptimizationProfile,
-    EnhancedPerformanceAnalyzer, ParallelCompiler, ParallelCompilationConfig,
     CompilerPassManager
-};
+// };
 
 use cursed::error::Result;
 use cursed::optimization::config::OptimizationLevel;
@@ -38,7 +36,6 @@ async fn main() -> Result<()> {
                     Arg::with_name("input")
                         .help("Input CURSED source file")
                         .required(true)
-                        .index(1),
                 )
                 .arg(
                     Arg::with_name("output")
@@ -46,7 +43,6 @@ async fn main() -> Result<()> {
                         .long("output")
                         .value_name("FILE")
                         .help("Output analysis report file")
-                        .takes_value(true),
                 )
                 .arg(
                     Arg::with_name("level")
@@ -55,13 +51,11 @@ async fn main() -> Result<()> {
                         .value_name("LEVEL")
                         .help("Optimization level (O0, O1, O2, O3)")
                         .takes_value(true)
-                        .default_value("O2"),
                 )
                 .arg(
                     Arg::with_name("json")
                         .long("json")
                         .help("Output results in JSON format")
-                ),
         )
         .subcommand(
             SubCommand::with_name("benchmark")
@@ -70,7 +64,6 @@ async fn main() -> Result<()> {
                     Arg::with_name("input")
                         .help("Input CURSED source file or directory")
                         .required(true)
-                        .index(1),
                 )
                 .arg(
                     Arg::with_name("output")
@@ -78,7 +71,6 @@ async fn main() -> Result<()> {
                         .long("output")
                         .value_name("FILE")
                         .help("Output benchmark report file")
-                        .takes_value(true),
                 )
                 .arg(
                     Arg::with_name("iterations")
@@ -87,7 +79,6 @@ async fn main() -> Result<()> {
                         .value_name("N")
                         .help("Number of benchmark iterations")
                         .takes_value(true)
-                        .default_value("5"),
                 )
         )
         .subcommand(
@@ -97,7 +88,6 @@ async fn main() -> Result<()> {
                     Arg::with_name("input")
                         .help("Input CURSED source file")
                         .required(true)
-                        .index(1),
                 )
                 .arg(
                     Arg::with_name("baseline")
@@ -105,7 +95,6 @@ async fn main() -> Result<()> {
                         .value_name("LEVEL")
                         .help("Baseline optimization level")
                         .takes_value(true)
-                        .default_value("O0"),
                 )
                 .arg(
                     Arg::with_name("target")
@@ -113,7 +102,6 @@ async fn main() -> Result<()> {
                         .value_name("LEVEL")
                         .help("Target optimization level")
                         .takes_value(true)
-                        .default_value("O3"),
                 )
         )
         .subcommand(
@@ -123,7 +111,6 @@ async fn main() -> Result<()> {
                     Arg::with_name("input")
                         .help("Input CURSED source file")
                         .required(true)
-                        .index(1),
                 )
                 .arg(
                     Arg::with_name("passes")
@@ -170,13 +157,7 @@ async fn main() -> Result<()> {
     }
 
     Ok(())
-}
-
 async fn run_analysis(
-    input_file: &str,
-    output_file: Option<&str>,
-    opt_level: OptimizationLevel,
-    json_output: bool,
 ) -> Result<()> {
     info!("Starting optimization analysis for {}", input_file);
 
@@ -195,7 +176,6 @@ async fn run_analysis(
         generate_json_report(&analysis_result)?
     } else {
         generate_text_report(&analysis_result)
-    };
 
     // Output report
     if let Some(output_path) = output_file {
@@ -204,19 +184,11 @@ async fn run_analysis(
         info!("Analysis report written to {}", output_path);
     } else {
         println!("{}", report);
-    }
-
     Ok(())
-}
-
 async fn run_benchmark(input: &str, output_file: Option<&str>, iterations: usize) -> Result<()> {
     info!("Starting optimization benchmark for {} ({} iterations)", input, iterations);
 
     let optimization_levels = [
-        OptimizationLevel::O0,
-        OptimizationLevel::O1,
-        OptimizationLevel::O2,
-        OptimizationLevel::O3,
     ];
 
     let mut benchmark_results = Vec::new();
@@ -237,15 +209,9 @@ async fn run_benchmark(input: &str, output_file: Option<&str>, iterations: usize
                     warn!("Benchmark iteration {} failed: {}", iteration + 1, e);
                 }
             }
-        }
-
         if successful_runs > 0 {
             let average_time = total_time / successful_runs as u32;
             benchmark_results.push(BenchmarkResult {
-                optimization_level: opt_level,
-                average_time,
-                successful_runs,
-                total_iterations: iterations,
             });
         }
     }
@@ -260,15 +226,8 @@ async fn run_benchmark(input: &str, output_file: Option<&str>, iterations: usize
         info!("Benchmark report written to {}", output_path);
     } else {
         println!("{}", report);
-    }
-
     Ok(())
-}
-
 async fn run_comparison(
-    input_file: &str,
-    baseline: OptimizationLevel,
-    target: OptimizationLevel,
 ) -> Result<()> {
     info!("Comparing optimization levels {:?} vs {:?}", baseline, target);
 
@@ -287,8 +246,6 @@ async fn run_comparison(
     println!("{}", report);
 
     Ok(())
-}
-
 async fn run_profiling(input_file: &str, profile_passes: bool) -> Result<()> {
     info!("Profiling compilation for {}", input_file);
 
@@ -341,20 +298,13 @@ async fn run_profiling(input_file: &str, profile_passes: bool) -> Result<()> {
                 println!("  - {} ({}% impact)", bottleneck.description, bottleneck.impact_percentage);
             }
             println!();
-        }
-        
         if !result.recommendations.is_empty() {
             println!("Optimization Recommendations:");
             for (i, rec) in result.recommendations.iter().enumerate() {
-                println!("  {}. {} (Priority: {}, Expected improvement: {:.1}%)", 
                     i + 1, rec.title, rec.priority, rec.expected_improvement * 100.0);
             }
         }
-    }
-
     Ok(())
-}
-
 async fn run_single_benchmark(input: &str, opt_level: OptimizationLevel) -> Result<Duration> {
     let start_time = Instant::now();
     
@@ -367,15 +317,8 @@ async fn run_single_benchmark(input: &str, opt_level: OptimizationLevel) -> Resu
     let _result = analyzer.analyze_compilation(&source, input, opt_level).await?;
     
     Ok(start_time.elapsed())
-}
-
 fn parse_optimization_level(level_str: &str) -> Result<OptimizationLevel> {
     match level_str.to_uppercase().as_str() {
-        "O0" => Ok(OptimizationLevel::O0),
-        "O1" => Ok(OptimizationLevel::O1),
-        "O2" => Ok(OptimizationLevel::O2),
-        "O3" => Ok(OptimizationLevel::O3),
-        _ => Err(cursed::error::CursedError::General(format!("Invalid optimization level: {}", level_str))),
     }
 }
 
@@ -389,12 +332,8 @@ fn generate_text_report(analysis: &cursed::optimization::EnhancedAnalysisResult)
     
     if let Some(ref bottleneck) = analysis.summary.primary_bottleneck {
         report.push_str(&format!("**Primary Bottleneck**: {}\n", bottleneck));
-    }
-    
     if let Some(ref recommendation) = analysis.summary.top_recommendation {
         report.push_str(&format!("**Top Recommendation**: {}\n", recommendation));
-    }
-    
     report.push_str(&format!("**Improvement Potential**: {:.1}%\n\n", analysis.summary.improvement_potential * 100.0));
     
     // Phase analysis
@@ -410,7 +349,6 @@ fn generate_text_report(analysis: &cursed::optimization::EnhancedAnalysisResult)
             if !metrics.issues.is_empty() {
                 report.push_str("- Issues:\n");
                 for issue in &metrics.issues {
-                    report.push_str(&format!("  - {} (severity {}): {}\n", 
                         issue.issue_type, issue.severity, issue.description));
                 }
             }
@@ -458,21 +396,11 @@ fn generate_text_report(analysis: &cursed::optimization::EnhancedAnalysisResult)
     }
     
     report
-}
-
 fn generate_json_report(analysis: &cursed::optimization::EnhancedAnalysisResult) -> Result<String> {
     serde_json::to_string_pretty(analysis)
         .map_err(|e| cursed::error::CursedError::General(format!("JSON serialization failed: {}", e)))
-}
-
 #[derive(Debug)]
 struct BenchmarkResult {
-    optimization_level: OptimizationLevel,
-    average_time: Duration,
-    successful_runs: usize,
-    total_iterations: usize,
-}
-
 fn generate_benchmark_report(results: &[BenchmarkResult]) -> String {
     let mut report = String::new();
     
@@ -481,8 +409,6 @@ fn generate_benchmark_report(results: &[BenchmarkResult]) -> String {
     if results.is_empty() {
         report.push_str("No successful benchmark runs.\n");
         return report;
-    }
-    
     // Find baseline (O0) for comparison
     let baseline = results.iter().find(|r| matches!(r.optimization_level, OptimizationLevel::O0));
     
@@ -496,25 +422,15 @@ fn generate_benchmark_report(results: &[BenchmarkResult]) -> String {
             base.average_time.as_secs_f64() / result.average_time.as_secs_f64()
         } else {
             1.0
-        };
         
         report.push_str(&format!(
-            "| {:?} | {:?} | {:.1}% | {:.2}x |\n",
-            result.optimization_level,
-            result.average_time,
-            success_rate,
             speedup
         ));
-    }
-    
     report.push_str("\n");
     
     // Analysis
     if let Some(fastest) = results.iter().min_by_key(|r| r.average_time) {
-        report.push_str(&format!("**Fastest**: {:?} ({:?})\n", 
             fastest.optimization_level, fastest.average_time));
-    }
-    
     if let Some(baseline) = baseline {
         if let Some(best) = results.iter().min_by_key(|r| r.average_time) {
             let improvement = baseline.average_time.as_secs_f64() / best.average_time.as_secs_f64();
@@ -523,13 +439,7 @@ fn generate_benchmark_report(results: &[BenchmarkResult]) -> String {
     }
     
     report
-}
-
 fn generate_comparison_report(
-    baseline: &cursed::optimization::EnhancedAnalysisResult,
-    target: &cursed::optimization::EnhancedAnalysisResult,
-    baseline_level: OptimizationLevel,
-    target_level: OptimizationLevel,
 ) -> String {
     let mut report = String::new();
     
@@ -544,25 +454,16 @@ fn generate_comparison_report(
     let time_change = (target.summary.total_time.as_secs_f64() - baseline.summary.total_time.as_secs_f64()) 
         / baseline.summary.total_time.as_secs_f64() * 100.0;
     report.push_str(&format!(
-        "| Total Time | {:?} | {:?} | {:.1}% |\n",
-        baseline.summary.total_time,
-        target.summary.total_time,
         time_change
     ));
     
     let score_change = target.summary.performance_score - baseline.summary.performance_score;
     report.push_str(&format!(
-        "| Performance Score | {:.1} | {:.1} | {:+.1} |\n",
-        baseline.summary.performance_score,
-        target.summary.performance_score,
         score_change
     ));
     
     let improvement_change = (target.summary.improvement_potential - baseline.summary.improvement_potential) * 100.0;
     report.push_str(&format!(
-        "| Improvement Potential | {:.1}% | {:.1}% | {:+.1}pp |\n",
-        baseline.summary.improvement_potential * 100.0,
-        target.summary.improvement_potential * 100.0,
         improvement_change
     ));
     
@@ -576,34 +477,19 @@ fn generate_comparison_report(
         report.push_str(&format!("❌ Performance decreased by {:.1} points\n", -score_change));
     } else {
         report.push_str("➡️ Performance unchanged\n");
-    }
-    
     if time_change < 0.0 {
         report.push_str(&format!("✅ Compilation time improved by {:.1}%\n", -time_change));
     } else if time_change > 0.0 {
         report.push_str(&format!("❌ Compilation time increased by {:.1}%\n", time_change));
-    }
-    
     report
-}
-
 fn create_test_program(input_file: &str) -> Result<cursed::ast::Program> {
     // Create a simple test program for profiling
     // In a real implementation, this would parse the actual input file
     Ok(cursed::ast::Program {
         functions: vec![
             cursed::ast::Function {
-                name: "main".to_string(),
-                parameters: vec![],
-                return_type: cursed::ast::Type::Void,
                 body: vec![
                     cursed::ast::Statement::VariableDeclaration(cursed::ast::VariableDeclaration {
-                        name: "x".to_string(),
-                        var_type: cursed::ast::Type::Integer,
-                        initializer: Some(cursed::ast::Expression::IntegerLiteral(42)),
-                    }),
-                ],
             }
-        ],
     })
 }

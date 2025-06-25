@@ -10,43 +10,11 @@ use tracing::{info, debug, warn, error};
 /// CLI command for optimization
 #[derive(Debug, Clone)]
 pub struct OptimizeCommand {
-    pub project_root: PathBuf,
-    pub source_files: Vec<PathBuf>,
-    pub output_dir: Option<PathBuf>,
-    pub target: Option<String>,
-    pub optimization_level: Option<String>,
-    pub debug: bool,
-    pub release: bool,
-    pub verbose: bool,
-    pub parallel: Option<usize>,
-    pub no_cache: bool,
-    pub no_incremental: bool,
-    pub benchmark: bool,
-    pub clean: bool,
-    pub profile: bool,
-}
-
 impl Default for OptimizeCommand {
     fn default() -> Self {
         Self {
-            project_root: std::env::current_dir().unwrap_or_else(|_| PathBuf::from(".")),
-            source_files: Vec::new(),
-            output_dir: None,
-            target: None,
-            optimization_level: None,
-            debug: false,
-            release: false,
-            verbose: false,
-            parallel: None,
-            no_cache: false,
-            no_incremental: false,
-            benchmark: false,
-            clean: false,
-            profile: false,
         }
     }
-}
-
 /// Execute the optimization command
 pub fn execute_optimize_command(cmd: OptimizeCommand) -> Result<()> {
     let start_time = Instant::now();
@@ -60,17 +28,8 @@ pub fn execute_optimize_command(cmd: OptimizeCommand) -> Result<()> {
         info!("  Parallel jobs: {:?}", cmd.parallel);
         info!("  Cache disabled: {}", cmd.no_cache);
         info!("  Incremental disabled: {}", cmd.no_incremental);
-    }
-    
     // Create build optimizer
     let mut optimizer = create_build_optimizer_from_args(
-        cmd.project_root.clone(),
-        cmd.source_files.clone(),
-        cmd.output_dir.clone(),
-        cmd.target.clone(),
-        cmd.debug,
-        cmd.release,
-        cmd.verbose,
     )?;
     
     // Handle clean command
@@ -79,8 +38,6 @@ pub fn execute_optimize_command(cmd: OptimizeCommand) -> Result<()> {
         optimizer.clean()?;
         println!("✅ Build cache cleaned successfully");
         return Ok(());
-    }
-    
     // Run optimization
     info!("Running optimized build...");
     let result = optimizer.optimize_build()?;
@@ -92,14 +49,10 @@ pub fn execute_optimize_command(cmd: OptimizeCommand) -> Result<()> {
     let total_time = start_time.elapsed();
     if cmd.verbose {
         info!("Total command time: {:.2?}", total_time);
-    }
-    
     // Print statistics if requested
     if cmd.verbose || cmd.profile {
         let stats = optimizer.get_statistics();
         print_optimization_statistics(&stats);
-    }
-    
     // Exit with appropriate code
     if result.success {
         println!("✅ Optimization completed successfully");
@@ -124,18 +77,10 @@ fn print_optimization_results(result: &BuildOptimizationResult, verbose: bool) {
     if result.files_cached > 0 {
         println!("  💾 Files from cache: {}", result.files_cached);
         println!("  📈 Cache hit rate: {:.1}%", result.cache_hit_rate * 100.0);
-    }
-    
     if result.parallel_efficiency > 0.0 {
         println!("  🔄 Parallel efficiency: {:.1}%", result.parallel_efficiency * 100.0);
-    }
-    
     if result.size_reduction_bytes > 0 {
-        println!("  📉 Size reduction: {} bytes ({:.1} KB)", 
-                 result.size_reduction_bytes,
                  result.size_reduction_bytes as f64 / 1024.0);
-    }
-    
     // Show warnings if any
     if !result.warnings.is_empty() {
         println!("\n⚠️  Warnings:");
@@ -168,8 +113,6 @@ fn print_optimization_statistics(stats: &crate::optimization::build_integration:
     if stats.total_compilations > 0 {
         let success_rate = (stats.successful_compilations as f64 / stats.total_compilations as f64) * 100.0;
         println!("  🎯 Success rate: {:.1}%", success_rate);
-    }
-    
     println!("  ⏱️  Average compilation time: {:.2?}", stats.average_compilation_time);
     
     println!("\n🔧 Optimization Features:");
@@ -184,20 +127,6 @@ fn print_optimization_statistics(stats: &crate::optimization::build_integration:
 
 /// Create optimization command from CLI arguments
 pub fn create_optimize_command_from_args(
-    project_root: Option<PathBuf>,
-    source_files: Vec<String>,
-    output_dir: Option<String>,
-    target: Option<String>,
-    optimization_level: Option<String>,
-    debug: bool,
-    release: bool,
-    verbose: bool,
-    parallel: Option<usize>,
-    no_cache: bool,
-    no_incremental: bool,
-    benchmark: bool,
-    clean: bool,
-    profile: bool,
 ) -> OptimizeCommand {
     let project_root = project_root.unwrap_or_else(|| 
         std::env::current_dir().unwrap_or_else(|_| PathBuf::from("."))
@@ -210,20 +139,6 @@ pub fn create_optimize_command_from_args(
     let output_dir = output_dir.map(PathBuf::from);
     
     OptimizeCommand {
-        project_root,
-        source_files,
-        output_dir,
-        target,
-        optimization_level,
-        debug,
-        release,
-        verbose,
-        parallel,
-        no_cache,
-        no_incremental,
-        benchmark,
-        clean,
-        profile,
     }
 }
 
@@ -271,20 +186,14 @@ pub fn print_optimization_help() {
     println!("  • LLVM optimization passes integration");
     println!("  • Performance profiling and analysis");
     println!("  • Automated benchmarking");
-}
-
 /// Discover source files in a directory
 pub fn discover_source_files(dir: &PathBuf, recursive: bool) -> Result<Vec<PathBuf>> {
     let mut source_files = Vec::new();
     
     if !dir.exists() {
         return Err(CursedError::optimization_error(&format!("Directory does not exist: {:?}", dir)));
-    }
-    
     if !dir.is_dir() {
         return Err(CursedError::optimization_error(&format!("Path is not a directory: {:?}", dir)));
-    }
-    
     let entries = std::fs::read_dir(dir).map_err(|e| {
         CursedError::optimization_error(&format!("Failed to read directory {:?}: {}", dir, e))
     })?;
@@ -312,5 +221,3 @@ pub fn discover_source_files(dir: &PathBuf, recursive: bool) -> Result<Vec<PathB
     
     source_files.sort();
     Ok(source_files)
-}
-

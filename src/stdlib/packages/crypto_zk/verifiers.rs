@@ -14,33 +14,16 @@ use std::time::{Instant, Duration};
 /// Generic verification result
 #[derive(Debug, Clone)]
 pub struct VerificationResult {
-    pub is_valid: bool,
-    pub verification_time: Duration,
-    pub error_message: Option<String>,
-    pub proof_system: String,
-    pub public_inputs_hash: Vec<u8>,
-}
-
 impl VerificationResult {
     /// Create successful verification result
     pub fn success(proof_system: String, verification_time: Duration, public_inputs_hash: Vec<u8>) -> Self {
         Self {
-            is_valid: true,
-            verification_time,
-            error_message: None,
-            proof_system,
-            public_inputs_hash,
         }
     }
 
     /// Create failed verification result
     pub fn failure(proof_system: String, verification_time: Duration, error: String) -> Self {
         Self {
-            is_valid: false,
-            verification_time,
-            error_message: Some(error),
-            proof_system,
-            public_inputs_hash: Vec::new(),
         }
     }
 
@@ -53,12 +36,8 @@ impl VerificationResult {
         
         if let Some(ref error) = self.error_message {
             result_map.insert("error_message".to_string(), Value::String(error.clone()));
-        }
-        
         if !self.public_inputs_hash.is_empty() {
             result_map.insert("public_inputs_hash".to_string(), Value::String(hex::encode(&self.public_inputs_hash)));
-        }
-        
         Value::Object(result_map)
     }
 }
@@ -66,12 +45,6 @@ impl VerificationResult {
 /// Batch verification result
 #[derive(Debug, Clone)]
 pub struct BatchVerificationResult {
-    pub all_valid: bool,
-    pub individual_results: Vec<VerificationResult>,
-    pub total_time: Duration,
-    pub batch_size: usize,
-}
-
 impl BatchVerificationResult {
     /// Convert to Value representation
     pub fn to_value(&self) -> Value {
@@ -96,34 +69,16 @@ impl BatchVerificationResult {
 /// Universal proof verifier
 #[derive(Debug, Clone)]
 pub struct UniversalVerifier {
-    pub supported_systems: Vec<String>,
-    pub verification_cache: HashMap<String, VerificationResult>,
-}
-
 impl UniversalVerifier {
     /// Create new universal verifier
     pub fn new() -> Self {
         Self {
             supported_systems: vec![
-                "groth16".to_string(),
-                "plonk".to_string(),
-                "stark".to_string(),
-                "bulletproofs".to_string(),
-                "schnorr".to_string(),
-                "sigma".to_string(),
-                "nizk".to_string(),
-            ],
-            verification_cache: HashMap::new(),
         }
     }
 
     /// Verify proof using appropriate verifier
     pub fn verify_proof(
-        &mut self,
-        proof_system: &str,
-        proof: &Value,
-        public_inputs: &Value,
-        verification_key: Option<&Value>,
     ) -> AdvancedCryptoResult<VerificationResult> {
         let start_time = Instant::now();
         
@@ -133,18 +88,7 @@ impl UniversalVerifier {
         // Check cache first
         if let Some(cached_result) = self.verification_cache.get(&cache_key) {
             return Ok(cached_result.clone());
-        }
-
         let result = match proof_system {
-            "groth16" => self.verify_groth16(proof, public_inputs, verification_key),
-            "plonk" => self.verify_plonk(proof, public_inputs, verification_key),
-            "stark" => self.verify_stark(proof, public_inputs),
-            "bulletproofs" => self.verify_bulletproofs(proof, public_inputs),
-            "schnorr" => self.verify_schnorr(proof, public_inputs),
-            "sigma" => self.verify_sigma(proof, public_inputs),
-            "nizk" => self.verify_nizk(proof, public_inputs),
-            _ => Err(CryptoError::InvalidInput(format!("Unsupported proof system: {}", proof_system))),
-        };
 
         let verification_time = start_time.elapsed();
         
@@ -153,19 +97,13 @@ impl UniversalVerifier {
                 let public_inputs_hash = self.hash_public_inputs(public_inputs);
                 VerificationResult::success(proof_system.to_string(), verification_time, public_inputs_hash)
             }
-            Err(e) => VerificationResult::failure(proof_system.to_string(), verification_time, e.to_string()),
-        };
 
         // Cache result
         self.verification_cache.insert(cache_key, final_result.clone());
         
         Ok(final_result)
-    }
-
     /// Batch verify multiple proofs
     pub fn batch_verify(
-        &mut self,
-        proofs_and_inputs: &[(String, Value, Value, Option<Value>)],
     ) -> AdvancedCryptoResult<BatchVerificationResult> {
         let start_time = Instant::now();
         let mut individual_results = Vec::new();
@@ -173,41 +111,21 @@ impl UniversalVerifier {
 
         for (proof_system, proof, public_inputs, verification_key) in proofs_and_inputs {
             let result = self.verify_proof(
-                proof_system,
-                proof,
-                public_inputs,
-                verification_key.as_ref(),
             )?;
             
             if !result.is_valid {
                 all_valid = false;
-            }
-            
             individual_results.push(result);
-        }
-
         let total_time = start_time.elapsed();
 
         Ok(BatchVerificationResult {
-            all_valid,
-            individual_results,
-            total_time,
-            batch_size: proofs_and_inputs.len(),
         })
-    }
-
     /// Individual proof system verifiers
     fn verify_groth16(
-        &self,
-        proof: &Value,
-        public_inputs: &Value,
-        verification_key: Option<&Value>,
     ) -> AdvancedCryptoResult<bool> {
         // Simplified Groth16 verification
         if verification_key.is_none() {
             return Err(CryptoError::InvalidInput("Groth16 requires verification key".to_string()));
-        }
-
         // Parse inputs
         let public_elems = self.parse_field_array(public_inputs)?;
         
@@ -218,34 +136,22 @@ impl UniversalVerifier {
 //             gamma_g2: crate::stdlib::packages::crypto_zk::groth16::G2Point::generator(),
 //             delta_g2: crate::stdlib::packages::crypto_zk::groth16::G2Point::generator(),
 //             ic: vec![crate::stdlib::packages::crypto_zk::groth16::G1Point::generator(); public_elems.len() + 1],
-        };
 
         let demo_proof = Groth16Proof {
 //             a: crate::stdlib::packages::crypto_zk::groth16::G1Point::generator(),
 //             b: crate::stdlib::packages::crypto_zk::groth16::G2Point::generator(),
 //             c: crate::stdlib::packages::crypto_zk::groth16::G1Point::generator(),
-        };
 
         Groth16Verifier::verify(&demo_vk, &public_elems, &demo_proof)
-    }
-
     fn verify_plonk(
-        &self,
-        proof: &Value,
-        public_inputs: &Value,
-        verification_key: Option<&Value>,
     ) -> AdvancedCryptoResult<bool> {
         // Simplified PLONK verification
         if verification_key.is_none() {
             return Err(CryptoError::InvalidInput("PLONK requires verification key".to_string()));
-        }
-
         let public_elems = self.parse_field_array(public_inputs)?;
         
         // Create demo objects
         let demo_vk = PlonkVerifyingKey {
-            domain_size: 4,
-            num_public_inputs: public_elems.len(),
 //             q_l_commitment: crate::stdlib::packages::crypto_zk::groth16::G1Point::generator(),
 //             q_r_commitment: crate::stdlib::packages::crypto_zk::groth16::G1Point::generator(),
 //             q_o_commitment: crate::stdlib::packages::crypto_zk::groth16::G1Point::generator(),
@@ -254,7 +160,6 @@ impl UniversalVerifier {
 //             sigma_commitments: vec![crate::stdlib::packages::crypto_zk::groth16::G1Point::generator(); 3],
 //             g1_generator: crate::stdlib::packages::crypto_zk::groth16::G1Point::generator(),
 //             g2_generator: crate::stdlib::packages::crypto_zk::groth16::G1Point::generator(),
-        };
 
         let demo_proof = PlonkProof {
 //             a_commitment: crate::stdlib::packages::crypto_zk::groth16::G1Point::generator(),
@@ -264,47 +169,20 @@ impl UniversalVerifier {
 //             t_lo_commitment: crate::stdlib::packages::crypto_zk::groth16::G1Point::generator(),
 //             t_mid_commitment: crate::stdlib::packages::crypto_zk::groth16::G1Point::generator(),
 //             t_hi_commitment: crate::stdlib::packages::crypto_zk::groth16::G1Point::generator(),
-            w_xi_eval: FieldElement::one(),
-            w_xi_omega_eval: FieldElement::one(),
-            a_xi_eval: FieldElement::one(),
-            b_xi_eval: FieldElement::one(),
-            c_xi_eval: FieldElement::one(),
-            s_sigma1_xi_eval: FieldElement::one(),
-            s_sigma2_xi_eval: FieldElement::one(),
-            z_xi_omega_eval: FieldElement::one(),
 //             opening_proof: crate::stdlib::packages::crypto_zk::groth16::G1Point::generator(),
-        };
 
         PlonkVerifier::verify(&demo_vk, &public_elems, &demo_proof)
-    }
-
     fn verify_stark(
-        &self,
-        proof: &Value,
-        public_inputs: &Value,
     ) -> AdvancedCryptoResult<bool> {
         let public_elems = self.parse_field_array(public_inputs)?;
         
         // Create demo objects
         let demo_constraints = StarkConstraints::new();
         let demo_proof = StarkProof {
-            trace_commitment: vec![0u8; 32],
-            constraint_evaluations: vec![FieldElement::zero(); 2],
 //             fri_proof: crate::stdlib::packages::crypto_zk::stark::FriProof {
-                commitments: vec![vec![0u8; 32]],
-                final_polynomial: vec![FieldElement::one()],
-                query_proofs: Vec::new(),
-            },
-            query_responses: Vec::new(),
-        };
 
         StarkVerifier::verify(&demo_proof, &demo_constraints, &public_elems)
-    }
-
     fn verify_bulletproofs(
-        &self,
-        proof: &Value,
-        public_inputs: &Value,
     ) -> AdvancedCryptoResult<bool> {
         // Create demo objects for Bulletproofs verification
         let demo_params = BulletproofsParams::generate(32)?;
@@ -313,68 +191,33 @@ impl UniversalVerifier {
 //             s: crate::stdlib::packages::crypto_zk::groth16::G1Point::generator(),
 //             t1: crate::stdlib::packages::crypto_zk::groth16::G1Point::generator(),
 //             t2: crate::stdlib::packages::crypto_zk::groth16::G1Point::generator(),
-            tau_x: FieldElement::one(),
-            mu: FieldElement::one(),
-            l_vec: vec![FieldElement::one(); 32],
-            r_vec: vec![FieldElement::zero(); 32],
-        };
 //         let demo_commitment = crate::stdlib::packages::crypto_zk::groth16::G1Point::generator();
 
         BulletproofsVerifier::verify_range(&demo_params, &demo_proof, &demo_commitment, 0, 255)
-    }
-
     fn verify_schnorr(
-        &self,
-        proof: &Value,
-        public_inputs: &Value,
     ) -> AdvancedCryptoResult<bool> {
         let public_elems = self.parse_field_array(public_inputs)?;
         
         if public_elems.len() < 2 {
             return Err(CryptoError::InvalidInput("Schnorr requires public key and generator".to_string()));
-        }
-
         let demo_proof = SchnorrProof {
-            commitment: FieldElement::one(),
-            response: FieldElement::one(),
-        };
 
         demo_proof.verify(public_elems[0], public_elems[1])
-    }
-
     fn verify_sigma(
-        &self,
-        proof: &Value,
-        public_inputs: &Value,
     ) -> AdvancedCryptoResult<bool> {
         let public_elems = self.parse_field_array(public_inputs)?;
         
         let demo_proof = SigmaProof {
-            commitments: vec![FieldElement::one(); public_elems.len()],
-            challenge: FieldElement::one(),
-            responses: vec![FieldElement::one(); public_elems.len()],
-        };
 
         let simple_relation = |_: &[FieldElement], _: &[FieldElement]| true;
         demo_proof.verify(&public_elems, simple_relation)
-    }
-
     fn verify_nizk(
-        &self,
-        proof: &Value,
-        public_inputs: &Value,
     ) -> AdvancedCryptoResult<bool> {
         let public_elems = self.parse_field_array(public_inputs)?;
         
         let demo_proof = NIZKProof {
-            proof_data: vec![0u8; 32],
-            public_inputs: public_elems.clone(),
-            proof_type: "demo".to_string(),
-        };
 
         demo_proof.verify(&public_elems)
-    }
-
     /// Helper methods
     fn parse_field_array(&self, value: &Value) -> AdvancedCryptoResult<Vec<FieldElement>> {
         match value {
@@ -382,18 +225,15 @@ impl UniversalVerifier {
                 let mut elements = Vec::new();
                 for item in arr {
                     match item {
-                        Value::Integer(i) => elements.push(FieldElement::new(*i as u64)),
                         Value::String(s) => {
                             let num: u64 = s.parse()
                                 .map_err(|_| CryptoError::InvalidInput("Invalid number string".to_string()))?;
                             elements.push(FieldElement::new(num));
                         }
-                        _ => return Err(CryptoError::InvalidInput("Invalid field element type".to_string())),
                     }
                 }
                 Ok(elements)
             }
-            _ => Err(CryptoError::InvalidInput("Expected array of field elements".to_string())),
         }
     }
 
@@ -406,21 +246,15 @@ impl UniversalVerifier {
         hasher.update(&format!("{:?}", public_inputs).as_bytes());
         
         hex::encode(hasher.finalize())
-    }
-
     fn hash_public_inputs(&self, public_inputs: &Value) -> Vec<u8> {
         use sha3::{Digest, Sha3_256};
         
         let mut hasher = Sha3_256::new();
         hasher.update(&format!("{:?}", public_inputs).as_bytes());
         hasher.finalize().to_vec()
-    }
-
     /// Clear verification cache
     pub fn clear_cache(&mut self) {
         self.verification_cache.clear();
-    }
-
     /// Get cache statistics
     pub fn cache_stats(&self) -> Value {
         let mut stats = HashMap::new();
@@ -439,9 +273,6 @@ pub struct VerificationBenchmark;
 impl VerificationBenchmark {
     /// Benchmark verification performance
     pub fn benchmark_verifier(
-        verifier: &mut UniversalVerifier,
-        proof_system: &str,
-        num_iterations: usize,
     ) -> AdvancedCryptoResult<Value> {
         let mut times = Vec::new();
         
@@ -453,14 +284,8 @@ impl VerificationBenchmark {
         for _ in 0..num_iterations {
             let start = Instant::now();
             let _result = verifier.verify_proof(
-                proof_system,
-                &demo_proof,
-                &demo_inputs,
-                demo_vk.as_ref(),
             )?;
             times.push(start.elapsed().as_micros() as i64);
-        }
-
         let mut benchmark_map = HashMap::new();
         benchmark_map.insert("proof_system".to_string(), Value::String(proof_system.to_string()));
         benchmark_map.insert("iterations".to_string(), Value::Integer(num_iterations as i64));
@@ -476,15 +301,9 @@ impl VerificationBenchmark {
             
             let verifications_per_second = 1_000_000.0 / avg_time as f64;
             benchmark_map.insert("verifications_per_second".to_string(), Value::Integer(verifications_per_second as i64));
-        }
-
         Ok(Value::Object(benchmark_map))
-    }
-
     /// Benchmark batch verification
     pub fn benchmark_batch_verification(
-        verifier: &mut UniversalVerifier,
-        batch_sizes: &[usize],
     ) -> AdvancedCryptoResult<Value> {
         let mut benchmark_results = Vec::new();
 
@@ -495,13 +314,7 @@ impl VerificationBenchmark {
             for i in 0..batch_size {
                 let proof_system = if i % 2 == 0 { "schnorr" } else { "sigma" };
                 batch_data.push((
-                    proof_system.to_string(),
-                    Value::Object(HashMap::new()),
-                    Value::Array(vec![Value::Integer(i as i64)]),
-                    None,
                 ));
-            }
-
             let start = Instant::now();
             let result = verifier.batch_verify(&batch_data)?;
             let total_time = start.elapsed();
@@ -515,8 +328,6 @@ impl VerificationBenchmark {
             batch_result.insert("all_valid".to_string(), Value::Boolean(result.all_valid));
             
             benchmark_results.push(Value::Object(batch_result));
-        }
-
         let mut final_result = HashMap::new();
         final_result.insert("batch_benchmarks".to_string(), Value::Array(benchmark_results));
         
@@ -537,26 +348,15 @@ impl Verifiers {
         ));
         verifier_map.insert("cache_enabled".to_string(), Value::Boolean(true));
         Ok(Value::Object(verifier_map))
-    }
-
     /// Verify single proof
     pub fn verify_proof(
-        proof_system: &Value,
-        proof: &Value,
-        public_inputs: &Value,
-        verification_key: Option<&Value>,
     ) -> AdvancedCryptoResult<Value> {
         let proof_system_str = match proof_system {
-            Value::String(s) => s,
-            _ => return Err(CryptoError::InvalidInput("Expected string for proof system".to_string())),
-        };
 
         let mut verifier = UniversalVerifier::new();
         let result = verifier.verify_proof(proof_system_str, proof, public_inputs, verification_key)?;
         
         Ok(result.to_value())
-    }
-
     /// Batch verify proofs
     pub fn batch_verify_proofs(proofs_and_inputs: &Value) -> AdvancedCryptoResult<Value> {
         let batch_data = match proofs_and_inputs {
@@ -565,9 +365,6 @@ impl Verifiers {
                 for item in arr {
                     if let Value::Object(map) = item {
                         let proof_system = match map.get("proof_system") {
-                            Some(Value::String(s)) => s.clone(),
-                            _ => return Err(CryptoError::InvalidInput("Missing proof_system".to_string())),
-                        };
                         
                         let proof = map.get("proof")
                             .ok_or_else(|| CryptoError::InvalidInput("Missing proof".to_string()))?
@@ -584,29 +381,18 @@ impl Verifiers {
                 }
                 data
             }
-            _ => return Err(CryptoError::InvalidInput("Expected array for batch verification".to_string())),
-        };
 
         let mut verifier = UniversalVerifier::new();
         let result = verifier.batch_verify(&batch_data)?;
         
         Ok(result.to_value())
-    }
-
     /// Benchmark verification performance
     pub fn benchmark_verification(
-        proof_system: &Value,
-        iterations: i64,
     ) -> AdvancedCryptoResult<Value> {
         let proof_system_str = match proof_system {
-            Value::String(s) => s,
-            _ => return Err(CryptoError::InvalidInput("Expected string for proof system".to_string())),
-        };
 
         let mut verifier = UniversalVerifier::new();
         VerificationBenchmark::benchmark_verifier(&mut verifier, proof_system_str, iterations as usize)
-    }
-
     /// Benchmark batch verification
     pub fn benchmark_batch_verification(batch_sizes: &Value) -> AdvancedCryptoResult<Value> {
         let sizes = match batch_sizes {
@@ -619,23 +405,12 @@ impl Verifiers {
                 }
                 sizes
             }
-            _ => return Err(CryptoError::InvalidInput("Expected array of batch sizes".to_string())),
-        };
 
         let mut verifier = UniversalVerifier::new();
         VerificationBenchmark::benchmark_batch_verification(&mut verifier, &sizes)
-    }
-
     /// Get supported proof systems
     pub fn supported_systems() -> Value {
         let systems = vec![
-            ("groth16", "zkSNARK with constant-size proofs"),
-            ("plonk", "Universal zkSNARK with single setup"),
-            ("stark", "Transparent proofs without trusted setup"),
-            ("bulletproofs", "Range proofs with logarithmic size"),
-            ("schnorr", "Discrete logarithm proofs"),
-            ("sigma", "3-round protocols for general relations"),
-            ("nizk", "Non-interactive zero-knowledge proofs"),
         ];
 
         let system_data: Vec<Value> = systems.iter().map(|(name, description)| {
@@ -646,20 +421,11 @@ impl Verifiers {
         }).collect();
 
         Value::Array(system_data)
-    }
-
     /// Verification complexity comparison
     pub fn verification_complexity() -> Value {
         let mut complexity = HashMap::new();
         
         let systems = vec![
-            ("groth16", "O(1)", "3 pairings", "Fast"),
-            ("plonk", "O(1)", "Multiple pairings", "Medium"),
-            ("stark", "O(log² n)", "Hash verifications", "Slow"),
-            ("bulletproofs", "O(log n)", "Group operations", "Medium"),
-            ("schnorr", "O(1)", "2 exponentiations", "Fast"),
-            ("sigma", "O(k)", "k field operations", "Fast"),
-            ("nizk", "Variable", "Depends on statement", "Variable"),
         ];
 
         let system_data: Vec<Value> = systems.iter().map(|(name, complexity, operations, speed)| {
@@ -673,21 +439,9 @@ impl Verifiers {
 
         complexity.insert("verification_complexity".to_string(), Value::Array(system_data));
         Value::Object(complexity)
-    }
-
     /// Verification best practices
     pub fn verification_best_practices() -> Value {
         let practices = vec![
-            "Always validate public inputs before verification",
-            "Use batch verification when possible for better performance",
-            "Cache verification results for identical proofs",
-            "Implement timeout mechanisms for long verifications",
-            "Validate proof format and structure before cryptographic checks",
-            "Use appropriate proof system for your security requirements",
-            "Consider post-quantum security for long-term applications",
-            "Implement proper error handling and logging",
-            "Use trusted verification keys from reliable sources",
-            "Perform sanity checks on proof components",
         ];
 
         let practice_values: Vec<Value> = practices.iter()

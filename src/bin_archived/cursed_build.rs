@@ -6,9 +6,8 @@ use crate::error::CursedError;
 
 use clap::{Parser, Subcommand, ArgGroup};
 use cursed::build_system::{
-    BuildConfig, BuildOrchestrator, TemplateManager, TemplateContext, 
     ProjectType, TemplateCategory, PipelineResult
-};
+// };
 
 use cursed::build_system::build_orchestrator::WatchConfig;
 use std::collections::HashMap;
@@ -23,319 +22,229 @@ use tracing_subscriber;
 #[command(version = env!("CARGO_PKG_VERSION"))]
 struct Cli {
     #[command(subcommand)]
-    command: Commands,
     
     /// Enable verbose output
     #[arg(short, long, global = true)]
-    verbose: bool,
     
     /// Suppress output
     #[arg(short, long, global = true)]
-    quiet: bool,
     
     /// Build profile to use
     #[arg(short, long, global = true, default_value = "dev")]
-    profile: String,
     
     /// Number of parallel jobs
     #[arg(short, long, global = true)]
-    jobs: Option<usize>,
-}
-
 #[derive(Subcommand)]
 enum Commands {
     /// Initialize a new CURSED project
     #[command(alias = "new")]
     Init {
         /// Project name
-        name: String,
         
         /// Project template to use
         #[arg(short, long, default_value = "cli")]
-        template: String,
         
         /// Create as library project
         #[arg(long)]
-        lib: bool,
         
         /// Target directory (defaults to project name)
         #[arg(long)]
-        target_dir: Option<PathBuf>,
         
         /// Additional template variables (key=value)
         #[arg(long = "var", value_parser = parse_key_val)]
-        variables: Vec<(String, String)>,
-    },
     
     /// Build the project
     Build {
         /// Specific targets to build
         #[arg(short, long)]
-        target: Vec<String>,
         
         /// Release build
         #[arg(short, long)]
-        release: bool,
         
         /// Enable all features
         #[arg(long)]
-        all_features: bool,
         
         /// Disable default features
         #[arg(long)]
-        no_default_features: bool,
         
         /// Enable specific features
         #[arg(long)]
-        features: Vec<String>,
         
         /// Force rebuild (ignore cache)
         #[arg(long)]
-        force: bool,
         
         /// Disable parallel compilation
         #[arg(long)]
-        no_parallel: bool,
         
         /// Use quick build (skip formatting and linting)
         #[arg(long)]
-        quick: bool,
         
         /// Watch for file changes and rebuild automatically
         #[arg(short, long)]
-        watch: bool,
-    },
     
     /// Run the project
     Run {
         /// Arguments to pass to the program
         #[arg(last = true)]
-        args: Vec<String>,
         
         /// Release build
         #[arg(short, long)]
-        release: bool,
         
         /// Specific target to run
         #[arg(long)]
-        bin: Option<String>,
-    },
     
     /// Test the project
     Test {
         /// Test name patterns
-        test_name: Vec<String>,
         
         /// Release build
         #[arg(short, long)]
-        release: bool,
         
         /// Run ignored tests
         #[arg(long)]
-        ignored: bool,
         
         /// Number of test threads
         #[arg(long)]
-        test_threads: Option<usize>,
         
         /// Watch for file changes and rerun tests automatically
         #[arg(short, long)]
-        watch: bool,
-    },
     
     /// Clean build artifacts
     Clean {
         /// Remove target directory completely
         #[arg(long)]
-        all: bool,
-    },
     
     /// Check code without building
     Check {
         /// Check all targets
         #[arg(long)]
-        all_targets: bool,
-    },
     
     /// Format source code
     #[command(alias = "fmt")]
     Format {
         /// Check formatting without applying changes
         #[arg(long)]
-        check: bool,
         
         /// Show diff of changes
         #[arg(long)]
-        diff: bool,
         
         /// Files or directories to format
-        files: Vec<PathBuf>,
-    },
     
     /// Lint source code
     Lint {
         /// Automatically fix issues where possible
         #[arg(long)]
-        fix: bool,
         
         /// Show detailed statistics
         #[arg(long)]
-        stats: bool,
         
         /// Files or directories to lint
-        files: Vec<PathBuf>,
-    },
     
     /// Generate documentation
     #[command(alias = "doc")]
     Docs {
         /// Open documentation in browser
         #[arg(long)]
-        open: bool,
         
         /// Documentation format
         #[arg(long, default_value = "html")]
-        format: String,
         
         /// Output directory
         #[arg(short, long)]
-        output: Option<PathBuf>,
-    },
     
     /// Package management
     #[command(alias = "pkg")]
     Package {
         #[command(subcommand)]
-        command: PackageCommands,
-    },
     
     /// List available templates
     Templates {
         /// Show templates for specific category
         #[arg(short, long)]
-        category: Option<String>,
         
         /// Show detailed template information
         #[arg(long)]
-        detailed: bool,
-    },
     
     /// Show project information
     Info {
         /// Show dependency graph
         #[arg(long)]
-        deps: bool,
         
         /// Show build configuration
         #[arg(long)]
-        config: bool,
         
         /// Output format (text, json, yaml)
         #[arg(long, default_value = "text")]
-        format: String,
-    },
     
     /// Watch for changes and rebuild
     Watch {
         /// Command to run on changes
         #[arg(short, long, default_value = "build")]
-        command: String,
         
         /// Delay before rebuilding (ms) 
         #[arg(long, default_value = "500")]
-        delay: u64,
         
         /// File patterns to watch (default: **/*.csd)
         #[arg(long)]
-        patterns: Vec<String>,
         
         /// Patterns to ignore
         #[arg(long)]
-        ignore: Vec<String>,
         
         /// Debounce delay for file events (ms)
         #[arg(long, default_value = "100")]
-        debounce: u64,
-    },
     
     /// Benchmark the project
     Bench {
         /// Benchmark name patterns
-        bench_name: Vec<String>,
         
         /// Save baseline
         #[arg(long)]
-        save_baseline: Option<String>,
         
         /// Compare against baseline
         #[arg(long)]
-        baseline: Option<String>,
-    },
-}
-
 #[derive(Subcommand)]
 enum PackageCommands {
     /// Install dependencies
-    Install,
     
     /// Update dependencies
     Update {
         /// Specific package to update
-        package: Option<String>,
         
         /// Dry run
         #[arg(long)]
-        dry_run: bool,
-    },
     
     /// Add a dependency
     Add {
         /// Package name
-        package: String,
         
         /// Package version
         #[arg(short, long)]
-        version: Option<String>,
         
         /// Add as dev dependency
         #[arg(long)]
-        dev: bool,
         
         /// Add as build dependency
         #[arg(long)]
-        build: bool,
-    },
     
     /// Remove a dependency
     Remove {
         /// Package name
-        package: String,
-    },
     
     /// Search for packages
     Search {
         /// Search query
-        query: String,
         
         /// Maximum results
         #[arg(short, long, default_value = "10")]
-        limit: usize,
-    },
     
     /// Show package information
     Info {
         /// Package name
-        package: String,
-    },
-}
-
 fn parse_key_val(s: &str) -> Result<(String, String), String> {
     let pos = s
         .find('=')
         .ok_or_else(|| format!("invalid KEY=value: no `=` found in `{s}`"))?;
     Ok((s[..pos].to_string(), s[pos + 1..].to_string()))
-}
-
 #[tokio::main]
 async fn main() -> crate::error::Result<()> {
     let cli = Cli::parse();
@@ -356,8 +265,6 @@ async fn main() -> crate::error::Result<()> {
             std::process::exit(1);
         }
     }
-}
-
 async fn run_command(cli: Cli) -> crate::error::Result<()> {
     match cli.command {
         Commands::Init { name, template, lib, target_dir, variables } => {
@@ -365,8 +272,6 @@ async fn run_command(cli: Cli) -> crate::error::Result<()> {
             let target = target_dir.unwrap_or_else(|| PathBuf::from(&name));
             
             init_project(&name, template_name, target, variables).await
-        }
-        
         Commands::Build { target, release, all_features, no_default_features, features, force, no_parallel, quick, watch } => {
             let profile = if release { "release" } else { &cli.profile };
             
@@ -380,8 +285,6 @@ async fn run_command(cli: Cli) -> crate::error::Result<()> {
         Commands::Run { args, release, bin } => {
             let profile = if release { "release" } else { &cli.profile };
             run_project(profile, bin, args, cli.jobs).await
-        }
-        
         Commands::Test { test_name, release, ignored, test_threads, watch } => {
             let profile = if release { "release" } else { &cli.profile };
             
@@ -394,51 +297,27 @@ async fn run_command(cli: Cli) -> crate::error::Result<()> {
         
         Commands::Clean { all } => {
             clean_project(all, cli.jobs).await
-        }
-        
         Commands::Check { all_targets } => {
             check_project(all_targets).await
-        }
-        
         Commands::Format { check, diff, files } => {
             format_code(check, diff, files).await
-        }
-        
         Commands::Lint { fix, stats, files } => {
             lint_code(fix, stats, files).await
-        }
-        
         Commands::Docs { open, format, output } => {
             generate_docs(open, &format, output).await
-        }
-        
         Commands::Package { command } => {
             handle_package_command(command).await
-        }
-        
         Commands::Templates { category, detailed } => {
             list_templates(category, detailed).await
-        }
-        
         Commands::Info { deps, config, format } => {
             show_project_info(deps, config, &format).await
-        }
-        
         Commands::Watch { command, delay, patterns, ignore, debounce } => {
             watch_project(&command, delay, patterns, ignore, debounce).await
-        }
-        
         Commands::Bench { bench_name, save_baseline, baseline } => {
             benchmark_project(bench_name, save_baseline, baseline).await
         }
     }
-}
-
 async fn init_project(
-    name: &str,
-    template: &str,
-    target_dir: PathBuf,
-    variables: Vec<(String, String)>,
 ) -> crate::error::Result<()> {
     info!("Initializing project '{}' with template '{}'", name, template);
     
@@ -446,10 +325,6 @@ async fn init_project(
     let variable_map: HashMap<String, String> = variables.into_iter().collect();
     
     let context = TemplateContext {
-        project_name: name.to_string(),
-        target_dir,
-        variables: variable_map,
-    };
     
     let target_dir = context.target_dir.clone();
     template_manager.generate_project(template, context)?;
@@ -463,17 +338,7 @@ async fn init_project(
     println!("  cursed-build run");
     
     Ok(())
-}
-
 async fn build_project(
-    profile: &str,
-    targets: Vec<String>,
-    _all_features: bool,
-    _no_default_features: bool,
-    _features: Vec<String>,
-    force: bool,
-    parallel: bool,
-    quick: bool,
 ) -> crate::error::Result<()> {
     info!("Building project with profile: {}", profile);
     
@@ -482,8 +347,6 @@ async fn build_project(
     
     if !config_path.exists() {
         return Err("No CursedBuild.toml found. Run 'cursed-build init' to create a project.".into());
-    }
-    
     let config = BuildConfig::load_from_file(&config_path)?;
     let mut orchestrator = BuildOrchestrator::new(config, work_dir)?;
     
@@ -498,7 +361,6 @@ async fn build_project(
         // Build specific targets with pipeline
         let pipeline_result = orchestrator.build_targets_with_pipeline(profile, &targets).await?;
         convert_pipeline_to_build_result(pipeline_result)
-    };
     
     println!("🔨 Build completed successfully!");
     println!("📊 Statistics:");
@@ -515,13 +377,7 @@ async fn build_project(
     }
     
     Ok(())
-}
-
 async fn run_project(
-    profile: &str,
-    bin: Option<String>,
-    args: Vec<String>,
-    _jobs: Option<usize>,
 ) -> crate::error::Result<()> {
     info!("Running project with profile: {}", profile);
     
@@ -549,12 +405,9 @@ async fn run_project(
         }
         
         executable.ok_or("No executable found in target directory")?
-    };
     
     if !executable.exists() {
         return Err(format!("Executable not found: {}", executable.display()).into());
-    }
-    
     println!("🚀 Running: {}", executable.display());
     
     let mut cmd = std::process::Command::new(&executable);
@@ -564,16 +417,8 @@ async fn run_project(
     
     if !status.success() {
         std::process::exit(status.code().unwrap_or(1));
-    }
-    
     Ok(())
-}
-
 async fn test_project(
-    profile: &str,
-    _test_name: Vec<String>,
-    _ignored: bool,
-    _test_threads: Option<usize>,
 ) -> crate::error::Result<()> {
     info!("Testing project with profile: {}", profile);
     
@@ -582,8 +427,6 @@ async fn test_project(
     
     if !config_path.exists() {
         return Err("No CursedBuild.toml found. Run 'cursed-build init' to create a project.".into());
-    }
-    
     let config = BuildConfig::load_from_file(&config_path)?;
     let mut orchestrator = BuildOrchestrator::new(config, work_dir)?;
     
@@ -595,8 +438,6 @@ async fn test_project(
     println!("   - Duration: {:?}", result.duration);
     
     Ok(())
-}
-
 async fn clean_project(all: bool, _jobs: Option<usize>) -> crate::error::Result<()> {
     info!("Cleaning project artifacts");
     
@@ -615,8 +456,6 @@ async fn clean_project(all: bool, _jobs: Option<usize>) -> crate::error::Result<
             if debug_dir.exists() {
                 std::fs::remove_dir_all(&debug_dir)?;
                 println!("🧹 Removed debug artifacts");
-            }
-            
             if release_dir.exists() {
                 std::fs::remove_dir_all(&release_dir)?;
                 println!("🧹 Removed release artifacts");
@@ -624,11 +463,7 @@ async fn clean_project(all: bool, _jobs: Option<usize>) -> crate::error::Result<
         }
     } else {
         println!("ℹ️  Nothing to clean");
-    }
-    
     Ok(())
-}
-
 async fn check_project(all_targets: bool) -> crate::error::Result<()> {
     use cursed::parser::{Parser, ParseOptions};
     use cursed::core::type_checker::TypeChecker;
@@ -642,8 +477,6 @@ async fn check_project(all_targets: bool) -> crate::error::Result<()> {
     
     if !config_path.exists() {
         return Err("No CursedBuild.toml found. Run 'cursed-build init' to create a project.".into());
-    }
-    
     let config = BuildConfig::load_from_file(&config_path)?;
     
     let mut total_files = 0;
@@ -656,7 +489,6 @@ async fn check_project(all_targets: bool) -> crate::error::Result<()> {
         vec!["src/**/*.csd", "tests/**/*.csd", "examples/**/*.csd"]
     } else {
         vec!["src/**/*.csd"]
-    };
     
     for pattern in source_patterns {
         let pattern_path = work_dir.join(pattern);
@@ -693,8 +525,6 @@ async fn check_project(all_targets: bool) -> crate::error::Result<()> {
     if total_files == 0 {
         println!("ℹ️  No CURSED source files found in the project");
         return Ok(());
-    }
-    
     // Print summary
     println!();
     println!("📊 Check Summary:");
@@ -711,12 +541,8 @@ async fn check_project(all_targets: bool) -> crate::error::Result<()> {
         }
     } else {
         println!("   ✅ All checks passed");
-    }
-    
     println!("🔍 Project check completed");
     Ok(())
-}
-
 async fn check_single_file(file_path: &std::path::Path) -> crate::error::Result<()> {
     // Read file content
     let content = std::fs::read_to_string(file_path)?;
@@ -727,24 +553,20 @@ async fn check_single_file(file_path: &std::path::Path) -> crate::error::Result<
     // Lexical analysis
     let mut lexer = Lexer::new(&content);
     let tokens = match lexer.tokenize() {
-        Ok(tokens) => tokens,
         Err(_) => {
             has_syntax_errors = true;
             return Ok((has_syntax_errors, has_type_errors));
         }
-    };
     
     // Syntax analysis (parsing)
     let parse_options = ParseOptions::default();
     let mut parser = Parser::new(tokens, parse_options);
     
     let ast = match parser.parse() {
-        Ok(ast) => ast,
         Err(_) => {
             has_syntax_errors = true;
             return Ok((has_syntax_errors, has_type_errors));
         }
-    };
     
     // Type checking
     let type_checker = TypeChecker::new();
@@ -761,12 +583,7 @@ async fn check_single_file(file_path: &std::path::Path) -> crate::error::Result<
     }
     
     Ok((has_syntax_errors, has_type_errors))
-}
-
 async fn format_code(
-    check: bool,
-    diff: bool,
-    files: Vec<PathBuf>,
 ) -> crate::error::Result<()> {
     info!("Formatting CURSED code");
     
@@ -774,33 +591,20 @@ async fn format_code(
     
     if check {
         cmd.arg("--check");
-    }
-    
     if diff {
         cmd.arg("--diff");
-    }
-    
     if files.is_empty() {
         cmd.arg(".");
     } else {
         cmd.args(files);
-    }
-    
     let status = cmd.status()?;
     
     if status.success() {
         println!("💄 Code formatting completed");
     } else {
         return Err("Formatting failed".into());
-    }
-    
     Ok(())
-}
-
 async fn lint_code(
-    fix: bool,
-    stats: bool,
-    files: Vec<PathBuf>,
 ) -> crate::error::Result<()> {
     info!("Linting CURSED code");
     
@@ -808,44 +612,26 @@ async fn lint_code(
     
     if fix {
         cmd.arg("--fix");
-    }
-    
     if stats {
         cmd.arg("--stats");
-    }
-    
     if files.is_empty() {
         cmd.arg(".");
     } else {
         cmd.args(files);
-    }
-    
     let status = cmd.status()?;
     
     if status.success() {
         println!("🔍 Code linting completed");
     } else {
         warn!("Linting found issues");
-    }
-    
     Ok(())
-}
-
 async fn generate_docs(
-    open: bool,
-    format: &str,
-    output: Option<PathBuf>,
 ) -> crate::error::Result<()> {
     info!("Generating documentation in {} format", format);
     
     let mut cmd = std::process::Command::new("./target/debug/cursed-doc");
     
     match format {
-        "html" => cmd.arg("--html"),
-        "markdown" => cmd.arg("--markdown"),
-        "json" => cmd.arg("--json"),
-        _ => return Err(format!("Unknown format: {}", format).into()),
-    };
     
     cmd.arg("--source").arg("src");
     
@@ -855,7 +641,6 @@ async fn generate_docs(
     } else {
         cmd.arg("--output").arg("docs");
         PathBuf::from("docs")
-    };
     
     let status = cmd.status()?;
     
@@ -870,11 +655,7 @@ async fn generate_docs(
         }
     } else {
         return Err("Documentation generation failed".into());
-    }
-    
     Ok(())
-}
-
 async fn handle_package_command(command: PackageCommands) -> crate::error::Result<()> {
     use cursed::package_manager::{PackageManager, PackageManagerConfig};
     
@@ -909,8 +690,6 @@ async fn handle_package_command(command: PackageCommands) -> crate::error::Resul
                             println!("     ❌ Failed to install {}: {}", dep_name, e);
                         }
                     }
-                }
-                
                 println!("✅ Installed {} dependencies", installed_count);
             } else {
                 println!("❌ No CursedPackage.toml found. Run 'cursed-build init' to create a project.");
@@ -922,8 +701,6 @@ async fn handle_package_command(command: PackageCommands) -> crate::error::Resul
                 println!("🔍 Checking for updates (dry run):");
             } else {
                 println!("📦 Updating dependencies...");
-            }
-            
             if let Some(pkg) = package {
                 println!("   Updating {}", pkg);
                 if !dry_run {
@@ -950,7 +727,6 @@ async fn handle_package_command(command: PackageCommands) -> crate::error::Resul
                         println!("   Updating {}", dep_name);
                         if !dry_run {
                             match manager.install_package(dep_name, None).await {
-                                Ok(_) => println!("     ✅ Updated {}", dep_name),
                                 Err(e) => {
                                     warn!("Failed to update {}: {}", dep_name, e);
                                     println!("     ❌ Failed to update {}: {}", dep_name, e);
@@ -975,20 +751,15 @@ async fn handle_package_command(command: PackageCommands) -> crate::error::Resul
                 "build dependency"
             } else {
                 "dependency"
-            };
             
             println!("📦 Adding {} as {}", package, dep_type);
             if let Some(ver) = &version {
                 println!("   Version: {}", ver);
-            }
-            
             // Install the package first
             match manager.install_package(&package, version.as_deref()).await {
                 Ok(packages) => {
                     for pkg in packages {
                         println!("   ✅ Installed {} v{}", pkg.name, pkg.version);
-                    }
-                    
                     // TODO: Add to CursedPackage.toml
                     println!("   📝 Adding to CursedPackage.toml");
                     println!("✅ Package added");
@@ -998,8 +769,6 @@ async fn handle_package_command(command: PackageCommands) -> crate::error::Resul
                     return Err(format!("Failed to add package {}: {}", package, e).into());
                 }
             }
-        }
-        
         PackageCommands::Remove { package } => {
             println!("🗑️  Removing package: {}", package);
             match manager.remove_package(&package) {
@@ -1014,8 +783,6 @@ async fn handle_package_command(command: PackageCommands) -> crate::error::Resul
                     println!("❌ Failed to remove package: {}", e);
                 }
             }
-        }
-        
         PackageCommands::Search { query, limit } => {
             println!("🔍 Searching for: {} (limit: {})", query, limit);
             
@@ -1040,8 +807,6 @@ async fn handle_package_command(command: PackageCommands) -> crate::error::Resul
                     println!("❌ Search failed: {}", e);
                 }
             }
-        }
-        
         PackageCommands::Info { package } => {
             println!("📋 Package information for: {}", package);
             
@@ -1055,24 +820,14 @@ async fn handle_package_command(command: PackageCommands) -> crate::error::Resul
                         
                         if !pkg.authors.is_empty() {
                             println!("  👥 Authors: {}", pkg.authors.join(", "));
-                        }
-                        
                         if let Some(repo) = &pkg.repository {
                             println!("  🔗 Repository: {}", repo);
-                        }
-                        
                         if let Some(license) = &pkg.license {
                             println!("  📜 License: {}", license);
-                        }
-                        
                         if !pkg.keywords.is_empty() {
                             println!("  🏷️  Keywords: {}", pkg.keywords.join(", "));
-                        }
-                        
                         if !pkg.categories.is_empty() {
                             println!("  📂 Categories: {}", pkg.categories.join(", "));
-                        }
-                        
                         if !pkg.dependencies.is_empty() {
                             println!("  📦 Dependencies:");
                             for (dep_name, dep_version) in &pkg.dependencies {
@@ -1099,28 +854,16 @@ async fn handle_package_command(command: PackageCommands) -> crate::error::Resul
     }
     
     Ok(())
-}
-
 async fn list_templates(
-    category: Option<String>,
-    detailed: bool,
 ) -> crate::error::Result<()> {
     let manager = TemplateManager::new();
     
     let templates = if let Some(cat) = category {
         let template_category = match cat.as_str() {
-            "cli" => TemplateCategory::CLI,
-            "lib" | "library" => TemplateCategory::Library,
-            "web" => TemplateCategory::Web,
-            "api" => TemplateCategory::API,
-            "game" => TemplateCategory::Game,
-            _ => return Err(format!("Unknown category: {}", cat).into()),
-        };
         
         manager.get_templates_by_category(&template_category)
     } else {
         manager.list_templates()
-    };
     
     println!("📋 Available templates:");
     println!();
@@ -1138,20 +881,13 @@ async fn list_templates(
     }
     
     Ok(())
-}
-
 async fn show_project_info(
-    deps: bool,
-    config: bool,
-    format: &str,
 ) -> crate::error::Result<()> {
     let work_dir = std::env::current_dir()?;
     let config_path = work_dir.join("CursedBuild.toml");
     
     if !config_path.exists() {
         return Err("No CursedBuild.toml found".into());
-    }
-    
     let build_config = BuildConfig::load_from_file(&config_path)?;
     
     match format {
@@ -1162,8 +898,6 @@ async fn show_project_info(
             
             if let Some(desc) = &build_config.project.description {
                 println!("Description: {}", desc);
-            }
-            
             println!("Targets: {}", build_config.targets.len());
             println!("Profiles: {}", build_config.profiles.len());
             
@@ -1183,25 +917,11 @@ async fn show_project_info(
         "json" => {
             let json = serde_json::to_string_pretty(&build_config)?;
             println!("{}", json);
-        }
-        
         "yaml" => {
             let yaml = serde_yaml::to_string(&build_config)?;
             println!("{}", yaml);
-        }
-        
-        _ => return Err(format!("Unknown format: {}", format).into()),
-    }
-    
     Ok(())
-}
-
 async fn watch_project(
-    command: &str, 
-    delay: u64,
-    patterns: Vec<String>, 
-    ignore: Vec<String>,
-    debounce: u64,
 ) -> crate::error::Result<()> {
     use std::time::Duration;
     use tokio::signal;
@@ -1215,8 +935,6 @@ async fn watch_project(
     
     if !config_path.exists() {
         return Err("No CursedBuild.toml found. Run 'cursed-build init' to create a project.".into());
-    }
-    
     let config = BuildConfig::load_from_file(&config_path)?;
     let mut orchestrator = BuildOrchestrator::new(config, work_dir)?;
     
@@ -1225,7 +943,6 @@ async fn watch_project(
         vec!["**/*.csd".to_string(), "src/**/*.rs".to_string()]
     } else {
         patterns
-    };
     
     // Setup ignore patterns - add common ones
     let mut ignore_patterns = ignore;
@@ -1249,11 +966,6 @@ async fn watch_project(
     
     // Configure watch settings
     let watch_config = WatchConfig {
-        patterns: watch_patterns,
-        debounce_ms: debounce,
-        incremental: true,
-        build_profile: "dev".to_string(),
-    };
     orchestrator.set_watch_config(watch_config);
     
     // Start file watching with orchestrator
@@ -1262,7 +974,6 @@ async fn watch_project(
     tokio::select! {
         result = watch_result => {
             match result {
-                Ok(_) => println!("👀 File watching completed"),
                 Err(e) => {
                     error!("File watching failed: {}", e);
                     return Err(e.into());
@@ -1277,17 +988,7 @@ async fn watch_project(
     }
     
     Ok(())
-}
-
 async fn watch_build_project(
-    profile: &str,
-    targets: Vec<String>,
-    _all_features: bool,
-    _no_default_features: bool,
-    _features: Vec<String>,
-    force: bool,
-    parallel: bool,
-    quick: bool,
 ) -> crate::error::Result<()> {
     use std::time::Duration;
     use tokio::signal;
@@ -1300,8 +1001,6 @@ async fn watch_build_project(
     
     if !config_path.exists() {
         return Err("No CursedBuild.toml found. Run 'cursed-build init' to create a project.".into());
-    }
-    
     let config = BuildConfig::load_from_file(&config_path)?;
     let mut orchestrator = BuildOrchestrator::new(config, work_dir)?;
     
@@ -1328,15 +1027,9 @@ async fn watch_build_project(
         "build-targets"
     } else {
         "build"
-    };
     
     // Configure watch settings
     let watch_config = WatchConfig {
-        patterns: watch_patterns,
-        debounce_ms: 100,
-        incremental: !force,
-        build_profile: profile.to_string(),
-    };
     orchestrator.set_watch_config(watch_config);
     
     // Start file watching with orchestrator
@@ -1345,7 +1038,6 @@ async fn watch_build_project(
     tokio::select! {
         result = watch_result => {
             match result {
-                Ok(_) => println!("👀 Build watching completed"),
                 Err(e) => {
                     error!("Build watching failed: {}", e);
                     return Err(e.into());
@@ -1360,13 +1052,7 @@ async fn watch_build_project(
     }
     
     Ok(())
-}
-
 async fn watch_test_project(
-    profile: &str,
-    _test_name: Vec<String>,
-    _ignored: bool,
-    _test_threads: Option<usize>,
 ) -> crate::error::Result<()> {
     use std::time::Duration;
     use tokio::signal;
@@ -1379,8 +1065,6 @@ async fn watch_test_project(
     
     if !config_path.exists() {
         return Err("No CursedBuild.toml found. Run 'cursed-build init' to create a project.".into());
-    }
-    
     let config = BuildConfig::load_from_file(&config_path)?;
     let mut orchestrator = BuildOrchestrator::new(config, work_dir)?;
     
@@ -1402,11 +1086,6 @@ async fn watch_test_project(
     
     // Configure watch settings
     let watch_config = WatchConfig {
-        patterns: watch_patterns,
-        debounce_ms: 100,
-        incremental: true,
-        build_profile: profile.to_string(),
-    };
     orchestrator.set_watch_config(watch_config);
     
     // Start file watching with orchestrator
@@ -1415,7 +1094,6 @@ async fn watch_test_project(
     tokio::select! {
         result = watch_result => {
             match result {
-                Ok(_) => println!("👀 Test watching completed"),
                 Err(e) => {
                     error!("Test watching failed: {}", e);
                     return Err(e.into());
@@ -1430,12 +1108,7 @@ async fn watch_test_project(
     }
     
     Ok(())
-}
-
 async fn benchmark_project(
-    bench_name: Vec<String>,
-    save_baseline: Option<String>,
-    baseline: Option<String>,
 ) -> crate::error::Result<()> {
     use cursed::profiling::benchmarking::{BenchmarkSuite, BenchmarkConfig, Benchmark, MicroBenchmark, MacroBenchmark};
     use std::time::Duration;
@@ -1447,8 +1120,6 @@ async fn benchmark_project(
     
     if !config_path.exists() {
         return Err("No CursedBuild.toml found. Run 'cursed-build init' to create a project.".into());
-    }
-    
     // Setup benchmark configuration
     let mut bench_config = BenchmarkConfig::default();
     bench_config.measurement_iterations = 5;
@@ -1461,20 +1132,16 @@ async fn benchmark_project(
     if let Some(baseline_path) = &baseline {
         println!("📊 Loading baseline from: {}", baseline_path);
         match suite.load_baseline(baseline_path) {
-            Ok(_) => println!("   ✅ Baseline loaded successfully"),
             Err(e) => {
                 warn!("Failed to load baseline: {}", e);
                 println!("   ⚠️  Warning: Could not load baseline: {}", e);
             }
         }
-    }
-    
     // Add default benchmarks if no specific names provided
     let benchmarks_to_run = if bench_name.is_empty() {
         vec!["build".to_string(), "parse".to_string(), "typecheck".to_string()]
     } else {
         bench_name
-    };
     
     // Create benchmarks based on requested names
     for name in &benchmarks_to_run {
@@ -1528,22 +1195,17 @@ async fn benchmark_project(
                     std::thread::sleep(Duration::from_millis(50));
                 })
             }
-        };
         
         suite.add_benchmark(benchmark);
-    }
-    
     // Run benchmarks
     println!("🏃 Running {} benchmark(s)...", benchmarks_to_run.len());
     println!();
     
     let results = match suite.run_all() {
-        Ok(results) => results,
         Err(e) => {
             error!("Benchmark execution failed: {}", e);
             return Err(format!("Benchmark execution failed: {}", e).into());
         }
-    };
     
     // Print results
     println!("📊 Benchmark Results:");
@@ -1559,8 +1221,6 @@ async fn benchmark_project(
         println!("   StdDev: {:?}", result.statistics.standard_deviation);
         println!("   CV:     {:.2}%", result.statistics.coefficient_of_variation * 100.0);
         println!();
-    }
-    
     // Print summary
     println!("📋 Summary:");
     println!("   Total benchmarks: {}", results.summary.total_benchmarks);
@@ -1603,14 +1263,11 @@ async fn benchmark_project(
         println!();
         println!("💾 Saving baseline to: {}", baseline_path);
         match results.save_to_file(baseline_path) {
-            Ok(_) => println!("   ✅ Baseline saved successfully"),
             Err(e) => {
                 warn!("Failed to save baseline: {}", e);
                 println!("   ❌ Failed to save baseline: {}", e);
             }
         }
-    }
-    
     println!();
     println!("🚀 Benchmarking completed!");
     
@@ -1622,26 +1279,19 @@ async fn benchmark_project(
     }
     
     Ok(())
-}
-
 fn setup_logging(verbose: bool, quiet: bool) {
     if quiet {
         return;
-    }
-    
     let level = if verbose {
         tracing::Level::DEBUG
     } else {
         tracing::Level::INFO
-    };
     
     tracing_subscriber::fmt()
         .with_max_level(level)
         .with_target(false)
         .without_time()
         .init();
-}
-
 fn is_executable(path: &std::path::Path) -> bool {
     #[cfg(unix)]
     {
@@ -1651,15 +1301,11 @@ fn is_executable(path: &std::path::Path) -> bool {
             return permissions.mode() & 0o111 != 0;
         }
         false
-    }
-    
     #[cfg(windows)]
     {
         path.extension()
             .map(|ext| ext == "exe" || ext == "bat" || ext == "cmd")
             .unwrap_or(false)
-    }
-    
     #[cfg(not(any(unix, windows)))]
     {
         false
@@ -1677,38 +1323,18 @@ fn open_in_browser(path: &std::path::Path) {
     
     #[cfg(target_os = "windows")]
     let _ = std::process::Command::new("start").arg(&url).spawn();
-}
-
 fn category_name(category: &TemplateCategory) -> &'static str {
     match category {
-        TemplateCategory::CLI => "cli",
-        TemplateCategory::Library => "library",
-        TemplateCategory::Web => "web",
-        TemplateCategory::API => "api",
-        TemplateCategory::Desktop => "desktop",
-        TemplateCategory::Game => "game",
-        TemplateCategory::Custom => "custom",
     }
 }
 
 fn convert_pipeline_to_build_result(pipeline_result: PipelineResult) -> cursed::build_system::BuildResult {
     cursed::build_system::BuildResult {
-        success: pipeline_result.success,
-        duration: pipeline_result.duration,
-        targets_built: pipeline_result.stages.keys().cloned().collect(),
         targets_skipped: pipeline_result.stages.values()
             .filter(|s| s.cache_hit)
             .map(|s| s.name.clone())
-            .collect(),
-        outputs: pipeline_result.artifacts.values().cloned().collect(),
-        artifacts: pipeline_result.artifacts,
-        warnings: pipeline_result.warnings,
         statistics: cursed::build_system::BuildStatistics {
-            files_compiled: pipeline_result.statistics.stages_executed,
-            files_cached: pipeline_result.statistics.stages_cached,
             lines_compiled: 0, // TODO: Extract from pipeline stages
-            peak_memory: pipeline_result.statistics.resource_usage.peak_memory,
             phase_timings: std::collections::HashMap::new(), // TODO: Extract from stages
-        },
     }
 }

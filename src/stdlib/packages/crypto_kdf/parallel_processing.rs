@@ -15,17 +15,10 @@ use sha2::{Sha256, Digest};
 #[derive(Debug, Clone)]
 pub struct ParallelConfig {
     /// Number of parallel threads to use
-    pub thread_count: usize,
     /// Work chunk size for each thread
-    pub chunk_size: usize,
     /// Maximum memory usage per thread (in bytes)
-    pub max_memory_per_thread: usize,
     /// Enable load balancing between threads
-    pub enable_load_balancing: bool,
     /// Thread priority (0 = normal, 1 = high)
-    pub thread_priority: u8,
-}
-
 impl ParallelConfig {
     /// slay Create parallel config with optimal settings
     pub fn new() -> Self {
@@ -34,11 +27,7 @@ impl ParallelConfig {
             .unwrap_or(1);
         
         Self {
-            thread_count: cpu_count,
-            chunk_size: 1024,
             max_memory_per_thread: 64 * 1024 * 1024, // 64 MB
-            enable_load_balancing: true,
-            thread_priority: 0,
         }
     }
     
@@ -49,22 +38,14 @@ impl ParallelConfig {
             .unwrap_or(1);
         
         Self {
-            thread_count: cpu_count.max(2),
-            chunk_size: 4096,
             max_memory_per_thread: 256 * 1024 * 1024, // 256 MB
-            enable_load_balancing: true,
-            thread_priority: 1,
         }
     }
     
     /// vibes Create config for memory-constrained environments
     pub fn low_memory() -> Self {
         Self {
-            thread_count: 2,
-            chunk_size: 256,
             max_memory_per_thread: 16 * 1024 * 1024, // 16 MB
-            enable_load_balancing: false,
-            thread_priority: 0,
         }
     }
     
@@ -72,23 +53,13 @@ impl ParallelConfig {
     pub fn validate(&self) -> KdfResult<()> {
         if self.thread_count == 0 {
             return Err(KdfError::InvalidConfig("Thread count must be greater than 0".to_string()));
-        }
-        
         if self.thread_count > 64 {
             return Err(KdfError::InvalidConfig("Thread count cannot exceed 64".to_string()));
-        }
-        
         if self.chunk_size == 0 {
             return Err(KdfError::InvalidConfig("Chunk size must be greater than 0".to_string()));
-        }
-        
         if self.max_memory_per_thread < 1024 {
             return Err(KdfError::InvalidConfig("Memory per thread must be at least 1KB".to_string()));
-        }
-        
         Ok(())
-    }
-    
     /// facts Calculate total memory usage
     pub fn total_memory_usage(&self) -> usize {
         self.thread_count * self.max_memory_per_thread
@@ -104,54 +75,26 @@ impl Default for ParallelConfig {
 /// fr fr Parallel KDF work unit
 #[derive(Debug, Clone)]
 pub struct ParallelWorkUnit {
-    pub chunk_id: usize,
-    pub start_offset: usize,
-    pub end_offset: usize,
-    pub data: Vec<u8>,
-    pub iterations: u32,
-}
-
 /// fr fr Parallel KDF result
 #[derive(Debug, Clone)]
 pub struct ParallelResult {
-    pub chunk_id: usize,
-    pub result: Vec<u8>,
-    pub processing_time_ms: u64,
-    pub iterations_completed: u32,
-}
-
 /// fr fr Parallel KDF processor
 pub struct ParallelProcessor {
-    config: ParallelConfig,
-}
-
 impl ParallelProcessor {
     /// slay Create new parallel processor
     pub fn new(config: ParallelConfig) -> KdfResult<Self> {
         config.validate()?;
         Ok(Self { config })
-    }
-    
     /// bestie Process KDF computation in parallel
     pub fn parallel_kdf(
-        &self,
-        password: &[u8], 
-        salt: &[u8], 
-        iterations: u32,
         output_length: usize
     ) -> KdfResult<Vec<u8>> {
         if password.is_empty() {
             return Err(KdfError::InvalidInput("Password cannot be empty".to_string()));
-        }
-        
         if salt.is_empty() {
             return Err(KdfError::InvalidInput("Salt cannot be empty".to_string()));
-        }
-        
         if output_length == 0 {
             return Err(KdfError::InvalidInput("Output length must be greater than 0".to_string()));
-        }
-        
         // Create work units
         let work_units = self.create_work_units(password, salt, iterations, output_length)?;
         
@@ -160,17 +103,12 @@ impl ParallelProcessor {
         
         // Combine results
         self.combine_results(results, output_length)
-    }
-    
     /// vibes Process multiple KDF computations in parallel
     pub fn parallel_batch_kdf(
-        &self,
         requests: &[(Vec<u8>, Vec<u8>, u32, usize)], // (password, salt, iterations, output_length)
     ) -> KdfResult<Vec<Vec<u8>>> {
         if requests.is_empty() {
             return Ok(Vec::new());
-        }
-        
         let request_count = requests.len();
         let chunks_per_thread = (request_count + self.config.thread_count - 1) / self.config.thread_count;
         
@@ -183,8 +121,6 @@ impl ParallelProcessor {
             
             if start_idx >= request_count {
                 break;
-            }
-            
             let thread_requests = requests[start_idx..end_idx].to_vec();
             let results_clone = Arc::clone(&results);
             
@@ -201,24 +137,13 @@ impl ParallelProcessor {
             });
             
             handles.push(handle);
-        }
-        
         // Wait for all threads to complete
         for handle in handles {
             handle.join().map_err(|_| KdfError::CryptographicError("Thread join failed".to_string()))?;
-        }
-        
         let final_results = results.lock().unwrap().clone();
         Ok(final_results)
-    }
-    
     /// periodt Parallel PBKDF2 implementation
     pub fn parallel_pbkdf2(
-        &self,
-        password: &[u8],
-        salt: &[u8],
-        iterations: u32,
-        output_length: usize,
     ) -> KdfResult<Vec<u8>> {
         use hmac::{Hmac, Mac};
         use sha2::Sha256;
@@ -227,8 +152,6 @@ impl ParallelProcessor {
         
         if iterations == 0 {
             return Err(KdfError::InvalidInput("Iterations must be greater than 0".to_string()));
-        }
-        
         let hlen = 32; // SHA-256 output length
         let l = (output_length + hlen - 1) / hlen; // Number of blocks
         
@@ -243,8 +166,6 @@ impl ParallelProcessor {
             
             if start_block >= l {
                 break;
-            }
-            
             let password = password.to_vec();
             let salt = salt.to_vec();
             let results_clone = Arc::clone(&results);
@@ -281,13 +202,9 @@ impl ParallelProcessor {
             });
             
             handles.push(handle);
-        }
-        
         // Wait for all threads
         for handle in handles {
             handle.join().map_err(|_| KdfError::CryptographicError("Thread join failed".to_string()))?;
-        }
-        
         // Combine results
         let block_results = results.lock().unwrap();
         let mut output = Vec::new();
@@ -297,16 +214,9 @@ impl ParallelProcessor {
         output.truncate(output_length);
         
         Ok(output)
-    }
-    
     // Helper methods
     
     fn create_work_units(
-        &self,
-        password: &[u8],
-        salt: &[u8],
-        iterations: u32,
-        output_length: usize,
     ) -> KdfResult<Vec<ParallelWorkUnit>> {
         let total_data_size = password.len() + salt.len();
         let chunk_count = (total_data_size + self.config.chunk_size - 1) / self.config.chunk_size;
@@ -321,25 +231,14 @@ impl ParallelProcessor {
             
             if start_offset >= output_length {
                 break;
-            }
-            
             let mut data = Vec::new();
             data.extend_from_slice(password);
             data.extend_from_slice(salt);
             data.extend_from_slice(&(i as u32).to_le_bytes());
             
             work_units.push(ParallelWorkUnit {
-                chunk_id: i,
-                start_offset,
-                end_offset,
-                data,
-                iterations,
             });
-        }
-        
         Ok(work_units)
-    }
-    
     fn process_work_units(&self, work_units: Vec<ParallelWorkUnit>) -> KdfResult<Vec<ParallelResult>> {
         let results = Arc::new(Mutex::new(Vec::new()));
         let mut handles = Vec::new();
@@ -353,8 +252,6 @@ impl ParallelProcessor {
             
             if start_idx >= work_units.len() {
                 break;
-            }
-            
             let work_units_clone = Arc::clone(&work_units);
             let results_clone = Arc::clone(&results);
             
@@ -374,42 +271,27 @@ impl ParallelProcessor {
                         let mut hasher = Sha256::new();
                         hasher.update(&current_hash);
                         current_hash = hasher.finalize().to_vec();
-                    }
-                    
                     let processing_time = start_time.elapsed().as_millis() as u64;
                     
                     let result = ParallelResult {
-                        chunk_id: unit.chunk_id,
-                        result: current_hash,
-                        processing_time_ms: processing_time,
-                        iterations_completed: unit.iterations,
-                    };
                     
                     results_clone.lock().unwrap().push(result);
                 }
             });
             
             handles.push(handle);
-        }
-        
         // Wait for all threads
         for handle in handles {
             handle.join().map_err(|_| KdfError::CryptographicError("Thread join failed".to_string()))?;
-        }
-        
         let mut final_results = results.lock().unwrap().clone();
         final_results.sort_by_key(|r| r.chunk_id);
         
         Ok(final_results)
-    }
-    
     fn combine_results(&self, results: Vec<ParallelResult>, output_length: usize) -> KdfResult<Vec<u8>> {
         let mut combined = Vec::new();
         
         for result in results {
             combined.extend_from_slice(&result.result);
-        }
-        
         // Use SHA-256 to mix all results
         let mut hasher = Sha256::new();
         hasher.update(&combined);
@@ -425,8 +307,6 @@ impl ParallelProcessor {
             hasher.update(b"expand");
             let additional = hasher.finalize();
             final_result.extend_from_slice(&additional);
-        }
-        
         final_result.truncate(output_length);
         Ok(final_result)
     }
@@ -441,22 +321,16 @@ impl ParallelUtils {
         std::thread::available_parallelism()
             .map(|n| n.get())
             .unwrap_or(1)
-    }
-    
     /// vibes Estimate parallel speedup
     pub fn estimate_speedup(thread_count: usize, iterations: u32) -> f64 {
         if thread_count <= 1 {
             return 1.0;
-        }
-        
         // Amdahl's law approximation
         let parallel_fraction = 0.9; // Assume 90% of work is parallelizable
         let overhead = 0.1 * (thread_count as f64).sqrt(); // Thread overhead
         
         let speedup = 1.0 / (1.0 - parallel_fraction + parallel_fraction / (thread_count as f64));
         (speedup * (1.0 - overhead)).max(1.0)
-    }
-    
     /// facts Calculate memory requirements
     pub fn calculate_memory_requirements(config: &ParallelConfig, data_size: usize) -> usize {
         let base_memory = config.thread_count * config.max_memory_per_thread;
@@ -471,31 +345,17 @@ impl ParallelUtils {
 pub fn parallel_kdf(args: Vec<Value>) -> crate::error::Result<()> {
     if args.len() < 3 {
         return Err(CursedError::Runtime("parallel_kdf requires password, salt, and iterations arguments".to_string()));
-    }
-    
     let password = match &args[0] {
-        Value::String(s) => s.as_bytes(),
-        _ => return Err(CursedError::Runtime("Password must be a string".to_string())),
-    };
     
     let salt = match &args[1] {
-        Value::String(s) => s.as_bytes(),
-        _ => return Err(CursedError::Runtime("Salt must be a string".to_string())),
-    };
     
     let iterations = match &args[2] {
-        Value::Number(n) => *n as u32,
-        _ => return Err(CursedError::Runtime("Iterations must be a number".to_string())),
-    };
     
     let output_length = if args.len() > 3 {
         match &args[3] {
-            Value::Number(n) => *n as usize,
-            _ => 32,
         }
     } else {
         32
-    };
     
     let config = ParallelConfig::new();
     let processor = ParallelProcessor::new(config)
@@ -505,5 +365,3 @@ pub fn parallel_kdf(args: Vec<Value>) -> crate::error::Result<()> {
         .map_err(|e| CursedError::Runtime(format!("Parallel KDF failed: {}", e)))?;
     
     Ok(Value::String(hex::encode(result)))
-}
-

@@ -10,186 +10,119 @@ use std::fmt;
 #[derive(Debug, Clone, PartialEq)]
 pub enum Value {
     /// Null/nil value
-    Null,
     /// Boolean value
-    Bool(bool),
     /// Integer value
-    Integer(i64),
     /// Floating point number
-    Number(f64),
     /// String value
-    String(String),
     /// Array/list of values
-    Array(Vec<Value>),
     /// Object/map of key-value pairs
-    Object(HashMap<String, Value>),
     /// Binary data
-    Bytes(Vec<u8>),
-}
-
 impl Value {
     /// slay Create a null value
     pub fn null() -> Self {
         Value::Null
-    }
-
     /// slay Create a boolean value
     pub fn bool(value: bool) -> Self {
         Value::Bool(value)
-    }
-
     /// slay Create an integer value
     pub fn integer(value: i64) -> Self {
         Value::Integer(value)
-    }
-
     /// slay Create a number value
     pub fn number(value: f64) -> Self {
         Value::Number(value)
-    }
-
     /// slay Create a string value
     pub fn string<S: Into<String>>(value: S) -> Self {
         Value::String(value.into())
-    }
-
     /// slay Create an array value
     pub fn array(values: Vec<Value>) -> Self {
         Value::Array(values)
-    }
-
     /// slay Create an object value
     pub fn object(map: HashMap<String, Value>) -> Self {
         Value::Object(map)
-    }
-
     /// slay Create a bytes value
     pub fn bytes(data: Vec<u8>) -> Self {
         Value::Bytes(data)
-    }
-
     /// slay Check if value is null
     pub fn is_null(&self) -> bool {
         matches!(self, Value::Null)
-    }
-
     /// slay Check if value is boolean
     pub fn is_bool(&self) -> bool {
         matches!(self, Value::Bool(_))
-    }
-
     /// slay Check if value is integer
     pub fn is_integer(&self) -> bool {
         matches!(self, Value::Integer(_))
-    }
-
     /// slay Check if value is number
     pub fn is_number(&self) -> bool {
         matches!(self, Value::Number(_) | Value::Integer(_))
-    }
-
     /// slay Check if value is string
     pub fn is_string(&self) -> bool {
         matches!(self, Value::String(_))
-    }
-
     /// slay Check if value is array
     pub fn is_array(&self) -> bool {
         matches!(self, Value::Array(_))
-    }
-
     /// slay Check if value is object
     pub fn is_object(&self) -> bool {
         matches!(self, Value::Object(_))
-    }
-
     /// slay Check if value is bytes
     pub fn is_bytes(&self) -> bool {
         matches!(self, Value::Bytes(_))
-    }
-
     /// slay Get value as boolean
     pub fn as_bool(&self) -> Option<bool> {
         match self {
-            Value::Bool(b) => Some(*b),
-            _ => None,
         }
     }
 
     /// slay Get value as integer
     pub fn as_integer(&self) -> Option<i64> {
         match self {
-            Value::Integer(i) => Some(*i),
-            Value::Number(n) => Some(*n as i64),
-            _ => None,
         }
     }
 
     /// slay Get value as number
     pub fn as_number(&self) -> Option<f64> {
         match self {
-            Value::Number(n) => Some(*n),
-            Value::Integer(i) => Some(*i as f64),
-            _ => None,
         }
     }
 
     /// slay Get value as string
     pub fn as_string(&self) -> Option<&str> {
         match self {
-            Value::String(s) => Some(s),
-            _ => None,
         }
     }
 
     /// slay Get value as array
     pub fn as_array(&self) -> Option<&Vec<Value>> {
         match self {
-            Value::Array(arr) => Some(arr),
-            _ => None,
         }
     }
 
     /// slay Get value as mutable array
     pub fn as_array_mut(&mut self) -> Option<&mut Vec<Value>> {
         match self {
-            Value::Array(arr) => Some(arr),
-            _ => None,
         }
     }
 
     /// slay Get value as object
     pub fn as_object(&self) -> Option<&HashMap<String, Value>> {
         match self {
-            Value::Object(obj) => Some(obj),
-            _ => None,
         }
     }
 
     /// slay Get value as mutable object
     pub fn as_object_mut(&mut self) -> Option<&mut HashMap<String, Value>> {
         match self {
-            Value::Object(obj) => Some(obj),
-            _ => None,
         }
     }
 
     /// slay Get value as bytes
     pub fn as_bytes(&self) -> Option<&Vec<u8>> {
         match self {
-            Value::Bytes(bytes) => Some(bytes),
-            _ => None,
         }
     }
 
     /// slay Convert value to string representation
     pub fn to_string(&self) -> String {
         match self {
-            Value::Null => "null".to_string(),
-            Value::Bool(b) => b.to_string(),
-            Value::Integer(i) => i.to_string(),
-            Value::Number(n) => n.to_string(),
-            Value::String(s) => s.clone(),
             Value::Array(arr) => {
                 let items: Vec<String> = arr.iter().map(|v| v.to_string()).collect();
                 format!("[{}]", items.join(", "))
@@ -200,25 +133,14 @@ impl Value {
                     .collect();
                 format!("{{{}}}", items.join(", "))
             }
-            Value::Bytes(bytes) => format!("bytes[{}]", bytes.len()),
         }
     }
 
     /// slay Get the type name of the value
     pub fn type_name(&self) -> &'static str {
         match self {
-            Value::Null => "null",
-            Value::Bool(_) => "bool",
-            Value::Integer(_) => "int",
-            Value::Number(_) => "number",
-            Value::String(_) => "string",
-            Value::Array(_) => "array",
-            Value::Object(_) => "object",
-            Value::Bytes(_) => "bytes",
         }
     }
-}
-
 impl fmt::Display for Value {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "{}", self.to_string())
@@ -280,40 +202,24 @@ pub type CursedValue = Value;
 #[derive(Debug, Default)]
 pub struct ValueManager {
     /// Value allocation stats
-    allocated_values: std::sync::atomic::AtomicUsize,
     /// Garbage collection enabled
-    gc_enabled: bool,
-}
-
 impl ValueManager {
     pub fn new() -> Self {
         Self {
-            allocated_values: std::sync::atomic::AtomicUsize::new(0),
-            gc_enabled: true,
         }
     }
 
     pub fn allocate_value(&self, value: Value) -> CursedValue {
         self.allocated_values.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
         value
-    }
-
     pub fn get_allocation_count(&self) -> usize {
         self.allocated_values.load(std::sync::atomic::Ordering::Relaxed)
-    }
-
     pub fn enable_gc(&mut self) {
         self.gc_enabled = true;
-    }
-
     pub fn disable_gc(&mut self) {
         self.gc_enabled = false;
-    }
-
     pub fn is_gc_enabled(&self) -> bool {
         self.gc_enabled
-    }
-
     pub fn collect_garbage(&self) -> usize {
         // Placeholder for GC implementation
         0

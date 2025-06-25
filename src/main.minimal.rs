@@ -21,25 +21,17 @@ fn main() {
     let matches = app.get_matches();
 
     let result = match matches.subcommand() {
-        Some(("run", sub_matches)) => handle_run_command(sub_matches),
-        Some(("build", sub_matches)) => handle_build_command(sub_matches),
-        Some(("check", sub_matches)) => handle_check_command(sub_matches),
-        Some(("format", sub_matches)) => handle_format_command(sub_matches),
         _ => {
             eprintln!("No subcommand provided. Use --help for usage information.");
             process::exit(1);
         }
-    };
 
     match result {
-        Ok(_) => process::exit(0),
         Err(e) => {
             eprintln!("CursedError: {}", e);
             process::exit(1);
         }
     }
-}
-
 fn build_minimal_cli() -> Command {
     Command::new("cursed")
         .about("CURSED Programming Language - Minimal Build")
@@ -123,8 +115,6 @@ fn build_minimal_cli() -> Command {
                         .help("Check if file is formatted without making changes")
                 )
         )
-}
-
 fn handle_run_command(matches: &clap::ArgMatches) -> crate::error::Result<()> {
     let file = matches.get_one::<String>("file").unwrap();
     
@@ -133,15 +123,11 @@ fn handle_run_command(matches: &clap::ArgMatches) -> crate::error::Result<()> {
     // Check if file exists
     if !std::path::Path::new(file).exists() {
         return Err(format!("File not found: {}", file).into());
-    }
-
     // Execute the file
     cursed::run_file(file)?;
     
     println!("✅ Program executed successfully!");
     Ok(())
-}
-
 fn handle_build_command(matches: &clap::ArgMatches) -> crate::error::Result<()> {
     let file = matches.get_one::<String>("file").unwrap();
     let output = matches.get_one::<String>("output");
@@ -154,13 +140,9 @@ fn handle_build_command(matches: &clap::ArgMatches) -> crate::error::Result<()> 
     
     if let Some(out) = output {
         println!("   Output file: {}", out);
-    }
-
     // Check if file exists
     if !std::path::Path::new(file).exists() {
         return Err(format!("File not found: {}", file).into());
-    }
-
     // Read and compile source
     let source = std::fs::read_to_string(file)?;
     
@@ -185,8 +167,6 @@ fn handle_build_command(matches: &clap::ArgMatches) -> crate::error::Result<()> 
     }
 
     Ok(())
-}
-
 fn handle_check_command(matches: &clap::ArgMatches) -> crate::error::Result<()> {
     let file = matches.get_one::<String>("file").unwrap();
     
@@ -195,16 +175,12 @@ fn handle_check_command(matches: &clap::ArgMatches) -> crate::error::Result<()> 
     // Check if file exists
     if !std::path::Path::new(file).exists() {
         return Err(format!("File not found: {}", file).into());
-    }
-
     // Read and check source
     let source = std::fs::read_to_string(file)?;
     cursed::check(&source)?;
     
     println!("✅ Check completed successfully!");
     Ok(())
-}
-
 fn handle_format_command(matches: &clap::ArgMatches) -> crate::error::Result<()> {
     let file_opt = matches.get_one::<String>("file");
     let check_only = matches.get_flag("check");
@@ -215,8 +191,6 @@ fn handle_format_command(matches: &clap::ArgMatches) -> crate::error::Result<()>
         // Check if file exists
         if !std::path::Path::new(file).exists() {
             return Err(format!("File not found: {}", file).into());
-        }
-
         // Read and format source
         let source = std::fs::read_to_string(file)?;
         let formatted = cursed::format(&source)?;
@@ -241,7 +215,5 @@ fn handle_format_command(matches: &clap::ArgMatches) -> crate::error::Result<()>
         
         let formatted = cursed::format(&source)?;
         println!("{}", formatted);
-    }
-    
     Ok(())
 }

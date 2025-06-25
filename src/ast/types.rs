@@ -7,29 +7,16 @@ use std::any::Any;
 /// Built-in types and type expressions
 #[derive(Debug, Clone)]
 pub struct TypeExpression {
-    pub token: String,
-    pub name: String,
-    pub type_args: Vec<Box<dyn Expression>>,
-}
-
 impl TypeExpression {
     pub fn new(token: String, name: String) -> Self {
         Self {
-            token,
-            name,
-            type_args: Vec::new(),
         }
     }
     
     pub fn with_args(token: String, name: String, type_args: Vec<Box<dyn Expression>>) -> Self {
         Self {
-            token,
-            name,
-            type_args,
         }
     }
-}
-
 impl Node for TypeExpression {
     fn string(&self) -> String {
         if self.type_args.is_empty() {
@@ -50,13 +37,8 @@ impl Node for TypeExpression {
 impl Expression for TypeExpression {
     fn as_any(&self) -> &dyn Any {
         self
-    }
-    
     fn clone_box(&self) -> Box<dyn Expression> {
         Box::new(TypeExpression {
-            token: self.token.clone(),
-            name: self.to_string().clone(),
-            type_args: self.type_args.iter().map(|arg| arg.clone_box()).collect(),
         })
     }
 }
@@ -64,8 +46,6 @@ impl Expression for TypeExpression {
 impl TypeNode for TypeExpression {
     fn type_name(&self) -> String {
         self.to_string().clone()
-    }
-    
     fn is_generic(&self) -> bool {
         !self.type_args.is_empty()
     }
@@ -74,28 +54,15 @@ impl TypeNode for TypeExpression {
 /// Map type expression (tea[KeyType]ValueType)
 #[derive(Debug, Clone)]
 pub struct MapTypeExpression {
-    pub token: String,
-    pub key_type: Box<dyn Expression>,
-    pub value_type: Box<dyn Expression>,
-}
-
 impl MapTypeExpression {
     pub fn new(
-        token: crate::lexer::Token,
-        key_type: Box<dyn Expression>,
-        value_type: Box<dyn Expression>,
     ) -> Self {
         Self {
-            token: token.literal,
-            key_type,
-            value_type,
         }
     }
     
     pub fn get_key_type(&self) -> &Box<dyn Expression> {
         &self.key_type
-    }
-    
     pub fn get_value_type(&self) -> &Box<dyn Expression> {
         &self.value_type
     }
@@ -104,8 +71,6 @@ impl MapTypeExpression {
 impl Node for MapTypeExpression {
     fn string(&self) -> String {
         format!("tea[{}]{}", self.key_type.string(), self.value_type.string())
-    }
-
     fn token_literal(&self) -> String {
         self.token.clone()
     }
@@ -114,13 +79,8 @@ impl Node for MapTypeExpression {
 impl Expression for MapTypeExpression {
     fn as_any(&self) -> &dyn Any {
         self
-    }
-    
     fn clone_box(&self) -> Box<dyn Expression> {
         Box::new(MapTypeExpression {
-            token: self.token.clone(),
-            key_type: self.key_type.clone_box(),
-            value_type: self.value_type.clone_box(),
         })
     }
 }
@@ -128,33 +88,17 @@ impl Expression for MapTypeExpression {
 /// Array type expression ([Type])
 #[derive(Debug, Clone)]
 pub struct ArrayTypeExpression {
-    pub token: String,
-    pub element_type: Box<dyn Expression>,
-    pub size: Option<Box<dyn Expression>>,
-}
-
 impl ArrayTypeExpression {
     pub fn new(token: String, element_type: Box<dyn Expression>) -> Self {
         Self {
-            token,
-            element_type,
-            size: None,
         }
     }
     
     pub fn with_size(
-        token: String,
-        element_type: Box<dyn Expression>,
-        size: Box<dyn Expression>,
     ) -> Self {
         Self {
-            token,
-            element_type,
-            size: Some(size),
         }
     }
-}
-
 impl Node for ArrayTypeExpression {
     fn string(&self) -> String {
         if let Some(size) = &self.size {
@@ -172,13 +116,8 @@ impl Node for ArrayTypeExpression {
 impl Expression for ArrayTypeExpression {
     fn as_any(&self) -> &dyn Any {
         self
-    }
-    
     fn clone_box(&self) -> Box<dyn Expression> {
         Box::new(ArrayTypeExpression {
-            token: self.token.clone(),
-            element_type: self.element_type.clone_box(),
-            size: self.size.as_ref().map(|s| s.clone_box()),
         })
     }
 }
@@ -186,34 +125,16 @@ impl Expression for ArrayTypeExpression {
 /// Channel type expression (dm Type)
 #[derive(Debug, Clone)]
 pub struct ChannelTypeExpression {
-    pub token: String,
-    pub element_type: Box<dyn Expression>,
-    pub direction: ChannelDirection,
-}
-
 #[derive(Debug, Clone)]
 pub enum ChannelDirection {
-    Bidirectional,
-    SendOnly,
-    ReceiveOnly,
-}
-
 impl ChannelTypeExpression {
     pub fn new(token: String, element_type: Box<dyn Expression>) -> Self {
         Self {
-            token,
-            element_type,
-            direction: ChannelDirection::Bidirectional,
         }
     }
-}
-
 impl Node for ChannelTypeExpression {
     fn string(&self) -> String {
         match self.direction {
-            ChannelDirection::Bidirectional => format!("dm {}", self.element_type.string()),
-            ChannelDirection::SendOnly => format!("dm<- {}", self.element_type.string()),
-            ChannelDirection::ReceiveOnly => format!("<-dm {}", self.element_type.string()),
         }
     }
 
@@ -225,13 +146,8 @@ impl Node for ChannelTypeExpression {
 impl Expression for ChannelTypeExpression {
     fn as_any(&self) -> &dyn Any {
         self
-    }
-    
     fn clone_box(&self) -> Box<dyn Expression> {
         Box::new(ChannelTypeExpression {
-            token: self.token.clone(),
-            element_type: self.element_type.clone_box(),
-            direction: self.direction.clone(),
         })
     }
 }
@@ -239,98 +155,49 @@ impl Expression for ChannelTypeExpression {
 /// Interface type for type assertions
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct InterfaceType {
-    pub name: String,
-    pub methods: Vec<String>,
-}
-
 impl InterfaceType {
     pub fn new(name: String) -> Self {
         Self {
-            name,
-            methods: Vec::new(),
         }
     }
-}
-
 /// Struct type for type assertions
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct StructType {
-    pub name: String,
-    pub fields: Vec<String>,
-}
-
 impl StructType {
     pub fn new(name: String) -> Self {
         Self {
-            name,
-            fields: Vec::new(),
         }
     }
-}
-
 /// Generic type enum (simplified for basic AST compatibility)
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum Type {
-    Interface(InterfaceType),
-    Struct(StructType),
-    Primitive(String),
-    Generic(String),
     /// Integer type (normie)
-    Integer,
     /// String type (tea)
-    String,
     /// Boolean type (based)
-    Boolean,
     /// Float type (facts)
-    Float,
     /// Character type 
-    Character,
     /// Nil type (empty)
-    Nil,
     /// Any type (universal)
-    Any,
     /// Array type [T]
-    Array(Box<Type>),
     /// Map type tea[K]V
-    Map(Box<Type>, Box<Type>),
     /// Channel type dm T
-    Channel(Box<Type>),
     /// Function type (params) -> return_type
-    Function(Vec<Type>, Box<Type>),
     /// Tuple type (T1, T2, ...)
-    Tuple(Vec<Type>),
     /// Associated type projection (e.g., Iterator::Item)
     AssociatedTypeProjection {
-        base_type: Box<Type>,
-        interface_name: String,
-        associated_type_name: String,
-    },
     /// Type parameter
-    Parameter(String),
     /// Higher-kinded type constructor
     Constructor {
-        name: String,
-        arity: usize,
-    },
     /// Type application (constructor applied to arguments)
     Application {
-        constructor: Box<Type>,
-        arguments: Vec<Type>,
-    },
-}
-
 /// Built-in type aliases for normie integers
 pub type NormieType = TypeExpression;
 
 /// Common built-in types
 pub fn normie_type() -> TypeExpression {
     TypeExpression::new("normie".to_string(), "normie".to_string())
-}
-    
     pub fn tea_type() -> TypeExpression {
     TypeExpression::new("tea".to_string(), "tea".to_string())
-}
-    
     pub fn based_type() -> TypeExpression {
     TypeExpression::new("based".to_string(), "based".to_string())
 }

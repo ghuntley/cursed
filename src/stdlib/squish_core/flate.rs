@@ -12,12 +12,6 @@ use crate::error::CursedError;
 
 /// DEFLATE reader that decompresses raw deflate data on read
 pub struct FlateReader<R: Read> {
-    inner: DeflateDecoder<BufReader<R>>,
-    bytes_read: usize,
-    timer: Instant,
-    input_size: usize,
-}
-
 impl<R: Read> FlateReader<R> {
     /// Create a new DEFLATE reader
     pub fn new(reader: R) -> SquishResult<Self> {
@@ -25,10 +19,6 @@ impl<R: Read> FlateReader<R> {
         let decoder = DeflateDecoder::new(buffered);
         
         Ok(Self {
-            inner: decoder,
-            bytes_read: 0,
-            timer: Instant::now(),
-            input_size: 0,
         })
     }
 }
@@ -45,34 +35,18 @@ impl<R: Read> SquishReader for FlateReader<R> {
     fn close(&mut self) -> SquishResult<()> {
         // DEFLATE decoder closes automatically when dropped
         Ok(())
-    }
-    
     fn stats(&self) -> Option<CompressionStats> {
         Some(CompressionStats::new(
-            self.input_size,
-            self.bytes_read,
-            self.timer.elapsed(),
-            "deflate".to_string(),
-            None,
         ))
     }
 }
 
 /// DEFLATE writer that compresses data to raw deflate format on write
 pub struct FlateWriter<W: Write> {
-    inner: Option<DeflateEncoder<BufWriter<W>>>,
-    bytes_written: usize,
-    uncompressed_size: usize,
-    level: CompressionLevel,
-    timer: Instant,
-}
-
 impl<W: Write> FlateWriter<W> {
     /// Create a new DEFLATE writer with default compression
     pub fn new(writer: W) -> Self {
         Self::with_level(writer, CompressionLevel::Default)
-    }
-    
     /// Create a new DEFLATE writer with specified compression level
     pub fn with_level(writer: W, level: CompressionLevel) -> Self {
         let buffered = BufWriter::new(writer);
@@ -80,15 +54,8 @@ impl<W: Write> FlateWriter<W> {
         let encoder = DeflateEncoder::new(buffered, compression);
         
         Self {
-            inner: Some(encoder),
-            bytes_written: 0,
-            uncompressed_size: 0,
-            level,
-            timer: Instant::now(),
         }
     }
-}
-
 impl<W: Write> Write for FlateWriter<W> {
     fn write(&mut self, buf: &[u8]) -> std::io::Result<usize> {
         if let Some(ref mut encoder) = self.inner {
@@ -97,7 +64,6 @@ impl<W: Write> Write for FlateWriter<W> {
             Ok(bytes)
         } else {
             Err(std::io::Error::new(
-                std::io::ErrorKind::BrokenPipe,
                 "Writer has been closed"
             ))
         }
@@ -110,8 +76,6 @@ impl<W: Write> Write for FlateWriter<W> {
             Ok(())
         }
     }
-}
-
 impl<W: Write> SquishWriter for FlateWriter<W> {
     fn close(&mut self) -> SquishResult<()> {
         if let Some(encoder) = self.inner.take() {
@@ -119,27 +83,16 @@ impl<W: Write> SquishWriter for FlateWriter<W> {
             drop(writer);
         }
         Ok(())
-    }
-    
     fn flush(&mut self) -> SquishResult<()> {
         Write::flush(self).map_err(SquishError::from)
-    }
-    
     fn reset(&mut self, writer: Box<dyn Write>) -> SquishResult<()> {
         // Close current encoder
         self.close()?;
         
         // Create new encoder (simplified implementation)
         Err(SquishError::generic("Reset not supported for DEFLATE writer in this implementation"))
-    }
-    
     fn stats(&self) -> Option<CompressionStats> {
         Some(CompressionStats::new(
-            self.uncompressed_size,
-            self.bytes_written,
-            self.timer.elapsed(),
-            "deflate".to_string(),
-            Some(self.level.to_numeric()),
         ))
     }
 }
@@ -147,23 +100,15 @@ impl<W: Write> SquishWriter for FlateWriter<W> {
 /// Create a new DEFLATE reader
 pub fn NewFlateReader<R: Read>(reader: R) -> SquishResult<FlateReader<R>> {
     FlateReader::new(reader)
-}
-
 /// Create a new DEFLATE writer with default compression
 pub fn NewFlateWriter<W: Write>(writer: W) -> FlateWriter<W> {
     FlateWriter::new(writer)
-}
-
 /// Create a new DEFLATE writer with specified compression level
 pub fn NewFlateWriterLevel<W: Write>(writer: W, level: CompressionLevel) -> FlateWriter<W> {
     FlateWriter::with_level(writer, level)
-}
-
 /// Compress data using raw DEFLATE with default compression
 pub fn flate_compress(data: &[u8]) -> SquishResult<Vec<u8>> {
     flate_compress_level(data, CompressionLevel::Default)
-}
-
 /// Compress data using raw DEFLATE with specified compression level
 pub fn flate_compress_level(data: &[u8], level: CompressionLevel) -> SquishResult<Vec<u8>> {
     let mut result = Vec::new();
@@ -173,8 +118,6 @@ pub fn flate_compress_level(data: &[u8], level: CompressionLevel) -> SquishResul
         writer.close()?;
     }
     Ok(result)
-}
-
 /// Decompress raw DEFLATE data
 pub fn flate_decompress(data: &[u8]) -> SquishResult<Vec<u8>> {
     let mut result = Vec::new();
@@ -182,30 +125,20 @@ pub fn flate_decompress(data: &[u8]) -> SquishResult<Vec<u8>> {
     let mut reader = FlateReader::new(cursor)?;
     reader.read_to_end(&mut result).map_err(SquishError::from)?;
     Ok(result)
-}
-
 /// Get file extension for DEFLATE files
 pub fn file_extension() -> &'static str {
     ".deflate"
-}
-
 /// Get MIME type for DEFLATE data
 pub fn mime_type() -> &'static str {
     "application/deflate"
-}
-
 /// Check if compression level is valid for DEFLATE
 pub fn is_valid_compression_level(level: i32) -> bool {
     level >= 0 && level <= 9 || level == -1
-}
-
 /// Initialize DEFLATE module
 pub fn initialize() {
         // TODO: implement
     }
     // No specific initialization needed for DEFLATE
-}
-
 
 /// bestie Create new FLATE writer with default compression
 pub fn new_writer<W: Write>(writer: W) -> SquishResult<FlateWriter<W>> {

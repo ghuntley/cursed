@@ -10,15 +10,9 @@ use crate::object::Object as CursedObject;
 #[derive(Debug, Clone)]
 pub enum TemplateError {
     /// CursedError during template rendering
-    RenderError(String),
     /// Invalid template parameter
-    ParameterError(String),
     /// Template not found
-    NotFoundError(String),
     /// General template error
-    GeneralError(String),
-}
-
 // impl std::fmt::Display for TemplateError {
 //     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
 //         match self {
@@ -42,356 +36,192 @@ pub enum TemplateError {
 #[derive(Debug, Clone)]
 pub struct HtmlTemplateContext {
     /// Whether to auto-escape HTML by default
-    auto_escape: bool,
     /// Content Security Policy settings
-    csp_settings: CspSettings,
     /// Safe content markers
-    safe_content: HashMap<String, SafeContentType>,
     /// Layout configuration
-    layout_config: LayoutConfig,
     /// Request context for web integration
-    request_context: Option<RequestContext>,
     /// Component cache
-    component_cache: Arc<Mutex<HashMap<String, ComponentTemplate>>>,
-}
-
 /// Content Security Policy settings
 #[derive(Debug, Clone)]
 pub struct CspSettings {
     /// Whether to generate CSP nonces
-    pub generate_nonces: bool,
     /// CSP nonce for scripts
-    pub script_nonce: Option<String>,
     /// CSP nonce for styles
-    pub style_nonce: Option<String>,
     /// Allowed inline script patterns
-    pub allowed_inline_scripts: Vec<String>,
     /// Allowed inline style patterns
-    pub allowed_inline_styles: Vec<String>,
-}
-
 /// Types of safe content that bypass escaping
 #[derive(Debug, Clone)]
 pub enum SafeContentType {
-    Html,
-    Url,
-    JavaScript,
-    Css,
-    Attribute,
-}
-
 /// Layout configuration for template composition
 #[derive(Debug, Clone)]
 pub struct LayoutConfig {
     /// Default layout template
-    pub default_layout: Option<String>,
     /// Content blocks for yielding
-    pub content_blocks: HashMap<String, String>,
     /// Asset configuration
-    pub asset_config: AssetConfig,
     /// Meta tags configuration
-    pub meta_config: MetaConfig,
-}
-
 /// Asset configuration for CSS/JS inclusion
 #[derive(Debug, Clone)]
 pub struct AssetConfig {
     /// Base URL for assets
-    pub base_url: String,
     /// CSS file paths
-    pub stylesheets: Vec<String>,
     /// JavaScript file paths
-    pub scripts: Vec<String>,
     /// Asset versioning
-    pub version_suffix: Option<String>,
-}
-
 /// Meta tags configuration
 #[derive(Debug, Clone)]
 pub struct MetaConfig {
     /// Page title
-    pub title: Option<String>,
     /// Meta description
-    pub description: Option<String>,
     /// Meta keywords
-    pub keywords: Vec<String>,
     /// Custom meta tags
-    pub custom_meta: HashMap<String, String>,
-}
-
 /// Request context for web framework integration
 #[derive(Debug, Clone)]
 pub struct RequestContext {
     /// Current request path
-    pub path: String,
     /// Request method
-    pub method: String,
     /// Session data
-    pub session: HashMap<String, CursedObject>,
     /// Flash messages
-    pub flash: HashMap<String, String>,
     /// CSRF token
-    pub csrf_token: Option<String>,
     /// Current user context
-    pub user: Option<HashMap<String, CursedObject>>,
-}
-
 /// HTML Component template
 #[derive(Debug, Clone)]
 pub struct ComponentTemplate {
     /// Component name
-    pub name: String,
     /// Component template content
-    pub template: String,
     /// Component parameters
-    pub parameters: Vec<ComponentParameter>,
     /// Whether component is cached
-    pub cacheable: bool,
-}
-
 /// Component parameter definition
 #[derive(Debug, Clone)]
 pub struct ComponentParameter {
     /// Parameter name
-    pub name: String,
     /// Parameter type
-    pub param_type: ComponentParameterType,
     /// Whether parameter is required
-    pub required: bool,
     /// Default value
-    pub default_value: Option<CursedObject>,
-}
-
 /// Component parameter types
 #[derive(Debug, Clone)]
 pub enum ComponentParameterType {
-    String,
-    Integer,
-    Float,
-    Boolean,
-    Object,
-    Array,
-}
-
 impl Default for CspSettings {
     fn default() -> Self {
         Self {
-            generate_nonces: false,
-            script_nonce: None,
-            style_nonce: None,
-            allowed_inline_scripts: vec![],
-            allowed_inline_styles: vec![],
         }
     }
-}
-
 impl Default for LayoutConfig {
     fn default() -> Self {
         Self {
-            default_layout: None,
-            content_blocks: HashMap::new(),
-            asset_config: AssetConfig::default(),
-            meta_config: MetaConfig::default(),
         }
     }
-}
-
 impl Default for AssetConfig {
     fn default() -> Self {
         Self {
             base_url: "/assets".to_string(),
-            stylesheets: vec![],
-            scripts: vec![],
-            version_suffix: None,
         }
     }
-}
-
 impl Default for MetaConfig {
     fn default() -> Self {
         Self {
-            title: None,
-            description: None,
-            keywords: vec![],
-            custom_meta: HashMap::new(),
         }
     }
-}
-
 impl HtmlTemplateContext {
     /// Create a new HTML template context
     pub fn new() -> Self {
         Self {
-            auto_escape: true,
-            csp_settings: CspSettings::default(),
-            safe_content: HashMap::new(),
-            layout_config: LayoutConfig::default(),
-            request_context: None,
-            component_cache: Arc::new(Mutex::new(HashMap::new())),
         }
     }
 
     /// Create context with auto-escaping disabled
     pub fn with_auto_escape(auto_escape: bool) -> Self {
         Self {
-            auto_escape,
-            csp_settings: CspSettings::default(),
-            safe_content: HashMap::new(),
-            layout_config: LayoutConfig::default(),
-            request_context: None,
-            component_cache: Arc::new(Mutex::new(HashMap::new())),
         }
     }
 
     /// Create context with CSP settings
     pub fn with_csp(csp_settings: CspSettings) -> Self {
         Self {
-            auto_escape: true,
-            csp_settings,
-            safe_content: HashMap::new(),
-            layout_config: LayoutConfig::default(),
-            request_context: None,
-            component_cache: Arc::new(Mutex::new(HashMap::new())),
         }
     }
 
     /// Create context with layout configuration
     pub fn with_layout(layout_config: LayoutConfig) -> Self {
         Self {
-            auto_escape: true,
-            csp_settings: CspSettings::default(),
-            safe_content: HashMap::new(),
-            layout_config,
-            request_context: None,
-            component_cache: Arc::new(Mutex::new(HashMap::new())),
         }
     }
 
     /// Create context with request context for web integration
     pub fn with_request_context(request_context: RequestContext) -> Self {
         Self {
-            auto_escape: true,
-            csp_settings: CspSettings::default(),
-            safe_content: HashMap::new(),
-            layout_config: LayoutConfig::default(),
-            request_context: Some(request_context),
-            component_cache: Arc::new(Mutex::new(HashMap::new())),
         }
     }
 
     /// Mark content as safe HTML (bypasses escaping)
     pub fn mark_safe_html(&mut self, key: String) {
         self.safe_content.insert(key, SafeContentType::Html);
-    }
-
     /// Mark content as safe URL
     pub fn mark_safe_url(&mut self, key: String) {
         self.safe_content.insert(key, SafeContentType::Url);
-    }
-
     /// Mark content as safe JavaScript
     pub fn mark_safe_js(&mut self, key: String) {
         self.safe_content.insert(key, SafeContentType::JavaScript);
-    }
-
     /// Mark content as safe CSS
     pub fn mark_safe_css(&mut self, key: String) {
         self.safe_content.insert(key, SafeContentType::Css);
-    }
-
     /// Check if content is marked as safe
     pub fn is_safe_content(&self, key: &str, content_type: &SafeContentType) -> bool {
         self.safe_content.get(key)
             .map(|t| std::mem::discriminant(t) == std::mem::discriminant(content_type))
             .unwrap_or(false)
-    }
-
     /// Get CSP nonce for scripts
     pub fn script_nonce(&self) -> Option<&str> {
         self.csp_settings.script_nonce.as_deref()
-    }
-
     /// Get CSP nonce for styles
     pub fn style_nonce(&self) -> Option<&str> {
         self.csp_settings.style_nonce.as_deref()
-    }
-
     /// Set content for a layout block
     pub fn set_content_block(&mut self, name: String, content: String) {
         self.layout_config.content_blocks.insert(name, content);
-    }
-
     /// Get content for a layout block
     pub fn get_content_block(&self, name: &str) -> Option<&str> {
         self.layout_config.content_blocks.get(name).map(|s| s.as_str())
-    }
-
     /// Add stylesheet to asset configuration
     pub fn add_stylesheet(&mut self, path: String) {
         self.layout_config.asset_config.stylesheets.push(path);
-    }
-
     /// Add JavaScript to asset configuration
     pub fn add_script(&mut self, path: String) {
         self.layout_config.asset_config.scripts.push(path);
-    }
-
     /// Set page title
     pub fn set_title(&mut self, title: String) {
         self.layout_config.meta_config.title = Some(title);
-    }
-
     /// Get page title
     pub fn title(&self) -> Option<&str> {
         self.layout_config.meta_config.title.as_deref()
-    }
-
     /// Set meta description
     pub fn set_description(&mut self, description: String) {
         self.layout_config.meta_config.description = Some(description);
-    }
-
     /// Add meta keyword
     pub fn add_keyword(&mut self, keyword: String) {
         self.layout_config.meta_config.keywords.push(keyword);
-    }
-
     /// Set custom meta tag
     pub fn set_meta(&mut self, name: String, content: String) {
         self.layout_config.meta_config.custom_meta.insert(name, content);
-    }
-
     /// Get request context
     pub fn request_context(&self) -> Option<&RequestContext> {
         self.request_context.as_ref()
-    }
-
     /// Get session data
     pub fn session_get(&self, key: &str) -> Option<&CursedObject> {
         self.request_context.as_ref()
             .and_then(|ctx| ctx.session.get(key))
-    }
-
     /// Get flash message
     pub fn flash_get(&self, key: &str) -> Option<&str> {
         self.request_context.as_ref()
             .and_then(|ctx| ctx.flash.get(key).map(|s| s.as_str()))
-    }
-
     /// Get CSRF token
     pub fn csrf_token(&self) -> Option<&str> {
         self.request_context.as_ref()
             .and_then(|ctx| ctx.csrf_token.as_deref())
-    }
-
     /// Register a component template
     pub fn register_component(&self, component: ComponentTemplate) -> crate::error::Result<()> {
         let mut cache = self.component_cache.lock()
             .map_err(|e| CursedError::Runtime(format!("Component cache lock error: {}", e)))?;
         cache.insert(component.name.clone(), component);
         Ok(())
-    }
-
     /// Get a component template
     pub fn get_component(&self, name: &str) -> crate::error::Result<()> {
         let cache = self.component_cache.lock()
@@ -408,9 +238,6 @@ impl Default for HtmlTemplateContext {
 
 /// HTML content escaper with context-aware escaping
 pub struct HtmlEscaper {
-    context: HtmlTemplateContext,
-}
-
 impl HtmlEscaper {
     /// Create a new HTML escaper
     pub fn new(context: HtmlTemplateContext) -> Self {
@@ -424,15 +251,7 @@ impl HtmlEscaper {
 
         if !self.context.auto_escape {
             return Ok(content.to_string());
-        }
-
         match escape_context {
-            EscapeContext::Html => Ok(self.escape_html(content)),
-            EscapeContext::HtmlAttribute => Ok(self.escape_html_attribute(content)),
-            EscapeContext::JavaScript => Ok(self.escape_javascript(content)),
-            EscapeContext::Css => Ok(self.escape_css(content)),
-            EscapeContext::Url => Ok(self.escape_url(content)),
-            EscapeContext::None => Ok(content.to_string()),
         }
     }
 
@@ -444,8 +263,6 @@ impl HtmlEscaper {
             .replace('>', "&gt;")
             .replace('"', "&quot;")
             .replace('\'', "&#x27;")
-    }
-
     /// Escape HTML attribute content
     fn escape_html_attribute(&self, content: &str) -> String {
         content
@@ -457,8 +274,6 @@ impl HtmlEscaper {
             .replace('\n', "&#10;")
             .replace('\r', "&#13;")
             .replace('\t', "&#9;")
-    }
-
     /// Escape JavaScript content
     fn escape_javascript(&self, content: &str) -> String {
         content
@@ -472,36 +287,18 @@ impl HtmlEscaper {
             .replace('\u{2029}', "\\u2029") // Paragraph separator
             .replace('<', "\\u003c")         // Prevent </script> injection
             .replace('>', "\\u003e")
-    }
-
     /// Escape CSS content
     fn escape_css(&self, content: &str) -> String {
         content.chars()
             .map(|c| match c {
-                '"' => "\\\"".to_string(),
-                '\'' => "\\'".to_string(),
-                '\\' => "\\\\".to_string(),
-                '\n' => "\\A".to_string(),
-                '\r' => "\\D".to_string(),
-                '\t' => "\\9".to_string(),
-                c if c.is_control() => format!("\\{:X}", c as u32),
-                c => c.to_string(),
             })
             .collect()
-    }
-
     /// Escape URL content
     fn escape_url(&self, content: &str) -> String {
         urlencoding::encode(content).to_string()
-    }
-
     /// Generate HTML with CSP nonces
     #[instrument(skip(self, tag_name, attributes, content))]
     pub fn generate_html_with_csp(
-        &self,
-        tag_name: &str,
-        attributes: &HashMap<String, String>,
-        content: Option<&str>,
     ) -> crate::error::Result<()> {
         let mut html = format!("<{}", tag_name);
 
@@ -509,8 +306,6 @@ impl HtmlEscaper {
         for (name, value) in attributes {
             let escaped_value = self.escape_html_attribute(value);
             html.push_str(&format!(" {}=\"{}\"", name, escaped_value));
-        }
-
         // Add CSP nonces if applicable
         if self.context.csp_settings.generate_nonces {
             match tag_name.to_lowercase().as_str() {
@@ -526,24 +321,14 @@ impl HtmlEscaper {
                 }
                 _ => {}
             }
-        }
-
         html.push('>');
 
         // Add content if provided
         if let Some(content) = content {
             let escaped_content = match tag_name.to_lowercase().as_str() {
-                "script" => self.escape_javascript(content),
-                "style" => self.escape_css(content),
-                _ => self.escape_html(content),
-            };
             html.push_str(&escaped_content);
             html.push_str(&format!("</{}>", tag_name));
-        }
-
         Ok(html)
-    }
-
     /// Validate and sanitize HTML content
     #[instrument(skip(self, html))]
     pub fn sanitize_html(&self, html: &str) -> crate::error::Result<()> {
@@ -585,19 +370,11 @@ impl HtmlEscaper {
 #[derive(Debug, Clone, Copy)]
 pub enum EscapeContext {
     /// HTML body content
-    Html,
     /// HTML attribute value
-    HtmlAttribute,
     /// JavaScript content
-    JavaScript,
     /// CSS content
-    Css,
     /// URL content
-    Url,
     /// No escaping
-    None,
-}
-
 /// Enhanced HTML template helpers with comprehensive web framework integration
 pub struct HtmlTemplateHelpers;
 
@@ -616,33 +393,15 @@ pub struct ComponentSystem;
 impl HtmlTemplateHelpers {
     /// Generate an HTML tag with attributes
     pub fn tag(
-        tag_name: &str,
-        attributes: &HashMap<String, CursedObject>,
-        content: Option<&str>,
-        escaper: &HtmlEscaper,
     ) -> crate::error::Result<()> {
         let mut attr_map = HashMap::new();
         for (key, value) in attributes {
             let value_str = match value {
-                CursedObject::String(s) => s.clone(),
-                CursedObject::Integer(n) => n.to_string(),
-                CursedObject::Float(n) => n.to_string(),
-                CursedObject::Boolean(b) => b.to_string(),
-                _ => continue,
-            };
             attr_map.insert(key.clone(), value_str);
-        }
-
         let html = escaper.generate_html_with_csp(tag_name, &attr_map, content)?;
         Ok(CursedObject::String(html))
-    }
-
     /// Generate a link tag
     pub fn link(
-        href: &str,
-        text: &str,
-        attributes: Option<&HashMap<String, CursedObject>>,
-        escaper: &HtmlEscaper,
     ) -> crate::error::Result<()> {
         let mut attr_map = HashMap::new();
         attr_map.insert("href".to_string(), href.to_string());
@@ -651,27 +410,13 @@ impl HtmlTemplateHelpers {
             for (key, value) in attrs {
                 if key != "href" {
                     let value_str = match value {
-                        CursedObject::String(s) => s.clone(),
-                        CursedObject::Integer(n) => n.to_string(),
-                        CursedObject::Float(n) => n.to_string(),
-                        CursedObject::Boolean(b) => b.to_string(),
-                        _ => continue,
-                    };
                     attr_map.insert(key.clone(), value_str);
                 }
             }
-        }
-
         let html = escaper.generate_html_with_csp("a", &attr_map, Some(text))?;
         Ok(html)
-    }
-
     /// Generate an image tag
     pub fn img(
-        src: &str,
-        alt: &str,
-        attributes: Option<&HashMap<String, CursedObject>>,
-        escaper: &HtmlEscaper,
     ) -> crate::error::Result<()> {
         let mut attr_map = HashMap::new();
         attr_map.insert("src".to_string(), src.to_string());
@@ -681,28 +426,13 @@ impl HtmlTemplateHelpers {
             for (key, value) in attrs {
                 if key != "src" && key != "alt" {
                     let value_str = match value {
-                        CursedObject::String(s) => s.clone(),
-                        CursedObject::Integer(n) => n.to_string(),
-                        CursedObject::Float(n) => n.to_string(),
-                        CursedObject::Boolean(b) => b.to_string(),
-                        _ => continue,
-                    };
                     attr_map.insert(key.clone(), value_str);
                 }
             }
-        }
-
         let html = escaper.generate_html_with_csp("img", &attr_map, None)?;
         Ok(CursedObject::String(html))
-    }
-
     /// Generate a form tag
     pub fn form(
-        action: &str,
-        method: &str,
-        attributes: Option<&HashMap<String, CursedObject>>,
-        content: &str,
-        escaper: &HtmlEscaper,
     ) -> crate::error::Result<()> {
         let mut attr_map = HashMap::new();
         attr_map.insert("action".to_string(), action.to_string());
@@ -712,28 +442,13 @@ impl HtmlTemplateHelpers {
             for (key, value) in attrs {
                 if key != "action" && key != "method" {
                     let value_str = match value {
-                        CursedObject::String(s) => s.clone(),
-                        CursedObject::Integer(n) => n.to_string(),
-                        CursedObject::Float(n) => n.to_string(),
-                        CursedObject::Boolean(b) => b.to_string(),
-                        _ => continue,
-                    };
                     attr_map.insert(key.clone(), value_str);
                 }
             }
-        }
-
         let html = escaper.generate_html_with_csp("form", &attr_map, Some(content))?;
         Ok(CursedObject::String(html))
-    }
-
     /// Generate an input tag
     pub fn input(
-        input_type: &str,
-        name: &str,
-        value: Option<&str>,
-        attributes: Option<&HashMap<String, CursedObject>>,
-        escaper: &HtmlEscaper,
     ) -> crate::error::Result<()> {
         let mut attr_map = HashMap::new();
         attr_map.insert("type".to_string(), input_type.to_string());
@@ -741,27 +456,15 @@ impl HtmlTemplateHelpers {
 
         if let Some(val) = value {
             attr_map.insert("value".to_string(), val.to_string());
-        }
-
         if let Some(attrs) = attributes {
             for (key, value) in attrs {
                 if key != "type" && key != "name" && key != "value" {
                     let value_str = match value {
-                        CursedObject::String(s) => s.clone(),
-                        CursedObject::Integer(n) => n.to_string(),
-                        CursedObject::Float(n) => n.to_string(),
-                        CursedObject::Boolean(b) => b.to_string(),
-                        _ => continue,
-                    };
                     attr_map.insert(key.clone(), value_str);
                 }
             }
-        }
-
         let html = escaper.generate_html_with_csp("input", &attr_map, None)?;
         Ok(CursedObject::String(html))
-    }
-
     /// Generate CSRF protection token
     pub fn csrf_token(secret: &str) -> crate::error::Result<()> {
         use std::time::{SystemTime, UNIX_EPOCH};
@@ -774,8 +477,6 @@ impl HtmlTemplateHelpers {
         // Simple CSRF token generation (in production, use proper crypto)
         let token = format!("{:x}", md5::compute(format!("{}{}", secret, timestamp)));
         Ok(CursedObject::String(token))
-    }
-
     /// Generate CSP nonce
     pub fn csp_nonce() -> crate::error::Result<()> {
         use rand::RngCore;
@@ -786,15 +487,9 @@ impl HtmlTemplateHelpers {
         
         let nonce = base64::Engine::encode(&base64::engine::general_purpose::STANDARD, &bytes);
         Ok(CursedObject::String(nonce))
-    }
-
     /// Generate a select dropdown
     pub fn select(
-        name: &str,
         options: &[(String, String)], // (value, display_text) pairs
-        selected: Option<&str>,
-        attributes: Option<&HashMap<String, CursedObject>>,
-        escaper: &HtmlEscaper,
     ) -> crate::error::Result<()> {
         let mut attr_map = HashMap::new();
         attr_map.insert("name".to_string(), name.to_string());
@@ -803,42 +498,25 @@ impl HtmlTemplateHelpers {
             for (key, value) in attrs {
                 if key != "name" {
                     let value_str = match value {
-                        CursedObject::String(s) => s.clone(),
-                        CursedObject::Integer(n) => n.to_string(),
-                        CursedObject::Float(n) => n.to_string(),
-                        CursedObject::Boolean(b) => b.to_string(),
-                        _ => continue,
-                    };
                     attr_map.insert(key.clone(), value_str);
                 }
             }
-        }
-
         let mut content = String::new();
         for (value, text) in options {
             let selected_attr = if Some(value.as_str()) == selected {
                 " selected"
             } else {
                 ""
-            };
             let escaped_value = escaper.escape_html_attribute(value);
             let escaped_text = escaper.escape_html(text);
             content.push_str(&format!(
                 "<option value=\"{}\"{}>{}</option>",
                 escaped_value, selected_attr, escaped_text
             ));
-        }
-
         let html = escaper.generate_html_with_csp("select", &attr_map, Some(&content))?;
         Ok(html)
-    }
-
     /// Generate a textarea
     pub fn textarea(
-        name: &str,
-        content: &str,
-        attributes: Option<&HashMap<String, CursedObject>>,
-        escaper: &HtmlEscaper,
     ) -> crate::error::Result<()> {
         let mut attr_map = HashMap::new();
         attr_map.insert("name".to_string(), name.to_string());
@@ -847,27 +525,14 @@ impl HtmlTemplateHelpers {
             for (key, value) in attrs {
                 if key != "name" {
                     let value_str = match value {
-                        CursedObject::String(s) => s.clone(),
-                        CursedObject::Integer(n) => n.to_string(),
-                        CursedObject::Float(n) => n.to_string(),
-                        CursedObject::Boolean(b) => b.to_string(),
-                        _ => continue,
-                    };
                     attr_map.insert(key.clone(), value_str);
                 }
             }
-        }
-
         let html = escaper.generate_html_with_csp("textarea", &attr_map, Some(content))?;
         Ok(html)
-    }
-
     /// Generate radio button group
     pub fn radio_group(
-        name: &str,
         options: &[(String, String)], // (value, label) pairs
-        selected: Option<&str>,
-        escaper: &HtmlEscaper,
     ) -> crate::error::Result<()> {
         let mut html = String::new();
         
@@ -876,7 +541,6 @@ impl HtmlTemplateHelpers {
                 " checked"
             } else {
                 ""
-            };
             
             let input_id = format!("{}_{}", name, value);
             let escaped_value = escaper.escape_html_attribute(value);
@@ -887,19 +551,9 @@ impl HtmlTemplateHelpers {
                 "<input type=\"radio\" name=\"{}\" value=\"{}\" id=\"{}\"{}><label for=\"{}\">{}</label>",
                 name, escaped_value, escaped_id, checked_attr, escaped_id, escaped_label
             ));
-        }
-        
         Ok(html)
-    }
-
     /// Generate checkbox
     pub fn checkbox(
-        name: &str,
-        value: &str,
-        checked: bool,
-        label: Option<&str>,
-        attributes: Option<&HashMap<String, CursedObject>>,
-        escaper: &HtmlEscaper,
     ) -> crate::error::Result<()> {
         let mut attr_map = HashMap::new();
         attr_map.insert("type".to_string(), "checkbox".to_string());
@@ -908,23 +562,13 @@ impl HtmlTemplateHelpers {
         
         if checked {
             attr_map.insert("checked".to_string(), "checked".to_string());
-        }
-
         if let Some(attrs) = attributes {
             for (key, value) in attrs {
                 if !["type", "name", "value", "checked"].contains(&key.as_str()) {
                     let value_str = match value {
-                        CursedObject::String(s) => s.clone(),
-                        CursedObject::Integer(n) => n.to_string(),
-                        CursedObject::Float(n) => n.to_string(),
-                        CursedObject::Boolean(b) => b.to_string(),
-                        _ => continue,
-                    };
                     attr_map.insert(key.clone(), value_str);
                 }
             }
-        }
-
         let input_html = escaper.generate_html_with_csp("input", &attr_map, None)?;
         
         if let Some(label_text) = label {
@@ -940,15 +584,10 @@ impl HtmlTemplateHelpers {
             Ok(input_html)
         }
     }
-}
-
 impl LayoutHelpers {
     /// Render a layout with content blocks
     #[instrument(skip(context, content_blocks))]
     pub fn render_layout(
-        layout_template: &str,
-        content_blocks: &HashMap<String, String>,
-        context: &HtmlTemplateContext,
     ) -> crate::error::Result<()> {
         info!(layout_template_length = layout_template.len(), blocks_count = content_blocks.len(), "Rendering layout");
         
@@ -958,16 +597,10 @@ impl LayoutHelpers {
         for (block_name, content) in content_blocks {
             let placeholder = format!("{{{{ yield '{}' }}}}", block_name);
             rendered = rendered.replace(&placeholder, content);
-        }
-        
         // Replace main content block
         if let Some(main_content) = content_blocks.get("main") {
             rendered = rendered.replace("{{ yield }}", main_content);
-        }
-        
         Ok(rendered)
-    }
-
     /// Generate meta tags for the page head
     pub fn render_meta_tags(context: &HtmlTemplateContext) -> crate::error::Result<()> {
         let meta_config = &context.layout_config.meta_config;
@@ -977,42 +610,27 @@ impl LayoutHelpers {
         if let Some(title) = &meta_config.title {
             let escaped_title = HtmlEscaper::new(context.clone()).escape_html(title);
             meta_html.push_str(&format!("<title>{}</title>\n", escaped_title));
-        }
-        
         // Meta description
         if let Some(description) = &meta_config.description {
             let escaped_desc = HtmlEscaper::new(context.clone()).escape_html_attribute(description);
             meta_html.push_str(&format!("<meta name=\"description\" content=\"{}\">\n", escaped_desc));
-        }
-        
         // Meta keywords
         if !meta_config.keywords.is_empty() {
             let keywords = meta_config.keywords.join(", ");
             let escaped_keywords = HtmlEscaper::new(context.clone()).escape_html_attribute(&keywords);
             meta_html.push_str(&format!("<meta name=\"keywords\" content=\"{}\">\n", escaped_keywords));
-        }
-        
         // Custom meta tags
         for (name, content) in &meta_config.custom_meta {
             let escaped_name = HtmlEscaper::new(context.clone()).escape_html_attribute(name);
             let escaped_content = HtmlEscaper::new(context.clone()).escape_html_attribute(content);
             meta_html.push_str(&format!("<meta name=\"{}\" content=\"{}\">\n", escaped_name, escaped_content));
-        }
-        
         // CSRF meta tag
         if let Some(csrf_token) = context.csrf_token() {
             let escaped_token = HtmlEscaper::new(context.clone()).escape_html_attribute(csrf_token);
             meta_html.push_str(&format!("<meta name=\"csrf-token\" content=\"{}\">\n", escaped_token));
-        }
-        
         Ok(meta_html)
-    }
-
     /// Render partial template
     pub fn render_partial(
-        partial_name: &str,
-        locals: &HashMap<String, CursedObject>,
-        context: &HtmlTemplateContext,
     ) -> crate::error::Result<()> {
         use super::template_core::{FileSystemLoader, TemplateLoader, TemplateEngine};
         use super::template_render::RenderContext;
@@ -1054,8 +672,6 @@ impl LayoutHelpers {
         
         let content = template_content.ok_or_else(|| {
             CursedError::TemplateError {
-                message: format!("Partial template '{}' not found. Tried: {:?}", partial_name, possible_names),
-                source_location: None,
             }
         })?;
         
@@ -1065,16 +681,12 @@ impl LayoutHelpers {
         let mut lexer = TemplateLexer::new(&content);
         let tokens = lexer.tokenize().map_err(|e| {
             CursedError::TemplateError {
-                message: format!("Failed to tokenize partial '{}': {}", partial_name, e),
-                source_location: None,
             }
         })?;
         
         let mut parser = TemplateParser::new(tokens);
         let ast = parser.parse().map_err(|e| {
             CursedError::TemplateError {
-                message: format!("Failed to parse partial '{}': {}", partial_name, e),
-                source_location: None,
             }
         })?;
         
@@ -1084,8 +696,6 @@ impl LayoutHelpers {
         // Add locals to render context
         for (key, value) in locals {
             render_context.set_variable(key.clone(), value.clone());
-        }
-        
         // Create a basic template engine for rendering
         let engine = TemplateEngine::new(Box::new(loader));
         let mut renderer = super::template_render::TemplateRenderer::new(&engine);
@@ -1093,8 +703,6 @@ impl LayoutHelpers {
         // Render the partial
         let rendered = renderer.render_ast(&ast, &render_context).map_err(|e| {
             CursedError::TemplateError {
-                message: format!("Failed to render partial '{}': {}", partial_name, e),
-                source_location: None,
             }
         })?;
         
@@ -1118,15 +726,9 @@ impl AssetHelpers {
             // Add nonce if CSP is enabled
             if let Some(nonce) = context.style_nonce() {
                 link_html.push_str(&format!(" nonce=\"{}\"", nonce));
-            }
-            
             link_html.push_str(">\n");
             html.push_str(&link_html);
-        }
-        
         Ok(html)
-    }
-
     /// Generate JavaScript script tags
     pub fn javascript_includes(context: &HtmlTemplateContext) -> crate::error::Result<()> {
         let asset_config = &context.layout_config.asset_config;
@@ -1141,32 +743,19 @@ impl AssetHelpers {
             // Add nonce if CSP is enabled
             if let Some(nonce) = context.script_nonce() {
                 script_html.push_str(&format!(" nonce=\"{}\"", nonce));
-            }
-            
             script_html.push_str("></script>\n");
             html.push_str(&script_html);
-        }
-        
         Ok(html)
-    }
-
     /// Generate asset URL with versioning
     pub fn asset_url(path: &str, base_url: &str, version_suffix: &Option<String>) -> String {
         let mut url = format!("{}/{}", base_url.trim_end_matches('/'), path.trim_start_matches('/'));
         
         if let Some(version) = version_suffix {
             url.push_str(&format!("?v={}", version));
-        }
-        
         url
-    }
-
     /// Generate image tag with responsive attributes
     pub fn responsive_image(
-        src: &str,
-        alt: &str,
         sizes: &[(u32, String)], // (width, src) pairs
-        context: &HtmlTemplateContext,
     ) -> crate::error::Result<()> {
         let escaper = HtmlEscaper::new(context.clone());
         let escaped_src = escaper.escape_html_attribute(src);
@@ -1180,8 +769,6 @@ impl AssetHelpers {
                 .map(|(width, src)| format!("{} {}w", escaper.escape_html_attribute(src), width))
                 .collect();
             img_html.push_str(&format!(" srcset=\"{}\"", srcset.join(", ")));
-        }
-        
         img_html.push('>');
         Ok(img_html)
     }
@@ -1190,12 +777,6 @@ impl AssetHelpers {
 impl FormHelpers {
     /// Generate a complete form with CSRF protection
     pub fn form_with_csrf(
-        action: &str,
-        method: &str,
-        attributes: Option<&HashMap<String, CursedObject>>,
-        content: &str,
-        context: &HtmlTemplateContext,
-        escaper: &HtmlEscaper,
     ) -> crate::error::Result<()> {
         let mut form_content = String::new();
         
@@ -1203,11 +784,8 @@ impl FormHelpers {
         if let Some(csrf_token) = context.csrf_token() {
             let escaped_token = escaper.escape_html_attribute(csrf_token);
             form_content.push_str(&format!(
-                "<input type=\"hidden\" name=\"_token\" value=\"{}\">\n",
                 escaped_token
             ));
-        }
-        
         form_content.push_str(content);
         
         let result = HtmlTemplateHelpers::form(action, method, attributes, &form_content, escaper)?;
@@ -1220,13 +798,6 @@ impl FormHelpers {
 
     /// Generate form field with label and validation
     pub fn form_field(
-        field_type: &str,
-        name: &str,
-        value: Option<&str>,
-        label: Option<&str>,
-        errors: &[String],
-        attributes: Option<&HashMap<String, CursedObject>>,
-        escaper: &HtmlEscaper,
     ) -> crate::error::Result<()> {
         let mut field_html = String::new();
         
@@ -1235,16 +806,12 @@ impl FormHelpers {
             let escaped_label = escaper.escape_html(label_text);
             let escaped_name = escaper.escape_html_attribute(name);
             field_html.push_str(&format!("<label for=\"{}\">{}</label>\n", escaped_name, escaped_label));
-        }
-        
         // Add the input field
         let input_result = HtmlTemplateHelpers::input(field_type, name, value, attributes, escaper)?;
         if let CursedObject::String(input_html) = input_result {
             // Add id attribute for label association
             let input_with_id = input_html.replace(">", &format!(" id=\"{}\">", escaper.escape_html_attribute(name)));
             field_html.push_str(&input_with_id);
-        }
-        
         // Add validation errors
         if !errors.is_empty() {
             field_html.push_str("<div class=\"errors\">\n");
@@ -1253,8 +820,6 @@ impl FormHelpers {
                 field_html.push_str(&format!("<span class=\"error\">{}</span>\n", escaped_error));
             }
             field_html.push_str("</div>\n");
-        }
-        
         Ok(field_html)
     }
 }
@@ -1263,9 +828,6 @@ impl ComponentSystem {
     /// Render a component with parameters
     #[instrument(skip(context, parameters))]
     pub fn render_component(
-        component_name: &str,
-        parameters: &HashMap<String, CursedObject>,
-        context: &HtmlTemplateContext,
     ) -> crate::error::Result<()> {
         info!(component_name = component_name, param_count = parameters.len(), "Rendering component");
         
@@ -1282,85 +844,41 @@ impl ComponentSystem {
         // Simple parameter substitution (in real implementation, use proper templating)
         for (param_name, param_value) in parameters {
             let value_str = match param_value {
-                CursedObject::String(s) => s.clone(),
-                CursedObject::Integer(n) => n.to_string(),
-                CursedObject::Float(f) => f.to_string(),
-                CursedObject::Boolean(b) => b.to_string(),
-                _ => format!("{:?}", param_value),
-            };
             
             let placeholder = format!("{{{{ {} }}}}", param_name);
             rendered = rendered.replace(&placeholder, &value_str);
-        }
-        
         Ok(rendered)
-    }
-
     /// Validate component parameters
     fn validate_parameters(
-        component: &ComponentTemplate,
-        parameters: &HashMap<String, CursedObject>,
     ) -> crate::error::Result<()> {
         for param_def in &component.parameters {
             if param_def.required && !parameters.contains_key(&param_def.name) {
                 return Err(CursedError::Runtime(format!(
-                    "Required parameter '{}' missing for component '{}'",
                     param_def.name, component.name
                 )));
-            }
-            
             // Type validation (simplified)
             if let Some(value) = parameters.get(&param_def.name) {
                 let valid = match (&param_def.param_type, value) {
-                    (ComponentParameterType::String, CursedObject::String(_)) => true,
-                    (ComponentParameterType::Integer, CursedObject::Integer(_)) => true,
-                    (ComponentParameterType::Float, CursedObject::Float(_)) => true,
-                    (ComponentParameterType::Boolean, CursedObject::Boolean(_)) => true,
                     (ComponentParameterType::Object, _) => true, // Accept any object
                     (ComponentParameterType::Array, _) => true,  // Accept any array-like
-                    _ => false,
-                };
                 
                 if !valid {
                     return Err(CursedError::Runtime(format!(
-                        "Parameter '{}' has invalid type for component '{}'",
                         param_def.name, component.name
                     )));
                 }
             }
-        }
-        
         Ok(())
-    }
-
     /// Create a new component template
     pub fn create_component(
-        name: String,
-        template: String,
-        parameters: Vec<ComponentParameter>,
-        cacheable: bool,
     ) -> ComponentTemplate {
         ComponentTemplate {
-            name,
-            template,
-            parameters,
-            cacheable,
         }
     }
 
     /// Create a component parameter definition
     pub fn create_parameter(
-        name: String,
-        param_type: ComponentParameterType,
-        required: bool,
-        default_value: Option<CursedObject>,
     ) -> ComponentParameter {
         ComponentParameter {
-            name,
-            param_type,
-            required,
-            default_value,
         }
     }
-}
-

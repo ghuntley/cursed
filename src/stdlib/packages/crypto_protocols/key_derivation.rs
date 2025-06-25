@@ -15,47 +15,20 @@ pub enum KdfType {
     ConcatKDF, // Concatenation KDF
     TLS12PRF,  // TLS 1.2 Pseudorandom Function
     TLS13HKDF, // TLS 1.3 HKDF
-}
-
 /// Key derivation parameters
 #[derive(Debug, Clone)]
 pub struct KdfParams {
-    pub kdf_type: KdfType,
-    pub input_key_material: Vec<u8>,
-    pub salt: Option<Vec<u8>>,
-    pub info: Option<Vec<u8>>,
-    pub output_length: usize,
-    pub iterations: Option<u32>,
-    pub memory_cost: Option<u32>,
-    pub parallelism: Option<u32>,
-}
-
 /// Key derivation result
 #[derive(Debug, Clone)]
 pub struct KdfResult {
-    pub derived_key: Vec<u8>,
-    pub kdf_type: KdfType,
-    pub output_length: usize,
-    pub salt_used: Vec<u8>,
-    pub info_used: Option<Vec<u8>>,
-}
-
 /// Protocol-specific key derivation manager
 #[derive(Debug)]
 pub struct ProtocolKeyDerivationManager {
-    hash_manager: HashRegistry,
-    secure_random: SecureRandom,
-}
-
 impl ProtocolKeyDerivationManager {
     /// Create new protocol key derivation manager
     pub fn new() -> AdvancedCryptoResult<Self> {
         Ok(Self {
-            hash_manager: HashRegistry::new()?,
-            secure_random: SecureRandom::new()?,
         })
-    }
-
     /// Derive key using specified KDF
     pub fn derive_key(&self, params: KdfParams) -> AdvancedCryptoResult<KdfResult> {
         let salt_used = params.salt.clone().unwrap_or_else(|| {
@@ -63,25 +36,9 @@ impl ProtocolKeyDerivationManager {
         });
 
         let derived_key = match params.kdf_type {
-            KdfType::HKDF => self.hkdf(&params.input_key_material, &salt_used, params.info.as_deref(), params.output_length)?,
-            KdfType::PBKDF2 => self.pbkdf2(&params.input_key_material, &salt_used, params.iterations.unwrap_or(10000), params.output_length)?,
-            KdfType::Scrypt => self.scrypt(&params.input_key_material, &salt_used, params.iterations.unwrap_or(16384), params.memory_cost.unwrap_or(8), params.parallelism.unwrap_or(1), params.output_length)?,
-            KdfType::Argon2 => self.argon2(&params.input_key_material, &salt_used, params.iterations.unwrap_or(3), params.memory_cost.unwrap_or(4096), params.parallelism.unwrap_or(1), params.output_length)?,
-            KdfType::ANSX963 => self.ansi_x963_kdf(&params.input_key_material, params.info.as_deref(), params.output_length)?,
-            KdfType::ConcatKDF => self.concat_kdf(&params.input_key_material, params.info.as_deref(), params.output_length)?,
-            KdfType::TLS12PRF => self.tls12_prf(&params.input_key_material, &salt_used, params.info.as_deref().unwrap_or(b""), params.output_length)?,
-            KdfType::TLS13HKDF => self.tls13_hkdf(&params.input_key_material, &salt_used, params.info.as_deref(), params.output_length)?,
-        };
 
         Ok(KdfResult {
-            derived_key,
-            kdf_type: params.kdf_type,
-            output_length: params.output_length,
-            salt_used,
-            info_used: params.info,
         })
-    }
-
     /// HKDF implementation (RFC 5869)
     pub fn hkdf(&self, ikm: &[u8], salt: &[u8], info: Option<&[u8]>, length: usize) -> AdvancedCryptoResult<Vec<u8>> {
         use sha2::{Sha256, Digest};
@@ -109,12 +66,8 @@ impl ProtocolKeyDerivationManager {
             mac.update(&[i as u8]);
             t = mac.finalize().into_bytes().to_vec();
             output.extend_from_slice(&t);
-        }
-
         output.truncate(length);
         Ok(output)
-    }
-
     /// PBKDF2 implementation (RFC 2898)
     pub fn pbkdf2(&self, password: &[u8], salt: &[u8], iterations: u32, length: usize) -> AdvancedCryptoResult<Vec<u8>> {
         use sha2::{Sha256, Digest};
@@ -146,12 +99,8 @@ impl ProtocolKeyDerivationManager {
             }
 
             output.extend_from_slice(&result);
-        }
-
         output.truncate(length);
         Ok(output)
-    }
-
     /// Scrypt implementation (simplified)
     pub fn scrypt(&self, password: &[u8], salt: &[u8], n: u32, r: u32, p: u32, length: usize) -> AdvancedCryptoResult<Vec<u8>> {
         // Simplified scrypt implementation
@@ -167,17 +116,10 @@ impl ProtocolKeyDerivationManager {
         }
 
         Ok(derived)
-    }
-
     /// Argon2 implementation (simplified)
     pub fn argon2(&self, password: &[u8], salt: &[u8], time_cost: u32, memory_cost: u32, parallelism: u32, length: usize) -> AdvancedCryptoResult<Vec<u8>> {
         // Simplified Argon2 implementation
         let params = [
-            password,
-            salt,
-            &time_cost.to_be_bytes(),
-            &memory_cost.to_be_bytes(),
-            &parallelism.to_be_bytes(),
         ].concat();
 
         // Simulate memory-hard operation
@@ -186,8 +128,6 @@ impl ProtocolKeyDerivationManager {
             let block_input = [&params, &i.to_be_bytes()].concat();
             let block = self.hash_manager.blake3(&block_input, Some(64))?;
             memory_blocks.push(block);
-        }
-
         // Mix memory blocks
         let mut result = vec![0u8; length];
         for _ in 0..time_cost {
@@ -208,8 +148,6 @@ impl ProtocolKeyDerivationManager {
 
         let final_hash = self.hash_manager.blake3(&final_block, Some(length))?;
         Ok(final_hash)
-    }
-
     /// ANSI X9.63 KDF
     pub fn ansi_x963_kdf(&self, shared_secret: &[u8], shared_info: Option<&[u8]>, length: usize) -> AdvancedCryptoResult<Vec<u8>> {
         let shared_info = shared_info.unwrap_or(b"");
@@ -221,12 +159,8 @@ impl ProtocolKeyDerivationManager {
             let hash = self.hash_manager.sha256(&input)?;
             output.extend_from_slice(&hash);
             counter += 1;
-        }
-
         output.truncate(length);
         Ok(output)
-    }
-
     /// Concatenation KDF
     pub fn concat_kdf(&self, shared_secret: &[u8], other_info: Option<&[u8]>, length: usize) -> AdvancedCryptoResult<Vec<u8>> {
         let other_info = other_info.unwrap_or(b"");
@@ -238,12 +172,8 @@ impl ProtocolKeyDerivationManager {
             let hash = self.hash_manager.sha256(&input)?;
             output.extend_from_slice(&hash);
             counter += 1;
-        }
-
         output.truncate(length);
         Ok(output)
-    }
-
     /// TLS 1.2 Pseudorandom Function
     pub fn tls12_prf(&self, secret: &[u8], seed: &[u8], label: &[u8], length: usize) -> AdvancedCryptoResult<Vec<u8>> {
         use sha2::{Sha256, Digest};
@@ -270,51 +200,27 @@ impl ProtocolKeyDerivationManager {
             let p_hash = mac.finalize().into_bytes();
             
             output.extend_from_slice(&p_hash);
-        }
-
         output.truncate(length);
         Ok(output)
-    }
-
     /// TLS 1.3 HKDF-based key derivation
     pub fn tls13_hkdf(&self, secret: &[u8], salt: &[u8], info: Option<&[u8]>, length: usize) -> AdvancedCryptoResult<Vec<u8>> {
         // TLS 1.3 uses HKDF with specific labels
         let tls13_info = match info {
-            Some(i) => [b"tls13 ", i].concat(),
-            None => b"tls13".to_vec(),
-        };
         
         self.hkdf(secret, salt, Some(&tls13_info), length)
-    }
-
     /// Derive multiple keys from a single master secret
     pub fn derive_multiple_keys(&self, master_secret: &[u8], labels: &[&str], key_lengths: &[usize]) -> AdvancedCryptoResult<Vec<Vec<u8>>> {
         if labels.len() != key_lengths.len() {
             return Err(CursedError::invalid_input("Labels and key lengths must have same length".to_string()));
-        }
-
         let mut keys = Vec::new();
         let salt = self.secure_random.generate_bytes(32)?;
 
         for (label, &length) in labels.iter().zip(key_lengths.iter()) {
             let params = KdfParams {
-                kdf_type: KdfType::HKDF,
-                input_key_material: master_secret.to_vec(),
-                salt: Some(salt.clone()),
-                info: Some(label.as_bytes().to_vec()),
-                output_length: length,
-                iterations: None,
-                memory_cost: None,
-                parallelism: None,
-            };
 
             let result = self.derive_key(params)?;
             keys.push(result.derived_key);
-        }
-
         Ok(keys)
-    }
-
     /// Protocol-specific key derivation for TLS
     pub fn derive_tls_keys(&self, master_secret: &[u8], client_random: &[u8], server_random: &[u8]) -> AdvancedCryptoResult<TlsKeys> {
         let seed = [client_random, server_random].concat();
@@ -323,22 +229,12 @@ impl ProtocolKeyDerivationManager {
         let key_material = self.tls12_prf(master_secret, &seed, b"key expansion", 128)?;
         
         Ok(TlsKeys {
-            client_write_mac_key: key_material[0..20].to_vec(),
-            server_write_mac_key: key_material[20..40].to_vec(),
-            client_write_key: key_material[40..72].to_vec(),
-            server_write_key: key_material[72..104].to_vec(),
-            client_write_iv: key_material[104..120].to_vec(),
-            server_write_iv: key_material[120..136].to_vec(),
         })
-    }
-
     // Helper methods
 
     fn xor_blocks(&self, a: &[u8], b: &[u8]) -> AdvancedCryptoResult<Vec<u8>> {
         if a.len() != b.len() {
             return Err(CursedError::invalid_input("Blocks must have same length".to_string()));
-        }
-
         Ok(a.iter().zip(b.iter()).map(|(&x, &y)| x ^ y).collect())
     }
 }
@@ -346,14 +242,6 @@ impl ProtocolKeyDerivationManager {
 /// TLS key structure
 #[derive(Debug, Clone)]
 pub struct TlsKeys {
-    pub client_write_mac_key: Vec<u8>,
-    pub server_write_mac_key: Vec<u8>,
-    pub client_write_key: Vec<u8>,
-    pub server_write_key: Vec<u8>,
-    pub client_write_iv: Vec<u8>,
-    pub server_write_iv: Vec<u8>,
-}
-
 impl Default for ProtocolKeyDerivationManager {
     fn default() -> Self {
         Self::new().expect("Failed to create default ProtocolKeyDerivationManager")

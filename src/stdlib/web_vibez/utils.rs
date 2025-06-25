@@ -4,51 +4,23 @@ use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
 /// Connection pool manager for efficient connection reuse
 pub struct ConnectionPool {
-    pools: HashMap<String, Vec<PooledConnection>>,
-    max_connections_per_host: usize,
-    connection_timeout: Duration,
-    idle_timeout: Duration,
-    total_connections: usize,
-    max_total_connections: usize,
-}
-
 #[derive(Debug, Clone)]
 pub struct PooledConnection {
-    pub id: String,
-    pub host: String,
-    pub port: u16,
-    pub created_at: SystemTime,
-    pub last_used: SystemTime,
-    pub is_active: bool,
-    pub connection_count: u64,
-}
-
 impl ConnectionPool {
     /// Create new connection pool
     pub fn new() -> Self {
         Self {
-            pools: HashMap::new(),
-            max_connections_per_host: 10,
-            connection_timeout: Duration::from_secs(30),
             idle_timeout: Duration::from_secs(300), // 5 minutes
-            total_connections: 0,
-            max_total_connections: 100,
         }
     }
 
     /// Configure connection pool limits
     pub fn with_limits(
-        mut self,
-        max_per_host: usize,
-        max_total: usize,
-        idle_timeout: Duration,
     ) -> Self {
         self.max_connections_per_host = max_per_host;
         self.max_total_connections = max_total;
         self.idle_timeout = idle_timeout;
         self
-    }
-
     /// Get or create connection for host
     pub fn get_connection(&mut self, host: &str, port: u16) -> Option<PooledConnection> {
         self.cleanup_idle_connections();
@@ -68,14 +40,6 @@ impl ConnectionPool {
         // Create new connection if under limits
         if self.total_connections < self.max_total_connections {
             let connection = PooledConnection {
-                id: format!("conn_{}_{}", host_key, SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_millis()),
-                host: host.to_string(),
-                port,
-                created_at: SystemTime::now(),
-                last_used: SystemTime::now(),
-                is_active: true,
-                connection_count: 1,
-            };
             
             self.total_connections += 1;
             Some(connection)
@@ -106,11 +70,7 @@ impl ConnectionPool {
         
         if let Some(connections) = self.pools.get_mut(&host_key) {
             connections.retain(|conn| conn.id != connection.id);
-        }
-        
         self.total_connections = self.total_connections.saturating_sub(1);
-    }
-
     /// Cleanup idle connections
     fn cleanup_idle_connections(&mut self) {
         let now = SystemTime::now();
@@ -122,12 +82,8 @@ impl ConnectionPool {
                 now.duration_since(conn.last_used).unwrap_or_default() < self.idle_timeout
             });
             connections_removed += initial_len - connections.len();
-        }
-
         self.pools.retain(|_, connections| !connections.is_empty());
         self.total_connections = self.total_connections.saturating_sub(connections_removed);
-    }
-
     /// Get pool statistics
     pub fn stats(&self) -> PoolStats {
         let mut host_counts = HashMap::new();
@@ -136,15 +92,7 @@ impl ConnectionPool {
         for (host, connections) in &self.pools {
             host_counts.insert(host.clone(), connections.len());
             total_idle += connections.len();
-        }
-
         PoolStats {
-            total_connections: self.total_connections,
-            idle_connections: total_idle,
-            active_connections: self.total_connections - total_idle,
-            host_counts,
-            max_connections_per_host: self.max_connections_per_host,
-            max_total_connections: self.max_total_connections,
         }
     }
 
@@ -164,44 +112,20 @@ impl Default for ConnectionPool {
 /// Pool statistics
 #[derive(Debug)]
 pub struct PoolStats {
-    pub total_connections: usize,
-    pub idle_connections: usize,
-    pub active_connections: usize,
-    pub host_counts: HashMap<String, usize>,
-    pub max_connections_per_host: usize,
-    pub max_total_connections: usize,
-}
-
 /// Request timeout manager
 pub struct RequestTimeoutManager {
-    default_timeout: Duration,
-    route_timeouts: HashMap<String, Duration>,
-    active_requests: HashMap<String, RequestTimeout>,
-}
-
 #[derive(Debug, Clone)]
 pub struct RequestTimeout {
-    pub request_id: String,
-    pub started_at: SystemTime,
-    pub timeout: Duration,
-    pub route: String,
-}
-
 impl RequestTimeoutManager {
     /// Create new timeout manager
     pub fn new(default_timeout: Duration) -> Self {
         Self {
-            default_timeout,
-            route_timeouts: HashMap::new(),
-            active_requests: HashMap::new(),
         }
     }
 
     /// Set timeout for specific route pattern
     pub fn set_route_timeout(&mut self, route_pattern: String, timeout: Duration) {
         self.route_timeouts.insert(route_pattern, timeout);
-    }
-
     /// Start tracking request timeout
     pub fn start_request(&mut self, request_id: String, route: String) -> Duration {
         let timeout = self.route_timeouts.get(&route)
@@ -209,16 +133,9 @@ impl RequestTimeoutManager {
             .unwrap_or(self.default_timeout);
 
         let request_timeout = RequestTimeout {
-            request_id: request_id.clone(),
-            started_at: SystemTime::now(),
-            timeout,
-            route,
-        };
 
         self.active_requests.insert(request_id, request_timeout);
         timeout
-    }
-
     /// Check if request has timed out
     pub fn is_timed_out(&self, request_id: &str) -> bool {
         if let Some(request) = self.active_requests.get(request_id) {
@@ -251,14 +168,10 @@ impl RequestTimeoutManager {
                 elapsed > request.timeout
             })
             .collect()
-    }
-
     /// Cleanup old requests
     pub fn cleanup_old_requests(&mut self) {
         let cutoff = SystemTime::now() - Duration::from_secs(3600); // 1 hour
         self.active_requests.retain(|_, request| request.started_at > cutoff);
-    }
-
     /// Get timeout statistics
     pub fn get_stats(&self) -> TimeoutStats {
         let now = SystemTime::now();
@@ -277,62 +190,27 @@ impl RequestTimeoutManager {
         }
 
         TimeoutStats {
-            active_requests: total_active,
-            timed_out_requests: total_timed_out,
-            route_counts,
-            default_timeout: self.default_timeout,
         }
     }
-}
-
 /// Timeout statistics
 #[derive(Debug)]
 pub struct TimeoutStats {
-    pub active_requests: usize,
-    pub timed_out_requests: usize,
-    pub route_counts: HashMap<String, usize>,
-    pub default_timeout: Duration,
-}
-
 /// Keep-alive connection manager
 pub struct KeepAliveManager {
-    keep_alive_timeout: Duration,
-    max_keep_alive_requests: u32,
-    connections: HashMap<String, KeepAliveConnection>,
-}
-
 #[derive(Debug, Clone)]
 pub struct KeepAliveConnection {
-    pub connection_id: String,
-    pub created_at: SystemTime,
-    pub last_activity: SystemTime,
-    pub request_count: u32,
-    pub client_ip: String,
-}
-
 impl KeepAliveManager {
     /// Create new keep-alive manager
     pub fn new(keep_alive_timeout: Duration, max_requests: u32) -> Self {
         Self {
-            keep_alive_timeout,
-            max_keep_alive_requests: max_requests,
-            connections: HashMap::new(),
         }
     }
 
     /// Register new keep-alive connection
     pub fn register_connection(&mut self, connection_id: String, client_ip: String) {
         let connection = KeepAliveConnection {
-            connection_id: connection_id.clone(),
-            created_at: SystemTime::now(),
-            last_activity: SystemTime::now(),
-            request_count: 0,
-            client_ip,
-        };
 
         self.connections.insert(connection_id, connection);
-    }
-
     /// Update connection activity
     pub fn update_activity(&mut self, connection_id: &str) -> bool {
         if let Some(connection) = self.connections.get_mut(connection_id) {
@@ -363,8 +241,6 @@ impl KeepAliveManager {
     /// Close connection
     pub fn close_connection(&mut self, connection_id: &str) {
         self.connections.remove(connection_id);
-    }
-
     /// Cleanup expired connections
     pub fn cleanup_expired(&mut self) -> usize {
         let now = SystemTime::now();
@@ -376,8 +252,6 @@ impl KeepAliveManager {
         });
 
         initial_count - self.connections.len()
-    }
-
     /// Get keep-alive statistics
     pub fn get_stats(&self) -> KeepAliveStats {
         let now = SystemTime::now();
@@ -397,53 +271,22 @@ impl KeepAliveManager {
         }
 
         KeepAliveStats {
-            total_connections: self.connections.len(),
-            active_connections,
-            expired_connections,
-            total_requests,
-            keep_alive_timeout: self.keep_alive_timeout,
-            max_keep_alive_requests: self.max_keep_alive_requests,
         }
     }
-}
-
 /// Keep-alive statistics
 #[derive(Debug)]
 pub struct KeepAliveStats {
-    pub total_connections: usize,
-    pub active_connections: usize,
-    pub expired_connections: usize,
-    pub total_requests: u32,
-    pub keep_alive_timeout: Duration,
-    pub max_keep_alive_requests: u32,
-}
-
 /// Rate limiter for controlling request rates
 pub struct RateLimiter {
-    buckets: HashMap<String, TokenBucket>,
-    default_capacity: u32,
     default_refill_rate: u32, // tokens per second
-    cleanup_interval: Duration,
-    last_cleanup: SystemTime,
-}
-
 #[derive(Debug, Clone)]
 pub struct TokenBucket {
-    capacity: u32,
-    tokens: f64,
-    last_refill: SystemTime,
     refill_rate: u32, // tokens per second
-}
-
 impl RateLimiter {
     /// Create new rate limiter
     pub fn new(capacity: u32, refill_rate: u32) -> Self {
         Self {
-            buckets: HashMap::new(),
-            default_capacity: capacity,
-            default_refill_rate: refill_rate,
             cleanup_interval: Duration::from_secs(300), // 5 minutes
-            last_cleanup: SystemTime::now(),
         }
     }
 
@@ -453,10 +296,6 @@ impl RateLimiter {
 
         let bucket = self.buckets.entry(client_id.to_string()).or_insert_with(|| {
             TokenBucket {
-                capacity: self.default_capacity,
-                tokens: self.default_capacity as f64,
-                last_refill: SystemTime::now(),
-                refill_rate: self.default_refill_rate,
             }
         });
 
@@ -473,14 +312,7 @@ impl RateLimiter {
     /// Set custom rate limit for specific client
     pub fn set_client_limit(&mut self, client_id: String, capacity: u32, refill_rate: u32) {
         let bucket = TokenBucket {
-            capacity,
-            tokens: capacity as f64,
-            last_refill: SystemTime::now(),
-            refill_rate,
-        };
         self.buckets.insert(client_id, bucket);
-    }
-
     /// Get remaining tokens for client
     pub fn get_remaining_tokens(&mut self, client_id: &str) -> u32 {
         if let Some(bucket) = self.buckets.get_mut(client_id) {
@@ -525,22 +357,13 @@ impl RateLimiter {
                 blocked_clients += 1;
             }
             total_tokens += bucket.tokens;
-        }
-
         RateLimiterStats {
-            total_clients,
-            blocked_clients,
             average_tokens: if total_clients > 0 {
                 total_tokens / total_clients as f64
             } else {
                 0.0
-            },
-            default_capacity: self.default_capacity,
-            default_refill_rate: self.default_refill_rate,
         }
     }
-}
-
 impl TokenBucket {
     /// Refill tokens based on elapsed time
     fn refill(&mut self) {
@@ -556,25 +379,12 @@ impl TokenBucket {
 /// Rate limiter statistics
 #[derive(Debug)]
 pub struct RateLimiterStats {
-    pub total_clients: usize,
-    pub blocked_clients: usize,
-    pub average_tokens: f64,
-    pub default_capacity: u32,
-    pub default_refill_rate: u32,
-}
-
 /// Request ID generator for tracing
 pub struct RequestIdGenerator {
-    counter: u64,
-    prefix: String,
-}
-
 impl RequestIdGenerator {
     /// Create new request ID generator
     pub fn new(prefix: String) -> Self {
         Self {
-            counter: 0,
-            prefix,
         }
     }
 
@@ -587,8 +397,6 @@ impl RequestIdGenerator {
             .as_millis();
         
         format!("{}-{}-{}", self.prefix, timestamp, self.counter)
-    }
-
     /// Generate request ID with custom suffix
     pub fn next_id_with_suffix(&mut self, suffix: &str) -> String {
         let base_id = self.next_id();
@@ -607,39 +415,27 @@ impl Default for RequestIdGenerator {
 #[derive(Debug, Clone)]
 pub struct UrlEncoder {
     /// Whether to encode reserved characters
-    pub encode_reserved: bool,
     /// Custom encoding rules
-    pub custom_rules: HashMap<char, String>,
-}
-
 impl UrlEncoder {
     /// Create new URL encoder
     pub fn new() -> Self {
         Self {
-            encode_reserved: false,
-            custom_rules: HashMap::new(),
         }
     }
 
     /// Create URL encoder with reserved character encoding
     pub fn with_reserved_encoding() -> Self {
         Self {
-            encode_reserved: true,
-            custom_rules: HashMap::new(),
         }
     }
 
     /// Add custom encoding rule
     pub fn add_rule(&mut self, ch: char, encoded: String) {
         self.custom_rules.insert(ch, encoded);
-    }
-
     /// Encode a URL string
     pub fn encode(&self, input: &str) -> String {
         // TODO: Implement proper URL encoding
         input.to_string()
-    }
-
     /// Decode a URL string
     pub fn decode(&self, input: &str) -> Result<String, String> {
         // TODO: Implement proper URL decoding
@@ -658,17 +454,11 @@ impl Default for UrlEncoder {
 #[derive(Debug, Clone)]
 pub struct HttpHeaders {
     /// Header map
-    pub headers: HashMap<String, Vec<String>>,
     /// Case-sensitive header names
-    pub case_sensitive: bool,
-}
-
 impl HttpHeaders {
     /// Create new HTTP headers manager
     pub fn new() -> Self {
         Self {
-            headers: HashMap::new(),
-            case_sensitive: false,
         }
     }
 
@@ -678,54 +468,38 @@ impl HttpHeaders {
             name.to_string()
         } else {
             name.to_lowercase()
-        };
         
         self.headers.entry(key).or_insert_with(Vec::new).push(value.to_string());
-    }
-
     /// Get header values
     pub fn get(&self, name: &str) -> Option<&Vec<String>> {
         let key = if self.case_sensitive {
             name.to_string()
         } else {
             name.to_lowercase()
-        };
         
         self.headers.get(&key)
-    }
-
     /// Get first header value
     pub fn get_first(&self, name: &str) -> Option<&String> {
         self.get(name).and_then(|values| values.first())
-    }
-
     /// Remove header
     pub fn remove(&mut self, name: &str) -> Option<Vec<String>> {
         let key = if self.case_sensitive {
             name.to_string()
         } else {
             name.to_lowercase()
-        };
         
         self.headers.remove(&key)
-    }
-
     /// Check if header exists
     pub fn contains(&self, name: &str) -> bool {
         let key = if self.case_sensitive {
             name.to_string()
         } else {
             name.to_lowercase()
-        };
         
         self.headers.contains_key(&key)
-    }
-
     /// Get all header names
     pub fn keys(&self) -> Vec<&String> {
         self.headers.keys().collect()
-    }
-
     /// Clear all headers
     pub fn clear(&mut self) {
         self.headers.clear();
@@ -743,16 +517,11 @@ impl Default for HttpHeaders {
 #[derive(Debug, Clone)]
 pub struct MimeTypes {
     /// Custom MIME type mappings
-    pub custom_types: HashMap<String, String>,
     /// Default MIME type for unknown extensions
-    pub default_type: String,
-}
-
 impl MimeTypes {
     /// Create new MIME types manager
     pub fn new() -> Self {
         Self {
-            custom_types: HashMap::new(),
             default_type: "application/octet-stream".to_string(),
         }
     }
@@ -760,13 +529,9 @@ impl MimeTypes {
     /// Add custom MIME type mapping
     pub fn add_type(&mut self, extension: &str, mime_type: &str) {
         self.custom_types.insert(extension.to_string(), mime_type.to_string());
-    }
-
     /// Get MIME type for file extension
     pub fn get_type(&self, extension: &str) -> &str {
         self.custom_types.get(extension).map(|s| s.as_str()).unwrap_or(&self.default_type)
-    }
-
     /// Get MIME type from filename
     pub fn get_type_from_filename(&self, filename: &str) -> &str {
         if let Some(extension) = filename.rfind('.').map(|pos| &filename[pos + 1..]) {

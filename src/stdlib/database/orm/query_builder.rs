@@ -15,49 +15,23 @@ use super::entity::Entity;
 #[derive(Debug, Clone)]
 pub struct FluentQueryBuilder<T: Entity> {
     /// Table being queried
-    table: String,
     /// Database connection
-    db: Arc<DB>,
     /// SELECT fields
-    select_fields: Vec<String>,
     /// WHERE conditions
-    where_conditions: Vec<WhereClause>,
     /// JOIN clauses
-    joins: Vec<JoinClause>,
     /// ORDER BY clauses
-    order_by: Vec<OrderByClause>,
     /// GROUP BY fields
-    group_by: Vec<String>,
     /// HAVING conditions
-    having_conditions: Vec<WhereClause>,
     /// LIMIT value
-    limit_value: Option<u64>,
     /// OFFSET value
-    offset_value: Option<u64>,
     /// Query parameters
-    parameters: Vec<SqlValue>,
     /// Entity type marker
-    _phantom: std::marker::PhantomData<T>,
-}
-
 impl<T: Entity> FluentQueryBuilder<T> {
     /// slay Create new query builder
     #[instrument(skip(db))]
     pub fn new(table: &str, db: Arc<DB>) -> Self {
         debug!(table = table, "Creating new query builder");
         Self {
-            table: table.to_string(),
-            db,
-            select_fields: Vec::from(["*".to_string()]),
-            where_conditions: Vec::new(),
-            joins: Vec::new(),
-            order_by: Vec::new(),
-            group_by: Vec::new(),
-            having_conditions: Vec::new(),
-            limit_value: None,
-            offset_value: None,
-            parameters: Vec::new(),
-            _phantom: std::marker::PhantomData,
         }
     }
 
@@ -67,38 +41,26 @@ impl<T: Entity> FluentQueryBuilder<T> {
         debug!(fields = ?fields, "Setting SELECT fields");
         self.select_fields = fields.iter().map(|f| f.to_string()).collect();
         self
-    }
-
     /// sus Add WHERE condition
     #[instrument(skip(self))]
     pub fn where_clause(mut self, condition: &str, params: Vec<SqlValue>) -> Self {
         debug!(condition = condition, params = ?params, "Adding WHERE condition");
         
         self.where_conditions.push(WhereClause {
-            condition: condition.to_string(),
-            operator: WhereOperator::And,
-            parameters: params.clone(),
         });
         
         self.parameters.extend(params);
         self
-    }
-
     /// highkey Add WHERE condition with OR operator
     #[instrument(skip(self))]
     pub fn or_where_its_giving(mut self, condition: &str, params: Vec<SqlValue>) -> Self {
         debug!(condition = condition, params = ?params, "Adding OR WHERE condition");
         
         self.where_conditions.push(WhereClause {
-            condition: condition.to_string(),
-            operator: WhereOperator::Or,
-            parameters: params.clone(),
         });
         
         self.parameters.extend(params);
         self
-    }
-
     /// lowkey Add WHERE IN condition
     #[instrument(skip(self))]
     pub fn where_in_the_vibe(mut self, field: &str, values: Vec<SqlValue>) -> Self {
@@ -112,15 +74,10 @@ impl<T: Entity> FluentQueryBuilder<T> {
         let condition = format!("{} IN ({})", field, placeholders.join(", "));
         
         self.where_conditions.push(WhereClause {
-            condition,
-            operator: WhereOperator::And,
-            parameters: values.clone(),
         });
         
         self.parameters.extend(values);
         self
-    }
-
     /// periodt Add WHERE LIKE condition
     #[instrument(skip(self))]
     pub fn where_like_totally(mut self, field: &str, pattern: &str) -> Self {
@@ -129,68 +86,45 @@ impl<T: Entity> FluentQueryBuilder<T> {
         let condition = format!("{} LIKE ${}", field, self.parameters.len() + 1);
         
         self.where_conditions.push(WhereClause {
-            condition,
-            operator: WhereOperator::And,
-            parameters: Vec::from([SqlValue::String(pattern.to_string())]),
         });
         
         self.parameters.push(SqlValue::String(pattern.to_string()));
         self
-    }
-
     /// bestie Add INNER JOIN
     #[instrument(skip(self))]
     pub fn join_the_party(mut self, table: &str, on_condition: &str) -> Self {
         debug!(table = table, condition = on_condition, "Adding INNER JOIN");
         
         self.joins.push(JoinClause {
-            join_type: JoinType::Inner,
-            table: table.to_string(),
-            condition: on_condition.to_string(),
         });
         
         self
-    }
-
     /// yolo Add LEFT JOIN
     #[instrument(skip(self))]
     pub fn left_join_if_vibing(mut self, table: &str, on_condition: &str) -> Self {
         debug!(table = table, condition = on_condition, "Adding LEFT JOIN");
         
         self.joins.push(JoinClause {
-            join_type: JoinType::Left,
-            table: table.to_string(),
-            condition: on_condition.to_string(),
         });
         
         self
-    }
-
     /// lit Add ORDER BY clause
     #[instrument(skip(self))]
     pub fn order_by_vibe(mut self, field: &str, direction: OrderDirection) -> Self {
         debug!(field = field, direction = ?direction, "Adding ORDER BY");
         
         self.order_by.push(OrderByClause {
-            field: field.to_string(),
-            direction,
         });
         
         self
-    }
-
     /// tea Order by ascending
     #[instrument(skip(self))]
     pub fn asc_vibes(self, field: &str) -> Self {
         self.order_by_vibe(field, OrderDirection::Ascending)
-    }
-
     /// flex Order by descending
     #[instrument(skip(self))]
     pub fn desc_vibes(self, field: &str) -> Self {
         self.order_by_vibe(field, OrderDirection::Descending)
-    }
-
     /// slay Add GROUP BY
     #[instrument(skip(self))]
     pub fn group_by_energy(mut self, fields: &[&str]) -> Self {
@@ -198,46 +132,33 @@ impl<T: Entity> FluentQueryBuilder<T> {
         
         self.group_by.extend(fields.iter().map(|f| f.to_string()));
         self
-    }
-
     /// facts Add HAVING condition
     #[instrument(skip(self))]
     pub fn having_main_character_energy(mut self, condition: &str, params: Vec<SqlValue>) -> Self {
         debug!(condition = condition, params = ?params, "Adding HAVING condition");
         
         self.having_conditions.push(WhereClause {
-            condition: condition.to_string(),
-            operator: WhereOperator::And,
-            parameters: params.clone(),
         });
         
         self.parameters.extend(params);
         self
-    }
-
     /// periodt Set LIMIT
     #[instrument(skip(self))]
     pub fn limit(mut self, count: u64) -> Self {
         debug!(limit = count, "Setting LIMIT");
         self.limit_value = Some(count);
         self
-    }
-
     /// bestie Set OFFSET
     #[instrument(skip(self))]
     pub fn offset(mut self, count: u64) -> Self {
         debug!(offset = count, "Setting OFFSET");
         self.offset_value = Some(count);
         self
-    }
-
     /// yolo Paginate results
     #[instrument(skip(self))]
     pub fn paginate_the_tea(self, page: u64, per_page: u64) -> Self {
         let offset = (page - 1) * per_page;
         self.limit(per_page).offset(offset)
-    }
-
     /// slay Execute query and return entities
     #[instrument(skip(self))]
     pub async fn execute(self) -> crate::error::Result<()> {
@@ -254,28 +175,19 @@ impl<T: Entity> FluentQueryBuilder<T> {
         for row in rows {
             let entity = T::from_row(&row)?;
             entities.push(entity);
-        }
-        
         info!(count = entities.len(), "Query executed successfully");
         Ok(entities)
-    }
-
     /// lit Execute and return first result
     #[instrument(skip(self))]
     pub async fn first_vibe(self) -> crate::error::Result<()> {
         let mut results = self.limit(1).execute().await?;
         Ok(results.pop())
-    }
-
     /// tea Execute and return single result (error if not exactly one)
     #[instrument(skip(self))]
     pub async fn single_main_character(self) -> crate::error::Result<()> {
         let results = self.limit(2).execute().await?;
         
         match results.len() {
-            0 => Err(DatabaseError::not_found("No matching record found")),
-            1 => Ok(results.into_iter().next().unwrap()),
-            _ => Err(DatabaseError::validation_error("Multiple records found, expected single result")),
         }
     }
 
@@ -299,28 +211,20 @@ impl<T: Entity> FluentQueryBuilder<T> {
         let count = if let Some(first_row) = rows.first() {
             if let Some(count_value) = first_row.values().next() {
                 match count_value {
-                    SqlValue::Integer(i) => *i as u64,
-                    SqlValue::Float(f) => *f as u64,
-                    _ => 0u64,
                 }
             } else {
                 0u64
             }
         } else {
             0u64
-        };
         
         info!(count = count, "Count query executed");
         Ok(count)
-    }
-
     /// vibe Check if any records exist
     #[instrument(skip(self))]
     pub async fn exists_no_cap(self) -> crate::error::Result<()> {
         let count = self.count_the_vibes().await?;
         Ok(count > 0)
-    }
-
     /// sus Build SQL query string
     #[instrument(skip(self))]
     fn build_sql(&self) -> crate::error::Result<()> {
@@ -335,10 +239,7 @@ impl<T: Entity> FluentQueryBuilder<T> {
         
         // JOIN clauses
         for join in &self.joins {
-            sql.push_str(&format!(" {} JOIN {} ON {}", 
                 join.join_type.to_sql(), join.table, join.condition));
-        }
-        
         // WHERE clause
         if !self.where_conditions.is_empty() {
             sql.push_str(" WHERE ");
@@ -353,13 +254,9 @@ impl<T: Entity> FluentQueryBuilder<T> {
                 })
                 .collect();
             sql.push_str(&conditions.join(""));
-        }
-        
         // GROUP BY clause
         if !self.group_by.is_empty() {
             sql.push_str(&format!(" GROUP BY {}", self.group_by.join(", ")));
-        }
-        
         // HAVING clause
         if !self.having_conditions.is_empty() {
             sql.push_str(" HAVING ");
@@ -374,8 +271,6 @@ impl<T: Entity> FluentQueryBuilder<T> {
                 })
                 .collect();
             sql.push_str(&conditions.join(""));
-        }
-        
         // ORDER BY clause
         if !self.order_by.is_empty() {
             sql.push_str(" ORDER BY ");
@@ -383,22 +278,14 @@ impl<T: Entity> FluentQueryBuilder<T> {
                 .map(|order| format!("{} {}", order.field, order.direction.to_sql()))
                 .collect();
             sql.push_str(&order_parts.join(", "));
-        }
-        
         // LIMIT clause
         if let Some(limit) = self.limit_value {
             sql.push_str(&format!(" LIMIT {}", limit));
-        }
-        
         // OFFSET clause
         if let Some(offset) = self.offset_value {
             sql.push_str(&format!(" OFFSET {}", offset));
-        }
-        
         debug!(sql = %sql, "Built SQL query");
         Ok(sql)
-    }
-
     /// facts Execute SQL and return raw rows with real database execution
     async fn execute_sql(&self, sql: &str) -> crate::error::Result<()> {
         debug!(sql = %sql, params = ?self.parameters, "Executing SQL query");
@@ -415,111 +302,58 @@ impl<T: Entity> FluentQueryBuilder<T> {
 #[derive(Debug, Clone)]
 pub struct WhereClause {
     /// Condition string with placeholders
-    pub condition: String,
     /// Logical operator (AND/OR)
-    pub operator: WhereOperator,
     /// Parameters for the condition
-    pub parameters: Vec<SqlValue>,
-}
-
 /// fr fr WHERE operators
 #[derive(Debug, Clone, PartialEq)]
 pub enum WhereOperator {
-    And,
-    Or,
-}
-
 impl WhereOperator {
     fn to_sql(&self) -> &'static str {
         match self {
-            WhereOperator::And => "AND",
-            WhereOperator::Or => "OR",
         }
     }
-}
-
 /// fr fr JOIN clause representation
 #[derive(Debug, Clone)]
 pub struct JoinClause {
     /// Type of join
-    pub join_type: JoinType,
     /// Table to join
-    pub table: String,
     /// Join condition
-    pub condition: String,
-}
-
 /// fr fr JOIN types
 #[derive(Debug, Clone, PartialEq)]
 pub enum JoinType {
-    Inner,
-    Left,
-    Right,
-    Full,
-    Cross,
-}
-
 impl JoinType {
     fn to_sql(&self) -> &'static str {
         match self {
-            JoinType::Inner => "INNER",
-            JoinType::Left => "LEFT",
-            JoinType::Right => "RIGHT",
-            JoinType::Full => "FULL",
-            JoinType::Cross => "CROSS",
         }
     }
-}
-
 /// fr fr ORDER BY clause representation
 #[derive(Debug, Clone)]
 pub struct OrderByClause {
     /// Field to order by
-    pub field: String,
     /// Sort direction
-    pub direction: OrderDirection,
-}
-
 /// fr fr Sort directions
 #[derive(Debug, Clone, PartialEq)]
 pub enum OrderDirection {
-    Ascending,
-    Descending,
-}
-
 impl OrderDirection {
     fn to_sql(&self) -> &'static str {
         match self {
-            OrderDirection::Ascending => "ASC",
-            OrderDirection::Descending => "DESC",
         }
     }
-}
-
 /// fr fr GROUP BY clause representation
 #[derive(Debug, Clone)]
 pub struct GroupByClause {
     /// Fields to group by
-    pub fields: Vec<String>,
-}
-
 /// fr fr Query executor for advanced query operations
 #[derive(Debug)]
 pub struct QueryExecutor {
     /// Database connection
-    db: Arc<DB>,
     /// Query cache
-    cache: Arc<std::sync::Mutex<HashMap<String, Vec<HashMap<String, SqlValue>>>>>,
-}
-
 impl QueryExecutor {
     /// slay Create new query executor
     #[instrument(skip(db))]
     pub fn new(db: Arc<DB>) -> Self {
         info!("Creating new query executor");
         Self {
-            db,
-            cache: Arc::new(std::sync::Mutex::new(HashMap::new())),
         }
     }
 
@@ -545,12 +379,8 @@ impl QueryExecutor {
         // Cache result
         if let Ok(mut cache) = self.cache.lock() {
             cache.insert(cache_key, results.clone());
-        }
-        
         info!(rows = results.len(), "Query executed successfully");
         Ok(results)
-    }
-
     /// periodt Clear query cache
     #[instrument(skip(self))]
     pub fn clear_cache(&self) {
@@ -559,8 +389,6 @@ impl QueryExecutor {
             cache.clear();
         }
     }
-}
-
 /// fr fr Trait for query operations that can be chained
 pub trait VibeQuery<T: Entity> {
     /// Basic where condition
@@ -574,5 +402,3 @@ pub trait VibeQuery<T: Entity> {
     
     /// Execute and get results
     fn get_vibes(&self) -> impl std::future::Future<Output = crate::error::Result<()>> + Send;
-}
-

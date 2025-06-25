@@ -10,134 +10,71 @@ use std::sync::{Arc, Mutex};
 use tracing::{debug, trace};
 
 use inkwell::{
-    values::{FunctionValue, BasicValue, BasicValueEnum, InstructionValue},
-    basic_block::BasicBlock,
-    module::Module,
-};
+// };
 
 use crate::optimization::enhanced_llvm_passes_manager::EnhancedOptimizationStatistics;
 
 /// CursedError propagation optimizer for CURSED error handling
 pub struct ErrorPropagationOptimizer<'ctx> {
-    context_lifetime: std::marker::PhantomData<&'ctx ()>,
-    statistics: Arc<Mutex<EnhancedOptimizationStatistics>>,
-    error_patterns: ErrorPatternAnalysis,
-    optimization_config: ErrorOptimizationConfig,
-}
-
 /// Configuration for error propagation optimizations
 #[derive(Debug, Clone)]
 struct ErrorOptimizationConfig {
     /// Enable error path optimization
-    enable_error_path_optimization: bool,
     /// Enable error result caching
-    enable_result_caching: bool,
     /// Enable error unwinding optimization
-    enable_unwinding_optimization: bool,
     /// Enable error branch prediction hints
-    enable_branch_prediction: bool,
-}
-
 impl Default for ErrorOptimizationConfig {
     fn default() -> Self {
         Self {
-            enable_error_path_optimization: true,
-            enable_result_caching: true,
-            enable_unwinding_optimization: true,
-            enable_branch_prediction: true,
         }
     }
-}
-
 /// Analysis of error handling patterns
 #[derive(Debug, Default)]
 struct ErrorPatternAnalysis {
     /// Function name -> error handling sites
-    error_sites: HashMap<String, Vec<ErrorHandlingSite>>,
     /// CursedError propagation chains
-    propagation_chains: Vec<ErrorPropagationChain>,
     /// CursedError result patterns
-    result_patterns: HashMap<String, Vec<ResultPattern>>,
-}
-
 /// Information about an error handling site
 #[derive(Debug, Clone)]
 struct ErrorHandlingSite {
     /// Type of error handling
-    handling_type: ErrorHandlingType,
     /// Location in source
-    location: String,
     /// CursedError types handled
-    error_types: Vec<String>,
     /// Frequency of error occurrence
-    error_frequency: f64,
     /// Performance cost
-    performance_cost: f64,
-}
-
 /// Types of error handling in CURSED
 #[derive(Debug, Clone, PartialEq)]
 enum ErrorHandlingType {
     /// Question mark operator (?)
-    QuestionMark,
     /// Explicit error checking
-    ExplicitCheck,
     /// Try-catch equivalent
-    TryCatch,
     /// CursedError unwinding
-    Unwinding,
     /// Result type handling
-    ResultType,
-}
-
 /// CursedError propagation chain
 #[derive(Debug, Clone)]
 struct ErrorPropagationChain {
     /// Functions in the chain
-    functions: Vec<String>,
     /// Chain length
-    length: usize,
     /// Total propagation cost
-    total_cost: f64,
     /// Optimization potential
-    optimization_potential: f64,
-}
-
 /// Result pattern analysis
 #[derive(Debug, Clone)]
 struct ResultPattern {
     /// Pattern type
-    pattern_type: ResultPatternType,
     /// Success rate
-    success_rate: f64,
     /// CursedError handling overhead
-    overhead: f64,
     /// Optimization strategy
-    optimization_strategy: String,
-}
-
 /// Types of Result patterns
 #[derive(Debug, Clone, PartialEq)]
 enum ResultPatternType {
     /// Always success
-    AlwaysSuccess,
     /// Mostly success
-    MostlySuccess,
     /// Mixed results
-    Mixed,
     /// Mostly error
-    MostlyError,
     /// Always error
-    AlwaysError,
-}
-
 impl<'ctx> ErrorPropagationOptimizer<'ctx> {
     pub fn new(statistics: Arc<Mutex<EnhancedOptimizationStatistics>>) -> Self {
         Self {
-            context_lifetime: std::marker::PhantomData,
-            statistics,
-            error_patterns: ErrorPatternAnalysis::default(),
-            optimization_config: ErrorOptimizationConfig::default(),
         }
     }
     
@@ -154,26 +91,16 @@ impl<'ctx> ErrorPropagationOptimizer<'ctx> {
         // Optimize error handling sites
         if let Some(error_sites) = self.error_patterns.error_sites.get(function_name) {
             optimizations_applied += self.optimize_error_sites(function, error_sites)?;
-        }
-        
         // Optimize result patterns
         if let Some(result_patterns) = self.error_patterns.result_patterns.get(function_name) {
             optimizations_applied += self.optimize_result_patterns(function, result_patterns)?;
-        }
-        
         // Update statistics
         {
             let mut stats = self.statistics.lock().unwrap();
             stats.error_propagations_optimized += optimizations_applied;
-        }
-        
         if optimizations_applied > 0 {
             debug!("Applied {} error handling optimizations to function {}", optimizations_applied, function_name);
-        }
-        
         Ok(())
-    }
-    
     /// Analyze error patterns in a function
     fn analyze_function_errors(&mut self, function: FunctionValue<'ctx>) -> Result<()> {
         let function_name = function.get_name().to_str().unwrap_or("unnamed").to_string();
@@ -182,11 +109,7 @@ impl<'ctx> ErrorPropagationOptimizer<'ctx> {
         while let Some(bb) = block {
             self.analyze_basic_block_errors(&function_name, bb)?;
             block = bb.get_next_basic_block();
-        }
-        
         Ok(())
-    }
-    
     /// Analyze error patterns in a basic block
     fn analyze_basic_block_errors(&mut self, function_name: &str, block: BasicBlock<'ctx>) -> Result<()> {
         let mut instruction = block.get_first_instruction();
@@ -197,23 +120,14 @@ impl<'ctx> ErrorPropagationOptimizer<'ctx> {
                     .entry(function_name.to_string())
                     .or_insert_with(Vec::new)
                     .push(error_site);
-            }
-            
             instruction = instr.get_next_instruction();
-        }
-        
         Ok(())
-    }
-    
     /// Analyze an instruction for error handling patterns
     fn analyze_instruction_errors(&self, _instruction: InstructionValue<'ctx>) -> Result<Option<ErrorHandlingSite>> {
         // This would analyze instructions for error handling patterns
         // For now, simulate finding error handling
         if self.is_error_handling_instruction(&_instruction) {
             Ok(Some(ErrorHandlingSite {
-                handling_type: ErrorHandlingType::QuestionMark,
-                location: "unknown".to_string(),
-                error_types: vec!["CursedError".to_string()],
                 error_frequency: 0.1, // 10% error rate
                 performance_cost: 0.05, // 5% performance cost
             }))
@@ -257,28 +171,15 @@ impl<'ctx> ErrorPropagationOptimizer<'ctx> {
                 // Check if selecting based on error condition
                 self.is_error_select(instruction)
             }
-            _ => false,
         }
     }
     
     /// Check if function name indicates error handling
     fn is_error_function_name(&self, name: &str) -> bool {
         const ERROR_FUNCTION_PATTERNS: &[&str] = &[
-            "cursed_propagate_error",
-            "cursed_check_result",
-            "cursed_unwrap_result",
-            "cursed_handle_error",
-            "cursed_return_error",
-            "cursed_panic_on_error",
-            "cursed_question_mark_op",
-            "__cursed_error_",
-            "rust_begin_unwind",
-            "rust_panic",
         ];
         
         ERROR_FUNCTION_PATTERNS.iter().any(|pattern| name.contains(pattern))
-    }
-    
     /// Check if branch instruction is part of error checking
     fn is_error_checking_branch(&self, instruction: &InstructionValue<'ctx>) -> bool {
         // Analyze the condition used in the branch
@@ -289,8 +190,6 @@ impl<'ctx> ErrorPropagationOptimizer<'ctx> {
             }
         }
         false
-    }
-    
     /// Check if load instruction accesses error result
     fn is_error_result_load(&self, instruction: &InstructionValue<'ctx>) -> bool {
         if let Some(ptr_operand) = instruction.get_operand(0) {
@@ -302,8 +201,6 @@ impl<'ctx> ErrorPropagationOptimizer<'ctx> {
             }
         }
         false
-    }
-    
     /// Check if comparison instruction compares error values
     fn is_error_comparison(&self, instruction: &InstructionValue<'ctx>) -> bool {
         // Check operands for error-related values
@@ -329,8 +226,6 @@ impl<'ctx> ErrorPropagationOptimizer<'ctx> {
             }
         }
         false
-    }
-    
     /// Check if store instruction stores error information
     fn is_error_store(&self, instruction: &InstructionValue<'ctx>) -> bool {
         if let Some(ptr_operand) = instruction.get_operand(1) {
@@ -341,8 +236,6 @@ impl<'ctx> ErrorPropagationOptimizer<'ctx> {
             }
         }
         false
-    }
-    
     /// Check if select instruction selects based on error condition
     fn is_error_select(&self, instruction: &InstructionValue<'ctx>) -> bool {
         if let Some(condition) = instruction.get_operand(0) {
@@ -351,8 +244,6 @@ impl<'ctx> ErrorPropagationOptimizer<'ctx> {
             }
         }
         false
-    }
-    
     /// Optimize error handling sites
     fn optimize_error_sites(&self, function: FunctionValue<'ctx>, error_sites: &[ErrorHandlingSite]) -> Result<usize> {
         let mut optimizations = 0;
@@ -386,8 +277,6 @@ impl<'ctx> ErrorPropagationOptimizer<'ctx> {
         }
         
         Ok(optimizations)
-    }
-    
     /// Optimize rare error paths by moving them out of hot code
     fn optimize_rare_error_path(&self, function: FunctionValue<'ctx>, site: &ErrorHandlingSite) -> Result<usize> {
         debug!("Optimizing rare error path with frequency {:.4}", site.error_frequency);
@@ -404,16 +293,10 @@ impl<'ctx> ErrorPropagationOptimizer<'ctx> {
                 // Add branch prediction hints favoring the success path
                 if self.optimization_config.enable_branch_prediction {
                     self.add_branch_prediction_hint(bb, false); // false = unlikely
-                }
-                
                 optimizations += 1;
             }
             block = bb.get_next_basic_block();
-        }
-        
         Ok(optimizations)
-    }
-    
     /// Optimize expensive error checks by combining them
     fn optimize_expensive_error_check(&self, function: FunctionValue<'ctx>, site: &ErrorHandlingSite) -> Result<usize> {
         debug!("Optimizing expensive error check with cost {:.4}", site.performance_cost);
@@ -429,11 +312,7 @@ impl<'ctx> ErrorPropagationOptimizer<'ctx> {
                 optimizations += self.combine_error_checks(bb, &error_checks)?;
             }
             block = bb.get_next_basic_block();
-        }
-        
         Ok(optimizations)
-    }
-    
     /// Apply result caching for functions that return the same errors frequently
     fn apply_result_caching(&self, function: FunctionValue<'ctx>, site: &ErrorHandlingSite) -> Result<usize> {
         debug!("Applying result caching for error site at {}", site.location);
@@ -446,11 +325,7 @@ impl<'ctx> ErrorPropagationOptimizer<'ctx> {
             // High error rate - consider caching the error
             debug!("High error rate function {} - applying error result caching", function_name);
             return Ok(1);
-        }
-        
         Ok(0)
-    }
-    
     /// Optimize try-catch equivalent blocks
     fn optimize_try_catch_block(&self, function: FunctionValue<'ctx>, site: &ErrorHandlingSite) -> Result<usize> {
         debug!("Optimizing try-catch block at {}", site.location);
@@ -467,11 +342,7 @@ impl<'ctx> ErrorPropagationOptimizer<'ctx> {
                 optimizations += 1;
             }
             block = bb.get_next_basic_block();
-        }
-        
         Ok(optimizations)
-    }
-    
     /// Optimize unwinding paths
     fn optimize_unwinding_path(&self, function: FunctionValue<'ctx>, site: &ErrorHandlingSite) -> Result<usize> {
         debug!("Optimizing unwinding path at {}", site.location);
@@ -487,11 +358,7 @@ impl<'ctx> ErrorPropagationOptimizer<'ctx> {
                 optimizations += 1;
             }
             block = bb.get_next_basic_block();
-        }
-        
         Ok(optimizations)
-    }
-    
     /// Check if block contains error handling
     fn block_contains_error_handling(&self, block: BasicBlock<'ctx>) -> bool {
         let mut instruction = block.get_first_instruction();
@@ -501,23 +368,15 @@ impl<'ctx> ErrorPropagationOptimizer<'ctx> {
                 return true;
             }
             instruction = instr.get_next_instruction();
-        }
-        
         false
-    }
-    
     /// Mark basic block as cold (for rare error paths)
     fn mark_block_as_cold(&self, _block: BasicBlock<'ctx>) {
         // In real implementation, this would add cold attributes to the block
         debug!("Marking block as cold for better code layout");
-    }
-    
     /// Add branch prediction hint
     fn add_branch_prediction_hint(&self, _block: BasicBlock<'ctx>, _likely: bool) {
         // In real implementation, this would add branch weight metadata
         debug!("Adding branch prediction hint");
-    }
-    
     /// Find error checks in a basic block
     fn find_error_checks_in_block(&self, block: BasicBlock<'ctx>) -> Vec<InstructionValue<'ctx>> {
         let mut error_checks = Vec::new();
@@ -530,17 +389,11 @@ impl<'ctx> ErrorPropagationOptimizer<'ctx> {
                 }
             }
             instruction = instr.get_next_instruction();
-        }
-        
         error_checks
-    }
-    
     /// Combine multiple error checks into a single check
     fn combine_error_checks(&self, _block: BasicBlock<'ctx>, error_checks: &[InstructionValue<'ctx>]) -> Result<usize> {
         if error_checks.len() <= 1 {
             return Ok(0);
-        }
-        
         debug!("Combining {} error checks into single check", error_checks.len());
         
         // In real implementation, this would:
@@ -550,33 +403,23 @@ impl<'ctx> ErrorPropagationOptimizer<'ctx> {
         // 4. Update control flow accordingly
         
         Ok(1) // One optimization applied
-    }
-    
     /// Check if block is a try-catch block
     fn is_try_catch_block(&self, _block: BasicBlock<'ctx>) -> bool {
         // Check for exception handling patterns
         // This would analyze the block structure for try-catch patterns
         false
-    }
-    
     /// Optimize exception handling in block
     fn optimize_exception_handling_in_block(&self, _block: BasicBlock<'ctx>) {
         debug!("Optimizing exception handling in block");
         // Implementation would optimize exception handling patterns
-    }
-    
     /// Check if block is an unwinding block
     fn is_unwinding_block(&self, _block: BasicBlock<'ctx>) -> bool {
         // Check for stack unwinding patterns
         false
-    }
-    
     /// Simplify unwinding block
     fn simplify_unwinding_block(&self, _block: BasicBlock<'ctx>) {
         debug!("Simplifying unwinding block");
         // Implementation would simplify cleanup code
-    }
-    
     /// Optimize result patterns
     fn optimize_result_patterns(&self, _function: FunctionValue<'ctx>, patterns: &[ResultPattern]) -> Result<usize> {
         let mut optimizations = 0;
@@ -624,119 +467,62 @@ mod memory_layout_optimizer_real {
     /// Real memory layout optimizer that analyzes and improves data locality
     /// for significant cache performance improvements
     pub struct MemoryLayoutOptimizer<'ctx> {
-        context_lifetime: std::marker::PhantomData<&'ctx ()>,
-        statistics: Arc<Mutex<EnhancedOptimizationStatistics>>,
         /// Real memory access pattern analysis
-        access_patterns: HashMap<String, MemoryAccessPattern>,
         /// Hot/cold field analysis for struct optimization
-        field_usage_analysis: HashMap<String, FieldUsageInfo>,
         /// Memory stride analysis for loop optimization
-        stride_analysis: HashMap<String, StrideInfo>,
         /// Configuration for memory layout optimizations
-        config: MemoryLayoutConfig,
         /// LLVM builder for creating optimized instructions
-        builder: Option<Builder<'ctx>>,
-    }
-    
     #[derive(Debug, Clone)]
     struct MemoryLayoutConfig {
         /// Enable struct field reordering
-        enable_field_reordering: bool,
         /// Enable memory prefetching
-        enable_prefetching: bool,
         /// Enable loop access optimization
-        enable_loop_optimization: bool,
         /// Cache line size for alignment
-        cache_line_size: usize,
-    }
-    
     impl Default for MemoryLayoutConfig {
         fn default() -> Self {
             Self {
-                enable_field_reordering: true,
-                enable_prefetching: true,
-                enable_loop_optimization: true,
                 cache_line_size: 64, // Most common cache line size
             }
         }
-    }
-    
     #[derive(Debug, Clone)]
     struct MemoryAccessPattern {
         /// Number of accesses to this memory location
-        access_count: usize,
         /// Access frequency (accesses per function call)
-        frequency: f64,
         /// Average access stride
-        stride: i64,
         /// Whether accesses are sequential
-        is_sequential: bool,
         /// Whether accesses are in a hot loop
-        in_hot_loop: bool,
         /// Cache line utilization efficiency
-        cache_efficiency: f64,
         /// Memory bandwidth utilization
-        bandwidth_efficiency: f64,
-    }
-    
     /// Field usage analysis for hot/cold separation
     #[derive(Debug, Clone)]
     struct FieldUsageInfo {
         /// Field name
-        field_name: String,
         /// Access frequency in hot paths
-        hot_access_count: usize,
         /// Access frequency in cold paths  
-        cold_access_count: usize,
         /// Field size in bytes
-        field_size: usize,
         /// Whether field is accessed together with other fields
-        has_spatial_locality: bool,
-    }
-    
     /// Memory stride analysis for loop optimization
     #[derive(Debug, Clone)]
     struct StrideInfo {
         /// Loop identifier
-        loop_id: String,
         /// Detected stride pattern
-        stride_pattern: StridePattern,
         /// Memory bandwidth utilization
-        bandwidth_utilization: f64,
         /// Cache miss prediction
-        predicted_miss_rate: f64,
-    }
-    
     #[derive(Debug, Clone)]
     enum StridePattern {
         /// Unit stride (consecutive access)
-        Unit,
         /// Constant stride
-        Constant(i64),
         /// Variable stride
-        Variable,
         /// Random access
-        Random,
-    }
-    
     impl<'ctx> MemoryLayoutOptimizer<'ctx> {
         pub fn new(statistics: Arc<Mutex<EnhancedOptimizationStatistics>>) -> Self {
             Self {
-                context_lifetime: std::marker::PhantomData,
-                statistics,
-                access_patterns: HashMap::new(),
-                field_usage_analysis: HashMap::new(),
-                stride_analysis: HashMap::new(),
-                config: MemoryLayoutConfig::default(),
-                builder: None,
             }
         }
         
         /// Initialize with LLVM context for real optimization
         pub fn with_context(&mut self, context: &'ctx Context) {
             self.builder = Some(context.create_builder());
-        }
-        
         /// Analyze memory access patterns in the entire module
         pub fn analyze_memory_patterns(&mut self, module: &Module<'ctx>) -> Result<()> {
             debug!("Analyzing memory access patterns for layout optimization");
@@ -746,19 +532,13 @@ mod memory_layout_optimizer_real {
             while let Some(func) = function {
                 self.analyze_function_memory_patterns(func)?;
                 function = func.get_next_function();
-            }
-            
             // Analyze global variables and their usage patterns
             let mut global = module.get_first_global();
             while let Some(global_var) = global {
                 self.analyze_global_memory_pattern(global_var)?;
                 global = global_var.get_next_global();
-            }
-            
             debug!("Found {} memory access patterns", self.access_patterns.len());
             Ok(())
-        }
-        
         /// Optimize memory layout for better cache performance
         pub fn optimize_memory_layout(&mut self, function: FunctionValue<'ctx>) -> Result<()> {
             let function_name = function.get_name().to_str().unwrap_or("unnamed");
@@ -769,18 +549,12 @@ mod memory_layout_optimizer_real {
             // Optimize struct field layouts
             if self.config.enable_field_reordering {
                 optimizations += self.optimize_struct_layouts(function)?;
-            }
-            
             // Optimize memory access patterns in loops
             if self.config.enable_loop_optimization {
                 optimizations += self.optimize_loop_memory_access(function)?;
-            }
-            
             // Add memory prefetching hints
             if self.config.enable_prefetching {
                 optimizations += self.add_prefetch_hints(function)?;
-            }
-            
             // Optimize local variable layout
             optimizations += self.optimize_local_variable_layout(function)?;
             
@@ -788,37 +562,23 @@ mod memory_layout_optimizer_real {
             {
                 let mut stats = self.statistics.lock().unwrap();
                 stats.memory_layout_optimizations += optimizations;
-            }
-            
             if optimizations > 0 {
                 debug!("Applied {} memory layout optimizations", optimizations);
-            }
-            
             Ok(())
-        }
-        
         fn analyze_function_memory_patterns(&mut self, function: FunctionValue<'ctx>) -> Result<()> {
             let mut block = function.get_first_basic_block();
             
             while let Some(bb) = block {
                 self.analyze_block_memory_patterns(bb)?;
                 block = bb.get_next_basic_block();
-            }
-            
             Ok(())
-        }
-        
         fn analyze_block_memory_patterns(&mut self, block: BasicBlock<'ctx>) -> Result<()> {
             let mut instruction = block.get_first_instruction();
             
             while let Some(instr) = instruction {
                 self.analyze_instruction_memory_access(instr)?;
                 instruction = instr.get_next_instruction();
-            }
-            
             Ok(())
-        }
-        
         fn analyze_instruction_memory_access(&mut self, instruction: InstructionValue<'ctx>) -> Result<()> {
             use inkwell::values::InstructionOpcode;
             
@@ -838,22 +598,11 @@ mod memory_layout_optimizer_real {
                     self.analyze_gep_pattern(instruction)?;
                 }
                 _ => {}
-            }
-            
             Ok(())
-        }
-        
         fn record_memory_access(&mut self, ptr: BasicValueEnum<'ctx>, is_store: bool) {
             let access_key = format!("{:?}_{}", ptr, is_store);
             
             let pattern = self.access_patterns.entry(access_key.clone()).or_insert(MemoryAccessPattern {
-                access_count: 0,
-                frequency: 0.0,
-                stride: 0,
-                is_sequential: false,
-                in_hot_loop: false,
-                cache_efficiency: 0.0,
-                bandwidth_efficiency: 0.0,
             });
             
             pattern.access_count += 1;
@@ -866,10 +615,7 @@ mod memory_layout_optimizer_real {
             // Detect sequential access patterns
             pattern.is_sequential = self.detect_sequential_pattern(ptr);
             
-            info!("Recorded memory access: {} (efficiency: {:.2}%)", 
                   access_key, pattern.cache_efficiency * 100.0);
-        }
-        
         /// Calculate real cache efficiency based on access patterns
         fn calculate_cache_efficiency(&self, access_key: &str) -> f64 {
             // Analyze cache line utilization
@@ -882,11 +628,8 @@ mod memory_layout_optimizer_real {
                 0.45 // Medium utilization for strided access
             } else {
                 0.15 // Low utilization for random access
-            };
             
             utilization
-        }
-        
         /// Calculate memory bandwidth efficiency
         fn calculate_bandwidth_efficiency(&self, pattern: &MemoryAccessPattern) -> f64 {
             let base_efficiency = if pattern.is_sequential {
@@ -895,7 +638,6 @@ mod memory_layout_optimizer_real {
                 0.6 // Small strides are reasonably efficient
             } else {
                 0.3 // Large strides waste bandwidth
-            };
             
             // Account for loop nesting (hot loops are more important)
             if pattern.in_hot_loop {
@@ -903,8 +645,6 @@ mod memory_layout_optimizer_real {
             } else {
                 base_efficiency
             }.min(1.0)
-        }
-        
         /// Detect sequential access patterns
         fn detect_sequential_pattern(&self, ptr: BasicValueEnum<'ctx>) -> bool {
             // Analyze pointer arithmetic to detect sequential patterns
@@ -944,8 +684,6 @@ mod memory_layout_optimizer_real {
                 }
             }
             false
-        }
-        
         /// Analyze pointer arithmetic for patterns
         fn analyze_pointer_arithmetic_pattern(&self, arith_instr: InstructionValue<'ctx>) -> bool {
             // Check if we're adding a small constant (suggests iteration)
@@ -958,8 +696,6 @@ mod memory_layout_optimizer_real {
                 }
             }
             false
-        }
-        
         fn analyze_gep_pattern(&mut self, instruction: InstructionValue<'ctx>) -> Result<()> {
             // Analyze GetElementPtr instructions to understand struct field access patterns
             let num_operands = instruction.get_num_operands();
@@ -976,17 +712,11 @@ mod memory_layout_optimizer_real {
                         }
                     }
                 }
-            }
-            
             Ok(())
-        }
-        
         fn analyze_global_memory_pattern(&mut self, _global: inkwell::values::GlobalValue<'ctx>) -> Result<()> {
             // Analyze global variable access patterns
             debug!("Analyzing global variable memory pattern");
             Ok(())
-        }
-        
         fn optimize_struct_layouts(&mut self, function: FunctionValue<'ctx>) -> Result<usize> {
             info!("Applying real struct layout optimizations for cache performance");
             
@@ -1002,12 +732,8 @@ mod memory_layout_optimizer_real {
                 optimizations += self.apply_prefetch_instructions(bb)?;
                 optimizations += self.reorder_memory_operations(bb)?;
                 block = bb.get_next_basic_block();
-            }
-            
             info!("Applied {} real struct layout optimizations", optimizations);
             Ok(optimizations)
-        }
-        
         /// Analyze field usage patterns for hot/cold separation
         fn analyze_field_usage_patterns(&mut self, function: FunctionValue<'ctx>) -> Result<()> {
             let mut block = function.get_first_basic_block();
@@ -1023,30 +749,19 @@ mod memory_layout_optimizer_real {
                     instruction = instr.get_next_instruction();
                 }
                 block = bb.get_next_basic_block();
-            }
-            
             Ok(())
-        }
-        
         /// Analyze individual field access for usage patterns
         fn analyze_field_access(&mut self, gep_instr: InstructionValue<'ctx>, is_hot_path: bool) {
             if let Some(field_info) = self.extract_field_info(gep_instr) {
                 let usage_info = self.field_usage_analysis
                     .entry(field_info.field_name.clone())
                     .or_insert(FieldUsageInfo {
-                        field_name: field_info.field_name,
-                        hot_access_count: 0,
-                        cold_access_count: 0,
-                        field_size: field_info.field_size,
-                        has_spatial_locality: false,
                     });
                 
                 if is_hot_path {
                     usage_info.hot_access_count += 1;
                 } else {
                     usage_info.cold_access_count += 1;
-                }
-                
                 // Detect spatial locality
                 usage_info.has_spatial_locality = self.detect_spatial_locality(gep_instr);
             }
@@ -1063,19 +778,13 @@ mod memory_layout_optimizer_real {
                         if let Some(int_const) = const_val.as_int_constant() {
                             let field_index = int_const.get_zero_extended_constant();
                             return Some(FieldUsageInfo {
-                                field_name: format!("field_{}", field_index),
-                                hot_access_count: 0,
-                                cold_access_count: 0,
                                 field_size: 8, // Estimate 8 bytes per field
-                                has_spatial_locality: false,
                             });
                         }
                     }
                 }
             }
             None
-        }
-        
         /// Detect spatial locality in field access
         fn detect_spatial_locality(&self, gep_instr: InstructionValue<'ctx>) -> bool {
             // Look for adjacent field accesses in the same basic block
@@ -1086,14 +795,11 @@ mod memory_layout_optimizer_real {
                 }
             }
             false
-        }
-        
         /// Check if this is a hot block (frequently executed)
         fn is_hot_block(&self, block: BasicBlock<'ctx>) -> bool {
             // Simple heuristic: blocks in loops are considered hot
             let mut instruction = block.get_first_instruction();
             while let Some(instr) = instruction {
-                if matches!(instr.get_opcode(), 
                     inkwell::values::InstructionOpcode::Br | 
                     inkwell::values::InstructionOpcode::CondBr
                 ) {
@@ -1103,8 +809,6 @@ mod memory_layout_optimizer_real {
                 instruction = instr.get_next_instruction();
             }
             false
-        }
-        
         /// Apply real prefetch instructions for predictable access patterns
         fn apply_prefetch_instructions(&self, block: BasicBlock<'ctx>) -> Result<usize> {
             let mut optimizations = 0;
@@ -1121,11 +825,7 @@ mod memory_layout_optimizer_real {
                     }
                 }
                 instruction = instr.get_next_instruction();
-            }
-            
             Ok(optimizations)
-        }
-        
         /// Determine if an access should be prefetched
         fn should_prefetch_access(&self, load_instr: InstructionValue<'ctx>) -> bool {
             // Prefetch if the access pattern suggests future sequential accesses
@@ -1137,16 +837,12 @@ mod memory_layout_optimizer_real {
                 }
             }
             false
-        }
-        
         /// Insert prefetch instruction (placeholder for LLVM intrinsic)
         fn insert_prefetch_instruction(&self, target_instr: InstructionValue<'ctx>) -> Result<()> {
             // In a real implementation, this would insert LLVM prefetch intrinsics
             // For now, we'll just record that we would insert them
             info!("Would insert prefetch intrinsic before instruction: {:?}", target_instr);
             Ok(())
-        }
-        
         /// Reorder memory operations for better cache locality
         fn reorder_memory_operations(&self, block: BasicBlock<'ctx>) -> Result<usize> {
             let mut optimizations = 0;
@@ -1165,26 +861,19 @@ mod memory_layout_optimizer_real {
             }
             
             Ok(optimizations)
-        }
-        
         /// Collect memory operations from a block
         fn collect_memory_operations(&self, block: BasicBlock<'ctx>) -> Vec<InstructionValue<'ctx>> {
             let mut operations = Vec::new();
             let mut instruction = block.get_first_instruction();
             
             while let Some(instr) = instruction {
-                if matches!(instr.get_opcode(), 
                     inkwell::values::InstructionOpcode::Load | 
                     inkwell::values::InstructionOpcode::Store
                 ) {
                     operations.push(instr);
                 }
                 instruction = instr.get_next_instruction();
-            }
-            
             operations
-        }
-        
         /// Group operations by base pointer for optimization
         fn group_operations_by_base_pointer(&self, operations: Vec<InstructionValue<'ctx>>) -> Vec<Vec<InstructionValue<'ctx>>> {
             let mut groups: HashMap<String, Vec<InstructionValue<'ctx>>> = HashMap::new();
@@ -1192,11 +881,7 @@ mod memory_layout_optimizer_real {
             for op in operations {
                 let base_ptr = self.extract_base_pointer(op);
                 groups.entry(base_ptr).or_insert_with(Vec::new).push(op);
-            }
-            
             groups.into_values().collect()
-        }
-        
         /// Extract base pointer identifier for grouping
         fn extract_base_pointer(&self, instr: InstructionValue<'ctx>) -> String {
             // Get the pointer operand (operand 0 for load, operand 1 for store)
@@ -1204,7 +889,6 @@ mod memory_layout_optimizer_real {
                 0
             } else {
                 1
-            };
             
             if let Some(ptr) = instr.get_operand(ptr_operand_index) {
                 format!("{:?}", ptr)
@@ -1217,8 +901,6 @@ mod memory_layout_optimizer_real {
         fn optimize_operation_group(&self, group: Vec<InstructionValue<'ctx>>) -> Result<usize> {
             if group.len() < 2 {
                 return Ok(0);
-            }
-            
             // Sort operations by their potential cache benefit
             let sorted_group = self.sort_operations_for_cache_locality(group);
             
@@ -1226,11 +908,7 @@ mod memory_layout_optimizer_real {
             if self.would_reordering_help(&sorted_group) {
                 info!("Would reorder {} memory operations for better cache locality", sorted_group.len());
                 return Ok(1);
-            }
-            
             Ok(0)
-        }
-        
         /// Sort operations for optimal cache locality
         fn sort_operations_for_cache_locality(&self, mut operations: Vec<InstructionValue<'ctx>>) -> Vec<InstructionValue<'ctx>> {
             // Sort by estimated memory address order
@@ -1241,8 +919,6 @@ mod memory_layout_optimizer_real {
             });
             
             operations
-        }
-        
         /// Estimate memory address for sorting operations
         fn estimate_memory_address(&self, instr: InstructionValue<'ctx>) -> f64 {
             // Simple heuristic: use instruction order as proxy for address
@@ -1254,8 +930,6 @@ mod memory_layout_optimizer_real {
         fn would_reordering_help(&self, operations: &[InstructionValue<'ctx>]) -> bool {
             // Check if operations access potentially adjacent memory locations
             operations.len() >= 2 && self.have_sequential_access_potential(operations)
-        }
-        
         /// Check if operations have sequential access potential
         fn have_sequential_access_potential(&self, operations: &[InstructionValue<'ctx>]) -> bool {
             // Look for GEP instructions with small, constant offsets
@@ -1269,18 +943,13 @@ mod memory_layout_optimizer_real {
                 }
             }
             false
-        }
-        
         /// Get pointer operand from memory instruction
         fn get_pointer_operand(&self, instr: InstructionValue<'ctx>) -> Option<BasicValueEnum<'ctx>> {
             let ptr_index = if matches!(instr.get_opcode(), inkwell::values::InstructionOpcode::Load) {
                 0
             } else {
                 1
-            };
             instr.get_operand(ptr_index)
-        }
-        
         fn optimize_struct_accesses_in_block(&self, block: BasicBlock<'ctx>) -> Result<usize> {
             let mut optimizations = 0;
             let mut instruction = block.get_first_instruction();
@@ -1294,18 +963,12 @@ mod memory_layout_optimizer_real {
                     }
                 }
                 instruction = instr.get_next_instruction();
-            }
-            
             Ok(optimizations)
-        }
-        
         fn can_optimize_struct_access(&self, _instruction: InstructionValue<'ctx>) -> bool {
             // Check if this struct access can be optimized
             // This would involve analyzing the access pattern and determining
             // if reordering would improve cache performance
             true // Simplified - assume we can optimize
-        }
-        
         fn optimize_loop_memory_access(&self, function: FunctionValue<'ctx>) -> Result<usize> {
             debug!("Optimizing memory access patterns in loops");
             
@@ -1317,11 +980,7 @@ mod memory_layout_optimizer_real {
                     optimizations += self.optimize_loop_block_memory(bb)?;
                 }
                 block = bb.get_next_basic_block();
-            }
-            
             Ok(optimizations)
-        }
-        
         fn is_loop_block(&self, block: BasicBlock<'ctx>) -> bool {
             // Check if this block is part of a loop
             // This would involve analyzing the control flow graph
@@ -1334,11 +993,7 @@ mod memory_layout_optimizer_real {
                     return true; // Simplified
                 }
                 instruction = instr.get_next_instruction();
-            }
-            
             false
-        }
-        
         fn optimize_loop_block_memory(&self, _block: BasicBlock<'ctx>) -> Result<usize> {
             debug!("Optimizing memory access in loop block");
             
@@ -1348,8 +1003,6 @@ mod memory_layout_optimizer_real {
             // 3. Add prefetch instructions for predictable access patterns
             
             Ok(1) // Simplified - assume we applied one optimization
-        }
-        
         fn add_prefetch_hints(&self, function: FunctionValue<'ctx>) -> Result<usize> {
             debug!("Adding memory prefetch hints for better cache performance");
             
@@ -1359,11 +1012,7 @@ mod memory_layout_optimizer_real {
             while let Some(bb) = block {
                 optimizations += self.add_prefetch_to_block(bb)?;
                 block = bb.get_next_basic_block();
-            }
-            
             Ok(optimizations)
-        }
-        
         fn add_prefetch_to_block(&self, block: BasicBlock<'ctx>) -> Result<usize> {
             let mut optimizations = 0;
             let mut instruction = block.get_first_instruction();
@@ -1377,17 +1026,11 @@ mod memory_layout_optimizer_real {
                     }
                 }
                 instruction = instr.get_next_instruction();
-            }
-            
             Ok(optimizations)
-        }
-        
         fn should_add_prefetch(&self, _instruction: InstructionValue<'ctx>) -> bool {
             // Determine if we should add a prefetch hint
             // This would analyze the access pattern and determine if prefetching would help
             false // Conservative - only add prefetch when we're confident it helps
-        }
-        
         fn optimize_local_variable_layout(&self, function: FunctionValue<'ctx>) -> Result<usize> {
             debug!("Optimizing local variable layout for better cache locality");
             
@@ -1397,11 +1040,7 @@ mod memory_layout_optimizer_real {
             while let Some(bb) = block {
                 optimizations += self.optimize_allocas_in_block(bb)?;
                 block = bb.get_next_basic_block();
-            }
-            
             Ok(optimizations)
-        }
-        
         fn optimize_allocas_in_block(&self, block: BasicBlock<'ctx>) -> Result<usize> {
             let mut optimizations = 0;
             let mut instruction = block.get_first_instruction();
@@ -1414,19 +1053,13 @@ mod memory_layout_optimizer_real {
                     }
                 }
                 instruction = instr.get_next_instruction();
-            }
-            
             Ok(optimizations)
-        }
-        
         fn can_optimize_alloca(&self, _instruction: InstructionValue<'ctx>) -> bool {
             // Check if this allocation can be optimized
             // This could involve reordering allocations or changing alignment
             true // Simplified
         }
     }
-}
-
 mod interprocedural_analyzer_real {
     use super::*;
     use std::collections::{HashMap, HashSet};
@@ -1434,82 +1067,40 @@ mod interprocedural_analyzer_real {
     /// Interprocedural analyzer performs cross-function optimizations
     /// by analyzing call relationships, inlining candidates, and global optimizations
     pub struct InterproceduralAnalyzer<'ctx> {
-        context_lifetime: std::marker::PhantomData<&'ctx ()>,
-        statistics: Arc<Mutex<EnhancedOptimizationStatistics>>,
         /// Call graph analysis results
-        call_graph: CallGraph,
         /// Function analysis results
-        function_info: HashMap<String, FunctionAnalysisInfo>,
         /// Configuration for interprocedural optimizations
-        config: InterproceduralConfig,
-    }
-    
     #[derive(Debug, Clone)]
     struct InterproceduralConfig {
         /// Enable function inlining
-        enable_inlining: bool,
         /// Maximum function size for inlining (in instructions)
-        max_inline_size: usize,
         /// Enable dead code elimination across functions
-        enable_dead_code_elimination: bool,
         /// Enable constant propagation across functions
-        enable_constant_propagation: bool,
         /// Enable tail call optimization
-        enable_tail_call_optimization: bool,
-    }
-    
     impl Default for InterproceduralConfig {
         fn default() -> Self {
             Self {
-                enable_inlining: true,
-                max_inline_size: 50,
-                enable_dead_code_elimination: true,
-                enable_constant_propagation: true,
-                enable_tail_call_optimization: true,
             }
         }
-    }
-    
     #[derive(Debug, Default)]
     struct CallGraph {
         /// Function name -> set of functions it calls
-        calls: HashMap<String, HashSet<String>>,
         /// Function name -> set of functions that call it
-        callers: HashMap<String, HashSet<String>>,
         /// Recursive function detection
-        recursive_functions: HashSet<String>,
-    }
-    
     #[derive(Debug, Clone)]
     struct FunctionAnalysisInfo {
         /// Function name
-        name: String,
         /// Number of instructions in the function
-        instruction_count: usize,
         /// Whether the function has side effects
-        has_side_effects: bool,
         /// Whether the function is recursive
-        is_recursive: bool,
         /// Call frequency (how often this function is called)
-        call_frequency: f64,
         /// Function complexity score
-        complexity_score: f64,
         /// Whether function is a good inlining candidate
-        is_inline_candidate: bool,
         /// Return type information
-        return_type_info: String,
         /// Parameter types
-        parameter_types: Vec<String>,
-    }
-    
     impl<'ctx> InterproceduralAnalyzer<'ctx> {
         pub fn new(statistics: Arc<Mutex<EnhancedOptimizationStatistics>>) -> Self {
             Self {
-                context_lifetime: std::marker::PhantomData,
-                statistics,
-                call_graph: CallGraph::default(),
-                function_info: HashMap::new(),
-                config: InterproceduralConfig::default(),
             }
         }
         
@@ -1536,12 +1127,8 @@ mod interprocedural_analyzer_real {
             {
                 let mut stats = self.statistics.lock().unwrap();
                 stats.interprocedural_optimizations += optimizations;
-            }
-            
             debug!("Completed interprocedural analysis with {} optimizations", optimizations);
             Ok(())
-        }
-        
         fn build_call_graph(&mut self, module: &Module<'ctx>) -> Result<()> {
             debug!("Building call graph for interprocedural analysis");
             
@@ -1550,23 +1137,15 @@ mod interprocedural_analyzer_real {
                 let function_name = func.get_name().to_str().unwrap_or("unnamed").to_string();
                 self.analyze_function_calls(func, &function_name)?;
                 function = func.get_next_function();
-            }
-            
             debug!("Built call graph with {} functions", self.call_graph.calls.len());
             Ok(())
-        }
-        
         fn analyze_function_calls(&mut self, function: FunctionValue<'ctx>, function_name: &str) -> Result<()> {
             let mut block = function.get_first_basic_block();
             
             while let Some(bb) = block {
                 self.analyze_block_calls(bb, function_name)?;
                 block = bb.get_next_basic_block();
-            }
-            
             Ok(())
-        }
-        
         fn analyze_block_calls(&mut self, block: BasicBlock<'ctx>, caller_name: &str) -> Result<()> {
             let mut instruction = block.get_first_instruction();
             
@@ -1575,11 +1154,7 @@ mod interprocedural_analyzer_real {
                     self.process_call_instruction(instr, caller_name)?;
                 }
                 instruction = instr.get_next_instruction();
-            }
-            
             Ok(())
-        }
-        
         fn process_call_instruction(&mut self, instruction: InstructionValue<'ctx>, caller_name: &str) -> Result<()> {
             // Extract the called function name
             let num_operands = instruction.get_num_operands();
@@ -1602,11 +1177,7 @@ mod interprocedural_analyzer_real {
                         trace!("Recorded call: {} -> {}", caller_name, called_function.get_name().to_str().unwrap_or("unnamed"));
                     }
                 }
-            }
-            
             Ok(())
-        }
-        
         fn analyze_functions(&mut self, module: &Module<'ctx>) -> Result<()> {
             debug!("Analyzing function characteristics for optimization");
             
@@ -1615,25 +1186,11 @@ mod interprocedural_analyzer_real {
                 let analysis_info = self.analyze_single_function(func)?;
                 self.function_info.insert(analysis_info.name.clone(), analysis_info);
                 function = func.get_next_function();
-            }
-            
             Ok(())
-        }
-        
         fn analyze_single_function(&self, function: FunctionValue<'ctx>) -> Result<FunctionAnalysisInfo> {
             let function_name = function.get_name().to_str().unwrap_or("unnamed").to_string();
             
             let mut info = FunctionAnalysisInfo {
-                name: function_name.clone(),
-                instruction_count: 0,
-                has_side_effects: false,
-                is_recursive: false,
-                call_frequency: 0.0,
-                complexity_score: 0.0,
-                is_inline_candidate: false,
-                return_type_info: self.analyze_return_type(function),
-                parameter_types: self.analyze_parameter_types(function),
-            };
             
             // Count instructions and analyze complexity
             let mut block = function.get_first_basic_block();
@@ -1643,8 +1200,6 @@ mod interprocedural_analyzer_real {
                 info.complexity_score += block_info.complexity_score;
                 info.has_side_effects |= block_info.has_side_effects;
                 block = bb.get_next_basic_block();
-            }
-            
             // Calculate call frequency
             info.call_frequency = self.calculate_call_frequency(&function_name);
             
@@ -1652,14 +1207,10 @@ mod interprocedural_analyzer_real {
             info.is_inline_candidate = self.is_good_inline_candidate(&info);
             
             Ok(info)
-        }
-        
         fn analyze_return_type(&self, function: FunctionValue<'ctx>) -> String {
             // Analyze the return type of the function
             let return_type = function.get_type().get_return_type();
             match return_type {
-                Some(ty) => format!("{:?}", ty),
-                None => "void".to_string(),
             }
         }
         
@@ -1675,14 +1226,8 @@ mod interprocedural_analyzer_real {
             }
             
             param_types
-        }
-        
         fn analyze_block_complexity(&self, block: BasicBlock<'ctx>) -> Result<BlockComplexityInfo> {
             let mut info = BlockComplexityInfo {
-                instruction_count: 0,
-                complexity_score: 0.0,
-                has_side_effects: false,
-            };
             
             let mut instruction = block.get_first_instruction();
             while let Some(instr) = instruction {
@@ -1690,11 +1235,7 @@ mod interprocedural_analyzer_real {
                 info.complexity_score += self.get_instruction_complexity_score(instr);
                 info.has_side_effects |= self.instruction_has_side_effects(instr);
                 instruction = instr.get_next_instruction();
-            }
-            
             Ok(info)
-        }
-        
         fn get_instruction_complexity_score(&self, instruction: InstructionValue<'ctx>) -> f64 {
             use inkwell::values::InstructionOpcode;
             
@@ -1702,37 +1243,28 @@ mod interprocedural_analyzer_real {
                 // Simple arithmetic operations
                 InstructionOpcode::Add | InstructionOpcode::Sub | 
                 InstructionOpcode::Mul | InstructionOpcode::And | 
-                InstructionOpcode::Or | InstructionOpcode::Xor => 1.0,
                 
                 // More complex operations
                 InstructionOpcode::SDiv | InstructionOpcode::UDiv |
-                InstructionOpcode::SRem | InstructionOpcode::URem => 3.0,
                 
                 // Control flow
-                InstructionOpcode::Br | InstructionOpcode::CondBr => 2.0,
                 
                 // Function calls
-                InstructionOpcode::Call => 5.0,
                 
                 // Memory operations
-                InstructionOpcode::Load | InstructionOpcode::Store => 2.0,
                 
                 // Everything else
-                _ => 1.5,
             }
         }
         
         fn instruction_has_side_effects(&self, instruction: InstructionValue<'ctx>) -> bool {
             use inkwell::values::InstructionOpcode;
             
-            matches!(instruction.get_opcode(), 
                 InstructionOpcode::Store | 
                 InstructionOpcode::Call |
                 InstructionOpcode::AtomicRMW |
                 InstructionOpcode::AtomicCmpXchg
             )
-        }
-        
         fn calculate_call_frequency(&self, function_name: &str) -> f64 {
             // Calculate how often this function is called
             if let Some(callers) = self.call_graph.callers.get(function_name) {
@@ -1748,8 +1280,6 @@ mod interprocedural_analyzer_real {
             !info.is_recursive &&
             info.call_frequency > 1.0 &&
             info.complexity_score < 20.0
-        }
-        
         fn detect_recursive_functions(&mut self) {
             debug!("Detecting recursive functions");
             
@@ -1763,34 +1293,22 @@ mod interprocedural_analyzer_real {
                         info.is_inline_candidate = false; // Don't inline recursive functions
                     }
                 }
-            }
-            
             debug!("Found {} recursive functions", self.call_graph.recursive_functions.len());
-        }
-        
         fn is_function_recursive(&self, function_name: &str, called_functions: &HashSet<String>, visited: &mut HashSet<String>) -> bool {
             if visited.contains(function_name) {
                 return true; // Found a cycle
-            }
-            
             visited.insert(function_name.to_string());
             
             for called_func in called_functions {
                 if called_func == function_name {
                     return true; // Direct recursion
-                }
-                
                 if let Some(transitive_calls) = self.call_graph.calls.get(called_func) {
                     if self.is_function_recursive(function_name, transitive_calls, visited) {
                         return true; // Indirect recursion
                     }
                 }
-            }
-            
             visited.remove(function_name);
             false
-        }
-        
         fn identify_optimization_opportunities(&self) {
             debug!("Identifying interprocedural optimization opportunities");
             
@@ -1807,30 +1325,18 @@ mod interprocedural_analyzer_real {
                 .collect();
             
             debug!("Found {} potentially unused functions", unused_functions.len());
-        }
-        
         fn apply_optimizations(&self, module: &Module<'ctx>) -> Result<usize> {
             let mut total_optimizations = 0;
             
             if self.config.enable_inlining {
                 total_optimizations += self.apply_function_inlining(module)?;
-            }
-            
             if self.config.enable_dead_code_elimination {
                 total_optimizations += self.apply_dead_code_elimination(module)?;
-            }
-            
             if self.config.enable_constant_propagation {
                 total_optimizations += self.apply_constant_propagation(module)?;
-            }
-            
             if self.config.enable_tail_call_optimization {
                 total_optimizations += self.apply_tail_call_optimization(module)?;
-            }
-            
             Ok(total_optimizations)
-        }
-        
         fn apply_function_inlining(&self, module: &Module<'ctx>) -> Result<usize> {
             info!("Applying real function inlining optimizations");
             
@@ -1854,12 +1360,8 @@ mod interprocedural_analyzer_real {
                         }
                     }
                 }
-            }
-            
             info!("Successfully inlined {} function calls", inlined_count);
             Ok(inlined_count)
-        }
-        
         /// Find function in module by name
         fn find_function_in_module(&self, module: &Module<'ctx>, name: &str) -> Option<FunctionValue<'ctx>> {
             let mut function = module.get_first_function();
@@ -1870,8 +1372,6 @@ mod interprocedural_analyzer_real {
                 function = func.get_next_function();
             }
             None
-        }
-        
         /// Find all call sites for a function
         fn find_call_sites(&self, module: &Module<'ctx>, target_name: &str) -> Vec<InstructionValue<'ctx>> {
             let mut call_sites = Vec::new();
@@ -1892,11 +1392,7 @@ mod interprocedural_analyzer_real {
                     block = bb.get_next_basic_block();
                 }
                 function = func.get_next_function();
-            }
-            
             call_sites
-        }
-        
         /// Check if call instruction calls the target function
         fn is_call_to_function(&self, call_instr: InstructionValue<'ctx>, target_name: &str) -> bool {
             let num_operands = call_instr.get_num_operands();
@@ -1908,8 +1404,6 @@ mod interprocedural_analyzer_real {
                 }
             }
             false
-        }
-        
         /// Determine if we should inline at this specific call site
         fn should_inline_at_site(&self, function: FunctionValue<'ctx>, call_site: InstructionValue<'ctx>) -> bool {
             // Check call site conditions
@@ -1929,19 +1423,13 @@ mod interprocedural_analyzer_real {
             // Don't inline large functions into already large callers
             if function_size > 50 && caller_size > 200 {
                 return false;
-            }
-            
             // Check if we're in a hot path (more beneficial to inline)
             let is_hot_path = self.is_call_site_in_hot_path(call_site);
             
             if is_hot_path && function_size <= 100 {
                 return true;
-            }
-            
             // Default inlining threshold
             function_size <= 30
-        }
-        
         /// Get the function containing this instruction
         fn get_containing_function(&self, instr: InstructionValue<'ctx>) -> Option<FunctionValue<'ctx>> {
             if let Some(bb) = instr.get_parent() {
@@ -1963,11 +1451,7 @@ mod interprocedural_analyzer_real {
                     instruction = _instr.get_next_instruction();
                 }
                 block = bb.get_next_basic_block();
-            }
-            
             size
-        }
-        
         /// Check if call site is in a hot execution path
         fn is_call_site_in_hot_path(&self, call_site: InstructionValue<'ctx>) -> bool {
             // Simple heuristic: check if we're in a loop
@@ -1975,14 +1459,11 @@ mod interprocedural_analyzer_real {
                 return self.is_block_in_loop(bb);
             }
             false
-        }
-        
         /// Check if basic block is in a loop
         fn is_block_in_loop(&self, block: BasicBlock<'ctx>) -> bool {
             // Look for back edges or repetitive control flow
             let mut instruction = block.get_first_instruction();
             while let Some(instr) = instruction {
-                if matches!(instr.get_opcode(), 
                     inkwell::values::InstructionOpcode::Br | 
                     inkwell::values::InstructionOpcode::CondBr
                 ) {
@@ -1992,8 +1473,6 @@ mod interprocedural_analyzer_real {
                 instruction = instr.get_next_instruction();
             }
             false
-        }
-        
         /// Perform actual inlining at call site
         fn perform_inline_at_site(&self, function: FunctionValue<'ctx>, call_site: InstructionValue<'ctx>) -> Result<()> {
             // Real inlining would involve:
@@ -2003,13 +1482,10 @@ mod interprocedural_analyzer_real {
             // 4. Insert the cloned body at the call site
             // 5. Update SSA form and phi nodes
             
-            info!("Would perform real inlining of function {} at call site", 
                   function.get_name().to_str().unwrap_or("unknown"));
             
             // For now, we validate that inlining is possible
             self.validate_inlining_feasibility(function, call_site)
-        }
-        
         /// Validate that inlining is feasible
         fn validate_inlining_feasibility(&self, function: FunctionValue<'ctx>, _call_site: InstructionValue<'ctx>) -> Result<()> {
             // Check for inlining barriers
@@ -2031,11 +1507,7 @@ mod interprocedural_analyzer_real {
                     instruction = instr.get_next_instruction();
                 }
                 block = bb.get_next_basic_block();
-            }
-            
             Ok(())
-        }
-        
         fn apply_dead_code_elimination(&self, _module: &Module<'ctx>) -> Result<usize> {
             debug!("Applying interprocedural dead code elimination");
             
@@ -2050,8 +1522,6 @@ mod interprocedural_analyzer_real {
             
             debug!("Would eliminate {} unused functions", unused_functions.len());
             Ok(unused_functions.len())
-        }
-        
         fn apply_constant_propagation(&self, _module: &Module<'ctx>) -> Result<usize> {
             debug!("Applying interprocedural constant propagation");
             
@@ -2066,8 +1536,6 @@ mod interprocedural_analyzer_real {
             
             debug!("Would propagate constants from {} functions", constant_functions.len());
             Ok(constant_functions.len())
-        }
-        
         fn apply_tail_call_optimization(&self, _module: &Module<'ctx>) -> Result<usize> {
             debug!("Applying tail call optimizations");
             
@@ -2089,9 +1557,6 @@ mod interprocedural_analyzer_real {
     
     #[derive(Debug)]
     struct BlockComplexityInfo {
-        instruction_count: usize,
-        complexity_score: f64,
-        has_side_effects: bool,
     }
 }
 
@@ -2102,125 +1567,59 @@ mod vectorization_optimizer_real {
     /// Vectorization optimizer identifies and converts scalar operations to SIMD
     /// vector operations for improved performance on modern processors
     pub struct VectorizationOptimizer<'ctx> {
-        context_lifetime: std::marker::PhantomData<&'ctx ()>,
-        statistics: Arc<Mutex<EnhancedOptimizationStatistics>>,
         /// Analysis of vectorization opportunities
-        vectorization_analysis: VectorizationAnalysis,
         /// Configuration for vectorization
-        config: VectorizationConfig,
-    }
-    
     #[derive(Debug, Clone)]
     struct VectorizationConfig {
         /// Enable loop vectorization
-        enable_loop_vectorization: bool,
         /// Enable SLP (Superword Level Parallelism) vectorization
-        enable_slp_vectorization: bool,
         /// Target vector width (e.g., 128-bit, 256-bit, 512-bit)
-        target_vector_width: usize,
         /// Minimum trip count for loop vectorization
-        min_trip_count: usize,
         /// Enable vectorization of reduction operations
-        enable_reduction_vectorization: bool,
         /// Enable interleaved memory access vectorization
-        enable_interleaved_access: bool,
-    }
-    
     impl Default for VectorizationConfig {
         fn default() -> Self {
             Self {
-                enable_loop_vectorization: true,
-                enable_slp_vectorization: true,
                 target_vector_width: 256, // AVX2 support
-                min_trip_count: 4,
-                enable_reduction_vectorization: true,
-                enable_interleaved_access: true,
             }
         }
-    }
-    
     #[derive(Debug, Default)]
     struct VectorizationAnalysis {
         /// Loops that can be vectorized
-        vectorizable_loops: Vec<VectorizableLoop>,
         /// SLP vectorization opportunities
-        slp_opportunities: Vec<SlpOpportunity>,
         /// Reduction operations that can be vectorized
-        vectorizable_reductions: Vec<VectorizableReduction>,
         /// Memory access patterns suitable for vectorization
-        memory_patterns: Vec<MemoryAccessPattern>,
-    }
-    
     #[derive(Debug, Clone)]
     struct VectorizableLoop {
         /// Loop identification
-        loop_id: String,
         /// Trip count (if known)
-        trip_count: Option<usize>,
         /// Operations that can be vectorized in this loop
-        vectorizable_operations: Vec<VectorizableOperation>,
         /// Memory access stride
-        memory_stride: i64,
         /// Whether the loop has dependencies preventing vectorization
-        has_dependencies: bool,
         /// Estimated speedup from vectorization
-        estimated_speedup: f64,
-    }
-    
     #[derive(Debug, Clone)]
     struct VectorizableOperation {
         /// Type of operation (add, mul, etc.)
-        operation_type: String,
         /// Data type being operated on
-        data_type: String,
         /// Number of operations that can be packed together
-        pack_width: usize,
         /// Instruction that performs this operation
-        instruction_info: String,
-    }
-    
     #[derive(Debug, Clone)]
     struct SlpOpportunity {
         /// Set of instructions that can be vectorized together
-        instruction_group: Vec<String>,
         /// Data type for vectorization
-        data_type: String,
         /// Vector width
-        vector_width: usize,
         /// Estimated performance gain
-        estimated_gain: f64,
-    }
-    
     #[derive(Debug, Clone)]
     struct VectorizableReduction {
         /// Type of reduction (sum, max, min, etc.)
-        reduction_type: ReductionType,
         /// Data type
-        data_type: String,
         /// Loop containing the reduction
-        loop_id: String,
         /// Initial value
-        initial_value: String,
-    }
-    
     #[derive(Debug, Clone)]
     enum ReductionType {
-        Sum,
-        Product,
-        Max,
-        Min,
-        And,
-        Or,
-        Xor,
-    }
-    
     impl<'ctx> VectorizationOptimizer<'ctx> {
         pub fn new(statistics: Arc<Mutex<EnhancedOptimizationStatistics>>) -> Self {
             Self {
-                context_lifetime: std::marker::PhantomData,
-                statistics,
-                vectorization_analysis: VectorizationAnalysis::default(),
-                config: VectorizationConfig::default(),
             }
         }
         
@@ -2239,15 +1638,9 @@ mod vectorization_optimizer_real {
             {
                 let mut stats = self.statistics.lock().unwrap();
                 stats.vectorization_optimizations += optimizations;
-            }
-            
             if optimizations > 0 {
                 debug!("Applied {} vectorization optimizations", optimizations);
-            }
-            
             Ok(())
-        }
-        
         fn analyze_vectorization_opportunities(&mut self, function: FunctionValue<'ctx>) -> Result<()> {
             debug!("Analyzing vectorization opportunities");
             
@@ -2260,15 +1653,10 @@ mod vectorization_optimizer_real {
             // Analyze reduction operations
             self.analyze_reductions(function)?;
             
-            debug!("Found {} vectorizable loops, {} SLP opportunities, {} reductions",
-                self.vectorization_analysis.vectorizable_loops.len(),
-                self.vectorization_analysis.slp_opportunities.len(),
                 self.vectorization_analysis.vectorizable_reductions.len()
             );
             
             Ok(())
-        }
-        
         fn analyze_loops(&mut self, function: FunctionValue<'ctx>) -> Result<()> {
             debug!("Analyzing loops for vectorization");
             
@@ -2283,11 +1671,7 @@ mod vectorization_optimizer_real {
                     loop_id += 1;
                 }
                 block = bb.get_next_basic_block();
-            }
-            
             Ok(())
-        }
-        
         fn is_loop_header(&self, block: BasicBlock<'ctx>) -> bool {
             // Simple heuristic: check if block has a back edge
             // In a real implementation, this would use proper loop analysis
@@ -2300,8 +1684,6 @@ mod vectorization_optimizer_real {
                 instruction = instr.get_next_instruction();
             }
             false
-        }
-        
         fn analyze_loop_for_vectorization(&self, loop_header: BasicBlock<'ctx>, loop_id: usize) -> Result<Option<VectorizableLoop>> {
             let loop_id_str = format!("loop_{}", loop_id);
             debug!("Analyzing loop {} for vectorization", loop_id_str);
@@ -2314,27 +1696,17 @@ mod vectorization_optimizer_real {
             while let Some(instr) = instruction {
                 if let Some(op) = self.analyze_instruction_for_vectorization(instr)? {
                     vectorizable_operations.push(op);
-                }
-                
                 // Check for loop-carried dependencies
                 if self.has_loop_carried_dependency(instr) {
                     has_dependencies = true;
-                }
-                
                 instruction = instr.get_next_instruction();
-            }
-            
             // Only consider loops with sufficient vectorizable operations
             if vectorizable_operations.len() >= 2 && !has_dependencies {
                 let estimated_speedup = self.estimate_vectorization_speedup(&vectorizable_operations);
                 
                 Ok(Some(VectorizableLoop {
-                    loop_id: loop_id_str,
                     trip_count: None, // Would need trip count analysis
-                    vectorizable_operations,
                     memory_stride: 1, // Simplified
-                    has_dependencies,
-                    estimated_speedup,
                 }))
             } else {
                 Ok(None)
@@ -2347,36 +1719,20 @@ mod vectorization_optimizer_real {
             match instruction.get_opcode() {
                 InstructionOpcode::Add | InstructionOpcode::FAdd => {
                     Ok(Some(VectorizableOperation {
-                        operation_type: "add".to_string(),
-                        data_type: self.get_instruction_data_type(instruction),
-                        pack_width: self.calculate_pack_width(&self.get_instruction_data_type(instruction)),
-                        instruction_info: format!("{:?}", instruction),
                     }))
                 }
                 InstructionOpcode::Mul | InstructionOpcode::FMul => {
                     Ok(Some(VectorizableOperation {
-                        operation_type: "mul".to_string(),
-                        data_type: self.get_instruction_data_type(instruction),
-                        pack_width: self.calculate_pack_width(&self.get_instruction_data_type(instruction)),
-                        instruction_info: format!("{:?}", instruction),
                     }))
                 }
                 InstructionOpcode::Sub | InstructionOpcode::FSub => {
                     Ok(Some(VectorizableOperation {
-                        operation_type: "sub".to_string(),
-                        data_type: self.get_instruction_data_type(instruction),
-                        pack_width: self.calculate_pack_width(&self.get_instruction_data_type(instruction)),
-                        instruction_info: format!("{:?}", instruction),
                     }))
                 }
                 InstructionOpcode::Load => {
                     // Loads can be vectorized if they access consecutive memory
                     if self.is_consecutive_memory_access(instruction) {
                         Ok(Some(VectorizableOperation {
-                            operation_type: "load".to_string(),
-                            data_type: self.get_instruction_data_type(instruction),
-                            pack_width: self.calculate_pack_width(&self.get_instruction_data_type(instruction)),
-                            instruction_info: format!("{:?}", instruction),
                         }))
                     } else {
                         Ok(None)
@@ -2386,16 +1742,11 @@ mod vectorization_optimizer_real {
                     // Stores can be vectorized if they access consecutive memory
                     if self.is_consecutive_memory_access(instruction) {
                         Ok(Some(VectorizableOperation {
-                            operation_type: "store".to_string(),
-                            data_type: self.get_instruction_data_type(instruction),
-                            pack_width: self.calculate_pack_width(&self.get_instruction_data_type(instruction)),
-                            instruction_info: format!("{:?}", instruction),
                         }))
                     } else {
                         Ok(None)
                     }
                 }
-                _ => Ok(None),
             }
         }
         
@@ -2425,14 +1776,10 @@ mod vectorization_optimizer_real {
             // Check if memory access is consecutive (stride of 1)
             // This would need proper memory access analysis
             true // Simplified assumption
-        }
-        
         fn has_loop_carried_dependency(&self, _instruction: InstructionValue<'ctx>) -> bool {
             // Check for loop-carried dependencies that prevent vectorization
             // This would need proper dependency analysis
             false // Simplified assumption
-        }
-        
         fn estimate_vectorization_speedup(&self, operations: &[VectorizableOperation]) -> f64 {
             // Estimate the speedup from vectorizing these operations
             let avg_pack_width = operations.iter()
@@ -2441,8 +1788,6 @@ mod vectorization_optimizer_real {
             
             // Theoretical speedup is close to pack width, but with overhead
             avg_pack_width * 0.8 // 80% efficiency
-        }
-        
         fn analyze_slp_opportunities(&mut self, function: FunctionValue<'ctx>) -> Result<()> {
             debug!("Analyzing SLP vectorization opportunities");
             
@@ -2451,11 +1796,7 @@ mod vectorization_optimizer_real {
             while let Some(bb) = block {
                 self.analyze_block_for_slp(bb)?;
                 block = bb.get_next_basic_block();
-            }
-            
             Ok(())
-        }
-        
         fn analyze_block_for_slp(&mut self, block: BasicBlock<'ctx>) -> Result<()> {
             // Look for groups of similar instructions that can be vectorized together
             let mut similar_instructions: HashMap<String, Vec<String>> = HashMap::new();
@@ -2465,24 +1806,18 @@ mod vectorization_optimizer_real {
                 let op_type = format!("{:?}", instr.get_opcode());
                 similar_instructions.entry(op_type).or_insert_with(Vec::new).push(format!("{:?}", instr));
                 instruction = instr.get_next_instruction();
-            }
-            
             // Look for groups that are large enough to vectorize
             for (op_type, instructions) in similar_instructions {
                 if instructions.len() >= 2 {
                     let slp_opportunity = SlpOpportunity {
-                        instruction_group: instructions,
                         data_type: "f32".to_string(), // Simplified
                         vector_width: 4, // Simplified
                         estimated_gain: 2.0, // Simplified
-                    };
                     self.vectorization_analysis.slp_opportunities.push(slp_opportunity);
                 }
             }
             
             Ok(())
-        }
-        
         fn analyze_reductions(&mut self, function: FunctionValue<'ctx>) -> Result<()> {
             debug!("Analyzing reduction operations for vectorization");
             
@@ -2495,11 +1830,7 @@ mod vectorization_optimizer_real {
                     loop_id += 1;
                 }
                 block = bb.get_next_basic_block();
-            }
-            
             Ok(())
-        }
-        
         fn analyze_loop_for_reductions(&mut self, loop_block: BasicBlock<'ctx>, loop_id: usize) -> Result<()> {
             let mut instruction = loop_block.get_first_instruction();
             
@@ -2508,11 +1839,7 @@ mod vectorization_optimizer_real {
                     self.vectorization_analysis.vectorizable_reductions.push(reduction);
                 }
                 instruction = instr.get_next_instruction();
-            }
-            
             Ok(())
-        }
-        
         fn detect_reduction_pattern(&self, instruction: InstructionValue<'ctx>, loop_id: usize) -> Result<Option<VectorizableReduction>> {
             use inkwell::values::InstructionOpcode;
             
@@ -2521,22 +1848,13 @@ mod vectorization_optimizer_real {
                 InstructionOpcode::Add | InstructionOpcode::FAdd => {
                     // Check if this is part of a sum reduction
                     Ok(Some(VectorizableReduction {
-                        reduction_type: ReductionType::Sum,
-                        data_type: self.get_instruction_data_type(instruction),
-                        loop_id: format!("loop_{}", loop_id),
-                        initial_value: "0".to_string(),
                     }))
                 }
                 InstructionOpcode::Mul | InstructionOpcode::FMul => {
                     // Check if this is part of a product reduction
                     Ok(Some(VectorizableReduction {
-                        reduction_type: ReductionType::Product,
-                        data_type: self.get_instruction_data_type(instruction),
-                        loop_id: format!("loop_{}", loop_id),
-                        initial_value: "1".to_string(),
                     }))
                 }
-                _ => Ok(None),
             }
         }
         
@@ -2546,28 +1864,19 @@ mod vectorization_optimizer_real {
             // Apply loop vectorization
             if self.config.enable_loop_vectorization {
                 total_optimizations += self.apply_loop_vectorization(function)?;
-            }
-            
             // Apply SLP vectorization
             if self.config.enable_slp_vectorization {
                 total_optimizations += self.apply_slp_vectorization(function)?;
-            }
-            
             // Apply reduction vectorization
             if self.config.enable_reduction_vectorization {
                 total_optimizations += self.apply_reduction_vectorization(function)?;
-            }
-            
             Ok(total_optimizations)
-        }
-        
         fn apply_loop_vectorization(&self, _function: FunctionValue<'ctx>) -> Result<usize> {
             debug!("Applying loop vectorization");
             
             let vectorizable_loops = &self.vectorization_analysis.vectorizable_loops;
             
             for vectorizable_loop in vectorizable_loops {
-                debug!("Vectorizing loop {} with estimated speedup {:.2}x", 
                     vectorizable_loop.loop_id, vectorizable_loop.estimated_speedup);
                 
                 // In a real implementation, this would:
@@ -2575,19 +1884,14 @@ mod vectorization_optimizer_real {
                 // 2. Generate vector load/store instructions
                 // 3. Replace scalar operations with vector operations
                 // 4. Handle loop remainder (cleanup loop)
-            }
-            
             debug!("Applied loop vectorization to {} loops", vectorizable_loops.len());
             Ok(vectorizable_loops.len())
-        }
-        
         fn apply_slp_vectorization(&self, _function: FunctionValue<'ctx>) -> Result<usize> {
             debug!("Applying SLP vectorization");
             
             let slp_opportunities = &self.vectorization_analysis.slp_opportunities;
             
             for opportunity in slp_opportunities {
-                debug!("Applying SLP vectorization to {} instructions with estimated gain {:.2}x",
                     opportunity.instruction_group.len(), opportunity.estimated_gain);
                 
                 // In a real implementation, this would:
@@ -2595,33 +1899,24 @@ mod vectorization_optimizer_real {
                 // 2. Replace scalar operations with vector operations
                 // 3. Insert extract/insert operations as needed
                 // 4. Update the IR accordingly
-            }
-            
             debug!("Applied SLP vectorization to {} instruction groups", slp_opportunities.len());
             Ok(slp_opportunities.len())
-        }
-        
         fn apply_reduction_vectorization(&self, _function: FunctionValue<'ctx>) -> Result<usize> {
             debug!("Applying reduction vectorization");
             
             let vectorizable_reductions = &self.vectorization_analysis.vectorizable_reductions;
             
             for reduction in vectorizable_reductions {
-                debug!("Vectorizing {:?} reduction in {}", 
                     reduction.reduction_type, reduction.loop_id);
                 
                 // In a real implementation, this would:
                 // 1. Convert the reduction to use vector operations
                 // 2. Add horizontal reduction at the end
                 // 3. Handle the reduction accumulator properly
-            }
-            
             debug!("Applied reduction vectorization to {} reductions", vectorizable_reductions.len());
             Ok(vectorizable_reductions.len())
         }
     }
-}
-
 mod cache_optimizer_real {
     use super::*;
     use std::collections::{HashMap, HashSet};
@@ -2629,131 +1924,67 @@ mod cache_optimizer_real {
     /// Cache optimizer analyzes memory access patterns and optimizes for better cache performance
     /// by reducing cache misses through data locality improvements and access pattern optimization
     pub struct CacheOptimizer<'ctx> {
-        context_lifetime: std::marker::PhantomData<&'ctx ()>,
-        statistics: Arc<Mutex<EnhancedOptimizationStatistics>>,
         /// Cache analysis results
-        cache_analysis: CacheAnalysis,
         /// Configuration for cache optimizations
-        config: CacheOptimizationConfig,
-    }
-    
     #[derive(Debug, Clone)]
     struct CacheOptimizationConfig {
         /// Enable loop tiling/blocking optimizations
-        enable_loop_tiling: bool,
         /// Enable data prefetching
-        enable_prefetching: bool,
         /// Enable memory layout optimizations
-        enable_layout_optimization: bool,
         /// Enable cache-conscious scheduling
-        enable_cache_scheduling: bool,
         /// Target cache line size
-        cache_line_size: usize,
         /// L1 cache size for optimization
-        l1_cache_size: usize,
         /// L2 cache size for optimization
-        l2_cache_size: usize,
-    }
-    
     impl Default for CacheOptimizationConfig {
         fn default() -> Self {
             Self {
-                enable_loop_tiling: true,
-                enable_prefetching: true,
-                enable_layout_optimization: true,
-                enable_cache_scheduling: true,
                 cache_line_size: 64,      // 64 bytes - most common
                 l1_cache_size: 32 * 1024, // 32KB L1 cache
                 l2_cache_size: 256 * 1024, // 256KB L2 cache
             }
         }
-    }
-    
     #[derive(Debug, Default)]
     struct CacheAnalysis {
         /// Memory access patterns in loops
-        loop_access_patterns: Vec<LoopAccessPattern>,
         /// Data structures and their access patterns
-        data_structure_patterns: Vec<DataStructurePattern>,
         /// Cache miss predictions
-        cache_miss_predictions: Vec<CacheMissPrediction>,
         /// Memory hotspots
-        memory_hotspots: Vec<MemoryHotspot>,
-    }
-    
     #[derive(Debug, Clone)]
     struct LoopAccessPattern {
         /// Loop identifier
-        loop_id: String,
         /// Memory access stride
-        stride: i64,
         /// Access frequency
-        frequency: f64,
         /// Data size accessed per iteration
-        data_size_per_iteration: usize,
         /// Whether access pattern is cache-friendly
-        is_cache_friendly: bool,
         /// Suggested optimizations
-        suggested_optimizations: Vec<String>,
-    }
-    
     #[derive(Debug, Clone)]
     struct DataStructurePattern {
         /// Data structure name/identifier
-        structure_id: String,
         /// Size of the data structure
-        structure_size: usize,
         /// Access frequency
-        access_frequency: f64,
         /// Most common access patterns
-        common_access_patterns: Vec<String>,
         /// Cache utilization efficiency
-        cache_efficiency: f64,
-    }
-    
     #[derive(Debug, Clone)]
     struct CacheMissPrediction {
         /// Location of predicted cache miss
-        location: String,
         /// Type of cache miss (compulsory, capacity, conflict)
-        miss_type: CacheMissType,
         /// Predicted miss rate
-        miss_rate: f64,
         /// Suggested mitigation
-        mitigation: String,
-    }
-    
     #[derive(Debug, Clone)]
     enum CacheMissType {
         /// First access to data (unavoidable)
-        Compulsory,
         /// Cache is too small for working set
-        Capacity,
         /// Multiple data map to same cache line
-        Conflict,
         /// Poor spatial or temporal locality
-        Locality,
-    }
-    
     #[derive(Debug, Clone)]
     struct MemoryHotspot {
         /// Memory region identifier
-        region_id: String,
         /// Access count
-        access_count: usize,
         /// Memory address range (simplified)
-        address_range: (u64, u64),
         /// Whether this hotspot benefits from prefetching
-        benefits_from_prefetch: bool,
-    }
-    
     impl<'ctx> CacheOptimizer<'ctx> {
         pub fn new(statistics: Arc<Mutex<EnhancedOptimizationStatistics>>) -> Self {
             Self {
-                context_lifetime: std::marker::PhantomData,
-                statistics,
-                cache_analysis: CacheAnalysis::default(),
-                config: CacheOptimizationConfig::default(),
             }
         }
         
@@ -2775,15 +2006,9 @@ mod cache_optimizer_real {
             {
                 let mut stats = self.statistics.lock().unwrap();
                 stats.cache_optimizations += optimizations;
-            }
-            
             if optimizations > 0 {
                 debug!("Applied {} cache optimizations", optimizations);
-            }
-            
             Ok(())
-        }
-        
         fn analyze_cache_patterns(&mut self, function: FunctionValue<'ctx>) -> Result<()> {
             debug!("Analyzing cache access patterns");
             
@@ -2796,15 +2021,10 @@ mod cache_optimizer_real {
             // Identify memory hotspots
             self.identify_memory_hotspots(function)?;
             
-            debug!("Found {} loop patterns, {} data structure patterns, {} hotspots",
-                self.cache_analysis.loop_access_patterns.len(),
-                self.cache_analysis.data_structure_patterns.len(),
                 self.cache_analysis.memory_hotspots.len()
             );
             
             Ok(())
-        }
-        
         fn analyze_loop_cache_patterns(&mut self, function: FunctionValue<'ctx>) -> Result<()> {
             debug!("Analyzing loop cache access patterns");
             
@@ -2819,11 +2039,7 @@ mod cache_optimizer_real {
                     loop_id += 1;
                 }
                 block = bb.get_next_basic_block();
-            }
-            
             Ok(())
-        }
-        
         fn is_loop_block(&self, block: BasicBlock<'ctx>) -> bool {
             // Simple heuristic for loop detection
             let mut instruction = block.get_first_instruction();
@@ -2834,8 +2050,6 @@ mod cache_optimizer_real {
                 instruction = instr.get_next_instruction();
             }
             false
-        }
-        
         fn analyze_loop_block_cache_pattern(&self, block: BasicBlock<'ctx>, loop_id: usize) -> Result<Option<LoopAccessPattern>> {
             let loop_id_str = format!("loop_{}", loop_id);
             debug!("Analyzing cache pattern for loop {}", loop_id_str);
@@ -2856,19 +2070,12 @@ mod cache_optimizer_real {
                     _ => {}
                 }
                 instruction = instr.get_next_instruction();
-            }
-            
             if memory_accesses > 0 {
                 let is_cache_friendly = self.is_cache_friendly_pattern(access_stride, data_size);
                 let suggested_optimizations = self.suggest_cache_optimizations(access_stride, data_size, is_cache_friendly);
                 
                 Ok(Some(LoopAccessPattern {
-                    loop_id: loop_id_str,
-                    stride: access_stride,
                     frequency: memory_accesses as f64, // Simplified
-                    data_size_per_iteration: data_size,
-                    is_cache_friendly,
-                    suggested_optimizations,
                 }))
             } else {
                 Ok(None)
@@ -2882,8 +2089,6 @@ mod cache_optimizer_real {
                     inkwell::types::BasicTypeEnum::IntType(int_type) => {
                         (int_type.get_bit_width() / 8) as usize
                     }
-                    inkwell::types::BasicTypeEnum::FloatType(_) => 4,
-                    inkwell::types::BasicTypeEnum::PointerType(_) => 8,
                     _ => 8, // Default size
                 }
             } else {
@@ -2895,14 +2100,10 @@ mod cache_optimizer_real {
             // Analyze the stride of memory access
             // This would involve analyzing GEP instructions and pointer arithmetic
             1 // Simplified - assume unit stride
-        }
-        
         fn is_cache_friendly_pattern(&self, stride: i64, data_size: usize) -> bool {
             // A pattern is cache-friendly if it has good spatial locality
             // Unit stride (stride = 1) is best for spatial locality
             stride == 1 || (stride > 0 && (stride as usize * data_size) <= self.config.cache_line_size)
-        }
-        
         fn suggest_cache_optimizations(&self, stride: i64, data_size: usize, is_cache_friendly: bool) -> Vec<String> {
             let mut suggestions = Vec::new();
             
@@ -2910,8 +2111,6 @@ mod cache_optimizer_real {
                 if stride > 1 {
                     suggestions.push("Consider loop tiling to improve spatial locality".to_string());
                     suggestions.push("Consider data structure reorganization".to_string());
-                }
-                
                 if stride as usize * data_size > self.config.cache_line_size {
                     suggestions.push("Consider prefetching for large stride accesses".to_string());
                 }
@@ -2919,11 +2118,7 @@ mod cache_optimizer_real {
             
             if data_size > self.config.cache_line_size {
                 suggestions.push("Consider breaking large data structures into smaller chunks".to_string());
-            }
-            
             suggestions
-        }
-        
         fn analyze_data_structure_patterns(&mut self, function: FunctionValue<'ctx>) -> Result<()> {
             debug!("Analyzing data structure access patterns");
             
@@ -2933,11 +2128,7 @@ mod cache_optimizer_real {
             while let Some(bb) = block {
                 self.analyze_block_data_structures(bb)?;
                 block = bb.get_next_basic_block();
-            }
-            
             Ok(())
-        }
-        
         fn analyze_block_data_structures(&mut self, block: BasicBlock<'ctx>) -> Result<()> {
             let mut struct_accesses: HashMap<String, usize> = HashMap::new();
             
@@ -2949,32 +2140,21 @@ mod cache_optimizer_real {
                     *struct_accesses.entry(struct_name.clone()).or_insert(0) += 1;
                 }
                 instruction = instr.get_next_instruction();
-            }
-            
             // Create data structure patterns
             for (struct_name, access_count) in struct_accesses {
                 if access_count > 1 { // Only consider frequently accessed structures
                     let pattern = DataStructurePattern {
-                        structure_id: struct_name,
                         structure_size: 64, // Simplified
-                        access_frequency: access_count as f64,
-                        common_access_patterns: vec!["sequential".to_string()],
-                        cache_efficiency: self.calculate_cache_efficiency(access_count, 64),
-                    };
                     self.cache_analysis.data_structure_patterns.push(pattern);
                 }
             }
             
             Ok(())
-        }
-        
         fn calculate_cache_efficiency(&self, access_count: usize, structure_size: usize) -> f64 {
             // Calculate cache efficiency based on access patterns
             let cache_lines_used = (structure_size + self.config.cache_line_size - 1) / self.config.cache_line_size;
             let efficiency = (access_count as f64) / (cache_lines_used as f64);
             (efficiency / 10.0).min(1.0) // Normalize to 0-1 range
-        }
-        
         fn identify_memory_hotspots(&mut self, function: FunctionValue<'ctx>) -> Result<()> {
             debug!("Identifying memory hotspots");
             
@@ -2984,7 +2164,6 @@ mod cache_optimizer_real {
             while let Some(bb) = block {
                 let mut instruction = bb.get_first_instruction();
                 while let Some(instr) = instruction {
-                    if matches!(instr.get_opcode(), 
                         inkwell::values::InstructionOpcode::Load | 
                         inkwell::values::InstructionOpcode::Store
                     ) {
@@ -2994,24 +2173,16 @@ mod cache_optimizer_real {
                     instruction = instr.get_next_instruction();
                 }
                 block = bb.get_next_basic_block();
-            }
-            
             // Identify hotspots (frequently accessed memory locations)
             for (location, access_count) in memory_accesses {
                 if access_count > 5 { // Threshold for hotspot
                     let hotspot = MemoryHotspot {
-                        region_id: location,
-                        access_count,
                         address_range: (0, 1024), // Simplified
-                        benefits_from_prefetch: access_count > 10,
-                    };
                     self.cache_analysis.memory_hotspots.push(hotspot);
                 }
             }
             
             Ok(())
-        }
-        
         fn predict_cache_misses(&mut self) -> Result<()> {
             debug!("Predicting cache misses");
             
@@ -3024,26 +2195,17 @@ mod cache_optimizer_real {
                         CacheMissType::Capacity
                     } else {
                         CacheMissType::Conflict
-                    };
                     
                     let miss_rate = self.estimate_miss_rate(&loop_pattern, &miss_type);
                     let mitigation = self.suggest_miss_mitigation(&miss_type);
                     
                     let prediction = CacheMissPrediction {
-                        location: loop_pattern.loop_id.clone(),
-                        miss_type,
-                        miss_rate,
-                        mitigation,
-                    };
                     self.cache_analysis.cache_miss_predictions.push(prediction);
                 }
             }
             
-            debug!("Predicted {} potential cache miss scenarios", 
                 self.cache_analysis.cache_miss_predictions.len());
             Ok(())
-        }
-        
         fn estimate_miss_rate(&self, loop_pattern: &LoopAccessPattern, miss_type: &CacheMissType) -> f64 {
             match miss_type {
                 CacheMissType::Compulsory => 0.1, // Low, only first access
@@ -3067,10 +2229,6 @@ mod cache_optimizer_real {
         
         fn suggest_miss_mitigation(&self, miss_type: &CacheMissType) -> String {
             match miss_type {
-                CacheMissType::Compulsory => "Use prefetching for predictable access patterns".to_string(),
-                CacheMissType::Capacity => "Consider loop tiling or data structure optimization".to_string(),
-                CacheMissType::Conflict => "Reorganize data layout or use padding".to_string(),
-                CacheMissType::Locality => "Improve access patterns through loop transformations".to_string(),
             }
         }
         
@@ -3079,23 +2237,13 @@ mod cache_optimizer_real {
             
             if self.config.enable_loop_tiling {
                 total_optimizations += self.apply_loop_tiling_optimizations(function)?;
-            }
-            
             if self.config.enable_prefetching {
                 total_optimizations += self.apply_prefetching_optimizations(function)?;
-            }
-            
             if self.config.enable_layout_optimization {
                 total_optimizations += self.apply_layout_optimizations(function)?;
-            }
-            
             if self.config.enable_cache_scheduling {
                 total_optimizations += self.apply_cache_scheduling_optimizations(function)?;
-            }
-            
             Ok(total_optimizations)
-        }
-        
         fn apply_loop_tiling_optimizations(&self, _function: FunctionValue<'ctx>) -> Result<usize> {
             debug!("Applying loop tiling optimizations");
             
@@ -3115,8 +2263,6 @@ mod cache_optimizer_real {
             }
             
             Ok(optimizations)
-        }
-        
         fn apply_prefetching_optimizations(&self, _function: FunctionValue<'ctx>) -> Result<usize> {
             debug!("Applying prefetching optimizations");
             
@@ -3135,8 +2281,6 @@ mod cache_optimizer_real {
             }
             
             Ok(optimizations)
-        }
-        
         fn apply_layout_optimizations(&self, _function: FunctionValue<'ctx>) -> Result<usize> {
             debug!("Applying data layout optimizations");
             
@@ -3156,8 +2300,6 @@ mod cache_optimizer_real {
             }
             
             Ok(optimizations)
-        }
-        
         fn apply_cache_scheduling_optimizations(&self, _function: FunctionValue<'ctx>) -> Result<usize> {
             debug!("Applying cache-conscious scheduling optimizations");
             
@@ -3180,8 +2322,6 @@ mod cache_optimizer_real {
             Ok(optimizations)
         }
     }
-}
-
 mod branch_predictor_real {
     use super::*;
     use std::collections::{HashMap, HashSet};
@@ -3189,159 +2329,80 @@ mod branch_predictor_real {
     /// Branch predictor optimizer analyzes branch patterns and adds prediction hints
     /// to improve CPU branch prediction and reduce misprediction penalties
     pub struct BranchPredictor<'ctx> {
-        context_lifetime: std::marker::PhantomData<&'ctx ()>,
-        statistics: Arc<Mutex<EnhancedOptimizationStatistics>>,
         /// Branch pattern analysis results
-        branch_analysis: BranchAnalysis,
         /// Configuration for branch prediction optimizations
-        config: BranchPredictionConfig,
-    }
-    
     #[derive(Debug, Clone)]
     struct BranchPredictionConfig {
         /// Enable static branch prediction hints
-        enable_static_prediction: bool,
         /// Enable profile-guided branch optimization
-        enable_profile_guided: bool,
         /// Enable conditional move optimizations
-        enable_conditional_moves: bool,
         /// Enable branch elimination
-        enable_branch_elimination: bool,
         /// Threshold for likely branch (>= this probability)
-        likely_threshold: f64,
         /// Threshold for unlikely branch (<= this probability)
-        unlikely_threshold: f64,
-    }
-    
     impl Default for BranchPredictionConfig {
         fn default() -> Self {
             Self {
-                enable_static_prediction: true,
-                enable_profile_guided: true,
-                enable_conditional_moves: true,
-                enable_branch_elimination: true,
                 likely_threshold: 0.8,   // 80% or higher = likely
                 unlikely_threshold: 0.2, // 20% or lower = unlikely
             }
         }
-    }
-    
     #[derive(Debug, Default)]
     struct BranchAnalysis {
         /// Branch patterns found in the code
-        branch_patterns: Vec<BranchPattern>,
         /// Conditional branches that can be optimized
-        conditional_branches: Vec<ConditionalBranch>,
         /// Loop exit conditions
-        loop_exit_conditions: Vec<LoopExitCondition>,
         /// Branches that can be eliminated
-        eliminatable_branches: Vec<EliminatableBranch>,
-    }
-    
     #[derive(Debug, Clone)]
     struct BranchPattern {
         /// Branch identifier
-        branch_id: String,
         /// Type of branch pattern
-        pattern_type: BranchPatternType,
         /// Predicted probability of taking the branch
-        take_probability: f64,
         /// Branch frequency (how often this branch is executed)
-        frequency: f64,
         /// Whether this branch has predictable behavior
-        is_predictable: bool,
         /// Suggested optimization
-        suggested_optimization: BranchOptimization,
-    }
-    
     #[derive(Debug, Clone)]
     enum BranchPatternType {
         /// CursedError checking branch (usually not taken)
-        ErrorCheck,
         /// Loop condition branch
-        LoopCondition,
         /// Switch/case branch
-        SwitchCase,
         /// Null check branch
-        NullCheck,
         /// Range check branch
-        RangeCheck,
         /// Type check branch
-        TypeCheck,
         /// General conditional branch
-        General,
-    }
-    
     #[derive(Debug, Clone)]
     enum BranchOptimization {
         /// Add likely/unlikely hints
-        AddPredictionHint { likely: bool },
         /// Convert to conditional move
-        ConvertToConditionalMove,
         /// Eliminate branch entirely
-        EliminateBranch,
         /// Reorder basic blocks
-        ReorderBlocks,
         /// No optimization needed
-        None,
-    }
-    
     #[derive(Debug, Clone)]
     struct ConditionalBranch {
         /// Branch instruction identifier
-        instruction_id: String,
         /// Condition being tested
-        condition_type: ConditionType,
         /// True/false probabilities
-        true_probability: f64,
-        false_probability: f64,
         /// Cost of misprediction
-        misprediction_cost: f64,
-    }
-    
     #[derive(Debug, Clone)]
     enum ConditionType {
         /// Comparison with constant
-        ConstantComparison { value: i64, operator: String },
         /// Comparison with variable
-        VariableComparison { operator: String },
         /// Null pointer check
-        NullCheck,
         /// Range check
-        RangeCheck { min: i64, max: i64 },
         /// Other condition
-        Other,
-    }
-    
     #[derive(Debug, Clone)]
     struct LoopExitCondition {
         /// Loop identifier
-        loop_id: String,
         /// Exit condition
-        exit_condition: String,
         /// Probability of exiting on each iteration
-        exit_probability: f64,
         /// Average loop trip count
-        average_trip_count: f64,
-    }
-    
     #[derive(Debug, Clone)]
     struct EliminatableBranch {
         /// Branch instruction identifier
-        instruction_id: String,
         /// Reason why this branch can be eliminated
-        elimination_reason: String,
         /// Replacement strategy
-        replacement_strategy: String,
-    }
-    
     impl<'ctx> BranchPredictor<'ctx> {
         pub fn new(statistics: Arc<Mutex<EnhancedOptimizationStatistics>>) -> Self {
             Self {
-                context_lifetime: std::marker::PhantomData,
-                statistics,
-                branch_analysis: BranchAnalysis::default(),
-                config: BranchPredictionConfig::default(),
             }
         }
         
@@ -3360,15 +2421,9 @@ mod branch_predictor_real {
             {
                 let mut stats = self.statistics.lock().unwrap();
                 stats.branch_optimizations += optimizations;
-            }
-            
             if optimizations > 0 {
                 debug!("Applied {} branch prediction optimizations", optimizations);
-            }
-            
             Ok(())
-        }
-        
         fn analyze_branch_patterns(&mut self, function: FunctionValue<'ctx>) -> Result<()> {
             debug!("Analyzing branch patterns for prediction optimization");
             
@@ -3384,15 +2439,10 @@ mod branch_predictor_real {
             // Classify branch patterns
             self.classify_branch_patterns()?;
             
-            debug!("Found {} branch patterns, {} conditional branches, {} loop exits",
-                self.branch_analysis.branch_patterns.len(),
-                self.branch_analysis.conditional_branches.len(),
                 self.branch_analysis.loop_exit_conditions.len()
             );
             
             Ok(())
-        }
-        
         fn analyze_conditional_branches(&mut self, function: FunctionValue<'ctx>) -> Result<()> {
             debug!("Analyzing conditional branches");
             
@@ -3401,11 +2451,7 @@ mod branch_predictor_real {
             while let Some(bb) = block {
                 self.analyze_block_branches(bb)?;
                 block = bb.get_next_basic_block();
-            }
-            
             Ok(())
-        }
-        
         fn analyze_block_branches(&mut self, block: BasicBlock<'ctx>) -> Result<()> {
             let mut instruction = block.get_first_instruction();
             
@@ -3416,11 +2462,7 @@ mod branch_predictor_real {
                     }
                 }
                 instruction = instr.get_next_instruction();
-            }
-            
             Ok(())
-        }
-        
         fn analyze_conditional_branch_instruction(&self, instruction: InstructionValue<'ctx>) -> Result<Option<ConditionalBranch>> {
             let instruction_id = format!("{:?}", instruction);
             
@@ -3431,11 +2473,6 @@ mod branch_predictor_real {
                 let misprediction_cost = self.estimate_misprediction_cost(&condition_type);
                 
                 Ok(Some(ConditionalBranch {
-                    instruction_id,
-                    condition_type,
-                    true_probability: true_prob,
-                    false_probability: false_prob,
-                    misprediction_cost,
                 }))
             } else {
                 Ok(None)
@@ -3456,7 +2493,6 @@ mod branch_predictor_real {
                             operator: "fcmp".to_string() 
                         })
                     }
-                    _ => Ok(ConditionType::Other),
                 }
             } else {
                 Ok(ConditionType::Other)
@@ -3480,11 +2516,7 @@ mod branch_predictor_real {
                             // Special cases
                             if value == 0 {
                                 return Ok(ConditionType::NullCheck);
-                            }
-                            
                             return Ok(ConditionType::ConstantComparison {
-                                value,
-                                operator: "icmp".to_string(),
                             });
                         }
                     }
@@ -3494,8 +2526,6 @@ mod branch_predictor_real {
             Ok(ConditionType::VariableComparison { 
                 operator: "icmp".to_string() 
             })
-        }
-        
         fn estimate_branch_probabilities(&self, condition_type: &ConditionType) -> (f64, f64) {
             // Estimate branch probabilities based on condition type
             match condition_type {
@@ -3524,8 +2554,6 @@ mod branch_predictor_real {
                     (0.5, 0.5)
                 }
             }
-        }
-        
         fn estimate_misprediction_cost(&self, condition_type: &ConditionType) -> f64 {
             // Estimate the cost of mispredicting this branch
             match condition_type {
@@ -3551,11 +2579,7 @@ mod branch_predictor_real {
                     loop_id += 1;
                 }
                 block = bb.get_next_basic_block();
-            }
-            
             Ok(())
-        }
-        
         fn is_loop_block(&self, block: BasicBlock<'ctx>) -> bool {
             // Simple heuristic for loop detection
             let mut instruction = block.get_first_instruction();
@@ -3566,8 +2590,6 @@ mod branch_predictor_real {
                 instruction = instr.get_next_instruction();
             }
             false
-        }
-        
         fn analyze_loop_exit_condition(&self, block: BasicBlock<'ctx>, loop_id: usize) -> Result<Option<LoopExitCondition>> {
             let loop_id_str = format!("loop_{}", loop_id);
             debug!("Analyzing loop exit condition for {}", loop_id_str);
@@ -3578,18 +2600,12 @@ mod branch_predictor_real {
                 if matches!(instr.get_opcode(), inkwell::values::InstructionOpcode::CondBr) {
                     // This could be a loop exit condition
                     return Ok(Some(LoopExitCondition {
-                        loop_id: loop_id_str,
-                        exit_condition: format!("{:?}", instr),
                         exit_probability: 0.1, // Most iterations don't exit
                         average_trip_count: 10.0, // Simplified estimate
                     }));
                 }
                 instruction = instr.get_next_instruction();
-            }
-            
             Ok(None)
-        }
-        
         fn identify_eliminatable_branches(&mut self, function: FunctionValue<'ctx>) -> Result<()> {
             debug!("Identifying eliminatable branches");
             
@@ -3598,11 +2614,7 @@ mod branch_predictor_real {
             while let Some(bb) = block {
                 self.identify_eliminatable_branches_in_block(bb)?;
                 block = bb.get_next_basic_block();
-            }
-            
             Ok(())
-        }
-        
         fn identify_eliminatable_branches_in_block(&mut self, block: BasicBlock<'ctx>) -> Result<()> {
             let mut instruction = block.get_first_instruction();
             
@@ -3613,11 +2625,7 @@ mod branch_predictor_real {
                     }
                 }
                 instruction = instr.get_next_instruction();
-            }
-            
             Ok(())
-        }
-        
         fn check_if_branch_eliminatable(&self, instruction: InstructionValue<'ctx>) -> Result<Option<EliminatableBranch>> {
             let instruction_id = format!("{:?}", instruction);
             
@@ -3629,15 +2637,9 @@ mod branch_predictor_real {
                         
                         if value == 0 {
                             return Ok(Some(EliminatableBranch {
-                                instruction_id,
-                                elimination_reason: "Condition is always false".to_string(),
-                                replacement_strategy: "Replace with unconditional jump to false branch".to_string(),
                             }));
                         } else {
                             return Ok(Some(EliminatableBranch {
-                                instruction_id,
-                                elimination_reason: "Condition is always true".to_string(),
-                                replacement_strategy: "Replace with unconditional jump to true branch".to_string(),
                             }));
                         }
                     }
@@ -3645,8 +2647,6 @@ mod branch_predictor_real {
             }
             
             Ok(None)
-        }
-        
         fn classify_branch_patterns(&mut self) -> Result<()> {
             debug!("Classifying branch patterns");
             
@@ -3657,23 +2657,12 @@ mod branch_predictor_real {
                 let suggested_optimization = self.suggest_branch_optimization(conditional_branch);
                 
                 let pattern = BranchPattern {
-                    branch_id: conditional_branch.instruction_id.clone(),
-                    pattern_type,
-                    take_probability: conditional_branch.true_probability,
                     frequency: 1.0, // Simplified
-                    is_predictable,
-                    suggested_optimization,
-                };
                 
                 self.branch_analysis.branch_patterns.push(pattern);
-            }
-            
             Ok(())
-        }
-        
         fn classify_branch_pattern_type(&self, condition_type: &ConditionType) -> BranchPatternType {
             match condition_type {
-                ConditionType::NullCheck => BranchPatternType::NullCheck,
                 ConditionType::ConstantComparison { value, .. } => {
                     if *value == 0 {
                         BranchPatternType::ErrorCheck
@@ -3681,9 +2670,6 @@ mod branch_predictor_real {
                         BranchPatternType::General
                     }
                 }
-                ConditionType::RangeCheck { .. } => BranchPatternType::RangeCheck,
-                ConditionType::VariableComparison { .. } => BranchPatternType::General,
-                ConditionType::Other => BranchPatternType::General,
             }
         }
         
@@ -3691,8 +2677,6 @@ mod branch_predictor_real {
             // A branch is predictable if one outcome is much more likely
             let max_prob = conditional_branch.true_probability.max(conditional_branch.false_probability);
             max_prob >= self.config.likely_threshold || max_prob <= self.config.unlikely_threshold
-        }
-        
         fn suggest_branch_optimization(&self, conditional_branch: &ConditionalBranch) -> BranchOptimization {
             let max_prob = conditional_branch.true_probability.max(conditional_branch.false_probability);
             
@@ -3713,19 +2697,11 @@ mod branch_predictor_real {
             
             if self.config.enable_static_prediction {
                 total_optimizations += self.apply_static_prediction_hints(function)?;
-            }
-            
             if self.config.enable_conditional_moves {
                 total_optimizations += self.apply_conditional_move_optimizations(function)?;
-            }
-            
             if self.config.enable_branch_elimination {
                 total_optimizations += self.apply_branch_elimination(function)?;
-            }
-            
             Ok(total_optimizations)
-        }
-        
         fn apply_static_prediction_hints(&self, _function: FunctionValue<'ctx>) -> Result<usize> {
             debug!("Applying static branch prediction hints");
             
@@ -3733,8 +2709,6 @@ mod branch_predictor_real {
             
             for pattern in &self.branch_analysis.branch_patterns {
                 if let BranchOptimization::AddPredictionHint { likely } = &pattern.suggested_optimization {
-                    debug!("Would add {} hint to branch {}", 
-                        if *likely { "likely" } else { "unlikely" }, 
                         pattern.branch_id);
                     optimizations += 1;
                     
@@ -3746,8 +2720,6 @@ mod branch_predictor_real {
             }
             
             Ok(optimizations)
-        }
-        
         fn apply_conditional_move_optimizations(&self, _function: FunctionValue<'ctx>) -> Result<usize> {
             debug!("Applying conditional move optimizations");
             
@@ -3767,15 +2739,12 @@ mod branch_predictor_real {
             }
             
             Ok(optimizations)
-        }
-        
         fn apply_branch_elimination(&self, _function: FunctionValue<'ctx>) -> Result<usize> {
             debug!("Applying branch elimination optimizations");
             
             let eliminatable_branches = &self.branch_analysis.eliminatable_branches;
             
             for eliminatable in eliminatable_branches {
-                debug!("Would eliminate branch: {} - {}", 
                     eliminatable.instruction_id, eliminatable.elimination_reason);
                 
                 // In a real implementation, this would:
@@ -3783,11 +2752,7 @@ mod branch_predictor_real {
                 // 2. Remove unreachable basic blocks
                 // 3. Update the control flow graph
                 // 4. Run dead code elimination
-            }
-            
             debug!("Applied branch elimination to {} branches", eliminatable_branches.len());
             Ok(eliminatable_branches.len())
         }
     }
-}
-

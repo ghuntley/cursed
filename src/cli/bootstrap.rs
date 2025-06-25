@@ -5,7 +5,7 @@
 
 use crate::bootstrap::{
     SelfCompilationVerifier, VerificationConfig, VerificationResult
-};
+// };
 
 use crate::error::{CursedError, Result as CursedResult};
 
@@ -16,29 +16,11 @@ use tracing::{debug, error, info, warn};
 
 /// Bootstrap CLI command configuration
 pub struct BootstrapCliConfig {
-    pub work_dir: PathBuf,
-    pub bootstrap_cycles: usize,
-    pub timeout_minutes: u64,
-    pub keep_intermediates: bool,
-    pub optimization_levels: Vec<String>,
-    pub verbose: bool,
-    pub force: bool,
-}
-
 impl Default for BootstrapCliConfig {
     fn default() -> Self {
         Self {
-            work_dir: PathBuf::from("bootstrap_verification"),
-            bootstrap_cycles: 3,
-            timeout_minutes: 10,
-            keep_intermediates: false,
-            optimization_levels: vec!["-O2".to_string()],
-            verbose: false,
-            force: false,
         }
     }
-}
-
 /// Create the bootstrap CLI command
 pub fn bootstrap_command() -> Command {
     Command::new("bootstrap")
@@ -129,8 +111,6 @@ pub fn bootstrap_command() -> Command {
             Command::new("status")
                 .about("Show bootstrap system status")
         )
-}
-
 /// Handle bootstrap CLI commands
 pub async fn handle_bootstrap_command(matches: &ArgMatches) -> CursedResult<()> {
     match matches.subcommand() {
@@ -155,8 +135,6 @@ pub async fn handle_bootstrap_command(matches: &ArgMatches) -> CursedResult<()> 
             Ok(())
         }
     }
-}
-
 /// Parse verification configuration from CLI arguments
 fn parse_verify_config(matches: &ArgMatches) -> CursedResult<BootstrapCliConfig> {
     let cycles = matches.get_one::<String>("cycles")
@@ -183,29 +161,13 @@ fn parse_verify_config(matches: &ArgMatches) -> CursedResult<BootstrapCliConfig>
         .unwrap_or_else(|| vec!["-O2".to_string()]);
 
     Ok(BootstrapCliConfig {
-        work_dir,
-        bootstrap_cycles: cycles,
-        timeout_minutes,
-        keep_intermediates,
-        optimization_levels,
-        verbose,
-        force,
     })
-}
-
 /// Run bootstrap verification with the given configuration
 async fn run_bootstrap_verification(config: BootstrapCliConfig) -> CursedResult<()> {
     info!("Starting bootstrap verification with {} cycles", config.bootstrap_cycles);
 
     // Create verification configuration
     let verification_config = VerificationConfig {
-        work_dir: config.work_dir.clone(),
-        compilation_timeout: Duration::from_secs(config.timeout_minutes * 60),
-        execution_timeout: Duration::from_secs(60),
-        keep_intermediates: config.keep_intermediates,
-        optimization_levels: config.optimization_levels.clone(),
-        bootstrap_cycles: config.bootstrap_cycles,
-    };
 
     // Create and run verifier
     let mut verifier = SelfCompilationVerifier::new(verification_config);
@@ -218,8 +180,6 @@ async fn run_bootstrap_verification(config: BootstrapCliConfig) -> CursedResult<
     if config.verbose {
         println!("   Timeout per stage: {} minutes", config.timeout_minutes);
         println!("   Keep intermediates: {}", config.keep_intermediates);
-    }
-
     match verifier.run_verification().await {
         Ok(result) => {
             display_verification_result(&result, config.verbose)?;
@@ -230,8 +190,6 @@ async fn run_bootstrap_verification(config: BootstrapCliConfig) -> CursedResult<
                 
                 if result.convergence_analysis.binary_stability {
                     println!("🎯 Compiler convergence achieved!");
-                }
-                
                 Ok(())
             } else {
                 println!("❌ Bootstrap verification failed!");
@@ -252,8 +210,6 @@ async fn run_bootstrap_verification(config: BootstrapCliConfig) -> CursedResult<
             Err(e)
         }
     }
-}
-
 /// Display detailed verification results
 fn display_verification_result(result: &VerificationResult, verbose: bool) -> CursedResult<()> {
     println!("\n📊 Bootstrap Verification Results:");
@@ -263,8 +219,6 @@ fn display_verification_result(result: &VerificationResult, verbose: bool) -> Cu
     if verbose {
         println!("\n🔧 Stage Details:");
         for stage_result in &result.stage_results {
-            println!("   Stage {}: {}", 
-                stage_result.stage, 
                 if stage_result.success { "✅ SUCCESS" } else { "❌ FAILED" }
             );
             println!("     Compilation time: {:.2}s", stage_result.compilation_time.as_secs_f64());
@@ -276,45 +230,28 @@ fn display_verification_result(result: &VerificationResult, verbose: bool) -> Cu
                     println!("       - {}", error);
                 }
             }
-        }
-        
         println!("\n📈 Performance Metrics:");
         if !result.performance_metrics.compilation_times.is_empty() {
             let avg_time = result.performance_metrics.compilation_times.iter()
                 .map(|d| d.as_secs_f64())
                 .sum::<f64>() / result.performance_metrics.compilation_times.len() as f64;
             println!("   Average compilation time: {:.2}s", avg_time);
-        }
-        
         if !result.performance_metrics.binary_sizes.is_empty() {
             let avg_size = result.performance_metrics.binary_sizes.iter().sum::<u64>() 
                 / result.performance_metrics.binary_sizes.len() as u64;
             println!("   Average binary size: {} bytes", avg_size);
-        }
-        
         println!("\n🎯 Convergence Analysis:");
-        println!("   Binary stability: {}", 
             if result.convergence_analysis.binary_stability { "✅ YES" } else { "❌ NO" }
         );
-        println!("   Performance stability: {}", 
             if result.convergence_analysis.performance_stability { "✅ YES" } else { "❌ NO" }
         );
         
         if let Some(cycle) = result.convergence_analysis.convergence_cycle {
             println!("   Convergence achieved at cycle: {}", cycle);
-        }
-        
-        println!("   Stability threshold: {:.1}%", 
             result.convergence_analysis.stability_threshold * 100.0);
-    }
-    
     if !result.issues.is_empty() && !verbose {
         println!("\n⚠️  Issues (use --verbose for details): {}", result.issues.len());
-    }
-    
     Ok(())
-}
-
 /// Show bootstrap stage information
 async fn show_bootstrap_stages(detail: bool) -> CursedResult<()> {
     println!("🏗️  Bootstrap Stages:");
@@ -340,11 +277,7 @@ async fn show_bootstrap_stages(detail: bool) -> CursedResult<()> {
         println!("     - Binary comparison for stability verification");
         println!("     - Performance analysis for optimization validation");
         println!("     - Convergence detection when stages produce identical results");
-    }
-    
     Ok(())
-}
-
 /// Clean bootstrap verification artifacts
 async fn clean_bootstrap_artifacts(work_dir: PathBuf) -> CursedResult<()> {
     info!("Cleaning bootstrap artifacts in {}", work_dir.display());
@@ -352,8 +285,6 @@ async fn clean_bootstrap_artifacts(work_dir: PathBuf) -> CursedResult<()> {
     if !work_dir.exists() {
         println!("No bootstrap artifacts found in {}", work_dir.display());
         return Ok(());
-    }
-    
     println!("🧹 Cleaning bootstrap artifacts...");
     println!("   Directory: {}", work_dir.display());
     
@@ -368,8 +299,6 @@ async fn clean_bootstrap_artifacts(work_dir: PathBuf) -> CursedResult<()> {
             Err(CursedError::io_error(format!("Failed to clean {}: {}", work_dir.display(), e)))
         }
     }
-}
-
 /// Show bootstrap system status
 async fn show_bootstrap_status() -> CursedResult<()> {
     println!("🔍 Bootstrap System Status:");
@@ -378,13 +307,11 @@ async fn show_bootstrap_status() -> CursedResult<()> {
     let stage2_dir = PathBuf::from("src/bootstrap/stage2");
     let stage2_exists = stage2_dir.exists();
     
-    println!("   Stage 2 compiler: {}", 
         if stage2_exists { "✅ Available" } else { "❌ Not found" }
     );
     
     if stage2_exists {
         let stage2_files = [
-            "main.csd", "lexer.csd", "parser.csd", 
             "type_checker.csd", "codegen.csd", "error.csd"
         ];
         
@@ -423,8 +350,6 @@ async fn show_bootstrap_status() -> CursedResult<()> {
         }
     } else {
         println!("   Verification artifacts: ❌ None");
-    }
-    
     // Bootstrap readiness check
     let bootstrap_ready = stage2_exists;
     
@@ -435,8 +360,4 @@ async fn show_bootstrap_status() -> CursedResult<()> {
     } else {
         println!("   Status: ❌ Bootstrap verification not available");
         println!("   Reason: Stage 2 compiler implementation missing");
-    }
-    
     Ok(())
-}
-

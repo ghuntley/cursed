@@ -9,54 +9,19 @@ use std::collections::HashMap;
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum BraceStyle {
-    SameLine,
-    NextLine,
-    NextLineUnindented,
-}
-
 #[derive(Debug, Clone, PartialEq)]
 pub enum OperatorSpacing {
-    WithSpaces,
-    WithoutSpaces,
-}
-
 #[derive(Debug, Clone, PartialEq)]
 pub enum CommaSpacing {
-    WithSpaces,
-    WithoutSpaces,
-}
-
 #[derive(Debug, Clone)]
 pub struct FormatterConfig {
-    pub indent_size: usize,
-    pub line_width: usize,
-    pub brace_style: BraceStyle,
-    pub operator_spacing: OperatorSpacing,
-    pub comma_spacing: CommaSpacing,
-    pub max_empty_lines: usize,
-}
-
 impl Default for FormatterConfig {
     fn default() -> Self {
         Self {
-            indent_size: 4,
-            line_width: 100,
-            brace_style: BraceStyle::SameLine,
-            operator_spacing: OperatorSpacing::WithSpaces,
-            comma_spacing: CommaSpacing::WithSpaces,
-            max_empty_lines: 2,
         }
     }
-}
-
 #[derive(Debug)]
 pub struct FormatterResult {
-    pub formatted_code: String,
-    pub changes_made: bool,
-    pub lines_changed: usize,
-    pub formatting_errors: Vec<String>,
-}
-
 impl FormatterResult {
     pub fn new(formatted_code: String, original: &str) -> Self {
         let changes_made = formatted_code != original;
@@ -64,13 +29,8 @@ impl FormatterResult {
             formatted_code.split("\n").count()
         } else {
             0
-        };
         
         Self {
-            formatted_code,
-            changes_made,
-            lines_changed,
-            formatting_errors: Vec::new(),
         }
     }
     
@@ -81,19 +41,9 @@ impl FormatterResult {
 }
 
 pub struct CursedFormatter {
-    config: FormatterConfig,
-    current_indent: usize,
-    output: String,
-    errors: Vec<String>,
-}
-
 impl CursedFormatter {
     pub fn new(config: FormatterConfig) -> Self {
         Self { 
-            config,
-            current_indent: 0,
-            output: String::new(),
-            errors: Vec::new(),
         }
     }
     
@@ -116,23 +66,17 @@ impl CursedFormatter {
             .with_errors(self.errors.clone());
         
         Ok(result)
-    }
-    
     fn format_program(&mut self, program: &Program) {
         // Package declaration
         if let Some(package) = &program.package_name {
             self.write_line(&format!("vibe {}", package));
             self.write_empty_line();
-        }
-        
         // Import statements
         if !program.imports.is_empty() {
             for import in &program.imports {
                 self.format_import_statement(import);
             }
             self.write_empty_line();
-        }
-        
         // Statements
         for (i, statement) in program.statements.iter().enumerate() {
             if i > 0 {
@@ -204,8 +148,6 @@ impl CursedFormatter {
         if let Some(return_type) = &func.return_type {
             line.push(' ');
             line.push_str(&return_type.string());
-        }
-        
         // Opening brace
         match self.config.brace_style {
             BraceStyle::SameLine => {
@@ -229,8 +171,6 @@ impl CursedFormatter {
         
         // Closing brace
         self.write_line("}");
-    }
-    
     fn format_squad_statement(&mut self, squad: &SquadStatement) {
         let mut line = format!("squad {}", squad.name.string());
         
@@ -259,8 +199,6 @@ impl CursedFormatter {
         
         // Closing brace
         self.write_line("}");
-    }
-    
     fn format_collab_statement(&mut self, collab: &CollabStatement) {
         let mut line = format!("collab {}", collab.name.string());
         
@@ -300,16 +238,12 @@ impl CursedFormatter {
             if let Some(return_type) = &method.return_type {
                 method_line.push(' ');
                 method_line.push_str(&return_type.string());
-            }
-            
             self.write_line(&method_line);
         }
         self.current_indent -= 1;
         
         // Closing brace
         self.write_line("}");
-    }
-    
     fn format_if_statement(&mut self, if_stmt: &IfStatement) {
         let mut line = format!("lowkey {}", if_stmt.condition.string());
         
@@ -393,8 +327,6 @@ impl CursedFormatter {
                 self.format_statement(stmt.as_ref());
             }
             self.current_indent -= 1;
-        }
-        
         // Default case
         if let Some(default) = &switch.default {
             self.write_line("basic:");
@@ -403,12 +335,8 @@ impl CursedFormatter {
                 self.format_statement(stmt.as_ref());
             }
             self.current_indent -= 1;
-        }
-        
         self.current_indent -= 1;
         self.write_line("}");
-    }
-    
     fn format_for_statement(&mut self, for_stmt: &ForStatement) {
         let init_str = for_stmt.init.as_ref().map(|i| i.string()).unwrap_or_default();
         let cond_str = for_stmt.condition.as_ref().map(|c| c.string()).unwrap_or_default();
@@ -440,8 +368,6 @@ impl CursedFormatter {
         
         // Closing brace
         self.write_line("}");
-    }
-    
     fn format_range_for_statement(&mut self, range_for: &RangeForStatement) {
         let vars = match (&range_for.key_var, &range_for.value_var) {
             (Some(k), Some(v)) => {
@@ -451,10 +377,6 @@ impl CursedFormatter {
                     format!("{},{}", k, v)
                 }
             }
-            (Some(k), None) => k.clone(),
-            (None, Some(v)) => v.clone(),
-            (None, None) => "_".to_string(),
-        };
         
         let spacing = if self.config.operator_spacing == OperatorSpacing::WithSpaces { " " } else { "" };
         let mut line = format!("bestie{}{}{}:={}flex{}{}", spacing, vars, spacing, spacing, spacing, range_for.iterable.string());
@@ -482,8 +404,6 @@ impl CursedFormatter {
         
         // Closing brace
         self.write_line("}");
-    }
-    
     fn format_while_statement(&mut self, while_stmt: &WhileStatement) {
         let mut line = format!("periodt {}", while_stmt.condition.string());
         
@@ -510,12 +430,8 @@ impl CursedFormatter {
         
         // Closing brace
         self.write_line("}");
-    }
-    
     fn format_type_alias_statement(&mut self, type_alias: &TypeAliasStatement) {
         self.write_line(&format!("be_like {} {}", type_alias.name, type_alias.target_type));
-    }
-    
     fn format_block_statement(&mut self, block: &BlockStatement) {
         for statement in &block.statements {
             self.format_statement(statement.as_ref());
@@ -526,17 +442,11 @@ impl CursedFormatter {
         self.output.push_str(&self.get_indent());
         self.output.push_str(content);
         self.output.push('\n');
-    }
-    
     fn write_unindented_line(&mut self, content: &str) {
         self.output.push_str(content);
         self.output.push('\n');
-    }
-    
     fn write_empty_line(&mut self) {
         self.output.push('\n');
-    }
-    
     fn get_indent(&self) -> String {
         " ".repeat(self.current_indent * self.config.indent_size)
     }

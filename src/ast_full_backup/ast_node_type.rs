@@ -5,10 +5,4 @@ use crate::ast::declarations::{FunctionDeclaration, VariableDeclaration, StructD
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum AstNodeType {
-    FunctionDeclaration(Box<FunctionDeclaration>),
-    Statement(Box<Statement>),
-    Expression(Box<Expression>),
-    VariableDeclaration(Box<VariableDeclaration>),
-    StructDeclaration(Box<StructDeclaration>),
-    InterfaceDeclaration(Box<InterfaceDeclaration>),
 }

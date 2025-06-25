@@ -20,75 +20,41 @@ use serde::{Serialize, Deserialize};
 /// Profile storage system with comprehensive data management
 pub struct ProfileStorage {
     /// Configuration for storage
-    config: ProfileStorageConfig,
     /// Profile database for metadata management
-    database: ProfileDatabase,
     /// Profile merger for combining multiple runs
-    merger: ProfileMerger,
     /// Storage statistics
-    statistics: StorageStatistics,
     /// Active storage format
-    format: ProfileFormat,
-}
-
 /// Configuration for profile storage
 #[derive(Debug, Clone)]
 pub struct ProfileStorageConfig {
     /// Storage directory for profile data
-    pub storage_directory: PathBuf,
     /// Enable data compression
-    pub enable_compression: bool,
     /// Compression level (0-9)
-    pub compression_level: u32,
     /// Maximum profile file size (bytes)
-    pub max_file_size: usize,
     /// Enable automatic cleanup of old profiles
-    pub enable_auto_cleanup: bool,
     /// Maximum age for profile retention
-    pub max_profile_age: Duration,
     /// Enable profile validation on load
-    pub enable_validation: bool,
     /// Profile format version
-    pub format_version: ProfileVersion,
     /// Enable incremental storage
-    pub enable_incremental: bool,
     /// Backup retention count
-    pub backup_retention_count: usize,
     /// Enable encryption for sensitive data
-    pub enable_encryption: bool,
     /// Encryption key derivation method
-    pub encryption_method: EncryptionMethod,
-}
-
 /// Profile format versions
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub enum ProfileVersion {
-    V1_0,
-    V1_1,
-    V2_0,
-}
-
 impl ProfileVersion {
     pub fn as_str(&self) -> &'static str {
         match self {
-            ProfileVersion::V1_0 => "1.0",
-            ProfileVersion::V1_1 => "1.1", 
-            ProfileVersion::V2_0 => "2.0",
         }
     }
 
     pub fn from_str(s: &str) -> Result<Self> {
         match s {
-            "1.0" => Ok(ProfileVersion::V1_0),
-            "1.1" => Ok(ProfileVersion::V1_1),
-            "2.0" => Ok(ProfileVersion::V2_0),
-            _ => Err(CursedError::General(format!("Unknown profile version: {}", s))),
         }
     }
 
     pub fn is_compatible_with(&self, other: &ProfileVersion) -> bool {
         // For now, all versions are compatible
-        matches!((self, other), 
             (ProfileVersion::V1_0, ProfileVersion::V1_0) |
             (ProfileVersion::V1_0, ProfileVersion::V1_1) |
             (ProfileVersion::V1_1, ProfileVersion::V1_0) |
@@ -102,30 +68,14 @@ impl ProfileVersion {
 /// Encryption methods for profile data
 #[derive(Debug, Clone)]
 pub enum EncryptionMethod {
-    None,
-    Aes256Gcm,
-    ChaCha20Poly1305,
-}
-
 impl Default for ProfileStorageConfig {
     fn default() -> Self {
         Self {
             storage_directory: PathBuf::from("target/pgo-profiles"),
-            enable_compression: true,
-            compression_level: 6,
             max_file_size: 100 * 1024 * 1024, // 100MB
-            enable_auto_cleanup: true,
             max_profile_age: Duration::from_secs(30 * 24 * 3600), // 30 days
-            enable_validation: true,
-            format_version: ProfileVersion::V1_0,
-            enable_incremental: true,
-            backup_retention_count: 5,
-            enable_encryption: false,
-            encryption_method: EncryptionMethod::None,
         }
     }
-}
-
 impl ProfileStorageConfig {
     /// Create config from PGO system config
     pub fn from_pgo_config(pgo_config: &PgoSystemConfig) -> Self {
@@ -166,194 +116,99 @@ impl ProfileStorageConfig {
 /// Profile storage format
 #[derive(Debug, Clone)]
 pub enum ProfileFormat {
-    Binary,
-    CompressedBinary,
-    Json,
-    CompressedJson,
-    MessagePack,
-    ProtoBuf,
-}
-
 /// Profile database for metadata management
 pub struct ProfileDatabase {
     /// Database file path
-    db_path: PathBuf,
     /// In-memory metadata cache
-    metadata_cache: HashMap<String, ProfileMetadata>,
     /// Profile index for fast lookup
-    profile_index: HashMap<String, ProfileIndexEntry>,
     /// Database statistics
-    db_statistics: DatabaseStatistics,
-}
-
 /// Profile metadata for database storage
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ProfileMetadata {
     /// Unique profile identifier
-    pub profile_id: String,
     /// Profile name/description
-    pub profile_name: String,
     /// Creation timestamp
-    pub created_at: SystemTime,
     /// Last modified timestamp
-    pub modified_at: SystemTime,
     /// Profile format version
-    pub format_version: ProfileVersion,
     /// Data quality score
-    pub quality_score: f64,
     /// Profile file size
-    pub file_size: usize,
     /// Compression ratio (if compressed)
-    pub compression_ratio: Option<f64>,
     /// Profile tags for categorization
-    pub tags: Vec<String>,
     /// Source program information
-    pub source_info: SourceInfo,
     /// Collection statistics summary
-    pub collection_summary: CollectionSummary,
     /// Custom metadata fields
-    pub custom_fields: HashMap<String, String>,
-}
-
 /// Source program information
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct SourceInfo {
     /// Source file paths
-    pub source_files: Vec<String>,
     /// Compiler version
-    pub compiler_version: String,
     /// Target architecture
-    pub target_arch: String,
     /// Optimization level used
-    pub optimization_level: String,
     /// Build configuration
-    pub build_config: String,
-}
-
 /// Collection statistics summary
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct CollectionSummary {
     /// Total events collected
-    pub total_events: u64,
     /// Collection duration
-    pub collection_duration: Duration,
     /// Function count
-    pub function_count: usize,
     /// Branch count
-    pub branch_count: usize,
     /// Loop count
-    pub loop_count: usize,
     /// Memory region count
-    pub memory_region_count: usize,
-}
-
 /// Profile index entry for fast lookup
 #[derive(Debug, Clone)]
 pub struct ProfileIndexEntry {
     /// Profile identifier
-    pub profile_id: String,
     /// File path
-    pub file_path: PathBuf,
     /// File size
-    pub file_size: usize,
     /// Last access time
-    pub last_accessed: SystemTime,
     /// Access frequency
-    pub access_count: u64,
     /// Index entry creation time
-    pub indexed_at: SystemTime,
-}
-
 /// Database statistics
 #[derive(Debug, Clone, Default)]
 pub struct DatabaseStatistics {
     /// Total profiles stored
-    pub total_profiles: usize,
     /// Total storage size
-    pub total_storage_size: usize,
     /// Average profile size
-    pub average_profile_size: usize,
     /// Database file size
-    pub database_size: usize,
     /// Cache hit rate
-    pub cache_hit_rate: f64,
     /// Queries per second
-    pub queries_per_second: f64,
-}
-
 /// Profile merger for combining multiple runs
 pub struct ProfileMerger {
     /// Merge configuration
-    config: MergeConfig,
     /// Merge statistics
-    statistics: MergeStatistics,
-}
-
 /// Configuration for profile merging
 #[derive(Debug, Clone)]
 pub struct MergeConfig {
     /// Enable weighted merging based on quality
-    pub enable_weighted_merge: bool,
     /// Maximum profiles to merge at once
-    pub max_merge_count: usize,
     /// Quality threshold for inclusion
-    pub quality_threshold: f64,
     /// Enable outlier detection and removal
-    pub enable_outlier_removal: bool,
     /// Statistical significance threshold
-    pub significance_threshold: f64,
-}
-
 impl Default for MergeConfig {
     fn default() -> Self {
         Self {
-            enable_weighted_merge: true,
-            max_merge_count: 10,
-            quality_threshold: 0.5,
-            enable_outlier_removal: true,
-            significance_threshold: 0.95,
         }
     }
-}
-
 /// Merge operation statistics
 #[derive(Debug, Clone, Default)]
 pub struct MergeStatistics {
     /// Total merges performed
-    pub total_merges: usize,
     /// Profiles merged
-    pub profiles_merged: usize,
     /// Average merge time
-    pub average_merge_time: Duration,
     /// Quality improvement from merging
-    pub quality_improvement: f64,
     /// Data reduction ratio
-    pub data_reduction_ratio: f64,
-}
-
 /// Storage operation statistics
 #[derive(Debug, Clone, Default)]
 pub struct StorageStatistics {
     /// Profiles stored
-    pub profiles_stored: usize,
     /// Profiles loaded
-    pub profiles_loaded: usize,
     /// Total bytes written
-    pub bytes_written: usize,
     /// Total bytes read
-    pub bytes_read: usize,
     /// Average storage time
-    pub average_storage_time: Duration,
     /// Average load time
-    pub average_load_time: Duration,
     /// Compression efficiency
-    pub compression_efficiency: f64,
     /// Storage errors
-    pub storage_errors: usize,
     /// Validation failures
-    pub validation_failures: usize,
-}
-
 impl ProfileStorage {
     /// Create new profile storage system
     #[instrument(skip(config))]
@@ -375,17 +230,9 @@ impl ProfileStorage {
             ProfileFormat::CompressedBinary
         } else {
             ProfileFormat::Binary
-        };
 
         Ok(Self {
-            config,
-            database,
-            merger,
-            statistics: StorageStatistics::default(),
-            format,
         })
-    }
-
     /// Initialize storage system
     #[instrument(skip(self, storage_path))]
     pub fn initialize(&mut self, storage_path: &Path) -> Result<()> {
@@ -406,12 +253,8 @@ impl ProfileStorage {
         // Perform auto-cleanup if enabled
         if self.config.enable_auto_cleanup {
             self.cleanup_old_profiles()?;
-        }
-
         info!("Profile storage initialized successfully");
         Ok(())
-    }
-
     /// Store profile data
     #[instrument(skip(self, profile_data))]
     pub fn store_profile(&mut self, profile_data: &ProfileData) -> Result<String> {
@@ -424,8 +267,6 @@ impl ProfileStorage {
         // Validate profile data if enabled
         if self.config.enable_validation {
             self.validate_profile_data(profile_data)?;
-        }
-
         // Create metadata
         let metadata = self.create_metadata(&profile_id, profile_data)?;
 
@@ -450,15 +291,10 @@ impl ProfileStorage {
              start_time.elapsed()) / self.statistics.profiles_stored as u32;
 
         info!(
-            profile_id = %profile_id,
-            file_size = file_size,
-            storage_time = ?start_time.elapsed(),
             "Profile stored successfully"
         );
 
         Ok(profile_id)
-    }
-
     /// Load profile data
     #[instrument(skip(self, profile_path))]
     pub fn load_profile(&mut self, profile_path: &Path) -> Result<ProfileData> {
@@ -475,7 +311,6 @@ impl ProfileStorage {
             let profile_id = profile_path.to_string_lossy().to_string();
             let actual_path = self.get_profile_path(&profile_id);
             (profile_id, actual_path)
-        };
 
         // Load metadata if available
         let metadata = self.database.load_metadata(&profile_id).ok();
@@ -483,14 +318,11 @@ impl ProfileStorage {
         // Validate file exists
         if !actual_path.exists() {
             return Err(CursedError::General(format!("Profile file not found: {}", actual_path.display())));
-        }
-
         // Check file age if configured
         if let Some(meta) = &metadata {
             let age = SystemTime::now().duration_since(meta.created_at).unwrap_or_default();
             if age > self.config.max_profile_age {
                 return Err(PgoError::ProfileTooOld { 
-                    age, 
                     max_age: self.config.max_profile_age 
                 }.into());
             }
@@ -502,13 +334,9 @@ impl ProfileStorage {
         // Validate profile data if enabled
         if self.config.enable_validation {
             self.validate_profile_data(&profile_data)?;
-        }
-
         // Update access statistics
         if let Ok(metadata) = self.database.get_metadata_mut(&profile_id) {
             metadata.modified_at = SystemTime::now();
-        }
-
         // Update storage statistics
         let file_size = std::fs::metadata(&actual_path)?.len() as usize;
         self.statistics.profiles_loaded += 1;
@@ -518,15 +346,10 @@ impl ProfileStorage {
              start_time.elapsed()) / self.statistics.profiles_loaded as u32;
 
         info!(
-            profile_id = %profile_id,
-            file_size = file_size,
-            load_time = ?start_time.elapsed(),
             "Profile loaded successfully"
         );
 
         Ok(profile_data)
-    }
-
     /// Merge multiple profiles
     #[instrument(skip(self, profile_ids))]
     pub fn merge_profiles(&mut self, profile_ids: &[String]) -> Result<ProfileData> {
@@ -534,16 +357,10 @@ impl ProfileStorage {
 
         if profile_ids.is_empty() {
             return Err(CursedError::General("No profiles to merge".to_string()));
-        }
-
         if profile_ids.len() > self.merger.config.max_merge_count {
             return Err(CursedError::General(format!(
-                "Too many profiles to merge: {} > {}", 
-                profile_ids.len(), 
                 self.merger.config.max_merge_count
             )));
-        }
-
         // Load all profiles
         let mut profiles = Vec::new();
         for profile_id in profile_ids {
@@ -554,32 +371,23 @@ impl ProfileStorage {
             if profile_data.metadata.quality_score >= self.merger.config.quality_threshold {
                 profiles.push(profile_data);
             } else {
-                warn!("Skipping low-quality profile: {} (quality: {:.2})", 
                       profile_id, profile_data.metadata.quality_score);
             }
         }
 
         if profiles.is_empty() {
             return Err(CursedError::General("No profiles meet quality threshold for merging".to_string()));
-        }
-
         // Perform merge
         let merged_profile = self.merger.merge_profiles(&profiles)?;
 
         info!(
-            merged_profiles = profiles.len(),
-            merged_quality = %merged_profile.metadata.quality_score,
             "Profile merge completed successfully"
         );
 
         Ok(merged_profile)
-    }
-
     /// List available profiles
     pub fn list_profiles(&self) -> Result<Vec<ProfileMetadata>> {
         self.database.list_all_profiles()
-    }
-
     /// Delete profile
     #[instrument(skip(self, profile_id))]
     pub fn delete_profile(&mut self, profile_id: &str) -> Result<()> {
@@ -591,25 +399,17 @@ impl ProfileStorage {
         // Create backup if configured
         if self.config.backup_retention_count > 0 {
             self.create_backup(&profile_path, profile_id)?;
-        }
-
         // Delete file
         if profile_path.exists() {
             std::fs::remove_file(&profile_path)?;
-        }
-
         // Remove from database
         self.database.delete_metadata(profile_id)?;
 
         info!("Profile deleted successfully: {}", profile_id);
         Ok(())
-    }
-
     /// Get storage statistics
     pub fn get_statistics(&self) -> StorageStatistics {
         self.statistics.clone()
-    }
-
     /// Cleanup old profiles
     #[instrument(skip(self))]
     pub fn cleanup_old_profiles(&mut self) -> Result<usize> {
@@ -627,40 +427,24 @@ impl ProfileStorage {
                     deleted_count += 1;
                 }
             }
-        }
-
         info!("Cleanup completed, deleted {} old profiles", deleted_count);
         Ok(deleted_count)
-    }
-
     /// Validate profile format and integrity
     pub fn validate_profile_data(&self, profile_data: &ProfileData) -> Result<()> {
         // Check format version compatibility
         if !self.config.format_version.is_compatible_with(&ProfileVersion::V1_0) {
             return Err(PgoError::IncompatibleFormat {
-                expected: self.config.format_version.as_str().to_string(),
-                found: "1.0".to_string(),
             }.into());
-        }
-
         // Check data quality
         if profile_data.metadata.quality_score < 0.5 {
             return Err(PgoError::InsufficientQuality {
-                actual: profile_data.metadata.quality_score,
-                required: 0.5,
             }.into());
-        }
-
         // Validate data consistency
         if profile_data.function_profiles.is_empty() && 
            profile_data.branch_profiles.is_empty() &&
            profile_data.loop_profiles.is_empty() {
             return Err(CursedError::General("Profile data appears to be empty".to_string()));
-        }
-
         Ok(())
-    }
-
     // Private helper methods
 
     fn generate_profile_id(&self, profile_data: &ProfileData) -> Result<String> {
@@ -676,53 +460,23 @@ impl ProfileStorage {
         
         let hash = hasher.finish();
         Ok(format!("profile_{:016x}", hash))
-    }
-
     fn create_metadata(&self, profile_id: &str, profile_data: &ProfileData) -> Result<ProfileMetadata> {
         let now = SystemTime::now();
         
         Ok(ProfileMetadata {
-            profile_id: profile_id.to_string(),
-            profile_name: format!("Profile {}", profile_id),
-            created_at: now,
-            modified_at: now,
-            format_version: self.config.format_version,
-            quality_score: profile_data.metadata.quality_score,
             file_size: 0, // Will be updated after writing
-            compression_ratio: if self.config.enable_compression { Some(0.7) } else { None },
-            tags: vec!["pgo".to_string(), "auto-generated".to_string()],
             source_info: SourceInfo {
-                source_files: vec!["unknown".to_string()],
-                compiler_version: profile_data.metadata.compiler_version.clone(),
-                target_arch: profile_data.metadata.target_architecture.clone(),
-                optimization_level: "unknown".to_string(),
-                build_config: "unknown".to_string(),
-            },
             collection_summary: CollectionSummary {
-                total_events: profile_data.collection_stats.total_events,
-                collection_duration: profile_data.collection_duration,
-                function_count: profile_data.function_profiles.len(),
-                branch_count: profile_data.branch_profiles.len(),
-                loop_count: profile_data.loop_profiles.len(),
-                memory_region_count: profile_data.memory_profiles.len(),
-            },
-            custom_fields: HashMap::new(),
         })
-    }
-
     fn get_profile_path(&self, profile_id: &str) -> PathBuf {
         self.config.storage_directory
             .join("profiles")
             .join(format!("{}.profile", profile_id))
-    }
-
     fn extract_profile_id_from_path(&self, path: &Path) -> Result<String> {
         path.file_stem()
             .and_then(|stem| stem.to_str())
             .map(|s| s.to_string())
             .ok_or_else(|| CursedError::General("Invalid profile path".to_string()))
-    }
-
     fn write_profile_data(&self, path: &PathBuf, profile_data: &ProfileData) -> Result<usize> {
         let file = OpenOptions::new()
             .create(true)
@@ -754,7 +508,6 @@ impl ProfileStorage {
                 writer.write_all(&serialized)?;
                 Ok(serialized.len())
             }
-            _ => Err(CursedError::General("Unsupported storage format".to_string())),
         }
     }
 
@@ -778,7 +531,6 @@ impl ProfileStorage {
                 serde_json::from_slice(&buffer)
                     .map_err(|e| CursedError::General(format!("JSON deserialization failed: {}", e)))
             }
-            _ => Err(CursedError::General("Unsupported storage format".to_string())),
         }
     }
 
@@ -788,8 +540,6 @@ impl ProfileStorage {
         compressed.extend_from_slice(b"COMPRESSED:");
         compressed.extend_from_slice(data);
         Ok(compressed)
-    }
-
     fn decompress_data(&self, data: &[u8]) -> Result<Vec<u8>> {
         // Simulate decompression
         if data.starts_with(b"COMPRESSED:") {
@@ -813,8 +563,6 @@ impl ProfileStorage {
         self.cleanup_old_backups(profile_id)?;
         
         Ok(())
-    }
-
     fn cleanup_old_backups(&self, profile_id: &str) -> Result<()> {
         let backup_dir = self.config.storage_directory.join("backups");
         let mut backups = Vec::new();
@@ -835,8 +583,6 @@ impl ProfileStorage {
         // Remove excess backups
         for (path, _) in backups.into_iter().skip(self.config.backup_retention_count) {
             let _ = std::fs::remove_file(path);
-        }
-        
         Ok(())
     }
 }
@@ -845,61 +591,39 @@ impl ProfileDatabase {
     /// Create new profile database
     pub fn new(db_path: PathBuf) -> Result<Self> {
         Ok(Self {
-            db_path,
-            metadata_cache: HashMap::new(),
-            profile_index: HashMap::new(),
-            db_statistics: DatabaseStatistics::default(),
         })
-    }
-
     /// Initialize database
     pub fn initialize(&mut self) -> Result<()> {
         // In a real implementation, this would create/open SQLite database
         // For now, we'll use in-memory storage
         debug!("Database initialized at: {}", self.db_path.display());
         Ok(())
-    }
-
     /// Store metadata
     pub fn store_metadata(&mut self, profile_id: &str, metadata: &ProfileMetadata) -> Result<()> {
         self.metadata_cache.insert(profile_id.to_string(), metadata.clone());
         
         let index_entry = ProfileIndexEntry {
-            profile_id: profile_id.to_string(),
             file_path: PathBuf::from(format!("profiles/{}.profile", profile_id)),
-            file_size: metadata.file_size,
-            last_accessed: SystemTime::now(),
-            access_count: 0,
-            indexed_at: SystemTime::now(),
-        };
         
         self.profile_index.insert(profile_id.to_string(), index_entry);
         self.db_statistics.total_profiles += 1;
         
         Ok(())
-    }
-
     /// Load metadata
     pub fn load_metadata(&self, profile_id: &str) -> Result<ProfileMetadata> {
         self.metadata_cache.get(profile_id)
             .cloned()
             .ok_or_else(|| CursedError::General(format!("Profile metadata not found: {}", profile_id)))
-    }
-
     /// Get mutable metadata reference
     pub fn get_metadata_mut(&mut self, profile_id: &str) -> Result<&mut ProfileMetadata> {
         self.metadata_cache.get_mut(profile_id)
             .ok_or_else(|| CursedError::General(format!("Profile metadata not found: {}", profile_id)))
-    }
-
     /// Delete metadata
     pub fn delete_metadata(&mut self, profile_id: &str) -> Result<()> {
         self.metadata_cache.remove(profile_id);
         self.profile_index.remove(profile_id);
         self.db_statistics.total_profiles = self.db_statistics.total_profiles.saturating_sub(1);
         Ok(())
-    }
-
     /// List all profiles
     pub fn list_all_profiles(&self) -> Result<Vec<ProfileMetadata>> {
         Ok(self.metadata_cache.values().cloned().collect())
@@ -910,23 +634,15 @@ impl ProfileMerger {
     /// Create new profile merger
     pub fn new(config: MergeConfig) -> Result<Self> {
         Ok(Self {
-            config,
-            statistics: MergeStatistics::default(),
         })
-    }
-
     /// Merge multiple profiles
     pub fn merge_profiles(&mut self, profiles: &[ProfileData]) -> Result<ProfileData> {
         let start_time = std::time::Instant::now();
         
         if profiles.is_empty() {
             return Err(CursedError::General("No profiles to merge".to_string()));
-        }
-
         if profiles.len() == 1 {
             return Ok(profiles[0].clone());
-        }
-
         // Use first profile as base
         let mut merged = profiles[0].clone();
         
@@ -950,8 +666,6 @@ impl ProfileMerger {
                     merged.function_profiles.insert(func_name.clone(), func_profile.clone());
                 }
             }
-        }
-
         // Merge branch profiles
         for profile in &profiles[1..] {
             for (branch_id, branch_profile) in &profile.branch_profiles {
@@ -966,13 +680,10 @@ impl ProfileMerger {
                         taken_ratio
                     } else {
                         1.0 - taken_ratio
-                    };
                 } else {
                     merged.branch_profiles.insert(branch_id.clone(), branch_profile.clone());
                 }
             }
-        }
-
         // Merge loop profiles
         for profile in &profiles[1..] {
             for (loop_id, loop_profile) in &profile.loop_profiles {
@@ -992,8 +703,6 @@ impl ProfileMerger {
                     merged.loop_profiles.insert(loop_id.clone(), loop_profile.clone());
                 }
             }
-        }
-
         // Update metadata
         merged.metadata.quality_score = self.calculate_merged_quality_score(profiles)?;
         merged.collection_duration = profiles.iter()
@@ -1009,13 +718,9 @@ impl ProfileMerger {
              start_time.elapsed()) / self.statistics.total_merges as u32;
 
         Ok(merged)
-    }
-
     fn calculate_merged_quality_score(&self, profiles: &[ProfileData]) -> Result<f64> {
         if profiles.is_empty() {
             return Ok(0.0);
-        }
-
         if self.config.enable_weighted_merge {
             // Weighted average based on individual quality scores
             let total_weight: f64 = profiles.iter()

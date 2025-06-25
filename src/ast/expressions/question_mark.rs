@@ -13,33 +13,21 @@ use std::any::Any;
 #[derive(Debug)]
 pub struct QuestionMarkExpression {
     /// The expression to evaluate and potentially propagate errors from
-    pub expression: Box<dyn Expression>,
     
     /// Source location information for error reporting
-    pub line: usize,
-    pub column: usize,
-}
-
 impl QuestionMarkExpression {
     /// Create a new question mark expression
     pub fn new(expression: Box<dyn Expression>, line: usize, column: usize) -> Self {
         Self {
-            expression,
-            line,
-            column,
         }
     }
     
     /// Get the inner expression being evaluated
     pub fn inner_expression(&self) -> &dyn Expression {
         &*self.expression
-    }
-    
     /// Get source location for error reporting
     pub fn location(&self) -> (usize, usize) {
         (self.line, self.column)
-    }
-    
     /// Convert to string representation for debugging
     pub fn to_string(&self) -> String {
         format!("{}?", self.expression.string())
@@ -49,13 +37,8 @@ impl QuestionMarkExpression {
 impl Clone for QuestionMarkExpression {
     fn clone(&self) -> Self {
         Self {
-            expression: self.expression.clone_box(),
-            line: self.line,
-            column: self.column,
         }
     }
-}
-
 impl fmt::Display for QuestionMarkExpression {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "{}?", self.expression.string())
@@ -65,8 +48,6 @@ impl fmt::Display for QuestionMarkExpression {
 impl crate::ast::traits::Node for QuestionMarkExpression {
     fn string(&self) -> String {
         format!("{}?", self.expression.string())
-    }
-
     fn token_literal(&self) -> String {
         "?".to_string()
     }
@@ -75,8 +56,6 @@ impl crate::ast::traits::Node for QuestionMarkExpression {
 impl Expression for QuestionMarkExpression {
     fn as_any(&self) -> &dyn Any {
         self
-    }
-    
     fn clone_box(&self) -> Box<dyn Expression> {
         Box::new(self.clone())
     }

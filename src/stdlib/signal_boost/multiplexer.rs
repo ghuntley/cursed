@@ -10,35 +10,21 @@ use std::time::Duration;
 
 /// Handle for managing a multiplexer subscription
 pub struct MultiplexerHandle {
-    id: usize,
-    signals: Vec<BoostSignal>,
-    active: Arc<AtomicBool>,
-}
-
 impl MultiplexerHandle {
     fn new(id: usize, signals: Vec<BoostSignal>) -> Self {
         Self {
-            id,
-            signals,
-            active: Arc::new(AtomicBool::new(true)),
         }
     }
     
     /// Get the subscription ID
     pub fn id(&self) -> usize {
         self.id
-    }
-    
     /// Get the signals this handle is subscribed to
     pub fn signals(&self) -> &[BoostSignal] {
         &self.signals
-    }
-    
     /// Check if this handle is still active
     pub fn is_active(&self) -> bool {
         self.active.load(Ordering::SeqCst)
-    }
-    
     /// Deactivate this handle
     pub fn deactivate(&self) {
         self.active.store(false, Ordering::SeqCst);
@@ -47,29 +33,12 @@ impl MultiplexerHandle {
 
 /// Entry for a signal subscription
 struct SubscriptionEntry {
-    sender: Sender<BoostSignal>,
-    signals: Vec<BoostSignal>,
-    handle: Arc<AtomicBool>,
-}
-
 /// Signal multiplexer for distributing signals to multiple channels
 pub struct SignalMultiplexer {
-    subscriptions: Arc<Mutex<HashMap<usize, SubscriptionEntry>>>,
-    next_id: Arc<AtomicUsize>,
-    running: Arc<AtomicBool>,
-    handle: Option<thread::JoinHandle<()>>,
-    stats: Arc<Mutex<MultiplexerStats>>,
-}
-
 impl SignalMultiplexer {
     /// Create a new SignalMultiplexer
     pub fn new() -> Self {
         Self {
-            subscriptions: Arc::new(Mutex::new(HashMap::new())),
-            next_id: Arc::new(AtomicUsize::new(1)),
-            running: Arc::new(AtomicBool::new(false)),
-            handle: None,
-            stats: Arc::new(Mutex::new(MultiplexerStats::default())),
         }
     }
     
@@ -79,10 +48,6 @@ impl SignalMultiplexer {
         let handle = Arc::new(AtomicBool::new(true));
         
         let entry = SubscriptionEntry {
-            sender,
-            signals: signals.to_vec(),
-            handle: Arc::clone(&handle),
-        };
         
         {
             let mut subscriptions = self.subscriptions.lock().unwrap();
@@ -98,15 +63,9 @@ impl SignalMultiplexer {
         }
         
         let multiplexer_handle = MultiplexerHandle {
-            id,
-            signals: signals.to_vec(),
-            active: handle,
-        };
         
         tracing::debug!("Added subscription {} for signals: {:?}", id, signals);
         Ok(multiplexer_handle)
-    }
-    
     /// Remove a subscription by ID
     pub fn remove(&mut self, id: usize) -> SignalBoostResult<()> {
         let mut subscriptions = self.subscriptions.lock().unwrap();
@@ -124,8 +83,6 @@ impl SignalMultiplexer {
                         stats.signal_counts.remove(signal);
                     }
                 }
-            }
-            
             tracing::debug!("Removed subscription {}", id);
             Ok(())
         } else {
@@ -137,14 +94,10 @@ impl SignalMultiplexer {
     pub fn remove_handle(&mut self, handle: &MultiplexerHandle) -> SignalBoostResult<()> {
         handle.deactivate();
         self.remove(handle.id())
-    }
-    
     /// Start the multiplexer
     pub fn start(&mut self) -> SignalBoostResult<()> {
         if self.running.swap(true, Ordering::SeqCst) {
             return Err(SignalBoostError::General("Multiplexer already running".to_string()));
-        }
-        
         // Get all unique signals from subscriptions
         let all_signals: Vec<BoostSignal> = {
             let subscriptions = self.subscriptions.lock().unwrap();
@@ -157,13 +110,10 @@ impl SignalMultiplexer {
                 }
             }
             signals
-        };
         
         if all_signals.is_empty() {
             self.running.store(false, Ordering::SeqCst);
             return Err(SignalBoostError::ConfigError("No signals to multiplex".to_string()));
-        }
-        
         // Set up signal notification
         let (receiver, _signal_handle) = notify(&all_signals)?;
         
@@ -195,7 +145,6 @@ impl SignalMultiplexer {
                                         Ok(()) => {
                                             distributed += 1;
                                             tracing::debug!("Distributed signal {} to subscription {}", signal, id);
-                                        },
                                         Err(_) => {
                                             failed += 1;
                                             entry.handle.store(false, Ordering::SeqCst);
@@ -204,8 +153,6 @@ impl SignalMultiplexer {
                                     }
                                 }
                             }
-                        }
-                        
                         // Update statistics
                         {
                             let mut stats = stats.lock().unwrap();
@@ -217,21 +164,15 @@ impl SignalMultiplexer {
                             signal_stats.received += 1;
                             signal_stats.distributed += distributed;
                             signal_stats.failed += failed;
-                        }
-                        
                         tracing::info!("Signal {} distributed to {} subscribers ({} failed)", signal, distributed, failed);
-                    },
                     Err(std::sync::mpsc::RecvTimeoutError::Timeout) => {
                         // Normal timeout, continue
                         continue;
-                    },
                     Err(std::sync::mpsc::RecvTimeoutError::Disconnected) => {
                         tracing::info!("Signal receiver disconnected, stopping multiplexer");
                         break;
                     }
                 }
-            }
-            
             tracing::info!("Signal multiplexer stopped");
         });
         
@@ -239,8 +180,6 @@ impl SignalMultiplexer {
         
         tracing::info!("Signal multiplexer started with {} subscriptions", self.count());
         Ok(())
-    }
-    
     /// Stop the multiplexer
     pub fn stop(&mut self) -> SignalBoostResult<()> {
         self.running.store(false, Ordering::SeqCst);
@@ -256,19 +195,13 @@ impl SignalMultiplexer {
         
         tracing::info!("Signal multiplexer stopped");
         Ok(())
-    }
-    
     /// Get the number of active subscriptions
     pub fn count(&self) -> usize {
         let subscriptions = self.subscriptions.lock().unwrap();
         subscriptions.len()
-    }
-    
     /// Check if the multiplexer is running
     pub fn is_running(&self) -> bool {
         self.running.load(Ordering::SeqCst)
-    }
-    
     /// Get multiplexer statistics
     pub fn get_statistics(&self) -> MultiplexerStats {
         let mut stats = self.stats.lock().unwrap();
@@ -278,8 +211,6 @@ impl SignalMultiplexer {
         stats.active_subscriptions = subscriptions.len();
         
         stats.clone()
-    }
-    
     /// Clear all subscriptions
     pub fn clear(&mut self) -> SignalBoostResult<()> {
         let mut subscriptions = self.subscriptions.lock().unwrap();
@@ -287,8 +218,6 @@ impl SignalMultiplexer {
         // Deactivate all handles
         for entry in subscriptions.values() {
             entry.handle.store(false, Ordering::SeqCst);
-        }
-        
         subscriptions.clear();
         
         let mut stats = self.stats.lock().unwrap();
@@ -297,8 +226,6 @@ impl SignalMultiplexer {
         
         tracing::info!("Cleared all subscriptions");
         Ok(())
-    }
-    
     /// Get all signals being monitored
     pub fn monitored_signals(&self) -> Vec<BoostSignal> {
         let subscriptions = self.subscriptions.lock().unwrap();
@@ -310,8 +237,6 @@ impl SignalMultiplexer {
                     signals.push(*signal);
                 }
             }
-        }
-        
         signals
     }
 }
@@ -325,27 +250,11 @@ impl Drop for SignalMultiplexer {
 /// Statistics for the signal multiplexer
 #[derive(Debug, Clone, Default)]
 pub struct MultiplexerStats {
-    pub total_subscriptions: usize,
-    pub active_subscriptions: usize,
-    pub signals_processed: usize,
-    pub signals_distributed: usize,
-    pub failed_distributions: usize,
-    pub signal_counts: HashMap<BoostSignal, usize>,
-    pub signal_stats: HashMap<BoostSignal, SignalStats>,
-}
-
 /// Statistics for individual signals
 #[derive(Debug, Clone, Default)]
 pub struct SignalStats {
-    pub received: usize,
-    pub distributed: usize,
-    pub failed: usize,
-}
-
 // Global statistics
 static ACTIVE_MULTIPLEXERS: AtomicUsize = AtomicUsize::new(0);
 
 pub fn get_active_count() -> usize {
     ACTIVE_MULTIPLEXERS.load(Ordering::SeqCst)
-}
-

@@ -17,16 +17,8 @@ static SEMAPHORE_REGISTRY: std::sync::OnceLock<Arc<RwLock<HashMap<String, Arc<Se
 
 #[derive(Debug)]
 struct SemaphoreInfo {
-    name: String,
-    semaphore_id: i32,
-    created_by_us: bool,
-    ref_count: Arc<Mutex<usize>>,
-}
-
 fn get_semaphore_registry() -> &'static Arc<RwLock<HashMap<String, Arc<SemaphoreInfo>>>> {
     SEMAPHORE_REGISTRY.get_or_init(|| Arc::new(RwLock::new(HashMap::new())))
-}
-
 /// Semaphore value type
 pub type SemaphoreValue = i32;
 
@@ -34,44 +26,22 @@ pub type SemaphoreValue = i32;
 #[derive(Debug, Clone)]
 pub struct SemaphoreConfig {
     /// Initial value of the semaphore
-    pub initial_value: SemaphoreValue,
     /// Maximum value of the semaphore
-    pub max_value: SemaphoreValue,
     /// Permissions for the semaphore
-    pub permissions: u32,
     /// Whether to create the semaphore if it doesn't exist
-    pub create_if_missing: bool,
     /// Whether to use POSIX semaphores (vs System V)
-    pub use_posix: bool,
     /// Number of semaphores in the set (System V only)
-    pub semaphore_count: usize,
-}
-
 impl Default for SemaphoreConfig {
     fn default() -> Self {
         Self {
-            initial_value: 1,
-            max_value: i32::MAX,
-            permissions: 0o666,
-            create_if_missing: true,
             use_posix: false, // Default to System V for broader compatibility
-            semaphore_count: 1,
         }
     }
-}
-
 /// Cross-platform semaphore
 #[derive(Debug)]
 pub struct Semaphore {
-    name: String,
-    config: SemaphoreConfig,
     #[cfg(unix)]
-    semaphore_id: Option<i32>,
     #[cfg(unix)]
-    posix_sem: Option<*mut libc::sem_t>,
-    is_open: bool,
-}
-
 unsafe impl Send for Semaphore {}
 unsafe impl Sync for Semaphore {}
 
@@ -79,31 +49,19 @@ impl Semaphore {
     /// Create a new semaphore
     pub fn new(name: &str, initial_value: SemaphoreValue) -> Self {
         let config = SemaphoreConfig {
-            initial_value,
             ..Default::default()
-        };
         
         Self {
-            name: name.to_string(),
-            config,
             #[cfg(unix)]
-            semaphore_id: None,
             #[cfg(unix)]
-            posix_sem: None,
-            is_open: false,
         }
     }
 
     /// Create with configuration
     pub fn with_config(name: &str, config: SemaphoreConfig) -> Self {
         Self {
-            name: name.to_string(),
-            config,
             #[cfg(unix)]
-            semaphore_id: None,
             #[cfg(unix)]
-            posix_sem: None,
-            is_open: false,
         }
     }
 
@@ -111,8 +69,6 @@ impl Semaphore {
     pub fn open(&mut self) -> IpcResult<()> {
         if self.is_open {
             return Ok(());
-        }
-
         #[cfg(unix)]
         {
             if self.config.use_posix {
@@ -132,8 +88,6 @@ impl Semaphore {
     pub fn wait(&mut self) -> IpcResult<()> {
         if !self.is_open {
             return Err(semaphore_error(Some(&self.name), "wait", "Semaphore not open"));
-        }
-
         #[cfg(unix)]
         {
             if self.config.use_posix {
@@ -153,8 +107,6 @@ impl Semaphore {
     pub fn try_wait(&mut self) -> IpcResult<bool> {
         if !self.is_open {
             return Err(semaphore_error(Some(&self.name), "try_wait", "Semaphore not open"));
-        }
-
         #[cfg(unix)]
         {
             if self.config.use_posix {
@@ -174,8 +126,6 @@ impl Semaphore {
     pub fn wait_timeout(&mut self, timeout: Duration) -> IpcResult<bool> {
         if !self.is_open {
             return Err(semaphore_error(Some(&self.name), "wait_timeout", "Semaphore not open"));
-        }
-
         #[cfg(unix)]
         {
             if self.config.use_posix {
@@ -195,8 +145,6 @@ impl Semaphore {
     pub fn signal(&mut self) -> IpcResult<()> {
         if !self.is_open {
             return Err(semaphore_error(Some(&self.name), "signal", "Semaphore not open"));
-        }
-
         #[cfg(unix)]
         {
             if self.config.use_posix {
@@ -216,8 +164,6 @@ impl Semaphore {
     pub fn value(&self) -> IpcResult<SemaphoreValue> {
         if !self.is_open {
             return Err(semaphore_error(Some(&self.name), "value", "Semaphore not open"));
-        }
-
         #[cfg(unix)]
         {
             if self.config.use_posix {
@@ -237,8 +183,6 @@ impl Semaphore {
     pub fn close(&mut self) -> IpcResult<()> {
         if !self.is_open {
             return Ok(());
-        }
-
         #[cfg(unix)]
         {
             if let Some(posix_sem) = self.posix_sem {
@@ -246,17 +190,11 @@ impl Semaphore {
                     sem_close(posix_sem);
                 }
                 self.posix_sem = None;
-            }
-            
             // System V semaphores don't need explicit closing
             self.semaphore_id = None;
-        }
-
         self.is_open = false;
         self.unregister_semaphore();
         Ok(())
-    }
-
     /// Delete the semaphore
     pub fn delete(&mut self) -> IpcResult<()> {
         self.close()?;
@@ -279,13 +217,9 @@ impl Semaphore {
     /// Get semaphore name
     pub fn name(&self) -> &str {
         &self.name
-    }
-
     /// Check if semaphore is open
     pub fn is_open(&self) -> bool {
         self.is_open
-    }
-
     #[cfg(unix)]
     fn open_sysv(&mut self) -> IpcResult<()> {
         // Generate key from name
@@ -294,27 +228,19 @@ impl Semaphore {
         // Try to get existing semaphore first
         let semaphore_id = unsafe {
             libc::semget(key, 0, 0)
-        };
         
         if semaphore_id >= 0 {
             self.semaphore_id = Some(semaphore_id);
             self.is_open = true;
             self.register_semaphore(semaphore_id, false);
             return Ok(());
-        }
-        
         // Create new semaphore if allowed
         if !self.config.create_if_missing {
             return Err(not_found("semaphore", &self.name, "Semaphore does not exist"));
-        }
-        
         let semaphore_id = unsafe {
             libc::semget(
-                key,
-                self.config.semaphore_count as i32,
                 libc::IPC_CREAT | libc::IPC_EXCL | (self.config.permissions as i32)
             )
-        };
         
         if semaphore_id < 0 {
             let errno = std::io::Error::last_os_error().raw_os_error().unwrap_or(-1);
@@ -329,18 +255,11 @@ impl Semaphore {
                 }
             }
             return Err(system_error(errno, "semget", "Failed to create semaphore"));
-        }
-        
         // Initialize semaphore value
         let mut sops = sembuf {
-            sem_num: 0,
-            sem_op: self.config.initial_value as i16,
-            sem_flg: 0,
-        };
         
         let result = unsafe {
             libc::semop(semaphore_id, &mut sops, 1)
-        };
         
         if result < 0 {
             let errno = std::io::Error::last_os_error().raw_os_error().unwrap_or(-1);
@@ -349,14 +268,10 @@ impl Semaphore {
                 libc::semctl(semaphore_id, 0, libc::IPC_RMID);
             }
             return Err(system_error(errno, "semop", "Failed to initialize semaphore"));
-        }
-        
         self.semaphore_id = Some(semaphore_id);
         self.is_open = true;
         self.register_semaphore(semaphore_id, true);
         Ok(())
-    }
-
     #[cfg(unix)]
     fn open_posix(&mut self) -> IpcResult<()> {
         let semaphore_name = format!("/{}", self.name);
@@ -366,28 +281,19 @@ impl Semaphore {
         // Try to open existing semaphore first
         let sem = unsafe {
             sem_open(semaphore_name_cstr.as_ptr(), 0, 0, 0)
-        };
         
         if sem != SEM_FAILED {
             self.posix_sem = Some(sem);
             self.is_open = true;
             self.register_semaphore(sem as i32, false);
             return Ok(());
-        }
-        
         // Create new semaphore if allowed
         if !self.config.create_if_missing {
             return Err(not_found("semaphore", &self.name, "Semaphore does not exist"));
-        }
-        
         let sem = unsafe {
             sem_open(
-                semaphore_name_cstr.as_ptr(),
-                libc::O_CREAT | libc::O_EXCL,
-                self.config.permissions,
                 self.config.initial_value as u32
             )
-        };
         
         if sem == SEM_FAILED {
             let errno = std::io::Error::last_os_error().raw_os_error().unwrap_or(-1);
@@ -395,7 +301,6 @@ impl Semaphore {
                 // Semaphore was created by another process, try to open it
                 let sem = unsafe {
                     sem_open(semaphore_name_cstr.as_ptr(), 0, 0, 0)
-                };
                 if sem != SEM_FAILED {
                     self.posix_sem = Some(sem);
                     self.is_open = true;
@@ -404,39 +309,26 @@ impl Semaphore {
                 }
             }
             return Err(system_error(errno, "sem_open", "Failed to create POSIX semaphore"));
-        }
-        
         self.posix_sem = Some(sem);
         self.is_open = true;
         self.register_semaphore(sem as i32, true);
         Ok(())
-    }
-
     #[cfg(windows)]
     fn open_windows(&mut self) -> IpcResult<()> {
         // Windows implementation using CreateSemaphore
         self.is_open = true;
         Ok(())
-    }
-
     #[cfg(unix)]
     fn wait_sysv(&mut self) -> IpcResult<()> {
         if let Some(semaphore_id) = self.semaphore_id {
             let mut sops = sembuf {
-                sem_num: 0,
-                sem_op: -1,
-                sem_flg: 0,
-            };
             
             let result = unsafe {
                 libc::semop(semaphore_id, &mut sops, 1)
-            };
             
             if result < 0 {
                 let errno = std::io::Error::last_os_error().raw_os_error().unwrap_or(-1);
                 return Err(system_error(errno, "semop", "Failed to wait on semaphore"));
-            }
-            
             Ok(())
         } else {
             Err(semaphore_error(Some(&self.name), "wait", "Semaphore not open"))
@@ -448,13 +340,10 @@ impl Semaphore {
         if let Some(sem) = self.posix_sem {
             let result = unsafe {
                 sem_wait(sem)
-            };
             
             if result < 0 {
                 let errno = std::io::Error::last_os_error().raw_os_error().unwrap_or(-1);
                 return Err(system_error(errno, "sem_wait", "Failed to wait on POSIX semaphore"));
-            }
-            
             Ok(())
         } else {
             Err(semaphore_error(Some(&self.name), "wait", "Semaphore not open"))
@@ -465,20 +354,13 @@ impl Semaphore {
     fn wait_windows(&mut self) -> IpcResult<()> {
         // Windows implementation using WaitForSingleObject
         Ok(())
-    }
-
     #[cfg(unix)]
     fn try_wait_sysv(&mut self) -> IpcResult<bool> {
         if let Some(semaphore_id) = self.semaphore_id {
             let mut sops = sembuf {
-                sem_num: 0,
-                sem_op: -1,
-                sem_flg: libc::IPC_NOWAIT,
-            };
             
             let result = unsafe {
                 libc::semop(semaphore_id, &mut sops, 1)
-            };
             
             if result < 0 {
                 let errno = std::io::Error::last_os_error().raw_os_error().unwrap_or(-1);
@@ -486,8 +368,6 @@ impl Semaphore {
                     return Ok(false); // Would block
                 }
                 return Err(system_error(errno, "semop", "Failed to try_wait on semaphore"));
-            }
-            
             Ok(true)
         } else {
             Err(semaphore_error(Some(&self.name), "try_wait", "Semaphore not open"))
@@ -499,7 +379,6 @@ impl Semaphore {
         if let Some(sem) = self.posix_sem {
             let result = unsafe {
                 sem_trywait(sem)
-            };
             
             if result < 0 {
                 let errno = std::io::Error::last_os_error().raw_os_error().unwrap_or(-1);
@@ -507,8 +386,6 @@ impl Semaphore {
                     return Ok(false); // Would block
                 }
                 return Err(system_error(errno, "sem_trywait", "Failed to try_wait on POSIX semaphore"));
-            }
-            
             Ok(true)
         } else {
             Err(semaphore_error(Some(&self.name), "try_wait", "Semaphore not open"))
@@ -519,8 +396,6 @@ impl Semaphore {
     fn try_wait_windows(&mut self) -> IpcResult<bool> {
         // Windows implementation using WaitForSingleObject with 0 timeout
         Ok(true)
-    }
-
     #[cfg(unix)]
     fn wait_timeout_sysv(&mut self, timeout: Duration) -> IpcResult<bool> {
         if let Some(semaphore_id) = self.semaphore_id {
@@ -528,28 +403,17 @@ impl Semaphore {
             
             loop {
                 let mut sops = sembuf {
-                    sem_num: 0,
-                    sem_op: -1,
-                    sem_flg: libc::IPC_NOWAIT,
-                };
                 
                 let result = unsafe {
                     libc::semop(semaphore_id, &mut sops, 1)
-                };
                 
                 if result >= 0 {
                     return Ok(true);
-                }
-                
                 let errno = std::io::Error::last_os_error().raw_os_error().unwrap_or(-1);
                 if errno != libc::EAGAIN {
                     return Err(system_error(errno, "semop", "Failed to wait on semaphore"));
-                }
-                
                 if start.elapsed() >= timeout {
                     return Ok(false); // Timeout
-                }
-                
                 // Brief sleep to avoid busy waiting
                 std::thread::sleep(Duration::from_millis(1));
             }
@@ -562,13 +426,9 @@ impl Semaphore {
     fn wait_timeout_posix(&mut self, timeout: Duration) -> IpcResult<bool> {
         if let Some(sem) = self.posix_sem {
             let timeout_spec = libc::timespec {
-                tv_sec: timeout.as_secs() as i64,
-                tv_nsec: timeout.subsec_nanos() as i64,
-            };
             
             let result = unsafe {
                 sem_timedwait(sem, &timeout_spec)
-            };
             
             if result < 0 {
                 let errno = std::io::Error::last_os_error().raw_os_error().unwrap_or(-1);
@@ -576,8 +436,6 @@ impl Semaphore {
                     return Ok(false); // Timeout
                 }
                 return Err(system_error(errno, "sem_timedwait", "Failed to wait on POSIX semaphore"));
-            }
-            
             Ok(true)
         } else {
             Err(semaphore_error(Some(&self.name), "wait_timeout", "Semaphore not open"))
@@ -588,26 +446,17 @@ impl Semaphore {
     fn wait_timeout_windows(&mut self, timeout: Duration) -> IpcResult<bool> {
         // Windows implementation using WaitForSingleObject with timeout
         Ok(true)
-    }
-
     #[cfg(unix)]
     fn signal_sysv(&mut self) -> IpcResult<()> {
         if let Some(semaphore_id) = self.semaphore_id {
             let mut sops = sembuf {
-                sem_num: 0,
-                sem_op: 1,
-                sem_flg: 0,
-            };
             
             let result = unsafe {
                 libc::semop(semaphore_id, &mut sops, 1)
-            };
             
             if result < 0 {
                 let errno = std::io::Error::last_os_error().raw_os_error().unwrap_or(-1);
                 return Err(system_error(errno, "semop", "Failed to signal semaphore"));
-            }
-            
             Ok(())
         } else {
             Err(semaphore_error(Some(&self.name), "signal", "Semaphore not open"))
@@ -619,13 +468,10 @@ impl Semaphore {
         if let Some(sem) = self.posix_sem {
             let result = unsafe {
                 sem_post(sem)
-            };
             
             if result < 0 {
                 let errno = std::io::Error::last_os_error().raw_os_error().unwrap_or(-1);
                 return Err(system_error(errno, "sem_post", "Failed to signal POSIX semaphore"));
-            }
-            
             Ok(())
         } else {
             Err(semaphore_error(Some(&self.name), "signal", "Semaphore not open"))
@@ -636,20 +482,15 @@ impl Semaphore {
     fn signal_windows(&mut self) -> IpcResult<()> {
         // Windows implementation using ReleaseSemaphore
         Ok(())
-    }
-
     #[cfg(unix)]
     fn value_sysv(&self) -> IpcResult<SemaphoreValue> {
         if let Some(semaphore_id) = self.semaphore_id {
             let result = unsafe {
                 libc::semctl(semaphore_id, 0, libc::GETVAL)
-            };
             
             if result < 0 {
                 let errno = std::io::Error::last_os_error().raw_os_error().unwrap_or(-1);
                 return Err(system_error(errno, "semctl", "Failed to get semaphore value"));
-            }
-            
             Ok(result)
         } else {
             Err(semaphore_error(Some(&self.name), "value", "Semaphore not open"))
@@ -662,13 +503,10 @@ impl Semaphore {
             let mut value: i32 = 0;
             let result = unsafe {
                 sem_getvalue(sem, &mut value)
-            };
             
             if result < 0 {
                 let errno = std::io::Error::last_os_error().raw_os_error().unwrap_or(-1);
                 return Err(system_error(errno, "sem_getvalue", "Failed to get POSIX semaphore value"));
-            }
-            
             Ok(value)
         } else {
             Err(semaphore_error(Some(&self.name), "value", "Semaphore not open"))
@@ -679,26 +517,17 @@ impl Semaphore {
     fn value_windows(&self) -> IpcResult<SemaphoreValue> {
         // Windows doesn't provide direct access to semaphore value
         Ok(self.config.initial_value)
-    }
-
     #[cfg(unix)]
     fn delete_sysv(&mut self) -> IpcResult<()> {
         if let Some(semaphore_id) = self.semaphore_id {
             let result = unsafe {
                 libc::semctl(semaphore_id, 0, libc::IPC_RMID)
-            };
             
             if result < 0 {
                 let errno = std::io::Error::last_os_error().raw_os_error().unwrap_or(-1);
                 return Err(system_error(errno, "semctl", "Failed to delete semaphore"));
-            }
-            
             self.semaphore_id = None;
-        }
-        
         Ok(())
-    }
-
     #[cfg(unix)]
     fn delete_posix(&mut self) -> IpcResult<()> {
         let semaphore_name = format!("/{}", self.name);
@@ -707,7 +536,6 @@ impl Semaphore {
         
         let result = unsafe {
             sem_unlink(semaphore_name_cstr.as_ptr())
-        };
         
         if result < 0 {
             let errno = std::io::Error::last_os_error().raw_os_error().unwrap_or(-1);
@@ -717,37 +545,23 @@ impl Semaphore {
         }
         
         Ok(())
-    }
-
     #[cfg(windows)]
     fn delete_windows(&mut self) -> IpcResult<()> {
         Ok(())
-    }
-
     #[cfg(unix)]
     fn generate_sysv_key(&self) -> IpcResult<i32> {
         // Generate a key based on the semaphore name
         let mut hash = 0i32;
         for byte in self.name.bytes() {
             hash = hash.wrapping_mul(31).wrapping_add(byte as i32);
-        }
-        
         // Ensure it's a valid System V key (non-zero)
         if hash == 0 {
             hash = 1;
-        }
-        
         Ok(hash)
-    }
-
     fn register_semaphore(&self, semaphore_id: i32, created_by_us: bool) {
         let registry = get_semaphore_registry();
         if let Ok(mut semaphores) = registry.write() {
             let info = Arc::new(SemaphoreInfo {
-                name: self.name.clone(),
-                semaphore_id,
-                created_by_us,
-                ref_count: Arc::new(Mutex::new(1)),
             });
             semaphores.insert(self.name.clone(), info);
         }
@@ -765,8 +579,6 @@ impl Semaphore {
             }
         }
     }
-}
-
 impl Drop for Semaphore {
     fn drop(&mut self) {
         let _ = self.close();
@@ -780,11 +592,6 @@ pub type NamedSemaphore = Semaphore;
 #[cfg(unix)]
 #[repr(C)]
 struct sembuf {
-    sem_num: u16,
-    sem_op: i16,
-    sem_flg: i16,
-}
-
 /// Cleanup all registered semaphores
 pub fn cleanup_semaphores() -> IpcResult<()> {
     let registry = get_semaphore_registry();
@@ -801,8 +608,6 @@ pub fn cleanup_semaphores() -> IpcResult<()> {
         }
     }
     Ok(())
-}
-
 // POSIX semaphore system calls
 #[cfg(unix)]
 extern "C" {
@@ -814,8 +619,6 @@ extern "C" {
     fn sem_timedwait(sem: *mut libc::sem_t, abs_timeout: *const libc::timespec) -> i32;
     fn sem_post(sem: *mut libc::sem_t) -> i32;
     fn sem_getvalue(sem: *mut libc::sem_t, sval: *mut i32) -> i32;
-}
-
 #[cfg(unix)]
 const SEM_FAILED: *mut libc::sem_t = (-1isize) as *mut libc::sem_t;
 

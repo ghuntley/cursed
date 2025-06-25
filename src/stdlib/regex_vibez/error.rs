@@ -9,21 +9,12 @@ pub type RegexVibesResult<T> = std::result::Result<T, RegexVibesError>;
 #[derive(Debug, Clone)]
 pub enum RegexVibesError {
     /// Invalid regex pattern compilation error
-    CompilationError(String),
     /// Invalid input data error
-    InvalidInput(String),
     /// Replacement template error
-    TemplateError(String),
     /// Index out of bounds error
-    IndexError(String),
     /// IO error during operations
-    IoError(String),
     /// UTF-8 encoding error
-    EncodingError(String),
     /// General regex operation error
-    GeneralError(String),
-}
-
 // impl fmt::Display for RegexVibesError {
 //     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
 //         match self {
@@ -67,30 +58,18 @@ impl From<std::str::Utf8Error> for RegexVibesError {
 /// Create a compilation error
 pub fn compilation_error(msg: &str) -> RegexVibesError {
     RegexVibesError::CompilationError(msg.to_string())
-}
-
 /// Create an invalid input error
 pub fn invalid_input_error(msg: &str) -> RegexVibesError {
     RegexVibesError::InvalidInput(msg.to_string())
-}
-
 /// Create a template error
 pub fn template_error(msg: &str) -> RegexVibesError {
     RegexVibesError::TemplateError(msg.to_string())
-}
-
 /// Create an index error
 pub fn index_error(msg: &str) -> RegexVibesError {
     RegexVibesError::IndexError(msg.to_string())
-}
-
 /// Create an encoding error
 pub fn encoding_error(msg: &str) -> RegexVibesError {
     RegexVibesError::EncodingError(msg.to_string())
-}
-
 /// Create a general error
 pub fn general_error(msg: &str) -> RegexVibesError {
     RegexVibesError::GeneralError(msg.to_string())
-}
-

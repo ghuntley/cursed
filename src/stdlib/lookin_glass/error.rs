@@ -9,29 +9,16 @@ pub type LookinGlassResult<T> = std::result::Result<T, LookinGlassError>;
 #[derive(Debug, Clone)]
 pub enum LookinGlassError {
     /// Type not found or invalid
-    TypeError(String),
     /// Value cannot be reflected upon
-    ValueError(String),
     /// Field access error
-    FieldError(String),
     /// Method access error
-    MethodError(String),
     /// Conversion error
-    ConversionError(String),
     /// Index out of bounds
-    IndexError(String),
     /// Invalid operation for this type
-    InvalidOperation(String),
     /// Cannot set value (not addressable or settable)
-    CannotSet(String),
     /// Type mismatch
-    TypeMismatch(String),
     /// JSON serialization/deserialization error
-    JsonError(String),
     /// General reflection error
-    ReflectionError(String),
-}
-
 // impl fmt::Display for LookinGlassError {
 //     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
 //         match self {
@@ -67,41 +54,21 @@ pub enum LookinGlassError {
 /// Helper functions for creating specific errors
 pub fn type_error(msg: &str) -> LookinGlassError {
     LookinGlassError::TypeError(msg.to_string())
-}
-
 pub fn value_error(msg: &str) -> LookinGlassError {
     LookinGlassError::ValueError(msg.to_string())
-}
-
 pub fn field_error(msg: &str) -> LookinGlassError {
     LookinGlassError::FieldError(msg.to_string())
-}
-
 pub fn method_error(msg: &str) -> LookinGlassError {
     LookinGlassError::MethodError(msg.to_string())
-}
-
 pub fn conversion_error(msg: &str) -> LookinGlassError {
     LookinGlassError::ConversionError(msg.to_string())
-}
-
 pub fn index_error(msg: &str) -> LookinGlassError {
     LookinGlassError::IndexError(msg.to_string())
-}
-
 pub fn invalid_operation(msg: &str) -> LookinGlassError {
     LookinGlassError::InvalidOperation(msg.to_string())
-}
-
 pub fn cannot_set(msg: &str) -> LookinGlassError {
     LookinGlassError::CannotSet(msg.to_string())
-}
-
 pub fn type_mismatch(msg: &str) -> LookinGlassError {
     LookinGlassError::TypeMismatch(msg.to_string())
-}
-
 pub fn reflection_error(msg: &str) -> LookinGlassError {
     LookinGlassError::ReflectionError(msg.to_string())
-}
-

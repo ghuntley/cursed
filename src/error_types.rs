@@ -6,17 +6,10 @@ use std::fmt;
 
 #[derive(Debug, Clone)]
 pub struct SourceLocation {
-    pub file: std::path::PathBuf,
-    pub line: usize,
-    pub column: usize,
-}
-
 impl SourceLocation {
     pub fn new(file: std::path::PathBuf, line: usize, column: usize) -> Self {
         Self { file, line, column }
     }
-}
-
 impl fmt::Display for SourceLocation {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "{}:{}:{}", self.file.display(), self.line, self.column)
@@ -27,34 +20,18 @@ impl fmt::Display for SourceLocation {
 #[derive(Debug)]
 pub enum Error {
     /// I/O related errors
-    Io(std::io::Error),
     /// Parsing errors
-    Parse(String),
     /// Compilation errors
-    CompilationError(String),
     /// Runtime errors
-    Runtime(String),
     /// Package manager errors
-    Package(String),
     /// REPL errors
-    Repl(String),
     /// Template system errors
     TemplateError { 
-        message: String,
-        source_location: Option<SourceLocation>,
-    },
     /// Optimization errors
-    OptimizationError(String),
     /// Memory management errors
-    MemoryError(String),
     /// Type system errors
-    TypeError(String),
     /// Import errors
-    ImportError(String),
     /// Generic error with message
-    Generic(String),
-}
-
 // impl fmt::Display for Error {
 //     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
 //         match self {

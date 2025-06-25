@@ -51,8 +51,6 @@ pub fn type_of_any<T: Any + 'static>(_value: &T) -> Type {
 /// TypeOf returns the reflection Type of the value (spec-compliant function)
 pub fn type_of(value: &Value) -> Type {
     value.typ().clone()
-}
-
 /// ValueOf returns a new Value initialized to the concrete value
 pub fn value_of<T: Any + Send + Sync + Clone + 'static>(value: T) -> Value {
     let typ = type_of_any(&value);
@@ -87,28 +85,17 @@ pub fn new(typ: Type) -> LookinGlassResult<Value> {
         .with_elem(typ);
     
 //     Ok(Value::new(ptr_type, crate::stdlib::lookin_glass::value::ValueData::Pointer(Some(Box::new(zero_val)))))
-}
-
 /// Zero returns a Value representing the zero value for the specified type
 pub fn zero(typ: Type) -> LookinGlassResult<Value> {
 //     use crate::stdlib::lookin_glass::value::ValueData;
     
     let data = match typ.kind() {
-        Kind::Invalid => return Err(type_error("Cannot create zero value for invalid type")),
-        Kind::Bool => ValueData::Bool(false),
-        Kind::Int | Kind::Int8 | Kind::Int16 | Kind::Int32 | Kind::Int64 => ValueData::Int(0),
-        Kind::Uint | Kind::Uint8 | Kind::Uint16 | Kind::Uint32 | Kind::Uint64 | Kind::Uintptr => ValueData::Uint(0),
-        Kind::Float32 | Kind::Float64 => ValueData::Float(0.0),
-        Kind::Complex64 | Kind::Complex128 => ValueData::Complex(0.0, 0.0),
-        Kind::String => ValueData::String(String::new()),
-        Kind::Slice => ValueData::Slice(Vec::new()),
         Kind::Array => {
             let len = typ.len().unwrap_or(0);
             let elem_type = typ.elem().unwrap_or_else(|_| Type::invalid());
             let zero_elem = zero(elem_type)?;
             ValueData::Array(vec![zero_elem; len])
         }
-        Kind::Map => ValueData::Map(HashMap::new()),
         Kind::Struct => {
             let mut fields = Vec::new();
             for i in 0..typ.num_field() {
@@ -119,25 +106,17 @@ pub fn zero(typ: Type) -> LookinGlassResult<Value> {
             }
             ValueData::Struct(fields)
         }
-        Kind::Pointer => ValueData::Pointer(None),
-        Kind::Interface => ValueData::Interface(None),
-        Kind::Chan => ValueData::Channel(Arc::new(Mutex::new(Vec::new()))),
         Kind::Func => {
             let func = Arc::new(|_args: &[Value]| -> LookinGlassResult<Vec<Value>> {
                 Err(reflection_error("Zero function cannot be called"))
             });
             ValueData::Function(func)
         }
-        Kind::UnsafePointer => ValueData::Pointer(None),
-    };
     
     Ok(Value::new(typ, data))
-}
-
 /// Indirect returns the value that v points to
 pub fn indirect(v: Value) -> LookinGlassResult<Value> {
     match v.kind() {
-        Kind::Pointer | Kind::Interface => v.elem(),
         _ => Ok(v), // If not a pointer, return the value itself
     }
 }
@@ -146,12 +125,8 @@ pub fn indirect(v: Value) -> LookinGlassResult<Value> {
 pub fn make_slice(typ: Type, len: usize, cap: usize) -> LookinGlassResult<Value> {
     if typ.kind() != Kind::Slice {
         return Err(type_error("MakeSlice called with non-slice type"));
-    }
-    
     if len > cap {
         return Err(invalid_operation("Slice length cannot exceed capacity"));
-    }
-    
     let elem_type = typ.elem()?;
     let zero_elem = zero(elem_type)?;
     
@@ -159,40 +134,25 @@ pub fn make_slice(typ: Type, len: usize, cap: usize) -> LookinGlassResult<Value>
     slice_data.resize(len, zero_elem);
     
 //     Ok(Value::new(typ, crate::stdlib::lookin_glass::value::ValueData::Slice(slice_data)))
-}
-
 /// MakeMap creates a new map with the specified type
 pub fn make_map(typ: Type) -> LookinGlassResult<Value> {
     if typ.kind() != Kind::Map {
         return Err(type_error("MakeMap called with non-map type"));
-    }
-    
 //     Ok(Value::new(typ, crate::stdlib::lookin_glass::value::ValueData::Map(HashMap::new())))
-}
-
 /// MakeChan creates a new channel with the specified type and buffer size
 pub fn make_chan(typ: Type, buffer: usize) -> LookinGlassResult<Value> {
     if typ.kind() != Kind::Chan {
         return Err(type_error("MakeChan called with non-channel type"));
-    }
-    
     let channel_data = Arc::new(Mutex::new(Vec::with_capacity(buffer)));
 //     Ok(Value::new(typ, crate::stdlib::lookin_glass::value::ValueData::Channel(channel_data)))
-}
-
 /// MakeFunc creates a new function with the specified type and implementation
 pub fn make_func<F>(typ: Type, func: F) -> LookinGlassResult<Value>
 where
-    F: Fn(&[Value]) -> LookinGlassResult<Vec<Value>> + Send + Sync + 'static,
 {
     if typ.kind() != Kind::Func {
         return Err(type_error("MakeFunc called with non-function type"));
-    }
-    
     let func_data = Arc::new(func);
 //     Ok(Value::new(typ, crate::stdlib::lookin_glass::value::ValueData::Function(func_data)))
-}
-
 /// Convenience functions for creating common types
 
 /// Create an array type
@@ -200,33 +160,23 @@ pub fn array_of(elem_type: Type, length: usize) -> Type {
     Type::new(Kind::Array, format!("[{}]{}", length, elem_type.name()), "".to_string())
         .with_elem(elem_type)
         .with_len(length)
-}
-
 /// Create a slice type
 pub fn slice_of(elem_type: Type) -> Type {
     Type::new(Kind::Slice, format!("[]{}", elem_type.name()), "".to_string())
         .with_elem(elem_type)
-}
-
 /// Create a map type
 pub fn map_of(key_type: Type, elem_type: Type) -> Type {
     Type::new(Kind::Map, format!("map[{}]{}", key_type.name(), elem_type.name()), "".to_string())
         .with_key(key_type)
         .with_elem(elem_type)
-}
-
 /// Create a pointer type
 pub fn ptr_to(elem_type: Type) -> Type {
     Type::new(Kind::Pointer, format!("*{}", elem_type.name()), "".to_string())
         .with_elem(elem_type)
-}
-
 /// Create a channel type
 pub fn chan_of(elem_type: Type) -> Type {
     Type::new(Kind::Chan, format!("chan {}", elem_type.name()), "".to_string())
         .with_elem(elem_type)
-}
-
 /// Create a function type
 pub fn func_of(in_types: Vec<Type>, out_types: Vec<Type>, variadic: bool) -> Type {
     let in_str = in_types.iter().map(|t| t.name()).collect::<Vec<_>>().join(", ");
@@ -234,20 +184,16 @@ pub fn func_of(in_types: Vec<Type>, out_types: Vec<Type>, variadic: bool) -> Typ
         out_types[0].name().to_string()
     } else {
         format!("({})", out_types.iter().map(|t| t.name()).collect::<Vec<_>>().join(", "))
-    };
     
     let name = if out_types.is_empty() {
         format!("func({})", in_str)
     } else {
         format!("func({}) {}", in_str, out_str)
-    };
     
     Type::new(Kind::Func, name, "".to_string())
         .with_in_types(in_types)
         .with_out_types(out_types)
         .with_variadic(variadic)
-}
-
 /// Type registry for complex types
 static TYPE_REGISTRY: std::sync::LazyLock<Mutex<HashMap<String, Type>>> = 
     std::sync::LazyLock::new(|| Mutex::new(HashMap::new()));
@@ -256,20 +202,14 @@ static TYPE_REGISTRY: std::sync::LazyLock<Mutex<HashMap<String, Type>>> =
 pub fn register_type(name: String, typ: Type) {
     let mut registry = TYPE_REGISTRY.lock().unwrap();
     registry.insert(name, typ);
-}
-
 /// Look up a type by name in the registry
 pub fn lookup_type(name: &str) -> Option<Type> {
     let registry = TYPE_REGISTRY.lock().unwrap();
     registry.get(name).cloned()
-}
-
 /// Get all registered types
 pub fn registered_types() -> Vec<(String, Type)> {
     let registry = TYPE_REGISTRY.lock().unwrap();
     registry.iter().map(|(k, v)| (k.clone(), v.clone())).collect()
-}
-
 /// Initialize common types in the registry
 pub fn init_type_registry() {
         // TODO: implement
@@ -295,7 +235,4 @@ pub fn init_type_registry() {
     // Common composite types
     register_type("[]byte".to_string(), slice_of(Type::basic(Kind::Uint8)));
     register_type("[]string".to_string(), slice_of(Type::basic(Kind::String)));
-    register_type("map[string]interface{}".to_string(), 
         map_of(Type::basic(Kind::String), Type::new(Kind::Interface, "interface{}".to_string(), "".to_string())));
-}
-

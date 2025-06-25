@@ -38,8 +38,6 @@ pub fn look_path(file: &str) -> ExecResult<String> {
             }
         }
         return Err(system_error(&format!("Executable not found: {}", file)));
-    }
-    
     // Search in PATH
     if let Ok(path_var) = env::var("PATH") {
         let path_separator = if cfg!(windows) { ';' } else { ':' };
@@ -47,8 +45,6 @@ pub fn look_path(file: &str) -> ExecResult<String> {
         for path_dir in path_var.split(path_separator) {
             if path_dir.is_empty() {
                 continue;
-            }
-            
             let mut candidate = PathBuf::from(path_dir);
             candidate.push(file);
             
@@ -60,88 +56,54 @@ pub fn look_path(file: &str) -> ExecResult<String> {
                     exe_candidate.set_extension("exe");
                     if exe_candidate.exists() {
                         return Ok(exe_candidate.to_string_lossy().to_string());
-                    }
-                    
                     let mut cmd_candidate = candidate.clone();
                     cmd_candidate.set_extension("cmd");
                     if cmd_candidate.exists() {
                         return Ok(cmd_candidate.to_string_lossy().to_string());
-                    }
-                    
                     let mut bat_candidate = candidate.clone();
                     bat_candidate.set_extension("bat");
                     if bat_candidate.exists() {
                         return Ok(bat_candidate.to_string_lossy().to_string());
                     }
                 }
-            }
-            
             if candidate.exists() {
                 return Ok(candidate.to_string_lossy().to_string());
             }
         }
-    }
-    
     Err(system_error(&format!("Executable not found in PATH: {}", file)))
-}
-
 /// Resource limits for process execution
 #[derive(Debug, Clone)]
 pub struct ResourceLimits {
     /// Maximum memory usage in bytes
-    pub max_memory: Option<u64>,
     /// Maximum CPU time in seconds
-    pub max_cpu_time: Option<Duration>,
     /// Maximum wall clock time
-    pub max_wall_time: Option<Duration>,
     /// Maximum number of open files
-    pub max_open_files: Option<u64>,
     /// Maximum number of processes/threads
-    pub max_processes: Option<u64>,
-}
-
 impl Default for ResourceLimits {
     fn default() -> Self {
         Self {
-            max_memory: None,
-            max_cpu_time: None,
-            max_wall_time: None,
-            max_open_files: None,
-            max_processes: None,
         }
     }
-}
-
 impl ResourceLimits {
     /// Create new resource limits
     pub fn new() -> Self {
         Self::default()
-    }
-    
     /// Set maximum memory
     pub fn with_max_memory(mut self, max_memory: u64) -> Self {
         self.max_memory = Some(max_memory);
         self
-    }
-    
     /// Set maximum CPU time
     pub fn with_max_cpu_time(mut self, max_cpu_time: Duration) -> Self {
         self.max_cpu_time = Some(max_cpu_time);
         self
-    }
-    
     /// Set maximum wall time
     pub fn with_max_wall_time(mut self, max_wall_time: Duration) -> Self {
         self.max_wall_time = Some(max_wall_time);
         self
-    }
-    
     /// Set maximum open files
     pub fn with_max_open_files(mut self, max_open_files: u64) -> Self {
         self.max_open_files = Some(max_open_files);
         self
-    }
-    
     /// Set maximum processes
     pub fn with_max_processes(mut self, max_processes: u64) -> Self {
         self.max_processes = Some(max_processes);
@@ -153,83 +115,42 @@ impl ResourceLimits {
 #[derive(Debug, Clone)]
 pub struct SecurityOptions {
     /// Drop privileges to this user (Unix only)
-    pub user: Option<String>,
     /// Drop privileges to this group (Unix only)
-    pub group: Option<String>,
     /// Chroot to this directory (Unix only)
-    pub chroot: Option<PathBuf>,
     /// Use a sandbox environment
-    pub sandbox: bool,
     /// Disable network access
-    pub no_network: bool,
     /// Read-only filesystem
-    pub readonly_fs: bool,
     /// Allowed file paths for access
-    pub allowed_paths: Vec<PathBuf>,
-}
-
 impl Default for SecurityOptions {
     fn default() -> Self {
         Self {
-            user: None,
-            group: None,
-            chroot: None,
-            sandbox: false,
-            no_network: false,
-            readonly_fs: false,
-            allowed_paths: Vec::new(),
         }
     }
-}
-
 /// Process monitor for tracking resource usage
 #[derive(Debug)]
 pub struct ProcessMonitor {
     /// Process being monitored
-    process: Process,
     /// Resource limits
-    limits: ResourceLimits,
     /// Monitoring interval
-    interval: Duration,
     /// Whether monitoring is active
-    active: Arc<Mutex<bool>>,
     /// Collected statistics
-    stats: Arc<Mutex<Vec<ProcessResourceSnapshot>>>,
-}
-
 #[derive(Debug, Clone)]
 pub struct ProcessResourceSnapshot {
-    pub timestamp: Instant,
-    pub memory_usage: u64,
-    pub cpu_percentage: f64,
-    pub open_files: u32,
-    pub threads: u32,
-}
-
 impl ProcessMonitor {
     /// Create a new process monitor
     pub fn new(process: Process, limits: ResourceLimits) -> Self {
         Self {
-            process,
-            limits,
-            interval: Duration::from_millis(100),
-            active: Arc::new(Mutex::new(false)),
-            stats: Arc::new(Mutex::new(Vec::new())),
         }
     }
     
     /// Set monitoring interval
     pub fn set_interval(&mut self, interval: Duration) {
         self.interval = interval;
-    }
-    
     /// Start monitoring
     pub fn start(&self) -> ExecResult<()> {
         {
             let mut active = self.active.lock().unwrap();
             *active = true;
-        }
-        
         let process_pid = self.process.pid();
         let limits = self.limits.clone();
         let interval = self.interval;
@@ -254,32 +175,23 @@ impl ProcessMonitor {
         });
         
         Ok(())
-    }
-    
     /// Stop monitoring
     pub fn stop(&self) {
         let mut active = self.active.lock().unwrap();
         *active = false;
-    }
-    
     /// Get collected statistics
     pub fn get_stats(&self) -> Vec<ProcessResourceSnapshot> {
         self.stats.lock().unwrap().clone()
-    }
-    
     fn collect_snapshot(pid: u32) -> ExecResult<ProcessResourceSnapshot> {
         // This is a simplified implementation
         // In practice, this would read from /proc/PID/stat on Linux,
         // or use platform-specific APIs
         Ok(ProcessResourceSnapshot {
-            timestamp: Instant::now(),
             memory_usage: 0, // Would read actual memory usage
             cpu_percentage: 0.0, // Would calculate CPU percentage
             open_files: 0, // Would count open file descriptors
             threads: 1, // Would count threads
         })
-    }
-    
     fn check_limits(snapshot: &ProcessResourceSnapshot, limits: &ResourceLimits) -> bool {
         if let Some(max_memory) = limits.max_memory {
             if snapshot.memory_usage > max_memory {
@@ -296,30 +208,15 @@ impl ProcessMonitor {
 #[derive(Debug)]
 pub struct ProcessPool {
     /// Maximum number of concurrent processes
-    max_processes: usize,
     /// Currently running processes
-    running: Arc<Mutex<HashMap<u32, Process>>>,
     /// Queue of pending commands
-    queue: Arc<Mutex<VecDeque<Cmd>>>,
     /// Pool statistics
-    stats: Arc<Mutex<PoolStats>>,
-}
-
 #[derive(Debug, Default)]
 struct PoolStats {
-    total_submitted: usize,
-    total_completed: usize,
-    total_failed: usize,
-}
-
 impl ProcessPool {
     /// Create a new process pool
     pub fn new(max_processes: usize) -> Self {
         Self {
-            max_processes,
-            running: Arc::new(Mutex::new(HashMap::new())),
-            queue: Arc::new(Mutex::new(VecDeque::new())),
-            stats: Arc::new(Mutex::new(PoolStats::default())),
         }
     }
     
@@ -328,8 +225,6 @@ impl ProcessPool {
         {
             let mut stats = self.stats.lock().unwrap();
             stats.total_submitted += 1;
-        }
-        
         let mut queue = self.queue.lock().unwrap();
         queue.push_back(cmd);
         
@@ -337,18 +232,12 @@ impl ProcessPool {
         self.process_queue();
         
         Ok(())
-    }
-    
     /// Get the number of running processes
     pub fn running_count(&self) -> usize {
         self.running.lock().unwrap().len()
-    }
-    
     /// Get the number of queued processes
     pub fn queue_size(&self) -> usize {
         self.queue.lock().unwrap().len()
-    }
-    
     fn process_queue(&self) {
         let mut running = self.running.lock().unwrap();
         let mut queue = self.queue.lock().unwrap();
@@ -365,8 +254,6 @@ impl ProcessPool {
             running.remove(&pid);
             let mut stats = self.stats.lock().unwrap();
             stats.total_completed += 1;
-        }
-        
         // Start new processes if we have capacity
         while running.len() < self.max_processes && !queue.is_empty() {
             if let Some(mut cmd) = queue.pop_front() {
@@ -393,30 +280,17 @@ pub type ProcessQueue = VecDeque<Cmd>;
 #[derive(Debug)]
 pub struct BatchRunner {
     /// Commands to execute
-    commands: Vec<Cmd>,
     /// Execution mode
-    mode: BatchMode,
     /// Maximum concurrent processes
-    max_concurrent: Option<usize>,
-}
-
 #[derive(Debug, Clone)]
 pub enum BatchMode {
     /// Execute all commands in parallel
-    Parallel,
     /// Execute commands sequentially
-    Sequential,
     /// Execute in batches of specified size
-    Batched(usize),
-}
-
 impl BatchRunner {
     /// Create a new batch runner
     pub fn new(commands: Vec<Cmd>) -> Self {
         Self {
-            commands,
-            mode: BatchMode::Sequential,
-            max_concurrent: None,
         }
     }
     
@@ -424,20 +298,13 @@ impl BatchRunner {
     pub fn with_mode(mut self, mode: BatchMode) -> Self {
         self.mode = mode;
         self
-    }
-    
     /// Set maximum concurrent processes
     pub fn with_max_concurrent(mut self, max_concurrent: usize) -> Self {
         self.max_concurrent = Some(max_concurrent);
         self
-    }
-    
     /// Execute all commands
     pub fn run(&mut self) -> ExecResult<Vec<ProcessState>> {
         match self.mode {
-            BatchMode::Sequential => self.run_sequential(),
-            BatchMode::Parallel => self.run_parallel(),
-            BatchMode::Batched(batch_size) => self.run_batched(batch_size),
         }
     }
     
@@ -447,21 +314,13 @@ impl BatchRunner {
         for cmd in &mut self.commands {
             let state = cmd.run()?;
             results.push(state);
-        }
-        
         Ok(results)
-    }
-    
     fn run_parallel(&mut self) -> ExecResult<Vec<ProcessState>> {
         let mut group = ProcessGroup::new();
         
         for cmd in std::mem::take(&mut self.commands) {
             group.add_command(cmd);
-        }
-        
         group.run()
-    }
-    
     fn run_batched(&mut self, batch_size: usize) -> ExecResult<Vec<ProcessState>> {
         let mut all_results = Vec::new();
         
@@ -485,30 +344,16 @@ impl BatchRunner {
 #[derive(Debug)]
 pub struct PlatformFeatures {
     /// Whether the platform supports process groups
-    pub process_groups: bool,
     /// Whether the platform supports signals
-    pub signals: bool,
     /// Whether the platform supports resource limits
-    pub resource_limits: bool,
     /// Whether the platform supports chroot
-    pub chroot: bool,
     /// Whether the platform supports namespaces
-    pub namespaces: bool,
-}
-
 impl PlatformFeatures {
     /// Detect platform features
     pub fn detect() -> Self {
         Self {
-            process_groups: cfg!(unix),
-            signals: cfg!(unix),
-            resource_limits: cfg!(unix),
-            chroot: cfg!(unix),
-            namespaces: cfg!(target_os = "linux"),
         }
     }
-}
-
 /// Cross-platform utilities
 pub struct CrossPlatformUtils;
 
@@ -539,8 +384,6 @@ impl CrossPlatformUtils {
     /// Get the directory separator
     pub fn dir_separator() -> char {
         if cfg!(windows) { '\\' } else { '/' }
-    }
-    
     /// Check if a file is executable
     pub fn is_executable(path: &Path) -> bool {
         #[cfg(unix)]

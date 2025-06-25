@@ -15,54 +15,31 @@ use super::error::{ExecResult, ExecError, execution_failed};
 #[derive(Debug)]
 pub struct Process {
     /// Process ID
-    pub pid: u32,
     /// Internal process handle
-    inner: Arc<Mutex<ProcessInner>>,
-}
-
 #[derive(Debug)]
 struct ProcessInner {
     /// System process handle
-    process: Option<process::Child>,
     /// Process start time
-    start_time: Instant,
     /// Whether the process has been released
-    released: bool,
-}
-
 impl Process {
     /// Create a new Process wrapper
     pub(crate) fn new(mut child: process::Child) -> ExecResult<Self> {
         let pid = child.id();
         
         let inner = ProcessInner {
-            process: Some(child),
-            start_time: Instant::now(),
-            released: false,
-        };
         
         Ok(Process {
-            pid,
-            inner: Arc::new(Mutex::new(inner)),
         })
-    }
-    
     /// Get the process ID
     pub fn pid(&self) -> u32 {
         self.pid
-    }
-    
     /// Kill the process
     pub fn kill(&self) -> ExecResult<()> {
         let mut inner = self.inner.lock().unwrap();
         
         if let Some(ref mut process) = inner.process {
             process.kill().map_err(|e| execution_failed(&format!("Failed to kill process {}: {}", self.pid, e)))?;
-        }
-        
         Ok(())
-    }
-    
     /// Send a signal to the process (Unix only)
     #[cfg(unix)]
     pub fn signal(&self, sig: i32) -> ExecResult<()> {
@@ -76,15 +53,11 @@ impl Process {
         }
         
         Ok(())
-    }
-    
     /// Send a signal to the process (Windows - limited support)
     #[cfg(windows)]
     pub fn signal(&self, _sig: i32) -> ExecResult<()> {
         // Windows doesn't have POSIX signals, so we can only terminate
         self.kill()
-    }
-    
     /// Wait for the process to complete and return its state
     pub fn wait(&self) -> ExecResult<ProcessState> {
         let mut inner = self.inner.lock().unwrap();
@@ -105,8 +78,6 @@ impl Process {
         inner.released = true;
         inner.process.take(); // Drop the process handle
         Ok(())
-    }
-    
     /// Check if the process is still running
     pub fn is_running(&self) -> bool {
         let mut inner = self.inner.lock().unwrap();
@@ -133,28 +104,18 @@ impl Process {
 #[derive(Debug, Clone)]
 pub struct ProcessState {
     /// Process exit status
-    exit_status: ExitStatus,
     /// Process start time
-    start_time: Instant,
     /// Process end time
-    end_time: Instant,
-}
-
 impl ProcessState {
     /// Create a new ProcessState
     pub(crate) fn new(exit_status: ExitStatus, start_time: Instant) -> Self {
         Self {
-            exit_status,
-            start_time,
-            end_time: Instant::now(),
         }
     }
     
     /// Check if the process has exited
     pub fn exited(&self) -> bool {
         true // If we have a ProcessState, the process has exited
-    }
-    
     /// Get the exit code
     pub fn exit_code(&self) -> i32 {
         #[cfg(unix)]
@@ -168,8 +129,6 @@ impl ProcessState {
                     -1
                 }
             })
-        }
-        
         #[cfg(windows)]
         {
             self.exit_status.code().unwrap_or(-1)
@@ -179,31 +138,21 @@ impl ProcessState {
     /// Check if the process completed successfully
     pub fn success(&self) -> bool {
         self.exit_status.success()
-    }
-    
     /// Get system-specific information
     pub fn sys(&self) -> Box<dyn std::any::Any> {
         Box::new(self.exit_status)
-    }
-    
     /// Get system usage information (placeholder)
     pub fn sys_usage(&self) -> Box<dyn std::any::Any> {
         // This would contain resource usage info in a real implementation
         Box::new(ProcessResourceUsage::default())
-    }
-    
     /// Get user CPU time (placeholder)
     pub fn user_time(&self) -> Duration {
         // In a real implementation, this would query system for CPU time
         Duration::from_millis(0)
-    }
-    
     /// Get system CPU time (placeholder)
     pub fn system_time(&self) -> Duration {
         // In a real implementation, this would query system for CPU time
         Duration::from_millis(0)
-    }
-    
     /// Get total process runtime
     pub fn runtime(&self) -> Duration {
         self.end_time.duration_since(self.start_time)
@@ -224,5 +173,3 @@ pub struct ProcessResourceUsage {
     pub sys_time: Duration,  // System CPU time
     pub voluntary_switches: u64,   // Voluntary context switches
     pub involuntary_switches: u64, // Involuntary context switches
-}
-

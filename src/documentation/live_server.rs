@@ -55,277 +55,145 @@ pub type LiveServercrate::error::Result<T> = std::result::Result<T>;
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct LiveServerConfig {
     /// HTTP server port
-    pub port: u16,
     
     /// Host address to bind to
-    pub host: String,
     
     /// Watch debounce duration to prevent rapid regeneration
-    pub watch_debounce: Duration,
     
     /// Maximum time to wait for documentation generation
-    pub generation_timeout: Duration,
     
     /// Enable interactive code playground
-    pub enable_playground: bool,
     
     /// Enable API explorer functionality
-    pub enable_api_explorer: bool,
     
     /// Enable syntax highlighting in code blocks
-    pub enable_syntax_highlighting: bool,
     
     /// Enable code folding in documentation
-    pub enable_code_folding: bool,
     
     /// Maximum number of concurrent WebSocket connections
-    pub max_websocket_connections: usize,
     
     /// Auto-open browser on startup
-    pub auto_open_browser: bool,
     
     /// Custom CSS file path
-    pub custom_css_path: Option<PathBuf>,
     
     /// Custom JavaScript file path
-    pub custom_js_path: Option<PathBuf>,
     
     /// Documentation formats to generate
-    pub output_formats: Vec<DocFormat>,
     
     /// Include private items in documentation
-    pub include_private: bool,
     
     /// Include source code in documentation
-    pub include_source: bool,
     
     /// Generate cross-references between items
-    pub generate_cross_refs: bool,
     
     /// Include executable examples
-    pub include_examples: bool,
     
     /// CORS origins to allow
-    pub cors_origins: Vec<String>,
-}
-
 impl Default for LiveServerConfig {
     fn default() -> Self {
         Self {
-            port: 8080,
-            host: "127.0.0.1".to_string(),
-            watch_debounce: Duration::from_millis(500),
-            generation_timeout: Duration::from_secs(30),
-            enable_playground: true,
-            enable_api_explorer: true,
-            enable_syntax_highlighting: true,
-            enable_code_folding: true,
-            max_websocket_connections: 100,
-            auto_open_browser: true,
-            custom_css_path: None,
-            custom_js_path: None,
-            output_formats: vec![DocFormat::Html],
-            include_private: false,
-            include_source: true,
-            generate_cross_refs: true,
-            include_examples: true,
-            cors_origins: vec!["*".to_string()],
         }
     }
-}
-
 /// WebSocket message types for client-server communication
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(tag = "type")]
 pub enum WebSocketMessage {
     /// Documentation has been regenerated
     DocumentationUpdated {
-        timestamp: SystemTime,
-        files_changed: Vec<String>,
-        generation_time_ms: u64,
-    },
     
     /// Generation started
     GenerationStarted {
-        timestamp: SystemTime,
-        trigger: String,
-    },
     
     /// Generation failed
     GenerationFailed {
-        timestamp: SystemTime,
-        error: String,
-        files_affected: Vec<String>,
-    },
     
     /// Server statistics update
     ServerStats {
-        timestamp: SystemTime,
-        connected_clients: usize,
-        total_regenerations: u64,
-        average_generation_time_ms: u64,
-        uptime_seconds: u64,
-    },
     
     /// Code execution request (for playground)
     ExecuteCode {
-        code: String,
-        language: String,
-        session_id: String,
-    },
     
     /// Code execution result
     ExecutionResult {
-        session_id: String,
-        success: bool,
-        output: String,
-        error: Option<String>,
-        execution_time_ms: u64,
-    },
     
     /// API method call (for API explorer)
     ApiCall {
-        method_name: String,
-        parameters: HashMap<String, serde_json::Value>,
-        session_id: String,
-    },
     
     /// API call result
     ApiResult {
-        session_id: String,
-        success: bool,
-        result: serde_json::Value,
-        error: Option<String>,
-    },
     
     /// Client ping
     Ping {
-        timestamp: SystemTime,
-    },
     
     /// Server pong
     Pong {
-        timestamp: SystemTime,
-    },
     
     /// Connection established
     Connected {
-        server_version: String,
-        features: Vec<String>,
-    },
-}
-
 /// Real-time server statistics
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ServerStatistics {
     /// Server start time
-    pub started_at: SystemTime,
     
     /// Number of currently connected WebSocket clients
-    pub connected_clients: usize,
     
     /// Total number of documentation regenerations
-    pub total_regenerations: u64,
     
     /// Average generation time in milliseconds
-    pub average_generation_time_ms: u64,
     
     /// Total generation time in milliseconds
-    pub total_generation_time_ms: u64,
     
     /// Number of successful generations
-    pub successful_generations: u64,
     
     /// Number of failed generations
-    pub failed_generations: u64,
     
     /// Total files processed
-    pub total_files_processed: u64,
     
     /// Last generation timestamp
-    pub last_generation: Option<SystemTime>,
     
     /// Current generation in progress
-    pub generation_in_progress: bool,
     
     /// Files currently being watched
-    pub watched_files: usize,
     
     /// Recent error messages
-    pub recent_errors: Vec<String>,
-}
-
 impl Default for ServerStatistics {
     fn default() -> Self {
         Self {
-            started_at: SystemTime::now(),
-            connected_clients: 0,
-            total_regenerations: 0,
-            average_generation_time_ms: 0,
-            total_generation_time_ms: 0,
-            successful_generations: 0,
-            failed_generations: 0,
-            total_files_processed: 0,
-            last_generation: None,
-            generation_in_progress: false,
-            watched_files: 0,
-            recent_errors: Vec::new(),
         }
     }
-}
-
 /// WebSocket client connection info
 #[derive(Debug, Clone)]
 pub struct ClientConnection {
     /// Unique client ID
-    pub id: Uuid,
     
     /// Connection timestamp
-    pub connected_at: SystemTime,
     
     /// Last ping timestamp
-    pub last_ping: Option<SystemTime>,
     
     /// Client user agent
-    pub user_agent: Option<String>,
     
     /// Features enabled for this client
-    pub features: HashSet<String>,
-}
-
 /// Live documentation server with hot reload capabilities
 pub struct LiveDocumentationServer {
     /// Server configuration
-    config: LiveServerConfig,
     
     /// File watcher for detecting changes
-    file_watcher: Option<FileWatcher>,
     
     /// Documentation generator
-    doc_generator: Option<DocumentationGenerator>,
     
     /// WebSocket broadcast channel for sending updates
-    websocket_tx: broadcast::Sender<WebSocketMessage>,
     
     /// Connected WebSocket clients
-    clients: Arc<RwLock<HashMap<Uuid, ClientConnection>>>,
     
     /// Server statistics
-    statistics: Arc<Mutex<ServerStatistics>>,
     
     /// Currently watched source paths
-    watched_paths: Arc<RwLock<Vec<PathBuf>>>,
     
     /// Output documentation directory
-    output_dir: Arc<RwLock<Option<PathBuf>>>,
     
     /// Generation task queue to prevent concurrent generations
-    generation_queue: Arc<Mutex<Option<tokio::task::JoinHandle<()>>>>,
     
     /// Server state
-    is_running: Arc<Mutex<bool>>,
-}
-
 impl LiveDocumentationServer {
     /// Create a new live documentation server
     #[instrument(skip(config))]
@@ -335,25 +203,10 @@ impl LiveDocumentationServer {
         let (websocket_tx, _) = broadcast::channel(1000);
         
         Ok(Self {
-            config,
-            file_watcher: None,
-            doc_generator: None,
-            websocket_tx,
-            clients: Arc::new(RwLock::new(HashMap::new())),
-            statistics: Arc::new(Mutex::new(ServerStatistics::default())),
-            watched_paths: Arc::new(RwLock::new(Vec::new())),
-            output_dir: Arc::new(RwLock::new(None)),
-            generation_queue: Arc::new(Mutex::new(None)),
-            is_running: Arc::new(Mutex::new(false)),
         })
-    }
-    
     /// Start serving documentation with hot reload
     #[instrument(skip(self, source_paths))]
     pub async fn start_serving<P: AsRef<Path>>(
-        &mut self,
-        source_paths: &[P],
-        output_dir: P,
     ) -> LiveServerResult<()> {
         let output_path = output_dir.as_ref().to_path_buf();
         
@@ -366,14 +219,10 @@ impl LiveDocumentationServer {
             let mut is_running = self.is_running.lock()
                 .map_err(|_| CursedError::system_error("Failed to acquire running lock"))?;
             *is_running = true;
-        }
-        
         {
             let mut output_dir_guard = self.output_dir.write()
                 .map_err(|_| CursedError::system_error("Failed to acquire output dir lock"))?;
             *output_dir_guard = Some(output_path.clone());
-        }
-        
         {
             let mut watched_paths = self.watched_paths.write()
                 .map_err(|_| CursedError::system_error("Failed to acquire watched paths lock"))?;
@@ -396,8 +245,6 @@ impl LiveDocumentationServer {
         self.start_http_server(&output_path).await?;
         
         Ok(())
-    }
-    
     /// Stop the live documentation server
     #[instrument(skip(self))]
     pub async fn stop_serving(&mut self) -> LiveServerResult<()> {
@@ -408,14 +255,10 @@ impl LiveDocumentationServer {
             let mut is_running = self.is_running.lock()
                 .map_err(|_| CursedError::system_error("Failed to acquire running lock"))?;
             *is_running = false;
-        }
-        
         // Stop file watcher
         if let Some(mut watcher) = self.file_watcher.take() {
             watcher.stop_watching()
                 .map_err(|e| CursedError::system_error(&format!("Failed to stop file watcher: {}", e)))?;
-        }
-        
         // Cancel any pending generation
         {
             let mut generation_queue = self.generation_queue.lock()
@@ -435,68 +278,32 @@ impl LiveDocumentationServer {
             let mut clients = self.clients.write()
                 .map_err(|_| CursedError::system_error("Failed to acquire clients lock"))?;
             clients.clear();
-        }
-        
         info!("Live documentation server stopped");
         Ok(())
-    }
-    
     /// Initialize the documentation generator
     #[instrument(skip(self, output_dir))]
     fn initialize_documentation_generator(&mut self, output_dir: &Path) -> LiveServerResult<()> {
         let doc_config = DocumentationConfig {
             input_dirs: Vec::new(), // Will be set when generating
-            output_dir: output_dir.to_path_buf(),
-            formats: self.config.output_formats.clone(),
             options: crate::documentation::DocOptions {
-                include_private: self.config.include_private,
-                include_source: self.config.include_source,
-                generate_cross_refs: self.config.generate_cross_refs,
-                include_examples: self.config.include_examples,
-                max_type_depth: 10,
-                custom_css: self.config.custom_css_path.clone(),
-                template_dir: None,
-            },
             metadata: crate::documentation::DocMetadata {
-                title: "CURSED Documentation".to_string(),
-                description: Some("Live documentation generated by CURSED".to_string()),
-                version: Some(env!("CARGO_PKG_VERSION").to_string()),
-                authors: vec!["CURSED Live Server".to_string()],
                 base_url: Some(format!("http://{}:{}", self.config.host, self.config.port)),
-            },
-        };
         
         self.doc_generator = Some(DocumentationGenerator::new(doc_config)?);
         
         info!("Documentation generator initialized");
         Ok(())
-    }
-    
     /// Setup file watcher for source files
     #[instrument(skip(self, source_paths))]
     async fn setup_file_watcher<P: AsRef<Path>>(&mut self, source_paths: &[P]) -> LiveServerResult<()> {
         let watch_config = WatchConfig {
             watch_patterns: vec![
-                "*.csd".to_string(),
-                "*.toml".to_string(),
-                "*.md".to_string(),
-                "Makefile".to_string(),
-            ],
             ignore_patterns: vec![
-                "*.tmp".to_string(),
-                "*.bak".to_string(),
                 "target/*".to_string(),
                 ".git/*".to_string(),
                 ".devenv/*".to_string(),
                 "coverage/*".to_string(),
                 "docs/*".to_string(), // Ignore output directory
-            ],
-            debounce_duration: self.config.watch_debounce,
-            max_batch_size: 50,
-            recursive: true,
-            follow_symlinks: false,
-            event_buffer_size: 1000,
-        };
         
         let mut file_watcher = FileWatcher::new(watch_config)
             .map_err(|e| CursedError::system_error(&format!("Failed to create file watcher: {}", e)))?;
@@ -519,13 +326,6 @@ impl LiveDocumentationServer {
             
             tokio::spawn(async move {
                 if let Err(e) = Self::handle_file_change_event(
-                    event,
-                    websocket_tx,
-                    generation_queue,
-                    statistics,
-                    output_dir,
-                    watched_paths,
-                    config,
                 ).await {
                     error!("Failed to handle file change event: {}", e);
                 }
@@ -541,43 +341,26 @@ impl LiveDocumentationServer {
             let mut stats = self.statistics.lock()
                 .map_err(|_| CursedError::system_error("Failed to acquire statistics lock"))?;
             stats.watched_files = file_watcher.get_watched_paths().len();
-        }
-        
         self.file_watcher = Some(file_watcher);
         
         info!("File watcher setup complete");
         Ok(())
-    }
-    
     /// Handle file change events
     #[instrument(skip(websocket_tx, generation_queue, statistics, output_dir, watched_paths, config))]
     async fn handle_file_change_event(
-        event: FileWatchEvent,
-        websocket_tx: broadcast::Sender<WebSocketMessage>,
-        generation_queue: Arc<Mutex<Option<tokio::task::JoinHandle<()>>>>,
-        statistics: Arc<Mutex<ServerStatistics>>,
-        output_dir: Arc<RwLock<Option<PathBuf>>>,
-        watched_paths: Arc<RwLock<Vec<PathBuf>>>,
-        config: LiveServerConfig,
     ) -> LiveServerResult<()> {
         // Check if this event should trigger regeneration
         if !event.should_trigger_rebuild() {
             return Ok(());
-        }
-        
         let changed_files = match &event {
             FileWatchEvent::Batch { events, .. } => {
                 events.iter().map(|e| e.path().to_string_lossy().to_string()).collect()
             }
-            _ => vec![event.path().to_string_lossy().to_string()],
-        };
         
         info!("File change detected: {:?}", changed_files);
         
         // Notify clients that generation is starting
         let _ = websocket_tx.send(WebSocketMessage::GenerationStarted {
-            timestamp: SystemTime::now(),
-            trigger: format!("File change: {}", changed_files.join(", ")),
         });
         
         // Update statistics
@@ -585,8 +368,6 @@ impl LiveDocumentationServer {
             let mut stats = statistics.lock()
                 .map_err(|_| CursedError::system_error("Failed to acquire statistics lock"))?;
             stats.generation_in_progress = true;
-        }
-        
         // Cancel any existing generation
         {
             let mut queue = generation_queue.lock()
@@ -610,9 +391,6 @@ impl LiveDocumentationServer {
                 
                 // Perform the documentation generation
                 let result = Self::regenerate_documentation(
-                    &output_dir,
-                    &watched_paths,
-                    &config,
                 ).await;
                 
                 let generation_time = start_time.elapsed();
@@ -633,9 +411,6 @@ impl LiveDocumentationServer {
                             
                             // Notify clients of successful generation
                             let _ = websocket_tx.send(WebSocketMessage::DocumentationUpdated {
-                                timestamp: SystemTime::now(),
-                                files_changed: changed_files,
-                                generation_time_ms: generation_time.as_millis() as u64,
                             });
                         }
                         Err(error) => {
@@ -646,88 +421,47 @@ impl LiveDocumentationServer {
                             stats.recent_errors.push(error_msg.clone());
                             if stats.recent_errors.len() > 10 {
                                 stats.recent_errors.remove(0);
-                            }
-                            
                             // Notify clients of failed generation
                             let _ = websocket_tx.send(WebSocketMessage::GenerationFailed {
-                                timestamp: SystemTime::now(),
-                                error: error_msg,
-                                files_affected: changed_files,
                             });
                         }
                     }
-                }
-                
                 result
             })
-        };
         
         // Store the generation task
         {
             let mut queue = generation_queue.lock()
                 .map_err(|_| CursedError::system_error("Failed to acquire generation queue lock"))?;
             *queue = Some(tokio::spawn(async move { let _ = generation_task.await; }));
-        }
-        
         Ok(())
-    }
-    
     /// Regenerate documentation
     #[instrument(skip(output_dir, watched_paths, config))]
     async fn regenerate_documentation(
-        output_dir: &Arc<RwLock<Option<PathBuf>>>,
-        watched_paths: &Arc<RwLock<Vec<PathBuf>>>,
-        config: &LiveServerConfig,
     ) -> LiveServerResult<()> {
         let output_path = {
             let output_guard = output_dir.read()
                 .map_err(|_| CursedError::system_error("Failed to acquire output dir lock"))?;
             output_guard.clone()
                 .ok_or_else(|| CursedError::system_error("Output directory not set"))?
-        };
         
         let source_paths = {
             let watched_guard = watched_paths.read()
                 .map_err(|_| CursedError::system_error("Failed to acquire watched paths lock"))?;
             watched_guard.clone()
-        };
         
         // Create new documentation generator for this generation
         let doc_config = DocumentationConfig {
-            source_dirs: source_paths,
-            output_dir: output_path,
-            output_formats: config.output_formats.clone(),
             options: crate::documentation::DocOptions {
-                generate_search_index: true,
-                include_dependencies: false,
-                generate_cross_refs: true,
-                include_examples: true,
-                include_private: false,
-                max_depth: 10,
-                theme: "default".to_string(),
-            },
             project: crate::documentation::ProjectMetadata {
-                name: "CURSED Documentation".to_string(),
-                version: env!("CARGO_PKG_VERSION").to_string(),
-                description: Some("Live documentation generated by CURSED".to_string()),
-                authors: vec!["CURSED Live Server".to_string()],
                 homepage: Some(format!("http://{}:{}", config.host, config.port)),
-                repository: None,
-                license: None,
-            },
             styling: crate::documentation::StylingConfig {
-                custom_css: config.custom_css_path.clone().map(|p| vec![p]).unwrap_or_default(),
-                template_dir: None,
-                theme: "light".to_string(),
                 // Note: These fields are not available in current StylingConfig
-            },
-        };
         
         let mut generator = DocumentationGenerator::new(doc_config)?;
         
         // Generate with timeout
         timeout(
-            config.generation_timeout,
             async {
                 let extracted_docs = Vec::new(); // TODO: Extract docs from source_dirs
                 generator.generate_output(&extracted_docs).await?;
@@ -739,8 +473,6 @@ impl LiveDocumentationServer {
         
         info!("Documentation regenerated successfully");
         Ok(())
-    }
-    
     /// Generate initial documentation
     #[instrument(skip(self))]
     async fn generate_initial_documentation(&mut self) -> LiveServerResult<()> {
@@ -754,18 +486,13 @@ impl LiveDocumentationServer {
         
         info!("Initial documentation generated");
         Ok(())
-    }
-    
     /// Start HTTP and WebSocket server
     #[instrument(skip(self, docs_dir))]
     async fn start_http_server(&self, docs_dir: &Path) -> LiveServerResult<()> {
         if !docs_dir.exists() {
             return Err(CursedError::system_error(&format!(
-                "Documentation directory does not exist: {}", 
                 docs_dir.display()
             )));
-        }
-        
         let websocket_tx = self.websocket_tx.clone();
         let clients = Arc::clone(&self.clients);
         let statistics = Arc::clone(&self.statistics);
@@ -804,8 +531,6 @@ impl LiveDocumentationServer {
         
         let addr = (
             self.config.host.parse::<std::net::IpAddr>()
-                .map_err(|e| CursedError::system_error(&format!("Invalid host address: {}", e)))?,
-            self.config.port,
         );
         
         info!("🌐 Live documentation server starting at http://{}:{}", self.config.host, self.config.port);
@@ -815,8 +540,6 @@ impl LiveDocumentationServer {
         // Open browser if configured
         if self.config.auto_open_browser {
             self.open_browser()?;
-        }
-        
         // Start server statistics broadcaster
         self.start_statistics_broadcaster().await;
         
@@ -826,16 +549,9 @@ impl LiveDocumentationServer {
             .await;
         
         Ok(())
-    }
-    
     /// Handle WebSocket connection
     #[instrument(skip(ws, websocket_tx, clients, statistics, config))]
     async fn handle_websocket_connection(
-        ws: WebSocket,
-        websocket_tx: broadcast::Sender<WebSocketMessage>,
-        clients: Arc<RwLock<HashMap<Uuid, ClientConnection>>>,
-        statistics: Arc<Mutex<ServerStatistics>>,
-        config: LiveServerConfig,
     ) {
         let client_id = Uuid::new_v4();
         let (mut ws_tx, mut ws_rx) = ws.split();
@@ -845,9 +561,6 @@ impl LiveDocumentationServer {
         {
             let mut clients_guard = clients.write().unwrap();
             let connection = ClientConnection {
-                id: client_id,
-                connected_at: SystemTime::now(),
-                last_ping: None,
                 user_agent: None, // Would extract from headers
                 features: {
                     let mut features = HashSet::new();
@@ -864,8 +577,6 @@ impl LiveDocumentationServer {
                         features.insert("code_folding".to_string());
                     }
                     features
-                },
-            };
             clients_guard.insert(client_id, connection.clone());
             
             info!("WebSocket client connected: {}", client_id);
@@ -879,14 +590,11 @@ impl LiveDocumentationServer {
         
         // Send connection confirmation
         let connected_message = WebSocketMessage::Connected {
-            server_version: env!("CARGO_PKG_VERSION").to_string(),
             features: {
                 let clients_guard = clients.read().unwrap();
                 clients_guard.get(&client_id)
                     .map(|conn| conn.features.iter().cloned().collect())
                     .unwrap_or_default()
-            },
-        };
         
         let ws_tx = Arc::new(Mutex::new(ws_tx));
         let ws_tx_clone = Arc::clone(&ws_tx);
@@ -907,11 +615,6 @@ impl LiveDocumentationServer {
                 match result {
                     Ok(message) => {
                         if let Err(e) = Self::handle_incoming_websocket_message(
-                            client_id,
-                            message,
-                            &clients_for_incoming,
-                            &statistics_for_incoming,
-                            &ws_tx_for_incoming,
                         ).await {
                             warn!("CursedError handling WebSocket message from {}: {}", client_id, e);
                         }
@@ -939,10 +642,6 @@ impl LiveDocumentationServer {
         
         // Wait for either task to complete
         tokio::select! {
-            _ = incoming_task => {},
-            _ = outgoing_task => {},
-        }
-        
         // Cleanup client
         {
             let mut clients_guard = clients.write().unwrap();
@@ -956,16 +655,9 @@ impl LiveDocumentationServer {
                 stats.connected_clients = clients_guard.len();
             }
         }
-    }
-    
     /// Handle incoming WebSocket message from client
     #[instrument(skip(message, clients, statistics, ws_tx))]
     async fn handle_incoming_websocket_message(
-        client_id: Uuid,
-        message: Message,
-        clients: &Arc<RwLock<HashMap<Uuid, ClientConnection>>>,
-        statistics: &Arc<Mutex<ServerStatistics>>,
-        ws_tx: &Arc<Mutex<warp::ws::SplitSink<WebSocket, Message>>>,
     ) -> LiveServerResult<()> {
         if message.is_text() {
             let text = message.to_str()
@@ -991,61 +683,39 @@ impl LiveDocumentationServer {
                             let _ = sender.send(Message::text(pong_text)).await;
                         }
                     }
-                }
-                
                 WebSocketMessage::ExecuteCode { code, language, session_id } => {
                     // Handle code execution for playground
                     let result = Self::execute_code_playground(&code, &language).await;
                     let response = WebSocketMessage::ExecutionResult {
-                        session_id,
-                        success: result.is_ok(),
-                        output: result.as_ref().map(|r| r.clone()).unwrap_or_default(),
-                        error: result.err().map(|e| e.to_string()),
                         execution_time_ms: 0, // Would measure actual execution time
-                    };
                     
                     if let Ok(response_text) = serde_json::to_string(&response) {
                         if let Ok(mut sender) = ws_tx.lock() {
                             let _ = sender.send(Message::text(response_text)).await;
                         }
                     }
-                }
-                
                 WebSocketMessage::ApiCall { method_name, parameters, session_id } => {
                     // Handle API method call for API explorer
                     let result = Self::execute_api_method(&method_name, &parameters).await;
                     let response = WebSocketMessage::ApiResult {
-                        session_id,
-                        success: result.is_ok(),
                         result: result.as_ref()
                             .map(|r| r.clone())
-                            .unwrap_or(serde_json::Value::Null),
-                        error: result.err().map(|e| e.to_string()),
-                    };
                     
                     if let Ok(response_text) = serde_json::to_string(&response) {
                         if let Ok(mut sender) = ws_tx.lock() {
                             let _ = sender.send(Message::text(response_text)).await;
                         }
                     }
-                }
-                
                 _ => {
                     debug!("Unhandled WebSocket message type from client {}", client_id);
                 }
             }
-        }
-        
         Ok(())
-    }
-    
     /// Execute code in the playground
     #[instrument(skip(code))]
     async fn execute_code_playground(code: &str, language: &str) -> crate::error::Result<()> {
         if language != "cursed" && language != "csd" {
             return Err(CursedError::system_error("Only CURSED language is supported"));
-        }
-        
         // This would integrate with the CURSED interpreter/compiler
         // For now, return a mock response
         info!("Executing code in playground: {} lines of {}", code.split("\n").count(), language);
@@ -1053,12 +723,9 @@ impl LiveDocumentationServer {
         // Mock execution result
         Ok(format!("// Code execution result\n// {} lines of {} code processed\nslay \"Hello from CURSED playground!\"", 
             code.split("\n").count(), language))
-    }
-    
     /// Execute API method for API explorer
     #[instrument(skip(parameters))]
     async fn execute_api_method(
-        method_name: &str, 
         parameters: &HashMap<String, serde_json::Value>
     ) -> crate::error::Result<()> {
         info!("Executing API method: {} with {} parameters", method_name, parameters.len());
@@ -1066,15 +733,10 @@ impl LiveDocumentationServer {
         // This would integrate with the CURSED runtime to call actual methods
         // For now, return a mock response
         let result = serde_json::json!({
-            "method": method_name,
-            "parameters": parameters,
-            "result": "Mock API execution result",
             "timestamp": chrono::Utc::now().to_rfc3339()
         });
         
         Ok(result)
-    }
-    
     /// Create API routes for interactive features
     fn create_api_routes(&self) -> impl Filter<Extract = impl warp::Reply, CursedError = warp::Rejection> + Clone {
         // Statistics endpoint
@@ -1089,24 +751,16 @@ impl LiveDocumentationServer {
             .and(warp::get())
             .map(|| {
                 warp::reply::json(&serde_json::json!({
-                    "status": "healthy",
-                    "server": "CURSED Live Documentation Server",
-                    "version": env!("CARGO_PKG_VERSION"),
                     "timestamp": chrono::Utc::now().to_rfc3339()
                 }))
             });
         
         stats_route.or(health_route)
-    }
-    
     /// Handle statistics API request
     async fn handle_stats_request(
-        statistics: Arc<Mutex<ServerStatistics>>,
     ) -> std::result::Result<impl warp::Reply, warp::Rejection> {
         let stats = statistics.lock().unwrap().clone();
         Ok(warp::reply::json(&stats))
-    }
-    
     /// Create CORS filter
     fn create_cors_filter(&self) -> warp::cors::Builder {
         let origins: Vec<&str> = self.config.cors_origins.iter().map(|s| s.as_str()).collect();
@@ -1115,8 +769,6 @@ impl LiveDocumentationServer {
             .allow_origins(origins)
             .allow_headers(vec!["content-type", "authorization"])
             .allow_methods(vec!["GET", "POST", "PUT", "DELETE", "OPTIONS"])
-    }
-    
     /// Start statistics broadcaster
     async fn start_statistics_broadcaster(&self) {
         let websocket_tx = self.websocket_tx.clone();
@@ -1134,21 +786,13 @@ impl LiveDocumentationServer {
                     let clients_count = clients.read().unwrap().len();
                     
                     WebSocketMessage::ServerStats {
-                        timestamp: SystemTime::now(),
-                        connected_clients: clients_count,
-                        total_regenerations: stats.total_regenerations,
-                        average_generation_time_ms: stats.average_generation_time_ms,
                         uptime_seconds: stats.started_at.elapsed()
                             .unwrap_or(Duration::from_secs(0))
-                            .as_secs(),
                     }
-                };
                 
                 let _ = websocket_tx.send(stats_message);
             }
         });
-    }
-    
     /// Open browser to view documentation
     fn open_browser(&self) -> LiveServerResult<()> {
         let url = format!("http://{}:{}", self.config.host, self.config.port);
@@ -1161,41 +805,29 @@ impl LiveDocumentationServer {
                 .args(["/c", "start", &url])
                 .spawn()
                 .map_err(|e| CursedError::system_error(&format!("Failed to open browser: {}", e)))?;
-        }
-        
         #[cfg(target_os = "macos")]
         {
             std::process::Command::new("open")
                 .arg(&url)
                 .spawn()
                 .map_err(|e| CursedError::system_error(&format!("Failed to open browser: {}", e)))?;
-        }
-        
         #[cfg(target_os = "linux")]
         {
             std::process::Command::new("xdg-open")
                 .arg(&url)
                 .spawn()
                 .map_err(|e| CursedError::system_error(&format!("Failed to open browser: {}", e)))?;
-        }
-        
         Ok(())
-    }
-    
     /// Get current server statistics
     pub fn get_statistics(&self) -> ServerStatistics {
         self.statistics.lock()
             .map(|stats| stats.clone())
             .unwrap_or_default()
-    }
-    
     /// Get connected client count
     pub fn get_connected_clients(&self) -> usize {
         self.clients.read()
             .map(|clients| clients.len())
             .unwrap_or(0)
-    }
-    
     /// Check if server is running
     pub fn is_running(&self) -> bool {
         self.is_running.lock()
@@ -1212,14 +844,10 @@ impl Drop for LiveDocumentationServer {
 
 /// Builder for creating live documentation server instances
 pub struct LiveDocumentationServerBuilder {
-    config: LiveServerConfig,
-}
-
 impl LiveDocumentationServerBuilder {
     /// Create a new builder
     pub fn new() -> Self {
         Self {
-            config: LiveServerConfig::default(),
         }
     }
     
@@ -1227,44 +855,30 @@ impl LiveDocumentationServerBuilder {
     pub fn port(mut self, port: u16) -> Self {
         self.config.port = port;
         self
-    }
-    
     /// Set server host
     pub fn host(mut self, host: String) -> Self {
         self.config.host = host;
         self
-    }
-    
     /// Set watch debounce duration
     pub fn watch_debounce(mut self, duration: Duration) -> Self {
         self.config.watch_debounce = duration;
         self
-    }
-    
     /// Enable/disable playground
     pub fn enable_playground(mut self, enable: bool) -> Self {
         self.config.enable_playground = enable;
         self
-    }
-    
     /// Enable/disable API explorer
     pub fn enable_api_explorer(mut self, enable: bool) -> Self {
         self.config.enable_api_explorer = enable;
         self
-    }
-    
     /// Set output formats
     pub fn output_formats(mut self, formats: Vec<DocFormat>) -> Self {
         self.config.output_formats = formats;
         self
-    }
-    
     /// Enable/disable auto-open browser
     pub fn auto_open_browser(mut self, enable: bool) -> Self {
         self.config.auto_open_browser = enable;
         self
-    }
-    
     /// Build the live documentation server
     pub fn build(self) -> LiveServerResult<LiveDocumentationServer> {
         LiveDocumentationServer::new(self.config)

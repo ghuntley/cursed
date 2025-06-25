@@ -25,8 +25,6 @@ pub fn fork_process() -> SysCoreResult<ForkResult> {
                 let errno = std::io::Error::last_os_error().raw_os_error().unwrap_or(-1);
                 Err(system_call_error("fork", errno))
             }
-            0 => Ok(ForkResult::Child),
-            child_pid => Ok(ForkResult::Parent(child_pid as ProcessId)),
         }
     }
     
@@ -39,16 +37,9 @@ pub fn fork_process() -> SysCoreResult<ForkResult> {
 /// Fork result
 #[derive(Debug, Clone, PartialEq)]
 pub enum ForkResult {
-    Parent(ProcessId),
-    Child,
-}
-
 /// Execute a program (Unix only)
 pub fn exec_process<P, A, S>(program: P, args: A) -> SysCoreResult<()>
 where
-    P: AsRef<str>,
-    A: IntoIterator<Item = S>,
-    S: AsRef<str>,
 {
     #[cfg(unix)]
     {
@@ -69,13 +60,9 @@ where
         
         unsafe {
             libc::execvp(program_cstr.as_ptr(), args_ptr.as_ptr());
-        }
-        
         // If execvp returns, it means it failed
         let errno = std::io::Error::last_os_error().raw_os_error().unwrap_or(-1);
         Err(system_call_error("execvp", errno))
-    }
-    
     #[cfg(not(unix))]
     {
         Err(not_supported("exec not supported on this platform"))
@@ -88,31 +75,22 @@ pub fn wait_process(pid: Option<ProcessId>) -> SysCoreResult<WaitResult> {
     {
         let mut status: i32 = 0;
         let wait_pid = match pid {
-            Some(p) => p as i32,
             None => -1, // Wait for any child
-        };
         
         let result_pid = unsafe { libc::waitpid(wait_pid, &mut status, 0) };
         
         if result_pid == -1 {
             let errno = std::io::Error::last_os_error().raw_os_error().unwrap_or(-1);
             return Err(system_call_error("waitpid", errno));
-        }
-        
         let exit_status = if unsafe { libc::WIFEXITED(status) } {
             ExitStatus::Exited(unsafe { libc::WEXITSTATUS(status) })
         } else if unsafe { libc::WIFSIGNALED(status) } {
             ExitStatus::Signaled(unsafe { libc::WTERMSIG(status) })
         } else {
             ExitStatus::Other(status)
-        };
         
         Ok(WaitResult {
-            pid: result_pid as ProcessId,
-            status: exit_status,
         })
-    }
-    
     #[cfg(not(unix))]
     {
         Err(not_supported("wait not supported on this platform"))
@@ -122,18 +100,9 @@ pub fn wait_process(pid: Option<ProcessId>) -> SysCoreResult<WaitResult> {
 /// Wait result
 #[derive(Debug, Clone)]
 pub struct WaitResult {
-    pub pid: ProcessId,
-    pub status: ExitStatus,
-}
-
 /// Process exit status
 #[derive(Debug, Clone)]
 pub enum ExitStatus {
-    Exited(i32),
-    Signaled(i32),
-    Other(i32),
-}
-
 /// Send a signal to a process
 pub fn kill_process(pid: ProcessId, signal: i32) -> SysCoreResult<()> {
     #[cfg(unix)]
@@ -144,8 +113,6 @@ pub fn kill_process(pid: ProcessId, signal: i32) -> SysCoreResult<()> {
             return Err(system_call_error("kill", errno));
         }
         Ok(())
-    }
-    
     #[cfg(not(unix))]
     {
         Err(not_supported("kill not supported on this platform"))
@@ -162,8 +129,6 @@ pub fn setpgid(pid: ProcessId, pgid: ProcessGroup) -> SysCoreResult<()> {
             return Err(system_call_error("setpgid", errno));
         }
         Ok(())
-    }
-    
     #[cfg(not(unix))]
     {
         Err(not_supported("setpgid not supported on this platform"))
@@ -180,8 +145,6 @@ pub fn setsid() -> SysCoreResult<SessionId> {
             return Err(system_call_error("setsid", errno));
         }
         Ok(result as SessionId)
-    }
-    
     #[cfg(not(unix))]
     {
         Err(not_supported("setsid not supported on this platform"))
@@ -206,8 +169,6 @@ pub fn getppid() -> SysCoreResult<ProcessId> {
     #[cfg(unix)]
     {
         Ok(unsafe { libc::getppid() as ProcessId })
-    }
-    
     #[cfg(not(unix))]
     {
         Err(not_supported("getppid not supported on this platform"))
@@ -224,8 +185,6 @@ pub fn getpgid(pid: ProcessId) -> SysCoreResult<ProcessGroup> {
             return Err(system_call_error("getpgid", errno));
         }
         Ok(result as ProcessGroup)
-    }
-    
     #[cfg(not(unix))]
     {
         Err(not_supported("getpgid not supported on this platform"))
@@ -242,8 +201,6 @@ pub fn getsid(pid: ProcessId) -> SysCoreResult<SessionId> {
             return Err(system_call_error("getsid", errno));
         }
         Ok(result as SessionId)
-    }
-    
     #[cfg(not(unix))]
     {
         Err(not_supported("getsid not supported on this platform"))
@@ -253,8 +210,6 @@ pub fn getsid(pid: ProcessId) -> SysCoreResult<SessionId> {
 /// Check if fork is supported on this platform
 pub fn supports_fork() -> bool {
     cfg!(unix)
-}
-
 /// Get current thread ID
 pub fn get_current_thread_id() -> ThreadId {
     #[cfg(target_os = "linux")]
@@ -270,17 +225,10 @@ pub fn get_current_thread_id() -> ThreadId {
 
 /// Thread creation and management
 pub struct ThreadInfo {
-    pub id: ThreadId,
-    pub name: Option<String>,
-    pub stack_size: Option<usize>,
-}
-
 /// Get information about the current thread
 pub fn get_current_thread_info() -> ThreadInfo {
     let current = std::thread::current();
     ThreadInfo {
-        id: get_current_thread_id(),
-        name: current.name().map(|s| s.to_string()),
         stack_size: None, // Would require platform-specific code to get actual stack size
     }
 }
@@ -288,13 +236,6 @@ pub fn get_current_thread_info() -> ThreadInfo {
 /// Process priority levels
 #[derive(Debug, Clone, Copy)]
 pub enum ProcessPriority {
-    Highest = -20,
-    High = -10,
-    Normal = 0,
-    Low = 10,
-    Lowest = 19,
-}
-
 /// Set process priority (nice value on Unix)
 pub fn set_process_priority(pid: ProcessId, priority: ProcessPriority) -> SysCoreResult<()> {
     #[cfg(unix)]
@@ -306,8 +247,6 @@ pub fn set_process_priority(pid: ProcessId, priority: ProcessPriority) -> SysCor
             return Err(system_call_error("setpriority", errno));
         }
         Ok(())
-    }
-    
     #[cfg(not(unix))]
     {
         Err(not_supported("setpriority not supported on this platform"))
@@ -326,11 +265,7 @@ pub fn get_process_priority(pid: ProcessId) -> SysCoreResult<i32> {
         
         if errno != 0 {
             return Err(system_call_error("getpriority", errno));
-        }
-        
         Ok(result)
-    }
-    
     #[cfg(not(unix))]
     {
         Err(not_supported("getpriority not supported on this platform"))

@@ -9,73 +9,24 @@ use std::time::SystemTime;
 /// Template engine types
 #[derive(Debug, Clone, PartialEq)]
 pub enum TemplateEngineType {
-    Handlebars,
-    Mustache,
-    Jinja2,
-    Simple,
-}
-
 /// Template engine for rendering HTML templates
 pub struct TemplateEngine {
-    config: TemplateConfig,
-    templates: HashMap<String, CachedTemplate>,
-    template_cache: HashMap<String, (String, SystemTime)>,
-    engine_type: TemplateEngineType,
-    inheritance_chain: HashMap<String, Vec<String>>,
-}
-
 #[derive(Debug, Clone)]
 pub struct Template {
-    pub name: String,
-    pub content: String,
-    pub last_modified: std::time::SystemTime,
-    pub extends: Option<String>,
-    pub includes: Vec<String>,
-    pub variables: Vec<String>,
-}
-
 #[derive(Debug, Clone)]
 pub struct CachedTemplate {
-    pub template: Template,
-    pub compiled_content: String,
-    pub cached_at: SystemTime,
-    pub dependencies: Vec<String>,
-}
-
 /// Template context for variable substitution
 #[derive(Debug, Clone)]
 pub struct TemplateContext {
-    pub variables: HashMap<String, TemplateValue>,
-    pub globals: HashMap<String, TemplateValue>,
-}
-
 #[derive(Debug, Clone)]
 pub enum TemplateValue {
-    String(String),
-    Number(f64),
-    Boolean(bool),
-    Array(Vec<TemplateValue>),
-    Object(HashMap<String, TemplateValue>),
-    Null,
-}
-
 /// Template renderer
 pub struct TemplateRenderer {
-    engine: TemplateEngine,
-}
-
 impl TemplateEngine {
     pub fn new(config: TemplateConfig) -> Self {
         Self::with_engine_type(config, TemplateEngineType::Simple)
-    }
-
     pub fn with_engine_type(config: TemplateConfig, engine_type: TemplateEngineType) -> Self {
         Self {
-            config,
-            templates: HashMap::new(),
-            template_cache: HashMap::new(),
-            engine_type,
-            inheritance_chain: HashMap::new(),
         }
     }
 
@@ -86,8 +37,6 @@ impl TemplateEngine {
         // Check if template exists
         if !template_path.exists() {
             return Err(TemplateError::TemplateNotFound(format!("Template file not found: {}", template_path.display())));
-        }
-
         // Check cache if enabled
         if self.config.cache_templates {
             if let Some((cached_content, cached_time)) = self.template_cache.get(name) {
@@ -101,8 +50,6 @@ impl TemplateEngine {
                     return Ok(());
                 }
             }
-        }
-
         // Read template content
         let content = fs::read_to_string(&template_path)
             .map_err(|e| TemplateError::LoadError(format!("Failed to read template file: {}", e)))?;
@@ -117,19 +64,10 @@ impl TemplateEngine {
         let (extends, includes, variables) = self.parse_template_metadata(&content)?;
 
         let template = Template {
-            name: name.to_string(),
-            content: content.clone(),
-            last_modified,
-            extends,
-            includes: includes.clone(),
-            variables,
-        };
 
         // Build inheritance chain
         if let Some(parent) = &template.extends {
             self.build_inheritance_chain(name, parent)?;
-        }
-
         // Load includes recursively
         for include_name in &includes {
             if !self.templates.contains_key(include_name) {
@@ -141,22 +79,13 @@ impl TemplateEngine {
         let compiled_content = self.compile_template(&template)?;
 
         let cached_template = CachedTemplate {
-            template,
-            compiled_content,
-            cached_at: SystemTime::now(),
-            dependencies: includes,
-        };
 
         self.templates.insert(name.to_string(), cached_template);
         
         // Update cache
         if self.config.cache_templates {
             self.template_cache.insert(name.to_string(), (content, SystemTime::now()));
-        }
-
         Ok(())
-    }
-
     /// Render template with context
     pub fn render(&self, name: &str, context: &TemplateContext) -> crate::error::Result<()> {
         let cached_template = self.templates.get(name)
@@ -167,28 +96,18 @@ impl TemplateEngine {
             self.render_with_inheritance(name, extends, context)?
         } else {
             cached_template.compiled_content.clone()
-        };
 
         // Process template includes
         content = self.process_includes(&content, context)?;
 
         // Render variables based on engine type
         content = match self.engine_type {
-            TemplateEngineType::Handlebars => self.render_handlebars(&content, context)?,
-            TemplateEngineType::Mustache => self.render_mustache(&content, context)?,
-            TemplateEngineType::Jinja2 => self.render_jinja2(&content, context)?,
-            TemplateEngineType::Simple => self.render_simple(&content, context)?,
-        };
 
         Ok(content)
-    }
-
     /// Render template with legacy string context (for backward compatibility)
     pub fn render_legacy(&self, name: &str, context: &HashMap<String, String>) -> crate::error::Result<()> {
         let template_context = TemplateContext::from_string_map(context);
         self.render(name, &template_context)
-    }
-
     /// Resolve template file path
     fn resolve_template_path(&self, name: &str) -> crate::error::Result<()> {
         let mut path = self.config.template_dir.join(name);
@@ -196,11 +115,7 @@ impl TemplateEngine {
         // Add extension if not present
         if path.extension().is_none() {
             path.set_extension(&self.config.template_extension);
-        }
-
         Ok(path)
-    }
-
     /// Parse template metadata (extends, includes, variables)
     fn parse_template_metadata(&self, content: &str) -> crate::error::Result<()> {
         let mut extends = None;
@@ -266,8 +181,6 @@ impl TemplateEngine {
         }
 
         Ok((extends, includes, variables))
-    }
-
     /// Build inheritance chain for template
     fn build_inheritance_chain(&mut self, child: &str, parent: &str) -> crate::error::Result<()> {
         let mut chain = vec![child.to_string()];
@@ -280,16 +193,12 @@ impl TemplateEngine {
         loop {
             if visited.contains(current) {
                 return Err(TemplateError::RenderError("Circular template inheritance detected".to_string()));
-            }
-            
             visited.insert(current.to_string());
             chain.push(current.to_string());
 
             // Load parent template if not loaded
             if !self.templates.contains_key(current) {
                 self.load_template(current)?;
-            }
-
             if let Some(cached_template) = self.templates.get(current) {
                 if let Some(grandparent) = &cached_template.template.extends {
                     current = grandparent;
@@ -303,15 +212,11 @@ impl TemplateEngine {
 
         self.inheritance_chain.insert(child.to_string(), chain);
         Ok(())
-    }
-
     /// Compile template content
     fn compile_template(&self, template: &Template) -> crate::error::Result<()> {
         // For now, return content as-is
         // In a full implementation, this would compile to an optimized format
         Ok(template.content.clone())
-    }
-
     /// Render template with inheritance
     fn render_with_inheritance(&self, child: &str, parent: &str, context: &TemplateContext) -> crate::error::Result<()> {
         let parent_template = self.templates.get(parent)
@@ -325,8 +230,6 @@ impl TemplateEngine {
         content = content.replace("{% block content %}", &child_template.template.content);
 
         Ok(content)
-    }
-
     /// Process template includes
     fn process_includes(&self, content: &str, context: &TemplateContext) -> crate::error::Result<()> {
         let mut result = content.to_string();
@@ -356,8 +259,6 @@ impl TemplateEngine {
         }
 
         Ok(result)
-    }
-
     /// Simple template rendering
     fn render_simple(&self, content: &str, context: &TemplateContext) -> crate::error::Result<()> {
         let mut rendered = content.to_string();
@@ -367,30 +268,20 @@ impl TemplateEngine {
             let placeholder = format!("{{{{{}}}}}", key);
             let value_str = value.to_string();
             rendered = rendered.replace(&placeholder, &value_str);
-        }
-
         // Replace global variables
         for (key, value) in &context.globals {
             let placeholder = format!("{{{{{}}}}}", key);
             let value_str = value.to_string();
             rendered = rendered.replace(&placeholder, &value_str);
-        }
-
         Ok(rendered)
-    }
-
     /// Handlebars-style template rendering
     fn render_handlebars(&self, content: &str, context: &TemplateContext) -> crate::error::Result<()> {
         // Basic handlebars-style rendering
         self.render_simple(content, context)
-    }
-
     /// Mustache-style template rendering
     fn render_mustache(&self, content: &str, context: &TemplateContext) -> crate::error::Result<()> {
         // Basic mustache-style rendering
         self.render_simple(content, context)
-    }
-
     /// Jinja2-style template rendering
     fn render_jinja2(&self, content: &str, context: &TemplateContext) -> crate::error::Result<()> {
         // Basic jinja2-style rendering with different delimiters
@@ -401,23 +292,15 @@ impl TemplateEngine {
             let placeholder = format!("{{{{{}}}}}", key);
             let value_str = value.to_string();
             rendered = rendered.replace(&placeholder, &value_str);
-        }
-
         Ok(rendered)
-    }
-
     /// Get template info
     pub fn get_template_info(&self, name: &str) -> Option<&Template> {
         self.templates.get(name).map(|cached| &cached.template)
-    }
-
     /// Clear template cache
     pub fn clear_cache(&mut self) {
         self.template_cache.clear();
         self.templates.clear();
         self.inheritance_chain.clear();
-    }
-
     /// Get cache statistics
     pub fn cache_stats(&self) -> (usize, usize) {
         (self.templates.len(), self.template_cache.len())
@@ -432,23 +315,15 @@ impl TemplateRenderer {
     /// Render template to string with rich context
     pub fn render_to_string(&self, template: &str, context: &TemplateContext) -> crate::error::Result<()> {
         self.engine.render(template, context)
-    }
-
     /// Render template to string with string context (backward compatibility)
     pub fn render_to_string_legacy(&self, template: &str, context: &HashMap<String, String>) -> crate::error::Result<()> {
         self.engine.render_legacy(template, context)
-    }
-
     /// Load template into the engine
     pub fn load_template(&mut self, name: &str) -> crate::error::Result<()> {
         self.engine.load_template(name)
-    }
-
     /// Get template information
     pub fn get_template_info(&self, name: &str) -> Option<&Template> {
         self.engine.get_template_info(name)
-    }
-
     /// Clear template cache
     pub fn clear_cache(&mut self) {
         self.engine.clear_cache()
@@ -457,14 +332,6 @@ impl TemplateRenderer {
 
 #[derive(Debug)]
 pub enum TemplateError {
-    TemplateNotFound(String),
-    RenderError(String),
-    LoadError(String),
-    ParseError(String),
-    InheritanceError(String),
-    CacheError(String),
-}
-
 // impl std::fmt::Display for TemplateError {
 //     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
 //         match self {
@@ -484,8 +351,6 @@ pub enum TemplateError {
 impl TemplateContext {
     pub fn new() -> Self {
         Self {
-            variables: HashMap::new(),
-            globals: HashMap::new(),
         }
     }
 
@@ -495,28 +360,16 @@ impl TemplateContext {
             context.variables.insert(key.clone(), TemplateValue::String(value.clone()));
         }
         context
-    }
-
     pub fn set_variable<K: Into<String>>(&mut self, key: K, value: TemplateValue) {
         self.variables.insert(key.into(), value);
-    }
-
     pub fn set_global<K: Into<String>>(&mut self, key: K, value: TemplateValue) {
         self.globals.insert(key.into(), value);
-    }
-
     pub fn set_string<K: Into<String>, V: Into<String>>(&mut self, key: K, value: V) {
         self.variables.insert(key.into(), TemplateValue::String(value.into()));
-    }
-
     pub fn set_number<K: Into<String>>(&mut self, key: K, value: f64) {
         self.variables.insert(key.into(), TemplateValue::Number(value));
-    }
-
     pub fn set_boolean<K: Into<String>>(&mut self, key: K, value: bool) {
         self.variables.insert(key.into(), TemplateValue::Boolean(value));
-    }
-
     pub fn get_variable(&self, key: &str) -> Option<&TemplateValue> {
         self.variables.get(key).or_else(|| self.globals.get(key))
     }
@@ -532,43 +385,26 @@ impl Default for TemplateContext {
 impl TemplateValue {
     pub fn as_string(&self) -> Option<&str> {
         match self {
-            TemplateValue::String(s) => Some(s),
-            _ => None,
         }
     }
 
     pub fn as_number(&self) -> Option<f64> {
         match self {
-            TemplateValue::Number(n) => Some(*n),
-            _ => None,
         }
     }
 
     pub fn as_boolean(&self) -> Option<bool> {
         match self {
-            TemplateValue::Boolean(b) => Some(*b),
-            _ => None,
         }
     }
 
     pub fn is_truthy(&self) -> bool {
         match self {
-            TemplateValue::Boolean(b) => *b,
-            TemplateValue::String(s) => !s.is_empty(),
-            TemplateValue::Number(n) => *n != 0.0,
-            TemplateValue::Array(arr) => !arr.is_empty(),
-            TemplateValue::Object(obj) => !obj.is_empty(),
-            TemplateValue::Null => false,
         }
     }
-}
-
 impl std::fmt::Display for TemplateValue {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         match self {
-            TemplateValue::String(s) => write!(f, "{}", s),
-            TemplateValue::Number(n) => write!(f, "{}", n),
-            TemplateValue::Boolean(b) => write!(f, "{}", b),
             TemplateValue::Array(arr) => {
                 write!(f, "[")?;
                 for (i, item) in arr.iter().enumerate() {
@@ -576,7 +412,6 @@ impl std::fmt::Display for TemplateValue {
                     write!(f, "{}", item)?;
                 }
                 write!(f, "]")
-            },
             TemplateValue::Object(obj) => {
                 write!(f, "{{")?;
                 let mut first = true;
@@ -586,12 +421,8 @@ impl std::fmt::Display for TemplateValue {
                     first = false;
                 }
                 write!(f, "}}")
-            },
-            TemplateValue::Null => write!(f, "null"),
         }
     }
-}
-
 impl From<String> for TemplateValue {
     fn from(s: String) -> Self {
         TemplateValue::String(s)

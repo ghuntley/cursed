@@ -24,7 +24,6 @@ use std::collections::VecDeque;
 /// Operator precedence levels for expression parsing
 #[derive(Debug, Clone, Copy, PartialEq, PartialOrd)]
 pub enum Precedence {
-    Lowest = 1,
     Channel = 2,     // <-
     Equals = 3,      // ==, !=
     LessGreater = 4, // > or <
@@ -33,33 +32,14 @@ pub enum Precedence {
     Prefix = 7,      // -x, !x
     Call = 8,        // myFunction(x)
     Index = 9,       // array[index]
-}
-
 impl From<&TokenType> for Precedence {
     fn from(token_type: &TokenType) -> Self {
         match token_type {
-            TokenType::LeftArrow => Precedence::Channel,
-            TokenType::Equal | TokenType::NotEqual => Precedence::Equals,
             TokenType::LessThan | TokenType::LessThanEqual |
-            TokenType::GreaterThan | TokenType::GreaterThanEqual => Precedence::LessGreater,
-            TokenType::Plus | TokenType::Minus => Precedence::Sum,
-            TokenType::Multiply | TokenType::Divide | TokenType::Modulo => Precedence::Product,
-            TokenType::LeftParen => Precedence::Call,
-            TokenType::LeftBracket => Precedence::Index,
-            _ => Precedence::Lowest,
         }
     }
-}
-
 /// Main parser structure with error recovery
 pub struct Parser {
-    lexer: Lexer,
-    current_token: Token,
-    peek_token: Token,
-    errors: Vec<String>,
-    sync_tokens: Vec<TokenType>,
-}
-
 impl Parser {
     /// Create a new parser from lexer (main constructor)
     pub fn new(mut lexer: Lexer) -> crate::error::Result<()> {
@@ -67,10 +47,6 @@ impl Parser {
         let peek_token = lexer.next_token()?;
         
         Ok(Self {
-            lexer,
-            current_token,
-            peek_token,
-            errors: Vec::new(),
             sync_tokens: vec![
                 TokenType::Slay,      // function
                 TokenType::Sus,       // variable
@@ -84,29 +60,20 @@ impl Parser {
                 TokenType::Yolo,      // return
                 TokenType::Async,     // async
                 TokenType::Await,     // await
-            ],
         })
-    }
-    
     /// Parse from tokens (convenience method for tests)
     pub fn from_tokens(tokens: Vec<Token>) -> crate::error::Result<()> {
         // Create a dummy lexer from tokens
         let input = tokens.iter().map(|t| t.literal.clone()).collect::<Vec<_>>().join(" ");
         let lexer = Lexer::new(&input);
         Self::new(lexer)
-    }
-
     /// Create parser from source string
     pub fn from_source(source: &str) -> crate::error::Result<()> {
         let lexer = Lexer::new(source);
         Self::new(lexer)
-    }
-    
     /// Convenience method for tests - alias for parse_program
     pub fn parse(&mut self) -> crate::error::Result<()> {
         self.parse_program()
-    }
-    
     /// Parse a complete CURSED program
     pub fn parse_program(&mut self) -> crate::error::Result<()> {
         let mut program = Program::new();
@@ -120,22 +87,16 @@ impl Parser {
                 program.package_name = Some(package_name);
             }
             self.skip_newlines();
-        }
-        
         // Parse imports
         while self.current_token_is(&TokenType::Yeet) {
             let import = self.parse_import_statement()?;
             program.add_import(import);
             self.skip_newlines();
-        }
-        
         // Parse top-level declarations and statements
         while !self.current_token_is(&TokenType::Eof) {
             self.skip_newlines();
             if self.current_token_is(&TokenType::Eof) {
                 break;
-            }
-            
             match self.parse_statement() {
                 Ok(stmt) => {
                     program.add_statement(stmt);
@@ -150,35 +111,21 @@ impl Parser {
                     self.synchronize();
                 }
             }
-        }
-        
         if !self.errors.is_empty() {
             return Err(CursedError::Parse(format!("Parse errors: {}", self.errors.join(", "))));
-        }
-        
         Ok(program)
-    }
-    
     /// Get parser errors
     pub fn errors(&self) -> Vec<String> {
         self.errors.clone()
-    }
-    
     // Token manipulation helpers
     fn advance_token(&mut self) -> crate::error::Result<()> {
         self.current_token = self.peek_token.clone();
         self.peek_token = self.lexer.next_token()?;
         Ok(())
-    }
-    
     fn current_token_is(&self, token_type: &TokenType) -> bool {
         self.current_token.token_type == *token_type
-    }
-    
     fn peek_token_is(&self, token_type: &TokenType) -> bool {
         self.peek_token.token_type == *token_type
-    }
-    
     fn expect_token(&mut self, token_type: TokenType) -> crate::error::Result<()> {
         if self.current_token.token_type == token_type {
             let token = self.current_token.clone();
@@ -186,10 +133,6 @@ impl Parser {
             Ok(token)
         } else {
             Err(CursedError::Parse(format!(
-                "Expected {:?}, got {:?} at line {} column {}",
-                token_type,
-                self.current_token.token_type,
-                self.current_token.location.line,
                 self.current_token.location.column
             )))
         }
@@ -201,16 +144,10 @@ impl Parser {
                 break;
             }
         }
-    }
-    
     fn current_precedence(&self) -> Precedence {
         Precedence::from(&self.current_token.token_type)
-    }
-    
     fn peek_precedence(&self) -> Precedence {
         Precedence::from(&self.peek_token.token_type)
-    }
-    
     // CursedError recovery
     fn synchronize(&mut self) {
         while !self.current_token_is(&TokenType::Eof) {
@@ -221,21 +158,15 @@ impl Parser {
                 return;
             }
         }
-    }
-    
     fn parse_package_declaration(&mut self) -> crate::error::Result<()> {
         self.expect_token(TokenType::Vibe)?;
         
         if !self.current_token_is(&TokenType::Identifier) {
             return Err(CursedError::Parse("Expected package name after 'vibe'".to_string()));
-        }
-        
         let package_name = self.current_token.literal.clone();
         self.advance_token()?;
         
         Ok(Some(package_name))
-    }
-    
     fn parse_import_statement(&mut self) -> crate::error::Result<()> {
         let token = self.expect_token(TokenType::Yeet)?;
         
@@ -252,13 +183,10 @@ impl Parser {
             (None, path)
         } else {
             return Err(CursedError::Parse("Expected import path".to_string()));
-        };
         
         Ok(if let Some(alias) = alias {
             ImportStatement::with_alias(token, path, alias)
         } else {
             ImportStatement::new(token, path)
         })
-    }
-    
 }

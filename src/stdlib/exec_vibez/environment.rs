@@ -13,17 +13,11 @@ use super::error::{ExecResult, invalid_arguments};
 #[derive(Debug, Clone)]
 pub struct Environment {
     /// Environment variables map
-    variables: HashMap<String, String>,
     /// Whether to inherit system environment
-    inherit_system: bool,
-}
-
 impl Environment {
     /// Create a new empty environment
     pub fn new() -> Self {
         Self {
-            variables: HashMap::new(),
-            inherit_system: true,
         }
     }
     
@@ -32,13 +26,9 @@ impl Environment {
         let mut env = Self::new();
         env.inherit_system_vars();
         env
-    }
-    
     /// Create an environment without system variables
     pub fn empty() -> Self {
         Self {
-            variables: HashMap::new(),
-            inherit_system: false,
         }
     }
     
@@ -46,8 +36,6 @@ impl Environment {
     pub fn set(&mut self, key: &str, value: &str) -> &mut Self {
         self.variables.insert(key.to_string(), value.to_string());
         self
-    }
-    
     /// Get an environment variable
     pub fn get(&self, key: &str) -> Option<&String> {
         self.variables.get(key).or_else(|| {
@@ -64,20 +52,14 @@ impl Environment {
                 None
             }
         })
-    }
-    
     /// Remove an environment variable
     pub fn remove(&mut self, key: &str) -> &mut Self {
         self.variables.remove(key);
         self
-    }
-    
     /// Clear all environment variables
     pub fn clear(&mut self) -> &mut Self {
         self.variables.clear();
         self
-    }
-    
     /// Append to an environment variable (e.g., PATH)
     pub fn append(&mut self, key: &str, value: &str) -> &mut Self {
         if let Some(existing) = self.variables.get(key) {
@@ -95,8 +77,6 @@ impl Environment {
             self.variables.insert(key.to_string(), value.to_string());
         }
         self
-    }
-    
     /// Prepend to an environment variable
     pub fn prepend(&mut self, key: &str, value: &str) -> &mut Self {
         if let Some(existing) = self.variables.get(key) {
@@ -114,14 +94,10 @@ impl Environment {
             self.variables.insert(key.to_string(), value.to_string());
         }
         self
-    }
-    
     /// Set whether to inherit system environment variables
     pub fn set_inherit_system(&mut self, inherit: bool) -> &mut Self {
         self.inherit_system = inherit;
         self
-    }
-    
     /// Inherit all current system environment variables
     pub fn inherit_system_vars(&mut self) -> &mut Self {
         for (key, value) in env::vars() {
@@ -131,8 +107,6 @@ impl Environment {
             }
         }
         self
-    }
-    
     /// Convert to a vector of "KEY=VALUE" strings for process execution
     pub fn to_env_vec(&self) -> Vec<String> {
         let mut env_vec = Vec::new();
@@ -162,8 +136,6 @@ impl Environment {
         }
         
         env_vec
-    }
-    
     /// Convert to a vector of OsString pairs for std::process::Command
     pub fn to_os_env(&self) -> Vec<(OsString, OsString)> {
         let mut env_vec = Vec::new();
@@ -179,8 +151,6 @@ impl Environment {
                     }
                 }
                 env_vec.push((key, value));
-            }
-            
             // Add any variables we have that aren't in the system environment
             for (key, value) in &self.variables {
                 if env::var(key).is_err() {
@@ -195,8 +165,6 @@ impl Environment {
         }
         
         env_vec
-    }
-    
     /// Get the number of environment variables
     pub fn len(&self) -> usize {
         if self.inherit_system {
@@ -222,14 +190,10 @@ impl Environment {
             self.variables.insert(key.clone(), value.clone());
         }
         self
-    }
-    
     /// Create a copy with modifications
     pub fn with_var(mut self, key: &str, value: &str) -> Self {
         self.set(key, value);
         self
-    }
-    
     /// Create a copy without a variable
     pub fn without_var(mut self, key: &str) -> Self {
         self.remove(key);
@@ -246,12 +210,8 @@ impl Default for Environment {
 /// Create a new environment
 pub fn new_environment() -> Environment {
     Environment::new()
-}
-
 /// Create a command with a custom environment
 pub fn command_with_env(name: &str, args: &[&str], env: Environment) -> Cmd {
     let mut cmd = Cmd::new(name, args);
     cmd.set_env(env);
     cmd
-}
-

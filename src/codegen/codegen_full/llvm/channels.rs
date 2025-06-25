@@ -29,70 +29,38 @@ use tracing::{debug, error, info, instrument, warn};
 #[derive(Debug)]
 pub struct LlvmChannelCompiler<'ctx> {
     /// Type registry for channel type management
-    type_registry: LlvmTypeRegistry,
     /// Expression context for variable and type management
-    context: ExpressionContext<'ctx>,
     /// Generated LLVM IR output
-    ir_output: Vec<String>,
     /// Channel type instances cache
-    channel_types: HashMap<String, CompiledChannelType>,
     /// Runtime function declarations
-    runtime_functions: HashMap<String, RuntimeFunction>,
-}
-
 /// Compiled channel type information
 #[derive(Debug, Clone)]
 pub struct CompiledChannelType {
     /// Element type of the channel (T in dm<T>)
-    element_type: LlvmType,
     /// LLVM struct type for channel handle
-    handle_type: String,
     /// Runtime type identifier
-    type_id: u64,
     /// Size of channel buffer (if buffered)
-    buffer_size: Option<usize>,
-}
-
 /// Runtime function metadata for LLVM integration
 #[derive(Debug, Clone)]
 pub struct RuntimeFunction {
     /// Function name in LLVM IR
-    llvm_name: String,
     /// Return type
-    return_type: LlvmType,
     /// Parameter types
-    param_types: Vec<LlvmType>,
     /// Whether function can throw errors
-    can_error: bool,
-}
-
 /// Channel operation compilation results
 #[derive(Debug, Clone)]
 pub struct ChannelOperation {
     /// Generated LLVM value
-    result_value: LlvmValue,
     /// Generated IR instructions
-    instructions: Vec<String>,
     /// CursedError handling code (if applicable)
-    error_handling: Option<Vec<String>>,
-}
-
 impl<'ctx> LlvmChannelCompiler<'ctx> {
     /// Create new channel compiler with type registry
     #[instrument]
     pub fn new(type_registry: LlvmTypeRegistry, context: ExpressionContext<'ctx>) -> Self {
         let mut compiler = Self {
-            type_registry,
-            context,
-            ir_output: Vec::new(),
-            channel_types: HashMap::new(),
-            runtime_functions: HashMap::new(),
-        };
         
         compiler.initialize_runtime_functions();
         compiler
-    }
-
     /// Initialize runtime function declarations for channel operations
     #[instrument(skip(self))]
     fn initialize_runtime_functions(&mut self) {
@@ -100,53 +68,39 @@ impl<'ctx> LlvmChannelCompiler<'ctx> {
         
         // Channel creation function
         self.runtime_functions.insert("create_channel".to_string(), RuntimeFunction {
-            llvm_name: "@cursed_channel_create".to_string(),
             return_type: LlvmType::Pointer(Box::new(LlvmType::Int32)), // Channel handle
             param_types: vec![
                 LlvmType::Int32, // element_size
                 LlvmType::Int32, // buffer_size
                 LlvmType::Int64, // type_id
-            ],
-            can_error: true,
         });
 
         // Channel send function
         self.runtime_functions.insert("send".to_string(), RuntimeFunction {
-            llvm_name: "@cursed_channel_send".to_string(),
             return_type: LlvmType::Int32, // SendResult enum
             param_types: vec![
                 LlvmType::Pointer(Box::new(LlvmType::Int32)), // channel_handle
                 LlvmType::Pointer(Box::new(LlvmType::Int32)), // value_ptr
                 LlvmType::Boolean, // blocking
-            ],
-            can_error: true,
         });
 
         // Channel receive function
         self.runtime_functions.insert("receive".to_string(), RuntimeFunction {
-            llvm_name: "@cursed_channel_receive".to_string(),
             return_type: LlvmType::Int32, // ReceiveResult enum
             param_types: vec![
                 LlvmType::Pointer(Box::new(LlvmType::Int32)), // channel_handle
                 LlvmType::Pointer(Box::new(LlvmType::Int32)), // output_ptr
                 LlvmType::Boolean, // blocking
-            ],
-            can_error: true,
         });
 
         // Channel close function
         self.runtime_functions.insert("close".to_string(), RuntimeFunction {
-            llvm_name: "@cursed_channel_close".to_string(),
             return_type: LlvmType::Int32, // Result code
             param_types: vec![
                 LlvmType::Pointer(Box::new(LlvmType::Int32)), // channel_handle
-            ],
-            can_error: true,
         });
 
         info!("Initialized {} runtime functions", self.runtime_functions.len());
-    }
-
     /// Compile channel type for generic `dm<T>` declaration
     #[instrument(skip(self), fields(element_type = ?element_type))]
     pub fn compile_channel_type(&mut self, element_type: &LlvmType, buffer_size: Option<usize>) -> crate::error::Result<()> {
@@ -158,8 +112,6 @@ impl<'ctx> LlvmChannelCompiler<'ctx> {
         if let Some(compiled) = self.channel_types.get(&type_key) {
             debug!("Using cached channel type: {}", type_key);
             return Ok(compiled.clone());
-        }
-
         // Generate type ID for runtime identification
         let type_id = self.generate_type_id(&type_key);
         
@@ -167,18 +119,11 @@ impl<'ctx> LlvmChannelCompiler<'ctx> {
         let handle_type = self.get_channel_struct_type(element_type)?;
         
         let compiled_type = CompiledChannelType {
-            element_type: element_type.clone(),
-            handle_type,
-            type_id,
-            buffer_size,
-        };
 
         self.channel_types.insert(type_key.clone(), compiled_type.clone());
         
         info!("Compiled channel type: {} with type_id: {}", type_key, type_id);
         Ok(compiled_type)
-    }
-
     /// Generate LLVM struct layout for channel handles
     #[instrument(skip(self), fields(element_type = ?element_type))]
     fn get_channel_struct_type(&mut self, element_type: &LlvmType) -> crate::error::Result<()> {
@@ -187,7 +132,6 @@ impl<'ctx> LlvmChannelCompiler<'ctx> {
         
         // Generate channel handle struct
         let struct_def = format!(
-            "%{} = type {{ i8*, i64, i32, i32 }}",
             struct_name.trim_start_matches('%')
         );
         
@@ -196,17 +140,12 @@ impl<'ctx> LlvmChannelCompiler<'ctx> {
         
         // Add runtime metadata for channel operations
         let metadata = format!(
-            "!{}_metadata = !{{ !\"element_type\", !\"{}\", !\"struct_name\", !\"{}\" }}",
-            struct_name.trim_start_matches('%').replace(".", "_"),
-            element_llvm,
             struct_name
         );
         self.ir_output.push(metadata);
         
         debug!("Generated channel struct type: {}", struct_name);
         Ok(struct_name)
-    }
-
     /// Compile channel creation expression (e.g., `make(dm<int>, 10)`)
     #[instrument(skip(self), fields(element_type = ?element_type, buffer_size = ?buffer_size))]
     pub fn compile_channel_creation(&mut self, element_type: &LlvmType, buffer_size: Option<usize>) -> crate::error::Result<()> {
@@ -220,36 +159,18 @@ impl<'ctx> LlvmChannelCompiler<'ctx> {
         let buffer_size_val = buffer_size.unwrap_or(0);
         
         let call_instruction = format!(
-            "{} = call {} {}(i32 {}, i32 {}, i64 {})",
-            result_temp,
-            create_fn.return_type.to_llvm_string(),
-            create_fn.llvm_name,
-            element_size,
-            buffer_size_val,
             channel_type.type_id
         );
 
         // CursedError handling for channel creation
         let error_check = vec![
-            format!("{}_is_null = icmp eq {}* {}, null", result_temp, 
-                   create_fn.return_type.to_llvm_string().trim_end_matches('*'), result_temp),
-            format!("br i1 {}_is_null, label %channel_create_error, label %channel_create_success", result_temp),
         ];
 
         let operation = ChannelOperation {
             result_value: LlvmValue {
-                value_type: create_fn.return_type.clone(),
-                llvm_name: result_temp.clone(),
-                is_constant: false,
-            },
-            instructions: vec![call_instruction],
-            error_handling: Some(error_check),
-        };
 
         info!("Compiled channel creation operation");
         Ok(operation)
-    }
-
     /// Compile send operation for `ch <- value` syntax
     #[instrument(skip(self), fields(channel_expr = ?channel_expr, value_expr = ?value_expr))]
     pub fn compile_send_operation(&mut self, channel_expr: &dyn Expression, value_expr: &dyn Expression, blocking: bool) -> crate::error::Result<()> {
@@ -269,23 +190,10 @@ impl<'ctx> LlvmChannelCompiler<'ctx> {
         
         // Allocate stack space for value
         let mut instructions = vec![
-            format!("{} = alloca {}", value_ptr_temp, value_result.value_type.to_llvm_string()),
-            format!("store {} {}, {}* {}", 
-                   value_result.value_type.to_llvm_string(), 
-                   value_result.llvm_name,
-                   value_result.value_type.to_llvm_string(),
-                   value_ptr_temp),
         ];
 
         // Call runtime send function
         let send_call = format!(
-            "{} = call {} {}({}* {}, i8* {}, i1 {})",
-            result_temp,
-            send_fn.return_type.to_llvm_string(),
-            send_fn.llvm_name,
-            channel_value.value_type.to_llvm_string().trim_end_matches('*'),
-            channel_value.llvm_name,
-            value_ptr_temp,
             if blocking { "true" } else { "false" }
         );
         instructions.push(send_call);
@@ -295,18 +203,9 @@ impl<'ctx> LlvmChannelCompiler<'ctx> {
 
         let operation = ChannelOperation {
             result_value: LlvmValue {
-                value_type: send_fn.return_type.clone(),
-                llvm_name: result_temp,
-                is_constant: false,
-            },
-            instructions,
-            error_handling: Some(error_handling),
-        };
 
         info!("Compiled send operation");
         Ok(operation)
-    }
-
     /// Compile receive operation for `<-ch` syntax
     #[instrument(skip(self), fields(channel_expr = ?channel_expr))]
     pub fn compile_receive_operation(&mut self, channel_expr: &dyn Expression, blocking: bool) -> crate::error::Result<()> {
@@ -327,28 +226,16 @@ impl<'ctx> LlvmChannelCompiler<'ctx> {
         
         // Allocate stack space for received value
         let mut instructions = vec![
-            format!("{} = alloca {}", output_ptr_temp, element_type.to_llvm_string()),
         ];
 
         // Call runtime receive function
         let receive_call = format!(
-            "{} = call {} {}({}* {}, i8* {}, i1 {})",
-            receive_result_temp,
-            receive_fn.return_type.to_llvm_string(),
-            receive_fn.llvm_name,
-            channel_value.value_type.to_llvm_string().trim_end_matches('*'),
-            channel_value.llvm_name,
-            output_ptr_temp,
             if blocking { "true" } else { "false" }
         );
         instructions.push(receive_call);
 
         // Load received value
         let load_value = format!(
-            "{} = load {}, {}* {}",
-            result_temp,
-            element_type.to_llvm_string(),
-            element_type.to_llvm_string(),
             output_ptr_temp
         );
         instructions.push(load_value);
@@ -358,18 +245,9 @@ impl<'ctx> LlvmChannelCompiler<'ctx> {
 
         let operation = ChannelOperation {
             result_value: LlvmValue {
-                value_type: element_type,
-                llvm_name: result_temp,
-                is_constant: false,
-            },
-            instructions,
-            error_handling: Some(error_handling),
-        };
 
         info!("Compiled receive operation");
         Ok(operation)
-    }
-
     /// Compile channel close operation
     #[instrument(skip(self), fields(channel_expr = ?channel_expr))]
     pub fn compile_channel_close(&mut self, channel_expr: &dyn Expression) -> crate::error::Result<()> {
@@ -385,34 +263,18 @@ impl<'ctx> LlvmChannelCompiler<'ctx> {
         
         // Call runtime close function
         let close_call = format!(
-            "{} = call {} {}({}* {})",
-            result_temp,
-            close_fn.return_type.to_llvm_string(),
-            close_fn.llvm_name,
-            channel_value.value_type.to_llvm_string().trim_end_matches('*'),
             channel_value.llvm_name
         );
 
         // CursedError handling for close operation
         let error_handling = vec![
-            format!("{}_success = icmp eq i32 {}, 0", result_temp, result_temp),
-            format!("br i1 {}_success, label %close_success, label %close_error", result_temp),
         ];
 
         let operation = ChannelOperation {
             result_value: LlvmValue {
-                value_type: close_fn.return_type.clone(),
-                llvm_name: result_temp,
-                is_constant: false,
-            },
-            instructions: vec![close_call],
-            error_handling: Some(error_handling),
-        };
 
         info!("Compiled channel close operation");
         Ok(operation)
-    }
-
     /// Helper: Compile channel expression to get channel handle
     #[instrument(skip(self))]
     fn compile_channel_expression(&mut self, expr: &dyn Expression) -> crate::error::Result<()> {
@@ -437,16 +299,7 @@ impl<'ctx> LlvmChannelCompiler<'ctx> {
         if let Some(literal) = expr.as_any().downcast_ref::<Literal>() {
             match &literal.value {
                 LiteralValue::Integer(i) => Ok(LlvmValue {
-                    value_type: LlvmType::Int32,
-                    llvm_name: i.to_string(),
-                    is_constant: true,
-                }),
                 LiteralValue::String(s) => Ok(LlvmValue {
-                    value_type: LlvmType::String,
-                    llvm_name: format!("\"{}\"", s),
-                    is_constant: true,
-                }),
-                _ => Err(CursedError::Runtime("Unsupported literal type".to_string())),
             }
         } else {
             Err(CursedError::Runtime("Complex expressions not yet supported".to_string()))
@@ -460,7 +313,6 @@ impl<'ctx> LlvmChannelCompiler<'ctx> {
         // This is simplified - real implementation would use type registry
         match &channel_value.value_type {
             LlvmType::Pointer(_) => Ok(LlvmType::Int32), // Default for now
-            _ => Err(CursedError::Runtime("Invalid channel type".to_string())),
         }
     }
 
@@ -468,30 +320,14 @@ impl<'ctx> LlvmChannelCompiler<'ctx> {
     #[instrument(skip(self))]
     fn generate_send_error_handling(&self, result_temp: &str) -> crate::error::Result<()> {
         Ok(vec![
-            format!("{}_is_error = icmp ne i32 {}, 0", result_temp, result_temp),
-            format!("br i1 {}_is_error, label %send_error, label %send_success", result_temp),
             // CursedError block would handle SendResult enum cases
-            "send_error:".to_string(),
-            format!("  ; Handle send error code in {}", result_temp),
-            "  br label %send_success".to_string(),
-            "send_success:".to_string(),
         ])
-    }
-
     /// Helper: Generate error handling for receive operations
     #[instrument(skip(self))]
     fn generate_receive_error_handling(&self, result_temp: &str) -> crate::error::Result<()> {
         Ok(vec![
-            format!("{}_is_error = icmp ne i32 {}, 0", result_temp, result_temp),
-            format!("br i1 {}_is_error, label %receive_error, label %receive_success", result_temp),
             // CursedError block would handle ReceiveResult enum cases
-            "receive_error:".to_string(),
-            format!("  ; Handle receive error code in {}", result_temp),
-            "  br label %receive_success".to_string(),
-            "receive_success:".to_string(),
         ])
-    }
-
     /// Helper: Generate type ID for runtime type identification
     #[instrument(skip(self))]
     fn generate_type_id(&self, type_name: &str) -> u64 {
@@ -501,20 +337,11 @@ impl<'ctx> LlvmChannelCompiler<'ctx> {
         let mut hasher = DefaultHasher::new();
         type_name.hash(&mut hasher);
         hasher.finish()
-    }
-
     /// Helper: Get size of LLVM type in bytes
     #[instrument(skip(self))]
     fn get_type_size(&self, llvm_type: &LlvmType) -> usize {
         match llvm_type {
-            LlvmType::Int32 => 4,
-            LlvmType::Int64 => 8,
-            LlvmType::Float64 => 8,
-            LlvmType::Boolean => 1,
             LlvmType::String => 8, // Pointer size
-            LlvmType::Pointer(_) => 8,
-            LlvmType::Void => 0,
-            LlvmType::Function { .. } => 8,
         }
     }
 
@@ -530,13 +357,8 @@ impl<'ctx> LlvmChannelCompiler<'ctx> {
                 .map(|t| t.to_llvm_string())
                 .collect();
             output.push(format!(
-                "declare {} {}({})",
-                func.return_type.to_llvm_string(),
-                func.llvm_name,
                 params.join(", ")
             ));
-        }
-        
         output.push("".to_string());
         
         // Add generated IR
@@ -556,8 +378,6 @@ pub trait ChannelExpressionCompiler {
     
     /// Compile channel creation expression
     fn compile_channel_creation_expression(&mut self, element_type: &LlvmType, buffer_size: Option<usize>) -> crate::error::Result<()>;
-}
-
 impl<'ctx> ChannelExpressionCompiler for LlvmChannelCompiler<'ctx> {
     #[instrument(skip(self))]
     fn compile_send_expression(&mut self, channel: &dyn Expression, value: &dyn Expression) -> crate::error::Result<()> {
@@ -567,11 +387,7 @@ impl<'ctx> ChannelExpressionCompiler for LlvmChannelCompiler<'ctx> {
         self.ir_output.extend(operation.instructions);
         if let Some(error_handling) = operation.error_handling {
             self.ir_output.extend(error_handling);
-        }
-        
         Ok(operation.result_value)
-    }
-
     #[instrument(skip(self))]
     fn compile_receive_expression(&mut self, channel: &dyn Expression) -> crate::error::Result<()> {
         let operation = self.compile_receive_operation(channel, true)?;
@@ -580,11 +396,7 @@ impl<'ctx> ChannelExpressionCompiler for LlvmChannelCompiler<'ctx> {
         self.ir_output.extend(operation.instructions);
         if let Some(error_handling) = operation.error_handling {
             self.ir_output.extend(error_handling);
-        }
-        
         Ok(operation.result_value)
-    }
-
     #[instrument(skip(self))]
     fn compile_channel_creation_expression(&mut self, element_type: &LlvmType, buffer_size: Option<usize>) -> crate::error::Result<()> {
         let operation = self.compile_channel_creation(element_type, buffer_size)?;
@@ -593,8 +405,6 @@ impl<'ctx> ChannelExpressionCompiler for LlvmChannelCompiler<'ctx> {
         self.ir_output.extend(operation.instructions);
         if let Some(error_handling) = operation.error_handling {
             self.ir_output.extend(error_handling);
-        }
-        
         Ok(operation.result_value)
     }
 }

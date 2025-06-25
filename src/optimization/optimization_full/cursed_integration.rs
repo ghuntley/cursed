@@ -6,9 +6,8 @@ use crate::error::{CursedError, Result};
 use crate::optimization::config::{OptimizationConfig};
 use crate::common_types::optimization_level::OptimizationLevel;
 use crate::optimization::enhanced_analysis::{
-    EnhancedPerformanceAnalyzer, EnhancedAnalysisResult, PerformanceBottleneck, 
     OptimizationRecommendation, CompilationPhase
-};
+// };
 
 use crate::optimization::lto::{LtoOptimizer, LtoConfig, LtoLevel};
 use crate::codegen::llvm::optimization::{OptimizationManager, OptimizationStats};
@@ -21,128 +20,55 @@ use tracing::{info, instrument, debug, warn};
 /// Comprehensive CURSED optimization coordinator
 pub struct CursedOptimizationCoordinator<'ctx> {
     /// Core LLVM optimization manager
-    llvm_optimizer: OptimizationManager<'ctx>,
     /// Enhanced performance analyzer
-    performance_analyzer: EnhancedPerformanceAnalyzer,
     /// Link-time optimizer
-    lto_optimizer: Option<LtoOptimizer>,
     /// Optimization configuration
-    config: CursedOptimizationConfig,
     /// Cumulative statistics
-    cumulative_stats: Arc<Mutex<CursedOptimizationStats>>,
     /// Optimization history for learning
-    optimization_history: Vec<OptimizationSession>,
-}
-
 /// Configuration for CURSED optimization integration
 #[derive(Debug, Clone)]
 pub struct CursedOptimizationConfig {
     /// Base optimization configuration
-    pub base_config: OptimizationConfig,
     /// LTO configuration
-    pub lto_config: Option<LtoConfig>,
     /// Enable CURSED-specific optimizations
-    pub enable_cursed_optimizations: bool,
     /// Enable performance analysis
-    pub enable_performance_analysis: bool,
     /// Enable adaptive optimization tuning
-    pub enable_adaptive_tuning: bool,
     /// Performance analysis threshold
-    pub analysis_threshold: Duration,
     /// Maximum optimization iterations
-    pub max_optimization_iterations: usize,
     /// Target performance improvement
-    pub target_improvement: f64,
-}
-
 impl Default for CursedOptimizationConfig {
     fn default() -> Self {
         Self {
-            base_config: OptimizationConfig::default(),
-            lto_config: Some(LtoConfig::default()),
-            enable_cursed_optimizations: true,
-            enable_performance_analysis: true,
-            enable_adaptive_tuning: true,
-            analysis_threshold: Duration::from_millis(100),
-            max_optimization_iterations: 3,
             target_improvement: 0.15, // 15% improvement target
         }
     }
-}
-
 /// Comprehensive CURSED optimization statistics
 #[derive(Debug, Clone, Default)]
 pub struct CursedOptimizationStats {
     /// Total optimization sessions
-    pub sessions: usize,
     /// Total CURSED optimizations applied
-    pub cursed_optimizations: usize,
     /// Total performance improvements achieved
-    pub total_performance_improvement: f64,
     /// Total memory reductions achieved
-    pub total_memory_reduction: f64,
     /// LLVM optimization statistics
-    pub llvm_stats: OptimizationStats,
     /// Performance analysis results
-    pub analysis_results: Vec<EnhancedAnalysisResult>,
     /// Optimization effectiveness by category
-    pub effectiveness_by_category: HashMap<OptimizationCategory, CategoryStats>,
     /// Adaptive tuning adjustments made
-    pub adaptive_adjustments: usize,
-}
-
 /// Optimization category tracking
 #[derive(Debug, Clone, Hash, PartialEq, Eq)]
 pub enum OptimizationCategory {
-    Goroutines,
-    Channels,
-    GarbageCollection,
-    GenZKeywords,
-    ControlFlow,
-    MemoryLayout,
-    CrossModule,
-    ProfileGuided,
-}
-
 /// Statistics per optimization category
 #[derive(Debug, Clone, Default)]
 pub struct CategoryStats {
-    pub optimizations_applied: usize,
-    pub performance_improvement: f64,
-    pub memory_reduction: f64,
-    pub success_rate: f64,
-}
-
 /// Record of an optimization session
 #[derive(Debug, Clone)]
 pub struct OptimizationSession {
-    pub timestamp: chrono::DateTime<chrono::Utc>,
-    pub input_characteristics: InputCharacteristics,
-    pub optimizations_applied: HashMap<OptimizationCategory, usize>,
-    pub performance_improvement: f64,
-    pub memory_reduction: f64,
-    pub compilation_time: Duration,
-    pub analysis_result: Option<EnhancedAnalysisResult>,
-}
-
 /// Characteristics of the input being optimized
 #[derive(Debug, Clone)]
 pub struct InputCharacteristics {
-    pub source_size: usize,
-    pub function_count: usize,
-    pub goroutine_usage: usize,
-    pub channel_usage: usize,
-    pub gc_allocations: usize,
-    pub genz_keyword_usage: usize,
-    pub complexity_score: f64,
-}
-
 impl<'ctx> CursedOptimizationCoordinator<'ctx> {
     /// Create a new CURSED optimization coordinator
     #[instrument(skip(context))]
     pub fn new(
-        context: &'ctx inkwell::context::Context,
-        config: CursedOptimizationConfig,
     ) -> Result<Self> {
         info!("Initializing CURSED optimization coordinator");
         
@@ -155,25 +81,12 @@ impl<'ctx> CursedOptimizationCoordinator<'ctx> {
             Some(LtoOptimizer::new(lto_config.clone())?)
         } else {
             None
-        };
         
         Ok(Self {
-            llvm_optimizer,
-            performance_analyzer,
-            lto_optimizer,
-            config,
-            cumulative_stats: Arc::new(Mutex::new(CursedOptimizationStats::default())),
-            optimization_history: Vec::new(),
         })
-    }
-    
     /// Perform comprehensive CURSED optimization
     #[instrument(skip(self, module, source))]
     pub async fn optimize_comprehensive(
-        &mut self,
-        module: &inkwell::module::Module<'ctx>,
-        source: &str,
-        file_path: &str,
     ) -> Result<CursedOptimizationResult> {
         let session_start = Instant::now();
         info!("Starting comprehensive CURSED optimization for {}", file_path);
@@ -183,25 +96,13 @@ impl<'ctx> CursedOptimizationCoordinator<'ctx> {
         
         // 2. Initialize optimization session
         let mut session = OptimizationSession {
-            timestamp: chrono::Utc::now(),
-            input_characteristics,
-            optimizations_applied: HashMap::new(),
-            performance_improvement: 0.0,
-            memory_reduction: 0.0,
-            compilation_time: Duration::from_millis(0),
-            analysis_result: None,
-        };
         
         // 3. Performance analysis (if enabled and meets threshold)
         let analysis_result = if self.config.enable_performance_analysis {
             Some(self.performance_analyzer.analyze_compilation(
-                source,
-                file_path,
-                self.config.base_config.level,
             ).await?)
         } else {
             None
-        };
         
         session.analysis_result = analysis_result.clone();
         
@@ -222,29 +123,18 @@ impl<'ctx> CursedOptimizationCoordinator<'ctx> {
         if let Some(ref mut lto_optimizer) = self.lto_optimizer {
             let lto_result = self.apply_lto_optimization(lto_optimizer, module)?;
             optimization_result.merge_lto_results(lto_result);
-        }
-        
         // 8. Update session and statistics
         session.compilation_time = session_start.elapsed();
         self.update_statistics(&session)?;
         self.optimization_history.push(session);
         
         info!(
-            optimizations_applied = optimization_result.total_optimizations,
-            performance_improvement = %format!("{:.1}%", optimization_result.performance_improvement * 100.0),
-            memory_reduction = %format!("{:.1}%", optimization_result.memory_reduction * 100.0),
-            compilation_time = ?session.compilation_time,
             "Comprehensive CURSED optimization completed"
         );
         
         Ok(optimization_result)
-    }
-    
     /// Analyze input characteristics for optimization planning
     fn analyze_input_characteristics(
-        &self,
-        source: &str,
-        module: &inkwell::module::Module<'ctx>,
     ) -> Result<InputCharacteristics> {
         let source_size = source.len();
         let function_count = module.get_functions().count();
@@ -275,16 +165,7 @@ impl<'ctx> CursedOptimizationCoordinator<'ctx> {
         let complexity_score = self.calculate_complexity_score(source, function_count);
         
         Ok(InputCharacteristics {
-            source_size,
-            function_count,
-            goroutine_usage,
-            channel_usage,
-            gc_allocations,
-            genz_keyword_usage,
-            complexity_score,
         })
-    }
-    
     /// Calculate complexity score for input
     fn calculate_complexity_score(&self, source: &str, function_count: usize) -> f64 {
         let lines = source.split("\n").count() as f64;
@@ -292,7 +173,6 @@ impl<'ctx> CursedOptimizationCoordinator<'ctx> {
             lines / function_count as f64
         } else {
             lines
-        };
         
         // Complexity factors
         let size_factor = (lines / 1000.0).min(2.0); // Max 2x for size
@@ -300,8 +180,6 @@ impl<'ctx> CursedOptimizationCoordinator<'ctx> {
         let nesting_factor = source.matches('{').count() as f64 / lines.max(1.0);
         
         size_factor + function_complexity + nesting_factor
-    }
-    
     /// Apply adaptive tuning based on performance analysis
     fn apply_adaptive_tuning(&mut self, analysis: &EnhancedAnalysisResult) -> Result<()> {
         debug!("Applying adaptive tuning based on performance analysis");
@@ -317,8 +195,6 @@ impl<'ctx> CursedOptimizationCoordinator<'ctx> {
             // Good performance, can use lighter optimization for faster compilation
             self.config.base_config.level = OptimizationLevel::O2;
             debug!("Using default optimization for already good performance");
-        }
-        
         // Adjust based on bottlenecks
         for bottleneck in &analysis.bottlenecks {
             match bottleneck.phase {
@@ -341,16 +217,9 @@ impl<'ctx> CursedOptimizationCoordinator<'ctx> {
         // Update statistics
         if let Ok(mut stats) = self.cumulative_stats.lock() {
             stats.adaptive_adjustments += 1;
-        }
-        
         Ok(())
-    }
-    
     /// Apply iterative optimization with feedback
     async fn apply_iterative_optimization(
-        &mut self,
-        module: &inkwell::module::Module<'ctx>,
-        session: &mut OptimizationSession,
     ) -> Result<CursedOptimizationResult> {
         let mut total_optimizations = 0;
         let mut best_performance = 0.0;
@@ -381,14 +250,10 @@ impl<'ctx> CursedOptimizationCoordinator<'ctx> {
             }
             if memory_reduction > best_memory {
                 best_memory = memory_reduction;
-            }
-            
             // Check if we've reached our target
             if performance_improvement >= self.config.target_improvement {
                 info!("Reached target performance improvement in {} iterations", iteration + 1);
                 break;
-            }
-            
             // Check for diminishing returns
             if iteration > 0 && performance_improvement < 0.02 {
                 debug!("Diminishing returns detected, stopping optimization");
@@ -400,16 +265,7 @@ impl<'ctx> CursedOptimizationCoordinator<'ctx> {
         session.memory_reduction = best_memory;
         
         Ok(CursedOptimizationResult {
-            total_optimizations,
-            performance_improvement: best_performance,
-            memory_reduction: best_memory,
-            compilation_time: start_time.elapsed(),
-            llvm_stats: self.llvm_optimizer.get_stats(),
-            cursed_optimizations_by_category: session.optimizations_applied.clone(),
-            analysis_insights: session.analysis_result.clone(),
         })
-    }
-    
     /// Update session category statistics
     fn update_session_category_stats(&self, session: &mut OptimizationSession, llvm_stats: &OptimizationStats) {
         // Estimate category breakdown based on input characteristics
@@ -432,39 +288,24 @@ impl<'ctx> CursedOptimizationCoordinator<'ctx> {
                 session.optimizations_applied.insert(OptimizationCategory::GenZKeywords, genz_opts);
             }
         }
-    }
-    
     /// Estimate performance improvement from optimization statistics
     fn estimate_performance_improvement(&self, stats: &OptimizationStats) -> f64 {
         let base_improvement = stats.cursed_specific_optimizations as f64 * 0.03; // 3% per optimization
         let llvm_improvement = match stats.passes_run {
-            0..=5 => 0.05,
-            6..=15 => 0.15,
-            16..=30 => 0.25,
-            _ => 0.35,
-        };
         
         (base_improvement + llvm_improvement).min(0.6) // Cap at 60%
-    }
-    
     /// Estimate memory reduction from optimization statistics
     fn estimate_memory_reduction(&self, stats: &OptimizationStats) -> f64 {
         let code_size_reduction = if stats.code_size_before > 0 {
             (stats.code_size_before - stats.code_size_after) as f64 / stats.code_size_before as f64
         } else {
             0.0
-        };
         
         let cursed_memory_reduction = stats.cursed_specific_optimizations as f64 * 0.02; // 2% per optimization
         
         (code_size_reduction + cursed_memory_reduction).min(0.4) // Cap at 40%
-    }
-    
     /// Apply LTO optimization with real LLVM functionality
     fn apply_lto_optimization(
-        &self,
-        lto_optimizer: &mut LtoOptimizer,
-        module: &inkwell::module::Module<'ctx>,
     ) -> Result<LtoOptimizationResult> {
         let start_time = Instant::now();
         info!("Starting real LTO optimization");
@@ -491,51 +332,27 @@ impl<'ctx> CursedOptimizationCoordinator<'ctx> {
         
         // Calculate real performance improvements
         let performance_improvement = self.calculate_lto_performance_improvement(
-            &pre_optimization_stats,
-            &post_optimization_stats,
         );
         
         let memory_reduction = if size_before > 0 {
             (size_before.saturating_sub(size_after) as f64) / (size_before as f64)
         } else {
             0.0
-        };
         
         let lto_optimization_time = start_time.elapsed();
         
         info!(
-            lto_time = ?lto_optimization_time,
-            functions_inlined = lto_result.optimization_results.inlining_results.functions_inlined.len(),
-            dead_functions_eliminated = lto_result.optimization_results.dce_results.eliminated_code.len(),
-            constants_propagated = lto_result.optimization_results.constant_propagation_results.propagated_constants.len(),
-            performance_improvement = %format!("{:.2}%", performance_improvement * 100.0),
-            memory_reduction = %format!("{:.2}%", memory_reduction * 100.0),
             "LTO optimization completed"
         );
         
         Ok(LtoOptimizationResult {
-            functions_inlined: lto_result.optimization_results.inlining_results.functions_inlined.len(),
-            dead_code_eliminated: lto_result.optimization_results.dce_results.eliminated_code.len(),
-            constants_propagated: lto_result.optimization_results.constant_propagation_results.propagated_constants.len(),
-            performance_improvement,
-            memory_reduction,
-            optimization_time: lto_optimization_time,
-            modules_processed: lto_result.statistics.modules_processed,
-            code_size_reduction: lto_result.statistics.code_size_reduction_percent(),
-            cross_module_optimizations: self.calculate_cross_module_optimizations(&lto_result),
-            thin_lto_partitions: lto_result.codegen_results.partition_count,
             cache_hits: if lto_result.statistics.cache_hit_rate > 0.0 { 
                 (lto_result.statistics.modules_processed as f64 * lto_result.statistics.cache_hit_rate) as usize 
             } else { 
                 0 
-            },
         })
-    }
-    
     /// Create a compilation unit from an LLVM module
     fn create_compilation_unit_from_module(
-        &self,
-        module: &inkwell::module::Module<'ctx>,
     ) -> Result<crate::optimization::lto::LtoCompilationUnit> {
         let module_name = module.get_name().to_string_lossy();
         let unit_id = format!("module_{}", module_name);
@@ -576,49 +393,29 @@ impl<'ctx> CursedOptimizationCoordinator<'ctx> {
         unit.metadata.insert("globals_count".to_string(), module.get_globals().count().to_string());
         
         Ok(unit)
-    }
-    
     /// Apply LTO optimization results back to the module
     fn apply_lto_results_to_module(
-        &self,
-        module: &inkwell::module::Module<'ctx>,
-        lto_result: &crate::optimization::lto::LtoResult,
     ) -> Result<()> {
         debug!("Applying LTO optimization results to module");
         
         // Apply inlining results
         for inlined_function in &lto_result.optimization_results.inlining_results.functions_inlined {
             self.apply_function_inlining(module, inlined_function)?;
-        }
-        
         // Apply dead code elimination results
         for dead_code in &lto_result.optimization_results.dce_results.eliminated_code {
             self.apply_dead_code_elimination(module, dead_code)?;
-        }
-        
         // Apply constant propagation results
         for constant_prop in &lto_result.optimization_results.constant_propagation_results.propagated_constants {
             self.apply_constant_propagation(module, constant_prop)?;
-        }
-        
         // Apply global optimizations
         for optimized_global in &lto_result.optimization_results.global_optimization_results.optimized_globals {
             self.apply_global_optimization(module, optimized_global)?;
-        }
-        
         // Apply devirtualization results
         for (caller, callee) in &lto_result.optimization_results.devirtualization_results.devirtualized_calls {
             self.apply_devirtualization(module, caller, callee)?;
-        }
-        
         Ok(())
-    }
-    
     /// Apply function inlining to the module
     fn apply_function_inlining(
-        &self,
-        module: &inkwell::module::Module<'ctx>,
-        inlining_opportunity: &crate::optimization::lto::InliningOpportunity,
     ) -> Result<()> {
         // Find the caller and callee functions
         if let Some(caller_fn) = module.get_function(&inlining_opportunity.caller) {
@@ -626,9 +423,6 @@ impl<'ctx> CursedOptimizationCoordinator<'ctx> {
                 // Check if inlining is beneficial (small callee, single use)
                 let callee_size = callee_fn.get_basic_blocks().count();
                 if callee_size <= 10 && inlining_opportunity.call_count == 1 {
-                    debug!("Inlining {} into {} (size: {})", 
-                           inlining_opportunity.callee, 
-                           inlining_opportunity.caller, 
                            callee_size);
                     
                     // In a full implementation, we would perform actual inlining here
@@ -636,18 +430,10 @@ impl<'ctx> CursedOptimizationCoordinator<'ctx> {
                     return Ok(());
                 }
             }
-        }
-        
-        debug!("Skipping inlining of {} into {} (not beneficial)", 
                inlining_opportunity.callee, inlining_opportunity.caller);
         Ok(())
-    }
-    
     /// Apply dead code elimination to the module
     fn apply_dead_code_elimination(
-        &self,
-        module: &inkwell::module::Module<'ctx>,
-        dead_code: &crate::optimization::lto::DeadCodeCandidate,
     ) -> Result<()> {
         if let Some(function_name) = &dead_code.function {
             if let Some(function) = module.get_function(function_name) {
@@ -681,55 +467,31 @@ impl<'ctx> CursedOptimizationCoordinator<'ctx> {
                     // For safety, we just mark it as processed
                 }
             }
-        }
-        
         Ok(())
-    }
-    
     /// Apply constant propagation to the module
     fn apply_constant_propagation(
-        &self,
-        _module: &inkwell::module::Module<'ctx>,
-        constant_prop: &crate::optimization::lto::ConstantPropagationOpportunity,
     ) -> Result<()> {
-        debug!("Propagating constant {} = {} (estimated benefit: {} bytes)",
-               constant_prop.variable,
-               constant_prop.constant_value,
                constant_prop.estimated_benefit);
         
         // In a full implementation, we would replace variable uses with constants
         // For now, we just log the optimization
         
         Ok(())
-    }
-    
     /// Apply global variable optimization to the module
     fn apply_global_optimization(
-        &self,
-        module: &inkwell::module::Module<'ctx>,
-        global_name: &str,
     ) -> Result<()> {
         if let Some(global) = module.get_global(global_name) {
             // Check if global can be optimized (e.g., made const, eliminated)
             let is_constant = global.is_constant();
             let linkage = global.get_linkage();
             
-            debug!("Optimizing global variable: {} (constant: {}, linkage: {:?})",
                    global_name, is_constant, linkage);
             
             // In a full implementation, we would apply the optimization
             // For now, we just mark it as processed
-        }
-        
         Ok(())
-    }
-    
     /// Apply devirtualization to the module
     fn apply_devirtualization(
-        &self,
-        _module: &inkwell::module::Module<'ctx>,
-        caller: &str,
-        callee: &str,
     ) -> Result<()> {
         debug!("Devirtualizing call from {} to {}", caller, callee);
         
@@ -737,8 +499,6 @@ impl<'ctx> CursedOptimizationCoordinator<'ctx> {
         // For now, we just log the optimization
         
         Ok(())
-    }
-    
     /// Collect metrics from a module for performance comparison
     fn collect_module_metrics(&self, module: &inkwell::module::Module<'ctx>) -> Result<ModuleMetrics> {
         let mut functions_count = 0;
@@ -758,37 +518,19 @@ impl<'ctx> CursedOptimizationCoordinator<'ctx> {
                     instructions_count += 1;
                     
                     match instruction.get_opcode() {
-                        inkwell::values::InstructionOpcode::Call => call_instructions += 1,
                         inkwell::values::InstructionOpcode::Load | 
-                        inkwell::values::InstructionOpcode::Store => load_store_instructions += 1,
                         inkwell::values::InstructionOpcode::Br | 
-                        inkwell::values::InstructionOpcode::Switch => branch_instructions += 1,
                         _ => {}
                     }
                 }
             }
-        }
-        
         let globals_count = module.get_globals().count();
         let ir_size = module.print_to_string().to_string().len();
         
         Ok(ModuleMetrics {
-            functions_count,
-            instructions_count,
-            basic_blocks_count,
-            globals_count,
-            call_instructions,
-            load_store_instructions,
-            branch_instructions,
-            ir_size,
         })
-    }
-    
     /// Calculate performance improvement from LTO optimization
     fn calculate_lto_performance_improvement(
-        &self,
-        before: &ModuleMetrics,
-        after: &ModuleMetrics,
     ) -> f64 {
         // Calculate improvement based on various metrics
         let instruction_reduction = if before.instructions_count > 0 {
@@ -796,20 +538,17 @@ impl<'ctx> CursedOptimizationCoordinator<'ctx> {
             (before.instructions_count as f64)
         } else {
             0.0
-        };
         
         let call_reduction = if before.call_instructions > 0 {
             (before.call_instructions.saturating_sub(after.call_instructions) as f64) / 
             (before.call_instructions as f64)
         } else {
             0.0
-        };
         
         let size_reduction = if before.ir_size > 0 {
             (before.ir_size.saturating_sub(after.ir_size) as f64) / (before.ir_size as f64)
         } else {
             0.0
-        };
         
         // Weight different improvements
         let weighted_improvement = 
@@ -819,8 +558,6 @@ impl<'ctx> CursedOptimizationCoordinator<'ctx> {
             
         // Cap improvement at reasonable maximum
         weighted_improvement.min(0.6) // Max 60% improvement
-    }
-    
     /// Calculate cross-module optimization count
     fn calculate_cross_module_optimizations(&self, lto_result: &crate::optimization::lto::LtoResult) -> usize {
         let inlining_count = lto_result.optimization_results.inlining_results.functions_inlined.len();
@@ -830,8 +567,6 @@ impl<'ctx> CursedOptimizationCoordinator<'ctx> {
         let devirt_count = lto_result.optimization_results.devirtualization_results.devirtualized_calls.len();
         
         inlining_count + dce_count + constant_prop_count + global_opt_count + devirt_count
-    }
-    
     /// Update cumulative statistics
     fn update_statistics(&self, session: &OptimizationSession) -> Result<()> {
         if let Ok(mut stats) = self.cumulative_stats.lock() {
@@ -863,16 +598,10 @@ impl<'ctx> CursedOptimizationCoordinator<'ctx> {
                     stats.analysis_results.remove(0);
                 }
             }
-        }
-        
         Ok(())
-    }
-    
     /// Get comprehensive statistics
     pub fn get_comprehensive_stats(&self) -> Result<CursedOptimizationStats> {
         Ok(self.cumulative_stats.lock().unwrap().clone())
-    }
-    
     /// Generate optimization report
     pub fn generate_comprehensive_report(&self) -> Result<String> {
         let stats = self.get_comprehensive_stats()?;
@@ -884,9 +613,7 @@ impl<'ctx> CursedOptimizationCoordinator<'ctx> {
         report.push_str("## Overview\n");
         report.push_str(&format!("- **Optimization Sessions**: {}\n", stats.sessions));
         report.push_str(&format!("- **Total CURSED Optimizations**: {}\n", stats.cursed_optimizations));
-        report.push_str(&format!("- **Average Performance Improvement**: {:.1}%\n", 
                                 stats.total_performance_improvement / stats.sessions.max(1) as f64 * 100.0));
-        report.push_str(&format!("- **Average Memory Reduction**: {:.1}%\n", 
                                 stats.total_memory_reduction / stats.sessions.max(1) as f64 * 100.0));
         report.push_str(&format!("- **Adaptive Adjustments**: {}\n\n", stats.adaptive_adjustments));
         
@@ -896,23 +623,16 @@ impl<'ctx> CursedOptimizationCoordinator<'ctx> {
             report.push_str(&format!("### {:?}\n", category));
             report.push_str(&format!("- Optimizations Applied: {}\n", category_stats.optimizations_applied));
             report.push_str(&format!("- Success Rate: {:.1}%\n", category_stats.success_rate * 100.0));
-            report.push_str(&format!("- Avg Performance Improvement: {:.1}%\n", 
                                     category_stats.performance_improvement / category_stats.optimizations_applied.max(1) as f64 * 100.0));
-            report.push_str(&format!("- Avg Memory Reduction: {:.1}%\n\n", 
                                     category_stats.memory_reduction / category_stats.optimizations_applied.max(1) as f64 * 100.0));
-        }
-        
         // Recent analysis insights
         if !stats.analysis_results.is_empty() {
             report.push_str("## Recent Performance Analysis Insights\n");
             for (i, analysis) in stats.analysis_results.iter().take(3).enumerate() {
                 report.push_str(&format!("### Analysis {}\n", i + 1));
                 report.push_str(&format!("- Performance Score: {:.1}\n", analysis.summary.performance_score));
-                report.push_str(&format!("- Primary Bottleneck: {}\n", 
                                         analysis.summary.primary_bottleneck.as_deref().unwrap_or("None")));
-                report.push_str(&format!("- Top Recommendation: {}\n", 
                                         analysis.summary.top_recommendation.as_deref().unwrap_or("None")));
-                report.push_str(&format!("- Improvement Potential: {:.1}%\n\n", 
                                         analysis.summary.improvement_potential * 100.0));
             }
         }
@@ -924,15 +644,6 @@ impl<'ctx> CursedOptimizationCoordinator<'ctx> {
 /// Result of comprehensive CURSED optimization
 #[derive(Debug, Clone)]
 pub struct CursedOptimizationResult {
-    pub total_optimizations: usize,
-    pub performance_improvement: f64,
-    pub memory_reduction: f64,
-    pub compilation_time: Duration,
-    pub llvm_stats: OptimizationStats,
-    pub cursed_optimizations_by_category: HashMap<OptimizationCategory, usize>,
-    pub analysis_insights: Option<EnhancedAnalysisResult>,
-}
-
 impl CursedOptimizationResult {
     pub fn merge_lto_results(&mut self, lto_result: LtoOptimizationResult) {
         self.performance_improvement += lto_result.performance_improvement;
@@ -948,29 +659,6 @@ impl CursedOptimizationResult {
 /// Module metrics for performance comparison
 #[derive(Debug, Clone)]
 pub struct ModuleMetrics {
-    pub functions_count: usize,
-    pub instructions_count: usize,
-    pub basic_blocks_count: usize,
-    pub globals_count: usize,
-    pub call_instructions: usize,
-    pub load_store_instructions: usize,
-    pub branch_instructions: usize,
-    pub ir_size: usize,
-}
-
 /// Result of real LTO optimization
 #[derive(Debug, Clone)]
 pub struct LtoOptimizationResult {
-    pub functions_inlined: usize,
-    pub dead_code_eliminated: usize,
-    pub constants_propagated: usize,
-    pub performance_improvement: f64,
-    pub memory_reduction: f64,
-    pub optimization_time: Duration,
-    pub modules_processed: usize,
-    pub code_size_reduction: f64,
-    pub cross_module_optimizations: usize,
-    pub thin_lto_partitions: usize,
-    pub cache_hits: usize,
-}
-

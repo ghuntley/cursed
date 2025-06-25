@@ -6,15 +6,9 @@ use std::fmt;
 #[derive(Debug, Clone, PartialEq)]
 pub enum NoCapError {
     /// Syntax error during parsing - invalid format
-    Syntax(String),
     /// Range error - value out of valid range
-    Range(String),
     /// Invalid input provided
-    InvalidInput(String),
     /// Unsupported conversion
-    UnsupportedConversion(String),
-}
-
 // impl fmt::Display for NoCapError {
 //     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
 //         match self {
@@ -38,8 +32,6 @@ impl ErrorConstants {
     /// Syntax error constant
     pub fn err_syntax() -> NoCapError {
         NoCapError::Syntax("sus conversion, invalid syntax".to_string())
-    }
-    
     /// Range error constant
     pub fn err_range() -> NoCapError {
         NoCapError::Range("too extra, value out of range".to_string())
@@ -49,20 +41,12 @@ impl ErrorConstants {
 /// CursedError creation helper functions
 pub fn syntax_error(msg: &str) -> NoCapError {
     NoCapError::Syntax(msg.to_string())
-}
-
 pub fn range_error(msg: &str) -> NoCapError {
     NoCapError::Range(msg.to_string())
-}
-
 pub fn invalid_input_error(msg: &str) -> NoCapError {
     NoCapError::InvalidInput(msg.to_string())
-}
-
 pub fn unsupported_conversion_error(msg: &str) -> NoCapError {
     NoCapError::UnsupportedConversion(msg.to_string())
-}
-
 /// Public error constants for API compatibility
 pub const ErrSyntax: fn() -> NoCapError = ErrorConstants::err_syntax;
 pub const ErrRange: fn() -> NoCapError = ErrorConstants::err_range;

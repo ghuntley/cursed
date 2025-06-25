@@ -22,8 +22,6 @@ use super::error::{EnvError, EnvResult, not_found_error, validate_env_key, valid
 pub fn get_env(key: &str) -> Option<String> {
     validate_env_key(key).ok()?;
     env::var(key).ok()
-}
-
 /// Set an environment variable
 /// 
 /// Sets the environment variable `key` to `value` for the current process.
@@ -41,8 +39,6 @@ pub fn set_env(key: &str, value: &str) -> EnvResult<()> {
     
     env::set_var(key, value);
     Ok(())
-}
-
 /// Remove an environment variable
 /// 
 /// Removes the environment variable `key` from the current process.
@@ -58,8 +54,6 @@ pub fn remove_env(key: &str) -> EnvResult<()> {
     
     env::remove_var(key);
     Ok(())
-}
-
 /// Get all environment variables
 /// 
 /// Returns a HashMap containing all environment variables and their values.
@@ -79,11 +73,7 @@ pub fn get_all_env() -> HashMap<String, String> {
     
     for (key, value) in env::vars() {
         result.insert(key, value);
-    }
-    
     result
-}
-
 /// Check if an environment variable exists
 /// 
 /// Returns `true` if the environment variable is set, `false` otherwise.
@@ -98,8 +88,6 @@ pub fn get_all_env() -> HashMap<String, String> {
 /// ```
 pub fn env_exists(key: &str) -> bool {
     get_env(key).is_some()
-}
-
 /// Get an environment variable with a default value
 /// 
 /// Returns the value of the environment variable if it exists, 
@@ -114,8 +102,6 @@ pub fn env_exists(key: &str) -> bool {
 /// ```
 pub fn get_env_with_default(key: &str, default: &str) -> String {
     get_env(key).unwrap_or_else(|| default.to_string())
-}
-
 /// Clear all environment variables
 /// 
 /// **Warning**: This is a destructive operation that removes all environment variables.
@@ -133,11 +119,7 @@ pub fn clear_all_env() -> EnvResult<()> {
     
     for key in keys {
         env::remove_var(key);
-    }
-    
     Ok(())
-}
-
 /// Get all environment variable keys
 /// 
 /// Returns a vector of all environment variable names.
@@ -151,8 +133,6 @@ pub fn clear_all_env() -> EnvResult<()> {
 /// ```
 pub fn get_env_keys() -> Vec<String> {
     env::vars().map(|(key, _)| key).collect()
-}
-
 /// Get all environment variable values
 /// 
 /// Returns a vector of all environment variable values.
@@ -166,8 +146,6 @@ pub fn get_env_keys() -> Vec<String> {
 /// ```
 pub fn get_env_values() -> Vec<String> {
     env::vars().map(|(_, value)| value).collect()
-}
-
 /// Get the current working directory from environment
 /// 
 /// Returns the current working directory path.
@@ -183,8 +161,6 @@ pub fn get_env_values() -> Vec<String> {
 pub fn get_current_dir() -> Option<String> {
     env::current_dir().ok()
         .and_then(|path| path.to_str().map(|s| s.to_string()))
-}
-
 /// Get the home directory from environment
 /// 
 /// Returns the user's home directory path from environment variables.
@@ -207,8 +183,6 @@ pub fn get_home_dir() -> Option<String> {
             let path = get_env("HOMEPATH")?;
             Some(format!("{}{}", drive, path))
         })
-    }
-    
     #[cfg(not(target_os = "windows"))]
     {
         get_env("HOME")
@@ -231,8 +205,6 @@ pub fn get_temp_dir() -> Option<String> {
     #[cfg(target_os = "windows")]
     {
         get_env("TEMP").or_else(|| get_env("TMP"))
-    }
-    
     #[cfg(not(target_os = "windows"))]
     {
         get_env("TMPDIR")
@@ -257,8 +229,6 @@ pub fn get_path_separator() -> &'static str {
     #[cfg(target_os = "windows")]
     {
         ";"
-    }
-    
     #[cfg(not(target_os = "windows"))]
     {
         ":"
@@ -281,8 +251,6 @@ pub fn is_case_sensitive_env() -> bool {
     #[cfg(target_os = "windows")]
     {
         false
-    }
-    
     #[cfg(not(target_os = "windows"))]
     {
         true
@@ -308,8 +276,6 @@ pub fn get_env_case_insensitive(key: &str) -> Option<String> {
         // On Windows, try exact match first, then case-insensitive
         if let Some(value) = get_env(key) {
             return Some(value);
-        }
-        
         let key_upper = key.to_uppercase();
         for (env_key, env_value) in env::vars() {
             if env_key.to_uppercase() == key_upper {
@@ -317,8 +283,6 @@ pub fn get_env_case_insensitive(key: &str) -> Option<String> {
             }
         }
         None
-    }
-    
     #[cfg(not(target_os = "windows"))]
     {
         get_env(key)
@@ -341,8 +305,6 @@ pub fn get_username() -> Option<String> {
     #[cfg(target_os = "windows")]
     {
         get_env("USERNAME")
-    }
-    
     #[cfg(not(target_os = "windows"))]
     {
         get_env("USER").or_else(|| get_env("LOGNAME"))
@@ -365,8 +327,6 @@ pub fn get_hostname() -> Option<String> {
     #[cfg(target_os = "windows")]
     {
         get_env("COMPUTERNAME").or_else(|| get_env("HOSTNAME"))
-    }
-    
     #[cfg(not(target_os = "windows"))]
     {
         get_env("HOSTNAME").or_else(|| get_env("HOST"))

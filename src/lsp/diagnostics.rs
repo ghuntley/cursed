@@ -18,23 +18,13 @@ use crate::imports::{ImportResolver, ImportManager};
 /// Enhanced diagnostics provider with compiler integration
 pub struct DiagnosticsProvider {
     /// Cached diagnostics to avoid recomputation
-    diagnostic_cache: std::sync::RwLock<HashMap<String, Vec<Diagnostic>>>,
     /// Type checker for semantic analysis
-    type_checker: std::sync::RwLock<TypeChecker>,
     /// Import resolver for cross-file validation
-    import_resolver: std::sync::RwLock<ImportResolver>,
     /// Parsed AST cache for efficient re-analysis
-    ast_cache: std::sync::RwLock<HashMap<String, Program>>,
-}
-
 impl DiagnosticsProvider {
     /// Create a new diagnostics provider with compiler integration
     pub fn new() -> Self {
         Self {
-            diagnostic_cache: std::sync::RwLock::new(HashMap::new()),
-            type_checker: std::sync::RwLock::new(TypeChecker::new()),
-            import_resolver: std::sync::RwLock::new(ImportResolver::new()),
-            ast_cache: std::sync::RwLock::new(HashMap::new()),
         }
     }
 
@@ -63,12 +53,6 @@ impl DiagnosticsProvider {
                 error!("Compiler analysis failed: {}", err);
                 diagnostics.push(self.create_diagnostic_impl(
                     Range {
-                        start: Position { line: 0, character: 0 },
-                        end: Position { line: 0, character: 10 },
-                    },
-                    DiagnosticSeverity::ERROR,
-                    format!("Compilation failed: {}", err),
-                    Some("compiler".to_string()),
                 ));
             }
         }
@@ -76,11 +60,7 @@ impl DiagnosticsProvider {
         // Cache the results
         if let Ok(mut cache) = self.diagnostic_cache.write() {
             cache.insert(content_hash, diagnostics.clone());
-        }
-
         diagnostics
-    }
-    
     /// Comprehensive analysis using CURSED compiler infrastructure
     async fn analyze_with_compiler(&self, content: &str) -> crate::error::Result<()> {
         info!("Running comprehensive compiler analysis");
@@ -104,8 +84,6 @@ impl DiagnosticsProvider {
                     break;
                 }
             }
-        }
-        
         if diagnostics.is_empty() {
             // Step 2: Syntax analysis
             let lexer = Lexer::new(content);
@@ -117,8 +95,6 @@ impl DiagnosticsProvider {
                     let content_hash = format!("{:x}", md5::compute(content));
                     if let Ok(mut cache) = self.ast_cache.write() {
                         cache.insert(content_hash, ast.clone());
-                    }
-                    
                     // Step 3: Semantic analysis
                     let semantic_diagnostics = self.analyze_semantics(&ast).await?;
                     diagnostics.extend(semantic_diagnostics);
@@ -136,11 +112,7 @@ impl DiagnosticsProvider {
                     diagnostics.push(diagnostic);
                 }
             }
-        }
-        
         Ok(diagnostics)
-    }
-    
     /// Analyze semantics using AST
     async fn analyze_semantics(&self, ast: &Program) -> crate::error::Result<()> {
         let mut diagnostics = Vec::new();
@@ -158,8 +130,6 @@ impl DiagnosticsProvider {
         diagnostics.extend(self.check_dead_code(ast));
         
         Ok(diagnostics)
-    }
-    
     /// Analyze types using type checker
     async fn analyze_types(&self, ast: &Program) -> crate::error::Result<()> {
         let mut diagnostics = Vec::new();
@@ -174,11 +144,7 @@ impl DiagnosticsProvider {
                     diagnostics.push(diagnostic);
                 }
             }
-        }
-        
         Ok(diagnostics)
-    }
-    
     /// Analyze imports using import resolver
     async fn analyze_imports(&self, ast: &Program) -> crate::error::Result<()> {
         let mut diagnostics = Vec::new();
@@ -193,22 +159,13 @@ impl DiagnosticsProvider {
                         if !import_resolver.resolve_local_import(&import_path, None).is_ok() {
                             diagnostics.push(self.create_diagnostic_impl(
                                 Range {
-                                    start: Position { line: 0, character: 0 },
-                                    end: Position { line: 0, character: stmt_str.len() as u32 },
-                                },
-                                DiagnosticSeverity::ERROR,
 //                                 format!("Cannot resolve import: '{}'", import_path),
-                                Some("import".to_string()),
                             ));
                         }
                     }
                 }
             }
-        }
-        
         Ok(diagnostics)
-    }
-    
     /// Convert lexer error to diagnostic
     fn convert_lexer_error_to_diagnostic(&self, error: &CursedError, _content: &str) -> Diagnostic {
         // Extract position information from error if available
@@ -216,43 +173,19 @@ impl DiagnosticsProvider {
         
         self.create_diagnostic_impl(
             Range {
-                start: Position { line, character },
-                end: Position { line, character: character + 1 },
-            },
-            DiagnosticSeverity::ERROR,
-            format!("Lexical error: {}", error),
-            Some("lexer".to_string()),
         )
-    }
-    
     /// Convert parse error to diagnostic  
     fn convert_parse_error_to_diagnostic(&self, error: &CursedError, _content: &str) -> Diagnostic {
         let (line, character) = self.extract_error_position(error);
         
         self.create_diagnostic_impl(
             Range {
-                start: Position { line, character },
-                end: Position { line, character: character + 10 },
-            },
-            DiagnosticSeverity::ERROR,
-            format!("Syntax error: {}", error),
-            Some("parser".to_string()),
         )
-    }
-    
     /// Convert type error to diagnostic
     fn convert_type_error_to_diagnostic(&self, error: &CursedError) -> Diagnostic {
         self.create_diagnostic_impl(
             Range {
-                start: Position { line: 0, character: 0 },
-                end: Position { line: 0, character: 10 },
-            },
-            DiagnosticSeverity::ERROR,
-            format!("Type error: {}", error),
-            Some("type-checker".to_string()),
         )
-    }
-    
     /// Extract error position from CURSED error
     fn extract_error_position(&self, error: &CursedError) -> (u32, u32) {
         // Try to extract position information from error
@@ -273,7 +206,6 @@ impl DiagnosticsProvider {
             if let Some(ast) = cache.get(&content_hash) {
                 // Use AST-based semantic analysis
                 match self.analyze_semantics(ast).await {
-                    Ok(diagnostics) => return diagnostics,
                     Err(err) => {
                         warn!("AST-based semantic analysis failed: {}", err);
                     }
@@ -289,8 +221,6 @@ impl DiagnosticsProvider {
         diagnostics.extend(self.check_imports_impl(content));
 
         diagnostics
-    }
-    
     /// Check for unreachable code in AST
     fn check_unreachable_code(&self, ast: &Program) -> Vec<Diagnostic> {
         let mut diagnostics = Vec::new();
@@ -304,20 +234,10 @@ impl DiagnosticsProvider {
                 if stmt_index + 1 < ast.statements.len() {
                     diagnostics.push(self.create_diagnostic_impl(
                         Range {
-                            start: Position { line: (stmt_index + 1) as u32, character: 0 },
-                            end: Position { line: (stmt_index + 1) as u32, character: 10 },
-                        },
-                        DiagnosticSeverity::WARNING,
-                        "Unreachable code after return statement".to_string(),
-                        Some("unreachable".to_string()),
                     ));
                 }
             }
-        }
-        
         diagnostics
-    }
-    
     /// Check for unused variables in AST
     fn check_unused_variables(&self, ast: &Program) -> Vec<Diagnostic> {
         let mut diagnostics = Vec::new();
@@ -332,8 +252,6 @@ impl DiagnosticsProvider {
                     declared_vars.insert(var_name, stmt_index);
                 }
             }
-        }
-        
         // Second pass: collect variable usages
         for statement in &ast.statements {
             let stmt_str = statement.string();
@@ -342,26 +260,16 @@ impl DiagnosticsProvider {
                     used_vars.insert(var_name.clone());
                 }
             }
-        }
-        
         // Report unused variables
         for (var_name, stmt_index) in declared_vars {
             if !used_vars.contains(&var_name) {
                 diagnostics.push(self.create_diagnostic_impl(
                     Range {
-                        start: Position { line: stmt_index as u32, character: 0 },
-                        end: Position { line: stmt_index as u32, character: 10 },
-                    },
-                    DiagnosticSeverity::WARNING,
-                    format!("Variable '{}' is declared but never used", var_name),
-                    Some("unused-variable".to_string()),
                 ));
             }
         }
         
         diagnostics
-    }
-    
     /// Check for infinite loops in AST
     fn check_infinite_loops(&self, ast: &Program) -> Vec<Diagnostic> {
         let mut diagnostics = Vec::new();
@@ -373,19 +281,11 @@ impl DiagnosticsProvider {
             if stmt_str.contains("flex true") || stmt_str.contains("periodt true") {
                 diagnostics.push(self.create_diagnostic_impl(
                     Range {
-                        start: Position { line: stmt_index as u32, character: 0 },
-                        end: Position { line: stmt_index as u32, character: stmt_str.len() as u32 },
-                    },
-                    DiagnosticSeverity::WARNING,
-                    "Potential infinite loop detected".to_string(),
-                    Some("infinite-loop".to_string()),
                 ));
             }
         }
         
         diagnostics
-    }
-    
     /// Check for dead code in AST
     fn check_dead_code(&self, ast: &Program) -> Vec<Diagnostic> {
         let mut diagnostics = Vec::new();
@@ -398,23 +298,13 @@ impl DiagnosticsProvider {
             if found_return {
                 diagnostics.push(self.create_diagnostic_impl(
                     Range {
-                        start: Position { line: stmt_index as u32, character: 0 },
-                        end: Position { line: stmt_index as u32, character: stmt_str.len() as u32 },
-                    },
-                    DiagnosticSeverity::INFORMATION,
-                    "Dead code - this statement will never be executed".to_string(),
-                    Some("dead-code".to_string()),
                 ));
-            }
-            
             if stmt_str.trim().starts_with("bounce ") {
                 found_return = true;
             }
         }
         
         diagnostics
-    }
-
     /// Get linting diagnostics (style, best practices, etc.)
     #[instrument(skip(self, content))]
     pub async fn get_lint_diagnostics(&self, content: &str) -> Vec<Diagnostic> {
@@ -435,8 +325,6 @@ impl DiagnosticsProvider {
         diagnostics.extend(self.check_security_issues_impl(content));
 
         diagnostics
-    }
-
     /// Analyze lexer errors
     fn analyze_lexer_errors(&self, content: &str) -> crate::error::Result<()> {
         let mut diagnostics = Vec::new();
@@ -453,17 +341,9 @@ impl DiagnosticsProvider {
                         diagnostics.push(self.create_diagnostic_impl(
                             Range {
                                 start: Position { 
-                                    line: token.location.line as u32 - 1, 
                                     character: token.location.column as u32 - 1 
-                                },
                                 end: Position { 
-                                    line: token.location.line as u32 - 1, 
                                     character: (token.location.column + 10) as u32 - 1 
-                                },
-                            },
-                            DiagnosticSeverity::WARNING,
-                            format!("Consider using proper CURSED slang: '{:?}'", token.token_type),
-                            Some("cursed-style".to_string()),
                         ));
                     }
                 }
@@ -472,37 +352,23 @@ impl DiagnosticsProvider {
                     let (line, column) = self.get_error_position(&err, content);
                     diagnostics.push(self.create_diagnostic_impl(
                         Range {
-                            start: Position { line, character: column },
-                            end: Position { line, character: column + 1 },
-                        },
-                        DiagnosticSeverity::ERROR,
-                        format!("Lexer error: {}", err),
-                        Some("lexer".to_string()),
                     ));
                     break;
                 }
             }
-        }
-
         Ok(diagnostics)
-    }
-
     /// Analyze parser errors
     fn analyze_parser_errors(&self, content: &str) -> crate::error::Result<()> {
         let mut diagnostics = Vec::new();
         let lexer = Lexer::new(content.to_string());
         let mut parser = match Parser::new(lexer) {
-            Ok(parser) => parser,
             Err(err) => {
                 // Failed to create parser
                 let diagnostic = Diagnostic::new_simple(
-                    Range::new(Position::new(0, 0), Position::new(0, 0)),
-                    format!("Failed to create parser: {}", err),
                 );
                 diagnostics.push(diagnostic);
                 return Ok(diagnostics);
             }
-        };
         
         match parser.parse_program() {
             Ok(_ast) => {
@@ -512,19 +378,12 @@ impl DiagnosticsProvider {
                 let (line, column) = self.get_error_position(&err, content);
                 diagnostics.push(self.create_diagnostic_impl(
                     Range {
-                        start: Position { line, character: column },
                         end: Position { line, character: column + 10 }, // Approximate error span
-                    },
-                    DiagnosticSeverity::ERROR,
-                    format!("Parse error: {}", err),
-                    Some("parser".to_string()),
                 ));
             }
         }
 
         Ok(diagnostics)
-    }
-
     /// Check for type errors (internal implementation)
     fn check_type_errors_impl(&self, content: &str) -> Vec<Diagnostic> {
         let mut diagnostics = Vec::new();
@@ -545,11 +404,7 @@ impl DiagnosticsProvider {
                     diagnostics.push(diagnostic);
                 }
             }
-        }
-
         diagnostics
-    }
-
     /// Check variable usage issues (internal implementation)
     fn check_variable_usage_impl(&self, content: &str) -> Vec<Diagnostic> {
         let mut diagnostics = Vec::new();
@@ -561,20 +416,10 @@ impl DiagnosticsProvider {
                 if let Some(var_name) = self.extract_variable_name(line) {
                     diagnostics.push(self.create_diagnostic_impl(
                         Range {
-                            start: Position { line: line_num as u32, character: 0 },
-                            end: Position { line: line_num as u32, character: line.len() as u32 },
-                        },
-                        DiagnosticSeverity::WARNING,
-                        format!("Variable '{}' is declared but never used", var_name),
-                        Some("unused-variable".to_string()),
                     ));
                 }
             }
-        }
-
         diagnostics
-    }
-
     /// Check function call issues (internal implementation)
     fn check_function_calls_impl(&self, content: &str) -> Vec<Diagnostic> {
         let mut diagnostics = Vec::new();
@@ -586,20 +431,10 @@ impl DiagnosticsProvider {
                 if !self.is_function_defined(&func_call, &lines) {
                     diagnostics.push(self.create_diagnostic_impl(
                         Range {
-                            start: Position { line: line_num as u32, character: 0 },
-                            end: Position { line: line_num as u32, character: line.len() as u32 },
-                        },
-                        DiagnosticSeverity::ERROR,
-                        format!("Function '{}' is not defined", func_call),
-                        Some("undefined-function".to_string()),
                     ));
                 }
             }
-        }
-
         diagnostics
-    }
-
     /// Check import issues (internal implementation)
     fn check_imports_impl(&self, content: &str) -> Vec<Diagnostic> {
         let mut diagnostics = Vec::new();
@@ -612,12 +447,6 @@ impl DiagnosticsProvider {
                     if !self.is_valid_import_path(&import_path) {
                         diagnostics.push(self.create_diagnostic_impl(
                             Range {
-                                start: Position { line: line_num as u32, character: 0 },
-                                end: Position { line: line_num as u32, character: line.len() as u32 },
-                            },
-                            DiagnosticSeverity::ERROR,
-                            format!("Invalid import path: '{}'", import_path),
-                            Some("invalid-import".to_string()),
                         ));
                     }
                 }
@@ -625,8 +454,6 @@ impl DiagnosticsProvider {
         }
 
         diagnostics
-    }
-
     /// Check style issues (internal implementation)
     fn check_style_issues_impl(&self, content: &str) -> Vec<Diagnostic> {
         let mut diagnostics = Vec::new();
@@ -637,32 +464,16 @@ impl DiagnosticsProvider {
             if line.contains("function") && !line.contains("slay") {
                 diagnostics.push(self.create_diagnostic_impl(
                     Range {
-                        start: Position { line: line_num as u32, character: 0 },
-                        end: Position { line: line_num as u32, character: line.len() as u32 },
-                    },
-                    DiagnosticSeverity::INFORMATION,
-                    "Consider using 'slay' instead of 'function' for proper CURSED style".to_string(),
-                    Some("cursed-style".to_string()),
                 ));
-            }
-            
             // Check for variable declaration style
             if line.contains("var") && !line.contains("facts") && !line.contains("sus") {
                 diagnostics.push(self.create_diagnostic_impl(
                     Range {
-                        start: Position { line: line_num as u32, character: 0 },
-                        end: Position { line: line_num as u32, character: line.len() as u32 },
-                    },
-                    DiagnosticSeverity::INFORMATION,
-                    "Consider using 'facts' or 'sus' instead of 'var' for proper CURSED style".to_string(),
-                    Some("cursed-style".to_string()),
                 ));
             }
         }
 
         diagnostics
-    }
-
     /// Check best practice issues (internal implementation)
     fn check_best_practices_impl(&self, content: &str) -> Vec<Diagnostic> {
         let mut diagnostics = Vec::new();
@@ -673,32 +484,16 @@ impl DiagnosticsProvider {
             if self.contains_magic_number(line) {
                 diagnostics.push(self.create_diagnostic_impl(
                     Range {
-                        start: Position { line: line_num as u32, character: 0 },
-                        end: Position { line: line_num as u32, character: line.len() as u32 },
-                    },
-                    DiagnosticSeverity::HINT,
-                    "Consider using a named constant instead of a magic number".to_string(),
-                    Some("best-practice".to_string()),
                 ));
-            }
-            
             // Check for long lines
             if line.len() > 120 {
                 diagnostics.push(self.create_diagnostic_impl(
                     Range {
-                        start: Position { line: line_num as u32, character: 120 },
-                        end: Position { line: line_num as u32, character: line.len() as u32 },
-                    },
-                    DiagnosticSeverity::HINT,
-                    "Line is too long (>120 characters)".to_string(),
-                    Some("line-length".to_string()),
                 ));
             }
         }
 
         diagnostics
-    }
-
     /// Check performance issues (internal implementation)
     fn check_performance_issues_impl(&self, content: &str) -> Vec<Diagnostic> {
         let mut diagnostics = Vec::new();
@@ -712,12 +507,6 @@ impl DiagnosticsProvider {
                     if next_line.contains("+") && next_line.contains("\"") {
                         diagnostics.push(self.create_diagnostic_impl(
                             Range {
-                                start: Position { line: (line_num + offset) as u32, character: 0 },
-                                end: Position { line: (line_num + offset) as u32, character: next_line.len() as u32 },
-                            },
-                            DiagnosticSeverity::HINT,
-                            "Consider using a string builder for better performance in loops".to_string(),
-                            Some("performance".to_string()),
                         ));
                         break;
                     }
@@ -726,8 +515,6 @@ impl DiagnosticsProvider {
         }
 
         diagnostics
-    }
-
     /// Check security issues (internal implementation)
     fn check_security_issues_impl(&self, content: &str) -> Vec<Diagnostic> {
         let mut diagnostics = Vec::new();
@@ -738,37 +525,16 @@ impl DiagnosticsProvider {
             if line.contains("eval") || line.contains("exec") {
                 diagnostics.push(self.create_diagnostic_impl(
                     Range {
-                        start: Position { line: line_num as u32, character: 0 },
-                        end: Position { line: line_num as u32, character: line.len() as u32 },
-                    },
-                    DiagnosticSeverity::WARNING,
                     "Use of eval/exec functions can be a security risk".to_string(),
-                    Some("security".to_string()),
                 ));
             }
         }
 
         diagnostics
-    }
-
     /// Create a diagnostic (internal implementation)
     fn create_diagnostic_impl(
-        &self,
-        range: Range,
-        severity: DiagnosticSeverity,
-        message: String,
-        source: Option<String>,
     ) -> Diagnostic {
         Diagnostic {
-            range,
-            severity: Some(severity),
-            code: None,
-            code_description: None,
-            source,
-            message,
-            related_information: None,
-            tags: None,
-            data: None,
         }
     }
 
@@ -776,49 +542,28 @@ impl DiagnosticsProvider {
 
     fn is_invalid_slang_usage(&self, token: &crate::lexer::Token) -> bool {
         // Check if token should use CURSED slang but doesn't
-        matches!(token.token_type, 
                  crate::lexer::TokenType::Slay | 
                  crate::lexer::TokenType::Sus |
                  crate::lexer::TokenType::Facts)
-    }
-
     fn get_error_position(&self, error: &CursedError, _content: &str) -> (u32, u32) {
         // Extract position from error if available, otherwise default to (0, 0)
         (0, 0)
-    }
-
     fn check_variable_type_assignment(&self, line: &str, line_num: usize) -> Option<Diagnostic> {
         // Basic type checking - this would be more sophisticated in a real implementation
         if line.contains("= \"") && line.contains(": int") {
             return Some(self.create_diagnostic_impl(
                 Range {
-                    start: Position { line: line_num as u32, character: 0 },
-                    end: Position { line: line_num as u32, character: line.len() as u32 },
-                },
-                DiagnosticSeverity::ERROR,
-                "Type mismatch: cannot assign string to int variable".to_string(),
-                Some("type-error".to_string()),
             ));
         }
         None
-    }
-
     fn check_function_return_type(&self, line: &str, line_num: usize) -> Option<Diagnostic> {
         // Check if function return type matches actual return
         if line.contains("-> string") && line.contains("return 42") {
             return Some(self.create_diagnostic_impl(
                 Range {
-                    start: Position { line: line_num as u32, character: 0 },
-                    end: Position { line: line_num as u32, character: line.len() as u32 },
-                },
-                DiagnosticSeverity::ERROR,
-                "Return type mismatch: expected string, got number".to_string(),
-                Some("type-error".to_string()),
             ));
         }
         None
-    }
-
     fn is_variable_used(&self, declaration_line: &str, all_lines: &[&str]) -> bool {
         if let Some(var_name) = self.extract_variable_name(declaration_line) {
             all_lines.iter().any(|line| line != &declaration_line && line.contains(&var_name))
@@ -837,8 +582,6 @@ impl DiagnosticsProvider {
             }
         }
         None
-    }
-
     fn extract_function_call(&self, line: &str) -> Option<String> {
         // Extract function name from function call
         if let Some(paren_pos) = line.find('(') {
@@ -850,20 +593,14 @@ impl DiagnosticsProvider {
             }
         }
         None
-    }
-
     fn is_function_defined(&self, func_name: &str, all_lines: &[&str]) -> bool {
         // Check if function is defined anywhere
         all_lines.iter().any(|line| {
             line.contains("slay") && line.contains(func_name) && line.contains('(')
         }) || self.is_builtin_function(func_name)
-    }
-
     fn is_builtin_function(&self, func_name: &str) -> bool {
         // List of built-in CURSED functions
         matches!(func_name, "print" | "println" | "len" | "str" | "int" | "float")
-    }
-
     fn extract_import_path(&self, line: &str) -> Option<String> {
         // Extract import path from import statement
         if let Some(quote_start) = line.find('"') {
@@ -872,14 +609,10 @@ impl DiagnosticsProvider {
             }
         }
         None
-    }
-
     fn is_valid_import_path(&self, _path: &str) -> bool {
         // Basic import path validation
         // In a real implementation, this would check if the module exists
         true
-    }
-
     fn contains_magic_number(&self, line: &str) -> bool {
         // Check for magic numbers (not 0, 1, or obvious constants)
         let numbers = regex::Regex::new(r"\b\d+\b").unwrap();
@@ -890,43 +623,27 @@ impl DiagnosticsProvider {
             }
         }
         false
-    }
-
     /// Check type errors in content
     pub fn check_type_errors(&self, content: &str) -> Vec<tower_lsp::lsp_types::Diagnostic> {
         self.check_type_errors_impl(content)
-    }
-
     /// Check variable usage
     pub fn check_variable_usage(&self, content: &str) -> Vec<tower_lsp::lsp_types::Diagnostic> {
         self.check_variable_usage_impl(content)
-    }
-
     /// Check function calls
     pub fn check_function_calls(&self, content: &str) -> Vec<tower_lsp::lsp_types::Diagnostic> {
         self.check_function_calls_impl(content)
-    }
-
     /// Check imports
     pub fn check_imports(&self, content: &str) -> Vec<tower_lsp::lsp_types::Diagnostic> {
         self.check_imports_impl(content)
-    }
-
     /// Check style issues
     pub fn check_style_issues(&self, content: &str) -> Vec<tower_lsp::lsp_types::Diagnostic> {
         self.check_style_issues_impl(content)
-    }
-
     /// Check best practices
     pub fn check_best_practices(&self, content: &str) -> Vec<tower_lsp::lsp_types::Diagnostic> {
         self.check_best_practices_impl(content)
-    }
-
     /// Check performance issues
     pub fn check_performance_issues(&self, content: &str) -> Vec<tower_lsp::lsp_types::Diagnostic> {
         self.check_performance_issues_impl(content)
-    }
-
     /// Check security issues
     pub fn check_security_issues(&self, content: &str) -> Vec<tower_lsp::lsp_types::Diagnostic> {
         self.check_security_issues_impl(content)

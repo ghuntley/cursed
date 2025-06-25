@@ -57,8 +57,6 @@ pub trait KeyEncapsulation {
 
     /// Get the algorithm type
     fn algorithm_type() -> AlgorithmType;
-}
-
 /// Common trait for Digital Signature schemes
 pub trait DigitalSignature {
     type PublicKey;
@@ -76,8 +74,6 @@ pub trait DigitalSignature {
 
     /// Get the algorithm type
     fn algorithm_type() -> AlgorithmType;
-}
-
 /// Common trait for Public Key Encryption schemes
 pub trait PublicKeyEncryption {
     type PublicKey;
@@ -96,8 +92,6 @@ pub trait PublicKeyEncryption {
 
     /// Get the algorithm type
     fn algorithm_type() -> AlgorithmType;
-}
-
 /// Parameter set information for algorithms
 pub trait ParameterSet {
     /// Get the security level
@@ -111,38 +105,16 @@ pub trait ParameterSet {
 
     /// Get additional size information (ciphertext, signature, etc.)
     fn additional_sizes(&self) -> Vec<(&'static str, usize)>;
-}
-
 /// Performance characteristics for algorithms
 #[derive(Debug, Clone)]
 pub struct AlgorithmPerformance {
-    pub keygen_time_ms: f64,
-    pub operation_time_ms: f64,
-    pub key_sizes: KeySizes,
-    pub throughput_ops_per_sec: f64,
-}
-
 /// Key size information
 #[derive(Debug, Clone)]
 pub struct KeySizes {
-    pub public_key: usize,
-    pub secret_key: usize,
-    pub ciphertext_or_signature: usize,
-    pub shared_secret: Option<usize>,
-}
-
 impl AlgorithmPerformance {
     pub fn new() -> Self {
         Self {
-            keygen_time_ms: 0.0,
-            operation_time_ms: 0.0,
             key_sizes: KeySizes {
-                public_key: 0,
-                secret_key: 0,
-                ciphertext_or_signature: 0,
-                shared_secret: None,
-            },
-            throughput_ops_per_sec: 0.0,
         }
     }
 }

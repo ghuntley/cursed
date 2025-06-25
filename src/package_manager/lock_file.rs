@@ -5,9 +5,7 @@
 // environments and time periods.
 
 use crate::package_manager::{
-    PackageManagerError,
-    resolver::{ResolvedDependency, LockFile, LockedPackage, PackageSource, LockFileMetadata},
-};
+// };
 use serde::{Deserialize, Serialize};
 use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
@@ -21,50 +19,23 @@ use crate::error::CursedError;
 #[derive(Debug)]
 pub struct LockFileManager {
     /// Path to the lock file
-    lock_file_path: PathBuf,
     /// Current lock file content (if loaded)
-    current_lock: Option<LockFile>,
-}
-
 /// Lock file validation result
 #[derive(Debug, Clone)]
 pub struct ValidationResult {
-    pub is_valid: bool,
-    pub missing_packages: Vec<String>,
-    pub version_mismatches: Vec<VersionMismatch>,
-    pub checksum_mismatches: Vec<ChecksumMismatch>,
-    pub extra_packages: Vec<String>,
-}
-
 /// Version mismatch information
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct VersionMismatch {
-    pub package: String,
-    pub expected: String,
-    pub actual: String,
-}
-
 /// Checksum mismatch information
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ChecksumMismatch {
-    pub package: String,
-    pub expected: String,
-    pub actual: String,
-}
-
 /// Lock file format versions
 #[derive(Debug, Clone, PartialEq)]
 pub enum LockFileFormat {
-    V1_0,
-    Unknown(String),
-}
-
 impl LockFileManager {
     /// Create a new lock file manager
     pub fn new<P: Into<PathBuf>>(lock_file_path: P) -> Self {
         Self {
-            lock_file_path: lock_file_path.into(),
-            current_lock: None,
         }
     }
 
@@ -72,21 +43,16 @@ impl LockFileManager {
     pub fn with_project_dir<P: AsRef<Path>>(project_dir: P) -> Self {
         let lock_path = project_dir.as_ref().join("Cursed.lock");
         Self::new(lock_path)
-    }
-
     /// Load existing lock file from disk
     #[instrument(skip(self))]
     pub fn load(&mut self) -> crate::error::Result<()> {
         if !self.lock_file_path.exists() {
             debug!("Lock file does not exist: {:?}", self.lock_file_path);
             return Ok(None);
-        }
-
         info!("Loading lock file from {:?}", self.lock_file_path);
         
         let content = fs::read_to_string(&self.lock_file_path)
             .map_err(|e| PackageManagerError::FileSystemError { 
-                path: self.lock_file_path.clone(),
                 error: e.to_string()
             })?;
 
@@ -101,28 +67,20 @@ impl LockFileManager {
             return Err(PackageManagerError::UnsupportedVersion { 
                 version: lock_file.version.clone()
             });
-        }
-
         info!("Successfully loaded lock file with {} packages", lock_file.packages.len());
         self.current_lock = Some(lock_file);
         Ok(self.current_lock.as_ref())
-    }
-
     /// Save lock file to disk
     #[instrument(skip(self, lock_file))]
     pub fn save(&mut self, lock_file: &LockFile) -> crate::error::Result<()> {
-        info!("Saving lock file to {:?} with {} packages", 
               self.lock_file_path, lock_file.packages.len());
 
         // Ensure parent directory exists
         if let Some(parent) = self.lock_file_path.parent() {
             fs::create_dir_all(parent)
                 .map_err(|e| PackageManagerError::FileSystemError { 
-                    path: parent.to_path_buf(),
                     error: e.to_string()
                 })?;
-        }
-
         // Serialize with pretty printing for human readability
         let content = serde_json::to_string_pretty(lock_file)
             .map_err(|e| PackageManagerError::InvalidMetadata { 
@@ -134,41 +92,24 @@ impl LockFileManager {
         
         fs::write(&temp_path, content)
             .map_err(|e| PackageManagerError::FileSystemError { 
-                path: temp_path.clone(),
                 error: e.to_string()
             })?;
 
         fs::rename(&temp_path, &self.lock_file_path)
             .map_err(|e| PackageManagerError::FileSystemError { 
-                path: self.lock_file_path.clone(),
                 error: e.to_string()
             })?;
 
         self.current_lock = Some(lock_file.clone());
         info!("Lock file saved successfully");
         Ok(())
-    }
-
     /// Validate lock file against current dependencies
     #[instrument(skip(self, dependencies))]
     pub fn validate(&self, dependencies: &[ResolvedDependency]) -> ValidationResult {
         let Some(lock_file) = &self.current_lock else {
             return ValidationResult {
-                is_valid: false,
-                missing_packages: dependencies.iter().map(|d| d.package.name.clone()).collect(),
-                version_mismatches: Vec::new(),
-                checksum_mismatches: Vec::new(),
-                extra_packages: Vec::new(),
-            };
-        };
 
         let mut result = ValidationResult {
-            is_valid: true,
-            missing_packages: Vec::new(),
-            version_mismatches: Vec::new(),
-            checksum_mismatches: Vec::new(),
-            extra_packages: Vec::new(),
-        };
 
         // Check all current dependencies are in lock file
         for dep in dependencies {
@@ -176,13 +117,8 @@ impl LockFileManager {
                 // Check version match
                 if locked_pkg.version != dep.resolved_version.to_string() {
                     result.version_mismatches.push(VersionMismatch {
-                        package: dep.package.name.clone(),
-                        expected: locked_pkg.version.clone(),
-                        actual: dep.resolved_version.to_string(),
                     });
                     result.is_valid = false;
-                }
-
                 // Note: Checksum validation would require actual package content
                 // For now, we skip checksum validation in tests
             } else {
@@ -202,15 +138,8 @@ impl LockFileManager {
         if result.is_valid {
             info!("Lock file validation passed");
         } else {
-            warn!("Lock file validation failed: {} missing, {} version mismatches, {} extra", 
-                  result.missing_packages.len(), 
-                  result.version_mismatches.len(),
                   result.extra_packages.len());
-        }
-
         result
-    }
-
     /// Generate a new lock file from resolved dependencies
     pub fn generate_from_dependencies(&self, dependencies: &[ResolvedDependency]) -> LockFile {
         let mut packages = BTreeMap::new();
@@ -218,38 +147,23 @@ impl LockFileManager {
 
         for dep in dependencies {
             let locked_package = LockedPackage {
-                version: dep.resolved_version.to_string(),
-                checksum: self.calculate_checksum(&dep.package.name, &dep.resolved_version),
                 source: PackageSource::Registry { 
                     url: "https://registry.cursed-lang.org".to_string() 
-                },
-                dependencies: dep.package.dependencies.keys().cloned().collect(),
-                resolved_at: Utc::now().to_rfc3339(),
-            };
 
             packages.insert(dep.package.name.clone(), locked_package);
 
             // Build dependency tree
             if !dep.required_by.is_empty() {
                 dependency_tree.insert(
-                    dep.package.name.clone(),
                     dep.required_by.clone()
                 );
             }
         }
 
         let metadata = LockFileMetadata {
-            generated_at: Utc::now().to_rfc3339(),
-            resolver_version: env!("CARGO_PKG_VERSION").to_string(),
-            total_packages: packages.len(),
             resolution_time_ms: 0, // Would be filled by resolver
-        };
 
         LockFile {
-            version: "1.0".to_string(),
-            packages,
-            metadata,
-            dependency_tree,
         }
     }
 
@@ -262,39 +176,26 @@ impl LockFileManager {
             // Could preserve creation time, maintain package order, etc.
             // For now, just generate fresh
             new_lock.metadata.generated_at = Utc::now().to_rfc3339();
-        }
-
         new_lock
-    }
-
     /// Check if lock file exists
     pub fn exists(&self) -> bool {
         self.lock_file_path.exists()
-    }
-
     /// Get lock file path
     pub fn path(&self) -> &Path {
         &self.lock_file_path
-    }
-
     /// Get current loaded lock file
     pub fn current_lock(&self) -> Option<&LockFile> {
         self.current_lock.as_ref()
-    }
-
     /// Delete lock file from disk
     pub fn delete(&mut self) -> crate::error::Result<()> {
         if self.lock_file_path.exists() {
             fs::remove_file(&self.lock_file_path)
                 .map_err(|e| PackageManagerError::FileSystemError { 
-                    path: self.lock_file_path.clone(),
                     error: e.to_string()
                 })?;
         }
         self.current_lock = None;
         Ok(())
-    }
-
     /// Calculate package checksum (simplified for now)
     fn calculate_checksum(&self, _package_name: &str, _version: &Version) -> String {
         // In a real implementation, this would calculate actual checksums
@@ -304,28 +205,21 @@ impl LockFileManager {
         hasher.update(_package_name.as_bytes());
         hasher.update(_version.to_string().as_bytes());
         format!("sha256:{:x}", hasher.finalize())
-    }
-
     /// Parse lock file format version
     fn parse_format_version(&self, version: &str) -> LockFileFormat {
         match version {
-            "1.0" => LockFileFormat::V1_0,
-            other => LockFileFormat::Unknown(other.to_string()),
         }
     }
 
     /// Check if format version is supported
     fn is_supported_format(&self, format: &LockFileFormat) -> bool {
         matches!(format, LockFileFormat::V1_0)
-    }
-
     /// Export lock file in different formats
     pub fn export(&self, format: LockFileExportFormat) -> crate::error::Result<()> {
         let Some(lock_file) = &self.current_lock else {
             return Err(PackageManagerError::InvalidMetadata { 
                 reason: "No lock file loaded".to_string()
             });
-        };
 
         match format {
             LockFileExportFormat::Json => {
@@ -344,8 +238,6 @@ impl LockFileManager {
                 Ok(self.generate_summary(lock_file))
             }
         }
-    }
-
     /// Generate human-readable summary of lock file
     fn generate_summary(&self, lock_file: &LockFile) -> String {
         let mut summary = String::new();
@@ -365,8 +257,6 @@ impl LockFileManager {
             
             if !pkg.dependencies.is_empty() {
                 summary.push_str(&format!("    Dependencies: {}\n", pkg.dependencies.join(", ")));
-            }
-            
             match &pkg.source {
                 PackageSource::Registry { url } => {
                     summary.push_str(&format!("    Source: Registry ({})\n", url));
@@ -384,32 +274,23 @@ impl LockFileManager {
             
             summary.push_str(&format!("    Checksum: {}\n", pkg.checksum));
             summary.push('\n');
-        }
-        
         if !lock_file.dependency_tree.is_empty() {
             summary.push_str("Dependency Tree:\n");
             summary.push_str("---------------\n");
             
             for (package, required_by) in &lock_file.dependency_tree {
-                summary.push_str(&format!("  {} required by: {}\n", 
                                         package, required_by.join(", ")));
             }
         }
         
         summary
-    }
-    
     /// Check if lock file exists on disk
     pub fn exists(&self) -> bool {
         self.lock_file_path.exists()
-    }
-    
     /// Load lock file from disk
     pub fn load(&mut self) -> crate::error::Result<()> {
         self.load_from_disk()?;
         Ok(())
-    }
-    
     /// Get locked version for a package
     pub fn get_locked_version(&self, package_name: &str) -> Option<LockedPackage> {
         self.current_lock.as_ref()?
@@ -423,8 +304,3 @@ impl LockFileManager {
 /// Export format options for lock files
 #[derive(Debug, Clone)]
 pub enum LockFileExportFormat {
-    Json,
-    Yaml,
-    Summary,
-}
-

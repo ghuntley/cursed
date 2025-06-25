@@ -13,17 +13,10 @@ use super::super::crypto_hash_advanced::hmac::{HmacEngine, HmacAlgorithm, HmacEr
 /// fr fr PBKDF2 parameters and configuration
 #[derive(Debug, Clone)]
 pub struct Pbkdf2Config {
-    pub hash_algorithm: HmacAlgorithm,
-    pub iterations: u32,
-    pub salt_len: usize,
-    pub output_len: usize,
-}
-
 impl Pbkdf2Config {
     /// slay Create PBKDF2 config with secure defaults
     pub fn new() -> Self {
         Self {
-            hash_algorithm: HmacAlgorithm::Sha256,
             iterations: 100_000, // OWASP recommended minimum
             salt_len: 16,        // 128-bit salt
             output_len: 32,      // 256-bit derived key
@@ -33,10 +26,6 @@ impl Pbkdf2Config {
     /// bestie Create PBKDF2 config with custom parameters
     pub fn with_params(hash_algorithm: HmacAlgorithm, iterations: u32, output_len: usize) -> Self {
         Self {
-            hash_algorithm,
-            iterations,
-            salt_len: 16,
-            output_len,
         }
     }
     
@@ -44,19 +33,11 @@ impl Pbkdf2Config {
     pub fn validate(&self) -> crate::error::Result<()> {
         if self.iterations < 1000 {
             return Err(Pbkdf2Error::InvalidConfig("PBKDF2 iterations must be at least 1000 for security".to_string()));
-        }
-        
         if self.salt_len < 8 {
             return Err(Pbkdf2Error::InvalidConfig("Salt length must be at least 8 bytes".to_string()));
-        }
-        
         if self.output_len == 0 || self.output_len > 1024 {
             return Err(Pbkdf2Error::InvalidConfig("Output length must be between 1 and 1024 bytes".to_string()));
-        }
-        
         Ok(())
-    }
-    
     /// periodt Get recommended iteration count for given security level
     pub fn recommended_iterations(security_level: SecurityLevel) -> u32 {
         match security_level {
@@ -66,8 +47,6 @@ impl Pbkdf2Config {
             SecurityLevel::Maximum => 1_000_000, // Maximum security
         }
     }
-}
-
 impl Default for Pbkdf2Config {
     fn default() -> Self {
         Self::new()
@@ -81,98 +60,57 @@ pub enum SecurityLevel {
     Standard,  // 100K iterations - production default
     High,      // 500K iterations - high security applications
     Maximum,   // 1M iterations - maximum security
-}
-
 impl SecurityLevel {
     pub fn name(&self) -> &'static str {
         match self {
-            SecurityLevel::Fast => "Fast",
-            SecurityLevel::Standard => "Standard",
-            SecurityLevel::High => "High",
-            SecurityLevel::Maximum => "Maximum",
         }
     }
-}
-
 /// fr fr PBKDF2 key derivation engine
 #[derive(Debug)]
 pub struct Pbkdf2Engine {
-    config: Pbkdf2Config,
-}
-
 impl Pbkdf2Engine {
     /// slay Create new PBKDF2 engine with configuration
     pub fn new(config: Pbkdf2Config) -> crate::error::Result<()> {
         config.validate()?;
         Ok(Self { config })
-    }
-    
     /// bestie Create PBKDF2 engine with default configuration
     pub fn default() -> crate::error::Result<()> {
         Self::new(Pbkdf2Config::new())
-    }
-    
     /// vibes Derive key from password and salt
     pub fn derive_key(&self, password: &[u8], salt: &[u8]) -> crate::error::Result<()> {
         if password.is_empty() {
             return Err(Pbkdf2Error::InvalidInput("Password cannot be empty".to_string()));
-        }
-        
         if salt.len() < 8 {
             return Err(Pbkdf2Error::InvalidInput("Salt must be at least 8 bytes".to_string()));
-        }
-        
         self.pbkdf2_derive(password, salt, self.config.iterations, self.config.output_len)
-    }
-    
     /// periodt Derive key with custom parameters
     pub fn derive_key_custom(&self, password: &[u8], salt: &[u8], iterations: u32, output_len: usize) -> crate::error::Result<()> {
         if password.is_empty() {
             return Err(Pbkdf2Error::InvalidInput("Password cannot be empty".to_string()));
-        }
-        
         if salt.len() < 8 {
             return Err(Pbkdf2Error::InvalidInput("Salt must be at least 8 bytes".to_string()));
-        }
-        
         if iterations < 1000 {
             return Err(Pbkdf2Error::InvalidInput("Iterations must be at least 1000".to_string()));
-        }
-        
         if output_len == 0 || output_len > 1024 {
             return Err(Pbkdf2Error::InvalidInput("Output length must be between 1 and 1024 bytes".to_string()));
-        }
-        
         self.pbkdf2_derive(password, salt, iterations, output_len)
-    }
-    
     /// facts Verify password against derived key
     pub fn verify_password(&self, password: &[u8], salt: &[u8], expected_key: &[u8]) -> crate::error::Result<()> {
         let derived_key = self.derive_key(password, salt)?;
         Ok(self.constant_time_compare(&derived_key, expected_key))
-    }
-    
     /// yolo Hash password with random salt (for storage)
     pub fn hash_password(&self, password: &[u8]) -> crate::error::Result<()> {
         let salt = self.generate_salt()?;
         let derived_key = self.derive_key(password, &salt)?;
         
         Ok(Pbkdf2Result {
-            algorithm: self.config.hash_algorithm,
-            iterations: self.config.iterations,
-            salt,
-            derived_key,
         })
-    }
-    
     /// slay Generate cryptographically secure salt
     pub fn generate_salt(&self) -> crate::error::Result<()> {
         use rand::RngCore;
         let mut salt = vec![0u8; self.config.salt_len];
         rand::thread_rng().fill_bytes(&mut salt);
         Ok(salt)
-    }
-    
     // Internal PBKDF2 implementation following RFC 2898
     fn pbkdf2_derive(&self, password: &[u8], salt: &[u8], iterations: u32, output_len: usize) -> crate::error::Result<()> {
         let hmac_engine = HmacEngine::new(self.config.hash_algorithm, password)
@@ -185,13 +123,9 @@ impl Pbkdf2Engine {
         for i in 1..=blocks_needed {
             let block = self.pbkdf2_f(&hmac_engine, salt, iterations, i)?;
             derived_key.extend_from_slice(&block);
-        }
-        
         // Truncate to requested length
         derived_key.truncate(output_len);
         Ok(derived_key)
-    }
-    
     // PBKDF2 F function: U1 = PRF(P, S || INT(i)), U2 = PRF(P, U1), ..., Uc = PRF(P, Uc-1)
     // F(P, S, c, i) = U1 XOR U2 XOR ... XOR Uc
     fn pbkdf2_f(&self, hmac_engine: &HmacEngine, salt: &[u8], iterations: u32, block_index: u32) -> crate::error::Result<()> {
@@ -214,14 +148,10 @@ impl Pbkdf2Engine {
         }
         
         Ok(result)
-    }
-    
     /// facts Constant-time comparison to prevent timing attacks
     fn constant_time_compare(&self, a: &[u8], b: &[u8]) -> bool {
         if a.len() != b.len() {
             return false;
-        }
-        
         let mut result = 0u8;
         for (x, y) in a.iter().zip(b.iter()) {
             result |= x ^ y;
@@ -233,37 +163,18 @@ impl Pbkdf2Engine {
 /// fr fr PBKDF2 result containing all derivation parameters
 #[derive(Debug, Clone)]
 pub struct Pbkdf2Result {
-    pub algorithm: HmacAlgorithm,
-    pub iterations: u32,
-    pub salt: Vec<u8>,
-    pub derived_key: Vec<u8>,
-}
-
 impl Pbkdf2Result {
     /// bestie Encode result as string for storage (simplified format)
     pub fn to_string(&self) -> String {
         format!(
-            "pbkdf2:{}:{}:{}:{}",
-            self.algorithm.name(),
-            self.iterations,
-            hex::encode(&self.salt),
             hex::encode(&self.derived_key)
         )
-    }
-    
     /// vibes Parse result from string format
     pub fn from_string(s: &str) -> crate::error::Result<()> {
         let parts: Vec<&str> = s.split(':').collect();
         if parts.len() != 5 || parts[0] != "pbkdf2" {
             return Err(Pbkdf2Error::InvalidFormat("Invalid PBKDF2 string format".to_string()));
-        }
-        
         let algorithm = match parts[1] {
-            "HMAC-SHA256" => HmacAlgorithm::Sha256,
-            "HMAC-SHA512" => HmacAlgorithm::Sha512,
-            "HMAC-BLAKE3" => HmacAlgorithm::Blake3,
-            _ => return Err(Pbkdf2Error::InvalidFormat("Unknown hash algorithm".to_string())),
-        };
         
         let iterations = parts[2].parse::<u32>()
             .map_err(|_| Pbkdf2Error::InvalidFormat("Invalid iteration count".to_string()))?;
@@ -275,21 +186,10 @@ impl Pbkdf2Result {
             .map_err(|_| Pbkdf2Error::InvalidFormat("Invalid derived key hex encoding".to_string()))?;
         
         Ok(Self {
-            algorithm,
-            iterations,
-            salt,
-            derived_key,
         })
-    }
-    
     /// periodt Verify password against this result
     pub fn verify(&self, password: &[u8]) -> crate::error::Result<()> {
         let config = Pbkdf2Config {
-            hash_algorithm: self.algorithm,
-            iterations: self.iterations,
-            salt_len: self.salt.len(),
-            output_len: self.derived_key.len(),
-        };
         
         let engine = Pbkdf2Engine::new(config)?;
         engine.verify_password(password, &self.salt, &self.derived_key)
@@ -299,14 +199,6 @@ impl Pbkdf2Result {
 /// fr fr PBKDF2 error types
 #[derive(Debug, Clone, PartialEq)]
 pub enum Pbkdf2Error {
-    InvalidConfig(String),
-    InvalidInput(String),
-    InvalidFormat(String),
-    HmacError(HmacError),
-    InsufficientEntropy,
-    Internal(String),
-}
-
 // impl std::fmt::Display for Pbkdf2Error {
 //     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
 //         match self {
@@ -329,42 +221,30 @@ impl Pbkdf2Utils {
     /// bestie Convert bytes to hex string
     pub fn to_hex(bytes: &[u8]) -> String {
         hex::encode(bytes)
-    }
-    
     /// vibes Hash password with PBKDF2-SHA256 and default settings
     pub fn hash_password_sha256(password: &str) -> crate::error::Result<()> {
         let engine = Pbkdf2Engine::default()?;
         let result = engine.hash_password(password.as_bytes())?;
         Ok(result.to_string())
-    }
-    
     /// periodt Hash password with PBKDF2-SHA512 and custom iterations
     pub fn hash_password_sha512(password: &str, iterations: u32) -> crate::error::Result<()> {
         let config = Pbkdf2Config::with_params(HmacAlgorithm::Sha512, iterations, 64);
         let engine = Pbkdf2Engine::new(config)?;
         let result = engine.hash_password(password.as_bytes())?;
         Ok(result.to_string())
-    }
-    
     /// facts Verify password against stored hash
     pub fn verify_password(password: &str, stored_hash: &str) -> crate::error::Result<()> {
         let result = Pbkdf2Result::from_string(stored_hash)?;
         result.verify(password.as_bytes())
-    }
-    
     /// yolo Derive key from password with custom parameters
     pub fn derive_key(password: &str, salt: &[u8], iterations: u32, output_len: usize) -> crate::error::Result<()> {
         let config = Pbkdf2Config::with_params(HmacAlgorithm::Sha256, iterations, output_len);
         let engine = Pbkdf2Engine::new(config)?;
         engine.derive_key(password.as_bytes(), salt)
-    }
-    
     /// slay Generate secure random salt
     pub fn generate_salt(length: usize) -> crate::error::Result<()> {
         if length < 8 {
             return Err(Pbkdf2Error::InvalidInput("Salt length must be at least 8 bytes".to_string()));
-        }
-        
         use rand::RngCore;
         let mut salt = vec![0u8; length];
         rand::thread_rng().fill_bytes(&mut salt);
@@ -378,37 +258,18 @@ impl Pbkdf2Utils {
 pub fn pbkdf2_derive_key(args: Vec<Value>) -> crate::error::Result<()> {
     if args.len() < 4 {
         return Err(CursedError::Runtime("PBKDF2 requires password, salt, iterations, and output length".to_string()));
-    }
-    
     let password = match &args[0] {
-        Value::String(s) => s.as_bytes(),
-        _ => return Err(CursedError::Runtime("Password must be a string".to_string())),
-    };
     
     let salt_hex = match &args[1] {
-        Value::String(s) => s,
-        _ => return Err(CursedError::Runtime("Salt must be a hex string".to_string())),
-    };
     
     let iterations = match &args[2] {
-        Value::Number(n) => *n as u32,
-        _ => return Err(CursedError::Runtime("Iterations must be a number".to_string())),
-    };
     
     let output_len = match &args[3] {
-        Value::Number(n) => *n as usize,
-        _ => return Err(CursedError::Runtime("Output length must be a number".to_string())),
-    };
     
     // Decode salt from hex
     let salt = match hex::decode(salt_hex) {
-        Ok(s) => s,
-        Err(_) => return Err(CursedError::Runtime("Invalid hex encoding in salt".to_string())),
-    };
     
     match Pbkdf2Utils::derive_key(std::str::from_utf8(password).unwrap(), &salt, iterations, output_len) {
-        Ok(key) => Ok(Value::String(Pbkdf2Utils::to_hex(&key))),
-        Err(e) => Err(CursedError::Runtime(format!("PBKDF2 derivation failed: {}", e))),
     }
 }
 
@@ -416,50 +277,28 @@ pub fn pbkdf2_derive_key(args: Vec<Value>) -> crate::error::Result<()> {
 pub fn pbkdf2_hash_password(args: Vec<Value>) -> crate::error::Result<()> {
     if args.is_empty() {
         return Err(CursedError::Runtime("PBKDF2 hash requires password".to_string()));
-    }
-    
     let password = match &args[0] {
-        Value::String(s) => s,
-        _ => return Err(CursedError::Runtime("Password must be a string".to_string())),
-    };
     
     let algorithm = if args.len() > 1 {
         match &args[1] {
             Value::String(s) => match s.as_str() {
-                "SHA256" => HmacAlgorithm::Sha256,
-                "SHA512" => HmacAlgorithm::Sha512,
-                "BLAKE3" => HmacAlgorithm::Blake3,
-                _ => HmacAlgorithm::Sha256,
-            },
-            _ => HmacAlgorithm::Sha256,
         }
     } else {
         HmacAlgorithm::Sha256
-    };
     
     let iterations = if args.len() > 2 {
         match &args[2] {
-            Value::Number(n) => *n as u32,
-            _ => 100_000,
         }
     } else {
         100_000
-    };
     
     match algorithm {
         HmacAlgorithm::Sha256 => {
             match Pbkdf2Utils::hash_password_sha256(password) {
-                Ok(hash) => Ok(Value::String(hash)),
-                Err(e) => Err(CursedError::Runtime(format!("PBKDF2 hash failed: {}", e))),
             }
-        },
         HmacAlgorithm::Sha512 => {
             match Pbkdf2Utils::hash_password_sha512(password, iterations) {
-                Ok(hash) => Ok(Value::String(hash)),
-                Err(e) => Err(CursedError::Runtime(format!("PBKDF2 hash failed: {}", e))),
             }
-        },
-        _ => Err(CursedError::Runtime("Unsupported PBKDF2 algorithm".to_string())),
     }
 }
 
@@ -467,21 +306,11 @@ pub fn pbkdf2_hash_password(args: Vec<Value>) -> crate::error::Result<()> {
 pub fn pbkdf2_verify_password(args: Vec<Value>) -> crate::error::Result<()> {
     if args.len() < 2 {
         return Err(CursedError::Runtime("PBKDF2 verify requires password and stored hash".to_string()));
-    }
-    
     let password = match &args[0] {
-        Value::String(s) => s,
-        _ => return Err(CursedError::Runtime("Password must be a string".to_string())),
-    };
     
     let stored_hash = match &args[1] {
-        Value::String(s) => s,
-        _ => return Err(CursedError::Runtime("Stored hash must be a string".to_string())),
-    };
     
     match Pbkdf2Utils::verify_password(password, stored_hash) {
-        Ok(valid) => Ok(Value::bool(valid)),
-        Err(e) => Err(CursedError::Runtime(format!("PBKDF2 verification failed: {}", e))),
     }
 }
 
@@ -491,14 +320,9 @@ pub fn pbkdf2_generate_salt(args: Vec<Value>) -> crate::error::Result<()> {
         16
     } else {
         match &args[0] {
-            Value::Number(n) => *n as usize,
-            _ => 16,
         }
-    };
     
     match Pbkdf2Utils::generate_salt(length) {
-        Ok(salt) => Ok(Value::String(Pbkdf2Utils::to_hex(&salt))),
-        Err(e) => Err(CursedError::Runtime(format!("Salt generation failed: {}", e))),
     }
 }
 
@@ -508,35 +332,21 @@ pub fn create_pbkdf2_config(args: Vec<Value>) -> crate::error::Result<()> {
         "SHA256"
     } else {
         match &args[0] {
-            Value::String(s) => s.as_str(),
-            _ => "SHA256",
         }
-    };
     
     let algorithm = match algorithm_str {
-        "SHA256" => HmacAlgorithm::Sha256,
-        "SHA512" => HmacAlgorithm::Sha512,
-        "BLAKE3" => HmacAlgorithm::Blake3,
-        _ => HmacAlgorithm::Sha256,
-    };
     
     let iterations = if args.len() > 1 {
         match &args[1] {
-            Value::Number(n) => *n as u32,
-            _ => 100_000,
         }
     } else {
         100_000
-    };
     
     let output_len = if args.len() > 2 {
         match &args[2] {
-            Value::Number(n) => *n as usize,
-            _ => algorithm.output_size(),
         }
     } else {
         algorithm.output_size()
-    };
     
     let config = Pbkdf2Config::with_params(algorithm, iterations, output_len);
     
@@ -547,5 +357,3 @@ pub fn create_pbkdf2_config(args: Vec<Value>) -> crate::error::Result<()> {
     result.insert("salt_len".to_string(), Value::Number(config.salt_len as f64));
     
     Ok(Value::Object(result))
-}
-

@@ -16,19 +16,11 @@ use tracing::{debug, info, instrument, warn};
 #[derive(Debug, Clone)]
 pub struct AdvancedRegisterAllocator {
     /// Target architecture register count
-    register_count: usize,
     /// Interference graph
-    interference_graph: HashMap<VirtualRegister, HashSet<VirtualRegister>>,
     /// Register allocation result
-    allocation: HashMap<VirtualRegister, PhysicalRegister>,
     /// Spill locations
-    spill_locations: HashMap<VirtualRegister, StackSlot>,
     /// Coalescing candidates
-    coalescing_candidates: Vec<(VirtualRegister, VirtualRegister)>,
     /// Statistics
-    statistics: RegisterAllocationStats,
-}
-
 /// Virtual register representation
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct VirtualRegister(pub u32);
@@ -44,33 +36,13 @@ pub struct StackSlot(pub u32);
 /// Live range information for register allocation
 #[derive(Debug, Clone)]
 pub struct LiveRange {
-    pub register: VirtualRegister,
-    pub start: u32,
-    pub end: u32,
-    pub frequency: f64,
-    pub spill_cost: f64,
-}
-
 /// Register allocation statistics
 #[derive(Debug, Clone, Default)]
 pub struct RegisterAllocationStats {
-    pub virtual_registers: usize,
-    pub physical_registers_used: usize,
-    pub spilled_registers: usize,
-    pub coalesced_moves: usize,
-    pub allocation_time: Duration,
-}
-
 impl AdvancedRegisterAllocator {
     /// Create new register allocator
     pub fn new(register_count: usize) -> Self {
         Self {
-            register_count,
-            interference_graph: HashMap::new(),
-            allocation: HashMap::new(),
-            spill_locations: HashMap::new(),
-            coalescing_candidates: Vec::new(),
-            statistics: RegisterAllocationStats::default(),
         }
     }
 
@@ -101,8 +73,6 @@ impl AdvancedRegisterAllocator {
         
         info!("Register allocation completed in {:?}", self.statistics.allocation_time);
         Ok(())
-    }
-
     /// Build interference graph from live ranges
     fn build_interference_graph(&mut self, live_ranges: &[LiveRange]) -> Result<()> {
         for i in 0..live_ranges.len() {
@@ -122,12 +92,8 @@ impl AdvancedRegisterAllocator {
                         .insert(range1.register);
                 }
             }
-        }
-        
         debug!("Built interference graph with {} nodes", self.interference_graph.len());
         Ok(())
-    }
-
     /// Perform register coalescing to reduce move instructions
     fn perform_coalescing(&mut self) -> Result<()> {
         let mut coalesced = 0;
@@ -142,8 +108,6 @@ impl AdvancedRegisterAllocator {
         self.statistics.coalesced_moves = coalesced;
         debug!("Coalesced {} register pairs", coalesced);
         Ok(())
-    }
-
     /// Check if two registers can be coalesced
     fn can_coalesce(&self, reg1: VirtualRegister, reg2: VirtualRegister) -> bool {
         // Simple heuristic: can coalesce if they don't interfere
@@ -151,8 +115,6 @@ impl AdvancedRegisterAllocator {
             .get(&reg1)
             .map(|neighbors| neighbors.contains(&reg2))
             .unwrap_or(false)
-    }
-
     /// Coalesce two registers by merging their interference sets
     fn coalesce_registers(&mut self, reg1: VirtualRegister, reg2: VirtualRegister) -> Result<()> {
         // Merge interference sets
@@ -160,8 +122,6 @@ impl AdvancedRegisterAllocator {
         
         if let Some(reg1_neighbors) = self.interference_graph.get_mut(&reg1) {
             reg1_neighbors.extend(reg2_neighbors);
-        }
-        
         // Update all references to reg2 to point to reg1
         for neighbors in self.interference_graph.values_mut() {
             if neighbors.remove(&reg2) {
@@ -170,8 +130,6 @@ impl AdvancedRegisterAllocator {
         }
         
         Ok(())
-    }
-
     /// Graph coloring register allocation
     fn graph_coloring_allocation(&mut self) -> Result<()> {
         let mut available_registers: HashSet<PhysicalRegister> = 
@@ -198,8 +156,6 @@ impl AdvancedRegisterAllocator {
         }
         
         Ok(())
-    }
-
     /// Handle register spills by allocating stack slots
     fn handle_spills(&mut self, live_ranges: &[LiveRange]) -> Result<()> {
         let mut next_stack_slot = 0;
@@ -215,18 +171,12 @@ impl AdvancedRegisterAllocator {
         }
         
         Ok(())
-    }
-
     /// Get allocation result
     pub fn get_allocation(&self) -> &HashMap<VirtualRegister, PhysicalRegister> {
         &self.allocation
-    }
-
     /// Get spill locations
     pub fn get_spill_locations(&self) -> &HashMap<VirtualRegister, StackSlot> {
         &self.spill_locations
-    }
-
     /// Get statistics
     pub fn get_statistics(&self) -> &RegisterAllocationStats {
         &self.statistics
@@ -237,17 +187,10 @@ impl AdvancedRegisterAllocator {
 #[derive(Debug, Clone)]
 pub struct InstructionScheduler {
     /// Instruction dependency graph
-    dependency_graph: HashMap<InstructionId, HashSet<InstructionId>>,
     /// Instruction latencies
-    latencies: HashMap<InstructionId, u32>,
     /// Pipeline configuration
-    pipeline_config: PipelineConfig,
     /// Scheduling result
-    scheduled_order: Vec<InstructionId>,
     /// Statistics
-    statistics: SchedulingStats,
-}
-
 /// Instruction identifier
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct InstructionId(pub u32);
@@ -255,39 +198,16 @@ pub struct InstructionId(pub u32);
 /// Pipeline configuration for instruction scheduling
 #[derive(Debug, Clone)]
 pub struct PipelineConfig {
-    pub pipeline_depth: u32,
-    pub issue_width: u32,
-    pub functional_units: HashMap<InstructionType, u32>,
-}
-
 /// Instruction type for pipeline scheduling
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum InstructionType {
-    Arithmetic,
-    Memory,
-    Branch,
-    FloatingPoint,
-    Vector,
-}
-
 /// Scheduling statistics
 #[derive(Debug, Clone, Default)]
 pub struct SchedulingStats {
-    pub instructions_scheduled: usize,
-    pub cycles_saved: u32,
-    pub pipeline_stalls_avoided: u32,
-    pub scheduling_time: Duration,
-}
-
 impl InstructionScheduler {
     /// Create new instruction scheduler
     pub fn new(pipeline_config: PipelineConfig) -> Self {
         Self {
-            dependency_graph: HashMap::new(),
-            latencies: HashMap::new(),
-            pipeline_config,
-            scheduled_order: Vec::new(),
-            statistics: SchedulingStats::default(),
         }
     }
 
@@ -310,8 +230,6 @@ impl InstructionScheduler {
         
         info!("Instruction scheduling completed in {:?}", self.statistics.scheduling_time);
         Ok(self.scheduled_order.clone())
-    }
-
     /// Build instruction dependency graph
     fn build_dependency_graph(&mut self, instructions: &[Instruction]) -> Result<()> {
         // Analyze data dependencies (RAW, WAR, WAW)
@@ -327,13 +245,8 @@ impl InstructionScheduler {
                         .insert(InstructionId(j as u32));
                 }
             }
-        }
-        
-        debug!("Built dependency graph with {} edges", 
                self.dependency_graph.values().map(|deps| deps.len()).sum::<usize>());
         Ok(())
-    }
-
     /// Check if instruction has dependency
     fn has_dependency(&self, inst1: &Instruction, inst2: &Instruction) -> bool {
         // Check for register dependencies
@@ -346,11 +259,7 @@ impl InstructionScheduler {
         // Check for memory dependencies
         if inst1.memory_access && inst2.memory_access {
             return true; // Conservative assumption
-        }
-        
         false
-    }
-
     /// List scheduling algorithm
     fn list_scheduling(&mut self, instructions: &[Instruction]) -> Result<()> {
         let mut ready_queue: VecDeque<InstructionId> = VecDeque::new();
@@ -388,13 +297,9 @@ impl InstructionScheduler {
             }
             
             cycle += 1;
-        }
-        
         self.statistics.cycles_saved = cycle.saturating_sub(instructions.len() as u32);
         debug!("List scheduling completed in {} cycles", cycle);
         Ok(())
-    }
-
     /// Check if instruction can be issued in current cycle
     fn can_issue_instruction(&self, instruction: &Instruction, cycle: u32) -> bool {
         // Check functional unit availability
@@ -405,8 +310,6 @@ impl InstructionScheduler {
         
         // Simplified check - in reality would track functional unit usage
         required_units > 0
-    }
-
     /// Update ready queue with newly available instructions
     fn update_ready_queue(&self, scheduled: &HashSet<InstructionId>, ready_queue: &mut VecDeque<InstructionId>) {
         for (&inst_id, dependencies) in &self.dependency_graph {
@@ -428,42 +331,22 @@ impl InstructionScheduler {
 /// Instruction representation for scheduling
 #[derive(Debug, Clone)]
 pub struct Instruction {
-    pub id: InstructionId,
-    pub instruction_type: InstructionType,
-    pub uses: HashSet<VirtualRegister>,
-    pub definitions: HashSet<VirtualRegister>,
-    pub memory_access: bool,
-    pub latency: u32,
-}
-
 impl Instruction {
     /// Create new instruction
     pub fn new(id: u32, instruction_type: InstructionType) -> Self {
         Self {
-            id: InstructionId(id),
-            instruction_type,
-            uses: HashSet::new(),
-            definitions: HashSet::new(),
-            memory_access: false,
-            latency: 1,
         }
     }
 
     /// Add register use
     pub fn add_use(&mut self, register: VirtualRegister) {
         self.uses.insert(register);
-    }
-
     /// Add register definition
     pub fn add_definition(&mut self, register: VirtualRegister) {
         self.definitions.insert(register);
-    }
-
     /// Mark as memory access
     pub fn set_memory_access(&mut self) {
         self.memory_access = true;
-    }
-
     /// Set instruction latency
     pub fn set_latency(&mut self, latency: u32) {
         self.latency = latency;
@@ -480,10 +363,5 @@ impl Default for PipelineConfig {
         functional_units.insert(InstructionType::Vector, 1);
         
         Self {
-            pipeline_depth: 5,
-            issue_width: 2,
-            functional_units,
         }
     }
-}
-

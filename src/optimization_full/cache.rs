@@ -17,120 +17,47 @@ use flate2::{Compression, read::GzDecoder, write::GzEncoder};
 /// Cache entry metadata
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct CacheEntry {
-    pub key: String,
-    pub file_path: PathBuf,
-    pub source_hash: String,
-    pub dependencies_hash: String,
-    pub compilation_flags: Vec<String>,
-    pub created_at: u64,
-    pub last_accessed: u64,
-    pub access_count: usize,
-    pub file_size: usize,
-    pub cache_type: CacheType,
-}
-
 /// Types of cached content
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub enum CacheType {
-    CompiledObject,
-    LlvmIr,
-    AstSerialized,
-    PreprocessedSource,
-    DependencyInfo,
-    OptimizationMetadata,
-}
-
 impl CacheType {
     pub fn file_extension(&self) -> &'static str {
         match self {
-            CacheType::CompiledObject => "o",
-            CacheType::LlvmIr => "ll",
-            CacheType::AstSerialized => "ast",
-            CacheType::PreprocessedSource => "i",
-            CacheType::DependencyInfo => "dep",
-            CacheType::OptimizationMetadata => "opt",
         }
     }
     
     pub fn should_compress(&self) -> bool {
         match self {
-            CacheType::LlvmIr | CacheType::PreprocessedSource | CacheType::AstSerialized => true,
-            _ => false,
         }
     }
-}
-
 /// Cache configuration
 #[derive(Debug, Clone)]
 pub struct CacheConfig {
-    pub max_size_mb: usize,
-    pub max_entries: usize,
-    pub ttl_hours: usize,
-    pub compression_enabled: bool,
-    pub eviction_strategy: EvictionStrategy,
-}
-
 /// Cache eviction strategies
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum EvictionStrategy {
-    LeastRecentlyUsed,
-    LeastFrequentlyUsed,
-    FirstInFirstOut,
-    SizeBasedPriority,
-}
-
 impl Default for CacheConfig {
     fn default() -> Self {
         Self {
             max_size_mb: 1024, // 1GB default
-            max_entries: 10000,
             ttl_hours: 24 * 7, // 1 week
-            compression_enabled: true,
-            eviction_strategy: EvictionStrategy::LeastRecentlyUsed,
         }
     }
-}
-
 /// Main compilation cache
 pub struct CompilationCache {
-    cache_dir: PathBuf,
-    config: CacheConfig,
-    entries: HashMap<String, CacheEntry>,
-    metadata_file: PathBuf,
-    stats: CacheStats,
-}
-
 /// Cache statistics
 #[derive(Debug, Clone)]
 pub struct CacheStats {
-    pub hits: usize,
-    pub misses: usize,
-    pub evictions: usize,
-    pub total_size_bytes: usize,
-    pub entry_count: usize,
-    pub compression_ratio: f64,
-}
-
 impl Default for CacheStats {
     fn default() -> Self {
         Self {
-            hits: 0,
-            misses: 0,
-            evictions: 0,
-            total_size_bytes: 0,
-            entry_count: 0,
-            compression_ratio: 1.0,
         }
     }
-}
-
 impl CompilationCache {
     /// Create new compilation cache
     pub fn new(cache_dir: &Path) -> Result<Self> {
         let config = CacheConfig::default();
         Self::with_config(cache_dir, config)
-    }
-    
     /// Create cache with custom configuration
     pub fn with_config(cache_dir: &Path, config: CacheConfig) -> Result<Self> {
         let cache_directory = cache_dir.to_path_buf();
@@ -141,32 +68,17 @@ impl CompilationCache {
             .map_err(|e| CursedError::General(format!("Failed to create cache directory: {}", e)))?;
         
         for cache_type in [
-            CacheType::CompiledObject,
-            CacheType::LlvmIr,
-            CacheType::AstSerialized,
-            CacheType::PreprocessedSource,
-            CacheType::DependencyInfo,
-            CacheType::OptimizationMetadata,
         ] {
             let subdir = cache_directory.join(cache_type.file_extension());
             fs::create_dir_all(&subdir)
                 .map_err(|e| CursedError::General(format!("Failed to create cache subdirectory: {}", e)))?;
-        }
-        
         // Load existing metadata
         let entries = if metadata_file.exists() {
             Self::load_metadata(&metadata_file)?
         } else {
             HashMap::new()
-        };
         
         let mut cache = Self {
-            cache_dir: cache_directory,
-            config,
-            entries,
-            metadata_file,
-            stats: CacheStats::default(),
-        };
         
         // Update stats
         cache.recalculate_stats();
@@ -175,15 +87,8 @@ impl CompilationCache {
         cache.clean_expired_entries()?;
         
         Ok(cache)
-    }
-    
     /// Generate cache key for source file
     pub fn generate_key(
-        &self,
-        source_path: &Path,
-        dependencies: &[PathBuf],
-        flags: &[String],
-        cache_type: CacheType,
     ) -> Result<String> {
         let mut hasher = Sha256::new();
         
@@ -208,15 +113,11 @@ impl CompilationCache {
         // Include compilation flags
         for flag in flags {
             hasher.update(flag.as_bytes());
-        }
-        
         // Include cache type
         hasher.update(&[cache_type as u8]);
         
         let hash = hasher.finalize();
         Ok(format!("{:x}", hash))
-    }
-    
     /// Check if entry exists in cache
     pub fn contains(&mut self, key: &str) -> bool {
         if let Some(entry) = self.entries.get_mut(key) {
@@ -246,13 +147,6 @@ impl CompilationCache {
     
     /// Store data in cache
     pub fn store(
-        &mut self,
-        key: &str,
-        data: &[u8],
-        source_path: &Path,
-        dependencies: &[PathBuf],
-        flags: &[String],
-        cache_type: CacheType,
     ) -> Result<()> {
         let cache_file = self.get_cache_file_path(key, cache_type);
         
@@ -260,8 +154,6 @@ impl CompilationCache {
         if let Some(parent) = cache_file.parent() {
             fs::create_dir_all(parent)
                 .map_err(|e| CursedError::General(format!("Failed to create cache directory: {}", e)))?;
-        }
-        
         // Write data (with compression if enabled)
         let final_size = if self.config.compression_enabled && cache_type.should_compress() {
             self.write_compressed(&cache_file, data)?
@@ -269,7 +161,6 @@ impl CompilationCache {
             fs::write(&cache_file, data)
                 .map_err(|e| CursedError::General(format!("Failed to write cache file: {}", e)))?;
             data.len()
-        };
         
         // Calculate hashes
         let source_hash = self.calculate_file_hash(source_path)?;
@@ -277,23 +168,12 @@ impl CompilationCache {
         
         // Create cache entry
         let entry = CacheEntry {
-            key: key.to_string(),
-            file_path: cache_file,
-            source_hash,
-            dependencies_hash,
-            compilation_flags: flags.to_vec(),
             created_at: SystemTime::now()
                 .duration_since(UNIX_EPOCH)
                 .unwrap_or_default()
-                .as_secs(),
             last_accessed: SystemTime::now()
                 .duration_since(UNIX_EPOCH)
                 .unwrap_or_default()
-                .as_secs(),
-            access_count: 1,
-            file_size: final_size,
-            cache_type,
-        };
         
         self.entries.insert(key.to_string(), entry);
         self.stats.entry_count += 1;
@@ -306,14 +186,10 @@ impl CompilationCache {
         self.save_metadata()?;
         
         Ok(())
-    }
-    
     /// Retrieve data from cache
     pub fn retrieve(&mut self, key: &str) -> Result<Option<Vec<u8>>> {
         if !self.contains(key) {
             return Ok(None);
-        }
-        
         let entry = self.entries.get(key).unwrap();
         let cache_file = &entry.file_path;
         
@@ -323,11 +199,8 @@ impl CompilationCache {
         } else {
             fs::read(cache_file)
                 .map_err(|e| CursedError::General(format!("Failed to read cache file: {}", e)))?
-        };
         
         Ok(Some(data))
-    }
-    
     /// Remove entry from cache
     pub fn remove(&mut self, key: &str) -> Result<bool> {
         if let Some(entry) = self.entries.remove(key) {
@@ -335,8 +208,6 @@ impl CompilationCache {
             if entry.file_path.exists() {
                 fs::remove_file(&entry.file_path)
                     .map_err(|e| CursedError::General(format!("Failed to remove cache file: {}", e)))?;
-            }
-            
             self.stats.entry_count -= 1;
             self.stats.total_size_bytes = self.stats.total_size_bytes.saturating_sub(entry.file_size);
             
@@ -357,12 +228,6 @@ impl CompilationCache {
         
         // Clear subdirectories
         for cache_type in [
-            CacheType::CompiledObject,
-            CacheType::LlvmIr,
-            CacheType::AstSerialized,
-            CacheType::PreprocessedSource,
-            CacheType::DependencyInfo,
-            CacheType::OptimizationMetadata,
         ] {
             let subdir = self.cache_dir.join(cache_type.file_extension());
             if subdir.exists() {
@@ -378,15 +243,12 @@ impl CompilationCache {
         self.save_metadata()?;
         
         Ok(())
-    }
-    
     /// Get cache statistics
     pub fn get_stats(&self) -> HashMap<String, usize> {
         let mut stats = HashMap::new();
         
         stats.insert("hits".to_string(), self.stats.hits);
         stats.insert("misses".to_string(), self.stats.misses);
-        stats.insert("hit_rate".to_string(), 
             if self.stats.hits + self.stats.misses > 0 {
                 (100 * self.stats.hits) / (self.stats.hits + self.stats.misses)
             } else {
@@ -399,22 +261,12 @@ impl CompilationCache {
         
         // Cache type breakdown
         for cache_type in [
-            CacheType::CompiledObject,
-            CacheType::LlvmIr,
-            CacheType::AstSerialized,
-            CacheType::PreprocessedSource,
-            CacheType::DependencyInfo,
-            CacheType::OptimizationMetadata,
         ] {
             let count = self.entries.values()
                 .filter(|e| e.cache_type == cache_type)
                 .count();
             stats.insert(format!("{:?}_count", cache_type).to_lowercase(), count);
-        }
-        
         stats
-    }
-    
     /// Get cache file path for key and type
     fn get_cache_file_path(&self, key: &str, cache_type: CacheType) -> PathBuf {
         let subdir = self.cache_dir.join(cache_type.file_extension());
@@ -422,10 +274,7 @@ impl CompilationCache {
             format!("{}.{}.gz", key, cache_type.file_extension())
         } else {
             format!("{}.{}", key, cache_type.file_extension())
-        };
         subdir.join(filename)
-    }
-    
     /// Write compressed data
     fn write_compressed(&self, path: &Path, data: &[u8]) -> Result<usize> {
         let file = File::create(path)
@@ -441,8 +290,6 @@ impl CompilationCache {
                 // Return compressed size
                 path.metadata().map(|m| m.len() as usize).unwrap_or(data.len())
             })
-    }
-    
     /// Read compressed data
     fn read_compressed(&self, path: &Path) -> Result<Vec<u8>> {
         let file = File::open(path)
@@ -454,8 +301,6 @@ impl CompilationCache {
             .map_err(|e| CursedError::General(format!("Failed to decompress data: {}", e)))?;
         
         Ok(data)
-    }
-    
     /// Calculate file hash
     fn calculate_file_hash(&self, file_path: &Path) -> Result<String> {
         let content = fs::read(file_path)
@@ -466,8 +311,6 @@ impl CompilationCache {
         let hash = hasher.finalize();
         
         Ok(format!("{:x}", hash))
-    }
-    
     /// Calculate dependencies hash
     fn calculate_dependencies_hash(&self, dependencies: &[PathBuf]) -> Result<String> {
         let mut hasher = Sha256::new();
@@ -483,8 +326,6 @@ impl CompilationCache {
         
         let hash = hasher.finalize();
         Ok(format!("{:x}", hash))
-    }
-    
     /// Clean expired entries
     fn clean_expired_entries(&mut self) -> Result<()> {
         let current_time = SystemTime::now()
@@ -504,11 +345,7 @@ impl CompilationCache {
         for key in expired_keys {
             self.remove(&key)?;
             self.stats.evictions += 1;
-        }
-        
         Ok(())
-    }
-    
     /// Maybe evict entries based on cache limits
     fn maybe_evict(&mut self) -> Result<()> {
         // Check size limit
@@ -527,8 +364,6 @@ impl CompilationCache {
         }
         
         Ok(())
-    }
-    
     /// Select candidate for eviction based on strategy
     fn select_eviction_candidate(&self) -> Option<String> {
         match self.config.eviction_strategy {
@@ -554,8 +389,6 @@ impl CompilationCache {
                     .map(|(key, _)| key.clone())
             }
         }
-    }
-    
     /// Recalculate cache statistics
     fn recalculate_stats(&mut self) {
         self.stats.entry_count = self.entries.len();
@@ -583,8 +416,6 @@ impl CompilationCache {
         let reader = BufReader::new(file);
         serde_json::from_reader(reader)
             .map_err(|e| CursedError::General(format!("Failed to parse metadata: {}", e)))
-    }
-    
     /// Save cache metadata
     fn save_metadata(&self) -> Result<()> {
         let file = File::create(&self.metadata_file)

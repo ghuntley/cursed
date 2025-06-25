@@ -13,8 +13,6 @@ pub type CtResult<T> = PkiResult<T>;
 
 pub fn parse_scts(_data: &[u8]) -> CtResult<SctList> {
     Ok(SctList)
-}
-
 pub fn verify_sct(_sct: &SignedCertificateTimestamp, _log: &CtLog) -> CtResult<bool> {
     Ok(true)
 }

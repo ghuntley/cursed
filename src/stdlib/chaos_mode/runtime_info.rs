@@ -11,23 +11,15 @@ use std::env;
 /// Returns the CURSED version string
 pub fn version() -> ChaosResult<String> {
     Ok(vibecheck::version())
-}
-
 /// Returns the Go architecture target (simulated for CURSED)
 pub fn goarch() -> ChaosResult<String> {
     Ok(vibecheck::goarch())
-}
-
 /// Returns the Go operating system target (simulated for CURSED)
 pub fn goos() -> ChaosResult<String> {
     Ok(vibecheck::goos())
-}
-
 /// Returns the compiler that built the binary
 pub fn compiler() -> ChaosResult<String> {
     Ok(vibecheck::compiler())
-}
-
 /// Gets runtime statistics
 pub fn runtime_stats() -> ChaosResult<HashMap<String, Value>> {
     let mut stats = HashMap::new();
@@ -77,20 +69,10 @@ pub fn runtime_stats() -> ChaosResult<HashMap<String, Value>> {
     // Runtime features
     let features = vibecheck::runtime_features();
     stats.insert("features".to_string(), json!({
-        "gc_enabled": features.gc_enabled,
-        "jit_enabled": features.jit_enabled,
-        "goroutines_enabled": features.goroutines_enabled,
-        "profiling_enabled": features.profiling_enabled,
-        "debugging_enabled": features.debugging_enabled,
     }));
     
     // Environment information
     stats.insert("environment".to_string(), json!({
-        "pid": std::process::id(),
-        "parent_pid": get_parent_pid(),
-        "working_directory": env::current_dir().ok().map(|p| p.to_string_lossy().to_string()),
-        "executable": env::current_exe().ok().map(|p| p.to_string_lossy().to_string()),
-        "command_line": env::args().collect::<Vec<String>>(),
     }));
     
     // Timing information
@@ -100,25 +82,16 @@ pub fn runtime_stats() -> ChaosResult<HashMap<String, Value>> {
         .unwrap_or_default();
     
     stats.insert("timing".to_string(), json!({
-        "start_time": start_time.duration_since(std::time::UNIX_EPOCH).unwrap_or_default().as_secs(),
-        "uptime_seconds": uptime.as_secs(),
-        "uptime_nanoseconds": uptime.as_nanos(),
     }));
     
     Ok(stats)
-}
-
 /// Gets the current Go root directory (simulated for CURSED)
 pub fn goroot() -> ChaosResult<String> {
     // Try to get from environment variable first
     if let Ok(goroot) = env::var("CURSED_ROOT") {
         return Ok(goroot);
-    }
-    
     if let Ok(goroot) = env::var("GOROOT") {
         return Ok(goroot);
-    }
-    
     // Default CURSED installation path
     if cfg!(target_os = "windows") {
         Ok("C:\\Program Files\\CURSED".to_string())
@@ -133,44 +106,22 @@ pub fn system_info() -> ChaosResult<HashMap<String, Value>> {
     
     // Operating system details
     info.insert("os".to_string(), json!({
-        "name": std::env::consts::OS,
-        "family": std::env::consts::FAMILY,
-        "arch": std::env::consts::ARCH,
-        "dll_prefix": std::env::consts::DLL_PREFIX,
-        "dll_suffix": std::env::consts::DLL_SUFFIX,
-        "exe_suffix": std::env::consts::EXE_SUFFIX,
     }));
     
     // CPU information
     info.insert("cpu".to_string(), json!({
-        "logical_cores": vibecheck::num_cpu(),
-        "max_procs": vibecheck::gomaxprocs(0),
-        "endianness": if cfg!(target_endian = "little") { "little" } else { "big" },
-        "pointer_width": std::mem::size_of::<usize>() * 8,
     }));
     
     // Memory layout
     let memory_layout = vibecheck::memory_layout();
     info.insert("memory_layout".to_string(), json!({
-        "page_size": memory_layout.page_size,
-        "stack_size": memory_layout.stack_size,
-        "heap_base": memory_layout.heap_base,
-        "heap_size": memory_layout.heap_size,
-        "address_space": memory_layout.address_space,
     }));
     
     // Process information
     info.insert("process".to_string(), json!({
-        "pid": std::process::id(),
-        "parent_pid": get_parent_pid(),
-        "thread_id": get_current_thread_id(),
-        "user_id": get_user_id(),
-        "group_id": get_group_id(),
     }));
     
     Ok(info)
-}
-
 /// Get performance characteristics
 pub fn performance_info() -> ChaosResult<HashMap<String, Value>> {
     let mut info = HashMap::new();
@@ -178,49 +129,26 @@ pub fn performance_info() -> ChaosResult<HashMap<String, Value>> {
     let runtime_metrics = vibecheck::get_metrics();
     
     info.insert("runtime_performance".to_string(), json!({
-        "goroutines": runtime_metrics.goroutines,
-        "threads": runtime_metrics.threads,
-        "memory_mb": runtime_metrics.memory_mb,
-        "gc_cycles": runtime_metrics.gc_cycles,
-        "cpu_usage": runtime_metrics.cpu_usage,
     }));
     
     let jit_stats = vibecheck::jit_stats();
     info.insert("jit_performance".to_string(), json!({
-        "compilations": jit_stats.compilations,
-        "execution_time_ms": jit_stats.execution_time_ms,
-        "optimization_level": jit_stats.optimization_level,
-        "cache_hits": jit_stats.cache_hits,
-        "cache_misses": jit_stats.cache_misses,
     }));
     
     let mem_stats = vibecheck::read_mem_stats();
     info.insert("memory_performance".to_string(), json!({
-        "allocations": mem_stats.mallocs,
-        "deallocations": mem_stats.frees,
-        "heap_alloc": mem_stats.heap_alloc,
-        "heap_sys": mem_stats.heap_sys,
-        "gc_pause_total_ns": mem_stats.pause_total_ns,
-        "gc_count": mem_stats.num_gc,
-        "gc_cpu_fraction": mem_stats.gc_cpu_fraction,
     }));
     
     Ok(info)
-}
-
 // Helper functions for system information
 
 fn get_parent_pid() -> Option<u32> {
     // Platform-specific implementation would go here
     // For now, return None as it's not easily portable
     None
-}
-
 fn get_current_thread_id() -> u64 {
     // Use vibecheck goroutine ID as thread ID
     vibecheck::go_id()
-}
-
 fn get_user_id() -> Option<u32> {
     #[cfg(unix)]
     {
@@ -248,17 +176,6 @@ pub fn cursed_env_vars() -> ChaosResult<HashMap<String, String>> {
     let mut vars = HashMap::new();
     
     let cursed_vars = [
-        "CURSED_ROOT",
-        "CURSED_DEBUG",
-        "CURSED_GC_PERCENT", 
-        "CURSED_GOMAXPROCS",
-        "CURSED_JIT_LEVEL",
-        "CURSED_PROFILE",
-        "CURSED_TRACE",
-        "GOROOT",
-        "GOOS",
-        "GOARCH",
-        "GOMAXPROCS",
     ];
     
     for var in &cursed_vars {
@@ -268,5 +185,3 @@ pub fn cursed_env_vars() -> ChaosResult<HashMap<String, String>> {
     }
     
     Ok(vars)
-}
-

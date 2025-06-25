@@ -11,10 +11,7 @@ use p384::{NistP384, ecdsa::SigningKey as P384SigningKey, ecdsa::VerifyingKey as
 use p521::{NistP521, ecdsa::SigningKey as P521SigningKey, ecdsa::VerifyingKey as P521VerifyingKey};
 use signature::{Signer, Verifier, SignatureEncoding};
 use elliptic_curve::{
-    sec1::{ToEncodedPoint, FromEncodedPoint, Coordinates},
-    pkcs8::{EncodePrivateKey, EncodePublicKey, DecodePrivateKey, DecodePublicKey, LineEnding},
-    PublicKey, SecretKey,
-};
+// };
 
 use zeroize::Zeroizing;
 use sha2::{Sha256, Sha384, Sha512, Digest};
@@ -25,34 +22,21 @@ pub enum EccCurve {
     P256,  // secp256r1 / prime256v1
     P384,  // secp384r1
     P521,  // secp521r1
-}
-
 impl EccCurve {
     pub fn name(&self) -> &'static str {
         match self {
-            EccCurve::P256 => "P-256",
-            EccCurve::P384 => "P-384", 
-            EccCurve::P521 => "P-521",
         }
     }
     
     pub fn key_size_bits(&self) -> usize {
         match self {
-            EccCurve::P256 => 256,
-            EccCurve::P384 => 384,
-            EccCurve::P521 => 521,
         }
     }
     
     pub fn coordinate_size_bytes(&self) -> usize {
         match self {
-            EccCurve::P256 => 32,
-            EccCurve::P384 => 48,
-            EccCurve::P521 => 66,
         }
     }
-}
-
 /// fr fr Key serialization formats for ECC
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum EccKeyFormat {
@@ -61,57 +45,28 @@ pub enum EccKeyFormat {
     Sec1Der,      // SEC1 DER format (for public keys)
     CompressedSec1, // SEC1 compressed format
     UncompressedSec1, // SEC1 uncompressed format
-}
-
 /// fr fr Hash algorithms for ECDSA
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum EccHashAlgorithm {
-    Sha256,
-    Sha384, 
-    Sha512,
-}
-
 impl EccHashAlgorithm {
     pub fn name(&self) -> &'static str {
         match self {
-            EccHashAlgorithm::Sha256 => "SHA-256",
-            EccHashAlgorithm::Sha384 => "SHA-384",
-            EccHashAlgorithm::Sha512 => "SHA-512",
         }
     }
     
     pub fn digest_size(&self) -> usize {
         match self {
-            EccHashAlgorithm::Sha256 => 32,
-            EccHashAlgorithm::Sha384 => 48,
-            EccHashAlgorithm::Sha512 => 64,
         }
     }
-}
-
 /// fr fr ECC key pair wrapper
 #[derive(Debug, Clone)]
 pub enum EccKeyPair {
     P256 {
-        private: P256SigningKey,
-        public: P256VerifyingKey,
-    },
     P384 {
-        private: P384SigningKey,
-        public: P384VerifyingKey,
-    },
     P521 {
-        private: P521SigningKey,
-        public: P521VerifyingKey,
-    },
-}
-
 impl EccKeyPair {
     pub fn curve(&self) -> EccCurve {
         match self {
-            EccKeyPair::P256 { .. } => EccCurve::P256,
-            EccKeyPair::P384 { .. } => EccCurve::P384,
-            EccKeyPair::P521 { .. } => EccCurve::P521,
         }
     }
     
@@ -123,20 +78,6 @@ impl EccKeyPair {
 /// fr fr ECC error types
 #[derive(Debug, Clone, PartialEq)]
 pub enum EccError {
-    UnsupportedCurve(String),
-    KeyGenerationFailed(String),
-    SigningFailed(String),
-    VerificationFailed(String),
-    InvalidSignature(String),
-    InvalidPublicKey(String),
-    InvalidPrivateKey(String),
-    InvalidFormat(String),
-    SerializationFailed(String),
-    DeserializationFailed(String),
-    UnsupportedHashAlgorithm(String),
-    Internal(String),
-}
-
 // impl std::fmt::Display for EccError {
 //     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
 //         match self {
@@ -162,14 +103,10 @@ type Ecccrate::error::Result<T> = Result<T>;
 
 /// fr fr ECC engine for cryptographic operations
 pub struct EccEngine {
-    rng: OsRng,
-}
-
 impl EccEngine {
     /// slay Create new ECC engine with cryptographically secure RNG
     pub fn new() -> Self {
         Self {
-            rng: OsRng,
         }
     }
     
@@ -185,26 +122,17 @@ impl EccEngine {
                 let private_key = P256SigningKey::random(&mut self.rng);
                 let public_key = private_key.verifying_key();
                 Ok(EccKeyPair::P256 {
-                    private: private_key,
-                    public: *public_key,
                 })
-            },
             EccCurve::P384 => {
                 let private_key = P384SigningKey::random(&mut self.rng);
                 let public_key = private_key.verifying_key();
                 Ok(EccKeyPair::P384 {
-                    private: private_key,
-                    public: *public_key,
                 })
-            },
             EccCurve::P521 => {
                 let private_key = P521SigningKey::random(&mut self.rng);
                 let public_key = private_key.verifying_key();
                 Ok(EccKeyPair::P521 {
-                    private: private_key,
-                    public: *public_key,
                 })
-            },
         }
     }
     
@@ -222,15 +150,12 @@ impl EccEngine {
             EccKeyPair::P256 { private, .. } => {
                 let signature: p256::ecdsa::Signature = private.sign(&hash);
                 Ok(signature.to_der().to_bytes().to_vec())
-            },
             EccKeyPair::P384 { private, .. } => {
                 let signature: p384::ecdsa::Signature = private.sign(&hash);
                 Ok(signature.to_der().to_bytes().to_vec())
-            },
             EccKeyPair::P521 { private, .. } => {
                 let signature: p521::ecdsa::Signature = private.sign(&hash);
                 Ok(signature.to_der().to_bytes().to_vec())
-            },
         }
     }
     
@@ -249,28 +174,20 @@ impl EccEngine {
                 let sig = p256::ecdsa::Signature::from_der(signature)
                     .map_err(|e| EccError::InvalidSignature(e.to_string()))?;
                 public.verify(&hash, &sig)
-            },
             EccKeyPair::P384 { public, .. } => {
                 let sig = p384::ecdsa::Signature::from_der(signature)
                     .map_err(|e| EccError::InvalidSignature(e.to_string()))?;
                 public.verify(&hash, &sig)
-            },
             EccKeyPair::P521 { public, .. } => {
                 let sig = p521::ecdsa::Signature::from_der(signature)
                     .map_err(|e| EccError::InvalidSignature(e.to_string()))?;
                 public.verify(&hash, &sig)
-            },
-        };
         
         Ok(result.is_ok())
-    }
-    
     /// slay Verify signature with standalone public key
     pub fn verify_with_public_key(&self, public_key: &[u8], curve: EccCurve, message: &[u8], signature: &[u8], hash_algo: EccHashAlgorithm) -> EccResult<bool> {
         let keypair = self.create_keypair_from_public_key(public_key, curve)?;
         self.verify(&keypair, message, signature, hash_algo)
-    }
-    
     /// slay Serialize private key to specified format
     /// 
     /// # Security Notes
@@ -283,33 +200,26 @@ impl EccEngine {
                 let pem = private.to_pkcs8_pem(LineEnding::LF)
                     .map_err(|e| EccError::SerializationFailed(e.to_string()))?;
                 Ok(Zeroizing::new(pem.as_bytes().to_vec()))
-            },
             (EccKeyPair::P256 { private, .. }, EccKeyFormat::Pkcs8Der) => {
                 let der = private.to_pkcs8_der()
                     .map_err(|e| EccError::SerializationFailed(e.to_string()))?;
                 Ok(Zeroizing::new(der.to_bytes().to_vec()))
-            },
             (EccKeyPair::P384 { private, .. }, EccKeyFormat::Pkcs8Pem) => {
                 let pem = private.to_pkcs8_pem(LineEnding::LF)
                     .map_err(|e| EccError::SerializationFailed(e.to_string()))?;
                 Ok(Zeroizing::new(pem.as_bytes().to_vec()))
-            },
             (EccKeyPair::P384 { private, .. }, EccKeyFormat::Pkcs8Der) => {
                 let der = private.to_pkcs8_der()
                     .map_err(|e| EccError::SerializationFailed(e.to_string()))?;
                 Ok(Zeroizing::new(der.to_bytes().to_vec()))
-            },
             (EccKeyPair::P521 { private, .. }, EccKeyFormat::Pkcs8Pem) => {
                 let pem = private.to_pkcs8_pem(LineEnding::LF)
                     .map_err(|e| EccError::SerializationFailed(e.to_string()))?;
                 Ok(Zeroizing::new(pem.as_bytes().to_vec()))
-            },
             (EccKeyPair::P521 { private, .. }, EccKeyFormat::Pkcs8Der) => {
                 let der = private.to_pkcs8_der()
                     .map_err(|e| EccError::SerializationFailed(e.to_string()))?;
                 Ok(Zeroizing::new(der.to_bytes().to_vec()))
-            },
-            _ => Err(EccError::InvalidFormat("Unsupported private key format".to_string())),
         }
     }
     
@@ -320,57 +230,44 @@ impl EccEngine {
                 let pem = public.to_public_key_pem(LineEnding::LF)
                     .map_err(|e| EccError::SerializationFailed(e.to_string()))?;
                 Ok(pem.as_bytes().to_vec())
-            },
             (EccKeyPair::P256 { public, .. }, EccKeyFormat::Pkcs8Der) => {
                 let der = public.to_public_key_der()
                     .map_err(|e| EccError::SerializationFailed(e.to_string()))?;
                 Ok(der.to_bytes().to_vec())
-            },
             (EccKeyPair::P256 { public, .. }, EccKeyFormat::UncompressedSec1) => {
                 let point = public.to_encoded_point(false);
                 Ok(point.as_bytes().to_vec())
-            },
             (EccKeyPair::P256 { public, .. }, EccKeyFormat::CompressedSec1) => {
                 let point = public.to_encoded_point(true);
                 Ok(point.as_bytes().to_vec())
-            },
             (EccKeyPair::P384 { public, .. }, EccKeyFormat::Pkcs8Pem) => {
                 let pem = public.to_public_key_pem(LineEnding::LF)
                     .map_err(|e| EccError::SerializationFailed(e.to_string()))?;
                 Ok(pem.as_bytes().to_vec())
-            },
             (EccKeyPair::P384 { public, .. }, EccKeyFormat::Pkcs8Der) => {
                 let der = public.to_public_key_der()
                     .map_err(|e| EccError::SerializationFailed(e.to_string()))?;
                 Ok(der.to_bytes().to_vec())
-            },
             (EccKeyPair::P384 { public, .. }, EccKeyFormat::UncompressedSec1) => {
                 let point = public.to_encoded_point(false);
                 Ok(point.as_bytes().to_vec())
-            },
             (EccKeyPair::P384 { public, .. }, EccKeyFormat::CompressedSec1) => {
                 let point = public.to_encoded_point(true);
                 Ok(point.as_bytes().to_vec())
-            },
             (EccKeyPair::P521 { public, .. }, EccKeyFormat::Pkcs8Pem) => {
                 let pem = public.to_public_key_pem(LineEnding::LF)
                     .map_err(|e| EccError::SerializationFailed(e.to_string()))?;
                 Ok(pem.as_bytes().to_vec())
-            },
             (EccKeyPair::P521 { public, .. }, EccKeyFormat::Pkcs8Der) => {
                 let der = public.to_public_key_der()
                     .map_err(|e| EccError::SerializationFailed(e.to_string()))?;
                 Ok(der.to_bytes().to_vec())
-            },
             (EccKeyPair::P521 { public, .. }, EccKeyFormat::UncompressedSec1) => {
                 let point = public.to_encoded_point(false);
                 Ok(point.as_bytes().to_vec())
-            },
             (EccKeyPair::P521 { public, .. }, EccKeyFormat::CompressedSec1) => {
                 let point = public.to_encoded_point(true);
                 Ok(point.as_bytes().to_vec())
-            },
-            _ => Err(EccError::InvalidFormat("Unsupported public key format".to_string())),
         }
     }
     
@@ -384,13 +281,11 @@ impl EccEngine {
                     .map_err(|e| EccError::DeserializationFailed(e.to_string()))?;
                 let public_key = *private_key.verifying_key();
                 Ok(EccKeyPair::P256 { private: private_key, public: public_key })
-            },
             (EccCurve::P256, EccKeyFormat::Pkcs8Der) => {
                 let private_key = P256SigningKey::from_pkcs8_der(key_data)
                     .map_err(|e| EccError::DeserializationFailed(e.to_string()))?;
                 let public_key = *private_key.verifying_key();
                 Ok(EccKeyPair::P256 { private: private_key, public: public_key })
-            },
             (EccCurve::P384, EccKeyFormat::Pkcs8Pem) => {
                 let pem_str = std::str::from_utf8(key_data)
                     .map_err(|e| EccError::DeserializationFailed(e.to_string()))?;
@@ -398,13 +293,11 @@ impl EccEngine {
                     .map_err(|e| EccError::DeserializationFailed(e.to_string()))?;
                 let public_key = *private_key.verifying_key();
                 Ok(EccKeyPair::P384 { private: private_key, public: public_key })
-            },
             (EccCurve::P384, EccKeyFormat::Pkcs8Der) => {
                 let private_key = P384SigningKey::from_pkcs8_der(key_data)
                     .map_err(|e| EccError::DeserializationFailed(e.to_string()))?;
                 let public_key = *private_key.verifying_key();
                 Ok(EccKeyPair::P384 { private: private_key, public: public_key })
-            },
             (EccCurve::P521, EccKeyFormat::Pkcs8Pem) => {
                 let pem_str = std::str::from_utf8(key_data)
                     .map_err(|e| EccError::DeserializationFailed(e.to_string()))?;
@@ -412,14 +305,11 @@ impl EccEngine {
                     .map_err(|e| EccError::DeserializationFailed(e.to_string()))?;
                 let public_key = *private_key.verifying_key();
                 Ok(EccKeyPair::P521 { private: private_key, public: public_key })
-            },
             (EccCurve::P521, EccKeyFormat::Pkcs8Der) => {
                 let private_key = P521SigningKey::from_pkcs8_der(key_data)
                     .map_err(|e| EccError::DeserializationFailed(e.to_string()))?;
                 let public_key = *private_key.verifying_key();
                 Ok(EccKeyPair::P521 { private: private_key, public: public_key })
-            },
-            _ => Err(EccError::InvalidFormat("Unsupported private key format for deserialization".to_string())),
         }
     }
     
@@ -435,14 +325,11 @@ impl EccEngine {
                 // In real use, you'd want separate methods for public-key-only operations
                 let dummy_private = P256SigningKey::random(&mut OsRng);
                 Ok(EccKeyPair::P256 { private: dummy_private, public: public_key })
-            },
             (EccCurve::P256, EccKeyFormat::Pkcs8Der) => {
                 let public_key = P256VerifyingKey::from_public_key_der(key_data)
                     .map_err(|e| EccError::DeserializationFailed(e.to_string()))?;
                 let dummy_private = P256SigningKey::random(&mut OsRng);
                 Ok(EccKeyPair::P256 { private: dummy_private, public: public_key })
-            },
-            _ => Err(EccError::InvalidFormat("Unsupported public key format for deserialization".to_string())),
         }
     }
     
@@ -456,7 +343,6 @@ impl EccEngine {
                 } else {
                     Err(EccError::InvalidPublicKey("Failed to extract coordinates".to_string()))
                 }
-            },
             EccKeyPair::P384 { public, .. } => {
                 let point = public.to_encoded_point(false);
                 if let Coordinates::Uncompressed { x, y } = point.coordinates() {
@@ -464,7 +350,6 @@ impl EccEngine {
                 } else {
                     Err(EccError::InvalidPublicKey("Failed to extract coordinates".to_string()))
                 }
-            },
             EccKeyPair::P521 { public, .. } => {
                 let point = public.to_encoded_point(false);
                 if let Coordinates::Uncompressed { x, y } = point.coordinates() {
@@ -472,7 +357,6 @@ impl EccEngine {
                 } else {
                     Err(EccError::InvalidPublicKey("Failed to extract coordinates".to_string()))
                 }
-            },
         }
     }
     
@@ -480,9 +364,6 @@ impl EccEngine {
     
     fn hash_message(&self, message: &[u8], hash_algo: EccHashAlgorithm) -> EccResult<Vec<u8>> {
         match hash_algo {
-            EccHashAlgorithm::Sha256 => Ok(Sha256::digest(message).to_vec()),
-            EccHashAlgorithm::Sha384 => Ok(Sha384::digest(message).to_vec()),
-            EccHashAlgorithm::Sha512 => Ok(Sha512::digest(message).to_vec()),
         }
     }
     
@@ -497,7 +378,6 @@ impl EccEngine {
                     .map_err(|e| EccError::InvalidPublicKey(e.to_string()))?;
                 let dummy_private = P256SigningKey::random(&mut OsRng);
                 Ok(EccKeyPair::P256 { private: dummy_private, public: public_key })
-            },
             EccCurve::P384 => {
                 let point = p384::EncodedPoint::from_bytes(public_key_bytes)
                     .map_err(|e| EccError::InvalidPublicKey(e.to_string()))?;
@@ -505,7 +385,6 @@ impl EccEngine {
                     .map_err(|e| EccError::InvalidPublicKey(e.to_string()))?;
                 let dummy_private = P384SigningKey::random(&mut OsRng);
                 Ok(EccKeyPair::P384 { private: dummy_private, public: public_key })
-            },
             EccCurve::P521 => {
                 let point = p521::EncodedPoint::from_bytes(public_key_bytes)
                     .map_err(|e| EccError::InvalidPublicKey(e.to_string()))?;
@@ -513,11 +392,8 @@ impl EccEngine {
                     .map_err(|e| EccError::InvalidPublicKey(e.to_string()))?;
                 let dummy_private = P521SigningKey::random(&mut OsRng);
                 Ok(EccKeyPair::P521 { private: dummy_private, public: public_key })
-            },
         }
     }
-}
-
 impl Default for EccEngine {
     fn default() -> Self {
         Self::new()
@@ -533,17 +409,9 @@ pub fn ecc_generate_keypair(args: Vec<Value>) -> crate::error::Result<()> {
         "P-256".to_string()
     } else {
         match &args[0] {
-            Value::String(s) => s.clone(),
-            _ => "P-256".to_string(),
         }
-    };
     
     let curve = match curve_name.as_str() {
-        "P-256" | "p256" | "secp256r1" => EccCurve::P256,
-        "P-384" | "p384" | "secp384r1" => EccCurve::P384,
-        "P-521" | "p521" | "secp521r1" => EccCurve::P521,
-        _ => return Err(CursedError::Runtime(format!("Unsupported curve: {}", curve_name))),
-    };
     
     let mut engine = EccEngine::new();
     match engine.generate_keypair(curve) {
@@ -556,19 +424,13 @@ pub fn ecc_generate_keypair(args: Vec<Value>) -> crate::error::Result<()> {
             // Serialize public key to PEM
             if let Ok(public_pem) = engine.serialize_public_key(&keypair, EccKeyFormat::Pkcs8Pem) {
                 result.insert("public_key_pem".to_string(), Value::String(String::from_utf8_lossy(&public_pem).to_string()));
-            }
-            
             // Get coordinates for display
             if let Ok((x, y)) = engine.get_public_key_coordinates(&keypair) {
                 result.insert("public_x".to_string(), Value::String(hex::encode(x)));
                 result.insert("public_y".to_string(), Value::String(hex::encode(y)));
-            }
-            
             result.insert("has_private_key".to_string(), Value::bool(true));
             
             Ok(Value::Object(result))
-        },
-        Err(e) => Err(CursedError::Runtime(format!("ECC key generation failed: {}", e))),
     }
 }
 
@@ -576,43 +438,20 @@ pub fn ecc_generate_keypair(args: Vec<Value>) -> crate::error::Result<()> {
 pub fn ecdsa_sign(args: Vec<Value>) -> crate::error::Result<()> {
     if args.len() < 3 {
         return Err(CursedError::Runtime("ECDSA sign requires private key, message, and curve".to_string()));
-    }
-    
     let private_key_pem = match &args[0] {
-        Value::String(s) => s,
-        _ => return Err(CursedError::Runtime("Private key must be a PEM string".to_string())),
-    };
     
     let message = match &args[1] {
-        Value::String(s) => s.as_bytes(),
-        _ => return Err(CursedError::Runtime("Message must be a string".to_string())),
-    };
     
     let curve_name = match &args[2] {
-        Value::String(s) => s,
-        _ => return Err(CursedError::Runtime("Curve must be a string".to_string())),
-    };
     
     let curve = match curve_name.as_str() {
-        "P-256" | "p256" | "secp256r1" => EccCurve::P256,
-        "P-384" | "p384" | "secp384r1" => EccCurve::P384,
-        "P-521" | "p521" | "secp521r1" => EccCurve::P521,
-        _ => return Err(CursedError::Runtime(format!("Unsupported curve: {}", curve_name))),
-    };
     
     let hash_algo = if args.len() > 3 {
         match &args[3] {
             Value::String(s) => match s.as_str() {
-                "SHA-256" | "sha256" => EccHashAlgorithm::Sha256,
-                "SHA-384" | "sha384" => EccHashAlgorithm::Sha384,
-                "SHA-512" | "sha512" => EccHashAlgorithm::Sha512,
-                _ => EccHashAlgorithm::Sha256,
-            },
-            _ => EccHashAlgorithm::Sha256,
         }
     } else {
         EccHashAlgorithm::Sha256
-    };
     
     let engine = EccEngine::new();
     
@@ -625,54 +464,26 @@ pub fn ecdsa_sign(args: Vec<Value>) -> crate::error::Result<()> {
         .map_err(|e| CursedError::Runtime(format!("Signing failed: {}", e)))?;
     
     Ok(Value::String(base64::encode(signature)))
-}
-
 /// slay ECDSA verify signature
 pub fn ecdsa_verify(args: Vec<Value>) -> crate::error::Result<()> {
     if args.len() < 4 {
         return Err(CursedError::Runtime("ECDSA verify requires public key, message, signature, and curve".to_string()));
-    }
-    
     let public_key_pem = match &args[0] {
-        Value::String(s) => s,
-        _ => return Err(CursedError::Runtime("Public key must be a PEM string".to_string())),
-    };
     
     let message = match &args[1] {
-        Value::String(s) => s.as_bytes(),
-        _ => return Err(CursedError::Runtime("Message must be a string".to_string())),
-    };
     
     let signature_b64 = match &args[2] {
-        Value::String(s) => s,
-        _ => return Err(CursedError::Runtime("Signature must be a base64 string".to_string())),
-    };
     
     let curve_name = match &args[3] {
-        Value::String(s) => s,
-        _ => return Err(CursedError::Runtime("Curve must be a string".to_string())),
-    };
     
     let curve = match curve_name.as_str() {
-        "P-256" | "p256" | "secp256r1" => EccCurve::P256,
-        "P-384" | "p384" | "secp384r1" => EccCurve::P384,
-        "P-521" | "p521" | "secp521r1" => EccCurve::P521,
-        _ => return Err(CursedError::Runtime(format!("Unsupported curve: {}", curve_name))),
-    };
     
     let hash_algo = if args.len() > 4 {
         match &args[4] {
             Value::String(s) => match s.as_str() {
-                "SHA-256" | "sha256" => EccHashAlgorithm::Sha256,
-                "SHA-384" | "sha384" => EccHashAlgorithm::Sha384,
-                "SHA-512" | "sha512" => EccHashAlgorithm::Sha512,
-                _ => EccHashAlgorithm::Sha256,
-            },
-            _ => EccHashAlgorithm::Sha256,
         }
     } else {
         EccHashAlgorithm::Sha256
-    };
     
     let engine = EccEngine::new();
     
@@ -689,5 +500,3 @@ pub fn ecdsa_verify(args: Vec<Value>) -> crate::error::Result<()> {
         .map_err(|e| CursedError::Runtime(format!("Verification failed: {}", e)))?;
     
     Ok(Value::bool(is_valid))
-}
-

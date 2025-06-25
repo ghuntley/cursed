@@ -14,143 +14,86 @@ use tracing::{debug, info, instrument};
 #[derive(Debug)]
 pub struct TemplateManager {
     /// Available templates
-    templates: HashMap<String, ProjectTemplate>,
-}
-
 /// Project template definition
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ProjectTemplate {
     /// Template name
-    pub name: String,
     
     /// Template description
-    pub description: String,
     
     /// Template category
-    pub category: TemplateCategory,
     
     /// Files to create
-    pub files: Vec<TemplateFile>,
     
     /// Directories to create
-    pub directories: Vec<String>,
     
     /// Template variables
-    pub variables: HashMap<String, TemplateVariable>,
     
     /// Default build configuration
-    pub build_config: BuildConfig,
     
     /// Post-generation scripts
-    pub post_scripts: Vec<String>,
-}
-
 /// Template categories
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum TemplateCategory {
     /// Command-line application
-    CLI,
     /// Library
-    Library,
     /// Web application
-    Web,
     /// API service
-    API,
     /// Desktop application
-    Desktop,
     /// Game
-    Game,
     /// Custom template
-    Custom,
-}
-
 /// Template file definition
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct TemplateFile {
     /// Relative path within the project
-    pub path: PathBuf,
     
     /// File content template
-    pub content: String,
     
     /// Whether file is executable
-    pub executable: bool,
     
     /// Conditional creation (optional)
-    pub condition: Option<String>,
-}
-
 /// Template variable definition
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct TemplateVariable {
     /// Variable description
-    pub description: String,
     
     /// Default value
-    pub default: Option<String>,
     
     /// Whether variable is required
-    pub required: bool,
     
     /// Variable type
-    pub var_type: VariableType,
-}
-
 /// Variable types
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum VariableType {
-    String,
-    Boolean,
-    Number,
-    Choice(Vec<String>),
-}
-
 /// Template generation context
 #[derive(Debug, Clone)]
 pub struct TemplateContext {
     /// Project name
-    pub project_name: String,
     
     /// Target directory
-    pub target_dir: PathBuf,
     
     /// Template variables
-    pub variables: HashMap<String, String>,
-}
-
 /// Template error types
 #[derive(Debug, thiserror::CursedError)]
 pub enum TemplateError {
     #[error("Template not found: {name}")]
-    TemplateNotFound { name: String },
     
     #[error("Invalid template variable: {variable}")]
-    InvalidVariable { variable: String },
     
     #[error("Missing required variable: {variable}")]
-    MissingVariable { variable: String },
     
     #[error("Template generation failed: {reason}")]
-    GenerationFailed { reason: String },
     
     #[error("IO error: {0}")]
-    IoError(#[from] std::io::Error),
     
     #[error("Template parsing error: {0}")]
-    ParseError(String),
-}
-
 impl TemplateManager {
     /// Create a new template manager with built-in templates
     pub fn new() -> Self {
         let mut manager = TemplateManager {
-            templates: HashMap::new(),
-        };
         
         manager.register_builtin_templates();
         manager
-    }
-    
     /// Register built-in templates
     fn register_builtin_templates(&mut self) {
         // CLI Application Template
@@ -167,33 +110,22 @@ impl TemplateManager {
         
         // Game Template
         self.register_template(create_game_template());
-    }
-    
     /// Register a new template
     pub fn register_template(&mut self, template: ProjectTemplate) {
         info!("Registering template: {}", template.name);
         self.templates.insert(template.name.clone(), template);
-    }
-    
     /// Get available templates
     pub fn list_templates(&self) -> Vec<&ProjectTemplate> {
         self.templates.values().collect()
-    }
-    
     /// Get templates by category
     pub fn get_templates_by_category(&self, category: &TemplateCategory) -> Vec<&ProjectTemplate> {
         self.templates
             .values()
             .filter(|t| std::mem::discriminant(&t.category) == std::mem::discriminant(category))
             .collect()
-    }
-    
     /// Generate project from template
     #[instrument(skip(self, context))]
     pub fn generate_project(
-        &self,
-        template_name: &str,
-        context: TemplateContext,
     ) -> crate::error::Result<()> {
         info!("Generating project '{}' from template '{}'", context.project_name, template_name);
         
@@ -211,8 +143,6 @@ impl TemplateManager {
             let dir_path = context.target_dir.join(dir);
             debug!("Creating directory: {}", dir_path.display());
             std::fs::create_dir_all(&dir_path)?;
-        }
-        
         // Generate files
         for file in &template.files {
             // Check condition if specified
@@ -229,8 +159,6 @@ impl TemplateManager {
             // Create parent directory if needed
             if let Some(parent) = file_path.parent() {
                 std::fs::create_dir_all(parent)?;
-            }
-            
             // Process template content
             let content = self.process_template_content(&file.content, &context)?;
             
@@ -247,8 +175,6 @@ impl TemplateManager {
                     std::fs::set_permissions(&file_path, perms)?;
                 }
             }
-        }
-        
         // Generate build configuration
         let config_path = context.target_dir.join("CursedBuild.toml");
         let mut build_config = template.build_config.clone();
@@ -263,33 +189,21 @@ impl TemplateManager {
         // Run post-generation scripts
         for script in &template.post_scripts {
             self.run_post_script(script, &context)?;
-        }
-        
         info!("Project '{}' generated successfully", context.project_name);
         Ok(())
-    }
-    
     /// Validate template context
     fn validate_context(&self, template: &ProjectTemplate, context: &TemplateContext) -> crate::error::Result<()> {
         for (name, variable) in &template.variables {
             if variable.required && !context.variables.contains_key(name) {
                 return Err(TemplateError::MissingVariable { variable: name.clone() });
-            }
-            
             if let Some(value) = context.variables.get(name) {
                 self.validate_variable_value(name, value, variable)?;
             }
         }
         
         Ok(())
-    }
-    
     /// Validate a variable value
     fn validate_variable_value(
-        &self,
-        name: &str,
-        value: &str,
-        variable: &TemplateVariable,
     ) -> crate::error::Result<()> {
         match &variable.var_type {
             VariableType::String => {
@@ -314,8 +228,6 @@ impl TemplateManager {
                 Ok(())
             }
         }
-    }
-    
     /// Process template content with variable substitution
     pub fn process_template_content(&self, content: &str, context: &TemplateContext) -> crate::error::Result<()> {
         let mut result = content.to_string();
@@ -327,29 +239,17 @@ impl TemplateManager {
         for (name, value) in &context.variables {
             let placeholder = format!("{{{{{}}}}}", name);
             result = result.replace(&placeholder, value);
-        }
-        
         Ok(result)
-    }
-    
     /// Process build configuration with template variables
     fn process_build_config(&self, config: &mut BuildConfig, context: &TemplateContext) -> crate::error::Result<()> {
         // Update project metadata
         if let Some(description) = context.variables.get("description") {
             config.project.description = Some(description.clone());
-        }
-        
         if let Some(author) = context.variables.get("author") {
             config.project.authors = Vec::from([author.clone()]);
-        }
-        
         if let Some(license) = context.variables.get("license") {
             config.project.license = Some(license.clone());
-        }
-        
         Ok(())
-    }
-    
     /// Evaluate a template condition
     fn evaluate_condition(&self, condition: &str, context: &TemplateContext) -> crate::error::Result<()> {
         // Simple condition evaluation - can be expanded
@@ -378,14 +278,11 @@ impl TemplateManager {
             std::process::Command::new("cmd")
         } else {
             std::process::Command::new("sh")
-        };
         
         if cfg!(target_os = "windows") {
             cmd.args(["/C", script]);
         } else {
             cmd.args(["-c", script]);
-        }
-        
         cmd.current_dir(&context.target_dir);
         
         let output = cmd.output()?;
@@ -393,10 +290,7 @@ impl TemplateManager {
         if !output.status.success() {
             let stderr = String::from_utf8_lossy(&output.stderr);
             return Err(TemplateError::GenerationFailed {
-                reason: format!("Post-script failed: {}", stderr),
             });
-        }
-        
         Ok(())
     }
 }
@@ -404,195 +298,64 @@ impl TemplateManager {
 /// Create CLI application template
 fn create_cli_template() -> ProjectTemplate {
     ProjectTemplate {
-        name: "cli".to_string(),
-        description: "Command-line application template".to_string(),
-        category: TemplateCategory::CLI,
         files: vec![
             TemplateFile {
                 path: PathBuf::from("src/main.csd"),
-                content: CLI_MAIN_TEMPLATE.to_string(),
-                executable: false,
-                condition: None,
-            },
             TemplateFile {
-                path: PathBuf::from("README.md"),
-                content: CLI_README_TEMPLATE.to_string(),
-                executable: false,
-                condition: None,
-            },
             TemplateFile {
-                path: PathBuf::from(".gitignore"),
-                content: GITIGNORE_TEMPLATE.to_string(),
-                executable: false,
-                condition: None,
-            },
-        ],
-        directories: Vec::from(["src".to_string(), "tests".to_string()]),
-        variables: create_common_variables(),
-        build_config: BuildConfig::default_for_project("{{project_name}}", ProjectType::Binary),
-        post_scripts: Vec::from([]),
     }
 }
 
 /// Create library template
 fn create_library_template() -> ProjectTemplate {
     ProjectTemplate {
-        name: "lib".to_string(),
-        description: "Library template".to_string(),
-        category: TemplateCategory::Library,
         files: vec![
             TemplateFile {
                 path: PathBuf::from("src/lib.csd"),
-                content: LIB_MAIN_TEMPLATE.to_string(),
-                executable: false,
-                condition: None,
-            },
             TemplateFile {
-                path: PathBuf::from("README.md"),
-                content: LIB_README_TEMPLATE.to_string(),
-                executable: false,
-                condition: None,
-            },
             TemplateFile {
-                path: PathBuf::from(".gitignore"),
-                content: GITIGNORE_TEMPLATE.to_string(),
-                executable: false,
-                condition: None,
-            },
-        ],
-        directories: Vec::from(["src".to_string(), "tests".to_string(), "examples".to_string()]),
-        variables: create_common_variables(),
-        build_config: BuildConfig::default_for_project("{{project_name}}", ProjectType::Library),
-        post_scripts: Vec::from([]),
     }
 }
 
 /// Create web application template
 fn create_web_template() -> ProjectTemplate {
     ProjectTemplate {
-        name: "web".to_string(),
-        description: "Web application template".to_string(),
-        category: TemplateCategory::Web,
         files: vec![
             TemplateFile {
                 path: PathBuf::from("src/main.csd"),
-                content: WEB_MAIN_TEMPLATE.to_string(),
-                executable: false,
-                condition: None,
-            },
             TemplateFile {
                 path: PathBuf::from("src/server.csd"),
-                content: WEB_SERVER_TEMPLATE.to_string(),
-                executable: false,
-                condition: None,
-            },
             TemplateFile {
                 path: PathBuf::from("static/index.html"),
-                content: WEB_INDEX_HTML_TEMPLATE.to_string(),
-                executable: false,
-                condition: None,
-            },
             TemplateFile {
-                path: PathBuf::from("README.md"),
-                content: WEB_README_TEMPLATE.to_string(),
-                executable: false,
-                condition: None,
-            },
             TemplateFile {
-                path: PathBuf::from(".gitignore"),
-                content: GITIGNORE_TEMPLATE.to_string(),
-                executable: false,
-                condition: None,
-            },
-        ],
-        directories: Vec::from(["src".to_string(), "static".to_string(), "templates".to_string()]),
-        variables: create_web_variables(),
-        build_config: BuildConfig::default_for_project("{{project_name}}", ProjectType::Binary),
-        post_scripts: Vec::from([]),
     }
 }
 
 /// Create API service template
 fn create_api_template() -> ProjectTemplate {
     ProjectTemplate {
-        name: "api".to_string(),
-        description: "REST API service template".to_string(),
-        category: TemplateCategory::API,
         files: vec![
             TemplateFile {
                 path: PathBuf::from("src/main.csd"),
-                content: API_MAIN_TEMPLATE.to_string(),
-                executable: false,
-                condition: None,
-            },
             TemplateFile {
                 path: PathBuf::from("src/routes.csd"),
-                content: API_ROUTES_TEMPLATE.to_string(),
-                executable: false,
-                condition: None,
-            },
             TemplateFile {
-                path: PathBuf::from("api.yaml"),
-                content: API_SPEC_TEMPLATE.to_string(),
-                executable: false,
-                condition: None,
-            },
             TemplateFile {
-                path: PathBuf::from("README.md"),
-                content: API_README_TEMPLATE.to_string(),
-                executable: false,
-                condition: None,
-            },
             TemplateFile {
-                path: PathBuf::from(".gitignore"),
-                content: GITIGNORE_TEMPLATE.to_string(),
-                executable: false,
-                condition: None,
-            },
-        ],
-        directories: Vec::from(["src".to_string(), "tests".to_string()]),
-        variables: create_api_variables(),
-        build_config: BuildConfig::default_for_project("{{project_name}}", ProjectType::Binary),
-        post_scripts: Vec::from([]),
     }
 }
 
 /// Create game template
 fn create_game_template() -> ProjectTemplate {
     ProjectTemplate {
-        name: "game".to_string(),
-        description: "Game application template".to_string(),
-        category: TemplateCategory::Game,
         files: vec![
             TemplateFile {
                 path: PathBuf::from("src/main.csd"),
-                content: GAME_MAIN_TEMPLATE.to_string(),
-                executable: false,
-                condition: None,
-            },
             TemplateFile {
                 path: PathBuf::from("src/game.csd"),
-                content: GAME_LOGIC_TEMPLATE.to_string(),
-                executable: false,
-                condition: None,
-            },
             TemplateFile {
-                path: PathBuf::from("README.md"),
-                content: GAME_README_TEMPLATE.to_string(),
-                executable: false,
-                condition: None,
-            },
             TemplateFile {
-                path: PathBuf::from(".gitignore"),
-                content: GITIGNORE_TEMPLATE.to_string(),
-                executable: false,
-                condition: None,
-            },
-        ],
-        directories: Vec::from(["src".to_string(), "assets".to_string(), "tests".to_string()]),
-        variables: create_game_variables(),
-        build_config: BuildConfig::default_for_project("{{project_name}}", ProjectType::Binary),
-        post_scripts: Vec::from([]),
     }
 }
 
@@ -601,83 +364,41 @@ fn create_common_variables() -> HashMap<String, TemplateVariable> {
     let mut variables = HashMap::new();
     
     variables.insert("description".to_string(), TemplateVariable {
-        description: "Project description".to_string(),
-        default: Some("A CURSED project".to_string()),
-        required: false,
-        var_type: VariableType::String,
     });
     
     variables.insert("author".to_string(), TemplateVariable {
-        description: "Project author".to_string(),
-        default: Some("Your Name <your.email@example.com>".to_string()),
-        required: false,
-        var_type: VariableType::String,
     });
     
     variables.insert("license".to_string(), TemplateVariable {
-        description: "Project license".to_string(),
-        default: Some("MIT OR Apache-2.0".to_string()),
-        required: false,
         var_type: VariableType::Choice(vec![
-            "MIT".to_string(),
-            "Apache-2.0".to_string(),
-            "MIT OR Apache-2.0".to_string(),
-            "GPL-3.0".to_string(),
-            "BSD-3-Clause".to_string(),
-        ]),
     });
     
     variables
-}
-
 /// Create web-specific variables
 fn create_web_variables() -> HashMap<String, TemplateVariable> {
     let mut variables = create_common_variables();
     
     variables.insert("port".to_string(), TemplateVariable {
-        description: "Server port".to_string(),
-        default: Some("8080".to_string()),
-        required: false,
-        var_type: VariableType::Number,
     });
     
     variables
-}
-
 /// Create API-specific variables
 fn create_api_variables() -> HashMap<String, TemplateVariable> {
     let mut variables = create_common_variables();
     
     variables.insert("api_version".to_string(), TemplateVariable {
-        description: "API version".to_string(),
-        default: Some("v1".to_string()),
-        required: false,
-        var_type: VariableType::String,
     });
     
     variables
-}
-
 /// Create game-specific variables
 fn create_game_variables() -> HashMap<String, TemplateVariable> {
     let mut variables = create_common_variables();
     
     variables.insert("game_type".to_string(), TemplateVariable {
-        description: "Type of game".to_string(),
-        default: Some("puzzle".to_string()),
-        required: false,
         var_type: VariableType::Choice(vec![
-            "puzzle".to_string(),
-            "platformer".to_string(),
-            "rpg".to_string(),
-            "strategy".to_string(),
-            "arcade".to_string(),
-        ]),
     });
     
     variables
-}
-
 // Template constants
 const CLI_MAIN_TEMPLATE: &str = r#"// {{project_name}} - A CURSED CLI Application
 //
@@ -702,11 +423,7 @@ slay main() -> i32 {
     } flex {
         io::println("Hello from {{project_name}}!");
         io::println("Use 'help' for usage information.");
-    }
-    
     return 0;
-}
-
 slay show_help() {
     io::println("{{project_name}} - {{description}}");
     io::println("");
@@ -728,20 +445,12 @@ vibe {{project_name}}_lib;
 /// Example function that demonstrates library usage
 slay hello(name: str) -> str {
     return "Hello, " + name + "! Welcome to {{project_name}}.";
-}
-
 /// Example struct
 squad Person {
-    name: str,
-    age: i32,
-}
-
 impl Person {
     /// Create a new person
     slay new(name: str, age: i32) -> Person {
         return Person { name: name, age: age };
-    }
-    
     /// Get a greeting from this person
     slay greet(&self) -> str {
         return hello(self.name);
@@ -752,8 +461,6 @@ impl Person {
 slay test_hello() {
     let result = hello("World");
     assert_eq!(result, "Hello, World! Welcome to {{project_name}}.");
-}
-
 #[test]
 slay test_person() {
     let person = Person::new("Alice", 30);
@@ -777,8 +484,6 @@ slay main() -> i32 {
     lowkey let err = server.start() {
         io::println("CursedError starting server: " + err.message());
         return 1;
-    }
-    
     io::println("Server started on port {{port}}");
     return 0;
 }
@@ -792,49 +497,16 @@ yeet "std::thread";
 yeet "std::sync";
 
 squad WebServer {
-    port: i32,
-    routes: Vec<Route>,
-}
-
 squad Route {
-    path: str,
-    method: HttpMethod,
-    handler: slay(Request) -> Response,
-}
-
 squad Request {
-    path: str,
-    method: HttpMethod,
-    headers: Map<str, str>,
-    body: str,
-}
-
 squad Response {
-    status: i32,
-    headers: Map<str, str>,
-    body: str,
-}
-
 enum HttpMethod {
-    GET,
-    POST,
-    PUT,
-    DELETE,
-}
-
 impl WebServer {
     slay new(port: i32) -> WebServer {
         return WebServer { 
-            port: port,
-            routes: Vec::new(),
-        };
-    }
-    
     slay add_route(&mut self, path: str, method: HttpMethod, handler: slay(Request) -> Response) {
         let route = Route { path: path, method: method, handler: handler };
         self.routes.push(route);
-    }
-    
     slay start(&self) -> crate::error::Result<()> {
         io::println("Starting {{project_name}} server on port " + self.port.to_string());
         
@@ -852,17 +524,11 @@ impl WebServer {
                     io::println("Connection error: " + e.to_string());
                 }
             }
-        }
-        
         return Ok(());
-    }
-    
     slay handle_connection(&self, mut stream: net::TcpStream) {
         let request = self.parse_request(&stream);
         let response = self.route_request(request);
         self.send_response(&stream, response);
-    }
-    
     slay parse_request(&self, stream: &net::TcpStream) -> Request {
         // Basic HTTP request parsing
         let mut buffer = [0; 1024];
@@ -876,30 +542,13 @@ impl WebServer {
             
             lowkey parts.len() >= 3 {
                 let method = vibe_check parts[0] {
-                    mood "GET" => HttpMethod::GET,
-                    mood "POST" => HttpMethod::POST,
-                    mood "PUT" => HttpMethod::PUT,
-                    mood "DELETE" => HttpMethod::DELETE,
-                    basic => HttpMethod::GET,
-                };
                 
                 return Request {
-                    path: parts[1].to_string(),
-                    method: method,
-                    headers: Map::new(),
-                    body: "".to_string(),
-                };
             }
         }
         
         return Request {
             path: "/".to_string(),
-            method: HttpMethod::GET,
-            headers: Map::new(),
-            body: "".to_string(),
-        };
-    }
-    
     slay route_request(&self, request: Request) -> Response {
         // Find matching route
         bestie route in &self.routes {
@@ -910,12 +559,6 @@ impl WebServer {
         
         // Default 404 response
         return Response {
-            status: 404,
-            headers: Map::new(),
-            body: "404 Not Found".to_string(),
-        };
-    }
-    
     slay send_response(&self, mut stream: &net::TcpStream, response: Response) {
         let status_line = "HTTP/1.1 " + response.status.to_string() + " OK\r\n";
         let content_length = "Content-Length: " + response.body.len().to_string() + "\r\n";
@@ -926,17 +569,11 @@ impl WebServer {
         
         stream.write(http_response.as_bytes());
         stream.flush();
-    }
-    
     // Helper methods for common routes
     slay get(&mut self, path: str, handler: slay(Request) -> Response) {
         self.add_route(path, HttpMethod::GET, handler);
-    }
-    
     slay post(&mut self, path: str, handler: slay(Request) -> Response) {
         self.add_route(path, HttpMethod::POST, handler);
-    }
-    
     // Static file serving
     slay serve_static(&self, request: Request) -> Response {
         let file_path = "static" + request.path;
@@ -944,17 +581,9 @@ impl WebServer {
         vibe_check std::fs::read_to_string(file_path) {
             mood Ok(content) => {
                 return Response {
-                    status: 200,
-                    headers: Map::new(),
-                    body: content,
-                };
             }
             mood Err(_) => {
                 return Response {
-                    status: 404,
-                    headers: Map::new(),
-                    body: "File not found".to_string(),
-                };
             }
         }
     }
@@ -992,8 +621,6 @@ slay main() -> i32 {
     lowkey let err = api.start() {
         io::println("CursedError starting API server: " + err.message());
         return 1;
-    }
-    
     return 0;
 }
 "#;
@@ -1006,59 +633,19 @@ yeet "std::time";
 yeet "std::collections";
 
 squad ApiServer {
-    port: i32,
-    routes: Map<str, RouteHandler>,
-    middleware: Vec<Middleware>,
-}
-
 squad RouteHandler {
-    method: HttpMethod,
-    handler: slay(ApiRequest) -> ApiResponse,
-}
-
 squad ApiRequest {
-    path: str,
-    method: HttpMethod,
-    headers: Map<str, str>,
-    query_params: Map<str, str>,
-    body: json::Value,
-    user_id: Option<str>,
-}
-
 squad ApiResponse {
-    status: i32,
-    headers: Map<str, str>,
-    body: json::Value,
-}
-
 squad Middleware {
-    name: str,
-    handler: slay(ApiRequest) -> Result<ApiRequest, ApiResponse>,
-}
-
 enum HttpMethod {
-    GET,
-    POST,
-    PUT,
-    DELETE,
-    PATCH,
-    OPTIONS,
-}
-
 impl ApiServer {
     slay new(port: i32) -> ApiServer {
         let mut server = ApiServer {
-            port: port,
-            routes: Map::new(),
-            middleware: Vec::new(),
-        };
         
         // Set up default routes
         server.setup_routes();
         
         return server;
-    }
-    
     slay setup_routes(&mut self) {
         // API status endpoint
         self.get("/api/{{api_version}}/status", |req| {
@@ -1090,8 +677,6 @@ impl ApiServer {
         self.delete("/api/{{api_version}}/users/{id}", |req| {
             self.delete_user(req)
         });
-    }
-    
     slay start(&self) -> crate::error::Result<()> {
         io::println("Starting {{project_name}} API server on port " + self.port.to_string());
         
@@ -1107,17 +692,11 @@ impl ApiServer {
                     io::println("Connection error: " + e.to_string());
                 }
             }
-        }
-        
         return Ok(());
-    }
-    
     slay handle_request(&self, mut stream: net::TcpStream) {
         let request = self.parse_api_request(&stream);
         let response = self.process_request(request);
         self.send_api_response(&stream, response);
-    }
-    
     slay process_request(&self, mut request: ApiRequest) -> ApiResponse {
         // Apply middleware
         bestie middleware in &self.middleware {
@@ -1129,8 +708,6 @@ impl ApiServer {
                     return error_response;
                 }
             }
-        }
-        
         // Route the request
         lowkey let Some(route_handler) = self.routes.get(&request.path) {
             lowkey route_handler.method == request.method {
@@ -1140,137 +717,78 @@ impl ApiServer {
         
         // Method not allowed or route not found
         return self.not_found_response();
-    }
-    
     // Route helper methods
     slay get(&mut self, path: str, handler: slay(ApiRequest) -> ApiResponse) {
         self.routes.insert(path.to_string(), RouteHandler {
-            method: HttpMethod::GET,
-            handler: handler,
         });
-    }
-    
     slay post(&mut self, path: str, handler: slay(ApiRequest) -> ApiResponse) {
         self.routes.insert(path.to_string(), RouteHandler {
-            method: HttpMethod::POST,
-            handler: handler,
         });
-    }
-    
     slay put(&mut self, path: str, handler: slay(ApiRequest) -> ApiResponse) {
         self.routes.insert(path.to_string(), RouteHandler {
-            method: HttpMethod::PUT,
-            handler: handler,
         });
-    }
-    
     slay delete(&mut self, path: str, handler: slay(ApiRequest) -> ApiResponse) {
         self.routes.insert(path.to_string(), RouteHandler {
-            method: HttpMethod::DELETE,
-            handler: handler,
         });
-    }
-    
     // API endpoint implementations
     slay get_status(&self, request: ApiRequest) -> ApiResponse {
         return self.json_response(200, json::object([
-            ("status", "ok"),
-            ("service", "{{project_name}}"),
-            ("version", "{{api_version}}"),
-            ("timestamp", time::now().timestamp()),
             ("uptime", "0:00:00") // TODO: Calculate actual uptime
         ]));
-    }
-    
     slay health_check(&self, request: ApiRequest) -> ApiResponse {
         return self.json_response(200, json::object([
-            ("healthy", true),
             ("checks", json::object([
-                ("database", "ok"),
-                ("memory", "ok"),
                 ("disk", "ok")
             ]))
         ]));
-    }
-    
     slay list_users(&self, request: ApiRequest) -> ApiResponse {
         // Mock user data
         let users = json::array([
             json::object([
-                ("id", 1),
-                ("name", "John Doe"),
                 ("email", "john@example.com")
-            ]),
             json::object([
-                ("id", 2),
-                ("name", "Jane Smith"),
                 ("email", "jane@example.com")
             ])
         ]);
         
         return self.json_response(200, json::object([
-            ("users", users),
-            ("total", 2),
-            ("page", 1),
             ("per_page", 10)
         ]));
-    }
-    
     slay create_user(&self, request: ApiRequest) -> ApiResponse {
         // Validate request body
         lowkey !request.body.has_key("name") || !request.body.has_key("email") {
             return self.error_response(400, "Missing required fields: name, email");
-        }
-        
         // Mock user creation
         let new_user = json::object([
-            ("id", 3),
-            ("name", request.body["name"]),
-            ("email", request.body["email"]),
             ("created_at", time::now().timestamp())
         ]);
         
         return self.json_response(201, new_user);
-    }
-    
     slay get_user(&self, request: ApiRequest) -> ApiResponse {
         // Extract user ID from path
         let user_id = self.extract_path_param(&request.path, "id");
         
         // Mock user lookup
         let user = json::object([
-            ("id", user_id.parse::<i32>().unwrap_or(0)),
-            ("name", "John Doe"),
-            ("email", "john@example.com"),
             ("created_at", "2024-01-01T00:00:00Z")
         ]);
         
         return self.json_response(200, user);
-    }
-    
     slay update_user(&self, request: ApiRequest) -> ApiResponse {
         let user_id = self.extract_path_param(&request.path, "id");
         
         // Mock user update
         let updated_user = json::object([
-            ("id", user_id.parse::<i32>().unwrap_or(0)),
-            ("name", request.body.get("name").unwrap_or("John Doe")),
-            ("email", request.body.get("email").unwrap_or("john@example.com")),
             ("updated_at", time::now().timestamp())
         ]);
         
         return self.json_response(200, updated_user);
-    }
-    
     slay delete_user(&self, request: ApiRequest) -> ApiResponse {
         let user_id = self.extract_path_param(&request.path, "id");
         
         return self.json_response(200, json::object([
-            ("message", "User deleted successfully"),
             ("user_id", user_id)
         ]));
-    }
-    
     // Helper methods
     slay json_response(&self, status: i32, body: json::Value) -> ApiResponse {
         let mut headers = Map::new();
@@ -1278,24 +796,12 @@ impl ApiServer {
         headers.insert("Access-Control-Allow-Origin".to_string(), "*".to_string());
         
         return ApiResponse {
-            status: status,
-            headers: headers,
-            body: body,
-        };
-    }
-    
     slay error_response(&self, status: i32, message: str) -> ApiResponse {
         return self.json_response(status, json::object([
-            ("error", true),
-            ("message", message),
             ("status", status)
         ]));
-    }
-    
     slay not_found_response(&self) -> ApiResponse {
         return self.error_response(404, "Route not found");
-    }
-    
     slay extract_path_param(&self, path: str, param_name: str) -> str {
         // Simple path parameter extraction
         let parts: Vec<&str> = path.split("/").collect();
@@ -1350,8 +856,6 @@ slay main() -> i32 {
     lowkey let err = game.run() {
         io::println("Game error: " + err.message());
         return 1;
-    }
-    
     io::println("Thanks for playing {{project_name}}!");
     return 0;
 }
@@ -1362,14 +866,9 @@ const GAME_LOGIC_TEMPLATE: &str = r#"// Game logic for {{project_name}}
 yeet "std::io";
 
 squad Game {
-    running: bool,
-}
-
 impl Game {
     slay new() -> Game {
         return Game { running: true };
-    }
-    
     slay run(&mut self) -> crate::error::Result<()> {
         io::println("Welcome to {{project_name}}!");
         io::println("Type 'quit' to exit.");
@@ -1386,8 +885,6 @@ impl Game {
         }
         
         return Ok(());
-    }
-    
     slay process_command(&self, command: &str) {
         vibe_check command {
             mood "help" => {
@@ -1398,8 +895,6 @@ impl Game {
                 io::println("Type 'help' for available commands.");
             }
         }
-    }
-    
     slay show_help(&self) {
         io::println("Available commands:");
         io::println("  help - Show this help");
@@ -1407,10 +902,6 @@ impl Game {
     }
 }
 "#;
-
-const CLI_README_TEMPLATE: &str = r#"# {{project_name}}
-
-{{description}}
 
 ## Installation
 
@@ -1448,10 +939,6 @@ cursed-build lint
 
 {{license}}
 "#;
-
-const LIB_README_TEMPLATE: &str = r#"# {{project_name}}
-
-{{description}}
 
 ## Usage
 
@@ -1499,10 +986,6 @@ cursed-build doc
 {{license}}
 "#;
 
-const WEB_README_TEMPLATE: &str = r#"# {{project_name}}
-
-{{description}}
-
 ## Quick Start
 
 ```bash
@@ -1539,10 +1022,6 @@ cursed-build watch
 
 {{license}}
 "#;
-
-const API_README_TEMPLATE: &str = r#"# {{project_name}}
-
-{{description}}
 
 ## Quick Start
 
@@ -1591,10 +1070,6 @@ curl http://localhost:8080/api/{{api_version}}/status
 
 {{license}}
 "#;
-
-const GAME_README_TEMPLATE: &str = r#"# {{project_name}}
-
-{{description}}
 
 ## Quick Start
 

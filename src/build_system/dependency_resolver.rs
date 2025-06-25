@@ -4,11 +4,8 @@
 // and builds dependency graphs for CURSED projects.
 
 use crate::package_manager::{
-    PackageManagerError, 
-    registry::{PackageRegistry, PackageInfo},
-    metadata::PackageMetadata as PkgMetadata,
     resolver::{DependencyResolver as PackageResolver, ConflictResolutionStrategy, ResolvedDependency}
-};
+// };
 use serde::{Deserialize, Serialize};
 use std::collections::{HashMap, HashSet, VecDeque};
 use std::sync::{Arc, Mutex};
@@ -20,142 +17,83 @@ use crate::error::CursedError;
 #[derive(Debug)]
 pub struct DependencyResolver {
     /// Resolved dependency graph
-    graph: DependencyGraph,
     
     /// Real constraint satisfaction resolver
-    package_resolver: PackageResolver,
     
     /// Package registry interface
-    registry: Option<Arc<Mutex<PackageRegistry>>>,
     
     /// Legacy constraint resolver for fallback
-    constraint_resolver: VersionConstraintResolver,
-}
-
 /// Dependency graph representation
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct DependencyGraph {
     /// Map of package name to dependency node
-    pub nodes: HashMap<String, DependencyNode>,
     
     /// Edges representing dependencies
-    pub edges: Vec<DependencyEdge>,
     
     /// Resolved versions for each package
-    pub resolved_versions: HashMap<String, String>,
-}
-
 /// Node in the dependency graph
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct DependencyNode {
     /// Package name
-    pub name: String,
     
     /// Resolved version
-    pub version: String,
     
     /// Package metadata
-    pub metadata: PackageMetadata,
     
     /// Direct dependencies
-    pub dependencies: Vec<String>,
     
     /// Development dependencies
-    pub dev_dependencies: Vec<String>,
     
     /// Build dependencies
-    pub build_dependencies: Vec<String>,
-}
-
 /// Edge in the dependency graph
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct DependencyEdge {
     /// Source package
-    pub from: String,
     
     /// Target package
-    pub to: String,
     
     /// Dependency type
-    pub dependency_type: DependencyType,
     
     /// Version constraint
-    pub constraint: String,
-}
-
 /// Types of dependencies
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum DependencyType {
-    Runtime,
-    Development,
-    Build,
-}
-
 /// Package metadata
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct PackageMetadata {
     /// Package description
-    pub description: Option<String>,
     
     /// License
-    pub license: Option<String>,
     
     /// Repository URL
-    pub repository: Option<String>,
     
     /// Keywords
-    pub keywords: Vec<String>,
     
     /// Categories
-    pub categories: Vec<String>,
-}
-
 /// Version constraint resolver
 #[derive(Debug)]
-pub struct VersionConstraintResolver {}
-
 /// Dependency resolution error types
 #[derive(Debug, thiserror::CursedError)]
 pub enum DependencyError {
     #[error("Package not found: {package}")]
-    PackageNotFound { package: String },
     
     #[error("Version constraint conflict: {package} requires {constraint1} and {constraint2}")]
     VersionConflict {
-        package: String,
-        constraint1: String,
-        constraint2: String,
-    },
     
     #[error("Circular dependency detected: {cycle}")]
-    CircularDependency { cycle: String },
     
     #[error("Invalid version constraint: {constraint}")]
-    InvalidConstraint { constraint: String },
     
     #[error("No compatible version found for {package} with constraint {constraint}")]
-    NoCompatibleVersion { package: String, constraint: String },
     
     #[error("Registry error: {0}")]
-    RegistryError(#[from] PackageManagerError),
-}
-
 impl DependencyResolver {
     /// Create a new dependency resolver
     pub fn new() -> Self {
         DependencyResolver {
             graph: DependencyGraph {
-                nodes: HashMap::new(),
-                edges: Vec::new(),
-                resolved_versions: HashMap::new(),
-            },
             package_resolver: PackageResolver::with_config(
-                50, 
-                true, 
                 ConflictResolutionStrategy::LatestCompatible
-            ),
-            registry: None,
-            constraint_resolver: VersionConstraintResolver::new(),
         }
     }
 
@@ -165,8 +103,6 @@ impl DependencyResolver {
     pub fn set_registry(&mut self, registry: Arc<Mutex<PackageRegistry>>) {
         self.registry = Some(registry.clone());
         self.package_resolver.set_registry(registry);
-    }
-    
     /// Resolve dependencies using the real constraint satisfaction algorithm
     #[instrument(skip(self, dependencies))]
     pub async fn resolve(&mut self, dependencies: &HashMap<String, String>) -> crate::error::Result<()> {
@@ -174,10 +110,6 @@ impl DependencyResolver {
         
         // Clear previous resolution
         self.graph = DependencyGraph {
-            nodes: HashMap::new(),
-            edges: Vec::new(),
-            resolved_versions: HashMap::new(),
-        };
         
         // Build dependency graph
         let mut queue = VecDeque::new();
@@ -186,14 +118,10 @@ impl DependencyResolver {
         // Add root dependencies to queue
         for (package, constraint) in dependencies {
             queue.push_back((package.clone(), constraint.clone(), None));
-        }
-        
         // Process dependency queue
         while let Some((package, constraint, parent)) = queue.pop_front() {
             if visited.contains(&package) {
                 continue;
-            }
-            
             visited.insert(package.clone());
             
             // Resolve version for this package
@@ -205,45 +133,22 @@ impl DependencyResolver {
             
             // Create dependency node
             let node = DependencyNode {
-                name: package.clone(),
-                version: resolved_version.clone(),
                 metadata: PackageMetadata {
-                    description: Some(package_metadata.description.clone()),
-                    license: package_metadata.license.clone(),
-                    repository: package_metadata.repository.clone(),
-                    keywords: package_metadata.keywords.clone(),
-                    categories: package_metadata.categories.clone(),
-                },
-                dependencies: package_metadata.dependencies.keys().cloned().collect(),
-                dev_dependencies: package_metadata.dev_dependencies.keys().cloned().collect(),
                 build_dependencies: vec![], // Build dependencies not supported in package manager metadata yet
-            };
             
             self.graph.nodes.insert(package.clone(), node);
             
             // Add edge if this is not a root dependency
             if let Some(parent_package) = parent {
                 self.graph.edges.push(DependencyEdge {
-                    from: parent_package,
-                    to: package.clone(),
-                    dependency_type: DependencyType::Runtime,
-                    constraint: constraint.clone(),
                 });
-            }
-            
             // Add transitive dependencies to queue
             for (dep_package, dep_version_spec) in &package_metadata.dependencies {
                 if !visited.contains(dep_package) {
                     let dep_constraint = match dep_version_spec {
-                        crate::package_manager::metadata::VersionSpec::Simple(v) => v.clone(),
-                        crate::package_manager::metadata::VersionSpec::Complex { version: Some(v), .. } => v.clone(),
-                        crate::package_manager::metadata::VersionSpec::Complex { .. } => "*".to_string(),
-                    };
                     queue.push_back((dep_package.clone(), dep_constraint, Some(package.clone())));
                 }
             }
-        }
-        
         // Check for circular dependencies
         self.check_circular_dependencies()?;
         
@@ -252,8 +157,6 @@ impl DependencyResolver {
         
         info!("Successfully resolved {} packages", self.graph.nodes.len());
         Ok(self.graph.clone())
-    }
-    
     /// Resolve version for a package given constraints
     async fn resolve_version(&self, package: &str, constraint: &str) -> crate::error::Result<()> {
         debug!("Resolving version for {}: {}", package, constraint);
@@ -266,8 +169,6 @@ impl DependencyResolver {
         
         debug!("Resolved {} to version {}", package, compatible_version);
         Ok(compatible_version)
-    }
-    
     /// Get available versions for a package from registry
     async fn get_available_versions(&self, package: &str) -> crate::error::Result<()> {
         if let Some(ref registry) = self.registry {
@@ -283,8 +184,6 @@ impl DependencyResolver {
                             warn!("Failed to fetch versions for {}: {}. Using fallback versions.", package, e);
                             // Fallback to basic versions if registry fails
                             Ok(vec![
-                                Version::parse("0.1.0").unwrap(),
-                                Version::parse("1.0.0").unwrap(),
                             ])
                         }
                     }
@@ -292,8 +191,6 @@ impl DependencyResolver {
                 Err(e) => {
                     warn!("Failed to lock registry for {}: {}. Using fallback versions.", package, e);
                     Ok(vec![
-                        Version::parse("0.1.0").unwrap(),
-                        Version::parse("1.0.0").unwrap(),
                     ])
                 }
             }
@@ -301,8 +198,6 @@ impl DependencyResolver {
             warn!("No registry configured, using fallback versions for {}", package);
             // Fallback when no registry is available
             Ok(vec![
-                Version::parse("0.1.0").unwrap(),
-                Version::parse("1.0.0").unwrap(),
             ])
         }
     }
@@ -322,16 +217,6 @@ impl DependencyResolver {
                             warn!("Failed to fetch metadata for {}@{}: {}. Creating minimal metadata.", name, version, e);
                             // Create minimal metadata as fallback
                             Ok(PkgMetadata {
-                                name: name.to_string(),
-                                version: version.to_string(),
-                                description: format!("Package {}", name),
-                                authors: vec![],
-                                dependencies: HashMap::new(),
-                                dev_dependencies: HashMap::new(),
-                                repository: None,
-                                license: None,
-                                keywords: vec![],
-                                categories: vec![],
                             })
                         }
                     }
@@ -339,16 +224,6 @@ impl DependencyResolver {
                 Err(e) => {
                     warn!("Failed to lock registry for {}@{}: {}. Creating minimal metadata.", name, version, e);
                     Ok(PkgMetadata {
-                        name: name.to_string(),
-                        version: version.to_string(),
-                        description: format!("Package {}", name),
-                        authors: vec![],
-                        dependencies: HashMap::new(),
-                        dev_dependencies: HashMap::new(),
-                        repository: None,
-                        license: None,
-                        keywords: vec![],
-                        categories: vec![],
                     })
                 }
             }
@@ -356,16 +231,6 @@ impl DependencyResolver {
             warn!("No registry configured, creating minimal metadata for {}@{}", name, version);
             // Create minimal metadata when no registry is available
             Ok(PkgMetadata {
-                name: name.to_string(),
-                version: version.to_string(),
-                description: format!("Package {}", name),
-                authors: vec![],
-                dependencies: HashMap::new(),
-                dev_dependencies: HashMap::new(),
-                repository: None,
-                license: None,
-                keywords: vec![],
-                categories: vec![],
             })
         }
     }
@@ -383,17 +248,9 @@ impl DependencyResolver {
                     return Err(DependencyError::CircularDependency { cycle });
                 }
             }
-        }
-        
         Ok(())
-    }
-    
     /// DFS to detect cycles
     fn detect_cycle_dfs(
-        &self,
-        package: &str,
-        visited: &mut HashSet<String>,
-        rec_stack: &mut HashSet<String>,
     ) -> Option<String> {
         visited.insert(package.to_string());
         rec_stack.insert(package.to_string());
@@ -408,12 +265,8 @@ impl DependencyResolver {
                     return Some(format!("{} -> {}", package, dependency));
                 }
             }
-        }
-        
         rec_stack.remove(package);
         None
-    }
-    
     /// Validate all version constraints are satisfied
     fn validate_constraints(&self) -> crate::error::Result<()> {
         debug!("Validating version constraints");
@@ -424,16 +277,11 @@ impl DependencyResolver {
             
             if !self.constraint_resolver.satisfies_constraint(resolved_version, &edge.constraint)? {
                 return Err(DependencyError::VersionConflict {
-                    package: edge.to.clone(),
-                    constraint1: edge.constraint.clone(),
-                    constraint2: format!("resolved to {}", resolved_version),
                 });
             }
         }
         
         Ok(())
-    }
-    
     /// Get dependency graph in topological order
     pub fn topological_sort(&self) -> crate::error::Result<()> {
         let mut in_degree = HashMap::new();
@@ -443,14 +291,10 @@ impl DependencyResolver {
         for package in self.graph.nodes.keys() {
             in_degree.insert(package.clone(), 0);
             adj_list.insert(package.clone(), Vec::new());
-        }
-        
         // Build adjacency list and calculate in-degrees
         for edge in &self.graph.edges {
             adj_list.get_mut(&edge.from).unwrap().push(edge.to.clone());
             *in_degree.get_mut(&edge.to).unwrap() += 1;
-        }
-        
         // Kahn's algorithm for topological sorting
         let mut queue = VecDeque::new();
         let mut result = Vec::new();
@@ -480,10 +324,7 @@ impl DependencyResolver {
         // Check if all nodes were processed (no cycles)
         if result.len() != self.graph.nodes.len() {
             return Err(DependencyError::CircularDependency {
-                cycle: "Unable to determine exact cycle".to_string(),
             });
-        }
-        
         Ok(result)
     }
 }
@@ -496,9 +337,6 @@ impl VersionConstraintResolver {
     
     /// Find compatible version given constraint
     pub fn find_compatible_version(
-        &self,
-        available_versions: &[String],
-        constraint: &str,
     ) -> crate::error::Result<()> {
         // Parse the constraint using semver
         let version_req = VersionReq::parse(constraint)
@@ -524,16 +362,10 @@ impl VersionConstraintResolver {
         
         if compatible_versions.is_empty() {
             return Err(DependencyError::NoCompatibleVersion {
-                package: "unknown".to_string(),
-                constraint: constraint.to_string(),
             });
-        }
-        
         // Sort versions in descending order and return the highest
         compatible_versions.sort_by(|a, b| b.cmp(a));
         Ok(compatible_versions[0].to_string())
-    }
-    
     /// Check if version satisfies constraint
     pub fn satisfies_constraint(&self, version: &str, constraint: &str) -> crate::error::Result<()> {
         let version_parsed = Version::parse(version)

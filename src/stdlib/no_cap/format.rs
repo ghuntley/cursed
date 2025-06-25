@@ -23,8 +23,6 @@ pub fn YeetBool(b: Lit) -> Tea {
 pub fn YeetInt(i: i64, base: Normie) -> Tea {
     if base < 2 || base > 36 {
         return format!("invalid base: {}", base);
-    }
-    
     if base == 10 {
         i.to_string()
     } else {
@@ -38,8 +36,6 @@ pub fn YeetInt(i: i64, base: Normie) -> Tea {
 pub fn YeetUint(i: u64, base: Normie) -> Tea {
     if base < 2 || base > 36 {
         return format!("invalid base: {}", base);
-    }
-    
     if base == 10 {
         i.to_string()
     } else {
@@ -66,28 +62,16 @@ pub fn YeetFloat(f: f64, fmt: u8, prec: Normie, bit_size: Normie) -> Tea {
             "+Inf".to_string()
         } else {
             "-Inf".to_string()
-        };
-    }
-    
     // Validate bit_size
     if ![32, 64].contains(&bit_size) {
         return format!("invalid bit size: {}", bit_size);
-    }
-    
     // Convert to appropriate precision for 32-bit
     let value = if bit_size == 32 {
         f as f32 as f64
     } else {
         f
-    };
     
     match fmt as char {
-        'e' => format_float_scientific(value, prec, false),
-        'E' => format_float_scientific(value, prec, true),
-        'f' | 'F' => format_float_fixed(value, prec),
-        'g' => format_float_general(value, prec, false),
-        'G' => format_float_general(value, prec, true),
-        _ => format!("invalid format: {}", fmt as char),
     }
 }
 
@@ -117,13 +101,9 @@ pub fn SussyFloat(f: f64) -> Tea {
 fn format_int_with_base(mut i: i64, base: Normie) -> Tea {
     if i == 0 {
         return "0".to_string();
-    }
-    
     let is_negative = i < 0;
     if is_negative {
         i = -i;
-    }
-    
     let mut result = String::new();
     let base = base as u64;
     let mut val = i as u64;
@@ -134,24 +114,15 @@ fn format_int_with_base(mut i: i64, base: Normie) -> Tea {
             (b'0' + digit as u8) as char
         } else {
             (b'a' + (digit - 10) as u8) as char
-        };
         result.push(char);
         val /= base;
-    }
-    
     if is_negative {
         result.push('-');
-    }
-    
     result.chars().rev().collect()
-}
-
 // Helper function to format unsigned integers with different bases
 fn format_uint_with_base(mut i: u64, base: Normie) -> Tea {
     if i == 0 {
         return "0".to_string();
-    }
-    
     let mut result = String::new();
     let base = base as u64;
     
@@ -161,14 +132,9 @@ fn format_uint_with_base(mut i: u64, base: Normie) -> Tea {
             (b'0' + digit as u8) as char
         } else {
             (b'a' + (digit - 10) as u8) as char
-        };
         result.push(char);
         i /= base;
-    }
-    
     result.chars().rev().collect()
-}
-
 // Helper function for scientific notation formatting
 fn format_float_scientific(f: f64, prec: Normie, uppercase: bool) -> Tea {
     let precision = if prec < 0 { 6 } else { prec as usize };
@@ -184,8 +150,6 @@ fn format_float_scientific(f: f64, prec: Normie, uppercase: bool) -> Tea {
 fn format_float_fixed(f: f64, prec: Normie) -> Tea {
     let precision = if prec < 0 { 6 } else { prec as usize };
     format!("{:.prec$}", f, prec = precision)
-}
-
 // Helper function for general formatting
 fn format_float_general(f: f64, prec: Normie, uppercase: bool) -> Tea {
     let precision = if prec < 0 { 6 } else { prec as usize };
@@ -203,5 +167,3 @@ fn format_float_general(f: f64, prec: Normie, uppercase: bool) -> Tea {
             fixed
         }
     }
-}
-

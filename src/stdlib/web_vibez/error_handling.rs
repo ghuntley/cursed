@@ -11,19 +11,11 @@ use std::fmt;
 #[derive(Debug, Clone)]
 pub enum RouterError {
     /// Invalid route pattern
-    InvalidPattern(String, String),
     /// Route already exists
-    DuplicateRoute(String),
     /// Route not found
-    RouteNotFound(String),
     /// Too many routes registered
-    TooManyRoutes(usize),
     /// Route priority conflict
-    PriorityConflict(String, String),
     /// Invalid route configuration
-    InvalidConfiguration(String),
-}
-
 // impl fmt::Display for RouterError {
 //     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
 //         match self {
@@ -61,29 +53,16 @@ impl From<String> for RouterError {
 #[derive(Debug, Clone)]
 pub enum MiddlewareError {
     /// Authentication failed
-    Authentication(String),
     /// Authorization failed
-    Authorization(String),
     /// Rate limit exceeded
-    RateLimit(String),
     /// File system error
-    FileSystem(String),
     /// Network error
-    Network(String),
     /// Timeout error
-    Timeout(String),
     /// Configuration error
-    Configuration(String),
     /// Security violation
-    Security(String),
     /// Validation error
-    Validation(String),
     /// External service error
-    ExternalService(String),
     /// Custom middleware error
-    Custom(String),
-}
-
 // impl fmt::Display for MiddlewareError {
 //     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
 //         match self {
@@ -108,33 +87,18 @@ pub enum MiddlewareError {
 #[derive(Debug, Clone)]
 pub enum HandlerError {
     /// Request processing error
-    RequestProcessing(String),
     /// Response generation error
-    ResponseGeneration(String),
     /// Data serialization error
-    Serialization(String),
     /// Data deserialization error
-    Deserialization(String),
     /// File system error
-    FileSystem(String),
     /// Database error
-    Database(String),
     /// External API error
-    ExternalApi(String),
     /// Business logic error
-    BusinessLogic(String),
     /// Validation error
-    Validation(String),
     /// Network communication error
-    Network(String),
     /// Configuration error
-    Configuration(String),
     /// Not implemented
-    NotImplemented(String),
     /// Internal error
-    Internal(String),
-}
-
 // impl fmt::Display for HandlerError {
 //     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
 //         match self {
@@ -161,17 +125,10 @@ pub enum HandlerError {
 #[derive(Debug)]
 pub enum WebVibezError {
     /// Router error
-    Router(RouterError),
     /// Middleware error
-    Middleware(MiddlewareError),
     /// Handler error
-    Handler(HandlerError),
     /// Configuration error
-    Configuration(String),
     /// System error
-    System(String),
-}
-
 // impl fmt::Display for WebVibezError {
 //     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
 //         match self {
@@ -217,43 +174,25 @@ impl From<HandlerError> for WebVibezError {
 #[derive(Debug, Clone)]
 pub struct ErrorContext {
     /// CursedError location (file, line, function)
-    pub location: Option<String>,
     /// Request ID for tracing
-    pub request_id: Option<String>,
     /// User ID if available
-    pub user_id: Option<String>,
     /// Additional context data
-    pub data: std::collections::HashMap<String, String>,
     /// Timestamp when error occurred
-    pub timestamp: std::time::SystemTime,
-}
-
 impl ErrorContext {
     pub fn new() -> Self {
         Self {
-            location: None,
-            request_id: None,
-            user_id: None,
-            data: std::collections::HashMap::new(),
-            timestamp: std::time::SystemTime::now(),
         }
     }
 
     pub fn with_location(mut self, location: &str) -> Self {
         self.location = Some(location.to_string());
         self
-    }
-
     pub fn with_request_id(mut self, request_id: &str) -> Self {
         self.request_id = Some(request_id.to_string());
         self
-    }
-
     pub fn with_user_id(mut self, user_id: &str) -> Self {
         self.user_id = Some(user_id.to_string());
         self
-    }
-
     pub fn with_data(mut self, key: &str, value: &str) -> Self {
         self.data.insert(key.to_string(), value.to_string());
         self
@@ -270,24 +209,16 @@ impl Default for ErrorContext {
 #[derive(Debug)]
 pub struct ContextualError {
     /// The underlying error
-    pub error: WebVibezError,
     /// CursedError context
-    pub context: ErrorContext,
-}
-
 impl ContextualError {
     pub fn new(error: WebVibezError) -> Self {
         Self {
-            error,
-            context: ErrorContext::new(),
         }
     }
 
     pub fn with_context(mut self, context: ErrorContext) -> Self {
         self.context = context;
         self
-    }
-
     pub fn add_context(mut self, key: &str, value: &str) -> Self {
         self.context.data.insert(key.to_string(), value.to_string());
         self
@@ -320,19 +251,11 @@ impl ContextualError {
 #[derive(Debug)]
 pub struct ErrorResponse {
     /// HTTP status code
-    pub status: u16,
     /// CursedError code for API clients
-    pub code: String,
     /// Human-readable error message
-    pub message: String,
     /// Detailed error information
-    pub details: Option<serde_json::Value>,
     /// Request ID for tracking
-    pub request_id: Option<String>,
     /// Timestamp
-    pub timestamp: String,
-}
-
 impl ErrorResponse {
     pub fn from_error(error: &WebVibezError) -> Self {
         let (status, code, message) = match error {
@@ -360,48 +283,30 @@ impl ErrorResponse {
             WebVibezError::Handler(HandlerError::Validation(_)) => {
                 (400, "VALIDATION_ERROR", "Request validation failed")
             }
-            _ => (500, "INTERNAL_ERROR", "Internal server error"),
-        };
 
         Self {
-            status,
-            code: code.to_string(),
-            message: message.to_string(),
             details: Some(serde_json::json!({
                 "error": error.to_string()
-            })),
-            request_id: None,
-            timestamp: chrono::Utc::now().to_rfc3339(),
         }
     }
 
     pub fn with_request_id(mut self, request_id: &str) -> Self {
         self.request_id = Some(request_id.to_string());
         self
-    }
-
     pub fn with_details(mut self, details: serde_json::Value) -> Self {
         self.details = Some(details);
         self
-    }
-
     pub fn to_json(&self) -> serde_json::Value {
         let mut json = serde_json::json!({
             "error": {
-                "code": self.code,
-                "message": self.message,
                 "timestamp": self.timestamp
             }
         });
 
         if let Some(request_id) = &self.request_id {
             json["error"]["request_id"] = serde_json::json!(request_id);
-        }
-
         if let Some(details) = &self.details {
             json["error"]["details"] = details.clone();
-        }
-
         json
     }
 }
@@ -410,8 +315,6 @@ impl ErrorResponse {
 pub trait ErrorHandler: Send + Sync {
     /// Handle an error and generate appropriate response
     fn handle_error(
-        &self,
-        error: &WebVibezError,
 //         context: &crate::stdlib::web_vibez::context::RequestContext,
 //         response: &mut crate::stdlib::web_vibez::context::ResponseContext,
     );
@@ -429,24 +332,16 @@ pub trait ErrorHandler: Send + Sync {
 #[derive(Debug)]
 pub struct DefaultErrorHandler {
     /// Include detailed error information in responses
-    include_details: bool,
     /// Include stack traces in development mode
-    include_stack_trace: bool,
-}
-
 impl DefaultErrorHandler {
     pub fn new() -> Self {
         Self {
-            include_details: false,
-            include_stack_trace: false,
         }
     }
 
     pub fn with_details(mut self, include: bool) -> Self {
         self.include_details = include;
         self
-    }
-
     pub fn with_stack_trace(mut self, include: bool) -> Self {
         self.include_stack_trace = include;
         self
@@ -461,8 +356,6 @@ impl Default for DefaultErrorHandler {
 
 impl ErrorHandler for DefaultErrorHandler {
     fn handle_error(
-        &self,
-        error: &WebVibezError,
 //         context: &crate::stdlib::web_vibez::context::RequestContext,
 //         response: &mut crate::stdlib::web_vibez::context::ResponseContext,
     ) {
@@ -473,8 +366,6 @@ impl ErrorHandler for DefaultErrorHandler {
 
         if !self.include_details {
             error_response.details = None;
-        }
-
         response.set_status(StatusCode(error_response.status));
         response.set_header("Content-Type", "application/json");
         
@@ -483,7 +374,6 @@ impl ErrorHandler for DefaultErrorHandler {
         } else {
             // Fallback if JSON serialization fails
             response.set_body_string(&format!(
-                r#"{{"error":{{"code":"{}","message":"{}"}}}}"#,
                 error_response.code, error_response.message
             ));
         }
@@ -491,8 +381,6 @@ impl ErrorHandler for DefaultErrorHandler {
 
     fn can_handle(&self, _error: &WebVibezError) -> bool {
         true // Default handler can handle any error
-    }
-
     fn priority(&self) -> u32 {
         1000 // Lowest priority - fallback handler
     }
@@ -503,23 +391,14 @@ impl ErrorHandler for DefaultErrorHandler {
 macro_rules! router_error {
     ($variant:ident, $($arg:expr),*) => {
 //         $crate::stdlib::web_vibez::error_handling::RouterError::$variant($($arg),*)
-    };
-}
-
 #[macro_export]
 macro_rules! middleware_error {
     ($variant:ident, $($arg:expr),*) => {
 //         $crate::stdlib::web_vibez::error_handling::MiddlewareError::$variant($($arg),*)
-    };
-}
-
 #[macro_export]
 macro_rules! handler_error {
     ($variant:ident, $($arg:expr),*) => {
 //         $crate::stdlib::web_vibez::error_handling::HandlerError::$variant($($arg),*)
-    };
-}
-
 /// Add chrono dependency (would be in Cargo.toml)
 mod chrono {
     use std::time::SystemTime;
@@ -540,5 +419,3 @@ mod chrono {
             format!("{:?}", self.0)
         }
     }
-}
-

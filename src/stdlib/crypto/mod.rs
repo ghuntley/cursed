@@ -40,124 +40,62 @@ pub mod ed25519_keys;
 
 // Re-export main types for convenience
 pub use asymmetric::{
-    AsymmetricCrypto, AsymmetricConfig, AsymmetricError, AsymmetricResult,
-    RsaKeyPair, RsaPublicKey, RsaPrivateKey, RsaPadding,
-    EcdsaKeyPair, EcdsaPublicKey, EcdsaPrivateKey, EcdsaSignature,
-    EcdhKeyPair, EcdhPublicKey, EcdhPrivateKey,
-    X25519KeyPair, X25519PublicKey, X25519PrivateKey,
-    Ed25519KeyPair,
-};
+// };
 pub use ed25519_keys::{
-    Ed25519PublicKey, Ed25519PrivateKey, Ed25519Keypair, Ed25519Signature,
     // Note: Constants removed - they need to be defined in ed25519_keys module
-};
+// };
 
 pub use format_conversions::{
-    FormatConverter, KeyFormat, JsonWebKey,
-    key_to_jwk, jwk_from_json, key_to_der, der_decode, detect_format,
-};
+// };
 
 pub use x448_implementation::{
-    X448Engine, X448PublicKey, X448PrivateKey, X448KeyPair, X448_KEY_SIZE,
-    x448_generate_keypair, x448_key_exchange, x448_validate_public_key, x448_get_public_key,
-};
+// };
 
 pub use crypto_advanced::{
-    XChaCha20Key, XChaCha20Nonce, XChaCha20Poly1305Cipher,
-    XChaCha20Poly1305StreamingEncoder, XChaCha20Poly1305StreamingDecoder, XChaCha20Poly1305Api,
-    XCHACHA20_KEY_SIZE, XCHACHA20_NONCE_SIZE, XCHACHA20_TAG_SIZE, XCHACHA20_MAX_PLAINTEXT_SIZE,
-};
+// };
 
 pub use types::{
-    CryptoError, CryptoPlatform,
-    HashFunction, SymmetricAlgorithm, AsymmetricAlgorithm, KeyMaterial, KeyType,
-    CryptoContext, SecurityLevel, KeySizeRecommendations,
-    CryptoParameters, SecurityContext,
-};
+// };
 
 pub use certificates::{
-    CertificateProcessor, CertificateConfig, CertificateError, CertificateResult,
-    X509Certificate, CertificateChain, CertificateSigningRequest,
-    DistinguishedName, Validity, PublicKeyInfo, Extension, ObjectIdentifier,
-    PublicKeyAlgorithm, SignatureAlgorithm, EncodingFormat,
-};
+// };
 
 pub use pqc::{
-    PqcError, PqcResult, AlgorithmType, PerformanceMetrics, QuantumResistanceAssessment,
-    KyberParameterSet, KyberPublicKey, KyberSecretKey, KyberKem,
-    DilithiumParameterSet, DilithiumPublicKey, DilithiumSecretKey, DilithiumSignature,
-    SphincsPlusParameterSet, SphincsPlusPublicKey, SphincsPlusSecretKey, SphincsPlusSignature,
-    FalconParameterSet, FalconPublicKey, FalconSecretKey, FalconSignature,
-    NtruParameterSet, NtruPublicKey, NtruSecretKey, NtruEncryption,
-    PqcBenchmark, validate_security_level, get_recommended_algorithm, bytes_to_hex, hex_to_bytes,
-};
+// };
 
 // Import comprehensive PQC module
 // use crate::stdlib::crypto_pqc;
 
 // Re-export production PQC types
 pub use pqc_production::{
-    PqcError as ProductionPqcError, PqcResult as ProductionPqcResult,
-    AlgorithmType as ProductionAlgorithmType,
-    MathematicalFoundation, ConstantTime, SecureBytes,
-    KyberParameterSet as ProductionKyberParameterSet,
-    KyberPublicKey as ProductionKyberPublicKey,
-    KyberSecretKey as ProductionKyberSecretKey,
-    KyberKem as ProductionKyberKem,
-    DilithiumParameterSet as ProductionDilithiumParameterSet,
-    DilithiumPublicKey as ProductionDilithiumPublicKey,
-    DilithiumSecretKey as ProductionDilithiumSecretKey,
-    DilithiumSigner as ProductionDilithiumSigner,
-    HybridKeyExchange, ClassicalKeyPair,
-    BenchmarkResults, PqcBenchmarkSuite, QuantumThreatAssessment,
-    bytes_to_hex as production_bytes_to_hex,
-    hex_to_bytes as production_hex_to_bytes,
-    validate_security_level as production_validate_security_level,
-    get_recommended_algorithm as production_get_recommended_algorithm,
-};
+// };
 
 // Re-export protocol types that are being imported elsewhere
 pub use protocols::{
-    JwtHandler, HmacAuth, TotpGenerator, 
-    ProtocolSuite, ProtocolBuilder, ProtocolConfig,
-    SecureMessagingProtocol, MpcProtocol, DkgProtocol,
-    SecurityAuditReport, ProtocolHealthStatus,
-    ProtocolError, ProtocolResult, CryptoPrimitives,
-    X25519KeyExchange, EcdhKeyExchange, DiffieHellmanKeyExchange,
-    EcdheKeyExchange, EcdheMessage, SecureChannel,
-    ChallengeResponseAuth, ChallengeSet, ResponseSet, AuthenticationResult,
-    MultiPartyComputation, ShareDistribution,
-    DistributedKeyGeneration, DistributedKey,
-};
+// };
 
 // Re-export random and encoding types
 pub use random::{
-    UuidV4Generator, SaltGenerator, NonceGenerator, SecureRandom,
-};
+// };
 
 pub use encoding::{
-    Base64Encoder, HexEncoder, Base32Encoder, UrlEncoder,
-};
+// };
 
 // Re-export CryptoPlatform if it exists
 // Note: This may need to be created or found in appropriate module
 
 // Re-export unified crypto ecosystem
 pub use unified_api::{
-    UnifiedCryptoError, UnifiedCryptoResult, UnifiedCryptoManager,
-    CryptoConfig, PerformanceMetrics as UnifiedPerformanceMetrics, SecurityAuditResult, CryptoOperation,
     ComplianceLevel, global_crypto_manager, initialize_unified_crypto, quick_crypto_operation
-};
+// };
 
 pub use integration_manager::{
-    CryptoIntegrationManager, IntegrationTestResult, CompatibilityMatrix,
     PackageDependency, global_integration_manager, initialize_crypto_integration
-};
+// };
 
 pub use package_manager::{
-    CryptoPackageManager, PackageInfo, PackageCapabilities, PackageStatistics,
     global_package_manager, initialize_crypto_ecosystem
-};
+// };
 
 // Re-export package types for integration
 // pub use crate::stdlib::packages::crypto_asymmetric::*;
@@ -183,7 +121,6 @@ pub fn init_crypto() -> std::result::crate::error::Result<()> {
         Ok(_) => {
             println!("🔐 Comprehensive crypto ecosystem initialized - maximum security activated bestie!");
             Ok(())
-        },
         Err(e) => {
             eprintln!("❌ Failed to initialize crypto ecosystem: {}", e);
             
@@ -206,20 +143,16 @@ pub fn init_crypto() -> std::result::crate::error::Result<()> {
             let mut failed_packages = Vec::new();
             for (name, init_fn) in packages {
                 match init_fn() {
-                    Ok(_) => println!("✅ {} initialized", name),
                     Err(init_err) => {
                         println!("⚠️  {} failed: {}", name, init_err);
                         failed_packages.push(name);
                     }
                 }
-            }
-
             if failed_packages.is_empty() {
                 println!("🔐 Fallback initialization completed - basic crypto ready bestie!");
                 Ok(())
             } else {
                 Err(CursedError::Runtime(format!(
-                    "Failed to initialize packages: {:?}. Original error: {}", 
                     failed_packages, e
                 )))
             }
@@ -238,8 +171,6 @@ pub fn get_crypto_info(_args: Vec<Value>) -> std::result::crate::error::Result<(
     // Get system overview from package manager
     if let Ok(overview) = global_package_manager().get_system_overview() {
         info.extend(overview);
-    }
-    
     // Available algorithm categories
     let algorithm_categories = global_crypto_manager().list_available_algorithms();
     let mut algorithms_obj = HashMap::new();
@@ -264,39 +195,16 @@ pub fn get_crypto_info(_args: Vec<Value>) -> std::result::crate::error::Result<(
             })
             .collect();
         info.insert("packages".to_string(), Value::Array(package_values));
-    }
-    
     // Enhanced features
     info.insert("features".to_string(), Value::Array(vec![
-        Value::String("Unified Crypto API".to_string()),
-        Value::String("Package Management".to_string()),
-        Value::String("Integration Testing".to_string()),
-        Value::String("Performance Monitoring".to_string()),
-        Value::String("Security Auditing".to_string()),
-        Value::String("Symmetric Encryption".to_string()),
-        Value::String("Asymmetric Cryptography".to_string()),
-        Value::String("Digital Signatures".to_string()),
-        Value::String("Hash Functions".to_string()),
-        Value::String("Key Derivation".to_string()),
-        Value::String("Random Generation".to_string()),
-        Value::String("PKI & Certificates".to_string()),
-        Value::String("Post-Quantum Crypto".to_string()),
-        Value::String("Zero-Knowledge Proofs".to_string()),
-        Value::String("Cryptographic Protocols".to_string()),
-        Value::String("Cross-Package Integration".to_string()),
-        Value::String("Compliance Checking".to_string()),
-        Value::String("Hardware Acceleration".to_string()),
     ]));
     
     // Security compliance
     if let Ok(audit) = global_crypto_manager().get_latest_audit() {
         if let Some(audit_result) = audit {
             let mut compliance_obj = HashMap::new();
-            compliance_obj.insert("compliance_level".to_string(), 
                 Value::String(format!("{:?}", audit_result.compliance_level)));
-            compliance_obj.insert("overall_score".to_string(), 
                 Value::Number(audit_result.overall_score));
-            compliance_obj.insert("vulnerabilities_count".to_string(), 
                 Value::Number(audit_result.security_vulnerabilities.len() as f64));
             info.insert("security_audit".to_string(), Value::Object(compliance_obj));
         }
@@ -305,8 +213,6 @@ pub fn get_crypto_info(_args: Vec<Value>) -> std::result::crate::error::Result<(
     info.insert("security_level".to_string(), Value::String("Enterprise Production-Ready".to_string()));
     
     Ok(Value::Object(info))
-}
-
 /// fr fr Comprehensive crypto functionality testing
 pub fn test_crypto(_args: Vec<Value>) -> std::result::crate::error::Result<()> {
     let mut results = HashMap::new();
@@ -315,13 +221,8 @@ pub fn test_crypto(_args: Vec<Value>) -> std::result::crate::error::Result<()> {
     
     // Test package manager functionality
     match global_package_manager().get_system_overview() {
-        Ok(_) => results.insert("package_manager".to_string(), Value::bool(true)),
-        Err(_) => results.insert("package_manager".to_string(), Value::bool(false)),
-    };
     
     // Test individual packages
-    let packages = ["crypto_advanced", "crypto_asymmetric", "crypto_hash_advanced", 
-                   "crypto_signatures", "crypto_kdf", "crypto_random", "crypto_pki", 
                    "crypto_zk", "crypto_pqc", "crypto_protocols"];
     
     for package_name in packages {
@@ -329,13 +230,10 @@ pub fn test_crypto(_args: Vec<Value>) -> std::result::crate::error::Result<()> {
             Ok(test_results) => {
                 let success = test_results.values().all(|&v| v);
                 results.insert(format!("{}_package", package_name), Value::bool(success));
-            },
             Err(_) => {
                 results.insert(format!("{}_package", package_name), Value::bool(false));
             }
         }
-    }
-    
     // Test integration functionality
     if let Ok(integration_results) = global_integration_manager().get_integration_results() {
         let all_passed = integration_results.iter().all(|r| r.success);
@@ -343,57 +241,31 @@ pub fn test_crypto(_args: Vec<Value>) -> std::result::crate::error::Result<()> {
         results.insert("integration_count".to_string(), Value::Number(integration_results.len() as f64));
     } else {
         results.insert("integration_tests".to_string(), Value::bool(false));
-    }
-    
     // Test performance monitoring
     match global_crypto_manager().get_performance_statistics() {
-        Ok(_) => results.insert("performance_monitoring".to_string(), Value::bool(true)),
-        Err(_) => results.insert("performance_monitoring".to_string(), Value::bool(false)),
-    };
     
     // Test security auditing
     match global_crypto_manager().get_latest_audit() {
         Ok(Some(audit)) => {
             results.insert("security_audit".to_string(), Value::bool(audit.overall_score > 80.0));
             results.insert("security_score".to_string(), Value::Number(audit.overall_score));
-        },
-        Ok(None) => results.insert("security_audit".to_string(), Value::bool(false)),
-        Err(_) => results.insert("security_audit".to_string(), Value::bool(false)),
-    };
     
     // Legacy individual algorithm tests for backward compatibility
     match asymmetric::rsa_generate_keypair(Vec::from([])) {
-        Ok(_) => results.insert("rsa_keygen".to_string(), Value::bool(true)),
-        Err(_) => results.insert("rsa_keygen".to_string(), Value::bool(false)),
-    };
     
     match asymmetric::ecdsa_generate_keypair(Vec::from([])) {
-        Ok(_) => results.insert("ecdsa_keygen".to_string(), Value::bool(true)),
-        Err(_) => results.insert("ecdsa_keygen".to_string(), Value::bool(false)),
-    };
     
     match asymmetric::x25519_generate_keypair(Vec::from([])) {
-        Ok(_) => results.insert("x25519_keygen".to_string(), Value::bool(true)),
-        Err(_) => results.insert("x25519_keygen".to_string(), Value::bool(false)),
-    };
     
     match asymmetric::ed25519_generate_keypair(Vec::from([])) {
-        Ok(_) => results.insert("ed25519_keygen".to_string(), Value::bool(true)),
-        Err(_) => results.insert("ed25519_keygen".to_string(), Value::bool(false)),
-    };
     
     let dummy_pem = "-----BEGIN CERTIFICATE-----\nMIIC...dummy...\n-----END CERTIFICATE-----";
     match certificates::parse_certificate_pem(Vec::from([Value::String(dummy_pem.to_string())])) {
-        Ok(_) => results.insert("cert_parsing".to_string(), Value::bool(true)),
-        Err(_) => results.insert("cert_parsing".to_string(), Value::bool(false)),
-    };
     
     // Calculate overall success rate
     let total_tests = results.len();
     let passed_tests = results.values()
         .filter_map(|v| match v {
-            Value::Bool(b) => Some(*b),
-            _ => None,
         })
         .filter(|&b| b)
         .count();
@@ -402,7 +274,6 @@ pub fn test_crypto(_args: Vec<Value>) -> std::result::crate::error::Result<()> {
         (passed_tests as f64 / total_tests as f64) * 100.0
     } else {
         0.0
-    };
     
     results.insert("overall_success_rate".to_string(), Value::Number(success_rate));
     results.insert("total_tests".to_string(), Value::Number(total_tests as f64));
@@ -412,5 +283,3 @@ pub fn test_crypto(_args: Vec<Value>) -> std::result::crate::error::Result<()> {
              success_rate, passed_tests, total_tests);
     
     Ok(Value::Object(results))
-}
-

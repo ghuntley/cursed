@@ -9,31 +9,17 @@ pub type ProfilerResult<T> = std::result::Result<T, ProfilerError>;
 #[derive(Debug, Clone, PartialEq)]
 pub enum ProfilerError {
     /// Profiler is not initialized
-    NotInitialized,
     /// Profiler is already running
-    AlreadyRunning,
     /// Profiler is not running
-    NotRunning,
     /// Invalid configuration
-    InvalidConfig(String),
     /// Sampling failed
-    SamplingFailed(String),
     /// Memory allocation failed
-    AllocationFailed,
     /// I/O error during profiling
-    IoError(String),
     /// Serialization error
-    SerializationError(String),
     /// Runtime integration error
-    RuntimeError(String),
     /// Benchmark error
-    BenchmarkError(String),
     /// Metrics collection error
-    MetricsError(String),
     /// General profiler error
-    General(String),
-}
-
 // impl fmt::Display for ProfilerError {
 //     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
 //         match self {
@@ -70,30 +56,18 @@ pub enum ProfilerError {
 /// Create a profiler error with a custom message
 pub fn profiler_error(msg: &str) -> ProfilerError {
     ProfilerError::General(msg.to_string())
-}
-
 /// Create an invalid configuration error
 pub fn invalid_config_error(msg: &str) -> ProfilerError {
     ProfilerError::InvalidConfig(msg.to_string())
-}
-
 /// Create a sampling failed error
 pub fn sampling_failed_error(msg: &str) -> ProfilerError {
     ProfilerError::SamplingFailed(msg.to_string())
-}
-
 /// Create a runtime integration error
 pub fn runtime_error(msg: &str) -> ProfilerError {
     ProfilerError::RuntimeError(msg.to_string())
-}
-
 /// Create a benchmark error
 pub fn benchmark_error(msg: &str) -> ProfilerError {
     ProfilerError::BenchmarkError(msg.to_string())
-}
-
 /// Create a metrics error
 pub fn metrics_error(msg: &str) -> ProfilerError {
     ProfilerError::MetricsError(msg.to_string())
-}
-

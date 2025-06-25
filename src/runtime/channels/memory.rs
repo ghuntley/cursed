@@ -11,13 +11,8 @@ use super::channel::{Channel, ChannelSender, ChannelReceiver};
 #[derive(Debug)]
 pub struct ChannelPool<T> {
     /// Pool of reusable channels
-    pool: std::sync::Mutex<Vec<Channel<T>>>,
     /// Maximum pool size
-    max_size: usize,
     /// Default channel capacity
-    default_capacity: usize,
-}
-
 impl<T> ChannelPool<T> {
     /// Create a new channel pool
     #[instrument]
@@ -25,9 +20,6 @@ impl<T> ChannelPool<T> {
         debug!(max_size, default_capacity, "Creating channel pool");
         
         Self {
-            pool: std::sync::Mutex::new(Vec::with_capacity(max_size)),
-            max_size,
-            default_capacity,
         }
     }
 
@@ -66,43 +58,23 @@ impl<T> ChannelPool<T> {
     pub fn stats(&self) -> ChannelPoolStats {
         let pool = self.pool.lock().unwrap();
         ChannelPoolStats {
-            available: pool.len(),
-            max_size: self.max_size,
-            default_capacity: self.default_capacity,
         }
     }
-}
-
 /// Statistics for channel pool
 #[derive(Debug, Clone)]
 pub struct ChannelPoolStats {
-    pub available: usize,
-    pub max_size: usize,
-    pub default_capacity: usize,
-}
-
 /// Memory tracker for channel allocations
 /// Helps monitor memory usage in channel-heavy applications
 #[derive(Debug)]
 pub struct ChannelMemoryTracker {
     /// Total channels created
-    channels_created: std::sync::atomic::AtomicUsize,
     /// Total channels dropped
-    channels_dropped: std::sync::atomic::AtomicUsize,
     /// Peak concurrent channels
-    peak_channels: std::sync::atomic::AtomicUsize,
     /// Current active channels
-    active_channels: std::sync::atomic::AtomicUsize,
-}
-
 impl ChannelMemoryTracker {
     /// Create a new memory tracker
     pub fn new() -> Self {
         Self {
-            channels_created: std::sync::atomic::AtomicUsize::new(0),
-            channels_dropped: std::sync::atomic::AtomicUsize::new(0),
-            peak_channels: std::sync::atomic::AtomicUsize::new(0),
-            active_channels: std::sync::atomic::AtomicUsize::new(0),
         }
     }
 
@@ -120,14 +92,10 @@ impl ChannelMemoryTracker {
             match self.peak_channels.compare_exchange_weak(
                 peak, active, Ordering::Relaxed, Ordering::Relaxed
             ) {
-                Ok(_) => break,
-                Err(current) => peak = current,
             }
         }
         
         debug!(active_channels = active, "Channel created");
-    }
-
     /// Record channel destruction
     #[instrument(skip(self))]
     pub fn record_destruction(&self) {
@@ -137,31 +105,17 @@ impl ChannelMemoryTracker {
         let active = self.active_channels.fetch_sub(1, Ordering::Relaxed) - 1;
         
         debug!(active_channels = active, "Channel destroyed");
-    }
-
     /// Get current memory statistics
     #[instrument(skip(self))]
     pub fn stats(&self) -> ChannelMemoryStats {
         use std::sync::atomic::Ordering;
         
         ChannelMemoryStats {
-            channels_created: self.channels_created.load(Ordering::Relaxed),
-            channels_dropped: self.channels_dropped.load(Ordering::Relaxed),
-            active_channels: self.active_channels.load(Ordering::Relaxed),
-            peak_channels: self.peak_channels.load(Ordering::Relaxed),
         }
     }
-}
-
 /// Memory statistics for channels
 #[derive(Debug, Clone)]
 pub struct ChannelMemoryStats {
-    pub channels_created: usize,
-    pub channels_dropped: usize,
-    pub active_channels: usize,
-    pub peak_channels: usize,
-}
-
 impl Default for ChannelMemoryTracker {
     fn default() -> Self {
         Self::new()
@@ -174,15 +128,9 @@ static GLOBAL_TRACKER: std::sync::OnceLock<ChannelMemoryTracker> = std::sync::On
 /// Get the global channel memory tracker
 pub fn global_memory_tracker() -> &'static ChannelMemoryTracker {
     GLOBAL_TRACKER.get_or_init(ChannelMemoryTracker::new)
-}
-
 /// Wrapper that automatically tracks channel memory usage
 #[derive(Debug)]
 pub struct TrackedChannel<T> {
-    channel: Channel<T>,
-    _tracker: Arc<ChannelMemoryTracker>,
-}
-
 impl<T> TrackedChannel<T> {
     /// Create a new tracked channel
     #[instrument]
@@ -191,16 +139,12 @@ impl<T> TrackedChannel<T> {
         tracker.record_creation();
         
         Self {
-            channel: Channel::new(capacity),
-            _tracker: tracker,
         }
     }
 
     /// Create sender and receiver handles
     pub fn split(self) -> (ChannelSender<T>, ChannelReceiver<T>) {
         (self.channel.sender(), self.channel.receiver())
-    }
-
     /// Get channel statistics
     pub fn stats(&self) -> super::channel::ChannelStats {
         self.channel.stats()

@@ -14,11 +14,7 @@ use tracing::{debug, instrument};
 /// Generic type information extractor
 pub struct GenericExtractor {
     /// Known constraint keywords
-    constraint_keywords: HashSet<String>,
     /// Built-in traits/interfaces
-    builtin_traits: HashSet<String>,
-}
-
 impl GenericExtractor {
     /// Create a new generic extractor
     #[instrument]
@@ -51,16 +47,10 @@ impl GenericExtractor {
         builtin_traits.insert("Unpin".to_string());
 
         Ok(Self {
-            constraint_keywords,
-            builtin_traits,
         })
-    }
-
     /// Extract generic information from function declaration
     #[instrument(skip(self, func_decl))]
     pub fn extract_function_generics(
-        &self,
-        func_decl: &FunctionDeclaration,
     ) -> crate::error::Result<()> {
         debug!("Extracting function generics for: {}", func_decl.to_string());
 
@@ -68,28 +58,19 @@ impl GenericExtractor {
             self.extract_generic_parameters(generics)?
         } else {
             Vec::new()
-        };
 
         let constraints = if let Some(ref constraints) = func_decl.constraints {
             self.extract_generic_constraints(constraints)?
         } else {
             Vec::new()
-        };
 
         let bounds = self.extract_function_bounds(func_decl)?;
 
         Ok(GenericInfo {
-            parameters,
-            constraints,
-            bounds,
         })
-    }
-
     /// Extract generic information from struct declaration
     #[instrument(skip(self, struct_decl))]
     pub fn extract_struct_generics(
-        &self,
-        struct_decl: &StructDeclaration,
     ) -> crate::error::Result<()> {
         debug!("Extracting struct generics for: {}", struct_decl.to_string());
 
@@ -97,28 +78,19 @@ impl GenericExtractor {
             self.extract_generic_parameters(generics)?
         } else {
             Vec::new()
-        };
 
         let constraints = if let Some(ref constraints) = struct_decl.constraints {
             self.extract_generic_constraints(constraints)?
         } else {
             Vec::new()
-        };
 
         let bounds = self.extract_struct_bounds(struct_decl)?;
 
         Ok(GenericInfo {
-            parameters,
-            constraints,
-            bounds,
         })
-    }
-
     /// Extract generic information from interface declaration
     #[instrument(skip(self, interface_decl))]
     pub fn extract_interface_generics(
-        &self,
-        interface_decl: &InterfaceDeclaration,
     ) -> crate::error::Result<()> {
         debug!("Extracting interface generics for: {}", interface_decl.to_string());
 
@@ -126,28 +98,19 @@ impl GenericExtractor {
             self.extract_generic_parameters(generics)?
         } else {
             Vec::new()
-        };
 
         let constraints = if let Some(ref constraints) = interface_decl.constraints {
             self.extract_generic_constraints(constraints)?
         } else {
             Vec::new()
-        };
 
         let bounds = self.extract_interface_bounds(interface_decl)?;
 
         Ok(GenericInfo {
-            parameters,
-            constraints,
-            bounds,
         })
-    }
-
     /// Extract generic parameters from a list of parameter names
     #[instrument(skip(self, param_names))]
     fn extract_generic_parameters(
-        &self,
-        param_names: &[String],
     ) -> crate::error::Result<()> {
         let mut parameters = Vec::new();
 
@@ -156,16 +119,10 @@ impl GenericExtractor {
             let (name, constraints) = self.parse_parameter_constraints(param_name)?;
             
             parameters.push(GenericParameter {
-                name,
-                constraints,
                 default_type: None, // Would need to parse default types
                 variance: self.infer_variance(param_name), // Simple variance inference
             });
-        }
-
         Ok(parameters)
-    }
-
     /// Parse parameter constraints from parameter string
     fn parse_parameter_constraints(&self, param_str: &str) -> crate::error::Result<()> {
         // Handle formats like "T: Clone + Debug" or "T where T: Clone"
@@ -209,8 +166,6 @@ impl GenericExtractor {
         }
 
         Ok(constraints)
-    }
-
     /// Infer variance from parameter usage (simplified)
     fn infer_variance(&self, param_name: &str) -> Option<Variance> {
         // Simple heuristics for variance inference
@@ -226,14 +181,10 @@ impl GenericExtractor {
     /// Extract generic constraints from constraint declarations
     #[instrument(skip(self, constraints))]
     fn extract_generic_constraints(
-        &self,
-        constraints: &[GenericConstraint],
     ) -> crate::error::Result<()> {
         // For now, return the constraints as-is
         // In a real implementation, we'd parse and validate them
         Ok(constraints.clone())
-    }
-
     /// Extract bounds from function declaration
     fn extract_function_bounds(&self, func_decl: &FunctionDeclaration) -> crate::error::Result<()> {
         let mut bounds = Vec::new();
@@ -248,11 +199,7 @@ impl GenericExtractor {
         // Extract bounds from return type
         if let Some(ref return_type) = func_decl.return_type {
             bounds.extend(self.extract_bounds_from_type_expression(return_type)?);
-        }
-
         Ok(bounds)
-    }
-
     /// Extract bounds from struct declaration
     fn extract_struct_bounds(&self, struct_decl: &StructDeclaration) -> crate::error::Result<()> {
         let mut bounds = Vec::new();
@@ -265,8 +212,6 @@ impl GenericExtractor {
         }
 
         Ok(bounds)
-    }
-
     /// Extract bounds from interface declaration
     fn extract_interface_bounds(&self, interface_decl: &InterfaceDeclaration) -> crate::error::Result<()> {
         let mut bounds = Vec::new();
@@ -287,13 +232,9 @@ impl GenericExtractor {
         }
 
         Ok(bounds)
-    }
-
     /// Extract bounds from a type expression
     #[instrument(skip(self, expr))]
     fn extract_bounds_from_type_expression(
-        &self,
-        expr: &dyn Expression,
     ) -> crate::error::Result<()> {
         let mut bounds = Vec::new();
 
@@ -302,9 +243,6 @@ impl GenericExtractor {
                 // Check if this identifier represents a bound
                 if self.builtin_traits.contains(&id.to_string()) {
                     bounds.push(GenericBound {
-                        bound_type: id.to_string().clone(),
-                        expression: id.to_string().clone(),
-                        lifetime: None,
                     });
                 }
             }
@@ -332,29 +270,20 @@ impl GenericExtractor {
         }
 
         Ok(bounds)
-    }
-
     /// Analyze generic parameter usage to determine variance
     #[instrument(skip(self, param_name, usage_contexts))]
     pub fn analyze_parameter_variance(
-        &self,
-        param_name: &str,
-        usage_contexts: &[VarianceContext],
     ) -> Variance {
         let mut positive_count = 0;
         let mut negative_count = 0;
 
         for context in usage_contexts {
             match context.variance_position {
-                VariancePosition::Covariant => positive_count += 1,
-                VariancePosition::Contravariant => negative_count += 1,
                 VariancePosition::Invariant => {
                     // Invariant usage forces invariant variance
                     return Variance::Invariant;
                 }
             }
-        }
-
         if positive_count > 0 && negative_count > 0 {
             Variance::Invariant
         } else if positive_count > 0 {
@@ -369,8 +298,6 @@ impl GenericExtractor {
     /// Extract constraint relationships between generic parameters
     #[instrument(skip(self, constraints))]
     pub fn extract_constraint_relationships(
-        &self,
-        constraints: &[GenericConstraint],
     ) -> crate::error::Result<()> {
         let mut relationships = Vec::new();
 
@@ -379,23 +306,12 @@ impl GenericExtractor {
             let relationship_type = self.classify_constraint(&constraint.constraint_type)?;
             
             relationships.push(ConstraintRelationship {
-                source_param: constraint.target_type.clone(),
-                target_constraint: constraint.constraint_type.clone(),
-                relationship_type,
                 strength: ConstraintStrength::Required, // Default to required
             });
-        }
-
         Ok(relationships)
-    }
-
     /// Classify constraint type
     fn classify_constraint(&self, constraint_type: &str) -> crate::error::Result<()> {
         match constraint_type.to_lowercase().as_str() {
-            "implements" | "impl" => Ok(ConstraintRelationshipType::Implements),
-            "extends" | "super" => Ok(ConstraintRelationshipType::Extends),
-            "where" => Ok(ConstraintRelationshipType::Where),
-            "bounds" => Ok(ConstraintRelationshipType::Bounds),
             _ => {
                 if self.builtin_traits.contains(constraint_type) {
                     Ok(ConstraintRelationshipType::TraitBound)
@@ -409,24 +325,15 @@ impl GenericExtractor {
     /// Validate generic constraints for correctness
     #[instrument(skip(self, generic_info))]
     pub fn validate_generic_constraints(
-        &self,
-        generic_info: &GenericInfo,
     ) -> crate::error::Result<()> {
         let mut results = Vec::new();
 
         for constraint in &generic_info.constraints {
             let validation = self.validate_single_constraint(constraint, &generic_info.parameters)?;
             results.push(validation);
-        }
-
         Ok(results)
-    }
-
     /// Validate a single constraint
     fn validate_single_constraint(
-        &self,
-        constraint: &GenericConstraint,
-        parameters: &[GenericParameter],
     ) -> crate::error::Result<()> {
         // Check if target type exists in parameters
         let target_exists = parameters.iter()
@@ -443,29 +350,18 @@ impl GenericExtractor {
                     format!("Unknown parameter: {}", constraint.target_type)
                 } else {
                     String::new()
-                },
                 if !constraint_valid {
                     format!("Unknown constraint: {}", constraint.constraint_type)
                 } else {
                     String::new()
-                },
             ].into_iter().filter(|s| !s.is_empty()).collect()
         } else {
             Vec::new()
-        };
 
         Ok(ConstraintValidationResult {
-            constraint: constraint.clone(),
-            is_valid,
-            issues,
-            suggestions: self.generate_constraint_suggestions(constraint)?,
         })
-    }
-
     /// Generate suggestions for constraint improvements
     fn generate_constraint_suggestions(
-        &self,
-        constraint: &GenericConstraint,
     ) -> crate::error::Result<()> {
         let mut suggestions = Vec::new();
 
@@ -483,27 +379,19 @@ impl GenericExtractor {
         }
 
         Ok(suggestions)
-    }
-
     /// Calculate string similarity (simplified Levenshtein distance)
     fn string_similarity(&self, a: &str, b: &str) -> f64 {
         if a == b {
             return 1.0;
-        }
-
         let len_a = a.len();
         let len_b = b.len();
 
         if len_a == 0 || len_b == 0 {
             return 0.0;
-        }
-
         let max_len = len_a.max(len_b);
         let distance = self.levenshtein_distance(a, b);
         
         1.0 - (distance as f64 / max_len as f64)
-    }
-
     /// Calculate Levenshtein distance
     fn levenshtein_distance(&self, a: &str, b: &str) -> usize {
         let a_chars: Vec<char> = a.chars().collect();
@@ -518,8 +406,6 @@ impl GenericExtractor {
         }
         for j in 0..=len_b {
             matrix[0][j] = j;
-        }
-
         for i in 1..=len_a {
             for j in 1..=len_b {
                 let cost = if a_chars[i - 1] == b_chars[j - 1] { 0 } else { 1 };
@@ -527,7 +413,6 @@ impl GenericExtractor {
                     std::cmp::min(
                         matrix[i - 1][j] + 1,      // deletion
                         matrix[i][j - 1] + 1       // insertion
-                    ),
                     matrix[i - 1][j - 1] + cost    // substitution
                 );
             }
@@ -541,60 +426,28 @@ impl GenericExtractor {
 #[derive(Debug, Clone)]
 pub struct VarianceContext {
     /// Position where parameter is used
-    pub variance_position: VariancePosition,
     /// Context description
-    pub context: String,
-}
-
 /// Variance position in type system
 #[derive(Debug, Clone)]
 pub enum VariancePosition {
-    Covariant,
-    Contravariant,
-    Invariant,
-}
-
 /// Constraint relationship between generic parameters
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ConstraintRelationship {
     /// Source parameter
-    pub source_param: String,
     /// Target constraint
-    pub target_constraint: String,
     /// Type of relationship
-    pub relationship_type: ConstraintRelationshipType,
     /// Strength of constraint
-    pub strength: ConstraintStrength,
-}
-
 /// Types of constraint relationships
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum ConstraintRelationshipType {
-    Implements,
-    Extends,
-    Where,
-    Bounds,
-    TraitBound,
-    Custom,
-}
-
 /// Strength of constraint
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum ConstraintStrength {
-    Required,
-    Optional,
-    Conditional,
-}
-
 /// Result of constraint validation
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ConstraintValidationResult {
     /// The constraint being validated
-    pub constraint: GenericConstraint,
     /// Whether the constraint is valid
-    pub is_valid: bool,
     /// Issues found
-    pub issues: Vec<String>,
     /// Suggestions for improvement
-    pub suggestions: Vec<String>,
 }

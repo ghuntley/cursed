@@ -16,89 +16,48 @@ use std::process::{Child, ExitStatus};
 #[derive(Debug, Clone)]
 pub struct RealProcessState {
     /// Process ID
-    pub pid: u32,
     /// Process exit status (if completed)
-    pub exit_status: Option<ExitStatus>,
     /// User CPU time consumed
-    pub user_time: Duration,
     /// System CPU time consumed  
-    pub system_time: Duration,
     /// Memory usage information
-    pub memory_info: RealMemoryInfo,
     /// Process creation time
-    pub start_time: SystemTime,
     /// Process completion time (if finished)
-    pub end_time: Option<SystemTime>,
     /// Whether process is still running
-    pub is_running: bool,
-}
-
 /// Real memory usage information
 #[derive(Debug, Clone)]
 pub struct RealMemoryInfo {
     /// Current resident set size (physical memory)
-    pub current_rss_bytes: u64,
     /// Peak resident set size
-    pub peak_rss_bytes: u64,
     /// Virtual memory size
-    pub virtual_memory_bytes: u64,
     /// Shared memory size
-    pub shared_memory_bytes: u64,
-}
-
 /// Enhanced process statistics with cross-platform support
 #[derive(Debug, Clone)]
 pub struct EnhancedProcessStats {
     /// Process ID
-    pub pid: u32,
     /// CPU usage percentage (0.0 to 100.0)
-    pub cpu_percent: f64,
     /// Memory information
-    pub memory_info: RealMemoryInfo,
     /// Number of open file descriptors/handles
-    pub open_files: u32,
     /// Number of threads
-    pub thread_count: u32,
     /// I/O read bytes
-    pub io_read_bytes: u64,
     /// I/O write bytes  
-    pub io_write_bytes: u64,
     /// Process uptime
-    pub uptime: Duration,
     /// CPU time in user mode
-    pub cpu_user_time: Duration,
     /// CPU time in system mode
-    pub cpu_system_time: Duration,
     /// Network connections count (if available)
-    pub network_connections: Option<u32>,
     /// Process priority/nice value
-    pub priority: Option<i32>,
-}
-
 /// CPU timing information
 #[derive(Debug, Clone)]
 pub struct CpuTimes {
     /// Time spent in user mode
-    pub user: Duration,
     /// Time spent in system mode
-    pub system: Duration,
     /// Time spent idle (for system-wide stats)
-    pub idle: Option<Duration>,
-}
-
 /// Memory usage statistics
 #[derive(Debug, Clone)]
 pub struct MemoryUsage {
     /// Physical memory usage in bytes
-    pub rss: u64,
     /// Virtual memory usage in bytes  
-    pub vms: u64,
     /// Shared memory in bytes
-    pub shared: u64,
     /// Peak memory usage in bytes
-    pub peak: u64,
-}
-
 /// Process statistics alias for compatibility
 pub type RealProcessStats = EnhancedProcessStats;
 
@@ -108,8 +67,6 @@ static PROCESS_REGISTRY: std::sync::OnceLock<Arc<RwLock<HashMap<u32, Arc<Mutex<C
 /// Initialize the process registry
 fn get_process_registry() -> &'static Arc<RwLock<HashMap<u32, Arc<Mutex<Child>>>>> {
     PROCESS_REGISTRY.get_or_init(|| Arc::new(RwLock::new(HashMap::new())))
-}
-
 /// Register a process for monitoring
 pub fn register_process_for_monitoring(pid: u32, child: Option<Arc<Mutex<Child>>>) -> ProcessResult<()> {
     let registry = get_process_registry();
@@ -118,12 +75,8 @@ pub fn register_process_for_monitoring(pid: u32, child: Option<Arc<Mutex<Child>>
     
     if let Some(child_handle) = child {
         processes.insert(pid, child_handle);
-    }
-    
     tracing::debug!(pid = pid, "Process registered for monitoring");
     Ok(())
-}
-
 /// Unregister a process from monitoring
 pub fn unregister_process_from_monitoring(pid: u32) -> ProcessResult<()> {
     let registry = get_process_registry();
@@ -133,8 +86,6 @@ pub fn unregister_process_from_monitoring(pid: u32) -> ProcessResult<()> {
     processes.remove(&pid);
     tracing::debug!(pid = pid, "Process unregistered from monitoring");
     Ok(())
-}
-
 /// Wait for a real process and get its final state
 pub fn wait_for_real_process(pid: u32) -> ProcessResult<RealProcessState> {
     // First, check if we have the process in our registry
@@ -143,7 +94,6 @@ pub fn wait_for_real_process(pid: u32) -> ProcessResult<RealProcessState> {
         let processes = registry.read()
             .map_err(|_| system_error(-1, "wait_for_real_process", "Failed to acquire registry lock"))?;
         processes.get(&pid).cloned()
-    };
 
     // If we have the child handle, wait for it
     if let Some(child_arc) = child_handle {
@@ -157,24 +107,12 @@ pub fn wait_for_real_process(pid: u32) -> ProcessResult<RealProcessState> {
         
         // Get final memory information
         let memory_info = get_real_memory_info(pid).unwrap_or_else(|_| RealMemoryInfo {
-            current_rss_bytes: 0,
-            peak_rss_bytes: 0,
-            virtual_memory_bytes: 0,
-            shared_memory_bytes: 0,
         });
         
         // Get CPU times
         let (user_time, system_time) = get_real_cpu_times(pid).unwrap_or((Duration::from_millis(0), Duration::from_millis(0)));
         
         Ok(RealProcessState {
-            pid,
-            exit_status: Some(exit_status),
-            user_time,
-            system_time,
-            memory_info,
-            start_time,
-            end_time: Some(end_time),
-            is_running: false,
         })
     } else {
         // Fallback: check if process exists using system calls
@@ -185,8 +123,6 @@ pub fn wait_for_real_process(pid: u32) -> ProcessResult<RealProcessState> {
 /// Get current process state from system (without waiting for completion)
 pub fn get_current_process_state(pid: u32) -> ProcessResult<RealProcessState> {
     get_process_state_from_system(pid)
-}
-
 /// Get process state directly from system information
 fn get_process_state_from_system(pid: u32) -> ProcessResult<RealProcessState> {
     // Check if process is running
@@ -194,10 +130,6 @@ fn get_process_state_from_system(pid: u32) -> ProcessResult<RealProcessState> {
     
     // Get memory information
     let memory_info = get_real_memory_info(pid).unwrap_or_else(|_| RealMemoryInfo {
-        current_rss_bytes: 0,
-        peak_rss_bytes: 0,
-        virtual_memory_bytes: 0,
-        shared_memory_bytes: 0,
     });
     
     // Get CPU times
@@ -207,17 +139,7 @@ fn get_process_state_from_system(pid: u32) -> ProcessResult<RealProcessState> {
     let start_time = get_process_start_time(pid).unwrap_or_else(|_| SystemTime::now());
     
     Ok(RealProcessState {
-        pid,
-        exit_status: if is_running { None } else { Some(ExitStatus::from_raw(0)) },
-        user_time,
-        system_time,
-        memory_info,
-        start_time,
-        end_time: if is_running { None } else { Some(SystemTime::now()) },
-        is_running,
     })
-}
-
 /// Check if a process is running using system calls
 fn is_process_running_system(pid: u32) -> ProcessResult<bool> {
     #[cfg(unix)]
@@ -230,7 +152,6 @@ fn is_process_running_system(pid: u32) -> ProcessResult<bool> {
                 match errno {
                     libc::ESRCH => Ok(false), // Process not found
                     libc::EPERM => Ok(true),  // Process exists but no permission
-                    _ => Err(system_error(errno, "kill", "Failed to check process status")),
                 }
             }
         }
@@ -248,8 +169,6 @@ fn is_process_running_system(pid: u32) -> ProcessResult<bool> {
         
         let stdout = String::from_utf8_lossy(&output.stdout);
         Ok(stdout.contains(&pid.to_string()))
-    }
-    
     #[cfg(not(any(unix, windows)))]
     {
         Err(system_error(-1, "is_running", "Platform not supported"))
@@ -286,16 +205,9 @@ fn get_real_memory_info(pid: u32) -> ProcessResult<RealMemoryInfo> {
                     vm_size = value_str.parse::<u64>().unwrap_or(0) * 1024; // Convert KB to bytes
                 }
             }
-        }
-        
         Ok(RealMemoryInfo {
-            current_rss_bytes: current_rss,
-            peak_rss_bytes: peak_rss,
-            virtual_memory_bytes: vm_size,
             shared_memory_bytes: 0, // Would need additional parsing
         })
-    }
-    
     #[cfg(target_os = "macos")]
     {
         use std::mem;
@@ -306,19 +218,11 @@ fn get_real_memory_info(pid: u32) -> ProcessResult<RealMemoryInfo> {
         
         let result = unsafe {
             libc::proc_pidinfo(
-                pid as i32,
-                libc::PROC_PIDTASKINFO,
-                0,
-                &mut task_info as *mut _ as *mut libc::c_void,
-                size as i32,
             )
-        };
         
         if result > 0 {
             Ok(RealMemoryInfo {
-                current_rss_bytes: task_info.pti_resident_size,
                 peak_rss_bytes: task_info.pti_resident_size, // macOS doesn't provide peak directly
-                virtual_memory_bytes: task_info.pti_virtual_size,
                 shared_memory_bytes: 0, // Would need additional system calls
             })
         } else {
@@ -335,13 +239,10 @@ fn get_real_memory_info(pid: u32) -> ProcessResult<RealMemoryInfo> {
         match get_windows_process_statistics(pid, std::time::Instant::now()) {
             Ok(stats) => {
                 Ok(RealMemoryInfo {
-                    current_rss_bytes: stats.resident_memory_bytes,
                     peak_rss_bytes: stats.memory_usage_bytes, // Best available approximation
-                    virtual_memory_bytes: stats.virtual_memory_bytes,
                     shared_memory_bytes: 0, // Windows doesn't easily provide this
                 })
             }
-            Err(e) => Err(e),
         }
     }
     
@@ -389,13 +290,7 @@ pub fn get_real_cpu_times(pid: u32) -> ProcessResult<(Duration, Duration)> {
         
         let result = unsafe {
             libc::proc_pidinfo(
-                pid as i32,
-                libc::PROC_PIDTASKINFO,
-                0,
-                &mut task_info as *mut _ as *mut libc::c_void,
-                size as i32,
             )
-        };
         
         if result > 0 {
             // Convert from microseconds to Duration
@@ -415,33 +310,19 @@ pub fn get_real_cpu_times(pid: u32) -> ProcessResult<(Duration, Duration)> {
         // Windows file time structure (100-nanosecond intervals)
         #[repr(C)]
         struct FileTime {
-            low_date_time: u32,
-            high_date_time: u32,
-        }
-        
         extern "system" {
             fn OpenProcess(desired_access: u32, inherit_handle: i32, process_id: u32) -> *mut std::ffi::c_void;
             fn GetProcessTimes(
-                handle: *mut std::ffi::c_void,
-                creation_time: *mut FileTime,
-                exit_time: *mut FileTime,
-                kernel_time: *mut FileTime,
-                user_time: *mut FileTime,
             ) -> i32;
             fn CloseHandle(handle: *mut std::ffi::c_void) -> i32;
-        }
-        
         const PROCESS_QUERY_INFORMATION: u32 = 0x0400;
         const FALSE: i32 = 0;
         
         let handle = unsafe { 
             OpenProcess(PROCESS_QUERY_INFORMATION, FALSE, pid)
-        };
         
         if handle == ptr::null_mut() {
             return Err(process_not_found_pid(pid, "Failed to open process"));
-        }
-        
         let mut creation_time: FileTime = unsafe { mem::zeroed() };
         let mut exit_time: FileTime = unsafe { mem::zeroed() };
         let mut kernel_time: FileTime = unsafe { mem::zeroed() };
@@ -449,15 +330,7 @@ pub fn get_real_cpu_times(pid: u32) -> ProcessResult<(Duration, Duration)> {
         
         let result = unsafe {
             GetProcessTimes(
-                handle,
-                &mut creation_time,
-                &mut exit_time,
-                &mut kernel_time,
-                &mut user_time,
             )
-        };
-        
-        unsafe { CloseHandle(handle); }
         
         if result != 0 {
             // Convert FileTime to Duration (100-nanosecond intervals)
@@ -510,8 +383,6 @@ fn get_process_start_time(pid: u32) -> ProcessResult<SystemTime> {
         
         // Fallback to current time
         Ok(SystemTime::now())
-    }
-    
     #[cfg(target_os = "macos")]
     {
         use std::mem;
@@ -522,13 +393,7 @@ fn get_process_start_time(pid: u32) -> ProcessResult<SystemTime> {
         
         let result = unsafe {
             libc::proc_pidinfo(
-                pid as i32,
-                libc::PROC_PIDTBSDINFO,
-                0,
-                &mut proc_info as *mut _ as *mut libc::c_void,
-                size as i32,
             )
-        };
         
         if result > 0 {
             // Convert from struct timeval to SystemTime
@@ -550,33 +415,19 @@ fn get_process_start_time(pid: u32) -> ProcessResult<SystemTime> {
         // Windows file time structure (100-nanosecond intervals since 1601-01-01)
         #[repr(C)]
         struct FileTime {
-            low_date_time: u32,
-            high_date_time: u32,
-        }
-        
         extern "system" {
             fn OpenProcess(desired_access: u32, inherit_handle: i32, process_id: u32) -> *mut std::ffi::c_void;
             fn GetProcessTimes(
-                handle: *mut std::ffi::c_void,
-                creation_time: *mut FileTime,
-                exit_time: *mut FileTime,
-                kernel_time: *mut FileTime,
-                user_time: *mut FileTime,
             ) -> i32;
             fn CloseHandle(handle: *mut std::ffi::c_void) -> i32;
-        }
-        
         const PROCESS_QUERY_INFORMATION: u32 = 0x0400;
         const FALSE: i32 = 0;
         
         let handle = unsafe { 
             OpenProcess(PROCESS_QUERY_INFORMATION, FALSE, pid)
-        };
         
         if handle == ptr::null_mut() {
             return Ok(SystemTime::now());
-        }
-        
         let mut creation_time: FileTime = unsafe { mem::zeroed() };
         let mut exit_time: FileTime = unsafe { mem::zeroed() };
         let mut kernel_time: FileTime = unsafe { mem::zeroed() };
@@ -584,15 +435,7 @@ fn get_process_start_time(pid: u32) -> ProcessResult<SystemTime> {
         
         let result = unsafe {
             GetProcessTimes(
-                handle,
-                &mut creation_time,
-                &mut exit_time,
-                &mut kernel_time,
-                &mut user_time,
             )
-        };
-        
-        unsafe { CloseHandle(handle); }
         
         if result != 0 {
             // Convert FileTime to SystemTime
@@ -621,11 +464,7 @@ fn get_process_start_time(pid: u32) -> ProcessResult<SystemTime> {
 /// Background monitoring task
 pub struct BackgroundMonitor {
     /// Monitoring thread handle
-    thread_handle: Option<thread::JoinHandle<()>>,
     /// Shutdown signal
-    shutdown: Arc<RwLock<bool>>,
-}
-
 impl BackgroundMonitor {
     /// Start background monitoring
     pub fn start() -> Self {
@@ -637,8 +476,6 @@ impl BackgroundMonitor {
         });
         
         Self {
-            thread_handle: Some(handle),
-            shutdown,
         }
     }
     
@@ -646,8 +483,6 @@ impl BackgroundMonitor {
     pub fn stop(&mut self) {
         if let Ok(mut shutdown) = self.shutdown.write() {
             *shutdown = true;
-        }
-        
         if let Some(handle) = self.thread_handle.take() {
             let _ = handle.join();
         }
@@ -678,8 +513,6 @@ impl BackgroundMonitor {
                         }
                     }
                 }
-            }
-            
             // Remove dead processes
             if !to_remove.is_empty() {
                 if let Ok(mut processes) = registry.write() {
@@ -688,14 +521,10 @@ impl BackgroundMonitor {
                         tracing::debug!(pid = pid, "Dead process removed from registry");
                     }
                 }
-            }
-            
             // Sleep before next check
             thread::sleep(Duration::from_secs(5));
         }
     }
-}
-
 impl Drop for BackgroundMonitor {
     fn drop(&mut self) {
         self.stop();
@@ -717,8 +546,6 @@ pub fn start_global_monitoring() {
             tracing::info!("Global process monitoring started");
         }
     }
-}
-
 /// Stop global monitoring
 pub fn stop_global_monitoring() {
         // TODO: implement
@@ -747,8 +574,6 @@ fn get_unix_process_stats(pid: u32) -> ProcessResult<EnhancedProcessStats> {
     let stat_fields: Vec<&str> = stat_content.split_whitespace().collect();
     if stat_fields.len() < 24 {
         return Err(system_error(-1, "parse_stat", "Invalid stat format"));
-    }
-    
     // Parse key fields (see man proc(5) for details)
     let utime = stat_fields[13].parse::<u64>().unwrap_or(0);
     let stime = stat_fields[14].parse::<u64>().unwrap_or(0);
@@ -794,26 +619,9 @@ fn get_unix_process_stats(pid: u32) -> ProcessResult<EnhancedProcessStats> {
     let network_connections = count_network_connections(pid);
     
     Ok(EnhancedProcessStats {
-        pid,
-        cpu_percent,
         memory_info: RealMemoryInfo {
-            current_rss_bytes: rss,
-            peak_rss_bytes: peak_rss,
-            virtual_memory_bytes: vsize,
-            shared_memory_bytes: shared_memory,
-        },
-        open_files: fd_count,
-        thread_count: num_threads,
-        io_read_bytes: io_read,
-        io_write_bytes: io_write,
-        uptime,
         cpu_user_time: Duration::from_millis(utime * 10), // Convert jiffies to ms
-        cpu_system_time: Duration::from_millis(stime * 10),
-        network_connections,
-        priority,
     })
-}
-
 /// Windows-specific process statistics collection
 #[cfg(windows)]
 fn get_windows_process_stats(pid: u32) -> ProcessResult<EnhancedProcessStats> {
@@ -825,11 +633,7 @@ fn get_windows_process_stats(pid: u32) -> ProcessResult<EnhancedProcessStats> {
     
     // Convert Windows info to enhanced stats
     let memory_info = RealMemoryInfo {
-        current_rss_bytes: windows_info.memory_usage.working_set_size,
-        peak_rss_bytes: windows_info.memory_usage.peak_working_set_size,
-        virtual_memory_bytes: windows_info.memory_usage.virtual_size,
         shared_memory_bytes: 0, // Not directly available on Windows
-    };
     
     // Calculate uptime
     let uptime = SystemTime::now()
@@ -837,46 +641,15 @@ fn get_windows_process_stats(pid: u32) -> ProcessResult<EnhancedProcessStats> {
         .unwrap_or(Duration::from_secs(0));
     
     Ok(EnhancedProcessStats {
-        pid,
-        cpu_percent: windows_info.cpu_usage_percent,
-        memory_info,
-        open_files: windows_info.handle_count,
-        thread_count: windows_info.thread_count,
-        io_read_bytes: windows_info.io_counters.read_bytes,
-        io_write_bytes: windows_info.io_counters.write_bytes,
-        uptime,
-        cpu_user_time: windows_info.user_time,
-        cpu_system_time: windows_info.kernel_time,
         network_connections: None, // Would need additional Windows API calls
-        priority: Some(windows_info.priority_class as i32),
     })
-}
-
 /// Basic process statistics for unsupported platforms
 #[cfg(not(any(unix, windows)))]
 fn get_basic_process_stats(pid: u32) -> ProcessResult<EnhancedProcessStats> {
     // Minimal implementation for other platforms
     Ok(EnhancedProcessStats {
-        pid,
-        cpu_percent: 0.0,
         memory_info: RealMemoryInfo {
-            current_rss_bytes: 0,
-            peak_rss_bytes: 0,
-            virtual_memory_bytes: 0,
-            shared_memory_bytes: 0,
-        },
-        open_files: 0,
-        thread_count: 1,
-        io_read_bytes: 0,
-        io_write_bytes: 0,
-        uptime: Duration::from_secs(0),
-        cpu_user_time: Duration::from_secs(0),
-        cpu_system_time: Duration::from_secs(0),
-        network_connections: None,
-        priority: None,
     })
-}
-
 /// Helper functions for Unix process monitoring
 #[cfg(unix)]
 fn extract_kb_value(line: &str) -> Option<u64> {
@@ -884,15 +657,11 @@ fn extract_kb_value(line: &str) -> Option<u64> {
         .nth(1)?
         .parse::<u64>()
         .ok()
-}
-
 #[cfg(unix)]
 fn count_open_file_descriptors(pid: u32) -> u32 {
     use std::fs;
     
     match fs::read_dir(format!("/proc/{}/fd", pid)) {
-        Ok(entries) => entries.count() as u32,
-        Err(_) => 0,
     }
 }
 
@@ -928,8 +697,6 @@ fn get_io_stats(pid: u32) -> (u64, u64) {
                     write_bytes = value.parse().unwrap_or(0);
                 }
             }
-        }
-        
         (read_bytes, write_bytes)
     } else {
         (0, 0)
@@ -953,11 +720,7 @@ fn get_process_uptime(pid: u32) -> Duration {
                     .unwrap_or(Duration::from_secs(0));
             }
         }
-    }
-    
     Duration::from_secs(0)
-}
-
 #[cfg(unix)]
 fn get_boot_time() -> SystemTime {
     use std::fs;
@@ -972,11 +735,7 @@ fn get_boot_time() -> SystemTime {
                 }
             }
         }
-    }
-    
     SystemTime::UNIX_EPOCH
-}
-
 #[cfg(unix)]
 fn get_process_priority(pid: u32) -> Option<i32> {
     use std::fs;
@@ -990,8 +749,6 @@ fn get_process_priority(pid: u32) -> Option<i32> {
     }
     
     None
-}
-
 #[cfg(unix)]
 fn count_network_connections(pid: u32) -> Option<u32> {
     use std::fs;
@@ -1009,8 +766,6 @@ fn count_network_connections(pid: u32) -> Option<u32> {
                 count += 1;
             }
         }
-    }
-    
     // Check UDP connections
     if let Ok(content) = fs::read_to_string("/proc/net/udp") {
         for line in content.split("\n").skip(1) { // Skip header
@@ -1018,8 +773,6 @@ fn count_network_connections(pid: u32) -> Option<u32> {
                 count += 1;
             }
         }
-    }
-    
     if count > 0 {
         Some(count)
     } else {
@@ -1033,16 +786,10 @@ pub type ProcessStats = EnhancedProcessStats;
 /// Alias for compatibility - gets enhanced process statistics
 pub fn get_real_process_stats(pid: u32) -> ProcessResult<ProcessStats> {
     get_enhanced_process_stats(pid)
-}
-
 /// Get real memory usage for a process
 pub fn get_real_memory_usage(pid: u32) -> ProcessResult<MemoryUsage> {
     let memory_info = get_real_memory_info(pid)?;
     
     Ok(MemoryUsage {
-        rss: memory_info.current_rss_bytes,
-        vms: memory_info.virtual_memory_bytes,
-        shared: memory_info.shared_memory_bytes,
-        peak: memory_info.peak_rss_bytes,
     })
 }

@@ -11,24 +11,13 @@ use std::fmt;
 // Core error handling
 #[derive(Debug, Clone)]
 pub struct CursedError {
-    pub message: String,
-    pub location: Option<SourceLocation>,
-}
-
 #[derive(Debug, Clone)]
 pub struct SourceLocation {
-    pub line: usize,
-    pub column: usize,
-    pub file: String,
-}
-
 impl fmt::Display for CursedError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "Error: {}", self.message)
     }
 }
-
-impl std::error::Error for CursedError {}
 
 pub type Result<T> = std::result::Result<T, CursedError>;
 
@@ -38,14 +27,6 @@ pub mod lexer {
     
     #[derive(Debug, Clone, PartialEq)]
     pub enum Token {
-        Identifier(String),
-        Number(i64),
-        String(String),
-        Keyword(String),
-        Operator(String),
-        EOF,
-    }
-    
     pub fn tokenize(input: &str) -> Result<Vec<Token>> {
         let mut tokens = Vec::new();
         let mut chars = input.chars().peekable();
@@ -78,8 +59,6 @@ pub mod lexer {
                         }
                     }
                     let n = num.parse().map_err(|_| CursedError {
-                        message: "Invalid number".to_string(),
-                        location: None,
                     })?;
                     tokens.push(Token::Number(n));
                 }
@@ -88,8 +67,6 @@ pub mod lexer {
                     tokens.push(Token::Operator(ch.to_string()));
                 }
             }
-        }
-        
         tokens.push(Token::EOF);
         Ok(tokens)
     }
@@ -101,17 +78,8 @@ pub mod ast {
     
     #[derive(Debug, Clone)]
     pub enum Statement {
-        Expression(Expression),
-        Assignment(String, Expression),
-    }
-    
     #[derive(Debug, Clone)]
     pub enum Expression {
-        Number(i64),
-        Identifier(String),
-        Binary(Box<Expression>, String, Box<Expression>),
-    }
-    
     pub fn parse(tokens: &[crate::lexer::Token]) -> Result<Vec<Statement>> {
         // Minimal parser implementation
         Ok(vec![])
@@ -127,16 +95,12 @@ pub mod execution {
     impl CursedExecutionEngine {
         pub fn new() -> Result<Self> {
             Ok(CursedExecutionEngine)
-        }
-        
         pub fn execute(&mut self, source: &str) -> Result<String> {
             let tokens = crate::lexer::tokenize(source)?;
             let _ast = crate::ast::parse(&tokens)?;
             Ok("Hello from CURSED!".to_string())
         }
     }
-}
-
 /// Library version information
 pub const VERSION: &str = env!("CARGO_PKG_VERSION");
 pub const NAME: &str = env!("CARGO_PKG_NAME");
@@ -145,8 +109,6 @@ pub const NAME: &str = env!("CARGO_PKG_NAME");
 pub fn init() {
     // Minimal initialization
     println!("CURSED {} initialized", VERSION);
-}
-
 /// Compile and execute CURSED source code (minimal version)
 pub fn run(source: &str) -> Result<()> {
     let mut execution_engine = execution::CursedExecutionEngine::new()?;

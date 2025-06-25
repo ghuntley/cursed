@@ -27,8 +27,6 @@ async fn main() -> crate::error::Result<()> {
     if cli.verbose {
         info!("CURSED Profiling Tool - Version 1.0.0");
         info!("Verbose mode enabled");
-    }
-    
     // Load configuration
     let config = if let Some(config_path) = &cli.config {
         match std::fs::read_to_string(config_path) {
@@ -46,7 +44,6 @@ async fn main() -> crate::error::Result<()> {
         }
     } else {
         CliConfig::default()
-    };
     
     // Execute command
     let executor = CliExecutor::new(config);

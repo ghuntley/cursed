@@ -11,55 +11,23 @@ use serde::{Deserialize, Serialize};
 /// Parsed documentation structure
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ParsedDocumentation {
-    pub summary: String,
-    pub description: String,
-    pub tags: HashMap<String, Vec<String>>,
-    pub examples: Vec<Example>,
-    pub see_also: Vec<String>,
-    pub since: Option<String>,
-    pub deprecated: Option<String>,
-    pub author: Option<String>,
-}
-
 /// Documentation comment parser
 pub struct CommentParser {
     // Parser configuration
-    allow_html: bool,
-    extract_examples: bool,
-    validate_links: bool,
-}
-
 impl CommentParser {
     /// Create a new comment parser with default settings
     pub fn new() -> crate::error::Result<()> {
         Ok(Self {
-            allow_html: true,
-            extract_examples: true,
-            validate_links: false,
         })
-    }
-
     /// Create parser with custom configuration
     pub fn with_config(allow_html: bool, extract_examples: bool, validate_links: bool) -> Self {
         Self {
-            allow_html,
-            extract_examples,
-            validate_links,
         }
     }
 
     /// Parse documentation content from a raw string
     pub fn parse_doc_content(&self, content: &str) -> crate::error::Result<()> {
         let mut parsed = ParsedDocumentation {
-            summary: String::new(),
-            description: String::new(),
-            tags: HashMap::new(),
-            examples: Vec::new(),
-            see_also: Vec::new(),
-            since: None,
-            deprecated: None,
-            author: None,
-        };
 
         let lines = content.split("\n").collect::<Vec<_>>();
         let mut current_section = ParsingSection::Summary;
@@ -73,8 +41,6 @@ impl CommentParser {
             if current_section == ParsingSection::Summary && trimmed.is_empty() {
                 current_section = ParsingSection::Description;
                 continue;
-            }
-
             // Handle doc comment prefixes
             let clean_line = self.clean_doc_line(trimmed);
 
@@ -83,8 +49,6 @@ impl CommentParser {
                 self.process_tag(&mut parsed, &mut current_example, tag_info)?;
                 current_section = ParsingSection::Tags;
                 continue;
-            }
-
             // Process code blocks for examples
             if self.extract_examples {
                 if let Some(example) = &mut current_example {
@@ -128,25 +92,17 @@ impl CommentParser {
         // Finalize any remaining example
         if let Some(example) = current_example {
             parsed.examples.push(example.build());
-        }
-
         // Join description lines
         if !description_lines.is_empty() {
             parsed.description = description_lines.join(" ");
-        }
-
         // Post-process parsed content
         self.post_process(&mut parsed)?;
 
         Ok(parsed)
-    }
-
     /// Parse documentation for a specific item at a location
     pub fn parse_item_documentation(&self, source: &str, location: &SourceLocation) -> crate::error::Result<()> {
         let doc_content = self.extract_doc_comments_at_location(source, location)?;
         self.parse_doc_content(&doc_content)
-    }
-
     /// Extract documentation comments preceding a location
     fn extract_doc_comments_at_location(&self, source: &str, location: &SourceLocation) -> crate::error::Result<()> {
         let lines = source.split("\n").collect::<Vec<_>>();
@@ -174,11 +130,7 @@ impl CommentParser {
                     break;
                 }
             }
-        }
-        
         Ok(doc_lines.join("\n"))
-    }
-
     /// Clean documentation line by removing comment prefixes
     fn clean_doc_line(&self, line: &str) -> String {
         if line.starts_with("///") {
@@ -197,13 +149,9 @@ impl CommentParser {
         if let Some(line) = line.strip_prefix('@') {
             if let Some((tag_name, rest)) = line.split_once(' ') {
                 Some(TagInfo {
-                    name: tag_name.to_string(),
-                    content: rest.trim().to_string(),
                 })
             } else {
                 Some(TagInfo {
-                    name: line.to_string(),
-                    content: String::new(),
                 })
             }
         } else {
@@ -271,8 +219,6 @@ impl CommentParser {
             }
         }
         Ok(())
-    }
-
     /// Post-process parsed documentation
     fn post_process(&self, parsed: &mut ParsedDocumentation) -> crate::error::Result<()> {
         // Clean up summary and description
@@ -283,8 +229,6 @@ impl CommentParser {
         if !self.allow_html {
             parsed.summary = self.strip_html(&parsed.summary);
             parsed.description = self.strip_html(&parsed.description);
-        }
-        
         // Validate and normalize examples
         for example in &mut parsed.examples {
             example.code = example.code.trim().to_string();
@@ -296,11 +240,7 @@ impl CommentParser {
         // Validate links if enabled
         if self.validate_links {
             self.validate_documentation_links(parsed)?;
-        }
-        
         Ok(())
-    }
-
     /// Strip HTML tags from text
     fn strip_html(&self, text: &str) -> String {
         // Simple HTML tag removal
@@ -309,22 +249,14 @@ impl CommentParser {
         
         for ch in text.chars() {
             match ch {
-                '<' => in_tag = true,
-                '>' => in_tag = false,
                 _ => if !in_tag { result.push(ch); }
             }
-        }
-        
         result
-    }
-
     /// Validate links in documentation
     fn validate_documentation_links(&self, _parsed: &ParsedDocumentation) -> crate::error::Result<()> {
         // TODO: Implement link validation
         // This would check for broken internal references, invalid URLs, etc.
         Ok(())
-    }
-
     /// Extract all documentation from source file
     pub fn extract_all_documentation(&self, source: &str) -> crate::error::Result<()> {
         let lines = source.split("\n").collect::<Vec<_>>();
@@ -345,13 +277,7 @@ impl CommentParser {
                 let doc_content = doc_lines.join("\n");
                 if let Ok(parsed) = self.parse_doc_content(&doc_content) {
                     let location = SourceLocation {
-                        line: current_doc_start.unwrap_or(line_num + 1) as u32,
-                        column: 1,
-                        file: None,
-                    };
                     results.push((location, parsed));
-                }
-                
                 // Reset for next doc block
                 doc_lines.clear();
                 current_doc_start = None;
@@ -363,10 +289,6 @@ impl CommentParser {
             let doc_content = doc_lines.join("\n");
             if let Ok(parsed) = self.parse_doc_content(&doc_content) {
                 let location = SourceLocation {
-                    line: current_doc_start.unwrap_or(lines.len()) as u32,
-                    column: 1,
-                    file: None,
-                };
                 results.push((location, parsed));
             }
         }
@@ -378,66 +300,30 @@ impl CommentParser {
 /// Internal parsing section tracker
 #[derive(Debug, PartialEq)]
 enum ParsingSection {
-    Summary,
-    Description,
-    Tags,
-}
-
 /// Tag information
 #[derive(Debug)]
 struct TagInfo {
-    name: String,
-    content: String,
-}
-
 /// Example builder for constructing examples during parsing
 #[derive(Debug)]
 struct ExampleBuilder {
-    title: Option<String>,
-    description: Option<String>,
-    language: String,
-    code_lines: Vec<String>,
-    output: Option<String>,
-}
-
 impl ExampleBuilder {
     fn new(language: String) -> Self {
         Self {
-            title: None,
-            description: None,
-            language,
-            code_lines: Vec::new(),
-            output: None,
         }
     }
 
     fn set_title(&mut self, title: String) {
         self.title = Some(title);
-    }
-
     fn set_description(&mut self, description: String) {
         self.description = Some(description);
-    }
-
     fn add_code_line(&mut self, line: &str) {
         self.code_lines.push(line.to_string());
-    }
-
     fn set_output(&mut self, output: String) {
         self.output = Some(output);
-    }
-
     fn build(self) -> Example {
         Example {
-            title: self.title,
-            description: self.description,
-            code: self.code_lines.join("\n"),
-            language: self.language,
-            output: self.output,
         }
     }
-}
-
 impl Default for CommentParser {
     fn default() -> Self {
         Self::new().unwrap()

@@ -30,8 +30,5 @@ pub use coordinator::{OptimizationCoordinator, CoordinatorConfiguration as Coord
 pub use performance_monitor::PerformanceMonitor;
 pub use types::{OptimizationStats, OptimizationResult};
 pub use optimization_manager::{
-    OptimizationManager, AdaptiveOptimizer, IncrementalCompiler, BenchmarkSuite,
-    PerformanceProfiler, OptimizationFeedback, OptimizationStrategy, OptimizationRecommendation,
-    IncrementalCompilationResult, BenchmarkSuiteResults, AdaptationResult, BenchmarkConfig,
     PerformanceMetrics, AdvancedOptimizationManager
-};
+// };

@@ -5,14 +5,12 @@
 // the CURSED compiler.
 
 use crate::bootstrap::{
-    SelfCompilationVerifier, VerificationConfig, VerificationResult,
     StageResult, PerformanceMetrics, ConvergenceAnalysis
-};
+// };
 
 use crate::build_system::{
-    BuildConfig, BuildResult, BuildTarget, BuildProfile,
     IncrementalCache, DependencyResolver
-};
+// };
 
 use crate::common_types::optimization_level::OptimizationLevel;
 use crate::build_system::build_pipeline::{BuildPipeline, PipelineContext, PipelineResult};
@@ -28,149 +26,86 @@ use tracing::{debug, error, info, warn, instrument};
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct BootstrapConfig {
     /// Whether bootstrap compilation is enabled
-    pub enabled: bool,
     
     /// Number of bootstrap cycles to perform
-    pub bootstrap_cycles: usize,
     
     /// Timeout for each bootstrap stage
-    pub stage_timeout: Duration,
     
     /// Whether to keep intermediate bootstrap files
-    pub keep_intermediates: bool,
     
     /// Bootstrap verification configuration
-    pub verification: VerificationConfig,
     
     /// Convergence detection threshold (performance variance)
-    pub convergence_threshold: f64,
     
     /// Whether to auto-detect when to run bootstrap
-    pub auto_bootstrap: bool,
     
     /// Minimum time between bootstrap runs
-    pub bootstrap_cooldown: Duration,
-}
-
 impl Default for BootstrapConfig {
     fn default() -> Self {
         Self {
-            enabled: true,
-            bootstrap_cycles: 3,
             stage_timeout: Duration::from_secs(600), // 10 minutes per stage
-            keep_intermediates: false,
-            verification: VerificationConfig::default(),
             convergence_threshold: 0.05, // 5% variance
-            auto_bootstrap: false,
             bootstrap_cooldown: Duration::from_secs(3600), // 1 hour
         }
     }
-}
-
 /// Bootstrap build pipeline for managing multi-stage compilation
 pub struct BootstrapPipeline {
-    config: BootstrapConfig,
-    verifier: SelfCompilationVerifier,
-    work_dir: PathBuf,
-    last_bootstrap: Option<Instant>,
-    stage_cache: HashMap<u8, StageCache>,
-}
-
 /// Cached information for a bootstrap stage
 #[derive(Debug, Clone)]
 struct StageCache {
-    checksum: String,
-    timestamp: Instant,
-    binary_path: PathBuf,
-    performance: PerformanceMetrics,
-}
-
 /// Result from bootstrap build operation
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct BootstrapBuildResult {
     /// Overall bootstrap success
-    pub success: bool,
     
     /// Total bootstrap time
-    pub total_time: Duration,
     
     /// Number of stages completed
-    pub stages_completed: usize,
     
     /// Individual stage results
-    pub stage_results: Vec<BootstrapStageResult>,
     
     /// Whether convergence was achieved
-    pub converged: bool,
     
     /// Convergence analysis
-    pub convergence_analysis: ConvergenceAnalysis,
     
     /// Performance metrics across stages
-    pub performance_metrics: PerformanceMetrics,
     
     /// Any issues encountered
-    pub issues: Vec<String>,
     
     /// Binary checksums for each stage
-    pub binary_checksums: HashMap<u8, String>,
-}
-
 /// Result from a single bootstrap stage
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct BootstrapStageResult {
     /// Stage number (0, 1, 2, ...)
-    pub stage: u8,
     
     /// Stage success
-    pub success: bool,
     
     /// Compilation time for this stage
-    pub compilation_time: Duration,
     
     /// Binary size produced
-    pub binary_size: u64,
     
     /// Binary checksum
-    pub checksum: String,
     
     /// Output binary path
-    pub binary_path: PathBuf,
     
     /// Stage-specific errors
-    pub errors: Vec<String>,
     
     /// Performance metrics for this stage
-    pub performance: StagePerformance,
-}
-
 /// Performance metrics for a single bootstrap stage
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct StagePerformance {
     /// Memory usage during compilation
-    pub memory_usage_mb: u64,
     
     /// CPU utilization percentage
-    pub cpu_utilization: f64,
     
     /// Disk I/O operations
-    pub disk_io_ops: u64,
     
     /// Compile-time optimization level achieved
-    pub optimization_score: f64,
-}
-
 impl Default for StagePerformance {
     fn default() -> Self {
         Self {
-            memory_usage_mb: 0,
-            cpu_utilization: 0.0,
-            disk_io_ops: 0,
-            optimization_score: 0.0,
         }
     }
-}
-
 impl BootstrapPipeline {
     /// Create a new bootstrap pipeline
     pub fn new(config: BootstrapConfig, work_dir: PathBuf) -> CursedResult<Self> {
@@ -178,27 +113,17 @@ impl BootstrapPipeline {
         let verifier = SelfCompilationVerifier::new(verification_config)?;
         
         Ok(Self {
-            config,
-            verifier,
-            work_dir,
-            last_bootstrap: None,
-            stage_cache: HashMap::new(),
         })
-    }
-    
     /// Check if bootstrap should be triggered
     #[instrument(skip(self))]
     pub fn should_bootstrap(&self, build_config: &BuildConfig) -> bool {
         if !self.config.enabled {
             debug!("Bootstrap disabled in configuration");
             return false;
-        }
-        
         // Check cooldown period
         if let Some(last) = self.last_bootstrap {
             let elapsed = last.elapsed();
             if elapsed < self.config.bootstrap_cooldown {
-                debug!("Bootstrap cooldown active: {:?} remaining", 
                        self.config.bootstrap_cooldown - elapsed);
                 return false;
             }
@@ -227,8 +152,6 @@ impl BootstrapPipeline {
         // This would integrate with file change detection
         // For now, use a simple heuristic
         match build_config.profile {
-            BuildProfile::Release => true,
-            _ => false,
         }
     }
     
@@ -239,16 +162,6 @@ impl BootstrapPipeline {
         let start_time = Instant::now();
         
         let mut result = BootstrapBuildResult {
-            success: false,
-            total_time: Duration::ZERO,
-            stages_completed: 0,
-            stage_results: Vec::new(),
-            converged: false,
-            convergence_analysis: ConvergenceAnalysis::default(),
-            performance_metrics: PerformanceMetrics::default(),
-            issues: Vec::new(),
-            binary_checksums: HashMap::new(),
-        };
         
         // Prepare verification configuration
         let mut verification_config = self.config.verification.clone();
@@ -274,8 +187,6 @@ impl BootstrapPipeline {
                     let bootstrap_stage = self.convert_stage_result(stage_result)?;
                     result.binary_checksums.insert(bootstrap_stage.stage, bootstrap_stage.checksum.clone());
                     result.stage_results.push(bootstrap_stage);
-                }
-                
                 result.issues = verification_result.issues;
                 
                 if result.success {
@@ -293,8 +204,6 @@ impl BootstrapPipeline {
         
         result.total_time = start_time.elapsed();
         Ok(result)
-    }
-    
     /// Convert verification stage result to bootstrap stage result
     fn convert_stage_result(&self, stage_result: StageResult) -> CursedResult<BootstrapStageResult> {
         // Calculate binary size
@@ -305,30 +214,17 @@ impl BootstrapPipeline {
                 .metadata()
                 .map(|m| m.len())
                 .unwrap_or(0)
-        };
         
         // Calculate performance metrics (simplified for now)
         let performance = StagePerformance {
             memory_usage_mb: 512, // Would be measured during compilation
             cpu_utilization: 85.0, // Would be sampled during compilation
             disk_io_ops: 1000, // Would be tracked during compilation
-            optimization_score: self.calculate_optimization_score(stage_result.stage),
-        };
         
         Ok(BootstrapStageResult {
-            stage: stage_result.stage,
-            success: stage_result.success,
-            compilation_time: stage_result.compilation_time,
-            binary_size,
-            checksum: stage_result.binary_checksum,
             binary_path: stage_result.output_files.get(0)
                 .cloned()
-                .unwrap_or_else(|| PathBuf::from("unknown")),
-            errors: stage_result.errors,
-            performance,
         })
-    }
-    
     /// Calculate optimization score for a stage
     fn calculate_optimization_score(&self, stage: u8) -> f64 {
         // Stages should become progressively more optimized
@@ -343,37 +239,22 @@ impl BootstrapPipeline {
     /// Map build profile to optimization levels
     fn map_build_profile_to_optimization(&self, build_config: &BuildConfig) -> Vec<String> {
         match build_config.profile {
-            BuildProfile::Debug => vec!["-O0".to_string()],
-            BuildProfile::Development => vec!["-O1".to_string()],
-            BuildProfile::Release => vec!["-O2".to_string(), "-O3".to_string()],
-            BuildProfile::Production => vec!["-O3".to_string(), "-Ofast".to_string()],
-            _ => vec!["-O2".to_string()],
         }
     }
     
     /// Get cached stage information
     pub fn get_stage_cache(&self, stage: u8) -> Option<&StageCache> {
         self.stage_cache.get(&stage)
-    }
-    
     /// Update stage cache
     pub fn update_stage_cache(&mut self, stage: u8, cache: StageCache) {
         self.stage_cache.insert(stage, cache);
-    }
-    
     /// Clear all cached stage information
     pub fn clear_cache(&mut self) {
         self.stage_cache.clear();
         info!("Bootstrap stage cache cleared");
-    }
-    
     /// Get bootstrap statistics
     pub fn get_statistics(&self) -> BootstrapStatistics {
         BootstrapStatistics {
-            total_bootstrap_runs: self.stage_cache.len(),
-            last_bootstrap_time: self.last_bootstrap,
-            cached_stages: self.stage_cache.keys().cloned().collect(),
-            average_stage_time: self.calculate_average_stage_time(),
         }
     }
     
@@ -381,8 +262,6 @@ impl BootstrapPipeline {
     fn calculate_average_stage_time(&self) -> Duration {
         if self.stage_cache.is_empty() {
             return Duration::ZERO;
-        }
-        
         // This would be calculated from historical data
         Duration::from_secs(180) // 3 minutes average
     }
@@ -392,18 +271,12 @@ impl BootstrapPipeline {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct BootstrapStatistics {
     /// Total number of bootstrap runs performed
-    pub total_bootstrap_runs: usize,
     
     /// Timestamp of last bootstrap
-    pub last_bootstrap_time: Option<Instant>,
     
     /// Currently cached stage numbers
-    pub cached_stages: Vec<u8>,
     
     /// Average time per stage
-    pub average_stage_time: Duration,
-}
-
 /// Integration trait for bootstrap functionality in build orchestrator
 pub trait BootstrapIntegration {
     /// Initialize bootstrap integration
@@ -417,5 +290,3 @@ pub trait BootstrapIntegration {
     
     /// Verify bootstrap integrity
     async fn verify_bootstrap(&self) -> CursedResult<VerificationResult>;
-}
-

@@ -18,72 +18,43 @@ pub trait DatabaseDriver: Send + Sync {
     
     /// yolo Validate connection string format for this driver
     fn validate_connection_string(&self, connection_string: &str) -> SqlResult<()>;
-}
-
 /// fr fr Configuration for database drivers - all the settings bestie
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct DriverConfig {
     /// Driver name (sqlite, postgres, mysql, etc.)
-    pub driver_name: String,
     
     /// Connection timeout in seconds
-    pub connection_timeout: Duration,
     
     /// Query timeout in seconds
-    pub query_timeout: Duration,
     
     /// Enable prepared statement caching
-    pub enable_prepared_cache: bool,
     
     /// Maximum number of prepared statements to cache
-    pub max_prepared_cache_size: usize,
     
     /// Enable connection validation on checkout
-    pub validate_connections: bool,
     
     /// Additional driver-specific options
-    pub driver_options: HashMap<String, String>,
-}
-
 impl Default for DriverConfig {
     fn default() -> Self {
         Self {
-            driver_name: "sqlite".to_string(),
-            connection_timeout: Duration::from_secs(30),
-            query_timeout: Duration::from_secs(60),
-            enable_prepared_cache: true,
-            max_prepared_cache_size: 100,
-            validate_connections: true,
-            driver_options: HashMap::new(),
         }
     }
-}
-
 /// fr fr Connection configuration - where to connect and how
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ConnectionConfig {
     /// Database connection URL
-    pub connection_string: String,
     
     /// Database name (if not in connection string)
-    pub database: Option<String>,
     
     /// Username for authentication
-    pub username: Option<String>,
     
     /// Password for authentication (handled securely)
-    pub password: Option<String>,
     
     /// Connection timeout
-    pub timeout: Duration,
     
     /// SSL/TLS configuration
-    pub ssl_config: Option<SslConfig>,
     
     /// Additional connection parameters
-    pub parameters: HashMap<String, String>,
-}
-
 impl ConnectionConfig {
     /// sus Create new connection config from connection string
     pub fn from_string(connection_string: &str) -> SqlResult<Self> {
@@ -91,26 +62,10 @@ impl ConnectionConfig {
         let parsed = parse_connection_string(connection_string)?;
         
         Ok(Self {
-            connection_string: connection_string.to_string(),
-            database: parsed.database,
-            username: parsed.username,
-            password: parsed.password,
-            timeout: Duration::from_secs(30),
-            ssl_config: None,
-            parameters: parsed.parameters,
         })
-    }
-    
     /// facts Create new connection config with all options
     pub fn new(connection_string: String) -> Self {
         Self {
-            connection_string,
-            database: None,
-            username: None,
-            password: None,
-            timeout: Duration::from_secs(30),
-            ssl_config: None,
-            parameters: HashMap::new(),
         }
     }
     
@@ -118,14 +73,10 @@ impl ConnectionConfig {
     pub fn with_parameter(mut self, key: String, value: String) -> Self {
         self.parameters.insert(key, value);
         self
-    }
-    
     /// highkey Set connection timeout
     pub fn with_timeout(mut self, timeout: Duration) -> Self {
         self.timeout = timeout;
         self
-    }
-    
     /// periodt Enable SSL with given configuration
     pub fn with_ssl(mut self, ssl_config: SslConfig) -> Self {
         self.ssl_config = Some(ssl_config);
@@ -137,33 +88,19 @@ impl ConnectionConfig {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct SslConfig {
     /// Enable SSL/TLS
-    pub enabled: bool,
     
     /// Verify server certificate
-    pub verify_certificate: bool,
     
     /// Path to CA certificate file
-    pub ca_cert_path: Option<String>,
     
     /// Path to client certificate file
-    pub client_cert_path: Option<String>,
     
     /// Path to client private key file
-    pub client_key_path: Option<String>,
-}
-
 impl Default for SslConfig {
     fn default() -> Self {
         Self {
-            enabled: false,
-            verify_certificate: true,
-            ca_cert_path: None,
-            client_cert_path: None,
-            client_key_path: None,
         }
     }
-}
-
 /// fr fr Database connection interface - where the magic happens
 pub trait DatabaseConnection: Send + Sync {
     /// sus Execute a query and return results
@@ -189,8 +126,6 @@ pub trait DatabaseConnection: Send + Sync {
     
     /// yolo Execute multiple statements in a single batch
     fn execute_batch(&mut self, statements: &[(&str, &[Parameter])]) -> SqlResult<Vec<SqlResult<u64>>>;
-}
-
 /// fr fr Prepared statement interface - for performance bestie
 pub trait PreparedStatement: Send + Sync {
     /// sus Execute the prepared statement with parameters
@@ -207,8 +142,6 @@ pub trait PreparedStatement: Send + Sync {
     
     /// periodt Close/deallocate the prepared statement
     fn close(&mut self) -> SqlResult<()>;
-}
-
 /// fr fr Transaction interface - ACID compliance periodt
 pub trait Transaction: Send + Sync {
     /// sus Execute a query within this transaction
@@ -234,147 +167,92 @@ pub trait Transaction: Send + Sync {
     
     /// yolo Get transaction isolation level
     fn isolation_level(&self) -> TransactionIsolation;
-}
-
 /// fr fr Driver information and capabilities
 #[derive(Debug, Clone)]
 pub struct DriverInfo {
     /// Driver name
-    pub name: String,
     
     /// Driver version
-    pub version: String,
     
     /// Supported database version range
-    pub supported_versions: Vec<String>,
     
     /// Supported features
-    pub features: Vec<DriverFeature>,
     
     /// Additional metadata
-    pub metadata: HashMap<String, String>,
-}
-
 /// fr fr Database driver features that might be supported
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum DriverFeature {
     /// Prepared statements
-    PreparedStatements,
     
     /// Transactions
-    Transactions,
     
     /// Savepoints within transactions
-    Savepoints,
     
     /// Batch execution
-    BatchExecution,
     
     /// Connection pooling
-    ConnectionPooling,
     
     /// SSL/TLS encryption
-    SslEncryption,
     
     /// Asynchronous operations
-    AsyncOperations,
     
     /// Custom data types
-    CustomTypes,
     
     /// Streaming results
-    StreamingResults,
     
     /// JSON/JSONB support
-    JsonSupport,
     
     /// Full-text search
-    FullTextSearch,
     
     /// Stored procedures
-    StoredProcedures,
     
     /// Window functions
-    WindowFunctions,
     
     /// Common table expressions (CTEs)
-    CommonTableExpressions,
-}
-
 /// fr fr Connection information and metadata
 #[derive(Debug, Clone)]
 pub struct ConnectionInfo {
     /// Database server version
-    pub server_version: String,
     
     /// Current database name
-    pub database_name: String,
     
     /// Current user/role
-    pub username: String,
     
     /// Server hostname/address
-    pub host: String,
     
     /// Server port
-    pub port: u16,
     
     /// Connection ID (if available)
-    pub connection_id: Option<u64>,
     
     /// Current transaction state
-    pub transaction_state: TransactionState,
     
     /// Connection uptime
-    pub uptime: Duration,
     
     /// Additional server properties
-    pub server_properties: HashMap<String, String>,
-}
-
 /// fr fr Transaction isolation levels - SQL standard compliance
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum TransactionIsolation {
     /// Read uncommitted - lowest isolation
-    ReadUncommitted,
     
     /// Read committed - default for most databases
-    ReadCommitted,
     
     /// Repeatable read - prevents non-repeatable reads
-    RepeatableRead,
     
     /// Serializable - highest isolation level
-    Serializable,
-}
-
 /// fr fr Transaction state tracking
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum TransactionState {
     /// No active transaction
-    None,
     
     /// Transaction is active
-    Active,
     
     /// Transaction is committed
-    Committed,
     
     /// Transaction is rolled back
-    RolledBack,
     
     /// Transaction failed and needs rollback
-    Failed,
-}
-
 /// fr fr Parsed connection string components - internal helper
 struct ParsedConnectionString {
-    pub database: Option<String>,
-    pub username: Option<String>,
-    pub password: Option<String>,
-    pub parameters: HashMap<String, String>,
-}
-
 /// fr fr Parse a connection string into components - internal implementation
 fn parse_connection_string(connection_string: &str) -> SqlResult<ParsedConnectionString> {
     // Basic parsing - would be more sophisticated in real implementation
@@ -402,8 +280,6 @@ fn parse_connection_string(connection_string: &str) -> SqlResult<ParsedConnectio
                 parameters.insert(key, value);
             }
         }
-    }
-    
     // Extract username/password from URL (postgres://user:pass@host/db format)
     if connection_string.contains("://") {
         if let Some(auth_start) = connection_string.find("://") {
@@ -421,53 +297,28 @@ fn parse_connection_string(connection_string: &str) -> SqlResult<ParsedConnectio
     }
     
     Ok(ParsedConnectionString {
-        database,
-        username,
-        password,
-        parameters,
     })
-}
-
 /// fr fr Mock database driver for testing - not a real implementation periodt
 #[derive(Debug)]
 pub struct MockDatabaseDriver {
-    pub name: String,
-    pub version: String,
-}
-
 impl MockDatabaseDriver {
     pub fn new(name: String, version: String) -> Self {
         Self { name, version }
     }
-}
-
 impl DatabaseDriver for MockDatabaseDriver {
     fn connect(&self, _config: ConnectionConfig) -> SqlResult<Box<dyn DatabaseConnection>> {
         Err(SqlError::connection("Mock driver cannot create real connections - it's just for testing bestie".to_string()))
-    }
-    
     fn driver_info(&self) -> DriverInfo {
         DriverInfo {
-            name: self.name.clone(),
-            version: self.version.clone(),
-            supported_versions: Vec::from(["any".to_string()]),
             features: vec![
-                DriverFeature::PreparedStatements,
-                DriverFeature::Transactions,
-                DriverFeature::BatchExecution,
-            ],
-            metadata: HashMap::new(),
         }
     }
     
     fn supports_feature(&self, feature: DriverFeature) -> bool {
-        matches!(feature, 
             DriverFeature::PreparedStatements | 
             DriverFeature::Transactions | 
             DriverFeature::BatchExecution
         )
-    }
-    
     fn validate_connection_string(&self, connection_string: &str) -> SqlResult<()> {
         if connection_string.is_empty() {
             Err(SqlError::connection("Connection string cannot be empty - that's sus af".to_string()))
@@ -475,5 +326,3 @@ impl DatabaseDriver for MockDatabaseDriver {
             Ok(())
         }
     }
-}
-

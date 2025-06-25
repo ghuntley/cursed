@@ -14,147 +14,37 @@ use super::{SqliteError, SqliteResult, SqliteType, SqliteVersion, SqliteFeatures
 #[repr(i32)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum SqliteResultCode {
-    Ok = 0,
-    CursedError = 1,
-    Internal = 2,
-    Perm = 3,
-    Abort = 4,
-    Busy = 5,
-    Locked = 6,
-    NoMem = 7,
-    ReadOnly = 8,
-    Interrupt = 9,
-    IoErr = 10,
-    Corrupt = 11,
-    NotFound = 12,
-    Full = 13,
-    CantOpen = 14,
-    Protocol = 15,
-    Empty = 16,
-    Schema = 17,
-    TooBig = 18,
-    Constraint = 19,
-    Mismatch = 20,
-    Misuse = 21,
-    NoLfs = 22,
-    Auth = 23,
-    Format = 24,
-    Range = 25,
-    NotADb = 26,
-    Notice = 27,
-    Warning = 28,
-    Row = 100,
-    Done = 101,
-}
-
 impl SqliteResultCode {
     /// slay Convert from raw SQLite result code
     pub fn from_raw(code: c_int) -> Self {
         match code {
-            0 => SqliteResultCode::Ok,
-            1 => SqliteResultCode::CursedError,
-            2 => SqliteResultCode::Internal,
-            3 => SqliteResultCode::Perm,
-            4 => SqliteResultCode::Abort,
-            5 => SqliteResultCode::Busy,
-            6 => SqliteResultCode::Locked,
-            7 => SqliteResultCode::NoMem,
-            8 => SqliteResultCode::ReadOnly,
-            9 => SqliteResultCode::Interrupt,
-            10 => SqliteResultCode::IoErr,
-            11 => SqliteResultCode::Corrupt,
-            12 => SqliteResultCode::NotFound,
-            13 => SqliteResultCode::Full,
-            14 => SqliteResultCode::CantOpen,
-            15 => SqliteResultCode::Protocol,
-            16 => SqliteResultCode::Empty,
-            17 => SqliteResultCode::Schema,
-            18 => SqliteResultCode::TooBig,
-            19 => SqliteResultCode::Constraint,
-            20 => SqliteResultCode::Mismatch,
-            21 => SqliteResultCode::Misuse,
-            22 => SqliteResultCode::NoLfs,
-            23 => SqliteResultCode::Auth,
-            24 => SqliteResultCode::Format,
-            25 => SqliteResultCode::Range,
-            26 => SqliteResultCode::NotADb,
-            27 => SqliteResultCode::Notice,
-            28 => SqliteResultCode::Warning,
-            100 => SqliteResultCode::Row,
-            101 => SqliteResultCode::Done,
-            _ => SqliteResultCode::CursedError,
         }
     }
 
     /// slay Check if result indicates success
     pub fn is_ok(self) -> bool {
         matches!(self, SqliteResultCode::Ok | SqliteResultCode::Row | SqliteResultCode::Done)
-    }
-
     /// slay Get error message for result code
     pub fn message(self) -> &'static str {
         match self {
-            SqliteResultCode::Ok => "Successful result",
-            SqliteResultCode::CursedError => "Generic error",
-            SqliteResultCode::Internal => "Internal logic error",
-            SqliteResultCode::Perm => "Access permission denied",
-            SqliteResultCode::Abort => "Callback routine requested abort",
-            SqliteResultCode::Busy => "Database file is locked",
-            SqliteResultCode::Locked => "Table in database is locked",
-            SqliteResultCode::NoMem => "Memory allocation failed",
-            SqliteResultCode::ReadOnly => "Attempt to write a readonly database",
-            SqliteResultCode::Interrupt => "Operation terminated by interrupt",
             SqliteResultCode::IoErr => "Some kind of disk I/O error",
-            SqliteResultCode::Corrupt => "Database disk image is malformed",
-            SqliteResultCode::NotFound => "Unknown opcode in prepared statement",
-            SqliteResultCode::Full => "Insertion failed because database is full",
-            SqliteResultCode::CantOpen => "Unable to open database file",
-            SqliteResultCode::Protocol => "Database lock protocol error",
-            SqliteResultCode::Empty => "Internal use only",
-            SqliteResultCode::Schema => "Database schema changed",
-            SqliteResultCode::TooBig => "String or BLOB exceeds size limit",
-            SqliteResultCode::Constraint => "Constraint violation",
-            SqliteResultCode::Mismatch => "Data type mismatch",
-            SqliteResultCode::Misuse => "Library used incorrectly",
-            SqliteResultCode::NoLfs => "Uses OS features not supported",
-            SqliteResultCode::Auth => "Authorization denied",
-            SqliteResultCode::Format => "Not used",
-            SqliteResultCode::Range => "2nd parameter to bind out of range",
-            SqliteResultCode::NotADb => "File opened that is not a database",
-            SqliteResultCode::Notice => "Notifications from sqlite3_log",
-            SqliteResultCode::Warning => "Warnings from sqlite3_log",
-            SqliteResultCode::Row => "sqlite3_step() has another row ready",
-            SqliteResultCode::Done => "sqlite3_step() has finished executing",
         }
     }
-}
-
 /// fr fr SQLite database handle (opaque pointer)
 #[derive(Debug)]
 pub struct SqliteHandle {
-    ptr: NonNull<c_void>,
-    path: String,
-    open_flags: i32,
-}
-
 impl SqliteHandle {
     /// slay Create new handle from raw pointer
     pub unsafe fn from_raw(ptr: *mut c_void, path: String, open_flags: i32) -> SqliteResult<Self> {
         NonNull::new(ptr)
             .map(|ptr| Self { ptr, path, open_flags })
             .ok_or_else(|| SqliteError::null_pointer("Invalid SQLite database handle"))
-    }
-
     /// slay Get raw pointer
     pub fn as_ptr(&self) -> *mut c_void {
         self.ptr.as_ptr()
-    }
-
     /// slay Get database path
     pub fn path(&self) -> &str {
         &self.path
-    }
-
     /// slay Get open flags
     pub fn open_flags(&self) -> i32 {
         self.open_flags
@@ -167,40 +57,22 @@ unsafe impl Sync for SqliteHandle {}
 /// fr fr SQLite prepared statement handle
 #[derive(Debug)]
 pub struct SqliteStmtHandle {
-    ptr: NonNull<c_void>,
-    sql: String,
-    parameter_count: i32,
-    column_count: i32,
-}
-
 impl SqliteStmtHandle {
     /// slay Create new statement handle from raw pointer
     pub unsafe fn from_raw(
-        ptr: *mut c_void,
-        sql: String,
-        parameter_count: i32,
-        column_count: i32,
     ) -> SqliteResult<Self> {
         NonNull::new(ptr)
             .map(|ptr| Self { ptr, sql, parameter_count, column_count })
             .ok_or_else(|| SqliteError::null_pointer("Invalid SQLite statement handle"))
-    }
-
     /// slay Get raw pointer
     pub fn as_ptr(&self) -> *mut c_void {
         self.ptr.as_ptr()
-    }
-
     /// slay Get SQL text
     pub fn sql(&self) -> &str {
         &self.sql
-    }
-
     /// slay Get parameter count
     pub fn parameter_count(&self) -> i32 {
         self.parameter_count
-    }
-
     /// slay Get column count
     pub fn column_count(&self) -> i32 {
         self.column_count
@@ -213,33 +85,19 @@ unsafe impl Sync for SqliteStmtHandle {}
 /// fr fr SQLite backup handle
 #[derive(Debug)]
 pub struct SqliteBackupHandle {
-    ptr: NonNull<c_void>,
-    source_name: String,
-    dest_name: String,
-}
-
 impl SqliteBackupHandle {
     /// slay Create new backup handle from raw pointer
     pub unsafe fn from_raw(
-        ptr: *mut c_void,
-        source_name: String,
-        dest_name: String,
     ) -> SqliteResult<Self> {
         NonNull::new(ptr)
             .map(|ptr| Self { ptr, source_name, dest_name })
             .ok_or_else(|| SqliteError::null_pointer("Invalid SQLite backup handle"))
-    }
-
     /// slay Get raw pointer
     pub fn as_ptr(&self) -> *mut c_void {
         self.ptr.as_ptr()
-    }
-
     /// slay Get source database name
     pub fn source_name(&self) -> &str {
         &self.source_name
-    }
-
     /// slay Get destination database name
     pub fn dest_name(&self) -> &str {
         &self.dest_name
@@ -285,12 +143,7 @@ impl SqliteFFI {
         let mut db_ptr: *mut c_void = ptr::null_mut();
         let result = unsafe {
             sqlite3_open_v2(
-                c_path.as_ptr(),
-                &mut db_ptr as *mut _ as *mut *mut c_void,
-                flags,
-                ptr::null(),
             )
-        };
 
         let code = SqliteResultCode::from_raw(result);
         if code.is_ok() {
@@ -326,13 +179,7 @@ impl SqliteFFI {
         
         let result = unsafe {
             sqlite3_prepare_v2(
-                db.as_ptr(),
-                c_sql.as_ptr(),
-                sql.len() as c_int + 1,
-                &mut stmt_ptr as *mut _ as *mut *mut c_void,
-                &mut tail_ptr,
             )
-        };
 
         let code = SqliteResultCode::from_raw(result);
         if code.is_ok() {
@@ -364,8 +211,6 @@ impl SqliteFFI {
     pub fn step(stmt: &SqliteStmtHandle) -> SqliteResult<SqliteResultCode> {
         let result = unsafe { sqlite3_step(stmt.as_ptr()) };
         Ok(SqliteResultCode::from_raw(result))
-    }
-
     /// slay Reset prepared statement
     pub fn reset(stmt: &SqliteStmtHandle) -> SqliteResult<()> {
         let result = unsafe { sqlite3_reset(stmt.as_ptr()) };
@@ -433,13 +278,7 @@ impl SqliteFFI {
         
         let result = unsafe {
             sqlite3_bind_text(
-                stmt.as_ptr(),
-                index,
-                c_value.as_ptr(),
-                value.len() as c_int,
-                std::mem::transmute(SQLITE_TRANSIENT_DESTRUCTOR),
             )
-        };
         
         let code = SqliteResultCode::from_raw(result);
         if code.is_ok() {
@@ -453,13 +292,7 @@ impl SqliteFFI {
     pub fn bind_blob(stmt: &SqliteStmtHandle, index: i32, value: &[u8]) -> SqliteResult<()> {
         let result = unsafe {
             sqlite3_bind_blob(
-                stmt.as_ptr(),
-                index,
-                value.as_ptr() as *const c_void,
-                value.len() as c_int,
-                std::mem::transmute(SQLITE_TRANSIENT_DESTRUCTOR),
             )
-        };
         
         let code = SqliteResultCode::from_raw(result);
         if code.is_ok() {
@@ -473,46 +306,32 @@ impl SqliteFFI {
     pub fn column_type(stmt: &SqliteStmtHandle, index: i32) -> SqliteResult<SqliteType> {
         let type_code = unsafe { sqlite3_column_type(stmt.as_ptr(), index) };
         Ok(SqliteType::from_code(type_code))
-    }
-
     /// slay Get column name
     pub fn column_name(stmt: &SqliteStmtHandle, index: i32) -> SqliteResult<String> {
         let name_ptr = unsafe { sqlite3_column_name(stmt.as_ptr(), index) };
         if name_ptr.is_null() {
             return Err(SqliteError::null_pointer("Column name is null"));
-        }
-        
         let c_str = unsafe { CStr::from_ptr(name_ptr) };
         c_str.to_str()
             .map(|s| s.to_string())
             .map_err(|_| SqliteError::encoding_error("Invalid column name encoding"))
-    }
-
     /// slay Get column as int64
     pub fn column_int64(stmt: &SqliteStmtHandle, index: i32) -> SqliteResult<i64> {
         let value = unsafe { sqlite3_column_int64(stmt.as_ptr(), index) };
         Ok(value)
-    }
-
     /// slay Get column as double
     pub fn column_double(stmt: &SqliteStmtHandle, index: i32) -> SqliteResult<f64> {
         let value = unsafe { sqlite3_column_double(stmt.as_ptr(), index) };
         Ok(value)
-    }
-
     /// slay Get column as text
     pub fn column_text(stmt: &SqliteStmtHandle, index: i32) -> SqliteResult<String> {
         let text_ptr = unsafe { sqlite3_column_text(stmt.as_ptr(), index) };
         if text_ptr.is_null() {
             return Ok(String::new());
-        }
-        
         let c_str = unsafe { CStr::from_ptr(text_ptr as *const c_char) };
         c_str.to_str()
             .map(|s| s.to_string())
             .map_err(|_| SqliteError::encoding_error("Invalid text encoding"))
-    }
-
     /// slay Get column as blob
     pub fn column_blob(stmt: &SqliteStmtHandle, index: i32) -> SqliteResult<Vec<u8>> {
         let blob_ptr = unsafe { sqlite3_column_blob(stmt.as_ptr(), index) };
@@ -520,40 +339,27 @@ impl SqliteFFI {
         
         if blob_ptr.is_null() || blob_size == 0 {
             return Ok(Vec::new());
-        }
-        
         let blob_slice = unsafe {
             std::slice::from_raw_parts(blob_ptr as *const u8, blob_size as usize)
-        };
         
         Ok(blob_slice.to_vec())
-    }
-
     /// slay Get last insert row ID
     pub fn last_insert_rowid(db: &SqliteHandle) -> SqliteResult<i64> {
         let rowid = unsafe { sqlite3_last_insert_rowid(db.as_ptr()) };
         Ok(rowid)
-    }
-
     /// slay Get number of changes from last statement
     pub fn changes(db: &SqliteHandle) -> SqliteResult<i32> {
         let changes = unsafe { sqlite3_changes(db.as_ptr()) };
         Ok(changes)
-    }
-
     /// slay Get error message from database
     pub fn get_error_message(db: &SqliteHandle) -> SqliteResult<String> {
         let error_ptr = unsafe { sqlite3_errmsg(db.as_ptr()) };
         if error_ptr.is_null() {
             return Ok("Unknown error".to_string());
-        }
-        
         let c_str = unsafe { CStr::from_ptr(error_ptr) };
         c_str.to_str()
             .map(|s| s.to_string())
             .map_err(|_| SqliteError::encoding_error("Invalid error message encoding"))
-    }
-
     /// slay Begin transaction
     pub fn begin_transaction(db: &SqliteHandle, transaction_type: &str) -> SqliteResult<()> {
         let sql = format!("BEGIN {}", transaction_type);
@@ -562,13 +368,7 @@ impl SqliteFFI {
         
         let result = unsafe {
             sqlite3_exec(
-                db.as_ptr(),
-                c_sql.as_ptr(),
-                None,
-                ptr::null_mut(),
-                ptr::null_mut(),
             )
-        };
         
         let code = SqliteResultCode::from_raw(result);
         if code.is_ok() {
@@ -583,13 +383,7 @@ impl SqliteFFI {
     pub fn commit_transaction(db: &SqliteHandle) -> SqliteResult<()> {
         let result = unsafe {
             sqlite3_exec(
-                db.as_ptr(),
-                b"COMMIT\0".as_ptr() as *const c_char,
-                None,
-                ptr::null_mut(),
-                ptr::null_mut(),
             )
-        };
         
         let code = SqliteResultCode::from_raw(result);
         if code.is_ok() {
@@ -604,13 +398,7 @@ impl SqliteFFI {
     pub fn rollback_transaction(db: &SqliteHandle) -> SqliteResult<()> {
         let result = unsafe {
             sqlite3_exec(
-                db.as_ptr(),
-                b"ROLLBACK\0".as_ptr() as *const c_char,
-                None,
-                ptr::null_mut(),
-                ptr::null_mut(),
             )
-        };
         
         let code = SqliteResultCode::from_raw(result);
         if code.is_ok() {
@@ -626,8 +414,6 @@ impl SqliteFFI {
         let version_ptr = unsafe { sqlite3_libversion() };
         if version_ptr.is_null() {
             return Err(SqliteError::null_pointer("Version string is null"));
-        }
-        
         let c_str = unsafe { CStr::from_ptr(version_ptr) };
         let version_str = c_str.to_str()
             .map_err(|_| SqliteError::encoding_error("Invalid version encoding"))?;
@@ -635,25 +421,16 @@ impl SqliteFFI {
         let version_number = unsafe { sqlite3_libversion_number() };
         
         Ok(SqliteVersion {
-            version_string: version_str.to_string(),
-            version_number,
-            source_id: Self::get_source_id()?,
         })
-    }
-
     /// slay Get SQLite source ID
     pub fn get_source_id() -> SqliteResult<String> {
         let source_ptr = unsafe { sqlite3_sourceid() };
         if source_ptr.is_null() {
             return Ok("Unknown".to_string());
-        }
-        
         let c_str = unsafe { CStr::from_ptr(source_ptr) };
         c_str.to_str()
             .map(|s| s.to_string())
             .map_err(|_| SqliteError::encoding_error("Invalid source ID encoding"))
-    }
-
     /// slay Check if feature is compiled in
     pub fn is_feature_compiled(feature: &str) -> SqliteResult<bool> {
         let c_feature = CString::new(feature)
@@ -661,8 +438,6 @@ impl SqliteFFI {
         
         let result = unsafe { sqlite3_compileoption_used(c_feature.as_ptr()) };
         Ok(result != 0)
-    }
-
     /// slay Get compile options
     pub fn get_compile_options() -> SqliteResult<Vec<String>> {
         let mut options = Vec::new();
@@ -672,16 +447,12 @@ impl SqliteFFI {
             let option_ptr = unsafe { sqlite3_compileoption_get(index) };
             if option_ptr.is_null() {
                 break;
-            }
-            
             let c_str = unsafe { CStr::from_ptr(option_ptr) };
             let option_str = c_str.to_str()
                 .map_err(|_| SqliteError::encoding_error("Invalid compile option encoding"))?;
             
             options.push(option_str.to_string());
             index += 1;
-        }
-        
         Ok(options)
     }
 }
@@ -690,7 +461,7 @@ impl SqliteFFI {
 const SQLITE_TRANSIENT: unsafe extern "C" fn(*mut c_void) = {
     unsafe extern "C" fn transient(_: *mut c_void) {}
     transient
-};
+// };
 
 // Alternative destructor that indicates SQLite should make its own copy
 const SQLITE_TRANSIENT_DESTRUCTOR: *const c_void = -1isize as *const c_void;
@@ -700,18 +471,9 @@ extern "C" {
     fn sqlite3_initialize() -> c_int;
     fn sqlite3_shutdown() -> c_int;
     fn sqlite3_open_v2(
-        filename: *const c_char,
-        ppdb: *mut *mut c_void,
-        flags: c_int,
-        zvfs: *const c_char,
     ) -> c_int;
     fn sqlite3_close_v2(db: *mut c_void) -> c_int;
     fn sqlite3_prepare_v2(
-        db: *mut c_void,
-        zsql: *const c_char,
-        nbyte: c_int,
-        ppstmt: *mut *mut c_void,
-        pztail: *mut *const c_char,
     ) -> c_int;
     fn sqlite3_finalize(pstmt: *mut c_void) -> c_int;
     fn sqlite3_step(pstmt: *mut c_void) -> c_int;
@@ -723,18 +485,8 @@ extern "C" {
     fn sqlite3_bind_int64(pstmt: *mut c_void, index: c_int, value: i64) -> c_int;
     fn sqlite3_bind_double(pstmt: *mut c_void, index: c_int, value: c_double) -> c_int;
     fn sqlite3_bind_text(
-        pstmt: *mut c_void,
-        index: c_int,
-        value: *const c_char,
-        n: c_int,
-        destructor: unsafe extern "C" fn(*mut c_void),
     ) -> c_int;
     fn sqlite3_bind_blob(
-        pstmt: *mut c_void,
-        index: c_int,
-        value: *const c_void,
-        n: c_int,
-        destructor: unsafe extern "C" fn(*mut c_void),
     ) -> c_int;
     fn sqlite3_column_type(pstmt: *mut c_void, icol: c_int) -> c_int;
     fn sqlite3_column_name(pstmt: *mut c_void, n: c_int) -> *const c_char;
@@ -747,21 +499,10 @@ extern "C" {
     fn sqlite3_changes(db: *mut c_void) -> c_int;
     fn sqlite3_errmsg(db: *mut c_void) -> *const c_char;
     fn sqlite3_exec(
-        db: *mut c_void,
-        sql: *const c_char,
         callback: Option<unsafe extern "C" fn(
-            *mut c_void,
-            c_int,
-            *mut *mut c_char,
-            *mut *mut c_char,
-        ) -> c_int>,
-        arg: *mut c_void,
-        errmsg: *mut *mut c_char,
     ) -> c_int;
     fn sqlite3_libversion() -> *const c_char;
     fn sqlite3_libversion_number() -> c_int;
     fn sqlite3_sourceid() -> *const c_char;
     fn sqlite3_compileoption_used(zoptname: *const c_char) -> c_int;
     fn sqlite3_compileoption_get(n: c_int) -> *const c_char;
-}
-

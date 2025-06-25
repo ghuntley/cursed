@@ -27,8 +27,6 @@ pub fn init_test_vibes() {
     }
     // Register built-in testing functions with the dot registry
     register_builtin_functions();
-}
-
 /// fr fr Register built-in testing functions with the CURSED stdlib
 fn register_builtin_functions() {
         // TODO: implement
@@ -41,18 +39,12 @@ fn register_builtin_functions() {
     // - test_vibes.mock() - create mock object
     
     println!("🧪 test_vibes package initialized - ready to test with good vibes!");
-}
-
 /// fr fr Quick test setup for common use cases
 pub fn quick_test(name: &str) -> VibeTest {
     VibeTest::new(name.to_string())
-}
-
 /// fr fr Quick benchmark setup
 pub fn quick_bench(name: &str) -> VibeBench {
     VibeBench::new(name.to_string())
-}
-
 /// fr fr Create test suite with multiple tests
 pub fn test_suite(name: &str, tests: Vec<fn(&mut VibeTest)>) -> TestResult {
     let mut suite_result = TestResult::new();
@@ -61,8 +53,4 @@ pub fn test_suite(name: &str, tests: Vec<fn(&mut VibeTest)>) -> TestResult {
         let mut test = VibeTest::new(format!("{}_{}", name, i));
         test_fn(&mut test);
         suite_result.add_test_result(test.get_result());
-    }
-    
     suite_result
-}
-

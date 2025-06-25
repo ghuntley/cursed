@@ -18,18 +18,6 @@ use std::io;
 /// Target platform enumeration
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum Platform {
-    Windows,
-    MacOS,
-    Linux,
-    FreeBSD,
-    OpenBSD,
-    NetBSD,
-    Solaris,
-    Android,
-    iOS,
-    Unknown,
-}
-
 impl Platform {
     /// Gets the current platform
     pub fn current() -> Self {
@@ -61,39 +49,18 @@ impl Platform {
         return Platform::iOS;
         
         #[cfg(not(any(
-            target_os = "windows",
-            target_os = "macos", 
-            target_os = "linux",
-            target_os = "freebsd",
-            target_os = "openbsd",
-            target_os = "netbsd",
-            target_os = "solaris",
-            target_os = "android",
             target_os = "ios"
         )))]
         return Platform::Unknown;
-    }
-    
     /// Gets platform name as string
     pub fn name(&self) -> &'static str {
         match self {
-            Platform::Windows => "Windows",
-            Platform::MacOS => "macOS",
-            Platform::Linux => "Linux",
-            Platform::FreeBSD => "FreeBSD",
-            Platform::OpenBSD => "OpenBSD",
-            Platform::NetBSD => "NetBSD",
-            Platform::Solaris => "Solaris",
-            Platform::Android => "Android",
-            Platform::iOS => "iOS",
-            Platform::Unknown => "Unknown",
         }
     }
     
     /// Checks if platform is Unix-like
     pub fn is_unix(&self) -> bool {
         matches!(
-            self,
             Platform::MacOS
                 | Platform::Linux
                 | Platform::FreeBSD
@@ -102,18 +69,12 @@ impl Platform {
                 | Platform::Solaris
                 | Platform::Android
         )
-    }
-    
     /// Checks if platform is Windows
     pub fn is_windows(&self) -> bool {
         *self == Platform::Windows
-    }
-    
     /// Checks if platform supports POSIX
     pub fn is_posix(&self) -> bool {
         self.is_unix()
-    }
-    
     /// Gets the platform's path separator
     pub fn path_separator(&self) -> char {
         if self.is_windows() {
@@ -135,45 +96,19 @@ impl Platform {
     /// Gets default shell for the platform
     pub fn default_shell(&self) -> &'static str {
         match self {
-            Platform::Windows => "cmd.exe",
             Platform::MacOS | Platform::Linux => "/bin/bash",
             Platform::FreeBSD | Platform::OpenBSD | Platform::NetBSD => "/bin/sh",
-            _ => "sh",
         }
     }
-}
-
 /// System information structure
 #[derive(Debug, Clone)]
 pub struct SystemInfo {
-    pub platform: Platform,
-    pub platform_version: String,
-    pub kernel_version: String,
-    pub hostname: String,
-    pub architecture: String,
-    pub cpu_count: usize,
-    pub total_memory: u64,
-    pub available_memory: u64,
-    pub uptime: u64,
-    pub boot_time: u64,
-}
-
 impl SystemInfo {
     /// Gathers comprehensive system information
     pub fn gather() -> io::Result<Self> {
         let platform = Platform::current();
         
         Ok(Self {
-            platform,
-            platform_version: get_platform_version()?,
-            kernel_version: get_kernel_version()?,
-            hostname: get_hostname()?,
-            architecture: get_architecture(),
-            cpu_count: get_cpu_count(),
-            total_memory: get_total_memory()?,
-            available_memory: get_available_memory()?,
-            uptime: get_uptime()?,
-            boot_time: get_boot_time()?,
         })
     }
 }
@@ -232,7 +167,6 @@ fn get_platform_version() -> io::Result<String> {
                 Ok("Linux".to_string())
             }
         }
-        _ => Ok(platform.name().to_string()),
     }
 }
 
@@ -286,13 +220,9 @@ fn get_hostname() -> io::Result<String> {
 /// Gets system architecture
 fn get_architecture() -> String {
     std::env::consts::ARCH.to_string()
-}
-
 /// Gets CPU count
 fn get_cpu_count() -> usize {
     num_cpus::get()
-}
-
 /// Gets total system memory in bytes
 fn get_total_memory() -> io::Result<u64> {
     let platform = Platform::current();
@@ -336,7 +266,6 @@ fn get_total_memory() -> io::Result<u64> {
             #[cfg(not(target_os = "windows"))]
             Ok(8 * 1024 * 1024 * 1024)
         }
-        _ => Ok(0),
     }
 }
 
@@ -365,8 +294,6 @@ fn get_available_memory() -> io::Result<u64> {
             Ok(total / 2)
         }
     }
-}
-
 /// Gets system uptime in seconds
 fn get_uptime() -> io::Result<u64> {
     let platform = Platform::current();
@@ -394,7 +321,6 @@ fn get_uptime() -> io::Result<u64> {
             #[cfg(not(target_os = "macos"))]
             Ok(3600)
         }
-        _ => Ok(0),
     }
 }
 
@@ -406,8 +332,6 @@ fn get_boot_time() -> io::Result<u64> {
         .unwrap()
         .as_secs();
     Ok(now - uptime)
-}
-
 // =============================================================================
 // PLATFORM-SPECIFIC FEATURES
 // =============================================================================
@@ -416,78 +340,29 @@ fn get_boot_time() -> io::Result<u64> {
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum PlatformFeature {
     // File system features
-    CaseSensitiveFileSystem,
-    HardLinks,
-    SymbolicLinks,
-    ExtendedAttributes,
-    FilePermissions,
     
     // Process features
-    ProcessPriorities,
-    SignalHandling,
-    ForkSupport,
-    ThreadSupport,
     
     // Network features
-    UnixDomainSockets,
-    RawSockets,
-    NetworkNamespaces,
     
     // Security features
-    Chroot,
-    Setuid,
-    Capabilities,
-    Sandboxing,
     
     // System features
-    VirtualMemory,
-    SwapFiles,
-    SystemCalls,
-    KernelModules,
     
     // Desktop features
-    SystemTray,
-    WindowManager,
-    DesktopNotifications,
-    ClipboardAccess,
-}
-
 impl PlatformFeature {
     /// Checks if the current platform supports this feature
     pub fn is_supported(&self) -> bool {
         let platform = Platform::current();
         self.is_supported_on(platform)
-    }
-    
     /// Checks if a specific platform supports this feature
     pub fn is_supported_on(&self, platform: Platform) -> bool {
         match self {
-            PlatformFeature::CaseSensitiveFileSystem => !platform.is_windows(),
-            PlatformFeature::HardLinks => true,
-            PlatformFeature::SymbolicLinks => true,
-            PlatformFeature::ExtendedAttributes => platform.is_unix(),
-            PlatformFeature::FilePermissions => platform.is_unix(),
             
-            PlatformFeature::ProcessPriorities => true,
-            PlatformFeature::SignalHandling => platform.is_unix(),
-            PlatformFeature::ForkSupport => platform.is_unix(),
-            PlatformFeature::ThreadSupport => true,
             
-            PlatformFeature::UnixDomainSockets => platform.is_unix(),
-            PlatformFeature::RawSockets => platform.is_unix(),
-            PlatformFeature::NetworkNamespaces => platform == Platform::Linux,
             
-            PlatformFeature::Chroot => platform.is_unix(),
-            PlatformFeature::Setuid => platform.is_unix(),
-            PlatformFeature::Capabilities => platform == Platform::Linux,
             PlatformFeature::Sandboxing => {
                 matches!(platform, Platform::Linux | Platform::MacOS | Platform::Windows)
-            }
-            
-            PlatformFeature::VirtualMemory => true,
-            PlatformFeature::SwapFiles => !matches!(platform, Platform::iOS | Platform::Android),
-            PlatformFeature::SystemCalls => platform.is_unix(),
-            PlatformFeature::KernelModules => matches!(platform, Platform::Linux | Platform::FreeBSD),
             
             PlatformFeature::SystemTray => {
                 matches!(platform, Platform::Windows | Platform::MacOS | Platform::Linux)
@@ -502,44 +377,17 @@ impl PlatformFeature {
                 matches!(platform, Platform::Windows | Platform::MacOS | Platform::Linux)
             }
         }
-    }
-    
     /// Gets feature description
     pub fn description(&self) -> &'static str {
         match self {
-            PlatformFeature::CaseSensitiveFileSystem => "Case-sensitive file system",
-            PlatformFeature::HardLinks => "Hard link support",
-            PlatformFeature::SymbolicLinks => "Symbolic link support",
-            PlatformFeature::ExtendedAttributes => "Extended file attributes",
-            PlatformFeature::FilePermissions => "POSIX file permissions",
             
-            PlatformFeature::ProcessPriorities => "Process priority control",
-            PlatformFeature::SignalHandling => "POSIX signal handling",
-            PlatformFeature::ForkSupport => "Process forking",
-            PlatformFeature::ThreadSupport => "Thread support",
             
-            PlatformFeature::UnixDomainSockets => "Unix domain sockets",
-            PlatformFeature::RawSockets => "Raw socket access",
-            PlatformFeature::NetworkNamespaces => "Network namespaces",
             
-            PlatformFeature::Chroot => "Chroot jail support",
             PlatformFeature::Setuid => "Setuid/setgid support",
-            PlatformFeature::Capabilities => "Linux capabilities",
-            PlatformFeature::Sandboxing => "Application sandboxing",
             
-            PlatformFeature::VirtualMemory => "Virtual memory",
-            PlatformFeature::SwapFiles => "Swap file support",
-            PlatformFeature::SystemCalls => "System call interface",
-            PlatformFeature::KernelModules => "Loadable kernel modules",
             
-            PlatformFeature::SystemTray => "System tray integration",
-            PlatformFeature::WindowManager => "Window manager",
-            PlatformFeature::DesktopNotifications => "Desktop notifications",
-            PlatformFeature::ClipboardAccess => "Clipboard access",
         }
     }
-}
-
 // =============================================================================
 // PLATFORM-SPECIFIC OPERATIONS
 // =============================================================================
@@ -554,56 +402,34 @@ pub mod file_ops {
         use std::os::unix::fs::PermissionsExt;
         let permissions = std::fs::Permissions::from_mode(mode);
         std::fs::set_permissions(path, permissions)
-    }
-    
     #[cfg(not(unix))]
     pub fn set_permissions<P: AsRef<Path>>(_path: P, _mode: u32) -> io::Result<()> {
         Err(std::io::Error::new(
-            io::ErrorKind::Unsupported,
-            "File permissions not supported on this platform",
         ))
-    }
-    
     /// Gets file permissions (Unix only)
     #[cfg(unix)]
     pub fn get_permissions<P: AsRef<Path>>(path: P) -> io::Result<u32> {
         use std::os::unix::fs::PermissionsExt;
         let metadata = std::fs::metadata(path)?;
         Ok(metadata.permissions().mode())
-    }
-    
     #[cfg(not(unix))]
     pub fn get_permissions<P: AsRef<Path>>(_path: P) -> io::Result<u32> {
         Err(std::io::Error::new(
-            io::ErrorKind::Unsupported,
-            "File permissions not supported on this platform",
         ))
-    }
-    
     /// Creates a hard link
     pub fn create_hard_link<P: AsRef<Path>, Q: AsRef<Path>>(src: P, dst: Q) -> io::Result<()> {
         std::fs::hard_link(src, dst)
-    }
-    
     /// Creates a symbolic link
     #[cfg(unix)]
     pub fn create_symlink<P: AsRef<Path>, Q: AsRef<Path>>(src: P, dst: Q) -> io::Result<()> {
         std::os::unix::fs::symlink(src, dst)
-    }
-    
     #[cfg(windows)]
     pub fn create_symlink<P: AsRef<Path>, Q: AsRef<Path>>(src: P, dst: Q) -> io::Result<()> {
         std::os::windows::fs::symlink_file(src, dst)
-    }
-    
     #[cfg(not(any(unix, windows)))]
     pub fn create_symlink<P: AsRef<Path>, Q: AsRef<Path>>(_src: P, _dst: Q) -> io::Result<()> {
         Err(std::io::Error::new(
-            io::ErrorKind::Unsupported,
-            "Symbolic links not supported on this platform",
         ))
-    }
-    
     /// Reads a symbolic link
     pub fn read_symlink<P: AsRef<Path>>(path: P) -> io::Result<PathBuf> {
         std::fs::read_link(path)
@@ -617,8 +443,6 @@ pub mod process_ops {
     /// Gets the current process ID
     pub fn current_pid() -> u32 {
         std::process::id()
-    }
-    
     /// Gets the parent process ID (Unix only)
     #[cfg(unix)]
     pub fn parent_pid() -> Option<u32> {
@@ -630,8 +454,6 @@ pub mod process_ops {
     #[cfg(not(unix))]
     pub fn parent_pid() -> Option<u32> {
         None // Not easily available on Windows
-    }
-    
     /// Sets process priority
     #[cfg(unix)]
     pub fn set_priority(pid: u32, priority: i32) -> io::Result<()> {
@@ -641,16 +463,10 @@ pub mod process_ops {
             }
         }
         Ok(())
-    }
-    
     #[cfg(not(unix))]
     pub fn set_priority(_pid: u32, _priority: i32) -> io::Result<()> {
         Err(std::io::Error::new(
-            io::ErrorKind::Unsupported,
-            "Process priority setting not implemented on this platform",
         ))
-    }
-    
     /// Gets process priority
     #[cfg(unix)]
     pub fn get_priority(pid: u32) -> io::Result<i32> {
@@ -662,13 +478,9 @@ pub mod process_ops {
                 Ok(priority)
             }
         }
-    }
-    
     #[cfg(not(unix))]
     pub fn get_priority(_pid: u32) -> io::Result<i32> {
         Err(std::io::Error::new(
-            io::ErrorKind::Unsupported,
-            "Process priority getting not implemented on this platform",
         ))
     }
 }
@@ -715,7 +527,6 @@ pub mod network_ops {
                 #[cfg(not(target_os = "windows"))]
                 Ok(vec!["eth0".to_string()])
             }
-            _ => Ok(Vec::new()),
         }
     }
     
@@ -737,8 +548,6 @@ pub mod network_ops {
                             return Ok(parts[2].to_string());
                         }
                     }
-                }
-                
                 Ok("0.0.0.0".to_string())
             }
             Platform::MacOS => {
@@ -753,15 +562,10 @@ pub mod network_ops {
                             return Ok(gateway.trim().to_string());
                         }
                     }
-                }
-                
                 Ok("0.0.0.0".to_string())
             }
-            _ => Ok("0.0.0.0".to_string()),
         }
     }
-}
-
 // =============================================================================
 // PLATFORM UTILITIES
 // =============================================================================
@@ -771,12 +575,6 @@ pub fn get_supported_features() -> Vec<PlatformFeature> {
     use PlatformFeature::*;
     
     let all_features = [
-        CaseSensitiveFileSystem, HardLinks, SymbolicLinks, ExtendedAttributes, FilePermissions,
-        ProcessPriorities, SignalHandling, ForkSupport, ThreadSupport,
-        UnixDomainSockets, RawSockets, NetworkNamespaces,
-        Chroot, Setuid, Capabilities, Sandboxing,
-        VirtualMemory, SwapFiles, SystemCalls, KernelModules,
-        SystemTray, WindowManager, DesktopNotifications, ClipboardAccess,
     ];
     
     all_features
@@ -784,19 +582,13 @@ pub fn get_supported_features() -> Vec<PlatformFeature> {
         .filter(|feature| feature.is_supported())
         .copied()
         .collect()
-}
-
 /// Gets platform capabilities as a map
 pub fn get_platform_capabilities() -> HashMap<String, bool> {
     let mut capabilities = HashMap::new();
     
     for feature in get_supported_features() {
         capabilities.insert(feature.description().to_string(), true);
-    }
-    
     capabilities
-}
-
 /// Executes a platform-appropriate command
 pub fn execute_platform_command(command: &str, args: &[&str]) -> io::Result<Output> {
     let platform = Platform::current();
@@ -817,28 +609,18 @@ pub fn execute_platform_command(command: &str, args: &[&str]) -> io::Result<Outp
 /// Gets platform-specific temporary directory
 pub fn get_temp_directory() -> PathBuf {
     std::env::temp_dir()
-}
-
 /// Gets platform-specific home directory
 pub fn get_home_directory() -> Option<PathBuf> {
     dirs::home_dir()
-}
-
 /// Gets platform-specific config directory
 pub fn get_config_directory() -> Option<PathBuf> {
     dirs::config_dir()
-}
-
 /// Gets platform-specific data directory
 pub fn get_data_directory() -> Option<PathBuf> {
     dirs::data_dir()
-}
-
 /// Gets platform-specific cache directory
 pub fn get_cache_directory() -> Option<PathBuf> {
     dirs::cache_dir()
-}
-
 // Include external crate for CPU count
 extern crate num_cpus;
 

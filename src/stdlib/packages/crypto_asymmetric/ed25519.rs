@@ -13,17 +13,11 @@ use zeroize::Zeroizing;
 /// fr fr Ed25519 key pair structure
 #[derive(Debug, Clone)]
 pub struct Ed25519KeyPair {
-    pub private_key: SigningKey,
-    pub public_key: VerifyingKey,
-}
-
 impl Ed25519KeyPair {
     /// slay Create new Ed25519 key pair from private key
     pub fn from_private_key(private_key: SigningKey) -> Self {
         let public_key = private_key.verifying_key();
         Self {
-            private_key,
-            public_key,
         }
     }
     
@@ -32,16 +26,12 @@ impl Ed25519KeyPair {
         // For verification-only operations, we create a dummy private key
         let dummy_private = SigningKey::generate(&mut OsRng);
         Self {
-            private_key: dummy_private,
-            public_key,
         }
     }
     
     /// slay Get raw public key bytes
     pub fn public_key_bytes(&self) -> [u8; 32] {
         self.public_key.to_bytes()
-    }
-    
     /// slay Get raw private key bytes
     pub fn private_key_bytes(&self) -> [u8; 32] {
         self.private_key.to_bytes()
@@ -54,24 +44,9 @@ pub enum Ed25519KeyFormat {
     Pkcs8Pem,     // PKCS#8 PEM format
     Pkcs8Der,     // PKCS#8 DER format
     Raw,          // Raw 32-byte format
-}
-
 /// fr fr Ed25519 error types
 #[derive(Debug, Clone, PartialEq)]
 pub enum Ed25519Error {
-    KeyGenerationFailed(String),
-    SigningFailed(String),
-    VerificationFailed(String),
-    InvalidSignature(String),
-    InvalidPublicKey(String),
-    InvalidPrivateKey(String),
-    InvalidFormat(String),
-    SerializationFailed(String),
-    DeserializationFailed(String),
-    InvalidKeyLength(usize),
-    Internal(String),
-}
-
 // impl std::fmt::Display for Ed25519Error {
 //     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
 //         match self {
@@ -108,14 +83,10 @@ type Ed25519crate::error::Result<T> = Result<T>;
 
 /// fr fr Ed25519 engine for cryptographic operations
 pub struct Ed25519Engine {
-    rng: OsRng,
-}
-
 impl Ed25519Engine {
     /// slay Create new Ed25519 engine with cryptographically secure RNG
     pub fn new() -> Self {
         Self {
-            rng: OsRng,
         }
     }
     
@@ -129,8 +100,6 @@ impl Ed25519Engine {
     pub fn generate_keypair(&mut self) -> Ed25519Result<Ed25519KeyPair> {
         let private_key = SigningKey::generate(&mut self.rng);
         Ok(Ed25519KeyPair::from_private_key(private_key))
-    }
-    
     /// slay Generate deterministic key pair from seed
     /// 
     /// # Security Notes
@@ -140,15 +109,11 @@ impl Ed25519Engine {
     pub fn generate_keypair_from_seed(&self, seed: &[u8]) -> Ed25519Result<Ed25519KeyPair> {
         if seed.len() != 32 {
             return Err(Ed25519Error::InvalidKeyLength(seed.len()));
-        }
-        
         let mut seed_array = [0u8; 32];
         seed_array.copy_from_slice(seed);
         
         let private_key = SigningKey::from_bytes(&seed_array);
         Ok(Ed25519KeyPair::from_private_key(private_key))
-    }
-    
     /// slay Ed25519 sign message with private key
     /// 
     /// # Security Notes
@@ -159,8 +124,6 @@ impl Ed25519Engine {
     pub fn sign(&self, keypair: &Ed25519KeyPair, message: &[u8]) -> Ed25519Result<Vec<u8>> {
         let signature = keypair.private_key.sign(message);
         Ok(signature.to_bytes().to_vec())
-    }
-    
     /// slay Ed25519 verify signature with public key
     /// 
     /// # Security Notes
@@ -171,16 +134,12 @@ impl Ed25519Engine {
     pub fn verify(&self, keypair: &Ed25519KeyPair, message: &[u8], signature: &[u8]) -> Ed25519Result<bool> {
         if signature.len() != 64 {
             return Ok(false);
-        }
-        
         let mut sig_bytes = [0u8; 64];
         sig_bytes.copy_from_slice(signature);
         
         let sig = Signature::from_bytes(&sig_bytes);
         
         match keypair.public_key.verify(message, &sig) {
-            Ok(()) => Ok(true),
-            Err(_) => Ok(false),
         }
     }
     
@@ -188,8 +147,6 @@ impl Ed25519Engine {
     pub fn verify_with_public_key(&self, public_key: &[u8], message: &[u8], signature: &[u8]) -> Ed25519Result<bool> {
         if public_key.len() != 32 {
             return Err(Ed25519Error::InvalidPublicKey(format!("Expected 32 bytes, got {}", public_key.len())));
-        }
-        
         let mut pub_key_bytes = [0u8; 32];
         pub_key_bytes.copy_from_slice(public_key);
         
@@ -198,8 +155,6 @@ impl Ed25519Engine {
         
         let keypair = Ed25519KeyPair::from_public_key(verifying_key);
         self.verify(&keypair, message, signature)
-    }
-    
     /// slay Serialize private key to specified format
     /// 
     /// # Security Notes
@@ -211,14 +166,11 @@ impl Ed25519Engine {
             Ed25519KeyFormat::Pkcs8Pem => {
                 let pem = keypair.private_key.to_pkcs8_pem(LineEnding::LF)?;
                 Ok(Zeroizing::new(pem.as_bytes().to_vec()))
-            },
             Ed25519KeyFormat::Pkcs8Der => {
                 let der = keypair.private_key.to_pkcs8_der()?;
                 Ok(Zeroizing::new(der.to_bytes().to_vec()))
-            },
             Ed25519KeyFormat::Raw => {
                 Ok(Zeroizing::new(keypair.private_key.to_bytes().to_vec()))
-            },
         }
     }
     
@@ -228,14 +180,11 @@ impl Ed25519Engine {
             Ed25519KeyFormat::Pkcs8Pem => {
                 let pem = keypair.public_key.to_public_key_pem(LineEnding::LF)?;
                 Ok(pem.as_bytes().to_vec())
-            },
             Ed25519KeyFormat::Pkcs8Der => {
                 let der = keypair.public_key.to_public_key_der()?;
                 Ok(der.to_bytes().to_vec())
-            },
             Ed25519KeyFormat::Raw => {
                 Ok(keypair.public_key.to_bytes().to_vec())
-            },
         }
     }
     
@@ -246,10 +195,8 @@ impl Ed25519Engine {
                 let pem_str = std::str::from_utf8(key_data)
                     .map_err(|e| Ed25519Error::DeserializationFailed(e.to_string()))?;
                 SigningKey::from_pkcs8_pem(pem_str)?
-            },
             Ed25519KeyFormat::Pkcs8Der => {
                 SigningKey::from_pkcs8_der(key_data)?
-            },
             Ed25519KeyFormat::Raw => {
                 if key_data.len() != 32 {
                     return Err(Ed25519Error::InvalidKeyLength(key_data.len()));
@@ -257,12 +204,8 @@ impl Ed25519Engine {
                 let mut key_bytes = [0u8; 32];
                 key_bytes.copy_from_slice(key_data);
                 SigningKey::from_bytes(&key_bytes)
-            },
-        };
         
         Ok(Ed25519KeyPair::from_private_key(private_key))
-    }
-    
     /// slay Deserialize public key from specified format
     pub fn deserialize_public_key(&self, key_data: &[u8], format: Ed25519KeyFormat) -> Ed25519Result<Ed25519KeyPair> {
         let public_key = match format {
@@ -270,10 +213,8 @@ impl Ed25519Engine {
                 let pem_str = std::str::from_utf8(key_data)
                     .map_err(|e| Ed25519Error::DeserializationFailed(e.to_string()))?;
                 VerifyingKey::from_public_key_pem(pem_str)?
-            },
             Ed25519KeyFormat::Pkcs8Der => {
                 VerifyingKey::from_public_key_der(key_data)?
-            },
             Ed25519KeyFormat::Raw => {
                 if key_data.len() != 32 {
                     return Err(Ed25519Error::InvalidKeyLength(key_data.len()));
@@ -282,18 +223,12 @@ impl Ed25519Engine {
                 key_bytes.copy_from_slice(key_data);
                 VerifyingKey::from_bytes(&key_bytes)
                     .map_err(|e| Ed25519Error::InvalidPublicKey(e.to_string()))?
-            },
-        };
         
         Ok(Ed25519KeyPair::from_public_key(public_key))
-    }
-    
     /// slay Derive public key from private key bytes
     pub fn derive_public_key(&self, private_key_bytes: &[u8]) -> Ed25519Result<Vec<u8>> {
         if private_key_bytes.len() != 32 {
             return Err(Ed25519Error::InvalidKeyLength(private_key_bytes.len()));
-        }
-        
         let mut key_bytes = [0u8; 32];
         key_bytes.copy_from_slice(private_key_bytes);
         
@@ -301,8 +236,6 @@ impl Ed25519Engine {
         let public_key = private_key.verifying_key();
         
         Ok(public_key.to_bytes().to_vec())
-    }
-    
     /// slay Batch verify multiple signatures (more efficient than individual verification)
     pub fn batch_verify(&self, messages_signatures_keys: &[(Vec<u8>, Vec<u8>, Vec<u8>)]) -> Ed25519Result<bool> {
         // For simplicity, we'll verify each individually
@@ -338,16 +271,12 @@ pub fn ed25519_generate_keypair(_args: Vec<Value>) -> crate::error::Result<()> {
             // Serialize public key to PEM
             if let Ok(public_pem) = engine.serialize_public_key(&keypair, Ed25519KeyFormat::Pkcs8Pem) {
                 result.insert("public_key_pem".to_string(), Value::String(String::from_utf8_lossy(&public_pem).to_string()));
-            }
-            
             // Raw public key for display
             result.insert("public_key_hex".to_string(), Value::String(hex::encode(keypair.public_key_bytes())));
             
             result.insert("has_private_key".to_string(), Value::bool(true));
             
             Ok(Value::Object(result))
-        },
-        Err(e) => Err(CursedError::Runtime(format!("Ed25519 key generation failed: {}", e))),
     }
 }
 
@@ -355,12 +284,7 @@ pub fn ed25519_generate_keypair(_args: Vec<Value>) -> crate::error::Result<()> {
 pub fn ed25519_generate_keypair_from_seed(args: Vec<Value>) -> crate::error::Result<()> {
     if args.is_empty() {
         return Err(CursedError::Runtime("Ed25519 key generation from seed requires seed".to_string()));
-    }
-    
     let seed_hex = match &args[0] {
-        Value::String(s) => s,
-        _ => return Err(CursedError::Runtime("Seed must be a hex string".to_string())),
-    };
     
     let seed = hex::decode(seed_hex)
         .map_err(|e| CursedError::Runtime(format!("Invalid hex seed: {}", e)))?;
@@ -377,14 +301,10 @@ pub fn ed25519_generate_keypair_from_seed(args: Vec<Value>) -> crate::error::Res
             // Serialize public key to PEM
             if let Ok(public_pem) = engine.serialize_public_key(&keypair, Ed25519KeyFormat::Pkcs8Pem) {
                 result.insert("public_key_pem".to_string(), Value::String(String::from_utf8_lossy(&public_pem).to_string()));
-            }
-            
             result.insert("public_key_hex".to_string(), Value::String(hex::encode(keypair.public_key_bytes())));
             result.insert("has_private_key".to_string(), Value::bool(true));
             
             Ok(Value::Object(result))
-        },
-        Err(e) => Err(CursedError::Runtime(format!("Ed25519 key generation from seed failed: {}", e))),
     }
 }
 
@@ -392,17 +312,9 @@ pub fn ed25519_generate_keypair_from_seed(args: Vec<Value>) -> crate::error::Res
 pub fn ed25519_sign(args: Vec<Value>) -> crate::error::Result<()> {
     if args.len() < 2 {
         return Err(CursedError::Runtime("Ed25519 sign requires private key and message".to_string()));
-    }
-    
     let private_key_pem = match &args[0] {
-        Value::String(s) => s,
-        _ => return Err(CursedError::Runtime("Private key must be a PEM string".to_string())),
-    };
     
     let message = match &args[1] {
-        Value::String(s) => s.as_bytes(),
-        _ => return Err(CursedError::Runtime("Message must be a string".to_string())),
-    };
     
     let engine = Ed25519Engine::new();
     
@@ -415,28 +327,15 @@ pub fn ed25519_sign(args: Vec<Value>) -> crate::error::Result<()> {
         .map_err(|e| CursedError::Runtime(format!("Signing failed: {}", e)))?;
     
     Ok(Value::String(base64::encode(signature)))
-}
-
 /// slay Ed25519 verify signature
 pub fn ed25519_verify(args: Vec<Value>) -> crate::error::Result<()> {
     if args.len() < 3 {
         return Err(CursedError::Runtime("Ed25519 verify requires public key, message, and signature".to_string()));
-    }
-    
     let public_key_pem = match &args[0] {
-        Value::String(s) => s,
-        _ => return Err(CursedError::Runtime("Public key must be a PEM string".to_string())),
-    };
     
     let message = match &args[1] {
-        Value::String(s) => s.as_bytes(),
-        _ => return Err(CursedError::Runtime("Message must be a string".to_string())),
-    };
     
     let signature_b64 = match &args[2] {
-        Value::String(s) => s,
-        _ => return Err(CursedError::Runtime("Signature must be a base64 string".to_string())),
-    };
     
     let engine = Ed25519Engine::new();
     
@@ -453,28 +352,15 @@ pub fn ed25519_verify(args: Vec<Value>) -> crate::error::Result<()> {
         .map_err(|e| CursedError::Runtime(format!("Verification failed: {}", e)))?;
     
     Ok(Value::bool(is_valid))
-}
-
 /// slay Ed25519 verify with raw public key
 pub fn ed25519_verify_raw(args: Vec<Value>) -> crate::error::Result<()> {
     if args.len() < 3 {
         return Err(CursedError::Runtime("Ed25519 verify raw requires public key hex, message, and signature".to_string()));
-    }
-    
     let public_key_hex = match &args[0] {
-        Value::String(s) => s,
-        _ => return Err(CursedError::Runtime("Public key must be a hex string".to_string())),
-    };
     
     let message = match &args[1] {
-        Value::String(s) => s.as_bytes(),
-        _ => return Err(CursedError::Runtime("Message must be a string".to_string())),
-    };
     
     let signature_b64 = match &args[2] {
-        Value::String(s) => s,
-        _ => return Err(CursedError::Runtime("Signature must be a base64 string".to_string())),
-    };
     
     let engine = Ed25519Engine::new();
     
@@ -491,18 +377,11 @@ pub fn ed25519_verify_raw(args: Vec<Value>) -> crate::error::Result<()> {
         .map_err(|e| CursedError::Runtime(format!("Verification failed: {}", e)))?;
     
     Ok(Value::bool(is_valid))
-}
-
 /// slay Derive Ed25519 public key from private key
 pub fn ed25519_derive_public_key(args: Vec<Value>) -> crate::error::Result<()> {
     if args.is_empty() {
         return Err(CursedError::Runtime("Ed25519 derive public key requires private key".to_string()));
-    }
-    
     let private_key_hex = match &args[0] {
-        Value::String(s) => s,
-        _ => return Err(CursedError::Runtime("Private key must be a hex string".to_string())),
-    };
     
     let engine = Ed25519Engine::new();
     
@@ -515,5 +394,3 @@ pub fn ed25519_derive_public_key(args: Vec<Value>) -> crate::error::Result<()> {
         .map_err(|e| CursedError::Runtime(format!("Public key derivation failed: {}", e)))?;
     
     Ok(Value::String(hex::encode(public_key)))
-}
-

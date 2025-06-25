@@ -27,7 +27,6 @@ fn main() {
             Arg::new("input")
                 .help("Input CURSED source file")
                 .required(true)
-                .index(1),
         )
         .arg(
             Arg::new("output")
@@ -35,7 +34,6 @@ fn main() {
                 .short('o')
                 .long("output")
                 .value_name("DIR")
-                .default_value("."),
         )
         .arg(
             Arg::new("debug-level")
@@ -43,7 +41,6 @@ fn main() {
                 .short('g')
                 .long("debug-level")
                 .value_name("LEVEL")
-                .default_value("2"),
         )
         .arg(
             Arg::new("format")
@@ -52,57 +49,48 @@ fn main() {
                 .long("format")
                 .value_name("FORMAT")
                 .value_parser(["llvm-ir", "dwarf", "gdb-script", "lldb-script", "vscode-config", "report"])
-                .default_value("llvm-ir"),
         )
         .arg(
             Arg::new("optimized")
                 .help("Generate optimized debug information")
                 .long("optimized")
-                .action(clap::ArgAction::SetTrue),
         )
         .arg(
             Arg::new("include-source")
                 .help("Include source code in debug information")
                 .long("include-source")
-                .action(clap::ArgAction::SetTrue),
         )
         .arg(
             Arg::new("compress")
                 .help("Compress debug sections")
                 .long("compress")
-                .action(clap::ArgAction::SetTrue),
         )
         .arg(
             Arg::new("split-debug")
                 .help("Split debug information into separate file")
                 .long("split-debug")
-                .action(clap::ArgAction::SetTrue),
         )
         .arg(
             Arg::new("dwarf-version")
                 .help("DWARF version to generate (2, 3, 4, or 5)")
                 .long("dwarf-version")
                 .value_name("VERSION")
-                .default_value("4"),
         )
         .arg(
             Arg::new("validate")
                 .help("Validate debug information consistency")
                 .long("validate")
-                .action(clap::ArgAction::SetTrue),
         )
         .arg(
             Arg::new("statistics")
                 .help("Print debug information statistics")
                 .long("stats")
-                .action(clap::ArgAction::SetTrue),
         )
         .arg(
             Arg::new("verbose")
                 .help("Enable verbose output")
                 .short('v')
                 .long("verbose")
-                .action(clap::ArgAction::SetTrue),
         )
         .get_matches();
 
@@ -138,14 +126,10 @@ fn run_debug_tool(matches: &clap::ArgMatches) -> crate::error::Result<()> {
         info!("Output directory: {}", output_dir);
         info!("Debug level: {}", debug_level);
         info!("Format: {}", format);
-    }
-
     // Check input file exists
     let input_path = Path::new(input_file);
     if !input_path.exists() {
         return Err(CursedError::Compile(format!("Input file '{}' does not exist", input_file)));
-    }
-
     // Read source code
     let source = fs::read_to_string(input_path)
         .map_err(|e| CursedError::Io(e.into()))?;
@@ -155,27 +139,15 @@ fn run_debug_tool(matches: &clap::ArgMatches) -> crate::error::Result<()> {
 
     if verbose {
         debug!("Debug configuration: {:?}", debug_config);
-    }
-
     // Create LLVM code generator with debug support
     let mut generator = LlvmCodeGenerator::new_with_debug(debug_config)?;
 
     // Generate debug information based on format
     match format.as_str() {
-        "llvm-ir" => generate_llvm_ir(&mut generator, input_path, &source, output_dir)?,
-        "dwarf" => generate_dwarf_info(&mut generator, input_path, &source, output_dir)?,
-        "gdb-script" => generate_gdb_script(&mut generator, input_path, &source, output_dir)?,
-        "lldb-script" => generate_lldb_script(&mut generator, input_path, &source, output_dir)?,
-        "vscode-config" => generate_vscode_config(&mut generator, input_path, output_dir)?,
-        "report" => generate_debug_report(&mut generator, input_path, &source, output_dir)?,
-        _ => return Err(CursedError::Compile(format!("Unknown format: {}", format))),
-    }
-
     // Validate debug information if requested
     if validate {
         info!("Validating debug information...");
         match generator.validate_debug() {
-            Ok(()) => info!("Debug information validation passed"),
             Err(errors) => {
                 error!("Debug information validation failed:");
                 for error in errors {
@@ -184,8 +156,6 @@ fn run_debug_tool(matches: &clap::ArgMatches) -> crate::error::Result<()> {
                 return Err(CursedError::Compile("Debug validation failed".to_string()));
             }
         }
-    }
-
     // Show statistics if requested
     if show_stats {
         info!("Debug Information Statistics:");
@@ -207,13 +177,7 @@ fn run_debug_tool(matches: &clap::ArgMatches) -> crate::error::Result<()> {
 
     info!("Debug information generation completed successfully");
     Ok(())
-}
-
 fn generate_llvm_ir(
-    generator: &mut LlvmCodeGenerator,
-    input_path: &Path,
-    source: &str,
-    output_dir: &str,
 ) -> crate::error::Result<()> {
     info!("Generating LLVM IR with debug information");
     
@@ -228,13 +192,7 @@ fn generate_llvm_ir(
     
     info!("LLVM IR written to: {}", output_file.display());
     Ok(())
-}
-
 fn generate_dwarf_info(
-    generator: &mut LlvmCodeGenerator,
-    input_path: &Path,
-    source: &str,
-    output_dir: &str,
 ) -> crate::error::Result<()> {
     info!("Generating DWARF debug information");
     
@@ -249,16 +207,12 @@ fn generate_dwarf_info(
          Debug Statistics:\n\
          {}\n\
          \n\
-         Line Table:\n",
-        input_path.display(),
         generator.debug_statistics()
     );
     
     let mut content = dwarf_info;
     for (line, info) in generator.line_table() {
         content.push_str(&format!("Line {}: {}\n", line, info));
-    }
-    
     let output_file = Path::new(output_dir).join(
         input_path.file_stem().unwrap_or_default()
     ).with_extension("dwarf");
@@ -268,13 +222,7 @@ fn generate_dwarf_info(
     
     info!("DWARF information written to: {}", output_file.display());
     Ok(())
-}
-
 fn generate_gdb_script(
-    generator: &mut LlvmCodeGenerator,
-    input_path: &Path,
-    source: &str,
-    output_dir: &str,
 ) -> crate::error::Result<()> {
     info!("Generating GDB debugging script");
     
@@ -297,8 +245,6 @@ fn generate_gdb_script(
     for command in &commands {
         script.push_str(command);
         script.push('\n');
-    }
-    
     script.push_str("\n# Additional CURSED-specific debugging commands\n");
     script.push_str("define cursed-info\n");
     script.push_str("  info functions\n");
@@ -315,13 +261,7 @@ fn generate_gdb_script(
     
     info!("GDB script written to: {}", output_file.display());
     Ok(())
-}
-
 fn generate_lldb_script(
-    generator: &mut LlvmCodeGenerator,
-    input_path: &Path,
-    source: &str,
-    output_dir: &str,
 ) -> crate::error::Result<()> {
     info!("Generating LLDB debugging script");
     
@@ -344,8 +284,6 @@ fn generate_lldb_script(
     for command in &commands {
         script.push_str(command);
         script.push('\n');
-    }
-    
     script.push_str("\n# Additional CURSED-specific debugging commands\n");
     script.push_str("command alias cursed-info frame info\n");
     script.push_str("command alias cursed-vars frame variable\n");
@@ -359,12 +297,7 @@ fn generate_lldb_script(
     
     info!("LLDB script written to: {}", output_file.display());
     Ok(())
-}
-
 fn generate_vscode_config(
-    generator: &mut LlvmCodeGenerator,
-    input_path: &Path,
-    output_dir: &str,
 ) -> crate::error::Result<()> {
     info!("Generating VS Code debugging configuration");
     
@@ -385,13 +318,7 @@ fn generate_vscode_config(
     
     info!("VS Code configuration written to: {}", output_file.display());
     Ok(())
-}
-
 fn generate_debug_report(
-    generator: &mut LlvmCodeGenerator,
-    input_path: &Path,
-    source: &str,
-    output_dir: &str,
 ) -> crate::error::Result<()> {
     info!("Generating comprehensive debug report");
     
@@ -417,8 +344,6 @@ fn generate_debug_report(
             report.push_str(&format!("| {} | {} |\n", line, info));
         }
         report.push_str("\n");
-    }
-    
     report.push_str("## Configuration\n\n");
     report.push_str("```json\n");
     let config_json = serde_json::to_string_pretty(&format!("{:?}", generator.debug_config()))
@@ -428,7 +353,6 @@ fn generate_debug_report(
     
     report.push_str("## Validation Results\n\n");
     match generator.validate_debug() {
-        Ok(()) => report.push_str("✅ Debug information validation passed\n\n"),
         Err(errors) => {
             report.push_str("❌ Debug information validation failed:\n\n");
             for error in errors {

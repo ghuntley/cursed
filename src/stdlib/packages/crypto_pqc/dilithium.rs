@@ -19,105 +19,41 @@ fn secure_random(buffer: &mut [u8]) -> crate::error::Result<()> {
         *byte = 42; // Placeholder value
     }
     Ok(())
-}
-
 /// Dilithium algorithm parameters for different security levels
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum DilithiumLevel {
     /// Dilithium2 - NIST Security Level 2 (128-bit)
-    Level2,
     /// Dilithium3 - NIST Security Level 3 (192-bit) 
-    Level3,
     /// Dilithium5 - NIST Security Level 5 (256-bit)
-    Level5,
-}
-
 /// Dilithium parameter set configuration
 #[derive(Debug, Clone)]
 pub struct DilithiumParams {
     /// Security level
-    pub level: DilithiumLevel,
     /// Dimension of the lattice
-    pub n: usize,
     /// Modulus
-    pub q: i32,
     /// Matrix dimensions
-    pub k: usize,
-    pub l: usize,
     /// Rejection sampling bound
-    pub eta: i32,
     /// Signature bound
-    pub tau: i32,
     /// Challenge weight
-    pub beta: i32,
     /// Public key size in bytes
-    pub pk_size: usize,
     /// Private key size in bytes
-    pub sk_size: usize,
     /// Signature size in bytes
-    pub sig_size: usize,
-}
-
 impl DilithiumParams {
     /// Get parameters for specified security level
     pub fn new(level: DilithiumLevel) -> Self {
         match level {
             DilithiumLevel::Level2 => DilithiumParams {
-                level,
-                n: 256,
-                q: 8380417,
-                k: 4,
-                l: 4,
-                eta: 2,
-                tau: 39,
-                beta: 78,
-                pk_size: 1312,
-                sk_size: 2528,
-                sig_size: 2420,
-            },
             DilithiumLevel::Level3 => DilithiumParams {
-                level,
-                n: 256,
-                q: 8380417,
-                k: 6,
-                l: 5,
-                eta: 4,
-                tau: 49,
-                beta: 196,
-                pk_size: 1952,
-                sk_size: 4000,
-                sig_size: 3293,
-            },
             DilithiumLevel::Level5 => DilithiumParams {
-                level,
-                n: 256,
-                q: 8380417,
-                k: 8,
-                l: 7,
-                eta: 2,
-                tau: 60,
-                beta: 120,
-                pk_size: 2592,
-                sk_size: 4864,
-                sig_size: 4595,
-            },
         }
     }
-}
-
 /// Dilithium public key
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct DilithiumPublicKey {
     /// Security level parameters
-    pub params: DilithiumParams,
     /// Public key data
-    pub key_data: Vec<u8>,
     /// Matrix A seed
-    pub rho: Vec<u8>,
     /// Packed t1 vector
-    pub t1: Vec<u8>,
-}
-
 impl DilithiumPublicKey {
     /// Create new public key from raw data
     pub fn from_bytes(level: DilithiumLevel, data: &[u8]) -> crate::error::Result<()> {
@@ -125,33 +61,19 @@ impl DilithiumPublicKey {
         
         if data.len() != params.pk_size {
             return Err(CryptoError::InvalidKeyLength {
-                expected: params.pk_size,
-                actual: data.len(),
             });
-        }
-
         // Split public key into rho (32 bytes) and t1 (remaining bytes)
         let rho = data[..32].to_vec();
         let t1 = data[32..].to_vec();
 
         Ok(DilithiumPublicKey {
-            params,
-            key_data: data.to_vec(),
-            rho,
-            t1,
         })
-    }
-
     /// Get raw public key bytes
     pub fn to_bytes(&self) -> Vec<u8> {
         self.key_data.clone()
-    }
-
     /// Get public key size in bytes
     pub fn size(&self) -> usize {
         self.params.pk_size
-    }
-
     /// Verify signature using this public key
     pub fn verify(&self, message: &[u8], signature: &DilithiumSignature) -> crate::error::Result<()> {
         verify_signature(self, message, signature)
@@ -162,22 +84,12 @@ impl DilithiumPublicKey {
 #[derive(Debug, Clone)]
 pub struct DilithiumPrivateKey {
     /// Security level parameters
-    pub params: DilithiumParams,
     /// Private key data (zeroized on drop)
-    key_data: Vec<u8>,
     /// Matrix A seed
-    pub rho: Vec<u8>,
     /// Signing key
-    pub k_key: Vec<u8>,
     /// Randomness for signing
-    pub tr: Vec<u8>,
     /// Secret vectors s1, s2
-    pub s1: Vec<u8>,
-    pub s2: Vec<u8>,
     /// Precomputed t0
-    pub t0: Vec<u8>,
-}
-
 impl DilithiumPrivateKey {
     /// Create new private key from raw data
     pub fn from_bytes(level: DilithiumLevel, data: &[u8]) -> crate::error::Result<()> {
@@ -185,11 +97,7 @@ impl DilithiumPrivateKey {
         
         if data.len() != params.sk_size {
             return Err(CryptoError::InvalidKeyLength {
-                expected: params.sk_size,
-                actual: data.len(),
             });
-        }
-
         // Parse private key components
         let mut offset = 0;
         
@@ -216,27 +124,13 @@ impl DilithiumPrivateKey {
         let t0 = data[offset..offset + t0_size].to_vec();
 
         Ok(DilithiumPrivateKey {
-            params,
-            key_data: data.to_vec(),
-            rho,
-            k_key,
-            tr,
-            s1,
-            s2,
-            t0,
         })
-    }
-
     /// Get raw private key bytes (creates temporary copy)
     pub fn to_bytes(&self) -> Vec<u8> {
         self.key_data.clone()
-    }
-
     /// Get private key size in bytes
     pub fn size(&self) -> usize {
         self.params.sk_size
-    }
-
     /// Sign message using this private key
     pub fn sign(&self, message: &[u8]) -> crate::error::Result<()> {
         sign_message(self, message)
@@ -258,17 +152,10 @@ impl Drop for DilithiumPrivateKey {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct DilithiumSignature {
     /// Security level parameters
-    pub params: DilithiumParams,
     /// Signature data
-    pub signature_data: Vec<u8>,
     /// Challenge c
-    pub c: Vec<u8>,
     /// Response z
-    pub z: Vec<u8>,
     /// Hint h
-    pub h: Vec<u8>,
-}
-
 impl DilithiumSignature {
     /// Create signature from raw bytes
     pub fn from_bytes(level: DilithiumLevel, data: &[u8]) -> crate::error::Result<()> {
@@ -278,8 +165,6 @@ impl DilithiumSignature {
             return Err(CryptoError::InvalidSignatureFormat(
                 format!("Invalid signature length: expected {}, got {}", params.sig_size, data.len())
             ));
-        }
-
         // Parse signature components
         let mut offset = 0;
         
@@ -293,19 +178,10 @@ impl DilithiumSignature {
         let h = data[offset..].to_vec();
 
         Ok(DilithiumSignature {
-            params,
-            signature_data: data.to_vec(),
-            c,
-            z,
-            h,
         })
-    }
-
     /// Get raw signature bytes
     pub fn to_bytes(&self) -> Vec<u8> {
         self.signature_data.clone()
-    }
-
     /// Get signature size in bytes
     pub fn size(&self) -> usize {
         self.params.sig_size
@@ -316,17 +192,11 @@ impl DilithiumSignature {
 #[derive(Debug, Clone)]
 pub struct DilithiumKeyPair {
     /// Public key
-    pub public_key: DilithiumPublicKey,
     /// Private key
-    pub private_key: DilithiumPrivateKey,
-}
-
 impl DilithiumKeyPair {
     /// Generate new key pair for specified security level
     pub fn generate(level: DilithiumLevel) -> crate::error::Result<()> {
         generate_keypair(level)
-    }
-
     /// Create key pair from existing keys
     pub fn from_keys(public_key: DilithiumPublicKey, private_key: DilithiumPrivateKey) -> crate::error::Result<()> {
         // Verify keys are compatible
@@ -334,19 +204,11 @@ impl DilithiumKeyPair {
             return Err(CryptoError::InvalidKeyPair(
                 "Public and private keys have different security levels".to_string()
             ));
-        }
-
         Ok(DilithiumKeyPair {
-            public_key,
-            private_key,
         })
-    }
-
     /// Sign message with private key
     pub fn sign(&self, message: &[u8]) -> crate::error::Result<()> {
         self.private_key.sign(message)
-    }
-
     /// Verify signature with public key
     pub fn verify(&self, message: &[u8], signature: &DilithiumSignature) -> crate::error::Result<()> {
         self.public_key.verify(message, signature)
@@ -389,11 +251,6 @@ pub fn generate_keypair(level: DilithiumLevel) -> crate::error::Result<()> {
     pk_data.extend_from_slice(&t1);
     
     let public_key = DilithiumPublicKey {
-        params: params.clone(),
-        key_data: pk_data,
-        rho: rho.clone(),
-        t1,
-    };
     
     // Construct private key
     let mut sk_data = Vec::new();
@@ -405,22 +262,9 @@ pub fn generate_keypair(level: DilithiumLevel) -> crate::error::Result<()> {
     sk_data.extend_from_slice(&t0);
     
     let private_key = DilithiumPrivateKey {
-        params,
-        key_data: sk_data,
-        rho,
-        k_key,
-        tr,
-        s1,
-        s2,
-        t0,
-    };
     
     Ok(DilithiumKeyPair {
-        public_key,
-        private_key,
     })
-}
-
 /// Sign message with Dilithium private key
 pub fn sign_message(private_key: &DilithiumPrivateKey, message: &[u8]) -> crate::error::Result<()> {
     let params = &private_key.params;
@@ -456,11 +300,6 @@ pub fn sign_message(private_key: &DilithiumPrivateKey, message: &[u8]) -> crate:
             sig_data.extend_from_slice(&h);
             
             return Ok(DilithiumSignature {
-                params: params.clone(),
-                signature_data: sig_data,
-                c,
-                z,
-                h,
             });
         }
     }
@@ -468,8 +307,6 @@ pub fn sign_message(private_key: &DilithiumPrivateKey, message: &[u8]) -> crate:
     Err(CryptoError::SignatureGenerationFailed(
         "Rejection sampling failed after maximum attempts".to_string()
     ))
-}
-
 /// Verify Dilithium signature
 pub fn verify_signature(public_key: &DilithiumPublicKey, message: &[u8], signature: &DilithiumSignature) -> crate::error::Result<()> {
     let params = &public_key.params;
@@ -477,13 +314,9 @@ pub fn verify_signature(public_key: &DilithiumPublicKey, message: &[u8], signatu
     // Verify signature format
     if signature.params.level != params.level {
         return Ok(false);
-    }
-    
     // Check signature bounds
     if !is_valid_signature(params, &signature.z, &signature.c) {
         return Ok(false);
-    }
-    
     // Recompute commitment
     let w_prime = recompute_commitment(params, public_key, &signature.c, &signature.z, &signature.h)?;
     
@@ -492,8 +325,6 @@ pub fn verify_signature(public_key: &DilithiumPublicKey, message: &[u8], signatu
     
     // Verify challenge matches
     Ok(c_prime == signature.c)
-}
-
 /// Generate secret vector using rejection sampling
 fn generate_secret_vector(params: &DilithiumParams, dimension: usize) -> crate::error::Result<()> {
     let mut vector = vec![0u8; dimension * params.n * 3]; // 3 bytes per coefficient
@@ -514,11 +345,7 @@ fn generate_secret_vector(params: &DilithiumParams, dimension: usize) -> crate::
                 break;
             }
         }
-    }
-    
     Ok(vector)
-}
-
 /// Compute t vector (simplified simulation)
 fn compute_t_vector(params: &DilithiumParams, rho: &[u8], s1: &[u8], s2: &[u8]) -> crate::error::Result<()> {
     // Simplified simulation of t = A * s1 + s2
@@ -543,11 +370,7 @@ fn compute_t_vector(params: &DilithiumParams, rho: &[u8], s1: &[u8], s2: &[u8]) 
         t[offset + 1] = ((t_val >> 8) & 0xFF) as u8;
         t[offset + 2] = ((t_val >> 16) & 0xFF) as u8;
         t[offset + 3] = ((t_val >> 24) & 0xFF) as u8;
-    }
-    
     Ok(t)
-}
-
 /// Split t vector into t1 and t0
 fn split_t_vector(params: &DilithiumParams, t: &[u8]) -> crate::error::Result<()> {
     let mut t1 = Vec::new();
@@ -571,11 +394,7 @@ fn split_t_vector(params: &DilithiumParams, t: &[u8]) -> crate::error::Result<()
         // Pack t0 (13 bits per coefficient)
         t0.push((t0_val & 0xFF) as u8);
         t0.push(((t0_val >> 8) & 0x1F) as u8);
-    }
-    
     Ok((t1, t0))
-}
-
 /// Generate commitment vector for signing
 fn generate_commitment_vector(params: &DilithiumParams) -> crate::error::Result<()> {
     let mut y = vec![0u8; params.l * params.n * 3]; // 3 bytes per coefficient
@@ -595,11 +414,7 @@ fn generate_commitment_vector(params: &DilithiumParams) -> crate::error::Result<
         y[offset] = (bounded_value & 0xFF) as u8;
         y[offset + 1] = ((bounded_value >> 8) & 0xFF) as u8;
         y[offset + 2] = ((bounded_value >> 16) & 0xFF) as u8;
-    }
-    
     Ok(y)
-}
-
 /// Compute commitment from y vector
 fn compute_commitment(params: &DilithiumParams, rho: &[u8], y: &[u8]) -> crate::error::Result<()> {
     let mut w = vec![0u8; params.k * params.n * 3]; // 3 bytes per coefficient
@@ -618,11 +433,7 @@ fn compute_commitment(params: &DilithiumParams, rho: &[u8], y: &[u8]) -> crate::
         w[offset] = (w_val & 0xFF) as u8;
         w[offset + 1] = ((w_val >> 8) & 0xFF) as u8;
         w[offset + 2] = ((w_val >> 16) & 0xFF) as u8;
-    }
-    
     Ok(w)
-}
-
 /// Extract high bits from vector
 fn high_bits(w: &[u8], q: i32) -> Vec<u8> {
     let mut w1 = Vec::new();
@@ -638,11 +449,7 @@ fn high_bits(w: &[u8], q: i32) -> Vec<u8> {
         
         w1.push((high & 0xFF) as u8);
         w1.push(((high >> 8) & 0x3) as u8);
-    }
-    
     w1
-}
-
 /// Compute challenge hash
 fn compute_challenge(params: &DilithiumParams, w1: &[u8], message: &[u8]) -> crate::error::Result<()> {
     use std::collections::hash_map::DefaultHasher;
@@ -659,11 +466,7 @@ fn compute_challenge(params: &DilithiumParams, w1: &[u8], message: &[u8]) -> cra
     let mut c = vec![0u8; 32];
     for i in 0..32 {
         c[i] = ((hash >> (i * 2)) & 0xFF) as u8;
-    }
-    
     Ok(c)
-}
-
 /// Compute signature response
 fn compute_response(params: &DilithiumParams, c: &[u8], s1: &[u8], y: &[u8]) -> crate::error::Result<()> {
     let mut z = vec![0u8; params.l * params.n * 3]; // 3 bytes per coefficient
@@ -688,11 +491,7 @@ fn compute_response(params: &DilithiumParams, c: &[u8], s1: &[u8], y: &[u8]) -> 
         z[offset] = (z_val & 0xFF) as u8;
         z[offset + 1] = ((z_val >> 8) & 0xFF) as u8;
         z[offset + 2] = ((z_val >> 16) & 0xFF) as u8;
-    }
-    
     Ok(z)
-}
-
 /// Check if signature is valid (rejection sampling)
 fn is_valid_signature(params: &DilithiumParams, z: &[u8], c: &[u8]) -> bool {
     // Check z bounds
@@ -710,8 +509,6 @@ fn is_valid_signature(params: &DilithiumParams, z: &[u8], c: &[u8]) -> bool {
     // Check challenge weight (simplified)
     let weight: u32 = c.iter().map(|&b| b.count_ones()).sum();
     weight <= params.tau as u32
-}
-
 /// Compute hint for signature
 fn compute_hint(params: &DilithiumParams, s2: &[u8], c: &[u8], w: &[u8]) -> crate::error::Result<()> {
     let mut h = vec![0u8; params.k * params.n / 8]; // 1 bit per coefficient
@@ -742,8 +539,6 @@ fn compute_hint(params: &DilithiumParams, s2: &[u8], c: &[u8], w: &[u8]) -> crat
     }
     
     Ok(h)
-}
-
 /// Recompute commitment for verification
 fn recompute_commitment(params: &DilithiumParams, public_key: &DilithiumPublicKey, c: &[u8], z: &[u8], h: &[u8]) -> crate::error::Result<()> {
     // Simplified verification computation
@@ -777,27 +572,17 @@ fn recompute_commitment(params: &DilithiumParams, public_key: &DilithiumPublicKe
         let offset = i * 2;
         w_prime[offset] = (w1_val & 0xFF) as u8;
         w_prime[offset + 1] = ((w1_val >> 8) & 0x3) as u8;
-    }
-    
     Ok(w_prime)
-}
-
 /// Utility functions for common operations
 
 /// Check if two byte slices are equal in constant time
 pub fn constant_time_eq(a: &[u8], b: &[u8]) -> bool {
     if a.len() != b.len() {
         return false;
-    }
-    
     let mut result = 0u8;
     for (x, y) in a.iter().zip(b.iter()) {
         result |= x ^ y;
-    }
-    
     result == 0
-}
-
 /// Generate test vectors for validation
 pub fn generate_test_vectors(level: DilithiumLevel) -> crate::error::Result<()> {
     let mut vectors = HashMap::new();
@@ -816,16 +601,8 @@ pub fn generate_test_vectors(level: DilithiumLevel) -> crate::error::Result<()> 
     vectors.insert("signature".to_string(), signature.to_bytes());
     
     Ok(vectors)
-}
-
 /// Benchmarking utilities
 pub struct DilithiumBenchmark {
-    pub keygen_time: std::time::Duration,
-    pub sign_time: std::time::Duration,
-    pub verify_time: std::time::Duration,
-    pub message_size: usize,
-}
-
 impl DilithiumBenchmark {
     pub fn run(level: DilithiumLevel, message: &[u8]) -> crate::error::Result<()> {
         let start = std::time::Instant::now();
@@ -841,10 +618,6 @@ impl DilithiumBenchmark {
         let verify_time = start.elapsed();
         
         Ok(DilithiumBenchmark {
-            keygen_time,
-            sign_time,
-            verify_time,
-            message_size: message.len(),
         })
     }
 }

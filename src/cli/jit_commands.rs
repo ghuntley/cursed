@@ -204,23 +204,14 @@ pub fn add_jit_commands(app: Command) -> Command {
                     )
             )
     )
-}
-
 /// Handle JIT-related CLI commands
 pub fn handle_jit_command(matches: &ArgMatches) -> crate::error::Result<()> {
     match matches.subcommand() {
-        ("compile", Some(compile_matches)) => handle_jit_compile_command(compile_matches),
-        ("execute", Some(execute_matches)) => handle_jit_execute_command(execute_matches),
-        ("benchmark", Some(benchmark_matches)) => handle_jit_benchmark_command(benchmark_matches),
-        ("config", Some(config_matches)) => handle_jit_config_command(config_matches),
-        ("stats", Some(stats_matches)) => handle_jit_stats_command(stats_matches),
         _ => {
             eprintln!("Unknown JIT command. Use 'cursed jit --help' for available commands.");
             Ok(())
         }
     }
-}
-
 /// Handle JIT compile command
 fn handle_jit_compile_command(matches: &ArgMatches) -> crate::error::Result<()> {
     let input_file = matches.value_of("input").unwrap();
@@ -246,7 +237,6 @@ fn handle_jit_compile_command(matches: &ArgMatches) -> crate::error::Result<()> 
         create_debug_jit_interface(&context)?
     } else {
         create_optimized_jit_interface(&context)?
-    };
 
     // Update configuration based on CLI arguments
     let mut config = jit_interface.get_config().clone();
@@ -271,11 +261,7 @@ fn handle_jit_compile_command(matches: &ArgMatches) -> crate::error::Result<()> 
         println!("  Functions compiled: {}", stats.total_jit_compilations);
         println!("  Total compilation time: {:?}", stats.total_compilation_time);
         println!("  Average compilation time: {:?}", stats.avg_compilation_time);
-    }
-
     Ok(())
-}
-
 /// Handle JIT execute command
 fn handle_jit_execute_command(matches: &ArgMatches) -> crate::error::Result<()> {
     let input_file = matches.value_of("input").unwrap();
@@ -325,8 +311,6 @@ fn handle_jit_execute_command(matches: &ArgMatches) -> crate::error::Result<()> 
         println!("Optimizing hot paths...");
         let optimized_count = jit_runtime.optimize_hot_paths()?;
         println!("Optimized {} functions", optimized_count);
-    }
-
     println!("Execution completed!");
     println!("Total time: {:?}", total_time);
     println!("Average time per execution: {:?}", total_time / iterations);
@@ -345,12 +329,8 @@ fn handle_jit_execute_command(matches: &ArgMatches) -> crate::error::Result<()> 
         let min_time = results.iter().map(|(_, time)| *time).min().unwrap();
         let max_time = results.iter().map(|(_, time)| *time).max().unwrap();
         println!("Execution time range: {:?} - {:?}", min_time, max_time);
-    }
-
     jit_runtime.shutdown()?;
     Ok(())
-}
-
 /// Handle JIT benchmark command
 fn handle_jit_benchmark_command(matches: &ArgMatches) -> crate::error::Result<()> {
     let input_file = matches.value_of("input").unwrap();
@@ -372,17 +352,9 @@ fn handle_jit_benchmark_command(matches: &ArgMatches) -> crate::error::Result<()
         benchmark_optimization_levels(&source, function_name, warmup_iterations, benchmark_iterations)?;
     } else {
         benchmark_single_configuration(&source, function_name, warmup_iterations, benchmark_iterations)?;
-    }
-
     Ok(())
-}
-
 /// Benchmark single configuration
 fn benchmark_single_configuration(
-    source: &str,
-    function_name: &str,
-    warmup_iterations: u32,
-    benchmark_iterations: u32,
 ) -> crate::error::Result<()> {
     let context = Context::create();
     let jit_interface = create_optimized_jit_interface(&context)?;
@@ -401,16 +373,12 @@ fn benchmark_single_configuration(
     println!("Warming up with {} iterations...", warmup_iterations);
     for _ in 0..warmup_iterations {
         jit_runtime.execute_function(function_name)?;
-    }
-
     // Benchmark phase
     println!("Benchmarking with {} iterations...", benchmark_iterations);
     let benchmark_start = Instant::now();
     
     for _ in 0..benchmark_iterations {
         jit_runtime.execute_function(function_name)?;
-    }
-    
     let benchmark_time = benchmark_start.elapsed();
 
     println!("=== Benchmark Results ===");
@@ -428,14 +396,8 @@ fn benchmark_single_configuration(
 
     jit_runtime.shutdown()?;
     Ok(())
-}
-
 /// Benchmark different optimization levels
 fn benchmark_optimization_levels(
-    source: &str,
-    function_name: &str,
-    warmup_iterations: u32,
-    benchmark_iterations: u32,
 ) -> crate::error::Result<()> {
     let optimization_levels = ["none", "less", "default", "aggressive"];
     
@@ -449,7 +411,6 @@ fn benchmark_optimization_levels(
             create_debug_jit_interface(&context)?
         } else {
             create_optimized_jit_interface(&context)?
-        };
         
         let runtime = Arc::new(Runtime::new());
         let mut jit_runtime = JitRuntime::new_with_default_config(jit_interface, runtime);
@@ -463,8 +424,6 @@ fn benchmark_optimization_levels(
         // Warmup
         for _ in 0..warmup_iterations {
             jit_runtime.execute_function(function_name)?;
-        }
-
         // Benchmark
         let benchmark_start = Instant::now();
         for _ in 0..benchmark_iterations {
@@ -478,11 +437,7 @@ fn benchmark_optimization_levels(
         println!("  Executions/sec: {:.0}", benchmark_iterations as f64 / benchmark_time.as_secs_f64());
 
         jit_runtime.shutdown()?;
-    }
-
     Ok(())
-}
-
 /// Handle JIT config command
 fn handle_jit_config_command(matches: &ArgMatches) -> crate::error::Result<()> {
     match matches.subcommand() {
@@ -504,8 +459,6 @@ fn handle_jit_config_command(matches: &ArgMatches) -> crate::error::Result<()> {
             Ok(())
         }
     }
-}
-
 /// Show JIT configuration
 fn show_jit_config(format: &str) -> crate::error::Result<()> {
     // Try to load from environment, fallback to default
@@ -531,24 +484,14 @@ fn show_jit_config(format: &str) -> crate::error::Result<()> {
     }
 
     Ok(())
-}
-
 /// Create JIT configuration file
 fn create_jit_config(output_file: &str, template: &str) -> crate::error::Result<()> {
     let config = match template {
-        "default" => JitConfig::default(),
-        "development" => JitConfig::development(),
-        "production" => JitConfig::production(),
-        "benchmarking" => JitConfig::benchmarking(),
-        _ => return Err(CursedError::from_str(&format!("Unknown template: {}. Use: default, development, production, benchmarking", template))),
-    };
 
     let output_path = PathBuf::from(output_file);
     let extension = output_path.extension().and_then(|ext| ext.to_str()).unwrap_or("toml");
 
     match extension {
-        "json" => config.save_to_json_file(&output_path)?,
-        "toml" => config.save_to_toml_file(&output_path)?,
         _ => {
             // Default to TOML
             config.save_to_toml_file(&output_path)?;
@@ -557,18 +500,12 @@ fn create_jit_config(output_file: &str, template: &str) -> crate::error::Result<
 
     println!("Created {} configuration file: {}", template, output_file);
     Ok(())
-}
-
 /// Validate JIT configuration file
 fn validate_jit_config(config_file: &str) -> crate::error::Result<()> {
     let config_path = PathBuf::from(config_file);
     let extension = config_path.extension().and_then(|ext| ext.to_str()).unwrap_or("toml");
 
     let config = match extension {
-        "json" => JitConfig::from_json_file(&config_path)?,
-        "toml" => JitConfig::from_toml_file(&config_path)?,
-        _ => return Err(CursedError::from_str(&format!("Unsupported config file format: {}", extension))),
-    };
 
     match config.validate() {
         Ok(()) => {
@@ -582,8 +519,6 @@ fn validate_jit_config(config_file: &str) -> crate::error::Result<()> {
     }
 
     Ok(())
-}
-
 /// Handle JIT stats command
 fn handle_jit_stats_command(matches: &ArgMatches) -> crate::error::Result<()> {
     let input_file = matches.value_of("input").unwrap();
@@ -609,8 +544,6 @@ fn handle_jit_stats_command(matches: &ArgMatches) -> crate::error::Result<()> {
     // Execute a few times to generate execution statistics
     for _ in 0..10 {
         jit_runtime.execute_function("main")?;
-    }
-
     // Show statistics
     let runtime_stats = jit_runtime.get_stats();
     let jit_stats = jit_runtime.get_jit_stats();
@@ -638,14 +571,8 @@ fn handle_jit_stats_command(matches: &ArgMatches) -> crate::error::Result<()> {
         println!("Background compilations: {}", jit_stats.background_compilations);
         println!("Compilation timeouts: {}", jit_stats.compilation_timeouts);
         println!("Compilation failures: {}", jit_stats.compilation_failures);
-    }
-
     if reset {
         jit_runtime.reset_stats();
         println!("\nStatistics have been reset.");
-    }
-
     jit_runtime.shutdown()?;
     Ok(())
-}
-

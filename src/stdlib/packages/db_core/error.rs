@@ -13,252 +13,132 @@ pub type Databasecrate::error::Result<T> = std::result::Result<T>;
 #[derive(Debug, Clone)]
 pub struct DatabaseError {
     /// fr fr CursedError kind
-    pub kind: ErrorKind,
     /// fr fr CursedError message
-    pub message: String,
     /// fr fr Source error (if any)
-    pub source: Option<String>,
     /// fr fr CursedError code (driver-specific)
-    pub code: Option<String>,
     /// fr fr SQL state (if applicable)
-    pub sql_state: Option<String>,
     /// fr fr Context information
-    pub context: std::collections::HashMap<String, String>,
-}
-
 /// fr fr CursedError kinds for different types of database errors
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum ErrorKind {
     /// Connection-related errors
-    Connection(ConnectionError),
     /// Query-related errors
-    Query(QueryError),
     /// Transaction-related errors
-    Transaction(TransactionError),
     /// Driver-related errors
-    Driver(DriverError),
     /// Configuration errors
-    Configuration,
     /// Authentication/authorization errors
-    Authentication,
     /// Constraint violation errors
-    ConstraintViolation,
     /// Data conversion errors
-    DataConversion,
     /// Timeout errors
-    Timeout,
     /// Network errors
-    Network,
     /// Resource exhaustion
-    ResourceExhausted,
     /// Unknown/other errors
-    Other,
-}
-
 /// fr fr Connection-specific error types
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum ConnectionError {
     /// Failed to establish connection
-    FailedToConnect,
     /// Connection was lost
-    ConnectionLost,
     /// Connection timeout
-    Timeout,
     /// Invalid connection string
-    InvalidConnectionString,
     /// Authentication failed
-    AuthenticationFailed,
     /// Connection refused
-    Refused,
     /// Host not found
-    HostNotFound,
     /// Database not found
-    DatabaseNotFound,
     /// Connection pool exhausted
-    PoolExhausted,
     /// Connection closed
-    Closed,
-}
-
 /// fr fr Query-specific error types
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum QueryError {
     /// SQL syntax error
-    SyntaxError,
     /// Invalid parameters
-    InvalidParameters,
     /// Column not found
-    ColumnNotFound,
     /// Table not found
-    TableNotFound,
     /// Execution failed
-    ExecutionFailed,
     /// Result set exhausted
-    ResultSetExhausted,
     /// Type mismatch
-    TypeMismatch,
     /// Query too complex
-    TooComplex,
     /// Query cancelled
-    Cancelled,
-}
-
 /// fr fr Transaction-specific error types
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum TransactionError {
     /// Transaction not active
-    NotActive,
     /// Already committed
-    AlreadyCommitted,
     /// Already rolled back
-    AlreadyRolledBack,
     /// Deadlock detected
-    Deadlock,
     /// Serialization failure
-    SerializationFailure,
     /// Constraint violation during transaction
-    ConstraintViolation,
     /// Transaction timeout
-    Timeout,
     /// Savepoint not found
-    SavepointNotFound,
-}
-
 /// fr fr Driver-specific error types
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum DriverError {
     /// Driver not found
-    NotFound,
     /// Driver initialization failed
-    InitializationFailed,
     /// Feature not supported
-    FeatureNotSupported,
     /// Version incompatible
-    VersionIncompatible,
     /// Configuration invalid
-    InvalidConfiguration,
     /// Internal driver error
-    InternalError,
-}
-
 impl DatabaseError {
     /// slay Create a new database error
     pub fn new(kind: ErrorKind, message: &str) -> Self {
         Self {
-            kind,
-            message: message.to_string(),
-            source: None,
-            code: None,
-            sql_state: None,
-            context: std::collections::HashMap::new(),
         }
     }
 
     /// slay Create a connection error
     pub fn connection(error: ConnectionError, message: &str) -> Self {
         Self::new(ErrorKind::Connection(error), message)
-    }
-
     /// slay Create a query error
     pub fn query(error: QueryError, message: &str) -> Self {
         Self::new(ErrorKind::Query(error), message)
-    }
-
     /// slay Create a transaction error
     pub fn transaction(error: TransactionError, message: &str) -> Self {
         Self::new(ErrorKind::Transaction(error), message)
-    }
-
     /// slay Create a driver error
     pub fn driver(message: &str) -> Self {
         Self::new(ErrorKind::Driver(DriverError::InternalError), message)
-    }
-
     /// slay Create a configuration error
     pub fn config(message: &str) -> Self {
         Self::new(ErrorKind::Configuration, message)
-    }
-
     /// slay Create an authentication error
     pub fn auth(message: &str) -> Self {
         Self::new(ErrorKind::Authentication, message)
-    }
-
     /// slay Create a timeout error
     pub fn timeout(message: &str) -> Self {
         Self::new(ErrorKind::Timeout, message)
-    }
-
     /// slay Add source error information
     pub fn with_source<E: StdError>(mut self, source: E) -> Self {
         self.source = Some(source.to_string());
         self
-    }
-
     /// slay Add error code
     pub fn with_code(mut self, code: &str) -> Self {
         self.code = Some(code.to_string());
         self
-    }
-
     /// slay Add SQL state
     pub fn with_sql_state(mut self, state: &str) -> Self {
         self.sql_state = Some(state.to_string());
         self
-    }
-
     /// slay Add context information
     pub fn with_context(mut self, key: &str, value: &str) -> Self {
         self.context.insert(key.to_string(), value.to_string());
         self
-    }
-
     /// slay Check if error is retryable
     pub fn is_retryable(&self) -> bool {
         match &self.kind {
-            ErrorKind::Connection(ConnectionError::Timeout) => true,
-            ErrorKind::Connection(ConnectionError::ConnectionLost) => true,
-            ErrorKind::Network => true,
-            ErrorKind::Timeout => true,
-            ErrorKind::Transaction(TransactionError::Deadlock) => true,
-            ErrorKind::Transaction(TransactionError::SerializationFailure) => true,
-            _ => false,
         }
     }
 
     /// slay Check if error is permanent
     pub fn is_permanent(&self) -> bool {
         match &self.kind {
-            ErrorKind::Authentication => true,
-            ErrorKind::Configuration => true,
-            ErrorKind::Query(QueryError::SyntaxError) => true,
-            ErrorKind::Query(QueryError::TableNotFound) => true,
-            ErrorKind::Query(QueryError::ColumnNotFound) => true,
-            ErrorKind::Driver(DriverError::NotFound) => true,
-            ErrorKind::Driver(DriverError::FeatureNotSupported) => true,
-            _ => false,
         }
     }
 
     /// slay Get error category for metrics/logging
     pub fn category(&self) -> &'static str {
         match &self.kind {
-            ErrorKind::Connection(_) => "connection",
-            ErrorKind::Query(_) => "query",
-            ErrorKind::Transaction(_) => "transaction",
-            ErrorKind::Driver(_) => "driver",
-            ErrorKind::Configuration => "configuration",
-            ErrorKind::Authentication => "authentication",
-            ErrorKind::ConstraintViolation => "constraint",
-            ErrorKind::DataConversion => "conversion",
-            ErrorKind::Timeout => "timeout",
-            ErrorKind::Network => "network",
-            ErrorKind::ResourceExhausted => "resource",
-            ErrorKind::Other => "other",
         }
     }
-}
-
 // impl fmt::Display for DatabaseError {
 //     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
 //         write!(f, "Database error [{}]: {}", self.category(), self.message)?;
@@ -303,8 +183,6 @@ impl StdError for DatabaseError {
 impl From<url::ParseError> for DatabaseError {
     fn from(error: url::ParseError) -> Self {
         DatabaseError::connection(
-            ConnectionError::InvalidConnectionString,
-            &error.to_string(),
         ).with_source(error)
     }
 }
@@ -317,29 +195,16 @@ impl DatabaseError {
         
         if let Some(source) = &self.source {
             chain.push(format!("caused by: {}", source));
-        }
-        
         chain.join(" -> ")
-    }
-
     /// slay Get error details for debugging
     pub fn debug_info(&self) -> String {
         let mut info = vec![
-            format!("CursedError: {}", self.message),
-            format!("Kind: {:?}", self.kind),
-            format!("Category: {}", self.category()),
-            format!("Retryable: {}", self.is_retryable()),
-            format!("Permanent: {}", self.is_permanent()),
         ];
 
         if let Some(code) = &self.code {
             info.push(format!("Code: {}", code));
-        }
-
         if let Some(state) = &self.sql_state {
             info.push(format!("SQL State: {}", state));
-        }
-
         if !self.context.is_empty() {
             info.push("Context:".to_string());
             for (key, value) in &self.context {
@@ -349,8 +214,6 @@ impl DatabaseError {
 
         if let Some(source) = &self.source {
             info.push(format!("Source: {}", source));
-        }
-
         info.join("\n")
     }
 }
@@ -362,13 +225,9 @@ pub trait DatabaseResultExt<T> {
     
     /// slay Convert to a different error type
     fn map_err_kind(self, kind: ErrorKind) -> DatabaseResult<T>;
-}
-
 impl<T> DatabaseResultExt<T> for DatabaseResult<T> {
     fn with_context(self, key: &str, value: &str) -> DatabaseResult<T> {
         self.map_err(|e| e.with_context(key, value))
-    }
-    
     fn map_err_kind(self, kind: ErrorKind) -> DatabaseResult<T> {
         self.map_err(|e| DatabaseError::new(kind, &e.message))
     }

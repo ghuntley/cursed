@@ -76,37 +76,20 @@ pub const SPEED_THRESHOLD_MS: u64 = 1000;          // 1 second speed threshold
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum CompressionQuality {
     /// Fastest compression, larger size
-    Fastest,
     /// Fast compression, good for real-time applications
-    Fast,
     /// Balanced compression speed and size
-    Balanced,
     /// Good compression, slower speed
-    Good,
     /// Best compression, slowest speed
-    Best,
-}
-
 impl CompressionQuality {
     /// Convert quality level to numeric compression level
     pub fn to_level(self) -> i32 {
         match self {
-            CompressionQuality::Fastest => 1,
-            CompressionQuality::Fast => 3,
-            CompressionQuality::Balanced => 6,
-            CompressionQuality::Good => 8,
-            CompressionQuality::Best => 9,
         }
     }
     
     /// Get all quality levels
     pub fn all() -> &'static [CompressionQuality] {
         &[
-            CompressionQuality::Fastest,
-            CompressionQuality::Fast,
-            CompressionQuality::Balanced,
-            CompressionQuality::Good,
-            CompressionQuality::Best,
         ]
     }
 }
@@ -121,30 +104,16 @@ impl Default for CompressionQuality {
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum CompressionStrategy {
     /// Default strategy suitable for most data
-    Default,
     /// Strategy for data with mostly small values
-    Filtered,
     /// Strategy for Huffman-only compression
-    HuffmanOnly,
     /// Strategy for run-length encoding
-    Rle,
     /// Strategy optimized for specific data patterns
-    Fixed,
-}
-
 impl CompressionStrategy {
     /// Convert strategy to numeric value for libraries that need it
     pub fn to_value(self) -> i32 {
         match self {
-            CompressionStrategy::Default => 0,
-            CompressionStrategy::Filtered => 1,
-            CompressionStrategy::HuffmanOnly => 2,
-            CompressionStrategy::Rle => 3,
-            CompressionStrategy::Fixed => 4,
         }
     }
-}
-
 impl Default for CompressionStrategy {
     fn default() -> Self {
         CompressionStrategy::Default
@@ -155,30 +124,16 @@ impl Default for CompressionStrategy {
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum FlushMode {
     /// No flush - accumulate data
-    None,
     /// Partial flush - flush pending output
-    Partial,
     /// Sync flush - flush all pending output and align to byte boundary
-    Sync,
     /// Full flush - like sync flush but reset compression state
-    Full,
     /// Finish - flush all data and complete compression
-    Finish,
-}
-
 impl FlushMode {
     /// Convert flush mode to numeric value for libraries that need it
     pub fn to_value(self) -> i32 {
         match self {
-            FlushMode::None => 0,
-            FlushMode::Partial => 1,
-            FlushMode::Sync => 2,
-            FlushMode::Full => 3,
-            FlushMode::Finish => 4,
         }
     }
-}
-
 impl Default for FlushMode {
     fn default() -> Self {
         FlushMode::None
@@ -190,13 +145,9 @@ pub fn is_valid_compression_level(level: i32) -> bool {
     level == DEFAULT_COMPRESSION || 
     level == HUFFMAN_ONLY || 
     (level >= MIN_COMPRESSION_LEVEL && level <= MAX_COMPRESSION_LEVEL)
-}
-
 /// Get recommended compression level for given quality
 pub fn quality_to_level(quality: CompressionQuality) -> i32 {
     quality.to_level()
-}
-
 /// Get recommended buffer size for given input size
 pub fn recommended_buffer_size(input_size: usize) -> usize {
     if input_size < MIN_BUFFER_SIZE {
@@ -216,14 +167,10 @@ pub fn recommended_buffer_size(input_size: usize) -> usize {
 /// Check if parallel compression should be used
 pub fn should_use_parallel(input_size: usize) -> bool {
     input_size >= PARALLEL_THRESHOLD
-}
-
 /// Calculate optimal chunk size for parallel compression
 pub fn optimal_chunk_size(input_size: usize, num_workers: usize) -> usize {
     if num_workers == 0 {
         return CHUNK_SIZE_PARALLEL;
-    }
-    
     let base_chunk_size = input_size / num_workers;
     let chunk_size = base_chunk_size.max(CHUNK_SIZE_PARALLEL);
     
@@ -231,7 +178,5 @@ pub fn optimal_chunk_size(input_size: usize, num_workers: usize) -> usize {
     let mut optimal_size = 1;
     while optimal_size < chunk_size {
         optimal_size *= 2;
-    }
-    
     optimal_size.min(MAX_BUFFER_SIZE)
 }

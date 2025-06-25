@@ -12,35 +12,16 @@ use std::time::{Duration, Instant};
 /// Else branch representation for if statements
 #[derive(Debug, Clone, PartialEq)]
 pub enum ElseBranch {
-    Block(Vec<Statement>),
-    If(Box<IfStatement>),
-}
-
 /// If statement representation
 #[derive(Debug, Clone, PartialEq)]
 pub struct IfStatement {
-    pub condition: Expression,
-    pub then_branch: Vec<Statement>,
-    pub else_branch: Option<ElseBranch>,
-}
-
 pub mod cse;
 
 /// Custom optimization pass manager for CURSED
 pub struct CursedOptimizationPasses {
-    passes: Vec<Box<dyn OptimizationPass>>,
-    stats: PassStatistics,
-}
-
 /// Statistics for optimization passes
 #[derive(Debug, Clone, Default)]
 pub struct PassStatistics {
-    pub passes_run: usize,
-    pub total_time: Duration,
-    pub transformations_applied: HashMap<String, usize>,
-    pub code_size_reduction: usize,
-}
-
 /// Trait for optimization passes
 pub trait OptimizationPass {
     /// Name of the optimization pass
@@ -55,8 +36,6 @@ pub trait OptimizationPass {
     /// Whether this pass can be run multiple times
     fn is_repeatable(&self) -> bool {
         false
-    }
-    
     /// Dependencies on other passes
     fn dependencies(&self) -> Vec<String> {
         Vec::new()
@@ -66,41 +45,20 @@ pub trait OptimizationPass {
 /// Result of an optimization pass
 #[derive(Debug, Clone)]
 pub struct PassResult {
-    pub changed: bool,
-    pub transformations: usize,
-    pub nodes_removed: usize,
-    pub nodes_added: usize,
-    pub execution_time: Duration,
-    pub messages: Vec<String>,
-}
-
 impl Default for PassResult {
     fn default() -> Self {
         Self {
-            changed: false,
-            transformations: 0,
-            nodes_removed: 0,
-            nodes_added: 0,
-            execution_time: Duration::from_secs(0),
-            messages: Vec::new(),
         }
     }
-}
-
 impl CursedOptimizationPasses {
     /// Create new optimization pass manager
     pub fn new() -> Self {
         let mut passes = Self {
-            passes: Vec::new(),
-            stats: PassStatistics::default(),
-        };
         
         // Register default passes
         passes.register_default_passes();
         
         passes
-    }
-    
     /// Register all default optimization passes
     fn register_default_passes(&mut self) {
         self.add_pass(Box::new(DeadCodeEliminationPass::new()));
@@ -113,13 +71,9 @@ impl CursedOptimizationPasses {
         self.add_pass(Box::new(SimplificationPass::new()));
         self.add_pass(Box::new(GoroutineOptimizationPass::new()));
         self.add_pass(Box::new(ChannelOptimizationPass::new()));
-    }
-    
     /// Add an optimization pass
     pub fn add_pass(&mut self, pass: Box<dyn OptimizationPass>) {
         self.passes.push(pass);
-    }
-    
     /// Run all optimization passes
     pub fn run_all(&mut self, ast: &mut Program) -> Result<PassStatistics> {
         let start_time = Instant::now();
@@ -153,14 +107,10 @@ impl CursedOptimizationPasses {
                     }
                 }
             }
-        }
-        
         total_stats.total_time = start_time.elapsed();
         self.stats = total_stats.clone();
         
         Ok(total_stats)
-    }
-    
     /// Run specific optimization pass
     pub fn run_pass(&mut self, pass_name: &str, ast: &mut Program) -> Result<PassResult> {
         if let Some(pass) = self.passes.iter_mut().find(|p| p.name() == pass_name) {
@@ -173,15 +123,11 @@ impl CursedOptimizationPasses {
     /// Get statistics for all passes
     pub fn get_stats(&self) -> &PassStatistics {
         &self.stats
-    }
-    
     /// List available passes
     pub fn list_passes(&self) -> Vec<(String, String)> {
         self.passes.iter()
             .map(|p| (p.name().to_string(), p.description().to_string()))
             .collect()
-    }
-    
     /// Order passes by dependencies
     fn order_passes(&self) -> Result<Vec<String>> {
         let mut ordered = Vec::new();
@@ -195,24 +141,13 @@ impl CursedOptimizationPasses {
         }
         
         Ok(ordered)
-    }
-    
     /// Visit pass for topological sorting
     fn visit_pass(
-        &self,
-        pass_name: &str,
-        visited: &mut HashSet<String>,
-        temp_mark: &mut HashSet<String>,
-        ordered: &mut Vec<String>,
     ) -> Result<()> {
         if temp_mark.contains(pass_name) {
             return Err(CursedError::General("Circular dependency in optimization passes".to_string()));
-        }
-        
         if visited.contains(pass_name) {
             return Ok(());
-        }
-        
         temp_mark.insert(pass_name.to_string());
         
         // Visit dependencies first
@@ -232,24 +167,15 @@ impl CursedOptimizationPasses {
 
 /// Dead code elimination pass
 pub struct DeadCodeEliminationPass {
-    removed_count: usize,
-}
-
 impl DeadCodeEliminationPass {
     pub fn new() -> Self {
         Self { removed_count: 0 }
     }
-}
-
 impl OptimizationPass for DeadCodeEliminationPass {
     fn name(&self) -> &str {
         "dead-code-elimination"
-    }
-    
     fn description(&self) -> &str {
         "Removes unreachable code and unused variables"
-    }
-    
     fn run(&mut self, ast: &mut Program) -> Result<PassResult> {
         let start_time = Instant::now();
         let mut result = PassResult::default();
@@ -258,8 +184,6 @@ impl OptimizationPass for DeadCodeEliminationPass {
         // Find and remove unreachable code
         for module in &mut ast.modules {
             self.eliminate_dead_code_in_module(module, &mut result);
-        }
-        
         result.execution_time = start_time.elapsed();
         result.changed = self.removed_count > 0;
         result.transformations = self.removed_count;
@@ -267,11 +191,7 @@ impl OptimizationPass for DeadCodeEliminationPass {
         
         if self.removed_count > 0 {
             result.messages.push(format!("Removed {} dead code segments", self.removed_count));
-        }
-        
         Ok(result)
-    }
-    
     fn is_repeatable(&self) -> bool {
         true
     }
@@ -321,28 +241,17 @@ impl DeadCodeEliminationPass {
             i += 1;
         }
     }
-}
-
 /// Constant folding pass
 pub struct ConstantFoldingPass {
-    folded_count: usize,
-}
-
 impl ConstantFoldingPass {
     pub fn new() -> Self {
         Self { folded_count: 0 }
     }
-}
-
 impl OptimizationPass for ConstantFoldingPass {
     fn name(&self) -> &str {
         "constant-folding"
-    }
-    
     fn description(&self) -> &str {
         "Evaluates constant expressions at compile time"
-    }
-    
     fn run(&mut self, ast: &mut Program) -> Result<PassResult> {
         let start_time = Instant::now();
         let mut result = PassResult::default();
@@ -351,19 +260,13 @@ impl OptimizationPass for ConstantFoldingPass {
         // Fold constants in all modules
         for module in &mut ast.modules {
             self.fold_constants_in_module(module, &mut result);
-        }
-        
         result.execution_time = start_time.elapsed();
         result.changed = self.folded_count > 0;
         result.transformations = self.folded_count;
         
         if self.folded_count > 0 {
             result.messages.push(format!("Folded {} constant expressions", self.folded_count));
-        }
-        
         Ok(result)
-    }
-    
     fn is_repeatable(&self) -> bool {
         true
     }
@@ -428,8 +331,6 @@ impl ConstantFoldingPass {
                 _ => {}
             }
         }
-    }
-    
     fn fold_constants_in_expression(&mut self, expr: &mut Expression, result: &mut PassResult) {
         match expr {
             Expression::Binary(binary_expr) => {
@@ -474,71 +375,31 @@ impl ConstantFoldingPass {
         match (left, right) {
             (Literal::Integer(a), Literal::Integer(b)) => {
                 match op {
-                    BinaryOperator::Add => Some(Literal::Integer(a + b)),
-                    BinaryOperator::Subtract => Some(Literal::Integer(a - b)),
-                    BinaryOperator::Multiply => Some(Literal::Integer(a * b)),
                     BinaryOperator::Divide if *b != 0 => Some(Literal::Integer(a / b)),
-                    BinaryOperator::Modulo if *b != 0 => Some(Literal::Integer(a % b)),
-                    BinaryOperator::Equal => Some(Literal::Boolean(a == b)),
-                    BinaryOperator::NotEqual => Some(Literal::Boolean(a != b)),
-                    BinaryOperator::LessThan => Some(Literal::Boolean(a < b)),
-                    BinaryOperator::LessThanOrEqual => Some(Literal::Boolean(a <= b)),
-                    BinaryOperator::GreaterThan => Some(Literal::Boolean(a > b)),
-                    BinaryOperator::GreaterThanOrEqual => Some(Literal::Boolean(a >= b)),
-                    _ => None,
                 }
             }
             (Literal::Float(a), Literal::Float(b)) => {
                 match op {
-                    BinaryOperator::Add => Some(Literal::Float(a + b)),
-                    BinaryOperator::Subtract => Some(Literal::Float(a - b)),
-                    BinaryOperator::Multiply => Some(Literal::Float(a * b)),
                     BinaryOperator::Divide if *b != 0.0 => Some(Literal::Float(a / b)),
-                    BinaryOperator::Equal => Some(Literal::Boolean((a - b).abs() < f64::EPSILON)),
-                    BinaryOperator::NotEqual => Some(Literal::Boolean((a - b).abs() >= f64::EPSILON)),
-                    BinaryOperator::LessThan => Some(Literal::Boolean(a < b)),
-                    BinaryOperator::LessThanOrEqual => Some(Literal::Boolean(a <= b)),
-                    BinaryOperator::GreaterThan => Some(Literal::Boolean(a > b)),
-                    BinaryOperator::GreaterThanOrEqual => Some(Literal::Boolean(a >= b)),
-                    _ => None,
                 }
             }
             (Literal::Boolean(a), Literal::Boolean(b)) => {
                 match op {
-                    BinaryOperator::LogicalAnd => Some(Literal::Boolean(*a && *b)),
-                    BinaryOperator::LogicalOr => Some(Literal::Boolean(*a || *b)),
-                    BinaryOperator::Equal => Some(Literal::Boolean(a == b)),
-                    BinaryOperator::NotEqual => Some(Literal::Boolean(a != b)),
-                    _ => None,
                 }
             }
             (Literal::String(a), Literal::String(b)) => {
                 match op {
-                    BinaryOperator::Add => Some(Literal::String(format!("{}{}", a, b))),
-                    BinaryOperator::Equal => Some(Literal::Boolean(a == b)),
-                    BinaryOperator::NotEqual => Some(Literal::Boolean(a != b)),
-                    _ => None,
                 }
             }
-            _ => None,
         }
     }
     
     fn fold_unary_literal(&self, op: &UnaryOperator, operand: &Literal) -> Option<Literal> {
         match (op, operand) {
-            (UnaryOperator::Minus, Literal::Integer(n)) => Some(Literal::Integer(-n)),
-            (UnaryOperator::Minus, Literal::Float(f)) => Some(Literal::Float(-f)),
-            (UnaryOperator::Not, Literal::Boolean(b)) => Some(Literal::Boolean(!b)),
-            _ => None,
         }
     }
-}
-
 /// Common subexpression elimination pass - now using complete implementation
 pub struct CommonSubexpressionEliminationPass {
-    inner_pass: cse::CommonSubexpressionEliminationPass,
-}
-
 impl CommonSubexpressionEliminationPass {
     pub fn new() -> Self {
         Self { 
@@ -552,17 +413,11 @@ impl CommonSubexpressionEliminationPass {
             inner_pass: cse::CommonSubexpressionEliminationPass::with_config(global_cse, debug_mode)
         }
     }
-}
-
 impl OptimizationPass for CommonSubexpressionEliminationPass {
     fn name(&self) -> &str {
         "common-subexpression-elimination"
-    }
-    
     fn description(&self) -> &str {
         "Eliminates redundant computations using advanced value numbering and dominance analysis"
-    }
-    
     fn run(&mut self, ast: &mut Program) -> Result<PassResult> {
         let start_time = Instant::now();
         let mut result = PassResult::default();
@@ -583,12 +438,8 @@ impl OptimizationPass for CommonSubexpressionEliminationPass {
         
         result.execution_time = start_time.elapsed();
         Ok(result)
-    }
-    
     fn dependencies(&self) -> Vec<String> {
         vec!["constant-folding".to_string()]
-    }
-    
     fn is_repeatable(&self) -> bool {
         true // CSE can benefit from multiple passes
     }
@@ -596,24 +447,15 @@ impl OptimizationPass for CommonSubexpressionEliminationPass {
 
 /// Tail call optimization pass
 pub struct TailCallOptimizationPass {
-    optimized_count: usize,
-}
-
 impl TailCallOptimizationPass {
     pub fn new() -> Self {
         Self { optimized_count: 0 }
     }
-}
-
 impl OptimizationPass for TailCallOptimizationPass {
     fn name(&self) -> &str {
         "tail-call-optimization"
-    }
-    
     fn description(&self) -> &str {
         "Optimizes tail-recursive function calls to avoid stack overflow"
-    }
-    
     fn run(&mut self, ast: &mut Program) -> Result<PassResult> {
         let start_time = Instant::now();
         let mut result = PassResult::default();
@@ -622,16 +464,12 @@ impl OptimizationPass for TailCallOptimizationPass {
         // Identify and optimize tail calls
         for module in &mut ast.modules {
             self.optimize_tail_calls_in_module(module, &mut result);
-        }
-        
         result.execution_time = start_time.elapsed();
         result.changed = self.optimized_count > 0;
         result.transformations = self.optimized_count;
         
         if self.optimized_count > 0 {
             result.messages.push(format!("Optimized {} tail calls", self.optimized_count));
-        }
-        
         Ok(result)
     }
 }
@@ -646,8 +484,6 @@ impl TailCallOptimizationPass {
     fn optimize_tail_calls_in_function(&mut self, function: &mut Function, result: &mut PassResult) {
         // Look for tail recursive calls
         self.find_tail_calls(&function.body, &function.name, result);
-    }
-    
     fn find_tail_calls(&mut self, statements: &[Box<dyn Statement>], function_name: &str, result: &mut PassResult) {
         if let Some(last_stmt) = statements.last() {
             // Try to downcast to ReturnStatement
@@ -661,28 +497,17 @@ impl TailCallOptimizationPass {
             }
         }
     }
-}
-
 /// Function inlining pass
 pub struct InliningPass {
-    inlined_count: usize,
-}
-
 impl InliningPass {
     pub fn new() -> Self {
         Self { inlined_count: 0 }
     }
-}
-
 impl OptimizationPass for InliningPass {
     fn name(&self) -> &str {
         "inlining"
-    }
-    
     fn description(&self) -> &str {
         "Inlines small functions to reduce function call overhead"
-    }
-    
     fn run(&mut self, ast: &mut Program) -> Result<PassResult> {
         let start_time = Instant::now();
         let mut result = PassResult::default();
@@ -696,8 +521,6 @@ impl OptimizationPass for InliningPass {
         result.transformations = self.inlined_count;
         
         Ok(result)
-    }
-    
     fn dependencies(&self) -> Vec<String> {
         vec!["dead-code-elimination".to_string()]
     }
@@ -705,24 +528,15 @@ impl OptimizationPass for InliningPass {
 
 /// Loop optimization pass
 pub struct LoopOptimizationPass {
-    optimized_count: usize,
-}
-
 impl LoopOptimizationPass {
     pub fn new() -> Self {
         Self { optimized_count: 0 }
     }
-}
-
 impl OptimizationPass for LoopOptimizationPass {
     fn name(&self) -> &str {
         "loop-optimization"
-    }
-    
     fn description(&self) -> &str {
         "Optimizes loops through unrolling, invariant code motion, and other techniques"
-    }
-    
     fn run(&mut self, ast: &mut Program) -> Result<PassResult> {
         let start_time = Instant::now();
         let mut result = PassResult::default();
@@ -740,24 +554,15 @@ impl OptimizationPass for LoopOptimizationPass {
 
 /// Variable renaming pass
 pub struct VariableRenamingPass {
-    renamed_count: usize,
-}
-
 impl VariableRenamingPass {
     pub fn new() -> Self {
         Self { renamed_count: 0 }
     }
-}
-
 impl OptimizationPass for VariableRenamingPass {
     fn name(&self) -> &str {
         "variable-renaming"
-    }
-    
     fn description(&self) -> &str {
         "Renames variables to avoid conflicts and improve readability"
-    }
-    
     fn run(&mut self, ast: &mut Program) -> Result<PassResult> {
         let start_time = Instant::now();
         let mut result = PassResult::default();
@@ -775,24 +580,15 @@ impl OptimizationPass for VariableRenamingPass {
 
 /// Code simplification pass
 pub struct SimplificationPass {
-    simplified_count: usize,
-}
-
 impl SimplificationPass {
     pub fn new() -> Self {
         Self { simplified_count: 0 }
     }
-}
-
 impl OptimizationPass for SimplificationPass {
     fn name(&self) -> &str {
         "simplification"
-    }
-    
     fn description(&self) -> &str {
         "Simplifies expressions and control flow structures"
-    }
-    
     fn run(&mut self, ast: &mut Program) -> Result<PassResult> {
         let start_time = Instant::now();
         let mut result = PassResult::default();
@@ -805,8 +601,6 @@ impl OptimizationPass for SimplificationPass {
         result.transformations = self.simplified_count;
         
         Ok(result)
-    }
-    
     fn dependencies(&self) -> Vec<String> {
         vec!["constant-folding".to_string()]
     }
@@ -814,24 +608,15 @@ impl OptimizationPass for SimplificationPass {
 
 /// Goroutine-specific optimizations
 pub struct GoroutineOptimizationPass {
-    optimized_count: usize,
-}
-
 impl GoroutineOptimizationPass {
     pub fn new() -> Self {
         Self { optimized_count: 0 }
     }
-}
-
 impl OptimizationPass for GoroutineOptimizationPass {
     fn name(&self) -> &str {
         "goroutine-optimization"
-    }
-    
     fn description(&self) -> &str {
         "Optimizes goroutine creation and synchronization"
-    }
-    
     fn run(&mut self, ast: &mut Program) -> Result<PassResult> {
         let start_time = Instant::now();
         let mut result = PassResult::default();
@@ -853,24 +638,15 @@ impl OptimizationPass for GoroutineOptimizationPass {
 
 /// Channel-specific optimizations
 pub struct ChannelOptimizationPass {
-    optimized_count: usize,
-}
-
 impl ChannelOptimizationPass {
     pub fn new() -> Self {
         Self { optimized_count: 0 }
     }
-}
-
 impl OptimizationPass for ChannelOptimizationPass {
     fn name(&self) -> &str {
         "channel-optimization"
-    }
-    
     fn description(&self) -> &str {
         "Optimizes channel operations and communication patterns"
-    }
-    
     fn run(&mut self, ast: &mut Program) -> Result<PassResult> {
         let start_time = Instant::now();
         let mut result = PassResult::default();

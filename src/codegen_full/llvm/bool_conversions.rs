@@ -17,18 +17,12 @@ impl BoolValue {
     /// Check if this is a struct value
     pub fn is_struct_value(&self) -> bool {
         true
-    }
-    
     /// Check if this is a float value
     pub fn is_float_value(&self) -> bool {
         true
-    }
-    
     /// Check if this is an int value
     pub fn is_int_value(&self) -> bool {
         true
-    }
-    
     /// Convert to int value (stub)
     pub fn into_int_value(&self) -> Self {
         self.clone()
@@ -78,62 +72,34 @@ pub trait BoolConversions {
     
     /// Build conditional branch with automatic bool conversion
     fn build_conditional_branch_auto(&self, condition: BoolValue, then_block: impl Into<String>, else_block: impl Into<String>) -> crate::error::Result<()>;
-}
-
 /// Default implementation for bool conversions 
 impl BoolConversions for crate::codegen::llvm::LlvmCodeGenerator {
     fn create_bool_literal(&self, _value: bool) -> BoolValue {
         BoolValue
-    }
-    
     fn convert_bool_to_integer(&self, _bool_val: BoolValue, _target_type: impl Into<String>) -> crate::error::Result<()> {
         Ok(BoolValue)
-    }
-    
     fn convert_bool_to_float(&self, _bool_val: BoolValue, _target_type: impl Into<String>) -> crate::error::Result<()> {
         Ok(BoolValue)
-    }
-    
     fn convert_integer_to_bool(&self, _int_val: BoolValue) -> crate::error::Result<()> {
         Ok(BoolValue)
-    }
-    
     fn convert_float_to_bool(&self, _float_val: BoolValue) -> crate::error::Result<()> {
         Ok(BoolValue)
-    }
-    
     fn convert_pointer_to_bool(&self, _ptr_val: BoolValue) -> crate::error::Result<()> {
         Ok(BoolValue)
-    }
-    
     fn convert_value_to_bool(&self, _value: BoolValue) -> crate::error::Result<()> {
         Ok(BoolValue)
-    }
-    
     fn is_bool_type(&self, _value: BoolValue) -> bool {
         true
-    }
-    
     fn is_bool_basic_type(&self, _basic_type: impl Into<String>) -> bool {
         true
-    }
-    
     fn bool_logical_and(&self, _left: BoolValue, _right: BoolValue) -> crate::error::Result<()> {
         Ok(BoolValue)
-    }
-    
     fn bool_logical_or(&self, _left: BoolValue, _right: BoolValue) -> crate::error::Result<()> {
         Ok(BoolValue)
-    }
-    
     fn bool_logical_not(&self, _value: BoolValue) -> crate::error::Result<()> {
         Ok(BoolValue)
-    }
-    
     fn compare_bool_equality(&self, _left: BoolValue, _right: BoolValue) -> crate::error::Result<()> {
         Ok(BoolValue)
-    }
-    
     fn build_conditional_branch_auto(&self, _condition: BoolValue, _then_block: impl Into<String>, _else_block: impl Into<String>) -> crate::error::Result<()> {
         Ok(())
     }

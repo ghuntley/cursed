@@ -6,6 +6,5 @@
 pub mod latex_generator;
 
 pub use latex_generator::{
-    LaTeXGenerator, LaTeXConfig, DocumentClass, PackageConfig, 
     SyntaxHighlighting, ColorScheme
-};
+// };

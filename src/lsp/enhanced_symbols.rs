@@ -16,8 +16,6 @@ use crate::ast::{self, *};
 /// Extension trait to add missing methods to &str
 trait StrExt {
     fn lines(&self) -> std::str::Lines;
-}
-
 impl StrExt for &str {
     fn lines(&self) -> std::str::Lines {
         str::lines(self)
@@ -27,72 +25,22 @@ impl StrExt for &str {
 /// Enhanced symbol information for CURSED language constructs
 #[derive(Debug, Clone)]
 pub struct CursedSymbol {
-    pub name: String,
-    pub kind: SymbolKind,
-    pub range: Range,
-    pub selection_range: Range,
-    pub detail: Option<String>,
-    pub tags: Option<Vec<SymbolTag>>,
-    pub children: Vec<CursedSymbol>,
     
     // CURSED-specific fields
-    pub cursed_kind: CursedSymbolKind,
-    pub visibility: Visibility,
-    pub is_async: bool,
-    pub is_generic: bool,
-    pub type_info: Option<String>,
-    pub documentation: Option<String>,
-    pub references: Vec<Location>,
-    pub implementations: Vec<Location>,
-}
-
 impl CursedSymbol {
     pub fn new(
-        name: String,
-        kind: SymbolKind,
-        range: Range,
-        selection_range: Range,
-        cursed_kind: CursedSymbolKind,
     ) -> Self {
         Self {
-            name,
-            kind,
-            range,
-            selection_range,
-            detail: None,
-            tags: None,
-            children: Vec::new(),
-            cursed_kind,
-            visibility: Visibility::Public,
-            is_async: false,
-            is_generic: false,
-            type_info: None,
-            documentation: None,
-            references: Vec::new(),
-            implementations: Vec::new(),
         }
     }
 
     pub fn add_child(&mut self, child: CursedSymbol) {
         self.children.push(child);
-    }
-
     pub fn to_workspace_symbol(&self, uri: &Url) -> WorkspaceSymbol {
         WorkspaceSymbol {
-            name: self.name.clone(),
-            kind: self.kind,
-            tags: self.tags.clone(),
-            deprecated: None,
             location: OneOf::Left(Location {
-                uri: uri.clone(),
-                range: self.range,
-            }),
-            container_name: None,
-            data: None,
         }
     }
-}
-
 
 
 /// CURSED-specific symbol kinds
@@ -150,35 +98,19 @@ pub enum CursedSymbolKind {
     Closure,             // closure
     StructField,         // struct field
     InterfaceMethod,     // interface method
-}
-
 /// Visibility levels for symbols
 #[derive(Debug, Clone, PartialEq)]
 pub enum Visibility {
-    Public,
-    Private,
-    Package,
-    Protected,
-}
-
 impl CursedSymbol {
     /// Convert to LSP DocumentSymbol
     pub fn to_document_symbol(&self) -> DocumentSymbol {
         #[allow(deprecated)]
         DocumentSymbol {
-            name: self.name.clone(),
-            detail: self.detail.clone(),
-            kind: self.kind,
-            tags: self.tags.clone(),
-            deprecated: None,
-            range: self.range,
-            selection_range: self.selection_range,
             children: Some(
                 self.children
                     .iter()
                     .map(|child| child.to_document_symbol())
                     .collect()
-            ),
         }
     }
     
@@ -186,12 +118,6 @@ impl CursedSymbol {
     pub fn to_symbol_information(&self, uri: Url) -> SymbolInformation {
         #[allow(deprecated)]
         SymbolInformation {
-            name: self.name.clone(),
-            kind: self.kind,
-            tags: self.tags.clone(),
-            deprecated: None,
-            location: Location::new(uri, self.range),
-            container_name: None,
         }
     }
     
@@ -199,37 +125,25 @@ impl CursedSymbol {
     pub fn with_visibility(mut self, visibility: Visibility) -> Self {
         self.visibility = visibility;
         self
-    }
-    
     /// Set async flag
     pub fn with_async(mut self, is_async: bool) -> Self {
         self.is_async = is_async;
         self
-    }
-    
     /// Set generic flag
     pub fn with_generic(mut self, is_generic: bool) -> Self {
         self.is_generic = is_generic;
         self
-    }
-    
     /// Set type information
     pub fn with_type_info(mut self, type_info: String) -> Self {
         self.type_info = Some(type_info);
         self
-    }
-    
     /// Set documentation
     pub fn with_documentation(mut self, documentation: String) -> Self {
         self.documentation = Some(documentation);
         self
-    }
-    
     /// Add reference location
     pub fn add_reference(&mut self, location: Location) {
         self.references.push(location);
-    }
-    
     /// Add implementation location
     pub fn add_implementation(&mut self, location: Location) {
         self.implementations.push(location);
@@ -239,126 +153,72 @@ impl CursedSymbol {
 /// Symbol hierarchy information
 #[derive(Debug, Clone)]
 pub struct SymbolHierarchy {
-    pub symbol: CursedSymbol,
-    pub parent: Option<Box<SymbolHierarchy>>,
-    pub children: Vec<SymbolHierarchy>,
-    pub call_hierarchy: CallHierarchy,
-}
-
 /// Call hierarchy information
 #[derive(Debug, Clone)]
 pub struct CallHierarchy {
-    pub incoming_calls: Vec<CallHierarchyItem>,
-    pub outgoing_calls: Vec<CallHierarchyItem>,
-}
-
 /// Enhanced symbol provider for CURSED language
 pub struct EnhancedSymbolProvider {
     /// Document symbols cache
-    document_symbols: HashMap<Url, Vec<CursedSymbol>>,
     /// Workspace symbols cache
-    workspace_symbols: HashMap<String, Vec<CursedSymbol>>,
     /// Symbol references cache
-    symbol_references: HashMap<String, Vec<Location>>,
     /// Symbol implementations cache
-    symbol_implementations: HashMap<String, Vec<Location>>,
     /// Call hierarchy cache
-    call_hierarchy: HashMap<String, CallHierarchy>,
     /// Type definitions cache
-    type_definitions: HashMap<String, Vec<Location>>,
-}
-
 impl EnhancedSymbolProvider {
     fn convert_import_statement_to_declaration(&self, import_stmt: &ImportStatement) -> ImportDeclaration {
         ImportDeclaration {
-            module_path: import_stmt.module_path.clone(),
-            items: import_stmt.items.clone(),
-            location: import_stmt.location.clone(),
         }
     }
 
     fn convert_package_statement_to_declaration(&self, package_stmt: &PackageStatement) -> PackageDeclaration {
         PackageDeclaration {
-            name: package_stmt.name.clone(),
-            version: package_stmt.version.clone(),
-            location: package_stmt.location.clone(),
         }
     }
 
     fn convert_to_core_struct_field(&self, field: &ast::declarations::main::StructField) -> core_types::StructField {
         core_types::StructField {
-            name: field.name.value.clone(),
-            field_type: field.field_type.clone(),
-            is_public: field.is_public,
-            location: field.location.clone(),
         }
     }
 
     fn convert_to_core_interface_method(&self, method: &ast::declarations::main::InterfaceMethod) -> core_types::InterfaceMethod {
         core_types::InterfaceMethod {
-            name: method.name.value.clone(),
-            parameters: method.parameters.clone(),
-            return_type: method.return_type.clone(),
-            location: method.location.clone(),
         }
     }
 
     fn convert_to_core_method_declaration(&self, method: &ast::declarations::main::MethodDeclaration) -> core_types::InterfaceMethod {
         core_types::InterfaceMethod {
-            name: method.name.value.clone(),
-            parameters: method.parameters.clone(),
-            return_type: method.return_type.clone(),
-            location: method.location.clone(),
         }
     }
 
     fn convert_to_core_variable_declaration(&self, var_decl: &ast::declarations::main::VariableDeclaration) -> core_types::VariableDeclaration {
         core_types::VariableDeclaration {
-            name: var_decl.name.value.clone(),
-            var_type: var_decl.var_type.clone(),
-            value: var_decl.value.clone(),
-            is_mutable: var_decl.is_mutable,
-            location: var_decl.location.clone(),
         }
     }
 
     /// Create a new enhanced symbol provider
     pub fn new() -> Self {
         Self {
-            document_symbols: HashMap::new(),
-            workspace_symbols: HashMap::new(),
-            symbol_references: HashMap::new(),
-            symbol_implementations: HashMap::new(),
-            call_hierarchy: HashMap::new(),
-            type_definitions: HashMap::new(),
         }
     }
     
     /// Get document symbols for the given content
     #[instrument(skip(self, content))]
     pub async fn get_document_symbols(
-        &mut self,
-        content: &str,
-        uri: &Url,
     ) -> Result<Vec<CursedSymbol>, String> {
         debug!("Extracting document symbols");
         
         // Check cache first
         if let Some(cached_symbols) = self.document_symbols.get(uri) {
             return Ok(cached_symbols.clone());
-        }
-        
         let mut symbols = Vec::new();
         
         // Parse the content
         let mut lexer = Lexer::new(content);
         let mut parser = match Parser::new(lexer) {
-            Ok(p) => p,
             Err(e) => {
                 debug!("Failed to create parser: {:?}", e);
                 return Ok(symbols);
             }
-        };
         
         match parser.parse() {
             Ok(ast) => {
@@ -376,32 +236,21 @@ impl EnhancedSymbolProvider {
         self.document_symbols.insert(uri.clone(), symbols.clone());
         
         Ok(symbols)
-    }
-    
     /// Create method signature string
     fn create_method_signature(&self, name: &str, params: &[String], return_type: Option<&str>) -> String {
         let params_str = params.join(", ");
         match return_type {
-            Some(ret) => format!("{}({}) -> {}", name, params_str, ret),
-            None => format!("{}({})", name, params_str),
         }
     }
 
     /// Create variable symbol
     fn create_variable_symbol(&self, name: &str, var_type: Option<&str>, range: Range, kind: SymbolKind) -> CursedSymbol {
         let mut symbol = CursedSymbol::new(
-            name.to_string(),
-            kind,
-            range,
-            range,
-            CursedSymbolKind::SusVariable,
         );
         if let Some(t) = var_type {
             symbol.type_info = Some(t.to_string());
         }
         symbol
-    }
-
     /// Create lexical function symbol from line
     fn create_lexical_function_symbol(&self, line: &str, line_num: u32) -> Option<CursedSymbol> {
         if line.trim().starts_with("slay ") || line.contains("fn ") {
@@ -419,11 +268,6 @@ impl EnhancedSymbolProvider {
                 .to_string();
                 
             Some(CursedSymbol::new(
-                name,
-                SymbolKind::FUNCTION,
-                range,
-                range,
-                CursedSymbolKind::SlayFunction,
             ))
         } else {
             None
@@ -448,11 +292,6 @@ impl EnhancedSymbolProvider {
                 .to_string();
                 
             Some(CursedSymbol::new(
-                name,
-                SymbolKind::VARIABLE,
-                range,
-                range,
-                if line.trim().starts_with("facts ") { CursedSymbolKind::FactsConstant } else { CursedSymbolKind::SusVariable },
             ))
         } else {
             None
@@ -479,14 +318,8 @@ impl EnhancedSymbolProvider {
                 (SymbolKind::STRUCT, CursedSymbolKind::SquadStruct)
             } else {
                 (SymbolKind::INTERFACE, CursedSymbolKind::CollabInterface)
-            };
                 
             Some(CursedSymbol::new(
-                name,
-                kind,
-                range,
-                range,
-                cursed_kind,
             ))
         } else {
             None
@@ -499,8 +332,6 @@ impl EnhancedSymbolProvider {
         symbol.name.to_lowercase().contains(&query_lower) ||
         symbol.detail.as_ref().map_or(false, |d| d.to_lowercase().contains(&query_lower)) ||
         symbol.documentation.as_ref().map_or(false, |d| d.to_lowercase().contains(&query_lower))
-    }
-
     /// Scan workspace for symbols
     async fn scan_workspace_for_symbols(&mut self, workspace_folders: &[WorkspaceFolder]) -> Vec<CursedSymbol> {
         let mut all_symbols = Vec::new();
@@ -512,16 +343,10 @@ impl EnhancedSymbolProvider {
             
             // This would scan .csd files in the workspace
             // For now, return empty to prevent compilation errors
-        }
-        
         all_symbols
-    }
-
     /// Build call hierarchy for symbol
     fn build_call_hierarchy(&mut self, symbol: &CursedSymbol, uri: &Url) -> CallHierarchy {
         CallHierarchy {
-            incoming_calls: Vec::new(),
-            outgoing_calls: Vec::new(),
         }
     }
 
@@ -529,191 +354,89 @@ impl EnhancedSymbolProvider {
     fn get_function_range(&self, func: &declarations::main::FunctionStatement) -> Range {
         // Simplified - return dummy range
         Range::new(Position::new(0, 0), Position::new(1, 0))
-    }
-
     fn get_function_name_range(&self, func: &declarations::main::FunctionStatement) -> Range {
         // Simplified - return dummy range
         Range::new(Position::new(0, 0), Position::new(0, 10))
-    }
-
     fn get_struct_range(&self, struct_decl: &StructDeclaration) -> Range {
         Range::new(Position::new(0, 0), Position::new(1, 0))
-    }
-
     fn get_struct_name_range(&self, struct_decl: &StructDeclaration) -> Range {
         Range::new(Position::new(0, 0), Position::new(0, 10))
-    }
-
     fn get_interface_range(&self, interface_decl: &InterfaceDeclaration) -> Range {
         Range::new(Position::new(0, 0), Position::new(1, 0))
-    }
-
     fn get_interface_name_range(&self, interface_decl: &InterfaceDeclaration) -> Range {
         Range::new(Position::new(0, 0), Position::new(0, 10))
-    }
-
     fn get_variable_range(&self, var_decl: &VariableDeclaration) -> Range {
         Range::new(Position::new(0, 0), Position::new(0, 20))
-    }
-
     fn get_variable_name_range(&self, var_decl: &VariableDeclaration) -> Range {
         Range::new(Position::new(0, 0), Position::new(0, 10))
-    }
-
     fn get_constant_range(&self, const_decl: &ConstantDeclaration) -> Range {
         Range::new(Position::new(0, 0), Position::new(0, 20))
-    }
-
     fn get_constant_name_range(&self, const_decl: &ConstantDeclaration) -> Range {
         Range::new(Position::new(0, 0), Position::new(0, 10))
-    }
-
     fn get_import_range(&self, import_decl: &ImportDeclaration) -> Range {
         Range::new(Position::new(0, 0), Position::new(0, 30))
-    }
-
     fn get_package_range(&self, package_decl: &PackageDeclaration) -> Range {
         Range::new(Position::new(0, 0), Position::new(0, 20))
-    }
-
     fn get_package_name_range(&self, package_decl: &PackageDeclaration) -> Range {
         Range::new(Position::new(0, 0), Position::new(0, 10))
-    }
-
     fn get_parameter_range(&self, param: &Parameter) -> Range {
         Range::new(Position::new(0, 0), Position::new(0, 15))
-    }
-
     fn get_parameter_name_range(&self, param: &Parameter) -> Range {
         Range::new(Position::new(0, 0), Position::new(0, 8))
-    }
-
     fn get_field_range(&self, field: &StructField) -> Range {
         Range::new(Position::new(0, 0), Position::new(0, 15))
-    }
-
     fn get_field_name_range(&self, field: &StructField) -> Range {
         Range::new(Position::new(0, 0), Position::new(0, 8))
-    }
-
     fn get_method_range(&self, method: &InterfaceMethod) -> Range {
         Range::new(Position::new(0, 0), Position::new(1, 0))
-    }
-
     fn get_method_name_range(&self, method: &InterfaceMethod) -> Range {
         Range::new(Position::new(0, 0), Position::new(0, 10))
-    }
-
     fn is_test_function(&self, name: &str) -> bool {
         name.starts_with("test_") || name.contains("test")
-    }
-
     fn create_function_symbol(&self, func: &declarations::main::FunctionStatement) -> CursedSymbol {
         let range = self.get_function_range(func);
         let selection_range = self.get_function_name_range(func);
         CursedSymbol::new(
-            "function_name".to_string(),
-            SymbolKind::FUNCTION,
-            range,
-            selection_range,
-            CursedSymbolKind::SlayFunction,
         )
-    }
-
     fn create_struct_symbol(&self, struct_decl: &StructDeclaration) -> CursedSymbol {
         let range = self.get_struct_range(struct_decl);
         let selection_range = self.get_struct_name_range(struct_decl);
         CursedSymbol::new(
-            struct_decl.name.clone(),
-            SymbolKind::STRUCT,
-            range,
-            selection_range,
-            CursedSymbolKind::SquadStruct,
         )
-    }
-
     fn create_interface_symbol(&self, interface_decl: &InterfaceDeclaration) -> CursedSymbol {
         let range = self.get_interface_range(interface_decl);
         let selection_range = self.get_interface_name_range(interface_decl);
         CursedSymbol::new(
-            interface_decl.name.clone(),
-            SymbolKind::INTERFACE,
-            range,
-            selection_range,
-            CursedSymbolKind::CollabInterface,
         )
-    }
-
     fn create_import_symbol(&self, import_decl: &ImportDeclaration) -> CursedSymbol {
         let range = self.get_import_range(import_decl);
         CursedSymbol::new(
-            import_decl.path.clone(),
-            SymbolKind::MODULE,
-            range,
-            range,
-            CursedSymbolKind::ImportDeclaration,
         )
-    }
-
     fn create_package_symbol(&self, package_decl: &PackageDeclaration) -> CursedSymbol {
         let range = self.get_package_range(package_decl);
         let selection_range = self.get_package_name_range(package_decl);
         CursedSymbol::new(
-            package_decl.name.clone(),
-            SymbolKind::PACKAGE,
-            range,
-            selection_range,
-            CursedSymbolKind::PackageDeclaration,
         )
-    }
-
     fn create_parameter_symbol(&self, param: &Parameter) -> CursedSymbol {
         let range = self.get_parameter_range(param);
         let selection_range = self.get_parameter_name_range(param);
         CursedSymbol::new(
-            param.name.clone(),
-            SymbolKind::VARIABLE,
-            range,
-            selection_range,
-            CursedSymbolKind::Parameter,
         )
-    }
-
     fn create_field_symbol(&self, field: &StructField) -> CursedSymbol {
         let range = self.get_field_range(self.convert_to_core_struct_field(field));
         let selection_range = self.get_field_name_range(self.convert_to_core_struct_field(field));
         CursedSymbol::new(
-            field.name.clone(),
-            SymbolKind::FIELD,
-            range,
-            selection_range,
-            CursedSymbolKind::StructField,
         )
-    }
-
     fn create_method_symbol(&self, method: &InterfaceMethod) -> CursedSymbol {
         let range = self.get_method_range(self.convert_to_core_interface_method(method));
         let selection_range = self.get_method_name_range(self.convert_to_core_interface_method(method));
         CursedSymbol::new(
-            method.name.clone(),
-            SymbolKind::METHOD,
-            range,
-            selection_range,
-            CursedSymbolKind::InterfaceMethod,
         )
-    }
-
     fn extract_local_symbols(&self, block: &BlockStatement, symbols: &mut Vec<CursedSymbol>) {
         // Simplified implementation for local symbol extraction
         // In a real implementation, this would traverse the block and extract local variables
-    }
-
     /// Extract symbols from parsed AST
     async fn extract_symbols_from_ast(
-        &mut self,
-        ast: &Program,
-        symbols: &mut Vec<CursedSymbol>,
-        uri: &Url,
     ) {
         for statement in &ast.statements {
             if let Some(func_decl) = statement.as_any().downcast_ref::<FunctionStatement>() {
@@ -744,8 +467,6 @@ impl EnhancedSymbolProvider {
                 symbols.push(symbol);
             }
         }
-    }
-    
     /// Create function symbol
     async fn create_function_symbol(&mut self, func_decl: &FunctionDeclaration, uri: &Url) -> CursedSymbol {
         let range = self.get_function_range(func_decl);
@@ -755,7 +476,6 @@ impl EnhancedSymbolProvider {
             SymbolKind::METHOD
         } else {
             SymbolKind::FUNCTION
-        };
         
         let cursed_kind = if self.is_test_function(&func_decl.name.value) {
             CursedSymbolKind::TestFunction
@@ -763,14 +483,8 @@ impl EnhancedSymbolProvider {
             CursedSymbolKind::GenericFunction
         } else {
             CursedSymbolKind::SlayFunction
-        };
         
         let mut symbol = CursedSymbol::new(
-            func_decl.name.value.clone(),
-            kind,
-            range,
-            selection_range,
-            cursed_kind,
         );
         
         // Add function details
@@ -781,29 +495,18 @@ impl EnhancedSymbolProvider {
         for param in &func_decl.parameters {
             let param_symbol = self.create_parameter_symbol(param);
             symbol.add_child(param_symbol);
-        }
-        
         // Extract local symbols from function body
         let mut local_symbols = Vec::new();
         self.extract_local_symbols(&func_decl.body, &mut local_symbols);
         for local_symbol in local_symbols {
             symbol.add_child(local_symbol);
-        }
-        
         symbol
-    }
-    
     /// Create struct symbol
     async fn create_struct_symbol(&mut self, struct_decl: &StructDeclaration, uri: &Url) -> CursedSymbol {
         let range = self.get_struct_range(struct_decl);
         let selection_range = self.get_struct_name_range(struct_decl);
         
         let mut symbol = CursedSymbol::new(
-            struct_decl.name.value.clone(),
-            SymbolKind::STRUCT,
-            range,
-            selection_range,
-            CursedSymbolKind::SquadStruct,
         );
         
         symbol.detail = Some("struct".to_string());
@@ -813,22 +516,13 @@ impl EnhancedSymbolProvider {
         for field in &struct_decl.fields {
             let field_symbol = self.create_field_symbol(&self.convert_to_core_struct_field(field));
             symbol.add_child(field_symbol);
-        }
-        
         symbol
-    }
-    
     /// Create interface symbol
     async fn create_interface_symbol(&mut self, interface_decl: &InterfaceDeclaration, uri: &Url) -> CursedSymbol {
         let range = self.get_interface_range(interface_decl);
         let selection_range = self.get_interface_name_range(interface_decl);
         
         let mut symbol = CursedSymbol::new(
-            interface_decl.name.value.clone(),
-            SymbolKind::INTERFACE,
-            range,
-            selection_range,
-            CursedSymbolKind::CollabInterface,
         );
         
         symbol.detail = Some("interface".to_string());
@@ -838,22 +532,13 @@ impl EnhancedSymbolProvider {
         for method in &interface_decl.methods {
             let method_symbol = self.create_method_symbol(&self.convert_to_core_interface_method(method));
             symbol.add_child(method_symbol);
-        }
-        
         symbol
-    }
-    
     /// Create variable symbol
     async fn create_variable_symbol(&mut self, var_decl: &VariableDeclaration, uri: &Url) -> CursedSymbol {
         let range = self.get_variable_range(self.convert_to_core_variable_declaration(var_decl));
         let selection_range = self.get_variable_name_range(self.convert_to_core_variable_declaration(var_decl));
         
         let mut symbol = CursedSymbol::new(
-            var_decl.name.value.clone(),
-            SymbolKind::VARIABLE,
-            range,
-            selection_range,
-            CursedSymbolKind::SusVariable,
         );
         
         // Add type information if available
@@ -862,22 +547,13 @@ impl EnhancedSymbolProvider {
             symbol.detail = Some(format!("sus {}: {}", var_decl.name.name, symbol.type_info.as_ref().unwrap()));
         } else {
             symbol.detail = Some(format!("sus {}", var_decl.name.name));
-        }
-        
         symbol
-    }
-    
     /// Create constant symbol
     async fn create_constant_symbol(&mut self, const_decl: &ConstantDeclaration, uri: &Url) -> CursedSymbol {
         let range = self.get_constant_range(const_decl);
         let selection_range = self.get_constant_name_range(const_decl);
         
         let mut symbol = CursedSymbol::new(
-            const_decl.name.value.clone(),
-            SymbolKind::CONSTANT,
-            range,
-            selection_range,
-            CursedSymbolKind::FactsConstant,
         );
         
         // Add type information if available
@@ -886,13 +562,9 @@ impl EnhancedSymbolProvider {
             symbol.detail = Some(format!("facts {}: {}", const_decl.name.name, symbol.type_info.as_ref().unwrap()));
         } else {
             symbol.detail = Some(format!("facts {}", const_decl.name.name));
-        }
-        
         // symbol.tags = Some(vec![SymbolTag::READONLY]); // READONLY not available
         
         symbol
-    }
-    
     /// Create import symbol
     async fn create_import_symbol(&mut self, import_decl: &ImportDeclaration, uri: &Url) -> CursedSymbol {
         let range = self.get_import_range(import_decl);
@@ -901,106 +573,64 @@ impl EnhancedSymbolProvider {
         let name = import_decl.path.clone();
         
         let mut symbol = CursedSymbol::new(
-            name.clone(),
-            SymbolKind::MODULE,
-            range,
-            selection_range,
-            CursedSymbolKind::ImportDeclaration,
         );
         
         symbol.detail = Some(format!("import \"{}\"", name));
         
         symbol
-    }
-    
     /// Create package symbol
     async fn create_package_symbol(&mut self, package_decl: &PackageDeclaration, uri: &Url) -> CursedSymbol {
         let range = self.get_package_range(package_decl);
         let selection_range = self.get_package_name_range(package_decl);
         
         let mut symbol = CursedSymbol::new(
-            package_decl.name.value.clone(),
-            SymbolKind::PACKAGE,
-            range,
-            selection_range,
-            CursedSymbolKind::PackageDeclaration,
         );
         
         symbol.detail = Some(format!("package {}", package_decl.name.value));
         
         symbol
-    }
-    
     /// Create parameter symbol
     fn create_parameter_symbol(&self, param: &Parameter) -> CursedSymbol {
         let range = self.get_parameter_range(param);
         let selection_range = self.get_parameter_name_range(param);
         
         let mut symbol = CursedSymbol::new(
-            param.name.clone(),
-            SymbolKind::VARIABLE,
-            range,
-            selection_range,
-            CursedSymbolKind::Parameter,
         );
         
         symbol.detail = Some(format!("{}: {}", param.name, param.param_type));
         symbol.type_info = Some(param.param_type.clone());
         
         symbol
-    }
-    
     /// Create field symbol
     fn create_field_symbol(&self, field: &StructField) -> CursedSymbol {
         let range = self.get_field_range(self.convert_to_core_struct_field(field));
         let selection_range = self.get_field_name_range(self.convert_to_core_struct_field(field));
         
         let mut symbol = CursedSymbol::new(
-            field.name.value.clone(),
-            SymbolKind::PROPERTY,
-            range,
-            selection_range,
-            CursedSymbolKind::SusVariable,
         );
         
         symbol.detail = Some(format!("{}: {:?}", field.name.value, field.type_annotation));
         symbol.type_info = Some(format!("{:?}", field.type_annotation));
         
         symbol
-    }
-    
     /// Create method symbol
     fn create_method_symbol(&self, method: &InterfaceMethod) -> CursedSymbol {
         let range = self.get_method_range(self.convert_to_core_interface_method(method));
         let selection_range = self.get_method_name_range(self.convert_to_core_interface_method(method));
         
         let mut symbol = CursedSymbol::new(
-            method.name.value.clone(),
-            SymbolKind::METHOD,
-            range,
-            selection_range,
-            CursedSymbolKind::SlayFunction,
         );
         
         symbol.detail = Some(self.create_method_signature(&method.name.value, &[], None));
         
         symbol
-    }
-    
     /// Create basic variable symbol
     fn create_variable_symbol_basic(&self, name: &str, var_type: &str) -> CursedSymbol {
         let range = Range::new(Position::new(0, 0), Position::new(0, 0));
         let mut symbol = CursedSymbol::new(
-            name.to_string(),
-            SymbolKind::VARIABLE,
-            range,
-            range,
-            CursedSymbolKind::SusVariable,
         );
         symbol.detail = Some(format!("{}: {}", name, var_type));
         symbol
-    }
-    
     /// Extract local symbols from block statement
     fn extract_local_symbols(&self, block: &BlockStatement, symbols: &mut Vec<CursedSymbol>) {
         for statement in &block.statements {
@@ -1019,10 +649,6 @@ impl EnhancedSymbolProvider {
     
     /// Extract symbols using lexical analysis when parsing fails
     async fn extract_symbols_lexically(
-        &mut self,
-        content: &str,
-        symbols: &mut Vec<CursedSymbol>,
-        uri: &Url,
     ) {
         let mut lexer = Lexer::new(content);
         let lines: Vec<&str> = content.lines().collect();
@@ -1032,8 +658,6 @@ impl EnhancedSymbolProvider {
                 Ok(token) => {
                     if token.token_type == TokenType::Eof {
                         break;
-                    }
-                    
                     // Look for function-like patterns
                     if token.literal == "slay" {
                         if let Some(symbol) = self.create_lexical_function_symbol(&token.literal, line_num) {
@@ -1053,17 +677,11 @@ impl EnhancedSymbolProvider {
                         }
                     }
                 }
-                Err(_) => break,
             }
         }
-    }
-    
     /// Search workspace symbols
     #[instrument(skip(self))]
     pub async fn search_workspace_symbols(
-        &mut self,
-        query: &str,
-        workspace_folders: &[WorkspaceFolder],
     ) -> Result<Vec<WorkspaceSymbol>, String> {
         debug!("Searching workspace symbols for query: {}", query);
         
@@ -1077,8 +695,6 @@ impl EnhancedSymbolProvider {
                     results.push(symbol.to_workspace_symbol(&uri));
                 }
             }
-        }
-        
         // If no results and we have workspace folders, scan files
         if results.len() == 0 && workspace_folders.len() > 0 {
             let additional_symbols = self.scan_workspace_for_symbols(workspace_folders).await;
@@ -1088,34 +704,20 @@ impl EnhancedSymbolProvider {
                     results.push(symbol.to_workspace_symbol(&uri));
                 }
             }
-        }
-        
         Ok(results)
-    }
-    
     /// Scan workspace for symbols
     async fn scan_workspace_for_symbols(
-        &mut self,
-        workspace_folders: &[WorkspaceFolder],
-        query: &str,
-        results: &mut Vec<WorkspaceSymbol>,
     ) {
         // This would scan the filesystem for .csd files and extract symbols
         // For now, return empty results
-    }
-    
     /// Check if symbol matches query
     fn symbol_matches_query(&self, symbol_name: &str, query: &str) -> bool {
         if query.len() == 0 {
             return true;
-        }
-        
         // Case-insensitive substring match
         symbol_name.to_lowercase().contains(&query.to_lowercase()) ||
         // Fuzzy matching (simplified)
         self.fuzzy_match(symbol_name, query)
-    }
-    
     /// Simple fuzzy matching
     fn fuzzy_match(&self, text: &str, pattern: &str) -> bool {
         let text = text.to_lowercase();
@@ -1127,28 +729,15 @@ impl EnhancedSymbolProvider {
         while let Some(pattern_char) = pattern_chars.next() {
             loop {
                 match text_chars.next() {
-                    Some(text_char) if text_char == pattern_char => break,
-                    Some(_) => continue,
-                    None => return false,
                 }
             }
-        }
-        
         true
-    }
-    
     /// Get call hierarchy for a symbol
     pub async fn get_call_hierarchy(
-        &mut self,
-        symbol_name: &str,
-        uri: &Url,
-        position: Position,
     ) -> Result<CallHierarchy, String> {
         // Check cache first
         if let Some(hierarchy) = self.call_hierarchy.get(symbol_name) {
             return Ok(hierarchy.clone());
-        }
-        
         // Create a dummy symbol and build call hierarchy  
         let dummy_symbol = self.create_variable_symbol_basic(symbol_name, "unknown");
         let hierarchy = self.build_call_hierarchy(&dummy_symbol, uri);
@@ -1157,241 +746,134 @@ impl EnhancedSymbolProvider {
         self.call_hierarchy.insert(symbol_name.to_string(), hierarchy.clone());
         
         Ok(hierarchy)
-    }
-    
     /// Build call hierarchy for a symbol by name
     async fn build_call_hierarchy_by_name(
-        &mut self,
-        symbol_name: &str,
-        uri: &Url,
-        position: Position,
     ) -> Result<CallHierarchy, String> {
         // This would analyze the code to find incoming and outgoing calls
         // For now, return empty hierarchy
         Ok(CallHierarchy {
-            incoming_calls: Vec::new(),
-            outgoing_calls: Vec::new(),
         })
-    }
-    
     // Helper methods for range calculation
     
     fn get_function_range(&self, func_decl: &FunctionDeclaration) -> Range {
         // Calculate range from function start to end
         Range {
             start: Position {
-                line: (func_decl.name.line - 1) as u32,
-                character: 0,
-            },
             end: Position {
-                line: (func_decl.name.line - 1) as u32,
                 character: 100, // Simplified
-            },
         }
     }
     
     fn get_function_name_range(&self, func_decl: &FunctionDeclaration) -> Range {
         Range {
             start: Position {
-                line: (func_decl.name.line - 1) as u32,
-                character: func_decl.name.column as u32,
-            },
             end: Position {
-                line: (func_decl.name.line - 1) as u32,
-                character: (func_decl.name.column + func_decl.name.name.len()) as u32,
-            },
         }
     }
     
     fn get_struct_range(&self, struct_decl: &StructDeclaration) -> Range {
         Range {
             start: Position {
-                line: (struct_decl.name.line - 1) as u32,
-                character: 0,
-            },
             end: Position {
-                line: (struct_decl.name.line - 1) as u32,
-                character: 100,
-            },
         }
     }
     
     fn get_struct_name_range(&self, struct_decl: &StructDeclaration) -> Range {
         Range {
             start: Position {
-                line: (struct_decl.name.line - 1) as u32,
-                character: struct_decl.name.column as u32,
-            },
             end: Position {
-                line: (struct_decl.name.line - 1) as u32,
-                character: (struct_decl.name.column + struct_decl.name.name.len()) as u32,
-            },
         }
     }
     
     fn get_interface_range(&self, interface_decl: &InterfaceDeclaration) -> Range {
         Range {
             start: Position {
-                line: (interface_decl.name.line - 1) as u32,
-                character: 0,
-            },
             end: Position {
-                line: (interface_decl.name.line - 1) as u32,
-                character: 100,
-            },
         }
     }
     
     fn get_interface_name_range(&self, interface_decl: &InterfaceDeclaration) -> Range {
         Range {
             start: Position {
-                line: (interface_decl.name.line - 1) as u32,
-                character: interface_decl.name.column as u32,
-            },
             end: Position {
-                line: (interface_decl.name.line - 1) as u32,
-                character: (interface_decl.name.column + interface_decl.name.name.len()) as u32,
-            },
         }
     }
     
     fn get_variable_range(&self, var_decl: &VariableDeclaration) -> Range {
         Range {
             start: Position {
-                line: (var_decl.name.line - 1) as u32,
-                character: 0,
-            },
             end: Position {
-                line: (var_decl.name.line - 1) as u32,
-                character: 100,
-            },
         }
     }
     
     fn get_variable_name_range(&self, var_decl: &VariableDeclaration) -> Range {
         Range {
             start: Position {
-                line: (var_decl.name.line - 1) as u32,
-                character: var_decl.name.column as u32,
-            },
             end: Position {
-                line: (var_decl.name.line - 1) as u32,
-                character: (var_decl.name.column + var_decl.name.name.len()) as u32,
-            },
         }
     }
     
     fn get_constant_range(&self, const_decl: &ConstantDeclaration) -> Range {
         Range {
             start: Position {
-                line: (const_decl.name.line - 1) as u32,
-                character: 0,
-            },
             end: Position {
-                line: (const_decl.name.line - 1) as u32,
-                character: 100,
-            },
         }
     }
     
     fn get_constant_name_range(&self, const_decl: &ConstantDeclaration) -> Range {
         Range {
             start: Position {
-                line: (const_decl.name.line - 1) as u32,
-                character: const_decl.name.column as u32,
-            },
             end: Position {
-                line: (const_decl.name.line - 1) as u32,
-                character: (const_decl.name.column + const_decl.name.name.len()) as u32,
-            },
         }
     }
     
     fn get_import_range(&self, import_decl: &ImportDeclaration) -> Range {
         // Simplified implementation
         Range {
-            start: Position { line: 0, character: 0 },
-            end: Position { line: 0, character: 100 },
         }
     }
     
     fn get_package_range(&self, package_decl: &PackageDeclaration) -> Range {
         Range {
             start: Position {
-                line: (package_decl.name.line - 1) as u32,
-                character: 0,
-            },
             end: Position {
-                line: (package_decl.name.line - 1) as u32,
-                character: 100,
-            },
         }
     }
     
     fn get_package_name_range(&self, package_decl: &PackageDeclaration) -> Range {
         Range {
             start: Position {
-                line: (package_decl.name.line - 1) as u32,
-                character: package_decl.name.column as u32,
-            },
             end: Position {
-                line: (package_decl.name.line - 1) as u32,
-                character: (package_decl.name.column + package_decl.name.name.len()) as u32,
-            },
         }
     }
     
     fn get_parameter_range(&self, param: &Parameter) -> Range {
         Range {
             start: Position {
-                line: (param.name.line - 1) as u32,
-                character: param.name.column as u32,
-            },
             end: Position {
-                line: (param.name.line - 1) as u32,
-                character: (param.name.column + param.name.name.len()) as u32,
-            },
         }
     }
     
     fn get_parameter_name_range(&self, param: &Parameter) -> Range {
         self.get_parameter_range(param)
-    }
-    
     fn get_field_range(&self, field: &StructField) -> Range {
         Range {
             start: Position {
-                line: (field.name.line - 1) as u32,
-                character: field.name.column as u32,
-            },
             end: Position {
-                line: (field.name.line - 1) as u32,
-                character: (field.name.column + field.name.name.len()) as u32,
-            },
         }
     }
     
     fn get_field_name_range(&self, field: &StructField) -> Range {
         self.get_field_range(self.convert_to_core_struct_field(field))
-    }
-    
     fn get_method_range(&self, method: &InterfaceMethod) -> Range {
         Range {
             start: Position {
-                line: (method.name.line - 1) as u32,
-                character: method.name.column as u32,
-            },
             end: Position {
-                line: (method.name.line - 1) as u32,
-                character: (method.name.column + method.name.name.len()) as u32,
-            },
         }
     }
     
     fn get_method_name_range(&self, method: &InterfaceMethod) -> Range {
         self.get_method_range(self.convert_to_core_interface_method(method))
-    }
-    
     // Helper methods for signature creation
     
     fn create_function_signature(&self, func_decl: &FunctionDeclaration) -> String {
@@ -1408,8 +890,6 @@ impl EnhancedSymbolProvider {
             .unwrap_or_default();
         
         format!("slay {}({}){}", func_decl.name.name, params.join(", "), return_type)
-    }
-    
     fn create_method_signature(&self, method: &InterfaceMethod) -> String {
         let params: Vec<String> = method
             .parameters
@@ -1424,90 +904,42 @@ impl EnhancedSymbolProvider {
             .unwrap_or_default();
         
         format!("{}({}){}", method.name.name, params.join(", "), return_type)
-    }
-    
     fn is_test_function(&self, name: &str) -> bool {
         name.starts_with("test_") || name.ends_with("_test") || name.contains("_test_")
-    }
-    
     // Lexical symbol creation methods
     
     fn create_lexical_function_symbol(&self, token: &Token, lines: &[&str]) -> Option<CursedSymbol> {
         // Simple lexical function symbol creation
         let range = Range {
             start: Position {
-                line: (token.line - 1) as u32,
-                character: token.column as u32,
-            },
             end: Position {
-                line: (token.line - 1) as u32,
-                character: (token.column + token.lexeme.len()) as u32,
-            },
-        };
         
         Some(CursedSymbol::new(
-            "function".to_string(),
-            SymbolKind::FUNCTION,
-            CursedSymbolKind::SlayFunction,
-            range,
-            range,
         ))
-    }
-    
     fn create_lexical_variable_symbol(&self, token: &Token, lines: &[&str]) -> Option<CursedSymbol> {
         let range = Range {
             start: Position {
-                line: (token.line - 1) as u32,
-                character: token.column as u32,
-            },
             end: Position {
-                line: (token.line - 1) as u32,
-                character: (token.column + token.lexeme.len()) as u32,
-            },
-        };
         
         let (kind, cursed_kind) = if token.lexeme == "sus" {
             (SymbolKind::VARIABLE, CursedSymbolKind::SusVariable)
         } else {
             (SymbolKind::CONSTANT, CursedSymbolKind::FactsConstant)
-        };
         
         Some(CursedSymbol::new(
-            "variable".to_string(),
-            kind,
-            cursed_kind,
-            range,
-            range,
         ))
-    }
-    
     fn create_lexical_type_symbol(&self, token: &Token, lines: &[&str]) -> Option<CursedSymbol> {
         let range = Range {
             start: Position {
-                line: (token.line - 1) as u32,
-                character: token.column as u32,
-            },
             end: Position {
-                line: (token.line - 1) as u32,
-                character: (token.column + token.lexeme.len()) as u32,
-            },
-        };
         
         let (kind, cursed_kind) = if token.lexeme == "squad" {
             (SymbolKind::STRUCT, CursedSymbolKind::SquadStruct)
         } else {
             (SymbolKind::INTERFACE, CursedSymbolKind::CollabInterface)
-        };
         
         Some(CursedSymbol::new(
-            "type".to_string(),
-            kind,
-            cursed_kind,
-            range,
-            range,
         ))
-    }
-
     // Missing methods needed by the async functions
     
     async fn create_field_symbol(&mut self, field: &crate::ast::declarations::StructField, uri: &Url) -> CursedSymbol {
@@ -1515,146 +947,81 @@ impl EnhancedSymbolProvider {
         let selection_range = self.get_field_name_range(self.convert_to_core_struct_field(field));
         
         CursedSymbol::new(
-            field.name.clone(),
-            SymbolKind::FIELD,
-            range,
-            selection_range,
-            CursedSymbolKind::StructField,
         )
-    }
-
     fn get_field_range(&self, _field: &crate::ast::declarations::StructField) -> Range {
         // Placeholder implementation
         Range::default()
-    }
-
     fn get_field_name_range(&self, _field: &crate::ast::declarations::StructField) -> Range {
         // Placeholder implementation  
         Range::default()
-    }
-
     async fn create_method_symbol(&mut self, method: &crate::ast::declarations::InterfaceMethod, uri: &Url) -> CursedSymbol {
         let range = self.get_method_range(self.convert_to_core_interface_method(method));
         let selection_range = self.get_method_name_range(self.convert_to_core_interface_method(method));
         
         let mut symbol = CursedSymbol::new(
-            method.name.clone(),
-            SymbolKind::METHOD,
-            range,
-            selection_range,
-            CursedSymbolKind::InterfaceMethod,
         );
         
         symbol.detail = Some(self.create_method_signature(&method.name, &[], None));
         symbol
-    }
-
     fn get_method_range(&self, _method: &crate::ast::declarations::InterfaceMethod) -> Range {
         // Placeholder implementation
         Range::default()
-    }
-
     fn get_method_name_range(&self, _method: &crate::ast::declarations::InterfaceMethod) -> Range {
         // Placeholder implementation
         Range::default()
-    }
-
     fn create_method_signature(&self, method: &crate::ast::declarations::InterfaceMethod) -> String {
         format!("{}()", method.name)
-    }
-
     fn get_interface_range(&self, _interface_decl: &crate::ast::declarations::InterfaceDeclaration) -> Range {
         // Placeholder implementation
         Range::default()
-    }
-
     fn get_interface_name_range(&self, _interface_decl: &crate::ast::declarations::InterfaceDeclaration) -> Range {
         // Placeholder implementation
         Range::default()
-    }
-
     fn get_variable_range(&self, _var_decl: &crate::ast::declarations::VariableDeclaration) -> Range {
         // Placeholder implementation
         Range::default()
-    }
-
     fn get_variable_name_range(&self, _var_decl: &crate::ast::declarations::VariableDeclaration) -> Range {
         // Placeholder implementation
         Range::default()
-    }
-
     fn get_constant_range(&self, _const_decl: &crate::ast::declarations::ConstantDeclaration) -> Range {
         // Placeholder implementation
         Range::default()
-    }
-
     fn get_constant_name_range(&self, _const_decl: &crate::ast::declarations::ConstantDeclaration) -> Range {
         // Placeholder implementation
         Range::default()
-    }
-
     fn get_import_range(&self, _import_decl: &crate::ast::declarations::ImportDeclaration) -> Range {
         // Placeholder implementation
         Range::default()
-    }
-
     fn get_package_range(&self, _package_decl: &crate::ast::declarations::PackageDeclaration) -> Range {
         // Placeholder implementation
         Range::default()
-    }
-
     fn get_package_name_range(&self, _package_decl: &crate::ast::declarations::PackageDeclaration) -> Range {
         // Placeholder implementation
         Range::default()
-    }
-
     fn get_parameter_range(&self, _param: &crate::ast::declarations::Parameter) -> Range {
         // Placeholder implementation
         Range::default()
-    }
-
     fn get_parameter_name_range(&self, _param: &crate::ast::declarations::Parameter) -> Range {
         // Placeholder implementation
         Range::default()
-    }
-
     async fn create_variable_symbol(&mut self, var_decl: &crate::ast::declarations::VariableDeclaration, uri: &Url) -> CursedSymbol {
         let range = self.get_variable_range(self.convert_to_core_variable_declaration(var_decl));
         let selection_range = self.get_variable_name_range(self.convert_to_core_variable_declaration(var_decl));
         
         CursedSymbol::new(
-            var_decl.name.clone(),
-            SymbolKind::VARIABLE,
-            range,
-            selection_range,
-            CursedSymbolKind::SusVariable,
         )
-    }
-
     fn create_lexical_function_symbol(&self, _token: &crate::lexer::Token, _lines: &[&str]) -> Option<CursedSymbol> {
         // Placeholder implementation
         None
-    }
-
     fn create_lexical_variable_symbol(&self, _token: &crate::lexer::Token, _lines: &[&str]) -> Option<CursedSymbol> {
         // Placeholder implementation
         None
-    }
-
     fn create_lexical_type_symbol(&self, _token: &crate::lexer::Token, _lines: &[&str]) -> Option<CursedSymbol> {
         // Placeholder implementation
         None
-    }
-
     fn symbol_matches_query(&self, symbol_name: &str, query: &str) -> bool {
         symbol_name.to_lowercase().contains(&query.to_lowercase())
-    }
-
     async fn scan_workspace_for_symbols(
-        &mut self,
-        _workspace_folders: &[tower_lsp::lsp_types::WorkspaceFolder],
-        query: &str,
-        results: &mut Vec<tower_lsp::lsp_types::WorkspaceSymbol>,
     ) {
         // Placeholder implementation - would scan workspace files for symbols
         // For now, just return empty results
@@ -1664,38 +1031,21 @@ impl EnhancedSymbolProvider {
 impl Default for EnhancedSymbolProvider {
     fn convert_to_core_struct_field(&self, field: &ast::declarations::main::StructField) -> core_types::StructField {
         core_types::StructField {
-            name: field.name.value.clone(),
-            field_type: field.field_type.clone(),
-            is_public: field.is_public,
-            location: field.location.clone(),
         }
     }
 
     fn convert_to_core_interface_method(&self, method: &ast::declarations::main::InterfaceMethod) -> core_types::InterfaceMethod {
         core_types::InterfaceMethod {
-            name: method.name.value.clone(),
-            parameters: method.parameters.clone(),
-            return_type: method.return_type.clone(),
-            location: method.location.clone(),
         }
     }
 
     fn convert_to_core_method_declaration(&self, method: &ast::declarations::main::MethodDeclaration) -> core_types::InterfaceMethod {
         core_types::InterfaceMethod {
-            name: method.name.value.clone(),
-            parameters: method.parameters.clone(),
-            return_type: method.return_type.clone(),
-            location: method.location.clone(),
         }
     }
 
     fn convert_to_core_variable_declaration(&self, var_decl: &ast::declarations::main::VariableDeclaration) -> core_types::VariableDeclaration {
         core_types::VariableDeclaration {
-            name: var_decl.name.value.clone(),
-            var_type: var_decl.var_type.clone(),
-            value: var_decl.value.clone(),
-            is_mutable: var_decl.is_mutable,
-            location: var_decl.location.clone(),
         }
     }
 

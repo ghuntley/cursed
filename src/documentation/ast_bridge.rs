@@ -18,25 +18,17 @@ pub trait AstConverter {
     
     /// Convert from source to target type
     fn convert(&self) -> crate::error::Result<()>;
-}
-
 /// Trait for converting to documentation-specific AST nodes
 pub trait ToDocumentationNode {
     /// Convert to documentation node
     fn to_doc_node(&self) -> crate::error::Result<()>;
-}
-
 /// Bridge between core AST and documentation AST
 pub struct AstBridge {
     /// Cache for type conversions
-    conversion_cache: HashMap<String, ast_node_support::Expression>,
-}
-
 impl AstBridge {
     /// Create a new AST bridge
     pub fn new() -> Self {
         Self {
-            conversion_cache: HashMap::new(),
         }
     }
 
@@ -70,26 +62,18 @@ impl AstBridge {
                 Ok(ast_node_support::Expression {
                     expr_type: ast_node_support::ExpressionType::Identifier(
                         ast_node_support::IdentifierExpression {
-                            name: "unknown_node".to_string(),
                         }
-                    ),
                 })
             }
         }
-    }
-
     /// Convert Program to documentation expression
     fn convert_program_node(&self, program: &Program) -> crate::error::Result<()> {
         // For program nodes, create an identifier representing the module
         Ok(ast_node_support::Expression {
             expr_type: ast_node_support::ExpressionType::Identifier(
                 ast_node_support::IdentifierExpression {
-                    name: program.package_name.clone().unwrap_or_else(|| "main".to_string()),
                 }
-            ),
         })
-    }
-
     /// Convert expression node to documentation expression
     fn convert_expression_node(&self, expr: &Box<dyn Expression>) -> crate::error::Result<()> {
         // Use string representation as fallback
@@ -104,29 +88,22 @@ impl AstBridge {
                         function: Box::new(ast_node_support::Expression {
                             expr_type: ast_node_support::ExpressionType::Identifier(
                                 ast_node_support::IdentifierExpression {
-                                    name: expr_str.split('(').next().unwrap_or("unknown").to_string(),
                                 }
-                            ),
-                        }),
                         arguments: Vec::new(), // Would need more sophisticated parsing
                     }
-                ),
             })
         } else if expr_str.chars().all(|c| c.is_alphanumeric() || c == '_') {
             // Likely an identifier
             Ok(ast_node_support::Expression {
                 expr_type: ast_node_support::ExpressionType::Identifier(
                     ast_node_support::IdentifierExpression {
-                        name: expr_str,
                     }
-                ),
             })
         } else {
             // Generic literal
             Ok(ast_node_support::Expression {
                 expr_type: ast_node_support::ExpressionType::Literal(
                     ast_node_support::Literal::String(expr_str)
-                ),
             })
         }
     }
@@ -139,56 +116,36 @@ impl AstBridge {
         Ok(ast_node_support::Expression {
             expr_type: ast_node_support::ExpressionType::Identifier(
                 ast_node_support::IdentifierExpression {
-                    name: stmt_str,
                 }
-            ),
         })
-    }
-
     /// Convert function declaration to documentation format
     fn convert_function_declaration(&self, func: &FunctionDeclaration) -> crate::error::Result<()> {
         Ok(ast_node_support::Expression {
             expr_type: ast_node_support::ExpressionType::Identifier(
                 ast_node_support::IdentifierExpression {
-                    name: func.to_string().clone(),
                 }
-            ),
         })
-    }
-
     /// Convert struct declaration to documentation format
     fn convert_struct_declaration(&self, struct_decl: &StructDeclaration) -> crate::error::Result<()> {
         Ok(ast_node_support::Expression {
             expr_type: ast_node_support::ExpressionType::Identifier(
                 ast_node_support::IdentifierExpression {
-                    name: struct_decl.to_string().clone(),
                 }
-            ),
         })
-    }
-
     /// Convert interface declaration to documentation format
     fn convert_interface_declaration(&self, interface: &InterfaceDeclaration) -> crate::error::Result<()> {
         Ok(ast_node_support::Expression {
             expr_type: ast_node_support::ExpressionType::Identifier(
                 ast_node_support::IdentifierExpression {
-                    name: interface.to_string().clone(),
                 }
-            ),
         })
-    }
-
     /// Convert variable declaration to documentation format
     fn convert_variable_declaration(&self, var: &VariableDeclaration) -> crate::error::Result<()> {
         Ok(ast_node_support::Expression {
             expr_type: ast_node_support::ExpressionType::Identifier(
                 ast_node_support::IdentifierExpression {
-                    name: var.to_string().clone(),
                 }
-            ),
         })
-    }
-
     /// Convert Program statements to documentation nodes
     #[instrument(skip(self, statements))]
     pub fn convert_statements(&mut self, statements: &[Box<dyn Statement>]) -> crate::error::Result<()> {
@@ -197,11 +154,7 @@ impl AstBridge {
         for stmt in statements {
             let expr = self.convert_statement_to_expression(stmt)?;
             converted.push(expr);
-        }
-        
         Ok(converted)
-    }
-
     /// Extract function declaration information from statements
     #[instrument(skip(self, statements))]
     pub fn extract_function_declarations(&self, statements: &[Box<dyn Statement>]) -> crate::error::Result<()> {
@@ -214,8 +167,6 @@ impl AstBridge {
         }
         
         Ok(functions)
-    }
-
     /// Try to extract function declaration from a statement
     fn try_extract_function_declaration(&self, stmt: &Box<dyn Statement>) -> crate::error::Result<()> {
         // Use string representation to extract function information
@@ -229,18 +180,10 @@ impl AstBridge {
                 parts[1].trim_end_matches('(').to_string()
             } else {
                 "unknown_function".to_string()
-            };
             
             Ok(Some(ast_node_support::FunctionDeclaration {
-                name,
                 parameters: Vec::new(), // Would need more sophisticated extraction
-                return_type: None,
-                body: AstNode::new_expression(Box::new(crate::ast::literals::StringLiteral::new("function_body".to_string()))),
-                generic_params: None,
-                constraints: None,
-                is_async: false,
                 is_public: true, // Default assumption
-                location: SourceLocation::default(),
             }))
         } else {
             Ok(None)
@@ -259,8 +202,6 @@ impl AstBridge {
         }
         
         Ok(structs)
-    }
-
     /// Try to extract struct declaration from a statement
     fn try_extract_struct_declaration(&self, stmt: &Box<dyn Statement>) -> crate::error::Result<()> {
         let stmt_str = format!("{}", stmt);
@@ -271,15 +212,9 @@ impl AstBridge {
                 parts[1].trim_end_matches('{').to_string()
             } else {
                 "unknown_struct".to_string()
-            };
             
             Ok(Some(ast_node_support::StructDeclaration {
-                name,
                 fields: Vec::new(), // Would need more sophisticated extraction
-                generic_params: None,
-                constraints: None,
-                is_public: true,
-                location: SourceLocation::default(),
             }))
         } else {
             Ok(None)
@@ -298,8 +233,6 @@ impl AstBridge {
         }
         
         Ok(interfaces)
-    }
-
     /// Try to extract interface declaration from a statement
     fn try_extract_interface_declaration(&self, stmt: &Box<dyn Statement>) -> crate::error::Result<()> {
         let stmt_str = format!("{}", stmt);
@@ -310,15 +243,9 @@ impl AstBridge {
                 parts[1].trim_end_matches('{').to_string()
             } else {
                 "unknown_interface".to_string()
-            };
             
             Ok(Some(ast_node_support::InterfaceDeclaration {
-                name,
                 methods: Vec::new(), // Would need more sophisticated extraction
-                generic_params: None,
-                constraints: None,
-                is_public: true,
-                location: SourceLocation::default(),
             }))
         } else {
             Ok(None)
@@ -330,8 +257,6 @@ impl AstBridge {
     pub fn extract_type_info(&self, expr: &Box<dyn Expression>) -> crate::error::Result<()> {
         // For now, use the expression's string representation as type info
         Ok(format!("{}", expr))
-    }
-
     /// Convert AST node types to compatible documentation types
     #[instrument(skip(self, node_type))]
     pub fn convert_ast_node_type(&self, node_type: &AstNodeType) -> crate::error::Result<()> {
@@ -340,45 +265,35 @@ impl AstBridge {
                 Ok(ast_node_support::Expression {
                     expr_type: ast_node_support::ExpressionType::Identifier(
                         ast_node_support::IdentifierExpression {
-                            name: program.package_name.clone().unwrap_or_else(|| "main".to_string()),
                         }
-                    ),
                 })
             }
             AstNodeType::FunctionDeclaration(func) => {
                 Ok(ast_node_support::Expression {
                     expr_type: ast_node_support::ExpressionType::Identifier(
                         ast_node_support::IdentifierExpression {
-                            name: func.to_string().clone(),
                         }
-                    ),
                 })
             }
             AstNodeType::StructDeclaration(struct_stmt) => {
                 Ok(ast_node_support::Expression {
                     expr_type: ast_node_support::ExpressionType::Identifier(
                         ast_node_support::IdentifierExpression {
-                            name: struct_stmt.to_string().to_string(),
                         }
-                    ),
                 })
             }
             AstNodeType::InterfaceDeclaration(interface_stmt) => {
                 Ok(ast_node_support::Expression {
                     expr_type: ast_node_support::ExpressionType::Identifier(
                         ast_node_support::IdentifierExpression {
-                            name: interface_stmt.to_string().to_string(),
                         }
-                    ),
                 })
             }
             AstNodeType::VariableDeclaration(var_stmt) => {
                 Ok(ast_node_support::Expression {
                     expr_type: ast_node_support::ExpressionType::Identifier(
                         ast_node_support::IdentifierExpression {
-                            name: var_stmt.to_string().to_string(),
                         }
-                    ),
                 })
             }
             _ => {
@@ -386,14 +301,10 @@ impl AstBridge {
                 Ok(ast_node_support::Expression {
                     expr_type: ast_node_support::ExpressionType::Identifier(
                         ast_node_support::IdentifierExpression {
-                            name: "unknown".to_string(),
                         }
-                    ),
                 })
             }
         }
-    }
-
     /// Create a safe wrapper for handling Vec<Box<dyn Statement>> to Option conversions
     #[instrument(skip(self, statements))]
     pub fn statements_to_optional_body(&self, statements: &[Box<dyn Statement>]) -> Option<AstNode> {
@@ -408,8 +319,6 @@ impl AstBridge {
             ))
         }
     }
-}
-
 impl Default for AstBridge {
     fn default() -> Self {
         Self::new()
@@ -420,8 +329,6 @@ impl Default for AstBridge {
 pub trait ToDocumentationAst {
     /// Convert to documentation-compatible AST representation
     fn to_doc_ast(&self) -> crate::error::Result<()>;
-}
-
 impl ToDocumentationAst for AstNode {
     fn to_doc_ast(&self) -> crate::error::Result<()> {
         let mut bridge = AstBridge::new();
@@ -457,8 +364,6 @@ impl SafeConverter {
     /// Safely convert AstNode reference to Statement vector
     pub fn ast_node_to_statements(node: &AstNode) -> Vec<Box<dyn Statement>> {
         match &node.node_type {
-            AstNodeType::Program(program) => program.statements.clone(),
-            AstNodeType::Statement(stmt) => vec![stmt.clone()],
             _ => {
                 // Create a wrapper statement for non-statement nodes
                 vec![Box::new(crate::ast::statements::ExpressionStatement::new(
@@ -466,22 +371,15 @@ impl SafeConverter {
                 ))]
             }
         }
-    }
-
     /// Safely convert Statement vector to Program
     pub fn statements_to_program(statements: Vec<Box<dyn Statement>>) -> Program {
         Program {
-            statements,
-            package_name: None,
-            imports: Vec::new(),
         }
     }
 
     /// Safely convert Option to Vec
     pub fn option_to_vec<T>(opt: Option<T>) -> Vec<T> {
         match opt {
-            Some(value) => vec![value],
-            None => Vec::new(),
         }
     }
 
@@ -493,5 +391,3 @@ impl SafeConverter {
             Some(vec.remove(0))
         }
     }
-}
-

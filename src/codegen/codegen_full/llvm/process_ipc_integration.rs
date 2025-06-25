@@ -5,14 +5,10 @@
 use crate::error::{CursedError, SourceLocation};
 
 // Basic placeholder implementations that return errors indicating features are disabled
-pub struct ProcessIpcIntegrationDisabled {}
-
 impl Default for ProcessIpcIntegrationDisabled {
     fn default() -> Self {
         Self {}
     }
-}
-
 impl ProcessIpcIntegrationDisabled {
     pub fn new() -> crate::error::Result<Self> {
         Err(CursedError::NotImplemented(

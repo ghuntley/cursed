@@ -5,18 +5,9 @@ use std::ptr;
 
 /// Memory mapping handle
 pub struct MemoryMap {
-    addr: *mut libc::c_void,
-    size: usize,
-}
-
 /// Memory protection flags
 #[derive(Debug, Clone, Copy)]
 pub struct MemoryProtection {
-    pub read: bool,
-    pub write: bool,
-    pub execute: bool,
-}
-
 impl MemoryProtection {
     pub fn read_only() -> Self {
         Self { read: true, write: false, execute: false }
@@ -33,44 +24,24 @@ impl MemoryProtection {
     pub fn read_write_execute() -> Self {
         Self { read: true, write: true, execute: true }
     }
-}
-
 /// Memory mapping flags
 #[derive(Debug, Clone, Copy)]
 pub struct MemoryFlags {
-    pub shared: bool,
-    pub private: bool,
-    pub anonymous: bool,
-    pub fixed: bool,
-}
-
 impl Default for MemoryFlags {
     fn default() -> Self {
         Self {
-            shared: false,
-            private: true,
-            anonymous: true,
-            fixed: false,
         }
     }
-}
-
 impl MemoryMap {
     /// Get the mapped address
     pub fn as_ptr(&self) -> *mut u8 {
         self.addr as *mut u8
-    }
-    
     /// Get the mapped size
     pub fn size(&self) -> usize {
         self.size
-    }
-    
     /// Get a slice view of the memory
     pub unsafe fn as_slice(&self) -> &[u8] {
         std::slice::from_raw_parts(self.addr as *const u8, self.size)
-    }
-    
     /// Get a mutable slice view of the memory
     pub unsafe fn as_mut_slice(&mut self) -> &mut [u8] {
         std::slice::from_raw_parts_mut(self.addr as *mut u8, self.size)
@@ -79,20 +50,12 @@ impl MemoryMap {
 
 /// Map memory into the address space
 pub fn mmap_memory(
-    addr: Option<*mut libc::c_void>,
-    size: usize,
-    protection: MemoryProtection,
-    flags: MemoryFlags,
-    fd: Option<i32>,
-    offset: i64,
 ) -> SysCoreResult<MemoryMap> {
     #[cfg(unix)]
     {
         let mut prot = 0;
         if protection.read { prot |= libc::PROT_READ; }
         if protection.write { prot |= libc::PROT_WRITE; }
-        if protection.execute { prot |= libc::PROT_EXEC; }
-        
         let mut map_flags = 0;
         if flags.shared { map_flags |= libc::MAP_SHARED; }
         if flags.private { map_flags |= libc::MAP_PRIVATE; }
@@ -104,19 +67,12 @@ pub fn mmap_memory(
         
         let result = unsafe {
             libc::mmap(addr, size, prot, map_flags, fd, offset)
-        };
         
         if result == libc::MAP_FAILED {
             let errno = std::io::Error::last_os_error().raw_os_error().unwrap_or(-1);
             return Err(system_call_error("mmap", errno));
-        }
-        
         Ok(MemoryMap {
-            addr: result,
-            size,
         })
-    }
-    
     #[cfg(not(unix))]
     {
         Err(not_supported("mmap not supported on this platform"))
@@ -133,8 +89,6 @@ pub fn munmap_memory(map: MemoryMap) -> SysCoreResult<()> {
             return Err(system_call_error("munmap", errno));
         }
         Ok(())
-    }
-    
     #[cfg(not(unix))]
     {
         Err(not_supported("munmap not supported on this platform"))
@@ -148,16 +102,12 @@ pub fn mprotect_memory(addr: *mut libc::c_void, size: usize, protection: MemoryP
         let mut prot = 0;
         if protection.read { prot |= libc::PROT_READ; }
         if protection.write { prot |= libc::PROT_WRITE; }
-        if protection.execute { prot |= libc::PROT_EXEC; }
-        
         let result = unsafe { libc::mprotect(addr, size, prot) };
         if result == -1 {
             let errno = std::io::Error::last_os_error().raw_os_error().unwrap_or(-1);
             return Err(system_call_error("mprotect", errno));
         }
         Ok(())
-    }
-    
     #[cfg(not(unix))]
     {
         Err(not_supported("mprotect not supported on this platform"))
@@ -174,8 +124,6 @@ pub fn mlock_memory(addr: *const libc::c_void, size: usize) -> SysCoreResult<()>
             return Err(system_call_error("mlock", errno));
         }
         Ok(())
-    }
-    
     #[cfg(not(unix))]
     {
         Err(not_supported("mlock not supported on this platform"))
@@ -192,8 +140,6 @@ pub fn munlock_memory(addr: *const libc::c_void, size: usize) -> SysCoreResult<(
             return Err(system_call_error("munlock", errno));
         }
         Ok(())
-    }
-    
     #[cfg(not(unix))]
     {
         Err(not_supported("munlock not supported on this platform"))
@@ -216,15 +162,6 @@ pub fn get_page_size() -> usize {
 /// Memory information
 #[derive(Debug, Clone)]
 pub struct MemoryInfo {
-    pub total_memory: u64,
-    pub available_memory: u64,
-    pub free_memory: u64,
-    pub used_memory: u64,
-    pub page_size: usize,
-    pub swap_total: u64,
-    pub swap_free: u64,
-}
-
 /// Get system memory information
 pub fn get_memory_info() -> SysCoreResult<MemoryInfo> {
     #[cfg(target_os = "linux")]
@@ -254,15 +191,7 @@ pub fn get_memory_info() -> SysCoreResult<MemoryInfo> {
         
         Ok(MemoryInfo {
             total_memory: total * 1024, // Convert from KB to bytes
-            available_memory: available * 1024,
-            free_memory: free * 1024,
-            used_memory: (total - free) * 1024,
-            page_size: get_page_size(),
-            swap_total: swap_total * 1024,
-            swap_free: swap_free * 1024,
         })
-    }
-    
     #[cfg(unix)]
     #[cfg(not(target_os = "linux"))]
     {
@@ -275,16 +204,9 @@ pub fn get_memory_info() -> SysCoreResult<MemoryInfo> {
         let available_memory = available_pages * page_size as u64;
         
         Ok(MemoryInfo {
-            total_memory,
-            available_memory,
             free_memory: available_memory, // Simplified
-            used_memory: total_memory - available_memory,
-            page_size,
             swap_total: 0, // Not easily available on all Unix systems
-            swap_free: 0,
         })
-    }
-    
     #[cfg(not(unix))]
     {
         Err(not_supported("Memory info not supported on this platform"))
@@ -305,14 +227,10 @@ fn parse_meminfo_line(line: &str, prefix: &str) -> Option<u64> {
 /// Check if memory mapping is supported
 pub fn supports_mmap() -> bool {
     cfg!(unix)
-}
-
 /// Memory allocation using system allocator
 pub fn alloc_memory(size: usize, alignment: usize) -> SysCoreResult<*mut u8> {
     if size == 0 {
         return Err(invalid_argument("Cannot allocate zero bytes"));
-    }
-    
     #[cfg(unix)]
     {
         let mut ptr: *mut libc::c_void = ptr::null_mut();
@@ -320,11 +238,7 @@ pub fn alloc_memory(size: usize, alignment: usize) -> SysCoreResult<*mut u8> {
         
         if result != 0 {
             return Err(system_call_error("posix_memalign", result));
-        }
-        
         Ok(ptr as *mut u8)
-    }
-    
     #[cfg(not(unix))]
     {
         // Fallback to standard allocator
@@ -336,8 +250,6 @@ pub fn alloc_memory(size: usize, alignment: usize) -> SysCoreResult<*mut u8> {
         let ptr = unsafe { alloc(layout) };
         if ptr.is_null() {
             return Err(SysCoreError::MemoryError("Failed to allocate memory".to_string()));
-        }
-        
         Ok(ptr)
     }
 }
@@ -346,14 +258,10 @@ pub fn alloc_memory(size: usize, alignment: usize) -> SysCoreResult<*mut u8> {
 pub fn free_memory(ptr: *mut u8, size: usize, alignment: usize) -> SysCoreResult<()> {
     if ptr.is_null() {
         return Ok(()); // Free of null pointer is a no-op
-    }
-    
     #[cfg(unix)]
     {
         unsafe { libc::free(ptr as *mut libc::c_void) };
         Ok(())
-    }
-    
     #[cfg(not(unix))]
     {
         use std::alloc::{dealloc, Layout};
@@ -371,15 +279,11 @@ pub fn memory_barrier() {
         // TODO: implement
     }
     std::sync::atomic::fence(std::sync::atomic::Ordering::SeqCst);
-}
-
 /// Read barrier
 pub fn read_barrier() {
         // TODO: implement
     }
     std::sync::atomic::fence(std::sync::atomic::Ordering::Acquire);
-}
-
 /// Write barrier
 pub fn write_barrier() {
         // TODO: implement

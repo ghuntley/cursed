@@ -11,16 +11,6 @@ use rand::RngCore;
 /// Bulletproofs range proof
 #[derive(Debug, Clone)]
 pub struct BulletproofsRangeProof {
-    pub a: G1Point,
-    pub s: G1Point,
-    pub t1: G1Point,
-    pub t2: G1Point,
-    pub tau_x: FieldElement,
-    pub mu: FieldElement,
-    pub l_vec: Vec<FieldElement>,
-    pub r_vec: Vec<FieldElement>,
-}
-
 impl BulletproofsRangeProof {
     /// Convert to Value representation
     pub fn to_value(&self) -> Value {
@@ -43,8 +33,6 @@ impl BulletproofsRangeProof {
         proof_map.insert("r_vec".to_string(), Value::Array(r_vec));
         
         Value::Object(proof_map)
-    }
-
     /// Serialize proof to bytes
     pub fn to_bytes(&self) -> Vec<u8> {
         let mut bytes = Vec::new();
@@ -63,16 +51,10 @@ impl BulletproofsRangeProof {
         bytes.extend_from_slice(&(self.l_vec.len() as u32).to_le_bytes());
         for elem in &self.l_vec {
             bytes.extend_from_slice(&elem.to_bytes());
-        }
-        
         bytes.extend_from_slice(&(self.r_vec.len() as u32).to_le_bytes());
         for elem in &self.r_vec {
             bytes.extend_from_slice(&elem.to_bytes());
-        }
-        
         bytes
-    }
-
     /// Get proof size in bytes
     pub fn size(&self) -> usize {
         4 * 32 + // 4 G1 points (x coordinate only)
@@ -85,10 +67,6 @@ impl BulletproofsRangeProof {
 /// Bulletproofs aggregated range proof
 #[derive(Debug, Clone)]
 pub struct BulletproofsAggregatedProof {
-    pub individual_proofs: Vec<BulletproofsRangeProof>,
-    pub aggregation_factor: usize,
-}
-
 impl BulletproofsAggregatedProof {
     /// Convert to Value representation
     pub fn to_value(&self) -> Value {
@@ -101,8 +79,6 @@ impl BulletproofsAggregatedProof {
         proof_map.insert("aggregation_factor".to_string(), Value::Integer(self.aggregation_factor as i64));
         
         Value::Object(proof_map)
-    }
-
     /// Get total size in bytes
     pub fn total_size(&self) -> usize {
         self.individual_proofs.iter().map(|p| p.size()).sum::<usize>() + 8
@@ -118,8 +94,6 @@ pub struct BulletproofsParams {
     pub g: G1Point,             // Base generator
     pub h: G1Point,             // Blinding generator
     pub bit_length: usize,      // Number of bits in range
-}
-
 impl BulletproofsParams {
     /// Generate Bulletproofs parameters for given bit length
     pub fn generate(bit_length: usize) -> AdvancedCryptoResult<Self> {
@@ -141,23 +115,13 @@ impl BulletproofsParams {
             
             g_vec.push(G1Point::generator().scalar_mul(&g_scalar)?);
             h_vec.push(G1Point::generator().scalar_mul(&h_scalar)?);
-        }
-        
         let mut u_bytes = [0u8; 32];
         rng.fill_bytes(&mut u_bytes);
         let u_scalar = FieldElement::from_bytes(&u_bytes)?;
         let u = G1Point::generator().scalar_mul(&u_scalar)?;
         
         Ok(Self {
-            g_vec,
-            h_vec,
-            u,
-            g: G1Point::generator(),
-            h: G1Point::generator().scalar_mul(&FieldElement::new(2))?,
-            bit_length,
         })
-    }
-
     /// Convert to Value representation
     pub fn to_value(&self) -> Value {
         let mut params_map = HashMap::new();
@@ -182,23 +146,14 @@ pub struct BulletproofsProver;
 impl BulletproofsProver {
     /// Generate range proof for a value
     pub fn prove_range(
-        params: &BulletproofsParams,
-        value: u64,
-        blinding: &FieldElement,
-        range_min: u64,
-        range_max: u64,
     ) -> AdvancedCryptoResult<BulletproofsRangeProof> {
         if value < range_min || value > range_max {
             return Err(CryptoError::InvalidInput("Value outside specified range".to_string()));
-        }
-
         let range_size = range_max - range_min + 1;
         let bit_length = (range_size as f64).log2().ceil() as usize;
         
         if bit_length > params.bit_length {
             return Err(CryptoError::InvalidInput("Range requires more bits than parameters support".to_string()));
-        }
-
         // Convert value to binary representation
         let adjusted_value = value - range_min;
         let binary_repr = Self::to_binary(adjusted_value, bit_length);
@@ -225,37 +180,16 @@ impl BulletproofsProver {
         let (l_vec, r_vec) = Self::compute_inner_product_vectors(&binary_repr);
 
         Ok(BulletproofsRangeProof {
-            a,
-            s,
-            t1,
-            t2,
-            tau_x,
-            mu,
-            l_vec,
-            r_vec,
         })
-    }
-
     /// Aggregate multiple range proofs
     pub fn aggregate_proofs(
-        proofs: Vec<BulletproofsRangeProof>,
     ) -> AdvancedCryptoResult<BulletproofsAggregatedProof> {
         if proofs.is_empty() {
             return Err(CryptoError::InvalidInput("Cannot aggregate empty proof list".to_string()));
-        }
-
         Ok(BulletproofsAggregatedProof {
-            aggregation_factor: proofs.len(),
-            individual_proofs: proofs,
         })
-    }
-
     /// Prove membership in a set (simplified)
     pub fn prove_membership(
-        params: &BulletproofsParams,
-        value: &FieldElement,
-        set: &[FieldElement],
-        blinding: &FieldElement,
     ) -> AdvancedCryptoResult<BulletproofsRangeProof> {
         // Simplified membership proof using range proof technique
         // In practice, would use polynomial commitments for set membership
@@ -266,8 +200,6 @@ impl BulletproofsProver {
 
         // Create range proof for position
         Self::prove_range(params, position as u64, blinding, 0, set.len() as u64 - 1)
-    }
-
     // Helper methods
     fn to_binary(value: u64, bit_length: usize) -> Vec<FieldElement> {
         let mut binary = Vec::new();
@@ -276,15 +208,8 @@ impl BulletproofsProver {
         for _ in 0..bit_length {
             binary.push(FieldElement::new(remaining & 1));
             remaining >>= 1;
-        }
-        
         binary
-    }
-
     fn compute_a_commitment(
-        params: &BulletproofsParams,
-        binary_repr: &[FieldElement],
-        alpha: &FieldElement,
     ) -> AdvancedCryptoResult<G1Point> {
         let mut commitment = params.h.scalar_mul(alpha)?;
         
@@ -296,12 +221,7 @@ impl BulletproofsProver {
         }
         
         Ok(commitment)
-    }
-
     fn compute_s_commitment(
-        params: &BulletproofsParams,
-        binary_repr: &[FieldElement],
-        rho: &FieldElement,
     ) -> AdvancedCryptoResult<G1Point> {
         let mut commitment = params.h.scalar_mul(rho)?;
         
@@ -315,11 +235,7 @@ impl BulletproofsProver {
         }
         
         Ok(commitment)
-    }
-
     fn compute_polynomial_commitments(
-        params: &BulletproofsParams,
-        binary_repr: &[FieldElement],
     ) -> AdvancedCryptoResult<(G1Point, G1Point)> {
         // Simplified polynomial commitment computation
         let mut rng = rand::thread_rng();
@@ -330,8 +246,6 @@ impl BulletproofsProver {
         let t2 = params.g.scalar_mul(&t2_scalar)?;
         
         Ok((t1, t2))
-    }
-
     fn compute_inner_product_vectors(binary_repr: &[FieldElement]) -> (Vec<FieldElement>, Vec<FieldElement>) {
         let n = binary_repr.len();
         let mut l_vec = Vec::new();
@@ -341,17 +255,11 @@ impl BulletproofsProver {
         for &bit in binary_repr {
             l_vec.push(bit);
             r_vec.push(FieldElement::one() - bit); // Complement for range proof
-        }
-        
         // Pad to power of 2 if needed
         while l_vec.len() < n.next_power_of_two() {
             l_vec.push(FieldElement::zero());
             r_vec.push(FieldElement::zero());
-        }
-        
         (l_vec, r_vec)
-    }
-
     fn random_field_element(rng: &mut impl RngCore) -> AdvancedCryptoResult<FieldElement> {
         let mut bytes = [0u8; 32];
         rng.fill_bytes(&mut bytes);
@@ -365,48 +273,29 @@ pub struct BulletproofsVerifier;
 impl BulletproofsVerifier {
     /// Verify range proof
     pub fn verify_range(
-        params: &BulletproofsParams,
-        proof: &BulletproofsRangeProof,
-        commitment: &G1Point,
-        range_min: u64,
-        range_max: u64,
     ) -> AdvancedCryptoResult<bool> {
         // Simplified verification - in production would implement full inner product argument
         
         // Check that proof components are valid points
         if proof.a.infinity || proof.s.infinity || proof.t1.infinity || proof.t2.infinity {
             return Ok(false);
-        }
-
         // Check vector lengths
         if proof.l_vec.len() != proof.r_vec.len() {
             return Ok(false);
-        }
-
         let bit_length = (range_max - range_min + 1).next_power_of_two().trailing_zeros() as usize;
         if proof.l_vec.len() < bit_length {
             return Ok(false);
-        }
-
         // Verify inner product relation (simplified)
         let inner_product = Self::compute_inner_product(&proof.l_vec, &proof.r_vec);
         
         // Check basic consistency
         Ok(!inner_product.is_zero() || proof.l_vec.iter().all(|x| x.is_zero()))
-    }
-
     /// Verify aggregated range proof
     pub fn verify_aggregated(
-        params: &BulletproofsParams,
-        proof: &BulletproofsAggregatedProof,
-        commitments: &[G1Point],
-        ranges: &[(u64, u64)],
     ) -> AdvancedCryptoResult<bool> {
         if proof.individual_proofs.len() != commitments.len() || 
            commitments.len() != ranges.len() {
             return Ok(false);
-        }
-
         // Verify each individual proof
         for (i, individual_proof) in proof.individual_proofs.iter().enumerate() {
             let (range_min, range_max) = ranges[i];
@@ -416,26 +305,16 @@ impl BulletproofsVerifier {
         }
 
         Ok(true)
-    }
-
     /// Verify membership proof
     pub fn verify_membership(
-        params: &BulletproofsParams,
-        proof: &BulletproofsRangeProof,
-        commitment: &G1Point,
-        set: &[FieldElement],
     ) -> AdvancedCryptoResult<bool> {
         // Simplified membership verification using range proof
         Self::verify_range(params, proof, commitment, 0, set.len() as u64 - 1)
-    }
-
     fn compute_inner_product(l_vec: &[FieldElement], r_vec: &[FieldElement]) -> FieldElement {
         let mut result = FieldElement::zero();
         
         for (l, r) in l_vec.iter().zip(r_vec.iter()) {
             result = result + (*l * *r);
-        }
-        
         result
     }
 }
@@ -448,43 +327,22 @@ impl Bulletproofs {
     pub fn generate_params(bit_length: i64) -> AdvancedCryptoResult<Value> {
         let params = BulletproofsParams::generate(bit_length as usize)?;
         Ok(params.to_value())
-    }
-
     /// Generate range proof
     pub fn prove_range(
-        params: &Value,
-        value: i64,
-        blinding: &Value,
-        range_min: i64,
-        range_max: i64,
     ) -> AdvancedCryptoResult<Value> {
         if value < 0 || range_min < 0 || range_max < 0 {
             return Err(CryptoError::InvalidInput("Negative values not supported".to_string()));
-        }
-
         let blinding_elem = Self::parse_field_element(blinding)?;
         
         // Create simplified parameters for demo
         let demo_params = BulletproofsParams::generate(32)?;
         
         let proof = BulletproofsProver::prove_range(
-            &demo_params,
-            value as u64,
-            &blinding_elem,
-            range_min as u64,
-            range_max as u64,
         )?;
 
         Ok(proof.to_value())
-    }
-
     /// Verify range proof
     pub fn verify_range(
-        params: &Value,
-        proof: &Value,
-        commitment: &Value,
-        range_min: i64,
-        range_max: i64,
     ) -> AdvancedCryptoResult<Value> {
         // Simplified verification for demo
         let demo_params = BulletproofsParams::generate(32)?;
@@ -492,59 +350,24 @@ impl Bulletproofs {
         
         // Create simplified proof from value
         let demo_proof = BulletproofsRangeProof {
-            a: G1Point::generator(),
-            s: G1Point::generator(),
-            t1: G1Point::generator(),
-            t2: G1Point::generator(),
-            tau_x: FieldElement::one(),
-            mu: FieldElement::one(),
-            l_vec: vec![FieldElement::one(); 32],
-            r_vec: vec![FieldElement::zero(); 32],
-        };
 
         let is_valid = BulletproofsVerifier::verify_range(
-            &demo_params,
-            &demo_proof,
-            &demo_commitment,
-            range_min as u64,
-            range_max as u64,
         )?;
 
         Ok(Value::Boolean(is_valid))
-    }
-
     /// Aggregate multiple proofs
     pub fn aggregate_proofs(proofs: &Value) -> AdvancedCryptoResult<Value> {
         let proof_array = match proofs {
-            Value::Array(arr) => arr,
-            _ => return Err(CryptoError::InvalidInput("Expected array of proofs".to_string())),
-        };
 
         // Create demo proofs for aggregation
         let mut demo_proofs = Vec::new();
         for _ in 0..proof_array.len() {
             demo_proofs.push(BulletproofsRangeProof {
-                a: G1Point::generator(),
-                s: G1Point::generator(),
-                t1: G1Point::generator(),
-                t2: G1Point::generator(),
-                tau_x: FieldElement::one(),
-                mu: FieldElement::one(),
-                l_vec: vec![FieldElement::one(); 32],
-                r_vec: vec![FieldElement::zero(); 32],
             });
-        }
-
         let aggregated = BulletproofsProver::aggregate_proofs(demo_proofs)?;
         Ok(aggregated.to_value())
-    }
-
     /// Prove set membership
     pub fn prove_membership(
-        params: &Value,
-        value: &Value,
-        set: &Value,
-        blinding: &Value,
     ) -> AdvancedCryptoResult<Value> {
         let value_elem = Self::parse_field_element(value)?;
         let blinding_elem = Self::parse_field_element(blinding)?;
@@ -554,8 +377,6 @@ impl Bulletproofs {
         let proof = BulletproofsProver::prove_membership(&demo_params, &value_elem, &set_elems, &blinding_elem)?;
         
         Ok(proof.to_value())
-    }
-
     /// Get proof size information
     pub fn proof_size_info(bit_length: i64) -> Value {
         let mut size_info = HashMap::new();
@@ -572,17 +393,11 @@ impl Bulletproofs {
         size_info.insert("description".to_string(), Value::String("Bulletproofs have logarithmic proof size".to_string()));
         
         Value::Object(size_info)
-    }
-
     /// Compare with other proof systems
     pub fn comparison_info() -> Value {
         let mut comparison = HashMap::new();
         
         let systems = vec![
-            ("Bulletproofs", "O(log n)", "No trusted setup", "Longer verification"),
-            ("Groth16", "O(1)", "Trusted setup required", "Fast verification"),
-            ("PLONK", "O(1)", "Universal setup", "Medium verification"),
-            ("STARKs", "O(log² n)", "No trusted setup", "Post-quantum secure"),
         ];
 
         let system_data: Vec<Value> = systems.iter().map(|(name, size, setup, notes)| {
@@ -596,25 +411,17 @@ impl Bulletproofs {
 
         comparison.insert("proof_systems".to_string(), Value::Array(system_data));
         comparison.insert("bulletproofs_advantages".to_string(), Value::Array(vec![
-            Value::String("No trusted setup required".to_string()),
-            Value::String("Logarithmic proof size".to_string()),
-            Value::String("Efficient aggregation".to_string()),
-            Value::String("Range proofs and set membership".to_string()),
         ]));
 
         Value::Object(comparison)
-    }
-
     /// Helper methods
     fn parse_field_element(value: &Value) -> AdvancedCryptoResult<FieldElement> {
         match value {
-            Value::Integer(i) => Ok(FieldElement::new(*i as u64)),
             Value::String(s) => {
                 let num: u64 = s.parse()
                     .map_err(|_| CryptoError::InvalidInput("Invalid number string".to_string()))?;
                 Ok(FieldElement::new(num))
             }
-            _ => Err(CryptoError::InvalidInput("Invalid field element type".to_string())),
         }
     }
 
@@ -627,7 +434,6 @@ impl Bulletproofs {
                 }
                 Ok(elements)
             }
-            _ => Err(CryptoError::InvalidInput("Expected array of field elements".to_string())),
         }
     }
 
@@ -638,27 +444,17 @@ impl Bulletproofs {
         rng.fill_bytes(&mut bytes);
         let elem = FieldElement::from_bytes(&bytes)?;
         Ok(Value::String(elem.to_string()))
-    }
-
     /// Create range proof for common ranges
     pub fn prove_age_range(age: i64, blinding: &Value) -> AdvancedCryptoResult<Value> {
         Self::prove_range(
             &Value::Object(HashMap::new()), // Simplified params
-            age,
-            blinding,
             18, // Minimum age
             120, // Maximum reasonable age
         )
-    }
-
     /// Create range proof for balance
     pub fn prove_balance_range(balance: i64, blinding: &Value, min_balance: i64, max_balance: i64) -> AdvancedCryptoResult<Value> {
         Self::prove_range(
             &Value::Object(HashMap::new()), // Simplified params
-            balance,
-            blinding,
-            min_balance,
-            max_balance,
         )
     }
 }

@@ -20,32 +20,16 @@ use std::io::{Write, Read};
 #[derive(Debug, Clone)]
 pub struct DaemonOptions {
     /// Enable logging
-    pub enable_logging: bool,
     /// Log level
-    pub log_level: String,
     /// Auto restart on crash
-    pub auto_restart: bool,
     /// Maximum restart attempts
-    pub max_restarts: u32,
     /// Start timeout
-    pub start_timeout: Duration,
     /// Stop timeout
-    pub stop_timeout: Duration,
-}
-
 impl Default for DaemonOptions {
     fn default() -> Self {
         Self {
-            enable_logging: true,
-            log_level: "info".to_string(),
-            auto_restart: true,
-            max_restarts: 5,
-            start_timeout: Duration::from_secs(30),
-            stop_timeout: Duration::from_secs(10),
         }
     }
-}
-
 /// Daemon manager type alias
 pub type DaemonManager = Daemon;
 
@@ -53,47 +37,22 @@ pub type DaemonManager = Daemon;
 #[derive(Debug, Clone)]
 pub struct DaemonConfig {
     /// Daemon name
-    pub name: String,
     /// Working directory
-    pub working_directory: Option<PathBuf>,
     /// User to run as (Unix only)
-    pub user: Option<String>,
     /// Group to run as (Unix only)
-    pub group: Option<String>,
     /// PID file location
-    pub pid_file: Option<PathBuf>,
     /// Log file location
-    pub log_file: Option<PathBuf>,
     /// Lock file location
-    pub lock_file: Option<PathBuf>,
     /// Daemon description
-    pub description: Option<String>,
     /// Auto-restart on failure
-    pub auto_restart: bool,
     /// Maximum restart attempts
-    pub max_restarts: u32,
     /// Environment variables
-    pub environment: HashMap<String, String>,
     /// Umask for daemon process
-    pub umask: Option<u32>,
-}
-
 impl DaemonConfig {
     /// Create a new daemon configuration
     pub fn new<S: Into<String>>(name: S) -> Self {
         Self {
-            name: name.into(),
             working_directory: Some(PathBuf::from("/")),
-            user: None,
-            group: None,
-            pid_file: None,
-            log_file: None,
-            lock_file: None,
-            description: None,
-            auto_restart: false,
-            max_restarts: 3,
-            environment: HashMap::new(),
-            umask: Some(0o022),
         }
     }
     
@@ -101,61 +60,41 @@ impl DaemonConfig {
     pub fn working_directory<P: Into<PathBuf>>(mut self, dir: P) -> Self {
         self.working_directory = Some(dir.into());
         self
-    }
-    
     /// Set user (Unix only)
     pub fn user<S: Into<String>>(mut self, user: S) -> Self {
         self.user = Some(user.into());
         self
-    }
-    
     /// Set group (Unix only)
     pub fn group<S: Into<String>>(mut self, group: S) -> Self {
         self.group = Some(group.into());
         self
-    }
-    
     /// Set PID file
     pub fn pid_file<P: Into<PathBuf>>(mut self, path: P) -> Self {
         self.pid_file = Some(path.into());
         self
-    }
-    
     /// Set log file
     pub fn log_file<P: Into<PathBuf>>(mut self, path: P) -> Self {
         self.log_file = Some(path.into());
         self
-    }
-    
     /// Set lock file
     pub fn lock_file<P: Into<PathBuf>>(mut self, path: P) -> Self {
         self.lock_file = Some(path.into());
         self
-    }
-    
     /// Set description
     pub fn description<S: Into<String>>(mut self, desc: S) -> Self {
         self.description = Some(desc.into());
         self
-    }
-    
     /// Enable auto-restart
     pub fn auto_restart(mut self, max_restarts: u32) -> Self {
         self.auto_restart = true;
         self.max_restarts = max_restarts;
         self
-    }
-    
     /// Add environment variable
     pub fn env<K, V>(mut self, key: K, value: V) -> Self
     where
-        K: Into<String>,
-        V: Into<String>,
     {
         self.environment.insert(key.into(), value.into());
         self
-    }
-    
     /// Set umask
     pub fn umask(mut self, mask: u32) -> Self {
         self.umask = Some(mask);
@@ -166,50 +105,27 @@ impl DaemonConfig {
 /// Daemon status
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum DaemonStatus {
-    Running,
-    Stopped,
-    Failed,
-    Starting,
-    Stopping,
-    Unknown,
-}
-
 /// Daemon handle
 pub struct Daemon {
-    config: DaemonConfig,
-    pid: Option<u32>,
-    status: Arc<Mutex<DaemonStatus>>,
-    restart_count: Arc<Mutex<u32>>,
-}
-
 impl Daemon {
     /// Create a new daemon
     pub fn new(config: DaemonConfig) -> Self {
         Self {
-            config,
-            pid: None,
-            status: Arc::new(Mutex::new(DaemonStatus::Stopped)),
-            restart_count: Arc::new(Mutex::new(0)),
         }
     }
     
     /// Start the daemon
     pub fn start<F>(&mut self, daemon_main: F) -> ProcessResult<()>
     where
-        F: FnOnce() -> ProcessResult<()> + Send + 'static,
     {
         self.set_status(DaemonStatus::Starting);
         
         #[cfg(unix)]
         {
             self.start_unix_daemon(daemon_main)
-        }
-        
         #[cfg(windows)]
         {
             self.start_windows_service(daemon_main)
-        }
-        
         #[cfg(not(any(unix, windows)))]
         {
             Err(system_error(-1, "Daemon creation not supported on this platform".to_string()))
@@ -219,28 +135,22 @@ impl Daemon {
     #[cfg(unix)]
     fn start_unix_daemon<F>(&mut self, daemon_main: F) -> ProcessResult<()>
     where
-        F: FnOnce() -> ProcessResult<()> + Send + 'static,
     {
         // First fork
         let pid = unsafe { libc::fork() };
         
         match pid {
             -1 => return Err(system_error(
-                std::io::Error::last_os_error().raw_os_error().unwrap_or(-1),
                 "First fork failed".to_string()
-            )),
             0 => {
                 // Child process
                 
                 // Create new session
                 if unsafe { libc::setsid() } == -1 {
                     std::process::exit(1);
-                }
-                
                 // Second fork to ensure we're not a session leader
                 let pid2 = unsafe { libc::fork() };
                 match pid2 {
-                    -1 => std::process::exit(1),
                     0 => {
                         // Grandchild process - this becomes the daemon
                         
@@ -262,8 +172,6 @@ impl Daemon {
                             libc::close(0); // stdin
                             libc::close(1); // stdout
                             libc::close(2); // stderr
-                        }
-                        
                         // Redirect to log file or /dev/null
                         self.setup_stdio();
                         
@@ -271,20 +179,14 @@ impl Daemon {
                         if let Err(e) = self.write_pid_file() {
                             eprintln!("Failed to write PID file: {}", e);
                             std::process::exit(1);
-                        }
-                        
                         // Create lock file
                         if let Err(e) = self.create_lock_file() {
                             eprintln!("Failed to create lock file: {}", e);
                             std::process::exit(1);
-                        }
-                        
                         // Run the daemon main function
                         if let Err(e) = daemon_main() {
                             eprintln!("Daemon main function failed: {}", e);
                             std::process::exit(1);
-                        }
-                        
                         std::process::exit(0);
                     }
                     child_pid => {
@@ -300,17 +202,12 @@ impl Daemon {
                 
                 // Wait for first child to exit
                 let mut status = 0;
-                unsafe { libc::waitpid(child_pid, &mut status, 0); }
-                
                 Ok(())
             }
         }
-    }
-    
     #[cfg(windows)]
     fn start_windows_service<F>(&mut self, daemon_main: F) -> ProcessResult<()>
     where
-        F: FnOnce() -> ProcessResult<()> + Send + 'static,
     {
         // For Windows, we'll create a background process instead of a true service
         // Real service implementation would use the Windows Service API
@@ -333,8 +230,6 @@ impl Daemon {
         self.set_status(DaemonStatus::Running);
         
         Ok(())
-    }
-    
     /// Stop the daemon
     pub fn stop(&mut self) -> ProcessResult<()> {
         if let Some(pid) = self.pid {
@@ -346,7 +241,6 @@ impl Daemon {
                 let result = unsafe { libc::kill(pid as libc::pid_t, libc::SIGTERM) };
                 if result != 0 {
                     return Err(system_error(
-                        std::io::Error::last_os_error().raw_os_error().unwrap_or(-1),
                         format!("Failed to stop daemon with PID {}", pid)
                     ));
                 }
@@ -374,20 +268,13 @@ impl Daemon {
             
             self.pid = None;
             self.set_status(DaemonStatus::Stopped);
-        }
-        
         Ok(())
-    }
-    
     /// Restart the daemon
     pub fn restart<F>(&mut self, daemon_main: F) -> ProcessResult<()>
     where
-        F: FnOnce() -> ProcessResult<()> + Send + 'static,
     {
         if self.is_running()? {
             self.stop()?;
-        }
-        
         // Increment restart count
         {
             let mut count = self.restart_count.lock().unwrap();
@@ -400,8 +287,6 @@ impl Daemon {
         
         thread::sleep(Duration::from_millis(500)); // Brief delay before restart
         self.start(daemon_main)
-    }
-    
     /// Check if daemon is running
     pub fn is_running(&self) -> ProcessResult<bool> {
         if let Some(pid) = self.pid {
@@ -410,8 +295,6 @@ impl Daemon {
                 // Send signal 0 to check if process exists
                 let result = unsafe { libc::kill(pid as libc::pid_t, 0) };
                 Ok(result == 0)
-            }
-            
             #[cfg(windows)]
             {
                 let output = Command::new("tasklist")
@@ -442,23 +325,15 @@ impl Daemon {
     /// Get daemon status
     pub fn status(&self) -> DaemonStatus {
         self.status.lock().unwrap().clone()
-    }
-    
     /// Get daemon PID
     pub fn pid(&self) -> Option<u32> {
         self.pid
-    }
-    
     /// Get restart count
     pub fn restart_count(&self) -> u32 {
         *self.restart_count.lock().unwrap()
-    }
-    
     /// Set daemon status
     fn set_status(&self, status: DaemonStatus) {
         *self.status.lock().unwrap() = status;
-    }
-    
     /// Setup stdio redirection with enhanced error handling and logging
     fn setup_stdio(&self) {
         #[cfg(unix)]
@@ -470,8 +345,6 @@ impl Daemon {
             // Create log directory if it doesn't exist
             if let Some(parent) = log_path.parent() {
                 let _ = std::fs::create_dir_all(parent);
-            }
-            
             // Open log file with enhanced options
             let log_file = OpenOptions::new()
                 .create(true)
@@ -499,8 +372,6 @@ impl Daemon {
             
             // Always redirect stdin to /dev/null for daemon processes
             self.redirect_stdin_to_null();
-        }
-        
         #[cfg(windows)]
         {
             // Windows daemon stdio setup - redirect to log file or NUL
@@ -519,8 +390,6 @@ impl Daemon {
                 libc::close(null_fd);
             }
         }
-    }
-    
     #[cfg(unix)]
     fn redirect_stdin_to_null(&self) {
         let dev_null = std::ffi::CString::new("/dev/null").unwrap();
@@ -531,8 +400,6 @@ impl Daemon {
                 libc::close(null_fd);
             }
         }
-    }
-    
     #[cfg(windows)]
     fn setup_windows_stdio(&self) {
         use std::os::windows::io::AsRawHandle;
@@ -572,33 +439,21 @@ impl Daemon {
             
             write!(file, "{}", pid)
                 .map_err(|e| system_error(-1, format!("Failed to write PID file: {}", e)))?;
-        }
-        
         Ok(())
-    }
-    
     /// Create lock file
     fn create_lock_file(&self) -> ProcessResult<()> {
         if let Some(ref lock_file) = self.config.lock_file {
             File::create(lock_file)
                 .map_err(|e| system_error(-1, format!("Failed to create lock file: {}", e)))?;
-        }
-        
         Ok(())
-    }
-    
     /// Clean up daemon files
     fn cleanup_files(&self) -> ProcessResult<()> {
         // Remove PID file
         if let Some(ref pid_file) = self.config.pid_file {
             let _ = std::fs::remove_file(pid_file);
-        }
-        
         // Remove lock file
         if let Some(ref lock_file) = self.config.lock_file {
             let _ = std::fs::remove_file(lock_file);
-        }
-        
         Ok(())
     }
 }
@@ -613,8 +468,6 @@ impl Drop for Daemon {
 #[cfg(unix)]
 trait AsRawFd {
     fn as_raw_fd(&self) -> libc::c_int;
-}
-
 #[cfg(unix)]
 impl AsRawFd for File {
     fn as_raw_fd(&self) -> libc::c_int {
@@ -625,14 +478,10 @@ impl AsRawFd for File {
 
 /// Service manager for handling multiple daemons
 pub struct ServiceManager {
-    services: Arc<Mutex<HashMap<String, Daemon>>>,
-}
-
 impl ServiceManager {
     /// Create a new service manager
     pub fn new() -> Self {
         Self {
-            services: Arc::new(Mutex::new(HashMap::new())),
         }
     }
     
@@ -643,18 +492,13 @@ impl ServiceManager {
         
         if services.contains_key(&name) {
             return Err(system_error(-1, format!("Service '{}' already registered", name)));
-        }
-        
         let daemon = Daemon::new(config);
         services.insert(name, daemon);
         
         Ok(())
-    }
-    
     /// Start a service
     pub fn start_service<F>(&self, name: &str, daemon_main: F) -> ProcessResult<()>
     where
-        F: FnOnce() -> ProcessResult<()> + Send + 'static,
     {
         let mut services = self.services.lock()
             .map_err(|_| system_error(-1, "Failed to lock services".to_string()))?;
@@ -695,8 +539,6 @@ impl ServiceManager {
         self.services.lock()
             .map(|services| services.keys().cloned().collect())
             .unwrap_or_else(|_| Vec::new())
-    }
-    
     /// Start all services
     pub fn start_all(&self) -> ProcessResult<()> {
         let service_names = self.list_services();
@@ -705,11 +547,7 @@ impl ServiceManager {
             // Note: This would need individual daemon_main functions for each service
             // In a real implementation, services would be configured with their main functions
             eprintln!("Would start service: {}", name);
-        }
-        
         Ok(())
-    }
-    
     /// Stop all services
     pub fn stop_all(&self) -> ProcessResult<()> {
         let service_names = self.list_services();
@@ -733,18 +571,12 @@ pub mod system {
         #[cfg(target_os = "linux")]
         {
             install_systemd_service(config, executable_path)
-        }
-        
         #[cfg(windows)]
         {
             install_windows_service(config, executable_path)
-        }
-        
         #[cfg(target_os = "macos")]
         {
             install_launchd_service(config, executable_path)
-        }
-        
         #[cfg(not(any(target_os = "linux", windows, target_os = "macos")))]
         {
             Err(system_error(-1, "System service installation not supported on this platform".to_string()))
@@ -764,15 +596,8 @@ ExecStart={}
 Restart=always
 User={}
 Group={}
-WorkingDirectory={}
-
 [Install]
 WantedBy=multi-user.target
-"#,
-            config.description.as_deref().unwrap_or(&config.name),
-            executable_path,
-            config.user.as_deref().unwrap_or("root"),
-            config.group.as_deref().unwrap_or("root"),
             config.working_directory.as_ref()
                 .map(|p| p.to_string_lossy())
                 .unwrap_or_else(|| "/".into())
@@ -796,8 +621,6 @@ WantedBy=multi-user.target
             .map_err(|e| execution_failed("systemctl", &e.to_string()))?;
         
         Ok(())
-    }
-    
     #[cfg(windows)]
     fn install_windows_service(config: &DaemonConfig, executable_path: &str) -> ProcessResult<()> {
         // Use sc.exe to install Windows service
@@ -810,7 +633,6 @@ WantedBy=multi-user.target
             .output();
             
         match result {
-            Ok(output) if output.status.success() => Ok(()),
             Ok(output) => {
                 let error_msg = String::from_utf8_lossy(&output.stderr);
                 Err(system_error(-1, format!("Failed to install service: {}", error_msg)))
@@ -840,9 +662,6 @@ WantedBy=multi-user.target
     <string>{}</string>
 </dict>
 </plist>
-"#,
-            config.name,
-            executable_path,
             config.working_directory.as_ref()
                 .map(|p| p.to_string_lossy())
                 .unwrap_or_else(|| "/".into())
@@ -860,8 +679,6 @@ WantedBy=multi-user.target
             .map_err(|e| execution_failed("launchctl", &e.to_string()))?;
         
         Ok(())
-    }
-    
     /// Uninstall system service
     pub fn uninstall_system_service(service_name: &str) -> ProcessResult<()> {
         #[cfg(target_os = "linux")]
@@ -881,8 +698,6 @@ WantedBy=multi-user.target
                 .arg("daemon-reload")
                 .output()
                 .map_err(|e| execution_failed("systemctl", &e.to_string()))?;
-        }
-        
         #[cfg(windows)]
         {
             // Stop service
@@ -894,8 +709,6 @@ WantedBy=multi-user.target
                 .arg(service_name)
                 .output()
                 .map_err(|e| execution_failed("sc", &e.to_string()))?;
-        }
-        
         #[cfg(target_os = "macos")]
         {
             let plist_file = format!("/Library/LaunchDaemons/{}.plist", service_name);
@@ -905,8 +718,6 @@ WantedBy=multi-user.target
             
             // Remove plist file
             let _ = std::fs::remove_file(plist_file);
-        }
-        
         Ok(())
     }
 }

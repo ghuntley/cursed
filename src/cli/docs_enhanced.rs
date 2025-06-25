@@ -20,257 +20,177 @@ use tokio::fs;
 #[derive(Debug, Args)]
 pub struct DocsArgs {
     #[command(subcommand)]
-    pub command: DocsCommand,
-}
-
 #[derive(Debug, Subcommand)]
 pub enum DocsCommand {
     /// Generate documentation
     Generate {
         /// Source directory
         #[arg(short, long, default_value = "src")]
-        source_dir: PathBuf,
         
         /// Output directory
         #[arg(short, long, default_value = "docs")]
-        output_dir: PathBuf,
         
         /// Output format
         #[arg(short, long, default_value = "html")]
-        format: String,
         
         /// Include private items
         #[arg(long)]
-        include_private: bool,
-    },
     
     /// Publish documentation
     Publish {
         /// Package name to publish
         #[arg(short, long)]
-        package: Option<String>,
         
         /// Version to publish
         #[arg(short, long)]
-        version: Option<String>,
         
         /// Publishing target (local, s3, github-pages, custom)
         #[arg(short, long, default_value = "local")]
-        target: String,
         
         /// Base URL for published documentation
         #[arg(short, long)]
-        base_url: Option<String>,
         
         /// Enable optimization
         #[arg(long)]
-        optimize: bool,
         
         /// Configuration file
         #[arg(short, long)]
-        config: Option<PathBuf>,
         
         /// Dry run (don't actually publish)
         #[arg(long)]
-        dry_run: bool,
-    },
     
     /// Start documentation server
     Serve {
         /// Bind address
         #[arg(short, long, default_value = "127.0.0.1:8080")]
-        bind: SocketAddr,
         
         /// Document root directory
         #[arg(short, long, default_value = "./docs")]
-        document_root: PathBuf,
         
         /// Enable HTTPS
         #[arg(long)]
-        https: bool,
         
         /// SSL certificate file
         #[arg(long)]
-        cert: Option<PathBuf>,
         
         /// SSL private key file
         #[arg(long)]
-        key: Option<PathBuf>,
         
         /// Configuration file
         #[arg(short, long)]
-        config: Option<PathBuf>,
-    },
     
     /// Test documentation
     Test {
         /// Package to test
         #[arg(short, long)]
-        package: Option<String>,
         
         /// Version to test
         #[arg(short, long)]
-        version: Option<String>,
         
         /// Check links
         #[arg(long)]
-        check_links: bool,
         
         /// Verify examples
         #[arg(long)]
-        verify_examples: bool,
         
         /// Check completeness
         #[arg(long)]
-        check_completeness: bool,
         
         /// Check accessibility
         #[arg(long)]
-        check_accessibility: bool,
         
         /// Output format (text, json, html)
         #[arg(short, long, default_value = "text")]
-        format: String,
         
         /// Output file
         #[arg(short, long)]
-        output: Option<PathBuf>,
         
         /// Configuration file
         #[arg(short, long)]
-        config: Option<PathBuf>,
-    },
     
     /// Preview documentation locally
     Preview {
         /// Source directory
         #[arg(short, long, default_value = "src")]
-        source_dir: PathBuf,
         
         /// Port to serve on
         #[arg(short, long, default_value = "3000")]
-        port: u16,
         
         /// Auto-rebuild on changes
         #[arg(long)]
-        watch: bool,
         
         /// Open browser automatically
         #[arg(long)]
-        open: bool,
-    },
     
     /// Validate documentation configuration
     Validate {
         /// Configuration file to validate
         #[arg(short, long)]
-        config: PathBuf,
         
         /// Configuration type (publish, server, registry, testing)
         #[arg(short, long)]
-        config_type: String,
-    },
     
     /// Manage documentation registry
     Registry {
         #[command(subcommand)]
-        command: RegistryCommand,
-    },
-}
-
 #[derive(Debug, Subcommand)]
 pub enum RegistryCommand {
     /// Initialize registry
     Init {
         /// Registry data directory
         #[arg(short, long, default_value = "./registry")]
-        data_dir: PathBuf,
-    },
     
     /// List packages in registry
     List {
         /// Package name filter
         #[arg(short, long)]
-        package: Option<String>,
         
         /// Output format (text, json)
         #[arg(short, long, default_value = "text")]
-        format: String,
-    },
     
     /// Search registry
     Search {
         /// Search query
-        query: String,
         
         /// Limit results
         #[arg(short, long, default_value = "20")]
-        limit: usize,
         
         /// Output format (text, json)
         #[arg(short, long, default_value = "text")]
-        format: String,
-    },
     
     /// Show package information
     Show {
         /// Package name
-        package: String,
         
         /// Version (defaults to latest)
         #[arg(short, long)]
-        version: Option<String>,
-    },
     
     /// Clean registry
     Clean {
         /// Remove old versions
         #[arg(long)]
-        old_versions: bool,
         
         /// Remove orphaned entries
         #[arg(long)]
-        orphaned: bool,
-    },
-}
-
 pub async fn handle_docs_command(args: DocsArgs) -> Result<()> {
     match args.command {
         DocsCommand::Generate { source_dir, output_dir, format, include_private } => {
             handle_generate_command(source_dir, output_dir, format, include_private).await
-        }
-        
         DocsCommand::Publish { package, version, target, base_url, optimize, config, dry_run } => {
             handle_publish_command(package, version, target, base_url, optimize, config, dry_run).await
-        }
-        
         DocsCommand::Serve { bind, document_root, https, cert, key, config } => {
             handle_serve_command(bind, document_root, https, cert, key, config).await
-        }
-        
         DocsCommand::Test { package, version, check_links, verify_examples, check_completeness, check_accessibility, format, output, config } => {
             handle_test_command(package, version, check_links, verify_examples, check_completeness, check_accessibility, format, output, config).await
-        }
-        
         DocsCommand::Preview { source_dir, port, watch, open } => {
             handle_preview_command(source_dir, port, watch, open).await
-        }
-        
         DocsCommand::Validate { config, config_type } => {
             handle_validate_command(config, config_type).await
-        }
-        
         DocsCommand::Registry { command } => {
             handle_registry_command(command).await
         }
     }
-}
-
 async fn handle_generate_command(
-    source_dir: PathBuf,
-    output_dir: PathBuf,
-    format: String,
-    include_private: bool,
 ) -> Result<()> {
     info!("Generating documentation from {:?} to {:?}", source_dir, output_dir);
     
@@ -295,16 +215,7 @@ async fn handle_generate_command(
     }
     
     Ok(())
-}
-
 async fn handle_publish_command(
-    package: Option<String>,
-    version: Option<String>,
-    target: String,
-    base_url: Option<String>,
-    optimize: bool,
-    config_file: Option<PathBuf>,
-    dry_run: bool,
 ) -> Result<()> {
     info!("Publishing documentation");
     
@@ -313,7 +224,6 @@ async fn handle_publish_command(
         load_publish_config(&config_path).await?
     } else {
         create_default_publish_config(&target, base_url, optimize)?
-    };
     
     // Get package information
     let package_manager = PackageManager::new();
@@ -323,32 +233,10 @@ async fn handle_publish_command(
     let pkg_version = version.unwrap_or(current_package.version);
     
     let package_to_publish = Package {
-        name: pkg_name.clone(),
-        version: pkg_version.clone(),
-        description: current_package.description,
-        authors: current_package.authors,
-        license: current_package.license,
-        repository: current_package.repository,
-        homepage: current_package.homepage,
-        keywords: current_package.keywords,
-        dependencies: current_package.dependencies,
-        dev_dependencies: current_package.dev_dependencies,
-        build_dependencies: current_package.build_dependencies,
-        features: current_package.features,
-        default_features: current_package.default_features,
-        edition: current_package.edition,
-        rust_version: current_package.rust_version,
-        exclude: current_package.exclude,
-        include: current_package.include,
-        links: current_package.links,
-        path: current_package.path,
-    };
     
     if dry_run {
         info!("Dry run - would publish package {} version {}", pkg_name, pkg_version);
         return Ok(());
-    }
-    
     // Create publisher
     let generator = DocumentationGenerator::new();
     let registry = DocumentationRegistry::new(RegistryConfig::default());
@@ -361,26 +249,15 @@ async fn handle_publish_command(
     let metadata = publisher.publish_package(&package_to_publish).await?;
     
     info!(
-        "Documentation published successfully for {} {}",
         metadata.package_name, metadata.version
     );
     info!("URL: {}", metadata.url);
     info!(
-        "Build time: {}ms, Upload time: {}ms",
-        metadata.performance.build_time_ms,
         metadata.performance.upload_time_ms
     );
     
     Ok(())
-}
-
 async fn handle_serve_command(
-    bind: SocketAddr,
-    document_root: PathBuf,
-    https: bool,
-    cert: Option<PathBuf>,
-    key: Option<PathBuf>,
-    config_file: Option<PathBuf>,
 ) -> Result<()> {
     info!("Starting documentation server on {}", bind);
     
@@ -389,7 +266,6 @@ async fn handle_serve_command(
         load_server_config(&config_path).await?
     } else {
         create_default_server_config(bind, document_root, https, cert, key)?
-    };
     
     // Create registry
     let registry = DocumentationRegistry::new(RegistryConfig::default());
@@ -403,18 +279,7 @@ async fn handle_serve_command(
     server.start().await?;
     
     Ok(())
-}
-
 async fn handle_test_command(
-    package: Option<String>,
-    version: Option<String>,
-    check_links: bool,
-    verify_examples: bool,
-    check_completeness: bool,
-    check_accessibility: bool,
-    format: String,
-    output: Option<PathBuf>,
-    config_file: Option<PathBuf>,
 ) -> Result<()> {
     info!("Testing documentation");
     
@@ -423,7 +288,6 @@ async fn handle_test_command(
         load_testing_config(&config_path).await?
     } else {
         create_default_testing_config(check_links, verify_examples, check_completeness, check_accessibility)
-    };
     
     // Get package information
     let package_manager = PackageManager::new();
@@ -433,26 +297,6 @@ async fn handle_test_command(
     let pkg_version = version.unwrap_or(current_package.version);
     
     let package_to_test = Package {
-        name: pkg_name.clone(),
-        version: pkg_version.clone(),
-        description: current_package.description,
-        authors: current_package.authors,
-        license: current_package.license,
-        repository: current_package.repository,
-        homepage: current_package.homepage,
-        keywords: current_package.keywords,
-        dependencies: current_package.dependencies,
-        dev_dependencies: current_package.dev_dependencies,
-        build_dependencies: current_package.build_dependencies,
-        features: current_package.features,
-        default_features: current_package.default_features,
-        edition: current_package.edition,
-        rust_version: current_package.rust_version,
-        exclude: current_package.exclude,
-        include: current_package.include,
-        links: current_package.links,
-        path: current_package.path,
-    };
     
     // Create registry and tester
     let registry = DocumentationRegistry::new(RegistryConfig::default());
@@ -493,16 +337,8 @@ async fn handle_test_command(
     // Exit with error code if tests failed
     if !test_results.passed {
         std::process::exit(1);
-    }
-    
     Ok(())
-}
-
 async fn handle_preview_command(
-    source_dir: PathBuf,
-    port: u16,
-    watch: bool,
-    open: bool,
 ) -> Result<()> {
     info!("Starting documentation preview on port {}", port);
     
@@ -534,13 +370,9 @@ async fn handle_preview_command(
     if watch {
         info!("File watching enabled - documentation will rebuild on changes");
         // File watching would be implemented here
-    }
-    
     server.start().await?;
     
     Ok(())
-}
-
 async fn handle_validate_command(config_path: PathBuf, config_type: String) -> Result<()> {
     info!("Validating configuration file: {:?}", config_path);
     
@@ -548,10 +380,6 @@ async fn handle_validate_command(config_path: PathBuf, config_type: String) -> R
         "publish" => {
             let config = load_publish_config(&config_path).await?;
             let publisher = DocumentationPublisher::new(
-                config,
-                DocumentationGenerator::new(),
-                DocumentationRegistry::new(RegistryConfig::default()),
-                PackageManager::new(),
             );
             publisher.validate_config()?;
             info!("Publish configuration is valid");
@@ -581,25 +409,18 @@ async fn handle_validate_command(config_path: PathBuf, config_type: String) -> R
     }
     
     Ok(())
-}
-
 async fn handle_registry_command(command: RegistryCommand) -> Result<()> {
     match command {
         RegistryCommand::Init { data_dir } => {
             info!("Initializing registry in {:?}", data_dir);
             
             let config = RegistryConfig {
-                data_dir: data_dir.clone(),
-                index_file: data_dir.join("index.json"),
                 ..RegistryConfig::default()
-            };
             
             let registry = DocumentationRegistry::new(config);
             registry.initialize().await?;
             
             info!("Registry initialized successfully");
-        }
-        
         RegistryCommand::List { package, format } => {
             let registry = DocumentationRegistry::new(RegistryConfig::default());
             registry.initialize().await?;
@@ -612,7 +433,6 @@ async fn handle_registry_command(command: RegistryCommand) -> Result<()> {
                 }
             } else {
                 registry.list_packages().await
-            };
             
             match format.as_str() {
                 "text" => {
@@ -627,23 +447,11 @@ async fn handle_registry_command(command: RegistryCommand) -> Result<()> {
                     return Err(CursedError::General(format!("Unsupported format: {}", format)));
                 }
             }
-        }
-        
         RegistryCommand::Search { query, limit, format } => {
             let registry = DocumentationRegistry::new(RegistryConfig::default());
             registry.initialize().await?;
             
             let search_query = crate::docs::registry::RegistrySearchQuery {
-                query,
-                package: None,
-                version: None,
-                item_type: None,
-                category: None,
-                min_quality: None,
-                sort_by: crate::docs::registry::SortOrder::Relevance,
-                limit,
-                offset: 0,
-            };
             
             let results = registry.search(&search_query).await?;
             
@@ -660,8 +468,6 @@ async fn handle_registry_command(command: RegistryCommand) -> Result<()> {
                     return Err(CursedError::General(format!("Unsupported format: {}", format)));
                 }
             }
-        }
-        
         RegistryCommand::Show { package, version } => {
             let registry = DocumentationRegistry::new(RegistryConfig::default());
             registry.initialize().await?;
@@ -693,34 +499,22 @@ async fn handle_registry_command(command: RegistryCommand) -> Result<()> {
             if old_versions {
                 info!("Removing old versions...");
                 // Implementation would remove old versions
-            }
-            
             if orphaned {
                 info!("Removing orphaned entries...");
                 // Implementation would remove orphaned entries
-            }
-            
             info!("Registry cleaned successfully");
         }
     }
     
     Ok(())
-}
-
 // Helper functions for configuration loading
 
 async fn load_publish_config(config_path: &PathBuf) -> Result<PublishConfig> {
     load_config_file(config_path).await
-}
-
 async fn load_server_config(config_path: &PathBuf) -> Result<ServerConfig> {
     load_config_file(config_path).await
-}
-
 async fn load_testing_config(config_path: &PathBuf) -> Result<TestingConfig> {
     load_config_file(config_path).await
-}
-
 async fn load_config_file<T: serde::de::DeserializeOwned>(config_path: &PathBuf) -> Result<T> {
     let content = fs::read_to_string(config_path).await
         .map_err(|e| CursedError::General(format!("Failed to read config file: {}", e)))?;
@@ -749,98 +543,43 @@ async fn load_config_file<T: serde::de::DeserializeOwned>(config_path: &PathBuf)
             Err(CursedError::General(format!("Unsupported config file format: {}", extension)))
         }
     }
-}
-
 fn create_default_publish_config(
-    target: &str,
-    base_url: Option<String>,
-    optimize: bool,
 ) -> Result<PublishConfig> {
     let publish_target = match target {
         "local" => PublishTarget::Local {
             path: PathBuf::from("./published_docs"),
-        },
         "s3" => PublishTarget::S3 {
-            bucket: "cursed-docs".to_string(),
-            region: "us-west-2".to_string(),
-            prefix: Some("docs".to_string()),
-        },
         "github-pages" => PublishTarget::GithubPages {
             repo: "user/repo".to_string(),
-            branch: "gh-pages".to_string(),
-            token: std::env::var("GITHUB_TOKEN").unwrap_or_default(),
-        },
         _ => {
             return Err(CursedError::General(format!("Unsupported publish target: {}", target)));
         }
-    };
     
     Ok(PublishConfig {
-        target: publish_target,
         base_url: base_url.unwrap_or_else(|| "https://docs.cursed.dev".to_string()),
-        cdn: None,
         optimization: if optimize {
             OptimizationConfig::default()
         } else {
             OptimizationConfig {
-                minify_html: false,
-                minify_css: false,
-                minify_js: false,
-                optimize_images: false,
-                gzip_compression: false,
-                brotli_compression: false,
             }
-        },
-        auth: None,
-        domain: None,
     })
-}
-
 fn create_default_server_config(
-    bind: SocketAddr,
-    document_root: PathBuf,
-    https: bool,
-    cert: Option<PathBuf>,
-    key: Option<PathBuf>,
 ) -> Result<ServerConfig> {
     let ssl_config = if https {
         Some(crate::docs::server::SslServerConfig {
             cert_path: cert.ok_or_else(|| {
                 CursedError::General("SSL certificate path required for HTTPS".to_string())
-            })?,
             key_path: key.ok_or_else(|| {
                 CursedError::General("SSL private key path required for HTTPS".to_string())
-            })?,
-            chain_path: None,
         })
     } else {
         None
-    };
     
     Ok(ServerConfig {
-        bind_address: bind,
-        document_root,
-        enable_https: https,
-        ssl_config,
-        cors_config: crate::docs::server::CorsConfig::default(),
-        rate_limiting: crate::docs::server::RateLimitConfig::default(),
-        cache_config: crate::docs::server::CacheConfig::default(),
-        search_config: crate::docs::server::SearchConfig::default(),
-        analytics_config: crate::docs::server::AnalyticsConfig::default(),
     })
-}
-
 fn create_default_testing_config(
-    check_links: bool,
-    verify_examples: bool,
-    check_completeness: bool,
-    check_accessibility: bool,
 ) -> TestingConfig {
     TestingConfig {
-        check_links,
-        verify_examples,
-        check_completeness,
-        check_accessibility,
         ..TestingConfig::default()
     }
 }
@@ -867,8 +606,6 @@ fn print_test_results_text(results: &crate::docs::testing::TestResults) {
             }
         }
         println!();
-    }
-    
     if !results.suggestions.is_empty() {
         println!("Suggestions for Improvement:");
         for suggestion in &results.suggestions {
@@ -876,8 +613,6 @@ fn print_test_results_text(results: &crate::docs::testing::TestResults) {
             println!("    {}", suggestion.guidance);
         }
     }
-}
-
 fn generate_test_results_html(results: &crate::docs::testing::TestResults) -> String {
     format!(
         r#"<!DOCTYPE html>
@@ -900,8 +635,6 @@ fn generate_test_results_html(results: &crate::docs::testing::TestResults) -> St
     <p><strong>Total Time:</strong> {}ms</p>
     
     <h2>Test Categories</h2>
-    {}
-    
     <h2>Performance Metrics</h2>
     <ul>
         <li>Links Checked: {}</li>
@@ -912,11 +645,6 @@ fn generate_test_results_html(results: &crate::docs::testing::TestResults) -> St
     </ul>
 </body>
 </html>"#,
-        results.package,
-        results.version,
-        if results.passed { "passed" } else { "failed" },
-        if results.passed { "PASSED" } else { "FAILED" },
-        results.performance.total_time_ms,
         results.test_categories.iter().map(|(name, result)| {
             format!(
                 r#"<div class="category">
@@ -925,11 +653,6 @@ fn generate_test_results_html(results: &crate::docs::testing::TestResults) -> St
                     <p><strong>Tests:</strong> {}/{} passed</p>
                     {}
                 </div>"#,
-                name,
-                if result.passed { "passed" } else { "failed" },
-                if result.passed { "PASSED" } else { "FAILED" },
-                result.tests_passed,
-                result.tests_run,
                 if result.issues.is_empty() {
                     String::new()
                 } else {
@@ -942,12 +665,4 @@ fn generate_test_results_html(results: &crate::docs::testing::TestResults) -> St
                     )
                 }
             )
-        }).collect::<String>(),
-        results.performance.links_checked,
-        results.performance.examples_tested,
-        results.performance.link_check_time_ms,
-        results.performance.example_verify_time_ms,
-        results.performance.completeness_time_ms,
     )
-}
-

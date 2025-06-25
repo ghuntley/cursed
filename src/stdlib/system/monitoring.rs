@@ -24,43 +24,17 @@ use crate::error::CursedError;
 /// System monitoring controller with caching
 #[derive(Debug)]
 pub struct SystemMonitor {
-    start_time: Instant,
-    enabled: bool,
-    system: Arc<Mutex<System>>,
-    cache: Arc<Mutex<MonitoringCache>>,
-}
-
 /// Cached monitoring data
 #[derive(Debug, Clone)]
 struct MonitoringCache {
-    cpu_usage: Option<(f64, Instant)>,
-    memory_usage: Option<(u64, Instant)>,
-    disk_usage: Option<(u64, Instant)>,
-    network_stats: Option<(NetworkStats, Instant)>,
-    performance_metrics: Option<(PerformanceMetrics, Instant)>,
-    cache_duration: Duration,
-}
-
 /// Network statistics
 #[derive(Debug, Clone)]
 struct NetworkStats {
-    rx_bytes: u64,
-    tx_bytes: u64,
-    rx_packets: u64,
-    tx_packets: u64,
-}
-
 impl Clone for SystemMonitor {
     fn clone(&self) -> Self {
         Self {
-            start_time: self.start_time,
-            enabled: self.enabled,
-            system: Arc::clone(&self.system),
-            cache: Arc::clone(&self.cache),
         }
     }
-}
-
 /// Resource usage information
 #[derive(Debug, Clone)]
 pub struct ResourceUsage {
@@ -69,19 +43,9 @@ pub struct ResourceUsage {
     pub disk_usage: u64,     // Disk usage in bytes
     pub network_rx: u64,     // Network bytes received
     pub network_tx: u64,     // Network bytes transmitted
-}
-
 /// Performance metrics
 #[derive(Debug, Clone)]
 pub struct PerformanceMetrics {
-    pub uptime: Duration,
-    pub load_average: Vec<f64>,
-    pub process_count: usize,
-    pub thread_count: usize,
-    pub handles: usize,
-    pub metrics: HashMap<String, f64>,
-}
-
 impl Default for SystemMonitor {
     fn default() -> Self {
         Self::new()
@@ -91,16 +55,9 @@ impl Default for SystemMonitor {
 impl Default for MonitoringCache {
     fn default() -> Self {
         Self {
-            cpu_usage: None,
-            memory_usage: None,
-            disk_usage: None,
-            network_stats: None,
-            performance_metrics: None,
             cache_duration: Duration::from_secs(1), // 1 second cache by default
         }
     }
-}
-
 impl SystemMonitor {
     /// Create a new system monitor
     pub fn new() -> Self {
@@ -108,10 +65,6 @@ impl SystemMonitor {
         system.refresh_all();
         
         Self {
-            start_time: Instant::now(),
-            enabled: false,
-            system: Arc::new(Mutex::new(system)),
-            cache: Arc::new(Mutex::new(MonitoringCache::default())),
         }
     }
 
@@ -124,10 +77,6 @@ impl SystemMonitor {
         cache.cache_duration = cache_duration;
         
         Self {
-            start_time: Instant::now(),
-            enabled: false,
-            system: Arc::new(Mutex::new(system)),
-            cache: Arc::new(Mutex::new(cache)),
         }
     }
 
@@ -136,19 +85,13 @@ impl SystemMonitor {
         self.enabled = true;
         self.start_time = Instant::now();
         Ok(())
-    }
-
     /// Stop monitoring
     pub fn stop(&mut self) -> SystemResult<()> {
         self.enabled = false;
         Ok(())
-    }
-
     /// Check if monitoring is enabled
     pub fn is_enabled(&self) -> bool {
         self.enabled
-    }
-
     /// Get current resource usage
     pub fn get_resource_usage(&self) -> SystemResult<ResourceUsage> {
         let cpu_usage = self.get_cpu_usage()?;
@@ -157,14 +100,7 @@ impl SystemMonitor {
         let network_stats = self.get_network_stats()?;
         
         Ok(ResourceUsage {
-            cpu_usage,
-            memory_usage,
-            disk_usage,
-            network_rx: network_stats.rx_bytes,
-            network_tx: network_stats.tx_bytes,
         })
-    }
-
     /// Get CPU usage percentage
     pub fn get_cpu_usage(&self) -> SystemResult<f64> {
         let now = Instant::now();
@@ -176,8 +112,6 @@ impl SystemMonitor {
                     return Ok(cached_value);
                 }
             }
-        }
-        
         // Refresh system information
         if let Ok(mut system) = self.system.lock() {
             system.refresh_cpu();
@@ -191,8 +125,6 @@ impl SystemMonitor {
             // Update cache
             if let Ok(mut cache) = self.cache.lock() {
                 cache.cpu_usage = Some((cpu_usage, now));
-            }
-            
             Ok(cpu_usage)
         } else {
             Err(SystemError::MonitoringError("Failed to access system information".to_string()))
@@ -210,8 +142,6 @@ impl SystemMonitor {
                     return Ok(cached_value);
                 }
             }
-        }
-        
         if let Ok(mut system) = self.system.lock() {
             system.refresh_memory();
             let used_memory = system.used_memory() * 1024; // Convert from KB to bytes
@@ -219,8 +149,6 @@ impl SystemMonitor {
             // Update cache
             if let Ok(mut cache) = self.cache.lock() {
                 cache.memory_usage = Some((used_memory, now));
-            }
-            
             Ok(used_memory)
         } else {
             Err(SystemError::MonitoringError("Failed to access system information".to_string()))
@@ -238,8 +166,6 @@ impl SystemMonitor {
                     return Ok(cached_value);
                 }
             }
-        }
-        
         if let Ok(mut system) = self.system.lock() {
             system.refresh_disks();
             let total_used = system.disks().iter()
@@ -249,8 +175,6 @@ impl SystemMonitor {
             // Update cache
             if let Ok(mut cache) = self.cache.lock() {
                 cache.disk_usage = Some((total_used, now));
-            }
-            
             Ok(total_used)
         } else {
             Err(SystemError::MonitoringError("Failed to access system information".to_string()))
@@ -268,8 +192,6 @@ impl SystemMonitor {
                     return Ok(cached_value.clone());
                 }
             }
-        }
-        
         if let Ok(mut system) = self.system.lock() {
             system.refresh_networks();
             
@@ -279,17 +201,11 @@ impl SystemMonitor {
                 });
             
             let stats = NetworkStats {
-                rx_bytes: total_rx,
-                tx_bytes: total_tx,
                 rx_packets: 0, // sysinfo doesn't provide packet counts
-                tx_packets: 0,
-            };
             
             // Update cache
             if let Ok(mut cache) = self.cache.lock() {
                 cache.network_stats = Some((stats.clone(), now));
-            }
-            
             Ok(stats)
         } else {
             Err(SystemError::MonitoringError("Failed to access system information".to_string()))
@@ -307,8 +223,6 @@ impl SystemMonitor {
                     return Ok(cached_value.clone());
                 }
             }
-        }
-        
         if let Ok(mut system) = self.system.lock() {
             system.refresh_all();
             
@@ -326,26 +240,15 @@ impl SystemMonitor {
             // Add per-CPU metrics
             for (i, cpu) in system.cpus().iter().enumerate() {
                 metrics.insert(format!("cpu_{}_usage", i), cpu.cpu_usage() as f64);
-            }
-            
             let load_average = self.get_load_average()?;
             let process_count = system.processes().len();
             let thread_count = self.get_thread_count()?;
             
             let performance_metrics = PerformanceMetrics {
-                uptime: self.get_system_uptime()?,
-                load_average,
-                process_count,
-                thread_count,
-                handles: self.get_handles_count()?,
-                metrics,
-            };
             
             // Update cache
             if let Ok(mut cache) = self.cache.lock() {
                 cache.performance_metrics = Some((performance_metrics.clone(), now));
-            }
-            
             Ok(performance_metrics)
         } else {
             Err(SystemError::MonitoringError("Failed to access system information".to_string()))
@@ -419,7 +322,6 @@ impl SystemMonitor {
         #[cfg(target_os = "linux")]
         {
             match fs::read_dir("/proc/self/fd") {
-                Ok(entries) => Ok(entries.count()),
                 Err(_) => {
                     // Fallback: estimate based on process count
                     if let Ok(system) = self.system.lock() {
@@ -440,8 +342,6 @@ impl SystemMonitor {
                 Ok(100)
             }
         }
-    }
-
     /// Clear monitoring cache
     pub fn clear_cache(&self) -> SystemResult<()> {
         if let Ok(mut cache) = self.cache.lock() {
@@ -466,59 +366,41 @@ impl SystemMonitor {
             Err(SystemError::MonitoringError("Failed to get cache stats".to_string()))
         }
     }
-}
-
 /// Monitor system resources
 pub fn monitor_system() -> SystemResult<SystemMonitor> {
     let mut monitor = SystemMonitor::new();
     monitor.start()?;
     Ok(monitor)
-}
-
 /// Monitor system resources with custom cache duration
 pub fn monitor_system_with_cache(cache_duration: Duration) -> SystemResult<SystemMonitor> {
     let mut monitor = SystemMonitor::with_cache_duration(cache_duration);
     monitor.start()?;
     Ok(monitor)
-}
-
 /// Get current resource usage
 pub fn get_resource_usage() -> SystemResult<ResourceUsage> {
     let monitor = SystemMonitor::new();
     monitor.get_resource_usage()
-}
-
 /// Get performance metrics
 pub fn get_performance_metrics() -> SystemResult<PerformanceMetrics> {
     let monitor = SystemMonitor::new();
     monitor.get_performance_metrics()
-}
-
 /// Get current CPU usage
 pub fn get_cpu_usage() -> SystemResult<f64> {
     let monitor = SystemMonitor::new();
     monitor.get_cpu_usage()
-}
-
 /// Get current memory usage
 pub fn get_memory_usage() -> SystemResult<u64> {
     let monitor = SystemMonitor::new();
     monitor.get_memory_usage()
-}
-
 /// Get disk usage
 pub fn get_disk_usage() -> SystemResult<u64> {
     let monitor = SystemMonitor::new();
     monitor.get_disk_usage()
-}
-
 /// Get network statistics
 pub fn get_network_statistics() -> SystemResult<(u64, u64)> {
     let monitor = SystemMonitor::new();
     let stats = monitor.get_network_stats()?;
     Ok((stats.rx_bytes, stats.tx_bytes))
-}
-
 /// Initialize monitoring subsystem
 pub fn init_monitoring() -> SystemResult<()> {
     // Initialize platform-specific monitoring
@@ -529,8 +411,6 @@ pub fn init_monitoring() -> SystemResult<()> {
     init_unix_monitoring()?;
     
     Ok(())
-}
-
 /// Cleanup monitoring subsystem
 pub fn cleanup_monitoring() -> SystemResult<()> {
     // Cleanup platform-specific monitoring
@@ -541,34 +421,24 @@ pub fn cleanup_monitoring() -> SystemResult<()> {
     cleanup_unix_monitoring()?;
     
     Ok(())
-}
-
 // Platform-specific implementations
 
 #[cfg(target_os = "windows")]
 fn init_windows_monitoring() -> SystemResult<()> {
     // Windows-specific monitoring initialization
     Ok(())
-}
-
 #[cfg(target_os = "windows")]
 fn cleanup_windows_monitoring() -> SystemResult<()> {
     // Windows-specific monitoring cleanup
     Ok(())
-}
-
 #[cfg(unix)]
 fn init_unix_monitoring() -> SystemResult<()> {
     // Unix-specific monitoring initialization
     Ok(())
-}
-
 #[cfg(unix)]
 fn cleanup_unix_monitoring() -> SystemResult<()> {
     // Unix-specific monitoring cleanup
     Ok(())
-}
-
 // Additional utility functions
 
 /// Get system information summary
@@ -585,12 +455,8 @@ pub fn get_system_info_summary() -> SystemResult<HashMap<String, String>> {
     info.insert("uptime".to_string(), system.uptime().to_string());
     
     Ok(info)
-}
-
 /// Monitor system continuously with callback
 pub fn monitor_continuous<F>(
-    interval: Duration,
-    mut callback: F,
 ) -> SystemResult<()>
 where
     F: FnMut(ResourceUsage) -> bool, // Return false to stop monitoring
@@ -610,11 +476,7 @@ where
         }
         
         std::thread::sleep(interval);
-    }
-    
     Ok(())
-}
-
 /// Get process information by PID
 pub fn get_process_info(pid: u32) -> SystemResult<HashMap<String, String>> {
     let mut system = System::new();
@@ -632,8 +494,6 @@ pub fn get_process_info(pid: u32) -> SystemResult<HashMap<String, String>> {
         
         if let Some(exe) = process.exe() {
             info.insert("executable".to_string(), exe.to_string_lossy().to_string());
-        }
-        
         Ok(info)
     } else {
         Err(SystemError::MonitoringError(format!("Process with PID {} not found", pid)))
@@ -656,8 +516,6 @@ pub fn get_top_processes_by_cpu(limit: usize) -> SystemResult<Vec<(u32, String, 
     processes.truncate(limit);
     
     Ok(processes)
-}
-
 /// Get top processes by memory usage
 pub fn get_top_processes_by_memory(limit: usize) -> SystemResult<Vec<(u32, String, u64)>> {
     let mut system = System::new_all();
@@ -674,5 +532,3 @@ pub fn get_top_processes_by_memory(limit: usize) -> SystemResult<Vec<(u32, Strin
     processes.truncate(limit);
     
     Ok(processes)
-}
-

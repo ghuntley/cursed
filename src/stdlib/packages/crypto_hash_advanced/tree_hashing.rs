@@ -9,20 +9,11 @@ pub type TreeResult<T> = std::result::Result<T, CryptoError>;
 /// Merkle tree implementation
 #[derive(Debug, Clone)]
 pub struct MerkleTree<H: Hasher + Clone> {
-    hasher: H,
-    leaves: Vec<Vec<u8>>,
     tree: Vec<Vec<Vec<u8>>>, // Level 0 = leaves, Level n = root
-    root_hash: Option<Vec<u8>>,
-}
-
 impl<H: Hasher + Clone> MerkleTree<H> {
     /// Create new Merkle tree
     pub fn new(hasher: H) -> Self {
         Self {
-            hasher,
-            leaves: Vec::new(),
-            tree: Vec::new(),
-            root_hash: None,
         }
     }
     
@@ -30,22 +21,16 @@ impl<H: Hasher + Clone> MerkleTree<H> {
     pub fn add_leaf(&mut self, data: &[u8]) {
         self.leaves.push(data.to_vec());
         self.root_hash = None; // Invalidate cached root
-    }
-    
     /// Add multiple leaves at once
     pub fn add_leaves(&mut self, data_items: &[&[u8]]) {
         for data in data_items {
             self.leaves.push(data.to_vec());
         }
         self.root_hash = None;
-    }
-    
     /// Build the Merkle tree and compute root hash
     pub fn build(&mut self) -> TreeResult<Vec<u8>> {
         if self.leaves.is_empty() {
             return Err(CursedError::InvalidArgument("Cannot build tree with no leaves".to_string()));
-        }
-        
         self.tree.clear();
         
         // Level 0: Hash all leaves
@@ -76,14 +61,10 @@ impl<H: Hasher + Clone> MerkleTree<H> {
             
             self.tree.push(next_level);
             level_index += 1;
-        }
-        
         // Cache and return root hash
         let root = self.tree.last().unwrap()[0].clone();
         self.root_hash = Some(root.clone());
         Ok(root)
-    }
-    
     /// Get the root hash (builds tree if necessary)
     pub fn root(&mut self) -> TreeResult<Vec<u8>> {
         if let Some(ref root) = self.root_hash {
@@ -99,8 +80,6 @@ impl<H: Hasher + Clone> MerkleTree<H> {
             return Err(CursedError::InvalidArgument(
                 format!("Leaf index {} out of bounds ({})", leaf_index, self.leaves.len())
             ));
-        }
-        
         // Ensure tree is built
         self.build()?;
         
@@ -114,7 +93,6 @@ impl<H: Hasher + Clone> MerkleTree<H> {
                 current_index + 1
             } else {
                 current_index - 1
-            };
             
             let current_level = &self.tree[level];
             
@@ -125,20 +103,9 @@ impl<H: Hasher + Clone> MerkleTree<H> {
                 // No sibling (odd number case) - use self
                 proof_hashes.push(current_level[current_index].clone());
                 proof_directions.push(false);
-            }
-            
             current_index /= 2;
-        }
-        
         Ok(MerkleProof {
-            leaf_data: self.leaves[leaf_index].clone(),
-            leaf_hash: self.tree[0][leaf_index].clone(),
-            proof_hashes,
-            proof_directions,
-            root_hash: self.root_hash.clone().unwrap(),
         })
-    }
-    
     /// Verify a Merkle proof
     pub fn verify_proof(&self, proof: &MerkleProof) -> bool {
         let mut current_hash = self.hasher.clone().hash(&proof.leaf_data);
@@ -146,8 +113,6 @@ impl<H: Hasher + Clone> MerkleTree<H> {
         // Check leaf hash matches
         if current_hash != proof.leaf_hash {
             return false;
-        }
-        
         // Traverse proof path
         for (sibling_hash, is_right_sibling) in proof.proof_hashes.iter().zip(&proof.proof_directions) {
             current_hash = if *is_right_sibling {
@@ -158,31 +123,20 @@ impl<H: Hasher + Clone> MerkleTree<H> {
                 // Current is right, sibling is left
                 let combined = [&sibling_hash[..], &current_hash[..]].concat();
                 self.hasher.clone().hash(&combined)
-            };
-        }
-        
         current_hash == proof.root_hash
-    }
-    
     /// Get tree depth
     pub fn depth(&self) -> usize {
         if self.tree.is_empty() {
             return 0;
         }
         self.tree.len() - 1
-    }
-    
     /// Get number of leaves
     pub fn leaf_count(&self) -> usize {
         self.leaves.len()
-    }
-    
     /// Update a leaf and rebuild affected path
     pub fn update_leaf(&mut self, index: usize, new_data: &[u8]) -> TreeResult<Vec<u8>> {
         if index >= self.leaves.len() {
             return Err(CursedError::InvalidArgument("Leaf index out of bounds".to_string()));
-        }
-        
         self.leaves[index] = new_data.to_vec();
         self.build() // Rebuild entire tree for simplicity
     }
@@ -191,13 +145,7 @@ impl<H: Hasher + Clone> MerkleTree<H> {
 /// Merkle proof for verifying leaf inclusion
 #[derive(Debug, Clone)]
 pub struct MerkleProof {
-    pub leaf_data: Vec<u8>,
-    pub leaf_hash: Vec<u8>,
-    pub proof_hashes: Vec<Vec<u8>>,
     pub proof_directions: Vec<bool>, // true = right sibling, false = left sibling
-    pub root_hash: Vec<u8>,
-}
-
 impl MerkleProof {
     /// Convert proof to compact binary format
     pub fn to_bytes(&self) -> Vec<u8> {
@@ -221,30 +169,22 @@ impl MerkleProof {
         for (hash, direction) in self.proof_hashes.iter().zip(&self.proof_directions) {
             result.extend_from_slice(hash);
             result.push(if *direction { 1 } else { 0 });
-        }
-        
         // Root hash
         result.extend_from_slice(&self.root_hash);
         
         result
-    }
-    
     /// Parse proof from binary format
     pub fn from_bytes(data: &[u8]) -> TreeResult<Self> {
         let mut offset = 0;
         
         if data.len() < 4 {
             return Err(CursedError::InvalidArgument("Proof data too short".to_string()));
-        }
-        
         // Leaf data
         let leaf_len = u32::from_le_bytes([data[0], data[1], data[2], data[3]]) as usize;
         offset += 4;
         
         if offset + leaf_len >= data.len() {
             return Err(CursedError::InvalidArgument("Invalid leaf data length".to_string()));
-        }
-        
         let leaf_data = data[offset..offset + leaf_len].to_vec();
         offset += leaf_len;
         
@@ -255,8 +195,6 @@ impl MerkleProof {
         // Leaf hash
         if offset + hash_size >= data.len() {
             return Err(CursedError::InvalidArgument("Invalid leaf hash".to_string()));
-        }
-        
         let leaf_hash = data[offset..offset + hash_size].to_vec();
         offset += hash_size;
         
@@ -271,28 +209,17 @@ impl MerkleProof {
         for _ in 0..proof_count {
             if offset + hash_size + 1 > data.len() {
                 return Err(CursedError::InvalidArgument("Invalid proof hash".to_string()));
-            }
-            
             proof_hashes.push(data[offset..offset + hash_size].to_vec());
             offset += hash_size;
             
             proof_directions.push(data[offset] != 0);
             offset += 1;
-        }
-        
         // Root hash
         if offset + hash_size != data.len() {
             return Err(CursedError::InvalidArgument("Invalid root hash".to_string()));
-        }
-        
         let root_hash = data[offset..offset + hash_size].to_vec();
         
         Ok(MerkleProof {
-            leaf_data,
-            leaf_hash,
-            proof_hashes,
-            proof_directions,
-            root_hash,
         })
     }
 }
@@ -300,19 +227,11 @@ impl MerkleProof {
 /// Binary hash tree for efficient hash computation
 #[derive(Debug, Clone)]
 pub struct BinaryHashTree<H: Hasher + Clone> {
-    hasher: H,
-    nodes: Vec<Option<Vec<u8>>>,
-    height: usize,
-}
-
 impl<H: Hasher + Clone> BinaryHashTree<H> {
     /// Create tree with specified height (2^height leaves)
     pub fn new(hasher: H, height: usize) -> Self {
         let node_count = (1 << (height + 1)) - 1; // 2^(h+1) - 1 nodes
         Self {
-            hasher,
-            nodes: vec![None; node_count],
-            height,
         }
     }
     
@@ -323,8 +242,6 @@ impl<H: Hasher + Clone> BinaryHashTree<H> {
             return Err(CursedError::InvalidArgument(
                 format!("Leaf index {} exceeds maximum {}", index, max_leaves - 1)
             ));
-        }
-        
         let leaf_node_index = self.leaf_node_index(index);
         self.nodes[leaf_node_index] = Some(self.hasher.clone().hash(data));
         
@@ -332,13 +249,9 @@ impl<H: Hasher + Clone> BinaryHashTree<H> {
         self.update_path_to_root(leaf_node_index);
         
         Ok(())
-    }
-    
     /// Get root hash
     pub fn root(&self) -> Option<Vec<u8>> {
         self.nodes[0].clone()
-    }
-    
     /// Update path from leaf to root
     fn update_path_to_root(&mut self, mut node_index: usize) {
         while node_index > 0 {
@@ -347,19 +260,14 @@ impl<H: Hasher + Clone> BinaryHashTree<H> {
                 node_index + 1
             } else {
                 node_index - 1
-            };
             
             // Compute parent hash from children
             if let (Some(left), Some(right)) = (
-                &self.nodes[if node_index % 2 == 1 { node_index } else { sibling_index }],
-                &self.nodes[if node_index % 2 == 1 { sibling_index } else { node_index }],
             ) {
                 let combined = [&left[..], &right[..]].concat();
                 self.nodes[parent_index] = Some(self.hasher.clone().hash(&combined));
             } else {
                 self.nodes[parent_index] = None;
-            }
-            
             node_index = parent_index;
         }
     }
@@ -372,19 +280,9 @@ impl<H: Hasher + Clone> BinaryHashTree<H> {
 
 /// Streaming Merkle tree for large datasets
 pub struct StreamingMerkleTree<H: Hasher + Clone> {
-    hasher: H,
-    buffer: VecDeque<Vec<u8>>,
-    tree_levels: Vec<VecDeque<Vec<u8>>>,
-    finalized: bool,
-}
-
 impl<H: Hasher + Clone> StreamingMerkleTree<H> {
     pub fn new(hasher: H) -> Self {
         Self {
-            hasher,
-            buffer: VecDeque::new(),
-            tree_levels: vec![VecDeque::new()],
-            finalized: false,
         }
     }
     
@@ -392,26 +290,18 @@ impl<H: Hasher + Clone> StreamingMerkleTree<H> {
     pub fn add_data(&mut self, data: &[u8]) -> TreeResult<()> {
         if self.finalized {
             return Err(CursedError::InvalidArgument("Cannot add data to finalized tree".to_string()));
-        }
-        
         let leaf_hash = self.hasher.clone().hash(data);
         self.buffer.push_back(leaf_hash);
         
         self.process_buffer();
         Ok(())
-    }
-    
     /// Finalize tree and get root hash
     pub fn finalize(&mut self) -> TreeResult<Vec<u8>> {
         if self.finalized {
             return Err(CursedError::InvalidArgument("Tree already finalized".to_string()));
-        }
-        
         // Process any remaining items in buffer
         while !self.buffer.is_empty() {
             self.process_buffer();
-        }
-        
         // Combine all levels to get final root
         let mut current_level = 0;
         while self.tree_levels.len() > 1 {
@@ -436,8 +326,6 @@ impl<H: Hasher + Clone> StreamingMerkleTree<H> {
                 current_level += 1;
             } else {
                 current_level += 1;
-            }
-            
             if current_level >= self.tree_levels.len() {
                 break;
             }
@@ -453,8 +341,6 @@ impl<H: Hasher + Clone> StreamingMerkleTree<H> {
         }
         
         Err(CursedError::InvalidArgument("Empty tree".to_string()))
-    }
-    
     fn process_buffer(&mut self) {
         // Process pairs from buffer
         while self.buffer.len() >= 2 {
@@ -465,8 +351,6 @@ impl<H: Hasher + Clone> StreamingMerkleTree<H> {
             let parent_hash = self.hasher.clone().hash(&combined);
             
             self.tree_levels[0].push_back(parent_hash);
-        }
-        
         // Process tree levels
         let mut level = 0;
         while level < self.tree_levels.len() && self.tree_levels[level].len() >= 2 {
@@ -483,5 +367,3 @@ impl<H: Hasher + Clone> StreamingMerkleTree<H> {
             level += 1;
         }
     }
-}
-

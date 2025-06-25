@@ -14,51 +14,28 @@ use super::{PublicKeyEncryption, ParameterSet, AlgorithmPerformance, KeySizes};
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum NtruParameterSet {
     /// NTRU-HPS-2048-509 (NIST Level 1)
-    NtruHps2048509,
     /// NTRU-HPS-2048-677 (NIST Level 3)
-    NtruHps2048677,
     /// NTRU-HPS-4096-821 (NIST Level 5)
-    NtruHps4096821,
     /// NTRU-HRSS-701 (NIST Level 1)
-    NtruHrss701,
-}
-
 impl ParameterSet for NtruParameterSet {
     fn security_level(&self) -> SecurityLevel {
         match self {
-            NtruParameterSet::NtruHps2048509 | NtruParameterSet::NtruHrss701 => SecurityLevel::Level1,
-            NtruParameterSet::NtruHps2048677 => SecurityLevel::Level3,
-            NtruParameterSet::NtruHps4096821 => SecurityLevel::Level5,
         }
     }
 
     fn public_key_size(&self) -> usize {
         match self {
-            NtruParameterSet::NtruHps2048509 => 699,
-            NtruParameterSet::NtruHps2048677 => 930,
-            NtruParameterSet::NtruHps4096821 => 1230,
-            NtruParameterSet::NtruHrss701 => 1138,
         }
     }
 
     fn secret_key_size(&self) -> usize {
         match self {
-            NtruParameterSet::NtruHps2048509 => 935,
-            NtruParameterSet::NtruHps2048677 => 1234,
-            NtruParameterSet::NtruHps4096821 => 1590,
-            NtruParameterSet::NtruHrss701 => 1450,
         }
     }
 
     fn additional_sizes(&self) -> Vec<(&'static str, usize)> {
         let ciphertext_size = match self {
-            NtruParameterSet::NtruHps2048509 => 699,
-            NtruParameterSet::NtruHps2048677 => 930,
-            NtruParameterSet::NtruHps4096821 => 1230,
-            NtruParameterSet::NtruHrss701 => 1138,
-        };
         vec![
-            ("ciphertext", ciphertext_size),
             ("plaintext_max", 32), // Maximum plaintext size
         ]
     }
@@ -67,41 +44,20 @@ impl ParameterSet for NtruParameterSet {
 impl fmt::Display for NtruParameterSet {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            NtruParameterSet::NtruHps2048509 => write!(f, "NTRU-HPS-2048-509"),
-            NtruParameterSet::NtruHps2048677 => write!(f, "NTRU-HPS-2048-677"),
-            NtruParameterSet::NtruHps4096821 => write!(f, "NTRU-HPS-4096-821"),
-            NtruParameterSet::NtruHrss701 => write!(f, "NTRU-HRSS-701"),
         }
     }
-}
-
 /// NTRU public key
 #[derive(Debug, Clone)]
 pub struct NtruPublicKey {
-    pub parameter_set: NtruParameterSet,
-    pub key_data: Vec<u8>,
-}
-
 /// NTRU secret key
 #[derive(Debug, Clone)]  
 pub struct NtruSecretKey {
-    pub parameter_set: NtruParameterSet,
-    pub key_data: Vec<u8>,
-}
-
 /// NTRU ciphertext
 #[derive(Debug, Clone)]
 pub struct NtruCiphertext {
-    pub parameter_set: NtruParameterSet,
-    pub data: Vec<u8>,
-}
-
 /// NTRU plaintext (wrapper for Vec<u8>)
 #[derive(Debug, Clone)]
 pub struct NtruPlaintext {
-    pub data: Vec<u8>,
-}
-
 /// NTRU implementation (placeholder)
 pub struct Ntru;
 
@@ -113,14 +69,8 @@ impl PublicKeyEncryption for Ntru {
 
     fn keygen(security_level: SecurityLevel) -> PqcResult<(Self::PublicKey, Self::SecretKey)> {
         let parameter_set = match security_level {
-            SecurityLevel::Level1 => NtruParameterSet::NtruHps2048509,
-            SecurityLevel::Level3 => NtruParameterSet::NtruHps2048677,
-            SecurityLevel::Level5 => NtruParameterSet::NtruHps4096821,
-        };
 
         Self::keygen_with_params(parameter_set)
-    }
-
     fn encrypt(public_key: &Self::PublicKey, plaintext: &Self::Plaintext) -> PqcResult<Self::Ciphertext> {
         // Placeholder implementation
         use rand::RngCore;
@@ -147,11 +97,7 @@ impl PublicKeyEncryption for Ntru {
         }
 
         Ok(NtruCiphertext {
-            parameter_set,
-            data: ciphertext_data,
         })
-    }
-
     fn decrypt(secret_key: &Self::SecretKey, ciphertext: &Self::Ciphertext) -> PqcResult<Self::Plaintext> {
         // Placeholder implementation
         let mut hasher = Sha3_256::new();
@@ -160,10 +106,7 @@ impl PublicKeyEncryption for Ntru {
         let hash_result = hasher.finalize();
         
         Ok(NtruPlaintext {
-            data: hash_result.to_vec(),
         })
-    }
-
     fn algorithm_type() -> AlgorithmType {
         AlgorithmType::Ntru
     }

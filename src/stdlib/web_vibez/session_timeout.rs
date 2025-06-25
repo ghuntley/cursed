@@ -23,18 +23,9 @@ use tokio::sync::Mutex as AsyncMutex;
 /// Session store with timeout support - using enum wrapper instead of trait object
 #[derive(Debug)]
 pub enum TimeoutAwareSessionStore {
-    Memory(TimeoutMemorySessionStore),
-    File(TimeoutFileSessionStore),
-    Redis(TimeoutRedisSessionStore),
-    Database(TimeoutDatabaseSessionStore),
-}
-
 impl TimeoutAwareSessionStore {
     /// Load session with timeout
     pub async fn load_with_timeout(
-        &self,
-        session_id: &str,
-        timeout_middleware: &TimeoutMiddleware,
     ) -> TimeoutResult<Option<Session>> {
         match self {
             TimeoutAwareSessionStore::Memory(store) => {
@@ -50,13 +41,8 @@ impl TimeoutAwareSessionStore {
                 store.load_with_timeout(session_id, timeout_middleware).await
             }
         }
-    }
-
     /// Save session with timeout
     pub async fn save_with_timeout(
-        &self,
-        session: &Session,
-        timeout_middleware: &TimeoutMiddleware,
     ) -> TimeoutResult<()> {
         match self {
             TimeoutAwareSessionStore::Memory(store) => {
@@ -72,13 +58,8 @@ impl TimeoutAwareSessionStore {
                 store.save_with_timeout(session, timeout_middleware).await
             }
         }
-    }
-
     /// Delete session with timeout
     pub async fn delete_with_timeout(
-        &self,
-        session_id: &str,
-        timeout_middleware: &TimeoutMiddleware,
     ) -> TimeoutResult<()> {
         match self {
             TimeoutAwareSessionStore::Memory(store) => {
@@ -94,12 +75,8 @@ impl TimeoutAwareSessionStore {
                 store.delete_with_timeout(session_id, timeout_middleware).await
             }
         }
-    }
-
     /// Cleanup expired sessions with timeout
     pub async fn cleanup_with_timeout(
-        &self,
-        timeout_middleware: &TimeoutMiddleware,
     ) -> TimeoutResult<usize> {
         match self {
             TimeoutAwareSessionStore::Memory(store) => {
@@ -115,13 +92,8 @@ impl TimeoutAwareSessionStore {
                 store.cleanup_with_timeout(timeout_middleware).await
             }
         }
-    }
-
     /// Check if session exists with timeout
     pub async fn exists_with_timeout(
-        &self,
-        session_id: &str,
-        timeout_middleware: &TimeoutMiddleware,
     ) -> TimeoutResult<bool> {
         match self {
             TimeoutAwareSessionStore::Memory(store) => {
@@ -143,12 +115,6 @@ impl TimeoutAwareSessionStore {
 /// Redis session store with timeout support
 #[derive(Debug)]
 pub struct TimeoutRedisSessionStore {
-    client: RedisClient,
-    connection: Arc<AsyncMutex<redis::aio::Connection>>,
-    config: SessionConfig,
-    key_prefix: String,
-}
-
 impl TimeoutRedisSessionStore {
     pub async fn new(redis_url: &str, config: SessionConfig) -> crate::error::Result<()> {
         let client = RedisClient::open(redis_url)
@@ -158,27 +124,15 @@ impl TimeoutRedisSessionStore {
             .map_err(|e| SessionError::StoreError(format!("Failed to connect to Redis: {}", e)))?;
         
         Ok(Self {
-            client,
-            connection: Arc::new(AsyncMutex::new(connection)),
-            config,
-            key_prefix: "cursed:session:".to_string(),
         })
-    }
-
     fn session_key(&self, session_id: &str) -> String {
         format!("{}{}", self.key_prefix, session_id)
-    }
-
     fn serialize_session(&self, session: &Session) -> crate::error::Result<()> {
         serde_json::to_string(session)
             .map_err(|e| SessionError::SerializationError(format!("Failed to serialize session: {}", e)))
-    }
-
     fn deserialize_session(&self, data: &str) -> crate::error::Result<()> {
         serde_json::from_str(data)
             .map_err(|e| SessionError::SerializationError(format!("Failed to deserialize session: {}", e)))
-    }
-
     fn is_session_expired(&self, session: &Session) -> bool {
         if let Some(expires_at) = session.expires_at {
             let now = SystemTime::now()
@@ -199,9 +153,6 @@ impl TimeoutRedisSessionStore {
         let pattern = format!("{}*", self.key_prefix);
         let mut iter: redis::AsyncIter<String> = conn.scan_match(&pattern).await
             .map_err(|e| TimeoutError::DatabaseTimeout {
-                elapsed: Duration::from_secs(0),
-                timeout: self.config.database_timeout,
-                operation: format!("redis_scan: {}", e),
             })?;
 
         while let Some(key) = iter.next_item().await {
@@ -228,16 +179,11 @@ impl TimeoutRedisSessionStore {
 
 impl TimeoutRedisSessionStore {
     async fn load_with_timeout(
-        &self,
-        session_id: &str,
-        timeout_middleware: &TimeoutMiddleware,
     ) -> TimeoutResult<Option<Session>> {
         let operation_id = Uuid::new_v4().to_string();
         let operation_type = "session_load_redis".to_string();
 
         timeout_middleware.with_database_timeout(
-            operation_id,
-            operation_type,
             async move {
                 let key = self.session_key(session_id);
                 let mut conn = self.connection.lock().await;
@@ -273,26 +219,16 @@ impl TimeoutRedisSessionStore {
                 }
             }
         ).await?
-    }
-
     async fn save_with_timeout(
-        &self,
-        session: &Session,
-        timeout_middleware: &TimeoutMiddleware,
     ) -> TimeoutResult<()> {
         let operation_id = Uuid::new_v4().to_string();
         let operation_type = "session_save_redis".to_string();
 
         timeout_middleware.with_database_timeout(
-            operation_id,
-            operation_type,
             async move {
                 let key = self.session_key(&session.id);
                 let data = self.serialize_session(session)
                     .map_err(|e| TimeoutError::DatabaseTimeout {
-                        elapsed: Duration::from_secs(0),
-                        timeout: self.config.database_timeout,
-                        operation: format!("serialize_session: {}", e),
                     })?;
 
                 let mut conn = self.connection.lock().await;
@@ -308,9 +244,6 @@ impl TimeoutRedisSessionStore {
                         let ttl = (expires_at - now) as u64;
                         conn.set_ex::<String, String, String>(key.clone(), data.clone(), ttl).await
                             .map_err(|e| TimeoutError::DatabaseTimeout {
-                                elapsed: Duration::from_secs(0),
-                                timeout: self.config.database_timeout,
-                                operation: format!("redis_set_ex: {}", e),
                             })?;
                     } else {
                         // Session already expired, don't save
@@ -322,29 +255,17 @@ impl TimeoutRedisSessionStore {
                     let ttl = self.config.max_age.as_secs();
                     conn.set_ex::<String, String, String>(key.clone(), data.clone(), ttl).await
                         .map_err(|e| TimeoutError::DatabaseTimeout {
-                            elapsed: Duration::from_secs(0),
-                            timeout: self.config.database_timeout,
-                            operation: format!("redis_set_ex_default: {}", e),
                         })?;
-                }
-
                 debug!(session_id = %session.id, "Session saved to Redis store");
                 Ok(())
             }
         ).await?
-    }
-
     async fn delete_with_timeout(
-        &self,
-        session_id: &str,
-        timeout_middleware: &TimeoutMiddleware,
     ) -> TimeoutResult<()> {
         let operation_id = Uuid::new_v4().to_string();
         let operation_type = "session_delete_redis".to_string();
 
         timeout_middleware.with_database_timeout(
-            operation_id,
-            operation_type,
             async move {
                 let key = self.session_key(session_id);
                 let mut conn = self.connection.lock().await;
@@ -363,33 +284,20 @@ impl TimeoutRedisSessionStore {
                 }
             }
         ).await?
-    }
-
     async fn cleanup_with_timeout(
-        &self,
-        timeout_middleware: &TimeoutMiddleware,
     ) -> TimeoutResult<usize> {
         let operation_id = Uuid::new_v4().to_string();
         let operation_type = "session_cleanup_redis".to_string();
 
         timeout_middleware.with_database_timeout(
-            operation_id,
-            operation_type,
             self.cleanup_expired_sessions()
         ).await?
-    }
-
     async fn exists_with_timeout(
-        &self,
-        session_id: &str,
-        timeout_middleware: &TimeoutMiddleware,
     ) -> TimeoutResult<bool> {
         let operation_id = Uuid::new_v4().to_string();
         let operation_type = "session_exists_redis".to_string();
 
         timeout_middleware.with_database_timeout(
-            operation_id,
-            operation_type,
             async move {
                 let key = self.session_key(session_id);
                 let mut conn = self.connection.lock().await;
@@ -418,7 +326,6 @@ impl TimeoutRedisSessionStore {
                             false
                         }
                     }
-                    Err(_) => false,
                 }
             }
         ).await?
@@ -428,11 +335,6 @@ impl TimeoutRedisSessionStore {
 /// Database session store with timeout support
 #[derive(Debug)]
 pub struct TimeoutDatabaseSessionStore {
-    pool: Arc<ConnectionPool>,
-    config: SessionConfig,
-    table_name: String,
-}
-
 impl TimeoutDatabaseSessionStore {
     pub async fn new(database_config: DatabaseConfig, config: SessionConfig) -> crate::error::Result<()> {
         let pool = ConnectionPool::new(database_config)
@@ -440,17 +342,11 @@ impl TimeoutDatabaseSessionStore {
             .map_err(|e| SessionError::StoreError(format!("Failed to create database pool: {}", e)))?;
 
         let store = Self {
-            pool: Arc::new(pool),
-            config,
-            table_name: "cursed_sessions".to_string(),
-        };
 
         // Initialize session table
         store.initialize_table().await?;
         
         Ok(store)
-    }
-
     async fn initialize_table(&self) -> crate::error::Result<()> {
         let mut conn = self.pool.get_connection().await
             .map_err(|e| SessionError::StoreError(format!("Failed to get database connection: {}", e)))?;
@@ -458,14 +354,8 @@ impl TimeoutDatabaseSessionStore {
         let create_table_sql = format!(
             r#"
             CREATE TABLE IF NOT EXISTS {} (
-                id VARCHAR(255) PRIMARY KEY,
-                data TEXT NOT NULL,
-                created_at BIGINT NOT NULL,
-                last_accessed BIGINT NOT NULL,
-                expires_at BIGINT,
                 INDEX idx_expires_at (expires_at)
             )
-            "#,
             self.table_name
         );
 
@@ -474,18 +364,12 @@ impl TimeoutDatabaseSessionStore {
 
         debug!(table = %self.table_name, "Session table initialized");
         Ok(())
-    }
-
     fn serialize_session(&self, session: &Session) -> crate::error::Result<()> {
         serde_json::to_string(session)
             .map_err(|e| SessionError::SerializationError(format!("Failed to serialize session: {}", e)))
-    }
-
     fn deserialize_session(&self, data: &str) -> crate::error::Result<()> {
         serde_json::from_str(data)
             .map_err(|e| SessionError::SerializationError(format!("Failed to deserialize session: {}", e)))
-    }
-
     fn is_session_expired(&self, session: &Session) -> bool {
         if let Some(expires_at) = session.expires_at {
             let now = SystemTime::now()
@@ -501,9 +385,6 @@ impl TimeoutDatabaseSessionStore {
     async fn cleanup_expired_sessions(&self) -> TimeoutResult<usize> {
         let mut conn = self.pool.get_connection().await
             .map_err(|e| TimeoutError::DatabaseTimeout {
-                elapsed: Duration::from_secs(0),
-                timeout: self.config.database_timeout,
-                operation: format!("get_connection: {}", e),
             })?;
 
         let now = SystemTime::now()
@@ -512,31 +393,22 @@ impl TimeoutDatabaseSessionStore {
             .as_secs() as i64;
 
         let delete_sql = format!(
-            "DELETE FROM {} WHERE expires_at IS NOT NULL AND expires_at <= ?",
             self.table_name
         );
 
         let result = conn.execute(&delete_sql, &[&now]).await
             .map_err(|e| TimeoutError::DatabaseTimeout {
-                elapsed: Duration::from_secs(0),
-                timeout: self.config.database_timeout,
-                operation: format!("delete_expired: {}", e),
             })?;
 
         let removed = result.rows_affected() as usize;
         if removed > 0 {
             debug!(removed = removed, "Cleaned up expired sessions from database");
-        }
-
         Ok(removed)
     }
 }
 
 impl TimeoutDatabaseSessionStore {
     async fn load_with_timeout(
-        &self,
-        session_id: &str,
-        timeout_middleware: &TimeoutMiddleware,
     ) -> TimeoutResult<Option<Session>> {
         let operation_id = Uuid::new_v4().to_string();
         let operation_type = "session_load_database".to_string();
@@ -546,34 +418,22 @@ impl TimeoutDatabaseSessionStore {
         let session_id = session_id.to_string();
 
         timeout_middleware.with_database_timeout(
-            operation_id,
-            operation_type,
             async move {
                 let mut conn = pool.get_connection().await
                     .map_err(|e| TimeoutError::DatabaseTimeout {
-                        elapsed: Duration::from_secs(0),
-                        timeout: self.config.database_timeout,
-                        operation: format!("get_connection: {}", e),
                     })?;
 
                 let select_sql = format!(
-                    "SELECT data FROM {} WHERE id = ?",
                     self.table_name
                 );
 
                 let rows = conn.query(&select_sql, &[&session_id]).await
                     .map_err(|e| TimeoutError::DatabaseTimeout {
-                        elapsed: Duration::from_secs(0),
-                        timeout: self.config.database_timeout,
-                        operation: format!("select_session: {}", e),
                     })?;
 
                 if let Some(row) = rows.first() {
                     let data: String = row.get(0)
                         .map_err(|e| TimeoutError::DatabaseTimeout {
-                            elapsed: Duration::from_secs(0),
-                            timeout: self.config.database_timeout,
-                            operation: format!("get_session_data: {}", e),
                         })?;
 
                     match self.deserialize_session(&data) {
@@ -600,32 +460,19 @@ impl TimeoutDatabaseSessionStore {
                 }
             }
         ).await?
-    }
-
     async fn save_with_timeout(
-        &self,
-        session: &Session,
-        timeout_middleware: &TimeoutMiddleware,
     ) -> TimeoutResult<()> {
         let operation_id = Uuid::new_v4().to_string();
         let operation_type = "session_save_database".to_string();
 
         timeout_middleware.with_database_timeout(
-            operation_id,
-            operation_type,
             async move {
                 let data = self.serialize_session(session)
                     .map_err(|e| TimeoutError::DatabaseTimeout {
-                        elapsed: Duration::from_secs(0),
-                        timeout: self.config.database_timeout,
-                        operation: format!("serialize_session: {}", e),
                     })?;
 
                 let mut conn = self.pool.get_connection().await
                     .map_err(|e| TimeoutError::DatabaseTimeout {
-                        elapsed: Duration::from_secs(0),
-                        timeout: self.config.database_timeout,
-                        operation: format!("get_connection: {}", e),
                     })?;
 
                 let upsert_sql = format!(
@@ -633,122 +480,73 @@ impl TimeoutDatabaseSessionStore {
                     INSERT INTO {} (id, data, created_at, last_accessed, expires_at)
                     VALUES (?, ?, ?, ?, ?)
                     ON DUPLICATE KEY UPDATE
-                        data = VALUES(data),
-                        last_accessed = VALUES(last_accessed),
                         expires_at = VALUES(expires_at)
-                    "#,
                     self.table_name
                 );
 
                 conn.execute(&upsert_sql, &[
-                    &session.id,
-                    &data,
-                    &(session.created_at as i64).to_string(),
-                    &(session.last_accessed as i64).to_string(),
-                    &session.expires_at.map(|t| (t as i64).to_string()).unwrap_or_default(),
                 ]).await
                 .map_err(|e| TimeoutError::DatabaseTimeout {
-                    elapsed: Duration::from_secs(0),
-                    timeout: self.config.database_timeout,
-                    operation: format!("upsert_session: {}", e),
                 })?;
 
                 debug!(session_id = %session.id, "Session saved to database store");
                 Ok(())
             }
         ).await?
-    }
-
     async fn delete_with_timeout(
-        &self,
-        session_id: &str,
-        timeout_middleware: &TimeoutMiddleware,
     ) -> TimeoutResult<()> {
         let operation_id = Uuid::new_v4().to_string();
         let operation_type = "session_delete_database".to_string();
 
         timeout_middleware.with_database_timeout(
-            operation_id,
-            operation_type,
             async move {
                 let mut conn = self.pool.get_connection().await
                     .map_err(|e| TimeoutError::DatabaseTimeout {
-                        elapsed: Duration::from_secs(0),
-                        timeout: self.config.database_timeout,
-                        operation: format!("get_connection: {}", e),
                     })?;
 
                 let delete_sql = format!("DELETE FROM {} WHERE id = ?", self.table_name);
                 
                 let result = conn.execute(&delete_sql, &[&session_id]).await
                     .map_err(|e| TimeoutError::DatabaseTimeout {
-                        elapsed: Duration::from_secs(0),
-                        timeout: self.config.database_timeout,
-                        operation: format!("delete_session: {}", e),
                     })?;
 
                 if result.rows_affected() > 0 {
                     debug!(session_id = %session_id, "Session deleted from database store");
                 } else {
                     debug!(session_id = %session_id, "Session not found for deletion in database store");
-                }
-
                 Ok(())
             }
         ).await?
-    }
-
     async fn cleanup_with_timeout(
-        &self,
-        timeout_middleware: &TimeoutMiddleware,
     ) -> TimeoutResult<usize> {
         let operation_id = Uuid::new_v4().to_string();
         let operation_type = "session_cleanup_database".to_string();
 
         timeout_middleware.with_database_timeout(
-            operation_id,
-            operation_type,
             self.cleanup_expired_sessions()
         ).await?
-    }
-
     async fn exists_with_timeout(
-        &self,
-        session_id: &str,
-        timeout_middleware: &TimeoutMiddleware,
     ) -> TimeoutResult<bool> {
         let operation_id = Uuid::new_v4().to_string();
         let operation_type = "session_exists_database".to_string();
 
         timeout_middleware.with_database_timeout(
-            operation_id,
-            operation_type,
             async move {
                 let mut conn = self.pool.get_connection().await
                     .map_err(|e| TimeoutError::DatabaseTimeout {
-                        elapsed: Duration::from_secs(0),
-                        timeout: self.config.database_timeout,
-                        operation: format!("get_connection: {}", e),
                     })?;
 
                 let select_sql = format!(
-                    "SELECT data FROM {} WHERE id = ?",
                     self.table_name
                 );
 
                 let rows = conn.query(&select_sql, &[&session_id]).await
                     .map_err(|e| TimeoutError::DatabaseTimeout {
-                        elapsed: Duration::from_secs(0),
-                        timeout: self.config.database_timeout,
-                        operation: format!("select_session: {}", e),
                     })?;
 
                 if let Some(row) = rows.first() {
                     let data: String = row.get(0)
                         .map_err(|e| TimeoutError::DatabaseTimeout {
-                            elapsed: Duration::from_secs(0),
-                            timeout: self.config.database_timeout,
-                            operation: format!("get_session_data: {}", e),
                         })?;
 
                     if let Ok(session) = self.deserialize_session(&data) {
@@ -775,15 +573,9 @@ impl TimeoutDatabaseSessionStore {
 /// Memory session store with timeout support
 #[derive(Debug)]
 pub struct TimeoutMemorySessionStore {
-    sessions: Arc<RwLock<HashMap<String, Session>>>,
-    config: SessionConfig,
-}
-
 impl TimeoutMemorySessionStore {
     pub fn new(config: SessionConfig) -> Self {
         Self {
-            sessions: Arc::new(RwLock::new(HashMap::new())),
-            config,
         }
     }
 
@@ -815,16 +607,11 @@ impl TimeoutMemorySessionStore {
 
 impl TimeoutMemorySessionStore {
     async fn load_with_timeout(
-        &self,
-        session_id: &str,
-        timeout_middleware: &TimeoutMiddleware,
     ) -> TimeoutResult<Option<Session>> {
         let operation_id = Uuid::new_v4().to_string();
         let operation_type = "session_load_memory".to_string();
 
         timeout_middleware.with_database_timeout(
-            operation_id,
-            operation_type,
             async move {
                 let sessions = self.sessions.read().unwrap();
                 if let Some(session) = sessions.get(session_id) {
@@ -841,38 +628,24 @@ impl TimeoutMemorySessionStore {
                 }
             }
         ).await?
-    }
-
     async fn save_with_timeout(
-        &self,
-        session: &Session,
-        timeout_middleware: &TimeoutMiddleware,
     ) -> TimeoutResult<()> {
         let operation_id = Uuid::new_v4().to_string();
         let operation_type = "session_save_memory".to_string();
 
         timeout_middleware.with_database_timeout(
-            operation_id,
-            operation_type,
             async move {
                 let mut sessions = self.sessions.write().unwrap();
                 sessions.insert(session.id.clone(), session.clone());
                 debug!(session_id = %session.id, "Session saved to memory store");
             }
         ).await?
-    }
-
     async fn delete_with_timeout(
-        &self,
-        session_id: &str,
-        timeout_middleware: &TimeoutMiddleware,
     ) -> TimeoutResult<()> {
         let operation_id = Uuid::new_v4().to_string();
         let operation_type = "session_delete_memory".to_string();
 
         timeout_middleware.with_database_timeout(
-            operation_id,
-            operation_type,
             async move {
                 let mut sessions = self.sessions.write().unwrap();
                 let removed = sessions.remove(session_id).is_some();
@@ -883,35 +656,22 @@ impl TimeoutMemorySessionStore {
                 }
             }
         ).await?
-    }
-
     async fn cleanup_with_timeout(
-        &self,
-        timeout_middleware: &TimeoutMiddleware,
     ) -> TimeoutResult<usize> {
         let operation_id = Uuid::new_v4().to_string();
         let operation_type = "session_cleanup_memory".to_string();
 
         timeout_middleware.with_database_timeout(
-            operation_id,
-            operation_type,
             async move {
                 self.cleanup_expired_sessions()
             }
         ).await?
-    }
-
     async fn exists_with_timeout(
-        &self,
-        session_id: &str,
-        timeout_middleware: &TimeoutMiddleware,
     ) -> TimeoutResult<bool> {
         let operation_id = Uuid::new_v4().to_string();
         let operation_type = "session_exists_memory".to_string();
 
         timeout_middleware.with_database_timeout(
-            operation_id,
-            operation_type,
             async move {
                 let sessions = self.sessions.read().unwrap();
                 if let Some(session) = sessions.get(session_id) {
@@ -927,38 +687,22 @@ impl TimeoutMemorySessionStore {
 /// File-based session store with timeout support
 #[derive(Debug)]
 pub struct TimeoutFileSessionStore {
-    directory: PathBuf,
-    config: SessionConfig,
-}
-
 impl TimeoutFileSessionStore {
     pub fn new(directory: PathBuf, config: SessionConfig) -> crate::error::Result<()> {
         // Ensure directory exists
         if !directory.exists() {
             fs::create_dir_all(&directory)
                 .map_err(|e| SessionError::StoreError(format!("Failed to create session directory: {}", e)))?;
-        }
-
         Ok(Self {
-            directory,
-            config,
         })
-    }
-
     fn session_file_path(&self, session_id: &str) -> PathBuf {
         self.directory.join(format!("{}.session", session_id))
-    }
-
     fn serialize_session(&self, session: &Session) -> crate::error::Result<()> {
         serde_json::to_vec(session)
             .map_err(|e| SessionError::SerializationError(format!("Failed to serialize session: {}", e)))
-    }
-
     fn deserialize_session(&self, data: &[u8]) -> crate::error::Result<()> {
         serde_json::from_slice(data)
             .map_err(|e| SessionError::SerializationError(format!("Failed to deserialize session: {}", e)))
-    }
-
     fn is_session_expired(&self, session: &Session) -> bool {
         if let Some(expires_at) = session.expires_at {
             let now = SystemTime::now()
@@ -976,17 +720,11 @@ impl TimeoutFileSessionStore {
         
         let entries = tokio::fs::read_dir(&self.directory).await
             .map_err(|e| TimeoutError::DatabaseTimeout {
-                elapsed: Duration::from_secs(0),
-                timeout: self.config.database_timeout,
-                operation: format!("read_session_directory: {}", e),
             })?;
 
         let mut entries = entries;
         while let Some(entry) = entries.next_entry().await
             .map_err(|e| TimeoutError::DatabaseTimeout {
-                elapsed: Duration::from_secs(0),
-                timeout: self.config.database_timeout,
-                operation: format!("read_directory_entry: {}", e),
             })? {
             
             let path = entry.path();
@@ -1013,16 +751,11 @@ impl TimeoutFileSessionStore {
 
 impl TimeoutFileSessionStore {
     async fn load_with_timeout(
-        &self,
-        session_id: &str,
-        timeout_middleware: &TimeoutMiddleware,
     ) -> TimeoutResult<Option<Session>> {
         let operation_id = Uuid::new_v4().to_string();
         let operation_type = "session_load_file".to_string();
 
         timeout_middleware.with_database_timeout(
-            operation_id,
-            operation_type,
             async move {
                 let file_path = self.session_file_path(session_id);
                 
@@ -1053,52 +786,32 @@ impl TimeoutFileSessionStore {
                 }
             }
         ).await?
-    }
-
     async fn save_with_timeout(
-        &self,
-        session: &Session,
-        timeout_middleware: &TimeoutMiddleware,
     ) -> TimeoutResult<()> {
         let operation_id = Uuid::new_v4().to_string();
         let operation_type = "session_save_file".to_string();
 
         timeout_middleware.with_database_timeout(
-            operation_id,
-            operation_type,
             async move {
                 let file_path = self.session_file_path(&session.id);
                 let data = self.serialize_session(session)
                     .map_err(|e| TimeoutError::DatabaseTimeout {
-                        elapsed: Duration::from_secs(0),
-                        timeout: self.config.database_timeout,
-                        operation: format!("serialize_session: {}", e),
                     })?;
 
                 tokio::fs::write(&file_path, data).await
                     .map_err(|e| TimeoutError::DatabaseTimeout {
-                        elapsed: Duration::from_secs(0),
-                        timeout: self.config.database_timeout,
-                        operation: format!("write_session_file: {}", e),
                     })?;
 
                 debug!(session_id = %session.id, "Session saved to file store");
                 Ok(())
             }
         ).await?
-    }
-
     async fn delete_with_timeout(
-        &self,
-        session_id: &str,
-        timeout_middleware: &TimeoutMiddleware,
     ) -> TimeoutResult<()> {
         let operation_id = Uuid::new_v4().to_string();
         let operation_type = "session_delete_file".to_string();
 
         timeout_middleware.with_database_timeout(
-            operation_id,
-            operation_type,
             async move {
                 let file_path = self.session_file_path(session_id);
                 
@@ -1112,44 +825,28 @@ impl TimeoutFileSessionStore {
                 }
             }
         ).await?
-    }
-
     async fn cleanup_with_timeout(
-        &self,
-        timeout_middleware: &TimeoutMiddleware,
     ) -> TimeoutResult<usize> {
         let operation_id = Uuid::new_v4().to_string();
         let operation_type = "session_cleanup_file".to_string();
 
         timeout_middleware.with_database_timeout(
-            operation_id,
-            operation_type,
             self.cleanup_expired_files()
         ).await?
-    }
-
     async fn exists_with_timeout(
-        &self,
-        session_id: &str,
-        timeout_middleware: &TimeoutMiddleware,
     ) -> TimeoutResult<bool> {
         let operation_id = Uuid::new_v4().to_string();
         let operation_type = "session_exists_file".to_string();
 
         timeout_middleware.with_database_timeout(
-            operation_id,
-            operation_type,
             async move {
                 let file_path = self.session_file_path(session_id);
                 
                 match tokio::fs::read(&file_path).await {
                     Ok(data) => {
                         match self.deserialize_session(&data) {
-                            Ok(session) => !self.is_session_expired(&session),
-                            Err(_) => false,
                         }
                     }
-                    Err(_) => false,
                 }
             }
         ).await?
@@ -1159,10 +856,6 @@ impl TimeoutFileSessionStore {
 /// Session manager with timeout support
 #[derive(Debug)]
 pub struct TimeoutSessionManager {
-    store: TimeoutAwareSessionStore,
-    config: SessionConfig,
-}
-
 impl TimeoutSessionManager {
     /// Create session manager with timeout support
     pub async fn new(config: SessionConfig) -> crate::error::Result<()> {
@@ -1182,38 +875,15 @@ impl TimeoutSessionManager {
 //                 use crate::stdlib::database::DatabaseConfig;
                 
                 let db_config = DatabaseConfig {
-                    max_open_connections: 10,
-                    max_idle_connections: 5,
-                    connection_max_lifetime_seconds: 3600,
-                    connection_max_idle_seconds: 600,
-                    connection_timeout_seconds: 30,
-                    query_timeout_seconds: 30,
-                    enable_pool_monitoring: false,
-                    enable_query_logging: false,
-                    max_retry_attempts: 3,
-                    retry_delay_ms: 100,
-                    enable_prepared_statements: true,
-                    enable_transaction_pooling: false,
-                    enable_read_replicas: false,
-                    schema_validation_enabled: true,
-                    migration_auto_run: false,
-                };
                 
                 let db_store = TimeoutDatabaseSessionStore::new(db_config, config.clone()).await?;
                 TimeoutAwareSessionStore::Database(db_store)
             }
-        };
 
         Ok(Self {
-            store,
-            config,
         })
-    }
-
     /// Create new session with timeout tracking
     pub async fn create_session_with_timeout(
-        &self,
-        timeout_middleware: &TimeoutMiddleware,
     ) -> TimeoutResult<Session> {
         let session_id = Uuid::new_v4().to_string();
         let now = SystemTime::now()
@@ -1222,14 +892,6 @@ impl TimeoutSessionManager {
             .as_secs();
 
         let session = Session {
-            id: session_id.clone(),
-            data: HashMap::new(),
-            created_at: now,
-            last_accessed: now,
-            expires_at: Some(now + self.config.max_age.as_secs()),
-            is_new: true,
-            is_dirty: true,
-        };
 
         // Start session timeout tracking
         timeout_middleware.start_session_timeout(session_id.clone());
@@ -1239,21 +901,14 @@ impl TimeoutSessionManager {
 
         debug!(session_id = %session_id, "Created new session with timeout tracking");
         Ok(session)
-    }
-
     /// Load session with timeout
     pub async fn load_session_with_timeout(
-        &self,
-        session_id: &str,
-        timeout_middleware: &TimeoutMiddleware,
     ) -> TimeoutResult<Option<Session>> {
         // Check if session is timed out first
         if timeout_middleware.is_session_timed_out(session_id) {
             debug!(session_id = %session_id, "Session timed out, removing");
             let _ = self.store.delete_with_timeout(session_id, timeout_middleware).await;
             return Ok(None);
-        }
-
         // Load from store
         if let Some(mut session) = self.store.load_with_timeout(session_id, timeout_middleware).await? {
             // Update last accessed time
@@ -1277,44 +932,27 @@ impl TimeoutSessionManager {
 
     /// Save session with timeout
     pub async fn save_session_with_timeout(
-        &self,
-        session: &Session,
-        timeout_middleware: &TimeoutMiddleware,
     ) -> TimeoutResult<()> {
         self.store.save_with_timeout(session, timeout_middleware).await?;
         timeout_middleware.update_session_activity(&session.id);
         debug!(session_id = %session.id, "Saved session with timeout update");
         Ok(())
-    }
-
     /// Delete session with timeout
     pub async fn delete_session_with_timeout(
-        &self,
-        session_id: &str,
-        timeout_middleware: &TimeoutMiddleware,
     ) -> TimeoutResult<()> {
         self.store.delete_with_timeout(session_id, timeout_middleware).await?;
         debug!(session_id = %session_id, "Deleted session with timeout tracking");
         Ok(())
-    }
-
     /// Cleanup expired sessions with timeout
     pub async fn cleanup_expired_sessions_with_timeout(
-        &self,
-        timeout_middleware: &TimeoutMiddleware,
     ) -> TimeoutResult<usize> {
         let removed = self.store.cleanup_with_timeout(timeout_middleware).await?;
         if removed > 0 {
             info!(removed = removed, "Cleaned up expired sessions");
         }
         Ok(removed)
-    }
-
     /// Check if session exists with timeout
     pub async fn session_exists_with_timeout(
-        &self,
-        session_id: &str,
-        timeout_middleware: &TimeoutMiddleware,
     ) -> TimeoutResult<bool> {
         self.store.exists_with_timeout(session_id, timeout_middleware).await?
     }

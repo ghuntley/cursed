@@ -16,167 +16,98 @@ pub type ComputedColumnFn = Box<dyn Fn(&HashMap<String, String>) -> CsvResult<St
 pub enum ColumnTransform {
     /// Transform an existing column's values
     Map {
-        column: String,
-        transform: ColumnTransformFn,
-    },
     
     /// Add a new computed column
     Add {
-        column: String,
-        compute: ComputedColumnFn,
-    },
     
     /// Remove a column
     Remove {
-        column: String,
-    },
     
     /// Rename a column
     Rename {
-        from: String,
-        to: String,
-    },
     
     /// Reorder columns
     Reorder {
-        new_order: Vec<String>,
-    },
     
     /// Filter rows based on a condition
     FilterRows {
-        condition: Box<dyn Fn(&HashMap<String, String>) -> CsvResult<bool>>,
-    },
-}
-
 /// CSV data transformer
 pub struct Transformer<R: io::Read> {
     /// Underlying CSV reader
-    reader: Reader<R>,
     
     /// List of transformations to apply
-    transforms: Vec<ColumnTransform>,
     
     /// Whether header has been read
-    header_read: bool,
     
     /// Original header
-    original_header: Vec<String>,
     
     /// Transformed header
-    transformed_header: Vec<String>,
     
     /// Column name to index mapping for original data
-    column_map: HashMap<String, usize>,
-}
-
 impl<R: io::Read> Transformer<R> {
     /// Create a new transformer
     pub fn new(reader: R) -> Self {
         Self {
-            reader: Reader::new(reader),
-            transforms: Vec::new(),
-            header_read: false,
-            original_header: Vec::new(),
-            transformed_header: Vec::new(),
-            column_map: HashMap::new(),
         }
     }
     
     /// Create a new transformer with custom CSV reader
     pub fn with_reader(reader: Reader<R>) -> Self {
         Self {
-            reader,
-            transforms: Vec::new(),
-            header_read: false,
-            original_header: Vec::new(),
-            transformed_header: Vec::new(),
-            column_map: HashMap::new(),
         }
     }
     
     /// Map an existing column's values using a transformation function
     pub fn map_column<F>(&mut self, column: &str, transform: F) -> &mut Self
     where
-        F: Fn(&str) -> CsvResult<String> + 'static,
     {
         self.transforms.push(ColumnTransform::Map {
-            column: column.to_string(),
-            transform: Box::new(transform),
         });
         self
-    }
-    
     /// Add a new computed column
     pub fn add_column<F>(&mut self, column: &str, compute: F) -> &mut Self
     where
-        F: Fn(&HashMap<String, String>) -> CsvResult<String> + 'static,
     {
         self.transforms.push(ColumnTransform::Add {
-            column: column.to_string(),
-            compute: Box::new(compute),
         });
         self
-    }
-    
     /// Remove a column
     pub fn remove_column(&mut self, column: &str) -> &mut Self {
         self.transforms.push(ColumnTransform::Remove {
-            column: column.to_string(),
         });
         self
-    }
-    
     /// Rename a column
     pub fn rename_column(&mut self, from: &str, to: &str) -> &mut Self {
         self.transforms.push(ColumnTransform::Rename {
-            from: from.to_string(),
-            to: to.to_string(),
         });
         self
-    }
-    
     /// Reorder columns
     pub fn reorder_columns(&mut self, new_order: Vec<String>) -> &mut Self {
         self.transforms.push(ColumnTransform::Reorder {
-            new_order,
         });
         self
-    }
-    
     /// Filter rows based on a condition
     pub fn filter_rows<F>(&mut self, condition: F) -> &mut Self
     where
-        F: Fn(&HashMap<String, String>) -> CsvResult<bool> + 'static,
     {
         self.transforms.push(ColumnTransform::FilterRows {
-            condition: Box::new(condition),
         });
         self
-    }
-    
     /// Configure the underlying reader
     pub fn comma(mut self, c: char) -> Self {
         self.reader = self.reader.comma(c);
         self
-    }
-    
     pub fn comment(mut self, c: char) -> Self {
         self.reader = self.reader.comment(c);
         self
-    }
-    
     pub fn trim_leading_space(mut self, enable: bool) -> Self {
         self.reader = self.reader.trim_leading_space(enable);
         self
-    }
-    
     /// Apply all transformations and return the transformed data
     pub fn transform(&mut self) -> CsvResult<Vec<Vec<String>>> {
         // Read header
         if !self.header_read {
             self.read_header()?;
-        }
-        
         let mut results = Vec::new();
         results.push(self.transformed_header.clone());
         
@@ -188,30 +119,20 @@ impl<R: io::Read> Transformer<R> {
         }
         
         Ok(results)
-    }
-    
     /// Transform data and write to a new CSV format
     pub fn transform_to_string(&mut self) -> CsvResult<String> {
 //         use crate::stdlib::csv::writer::write_to_string;
         let transformed = self.transform()?;
         write_to_string(&transformed)
-    }
-    
     /// Get the list of transformations
     pub fn transforms(&self) -> &[ColumnTransform] {
         &self.transforms
-    }
-    
     /// Get the original header
     pub fn original_header(&self) -> &[String] {
         &self.original_header
-    }
-    
     /// Get the transformed header
     pub fn transformed_header(&self) -> &[String] {
         &self.transformed_header
-    }
-    
     /// Read and process the header
     fn read_header(&mut self) -> CsvResult<()> {
         if let Some(header) = self.reader.read()? {
@@ -221,18 +142,12 @@ impl<R: io::Read> Transformer<R> {
             // Build column map
             for (index, column_name) in self.original_header.iter().enumerate() {
                 self.column_map.insert(column_name.clone(), index);
-            }
-            
             // Apply header transformations
             self.apply_header_transforms()?;
             self.header_read = true;
         } else {
             return Err(CsvError::General("No header found in CSV".to_string()));
-        }
-        
         Ok(())
-    }
-    
     /// Apply transformations that affect the header
     fn apply_header_transforms(&mut self) -> CsvResult<()> {
         for transform in &self.transforms {
@@ -242,11 +157,9 @@ impl<R: io::Read> Transformer<R> {
                     if !self.transformed_header.contains(column) {
                         self.transformed_header.push(column.clone());
                     }
-                },
                 ColumnTransform::Remove { column } => {
                     // Remove column from header
                     self.transformed_header.retain(|c| c != column);
-                },
                 ColumnTransform::Rename { from, to } => {
                     // Rename column in header
                     for col in &mut self.transformed_header {
@@ -255,7 +168,6 @@ impl<R: io::Read> Transformer<R> {
                             break;
                         }
                     }
-                },
                 ColumnTransform::Reorder { new_order } => {
                     // Reorder header columns
                     let mut new_header = Vec::new();
@@ -271,14 +183,11 @@ impl<R: io::Read> Transformer<R> {
                         }
                     }
                     self.transformed_header = new_header;
-                },
                 _ => {} // Other transforms don't affect header
             }
         }
         
         Ok(())
-    }
-    
     /// Transform a single record
     fn transform_record(&self, record: &[String]) -> CsvResult<Option<Vec<String>>> {
         // Build record map
@@ -288,10 +197,7 @@ impl<R: io::Read> Transformer<R> {
                 record[index].clone()
             } else {
                 String::new()
-            };
             record_map.insert(column_name.clone(), value);
-        }
-        
         // Apply transformations
         let mut should_include_row = true;
         
@@ -302,41 +208,31 @@ impl<R: io::Read> Transformer<R> {
                         let transformed_value = transform(value)?;
                         record_map.insert(column.clone(), transformed_value);
                     }
-                },
                 ColumnTransform::Add { column, compute } => {
                     let computed_value = compute(&record_map)?;
                     record_map.insert(column.clone(), computed_value);
-                },
                 ColumnTransform::Remove { column } => {
                     record_map.remove(column);
-                },
                 ColumnTransform::Rename { from, to } => {
                     if let Some(value) = record_map.remove(from) {
                         record_map.insert(to.clone(), value);
                     }
-                },
                 ColumnTransform::FilterRows { condition } => {
                     if !condition(&record_map)? {
                         should_include_row = false;
                     }
-                },
                 ColumnTransform::Reorder { .. } => {
                     // Reordering is handled when building the output record
-                },
             }
         }
         
         if !should_include_row {
             return Ok(None);
-        }
-        
         // Build output record based on transformed header
         let mut output_record = Vec::new();
         for column_name in &self.transformed_header {
             let value = record_map.get(column_name).cloned().unwrap_or_else(String::new);
             output_record.push(value);
-        }
-        
         Ok(Some(output_record))
     }
 }
@@ -345,29 +241,18 @@ impl<R: io::Read> Transformer<R> {
 #[derive(Debug, Clone)]
 pub struct TransformResult {
     /// Transformed records (including header)
-    pub records: Vec<Vec<String>>,
     
     /// Number of input records processed
-    pub input_records: usize,
     
     /// Number of output records generated
-    pub output_records: usize,
     
     /// Number of columns in input
-    pub input_columns: usize,
     
     /// Number of columns in output
-    pub output_columns: usize,
-}
-
 impl TransformResult {
     /// Get a summary of the transformation
     pub fn summary(&self) -> String {
         format!(
-            "Transformed {} -> {} records, {} -> {} columns",
-            self.input_records,
-            self.output_records,
-            self.input_columns,
             self.output_columns
         )
     }
@@ -380,23 +265,15 @@ pub mod transforms {
     /// Convert string to uppercase
     pub fn to_uppercase(value: &str) -> CsvResult<String> {
         Ok(value.to_uppercase())
-    }
-    
     /// Convert string to lowercase
     pub fn to_lowercase(value: &str) -> CsvResult<String> {
         Ok(value.to_lowercase())
-    }
-    
     /// Trim whitespace
     pub fn trim(value: &str) -> CsvResult<String> {
         Ok(value.trim().to_string())
-    }
-    
     /// Replace characters
     pub fn replace<'a>(from: &'a str, to: &'a str) -> impl Fn(&str) -> CsvResult<String> + 'a {
         move |value: &str| Ok(value.replace(from, to))
-    }
-    
     /// Parse and format numbers
     pub fn format_number(decimals: usize) -> impl Fn(&str) -> CsvResult<String> {
         move |value: &str| {
@@ -406,8 +283,6 @@ pub mod transforms {
                 Ok(value.to_string())
             }
         }
-    }
-    
     /// Concatenate columns
     pub fn concat_columns(columns: Vec<String>, separator: String) -> impl Fn(&HashMap<String, String>) -> CsvResult<String> {
         move |record: &HashMap<String, String>| {
@@ -423,9 +298,6 @@ pub mod transforms {
         move |record: &HashMap<String, String>| {
             let condition_value = record.get(&condition_column).cloned().unwrap_or_default();
             let result = match condition_value.to_lowercase().as_str() {
-                "true" | "yes" | "1" | "on" | "based" => true_value.clone(),
-                _ => false_value.clone(),
-            };
             Ok(result)
         }
     }

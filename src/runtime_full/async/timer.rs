@@ -18,8 +18,6 @@ pub struct TimerHandle(u64);
 impl TimerHandle {
     pub fn new(id: u64) -> Self {
         Self(id)
-    }
-
     pub fn id(&self) -> u64 {
         self.0
     }
@@ -28,32 +26,16 @@ impl TimerHandle {
 /// Timer entry for the timer wheel
 #[derive(Debug)]
 struct TimerEntry {
-    handle: TimerHandle,
-    deadline: Instant,
-    waker: Option<Waker>,
-    completed: bool,
-    cancelled: bool,
-}
-
 impl TimerEntry {
     fn new(handle: TimerHandle, deadline: Instant) -> Self {
         Self {
-            handle,
-            deadline,
-            waker: None,
-            completed: false,
-            cancelled: false,
         }
     }
-}
-
 impl PartialEq for TimerEntry {
     fn eq(&self, other: &Self) -> bool {
         self.deadline == other.deadline && self.handle == other.handle
     }
 }
-
-impl Eq for TimerEntry {}
 
 impl PartialOrd for TimerEntry {
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
@@ -70,15 +52,9 @@ impl Ord for TimerEntry {
 
 /// Timer wheel for efficient timer management
 pub struct TimerWheel {
-    heap: BinaryHeap<TimerEntry>,
-    next_handle_id: u64,
-}
-
 impl TimerWheel {
     pub fn new() -> Self {
         Self {
-            heap: BinaryHeap::new(),
-            next_handle_id: 1,
         }
     }
 
@@ -91,8 +67,6 @@ impl TimerWheel {
         self.heap.push(entry);
 
         handle
-    }
-
     /// Remove a timer from the wheel
     pub fn cancel_timer(&mut self, handle: TimerHandle) -> bool {
         // Mark as cancelled - we'll clean up during processing
@@ -104,8 +78,6 @@ impl TimerWheel {
             }
         }
         false
-    }
-
     /// Process expired timers
     pub fn process_expired(&mut self, now: Instant) -> Vec<TimerHandle> {
         let mut expired = Vec::new();
@@ -127,13 +99,9 @@ impl TimerWheel {
         }
 
         expired
-    }
-
     /// Get the next deadline
     pub fn next_deadline(&self) -> Option<Instant> {
         self.heap.peek().map(|entry| entry.deadline)
-    }
-
     /// Set waker for a timer
     pub fn set_waker(&mut self, handle: TimerHandle, waker: Waker) {
         // In a real implementation, we'd use a hash map for efficient lookup
@@ -144,12 +112,8 @@ impl TimerWheel {
                 break;
             }
         }
-    }
-
     pub fn len(&self) -> usize {
         self.heap.len()
-    }
-
     pub fn is_empty(&self) -> bool {
         self.heap.is_empty()
     }
@@ -163,12 +127,6 @@ impl Default for TimerWheel {
 
 /// Global timer manager
 pub struct Timer {
-    timer_wheel: Arc<Mutex<TimerWheel>>,
-    worker_handle: Option<thread::JoinHandle<()>>,
-    shutdown_signal: Arc<Mutex<bool>>,
-    timer_condvar: Arc<Condvar>,
-}
-
 impl Timer {
     /// Create a new timer manager
     pub fn new() -> Self {
@@ -177,16 +135,9 @@ impl Timer {
         let timer_condvar = Arc::new(Condvar::new());
 
         let mut timer = Self {
-            timer_wheel,
-            worker_handle: None,
-            shutdown_signal,
-            timer_condvar,
-        };
 
         timer.start_worker();
         timer
-    }
-
     /// Start the timer worker thread
     fn start_worker(&mut self) {
         let timer_wheel = self.timer_wheel.clone();
@@ -201,13 +152,8 @@ impl Timer {
             .expect("Failed to spawn timer worker");
 
         self.worker_handle = Some(handle);
-    }
-
     /// Timer worker loop
     fn worker_loop(
-        timer_wheel: Arc<Mutex<TimerWheel>>,
-        shutdown_signal: Arc<Mutex<bool>>,
-        timer_condvar: Arc<Condvar>,
     ) {
         loop {
             // Check for shutdown
@@ -223,7 +169,6 @@ impl Timer {
                 let mut wheel = timer_wheel.lock().unwrap();
                 let _expired = wheel.process_expired(now);
                 wheel.next_deadline()
-            };
 
             // Wait until next deadline or shutdown
             if let Some(deadline) = next_deadline {
@@ -238,41 +183,28 @@ impl Timer {
                 let _result = timer_condvar.wait(shutdown);
             }
         }
-    }
-
     /// Create a delay future
     pub fn delay(duration: Duration) -> Delay {
         Delay::new(duration)
-    }
-
     /// Create a timeout wrapper for a future
     pub fn timeout<F>(duration: Duration, future: F) -> Timeout<F>
     where
-        F: Future,
     {
         Timeout::new(duration, future)
-    }
-
     /// Create an interval timer
     pub fn interval(duration: Duration) -> Interval {
         Interval::new(duration)
-    }
-
     /// Shutdown the timer
     pub fn shutdown(&mut self) {
         {
             let mut shutdown = self.shutdown_signal.lock().unwrap();
             *shutdown = true;
-        }
-
         self.timer_condvar.notify_all();
 
         if let Some(handle) = self.worker_handle.take() {
             let _ = handle.join();
         }
     }
-}
-
 impl Drop for Timer {
     fn drop(&mut self) {
         self.shutdown();
@@ -281,22 +213,14 @@ impl Drop for Timer {
 
 /// Delay future that completes after a specified duration
 pub struct Delay {
-    deadline: Instant,
-    completed: bool,
-}
-
 impl Delay {
     pub fn new(duration: Duration) -> Self {
         Self {
-            deadline: Instant::now() + duration,
-            completed: false,
         }
     }
 
     pub fn deadline(&self) -> Instant {
         self.deadline
-    }
-
     pub fn is_completed(&self) -> bool {
         self.completed
     }
@@ -308,8 +232,6 @@ impl Future for Delay {
     fn poll(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
         if self.completed {
             return Poll::Ready(());
-        }
-
         let now = Instant::now();
         if now >= self.deadline {
             self.completed = true;
@@ -330,8 +252,6 @@ impl Future for Delay {
             Poll::Pending
         }
     }
-}
-
 // Implement standard Future trait for Delay to support .await syntax
 impl StdFuture for Delay {
     type Output = ();
@@ -344,27 +264,15 @@ impl StdFuture for Delay {
 
 /// Timeout wrapper that fails a future if it takes too long
 pub struct Timeout<F> {
-    future: Option<F>,
-    delay: Delay,
-    completed: bool,
-}
-
 impl<F> Timeout<F>
 where
-    F: Future,
 {
     pub fn new(duration: Duration, future: F) -> Self {
         Self {
-            future: Some(future),
-            delay: Delay::new(duration),
-            completed: false,
         }
     }
-}
-
 impl<F> Future for Timeout<F>
 where
-    F: Future,
 {
     type Output = crate::error::Result<()>;
 
@@ -373,15 +281,11 @@ where
 
         if this.completed {
             return Poll::Ready(Err(FutureError::InvalidState));
-        }
-
         // Check if timeout has expired
         let delay = unsafe { Pin::new_unchecked(&mut this.delay) };
         if let Poll::Ready(()) = delay.poll(cx) {
             this.completed = true;
             return Poll::Ready(Err(FutureError::Timeout));
-        }
-
         // Poll the inner future
         if let Some(ref mut future) = this.future {
             let future = unsafe { Pin::new_unchecked(future) };
@@ -391,18 +295,14 @@ where
                     this.future = None;
                     Poll::Ready(Ok(result))
                 }
-                Poll::Pending => Poll::Pending,
             }
         } else {
             Poll::Ready(Err(FutureError::InvalidState))
         }
     }
-}
-
 // Implement standard Future trait for Timeout to support .await syntax
 impl<F> StdFuture for Timeout<F>
 where
-    F: Future,
 {
     type Output = crate::error::Result<()>;
 
@@ -414,25 +314,15 @@ where
 
 /// Interval timer that fires repeatedly
 pub struct Interval {
-    duration: Duration,
-    next_deadline: Instant,
-    completed: bool,
-}
-
 impl Interval {
     pub fn new(duration: Duration) -> Self {
         Self {
-            duration,
-            next_deadline: Instant::now() + duration,
-            completed: false,
         }
     }
 
     pub fn reset(&mut self) {
         self.next_deadline = Instant::now() + self.duration;
         self.completed = false;
-    }
-
     pub fn cancel(&mut self) {
         self.completed = true;
     }
@@ -444,8 +334,6 @@ impl Future for Interval {
     fn poll(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
         if self.completed {
             return Poll::Ready(());
-        }
-
         let now = Instant::now();
         if now >= self.next_deadline {
             // Update next deadline
@@ -467,8 +355,6 @@ impl Future for Interval {
             Poll::Pending
         }
     }
-}
-
 // Implement standard Future trait for Interval to support .await syntax
 impl StdFuture for Interval {
     type Output = ();
@@ -486,8 +372,6 @@ pub mod utils {
     /// Sleep for the specified duration
     pub async fn sleep(duration: Duration) {
         Delay::new(duration).await
-    }
-
     /// Sleep until the specified instant
     pub async fn sleep_until(deadline: Instant) {
         let now = Instant::now();
@@ -499,31 +383,20 @@ pub mod utils {
     /// Create a timeout for a future
     pub fn timeout<F>(duration: Duration, future: F) -> Timeout<F>
     where
-        F: Future,
     {
         Timeout::new(duration, future)
-    }
-
     /// Race two futures, returning the first to complete
     pub async fn race<F1, F2>(f1: F1, f2: F2) -> Either<F1::Output, F2::Output>
     where
-        F1: StdFuture + Send + 'static,
-        F2: StdFuture + Send + 'static,
-        F1::Output: Send + 'static,
-        F2::Output: Send + 'static,
     {
         // Use tokio's select! for proper async racing
         tokio::select! {
-            result = f1 => Either::Left(result),
-            result = f2 => Either::Right(result),
         }
     }
 
     /// Either type for race results
     #[derive(Debug, Clone, PartialEq, Eq)]
     pub enum Either<L, R> {
-        Left(L),
-        Right(R),
     }
 }
 
@@ -539,8 +412,6 @@ pub fn initialize_global_timer() {
             GLOBAL_TIMER = Some(timer);
         }
     });
-}
-
 /// Get the global timer
 pub fn get_global_timer() -> Option<&'static Timer> {
     unsafe { GLOBAL_TIMER.as_ref() }
@@ -553,5 +424,3 @@ pub fn shutdown_global_timer() {
             timer.shutdown();
         }
     }
-}
-

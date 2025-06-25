@@ -12,108 +12,42 @@ pub enum HardwareRngType {
     TpmRng,         // TPM (Trusted Platform Module) RNG
     ChaChaTng,      // ChaCha-based hardware RNG
     Custom(String), // Custom hardware RNG
-}
-
 /// Hardware RNG capabilities
 #[derive(Debug, Clone)]
 pub struct HardwareCapabilities {
-    pub rng_type: HardwareRngType,
-    pub available: bool,
-    pub max_bytes_per_call: usize,
     pub estimated_entropy_rate: f64, // bits per byte
-    pub supports_conditioning: bool,
-    pub vendor_info: String,
-    pub version: String,
-}
-
 /// Hardware RNG statistics
 #[derive(Debug, Clone, Default)]
 pub struct HardwareStats {
-    pub total_bytes_generated: u64,
-    pub total_calls: u64,
-    pub failed_calls: u64,
-    pub average_call_time: Duration,
-    pub last_successful_call: Option<SystemTime>,
-    pub last_failure: Option<SystemTime>,
-    pub consecutive_failures: usize,
-}
-
 /// Hardware entropy collector
 pub struct HardwareEntropyCollector {
-    capabilities: Vec<HardwareCapabilities>,
-    stats: Arc<Mutex<HardwareStats>>,
-    preferred_rng: Option<HardwareRngType>,
-    fallback_enabled: bool,
-}
-
 impl HardwareEntropyCollector {
     /// Create new hardware entropy collector
     pub fn new() -> Self {
         let mut collector = Self {
-            capabilities: Vec::new(),
-            stats: Arc::new(Mutex::new(HardwareStats::default())),
-            preferred_rng: None,
-            fallback_enabled: true,
-        };
         
         collector.detect_hardware_rngs();
         collector
-    }
-    
     /// Detect available hardware RNGs
     fn detect_hardware_rngs(&mut self) {
         // Detect Intel RDRAND
         if self.detect_intel_rdrand() {
             self.capabilities.push(HardwareCapabilities {
-                rng_type: HardwareRngType::IntelRdrand,
-                available: true,
-                max_bytes_per_call: 8,
                 estimated_entropy_rate: 7.5, // Conservative estimate
-                supports_conditioning: false,
-                vendor_info: "Intel Corporation".to_string(),
-                version: "RDRAND".to_string(),
             });
-        }
-        
         // Detect Intel RDSEED
         if self.detect_intel_rdseed() {
             self.capabilities.push(HardwareCapabilities {
-                rng_type: HardwareRngType::IntelRdseed,
-                available: true,
-                max_bytes_per_call: 8,
                 estimated_entropy_rate: 7.8, // Higher entropy than RDRAND
-                supports_conditioning: true,
-                vendor_info: "Intel Corporation".to_string(),
-                version: "RDSEED".to_string(),
             });
-        }
-        
         // Detect ARM TRNG
         if self.detect_arm_trng() {
             self.capabilities.push(HardwareCapabilities {
-                rng_type: HardwareRngType::ArmTrng,
-                available: true,
-                max_bytes_per_call: 16,
-                estimated_entropy_rate: 7.9,
-                supports_conditioning: true,
-                vendor_info: "ARM Limited".to_string(),
-                version: "TrustZone TRNG".to_string(),
             });
-        }
-        
         // Detect TPM RNG
         if self.detect_tpm_rng() {
             self.capabilities.push(HardwareCapabilities {
-                rng_type: HardwareRngType::TpmRng,
-                available: true,
-                max_bytes_per_call: 64,
-                estimated_entropy_rate: 7.7,
-                supports_conditioning: true,
-                vendor_info: "TPM Vendor".to_string(),
-                version: "TPM 2.0".to_string(),
             });
-        }
-        
         // Set preferred RNG (prioritize RDSEED > RDRAND > ARM TRNG > TPM)
         if self.has_capability(&HardwareRngType::IntelRdseed) {
             self.preferred_rng = Some(HardwareRngType::IntelRdseed);
@@ -193,24 +127,17 @@ impl HardwareEntropyCollector {
         // Check for TPM device
         std::path::Path::new("/dev/tpm0").exists() || 
         std::path::Path::new("/dev/tpmrm0").exists()
-    }
-    
     /// Check if hardware capability is available
     pub fn has_capability(&self, rng_type: &HardwareRngType) -> bool {
         self.capabilities.iter()
             .any(|cap| &cap.rng_type == rng_type && cap.available)
-    }
-    
     /// Get hardware capabilities
     pub fn get_capabilities(&self) -> &[HardwareCapabilities] {
         &self.capabilities
-    }
-    
     /// Generate random bytes using hardware RNG
     pub fn generate_bytes(&self, size: usize) -> AdvancedCryptoResult<Vec<u8>> {
         if let Some(ref preferred) = self.preferred_rng {
             match self.generate_bytes_with_rng(preferred, size) {
-                Ok(bytes) => return Ok(bytes),
                 Err(_) if self.fallback_enabled => {
                     // Try other available RNGs
                     for capability in &self.capabilities {
@@ -221,43 +148,30 @@ impl HardwareEntropyCollector {
                         }
                     }
                 }
-                Err(e) => return Err(e),
             }
         }
         
         Err("No hardware RNG available".into())
-    }
-    
     /// Generate random bytes using specific RNG type
     pub fn generate_bytes_with_rng(&self, rng_type: &HardwareRngType, size: usize) -> AdvancedCryptoResult<Vec<u8>> {
         let start_time = SystemTime::now();
         
         let result = match rng_type {
-            HardwareRngType::IntelRdrand => self.generate_intel_rdrand(size),
-            HardwareRngType::IntelRdseed => self.generate_intel_rdseed(size),
-            HardwareRngType::ArmTrng => self.generate_arm_trng(size),
-            HardwareRngType::TpmRng => self.generate_tpm_rng(size),
-            HardwareRngType::ChaChaTng => self.generate_chacha_trng(size),
             HardwareRngType::Custom(name) => {
                 return Err(format!("Custom hardware RNG '{}' not implemented", name).into());
             }
-        };
         
         // Update statistics
         let call_time = start_time.elapsed().unwrap_or(Duration::from_millis(1));
         self.update_stats(&result, call_time);
         
         result
-    }
-    
     /// Generate random bytes using Intel RDRAND
     fn generate_intel_rdrand(&self, size: usize) -> AdvancedCryptoResult<Vec<u8>> {
         #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
         {
             if !self.detect_intel_rdrand() {
                 return Err("Intel RDRAND not available".into());
-            }
-            
             let mut buffer = vec![0u8; size];
             let mut offset = 0;
             
@@ -271,8 +185,6 @@ impl HardwareEntropyCollector {
                     
                     if success == 0 {
                         return Err("Intel RDRAND failed to generate random value".into());
-                    }
-                    
                     let bytes = value.to_le_bytes();
                     let copy_len = std::cmp::min(8, size - offset);
                     buffer[offset..offset + copy_len].copy_from_slice(&bytes[..copy_len]);
@@ -290,8 +202,6 @@ impl HardwareEntropyCollector {
                     
                     if success == 0 {
                         return Err("Intel RDRAND failed to generate random value".into());
-                    }
-                    
                     let bytes = value.to_le_bytes();
                     let copy_len = std::cmp::min(4, size - offset);
                     buffer[offset..offset + copy_len].copy_from_slice(&bytes[..copy_len]);
@@ -313,8 +223,6 @@ impl HardwareEntropyCollector {
         {
             if !self.detect_intel_rdseed() {
                 return Err("Intel RDSEED not available".into());
-            }
-            
             let mut buffer = vec![0u8; size];
             let mut offset = 0;
             
@@ -339,8 +247,6 @@ impl HardwareEntropyCollector {
                     
                     if success == 0 {
                         return Err("Intel RDSEED failed to generate random value after retries".into());
-                    }
-                    
                     let bytes = value.to_le_bytes();
                     let copy_len = std::cmp::min(8, size - offset);
                     buffer[offset..offset + copy_len].copy_from_slice(&bytes[..copy_len]);
@@ -368,8 +274,6 @@ impl HardwareEntropyCollector {
                     
                     if success == 0 {
                         return Err("Intel RDSEED failed to generate random value after retries".into());
-                    }
-                    
                     let bytes = value.to_le_bytes();
                     let copy_len = std::cmp::min(4, size - offset);
                     buffer[offset..offset + copy_len].copy_from_slice(&bytes[..copy_len]);
@@ -396,8 +300,6 @@ impl HardwareEntropyCollector {
             if let Ok(mut file) = File::open("/dev/hwrng") {
                 let mut buffer = vec![0u8; size];
                 match file.read_exact(&mut buffer) {
-                    Ok(()) => return Ok(buffer),
-                    Err(e) => return Err(format!("Failed to read from ARM TRNG: {}", e).into()),
                 }
             }
             
@@ -421,22 +323,14 @@ impl HardwareEntropyCollector {
             if let Ok(mut file) = File::open(device) {
                 let mut buffer = vec![0u8; size];
                 match file.read_exact(&mut buffer) {
-                    Ok(()) => return Ok(buffer),
-                    Err(_) => continue,
                 }
             }
-        }
-        
         Err("TPM RNG device not available".into())
-    }
-    
     /// Generate random bytes using ChaCha TRNG (software fallback)
     fn generate_chacha_trng(&self, _size: usize) -> AdvancedCryptoResult<Vec<u8>> {
         // This would implement a ChaCha-based TRNG
         // For now, return error as not implemented
         Err("ChaCha TRNG not yet implemented".into())
-    }
-    
     /// Update hardware RNG statistics
     fn update_stats(&self, result: &AdvancedCryptoResult<Vec<u8>>, call_time: Duration) {
         let mut stats = self.stats.lock().unwrap();
@@ -460,18 +354,12 @@ impl HardwareEntropyCollector {
         let total_time = stats.average_call_time.as_nanos() as f64 * (stats.total_calls - 1) as f64;
         let new_total_time = total_time + call_time.as_nanos() as f64;
         stats.average_call_time = Duration::from_nanos((new_total_time / stats.total_calls as f64) as u64);
-    }
-    
     /// Get hardware RNG statistics
     pub fn get_stats(&self) -> HardwareStats {
         self.stats.lock().unwrap().clone()
-    }
-    
     /// Test hardware RNG availability
     pub fn test_rng(&self, rng_type: &HardwareRngType) -> bool {
         match self.generate_bytes_with_rng(rng_type, 32) {
-            Ok(_) => true,
-            Err(_) => false,
         }
     }
     
@@ -480,8 +368,6 @@ impl HardwareEntropyCollector {
         self.capabilities.iter()
             .map(|cap| (cap.rng_type.clone(), self.test_rng(&cap.rng_type)))
             .collect()
-    }
-    
     /// Set preferred RNG type
     pub fn set_preferred_rng(&mut self, rng_type: Option<HardwareRngType>) {
         if let Some(ref rng) = rng_type {
@@ -496,25 +382,17 @@ impl HardwareEntropyCollector {
     /// Enable or disable fallback to other RNGs
     pub fn set_fallback_enabled(&mut self, enabled: bool) {
         self.fallback_enabled = enabled;
-    }
-    
     /// Get preferred RNG type
     pub fn get_preferred_rng(&self) -> Option<&HardwareRngType> {
         self.preferred_rng.as_ref()
-    }
-    
     /// Check if any hardware RNG is available
     pub fn has_hardware_rng(&self) -> bool {
         !self.capabilities.is_empty()
-    }
-    
     /// Get best available hardware RNG (by entropy rate)
     pub fn get_best_rng(&self) -> Option<&HardwareCapabilities> {
         self.capabilities.iter()
             .filter(|cap| cap.available)
             .max_by(|a, b| a.estimated_entropy_rate.partial_cmp(&b.estimated_entropy_rate).unwrap())
-    }
-    
     /// Refresh hardware detection
     pub fn refresh_detection(&mut self) {
         self.capabilities.clear();

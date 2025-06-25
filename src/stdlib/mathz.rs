@@ -45,8 +45,6 @@ pub type Chonky = f64;
 /// ```
 pub fn abs_normie(x: Normie) -> Normie {
     math::abs_i32(x)
-}
-
 /// Minimum of two normie numbers (smallest vibes)
 /// 
 /// # Examples
@@ -55,8 +53,6 @@ pub fn abs_normie(x: Normie) -> Normie {
 /// ```
 pub fn min_normie(a: Normie, b: Normie) -> Normie {
     math::min_i32(a, b)
-}
-
 /// Maximum of two normie numbers (biggest vibes)
 /// 
 /// # Examples
@@ -65,8 +61,6 @@ pub fn min_normie(a: Normie, b: Normie) -> Normie {
 /// ```
 pub fn max_normie(a: Normie, b: Normie) -> Normie {
     math::max_i32(a, b)
-}
-
 /// Clamp normie between bounds (keep it in range vibes)
 /// 
 /// # Examples
@@ -75,8 +69,6 @@ pub fn max_normie(a: Normie, b: Normie) -> Normie {
 /// ```
 pub fn clamp_normie(value: Normie, min: Normie, max: Normie) -> Normie {
     math::clamp_i32(value, min, max)
-}
-
 /// Sign of normie number (direction vibes)
 /// 
 /// # Examples
@@ -98,8 +90,6 @@ pub fn sign_normie(x: Normie) -> Normie {
 /// ```
 pub fn is_even_normie(x: Normie) -> bool {
     math::is_even(x)
-}
-
 /// Check if normie is odd (not divisible by 2 vibes)
 /// 
 /// # Examples
@@ -109,8 +99,6 @@ pub fn is_even_normie(x: Normie) -> bool {
 /// ```
 pub fn is_odd_normie(x: Normie) -> bool {
     math::is_odd(x)
-}
-
 /// Greatest common divisor of normie numbers (common factor vibes)
 /// 
 /// # Examples
@@ -119,8 +107,6 @@ pub fn is_odd_normie(x: Normie) -> bool {
 /// ```
 pub fn gcd_normie(a: Normie, b: Normie) -> Normie {
     math::gcd(a, b)
-}
-
 /// Least common multiple of normie numbers (common multiple vibes)
 /// 
 /// # Examples
@@ -129,8 +115,6 @@ pub fn gcd_normie(a: Normie, b: Normie) -> Normie {
 /// ```
 pub fn lcm_normie(a: Normie, b: Normie) -> Normie {
     math::lcm(a, b)
-}
-
 // ================================
 // THICC ARITHMETIC (BIG VIBES)
 // ================================
@@ -143,8 +127,6 @@ pub fn lcm_normie(a: Normie, b: Normie) -> Normie {
 /// ```
 pub fn abs_thicc(x: Thicc) -> Thicc {
     math::abs_i64(x)
-}
-
 /// Minimum of two thicc numbers (smallest big vibes)
 /// 
 /// # Examples
@@ -153,8 +135,6 @@ pub fn abs_thicc(x: Thicc) -> Thicc {
 /// ```
 pub fn min_thicc(a: Thicc, b: Thicc) -> Thicc {
     math::min_i64(a, b)
-}
-
 /// Maximum of two thicc numbers (biggest big vibes)
 /// 
 /// # Examples
@@ -163,8 +143,6 @@ pub fn min_thicc(a: Thicc, b: Thicc) -> Thicc {
 /// ```
 pub fn max_thicc(a: Thicc, b: Thicc) -> Thicc {
     math::max_i64(a, b)
-}
-
 /// Clamp thicc between bounds (keep it in range big vibes)
 /// 
 /// # Examples
@@ -173,8 +151,6 @@ pub fn max_thicc(a: Thicc, b: Thicc) -> Thicc {
 /// ```
 pub fn clamp_thicc(value: Thicc, min: Thicc, max: Thicc) -> Thicc {
     math::clamp_i64(value, min, max)
-}
-
 /// Sign of thicc number (direction big vibes)
 /// 
 /// # Examples
@@ -193,8 +169,6 @@ pub fn sign_thicc(x: Thicc) -> Thicc {
 /// ```
 pub fn is_even_thicc(x: Thicc) -> bool {
     x % 2 == 0
-}
-
 /// Check if thicc is odd (not divisible by 2 big vibes)
 /// 
 /// # Examples
@@ -203,8 +177,6 @@ pub fn is_even_thicc(x: Thicc) -> bool {
 /// ```
 pub fn is_odd_thicc(x: Thicc) -> bool {
     x % 2 != 0
-}
-
 // ================================
 // CHONKY ARITHMETIC (PRECISE VIBES)
 // ================================
@@ -217,8 +189,6 @@ pub fn is_odd_thicc(x: Thicc) -> bool {
 /// ```
 pub fn abs_chonky(x: Chonky) -> Chonky {
     math::abs(x)
-}
-
 /// Minimum of two chonky numbers (smallest precise vibes)
 /// 
 /// # Examples
@@ -227,8 +197,6 @@ pub fn abs_chonky(x: Chonky) -> Chonky {
 /// ```
 pub fn min_chonky(a: Chonky, b: Chonky) -> Chonky {
     math::min(a, b)
-}
-
 /// Maximum of two chonky numbers (biggest precise vibes)
 /// 
 /// # Examples
@@ -237,8 +205,6 @@ pub fn min_chonky(a: Chonky, b: Chonky) -> Chonky {
 /// ```
 pub fn max_chonky(a: Chonky, b: Chonky) -> Chonky {
     math::max(a, b)
-}
-
 /// Clamp chonky between bounds (keep it in range precise vibes)
 /// 
 /// # Examples
@@ -247,8 +213,6 @@ pub fn max_chonky(a: Chonky, b: Chonky) -> Chonky {
 /// ```
 pub fn clamp_chonky(value: Chonky, min: Chonky, max: Chonky) -> Chonky {
     math::clamp(value, min, max)
-}
-
 /// Sign of chonky number (direction precise vibes)
 /// 
 /// # Examples
@@ -257,8 +221,6 @@ pub fn clamp_chonky(value: Chonky, min: Chonky, max: Chonky) -> Chonky {
 /// ```
 pub fn sign_chonky(x: Chonky) -> Chonky {
     math::sign(x)
-}
-
 /// Floor of chonky number (round down vibes)
 /// 
 /// # Examples
@@ -267,8 +229,6 @@ pub fn sign_chonky(x: Chonky) -> Chonky {
 /// ```
 pub fn floor_chonky(x: Chonky) -> Chonky {
     math::floor(x)
-}
-
 /// Ceiling of chonky number (round up vibes)
 /// 
 /// # Examples
@@ -277,8 +237,6 @@ pub fn floor_chonky(x: Chonky) -> Chonky {
 /// ```
 pub fn ceil_chonky(x: Chonky) -> Chonky {
     math::ceil(x)
-}
-
 /// Round chonky number (nearest vibes)
 /// 
 /// # Examples
@@ -288,8 +246,6 @@ pub fn ceil_chonky(x: Chonky) -> Chonky {
 /// ```
 pub fn round_chonky(x: Chonky) -> Chonky {
     math::round(x)
-}
-
 /// Truncate chonky number (cut decimal vibes)
 /// 
 /// # Examples
@@ -299,8 +255,6 @@ pub fn round_chonky(x: Chonky) -> Chonky {
 /// ```
 pub fn truncate_chonky(x: Chonky) -> Chonky {
     math::math_truncate(x)
-}
-
 /// Fractional part of chonky number (decimal vibes)
 /// 
 /// # Examples
@@ -309,8 +263,6 @@ pub fn truncate_chonky(x: Chonky) -> Chonky {
 /// ```
 pub fn fract_chonky(x: Chonky) -> Chonky {
     math::fract(x)
-}
-
 /// Check if chonky is zero (empty vibes)
 /// 
 /// # Examples
@@ -320,8 +272,6 @@ pub fn fract_chonky(x: Chonky) -> Chonky {
 /// ```
 pub fn is_zero_chonky(x: Chonky) -> bool {
     math::is_zero(x)
-}
-
 /// Check if two chonky numbers are equal (same vibes)
 /// 
 /// # Examples
@@ -330,8 +280,6 @@ pub fn is_zero_chonky(x: Chonky) -> bool {
 /// ```
 pub fn is_equal_chonky(a: Chonky, b: Chonky, epsilon: Chonky) -> bool {
     math::is_equal(a, b, epsilon)
-}
-
 // ================================
 // POWER AND ROOT FUNCTIONS (EXPONENTIAL VIBES)
 // ================================
@@ -344,8 +292,6 @@ pub fn is_equal_chonky(a: Chonky, b: Chonky, epsilon: Chonky) -> bool {
 /// ```
 pub fn pow_chonky(base: Chonky, exponent: Chonky) -> MathzResult<Chonky> {
     math::pow(base, exponent)
-}
-
 /// Integer power function for chonky numbers (whole exponent vibes)
 /// 
 /// # Examples
@@ -354,8 +300,6 @@ pub fn pow_chonky(base: Chonky, exponent: Chonky) -> MathzResult<Chonky> {
 /// ```
 pub fn powi_chonky(base: Chonky, exponent: Normie) -> MathzResult<Chonky> {
     math::powi(base, exponent)
-}
-
 /// Square function (double vibes)
 /// 
 /// # Examples
@@ -364,8 +308,6 @@ pub fn powi_chonky(base: Chonky, exponent: Normie) -> MathzResult<Chonky> {
 /// ```
 pub fn square_chonky(x: Chonky) -> Chonky {
     math::square(x)
-}
-
 /// Cube function (triple vibes)
 /// 
 /// # Examples
@@ -374,8 +316,6 @@ pub fn square_chonky(x: Chonky) -> Chonky {
 /// ```
 pub fn cube_chonky(x: Chonky) -> Chonky {
     math::cube(x)
-}
-
 /// Square root function (half power vibes)
 /// 
 /// # Examples
@@ -384,8 +324,6 @@ pub fn cube_chonky(x: Chonky) -> Chonky {
 /// ```
 pub fn sqrt_chonky(x: Chonky) -> MathzResult<Chonky> {
     math::sqrt(x)
-}
-
 /// Cube root function (third root vibes)
 /// 
 /// # Examples
@@ -394,8 +332,6 @@ pub fn sqrt_chonky(x: Chonky) -> MathzResult<Chonky> {
 /// ```
 pub fn cbrt_chonky(x: Chonky) -> MathzResult<Chonky> {
     math::cbrt(x)
-}
-
 /// Nth root function (any root vibes)
 /// 
 /// # Examples
@@ -404,8 +340,6 @@ pub fn cbrt_chonky(x: Chonky) -> MathzResult<Chonky> {
 /// ```
 pub fn nth_root_chonky(x: Chonky, n: Chonky) -> MathzResult<Chonky> {
     math::nth_root(x, n)
-}
-
 /// Hypotenuse function (triangle vibes)
 /// 
 /// # Examples
@@ -414,8 +348,6 @@ pub fn nth_root_chonky(x: Chonky, n: Chonky) -> MathzResult<Chonky> {
 /// ```
 pub fn hypot_chonky(x: Chonky, y: Chonky) -> Chonky {
     math::hypot(x, y)
-}
-
 /// Reciprocal function (inverse vibes)
 /// 
 /// # Examples
@@ -424,8 +356,6 @@ pub fn hypot_chonky(x: Chonky, y: Chonky) -> Chonky {
 /// ```
 pub fn reciprocal_chonky(x: Chonky) -> MathzResult<Chonky> {
     math::reciprocal(x)
-}
-
 // ================================
 // LOGARITHMIC AND EXPONENTIAL FUNCTIONS (LOG VIBES)
 // ================================
@@ -438,8 +368,6 @@ pub fn reciprocal_chonky(x: Chonky) -> MathzResult<Chonky> {
 /// ```
 pub fn ln_chonky(x: Chonky) -> MathzResult<Chonky> {
     math::ln(x)
-}
-
 /// Base-10 logarithm (log vibes)
 /// 
 /// # Examples
@@ -448,8 +376,6 @@ pub fn ln_chonky(x: Chonky) -> MathzResult<Chonky> {
 /// ```
 pub fn log10_chonky(x: Chonky) -> MathzResult<Chonky> {
     math::log10(x)
-}
-
 /// Base-2 logarithm (binary log vibes)
 /// 
 /// # Examples
@@ -458,8 +384,6 @@ pub fn log10_chonky(x: Chonky) -> MathzResult<Chonky> {
 /// ```
 pub fn log2_chonky(x: Chonky) -> MathzResult<Chonky> {
     math::log2(x)
-}
-
 /// Arbitrary base logarithm (custom log vibes)
 /// 
 /// # Examples
@@ -468,8 +392,6 @@ pub fn log2_chonky(x: Chonky) -> MathzResult<Chonky> {
 /// ```
 pub fn log_chonky(x: Chonky, base: Chonky) -> MathzResult<Chonky> {
     math::log(x, base)
-}
-
 /// Natural exponential (e^x vibes)
 /// 
 /// # Examples
@@ -478,8 +400,6 @@ pub fn log_chonky(x: Chonky, base: Chonky) -> MathzResult<Chonky> {
 /// ```
 pub fn exp_chonky(x: Chonky) -> MathzResult<Chonky> {
     math::exp(x)
-}
-
 /// Base-2 exponential (2^x vibes)
 /// 
 /// # Examples
@@ -488,8 +408,6 @@ pub fn exp_chonky(x: Chonky) -> MathzResult<Chonky> {
 /// ```
 pub fn exp2_chonky(x: Chonky) -> MathzResult<Chonky> {
     math::exp2(x)
-}
-
 /// Base-10 exponential (10^x vibes)
 /// 
 /// # Examples
@@ -498,8 +416,6 @@ pub fn exp2_chonky(x: Chonky) -> MathzResult<Chonky> {
 /// ```
 pub fn exp10_chonky(x: Chonky) -> MathzResult<Chonky> {
     math::exp10(x)
-}
-
 // ================================
 // TRIGONOMETRIC FUNCTIONS (TRIG VIBES)
 // ================================
@@ -512,8 +428,6 @@ pub fn exp10_chonky(x: Chonky) -> MathzResult<Chonky> {
 /// ```
 pub fn sin_chonky(x: Chonky) -> MathzResult<Chonky> {
     math::sin(x)
-}
-
 /// Cosine function (cos vibes)
 /// 
 /// # Examples
@@ -522,8 +436,6 @@ pub fn sin_chonky(x: Chonky) -> MathzResult<Chonky> {
 /// ```
 pub fn cos_chonky(x: Chonky) -> MathzResult<Chonky> {
     math::cos(x)
-}
-
 /// Tangent function (tan vibes)
 /// 
 /// # Examples
@@ -532,8 +444,6 @@ pub fn cos_chonky(x: Chonky) -> MathzResult<Chonky> {
 /// ```
 pub fn tan_chonky(x: Chonky) -> MathzResult<Chonky> {
     math::tan(x)
-}
-
 /// Arcsine function (inverse sin vibes)
 /// 
 /// # Examples
@@ -542,8 +452,6 @@ pub fn tan_chonky(x: Chonky) -> MathzResult<Chonky> {
 /// ```
 pub fn asin_chonky(x: Chonky) -> MathzResult<Chonky> {
     math::asin(x)
-}
-
 /// Arccosine function (inverse cos vibes)
 /// 
 /// # Examples
@@ -552,8 +460,6 @@ pub fn asin_chonky(x: Chonky) -> MathzResult<Chonky> {
 /// ```
 pub fn acos_chonky(x: Chonky) -> MathzResult<Chonky> {
     math::acos(x)
-}
-
 /// Arctangent function (inverse tan vibes)
 /// 
 /// # Examples
@@ -562,8 +468,6 @@ pub fn acos_chonky(x: Chonky) -> MathzResult<Chonky> {
 /// ```
 pub fn atan_chonky(x: Chonky) -> MathzResult<Chonky> {
     math::atan(x)
-}
-
 /// Two-argument arctangent (atan2 vibes)
 /// 
 /// # Examples
@@ -572,8 +476,6 @@ pub fn atan_chonky(x: Chonky) -> MathzResult<Chonky> {
 /// ```
 pub fn atan2_chonky(y: Chonky, x: Chonky) -> MathzResult<Chonky> {
     math::atan2(y, x)
-}
-
 // ================================
 // HYPERBOLIC FUNCTIONS (HYPERBOLIC VIBES)
 // ================================
@@ -586,8 +488,6 @@ pub fn atan2_chonky(y: Chonky, x: Chonky) -> MathzResult<Chonky> {
 /// ```
 pub fn sinh_chonky(x: Chonky) -> MathzResult<Chonky> {
     math::sinh(x)
-}
-
 /// Hyperbolic cosine (cosh vibes)
 /// 
 /// # Examples
@@ -596,8 +496,6 @@ pub fn sinh_chonky(x: Chonky) -> MathzResult<Chonky> {
 /// ```
 pub fn cosh_chonky(x: Chonky) -> MathzResult<Chonky> {
     math::cosh(x)
-}
-
 /// Hyperbolic tangent (tanh vibes)
 /// 
 /// # Examples
@@ -606,8 +504,6 @@ pub fn cosh_chonky(x: Chonky) -> MathzResult<Chonky> {
 /// ```
 pub fn tanh_chonky(x: Chonky) -> MathzResult<Chonky> {
     math::tanh(x)
-}
-
 // ================================
 // MATHEMATICAL CONSTANTS (CONST VIBES)
 // ================================
@@ -645,8 +541,6 @@ pub const LN_10_CHONKY: Chonky = std::f64::consts::LN_10;
 /// ```
 pub fn random_chonky() -> Chonky {
     math::random()
-}
-
 /// Generate random chonky number in range (ranged random vibes)
 /// 
 /// # Examples
@@ -655,8 +549,6 @@ pub fn random_chonky() -> Chonky {
 /// ```
 pub fn random_range_chonky(min: Chonky, max: Chonky) -> Chonky {
     math::random_range(min, max)
-}
-
 /// Generate random normie number (random int vibes)
 /// 
 /// # Examples
@@ -665,8 +557,6 @@ pub fn random_range_chonky(min: Chonky, max: Chonky) -> Chonky {
 /// ```
 pub fn random_normie() -> Normie {
     math::random_int()
-}
-
 /// Generate random boolean (random truth vibes)
 /// 
 /// # Examples
@@ -675,8 +565,6 @@ pub fn random_normie() -> Normie {
 /// ```
 pub fn random_bool() -> bool {
     math::random_bool()
-}
-
 // ================================
 // INTERPOLATION FUNCTIONS (SMOOTH VIBES)
 // ================================
@@ -689,8 +577,6 @@ pub fn random_bool() -> bool {
 /// ```
 pub fn lerp_chonky(start: Chonky, end: Chonky, t: Chonky) -> Chonky {
     math::lerp(start, end, t)
-}
-
 /// Inverse linear interpolation (reverse smooth vibes)
 /// 
 /// # Examples
@@ -699,8 +585,6 @@ pub fn lerp_chonky(start: Chonky, end: Chonky, t: Chonky) -> Chonky {
 /// ```
 pub fn inverse_lerp_chonky(start: Chonky, end: Chonky, value: Chonky) -> Chonky {
     math::inverse_lerp(start, end, value)
-}
-
 /// Smooth step interpolation (cubic smooth vibes)
 /// 
 /// # Examples
@@ -709,8 +593,6 @@ pub fn inverse_lerp_chonky(start: Chonky, end: Chonky, value: Chonky) -> Chonky 
 /// ```
 pub fn smooth_step_chonky(edge0: Chonky, edge1: Chonky, x: Chonky) -> Chonky {
     math::smooth_step(edge0, edge1, x)
-}
-
 /// Smoother step interpolation (quintic smooth vibes)
 /// 
 /// # Examples
@@ -719,8 +601,6 @@ pub fn smooth_step_chonky(edge0: Chonky, edge1: Chonky, x: Chonky) -> Chonky {
 /// ```
 pub fn smoother_step_chonky(edge0: Chonky, edge1: Chonky, x: Chonky) -> Chonky {
     math::smoother_step(edge0, edge1, x)
-}
-
 /// Map value from one range to another (range mapping vibes)
 /// 
 /// # Examples
@@ -729,8 +609,6 @@ pub fn smoother_step_chonky(edge0: Chonky, edge1: Chonky, x: Chonky) -> Chonky {
 /// ```
 pub fn map_range_chonky(value: Chonky, from_min: Chonky, from_max: Chonky, to_min: Chonky, to_max: Chonky) -> Chonky {
     math::map_range(value, from_min, from_max, to_min, to_max)
-}
-
 // ================================
 // UTILITY FUNCTIONS
 // ================================
@@ -744,8 +622,6 @@ pub fn map_range_chonky(value: Chonky, from_min: Chonky, from_max: Chonky, to_mi
 /// ```
 pub fn is_valid_chonky(x: Chonky) -> bool {
     math::is_valid_float(x)
-}
-
 /// Round chonky to specified decimal places (precision vibes)
 /// 
 /// # Examples
@@ -754,8 +630,6 @@ pub fn is_valid_chonky(x: Chonky) -> bool {
 /// ```
 pub fn round_to_decimals_chonky(x: Chonky, decimals: u32) -> MathzResult<Chonky> {
     math::round_to_decimals(x, decimals)
-}
-
 /// Calculate average of chonky numbers (mean vibes)
 /// 
 /// # Examples
@@ -765,12 +639,8 @@ pub fn round_to_decimals_chonky(x: Chonky, decimals: u32) -> MathzResult<Chonky>
 pub fn average_chonky(values: &[Chonky]) -> MathzResult<Chonky> {
     if values.is_empty() {
         return Err(MathzError::DomainError("Cannot compute average of empty slice".to_string()));
-    }
-    
     let sum: Chonky = values.iter().sum();
     Ok(sum / values.len() as Chonky)
-}
-
 /// Calculate geometric mean of chonky numbers (geo mean vibes)
 /// 
 /// # Examples
@@ -780,16 +650,10 @@ pub fn average_chonky(values: &[Chonky]) -> MathzResult<Chonky> {
 pub fn geometric_mean_chonky(values: &[Chonky]) -> MathzResult<Chonky> {
     if values.is_empty() {
         return Err(MathzError::DomainError("Cannot compute geometric mean of empty slice".to_string()));
-    }
-    
     if values.iter().any(|&x| x <= 0.0) {
         return Err(MathzError::DomainError("All values must be positive for geometric mean".to_string()));
-    }
-    
     let product: Chonky = values.iter().map(|&x| x.ln()).sum();
     Ok((product / values.len() as Chonky).exp())
-}
-
 /// Calculate harmonic mean of chonky numbers (harmonic mean vibes)
 /// 
 /// # Examples
@@ -799,22 +663,14 @@ pub fn geometric_mean_chonky(values: &[Chonky]) -> MathzResult<Chonky> {
 pub fn harmonic_mean_chonky(values: &[Chonky]) -> MathzResult<Chonky> {
     if values.is_empty() {
         return Err(MathzError::DomainError("Cannot compute harmonic mean of empty slice".to_string()));
-    }
-    
     if values.iter().any(|&x| x == 0.0) {
         return Err(MathzError::DomainError("Cannot compute harmonic mean with zero values".to_string()));
-    }
-    
     let reciprocal_sum: Chonky = values.iter().map(|&x| 1.0 / x).sum();
     Ok(values.len() as Chonky / reciprocal_sum)
-}
-
 /// Module initialization function
 pub fn init_mathz() -> MathzResult<()> {
     // Initialize any global state for MathZ module
     Ok(())
-}
-
 /// Get module statistics and information
 pub fn get_mathz_stats() -> HashMap<String, String> {
     let mut stats = HashMap::new();
@@ -823,5 +679,3 @@ pub fn get_mathz_stats() -> HashMap<String, String> {
     stats.insert("features".to_string(), "CURSED types, Gen Z naming, comprehensive math".to_string());
     stats.insert("types".to_string(), "normie, thicc, smol, chonky".to_string());
     stats
-}
-

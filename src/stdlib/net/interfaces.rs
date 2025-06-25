@@ -12,135 +12,44 @@ use std::collections::HashMap;
 /// Network interface type
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum InterfaceType {
-    Loopback,
-    Ethernet,
-    Wireless,
-    Ppp,
-    Tunnel,
-    Bridge,
-    Virtual,
-    Unknown,
-}
-
 impl std::fmt::Display for InterfaceType {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            InterfaceType::Loopback => write!(f, "Loopback"),
-            InterfaceType::Ethernet => write!(f, "Ethernet"),
-            InterfaceType::Wireless => write!(f, "Wireless"),
-            InterfaceType::Ppp => write!(f, "PPP"),
-            InterfaceType::Tunnel => write!(f, "Tunnel"),
-            InterfaceType::Bridge => write!(f, "Bridge"),
-            InterfaceType::Virtual => write!(f, "Virtual"),
-            InterfaceType::Unknown => write!(f, "Unknown"),
         }
     }
-}
-
 /// Network interface statistics
 #[derive(Debug, Clone)]
 pub struct InterfaceStats {
-    pub bytes_sent: u64,
-    pub bytes_received: u64,
-    pub packets_sent: u64,
-    pub packets_received: u64,
-    pub errors_in: u64,
-    pub errors_out: u64,
-    pub dropped_in: u64,
-    pub dropped_out: u64,
-    pub collisions: u64,
-}
-
 impl Default for InterfaceStats {
     fn default() -> Self {
         Self {
-            bytes_sent: 0,
-            bytes_received: 0,
-            packets_sent: 0,
-            packets_received: 0,
-            errors_in: 0,
-            errors_out: 0,
-            dropped_in: 0,
-            dropped_out: 0,
-            collisions: 0,
         }
     }
-}
-
 /// Network interface configuration
 #[derive(Debug, Clone)]
 pub struct InterfaceConfig {
-    pub mtu: u32,
-    pub up: bool,
-    pub running: bool,
-    pub multicast: bool,
-    pub broadcast: bool,
-    pub point_to_point: bool,
-    pub loopback: bool,
-}
-
 impl Default for InterfaceConfig {
     fn default() -> Self {
         Self {
-            mtu: 1500,
-            up: false,
-            running: false,
-            multicast: false,
-            broadcast: false,
-            point_to_point: false,
-            loopback: false,
         }
     }
-}
-
 /// Network interface information
 #[derive(Debug, Clone)]
 pub struct NetworkInterface {
-    pub name: String,
-    pub display_name: String,
-    pub description: String,
-    pub interface_type: InterfaceType,
     pub hardware_address: Option<String>, // MAC address
-    pub ip_addresses: Vec<IpAddr>,
-    pub netmask: Option<IpAddr>,
-    pub broadcast_address: Option<IpAddr>,
-    pub gateway: Option<IpAddr>,
-    pub dns_servers: Vec<IpAddr>,
-    pub config: InterfaceConfig,
-    pub stats: InterfaceStats,
-    pub index: u32,
-}
-
 impl NetworkInterface {
     /// Create a new network interface
     pub fn new(name: String, index: u32) -> Self {
         Self {
-            name: name.clone(),
-            display_name: name.clone(),
-            description: String::new(),
-            interface_type: InterfaceType::Unknown,
-            hardware_address: None,
-            ip_addresses: Vec::new(),
-            netmask: None,
-            broadcast_address: None,
-            gateway: None,
-            dns_servers: Vec::new(),
-            config: InterfaceConfig::default(),
-            stats: InterfaceStats::default(),
-            index,
         }
     }
     
     /// Check if interface is up and running
     pub fn is_active(&self) -> bool {
         self.config.up && self.config.running
-    }
-    
     /// Check if interface is a loopback interface
     pub fn is_loopback(&self) -> bool {
         self.interface_type == InterfaceType::Loopback || self.config.loopback
-    }
-    
     /// Get primary IP address (first non-loopback if available)
     pub fn primary_ip(&self) -> Option<IpAddr> {
         if self.is_loopback() {
@@ -159,16 +68,12 @@ impl NetworkInterface {
             .filter(|ip| ip.is_ipv4())
             .copied()
             .collect()
-    }
-    
     /// Get IPv6 addresses only
     pub fn ipv6_addresses(&self) -> Vec<IpAddr> {
         self.ip_addresses.iter()
             .filter(|ip| ip.is_ipv6())
             .copied()
             .collect()
-    }
-    
     /// Calculate total bandwidth (bytes/second estimate)
     pub fn bandwidth_estimate(&self) -> f64 {
         // Simple estimate based on interface type
@@ -190,8 +95,6 @@ impl NetworkInterface {
         
         if let Some(mac) = &self.hardware_address {
             info.push_str(&format!("  MAC: {}\n", mac));
-        }
-        
         info.push_str(&format!("  MTU: {}\n", self.config.mtu));
         
         if !self.ip_addresses.is_empty() {
@@ -203,8 +106,6 @@ impl NetworkInterface {
         
         if let Some(gateway) = &self.gateway {
             info.push_str(&format!("  Gateway: {}\n", gateway));
-        }
-        
         if !self.dns_servers.is_empty() {
             info.push_str("  DNS Servers:\n");
             for dns in &self.dns_servers {
@@ -219,17 +120,10 @@ impl NetworkInterface {
 /// Network interface manager
 #[derive(Debug)]
 pub struct InterfaceManager {
-    interfaces: HashMap<String, NetworkInterface>,
-    last_update: std::time::Instant,
-    cache_duration: std::time::Duration,
-}
-
 impl InterfaceManager {
     /// Create a new interface manager
     pub fn new() -> Self {
         Self {
-            interfaces: HashMap::new(),
-            last_update: std::time::Instant::now() - std::time::Duration::from_secs(3600),
             cache_duration: std::time::Duration::from_secs(60), // Cache for 1 minute
         }
     }
@@ -240,32 +134,24 @@ impl InterfaceManager {
         self.discover_interfaces()?;
         self.last_update = std::time::Instant::now();
         Ok(())
-    }
-    
     /// Get all interfaces (refreshes if cache is stale)
     pub fn get_interfaces(&mut self) -> NetResult<&HashMap<String, NetworkInterface>> {
         if self.last_update.elapsed() > self.cache_duration {
             self.refresh()?;
         }
         Ok(&self.interfaces)
-    }
-    
     /// Get interface by name
     pub fn get_interface(&mut self, name: &str) -> NetResult<Option<&NetworkInterface>> {
         if self.last_update.elapsed() > self.cache_duration {
             self.refresh()?;
         }
         Ok(self.interfaces.get(name))
-    }
-    
     /// Get all active interfaces
     pub fn get_active_interfaces(&mut self) -> NetResult<Vec<&NetworkInterface>> {
         let interfaces = self.get_interfaces()?;
         Ok(interfaces.values()
             .filter(|iface| iface.is_active())
             .collect())
-    }
-    
     /// Get default interface (usually the one with default route)
     pub fn get_default_interface(&mut self) -> NetResult<Option<&NetworkInterface>> {
         let interfaces = self.get_interfaces()?;
@@ -285,8 +171,6 @@ impl InterfaceManager {
         }
         
         Ok(None)
-    }
-    
     /// Platform-specific interface discovery
     fn discover_interfaces(&mut self) -> NetResult<()> {
         // This is a simplified implementation
@@ -295,21 +179,13 @@ impl InterfaceManager {
         #[cfg(unix)]
         {
             self.discover_unix_interfaces()?;
-        }
-        
         #[cfg(windows)]
         {
             self.discover_windows_interfaces()?;
-        }
-        
         // Always add loopback interface as fallback
         if !self.interfaces.contains_key("lo") && !self.interfaces.contains_key("loopback") {
             self.add_loopback_interface();
-        }
-        
         Ok(())
-    }
-    
     #[cfg(unix)]
     fn discover_unix_interfaces(&mut self) -> NetResult<()> {
         use std::process::Command;
@@ -329,11 +205,7 @@ impl InterfaceManager {
         // Fallback to parsing /proc/net/dev for basic interface names
         if let Ok(contents) = std::fs::read_to_string("/proc/net/dev") {
             self.parse_proc_net_dev(&contents)?;
-        }
-        
         Ok(())
-    }
-    
     #[cfg(windows)]
     fn discover_windows_interfaces(&mut self) -> NetResult<()> {
         use std::process::Command;
@@ -350,8 +222,6 @@ impl InterfaceManager {
         }
         
         Ok(())
-    }
-    
     fn parse_ip_addr_output(&mut self, output: &str) -> NetResult<()> {
         let mut current_interface: Option<NetworkInterface> = None;
         
@@ -362,8 +232,6 @@ impl InterfaceManager {
             if line.contains(": ") && line.contains("mtu") {
                 if let Some(iface) = current_interface.take() {
                     self.interfaces.insert(iface.name.clone(), iface);
-                }
-                
                 let parts: Vec<&str> = line.split_whitespace().collect();
                 if parts.len() >= 2 {
                     let name_part = parts[1];
@@ -386,8 +254,6 @@ impl InterfaceManager {
                         iface.interface_type = InterfaceType::Ethernet;
                     } else if name.starts_with("wlan") || name.starts_with("wlp") {
                         iface.interface_type = InterfaceType::Wireless;
-                    }
-                    
                     // Parse MTU
                     if let Some(mtu_pos) = line.find("mtu ") {
                         let mtu_str = &line[mtu_pos + 4..];
@@ -396,8 +262,6 @@ impl InterfaceManager {
                                 iface.config.mtu = mtu;
                             }
                         }
-                    }
-                    
                     current_interface = Some(iface);
                 }
             }
@@ -445,11 +309,7 @@ impl InterfaceManager {
         // Don't forget the last interface
         if let Some(iface) = current_interface {
             self.interfaces.insert(iface.name.clone(), iface);
-        }
-        
         Ok(())
-    }
-    
     fn parse_proc_net_dev(&mut self, contents: &str) -> NetResult<()> {
         for (index, line) in contents.split("\n").enumerate().skip(2) { // Skip header lines
             if let Some(colon_pos) = line.find(':') {
@@ -464,8 +324,6 @@ impl InterfaceManager {
                     iface.interface_type = InterfaceType::Ethernet;
                 } else if name.starts_with("wlan") || name.starts_with("wlp") {
                     iface.interface_type = InterfaceType::Wireless;
-                }
-                
                 // Assume interface is up (we can't tell from /proc/net/dev alone)
                 iface.config.up = true;
                 iface.config.running = true;
@@ -475,8 +333,6 @@ impl InterfaceManager {
         }
         
         Ok(())
-    }
-    
     #[cfg(windows)]
     fn parse_ipconfig_output(&mut self, output: &str) -> NetResult<()> {
         let mut current_interface: Option<NetworkInterface> = None;
@@ -489,8 +345,6 @@ impl InterfaceManager {
             if line.starts_with("Ethernet adapter") || line.starts_with("Wireless LAN adapter") {
                 if let Some(iface) = current_interface.take() {
                     self.interfaces.insert(iface.name.clone(), iface);
-                }
-                
                 let name = if let Some(start) = line.find(' ') {
                     let rest = &line[start + 1..];
                     if let Some(end) = rest.find(':') {
@@ -500,7 +354,6 @@ impl InterfaceManager {
                     }
                 } else {
                     format!("adapter{}", index)
-                };
                 
                 let mut iface = NetworkInterface::new(name.clone(), index);
                 iface.display_name = name.clone();
@@ -509,8 +362,6 @@ impl InterfaceManager {
                     iface.interface_type = InterfaceType::Ethernet;
                 } else if line.starts_with("Wireless LAN adapter") {
                     iface.interface_type = InterfaceType::Wireless;
-                }
-                
                 current_interface = Some(iface);
                 index += 1;
             }
@@ -541,11 +392,7 @@ impl InterfaceManager {
         // Don't forget the last interface
         if let Some(iface) = current_interface {
             self.interfaces.insert(iface.name.clone(), iface);
-        }
-        
         Ok(())
-    }
-    
     fn add_loopback_interface(&mut self) {
         let mut loopback = NetworkInterface::new("loopback".to_string(), 0);
         loopback.interface_type = InterfaceType::Loopback;
@@ -569,42 +416,30 @@ static GLOBAL_INTERFACE_MANAGER: OnceLock<Arc<Mutex<InterfaceManager>>> = OnceLo
 
 fn get_global_interface_manager() -> &'static Arc<Mutex<InterfaceManager>> {
     GLOBAL_INTERFACE_MANAGER.get_or_init(|| Arc::new(Mutex::new(InterfaceManager::new())))
-}
-
 /// List all network interfaces
 pub fn list_interfaces() -> NetResult<Vec<NetworkInterface>> {
     let manager = get_global_interface_manager();
     let mut manager_guard = manager.lock().unwrap();
     let interfaces = manager_guard.get_interfaces()?;
     Ok(interfaces.values().cloned().collect())
-}
-
 /// Get interface by name
 pub fn get_interface_by_name(name: &str) -> NetResult<Option<NetworkInterface>> {
     let manager = get_global_interface_manager();
     let mut manager_guard = manager.lock().unwrap();
     Ok(manager_guard.get_interface(name)?.cloned())
-}
-
 /// Get default network interface
 pub fn get_default_interface() -> NetResult<Option<NetworkInterface>> {
     let manager = get_global_interface_manager();
     let mut manager_guard = manager.lock().unwrap();
     Ok(manager_guard.get_default_interface()?.cloned())
-}
-
 /// Get all active interfaces
 pub fn get_active_interfaces() -> NetResult<Vec<NetworkInterface>> {
     let manager = get_global_interface_manager();
     let mut manager_guard = manager.lock().unwrap();
     let active_interfaces = manager_guard.get_active_interfaces()?;
     Ok(active_interfaces.into_iter().cloned().collect())
-}
-
 /// Refresh interface cache
 pub fn refresh_interface_cache() -> NetResult<()> {
     let manager = get_global_interface_manager();
     let mut manager_guard = manager.lock().unwrap();
     manager_guard.refresh()
-}
-

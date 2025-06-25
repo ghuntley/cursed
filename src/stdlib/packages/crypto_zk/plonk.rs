@@ -16,47 +16,28 @@ pub struct PlonkGate {
     pub q_o: FieldElement,  // Output wire coefficient
     pub q_m: FieldElement,  // Multiplication coefficient
     pub q_c: FieldElement,  // Constant coefficient
-}
-
 impl PlonkGate {
     /// Create addition gate: a + b = c
     pub fn addition() -> Self {
         Self {
-            q_l: FieldElement::one(),
-            q_r: FieldElement::one(),
-            q_o: -FieldElement::one(),
-            q_m: FieldElement::zero(),
-            q_c: FieldElement::zero(),
         }
     }
 
     /// Create multiplication gate: a * b = c
     pub fn multiplication() -> Self {
         Self {
-            q_l: FieldElement::zero(),
-            q_r: FieldElement::zero(),
-            q_o: -FieldElement::one(),
-            q_m: FieldElement::one(),
-            q_c: FieldElement::zero(),
         }
     }
 
     /// Create constant gate: a = constant
     pub fn constant(value: FieldElement) -> Self {
         Self {
-            q_l: FieldElement::one(),
-            q_r: FieldElement::zero(),
-            q_o: FieldElement::zero(),
-            q_m: FieldElement::zero(),
-            q_c: -value,
         }
     }
 
     /// Evaluate gate constraint: q_l*a + q_r*b + q_o*c + q_m*a*b + q_c
     pub fn evaluate(&self, a: FieldElement, b: FieldElement, c: FieldElement) -> FieldElement {
         self.q_l * a + self.q_r * b + self.q_o * c + self.q_m * a * b + self.q_c
-    }
-
     /// Convert to Value representation
     pub fn to_value(&self) -> Value {
         let mut gate_map = HashMap::new();
@@ -72,10 +53,6 @@ impl PlonkGate {
 /// PLONK polynomial
 #[derive(Debug, Clone)]
 pub struct PlonkPolynomial {
-    pub coefficients: Vec<FieldElement>,
-    pub degree: usize,
-}
-
 impl PlonkPolynomial {
     /// Create polynomial from coefficients
     pub fn new(coefficients: Vec<FieldElement>) -> Self {
@@ -86,13 +63,9 @@ impl PlonkPolynomial {
     /// Create zero polynomial
     pub fn zero() -> Self {
         Self::new(vec![FieldElement::zero()])
-    }
-
     /// Create constant polynomial
     pub fn constant(value: FieldElement) -> Self {
         Self::new(vec![value])
-    }
-
     /// Evaluate polynomial at point
     pub fn evaluate(&self, x: FieldElement) -> FieldElement {
         let mut result = FieldElement::zero();
@@ -101,11 +74,7 @@ impl PlonkPolynomial {
         for &coeff in &self.coefficients {
             result = result + (coeff * power);
             power = power * x;
-        }
-        
         result
-    }
-
     /// Add two polynomials
     pub fn add(&self, other: &Self) -> Self {
         let max_len = self.coefficients.len().max(other.coefficients.len());
@@ -121,22 +90,16 @@ impl PlonkPolynomial {
         }
         
         Self::new(result_coeffs)
-    }
-
     /// Multiply polynomial by scalar
     pub fn scalar_mul(&self, scalar: FieldElement) -> Self {
         let result_coeffs: Vec<FieldElement> = self.coefficients.iter()
             .map(|&coeff| coeff * scalar)
             .collect();
         Self::new(result_coeffs)
-    }
-
     /// Multiply two polynomials
     pub fn multiply(&self, other: &Self) -> Self {
         if self.coefficients.is_empty() || other.coefficients.is_empty() {
             return Self::zero();
-        }
-        
         let result_degree = self.degree + other.degree;
         let mut result_coeffs = vec![FieldElement::zero(); result_degree + 1];
         
@@ -147,14 +110,10 @@ impl PlonkPolynomial {
         }
         
         Self::new(result_coeffs)
-    }
-
     /// Interpolate polynomial from points
     pub fn interpolate(points: &[(FieldElement, FieldElement)]) -> AdvancedCryptoResult<Self> {
         if points.is_empty() {
             return Ok(Self::zero());
-        }
-        
         let n = points.len();
         let mut result = Self::zero();
         
@@ -177,11 +136,7 @@ impl PlonkPolynomial {
             
             li = li.scalar_mul(yi);
             result = result.add(&li);
-        }
-        
         Ok(result)
-    }
-
     /// Convert to Value representation
     pub fn to_value(&self) -> Value {
         let coeffs: Vec<Value> = self.coefficients.iter()
@@ -200,16 +155,11 @@ impl PlonkPolynomial {
 #[derive(Debug, Clone)]
 pub struct PlonkPermutation {
     pub sigma: Vec<usize>, // Permutation mapping
-    pub domain_size: usize,
-}
-
 impl PlonkPermutation {
     /// Create identity permutation
     pub fn identity(size: usize) -> Self {
         let sigma: Vec<usize> = (0..size).collect();
         Self {
-            sigma,
-            domain_size: size,
         }
     }
 
@@ -244,11 +194,7 @@ impl PlonkPermutation {
                 return false;
             }
             seen[target] = true;
-        }
-        
         seen.iter().all(|&x| x)
-    }
-
     /// Convert to Value representation
     pub fn to_value(&self) -> Value {
         let sigma_values: Vec<Value> = self.sigma.iter()
@@ -266,17 +212,7 @@ impl PlonkPermutation {
 /// PLONK proving key
 #[derive(Debug, Clone)]
 pub struct PlonkProvingKey {
-    pub domain_size: usize,
-    pub num_public_inputs: usize,
-    pub q_l: PlonkPolynomial,
-    pub q_r: PlonkPolynomial,
-    pub q_o: PlonkPolynomial,
-    pub q_m: PlonkPolynomial,
-    pub q_c: PlonkPolynomial,
-    pub permutation: PlonkPermutation,
     pub kzg_params: Vec<G1Point>, // KZG commitment parameters
-}
-
 impl PlonkProvingKey {
     /// Convert to Value representation
     pub fn to_value(&self) -> Value {
@@ -302,18 +238,7 @@ impl PlonkProvingKey {
 /// PLONK verifying key
 #[derive(Debug, Clone)]
 pub struct PlonkVerifyingKey {
-    pub domain_size: usize,
-    pub num_public_inputs: usize,
-    pub q_l_commitment: G1Point,
-    pub q_r_commitment: G1Point,
-    pub q_o_commitment: G1Point,
-    pub q_m_commitment: G1Point,
-    pub q_c_commitment: G1Point,
-    pub sigma_commitments: Vec<G1Point>,
-    pub g1_generator: G1Point,
     pub g2_generator: G1Point, // Simplified as G1Point for this implementation
-}
-
 impl PlonkVerifyingKey {
     /// Convert to Value representation
     pub fn to_value(&self) -> Value {
@@ -341,24 +266,6 @@ impl PlonkVerifyingKey {
 /// PLONK proof
 #[derive(Debug, Clone)]
 pub struct PlonkProof {
-    pub a_commitment: G1Point,
-    pub b_commitment: G1Point,
-    pub c_commitment: G1Point,
-    pub z_commitment: G1Point,
-    pub t_lo_commitment: G1Point,
-    pub t_mid_commitment: G1Point,
-    pub t_hi_commitment: G1Point,
-    pub w_xi_eval: FieldElement,
-    pub w_xi_omega_eval: FieldElement,
-    pub a_xi_eval: FieldElement,
-    pub b_xi_eval: FieldElement,
-    pub c_xi_eval: FieldElement,
-    pub s_sigma1_xi_eval: FieldElement,
-    pub s_sigma2_xi_eval: FieldElement,
-    pub z_xi_omega_eval: FieldElement,
-    pub opening_proof: G1Point,
-}
-
 impl PlonkProof {
     /// Convert to Value representation
     pub fn to_value(&self) -> Value {
@@ -381,8 +288,6 @@ impl PlonkProof {
         proof_map.insert("opening_proof".to_string(), self.opening_proof.to_value());
         
         Value::Object(proof_map)
-    }
-
     /// Serialize proof to bytes
     pub fn to_bytes(&self) -> Vec<u8> {
         let mut bytes = Vec::new();
@@ -415,14 +320,9 @@ pub struct PlonkProver;
 impl PlonkProver {
     /// Generate PLONK proof
     pub fn prove(
-        proving_key: &PlonkProvingKey,
-        public_inputs: &[FieldElement],
-        private_inputs: &[FieldElement],
     ) -> AdvancedCryptoResult<PlonkProof> {
         if public_inputs.len() != proving_key.num_public_inputs {
             return Err(CryptoError::InvalidInput("Public input length mismatch".to_string()));
-        }
-
         // Combine inputs to create witness
         let mut witness = Vec::new();
         witness.extend_from_slice(public_inputs);
@@ -431,8 +331,6 @@ impl PlonkProver {
         // Pad witness to domain size
         while witness.len() < proving_key.domain_size {
             witness.push(FieldElement::zero());
-        }
-
         // Round 1: Commit to wire polynomials
         let a_poly = PlonkPolynomial::new(witness.clone());
         let b_poly = PlonkPolynomial::new(witness.clone()); // Simplified
@@ -464,25 +362,11 @@ impl PlonkProver {
         let opening_proof = Self::compute_opening_proof(&a_poly, challenge, &proving_key.kzg_params)?;
 
         Ok(PlonkProof {
-            a_commitment,
-            b_commitment,
-            c_commitment,
-            z_commitment,
-            t_lo_commitment,
-            t_mid_commitment,
-            t_hi_commitment,
             w_xi_eval: a_xi_eval, // Simplified
             w_xi_omega_eval: b_xi_eval, // Simplified
-            a_xi_eval,
-            b_xi_eval,
-            c_xi_eval,
             s_sigma1_xi_eval: FieldElement::one(), // Simplified
             s_sigma2_xi_eval: FieldElement::one(), // Simplified
-            z_xi_omega_eval,
-            opening_proof,
         })
-    }
-
     fn commit_polynomial(poly: &PlonkPolynomial, kzg_params: &[G1Point]) -> AdvancedCryptoResult<G1Point> {
         let mut commitment = G1Point::infinity();
         
@@ -494,8 +378,6 @@ impl PlonkProver {
         }
         
         Ok(commitment)
-    }
-
     fn compute_permutation_polynomial(witness: &[FieldElement], permutation: &PlonkPermutation) -> AdvancedCryptoResult<PlonkPolynomial> {
         // Simplified permutation polynomial computation
         let mut z_coeffs = vec![FieldElement::one()]; // z(1) = 1
@@ -514,13 +396,7 @@ impl PlonkProver {
         }
         
         Ok(PlonkPolynomial::new(z_coeffs))
-    }
-
     fn compute_quotient_polynomials(
-        a_poly: &PlonkPolynomial,
-        b_poly: &PlonkPolynomial,
-        c_poly: &PlonkPolynomial,
-        proving_key: &PlonkProvingKey,
     ) -> AdvancedCryptoResult<(PlonkPolynomial, PlonkPolynomial, PlonkPolynomial)> {
         // Simplified quotient polynomial computation
         let domain_size = proving_key.domain_size;
@@ -531,8 +407,6 @@ impl PlonkProver {
         let t_hi = PlonkPolynomial::new(vec![FieldElement::one(); domain_size]);
         
         Ok((t_lo, t_mid, t_hi))
-    }
-
     fn compute_opening_proof(poly: &PlonkPolynomial, challenge: FieldElement, kzg_params: &[G1Point]) -> AdvancedCryptoResult<G1Point> {
         // Simplified opening proof - would compute quotient polynomial (f(x) - f(challenge)) / (x - challenge)
         let mut proof = G1Point::infinity();
@@ -546,8 +420,6 @@ impl PlonkProver {
         }
         
         Ok(proof)
-    }
-
     fn generate_challenge() -> AdvancedCryptoResult<FieldElement> {
         let mut rng = rand::thread_rng();
         let mut bytes = [0u8; 32];
@@ -562,14 +434,9 @@ pub struct PlonkVerifier;
 impl PlonkVerifier {
     /// Verify PLONK proof
     pub fn verify(
-        verifying_key: &PlonkVerifyingKey,
-        public_inputs: &[FieldElement],
-        proof: &PlonkProof,
     ) -> AdvancedCryptoResult<bool> {
         if public_inputs.len() != verifying_key.num_public_inputs {
             return Err(CryptoError::InvalidInput("Public input length mismatch".to_string()));
-        }
-
         // Recreate challenge (would use Fiat-Shamir transcript)
         let challenge = Self::generate_challenge()?;
 
@@ -583,12 +450,7 @@ impl PlonkVerifier {
         let opening_valid = Self::verify_opening_proofs(verifying_key, proof, challenge)?;
 
         Ok(gate_constraint && permutation_constraint && opening_valid)
-    }
-
     fn verify_gate_constraints(
-        verifying_key: &PlonkVerifyingKey,
-        proof: &PlonkProof,
-        challenge: FieldElement,
     ) -> AdvancedCryptoResult<bool> {
         // Simplified gate constraint verification
         // In full implementation, would check that gate polynomial evaluates to zero
@@ -600,28 +462,16 @@ impl PlonkVerifier {
         // Check if basic multiplication constraint is satisfied: a * b = c
         let constraint_result = a_eval * b_eval - c_eval;
         Ok(constraint_result.is_zero())
-    }
-
     fn verify_permutation_argument(
-        verifying_key: &PlonkVerifyingKey,
-        proof: &PlonkProof,
-        challenge: FieldElement,
     ) -> AdvancedCryptoResult<bool> {
         // Simplified permutation argument verification
         // In full implementation, would check permutation polynomial constraints
         Ok(true)
-    }
-
     fn verify_opening_proofs(
-        verifying_key: &PlonkVerifyingKey,
-        proof: &PlonkProof,
-        challenge: FieldElement,
     ) -> AdvancedCryptoResult<bool> {
         // Simplified opening proof verification
         // In full implementation, would use KZG verification equation
         Ok(!proof.opening_proof.infinity)
-    }
-
     fn generate_challenge() -> AdvancedCryptoResult<FieldElement> {
         let mut rng = rand::thread_rng();
         let mut bytes = [0u8; 32];
@@ -649,17 +499,9 @@ impl PlonkSetup {
             let commitment = g1_gen.scalar_mul(&power_of_tau)?;
             kzg_params.push(commitment);
             power_of_tau = power_of_tau * tau;
-        }
-
         Ok(kzg_params)
-    }
-
     /// Generate circuit-specific keys from universal setup
     pub fn circuit_setup(
-        gates: &[PlonkGate],
-        permutation: &PlonkPermutation,
-        kzg_params: &[G1Point],
-        num_public_inputs: usize,
     ) -> AdvancedCryptoResult<(PlonkProvingKey, PlonkVerifyingKey)> {
         let domain_size = gates.len().next_power_of_two().max(4);
 
@@ -687,8 +529,6 @@ impl PlonkSetup {
             q_o_coeffs.push(FieldElement::zero());
             q_m_coeffs.push(FieldElement::zero());
             q_c_coeffs.push(FieldElement::zero());
-        }
-
         let q_l = PlonkPolynomial::new(q_l_coeffs);
         let q_r = PlonkPolynomial::new(q_r_coeffs);
         let q_o = PlonkPolynomial::new(q_o_coeffs);
@@ -706,33 +546,11 @@ impl PlonkSetup {
         let sigma_commitments = vec![G1Point::generator(); 3]; // For a, b, c wires
 
         let proving_key = PlonkProvingKey {
-            domain_size,
-            num_public_inputs,
-            q_l,
-            q_r,
-            q_o,
-            q_m,
-            q_c,
-            permutation: permutation.clone(),
-            kzg_params: kzg_params.to_vec(),
-        };
 
         let verifying_key = PlonkVerifyingKey {
-            domain_size,
-            num_public_inputs,
-            q_l_commitment,
-            q_r_commitment,
-            q_o_commitment,
-            q_m_commitment,
-            q_c_commitment,
-            sigma_commitments,
-            g1_generator: G1Point::generator(),
             g2_generator: G1Point::generator(), // Simplified
-        };
 
         Ok((proving_key, verifying_key))
-    }
-
     fn commit_polynomial(poly: &PlonkPolynomial, kzg_params: &[G1Point]) -> AdvancedCryptoResult<G1Point> {
         let mut commitment = G1Point::infinity();
         
@@ -764,13 +582,8 @@ impl Plonk {
         setup_map.insert("max_degree".to_string(), Value::Integer(max_degree));
         
         Ok(Value::Object(setup_map))
-    }
-
     /// Generate circuit setup
     pub fn circuit_setup(
-        universal_setup: &Value,
-        circuit_gates: &Value,
-        num_public_inputs: i64,
     ) -> AdvancedCryptoResult<Value> {
         // Parse universal setup
         let kzg_params = Self::parse_kzg_params(universal_setup)?;
@@ -780,10 +593,6 @@ impl Plonk {
         let permutation = PlonkPermutation::identity(4);
         
         let (proving_key, verifying_key) = PlonkSetup::circuit_setup(
-            &gates,
-            &permutation,
-            &kzg_params,
-            num_public_inputs as usize,
         )?;
 
         let mut setup_map = HashMap::new();
@@ -791,84 +600,34 @@ impl Plonk {
         setup_map.insert("verifying_key".to_string(), verifying_key.to_value());
         
         Ok(Value::Object(setup_map))
-    }
-
     /// Generate PLONK proof
     pub fn prove(
-        proving_key: &Value,
-        public_inputs: &Value,
-        private_inputs: &Value,
     ) -> AdvancedCryptoResult<Value> {
         let public_elems = Self::parse_field_array(public_inputs)?;
         let private_elems = Self::parse_field_array(private_inputs)?;
 
         // Create simplified proving key for demo
         let demo_proving_key = PlonkProvingKey {
-            domain_size: 4,
-            num_public_inputs: public_elems.len(),
-            q_l: PlonkPolynomial::constant(FieldElement::zero()),
-            q_r: PlonkPolynomial::constant(FieldElement::zero()),
-            q_o: PlonkPolynomial::constant(FieldElement::one()),
-            q_m: PlonkPolynomial::constant(FieldElement::one()),
-            q_c: PlonkPolynomial::constant(FieldElement::zero()),
-            permutation: PlonkPermutation::identity(4),
-            kzg_params: vec![G1Point::generator(); 8],
-        };
 
         let proof = PlonkProver::prove(&demo_proving_key, &public_elems, &private_elems)?;
         Ok(proof.to_value())
-    }
-
     /// Verify PLONK proof
     pub fn verify(
-        verifying_key: &Value,
-        public_inputs: &Value,
-        proof: &Value,
     ) -> AdvancedCryptoResult<Value> {
         let public_elems = Self::parse_field_array(public_inputs)?;
 
         // Create simplified verifying key for demo
         let demo_verifying_key = PlonkVerifyingKey {
-            domain_size: 4,
-            num_public_inputs: public_elems.len(),
-            q_l_commitment: G1Point::generator(),
-            q_r_commitment: G1Point::generator(),
-            q_o_commitment: G1Point::generator(),
-            q_m_commitment: G1Point::generator(),
-            q_c_commitment: G1Point::generator(),
-            sigma_commitments: vec![G1Point::generator(); 3],
-            g1_generator: G1Point::generator(),
-            g2_generator: G1Point::generator(),
-        };
 
         // Create simplified proof for demo
         let demo_proof = PlonkProof {
-            a_commitment: G1Point::generator(),
-            b_commitment: G1Point::generator(),
-            c_commitment: G1Point::generator(),
-            z_commitment: G1Point::generator(),
-            t_lo_commitment: G1Point::generator(),
-            t_mid_commitment: G1Point::generator(),
-            t_hi_commitment: G1Point::generator(),
-            w_xi_eval: FieldElement::one(),
-            w_xi_omega_eval: FieldElement::one(),
-            a_xi_eval: if !public_elems.is_empty() { public_elems[0] } else { FieldElement::one() },
-            b_xi_eval: if public_elems.len() > 1 { public_elems[1] } else { FieldElement::one() },
             c_xi_eval: if !public_elems.is_empty() && public_elems.len() > 1 { 
                 public_elems[0] * public_elems[1] 
             } else { 
                 FieldElement::one() 
-            },
-            s_sigma1_xi_eval: FieldElement::one(),
-            s_sigma2_xi_eval: FieldElement::one(),
-            z_xi_omega_eval: FieldElement::one(),
-            opening_proof: G1Point::generator(),
-        };
 
         let is_valid = PlonkVerifier::verify(&demo_verifying_key, &public_elems, &demo_proof)?;
         Ok(Value::Boolean(is_valid))
-    }
-
     /// Get PLONK proof size information
     pub fn proof_size() -> Value {
         let mut size_info = HashMap::new();
@@ -877,40 +636,31 @@ impl Plonk {
         size_info.insert("total_bytes".to_string(), Value::Integer(7 * 64 + 9 * 32));
         size_info.insert("description".to_string(), Value::String("PLONK proof contains 7 commitments and 9 evaluations".to_string()));
         Value::Object(size_info)
-    }
-
     /// Helper methods
     fn parse_kzg_params(value: &Value) -> AdvancedCryptoResult<Vec<G1Point>> {
         // Simplified parsing - return demo params
         Ok(vec![G1Point::generator(); 16])
-    }
-
     fn parse_field_array(value: &Value) -> AdvancedCryptoResult<Vec<FieldElement>> {
         match value {
             Value::Array(arr) => {
                 let mut elements = Vec::new();
                 for item in arr {
                     match item {
-                        Value::Integer(i) => elements.push(FieldElement::new(*i as u64)),
                         Value::String(s) => {
                             let num: u64 = s.parse()
                                 .map_err(|_| CryptoError::InvalidInput("Invalid number string".to_string()))?;
                             elements.push(FieldElement::new(num));
                         }
-                        _ => return Err(CryptoError::InvalidInput("Invalid field element type".to_string())),
                     }
                 }
                 Ok(elements)
             }
-            _ => Err(CryptoError::InvalidInput("Expected array of field elements".to_string())),
         }
     }
 
     /// Create multiplication circuit for testing
     pub fn multiplication_circuit() -> AdvancedCryptoResult<Value> {
         let gates = vec![
-            PlonkGate::multiplication(),
-            PlonkGate::addition(),
         ];
         
         let gates_value: Vec<Value> = gates.iter()
@@ -918,8 +668,6 @@ impl Plonk {
             .collect();
         
         Ok(Value::Array(gates_value))
-    }
-
     /// Interpolate polynomial from points
     pub fn interpolate_polynomial(points: &Value) -> AdvancedCryptoResult<Value> {
         let point_pairs = match points {
@@ -936,23 +684,15 @@ impl Plonk {
                 }
                 pairs
             }
-            _ => return Err(CryptoError::InvalidInput("Expected array of point pairs".to_string())),
-        };
 
         let poly = PlonkPolynomial::interpolate(&point_pairs)?;
         Ok(poly.to_value())
-    }
-
     fn parse_field_element(value: &Value) -> AdvancedCryptoResult<FieldElement> {
         match value {
-            Value::Integer(i) => Ok(FieldElement::new(*i as u64)),
             Value::String(s) => {
                 let num: u64 = s.parse()
                     .map_err(|_| CryptoError::InvalidInput("Invalid number string".to_string()))?;
                 Ok(FieldElement::new(num))
             }
-            _ => Err(CryptoError::InvalidInput("Invalid field element type".to_string())),
         }
     }
-}
-

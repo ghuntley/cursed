@@ -12,64 +12,33 @@ pub enum SocketDomain {
     Unix,    // Unix domain sockets
     Inet,    // IPv4
     Inet6,   // IPv6
-}
-
 /// Socket type
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum SocketType {
     Stream,   // TCP
     Datagram, // UDP
     Raw,      // Raw sockets
-}
-
 /// Socket protocol
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum SocketProtocol {
-    Default,
-    Tcp,
-    Udp,
-    Icmp,
-}
-
 /// Socket address abstraction
 #[derive(Debug, Clone)]
 pub enum SocketAddress {
-    Unix(String),
-    Inet(std::net::SocketAddr),
-}
-
 /// Create a socket
 pub fn create_socket(domain: SocketDomain, socket_type: SocketType, protocol: SocketProtocol) -> SysCoreResult<i32> {
     #[cfg(unix)]
     {
         let domain = match domain {
-            SocketDomain::Unix => libc::AF_UNIX,
-            SocketDomain::Inet => libc::AF_INET,
-            SocketDomain::Inet6 => libc::AF_INET6,
-        };
         
         let sock_type = match socket_type {
-            SocketType::Stream => libc::SOCK_STREAM,
-            SocketType::Datagram => libc::SOCK_DGRAM,
-            SocketType::Raw => libc::SOCK_RAW,
-        };
         
         let protocol = match protocol {
-            SocketProtocol::Default => 0,
-            SocketProtocol::Tcp => libc::IPPROTO_TCP,
-            SocketProtocol::Udp => libc::IPPROTO_UDP,
-            SocketProtocol::Icmp => libc::IPPROTO_ICMP,
-        };
         
         let fd = unsafe { libc::socket(domain, sock_type, protocol) };
         if fd == -1 {
             let errno = std::io::Error::last_os_error().raw_os_error().unwrap_or(-1);
             return Err(system_call_error("socket", errno));
-        }
-        
         Ok(fd)
-    }
-    
     #[cfg(not(unix))]
     {
         Err(not_supported("Socket operations not supported on this platform"))
@@ -93,23 +62,12 @@ pub fn bind_socket(fd: i32, addr: &SocketAddress) -> SysCoreResult<()> {
                 let path_bytes = path_cstr.as_bytes();
                 if path_bytes.len() >= addr.sun_path.len() {
                     return Err(invalid_argument("Unix socket path too long"));
-                }
-                
                 unsafe {
                     std::ptr::copy_nonoverlapping(
-                        path_bytes.as_ptr() as *const i8,
-                        addr.sun_path.as_mut_ptr(),
-                        path_bytes.len(),
                     );
-                }
-                
                 let result = unsafe {
                     libc::bind(
-                        fd,
-                        &addr as *const libc::sockaddr_un as *const libc::sockaddr,
-                        mem::size_of::<libc::sockaddr_un>() as u32,
                     )
-                };
                 
                 if result == -1 {
                     let errno = std::io::Error::last_os_error().raw_os_error().unwrap_or(-1);
@@ -126,11 +84,7 @@ pub fn bind_socket(fd: i32, addr: &SocketAddress) -> SysCoreResult<()> {
                         
                         let result = unsafe {
                             libc::bind(
-                                fd,
-                                &addr as *const libc::sockaddr_in as *const libc::sockaddr,
-                                mem::size_of::<libc::sockaddr_in>() as u32,
                             )
-                        };
                         
                         if result == -1 {
                             let errno = std::io::Error::last_os_error().raw_os_error().unwrap_or(-1);
@@ -145,8 +99,6 @@ pub fn bind_socket(fd: i32, addr: &SocketAddress) -> SysCoreResult<()> {
         }
         
         Ok(())
-    }
-    
     #[cfg(not(unix))]
     {
         Err(not_supported("Socket operations not supported on this platform"))
@@ -163,8 +115,6 @@ pub fn listen_socket(fd: i32, backlog: i32) -> SysCoreResult<()> {
             return Err(system_call_error("listen", errno));
         }
         Ok(())
-    }
-    
     #[cfg(not(unix))]
     {
         Err(not_supported("Socket operations not supported on this platform"))
@@ -180,24 +130,16 @@ pub fn accept_socket(fd: i32) -> SysCoreResult<(i32, SocketAddress)> {
         
         let client_fd = unsafe {
             libc::accept(
-                fd,
-                &mut addr as *mut libc::sockaddr_storage as *mut libc::sockaddr,
-                &mut addr_len,
             )
-        };
         
         if client_fd == -1 {
             let errno = std::io::Error::last_os_error().raw_os_error().unwrap_or(-1);
             return Err(system_call_error("accept", errno));
-        }
-        
         // Convert sockaddr back to SocketAddress
         // This is simplified - real implementation would need proper conversion
         let socket_addr = SocketAddress::Inet("0.0.0.0:0".parse().unwrap());
         
         Ok((client_fd, socket_addr))
-    }
-    
     #[cfg(not(unix))]
     {
         Err(not_supported("Socket operations not supported on this platform"))
@@ -221,23 +163,12 @@ pub fn connect_socket(fd: i32, addr: &SocketAddress) -> SysCoreResult<()> {
                 let path_bytes = path_cstr.as_bytes();
                 if path_bytes.len() >= addr.sun_path.len() {
                     return Err(invalid_argument("Unix socket path too long"));
-                }
-                
                 unsafe {
                     std::ptr::copy_nonoverlapping(
-                        path_bytes.as_ptr() as *const i8,
-                        addr.sun_path.as_mut_ptr(),
-                        path_bytes.len(),
                     );
-                }
-                
                 let result = unsafe {
                     libc::connect(
-                        fd,
-                        &addr as *const libc::sockaddr_un as *const libc::sockaddr,
-                        mem::size_of::<libc::sockaddr_un>() as u32,
                     )
-                };
                 
                 if result == -1 {
                     let errno = std::io::Error::last_os_error().raw_os_error().unwrap_or(-1);
@@ -254,11 +185,7 @@ pub fn connect_socket(fd: i32, addr: &SocketAddress) -> SysCoreResult<()> {
                         
                         let result = unsafe {
                             libc::connect(
-                                fd,
-                                &addr as *const libc::sockaddr_in as *const libc::sockaddr,
-                                mem::size_of::<libc::sockaddr_in>() as u32,
                             )
-                        };
                         
                         if result == -1 {
                             let errno = std::io::Error::last_os_error().raw_os_error().unwrap_or(-1);
@@ -273,8 +200,6 @@ pub fn connect_socket(fd: i32, addr: &SocketAddress) -> SysCoreResult<()> {
         }
         
         Ok(())
-    }
-    
     #[cfg(not(unix))]
     {
         Err(not_supported("Socket operations not supported on this platform"))
@@ -287,16 +212,11 @@ pub fn send_data(fd: i32, data: &[u8], flags: i32) -> SysCoreResult<usize> {
     {
         let result = unsafe {
             libc::send(fd, data.as_ptr() as *const libc::c_void, data.len(), flags)
-        };
         
         if result == -1 {
             let errno = std::io::Error::last_os_error().raw_os_error().unwrap_or(-1);
             return Err(system_call_error("send", errno));
-        }
-        
         Ok(result as usize)
-    }
-    
     #[cfg(not(unix))]
     {
         Err(not_supported("Socket operations not supported on this platform"))
@@ -309,16 +229,11 @@ pub fn recv_data(fd: i32, buffer: &mut [u8], flags: i32) -> SysCoreResult<usize>
     {
         let result = unsafe {
             libc::recv(fd, buffer.as_mut_ptr() as *mut libc::c_void, buffer.len(), flags)
-        };
         
         if result == -1 {
             let errno = std::io::Error::last_os_error().raw_os_error().unwrap_or(-1);
             return Err(system_call_error("recv", errno));
-        }
-        
         Ok(result as usize)
-    }
-    
     #[cfg(not(unix))]
     {
         Err(not_supported("Socket operations not supported on this platform"))
@@ -330,20 +245,12 @@ pub fn shutdown_socket(fd: i32, how: ShutdownHow) -> SysCoreResult<()> {
     #[cfg(unix)]
     {
         let how = match how {
-            ShutdownHow::Read => libc::SHUT_RD,
-            ShutdownHow::Write => libc::SHUT_WR,
-            ShutdownHow::Both => libc::SHUT_RDWR,
-        };
         
         let result = unsafe { libc::shutdown(fd, how) };
         if result == -1 {
             let errno = std::io::Error::last_os_error().raw_os_error().unwrap_or(-1);
             return Err(system_call_error("shutdown", errno));
-        }
-        
         Ok(())
-    }
-    
     #[cfg(not(unix))]
     {
         Err(not_supported("Socket operations not supported on this platform"))
@@ -353,7 +260,4 @@ pub fn shutdown_socket(fd: i32, how: ShutdownHow) -> SysCoreResult<()> {
 /// Shutdown direction
 #[derive(Debug, Clone, Copy)]
 pub enum ShutdownHow {
-    Read,
-    Write,
-    Both,
 }

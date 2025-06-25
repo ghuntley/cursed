@@ -15,45 +15,18 @@ pub type PreprocessorResult<T> = std::result::Result<T, PreprocessorError>;
 pub enum PreprocessorError {
     /// Unclosed type parameter brackets
     UnclosedTypeParameters {
-        location: SourceLocation,
-        message: String,
-    },
     /// Unexpected token in generic declaration
     UnexpectedToken {
-        location: SourceLocation,
-        expected: String,
-        found: String,
-    },
     /// Missing required token after type parameters
     MissingRequiredToken {
-        location: SourceLocation,
-        expected: String,
-        context: String,
-    },
     /// Invalid generic syntax pattern
     InvalidGenericSyntax {
-        location: SourceLocation,
-        pattern: String,
-        reason: String,
-    },
     /// Nested generic type too deep
     NestedGenericTooDeep {
-        location: SourceLocation,
-        depth: usize,
-        max_depth: usize,
-    },
     /// Lexer error during preprocessing
     LexerError {
-        location: SourceLocation,
-        message: String,
-    },
     /// General preprocessing error
     General {
-        location: SourceLocation,
-        message: String,
-    },
-}
-
 impl PreprocessorError {
     /// Create an unclosed type parameters error
     pub fn unclosed_type_parameters(location: SourceLocation, message: String) -> Self {
@@ -93,13 +66,6 @@ impl PreprocessorError {
     /// Get the source location of the error
     pub fn location(&self) -> &SourceLocation {
         match self {
-            Self::UnclosedTypeParameters { location, .. } => location,
-            Self::UnexpectedToken { location, .. } => location,
-            Self::MissingRequiredToken { location, .. } => location,
-            Self::InvalidGenericSyntax { location, .. } => location,
-            Self::NestedGenericTooDeep { location, .. } => location,
-            Self::LexerError { location, .. } => location,
-            Self::General { location, .. } => location,
         }
     }
 
@@ -124,11 +90,8 @@ impl PreprocessorError {
             Self::LexerError { message, .. } => {
                 format!("Lexer error during preprocessing: {}", message)
             }
-            Self::General { message, .. } => message.clone(),
         }
     }
-}
-
 // impl fmt::Display for PreprocessorError {
 //     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
 //         write!(f, "{} at {}", self.detailed_message(), self.location())

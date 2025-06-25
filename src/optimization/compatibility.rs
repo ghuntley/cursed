@@ -9,34 +9,26 @@ pub use crate::common_types::optimization_level::OptimizationLevel as CoreOptimi
 
 /// Performance analysis types
 pub use crate::optimization::performance_analysis::{
-    PerformanceAnalyzer as CorePerformanceAnalyzer,
-    PerformanceAnalysisEngine,
     ComprehensivePerformanceAnalysis
-};
+// };
 
 /// Benchmark types
 pub use crate::optimization::benchmarks::{
-    BenchmarkResult as CoreBenchmarkResult,
-    BenchmarkSuiteResult,
     BenchmarkRunner
-};
+// };
 
 /// Adaptive optimization types
 pub use crate::optimization::adaptive::{
-    AdaptiveOptimizer,
-    AdaptationResult as CoreAdaptationResult,
-};
+// };
 // AdaptiveStrategy comes from optimization_result module, not adaptive
 pub use crate::optimization::optimization_result::{
     AdaptiveStrategy as CoreAdaptiveStrategy
-};
+// };
 
 /// LLVM optimization types
 pub use crate::optimization::real_llvm_passes::{
-    RealLlvmOptimizer as LlvmOptimizer,
-    OptimizationResults as LlvmOptimizationResults,
     PerformanceImprovements as LlvmPerformanceImprovements
-};
+// };
 
 /// Type aliases for backward compatibility and conflict resolution
 pub type DefaultOptimizationConfig = CoreOptimizationConfig;
@@ -48,7 +40,5 @@ pub type DefaultAdaptiveStrategy = CoreAdaptiveStrategy;
 
 /// Re-export commonly used optimization types for convenience
 pub use crate::optimization::{
-    OptimizationManager,
-    LocalOptimizationCoordinator,
     OptimizationRecommendation
-};
+// };

@@ -28,42 +28,22 @@ static GLOBAL_POOL_MUTEX: std::sync::Mutex<()> = std::sync::Mutex::new(());
 #[derive(Debug, Clone)]
 pub struct ThreadPoolConfig {
     /// Number of worker threads
-    pub num_threads: usize,
     /// Maximum queue size (None for unlimited)
-    pub max_queue_size: Option<usize>,
     /// Thread stack size
-    pub stack_size: Option<usize>,
     /// Thread name prefix
-    pub thread_name_prefix: String,
     /// Keep alive time for idle threads
-    pub keep_alive: Duration,
     /// Whether to allow core threads to timeout
-    pub allow_core_thread_timeout: bool,
-}
-
 impl Default for ThreadPoolConfig {
     fn default() -> Self {
         Self {
-            num_threads: num_cpus::get(),
-            max_queue_size: None,
-            stack_size: None,
-            thread_name_prefix: "cursed-pool".to_string(),
-            keep_alive: Duration::from_secs(60),
-            allow_core_thread_timeout: false,
         }
     }
-}
-
 /// Builder for configuring thread pools
 pub struct ThreadPoolBuilder {
-    config: ThreadPoolConfig,
-}
-
 impl ThreadPoolBuilder {
     /// Create a new thread pool builder
     pub fn new() -> Self {
         Self {
-            config: ThreadPoolConfig::default(),
         }
     }
 
@@ -71,32 +51,22 @@ impl ThreadPoolBuilder {
     pub fn num_threads(mut self, num_threads: usize) -> Self {
         self.config.num_threads = num_threads.max(1);
         self
-    }
-
     /// Set the maximum queue size
     pub fn max_queue_size(mut self, max_queue_size: usize) -> Self {
         self.config.max_queue_size = Some(max_queue_size);
         self
-    }
-
     /// Set the thread stack size
     pub fn stack_size(mut self, stack_size: usize) -> Self {
         self.config.stack_size = Some(stack_size);
         self
-    }
-
     /// Set the thread name prefix
     pub fn thread_name_prefix(mut self, prefix: String) -> Self {
         self.config.thread_name_prefix = prefix;
         self
-    }
-
     /// Set the keep alive time
     pub fn keep_alive(mut self, keep_alive: Duration) -> Self {
         self.config.keep_alive = keep_alive;
         self
-    }
-
     /// Build the thread pool
     pub fn build(self) -> SyncResult<ThreadPool> {
         ThreadPool::with_config(self.config)
@@ -117,34 +87,14 @@ pub type TaskResult<T> = std::result::Result<T, SyncError>;
 
 /// A thread pool for executing tasks
 pub struct ThreadPool {
-    workers: Vec<Worker>,
-    sender: mpsc::Sender<Message>,
-    config: ThreadPoolConfig,
-    active_tasks: Arc<StdAtomicUsize>,
-    total_tasks: Arc<AtomicU64>,
-    completed_tasks: Arc<AtomicU64>,
-    shutdown: Arc<StdAtomicBool>,
-}
-
 enum Message {
-    NewTask(Task),
-    Terminate,
-}
-
 struct Worker {
-    id: usize,
-    thread: Option<thread::JoinHandle<()>>,
-}
-
 impl ThreadPool {
     /// Create a new thread pool with default configuration
     pub fn new(num_threads: usize) -> SyncResult<Self> {
         Self::with_config(ThreadPoolConfig {
-            num_threads,
             ..Default::default()
         })
-    }
-
     /// Create a thread pool with custom configuration
     pub fn with_config(config: ThreadPoolConfig) -> SyncResult<Self> {
         let (sender, receiver) = mpsc::channel();
@@ -167,38 +117,20 @@ impl ThreadPool {
             
             if let Some(stack_size) = config.stack_size {
                 builder = builder.stack_size(stack_size);
-            }
-
             let thread = builder.spawn(move || {
                 Worker::run(id, receiver, active_tasks, completed_tasks, shutdown);
             }).map_err(|e| thread_pool_error("worker", &format!("Failed to spawn worker thread: {}", e)))?;
 
             workers.push(Worker {
-                id,
-                thread: Some(thread),
             });
-        }
-
         Ok(ThreadPool {
-            workers,
-            sender,
-            config,
-            active_tasks,
-            total_tasks,
-            completed_tasks,
-            shutdown,
         })
-    }
-
     /// Execute a task asynchronously
     pub fn execute<F>(&self, f: F) -> SyncResult<()>
     where
-        F: FnOnce() + Send + 'static,
     {
         if self.shutdown.load(StdOrdering::Acquire) {
             return Err(thread_pool_error("execute", "Thread pool is shut down"));
-        }
-
         let task = Box::new(f);
         
         self.sender
@@ -207,13 +139,9 @@ impl ThreadPool {
         
         self.total_tasks.fetch_add(1, StdOrdering::Relaxed);
         Ok(())
-    }
-
     /// Execute a task and return a handle to wait for the result
     pub fn spawn<F, T>(&self, f: F) -> SyncResult<TaskHandle<T>>
     where
-        F: FnOnce() -> T + Send + 'static,
-        T: Send + 'static,
     {
         let (sender, receiver) = mpsc::channel();
         
@@ -223,28 +151,18 @@ impl ThreadPool {
         })?;
 
         Ok(TaskHandle { receiver })
-    }
-
     /// Get the number of worker threads
     pub fn thread_count(&self) -> usize {
         self.config.num_threads
-    }
-
     /// Get the number of active tasks
     pub fn active_tasks(&self) -> usize {
         self.active_tasks.load(StdOrdering::Acquire)
-    }
-
     /// Get the total number of tasks submitted
     pub fn total_tasks(&self) -> u64 {
         self.total_tasks.load(StdOrdering::Acquire)
-    }
-
     /// Get the total number of completed tasks
     pub fn completed_tasks(&self) -> u64 {
         self.completed_tasks.load(StdOrdering::Acquire)
-    }
-
     /// Get the current utilization (0.0 to 1.0)
     pub fn utilization(&self) -> f64 {
         let active = self.active_tasks() as f64;
@@ -259,14 +177,9 @@ impl ThreadPool {
     /// Wait for all tasks to complete
     pub fn join(&self) -> SyncResult<()> {
         self.wait_for_completion(None)
-    }
-
     /// Wait for all tasks to complete with a timeout
     pub fn join_timeout(&self, timeout: Duration) -> SyncResult<bool> {
         match self.wait_for_completion(Some(timeout)) {
-            Ok(()) => Ok(true),
-            Err(SyncError::TimeoutError { .. }) => Ok(false),
-            Err(e) => Err(e),
         }
     }
 
@@ -276,8 +189,6 @@ impl ThreadPool {
         loop {
             if self.active_tasks() == 0 {
                 return Ok(());
-            }
-            
             if let Some(timeout) = timeout {
                 if start.elapsed() >= timeout {
                     return Err(timeout_error("thread pool join", timeout));
@@ -294,11 +205,7 @@ impl ThreadPool {
         
         for _ in &self.workers {
             let _ = self.sender.send(Message::Terminate);
-        }
-        
         Ok(())
-    }
-
     /// Get the configuration
     pub fn config(&self) -> &ThreadPoolConfig {
         &self.config
@@ -319,17 +226,11 @@ impl Drop for ThreadPool {
 
 impl Worker {
     fn run(
-        id: usize,
-        receiver: Arc<Mutex<mpsc::Receiver<Message>>>,
-        active_tasks: Arc<StdAtomicUsize>,
-        completed_tasks: Arc<AtomicU64>,
-        shutdown: Arc<StdAtomicBool>,
     ) {
         loop {
             let message = {
                 let receiver = receiver.lock().unwrap();
                 receiver.recv()
-            };
 
             match message {
                 Ok(Message::NewTask(task)) => {
@@ -352,22 +253,15 @@ impl Worker {
 
 /// Handle for waiting on task completion
 pub struct TaskHandle<T> {
-    receiver: mpsc::Receiver<T>,
-}
-
 impl<T> TaskHandle<T> {
     /// Wait for the task to complete and get the result
     pub fn join(self) -> SyncResult<T> {
         self.receiver
             .recv()
             .map_err(|_| thread_pool_error("task", "Task execution failed"))
-    }
-
     /// Try to get the result without blocking
     pub fn try_join(self) -> SyncResult<Option<T>> {
         match self.receiver.try_recv() {
-            Ok(result) => Ok(Some(result)),
-            Err(mpsc::TryRecvError::Empty) => Ok(None),
             Err(mpsc::TryRecvError::Disconnected) => {
                 Err(thread_pool_error("task", "Task execution failed"))
             }
@@ -381,18 +275,7 @@ impl<T> TaskHandle<T> {
 
 /// A work-stealing thread pool implementation
 pub struct WorkStealingPool {
-    workers: Vec<WorkStealingWorker>,
-    task_queues: Vec<Arc<Mutex<VecDeque<Task>>>>,
-    shutdown: Arc<AtomicBool>,
-    active_workers: Arc<AtomicUsize>,
-}
-
 struct WorkStealingWorker {
-    id: usize,
-    thread: Option<thread::JoinHandle<()>>,
-    local_queue: Arc<Mutex<VecDeque<Task>>>,
-}
-
 impl WorkStealingPool {
     /// Create a new work-stealing pool
     pub fn new(num_threads: usize) -> SyncResult<Self> {
@@ -404,8 +287,6 @@ impl WorkStealingPool {
         // Create task queues
         for _ in 0..num_threads {
             task_queues.push(Arc::new(Mutex::new(VecDeque::new())));
-        }
-
         // Create workers
         for id in 0..num_threads {
             let local_queue = Arc::clone(&task_queues[id]);
@@ -418,39 +299,20 @@ impl WorkStealingPool {
                 .name(format!("work-stealing-{}", id))
                 .spawn(move || {
                     WorkStealingWorker::run(
-                        id,
-                        local_queue_for_worker,
-                        all_queues,
-                        shutdown_flag,
-                        active_workers_counter,
                     );
                 })
                 .map_err(|e| thread_pool_error("work-stealing", &format!("Failed to spawn worker: {}", e)))?;
 
             workers.push(WorkStealingWorker {
-                id,
-                thread: Some(thread),
-                local_queue,
             });
-        }
-
         Ok(Self {
-            workers,
-            task_queues,
-            shutdown,
-            active_workers,
         })
-    }
-
     /// Submit a task to the pool
     pub fn submit<F>(&self, f: F) -> SyncResult<()>
     where
-        F: FnOnce() + Send + 'static,
     {
         if self.shutdown.load(StdOrdering::Acquire) {
             return Err(thread_pool_error("work-stealing", "Pool is shut down"));
-        }
-
         let task = Box::new(f);
         
         // Try to find the least loaded queue
@@ -464,21 +326,15 @@ impl WorkStealingPool {
                     target_queue = i;
                 }
             }
-        }
-
         let queue = &self.task_queues[target_queue];
         let mut q = queue.lock().map_err(|_| thread_pool_error("work-stealing", "Failed to lock queue"))?;
         q.push_back(task);
         
         Ok(())
-    }
-
     /// Shutdown the pool
     pub fn shutdown(&self) -> SyncResult<()> {
         self.shutdown.store(true, StdOrdering::Release);
         Ok(())
-    }
-
     /// Get the number of active workers
     pub fn active_workers(&self) -> usize {
         self.active_workers.load(StdOrdering::Acquire)
@@ -499,11 +355,6 @@ impl Drop for WorkStealingPool {
 
 impl WorkStealingWorker {
     fn run(
-        id: usize,
-        local_queue: Arc<Mutex<VecDeque<Task>>>,
-        all_queues: Vec<Arc<Mutex<VecDeque<Task>>>>,
-        shutdown: Arc<AtomicBool>,
-        active_workers: Arc<AtomicUsize>,
     ) {
         while !shutdown.load(StdOrdering::Acquire) {
             // Try to get a task from local queue first
@@ -512,16 +363,12 @@ impl WorkStealingWorker {
                 task();
                 active_workers.fetch_sub(1, StdOrdering::Relaxed);
                 continue;
-            }
-
             // Try to steal work from other queues
             if let Some(task) = Self::steal_work(id, &all_queues) {
                 active_workers.fetch_add(1, StdOrdering::Relaxed);
                 task();
                 active_workers.fetch_sub(1, StdOrdering::Relaxed);
                 continue;
-            }
-
             // No work available, sleep briefly
             thread::sleep(Duration::from_millis(1));
         }
@@ -529,8 +376,6 @@ impl WorkStealingWorker {
 
     fn pop_local(queue: &Arc<Mutex<VecDeque<Task>>>) -> Option<Task> {
         queue.lock().ok()?.pop_front()
-    }
-
     fn steal_work(worker_id: usize, all_queues: &[Arc<Mutex<VecDeque<Task>>>]) -> Option<Task> {
         for (i, queue) in all_queues.iter().enumerate() {
             if i != worker_id {
@@ -551,27 +396,16 @@ impl WorkStealingWorker {
 
 /// A queue for managing tasks
 pub struct TaskQueue {
-    tasks: Mutex<VecDeque<Task>>,
-    not_empty: CondVar,
-    max_size: Option<usize>,
-}
-
 impl TaskQueue {
     /// Create a new task queue
     pub fn new() -> Self {
         Self {
-            tasks: Mutex::new(VecDeque::new()),
-            not_empty: CondVar::new(),
-            max_size: None,
         }
     }
 
     /// Create a bounded task queue
     pub fn bounded(max_size: usize) -> Self {
         Self {
-            tasks: Mutex::new(VecDeque::new()),
-            not_empty: CondVar::new(),
-            max_size: Some(max_size),
         }
     }
 
@@ -588,31 +422,21 @@ impl TaskQueue {
         tasks.push_back(task);
         self.not_empty.notify_one();
         Ok(())
-    }
-
     /// Get a task from the queue (blocking)
     pub fn pop(&self) -> SyncResult<Task> {
         let mut tasks = self.tasks.lock()?;
         
         while tasks.is_empty() {
             tasks = self.not_empty.wait(tasks)?;
-        }
-        
         Ok(tasks.pop_front().unwrap())
-    }
-
     /// Try to get a task without blocking
     pub fn try_pop(&self) -> SyncResult<Option<Task>> {
         let mut tasks = self.tasks.lock()?;
         Ok(tasks.pop_front())
-    }
-
     /// Get the queue length
     pub fn len(&self) -> SyncResult<usize> {
         let tasks = self.tasks.lock()?;
         Ok(tasks.len())
-    }
-
     /// Check if the queue is empty
     pub fn is_empty(&self) -> SyncResult<bool> {
         let tasks = self.tasks.lock()?;
@@ -635,59 +459,37 @@ pub trait ParallelIterator<T> {
     /// Execute a function on each element in parallel
     fn par_for_each<F>(self, f: F) -> SyncResult<()>
     where
-        F: Fn(&T) + Send + Sync + 'static,
         T: Send + Sync;
 
     /// Map each element in parallel
     fn par_map<F, U>(self, f: F) -> SyncResult<Vec<U>>
     where
-        F: Fn(&T) -> U + Send + Sync + 'static,
-        T: Send + Sync,
         U: Send + 'static;
 
     /// Filter elements in parallel
     fn par_filter<F>(self, f: F) -> SyncResult<Vec<T>>
     where
-        F: Fn(&T) -> bool + Send + Sync + 'static,
         T: Send + Sync + Clone;
 
     /// Reduce elements in parallel
     fn par_reduce<F>(self, identity: T, f: F) -> SyncResult<T>
     where
-        F: Fn(T, T) -> T + Send + Sync + 'static,
         T: Send + Sync + Clone;
-}
-
 impl<T: 'static> ParallelIterator<T> for Vec<T> {
     fn par_for_each<F>(self, f: F) -> SyncResult<()>
     where
-        F: Fn(&T) + Send + Sync + 'static,
-        T: Send + Sync,
     {
         par_for_each(self, f)
-    }
-
     fn par_map<F, U>(self, f: F) -> SyncResult<Vec<U>>
     where
-        F: Fn(&T) -> U + Send + Sync + 'static,
-        T: Send + Sync,
-        U: Send + 'static,
     {
         par_map(self, f)
-    }
-
     fn par_filter<F>(self, f: F) -> SyncResult<Vec<T>>
     where
-        F: Fn(&T) -> bool + Send + Sync + 'static,
-        T: Send + Sync + Clone,
     {
         par_filter(self, f)
-    }
-
     fn par_reduce<F>(self, identity: T, f: F) -> SyncResult<T>
     where
-        F: Fn(T, T) -> T + Send + Sync + 'static,
-        T: Send + Sync + Clone,
     {
         par_reduce(self, identity, f)
     }
@@ -696,8 +498,6 @@ impl<T: 'static> ParallelIterator<T> for Vec<T> {
 /// Execute a function on each element in parallel
 pub fn par_for_each<T, F>(data: Vec<T>, f: F) -> SyncResult<()>
 where
-    F: Fn(&T) + Send + Sync + 'static,
-    T: Send + Sync + 'static,
 {
     let pool = get_global_pool()?;
     let f = Arc::new(f);
@@ -709,21 +509,12 @@ where
             f_clone(&item);
         })?;
         handles.push(handle);
-    }
-
     for handle in handles {
         handle.join()?;
-    }
-
     Ok(())
-}
-
 /// Map each element in parallel
 pub fn par_map<T, U, F>(data: Vec<T>, f: F) -> SyncResult<Vec<U>>
 where
-    F: Fn(&T) -> U + Send + Sync + 'static,
-    T: Send + Sync + 'static,
-    U: Send + 'static,
 {
     let pool = get_global_pool()?;
     let f = Arc::new(f);
@@ -733,21 +524,13 @@ where
         let f_clone = Arc::clone(&f);
         let handle = pool.spawn(move || f_clone(&item))?;
         handles.push(handle);
-    }
-
     let mut results = Vec::new();
     for handle in handles {
         results.push(handle.join()?);
-    }
-
     Ok(results)
-}
-
 /// Filter elements in parallel
 pub fn par_filter<T, F>(data: Vec<T>, f: F) -> SyncResult<Vec<T>>
 where
-    F: Fn(&T) -> bool + Send + Sync + 'static,
-    T: Send + Sync + Clone + 'static,
 {
     let pool = get_global_pool()?;
     let f = Arc::new(f);
@@ -764,8 +547,6 @@ where
             }
         })?;
         handles.push(handle);
-    }
-
     let mut results = Vec::new();
     for handle in handles {
         if let Some(item) = handle.join()? {
@@ -774,18 +555,12 @@ where
     }
 
     Ok(results)
-}
-
 /// Reduce elements in parallel
 pub fn par_reduce<T, F>(data: Vec<T>, identity: T, f: F) -> SyncResult<T>
 where
-    F: Fn(T, T) -> T + Send + Sync + 'static,
-    T: Send + Sync + Clone + 'static,
 {
     if data.is_empty() {
         return Ok(identity);
-    }
-
     let pool = get_global_pool()?;
     let f = Arc::new(f);
     
@@ -802,27 +577,18 @@ where
             chunk.into_iter().fold(identity_clone, |acc, item| f_clone(acc, item))
         })?;
         handles.push(handle);
-    }
-
     let mut result = identity;
     for handle in handles {
         result = f(result, handle.join()?);
-    }
-
     Ok(result)
-}
-
 /// Sort a vector in parallel
 pub fn parallel_sort<T>(mut data: Vec<T>) -> SyncResult<Vec<T>>
 where
-    T: Ord + Send + Clone + 'static,
 {
     // Simple parallel merge sort implementation
     if data.len() <= 1000 {
         data.sort();
         return Ok(data);
-    }
-
     let mid = data.len() / 2;
     let (left, right) = data.split_at(mid);
     
@@ -837,8 +603,6 @@ where
     
     // Merge the sorted halves
     Ok(merge_sorted(left_sorted, right_sorted))
-}
-
 fn merge_sorted<T: Ord>(left: Vec<T>, right: Vec<T>) -> Vec<T> {
     let mut result = Vec::with_capacity(left.len() + right.len());
     let mut left_iter = left.into_iter();
@@ -869,18 +633,13 @@ fn merge_sorted<T: Ord>(left: Vec<T>, right: Vec<T>) -> Vec<T> {
                 result.extend(right_iter);
                 break;
             }
-            (None, None) => break,
         }
     }
 
     result
-}
-
 /// Search for an element in parallel
 pub fn parallel_search<T, F>(data: Vec<T>, predicate: F) -> SyncResult<Option<T>>
 where
-    F: Fn(&T) -> bool + Send + Sync + 'static,
-    T: Send + Sync + Clone + 'static,
 {
     let pool = get_global_pool()?;
     let predicate = Arc::new(predicate);
@@ -907,8 +666,6 @@ where
             None
         })?;
         handles.push(handle);
-    }
-
     for handle in handles {
         if let Some(result) = handle.join()? {
             return Ok(Some(result));
@@ -916,8 +673,6 @@ where
     }
 
     Ok(None)
-}
-
 //==============================================================================
 // Scheduler Policies and Load Balancing
 //==============================================================================
@@ -926,27 +681,15 @@ where
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum SchedulerPolicy {
     /// First In, First Out
-    Fifo,
     /// Last In, First Out
-    Lifo,
     /// Work stealing
-    WorkStealing,
     /// Round robin assignment
-    RoundRobin,
-}
-
 /// Load balancer for distributing tasks
 pub struct LoadBalancer {
-    policy: SchedulerPolicy,
-    next_worker: AtomicUsize,
-}
-
 impl LoadBalancer {
     /// Create a new load balancer
     pub fn new(policy: SchedulerPolicy) -> Self {
         Self {
-            policy,
-            next_worker: AtomicUsize::new(0),
         }
     }
 
@@ -963,8 +706,6 @@ impl LoadBalancer {
                 next % num_workers
             }
         }
-    }
-
     /// Get the current policy
     pub fn policy(&self) -> SchedulerPolicy {
         self.policy
@@ -982,22 +723,14 @@ impl RayonCompat {
     /// Install global thread pool with Rayon-style interface
     pub fn install<F, R>(pool: ThreadPool, f: F) -> SyncResult<R>
     where
-        F: FnOnce() -> R + Send + 'static,
-        R: Send + 'static,
     {
         // This is a simplified implementation
         // In a real implementation, this would set up thread-local state
         let handle = pool.spawn(f)?;
         handle.join()
-    }
-
     /// Join two computations
     pub fn join<A, B, RA, RB>(pool: &ThreadPool, a: A, b: B) -> SyncResult<(RA, RB)>
     where
-        A: FnOnce() -> RA + Send + 'static,
-        B: FnOnce() -> RB + Send + 'static,
-        RA: Send + 'static,
-        RB: Send + 'static,
     {
         let handle_a = pool.spawn(a)?;
         let result_b = b();
@@ -1019,17 +752,11 @@ pub fn init_global_thread_pool() -> SyncResult<()> {
             GLOBAL_POOL = Some(ThreadPool::new(num_cpus::get())?);
         }
         GLOBAL_POOL_INITIALIZED.store(true, StdOrdering::Release);
-    }
-    
     Ok(())
-}
-
 /// Get the global thread pool
 pub fn get_global_pool() -> SyncResult<&'static ThreadPool> {
     if !GLOBAL_POOL_INITIALIZED.load(StdOrdering::Acquire) {
         init_global_thread_pool()?;
-    }
-    
     unsafe {
         GLOBAL_POOL.as_ref().ok_or_else(|| thread_pool_error("global", "Global thread pool not initialized"))
     }
@@ -1047,8 +774,6 @@ pub fn shutdown_global_thread_pool() -> SyncResult<()> {
     
     GLOBAL_POOL_INITIALIZED.store(false, StdOrdering::Release);
     Ok(())
-}
-
 /// Get global thread pool utilization
 pub fn get_thread_pool_utilization() -> f64 {
     if let Ok(pool) = get_global_pool() {

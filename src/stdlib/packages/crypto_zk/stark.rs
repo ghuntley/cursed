@@ -12,18 +12,10 @@ use rand::RngCore;
 /// STARK trace representing computation
 #[derive(Debug, Clone)]
 pub struct StarkTrace {
-    pub columns: Vec<Vec<FieldElement>>,
-    pub num_steps: usize,
-    pub num_columns: usize,
-}
-
 impl StarkTrace {
     /// Create new STARK trace
     pub fn new(num_columns: usize) -> Self {
         Self {
-            columns: vec![Vec::new(); num_columns],
-            num_steps: 0,
-            num_columns,
         }
     }
 
@@ -31,16 +23,12 @@ impl StarkTrace {
     pub fn add_step(&mut self, values: Vec<FieldElement>) -> AdvancedCryptoResult<()> {
         if values.len() != self.num_columns {
             return Err(CryptoError::InvalidInput("Step values count mismatch".to_string()));
-        }
-
         for (i, value) in values.into_iter().enumerate() {
             self.columns[i].push(value);
         }
         self.num_steps += 1;
 
         Ok(())
-    }
-
     /// Get value at specific step and column
     pub fn get(&self, step: usize, column: usize) -> Option<FieldElement> {
         if step < self.num_steps && column < self.num_columns {
@@ -61,8 +49,6 @@ impl StarkTrace {
         }
         
         self.num_steps = target_size;
-    }
-
     /// Convert to Value representation
     pub fn to_value(&self) -> Value {
         let mut trace_map = HashMap::new();
@@ -85,29 +71,19 @@ impl StarkTrace {
 /// STARK constraint system
 #[derive(Debug, Clone)]
 pub struct StarkConstraints {
-    pub boundary_constraints: Vec<BoundaryConstraint>,
-    pub transition_constraints: Vec<TransitionConstraint>,
-}
-
 impl StarkConstraints {
     /// Create new constraint system
     pub fn new() -> Self {
         Self {
-            boundary_constraints: Vec::new(),
-            transition_constraints: Vec::new(),
         }
     }
 
     /// Add boundary constraint (initial/final values)
     pub fn add_boundary_constraint(&mut self, constraint: BoundaryConstraint) {
         self.boundary_constraints.push(constraint);
-    }
-
     /// Add transition constraint (step-to-step relations)
     pub fn add_transition_constraint(&mut self, constraint: TransitionConstraint) {
         self.transition_constraints.push(constraint);
-    }
-
     /// Evaluate all constraints on a trace
     pub fn evaluate(&self, trace: &StarkTrace) -> AdvancedCryptoResult<bool> {
         // Check boundary constraints
@@ -125,8 +101,6 @@ impl StarkConstraints {
         }
 
         Ok(true)
-    }
-
     /// Convert to Value representation
     pub fn to_value(&self) -> Value {
         let mut constraints_map = HashMap::new();
@@ -151,14 +125,10 @@ pub struct BoundaryConstraint {
     pub step: usize,         // Which step (0 for initial, num_steps-1 for final)
     pub column: usize,       // Which column
     pub value: FieldElement, // Expected value
-}
-
 impl BoundaryConstraint {
     /// Evaluate constraint on trace
     pub fn evaluate(&self, trace: &StarkTrace) -> AdvancedCryptoResult<bool> {
         match trace.get(self.step, self.column) {
-            Some(actual_value) => Ok(actual_value == self.value),
-            None => Ok(false),
         }
     }
 
@@ -177,8 +147,6 @@ impl BoundaryConstraint {
 pub struct TransitionConstraint {
     pub columns: Vec<usize>,               // Which columns are involved
     pub polynomial: TransitionPolynomial,  // The constraint polynomial
-}
-
 impl TransitionConstraint {
     /// Evaluate constraint on trace
     pub fn evaluate(&self, trace: &StarkTrace) -> AdvancedCryptoResult<bool> {
@@ -197,8 +165,6 @@ impl TransitionConstraint {
         }
 
         Ok(true)
-    }
-
     /// Convert to Value representation
     pub fn to_value(&self) -> Value {
         let mut constraint_map = HashMap::new();
@@ -217,15 +183,9 @@ impl TransitionConstraint {
 #[derive(Debug, Clone)]
 pub enum TransitionPolynomial {
     /// Linear constraint: next = current + constant
-    Linear { constant: FieldElement },
     /// Multiplication: next = current * multiplier
-    Multiplication { multiplier: FieldElement },
     /// Addition of two columns: next[0] = current[0] + current[1]
-    Addition,
     /// Custom polynomial with coefficients
-    Custom { coefficients: Vec<FieldElement> },
-}
-
 impl TransitionPolynomial {
     /// Evaluate polynomial on current and next values
     pub fn evaluate(&self, current: &[FieldElement], next: &[FieldElement]) -> FieldElement {
@@ -263,13 +223,9 @@ impl TransitionPolynomial {
                 
                 if !next.is_empty() {
                     result = result - next[0];
-                }
-                
                 result
             }
         }
-    }
-
     /// Convert to Value representation
     pub fn to_value(&self) -> Value {
         let mut poly_map = HashMap::new();
@@ -303,11 +259,7 @@ impl TransitionPolynomial {
 #[derive(Debug, Clone)]
 pub struct StarkProof {
     pub trace_commitment: Vec<u8>,     // Merkle root of trace
-    pub constraint_evaluations: Vec<FieldElement>,
     pub fri_proof: FriProof,           // FRI low-degree proof
-    pub query_responses: Vec<QueryResponse>,
-}
-
 impl StarkProof {
     /// Convert to Value representation
     pub fn to_value(&self) -> Value {
@@ -328,8 +280,6 @@ impl StarkProof {
         proof_map.insert("query_responses".to_string(), Value::Array(responses));
         
         Value::Object(proof_map)
-    }
-
     /// Serialize proof to bytes
     pub fn to_bytes(&self) -> Vec<u8> {
         let mut bytes = Vec::new();
@@ -342,8 +292,6 @@ impl StarkProof {
         bytes.extend_from_slice(&(self.constraint_evaluations.len() as u32).to_le_bytes());
         for eval in &self.constraint_evaluations {
             bytes.extend_from_slice(&eval.to_bytes());
-        }
-        
         // FRI proof (simplified)
         let fri_bytes = self.fri_proof.to_bytes();
         bytes.extend_from_slice(&(fri_bytes.len() as u32).to_le_bytes());
@@ -355,11 +303,7 @@ impl StarkProof {
             let response_bytes = response.to_bytes();
             bytes.extend_from_slice(&(response_bytes.len() as u32).to_le_bytes());
             bytes.extend_from_slice(&response_bytes);
-        }
-        
         bytes
-    }
-
     /// Get proof size estimate
     pub fn size_estimate(&self) -> usize {
         let base_size = 4 + self.trace_commitment.len(); // commitment + length
@@ -377,10 +321,6 @@ impl StarkProof {
 #[derive(Debug, Clone)]
 pub struct FriProof {
     pub commitments: Vec<Vec<u8>>,     // Merkle roots for each FRI layer
-    pub final_polynomial: Vec<FieldElement>,
-    pub query_proofs: Vec<FriQueryProof>,
-}
-
 impl FriProof {
     /// Convert to Value representation
     pub fn to_value(&self) -> Value {
@@ -402,8 +342,6 @@ impl FriProof {
         fri_map.insert("query_proofs".to_string(), Value::Array(query_proofs));
         
         Value::Object(fri_map)
-    }
-
     /// Serialize to bytes
     pub fn to_bytes(&self) -> Vec<u8> {
         let mut bytes = Vec::new();
@@ -413,20 +351,14 @@ impl FriProof {
         for commitment in &self.commitments {
             bytes.extend_from_slice(&(commitment.len() as u32).to_le_bytes());
             bytes.extend_from_slice(commitment);
-        }
-        
         // Final polynomial
         bytes.extend_from_slice(&(self.final_polynomial.len() as u32).to_le_bytes());
         for elem in &self.final_polynomial {
             bytes.extend_from_slice(&elem.to_bytes());
-        }
-        
         // Query proofs (simplified)
         bytes.extend_from_slice(&(self.query_proofs.len() as u32).to_le_bytes());
         
         bytes
-    }
-
     /// Size estimate
     pub fn size_estimate(&self) -> usize {
         let commitments_size = 4 + self.commitments.iter()
@@ -442,11 +374,6 @@ impl FriProof {
 /// FRI query proof for a specific position
 #[derive(Debug, Clone)]
 pub struct FriQueryProof {
-    pub position: usize,
-    pub merkle_proofs: Vec<MerkleProof>,
-    pub values: Vec<FieldElement>,
-}
-
 impl FriQueryProof {
     /// Convert to Value representation
     pub fn to_value(&self) -> Value {
@@ -470,11 +397,6 @@ impl FriQueryProof {
 /// Query response for STARK verification
 #[derive(Debug, Clone)]
 pub struct QueryResponse {
-    pub position: usize,
-    pub trace_values: Vec<FieldElement>,
-    pub merkle_proof: MerkleProof,
-}
-
 impl QueryResponse {
     /// Convert to Value representation
     pub fn to_value(&self) -> Value {
@@ -488,8 +410,6 @@ impl QueryResponse {
         response_map.insert("merkle_proof".to_string(), self.merkle_proof.to_value());
         
         Value::Object(response_map)
-    }
-
     /// Serialize to bytes
     pub fn to_bytes(&self) -> Vec<u8> {
         let mut bytes = Vec::new();
@@ -499,14 +419,10 @@ impl QueryResponse {
         
         for value in &self.trace_values {
             bytes.extend_from_slice(&value.to_bytes());
-        }
-        
         // Merkle proof serialization (simplified)
         bytes.extend_from_slice(&[0u8; 32]); // Placeholder
         
         bytes
-    }
-
     /// Size estimate
     pub fn size_estimate(&self) -> usize {
         8 + self.trace_values.len() * 32 + 64 // Simplified
@@ -519,15 +435,10 @@ pub struct StarkProver;
 impl StarkProver {
     /// Generate STARK proof
     pub fn prove(
-        trace: &StarkTrace,
-        constraints: &StarkConstraints,
-        num_queries: usize,
     ) -> AdvancedCryptoResult<StarkProof> {
         // Step 1: Verify trace satisfies constraints
         if !constraints.evaluate(trace)? {
             return Err(CryptoError::InvalidInput("Trace does not satisfy constraints".to_string()));
-        }
-
         // Step 2: Commit to trace using Merkle tree
         let trace_commitment = Self::commit_to_trace(trace)?;
 
@@ -541,13 +452,7 @@ impl StarkProver {
         let query_responses = Self::generate_query_responses(trace, num_queries)?;
 
         Ok(StarkProof {
-            trace_commitment,
-            constraint_evaluations,
-            fri_proof,
-            query_responses,
         })
-    }
-
     fn commit_to_trace(trace: &StarkTrace) -> AdvancedCryptoResult<Vec<u8>> {
         // Flatten trace into byte representation
         let mut trace_data = Vec::new();
@@ -558,16 +463,10 @@ impl StarkProver {
                     trace_data.push(value.to_bytes());
                 }
             }
-        }
-
         // Create Merkle tree
         let tree = MerkleTree::new(trace_data)?;
         Ok(tree.root_hash())
-    }
-
     fn evaluate_constraints(
-        trace: &StarkTrace,
-        constraints: &StarkConstraints,
     ) -> AdvancedCryptoResult<Vec<FieldElement>> {
         let mut evaluations = Vec::new();
 
@@ -579,8 +478,6 @@ impl StarkProver {
             } else {
                 FieldElement::one()
             });
-        }
-
         // Evaluate transition constraints
         for constraint in &constraints.transition_constraints {
             let is_satisfied = constraint.evaluate(trace)?;
@@ -589,14 +486,8 @@ impl StarkProver {
             } else {
                 FieldElement::one()
             });
-        }
-
         Ok(evaluations)
-    }
-
     fn generate_fri_proof(
-        trace: &StarkTrace,
-        _constraint_evaluations: &[FieldElement],
     ) -> AdvancedCryptoResult<FriProof> {
         // Simplified FRI proof generation
         let mut commitments = Vec::new();
@@ -608,28 +499,16 @@ impl StarkProver {
             hasher.update(format!("fri_layer_{}", current_size).as_bytes());
             commitments.push(hasher.finalize().to_vec());
             current_size /= 2;
-        }
-
         // Final polynomial is constant
         let final_polynomial = vec![FieldElement::one()];
 
         // Generate query proofs (simplified)
         let query_proofs = vec![FriQueryProof {
-            position: 0,
-            merkle_proofs: Vec::new(),
-            values: vec![FieldElement::one()],
         }];
 
         Ok(FriProof {
-            commitments,
-            final_polynomial,
-            query_proofs,
         })
-    }
-
     fn generate_query_responses(
-        trace: &StarkTrace,
-        num_queries: usize,
     ) -> AdvancedCryptoResult<Vec<QueryResponse>> {
         let mut responses = Vec::new();
         let mut rng = rand::thread_rng();
@@ -646,18 +525,10 @@ impl StarkProver {
 
             // Create simplified Merkle proof
             let merkle_proof = MerkleProof {
-                leaf_index: position,
-                proof_elements: Vec::new(),
                 root_hash: vec![0u8; 32], // Simplified
-            };
 
             responses.push(QueryResponse {
-                position,
-                trace_values,
-                merkle_proof,
             });
-        }
-
         Ok(responses)
     }
 }
@@ -668,81 +539,50 @@ pub struct StarkVerifier;
 impl StarkVerifier {
     /// Verify STARK proof
     pub fn verify(
-        proof: &StarkProof,
-        constraints: &StarkConstraints,
-        public_inputs: &[FieldElement],
     ) -> AdvancedCryptoResult<bool> {
         // Step 1: Verify trace commitment
         if !Self::verify_trace_commitment(&proof.trace_commitment)? {
             return Ok(false);
-        }
-
         // Step 2: Verify constraint evaluations
         if !Self::verify_constraint_evaluations(&proof.constraint_evaluations, constraints)? {
             return Ok(false);
-        }
-
         // Step 3: Verify FRI proof
         if !Self::verify_fri_proof(&proof.fri_proof)? {
             return Ok(false);
-        }
-
         // Step 4: Verify query responses
         if !Self::verify_query_responses(&proof.query_responses, &proof.trace_commitment)? {
             return Ok(false);
-        }
-
         // Step 5: Check public inputs consistency
         Self::verify_public_inputs(proof, public_inputs)
-    }
-
     fn verify_trace_commitment(commitment: &[u8]) -> AdvancedCryptoResult<bool> {
         // Simplified commitment verification
         Ok(commitment.len() == 32) // Basic length check
-    }
-
     fn verify_constraint_evaluations(
-        evaluations: &[FieldElement],
-        constraints: &StarkConstraints,
     ) -> AdvancedCryptoResult<bool> {
         // Check that constraint evaluations are mostly zero (satisfied constraints)
         let total_constraints = constraints.boundary_constraints.len() + constraints.transition_constraints.len();
         
         if evaluations.len() != total_constraints {
             return Ok(false);
-        }
-
         // In a real implementation, would verify polynomial evaluations
         // For now, just check that most evaluations are zero
         let zero_count = evaluations.iter().filter(|&e| e.is_zero()).count();
         Ok(zero_count as f64 / evaluations.len() as f64 > 0.9) // 90% should be zero
-    }
-
     fn verify_fri_proof(fri_proof: &FriProof) -> AdvancedCryptoResult<bool> {
         // Simplified FRI verification
         // Check that we have a reasonable number of layers
         if fri_proof.commitments.is_empty() {
             return Ok(false);
-        }
-
         // Check final polynomial is small
         if fri_proof.final_polynomial.len() > 4 {
             return Ok(false);
-        }
-
         Ok(true)
-    }
-
     fn verify_query_responses(
-        responses: &[QueryResponse],
-        trace_commitment: &[u8],
     ) -> AdvancedCryptoResult<bool> {
         // Verify that query responses are consistent with trace commitment
         for response in responses {
             if response.trace_values.is_empty() {
                 return Ok(false);
-            }
-            
             // In real implementation, would verify Merkle proofs
             if response.position > 10000 { // Sanity check
                 return Ok(false);
@@ -750,11 +590,7 @@ impl StarkVerifier {
         }
 
         Ok(true)
-    }
-
     fn verify_public_inputs(
-        proof: &StarkProof,
-        public_inputs: &[FieldElement],
     ) -> AdvancedCryptoResult<bool> {
         // Simplified public input verification
         // Check that public inputs are consistent with proof
@@ -770,25 +606,16 @@ impl Stark {
     pub fn create_trace(num_columns: i64) -> AdvancedCryptoResult<Value> {
         let trace = StarkTrace::new(num_columns as usize);
         Ok(trace.to_value())
-    }
-
     /// Add step to trace
     pub fn add_trace_step(trace: &Value, values: &Value) -> AdvancedCryptoResult<Value> {
         // Simplified - would modify trace in place
         Ok(Value::Boolean(true))
-    }
-
     /// Create constraint system
     pub fn create_constraints() -> AdvancedCryptoResult<Value> {
         let constraints = StarkConstraints::new();
         Ok(constraints.to_value())
-    }
-
     /// Generate STARK proof
     pub fn prove(
-        trace: &Value,
-        constraints: &Value,
-        num_queries: i64,
     ) -> AdvancedCryptoResult<Value> {
         // Create demo trace and constraints
         let mut demo_trace = StarkTrace::new(3);
@@ -805,26 +632,16 @@ impl Stark {
         
         // Boundary constraint: first value is 0
         demo_constraints.add_boundary_constraint(BoundaryConstraint {
-            step: 0,
-            column: 0,
-            value: FieldElement::zero(),
         });
 
         // Transition constraint: Fibonacci relation
         demo_constraints.add_transition_constraint(TransitionConstraint {
-            columns: vec![0, 1, 2],
-            polynomial: TransitionPolynomial::Addition,
         });
 
         let proof = StarkProver::prove(&demo_trace, &demo_constraints, num_queries as usize)?;
         Ok(proof.to_value())
-    }
-
     /// Verify STARK proof
     pub fn verify(
-        proof: &Value,
-        constraints: &Value,
-        public_inputs: &Value,
     ) -> AdvancedCryptoResult<Value> {
         let public_input_elems = Self::parse_field_array(public_inputs)?;
 
@@ -833,20 +650,10 @@ impl Stark {
         
         // Create simplified proof for verification
         let demo_proof = StarkProof {
-            trace_commitment: vec![0u8; 32],
-            constraint_evaluations: vec![FieldElement::zero(); 2],
             fri_proof: FriProof {
-                commitments: vec![vec![0u8; 32]],
-                final_polynomial: vec![FieldElement::one()],
-                query_proofs: Vec::new(),
-            },
-            query_responses: Vec::new(),
-        };
 
         let is_valid = StarkVerifier::verify(&demo_proof, &demo_constraints, &public_input_elems)?;
         Ok(Value::Boolean(is_valid))
-    }
-
     /// Create Fibonacci computation trace
     pub fn fibonacci_trace(num_steps: i64) -> AdvancedCryptoResult<Value> {
         let mut trace = StarkTrace::new(3); // a, b, c columns where c = a + b
@@ -859,44 +666,30 @@ impl Stark {
             trace.add_step(vec![a, b, c])?;
             a = b;
             b = c;
-        }
-
         trace.pad_to_power_of_two();
         Ok(trace.to_value())
-    }
-
     /// Create constraints for Fibonacci computation
     pub fn fibonacci_constraints() -> AdvancedCryptoResult<Value> {
         let mut constraints = StarkConstraints::new();
 
         // Boundary constraints
         constraints.add_boundary_constraint(BoundaryConstraint {
-            step: 0,
-            column: 0,
             value: FieldElement::zero(), // F(0) = 0
         });
 
         constraints.add_boundary_constraint(BoundaryConstraint {
-            step: 0,
-            column: 1,
             value: FieldElement::one(), // F(1) = 1
         });
 
         // Transition constraint: c = a + b
         constraints.add_transition_constraint(TransitionConstraint {
-            columns: vec![0, 1, 2],
-            polynomial: TransitionPolynomial::Addition,
         });
 
         // Next step constraint: next_a = current_b
         constraints.add_transition_constraint(TransitionConstraint {
-            columns: vec![1],
-            polynomial: TransitionPolynomial::Linear { constant: FieldElement::zero() },
         });
 
         Ok(constraints.to_value())
-    }
-
     /// Get STARK proof size information
     pub fn proof_size_info(trace_size: i64, num_queries: i64) -> Value {
         let mut size_info = HashMap::new();
@@ -919,17 +712,11 @@ impl Stark {
         size_info.insert("transparent".to_string(), Value::Boolean(true));
         
         Value::Object(size_info)
-    }
-
     /// Compare STARK with other proof systems
     pub fn comparison_with_other_systems() -> Value {
         let mut comparison = HashMap::new();
         
         let systems = vec![
-            ("STARKs", "O(log² n)", "None", "Post-quantum secure", "Transparent"),
-            ("SNARKs (Groth16)", "O(1)", "Trusted setup", "Fast verification", "Not post-quantum"),
-            ("SNARKs (PLONK)", "O(1)", "Universal setup", "Medium verification", "Not post-quantum"),
-            ("Bulletproofs", "O(log n)", "None", "Range proofs", "Not post-quantum"),
         ];
 
         let system_data: Vec<Value> = systems.iter().map(|(name, size, setup, advantage, quantum)| {
@@ -945,17 +732,10 @@ impl Stark {
         comparison.insert("proof_systems".to_string(), Value::Array(system_data));
         
         let stark_advantages = vec![
-            Value::String("No trusted setup required".to_string()),
-            Value::String("Transparent and verifiable".to_string()),
-            Value::String("Post-quantum secure".to_string()),
-            Value::String("Scales to very large computations".to_string()),
-            Value::String("No hidden assumptions".to_string()),
         ];
         comparison.insert("stark_advantages".to_string(), Value::Array(stark_advantages));
         
         Value::Object(comparison)
-    }
-
     /// Helper methods
     fn parse_field_array(value: &Value) -> AdvancedCryptoResult<Vec<FieldElement>> {
         match value {
@@ -963,18 +743,15 @@ impl Stark {
                 let mut elements = Vec::new();
                 for item in arr {
                     match item {
-                        Value::Integer(i) => elements.push(FieldElement::new(*i as u64)),
                         Value::String(s) => {
                             let num: u64 = s.parse()
                                 .map_err(|_| CryptoError::InvalidInput("Invalid number string".to_string()))?;
                             elements.push(FieldElement::new(num));
                         }
-                        _ => return Err(CryptoError::InvalidInput("Invalid field element type".to_string())),
                     }
                 }
                 Ok(elements)
             }
-            _ => Err(CryptoError::InvalidInput("Expected array of field elements".to_string())),
         }
     }
 
@@ -985,14 +762,9 @@ impl Stark {
         rng.fill_bytes(&mut bytes);
         let elem = FieldElement::from_bytes(&bytes)?;
         Ok(Value::String(elem.to_string()))
-    }
-
     /// Create hash chain computation trace
     pub fn hash_chain_trace(initial_value: &Value, chain_length: i64) -> AdvancedCryptoResult<Value> {
         let initial = match initial_value {
-            Value::String(s) => s.as_bytes().to_vec(),
-            _ => return Err(CryptoError::InvalidInput("Expected string for initial value".to_string())),
-        };
 
         let mut trace = StarkTrace::new(1); // Single column for hash values
         let mut current_hash = initial;
@@ -1008,8 +780,6 @@ impl Stark {
             let field_elem = FieldElement::new(hash_as_u64);
             
             trace.add_step(vec![field_elem])?;
-        }
-
         trace.pad_to_power_of_two();
         Ok(trace.to_value())
     }

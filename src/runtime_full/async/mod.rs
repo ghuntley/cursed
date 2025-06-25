@@ -42,28 +42,18 @@ extern "C" {
     
     /// Create a timeout wrapper
     pub fn cursed_create_timeout(future_id: u64, timeout_ms: u64) -> u64;
-}
-
 /// Initialize the async runtime system
 pub fn initialize_async_runtime() -> crate::error::Result<()> {
     runtime::initialize_global_async_runtime()
-}
-
 /// Get the global async runtime
 pub fn get_async_runtime() -> Option<std::sync::Arc<AsyncRuntime>> {
     runtime::get_global_async_runtime()
-}
-
 /// Shutdown the async runtime system
 pub fn shutdown_async_runtime() {
     runtime::shutdown_global_async_runtime()
-}
-
 /// Spawn a future on the async runtime
 pub fn spawn<F>(future: F) -> TaskHandle<F::Output>
 where
-    F: Future + Send + 'static,
-    F::Output: Send + 'static,
 {
     if let Some(runtime) = get_async_runtime() {
         runtime.spawn(future)
@@ -76,7 +66,6 @@ where
 /// Block on a future until completion
 pub fn block_on<F>(future: F) -> F::Output
 where
-    F: Future,
 {
     if let Some(runtime) = get_async_runtime() {
         runtime.block_on(future)
@@ -91,17 +80,12 @@ where
 pub async fn yield_now() {
     // Implementation will yield to the async scheduler
     future::yield_now().await
-}
-
 /// Create a delay future
 pub fn delay(duration: std::time::Duration) -> Delay {
     Timer::delay(duration)
-}
-
 /// Create a timeout wrapper for a future
 pub fn timeout<F>(duration: std::time::Duration, future: F) -> Timeout<F>
 where
-    F: Future,
 {
     Timer::timeout(duration, future)
 }

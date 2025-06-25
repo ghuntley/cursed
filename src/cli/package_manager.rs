@@ -13,50 +13,33 @@ use indicatif::{ProgressBar, ProgressStyle};
 use serde_json;
 
 use crate::package_manager::{
-    PackageManager, PackageManagerConfig, PackageManagerError, 
     init_package, metadata::PackageMetadata
-};
+// };
 
 /// Progress reporter for long-running operations
 pub struct ProgressReporter {
-    progress: ProgressBar,
-    start_time: Instant,
-}
-
 impl ProgressReporter {
     pub fn new(message: &str, total: Option<u64>) -> Self {
         let progress = match total {
-            Some(total) => ProgressBar::new(total),
-            None => ProgressBar::new_spinner(),
-        };
         
         progress.set_style(
             ProgressStyle::default_bar()
                 .template("{spinner:.green} [{elapsed_precise}] [{wide_bar:.cyan/blue}] {bytes}/{total_bytes} ({eta}) {msg}")
                 .unwrap()
-                .progress_chars("#>-"),
         );
         
         progress.set_message(message.to_string());
         
         Self {
-            progress,
-            start_time: Instant::now(),
         }
     }
     
     pub fn set_message(&self, message: &str) {
         self.progress.set_message(message.to_string());
-    }
-    
     pub fn set_position(&self, pos: u64) {
         self.progress.set_position(pos);
-    }
-    
     pub fn inc(&self, delta: u64) {
         self.progress.inc(delta);
-    }
-    
     pub fn finish_with_message(&self, message: &str) {
         self.progress.finish_with_message(message.to_string());
     }
@@ -73,19 +56,9 @@ impl Drop for ProgressReporter {
 /// Configuration loaded from multiple sources
 #[derive(Debug, Clone)]
 pub struct CliConfig {
-    pub package_manager: PackageManagerConfig,
-    pub verbose: bool,
-    pub output_format: OutputFormat,
-}
-
 /// Output format options
 #[derive(Debug, Clone)]
 pub enum OutputFormat {
-    Human,
-    Json,
-    Table,
-}
-
 impl Default for OutputFormat {
     fn default() -> Self {
         OutputFormat::Human
@@ -325,8 +298,6 @@ pub fn add_package_commands(app: Command) -> Command {
                         .help("Specific version")
                 )
         )
-}
-
 /// Handle package management commands with real implementations
 pub fn handle_package_command(matches: &clap::ArgMatches) -> crate::error::Result<()> {
     // Create async runtime for handling async operations
@@ -337,18 +308,13 @@ pub fn handle_package_command(matches: &clap::ArgMatches) -> crate::error::Resul
     
     if config.verbose {
         tracing::info!("Starting package operation with config: {:?}", config);
-    }
-    
     rt.block_on(async {
         execute_package_command(matches, config).await
     })?;
     
     Ok(())
-}
-
 /// Execute package command asynchronously
 async fn execute_package_command(
-    matches: &clap::ArgMatches, 
     config: CliConfig
 ) -> crate::error::Result<()> {
     let package_config = config.package_manager.clone();
@@ -391,12 +357,8 @@ async fn execute_package_command(
     }
     
     Ok(())
-}
-
 /// Handle package installation command
 async fn handle_get_command(
-    manager: &mut PackageManager,
-    matches: &clap::ArgMatches,
     config: &CliConfig
 ) -> crate::error::Result<()> {
     let package_spec = matches.get_one::<String>("package").unwrap();
@@ -431,11 +393,8 @@ async fn handle_get_command(
             match config.output_format {
                 OutputFormat::Json => {
                     let output = serde_json::json!({
-                        "status": "success",
                         "installed": packages.iter().map(|p| {
                             serde_json::json!({
-                                "name": p.name,
-                                "version": p.version,
                                 "description": p.description
                             })
                         }).collect::<Vec<_>>()
@@ -447,9 +406,6 @@ async fn handle_get_command(
                     println!("│ Package             │ Version  │ Description                       │");
                     println!("├─────────────────────┼──────────┼───────────────────────────────────┤");
                     for pkg in packages {
-                        println!("│ {:<19} │ {:<8} │ {:<33} │", 
-                               truncate(&pkg.name, 19),
-                               truncate(&pkg.version, 8),
                                truncate(&pkg.description, 33));
                     }
                     println!("└─────────────────────┴──────────┴───────────────────────────────────┘");
@@ -469,12 +425,8 @@ async fn handle_get_command(
     }
     
     Ok(())
-}
-
 /// Handle package search command
 async fn handle_search_command(
-    manager: &mut PackageManager,
-    matches: &clap::ArgMatches,
     config: &CliConfig
 ) -> crate::error::Result<()> {
     let query = matches.get_one::<String>("query").unwrap();
@@ -483,8 +435,6 @@ async fn handle_search_command(
     
     if config.verbose {
         println!("🔍 Searching for packages matching '{}' (limit: {})", query, limit);
-    }
-    
     let progress = ProgressReporter::new("Searching packages", None);
     
     match manager.search_packages(query, Some(limit)).await {
@@ -495,13 +445,10 @@ async fn handle_search_command(
                 packages.into_iter().filter(|p| p.name == *query).collect()
             } else {
                 packages
-            };
             
             match config.output_format {
                 OutputFormat::Json => {
                     let output = serde_json::json!({
-                        "query": query,
-                        "results": filtered_packages.len(),
                         "packages": filtered_packages
                     });
                     println!("{}", serde_json::to_string_pretty(&output)?);
@@ -512,9 +459,6 @@ async fn handle_search_command(
                         println!("│ Package             │ Version  │ Description                       │");
                         println!("├─────────────────────┼──────────┼───────────────────────────────────┤");
                         for pkg in filtered_packages {
-                            println!("│ {:<19} │ {:<8} │ {:<33} │", 
-                                   truncate(&pkg.name, 19),
-                                   truncate(&pkg.version, 8),
                                    truncate(&pkg.description, 33));
                         }
                         println!("└─────────────────────┴──────────┴───────────────────────────────────┘");
@@ -541,12 +485,8 @@ async fn handle_search_command(
     }
     
     Ok(())
-}
-
 /// Handle list installed packages command
 async fn handle_list_command(
-    manager: &PackageManager,
-    matches: &clap::ArgMatches,
     config: &CliConfig
 ) -> crate::error::Result<()> {
     let outdated_only = matches.get_flag("outdated");
@@ -554,8 +494,6 @@ async fn handle_list_command(
     
     if config.verbose {
         println!("📋 Listing installed packages");
-    }
-    
     match manager.list_installed() {
         Ok(packages) => {
             // Filter outdated packages if requested
@@ -564,12 +502,10 @@ async fn handle_list_command(
                 packages
             } else {
                 packages
-            };
             
             match config.output_format {
                 OutputFormat::Json => {
                     let output = serde_json::json!({
-                        "installed": display_packages.len(),
                         "packages": display_packages
                     });
                     println!("{}", serde_json::to_string_pretty(&output)?);
@@ -580,9 +516,6 @@ async fn handle_list_command(
                         println!("│ Package             │ Version  │ Description                       │");
                         println!("├─────────────────────┼──────────┼───────────────────────────────────┤");
                         for pkg in display_packages {
-                            println!("│ {:<19} │ {:<8} │ {:<33} │", 
-                                   truncate(&pkg.name, 19),
-                                   truncate(&pkg.version, 8),
                                    truncate(&pkg.description, 33));
                         }
                         println!("└─────────────────────┴──────────┴───────────────────────────────────┘");
@@ -613,12 +546,8 @@ async fn handle_list_command(
     }
     
     Ok(())
-}
-
 /// Handle package update command
 async fn handle_update_command(
-    manager: &mut PackageManager,
-    matches: &clap::ArgMatches,
     config: &CliConfig
 ) -> crate::error::Result<()> {
     let package = matches.get_one::<String>("package");
@@ -646,9 +575,6 @@ async fn handle_update_command(
             
             // Get currently installed packages
             let installed_packages = match manager.list_installed() {
-                    Ok(packages) => packages,
-            Err(_) => Vec::new(),
-        };
         
         if installed_packages.is_empty() {
             println!("  No packages currently installed");
@@ -660,17 +586,12 @@ async fn handle_update_command(
                     Ok(mut search_results) if !search_results.is_empty() => {
                         let latest_pkg = search_results.remove(0);
                         if latest_pkg.version != installed_pkg.version {
-                            println!("  • {}: {} → {}", 
-                                   installed_pkg.name,
-                                   installed_pkg.version,
                                    latest_pkg.version);
                         }
                     }
                     _ => {
                         // Package not found in registry or no newer version
                         if config.verbose {
-                            println!("  • {}: {} (no updates available)", 
-                                   installed_pkg.name,
                                    installed_pkg.version);
                         }
                     }
@@ -681,7 +602,6 @@ async fn handle_update_command(
                 match config.output_format {
                     OutputFormat::Json => {
                         let output = serde_json::json!({
-                            "status": "success",
                             "updated": if let Some(pkg) = package {
                                 vec![pkg.clone()]
                             } else {
@@ -707,12 +627,8 @@ async fn handle_update_command(
     }
     
     Ok(())
-}
-
 /// Handle package removal command
 async fn handle_remove_command(
-    manager: &mut PackageManager,
-    matches: &clap::ArgMatches,
     config: &CliConfig
 ) -> crate::error::Result<()> {
     let package = matches.get_one::<String>("package").unwrap();
@@ -730,8 +646,6 @@ async fn handle_remove_command(
             match config.output_format {
                 OutputFormat::Json => {
                     let output = serde_json::json!({
-                        "status": "success",
-                        "removed": package,
                         "purged": purge
                     });
                     println!("{}", serde_json::to_string_pretty(&output)?);
@@ -747,11 +661,8 @@ async fn handle_remove_command(
     }
     
     Ok(())
-}
-
 /// Handle project initialization command
 async fn handle_init_command(
-    matches: &clap::ArgMatches,
     config: &CliConfig
 ) -> crate::error::Result<()> {
     let name = matches.get_one::<String>("name");
@@ -780,9 +691,6 @@ async fn handle_init_command(
             match config.output_format {
                 OutputFormat::Json => {
                     let output = serde_json::json!({
-                        "status": "success",
-                        "project": project_name,
-                        "type": if is_lib { "library" } else { "binary" },
                         "version": version.unwrap_or(&"0.1.0".to_string())
                     });
                     println!("{}", serde_json::to_string_pretty(&output)?);
@@ -801,12 +709,8 @@ async fn handle_init_command(
     }
     
     Ok(())
-}
-
 /// Handle dependency resolution command
 async fn handle_resolve_command(
-    manager: &mut PackageManager,
-    matches: &clap::ArgMatches,
     config: &CliConfig
 ) -> crate::error::Result<()> {
     let format = matches.get_one::<String>("format").unwrap();
@@ -814,8 +718,6 @@ async fn handle_resolve_command(
     
     if config.verbose {
         println!("🔍 Resolving dependency graph");
-    }
-    
     // Use real dependency resolution
     let project_name = package.unwrap_or(&"current-project".to_string()).clone();
     
@@ -826,18 +728,12 @@ async fn handle_resolve_command(
                 .map_err(|e| std::io::Error::new(std::io::ErrorKind::InvalidData, e)))
     } else {
         Err(std::io::Error::new(std::io::ErrorKind::NotFound, "No CursedPackage.toml found"))
-    };
     
     match format.as_str() {
         "json" => {
             let (dependencies, resolved) = match &metadata_result {
-                Ok(metadata) => (metadata.dependencies.clone(), true),
-                Err(_) => (std::collections::HashMap::new(), false),
-            };
             
             let output = serde_json::json!({
-                "name": project_name,
-                "dependencies": dependencies,
                 "resolved": resolved
             });
             println!("{}", serde_json::to_string_pretty(&output)?);
@@ -861,15 +757,9 @@ async fn handle_resolve_command(
                 println!("└── (no dependencies - no CursedPackage.toml found)");
             }
         }
-    }
-    
     Ok(())
-}
-
 /// Handle dependency check command
 async fn handle_check_command(
-    manager: &mut PackageManager,
-    matches: &clap::ArgMatches,
     config: &CliConfig
 ) -> crate::error::Result<()> {
     let fix_issues = matches.get_flag("fix");
@@ -889,18 +779,12 @@ async fn handle_check_command(
     
     // Perform actual dependency checks
     let issues_found = match manager.validate_lock_file() {
-        Ok(_) => false,
-        Err(_) => true,
-    };
     
     progress.finish_with_message("Check completed");
     
     match config.output_format {
         OutputFormat::Json => {
             let output = serde_json::json!({
-                "status": "success",
-                "issues_found": issues_found,
-                "auto_fix": fix_issues,
                 "integrity_check": check_integrity
             });
             println!("{}", serde_json::to_string_pretty(&output)?);
@@ -916,15 +800,9 @@ async fn handle_check_command(
                 println!("✅ All dependency checks passed!");
             }
         }
-    }
-    
     Ok(())
-}
-
 /// Handle cache cleanup command
 async fn handle_clean_command(
-    manager: &mut PackageManager,
-    matches: &clap::ArgMatches,
     config: &CliConfig
 ) -> crate::error::Result<()> {
     let clean_all = matches.get_flag("all");
@@ -945,17 +823,12 @@ async fn handle_clean_command(
         
         // Calculate actual cache sizes
         let cache_stats = match manager.get_cache_stats() {
-            Ok(stats) => Some(stats),
-            Err(_) => None,
-        };
         
         if let Some(stats) = cache_stats {
             let package_cache_size = crate::package_manager::cache::CacheStats::format_size(stats.total_size);
             println!("  • Package cache: {}", package_cache_size);
         } else {
             println!("  • Package cache: (unknown size)");
-        }
-        
         // Calculate temp directory size
         let temp_dir = manager.get_config().cache_dir.join("temp");
         let temp_size = calculate_directory_size(&temp_dir);
@@ -968,7 +841,6 @@ async fn handle_clean_command(
                 std::fs::metadata(&index_path).map(|m| m.len() as usize).unwrap_or(0)
             } else {
                 0
-            };
             println!("  • Registry index: {}", crate::package_manager::cache::CacheStats::format_size(index_size));
         }
     } else {
@@ -984,10 +856,6 @@ async fn handle_clean_command(
         match config.output_format {
         OutputFormat::Json => {
             let output = serde_json::json!({
-            "status": "success",
-            "cleaned": "cache",
-                "all": clean_all,
-                    "freed_bytes": freed_space,
                         "freed_formatted": crate::package_manager::cache::CacheStats::format_size(freed_space)
                         });
                         println!("{}", serde_json::to_string_pretty(&output)?);
@@ -1006,15 +874,9 @@ async fn handle_clean_command(
                 return Err(format!("Failed to clean cache: {}", e).into());
             }
         }
-    }
-    
     Ok(())
-}
-
 /// Handle package info command
 async fn handle_info_command(
-    manager: &mut PackageManager,
-    matches: &clap::ArgMatches,
     config: &CliConfig
 ) -> crate::error::Result<()> {
     let package = matches.get_one::<String>("package").unwrap();
@@ -1022,15 +884,10 @@ async fn handle_info_command(
     
     if config.verbose {
         println!("📋 Getting package information for '{}'", package);
-    }
-    
     // Try to fetch real package info from registry
     let progress = ProgressReporter::new("Fetching package info", None);
     
     let package_info = match manager.search_packages(package, Some(1)).await {
-        Ok(mut packages) if !packages.is_empty() => Some(packages.remove(0)),
-        _ => None,
-    };
     
     progress.finish_with_message("Package info fetched");
     
@@ -1038,23 +895,12 @@ async fn handle_info_command(
         OutputFormat::Json => {
             let output = if let Some(ref info) = package_info {
                 serde_json::json!({
-                    "name": info.name,
-                    "version": version.unwrap_or(&info.version),
-                    "description": info.description,
-                    "available": true,
-                    "authors": info.authors,
-                    "dependencies": info.dependencies,
-                    "repository": info.repository,
                     "license": info.license
                 })
             } else {
                 serde_json::json!({
-                    "name": package,
-                    "version": version.unwrap_or(&"unknown".to_string()),
-                    "description": "Package not found in registry",
                     "available": false
                 })
-            };
             println!("{}", serde_json::to_string_pretty(&output)?);
         }
         _ => {
@@ -1080,11 +926,7 @@ async fn handle_info_command(
                 println!("   Description: Package not available");
             }
         }
-    }
-    
     Ok(())
-}
-
 /// Load configuration from CLI arguments and config files
 fn load_cli_config(matches: &clap::ArgMatches) -> crate::error::Result<()> {
     let mut package_config = PackageManagerConfig::default();
@@ -1092,27 +934,14 @@ fn load_cli_config(matches: &clap::ArgMatches) -> crate::error::Result<()> {
     // Apply CLI overrides
     if let Some(registry) = matches.get_one::<String>("registry") {
         package_config.registry_url = registry.clone();
-    }
-    
     if let Some(cache_dir) = matches.get_one::<String>("cache-dir") {
         package_config.cache_dir = PathBuf::from(cache_dir);
-    }
-    
     let verbose = matches.get_flag("verbose");
     
     let output_format = match matches.get_one::<String>("format").map(|s| s.as_str()) {
-        Some("json") => OutputFormat::Json,
-        Some("table") => OutputFormat::Table,
-        _ => OutputFormat::Human,
-    };
     
     Ok(CliConfig {
-        package_manager: package_config,
-        verbose,
-        output_format,
     })
-}
-
 /// Parse package specification in format "name[@version]"
 fn parse_package_spec(spec: &str) -> (String, Option<&str>) {
     if let Some(at_pos) = spec.rfind('@') {
@@ -1152,8 +981,6 @@ fn calculate_directory_size(path: &std::path::Path) -> usize {
         }
         
         size
-    }
-    
     if path.exists() && path.is_dir() {
         dir_size_recursive(path) as usize
     } else {

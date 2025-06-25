@@ -12,96 +12,28 @@ use super::{DatabaseError, DatabaseErrorKind, SqlValue, DB};
 /// fr fr Query plan cache for optimizing repeated queries
 #[derive(Debug)]
 pub struct QueryPlanCache {
-    cache: Arc<RwLock<LRUCache<QueryFingerprint, CachedQueryPlan>>>,
-    max_size: usize,
-    hit_count: Arc<Mutex<u64>>,
-    miss_count: Arc<Mutex<u64>>,
-    eviction_count: Arc<Mutex<u64>>,
-}
-
 /// fr fr Query fingerprint for cache key generation
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct QueryFingerprint {
-    normalized_sql: String,
-    parameter_types: Vec<SqlTypeInfo>,
-    database_version: String,
-}
-
 /// fr fr SQL type information for fingerprinting
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum SqlTypeInfo {
-    Integer,
-    BigInteger,
-    Float,
-    Double,
-    String,
-    Boolean,
-    Timestamp,
-    Binary,
-    Null,
-}
-
 /// fr fr Cached query plan with execution metadata
 #[derive(Debug, Clone)]
 pub struct CachedQueryPlan {
-    pub plan_id: String,
-    pub execution_plan: ExecutionPlan,
-    pub estimated_cost: f64,
-    pub estimated_rows: u64,
-    pub created_at: Instant,
-    pub last_used: Instant,
-    pub use_count: u64,
-    pub average_execution_time: Duration,
-}
-
 /// fr fr Query execution plan representation
 #[derive(Debug, Clone)]
 pub struct ExecutionPlan {
-    pub nodes: Vec<PlanNode>,
-    pub total_cost: f64,
-    pub startup_cost: f64,
-    pub plan_width: u32,
-}
-
 #[derive(Debug, Clone)]
 pub struct PlanNode {
-    pub node_type: NodeType,
-    pub table_name: Option<String>,
-    pub index_name: Option<String>,
-    pub cost: f64,
-    pub rows: u64,
-    pub children: Vec<PlanNode>,
-}
-
 #[derive(Debug, Clone)]
 pub enum NodeType {
-    SeqScan,
-    IndexScan,
-    IndexOnlyScan,
-    BitmapHeapScan,
-    BitmapIndexScan,
-    NestedLoop,
-    HashJoin,
-    MergeJoin,
-    Sort,
-    Hash,
-    Aggregate,
-    Unique,
-    Limit,
-    Materialize,
-}
-
 impl QueryPlanCache {
     /// slay Create new query plan cache with specified size
     #[instrument]
     pub fn new(max_size: usize) -> Self {
         info!(max_size = max_size, "Creating query plan cache");
         Self {
-            cache: Arc::new(RwLock::new(LRUCache::new(max_size))),
-            max_size,
-            hit_count: Arc::new(Mutex::new(0)),
-            miss_count: Arc::new(Mutex::new(0)),
-            eviction_count: Arc::new(Mutex::new(0)),
         }
     }
 
@@ -115,11 +47,7 @@ impl QueryPlanCache {
             if let Some(plan) = cache.get(&fingerprint) {
                 if let Ok(mut hit_count) = self.hit_count.lock() {
                     *hit_count += 1;
-                }
-                
                 trace!(
-                    sql = %sql,
-                    plan_id = %plan.plan_id,
                     "Query plan cache hit"
                 );
                 
@@ -135,19 +63,13 @@ impl QueryPlanCache {
         // Cache miss - generate new plan
         if let Ok(mut miss_count) = self.miss_count.lock() {
             *miss_count += 1;
-        }
-        
         debug!(sql = %sql, "Query plan cache miss, generating new plan");
         let plan = self.generate_query_plan(sql, params).await?;
         
         // Store in cache
         if let Ok(mut cache) = self.cache.write() {
             cache.put(fingerprint, plan.clone());
-        }
-        
         Ok(plan)
-    }
-
     /// lowkey Generate fingerprint for query caching
     fn generate_fingerprint(&self, sql: &str, params: &[SqlValue]) -> crate::error::Result<()> {
         let normalized_sql = self.normalize_sql(sql);
@@ -156,12 +78,8 @@ impl QueryPlanCache {
             .collect();
         
         Ok(QueryFingerprint {
-            normalized_sql,
-            parameter_types,
             database_version: "14.0".to_string(), // Would get from actual DB
         })
-    }
-
     /// periodt Normalize SQL for consistent caching
     fn normalize_sql(&self, sql: &str) -> String {
         sql.trim()
@@ -169,20 +87,9 @@ impl QueryPlanCache {
             .split_whitespace()
             .collect::<Vec<_>>()
             .join(" ")
-    }
-
     /// bestie Convert SqlValue to type info
     fn sql_value_to_type_info(&self, value: &SqlValue) -> SqlTypeInfo {
         match value {
-            SqlValue::Null => SqlTypeInfo::Null,
-            SqlValue::Boolean(_) => SqlTypeInfo::Boolean,
-            SqlValue::Integer(_) => SqlTypeInfo::Integer,
-            SqlValue::BigInteger(_) => SqlTypeInfo::BigInteger,
-            SqlValue::Float(_) => SqlTypeInfo::Float,
-            SqlValue::Double(_) => SqlTypeInfo::Double,
-            SqlValue::String(_) => SqlTypeInfo::String,
-            SqlValue::Binary(_) => SqlTypeInfo::Binary,
-            SqlValue::Timestamp(_) => SqlTypeInfo::Timestamp,
         }
     }
 
@@ -200,90 +107,25 @@ impl QueryPlanCache {
             ExecutionPlan {
                 nodes: vec![
                     PlanNode {
-                        node_type: NodeType::HashJoin,
-                        table_name: Some("table1".to_string()),
-                        index_name: None,
-                        cost: 100.0,
-                        rows: 1000,
                         children: vec![
                             PlanNode {
-                                node_type: NodeType::SeqScan,
-                                table_name: Some("table1".to_string()),
-                                index_name: None,
-                                cost: 50.0,
-                                rows: 500,
-                                children: Vec::from([]),
-                            },
                             PlanNode {
-                                node_type: NodeType::IndexScan,
-                                table_name: Some("table2".to_string()),
-                                index_name: Some("idx_table2_fk".to_string()),
-                                cost: 25.0,
-                                rows: 500,
-                                children: Vec::from([]),
-                            },
-                        ],
-                    },
-                ],
-                total_cost: 175.0,
-                startup_cost: 10.0,
-                plan_width: 64,
             }
         } else if sql.contains("ORDER BY") {
             ExecutionPlan {
                 nodes: vec![
                     PlanNode {
-                        node_type: NodeType::Sort,
-                        table_name: None,
-                        index_name: None,
-                        cost: 150.0,
-                        rows: 1000,
                         children: vec![
                             PlanNode {
-                                node_type: NodeType::SeqScan,
-                                table_name: Some("table1".to_string()),
-                                index_name: None,
-                                cost: 100.0,
-                                rows: 1000,
-                                children: Vec::from([]),
-                            },
-                        ],
-                    },
-                ],
-                total_cost: 250.0,
-                startup_cost: 5.0,
-                plan_width: 32,
             }
         } else {
             ExecutionPlan {
                 nodes: vec![
                     PlanNode {
-                        node_type: NodeType::IndexScan,
-                        table_name: Some("table1".to_string()),
-                        index_name: Some("idx_table1_pk".to_string()),
-                        cost: 25.0,
-                        rows: 100,
-                        children: Vec::from([]),
-                    },
-                ],
-                total_cost: 25.0,
-                startup_cost: 1.0,
-                plan_width: 32,
             }
-        };
         
         Ok(CachedQueryPlan {
-            plan_id,
-            execution_plan,
-            estimated_cost: execution_plan.total_cost,
-            estimated_rows: execution_plan.nodes[0].rows,
-            created_at: Instant::now(),
-            last_used: Instant::now(),
-            use_count: 1,
-            average_execution_time: Duration::from_millis(50),
         })
-    }
-
     /// slay Get cache statistics
     #[instrument(skip(self))]
     pub fn get_cache_stats(&self) -> CacheStats {
@@ -299,15 +141,8 @@ impl QueryPlanCache {
             hit_count as f64 / (hit_count + miss_count) as f64
         } else {
             0.0
-        };
         
         CacheStats {
-            hit_count,
-            miss_count,
-            eviction_count,
-            hit_ratio,
-            cache_size,
-            max_size: self.max_size,
         }
     }
 
@@ -316,20 +151,12 @@ impl QueryPlanCache {
     pub fn clear_cache(&self) {
         if let Ok(mut cache) = self.cache.write() {
             cache.clear();
-        }
-        
         if let Ok(mut hit_count) = self.hit_count.lock() {
             *hit_count = 0;
-        }
-        
         if let Ok(mut miss_count) = self.miss_count.lock() {
             *miss_count = 0;
-        }
-        
         if let Ok(mut eviction_count) = self.eviction_count.lock() {
             *eviction_count = 0;
-        }
-        
         info!("Query plan cache cleared");
     }
 }
@@ -337,60 +164,23 @@ impl QueryPlanCache {
 /// fr fr Cache statistics for monitoring
 #[derive(Debug, Clone)]
 pub struct CacheStats {
-    pub hit_count: u64,
-    pub miss_count: u64,
-    pub eviction_count: u64,
-    pub hit_ratio: f64,
-    pub cache_size: usize,
-    pub max_size: usize,
-}
-
 /// fr fr Prepared statement pool for reusing compiled statements
 #[derive(Debug)]
 pub struct PreparedStatementPool {
-    pool: Arc<RwLock<HashMap<String, PooledStatement>>>,
-    max_statements: usize,
-    statement_timeout: Duration,
-    usage_stats: Arc<Mutex<UsageStats>>,
-}
-
 /// fr fr Pooled prepared statement with metadata
 #[derive(Debug, Clone)]
 pub struct PooledStatement {
-    pub statement_id: String,
-    pub sql: String,
-    pub parameter_count: usize,
-    pub created_at: Instant,
-    pub last_used: Instant,
-    pub use_count: u64,
-    pub average_execution_time: Duration,
-    pub is_active: bool,
-}
-
 #[derive(Debug, Clone, Default)]
 pub struct UsageStats {
-    pub total_requests: u64,
-    pub cache_hits: u64,
-    pub cache_misses: u64,
-    pub statements_created: u64,
-    pub statements_evicted: u64,
-}
-
 impl PreparedStatementPool {
     /// slay Create new prepared statement pool
     #[instrument]
     pub fn new(max_statements: usize, statement_timeout: Duration) -> Self {
         info!(
-            max_statements = max_statements,
-            timeout = ?statement_timeout,
             "Creating prepared statement pool"
         );
         
         Self {
-            pool: Arc::new(RwLock::new(HashMap::new())),
-            max_statements,
-            statement_timeout,
-            usage_stats: Arc::new(Mutex::new(UsageStats::default())),
         }
     }
 
@@ -402,19 +192,13 @@ impl PreparedStatementPool {
         // Update usage stats
         if let Ok(mut stats) = self.usage_stats.lock() {
             stats.total_requests += 1;
-        }
-        
         // Try to get from pool
         if let Ok(pool) = self.pool.read() {
             if let Some(statement) = pool.get(&statement_key) {
                 if !self.is_statement_expired(statement) {
                     if let Ok(mut stats) = self.usage_stats.lock() {
                         stats.cache_hits += 1;
-                    }
-                    
                     trace!(
-                        sql = %sql,
-                        statement_id = %statement.statement_id,
                         "Prepared statement pool hit"
                     );
                     
@@ -425,14 +209,10 @@ impl PreparedStatementPool {
                     return Ok(updated_statement);
                 }
             }
-        }
-        
         // Pool miss - create new statement
         if let Ok(mut stats) = self.usage_stats.lock() {
             stats.cache_misses += 1;
             stats.statements_created += 1;
-        }
-        
         debug!(sql = %sql, "Prepared statement pool miss, creating new statement");
         let statement = self.create_prepared_statement(sql).await?;
         
@@ -440,8 +220,6 @@ impl PreparedStatementPool {
         self.store_statement(statement_key, statement.clone()).await?;
         
         Ok(statement)
-    }
-
     /// lowkey Generate unique key for statement
     fn generate_statement_key(&self, sql: &str) -> String {
         use std::collections::hash_map::DefaultHasher;
@@ -449,13 +227,9 @@ impl PreparedStatementPool {
         let mut hasher = DefaultHasher::new();
         sql.hash(&mut hasher);
         format!("stmt_{:x}", hasher.finish())
-    }
-
     /// periodt Check if statement has expired
     fn is_statement_expired(&self, statement: &PooledStatement) -> bool {
         statement.last_used.elapsed() > self.statement_timeout
-    }
-
     /// bestie Create new prepared statement
     async fn create_prepared_statement(&self, sql: &str) -> crate::error::Result<()> {
         trace!(sql = %sql, "Creating prepared statement");
@@ -467,31 +241,15 @@ impl PreparedStatementPool {
         let parameter_count = sql.matches('?').count() + sql.matches('$').count();
         
         Ok(PooledStatement {
-            statement_id,
-            sql: sql.to_string(),
-            parameter_count,
-            created_at: Instant::now(),
-            last_used: Instant::now(),
-            use_count: 1,
-            average_execution_time: Duration::from_millis(25),
-            is_active: true,
         })
-    }
-
     /// yolo Store statement in pool with LRU eviction
     async fn store_statement(&self, key: String, statement: PooledStatement) -> crate::error::Result<()> {
         if let Ok(mut pool) = self.pool.write() {
             // Check if we need to evict
             if pool.len() >= self.max_statements {
                 self.evict_least_recently_used(&mut pool).await?;
-            }
-            
             pool.insert(key, statement);
-        }
-        
         Ok(())
-    }
-
     /// slay Evict least recently used statement
     async fn evict_least_recently_used(&self, pool: &mut HashMap<String, PooledStatement>) -> crate::error::Result<()> {
         let mut oldest_key = None;
@@ -509,14 +267,8 @@ impl PreparedStatementPool {
             
             if let Ok(mut stats) = self.usage_stats.lock() {
                 stats.statements_evicted += 1;
-            }
-            
             trace!(evicted_key = %key, "Evicted prepared statement");
-        }
-        
         Ok(())
-    }
-
     /// facts Get pool statistics
     #[instrument(skip(self))]
     pub fn get_pool_stats(&self) -> PoolStats {
@@ -532,13 +284,8 @@ impl PreparedStatementPool {
             usage_stats.cache_hits as f64 / usage_stats.total_requests as f64
         } else {
             0.0
-        };
         
         PoolStats {
-            pool_size,
-            max_size: self.max_statements,
-            hit_ratio,
-            usage_stats,
         }
     }
 
@@ -566,8 +313,6 @@ impl PreparedStatementPool {
         
         if removed_count > 0 {
             info!(removed = removed_count, "Cleaned up expired prepared statements");
-        }
-        
         Ok(removed_count)
     }
 }
@@ -575,36 +320,18 @@ impl PreparedStatementPool {
 /// fr fr Pool statistics
 #[derive(Debug, Clone)]
 pub struct PoolStats {
-    pub pool_size: usize,
-    pub max_size: usize,
-    pub hit_ratio: f64,
-    pub usage_stats: UsageStats,
-}
-
 /// fr fr Connection warmer for pre-establishing connections
 #[derive(Debug)]
 pub struct ConnectionWarmer {
-    target_connections: usize,
-    warmup_queries: Vec<String>,
-    warm_connections: Arc<Mutex<VecDeque<String>>>,
-    warming_in_progress: Arc<Mutex<bool>>,
-}
-
 impl ConnectionWarmer {
     /// slay Create new connection warmer
     #[instrument]
     pub fn new(target_connections: usize, warmup_queries: Vec<String>) -> Self {
         info!(
-            target = target_connections,
-            warmup_queries = warmup_queries.len(),
             "Creating connection warmer"
         );
         
         Self {
-            target_connections,
-            warmup_queries,
-            warm_connections: Arc::new(Mutex::new(VecDeque::new())),
-            warming_in_progress: Arc::new(Mutex::new(false)),
         }
     }
 
@@ -617,8 +344,6 @@ impl ConnectionWarmer {
                 return Ok(());
             }
             *warming = true;
-        }
-        
         info!(target = self.target_connections, "Starting connection warming");
         
         let current_count = self.warm_connections.lock()
@@ -636,34 +361,20 @@ impl ConnectionWarmer {
             // Execute warmup queries
             for query in &self.warmup_queries {
                 self.execute_warmup_query(&connection_id, query).await?;
-            }
-            
             // Store warm connection
             if let Ok(mut warm_conns) = self.warm_connections.lock() {
                 warm_conns.push_back(connection_id.clone());
-            }
-            
             trace!(connection = %connection_id, "Connection warmed successfully");
-        }
-        
         if let Ok(mut warming) = self.warming_in_progress.lock() {
             *warming = false;
-        }
-        
         info!(
-            created = connections_to_create,
-            total = self.target_connections,
             "Connection warming completed"
         );
         
         Ok(())
-    }
-
     /// lowkey Execute warmup query on connection
     async fn execute_warmup_query(&self, connection_id: &str, query: &str) -> crate::error::Result<()> {
         trace!(
-            connection = %connection_id,
-            query = %query,
             "Executing warmup query"
         );
         
@@ -671,8 +382,6 @@ impl ConnectionWarmer {
         tokio::time::sleep(Duration::from_millis(5)).await;
         
         Ok(())
-    }
-
     /// periodt Get warm connection from pool
     #[instrument(skip(self))]
     pub async fn get_warm_connection(&self) -> Option<String> {
@@ -681,14 +390,8 @@ impl ConnectionWarmer {
             
             if connection.is_some() {
                 debug!("Retrieved warm connection from pool");
-            }
-            
             return connection;
-        }
-        
         None
-    }
-
     /// bestie Return connection to warm pool
     #[instrument(skip(self))]
     pub async fn return_connection(&self, connection_id: String) -> crate::error::Result<()> {
@@ -700,8 +403,6 @@ impl ConnectionWarmer {
         }
         
         Ok(())
-    }
-
     /// yolo Get warmer statistics
     #[instrument(skip(self))]
     pub fn get_warmer_stats(&self) -> WarmerStats {
@@ -713,65 +414,29 @@ impl ConnectionWarmer {
             .unwrap_or(&mut false);
         
         WarmerStats {
-            target_connections: self.target_connections,
-            warm_connections: warm_count,
-            warming_in_progress: is_warming,
-            warmup_queries_count: self.warmup_queries.len(),
         }
     }
-}
-
 /// fr fr Warmer statistics
 #[derive(Debug, Clone)]
 pub struct WarmerStats {
-    pub target_connections: usize,
-    pub warm_connections: usize,
-    pub warming_in_progress: bool,
-    pub warmup_queries_count: usize,
-}
-
 /// fr fr Batch operation optimizer for bulk operations
 #[derive(Debug)]
 pub struct BatchOperationOptimizer {
-    batch_size: usize,
-    flush_interval: Duration,
-    pending_operations: Arc<Mutex<Vec<BatchOperation>>>,
-    last_flush: Arc<Mutex<Instant>>,
-}
-
 /// fr fr Batch operation types
 #[derive(Debug, Clone)]
 pub enum BatchOperation {
     Insert {
-        table: String,
-        values: HashMap<String, SqlValue>,
-    },
     Update {
-        table: String,
-        values: HashMap<String, SqlValue>,
-        conditions: HashMap<String, SqlValue>,
-    },
     Delete {
-        table: String,
-        conditions: HashMap<String, SqlValue>,
-    },
-}
-
 impl BatchOperationOptimizer {
     /// slay Create new batch operation optimizer
     #[instrument]
     pub fn new(batch_size: usize, flush_interval: Duration) -> Self {
         info!(
-            batch_size = batch_size,
-            flush_interval = ?flush_interval,
             "Creating batch operation optimizer"
         );
         
         Self {
-            batch_size,
-            flush_interval,
-            pending_operations: Arc::new(Mutex::new(Vec::new())),
-            last_flush: Arc::new(Mutex::new(Instant::now())),
         }
     }
 
@@ -788,21 +453,15 @@ impl BatchOperationOptimizer {
                     last_flush.elapsed() >= self.flush_interval
                 } else {
                     false
-                };
                 
                 size_threshold_met || time_threshold_met
             } else {
                 false
             }
-        };
         
         if should_flush {
             self.flush_batch().await?;
-        }
-        
         Ok(should_flush)
-    }
-
     /// periodt Flush pending batch operations
     #[instrument(skip(self))]
     pub async fn flush_batch(&self) -> crate::error::Result<()> {
@@ -814,12 +473,9 @@ impl BatchOperationOptimizer {
             } else {
                 return Err(DatabaseError::transaction_error("Failed to acquire batch lock"));
             }
-        };
         
         if operations.is_empty() {
             return Ok(0);
-        }
-        
         info!(operation_count = operations.len(), "Flushing batch operations");
         
         // Group operations by type and table for optimization
@@ -839,48 +495,31 @@ impl BatchOperationOptimizer {
                     delete_operations.push(operation);
                 }
             }
-        }
-        
         let mut total_executed = 0;
         
         // Execute batch inserts
         for (table, value_sets) in insert_batches {
             total_executed += self.execute_batch_insert(&table, value_sets).await?;
-        }
-        
         // Execute updates and deletes
         for operation in update_operations {
             self.execute_single_operation(operation).await?;
             total_executed += 1;
-        }
-        
         for operation in delete_operations {
             self.execute_single_operation(operation).await?;
             total_executed += 1;
-        }
-        
         // Update last flush time
         if let Ok(mut last_flush) = self.last_flush.lock() {
             *last_flush = Instant::now();
-        }
-        
         info!(
-            executed = total_executed,
             "Batch operations flushed successfully"
         );
         
         Ok(total_executed)
-    }
-
     /// lowkey Execute batch insert operation
     async fn execute_batch_insert(&self, table: &str, value_sets: Vec<HashMap<String, SqlValue>>) -> crate::error::Result<()> {
         if value_sets.is_empty() {
             return Ok(0);
-        }
-        
         debug!(
-            table = %table,
-            count = value_sets.len(),
             "Executing batch insert"
         );
         
@@ -904,15 +543,10 @@ impl BatchOperationOptimizer {
         }
         
         let sql = format!(
-            "INSERT INTO {} ({}) VALUES {}",
-            table,
-            column_list,
             value_placeholders.join(", ")
         );
         
         trace!(
-            sql = %sql,
-            param_count = all_values.len(),
             "Executing batch insert SQL"
         );
         
@@ -920,8 +554,6 @@ impl BatchOperationOptimizer {
         tokio::time::sleep(Duration::from_millis(10)).await;
         
         Ok(value_sets.len() as u32)
-    }
-
     /// bestie Execute single operation
     async fn execute_single_operation(&self, operation: BatchOperation) -> crate::error::Result<()> {
         match operation {
@@ -936,11 +568,7 @@ impl BatchOperationOptimizer {
                 tokio::time::sleep(Duration::from_millis(1)).await;
             }
             _ => {} // Insert handled in batch
-        }
-        
         Ok(())
-    }
-
     /// yolo Get batch optimizer statistics
     #[instrument(skip(self))]
     pub fn get_batch_stats(&self) -> BatchStats {
@@ -953,42 +581,22 @@ impl BatchOperationOptimizer {
             .unwrap_or(Duration::ZERO);
         
         BatchStats {
-            pending_operations: pending_count,
-            batch_size: self.batch_size,
-            flush_interval: self.flush_interval,
-            time_since_last_flush,
         }
     }
-}
-
 /// fr fr Batch statistics
 #[derive(Debug, Clone)]
 pub struct BatchStats {
-    pub pending_operations: usize,
-    pub batch_size: usize,
-    pub flush_interval: Duration,
-    pub time_since_last_flush: Duration,
-}
-
 // Mock LRUCache implementation for compilation
 #[derive(Debug)]
 pub struct LRUCache<K, V> {
-    map: HashMap<K, V>,
-    max_size: usize,
-}
-
 impl<K: Hash + Eq + Clone, V> LRUCache<K, V> {
     pub fn new(max_size: usize) -> Self {
         Self {
-            map: HashMap::new(),
-            max_size,
         }
     }
     
     pub fn get(&self, key: &K) -> Option<&V> {
         self.map.get(key)
-    }
-    
     pub fn put(&mut self, key: K, value: V) {
         if self.map.len() >= self.max_size && !self.map.contains_key(&key) {
             // Simple eviction - remove first item
@@ -997,12 +605,8 @@ impl<K: Hash + Eq + Clone, V> LRUCache<K, V> {
             }
         }
         self.map.insert(key, value);
-    }
-    
     pub fn len(&self) -> usize {
         self.map.len()
-    }
-    
     pub fn clear(&mut self) {
         self.map.clear();
     }

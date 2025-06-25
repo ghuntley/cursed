@@ -41,8 +41,6 @@ async fn main() {
             process::exit(1);
         }
     }
-}
-
 /// Build the CLI application
 fn build_cli() -> Command {
     let base_cmd = Command::new("cursed-doc")
@@ -295,10 +293,6 @@ fn build_cli() -> Command {
         );
 
     base_cmd
-}
-
 /// Handle the documentation command
 async fn handle_doc_command(matches: &ArgMatches) -> crate::error::Result<()> {
     handle_documentation_command(matches).await
-}
-

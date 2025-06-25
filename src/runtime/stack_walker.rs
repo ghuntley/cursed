@@ -21,62 +21,35 @@ use tracing::{debug, error, info, instrument, warn};
 #[derive(Debug, Clone)]
 pub struct RawStackFrame {
     /// Instruction pointer
-    pub instruction_pointer: usize,
     /// Frame pointer (if available)
-    pub frame_pointer: Option<usize>,
     /// Stack pointer
-    pub stack_pointer: Option<usize>,
     /// Symbol name (if resolved)
-    pub symbol_name: Option<String>,
     /// Source file information (if available)
-    pub source_info: Option<SourceFrameInfo>,
     /// Whether this frame is from CURSED code
-    pub is_cursed_frame: bool,
-}
-
 /// Source information for a stack frame
 #[derive(Debug, Clone)]
 pub struct SourceFrameInfo {
     /// Source file path
-    pub file_path: PathBuf,
     /// Line number
-    pub line: u32,
     /// Column number (if available)
-    pub column: Option<u32>,
     /// Function name
-    pub function_name: String,
     /// Module or namespace
-    pub module_name: Option<String>,
-}
-
 impl RawStackFrame {
     pub fn new(instruction_pointer: usize) -> Self {
         RawStackFrame {
-            instruction_pointer,
-            frame_pointer: None,
-            stack_pointer: None,
-            symbol_name: None,
-            source_info: None,
-            is_cursed_frame: false,
         }
     }
 
     pub fn with_symbol(mut self, symbol_name: String) -> Self {
         self.symbol_name = Some(symbol_name);
         self
-    }
-
     pub fn with_source_info(mut self, source_info: SourceFrameInfo) -> Self {
         self.is_cursed_frame = self.is_likely_cursed_frame(&source_info);
         self.source_info = Some(source_info);
         self
-    }
-
     pub fn with_frame_pointer(mut self, frame_pointer: usize) -> Self {
         self.frame_pointer = Some(frame_pointer);
         self
-    }
-
     /// Heuristically determine if this is a CURSED frame
     fn is_likely_cursed_frame(&self, source_info: &SourceFrameInfo) -> bool {
         // Check file extension
@@ -89,7 +62,6 @@ impl RawStackFrame {
         // Check for CURSED keywords in function names
         let function_name = &source_info.function_name;
         let cursed_keywords = [
-            "slay", "yolo", "periodt", "lowkey", "highkey", "sus", "facts",
             "bestie", "flex", "vibe_check", "mood", "basic", "stan", "tea"
         ];
 
@@ -109,8 +81,6 @@ impl fmt::Display for RawStackFrame {
         
         if let Some(symbol) = &self.symbol_name {
             write!(f, " in {}", symbol)?;
-        }
-        
         if let Some(source) = &self.source_info {
             write!(f, " at {}:{}", source.file_path.display(), source.line)?;
             if let Some(column) = source.column {
@@ -120,8 +90,6 @@ impl fmt::Display for RawStackFrame {
         
         if self.is_cursed_frame {
             write!(f, " [CURSED]")?;
-        }
-        
         Ok(())
     }
 }
@@ -130,101 +98,55 @@ impl fmt::Display for RawStackFrame {
 #[derive(Debug, Clone)]
 pub struct StackWalkConfig {
     /// Maximum number of frames to capture
-    pub max_frames: usize,
     /// Whether to resolve symbols
-    pub resolve_symbols: bool,
     /// Whether to capture source information
-    pub capture_source_info: bool,
     /// Maximum symbol name length
-    pub max_symbol_length: usize,
     /// Skip system/runtime frames
-    pub skip_system_frames: bool,
     /// Only capture CURSED frames
-    pub cursed_frames_only: bool,
-}
-
 impl Default for StackWalkConfig {
     fn default() -> Self {
         StackWalkConfig {
-            max_frames: 100,
-            resolve_symbols: true,
-            capture_source_info: true,
-            max_symbol_length: 1000,
-            skip_system_frames: true,
-            cursed_frames_only: false,
         }
     }
-}
-
 /// Cross-platform stack walker
 pub struct StackWalker {
     /// Configuration for walking
-    config: StackWalkConfig,
     /// Symbol resolver for address translation
-    symbol_resolver: Option<Arc<dyn SymbolResolver + Send + Sync>>,
     /// Cache for resolved symbols
-    symbol_cache: Arc<Mutex<HashMap<usize, String>>>,
     /// Debug information registry
-    debug_registry: Option<Arc<crate::runtime::debug_manager::DebugManager>>,
     /// Statistics tracking
-    stats: Arc<Mutex<StackWalkStatistics>>,
-}
-
 /// Statistics for stack walking operations
 #[derive(Debug, Default, Clone)]
 pub struct StackWalkStatistics {
     /// Total walks performed
-    pub total_walks: u64,
     /// Total frames captured
-    pub total_frames: u64,
     /// Symbols resolved
-    pub symbols_resolved: u64,
     /// Source info captured
-    pub source_info_captured: u64,
     /// CURSED frames found
-    pub cursed_frames_found: u64,
     /// Average walk time
-    pub average_walk_time: std::time::Duration,
-}
-
 impl StackWalker {
     /// Create a new stack walker
     pub fn new() -> Self {
         StackWalker {
-            config: StackWalkConfig::default(),
-            symbol_resolver: None,
-            symbol_cache: Arc::new(Mutex::new(HashMap::new())),
-            debug_registry: None,
-            stats: Arc::new(Mutex::new(StackWalkStatistics::default())),
         }
     }
 
     /// Create with custom configuration
     pub fn with_config(config: StackWalkConfig) -> Self {
         StackWalker {
-            config,
-            symbol_resolver: None,
-            symbol_cache: Arc::new(Mutex::new(HashMap::new())),
-            debug_registry: None,
-            stats: Arc::new(Mutex::new(StackWalkStatistics::default())),
         }
     }
 
     /// Set symbol resolver
     pub fn with_symbol_resolver<R>(mut self, resolver: R) -> Self 
     where
-        R: SymbolResolver + Send + Sync + 'static,
     {
         self.symbol_resolver = Some(Arc::new(resolver));
         self
-    }
-
     /// Set debug registry
     pub fn with_debug_registry(mut self, registry: Arc<crate::runtime::debug_manager::DebugManager>) -> Self {
         self.debug_registry = Some(registry);
         self
-    }
-
     /// Walk the current call stack
     #[instrument(skip(self))]
     pub fn walk_stack(&self) -> crate::error::Result<()> {
@@ -244,12 +166,8 @@ impl StackWalker {
             // Update average walk time
             let total_time = stats.average_walk_time * (stats.total_walks - 1) as u32 + walk_time;
             stats.average_walk_time = total_time / stats.total_walks as u32;
-        }
-        
         debug!("Stack walk completed: {} frames captured", frames.len());
         Ok(frames)
-    }
-
     /// Internal stack walking implementation
     fn walk_stack_impl(&self) -> crate::error::Result<()> {
         let mut frames = Vec::new();
@@ -258,23 +176,15 @@ impl StackWalker {
         #[cfg(target_os = "linux")]
         {
             self.walk_stack_linux(&mut frames)?;
-        }
-        
         #[cfg(target_os = "macos")]
         {
             self.walk_stack_macos(&mut frames)?;
-        }
-        
         #[cfg(target_os = "windows")]
         {
             self.walk_stack_windows(&mut frames)?;
-        }
-        
         #[cfg(not(any(target_os = "linux", target_os = "macos", target_os = "windows")))]
         {
             self.walk_stack_generic(&mut frames)?;
-        }
-        
         // Filter frames based on configuration
         let filtered_frames: Vec<RawStackFrame> = frames
             .into_iter()
@@ -283,8 +193,6 @@ impl StackWalker {
             .collect();
         
         Ok(filtered_frames)
-    }
-
     /// Linux-specific stack walking using backtrace
     #[cfg(target_os = "linux")]
     fn walk_stack_linux(&self, frames: &mut Vec<RawStackFrame>) -> crate::error::Result<()> {
@@ -297,29 +205,21 @@ impl StackWalker {
         
         let num_frames = unsafe {
             libc::backtrace(buffer.as_mut_ptr(), MAX_FRAMES as i32)
-        };
         
         if num_frames < 0 {
             return Err(CursedError::Runtime("Failed to capture backtrace".to_string()));
-        }
-        
         debug!("Captured {} frames on Linux", num_frames);
         
         // Get symbol names
         let symbols = unsafe {
             libc::backtrace_symbols(buffer.as_ptr(), num_frames)
-        };
         
         if symbols.is_null() {
             warn!("Failed to get symbol names for backtrace");
-        }
-        
         // Process each frame
         for i in 0..num_frames as usize {
             if frames.len() >= self.config.max_frames {
                 break;
-            }
-            
             let ip = buffer[i] as usize;
             let mut raw_frame = RawStackFrame::new(ip);
             
@@ -333,8 +233,6 @@ impl StackWalker {
                         raw_frame = raw_frame.with_symbol(demangled);
                     }
                 }
-            }
-            
             // Try to resolve additional symbol information
             if self.config.resolve_symbols {
                 if let Ok(Some(resolved_symbol)) = self.resolve_symbol_for_frame_addr(ip) {
@@ -350,8 +248,6 @@ impl StackWalker {
             }
             
             frames.push(raw_frame);
-        }
-        
         // Free symbol names
         if !symbols.is_null() {
             unsafe {
@@ -360,8 +256,6 @@ impl StackWalker {
         }
         
         Ok(())
-    }
-
     /// macOS-specific stack walking using backtrace
     #[cfg(target_os = "macos")]
     fn walk_stack_macos(&self, frames: &mut Vec<RawStackFrame>) -> crate::error::Result<()> {
@@ -373,25 +267,19 @@ impl StackWalker {
         
         let num_frames = unsafe {
             libc::backtrace(buffer.as_mut_ptr(), MAX_FRAMES as i32)
-        };
         
         if num_frames < 0 {
             return Err(CursedError::Runtime("Failed to capture backtrace on macOS".to_string()));
-        }
-        
         debug!("Captured {} frames on macOS", num_frames);
         
         // Get symbol names
         let symbols = unsafe {
             libc::backtrace_symbols(buffer.as_ptr(), num_frames)
-        };
         
         // Process frames similar to Linux
         for i in 0..num_frames as usize {
             if frames.len() >= self.config.max_frames {
                 break;
-            }
-            
             let ip = buffer[i] as usize;
             let mut raw_frame = RawStackFrame::new(ip);
             
@@ -405,8 +293,6 @@ impl StackWalker {
                         raw_frame = raw_frame.with_symbol(demangled);
                     }
                 }
-            }
-            
             // Try to resolve additional information
             if self.config.resolve_symbols {
                 if let Ok(Some(resolved_symbol)) = self.resolve_symbol_for_frame_addr(ip) {
@@ -421,8 +307,6 @@ impl StackWalker {
             }
             
             frames.push(raw_frame);
-        }
-        
         // Free symbol names
         if !symbols.is_null() {
             unsafe {
@@ -431,8 +315,6 @@ impl StackWalker {
         }
         
         Ok(())
-    }
-
     /// Windows-specific stack walking using StackWalk64
     #[cfg(target_os = "windows")]
     fn walk_stack_windows(&self, frames: &mut Vec<RawStackFrame>) -> crate::error::Result<()> {
@@ -458,19 +340,13 @@ impl StackWalker {
         #[cfg(target_arch = "x86_64")]
         unsafe {
             std::arch::asm!("mov {}, rbp", out(reg) frame_ptr);
-        }
-        
         #[cfg(target_arch = "x86")]
         unsafe {
             std::arch::asm!("mov {}, ebp", out(reg) frame_ptr);
-        }
-        
         #[cfg(not(any(target_arch = "x86_64", target_arch = "x86")))]
         {
             warn!("Inline assembly stack walking not supported on this architecture");
             return Ok(());
-        }
-        
         let mut frame_count = 0;
         let mut current_frame = frame_ptr;
         
@@ -481,12 +357,9 @@ impl StackWalker {
                     break;
                 }
                 *current_frame.add(1) // Return address is at [rbp + 8]
-            };
             
             if ip == 0 {
                 break;
-            }
-            
             let mut raw_frame = RawStackFrame::new(ip);
             
             // Try to resolve symbol information
@@ -511,7 +384,6 @@ impl StackWalker {
                 } else {
                     *current_frame as *const usize
                 }
-            };
             
             frame_count += 1;
             
@@ -524,8 +396,6 @@ impl StackWalker {
         
         debug!("Captured {} frames on Windows", frame_count);
         Ok(())
-    }
-
     /// Generic stack walking fallback for unsupported platforms
     #[cfg(not(any(target_os = "linux", target_os = "macos", target_os = "windows")))]
     fn walk_stack_generic(&self, frames: &mut Vec<RawStackFrame>) -> crate::error::Result<()> {
@@ -539,12 +409,8 @@ impl StackWalker {
         for (index, line) in backtrace_str.split("\n").enumerate() {
             if index >= self.config.max_frames {
                 break;
-            }
-            
             if line.trim().is_empty() {
                 continue;
-            }
-            
             // Try to extract address and symbol from backtrace line
             if let Some(ip) = self.extract_address_from_backtrace_line(line) {
                 let mut raw_frame = RawStackFrame::new(ip);
@@ -552,15 +418,11 @@ impl StackWalker {
                 // Try to extract symbol name from the line
                 if let Some(symbol) = self.extract_symbol_from_backtrace_line(line) {
                     raw_frame = raw_frame.with_symbol(symbol);
-                }
-                
                 frames.push(raw_frame);
             }
         }
         
         Ok(())
-    }
-
     /// Extract address from backtrace line
     fn extract_address_from_backtrace_line(&self, line: &str) -> Option<usize> {
         // Look for hex addresses in the line
@@ -574,8 +436,6 @@ impl StackWalker {
             }
         }
         None
-    }
-
     /// Extract symbol name from backtrace line
     fn extract_symbol_from_backtrace_line(&self, line: &str) -> Option<String> {
         // Look for symbol patterns in backtrace lines
@@ -588,8 +448,6 @@ impl StackWalker {
             }
         }
         None
-    }
-
     /// Resolve symbol for a specific instruction pointer address
     fn resolve_symbol_for_frame_addr(&self, ip: usize) -> crate::error::Result<()> {
         // Check cache first
@@ -638,8 +496,6 @@ impl StackWalker {
         
         // No symbol found
         Ok(None)
-    }
-
     /// Resolve symbol using addr2line utility on Unix systems
     #[cfg(any(target_os = "linux", target_os = "macos"))]
     fn resolve_symbol_with_addr2line(&self, ip: usize) -> crate::error::Result<()> {
@@ -674,8 +530,6 @@ impl StackWalker {
         }
         
         Ok(None)
-    }
-
     /// Extract source information for a specific instruction pointer address
     fn extract_source_info_for_addr(&self, ip: usize) -> crate::error::Result<()> {
         // Try symbol resolver first if available
@@ -683,29 +537,17 @@ impl StackWalker {
             if let Some(symbol_info) = resolver.resolve_symbol(ip) {
                 if let (Some(file), Some(line)) = (&symbol_info.file, symbol_info.line) {
                     let source_info = SourceFrameInfo {
-                        file_path: file.clone(),
-                        line,
-                        column: symbol_info.column,
-                        function_name: self.demangle_function_name(&symbol_info.name),
-                        module_name: self.extract_module_name(&symbol_info.name),
-                    };
                     
                     if let Ok(mut stats) = self.stats.lock() {
                         stats.source_info_captured += 1;
-                    }
-                    
                     return Ok(Some(source_info));
                 }
             }
-        }
-        
         // Try debug registry if available
         if let Some(debug_registry) = &self.debug_registry {
             // This would integrate with the debug manager to get source info
             // For now, we'll leave this as a placeholder for future integration
             debug!("Debug registry available but not yet integrated for address 0x{:x}", ip);
-        }
-        
         // Try using addr2line for source information on Unix systems
         #[cfg(any(target_os = "linux", target_os = "macos"))]
         {
@@ -723,12 +565,8 @@ impl StackWalker {
                 stats.source_info_captured += 1;
             }
             return Ok(Some(source_info));
-        }
-        
         // No source information found
         Ok(None)
-    }
-
     /// Extract source information using addr2line utility
     #[cfg(any(target_os = "linux", target_os = "macos"))]
     fn extract_source_info_with_addr2line(&self, ip: usize) -> crate::error::Result<()> {
@@ -766,12 +604,7 @@ impl StackWalker {
                             
                             if let Ok(line_num) = line_str.parse::<u32>() {
                                 let source_info = SourceFrameInfo {
-                                    file_path: PathBuf::from(file_path_str),
-                                    line: line_num,
                                     column: None, // addr2line doesn't always provide column info
-                                    function_name: self.demangle_function_name(&function_name),
-                                    module_name: self.extract_module_name(&function_name),
-                                };
                                 
                                 return Ok(Some(source_info));
                             }
@@ -785,16 +618,12 @@ impl StackWalker {
         }
         
         Ok(None)
-    }
-
     /// Extract source information from DWARF debug information
     fn extract_source_info_from_dwarf(&self, ip: usize) -> crate::error::Result<()> {
         // This would integrate with a DWARF parser library like gimli
         // For now, this is a placeholder for future DWARF integration
         debug!("DWARF debug info parsing not yet implemented for address 0x{:x}", ip);
         Ok(None)
-    }
-
     /// Extract module name from symbol name
     fn extract_module_name(&self, symbol_name: &str) -> Option<String> {
         // Try to extract module/namespace from symbol
@@ -808,8 +637,6 @@ impl StackWalker {
         }
         
         None
-    }
-
     /// Demangle function name to extract CURSED function names
     fn demangle_function_name(&self, mangled_name: &str) -> String {
         // Try Rust demangling first
@@ -819,19 +646,11 @@ impl StackWalker {
             // Look for CURSED function patterns
             if let Some(cursed_name) = self.extract_cursed_function_name(&demangled_str) {
                 return cursed_name;
-            }
-            
             return demangled_str;
-        }
-        
         // Fall back to extracting CURSED patterns from mangled name
         if let Some(cursed_name) = self.extract_cursed_function_name(mangled_name) {
             return cursed_name;
-        }
-        
         mangled_name.to_string()
-    }
-
     /// Extract CURSED function name from demangled symbols
     fn extract_cursed_function_name(&self, symbol_name: &str) -> Option<String> {
         // Look for common CURSED function patterns
@@ -845,11 +664,8 @@ impl StackWalker {
                     return Some(after_cursed.to_string());
                 }
             }
-        }
-        
         // Look for CURSED keywords
         let cursed_keywords = [
-            "slay", "yolo", "periodt", "lowkey", "highkey", "sus", "facts",
             "bestie", "flex", "vibe_check", "mood", "basic", "stan", "tea"
         ];
         
@@ -868,8 +684,6 @@ impl StackWalker {
         }
         
         None
-    }
-
     /// Determine if a frame should be included based on configuration
     fn should_include_frame(&self, frame: &RawStackFrame) -> bool {
         // Skip system frames if configured
@@ -879,21 +693,13 @@ impl StackWalker {
                     return false;
                 }
             }
-        }
-        
         // Only include CURSED frames if configured
         if self.config.cursed_frames_only && !frame.is_cursed_frame {
             return false;
-        }
-        
         true
-    }
-
     /// Check if a symbol represents a system/runtime frame
     fn is_system_frame(&self, symbol_name: &str) -> bool {
         let system_patterns = [
-            "std::", "core::", "alloc::", "rust_", "rustc_",
-            "__rust", "pthread_", "_start", "__libc_",
             "backtrace::", "panic_", "abort"
         ];
         
@@ -904,41 +710,25 @@ impl StackWalker {
         }
         
         false
-    }
-
     /// Walk stack with additional context information
     #[instrument(skip(self))]
     pub fn walk_stack_with_context(
-        &self,
-        thread_id: Option<std::thread::ThreadId>,
-        goroutine_id: Option<u64>,
     ) -> crate::error::Result<()> {
         let frames = self.walk_stack()?;
         
         Ok(ContextualStackWalk {
-            frames,
-            thread_id: thread_id.unwrap_or_else(|| std::thread::current().id()),
-            goroutine_id,
-            timestamp: std::time::SystemTime::now(),
-            config: self.config.clone(),
         })
-    }
-
     /// Get statistics
     pub fn get_statistics(&self) -> crate::error::Result<()> {
         self.stats.lock()
             .map(|stats| stats.clone())
             .map_err(|_| CursedError::Runtime("Failed to access stack walk statistics".to_string()))
-    }
-
     /// Clear symbol cache
     pub fn clear_cache(&self) {
         if let Ok(mut cache) = self.symbol_cache.lock() {
             cache.clear();
         }
     }
-}
-
 impl Default for StackWalker {
     fn default() -> Self {
         Self::new()
@@ -949,28 +739,17 @@ impl Default for StackWalker {
 #[derive(Debug)]
 pub struct ContextualStackWalk {
     /// Stack frames
-    pub frames: Vec<RawStackFrame>,
     /// Thread where stack was captured
-    pub thread_id: std::thread::ThreadId,
     /// Goroutine ID (if applicable)
-    pub goroutine_id: Option<u64>,
     /// Timestamp when captured
-    pub timestamp: std::time::SystemTime,
     /// Configuration used for walking
-    pub config: StackWalkConfig,
-}
-
 impl ContextualStackWalk {
     /// Get CURSED frames only
     pub fn cursed_frames(&self) -> Vec<&RawStackFrame> {
         self.frames.iter().filter(|f| f.is_cursed_frame).collect()
-    }
-
     /// Get top frame (most recent)
     pub fn top_frame(&self) -> Option<&RawStackFrame> {
         self.frames.first()
-    }
-
     /// Find frame by function name
     pub fn find_frame(&self, function_name: &str) -> Option<&RawStackFrame> {
         self.frames.iter().find(|frame| {
@@ -991,12 +770,8 @@ impl fmt::Display for ContextualStackWalk {
         
         if let Some(goroutine_id) = self.goroutine_id {
             writeln!(f, "  in goroutine #{}", goroutine_id)?;
-        }
-        
         for (index, frame) in self.frames.iter().enumerate() {
             writeln!(f, "  #{}: {}", index, frame)?;
-        }
-        
         Ok(())
     }
 }
@@ -1009,14 +784,10 @@ pub fn get_global_stack_walker() -> Arc<Mutex<StackWalker>> {
     GLOBAL_STACK_WALKER.get_or_init(|| {
         Arc::new(Mutex::new(StackWalker::new()))
     }).clone()
-}
-
 /// Initialize global stack walker with configuration
 pub fn initialize_global_stack_walker(config: StackWalkConfig) {
     let walker = StackWalker::with_config(config);
     let _ = GLOBAL_STACK_WALKER.set(Arc::new(Mutex::new(walker)));
-}
-
 /// Convenience function to walk current stack
 pub fn walk_current_stack() -> crate::error::Result<()> {
     let walker = get_global_stack_walker();
@@ -1024,7 +795,4 @@ pub fn walk_current_stack() -> crate::error::Result<()> {
         w.walk_stack()
     } else {
         Err(CursedError::Runtime("Failed to access global stack walker".to_string()))
-    };
     result
-}
-

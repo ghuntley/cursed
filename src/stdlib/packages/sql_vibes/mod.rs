@@ -19,5 +19,3 @@ pub fn init_sql_vibes() {
         // TODO: implement
     }
     println!("🗄️ sql_vibes package initialized - ready to store some data bestie!");
-}
-

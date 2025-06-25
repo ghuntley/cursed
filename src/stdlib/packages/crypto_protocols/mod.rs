@@ -31,31 +31,11 @@ pub use session_management::{SessionManager, CryptoSession, SessionTicket, Sessi
 pub fn init_crypto_protocols() -> AdvancedCryptoResult<()> {
     println!("🔐 Cryptographic protocols package initialized - secure communications ready!");
     Ok(())
-}
-
 /// Create a comprehensive cryptographic protocols suite
 pub fn create_protocol_suite() -> AdvancedCryptoResult<CryptoProtocolSuite> {
     Ok(CryptoProtocolSuite {
-        key_exchange: KeyExchangeManager::new()?,
-        ecdh: EcdhManager::new()?,
-        diffie_hellman: DiffieHellmanManager::new()?,
-        authentication: AuthenticationManager::new()?,
-        secure_channels: SecureChannelManager::new()?,
-        signal_protocol: SignalProtocolManager::new()?,
-        tls_handshake: TlsHandshakeManager::new()?,
-        session_management: SessionManager::new()?,
     })
-}
-
 /// Comprehensive cryptographic protocols suite
 #[derive(Debug)]
 pub struct CryptoProtocolSuite {
-    pub key_exchange: KeyExchangeManager,
-    pub ecdh: EcdhManager,
-    pub diffie_hellman: DiffieHellmanManager,
-    pub authentication: AuthenticationManager,
-    pub secure_channels: SecureChannelManager,
-    pub signal_protocol: SignalProtocolManager,
-    pub tls_handshake: TlsHandshakeManager,
-    pub session_management: SessionManager,
 }

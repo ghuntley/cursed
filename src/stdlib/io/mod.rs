@@ -58,22 +58,18 @@ pub use streams::{Stdin, Stdout, Stderr, stdin, stdout, stderr, flush_all};
 
 // Basic console operations
 pub use console::{
-    print, println, eprint, eprintln,
-    printf, printfln, eprintf, eprintfln,
     read_line, read_char, read_until, read_all, flush
-};
+// };
 
 // Interactive utilities
 pub use interactive::{
     prompt, confirm, select, multi_select, read_password, paginate, ProgressBar
-};
+// };
 
 // Buffered I/O
 pub use buffered::{
-    BufferedReader, BufferedWriter, SharedBufferedReader, SharedBufferedWriter,
-    buffered_stdin, buffered_stdout, buffered_stderr,
     shared_buffered_stdin, shared_buffered_stdout, shared_buffered_stderr
-};
+// };
 
 /// Initialize the I/O subsystem
 /// 
@@ -89,8 +85,6 @@ pub fn initialize() -> IoResult<()> {
     flush_all()?;
     
     Ok(())
-}
-
 /// Shutdown the I/O subsystem
 /// 
 /// This function should be called at program shutdown to ensure all
@@ -98,5 +92,3 @@ pub fn initialize() -> IoResult<()> {
 pub fn shutdown() -> IoResult<()> {
     flush_all()?;
     Ok(())
-}
-

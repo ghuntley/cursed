@@ -9,13 +9,9 @@ use std::path::Path;
 
 /// XML documentation generator
 pub struct XmlGenerator {
-    config: DocGeneratorConfig,
-}
-
 impl XmlGenerator {
     pub fn new(config: &DocGeneratorConfig) -> Self {
         Self {
-            config: config.clone(),
         }
     }
 
@@ -81,8 +77,6 @@ impl XmlGenerator {
         
         fs::write(xml_path, content).map_err(CursedError::Io)?;
         Ok(())
-    }
-
     /// Generate XML for a single module
     fn generate_module_xml(&self, doc: &ExtractedDocumentation) -> crate::error::Result<()> {
         let mut content = String::new();
@@ -114,8 +108,6 @@ impl XmlGenerator {
                 content.push_str(&format!("        <import>{}</import>\n", self.xml_escape(import)));
             }
             content.push_str("      </imports>\n");
-        }
-        
         // Items
         content.push_str("      <items>\n");
         for item in &doc.items {
@@ -125,28 +117,14 @@ impl XmlGenerator {
         
         content.push_str("    </module>\n");
         Ok(content)
-    }
-
     /// Generate XML for a single documentation item
     fn generate_item_xml(&self, item: &DocumentationItem) -> crate::error::Result<()> {
         let mut content = String::new();
         
         let kind_str = match item.kind {
-            crate::docs::generator::ItemKind::Function => "function",
-            crate::docs::generator::ItemKind::Struct => "struct",
-            crate::docs::generator::ItemKind::Interface => "interface",
-            crate::docs::generator::ItemKind::Variable => "variable",
-            crate::docs::generator::ItemKind::Constant => "constant",
-            crate::docs::generator::ItemKind::Type => "type",
-            crate::docs::generator::ItemKind::Module => "module",
-        };
         
         let visibility_str = match item.visibility {
-            crate::docs::generator::Visibility::Public => "public",
-            crate::docs::generator::Visibility::Private => "private",
-        };
         
-        content.push_str(&format!("        <item name=\"{}\" kind=\"{}\" visibility=\"{}\">\n", 
             self.xml_escape(&item.name), kind_str, visibility_str));
         
         content.push_str(&format!("          <module>{}</module>\n", self.xml_escape(&item.module)));
@@ -156,8 +134,6 @@ impl XmlGenerator {
         // Signature
         if let Some(signature) = &item.signature {
             content.push_str(&format!("          <signature>{}</signature>\n", self.xml_escape(signature)));
-        }
-        
         // Parameters
         if !item.parameters.is_empty() {
             content.push_str("          <parameters>\n");
@@ -174,13 +150,9 @@ impl XmlGenerator {
                 content.push_str("            </parameter>\n");
             }
             content.push_str("          </parameters>\n");
-        }
-        
         // Return type
         if let Some(return_type) = &item.return_type {
             content.push_str(&format!("          <return_type>{}</return_type>\n", self.xml_escape(return_type)));
-        }
-        
         // Examples
         if !item.examples.is_empty() {
             content.push_str("          <examples>\n");
@@ -200,8 +172,6 @@ impl XmlGenerator {
                 content.push_str("            </example>\n");
             }
             content.push_str("          </examples>\n");
-        }
-        
         // Tags
         if !item.tags.is_empty() {
             content.push_str("          <tags>\n");
@@ -212,8 +182,6 @@ impl XmlGenerator {
                 }
             }
             content.push_str("          </tags>\n");
-        }
-        
         // Location
         content.push_str("          <location>\n");
         content.push_str(&format!("            <line>{}</line>\n", item.location.line));
@@ -227,12 +195,8 @@ impl XmlGenerator {
         if self.config.include_examples && item.source_code.is_some() {
             content.push_str(&format!("          <source_code><![CDATA[{}]]></source_code>\n", 
                 item.source_code.as_ref().unwrap()));
-        }
-        
         content.push_str("        </item>\n");
         Ok(content)
-    }
-
     /// Generate search index XML
     pub fn generate_search_index(&self, search_index: &[SearchIndexEntry], output_dir: &Path) -> crate::error::Result<()> {
         let search_path = output_dir.join("search_index.xml");
@@ -262,8 +226,6 @@ impl XmlGenerator {
                     content.push_str(&format!("        <keyword>{}</keyword>\n", self.xml_escape(keyword)));
                 }
                 content.push_str("      </keywords>\n");
-            }
-            
             content.push_str("    </entry>\n");
         }
         content.push_str("  </entries>\n");
@@ -272,8 +234,6 @@ impl XmlGenerator {
         
         fs::write(search_path, content).map_err(CursedError::Io)?;
         Ok(())
-    }
-
     /// Generate XML schema definition
     pub fn generate_schema(&self, output_dir: &Path) -> crate::error::Result<()> {
         let schema_path = output_dir.join("documentation.xsd");
@@ -452,8 +412,6 @@ impl XmlGenerator {
         
         fs::write(schema_path, schema).map_err(CursedError::Io)?;
         Ok(())
-    }
-
     /// Escape XML special characters
     fn xml_escape(&self, text: &str) -> String {
         text.replace("&", "&amp;")

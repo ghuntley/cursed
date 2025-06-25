@@ -17,165 +17,63 @@ pub type ProcessResult<T> = std::result::Result<T, ProcessError>;
 pub enum ProcessError {
     /// Process not found error
     ProcessNotFound {
-        pid: Option<u32>,
-        name: Option<String>,
-        message: String,
-    },
     
     /// Permission denied for process operation
     PermissionDenied {
-        operation: String,
-        pid: Option<u32>,
-        message: String,
-    },
     
     /// Invalid process state for operation
     InvalidState {
-        expected: String,
-        actual: String,
-        pid: u32,
-    },
     
     /// Process execution failed
     ExecutionFailed {
-        command: String,
-        exit_code: Option<i32>,
-        stderr: Option<String>,
-        message: String,
-    },
     
     /// Operation timed out
     Timeout {
-        operation: String,
-        duration: Duration,
-        message: String,
-    },
     
     /// Invalid arguments provided
     InvalidArguments {
-        operation: String,
-        argument: String,
-        message: String,
-    },
     
     /// Environment variable error
     EnvironmentError {
-        variable: Option<String>,
-        operation: String,
-        message: String,
-    },
     
     /// Communication error with process
     CommunicationError {
-        operation: String,
-        error_type: String,
-        message: String,
-    },
     
     /// System-level error
     SystemError {
-        code: i32,
-        operation: String,
-        message: String,
-    },
     
     /// I/O error during process operations
     IoError {
-        operation: String,
-        kind: String,
-        message: String,
-    },
     
     /// Signal handling error
     SignalError {
-        signal: String,
-        operation: String,
-        message: String,
-    },
     
     /// Resource limit exceeded
     ResourceLimitExceeded {
-        resource: String,
-        limit: u64,
-        current: u64,
-        message: String,
-    },
     
     /// Platform-specific error
     PlatformError {
-        platform: String,
-        feature: Option<String>,
-        message: String,
-    },
     
     /// Generic process error
     General {
-        message: String,
-    },
-}
-
 impl ProcessError {
     /// Get error message
     pub fn message(&self) -> &str {
         match self {
-            ProcessError::ProcessNotFound { message, .. } => message,
-            ProcessError::PermissionDenied { message, .. } => message,
-            ProcessError::InvalidState { .. } => "Invalid process state",
-            ProcessError::ExecutionFailed { message, .. } => message,
-            ProcessError::Timeout { message, .. } => message,
-            ProcessError::InvalidArguments { message, .. } => message,
-            ProcessError::EnvironmentError { message, .. } => message,
-            ProcessError::CommunicationError { message, .. } => message,
-            ProcessError::SystemError { message, .. } => message,
-            ProcessError::IoError { message, .. } => message,
-            ProcessError::SignalError { message, .. } => message,
-            ProcessError::ResourceLimitExceeded { message, .. } => message,
-            ProcessError::PlatformError { message, .. } => message,
-            ProcessError::General { message } => message,
         }
     }
     
     /// Get error category
     pub fn category(&self) -> &'static str {
         match self {
-            ProcessError::ProcessNotFound { .. } => "ProcessNotFound",
-            ProcessError::PermissionDenied { .. } => "PermissionDenied",
-            ProcessError::InvalidState { .. } => "InvalidState",
-            ProcessError::ExecutionFailed { .. } => "ExecutionFailed",
-            ProcessError::Timeout { .. } => "Timeout",
-            ProcessError::InvalidArguments { .. } => "InvalidArguments",
-            ProcessError::EnvironmentError { .. } => "EnvironmentError",
-            ProcessError::CommunicationError { .. } => "CommunicationError",
-            ProcessError::SystemError { .. } => "SystemError",
-            ProcessError::IoError { .. } => "IoError",
-            ProcessError::SignalError { .. } => "SignalError",
-            ProcessError::ResourceLimitExceeded { .. } => "ResourceLimitExceeded",
-            ProcessError::PlatformError { .. } => "PlatformError",
-            ProcessError::General { .. } => "General",
         }
     }
     
     /// Check if error is recoverable
     pub fn is_recoverable(&self) -> bool {
         match self {
-            ProcessError::ProcessNotFound { .. } => false,
-            ProcessError::PermissionDenied { .. } => false,
-            ProcessError::InvalidState { .. } => true,
-            ProcessError::ExecutionFailed { .. } => false,
-            ProcessError::Timeout { .. } => true,
-            ProcessError::InvalidArguments { .. } => false,
-            ProcessError::EnvironmentError { .. } => true,
-            ProcessError::CommunicationError { .. } => true,
-            ProcessError::SystemError { .. } => false,
-            ProcessError::IoError { .. } => true,
-            ProcessError::SignalError { .. } => true,
-            ProcessError::ResourceLimitExceeded { .. } => true,
-            ProcessError::PlatformError { .. } => false,
-            ProcessError::General { .. } => false,
         }
     }
-}
-
 // impl fmt::Display for ProcessError {
 //     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
 //         match self {
@@ -270,203 +168,133 @@ impl ProcessError {
 impl From<num::ParseIntError> for ProcessError {
     fn from(error: num::ParseIntError) -> Self {
         ProcessError::InvalidArguments {
-            operation: "parse_integer".to_string(),
-            argument: "number".to_string(),
-            message: error.to_string(),
         }
     }
-}
-
 /// CursedError creation helper functions
 
 /// Create a process not found error
 pub fn process_not_found(message: &str) -> ProcessError {
     ProcessError::ProcessNotFound {
-        pid: None,
-        name: None,
-        message: message.to_string(),
     }
 }
 
 /// Create a process not found error with PID
 pub fn process_not_found_pid(pid: u32, message: &str) -> ProcessError {
     ProcessError::ProcessNotFound {
-        pid: Some(pid),
-        name: None,
-        message: message.to_string(),
     }
 }
 
 /// Create a process not found error with name
 pub fn process_not_found_name(name: &str, message: &str) -> ProcessError {
     ProcessError::ProcessNotFound {
-        pid: None,
-        name: Some(name.to_string()),
-        message: message.to_string(),
     }
 }
 
 /// Create a permission denied error
 pub fn permission_denied(operation: &str, message: &str) -> ProcessError {
     ProcessError::PermissionDenied {
-        operation: operation.to_string(),
-        pid: None,
-        message: message.to_string(),
     }
 }
 
 /// Create a permission denied error with PID
 pub fn permission_denied_pid(operation: &str, pid: u32, message: &str) -> ProcessError {
     ProcessError::PermissionDenied {
-        operation: operation.to_string(),
-        pid: Some(pid),
-        message: message.to_string(),
     }
 }
 
 /// Create an invalid state error
 pub fn invalid_state(expected: &str, actual: &str, pid: u32) -> ProcessError {
     ProcessError::InvalidState {
-        expected: expected.to_string(),
-        actual: actual.to_string(),
-        pid,
     }
 }
 
 /// Create an execution failed error
 pub fn execution_failed(command: &str, message: &str) -> ProcessError {
     ProcessError::ExecutionFailed {
-        command: command.to_string(),
-        exit_code: None,
-        stderr: None,
-        message: message.to_string(),
     }
 }
 
 /// Create an execution failed error with exit code
 pub fn execution_failed_with_code(command: &str, exit_code: i32, message: &str) -> ProcessError {
     ProcessError::ExecutionFailed {
-        command: command.to_string(),
-        exit_code: Some(exit_code),
-        stderr: None,
-        message: message.to_string(),
     }
 }
 
 /// Create an execution failed error with stderr
 pub fn execution_failed_with_stderr(command: &str, stderr: &str, message: &str) -> ProcessError {
     ProcessError::ExecutionFailed {
-        command: command.to_string(),
-        exit_code: None,
-        stderr: Some(stderr.to_string()),
-        message: message.to_string(),
     }
 }
 
 /// Create a timeout error
 pub fn timeout_error(operation: &str, duration: Duration, message: &str) -> ProcessError {
     ProcessError::Timeout {
-        operation: operation.to_string(),
-        duration,
-        message: message.to_string(),
     }
 }
 
 /// Create an invalid arguments error
 pub fn invalid_arguments(operation: &str, argument: &str, message: &str) -> ProcessError {
     ProcessError::InvalidArguments {
-        operation: operation.to_string(),
-        argument: argument.to_string(),
-        message: message.to_string(),
     }
 }
 
 /// Create an environment error
 pub fn environment_error(operation: &str, message: &str) -> ProcessError {
     ProcessError::EnvironmentError {
-        variable: None,
-        operation: operation.to_string(),
-        message: message.to_string(),
     }
 }
 
 /// Create an environment error with variable name
 pub fn environment_error_var(variable: &str, operation: &str, message: &str) -> ProcessError {
     ProcessError::EnvironmentError {
-        variable: Some(variable.to_string()),
-        operation: operation.to_string(),
-        message: message.to_string(),
     }
 }
 
 /// Create a communication error
 pub fn communication_error(operation: &str, error_type: &str, message: &str) -> ProcessError {
     ProcessError::CommunicationError {
-        operation: operation.to_string(),
-        error_type: error_type.to_string(),
-        message: message.to_string(),
     }
 }
 
 /// Create a system error
 pub fn system_error(code: i32, operation: &str, message: &str) -> ProcessError {
     ProcessError::SystemError {
-        code,
-        operation: operation.to_string(),
-        message: message.to_string(),
     }
 }
 
 /// Create an I/O error
 pub fn io_error(operation: &str, kind: &str, message: &str) -> ProcessError {
     ProcessError::IoError {
-        operation: operation.to_string(),
-        kind: kind.to_string(),
-        message: message.to_string(),
     }
 }
 
 /// Create a signal error
 pub fn signal_error(signal: &str, operation: &str, message: &str) -> ProcessError {
     ProcessError::SignalError {
-        signal: signal.to_string(),
-        operation: operation.to_string(),
-        message: message.to_string(),
     }
 }
 
 /// Create a resource limit exceeded error
 pub fn resource_limit_exceeded(resource: &str, limit: u64, current: u64, message: &str) -> ProcessError {
     ProcessError::ResourceLimitExceeded {
-        resource: resource.to_string(),
-        limit,
-        current,
-        message: message.to_string(),
     }
 }
 
 /// Create a platform error
 pub fn platform_error(message: &str) -> ProcessError {
     ProcessError::PlatformError {
-        platform: std::env::consts::OS.to_string(),
-        feature: None,
-        message: message.to_string(),
     }
 }
 
 /// Create a platform error with feature
 pub fn platform_error_feature(feature: &str, message: &str) -> ProcessError {
     ProcessError::PlatformError {
-        platform: std::env::consts::OS.to_string(),
-        feature: Some(feature.to_string()),
-        message: message.to_string(),
     }
 }
 
 /// Create a general error
 pub fn general_error(message: &str) -> ProcessError {
     ProcessError::General {
-        message: message.to_string(),
     }
 }
 

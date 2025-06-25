@@ -17,17 +17,10 @@ pub struct Assert;
 #[derive(Debug, Clone)]
 pub struct AssertionError {
     /// CursedError message
-    pub message: String,
     /// Expected value (if applicable)
-    pub expected: Option<String>,
     /// Actual value (if applicable)
-    pub actual: Option<String>,
     /// Source location
-    pub location: SourceLocation,
     /// Additional context
-    pub context: Option<String>,
-}
-
 /// Result type for assertions
 pub type AssertionResult<T> = std::result::Result<T, AssertionError>;
 
@@ -41,15 +34,7 @@ impl Assert {
             Ok(())
         } else {
             Err(AssertionError {
-                message: format!("Expected true, but got false: {}", message),
-                expected: Some("true".to_string()),
-                actual: Some("false".to_string()),
                 location: SourceLocation {
-                    file: "unknown".to_string(),
-                    line: 0,
-                    column: 0,
-                },
-                context: None,
             })
         }
     }
@@ -61,15 +46,7 @@ impl Assert {
             Ok(())
         } else {
             Err(AssertionError {
-                message: format!("Expected false, but got true: {}", message),
-                expected: Some("false".to_string()),
-                actual: Some("true".to_string()),
                 location: SourceLocation {
-                    file: "unknown".to_string(),
-                    line: 0,
-                    column: 0,
-                },
-                context: None,
             })
         }
     }
@@ -81,15 +58,7 @@ impl Assert {
             Ok(())
         } else {
             Err(AssertionError {
-                message: format!("Values are not equal: {}", message),
-                expected: Some(format!("{:?}", expected)),
-                actual: Some(format!("{:?}", actual)),
                 location: SourceLocation {
-                    file: "unknown".to_string(),
-                    line: 0,
-                    column: 0,
-                },
-                context: None,
             })
         }
     }
@@ -101,15 +70,7 @@ impl Assert {
             Ok(())
         } else {
             Err(AssertionError {
-                message: format!("Values are equal when they should not be: {}", message),
-                expected: Some(format!("not {:?}", unexpected)),
-                actual: Some(format!("{:?}", actual)),
                 location: SourceLocation {
-                    file: "unknown".to_string(),
-                    line: 0,
-                    column: 0,
-                },
-                context: None,
             })
         }
     }
@@ -121,15 +82,7 @@ impl Assert {
             Ok(())
         } else {
             Err(AssertionError {
-                message: format!("Expected null, but got a value: {}", message),
-                expected: Some("null".to_string()),
-                actual: Some("some value".to_string()),
                 location: SourceLocation {
-                    file: "unknown".to_string(),
-                    line: 0,
-                    column: 0,
-                },
-                context: None,
             })
         }
     }
@@ -141,15 +94,7 @@ impl Assert {
             Ok(())
         } else {
             Err(AssertionError {
-                message: format!("Expected a value, but got null: {}", message),
-                expected: Some("some value".to_string()),
-                actual: Some("null".to_string()),
                 location: SourceLocation {
-                    file: "unknown".to_string(),
-                    line: 0,
-                    column: 0,
-                },
-                context: None,
             })
         }
     }
@@ -161,15 +106,7 @@ impl Assert {
             Ok(())
         } else {
             Err(AssertionError {
-                message: format!("String does not contain expected substring: {}", message),
-                expected: Some(format!("string containing '{}'", needle)),
-                actual: Some(format!("'{}'", haystack)),
                 location: SourceLocation {
-                    file: "unknown".to_string(),
-                    line: 0,
-                    column: 0,
-                },
-                context: None,
             })
         }
     }
@@ -181,15 +118,7 @@ impl Assert {
             Ok(())
         } else {
             Err(AssertionError {
-                message: format!("String contains unexpected substring: {}", message),
-                expected: Some(format!("string not containing '{}'", needle)),
-                actual: Some(format!("'{}'", haystack)),
                 location: SourceLocation {
-                    file: "unknown".to_string(),
-                    line: 0,
-                    column: 0,
-                },
-                context: None,
             })
         }
     }
@@ -201,15 +130,7 @@ impl Assert {
             Ok(())
         } else {
             Err(AssertionError {
-                message: format!("String does not start with expected prefix: {}", message),
-                expected: Some(format!("string starting with '{}'", prefix)),
-                actual: Some(format!("'{}'", text)),
                 location: SourceLocation {
-                    file: "unknown".to_string(),
-                    line: 0,
-                    column: 0,
-                },
-                context: None,
             })
         }
     }
@@ -221,15 +142,7 @@ impl Assert {
             Ok(())
         } else {
             Err(AssertionError {
-                message: format!("String does not end with expected suffix: {}", message),
-                expected: Some(format!("string ending with '{}'", suffix)),
-                actual: Some(format!("'{}'", text)),
                 location: SourceLocation {
-                    file: "unknown".to_string(),
-                    line: 0,
-                    column: 0,
-                },
-                context: None,
             })
         }
     }
@@ -241,15 +154,7 @@ impl Assert {
             Ok(())
         } else {
             Err(AssertionError {
-                message: format!("Expected empty collection, but got {} items: {}", collection.len(), message),
-                expected: Some("empty collection".to_string()),
-                actual: Some(format!("collection with {} items", collection.len())),
                 location: SourceLocation {
-                    file: "unknown".to_string(),
-                    line: 0,
-                    column: 0,
-                },
-                context: None,
             })
         }
     }
@@ -261,15 +166,7 @@ impl Assert {
             Ok(())
         } else {
             Err(AssertionError {
-                message: format!("Expected non-empty collection: {}", message),
-                expected: Some("non-empty collection".to_string()),
-                actual: Some("empty collection".to_string()),
                 location: SourceLocation {
-                    file: "unknown".to_string(),
-                    line: 0,
-                    column: 0,
-                },
-                context: None,
             })
         }
     }
@@ -282,15 +179,7 @@ impl Assert {
             Ok(())
         } else {
             Err(AssertionError {
-                message: format!("Collection length mismatch: {}", message),
-                expected: Some(format!("length {}", expected_length)),
-                actual: Some(format!("length {}", actual_length)),
                 location: SourceLocation {
-                    file: "unknown".to_string(),
-                    line: 0,
-                    column: 0,
-                },
-                context: None,
             })
         }
     }
@@ -303,15 +192,7 @@ impl Assert {
             Ok(())
         } else {
             Err(AssertionError {
-                message: format!("Floating point numbers are not approximately equal: {}", message),
-                expected: Some(format!("{} (±{})", expected, epsilon)),
-                actual: Some(format!("{} (diff: {})", actual, diff)),
                 location: SourceLocation {
-                    file: "unknown".to_string(),
-                    line: 0,
-                    column: 0,
-                },
-                context: Some(format!("Difference {} exceeds epsilon {}", diff, epsilon)),
             })
         }
     }
@@ -323,15 +204,7 @@ impl Assert {
             Ok(())
         } else {
             Err(AssertionError {
-                message: format!("Value is not in expected range: {}", message),
-                expected: Some(format!("value between {:?} and {:?}", min, max)),
-                actual: Some(format!("{:?}", value)),
                 location: SourceLocation {
-                    file: "unknown".to_string(),
-                    line: 0,
-                    column: 0,
-                },
-                context: None,
             })
         }
     }
@@ -343,15 +216,7 @@ impl Assert {
             Ok(())
         } else {
             Err(AssertionError {
-                message: format!("Collection does not contain expected item: {}", message),
-                expected: Some(format!("collection containing {:?}", item)),
-                actual: Some(format!("collection: {:?}", collection)),
                 location: SourceLocation {
-                    file: "unknown".to_string(),
-                    line: 0,
-                    column: 0,
-                },
-                context: None,
             })
         }
     }
@@ -365,20 +230,10 @@ impl Assert {
             }
             Err(error) => {
                 Err(AssertionError {
-                    message: format!("Expected Ok result, but got Err: {}", message),
-                    expected: Some("Ok(_)".to_string()),
-                    actual: Some(format!("Err({:?})", error)),
                     location: SourceLocation {
-                        file: "unknown".to_string(),
-                        line: 0,
-                        column: 0,
-                    },
-                    context: None,
                 })
             }
         }
-    }
-
     /// Assert that a result is Err
     pub fn assert_err<T: Debug, E>(result: Result<T, E>, message: &str) -> AssertionResult<E> {
         match result {
@@ -388,20 +243,10 @@ impl Assert {
             }
             Ok(value) => {
                 Err(AssertionError {
-                    message: format!("Expected Err result, but got Ok: {}", message),
-                    expected: Some("Err(_)".to_string()),
-                    actual: Some(format!("Ok({:?})", value)),
                     location: SourceLocation {
-                        file: "unknown".to_string(),
-                        line: 0,
-                        column: 0,
-                    },
-                    context: None,
                 })
             }
         }
-    }
-
     /// Assert that code panics
     pub fn assert_panics<F: FnOnce() + std::panic::UnwindSafe>(f: F, message: &str) -> AssertionResult {
         let result = std::panic::catch_unwind(f);
@@ -410,15 +255,7 @@ impl Assert {
             Ok(())
         } else {
             Err(AssertionError {
-                message: format!("Expected code to panic, but it completed normally: {}", message),
-                expected: Some("panic".to_string()),
-                actual: Some("normal completion".to_string()),
                 location: SourceLocation {
-                    file: "unknown".to_string(),
-                    line: 0,
-                    column: 0,
-                },
-                context: None,
             })
         }
     }
@@ -426,28 +263,16 @@ impl Assert {
     /// Custom assertion with user-defined predicate
     pub fn assert_that<T, F>(value: T, predicate: F, message: &str) -> AssertionResult 
     where
-        F: FnOnce(&T) -> bool,
-        T: Debug,
     {
         if predicate(&value) {
             debug!("Assertion passed: {} - custom predicate satisfied", message);
             Ok(())
         } else {
             Err(AssertionError {
-                message: format!("Custom assertion failed: {}", message),
-                expected: Some("predicate to return true".to_string()),
-                actual: Some(format!("predicate returned false for value: {:?}", value)),
                 location: SourceLocation {
-                    file: "unknown".to_string(),
-                    line: 0,
-                    column: 0,
-                },
-                context: None,
             })
         }
     }
-}
-
 /// Macro helper for creating assertions with file/line information
 #[macro_export]
 macro_rules! assert_eq_loc {
@@ -464,9 +289,6 @@ macro_rules! assert_eq_loc {
                 Ok(())
             }
         }
-    };
-}
-
 /// Macro helper for creating true assertions with file/line information
 #[macro_export]
 macro_rules! assert_true_loc {
@@ -483,21 +305,12 @@ macro_rules! assert_true_loc {
                 Ok(())
             }
         }
-    };
-}
-
 /// Assertion builder for fluent interface
 pub struct AssertionBuilder<T> {
-    value: T,
-    context: Option<String>,
-}
-
 impl<T> AssertionBuilder<T> {
     /// Create new assertion builder
     pub fn new(value: T) -> Self {
         Self {
-            value,
-            context: None,
         }
     }
 
@@ -505,8 +318,6 @@ impl<T> AssertionBuilder<T> {
     pub fn with_context(mut self, context: String) -> Self {
         self.context = Some(context);
         self
-    }
-
     /// Get the wrapped value
     pub fn value(&self) -> &T {
         &self.value
@@ -518,8 +329,6 @@ impl<T: PartialEq + Debug> AssertionBuilder<T> {
     pub fn equals(self, expected: T) -> AssertionResult {
         let message = self.context.as_deref().unwrap_or("assertion failed");
         Assert::assert_equal(expected, self.value, message)
-    }
-
     /// Assert not equals using builder pattern
     pub fn not_equals(self, unexpected: T) -> AssertionResult {
         let message = self.context.as_deref().unwrap_or("assertion failed");
@@ -532,17 +341,8 @@ impl<T> AssertionBuilder<Option<T>> {
     pub fn is_some(self) -> AssertionResult<T> {
         let message = self.context.as_deref().unwrap_or("assertion failed");
         match self.value {
-            Some(value) => Ok(value),
             None => Err(AssertionError {
-                message: format!("Expected Some, but got None: {}", message),
-                expected: Some("Some(_)".to_string()),
-                actual: Some("None".to_string()),
                 location: SourceLocation {
-                    file: "unknown".to_string(),
-                    line: 0,
-                    column: 0,
-                },
-                context: self.context,
             })
         }
     }
@@ -557,5 +357,3 @@ impl<T> AssertionBuilder<Option<T>> {
 /// Create assertion builder
 pub fn assert_that<T>(value: T) -> AssertionBuilder<T> {
     AssertionBuilder::new(value)
-}
-

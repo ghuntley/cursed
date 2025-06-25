@@ -17,72 +17,45 @@ use crate::type_system::constraint_resolver::ConstraintResolver;
 #[derive(Debug, Clone, PartialEq)]
 pub struct AssociatedType {
     /// Name of the associated type
-    pub name: String,
     /// Optional constraints on the associated type
-    pub constraints: Vec<GenericConstraint>,
     /// Default type if provided
-    pub default_type: Option<Type>,
     /// Documentation for the associated type
-    pub documentation: Option<String>,
-}
-
 /// Represents an associated type projection (e.g., Iterator::Item)
 #[derive(Debug, Clone, PartialEq, Hash, Eq)]
 pub struct AssociatedTypeProjection {
     /// The base type that implements the interface
-    pub base_type: Type,
     /// The interface name containing the associated type
-    pub interface_name: String,
     /// The associated type name
-    pub associated_type_name: String,
-}
-
 /// Registry for managing associated type definitions and projections
 #[derive(Debug)]
 pub struct AssociatedTypeRegistry {
     /// Map from interface name to its associated types
-    interface_associated_types: RwLock<HashMap<String, Vec<AssociatedType>>>,
     /// Cache of resolved projections
-    projection_cache: RwLock<HashMap<AssociatedTypeProjection, Type>>,
     /// Constraint resolver for validation
-    constraint_resolver: Arc<ConstraintResolver>,
-}
-
 impl AssociatedTypeRegistry {
     /// Create a new associated type registry
     #[instrument]
     pub fn new(constraint_resolver: Arc<ConstraintResolver>) -> Self {
         debug!("Creating new AssociatedTypeRegistry");
         Self {
-            interface_associated_types: RwLock::new(HashMap::new()),
-            projection_cache: RwLock::new(HashMap::new()),
-            constraint_resolver,
         }
     }
 
     /// Register associated types for an interface
     #[instrument(skip(self))]
     pub fn register_interface_associated_types(
-        &self,
-        interface_name: &str,
-        associated_types: Vec<AssociatedType>,
     ) -> crate::error::Result<()> {
-        debug!("Registering {} associated types for interface {}", 
                associated_types.len(), interface_name);
 
         // Validate each associated type
         for assoc_type in &associated_types {
             self.validate_associated_type(assoc_type)?;
-        }
-
         let mut registry = self.interface_associated_types.write()
             .map_err(|_| CursedError::system_error("Failed to acquire write lock"))?;
         
         registry.insert(interface_name.to_string(), associated_types);
         info!("Successfully registered associated types for interface {}", interface_name);
         Ok(())
-    }
-
     /// Get associated types for an interface
     #[instrument(skip(self))]
     pub fn get_interface_associated_types(&self, interface_name: &str) -> crate::error::Result<()> {
@@ -90,8 +63,6 @@ impl AssociatedTypeRegistry {
             .map_err(|_| CursedError::system_error("Failed to acquire read lock"))?;
         
         Ok(registry.get(interface_name).cloned().unwrap_or_default())
-    }
-
     /// Resolve an associated type projection
     #[instrument(skip(self))]
     pub fn resolve_projection(&self, projection: &AssociatedTypeProjection) -> crate::error::Result<()> {
@@ -100,7 +71,6 @@ impl AssociatedTypeRegistry {
             let cache = self.projection_cache.read()
                 .map_err(|_| CursedError::system_error("Failed to acquire read lock"))?;
             if let Some(resolved_type) = cache.get(projection) {
-                debug!("Found cached projection for {}.{}", 
                        projection.interface_name, projection.associated_type_name);
                 return Ok(resolved_type.clone());
             }
@@ -114,13 +84,8 @@ impl AssociatedTypeRegistry {
             let mut cache = self.projection_cache.write()
                 .map_err(|_| CursedError::system_error("Failed to acquire write lock"))?;
             cache.insert(projection.clone(), resolved_type.clone());
-        }
-
-        info!("Resolved projection {}.{} to {:?}", 
               projection.interface_name, projection.associated_type_name, resolved_type);
         Ok(resolved_type)
-    }
-
     /// Internal implementation for resolving projections
     #[instrument(skip(self))]
     fn resolve_projection_impl(&self, projection: &AssociatedTypeProjection) -> crate::error::Result<()> {
@@ -129,7 +94,6 @@ impl AssociatedTypeRegistry {
         let assoc_type = associated_types.iter()
             .find(|at| at.name == projection.associated_type_name)
             .ok_or_else(|| CursedError::type_error(format!(
-                "Associated type {} not found in interface {}",
                 projection.associated_type_name, projection.interface_name
             )))?;
 
@@ -139,9 +103,6 @@ impl AssociatedTypeRegistry {
         } else {
             // Create a projection type that will be resolved later
             Ok(Type::AssociatedTypeProjection {
-                base_type: Box::new(projection.base_type.clone()),
-                interface_name: projection.interface_name.clone(),
-                associated_type_name: projection.associated_type_name.clone(),
             })
         }
     }
@@ -152,21 +113,13 @@ impl AssociatedTypeRegistry {
         // Validate name
         if assoc_type.name.is_empty() {
             return Err(CursedError::type_error("Associated type name cannot be empty".to_string()));
-        }
-
         // Validate constraints
         for constraint in &assoc_type.constraints {
             self.validate_constraint(constraint)?;
-        }
-
         // Validate default type if present
         if let Some(default_type) = &assoc_type.default_type {
             self.validate_default_type(assoc_type, default_type)?;
-        }
-
         Ok(())
-    }
-
     /// Validate a constraint on an associated type
     #[instrument(skip(self))]
     fn validate_constraint(&self, constraint: &GenericConstraint) -> crate::error::Result<()> {
@@ -177,17 +130,11 @@ impl AssociatedTypeRegistry {
         // Validate that constraint name is not empty
         if constraint.constraint_name.is_empty() {
             return Err(CursedError::type_error("Constraint name cannot be empty".to_string()));
-        }
-        
         // Validate that type parameters are not empty
         if constraint.type_parameters.is_empty() {
             return Err(CursedError::type_error("Constraint must have at least one type parameter".to_string()));
-        }
-        
         debug!("Successfully validated constraint: {}", constraint.constraint_name);
         Ok(())
-    }
-
     /// Validate that a default type satisfies the associated type's constraints
     #[instrument(skip(self))]
     fn validate_default_type(&self, assoc_type: &AssociatedType, default_type: &Type) -> crate::error::Result<()> {
@@ -196,14 +143,11 @@ impl AssociatedTypeRegistry {
             // Verify that the default type implements the required constraint
             if !self.type_implements_interface(default_type, &constraint.constraint_name)? {
                 return Err(CursedError::type_error(format!(
-                    "Default type {:?} does not implement required constraint {}",
                     default_type, constraint.constraint_name
                 )));
             }
         }
         Ok(())
-    }
-
     /// Check if a type implements an interface (proper implementation)
     #[instrument(skip(self))]
     fn type_implements_interface(&self, type_ref: &Type, interface_name: &str) -> crate::error::Result<()> {
@@ -238,11 +182,6 @@ impl AssociatedTypeRegistry {
             Type::Primitive(primitive_name) => {
                 // Primitive types implement certain interfaces
                 match (primitive_name.as_str(), interface_name) {
-                    ("normie" | "facts" | "tea" | "based", "Clone") => Ok(true),
-                    ("normie" | "facts" | "tea" | "based", "Debug") => Ok(true),
-                    ("normie" | "facts", "PartialEq") => Ok(true),
-                    ("normie" | "facts", "Eq") => Ok(true),
-                    ("tea", "Display") => Ok(true),
                     _ => Ok(false)
                 }
             }
@@ -273,7 +212,6 @@ impl AssociatedTypeRegistry {
                 // Channel implements interface based on element type
                 match interface_name {
                     "Clone" => Ok(false), // Channels are not cloneable
-                    "Debug" => self.type_implements_interface(element_type, interface_name),
                     _ => Ok(false)
                 }
             }
@@ -293,15 +231,12 @@ impl AssociatedTypeRegistry {
             Type::Integer | Type::String | Type::Boolean | Type::Float | Type::Character => {
                 // Built-in types have known interface implementations
                 match interface_name {
-                    "Clone" | "Debug" | "PartialEq" | "Eq" => Ok(true),
-                    "Display" => Ok(true),
                     _ => Ok(false)
                 }
             }
             Type::Nil => {
                 // Nil type implements limited interfaces
                 match interface_name {
-                    "Clone" | "Debug" | "PartialEq" | "Eq" => Ok(true),
                     _ => Ok(false)
                 }
             }
@@ -353,8 +288,6 @@ impl AssociatedTypeRegistry {
             .collect();
 
         Ok(projections)
-    }
-
     /// Clear the projection cache
     #[instrument(skip(self))]
     pub fn clear_cache(&self) -> crate::error::Result<()> {
@@ -363,8 +296,6 @@ impl AssociatedTypeRegistry {
         cache.clear();
         debug!("Cleared associated type projection cache");
         Ok(())
-    }
-
     /// Get statistics about the registry
     #[instrument(skip(self))]
     pub fn get_statistics(&self) -> crate::error::Result<()> {
@@ -378,9 +309,6 @@ impl AssociatedTypeRegistry {
             .sum();
 
         Ok(AssociatedTypeStatistics {
-            total_interfaces: interface_registry.len(),
-            total_associated_types,
-            cached_projections: projection_cache.len(),
         })
     }
 }
@@ -388,11 +316,6 @@ impl AssociatedTypeRegistry {
 /// Statistics about the associated type registry
 #[derive(Debug, Clone)]
 pub struct AssociatedTypeStatistics {
-    pub total_interfaces: usize,
-    pub total_associated_types: usize,
-    pub cached_projections: usize,
-}
-
 /// Trait for working with associated types in the type system
 pub trait AssociatedTypeHandler {
     /// Create an associated type projection
@@ -403,15 +326,10 @@ pub trait AssociatedTypeHandler {
     
     /// Check if a type has associated types
     fn has_associated_types(&self, interface_name: &str) -> bool;
-}
-
 impl AssociatedTypeHandler for AssociatedTypeRegistry {
     #[instrument(skip(self))]
     fn create_projection(&self, base_type: Type, interface_name: String, associated_type_name: String) -> AssociatedTypeProjection {
         AssociatedTypeProjection {
-            base_type,
-            interface_name,
-            associated_type_name,
         }
     }
 
@@ -422,8 +340,6 @@ impl AssociatedTypeHandler for AssociatedTypeRegistry {
             results.push(self.resolve_projection(projection)?);
         }
         Ok(results)
-    }
-
     #[instrument(skip(self))]
     fn has_associated_types(&self, interface_name: &str) -> bool {
         if let Ok(registry) = self.interface_associated_types.read() {
@@ -432,8 +348,6 @@ impl AssociatedTypeHandler for AssociatedTypeRegistry {
             false
         }
     }
-}
-
 /// Helper functions for working with associated types
 pub mod utils {
     use super::*;
@@ -441,34 +355,15 @@ pub mod utils {
     /// Create a standard Iterator interface with Item associated type
     pub fn create_iterator_interface() -> (String, Vec<AssociatedType>) {
         let item_type = AssociatedType {
-            name: "Item".to_string(),
-            constraints: vec![],
-            default_type: None,
-            documentation: Some("The type of items yielded by the iterator".to_string()),
-        };
 
         ("Iterator".to_string(), vec![item_type])
-    }
-
     /// Create a standard Collection interface with Item and Index associated types
     pub fn create_collection_interface() -> (String, Vec<AssociatedType>) {
         let item_type = AssociatedType {
-            name: "Item".to_string(),
-            constraints: vec![],
-            default_type: None,
-            documentation: Some("The type of items stored in the collection".to_string()),
-        };
 
         let index_type = AssociatedType {
-            name: "Index".to_string(),
-            constraints: vec![],
-            default_type: Some(Type::Integer),
-            documentation: Some("The type used for indexing into the collection".to_string()),
-        };
 
         ("Collection".to_string(), vec![item_type, index_type])
-    }
-
     /// Extract associated type name from a projection string (e.g., "Iterator::Item" -> "Item")
     pub fn extract_associated_type_name(projection_str: &str) -> Option<(&str, &str)> {
         projection_str.split_once("::")

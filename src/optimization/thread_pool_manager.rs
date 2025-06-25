@@ -14,29 +14,15 @@ use tracing::{debug, info, instrument, warn, error};
 #[derive(Debug, Clone)]
 pub struct ThreadPoolConfig {
     /// Number of worker threads
-    pub num_threads: usize,
     /// Maximum queue size per worker
-    pub max_queue_size: usize,
     /// Thread idle timeout before termination
-    pub idle_timeout: Duration,
     /// Enable work stealing between workers
-    pub enable_work_stealing: bool,
     /// Priority queue enabled
-    pub enable_priority_queue: bool,
-}
-
 impl Default for ThreadPoolConfig {
     fn default() -> Self {
         Self {
-            num_threads: num_cpus::get(),
-            max_queue_size: 1000,
-            idle_timeout: Duration::from_secs(60),
-            enable_work_stealing: true,
-            enable_priority_queue: false,
         }
     }
-}
-
 /// Task to be executed by the thread pool
 pub trait Task: Send {
     /// Execute the task
@@ -50,17 +36,9 @@ pub trait Task: Send {
 /// Work-stealing task queue
 #[derive(Debug)]
 struct TaskQueue {
-    tasks: VecDeque<Box<dyn Task>>,
-    priority_tasks: VecDeque<Box<dyn Task>>,
-    config: ThreadPoolConfig,
-}
-
 impl TaskQueue {
     fn new(config: ThreadPoolConfig) -> Self {
         Self {
-            tasks: VecDeque::new(),
-            priority_tasks: VecDeque::new(),
-            config,
         }
     }
 
@@ -77,8 +55,6 @@ impl TaskQueue {
             self.tasks.push_back(task);
         }
         Ok(())
-    }
-
     fn pop_task(&mut self) -> Option<Box<dyn Task>> {
         // Priority tasks first
         if let Some(task) = self.priority_tasks.pop_front() {
@@ -86,13 +62,9 @@ impl TaskQueue {
         }
         // Then regular tasks
         self.tasks.pop_front()
-    }
-
     fn steal_task(&mut self) -> Option<Box<dyn Task>> {
         // Steal from the back for better cache locality
         self.tasks.pop_back().or_else(|| self.priority_tasks.pop_back())
-    }
-
     fn len(&self) -> usize {
         self.tasks.len() + self.priority_tasks.len()
     }
@@ -101,40 +73,18 @@ impl TaskQueue {
 /// Worker thread state
 #[derive(Debug)]
 struct Worker {
-    id: usize,
-    thread: Option<JoinHandle<()>>,
-    active: Arc<AtomicBool>,
-}
-
 /// Thread pool manager for parallel optimization tasks
 #[derive(Debug)]
 pub struct ThreadPoolManager {
-    config: ThreadPoolConfig,
-    workers: Vec<Worker>,
-    task_queues: Arc<Mutex<Vec<Arc<Mutex<TaskQueue>>>>>,
-    shutdown: Arc<AtomicBool>,
-    pending_tasks: Arc<AtomicUsize>,
-    task_condvar: Arc<Condvar>,
-    statistics: Arc<Mutex<ThreadPoolStatistics>>,
-}
-
 /// Statistics for thread pool performance
 #[derive(Debug, Default)]
 pub struct ThreadPoolStatistics {
     /// Total tasks executed
-    pub tasks_executed: u64,
     /// Total tasks failed
-    pub tasks_failed: u64,
     /// Average task execution time
-    pub avg_execution_time: Duration,
     /// Work stealing operations
-    pub work_steals: u64,
     /// Queue utilization (0.0 to 1.0)
-    pub queue_utilization: f64,
     /// Active worker count
-    pub active_workers: usize,
-}
-
 impl ThreadPoolManager {
     /// Create a new thread pool manager
     #[instrument]
@@ -172,42 +122,18 @@ impl ThreadPoolManager {
                 .name(format!("optimization-worker-{}", worker_id))
                 .spawn(move || {
                     Self::worker_loop(
-                        worker_id,
-                        worker_shutdown,
-                        worker_queues,
-                        worker_pending,
-                        worker_condvar,
-                        worker_config,
-                        worker_stats,
-                        worker_active,
                     );
                 })?;
 
             workers.push(Worker {
-                id: worker_id,
-                thread: Some(thread),
-                active,
             });
-        }
-
         Ok(Self {
-            config,
-            workers,
-            task_queues,
-            shutdown,
-            pending_tasks,
-            task_condvar,
-            statistics,
         })
-    }
-
     /// Submit a task for execution
     #[instrument(skip(self, task))]
     pub fn submit_task(&self, task: Box<dyn Task>) -> Result<()> {
         if self.shutdown.load(Ordering::Relaxed) {
             return Err(CursedError::General("Thread pool is shutting down".to_string()));
-        }
-
         // Find the least loaded queue
         let queues = self.task_queues.lock().unwrap();
         let mut min_queue_idx = 0;
@@ -230,8 +156,6 @@ impl ThreadPoolManager {
 
         debug!("Task submitted to worker {}", min_queue_idx);
         Ok(())
-    }
-
     /// Wait for all pending tasks to complete
     #[instrument]
     pub fn wait_for_completion(&self) -> Result<()> {
@@ -240,8 +164,6 @@ impl ThreadPoolManager {
         }
         info!("All tasks completed");
         Ok(())
-    }
-
     /// Get current statistics
     pub fn get_statistics(&self) -> ThreadPoolStatistics {
         let stats = self.statistics.lock().unwrap();
@@ -261,8 +183,6 @@ impl ThreadPoolManager {
         result.queue_utilization = total_tasks as f64 / total_capacity as f64;
 
         result
-    }
-
     /// Shutdown the thread pool
     #[instrument]
     pub fn shutdown(&mut self) -> Result<()> {
@@ -280,18 +200,8 @@ impl ThreadPoolManager {
 
         info!("Thread pool shutdown complete");
         Ok(())
-    }
-
     /// Worker thread main loop
     fn worker_loop(
-        worker_id: usize,
-        shutdown: Arc<AtomicBool>,
-        task_queues: Arc<Mutex<Vec<Arc<Mutex<TaskQueue>>>>>,
-        pending_tasks: Arc<AtomicUsize>,
-        task_condvar: Arc<Condvar>,
-        config: ThreadPoolConfig,
-        statistics: Arc<Mutex<ThreadPoolStatistics>>,
-        active: Arc<AtomicBool>,
     ) {
         debug!("Worker {} started", worker_id);
         
@@ -312,7 +222,6 @@ impl ThreadPoolManager {
                 } else {
                     None
                 }
-            };
 
             if let Some(task) = task {
                 active.store(true, Ordering::Relaxed);
@@ -335,8 +244,6 @@ impl ThreadPoolManager {
                     error!("Task {} failed: {:?}", task_name, result);
                 } else {
                     debug!("Task {} completed in {:?}", task_name, execution_time);
-                }
-                
                 // Update average execution time
                 stats.avg_execution_time = Duration::from_nanos(
                     ((stats.avg_execution_time.as_nanos() as u64 * (stats.tasks_executed - 1)) +
@@ -349,7 +256,6 @@ impl ThreadPoolManager {
                 
                 // No task available, wait for notification or timeout
                 let _unused = task_condvar.wait_timeout(
-                    task_queues.lock().unwrap(),
                     Duration::from_millis(100)
                 );
                 
@@ -359,16 +265,9 @@ impl ThreadPoolManager {
                     break;
                 }
             }
-        }
-        
         debug!("Worker {} stopped", worker_id);
-    }
-
     /// Try to steal a task from other workers
     fn try_steal_task(
-        queues: &[Arc<Mutex<TaskQueue>>],
-        worker_id: usize,
-        statistics: &Arc<Mutex<ThreadPoolStatistics>>,
     ) -> Option<Box<dyn Task>> {
         // Try to steal from each other queue
         for (i, queue) in queues.iter().enumerate() {
@@ -395,44 +294,25 @@ impl Drop for ThreadPoolManager {
 
 // Simple task implementation for testing
 pub struct SimpleTask {
-    name: String,
-    function: Box<dyn FnOnce() -> Result<()> + Send>,
-    priority: i32,
-}
-
 impl SimpleTask {
     pub fn new<F>(name: String, function: F) -> Self 
     where
-        F: FnOnce() -> Result<()> + Send + 'static,
     {
         Self {
-            name,
-            function: Box::new(function),
-            priority: 0,
         }
     }
 
     pub fn with_priority<F>(name: String, function: F, priority: i32) -> Self 
     where
-        F: FnOnce() -> Result<()> + Send + 'static,
     {
         Self {
-            name,
-            function: Box::new(function),
-            priority,
         }
     }
-}
-
 impl Task for SimpleTask {
     fn execute(self: Box<Self>) -> Result<()> {
         (self.function)()
-    }
-
     fn priority(&self) -> i32 {
         self.priority
-    }
-
     fn name(&self) -> &str {
         &self.name
     }

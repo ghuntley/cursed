@@ -14,8 +14,6 @@ pub trait Model: Send + Sync + 'static {
     /// facts Get the primary key column name
     fn primary_key() -> &'static str where Self: Sized {
         "id"
-    }
-    
     /// lowkey Get column definitions for this model
     fn columns() -> Vec<ColumnDefinition> where Self: Sized;
     
@@ -31,24 +29,14 @@ pub trait Model: Send + Sync + 'static {
     /// flex Check if this is a new record (not yet saved)
     fn is_new(&self) -> bool {
         self.primary_key_value().is_none()
-    }
-    
     /// yolo Validate the model before saving
     fn validate(&self) -> SqlResult<()> {
         Ok(()) // Default implementation does no validation
-    }
-    
     /// slay Get model metadata
     fn model_metadata() -> ModelMetadata where Self: Sized {
         ModelMetadata {
-            table_name: Self::table_name().to_string(),
-            primary_key: Self::primary_key().to_string(),
-            columns: Self::columns(),
-            relationships: Vec::new(),
         }
     }
-}
-
 /// fr fr CRUD operations trait - create, read, update, delete vibes
 pub trait CrudOperations<T: Model> {
     /// sus Create a new record
@@ -83,31 +71,21 @@ pub trait CrudOperations<T: Model> {
     
     /// vibes Count records matching conditions
     fn count_where(&mut self, conditions: &[(&str, SqlValue)]) -> SqlResult<u64>;
-}
-
 /// fr fr Repository pattern implementation - data access layer bestie
 pub struct Repository<T: Model> {
     /// Database connection
-    connection: Box<dyn DatabaseConnection>,
     
     /// Model type marker
-    _phantom: std::marker::PhantomData<T>,
-}
-
 impl<T: Model> Repository<T> {
     /// sus Create new repository with database connection
     pub fn new(connection: Box<dyn DatabaseConnection>) -> Self {
         Self {
-            connection,
-            _phantom: std::marker::PhantomData,
         }
     }
     
     /// facts Create query builder for SELECT operations
     pub fn query(&self) -> ModelQueryBuilder<T> {
         ModelQueryBuilder::new()
-    }
-    
     /// lowkey Get the connection for custom queries
     pub fn connection(&mut self) -> &mut dyn DatabaseConnection {
         self.connection.as_mut()
@@ -123,8 +101,6 @@ impl<T: Model> CrudOperations<T> for Repository<T> {
         
         if values.is_empty() {
             return Err(SqlError::query("Cannot create record with no values - that's sus af".to_string()));
-        }
-        
         // Build INSERT query
         let columns: Vec<&str> = values.keys().map(|k| k.as_str()).collect();
         let values_vec: Vec<SqlValue> = values.values().cloned().collect();
@@ -141,8 +117,6 @@ impl<T: Model> CrudOperations<T> for Repository<T> {
         
         if result == 0 {
             return Err(SqlError::query("Failed to create record - no rows affected periodt".to_string()));
-        }
-        
         // For auto-increment primary keys, we might need to fetch the created record
         if model.is_new() {
             // Try to get the last inserted ID and fetch the record
@@ -152,12 +126,8 @@ impl<T: Model> CrudOperations<T> for Repository<T> {
                     return Ok(created_model);
                 }
             }
-        }
-        
         // If we can't get the created record, return the original with updates
         self.find_by_values(&values)
-    }
-    
     fn find(&mut self, id: SqlValue) -> SqlResult<Option<T>> {
         let table_name = T::table_name();
         let primary_key = T::primary_key();
@@ -194,19 +164,13 @@ impl<T: Model> CrudOperations<T> for Repository<T> {
         let mut models = Vec::new();
         for row in result_set.iter() {
             models.push(T::from_row(row)?);
-        }
-        
         Ok(models)
-    }
-    
     fn find_where(&mut self, conditions: &[(&str, SqlValue)]) -> SqlResult<Vec<T>> {
         let table_name = T::table_name();
         let mut builder = SelectBuilder::new(&["*"]).from(table_name);
         
         for (column, value) in conditions {
             builder = builder.where_eq(column, value.clone());
-        }
-        
         let query = builder.build()?;
         let params = builder.parameters();
         
@@ -215,18 +179,12 @@ impl<T: Model> CrudOperations<T> for Repository<T> {
         let mut models = Vec::new();
         for row in result_set.iter() {
             models.push(T::from_row(row)?);
-        }
-        
         Ok(models)
-    }
-    
     fn update(&mut self, model: &T) -> SqlResult<T> {
         model.validate()?;
         
         if model.is_new() {
             return Err(SqlError::query("Cannot update a new record - use create() or save() instead bestie".to_string()));
-        }
-        
         let table_name = T::table_name();
         let primary_key = T::primary_key();
         let primary_key_value = model.primary_key_value()
@@ -236,8 +194,6 @@ impl<T: Model> CrudOperations<T> for Repository<T> {
         
         if values.is_empty() {
             return Err(SqlError::query("Cannot update record with no values - nothing to update bestie".to_string()));
-        }
-        
         // Build UPDATE query
         let mut builder = UpdateBuilder::new(table_name);
         
@@ -257,15 +213,10 @@ impl<T: Model> CrudOperations<T> for Repository<T> {
         
         if result == 0 {
             return Err(SqlError::query("No rows updated - record might not exist or no changes made periodt".to_string()));
-        }
-        
         // Return the updated model (assuming it's still valid)
         Ok(T::from_row(&Row::new(
-            values.keys().cloned().collect(),
             values.values().cloned().collect()
         ))?)
-    }
-    
     fn save(&mut self, model: &T) -> SqlResult<T> {
         if model.is_new() {
             self.create(model)
@@ -296,22 +247,16 @@ impl<T: Model> CrudOperations<T> for Repository<T> {
         
         let result = self.connection.execute_statement(&query, &params)?;
         Ok(result > 0)
-    }
-    
     fn delete_where(&mut self, conditions: &[(&str, SqlValue)]) -> SqlResult<u64> {
         let table_name = T::table_name();
         let mut builder = DeleteBuilder::new(table_name);
         
         for (column, value) in conditions {
             builder = builder.where_eq(column, value.clone());
-        }
-        
         let query = builder.build()?;
         let params = builder.parameters();
         
         self.connection.execute_statement(&query, &params)
-    }
-    
     fn count(&mut self) -> SqlResult<u64> {
         let table_name = T::table_name();
         
@@ -340,8 +285,6 @@ impl<T: Model> CrudOperations<T> for Repository<T> {
         
         for (column, value) in conditions {
             builder = builder.where_eq(column, value.clone());
-        }
-        
         let query = builder.build()?;
         let params = builder.parameters();
         
@@ -359,8 +302,6 @@ impl<T: Model> CrudOperations<T> for Repository<T> {
             Ok(0)
         }
     }
-}
-
 impl<T: Model> Repository<T> {
     /// Internal: Get last inserted ID
     fn get_last_insert_id(&mut self) -> SqlResult<Option<i64>> {
@@ -370,8 +311,6 @@ impl<T: Model> Repository<T> {
         // MySQL: SELECT LAST_INSERT_ID()
         // For now, return None
         Ok(None)
-    }
-    
     /// Internal: Find record by values
     fn find_by_values(&mut self, values: &HashMap<String, SqlValue>) -> SqlResult<T> {
         let conditions: Vec<(&str, SqlValue)> = values.iter()
@@ -388,23 +327,15 @@ impl<T: Model> Repository<T> {
             Err(SqlError::query("Multiple records found with same values - that's sus af".to_string()))
         }
     }
-}
-
 /// fr fr Model query builder - fluent interface for complex queries
 pub struct ModelQueryBuilder<T: Model> {
     /// Internal select builder
-    builder: SelectBuilder,
     
     /// Model type marker
-    _phantom: std::marker::PhantomData<T>,
-}
-
 impl<T: Model> ModelQueryBuilder<T> {
     /// sus Create new model query builder
     pub fn new() -> Self {
         Self {
-            builder: SelectBuilder::new(&["*"]).from(T::table_name()),
-            _phantom: std::marker::PhantomData,
         }
     }
     
@@ -412,38 +343,26 @@ impl<T: Model> ModelQueryBuilder<T> {
     pub fn where_eq(mut self, column: &str, value: SqlValue) -> Self {
         self.builder = self.builder.where_eq(column, value);
         self
-    }
-    
     /// lowkey Add custom WHERE expression
     pub fn where_expr(mut self, expression: &str) -> Self {
         self.builder = self.builder.where_expr(expression);
         self
-    }
-    
     /// highkey Add OR WHERE condition
     pub fn or_where(mut self, expression: &str) -> Self {
         self.builder = self.builder.or_where(expression);
         self
-    }
-    
     /// periodt Add ORDER BY clause
 //     pub fn order_by(mut self, column: &str, direction: crate::stdlib::packages::sql_vibes::builder::OrderDirection) -> Self {
         self.builder = self.builder.order_by(column, direction);
         self
-    }
-    
     /// bestie Add LIMIT clause
     pub fn limit(mut self, count: u64) -> Self {
         self.builder = self.builder.limit(count);
         self
-    }
-    
     /// flex Add OFFSET clause
     pub fn offset(mut self, count: u64) -> Self {
         self.builder = self.builder.offset(count);
         self
-    }
-    
     /// yolo Execute query and return models
     pub fn get(self, connection: &mut dyn DatabaseConnection) -> SqlResult<Vec<T>> {
         let query = self.builder.build()?;
@@ -454,11 +373,7 @@ impl<T: Model> ModelQueryBuilder<T> {
         let mut models = Vec::new();
         for row in result_set.iter() {
             models.push(T::from_row(row)?);
-        }
-        
         Ok(models)
-    }
-    
     /// slay Execute query and return first model
     pub fn first(self, connection: &mut dyn DatabaseConnection) -> SqlResult<Option<T>> {
         let mut models = self.limit(1).get(connection)?;
@@ -470,42 +385,24 @@ impl<T: Model> ModelQueryBuilder<T> {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ColumnDefinition {
     /// Column name
-    pub name: String,
     
     /// SQL data type
-    pub sql_type: SqlType,
     
     /// Whether column can be NULL
-    pub nullable: bool,
     
     /// Whether column is primary key
-    pub primary_key: bool,
     
     /// Whether column auto-increments
-    pub auto_increment: bool,
     
     /// Default value (if any)
-    pub default_value: Option<SqlValue>,
     
     /// Unique constraint
-    pub unique: bool,
     
     /// Index name (if indexed)
-    pub index: Option<String>,
-}
-
 impl ColumnDefinition {
     /// sus Create new column definition
     pub fn new(name: String, sql_type: SqlType) -> Self {
         Self {
-            name,
-            sql_type,
-            nullable: true,
-            primary_key: false,
-            auto_increment: false,
-            default_value: None,
-            unique: false,
-            index: None,
         }
     }
     
@@ -513,33 +410,23 @@ impl ColumnDefinition {
     pub fn not_null(mut self) -> Self {
         self.nullable = false;
         self
-    }
-    
     /// lowkey Make column primary key
     pub fn primary_key(mut self) -> Self {
         self.primary_key = true;
         self.nullable = false;
         self
-    }
-    
     /// highkey Make column auto-increment
     pub fn auto_increment(mut self) -> Self {
         self.auto_increment = true;
         self
-    }
-    
     /// periodt Set default value
     pub fn default_value(mut self, value: SqlValue) -> Self {
         self.default_value = Some(value);
         self
-    }
-    
     /// bestie Make column unique
     pub fn unique(mut self) -> Self {
         self.unique = true;
         self
-    }
-    
     /// flex Add index to column
     pub fn index(mut self, name: String) -> Self {
         self.index = Some(name);
@@ -551,53 +438,34 @@ impl ColumnDefinition {
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub enum RelationshipType {
     /// One-to-one relationship
-    HasOne,
     
     /// One-to-many relationship
-    HasMany,
     
     /// Many-to-one relationship (belongs to)
-    BelongsTo,
     
     /// Many-to-many relationship
-    ManyToMany,
-}
-
 /// fr fr Relationship definition between models
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Relationship {
     /// Relationship type
-    pub relationship_type: RelationshipType,
     
     /// Related model name
-    pub related_model: String,
     
     /// Foreign key column in this table
-    pub foreign_key: String,
     
     /// Related key column in related table
-    pub related_key: String,
     
     /// Junction table for many-to-many (if applicable)
-    pub junction_table: Option<String>,
-}
-
 /// fr fr Model metadata - schema information
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ModelMetadata {
     /// Table name
-    pub table_name: String,
     
     /// Primary key column
-    pub primary_key: String,
     
     /// Column definitions
-    pub columns: Vec<ColumnDefinition>,
     
     /// Relationships to other models
-    pub relationships: Vec<Relationship>,
-}
-
 /// fr fr Model registry - global registry of model types
 static MODEL_REGISTRY: OnceLock<Arc<RwLock<HashMap<String, ModelMetadata>>>> = OnceLock::new();
 
@@ -619,8 +487,6 @@ impl ModelRegistry {
         
         registry_guard.insert(table_name, metadata);
         Ok(())
-    }
-    
     /// facts Get model metadata by table name
     pub fn get_metadata(table_name: &str) -> SqlResult<Option<ModelMetadata>> {
         let registry = MODEL_REGISTRY.get()
@@ -630,8 +496,6 @@ impl ModelRegistry {
             .map_err(|_| SqlError::configuration("Failed to acquire registry read lock - that's sus af".to_string()))?;
         
         Ok(registry_guard.get(table_name).cloned())
-    }
-    
     /// lowkey Get all registered models
     pub fn list_models() -> SqlResult<Vec<String>> {
         let registry = MODEL_REGISTRY.get()
@@ -641,8 +505,6 @@ impl ModelRegistry {
             .map_err(|_| SqlError::configuration("Failed to acquire registry read lock - registry is broken".to_string()))?;
         
         Ok(registry_guard.keys().cloned().collect())
-    }
-    
     /// highkey Check if model is registered
     pub fn is_registered(table_name: &str) -> bool {
         MODEL_REGISTRY.get()
@@ -655,85 +517,48 @@ impl ModelRegistry {
 /// fr fr Example user model - shows how to implement Model trait
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct User {
-    pub id: Option<i64>,
-    pub name: String,
-    pub email: String,
-    pub age: Option<i32>,
-    pub created_at: Option<chrono::DateTime<chrono::Utc>>,
-}
-
 impl Model for User {
     fn table_name() -> &'static str {
         "users"
-    }
-    
     fn columns() -> Vec<ColumnDefinition> {
         vec![
             ColumnDefinition::new("id".to_string(), SqlType::BigInt)
                 .primary_key()
-                .auto_increment(),
             ColumnDefinition::new("name".to_string(), SqlType::VarChar(255))
-                .not_null(),
             ColumnDefinition::new("email".to_string(), SqlType::VarChar(255))
                 .not_null()
-                .unique(),
-            ColumnDefinition::new("age".to_string(), SqlType::Integer),
             ColumnDefinition::new("created_at".to_string(), SqlType::Timestamp)
-                .default_value(SqlValue::String("CURRENT_TIMESTAMP".to_string())),
         ]
-    }
-    
     fn from_row(row: &Row) -> SqlResult<Self> {
         Ok(Self {
-            id: row.get("id").and_then(|v| v.as_i64()),
             name: row.get("name")
                 .and_then(|v| v.as_string())
-                .ok_or_else(|| SqlError::type_conversion("name column is required and must be string - check your data bestie".to_string()))?,
             email: row.get("email")
                 .and_then(|v| v.as_string())
-                .ok_or_else(|| SqlError::type_conversion("email column is required and must be string - fix your schema periodt".to_string()))?,
-            age: row.get("age").and_then(|v| v.as_i32()),
             created_at: row.get("created_at").and_then(|v| {
                 // This would need proper DateTime parsing
                 None
-            }),
         })
-    }
-    
     fn to_values(&self) -> HashMap<String, SqlValue> {
         let mut values = HashMap::new();
         
         if let Some(id) = self.id {
             values.insert("id".to_string(), SqlValue::BigInt(id));
-        }
-        
         values.insert("name".to_string(), SqlValue::String(self.name.clone()));
         values.insert("email".to_string(), SqlValue::String(self.email.clone()));
         
         if let Some(age) = self.age {
             values.insert("age".to_string(), SqlValue::Integer(age));
-        }
-        
         if let Some(created_at) = self.created_at {
             values.insert("created_at".to_string(), SqlValue::DateTime(created_at));
-        }
-        
         values
-    }
-    
     fn primary_key_value(&self) -> Option<SqlValue> {
         self.id.map(SqlValue::BigInt)
-    }
-    
     fn validate(&self) -> SqlResult<()> {
         if self.name.trim().is_empty() {
             return Err(SqlError::query("Name cannot be empty - that's basic validation bestie".to_string()));
-        }
-        
         if !self.email.contains('@') {
             return Err(SqlError::query("Email must contain @ symbol - basic email validation periodt".to_string()));
-        }
-        
         if let Some(age) = self.age {
             if age < 0 || age > 150 {
                 return Err(SqlError::query("Age must be between 0 and 150 - be realistic bestie".to_string()));

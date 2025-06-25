@@ -12,79 +12,42 @@ use std::time::{Instant, SystemTime};
 static PROFILING_MANAGER: Mutex<Option<ProfilingManager>> = Mutex::new(None);
 
 struct ProfilingManager {
-    trace_enabled: bool,
-    trace_data: VecDeque<TraceEvent>,
-    traceback_limit: i32,
-    cpu_profile_rate: i32,
-    cpu_profiling_active: bool,
-    trace_start_time: Option<Instant>,
-}
-
 #[derive(Debug, Clone)]
 struct TraceEvent {
-    timestamp: SystemTime,
-    event_type: String,
-    goroutine_id: u64,
-    function_name: String,
-    duration_ns: u64,
-}
-
 impl ProfilingManager {
     fn new() -> Self {
         Self {
-            trace_enabled: false,
-            trace_data: VecDeque::new(),
             traceback_limit: 100, // Default traceback limit
             cpu_profile_rate: 100, // Default 100Hz
-            cpu_profiling_active: false,
-            trace_start_time: None,
         }
     }
     
     fn start_trace(&mut self) -> ChaosResult<String> {
         if self.trace_enabled {
             return Err(profiling_error("Tracing is already enabled"));
-        }
-        
         self.trace_enabled = true;
         self.trace_start_time = Some(Instant::now());
         self.trace_data.clear();
         
         // Add initial trace event
         self.trace_data.push_back(TraceEvent {
-            timestamp: SystemTime::now(),
-            event_type: "trace_start".to_string(),
-            goroutine_id: 1,
-            function_name: "chaos_mode::start_trace".to_string(),
-            duration_ns: 0,
         });
         
         Ok("Tracing started".to_string())
-    }
-    
     fn stop_trace(&mut self) -> ChaosResult<String> {
         if !self.trace_enabled {
             return Err(profiling_error("Tracing is not enabled"));
-        }
-        
         self.trace_enabled = false;
         
         // Add final trace event
         self.trace_data.push_back(TraceEvent {
-            timestamp: SystemTime::now(),
-            event_type: "trace_stop".to_string(),
-            goroutine_id: 1,
-            function_name: "chaos_mode::stop_trace".to_string(),
             duration_ns: self.trace_start_time
                 .map(|start| start.elapsed().as_nanos() as u64)
-                .unwrap_or(0),
         });
         
         self.trace_start_time = None;
         
         Ok("Tracing stopped".to_string())
-    }
-    
     fn read_trace(&self) -> Vec<u8> {
         // Generate a simple trace format
         let mut trace_output = String::new();
@@ -99,34 +62,16 @@ impl ProfilingManager {
                 .as_nanos();
             
             trace_output.push_str(&format!(
-                "{},{},{},{},{}\n",
-                timestamp,
-                event.event_type,
-                event.goroutine_id,
-                event.function_name,
                 event.duration_ns
             ));
-        }
-        
         trace_output.into_bytes()
-    }
-    
     fn add_trace_event(&mut self, event_type: &str, function_name: &str, duration_ns: u64) {
         if !self.trace_enabled {
             return;
-        }
-        
         // Limit trace data size to prevent memory issues
         if self.trace_data.len() >= 10000 {
             self.trace_data.pop_front();
-        }
-        
         self.trace_data.push_back(TraceEvent {
-            timestamp: SystemTime::now(),
-            event_type: event_type.to_string(),
-            goroutine_id: vibecheck::go_id(),
-            function_name: function_name.to_string(),
-            duration_ns,
         });
     }
 }
@@ -137,11 +82,7 @@ pub fn initialize() -> ChaosResult<()> {
     
     if manager_guard.is_none() {
         *manager_guard = Some(ProfilingManager::new());
-    }
-    
     Ok(())
-}
-
 pub fn cleanup() -> ChaosResult<()> {
     let mut manager_guard = PROFILING_MANAGER.lock()
         .map_err(|e| system_error(&format!("Lock error during cleanup: {}", e)))?;
@@ -152,12 +93,8 @@ pub fn cleanup() -> ChaosResult<()> {
             let _ = manager.stop_trace();
         }
         manager.cpu_profiling_active = false;
-    }
-    
     *manager_guard = None;
     Ok(())
-}
-
 /// StartTrace enables runtime tracing
 pub fn start_trace() -> ChaosResult<String> {
     let mut manager_guard = PROFILING_MANAGER.lock()
@@ -238,8 +175,6 @@ pub fn start_cpu_profile<W: Write + Send + 'static>(writer: W) -> ChaosResult<St
     if let Some(ref mut manager) = *manager_guard {
         if manager.cpu_profiling_active {
             return Err(profiling_error("CPU profiling is already active"));
-        }
-        
         manager.cpu_profiling_active = true;
         
         // In a real implementation, this would start the CPU profiler
@@ -249,7 +184,6 @@ pub fn start_cpu_profile<W: Write + Send + 'static>(writer: W) -> ChaosResult<St
         // Simulate writing profile data
         std::thread::spawn(move || {
             let mut writer = writer;
-            let profile_data = format!("CPU Profile Data\nSamples: {}\nDuration: {}ms\n", 
                                      profile.samples, profile.duration_ms);
             let _ = writer.write_all(profile_data.as_bytes());
         });
@@ -268,8 +202,6 @@ pub fn stop_cpu_profile() -> ChaosResult<()> {
     if let Some(ref mut manager) = *manager_guard {
         if !manager.cpu_profiling_active {
             return Err(profiling_error("CPU profiling is not active"));
-        }
-        
         manager.cpu_profiling_active = false;
         Ok(())
     } else {

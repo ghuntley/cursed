@@ -11,16 +11,6 @@ use std::fmt;
 /// Format error types
 #[derive(Debug, Clone, PartialEq)]
 pub enum FormatError {
-    InvalidPlaceholder(String),
-    MissingArgument(usize),
-    TooManyArguments,
-    InvalidFormatSpec(String),
-    CircularReference(String),
-    TypeMismatch(String),
-    IndexOutOfBounds(usize),
-    InvalidContext(String),
-}
-
 // impl fmt::Display for FormatError {
 //     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
 //         match self {
@@ -59,83 +49,37 @@ pub type FormatResult<T> = std::result::Result<T, FormatError>;
 /// Format specification options
 #[derive(Debug, Clone)]
 pub struct FormatSpec {
-    pub width: Option<usize>,
-    pub precision: Option<usize>,
-    pub alignment: Option<FormatAlignment>,
-    pub fill_char: Option<char>,
-    pub sign: Option<FormatSign>,
-    pub alternate: bool,
-    pub zero_pad: bool,
-}
-
 impl Default for FormatSpec {
     fn default() -> Self {
         Self {
-            width: None,
-            precision: None,
-            alignment: None,
-            fill_char: None,
-            sign: None,
-            alternate: false,
-            zero_pad: false,
         }
     }
-}
-
 /// Format alignment options
 #[derive(Debug, Clone, Copy)]
 pub enum FormatAlignment {
-    Left,
-    Right,
-    Center,
-}
-
 /// Format sign options
 #[derive(Debug, Clone, Copy)]
 pub enum FormatSign {
     Plus,      // Always show sign
     Minus,     // Only show negative (default)
     Space,     // Space for positive, minus for negative
-}
-
 /// Placeholder types
 #[derive(Debug, Clone)]
 pub enum PlaceholderType {
     Positional(usize),          // {0}, {1}, etc.
     Named(String),              // {name}, {value}, etc.
     Auto,                       // {} - uses next available argument
-}
-
 /// Format placeholder information
 #[derive(Debug, Clone)]
 pub struct FormatPlaceholder {
-    pub placeholder_type: PlaceholderType,
-    pub format_spec: FormatSpec,
-    pub original: String,
-    pub start: usize,
-    pub end: usize,
-}
-
 /// Format context for named placeholders and advanced features
 #[derive(Debug, Clone)]
 pub struct FormatContext {
-    pub variables: HashMap<String, Value>,
-    pub functions: HashMap<String, Box<dyn Fn(&[Value]) -> FormatResult<String>>>,
-    pub max_recursion_depth: usize,
-    pub current_depth: usize,
-}
-
 impl Default for FormatContext {
     fn default() -> Self {
         Self {
-            variables: HashMap::new(),
-            functions: HashMap::new(),
-            max_recursion_depth: 10,
-            current_depth: 0,
         }
     }
-}
-
 /// Format options for controlling behavior
 #[derive(Debug, Clone)]
 pub struct FormatOptions {
@@ -143,19 +87,11 @@ pub struct FormatOptions {
     pub html_escape: bool,          // HTML escape output
     pub trim_whitespace: bool,      // Trim leading/trailing whitespace
     pub allow_functions: bool,      // Allow function calls in placeholders
-}
-
 impl Default for FormatOptions {
     fn default() -> Self {
         Self {
-            strict_mode: true,
-            html_escape: false,
-            trim_whitespace: false,
-            allow_functions: false,
         }
     }
-}
-
 /// Format a template string with positional arguments
 /// Example: format("Hello {}, you are {} years old", &[name, age])
 pub fn format(template: &str, args: &[Value]) -> FormatResult<String> {
@@ -170,7 +106,6 @@ pub fn format(template: &str, args: &[Value]) -> FormatResult<String> {
 
         // Get the argument for this placeholder
         let arg_index = match &placeholder.placeholder_type {
-            PlaceholderType::Positional(index) => *index,
             PlaceholderType::Auto => {
                 let index = auto_index;
                 auto_index += 1;
@@ -181,31 +116,22 @@ pub fn format(template: &str, args: &[Value]) -> FormatResult<String> {
                     "Named placeholders not supported without context".to_string()
                 ));
             }
-        };
 
         // Check if argument exists
         if arg_index >= args.len() {
             return Err(FormatError::MissingArgument(arg_index));
-        }
-
         // Format the argument
         let formatted = format_value_with_spec(&args[arg_index], &placeholder.format_spec)?;
         result.push_str(&formatted);
 
         last_end = placeholder.end;
-    }
-
     // Add remaining text
     result.push_str(&template[last_end..]);
 
     Ok(result)
-}
-
 /// Format with named arguments using context
 /// Example: format_with_context("Hello {name}", &[], &context)
 pub fn format_with_context(
-    template: &str, 
-    args: &[Value], 
     context: &FormatContext
 ) -> FormatResult<String> {
     let mut context = context.clone();
@@ -213,8 +139,6 @@ pub fn format_with_context(
 
     if context.current_depth > context.max_recursion_depth {
         return Err(FormatError::CircularReference("Maximum recursion depth exceeded".to_string()));
-    }
-
     let placeholders = parse_placeholders(template)?;
     let mut result = String::new();
     let mut last_end = 0;
@@ -244,21 +168,16 @@ pub fn format_with_context(
                 context.variables.get(name)
                     .ok_or_else(|| FormatError::MissingArgument(0))?
             }
-        };
 
         // Format the value
         let formatted = format_value_with_spec(value, &placeholder.format_spec)?;
         result.push_str(&formatted);
 
         last_end = placeholder.end;
-    }
-
     // Add remaining text
     result.push_str(&template[last_end..]);
 
     Ok(result)
-}
-
 /// Simple argument formatting (like print functions)
 /// Example: format_args(&[Value::String("Hello".to_string()), Value::Int(42)])
 pub fn format_args(args: &[Value]) -> String {
@@ -266,8 +185,6 @@ pub fn format_args(args: &[Value]) -> String {
         .map(|arg| format_value_simple(arg))
         .collect::<Vec<_>>()
         .join(" ")
-}
-
 /// Interpolate variables in a string using ${variable} syntax
 /// Example: interpolate("Hello ${name}!", &context)
 pub fn interpolate(template: &str, context: &FormatContext) -> FormatResult<String> {
@@ -285,8 +202,6 @@ pub fn interpolate(template: &str, context: &FormatContext) -> FormatResult<Stri
                     break;
                 }
                 var_name.push(ch);
-            }
-            
             // Look up variable
             if let Some(value) = context.variables.get(&var_name) {
                 result.push_str(&format_value_simple(value));
@@ -299,8 +214,6 @@ pub fn interpolate(template: &str, context: &FormatContext) -> FormatResult<Stri
     }
     
     Ok(result)
-}
-
 /// Parse placeholders from a template string
 fn parse_placeholders(template: &str) -> FormatResult<Vec<FormatPlaceholder>> {
     let mut placeholders = Vec::new();
@@ -312,8 +225,6 @@ fn parse_placeholders(template: &str) -> FormatResult<Vec<FormatPlaceholder>> {
                 // Escaped brace {{ -> skip
                 chars.next();
                 continue;
-            }
-            
             // Find end of placeholder
             let start = i;
             let mut end = None;
@@ -325,8 +236,6 @@ fn parse_placeholders(template: &str) -> FormatResult<Vec<FormatPlaceholder>> {
                     break;
                 }
                 placeholder_content.push(ch);
-            }
-            
             let end = end.ok_or_else(|| {
                 FormatError::InvalidPlaceholder("Unclosed placeholder".to_string())
             })?;
@@ -338,22 +247,13 @@ fn parse_placeholders(template: &str) -> FormatResult<Vec<FormatPlaceholder>> {
     }
     
     Ok(placeholders)
-}
-
 /// Parse the content of a placeholder
 fn parse_placeholder_content(content: &str, start: usize, end: usize) -> FormatResult<FormatPlaceholder> {
     let original = format!("{{{}}}", content);
     
     if content.is_empty() {
         return Ok(FormatPlaceholder {
-            placeholder_type: PlaceholderType::Auto,
-            format_spec: FormatSpec::default(),
-            original,
-            start,
-            end,
         });
-    }
-    
     // Split on ':' to separate identifier from format spec
     let parts: Vec<&str> = content.splitn(2, ':').collect();
     let identifier = parts[0];
@@ -368,39 +268,25 @@ fn parse_placeholder_content(content: &str, start: usize, end: usize) -> FormatR
         })?)
     } else {
         PlaceholderType::Named(identifier.to_string())
-    };
     
     // Parse format specification
     let format_spec = parse_format_spec(format_spec_str)?;
     
     Ok(FormatPlaceholder {
-        placeholder_type,
-        format_spec,
-        original,
-        start,
-        end,
     })
-}
-
 /// Parse format specification string
 fn parse_format_spec(spec: &str) -> FormatResult<FormatSpec> {
     if spec.is_empty() {
         return Ok(FormatSpec::default());
-    }
-    
     let mut format_spec = FormatSpec::default();
     
     // Basic parsing - can be extended for more complex format specs
     if let Ok(width) = spec.parse::<usize>() {
         format_spec.width = Some(width);
-    }
-    
     // TODO: Add more sophisticated format spec parsing
     // This is a simplified implementation
     
     Ok(format_spec)
-}
-
 /// Format a value with a format specification
 fn format_value_with_spec(value: &Value, spec: &FormatSpec) -> FormatResult<String> {
     let mut formatted = format_value_simple(value);
@@ -426,32 +312,17 @@ fn format_value_with_spec(value: &Value, spec: &FormatSpec) -> FormatResult<Stri
     }
     
     Ok(formatted)
-}
-
 /// Simple value formatting without format specifications
 fn format_value_simple(value: &Value) -> String {
     match value {
-        Value::Nil => "nil".to_string(),
-        Value::Bool(b) => b.to_string(),
-        Value::Int(i) => i.to_string(),
-        Value::Float(f) => f.to_string(),
-        Value::String(s) => s.clone(),
         Value::Array(arr) => {
             let items: Vec<String> = arr.iter().map(format_value_simple).collect();
             format!("[{}]", items.join(", "))
-        },
         Value::Object(obj) => {
             let items: Vec<String> = obj.iter()
                 .map(|(k, v)| format!("{}: {}", k, format_value_simple(v)))
                 .collect();
             format!("{{{}}}", items.join(", "))
-        },
-        Value::Function(_) => "<function>".to_string(),
-        Value::NativeFunction(_) => "<native_function>".to_string(),
-        Value::Channel(_) => "<channel>".to_string(),
-        Value::Interface(_) => "<interface>".to_string(),
-        Value::CursedError(e) => format!("CursedError: {}", e),
-        Value::Bytes(b) => format!("<bytes[{}]>", b.len()),
     }
 }
 

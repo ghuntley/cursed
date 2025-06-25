@@ -26,9 +26,8 @@ pub use validation::*;
 pub use format::*;
 // Use explicit imports from regex to avoid conflicts
 pub use regex::{
-    find_with_regex, replace_with_regex, replace_all_with_regex, split_with_regex,
     match_with_regex, capture_groups, extract_patterns, RegexPattern, RegexMatch
-};
+// };
 
 // String manipulation result type
 pub type StringResult<T> = std::result::Result<T, StringError>;
@@ -36,14 +35,6 @@ pub type StringResult<T> = std::result::Result<T, StringError>;
 /// Errors that can occur during string operations
 #[derive(Debug, Clone, PartialEq)]
 pub enum StringError {
-    IndexOutOfBounds { index: usize, length: usize },
-    InvalidRange { start: usize, end: usize, length: usize },
-    InvalidUtf8 { position: usize },
-    EmptyInput,
-    InvalidParameter { param: String, value: String },
-    RegexError { message: String, pattern: String },
-}
-
 // impl std::fmt::Display for StringError {
 //     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
 //         match self {

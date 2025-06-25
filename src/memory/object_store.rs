@@ -30,23 +30,17 @@ use crate::error::CursedError;
 /// while maintaining type safety through the type system.
 #[derive(Debug)]
 struct ThreadSafePtr {
-    ptr: *mut u8,
     // We use *mut u8 instead of *mut dyn Any to avoid trait object complications
-}
-
 impl ThreadSafePtr {
     /// Create a new thread-safe pointer wrapper
     fn new<T>(ptr: *mut T) -> Self {
         Self {
-            ptr: ptr as *mut u8,
         }
     }
     
     /// Get the raw pointer, typed appropriately
     unsafe fn as_ptr<T>(&self) -> *mut T {
         self.ptr as *mut T
-    }
-    
     /// Check if the pointer is null
     fn is_null(&self) -> bool {
         self.ptr.is_null()
@@ -68,16 +62,11 @@ pub trait Storable: Traceable + Send + Sync + 'static {
     /// Get the type name for debugging
     fn type_name(&self) -> &'static str {
         std::any::type_name::<Self>()
-    }
-    
     /// Get the size of this object in bytes
     fn object_size(&self) -> usize 
     where 
-        Self: Sized,
     {
         std::mem::size_of::<Self>()
-    }
-    
     /// Called when object is being collected (optional cleanup)
     fn on_collect(&mut self) {
         // Default implementation does nothing
@@ -87,15 +76,11 @@ pub trait Storable: Traceable + Send + Sync + 'static {
 /// Automatically implement Storable for types that implement required traits
 impl<T> Storable for T 
 where 
-    T: Traceable + Send + Sync + 'static,
 {
     fn type_name(&self) -> &'static str {
         std::any::type_name::<T>()
-    }
-    
     fn object_size(&self) -> usize 
     where 
-        Self: Sized,
     {
         std::mem::size_of::<T>()
     }
@@ -107,20 +92,10 @@ where
 /// during garbage collection cycles.
 #[derive(Debug)]
 pub struct ObjectHandle<T: Storable> {
-    object_id: ObjectId,
-    ptr: NonNull<T>,
-    object_store: Weak<ObjectStore>,
-    _phantom: PhantomData<T>,
-}
-
 impl<T: Storable> ObjectHandle<T> {
     /// Create a new object handle
     fn new(object_id: ObjectId, ptr: NonNull<T>, object_store: Weak<ObjectStore>) -> Self {
         Self {
-            object_id,
-            ptr,
-            object_store,
-            _phantom: PhantomData,
         }
     }
     
@@ -130,13 +105,9 @@ impl<T: Storable> ObjectHandle<T> {
     /// their own memory allocation but need to integrate with the object store.
     pub fn new_external(object_id: ObjectId, ptr: NonNull<T>, object_store: Weak<ObjectStore>) -> Self {
         Self::new(object_id, ptr, object_store)
-    }
-    
     /// Get the object ID
     pub fn object_id(&self) -> ObjectId {
         self.object_id
-    }
-    
     /// Get a reference to the stored object
     /// 
     /// This is safe because the object store ensures the object remains
@@ -190,19 +161,11 @@ impl<T: Storable> ObjectHandle<T> {
             Err("Object store no longer available".to_string())
         }
     }
-}
-
 impl<T: Storable> Clone for ObjectHandle<T> {
     fn clone(&self) -> Self {
         Self {
-            object_id: self.object_id,
-            ptr: self.ptr,
-            object_store: self.object_store.clone(),
-            _phantom: PhantomData,
         }
     }
-}
-
 // Safety: ObjectHandle is safe to send between threads because:
 // 1. ObjectId is Copy and thread-safe
 // 2. NonNull<T> is Send if T is Send (which Storable requires)
@@ -214,20 +177,8 @@ unsafe impl<T: Storable> Sync for ObjectHandle<T> {}
 /// Information about a stored object
 #[derive(Debug, Clone)]
 pub struct StoredObjectInfo {
-    pub object_id: ObjectId,
-    pub type_id: TypeId,
-    pub type_name: String,
-    pub size: usize,
-    pub is_root: bool,
-    pub reference_count: usize,
-}
-
 /// Visitor implementation for the object store
 struct ObjectStoreVisitor<'a> {
-    object_store: &'a ObjectStore,
-    visited: &'a mut std::collections::HashSet<ObjectId>,
-}
-
 impl<'a> Visitor for ObjectStoreVisitor<'a> {
     fn visit(&mut self, obj: &dyn Traceable) {
         // This is a simplified implementation - in practice, you'd need
@@ -242,19 +193,11 @@ impl<'a> Visitor for ObjectStoreVisitor<'a> {
 /// high-level object management with garbage collection integration.
 pub struct ObjectStore {
     /// Underlying heap manager
-    heap_manager: Arc<RwLock<HeapManager>>,
     /// Object registry for metadata
-    object_registry: SharedObjectRegistry,
     /// Type information for stored objects
-    type_registry: RwLock<HashMap<ObjectId, TypeId>>,
     /// Raw object pointers (type-erased) - wrapped for thread safety
-    object_pointers: RwLock<HashMap<ObjectId, (ThreadSafePtr, TypeId)>>,
     /// Root set for garbage collection
-    root_objects: RwLock<std::collections::HashSet<ObjectId>>,
     /// Reference counts for objects
-    reference_counts: RwLock<HashMap<ObjectId, usize>>,
-}
-
 impl ObjectStore {
     /// Create a new object store
     #[instrument]
@@ -262,15 +205,7 @@ impl ObjectStore {
         debug!("Creating new object store");
         
         Arc::new(Self {
-            heap_manager,
-            object_registry,
-            type_registry: RwLock::new(HashMap::new()),
-            object_pointers: RwLock::new(HashMap::new()),
-            root_objects: RwLock::new(std::collections::HashSet::new()),
-            reference_counts: RwLock::new(HashMap::new()),
         })
-    }
-    
     /// Store a new object in the object store
     #[instrument(skip(self, object))]
     pub fn store<T: Storable>(self: &Arc<Self>, object: T) -> Result<ObjectHandle<T>, String> {
@@ -285,42 +220,31 @@ impl ObjectStore {
             let heap = self.heap_manager.read()
                 .map_err(|_| "Failed to acquire read lock on heap manager")?;
             heap.allocate::<T>(size, type_name)?
-        };
         
         // Write object to allocated memory
         unsafe {
             let typed_ptr = ptr.as_ptr() as *mut T;
             typed_ptr.write(object);
-        }
-        
         // Register type information
         {
             let mut types = self.type_registry.write()
                 .map_err(|_| "Failed to acquire write lock on type registry")?;
             types.insert(object_id, type_id);
-        }
-        
         // Store type-erased pointer
         {
             let mut pointers = self.object_pointers.write()
                 .map_err(|_| "Failed to acquire write lock on object pointers")?;
             let thread_safe_ptr = ThreadSafePtr::new(ptr.as_ptr() as *mut T);
             pointers.insert(object_id, (thread_safe_ptr, type_id));
-        }
-        
         // Initialize reference count
         {
             let mut ref_counts = self.reference_counts.write()
                 .map_err(|_| "Failed to acquire write lock on reference counts")?;
             ref_counts.insert(object_id, 0);
-        }
-        
         debug!("Successfully stored object {} at {:p}", object_id, ptr.as_ptr());
         
         let handle = ObjectHandle::new(object_id, ptr.cast(), Arc::downgrade(self));
         Ok(handle)
-    }
-    
     /// Get an object handle by ID (if it exists and has the correct type)
     pub fn get_handle<T: Storable>(&self, object_id: ObjectId) -> Option<ObjectHandle<T>> {
         let type_id = TypeId::of::<T>();
@@ -329,14 +253,10 @@ impl ObjectStore {
         let stored_type = {
             let types = self.type_registry.read().ok()?;
             *types.get(&object_id)?
-        };
         
         if stored_type != type_id {
-            warn!("Type mismatch for object {}: expected {:?}, found {:?}", 
                   object_id, type_id, stored_type);
             return None;
-        }
-        
         // Get the pointer
         let ptr = {
             let pointers = self.object_pointers.read().ok()?;
@@ -347,14 +267,11 @@ impl ObjectStore {
             unsafe {
                 NonNull::new(thread_safe_ptr.as_ptr::<T>())?
             }
-        };
         
         // This method should only be called on Arc<ObjectStore>, so we can't easily get a weak reference
         // For now, we'll create an invalid weak reference - this needs to be fixed in the API design
         let weak_ref = std::sync::Weak::<ObjectStore>::new();
         Some(ObjectHandle::new(object_id, ptr, weak_ref))
-    }
-    
     /// Check if an object is valid (still exists in the store)
     pub fn is_object_valid(&self, object_id: ObjectId) -> bool {
         if let Ok(pointers) = self.object_pointers.read() {
@@ -369,18 +286,12 @@ impl ObjectStore {
     pub fn mark_as_root(&self, object_id: ObjectId) -> Result<(), String> {
         if !self.is_object_valid(object_id) {
             return Err(format!("Object {} is not valid", object_id));
-        }
-        
         let mut roots = self.root_objects.write()
             .map_err(|_| "Failed to acquire write lock on root objects")?;
         
         if roots.insert(object_id) {
             debug!("Marked object {} as GC root", object_id);
-        }
-        
         Ok(())
-    }
-    
     /// Unmark an object as a garbage collection root
     #[instrument(skip(self))]
     pub fn unmark_as_root(&self, object_id: ObjectId) -> Result<(), String> {
@@ -389,18 +300,12 @@ impl ObjectStore {
         
         if roots.remove(&object_id) {
             debug!("Unmarked object {} as GC root", object_id);
-        }
-        
         Ok(())
-    }
-    
     /// Get all root objects
     pub fn get_root_objects(&self) -> Result<Vec<ObjectId>, String> {
         let roots = self.root_objects.read()
             .map_err(|_| "Failed to acquire read lock on root objects")?;
         Ok(roots.iter().copied().collect())
-    }
-    
     /// Increment reference count for an object
     pub fn inc_ref(&self, object_id: ObjectId) -> Result<usize, String> {
         let mut ref_counts = self.reference_counts.write()
@@ -409,8 +314,6 @@ impl ObjectStore {
         let count = ref_counts.entry(object_id).or_insert(0);
         *count += 1;
         Ok(*count)
-    }
-    
     /// Decrement reference count for an object
     pub fn dec_ref(&self, object_id: ObjectId) -> Result<usize, String> {
         let mut ref_counts = self.reference_counts.write()
@@ -421,15 +324,11 @@ impl ObjectStore {
             *count -= 1;
         }
         Ok(*count)
-    }
-    
     /// Get reference count for an object
     pub fn get_ref_count(&self, object_id: ObjectId) -> Result<usize, String> {
         let ref_counts = self.reference_counts.read()
             .map_err(|_| "Failed to acquire read lock on reference counts")?;
         Ok(ref_counts.get(&object_id).copied().unwrap_or(0))
-    }
-    
     /// Remove an object from the store (called during GC)
     #[instrument(skip(self))]
     pub fn remove_object(&self, object_id: ObjectId) -> Result<(), String> {
@@ -446,34 +345,22 @@ impl ObjectStore {
                     debug!("Removed object {} pointer from store", object_id);
                 }
             }
-        }
-        
         // Remove from type registry
         if let Ok(mut types) = self.type_registry.write() {
             types.remove(&object_id);
-        }
-        
         // Remove from root set
         if let Ok(mut roots) = self.root_objects.write() {
             roots.remove(&object_id);
-        }
-        
         // Remove reference count
         if let Ok(mut ref_counts) = self.reference_counts.write() {
             ref_counts.remove(&object_id);
-        }
-        
         // Deallocate from heap
         {
             let heap = self.heap_manager.read()
                 .map_err(|_| "Failed to acquire read lock on heap manager")?;
             heap.deallocate(object_id)?;
-        }
-        
         debug!("Successfully removed object {}", object_id);
         Ok(())
-    }
-    
     /// Get information about all stored objects
     pub fn get_all_objects(&self) -> Result<Vec<StoredObjectInfo>, String> {
         let pointers = self.object_pointers.read()
@@ -490,20 +377,11 @@ impl ObjectStore {
         for (&object_id, &(ref _thread_safe_ptr, type_id)) in pointers.iter() {
             if let Ok(Some(metadata)) = self.object_registry.get(object_id) {
                 let info = StoredObjectInfo {
-                    object_id,
-                    type_id,
-                    type_name: metadata.type_name.clone(),
-                    size: metadata.size,
-                    is_root: roots.contains(&object_id),
-                    reference_count: ref_counts.get(&object_id).copied().unwrap_or(0),
-                };
                 objects.push(info);
             }
         }
         
         Ok(objects)
-    }
-    
     /// Get object store statistics
     pub fn get_stats(&self) -> Result<ObjectStoreStats, String> {
         let objects = self.get_all_objects()?;
@@ -515,16 +393,8 @@ impl ObjectStore {
         let mut type_counts = HashMap::new();
         for obj in &objects {
             *type_counts.entry(obj.type_name.clone()).or_insert(0) += 1;
-        }
-        
         Ok(ObjectStoreStats {
-            total_objects,
-            root_objects,
-            total_size,
-            type_counts,
         })
-    }
-    
     /// Trace all objects for garbage collection
     pub fn trace_objects(&self, visitor: &mut dyn Visitor) -> Result<(), String> {
         let pointers = self.object_pointers.read()
@@ -534,8 +404,6 @@ impl ObjectStore {
             // For now, skip tracing - this would require proper type dispatch
             // to call the trace method on the actual object type
             // This is a complex problem that would need additional type system support
-        }
-        
         Ok(())
     }
 }
@@ -543,12 +411,6 @@ impl ObjectStore {
 /// Statistics about the object store
 #[derive(Debug, Clone)]
 pub struct ObjectStoreStats {
-    pub total_objects: usize,
-    pub root_objects: usize,
-    pub total_size: usize,
-    pub type_counts: HashMap<String, usize>,
-}
-
 impl std::fmt::Display for ObjectStoreStats {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         writeln!(f, "Object Store Stats:")?;
@@ -559,8 +421,6 @@ impl std::fmt::Display for ObjectStoreStats {
         
         for (type_name, count) in &self.type_counts {
             writeln!(f, "  {}: {}", type_name, count)?;
-        }
-        
         Ok(())
     }
 }
@@ -571,13 +431,9 @@ impl std::fmt::Display for ObjectStoreStats {
 // 3. All internal data structures use RwLock for synchronization
 // 4. ThreadSafePtr wrapper ensures raw pointers are handled safely
 // 5. HashMap operations are coordinated through RwLock protection
-unsafe impl Send for ObjectStore {}
-
 // Safety: ObjectStore is safe to share between threads because:
 // 1. All mutation is coordinated through RwLock<HashMap<...>>
 // 2. HeapManager access is synchronized through Arc<RwLock<>>
 // 3. ObjectRegistry is designed for concurrent access
 // 4. ThreadSafePtr ensures safe raw pointer sharing
 // 5. No direct mutable access to internal state without locks
-unsafe impl Sync for ObjectStore {}
-

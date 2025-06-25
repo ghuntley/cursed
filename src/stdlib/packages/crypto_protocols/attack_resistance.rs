@@ -8,60 +8,23 @@ use std::time::{Duration, SystemTime};
 /// Attack types to defend against
 #[derive(Debug, Clone, PartialEq)]
 pub enum AttackType {
-    Replay,
-    ManInTheMiddle,
-    DenialOfService,
-    TimingAttack,
-    SideChannel,
-    BruteForce,
-    Dictionary,
-}
-
 /// Attack resistance configuration
 #[derive(Debug, Clone)]
 pub struct AttackResistanceConfig {
-    pub enable_replay_protection: bool,
-    pub max_replay_window: Duration,
-    pub rate_limiting_enabled: bool,
-    pub max_requests_per_minute: u32,
-    pub constant_time_operations: bool,
-    pub randomized_delays: bool,
-}
-
 /// Attack resistance manager
 #[derive(Debug)]
 pub struct AttackResistanceManager {
-    nonce_cache: HashMap<Vec<u8>, SystemTime>,
-    request_counters: HashMap<String, (u32, SystemTime)>,
-    secure_random: SecureRandom,
-    config: AttackResistanceConfig,
-}
-
 impl AttackResistanceManager {
     pub fn new() -> AdvancedCryptoResult<Self> {
         let config = AttackResistanceConfig {
-            enable_replay_protection: true,
             max_replay_window: Duration::from_secs(300), // 5 minutes
-            rate_limiting_enabled: true,
-            max_requests_per_minute: 60,
-            constant_time_operations: true,
-            randomized_delays: true,
-        };
 
         Ok(Self {
-            nonce_cache: HashMap::new(),
-            request_counters: HashMap::new(),
-            secure_random: SecureRandom::new()?,
-            config,
         })
-    }
-
     /// Check for replay attacks
     pub fn check_replay_attack(&mut self, nonce: &[u8]) -> AdvancedCryptoResult<bool> {
         if !self.config.enable_replay_protection {
             return Ok(false);
-        }
-
         let now = SystemTime::now();
         
         // Clean old nonces
@@ -72,19 +35,13 @@ impl AttackResistanceManager {
         // Check if nonce already exists
         if self.nonce_cache.contains_key(nonce) {
             return Ok(true); // Replay detected
-        }
-
         // Store nonce
         self.nonce_cache.insert(nonce.to_vec(), now);
         Ok(false)
-    }
-
     /// Rate limiting check
     pub fn check_rate_limit(&mut self, client_id: &str) -> AdvancedCryptoResult<bool> {
         if !self.config.rate_limiting_enabled {
             return Ok(false);
-        }
-
         let now = SystemTime::now();
         
         if let Some((count, last_reset)) = self.request_counters.get_mut(client_id) {
@@ -93,69 +50,43 @@ impl AttackResistanceManager {
                 *count = 1;
                 *last_reset = now;
                 return Ok(false);
-            }
-
             *count += 1;
             if *count > self.config.max_requests_per_minute {
                 return Ok(true); // Rate limit exceeded
             }
         } else {
             self.request_counters.insert(client_id.to_string(), (1, now));
-        }
-
         Ok(false)
-    }
-
     /// Constant time string comparison
     pub fn constant_time_compare(&self, a: &[u8], b: &[u8]) -> bool {
         if !self.config.constant_time_operations {
             return a == b;
-        }
-
         if a.len() != b.len() {
             return false;
-        }
-
         let mut result = 0u8;
         for (x, y) in a.iter().zip(b.iter()) {
             result |= x ^ y;
-        }
-
         result == 0
-    }
-
     /// Add randomized delay to prevent timing attacks
     pub fn randomized_delay(&self) -> AdvancedCryptoResult<()> {
         if !self.config.randomized_delays {
             return Ok(());
-        }
-
         let delay_ms = self.secure_random.generate_bytes(1)?[0] as u64 % 100; // 0-99ms
         std::thread::sleep(Duration::from_millis(delay_ms));
         Ok(())
-    }
-
     /// Validate against common attack patterns
     pub fn validate_input(&self, input: &[u8]) -> AdvancedCryptoResult<bool> {
         // Check for null bytes (common in injection attacks)
         if input.contains(&0) {
             return Ok(false);
-        }
-
         // Check for excessively long input (DoS prevention)
         if input.len() > 1024 * 1024 { // 1MB limit
             return Ok(false);
-        }
-
         // Additional validation can be added here
         Ok(true)
-    }
-
     /// Generate secure challenge for authentication
     pub fn generate_challenge(&self) -> AdvancedCryptoResult<Vec<u8>> {
         self.secure_random.generate_bytes(32)
-    }
-
     /// Protect against DoS by validating computational work
     pub fn validate_proof_of_work(&self, challenge: &[u8], response: &[u8], difficulty: u8) -> AdvancedCryptoResult<bool> {
         use sha2::{Sha256, Digest};

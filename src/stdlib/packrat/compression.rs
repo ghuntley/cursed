@@ -20,30 +20,13 @@ const BZIP2_MAGIC: &[u8] = b"BZ";
 // Compression format enumeration
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum CompressionFormat {
-    None,
-    Gzip,
-    Bzip2,
-    Xz,
-    Zstd,
-}
-
 // Archive format enumeration
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum ArchiveFormat {
-    Tar,
-    Zip,
-    TarGz,
-    TarBz2,
-    TarXz,
-    Unknown,
-}
-
 // Check if data is ZIP format
 pub fn IsZip<R: Read>(mut reader: R) -> bool {
     let mut magic = [0u8; 4];
     match reader.read_exact(&mut magic) {
-        Ok(()) => magic == ZIP_SIGNATURE,
-        Err(_) => false,
     }
 }
 
@@ -52,12 +35,8 @@ pub fn IsTar<R: Read + std::io::Seek>(mut reader: R) -> bool {
     // TAR magic is at offset 257
     if reader.seek(std::io::SeekFrom::Start(257)).is_err() {
         return false;
-    }
-    
     let mut magic = [0u8; 6];
     match reader.read_exact(&mut magic) {
-        Ok(()) => magic == TAR_USTAR_MAGIC,
-        Err(_) => false,
     }
 }
 
@@ -66,8 +45,6 @@ pub fn detect_format<P: AsRef<Path>>(path: P) -> ArchiveResult<ArchiveFormat> {
     let file = File::open(&path)?;
     let mut reader = BufReader::new(file);
     detect_format_from_reader(&mut reader)
-}
-
 // Detect format from reader
 pub fn detect_format_from_reader<R: Read + std::io::Seek>(reader: &mut R) -> ArchiveResult<ArchiveFormat> {
     let mut magic = [0u8; 8];
@@ -78,44 +55,29 @@ pub fn detect_format_from_reader<R: Read + std::io::Seek>(reader: &mut R) -> Arc
             // Check ZIP signature
             if magic[..4] == *ZIP_SIGNATURE {
                 return Ok(ArchiveFormat::Zip);
-            }
-            
             // Check GZIP signature
             if n >= 2 && magic[..2] == *GZIP_MAGIC {
                 // Could be tar.gz, check further
                 return detect_compressed_tar_format(reader, CompressionFormat::Gzip);
-            }
-            
             // Check BZIP2 signature
             if n >= 2 && magic[..2] == *BZIP2_MAGIC {
                 return detect_compressed_tar_format(reader, CompressionFormat::Bzip2);
-            }
-            
             // Check TAR format (magic at offset 257)
             reader.seek(std::io::SeekFrom::Start(257))?;
             let mut tar_magic = [0u8; 6];
             if reader.read_exact(&mut tar_magic).is_ok() && tar_magic == *TAR_USTAR_MAGIC {
                 return Ok(ArchiveFormat::Tar);
-            }
-            
             Ok(ArchiveFormat::Unknown)
-        },
-        _ => Ok(ArchiveFormat::Unknown),
     }
 }
 
 // Detect compressed TAR format
 fn detect_compressed_tar_format<R: Read + std::io::Seek>(
-    _reader: &mut R, 
     compression: CompressionFormat
 ) -> ArchiveResult<ArchiveFormat> {
     // For now, assume compressed files are TAR archives
     // In a full implementation, we would decompress and check
     match compression {
-        CompressionFormat::Gzip => Ok(ArchiveFormat::TarGz),
-        CompressionFormat::Bzip2 => Ok(ArchiveFormat::TarBz2),
-        CompressionFormat::Xz => Ok(ArchiveFormat::TarXz),
-        _ => Ok(ArchiveFormat::Unknown),
     }
 }
 
@@ -124,15 +86,9 @@ pub fn Compress<P: AsRef<Path>>(src: P, dst: P, format: &str) -> ArchiveResult<(
     let src_path = src.as_ref();
     let dst_path = dst.as_ref();
     
-    debug!("Compressing {} to {} with format {}", 
            src_path.display(), dst_path.display(), format);
     
     match format.to_lowercase().as_str() {
-        "tar" => compress_tar(src_path, dst_path),
-        "zip" => compress_zip(src_path, dst_path),
-        "tar.gz" | "tgz" => compress_tar_gz(src_path, dst_path),
-        "tar.bz2" | "tbz2" => compress_tar_bz2(src_path, dst_path),
-        _ => Err(ArchiveError::UnsupportedFormat(format!("Unsupported format: {}", format))),
     }
 }
 
@@ -147,12 +103,6 @@ pub fn Decompress<P: AsRef<Path>>(src: P, dst: P) -> ArchiveResult<()> {
     let format = detect_format(src_path)?;
     
     match format {
-        ArchiveFormat::Tar => decompress_tar(src_path, dst_path),
-        ArchiveFormat::Zip => decompress_zip(src_path, dst_path),
-        ArchiveFormat::TarGz => decompress_tar_gz(src_path, dst_path),
-        ArchiveFormat::TarBz2 => decompress_tar_bz2(src_path, dst_path),
-        ArchiveFormat::TarXz => decompress_tar_xz(src_path, dst_path),
-        ArchiveFormat::Unknown => Err(ArchiveError::UnsupportedFormat("Unknown archive format".to_string())),
     }
 }
 
@@ -166,12 +116,8 @@ fn compress_tar<P: AsRef<Path>>(src: P, dst: P) -> ArchiveResult<()> {
         add_file_to_tar(&mut tar, src.as_ref())?;
     } else {
         add_directory_to_tar(&mut tar, src.as_ref())?;
-    }
-    
     tar.close()?;
     Ok(())
-}
-
 // ZIP compression
 fn compress_zip<P: AsRef<Path>>(src: P, dst: P) -> ArchiveResult<()> {
     let dst_file = File::create(dst)?;
@@ -183,26 +129,18 @@ fn compress_zip<P: AsRef<Path>>(src: P, dst: P) -> ArchiveResult<()> {
         add_file_to_zip(&mut zip, src.as_ref())?;
     } else {
         add_directory_to_zip(&mut zip, src.as_ref())?;
-    }
-    
     zip.close()?;
     Ok(())
-}
-
 // TAR.GZ compression (placeholder - would use actual gzip in full implementation)
 fn compress_tar_gz<P: AsRef<Path>>(src: P, dst: P) -> ArchiveResult<()> {
     // For now, just create TAR file
     // In full implementation, would pipe through gzip encoder
     warn!("TAR.GZ compression not fully implemented, falling back to TAR");
     compress_tar(src, dst)
-}
-
 // TAR.BZ2 compression (placeholder)
 fn compress_tar_bz2<P: AsRef<Path>>(src: P, dst: P) -> ArchiveResult<()> {
     warn!("TAR.BZ2 compression not fully implemented, falling back to TAR");
     compress_tar(src, dst)
-}
-
 // TAR decompression
 fn decompress_tar<P: AsRef<Path>>(src: P, dst: P) -> ArchiveResult<()> {
     let src_file = File::open(src)?;
@@ -210,8 +148,6 @@ fn decompress_tar<P: AsRef<Path>>(src: P, dst: P) -> ArchiveResult<()> {
     
     extract_tar(&mut tar, dst.as_ref())?;
     Ok(())
-}
-
 // ZIP decompression
 fn decompress_zip<P: AsRef<Path>>(src: P, dst: P) -> ArchiveResult<()> {
     let src_file = File::open(src)?;
@@ -220,26 +156,18 @@ fn decompress_zip<P: AsRef<Path>>(src: P, dst: P) -> ArchiveResult<()> {
     
     extract_zip(&zip, dst.as_ref())?;
     Ok(())
-}
-
 // TAR.GZ decompression (placeholder)
 fn decompress_tar_gz<P: AsRef<Path>>(src: P, dst: P) -> ArchiveResult<()> {
     warn!("TAR.GZ decompression not fully implemented, falling back to TAR");
     decompress_tar(src, dst)
-}
-
 // TAR.BZ2 decompression (placeholder)
 fn decompress_tar_bz2<P: AsRef<Path>>(src: P, dst: P) -> ArchiveResult<()> {
     warn!("TAR.BZ2 decompression not fully implemented, falling back to TAR");
     decompress_tar(src, dst)
-}
-
 // TAR.XZ decompression (placeholder)
 fn decompress_tar_xz<P: AsRef<Path>>(src: P, dst: P) -> ArchiveResult<()> {
     warn!("TAR.XZ decompression not fully implemented, falling back to TAR");
     decompress_tar(src, dst)
-}
-
 // Helper functions for adding files to archives
 fn add_file_to_tar<W: Write>(tar: &mut RatStash<W>, file_path: &Path) -> ArchiveResult<()> {
     let file = File::open(file_path)?;
@@ -249,9 +177,6 @@ fn add_file_to_tar<W: Write>(tar: &mut RatStash<W>, file_path: &Path) -> Archive
         .to_string_lossy();
     
     let header = super::tar::FileInfoHeader(
-        &file_name,
-        metadata.len(),
-        0o644,
         ""
     )?;
     
@@ -261,8 +186,6 @@ fn add_file_to_tar<W: Write>(tar: &mut RatStash<W>, file_path: &Path) -> Archive
     std::io::copy(&mut reader, tar)?;
     
     Ok(())
-}
-
 fn add_directory_to_tar<W: Write>(tar: &mut RatStash<W>, dir_path: &Path) -> ArchiveResult<()> {
     // Simplified directory handling - would recursively walk in full implementation
     for entry in std::fs::read_dir(dir_path)? {
@@ -275,8 +198,6 @@ fn add_directory_to_tar<W: Write>(tar: &mut RatStash<W>, dir_path: &Path) -> Arc
     }
     
     Ok(())
-}
-
 fn add_file_to_zip<W: Write + std::io::Seek>(zip: &mut HoardStash<W>, file_path: &Path) -> ArchiveResult<()> {
     let mut file = File::open(file_path)?;
     let file_name = file_path.file_name()
@@ -287,8 +208,6 @@ fn add_file_to_zip<W: Write + std::io::Seek>(zip: &mut HoardStash<W>, file_path:
     std::io::copy(&mut file, &mut writer)?;
     
     Ok(())
-}
-
 fn add_directory_to_zip<W: Write + std::io::Seek>(zip: &mut HoardStash<W>, dir_path: &Path) -> ArchiveResult<()> {
     // Simplified directory handling
     for entry in std::fs::read_dir(dir_path)? {
@@ -301,8 +220,6 @@ fn add_directory_to_zip<W: Write + std::io::Seek>(zip: &mut HoardStash<W>, dir_p
     }
     
     Ok(())
-}
-
 // Helper functions for extracting from archives
 fn extract_tar<R: Read>(tar: &mut RatPack<R>, dst_dir: &Path) -> ArchiveResult<()> {
     std::fs::create_dir_all(dst_dir)?;
@@ -313,18 +230,12 @@ fn extract_tar<R: Read>(tar: &mut RatPack<R>, dst_dir: &Path) -> ArchiveResult<(
         // Ensure parent directory exists
         if let Some(parent) = file_path.parent() {
             std::fs::create_dir_all(parent)?;
-        }
-        
         // Extract file
         let mut output_file = File::create(&file_path)?;
         std::io::copy(tar, &mut output_file)?;
         
         debug!("Extracted: {}", file_path.display());
-    }
-    
     Ok(())
-}
-
 fn extract_zip<R: Read + std::io::Seek>(zip: &HoardPack<R>, dst_dir: &Path) -> ArchiveResult<()> {
     std::fs::create_dir_all(dst_dir)?;
     
@@ -334,16 +245,10 @@ fn extract_zip<R: Read + std::io::Seek>(zip: &HoardPack<R>, dst_dir: &Path) -> A
         // Ensure parent directory exists
         if let Some(parent) = file_path.parent() {
             std::fs::create_dir_all(parent)?;
-        }
-        
         // Extract file
         let mut reader = file.open()?;
         let mut output_file = File::create(&file_path)?;
         std::io::copy(&mut reader, &mut output_file)?;
         
         debug!("Extracted: {}", file_path.display());
-    }
-    
     Ok(())
-}
-

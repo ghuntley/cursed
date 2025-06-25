@@ -5,27 +5,17 @@ use std::collections::{HashMap, HashSet, VecDeque};
 /// Dependency graph for package resolution
 #[derive(Debug, Clone)]
 pub struct DependencyGraph {
-    pub nodes: HashMap<String, DependencyNode>,
-    pub edges: HashMap<String, Vec<String>>,
-}
-
 impl DependencyGraph {
     pub fn new() -> Self {
         Self {
-            nodes: HashMap::new(),
-            edges: HashMap::new(),
         }
     }
 
     pub fn add_node(&mut self, package: String, node: DependencyNode) {
         self.nodes.insert(package.clone(), node);
         self.edges.entry(package).or_insert_with(Vec::new);
-    }
-
     pub fn add_dependency(&mut self, package: String, dependency: String) {
         self.edges.entry(package).or_default().push(dependency);
-    }
-
     pub fn detect_cycles(&self) -> Vec<Vec<String>> {
         let mut cycles = Vec::new();
         let mut visited = HashSet::new();
@@ -37,17 +27,8 @@ impl DependencyGraph {
                     cycles.push(cycle);
                 }
             }
-        }
-
         cycles
-    }
-
     fn dfs_cycle_detect(
-        &self,
-        node: &str,
-        visited: &mut HashSet<String>,
-        rec_stack: &mut HashSet<String>,
-        path: &mut Vec<String>,
     ) -> Option<Vec<String>> {
         visited.insert(node.to_string());
         rec_stack.insert(node.to_string());
@@ -65,13 +46,9 @@ impl DependencyGraph {
                     return Some(path[cycle_start..].to_vec());
                 }
             }
-        }
-
         rec_stack.remove(node);
         path.pop();
         None
-    }
-
     pub fn topological_sort(&self) -> crate::error_types::Result<Vec<String>> {
         let mut in_degree = HashMap::new();
         let mut queue = VecDeque::new();
@@ -80,8 +57,6 @@ impl DependencyGraph {
         // Calculate in-degrees
         for node in self.nodes.keys() {
             in_degree.insert(node.clone(), 0);
-        }
-
         for dependencies in self.edges.values() {
             for dep in dependencies {
                 *in_degree.entry(dep.clone()).or_insert(0) += 1;
@@ -109,12 +84,8 @@ impl DependencyGraph {
                     }
                 }
             }
-        }
-
         if result.len() != self.nodes.len() {
             return Err(CursedError::Parse("Circular dependency detected".to_string()));
-        }
-
         Ok(result)
     }
 }
@@ -128,32 +99,16 @@ impl Default for DependencyGraph {
 /// Node in the dependency graph
 #[derive(Debug, Clone)]
 pub struct DependencyNode {
-    pub package: String,
-    pub version: crate::package_manager::Version,
-    pub dependencies: Vec<String>,
-    pub dev_dependencies: Vec<String>,
-    pub optional_dependencies: Vec<String>,
-}
-
 impl DependencyNode {
     pub fn new(package: String, version: crate::package_manager::Version) -> Self {
         Self {
-            package,
-            version,
-            dependencies: Vec::new(),
-            dev_dependencies: Vec::new(),
-            optional_dependencies: Vec::new(),
         }
     }
 
     pub fn add_dependency(&mut self, dep: String) {
         self.dependencies.push(dep);
-    }
-
     pub fn add_dev_dependency(&mut self, dep: String) {
         self.dev_dependencies.push(dep);
-    }
-
     pub fn add_optional_dependency(&mut self, dep: String) {
         self.optional_dependencies.push(dep);
     }

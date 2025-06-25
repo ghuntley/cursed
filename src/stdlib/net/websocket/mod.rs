@@ -41,30 +41,10 @@ impl CloseCode {
     
     pub fn as_u16(&self) -> u16 {
         self.0
-    }
-    
     pub fn reason(&self) -> &'static str {
         match self.0 {
-            1000 => "Normal Closure",
-            1001 => "Going Away",
-            1002 => "Protocol CursedError",
-            1003 => "Unsupported Data",
-            1005 => "No Status Received",
-            1006 => "Abnormal Closure",
-            1007 => "Invalid Frame Payload Data",
-            1008 => "Policy Violation",
-            1009 => "Message Too Big",
-            1010 => "Mandatory Extension",
-            1011 => "Internal CursedError",
-            1012 => "Service Restart",
-            1013 => "Try Again Later",
-            1014 => "Bad Gateway",
-            1015 => "TLS Handshake",
-            _ => "Unknown",
         }
     }
-}
-
 impl std::fmt::Display for CloseCode {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "{} {}", self.0, self.reason())
@@ -74,9 +54,3 @@ impl std::fmt::Display for CloseCode {
 /// WebSocket connection state
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum ConnectionState {
-    Connecting,
-    Open,
-    Closing,
-    Closed,
-}
-

@@ -21,21 +21,14 @@ use super::error::{EnvError, EnvResult, not_found_error, invalid_value_error};
 /// ```
 pub fn parse_env<T>(key: &str) -> EnvResult<T>
 where
-    T: FromStr,
-    T::Err: std::fmt::Display,
 {
     let value = get_env(key).ok_or_else(|| not_found_error(key))?;
     
     value.parse::<T>().map_err(|err| {
         invalid_value_error(
-            key,
-            &value,
-            std::any::type_name::<T>(),
             &err.to_string()
         )
     })
-}
-
 /// Parse an environment variable with a default value
 /// 
 /// Attempts to parse the environment variable to type `T`.
@@ -50,13 +43,8 @@ where
 /// ```
 pub fn parse_env_with_default<T>(key: &str, default: T) -> EnvResult<T>
 where
-    T: FromStr + Clone,
-    T::Err: std::fmt::Display,
 {
     match parse_env(key) {
-        Ok(value) => Ok(value),
-        Err(EnvError::NotFound { .. }) => Ok(default),
-        Err(err) => Err(err),
     }
 }
 
@@ -86,8 +74,6 @@ pub fn get_path_env(key: &str) -> Option<Vec<PathBuf>> {
             .map(PathBuf::from)
             .collect()
     )
-}
-
 /// Parse an environment variable as an integer
 /// 
 /// Convenience function for parsing integer environment variables.
@@ -100,8 +86,6 @@ pub fn get_path_env(key: &str) -> Option<Vec<PathBuf>> {
 /// ```
 pub fn get_int_env(key: &str) -> EnvResult<i64> {
     parse_env(key)
-}
-
 /// Parse an environment variable as a float
 /// 
 /// Convenience function for parsing floating-point environment variables.
@@ -114,8 +98,6 @@ pub fn get_int_env(key: &str) -> EnvResult<i64> {
 /// ```
 pub fn get_float_env(key: &str) -> EnvResult<f64> {
     parse_env(key)
-}
-
 /// Parse an environment variable as a boolean
 /// 
 /// Supports various boolean representations:
@@ -133,14 +115,8 @@ pub fn get_bool_env(key: &str) -> EnvResult<bool> {
     let value = get_env(key).ok_or_else(|| not_found_error(key))?;
     
     match value.to_lowercase().as_str() {
-        "true" | "1" | "yes" | "on" => Ok(true),
-        "false" | "0" | "no" | "off" => Ok(false),
         _ => Err(invalid_value_error(
-            key,
-            &value,
-            "boolean",
             "Expected true/false, 1/0, yes/no, or on/off"
-        )),
     }
 }
 
@@ -157,23 +133,14 @@ pub fn get_bool_env(key: &str) -> EnvResult<bool> {
 /// ```
 pub fn get_numeric_env<T>(key: &str, min: T, max: T) -> EnvResult<T>
 where
-    T: FromStr + PartialOrd + Copy + std::fmt::Display,
-    T::Err: std::fmt::Display,
 {
     let value: T = parse_env(key)?;
     
     if value < min || value > max {
         return Err(invalid_value_error(
-            key,
-            &format!("{}", value),
-            &format!("number between {} and {}", min, max),
             "Value is outside the valid range"
         ));
-    }
-    
     Ok(value)
-}
-
 /// Parse an environment variable as a comma-separated list
 /// 
 /// Splits the environment variable by commas and trims whitespace.
@@ -195,8 +162,6 @@ pub fn parse_env_list(key: &str) -> EnvResult<Vec<String>> {
             .filter(|s| !s.is_empty())
             .collect()
     )
-}
-
 /// Parse an environment variable as a colon-separated list (Unix-style)
 /// 
 /// Splits the environment variable by colons and trims whitespace.
@@ -218,8 +183,6 @@ pub fn parse_env_colon_list(key: &str) -> EnvResult<Vec<String>> {
             .filter(|s| !s.is_empty())
             .collect()
     )
-}
-
 /// Parse an environment variable as a semicolon-separated list (Windows-style)
 /// 
 /// Splits the environment variable by semicolons and trims whitespace.
@@ -241,8 +204,6 @@ pub fn parse_env_semicolon_list(key: &str) -> EnvResult<Vec<String>> {
             .filter(|s| !s.is_empty())
             .collect()
     )
-}
-
 /// Parse an environment variable as a platform-appropriate path list
 /// 
 /// Uses the platform's path separator (: on Unix, ; on Windows).
@@ -264,8 +225,6 @@ pub fn parse_env_path_list(key: &str) -> EnvResult<Vec<String>> {
             .filter(|s| !s.is_empty())
             .collect()
     )
-}
-
 /// Parse an environment variable as a key=value configuration map
 /// 
 /// Supports formats like: "key1=value1,key2=value2" or "key1=value1;key2=value2"
@@ -285,24 +244,13 @@ pub fn parse_env_config(key: &str, separator: &str) -> EnvResult<std::collection
         let pair = pair.trim();
         if pair.is_empty() {
             continue;
-        }
-        
         let parts: Vec<&str> = pair.splitn(2, '=').collect();
         if parts.len() != 2 {
             return Err(invalid_value_error(
-                key,
-                &value,
-                "key=value pairs",
                 &format!("Invalid pair format: '{}'", pair)
             ));
-        }
-        
         config.insert(parts[0].trim().to_string(), parts[1].trim().to_string());
-    }
-    
     Ok(config)
-}
-
 /// Parse an environment variable as a duration in seconds
 /// 
 /// Supports suffixes: s (seconds), m (minutes), h (hours), d (days)
@@ -320,8 +268,6 @@ pub fn parse_env_duration(key: &str) -> EnvResult<std::time::Duration> {
     
     if value.is_empty() {
         return Err(invalid_value_error(key, &value, "duration", "Empty value"));
-    }
-    
     let (number_part, suffix) = if let Some(last_char) = value.chars().last() {
         if last_char.is_alphabetic() {
             (&value[..value.len()-1], &value[value.len()-1..])
@@ -330,32 +276,18 @@ pub fn parse_env_duration(key: &str) -> EnvResult<std::time::Duration> {
         }
     } else {
         return Err(invalid_value_error(key, &value, "duration", "Invalid format"));
-    };
     
     let number: f64 = number_part.parse().map_err(|err| {
         invalid_value_error(key, &value, "duration", &format!("Invalid number: {}", err))
     })?;
     
     let seconds = match suffix.to_lowercase().as_str() {
-        "s" => number,
-        "m" => number * 60.0,
-        "h" => number * 3600.0,
-        "d" => number * 86400.0,
         _ => return Err(invalid_value_error(
-            key,
-            &value,
-            "duration",
             "Unsupported suffix. Use s, m, h, or d"
-        )),
-    };
     
     if seconds < 0.0 {
         return Err(invalid_value_error(key, &value, "duration", "Duration cannot be negative"));
-    }
-    
     Ok(std::time::Duration::from_secs_f64(seconds))
-}
-
 /// Parse an environment variable as a memory size in bytes
 /// 
 /// Supports suffixes: B (bytes), KB (kilobytes), MB (megabytes), GB (gigabytes)
@@ -373,8 +305,6 @@ pub fn parse_env_memory_size(key: &str) -> EnvResult<u64> {
     
     if value.is_empty() {
         return Err(invalid_value_error(key, &value, "memory size", "Empty value"));
-    }
-    
     let (number_part, suffix) = if value.ends_with("GB") {
         (&value[..value.len()-2], "GB")
     } else if value.ends_with("MB") {
@@ -385,29 +315,15 @@ pub fn parse_env_memory_size(key: &str) -> EnvResult<u64> {
         (&value[..value.len()-1], "B")
     } else {
         (value.as_str(), "B") // Default to bytes
-    };
     
     let number: f64 = number_part.parse().map_err(|err| {
         invalid_value_error(key, &value, "memory size", &format!("Invalid number: {}", err))
     })?;
     
     let bytes = match suffix {
-        "B" => number,
-        "KB" => number * 1024.0,
-        "MB" => number * 1024.0 * 1024.0,
-        "GB" => number * 1024.0 * 1024.0 * 1024.0,
         _ => return Err(invalid_value_error(
-            key,
-            &value,
-            "memory size",
             "Unsupported suffix. Use B, KB, MB, or GB"
-        )),
-    };
     
     if bytes < 0.0 {
         return Err(invalid_value_error(key, &value, "memory size", "Size cannot be negative"));
-    }
-    
     Ok(bytes as u64)
-}
-

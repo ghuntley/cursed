@@ -20,31 +20,28 @@ pub mod framework;
 // Core testing infrastructure re-exports
 pub use framework::{
     TestFramework, TestFrameworkConfig, TestExecutionMode, TestFilterMode
-};
+// };
 
 // Test discovery and execution
 pub use discovery::{
     TestDiscovery, TestFilter, DiscoveryConfig, TestInfo, TestMetadata
-};
+// };
 pub use executor::{
-    TestExecutor, TestExecutorConfig, TestResult, TestStatus, TestFailure,
     ExecutionContext, TestTimeout, ParallelExecutor, SequentialExecutor
-};
+// };
 
 // Test runner and reporting
 pub use runner::{
     TestRunner, TestRunnerConfig, RunnerResult, TestSuite, TestSuiteResult
-};
+// };
 pub use reporting::{
-    TestReporter, ReportFormat, ReportConfig, TestReport, SummaryReport,
     ConsoleReporter, JsonReporter, XmlReporter, HtmlReporter
-};
+// };
 
 // Statistics and performance measurement
 pub use stats::{
-    TestStatistics, TestTiming, PerformanceStats, TestMetrics,
     ExecutionStats, TestBenchmark
-};
+// };
 
 // Memory stats from executor module
 pub use executor::MemoryStats;
@@ -52,43 +49,31 @@ pub use executor::MemoryStats;
 // Assertion framework
 pub use assertions::{
     // Basic assertions
-    assert_true, assert_false, assert_eq, assert_ne, assert_null, assert_not_null,
     
     // Numeric assertions
-    assert_greater, assert_greater_equal, assert_less, assert_less_equal,
-    assert_close_to, assert_between, assert_positive, assert_negative, assert_zero,
     
     // String assertions
-    assert_contains, assert_not_contains, assert_starts_with, assert_ends_with,
-    assert_matches_regex, assert_empty_string, assert_length,
     
     // Collection assertions
-    assert_empty, assert_not_empty, assert_contains_element, assert_not_contains_element,
-    assert_has_length, assert_all_true, assert_any_true, assert_none_true,
     
     // CursedError assertions
-    assert_error, assert_no_error, assert_error_type, assert_error_message,
-    assert_panic, assert_no_panic,
     
     // Advanced assertions
-    assert_eventually, assert_within_timeout, assert_file_exists, assert_file_content,
     
     // Assertion result types
     AssertionResult, AssertionError, AssertionContext
-};
+// };
 
 // Test attributes and metadata
 pub use attributes::{
-    TestAttribute, TestAttributes, TestIgnore, TestExpectedPanic,
     // TestTimeout as AttributeTimeout, TestSetup, TestTeardown,
     parse_test_attributes, validate_test_attributes
-};
+// };
 
 // Test macros (re-exported for convenience)
 pub use macros::{
-    test_function, ignore_test, should_panic_test, timeout_test,
     setup_function, teardown_function, test_suite_macro
-};
+// };
 
 // CursedError handling for testing framework
 use crate::error::CursedError;
@@ -100,21 +85,12 @@ pub type TestFrameworkResult<T> = std::result::Result<T, TestError>;
 #[derive(Debug, Clone)]
 pub enum TestError {
     /// Test discovery failed
-    DiscoveryError(String),
     /// Test execution failed
-    ExecutionError(String),
     /// Assertion failed
-    AssertionError(String),
     /// Test timeout
-    TimeoutError(String),
     /// Configuration error
-    ConfigError(String),
     /// Report generation error
-    ReportError(String),
     /// General testing framework error
-    FrameworkError(String),
-}
-
 // impl std::fmt::Display for TestError {
 //     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
 //         match self {
@@ -141,33 +117,21 @@ pub enum TestError {
 /// Helper function to create test discovery errors
 pub fn discovery_error(message: &str) -> TestError {
     TestError::DiscoveryError(message.to_string())
-}
-
 /// Helper function to create test execution errors
 pub fn execution_error(message: &str) -> TestError {
     TestError::ExecutionError(message.to_string())
-}
-
 /// Helper function to create assertion errors
 pub fn assertion_error(message: &str) -> TestError {
     TestError::AssertionError(message.to_string())
-}
-
 /// Helper function to create timeout errors
 pub fn timeout_error(message: &str) -> TestError {
     TestError::TimeoutError(message.to_string())
-}
-
 /// Helper function to create configuration errors
 pub fn config_error(message: &str) -> TestError {
     TestError::ConfigError(message.to_string())
-}
-
 /// Helper function to create report generation errors
 pub fn report_error(message: &str) -> TestError {
     TestError::ReportError(message.to_string())
-}
-
 /// Helper function to create general framework errors
 pub fn framework_error(message: &str) -> TestError {
     TestError::FrameworkError(message.to_string())

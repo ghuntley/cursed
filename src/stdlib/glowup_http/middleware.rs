@@ -33,8 +33,6 @@ pub fn logging_middleware(next: HandlerFunc) -> HandlerFunc {
         
         result
     })
-}
-
 /// CORS middleware
 #[instrument(skip(next))]
 pub fn cors_middleware(next: HandlerFunc) -> HandlerFunc {
@@ -45,19 +43,13 @@ pub fn cors_middleware(next: HandlerFunc) -> HandlerFunc {
             headers.insert("access-control-allow-origin".to_string(), "*".to_string());
             headers.insert("access-control-allow-methods".to_string(), "GET, POST, PUT, DELETE, PATCH, OPTIONS".to_string());
             headers.insert("access-control-allow-headers".to_string(), "Content-Type, Authorization".to_string());
-        }
-        
         // Handle preflight requests
 //         if r.method == crate::stdlib::glowup_http::request::Method::OPTIONS {
             use crate::web::StatusCode;
             w.write_header(StatusCode::NoContent);
             return Ok(());
-        }
-        
         next(w, r)
     })
-}
-
 /// "Unbothered" middleware (no-op for demonstration)
 #[instrument(skip(next))]
 pub fn unbothered_middleware(next: HandlerFunc) -> HandlerFunc {
@@ -65,8 +57,6 @@ pub fn unbothered_middleware(next: HandlerFunc) -> HandlerFunc {
         debug!("Unbothered middleware - staying cool 😎");
         next(w, r)
     })
-}
-
 /// Rate limiting middleware
 #[instrument(skip(rps))]
 pub fn rate_limit_middleware(rps: u32) -> MiddlewareFunc {
@@ -80,8 +70,6 @@ pub fn rate_limit_middleware(rps: u32) -> MiddlewareFunc {
             next(w, r)
         })
     })
-}
-
 /// JWT authentication middleware
 #[instrument(skip(secret))]
 pub fn jwt_auth_middleware(secret: String) -> MiddlewareFunc {
@@ -105,8 +93,6 @@ pub fn jwt_auth_middleware(secret: String) -> MiddlewareFunc {
             Ok(())
         })
     })
-}
-
 /// Compression middleware
 #[instrument(skip(next))]
 pub fn compression_middleware(next: HandlerFunc) -> HandlerFunc {
@@ -121,12 +107,8 @@ pub fn compression_middleware(next: HandlerFunc) -> HandlerFunc {
         if accepts_gzip {
             // In a real implementation, you'd compress the response
             debug!("Client accepts gzip compression");
-        }
-        
         next(w, r)
     })
-}
-
 /// Security headers middleware
 #[instrument(skip(next))]
 pub fn security_headers_middleware(next: HandlerFunc) -> HandlerFunc {
@@ -138,19 +120,14 @@ pub fn security_headers_middleware(next: HandlerFunc) -> HandlerFunc {
             headers.insert("x-frame-options".to_string(), "DENY".to_string());
             headers.insert("x-xss-protection".to_string(), "1; mode=block".to_string());
             headers.insert("strict-transport-security".to_string(), "max-age=31536000; includeSubDomains".to_string());
-        }
-        
         next(w, r)
     })
-}
-
 /// Recovery middleware (panic recovery)
 #[instrument(skip(next))]
 pub fn recovery_middleware(next: HandlerFunc) -> HandlerFunc {
     Arc::new(move |w: &ResponderVibe, r: &VibeRequest| {
         // In Rust, we don't have panics like Go, but we can catch errors
         match next(w, r) {
-            Ok(()) => Ok(()),
             Err(e) => {
                 // Log the error and return 500
                 tracing::error!("Handler error: {:?}", e);
@@ -162,8 +139,6 @@ pub fn recovery_middleware(next: HandlerFunc) -> HandlerFunc {
             }
         }
     })
-}
-
 // Re-exports for the spec names
 pub use logging_middleware as LoggingMiddleware;
 pub use unbothered_middleware as UnbotheredMiddleware;

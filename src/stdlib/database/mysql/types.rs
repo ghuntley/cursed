@@ -12,12 +12,6 @@ use super::error::{MySqlError, MySqlResult};
 /// Convert CURSED SqlValue to MySQL Value
 pub fn convert_from_sql_value(value: &SqlValue) -> MySqlResult<MySqlValue> {
     match value {
-        SqlValue::Null => Ok(MySqlValue::NULL),
-        SqlValue::Boolean(b) => Ok(MySqlValue::Int(if *b { 1 } else { 0 })),
-        SqlValue::Integer(i) => Ok(MySqlValue::Int(*i)),
-        SqlValue::Float(f) => Ok(MySqlValue::Double(*f)),
-        SqlValue::String(s) => Ok(MySqlValue::Bytes(s.as_bytes().to_vec())),
-        SqlValue::Bytes(b) => Ok(MySqlValue::Bytes(b.clone())),
         SqlValue::Timestamp(ts) => {
             // Convert SystemTime to MySQL datetime string
             match ts.duration_since(SystemTime::UNIX_EPOCH) {
@@ -28,7 +22,6 @@ pub fn convert_from_sql_value(value: &SqlValue) -> MySqlResult<MySqlValue> {
                     let formatted = datetime.format("%Y-%m-%d %H:%M:%S").to_string();
                     Ok(MySqlValue::Bytes(formatted.as_bytes().to_vec()))
                 }
-                Err(_) => Err(MySqlError::type_conversion_error("SystemTime", "MySQL DATETIME")),
             }
         }
         SqlValue::Json(json) => {
@@ -37,20 +30,14 @@ pub fn convert_from_sql_value(value: &SqlValue) -> MySqlResult<MySqlValue> {
             Ok(MySqlValue::Bytes(json_str.as_bytes().to_vec()))
         }
     }
-}
-
 /// Convert MySQL Value to CURSED SqlValue
 pub fn convert_to_sql_value(value: MySqlValue) -> MySqlResult<SqlValue> {
     match value {
-        MySqlValue::NULL => Ok(SqlValue::Null),
         MySqlValue::Bytes(bytes) => {
             // Try to convert to string first, fall back to bytes
             match String::from_utf8(bytes.clone()) {
-                Ok(s) => Ok(SqlValue::String(s)),
-                Err(_) => Ok(SqlValue::Bytes(bytes)),
             }
         }
-        MySqlValue::Int(i) => Ok(SqlValue::Integer(i)),
         MySqlValue::UInt(u) => {
             if u <= i64::MAX as u64 {
                 Ok(SqlValue::Integer(u as i64))
@@ -59,8 +46,6 @@ pub fn convert_to_sql_value(value: MySqlValue) -> MySqlResult<SqlValue> {
                 Ok(SqlValue::String(u.to_string()))
             }
         }
-        MySqlValue::Float(f) => Ok(SqlValue::Float(f as f64)),
-        MySqlValue::Double(d) => Ok(SqlValue::Float(d)),
         MySqlValue::Date(year, month, day, hour, minute, second, microsecond) => {
             // Convert MySQL date/time to SystemTime
             let datetime = chrono::NaiveDate::from_ymd_opt(year as i32, month as u32, day as u32)
@@ -71,10 +56,8 @@ pub fn convert_to_sql_value(value: MySqlValue) -> MySqlResult<SqlValue> {
                 .map(|timestamp| SystemTime::UNIX_EPOCH + std::time::Duration::from_secs(timestamp as u64));
             
             match datetime {
-                Some(ts) => Ok(SqlValue::Timestamp(ts)),
                 None => {
                     // Fall back to string representation
-                    let date_str = format!("{:04}-{:02}-{:02} {:02}:{:02}:{:02}", 
                                          year, month, day, hour, minute, second);
                     Ok(SqlValue::String(date_str))
                 }
@@ -87,33 +70,22 @@ pub fn convert_to_sql_value(value: MySqlValue) -> MySqlResult<SqlValue> {
                 format!("{}{:02}:{:02}:{:02}.{:06}", sign, days * 24 + hours as u32, minutes, seconds, microseconds)
             } else {
                 format!("{}{:02}:{:02}:{:02}.{:06}", sign, hours, minutes, seconds, microseconds)
-            };
             Ok(SqlValue::String(time_str))
         }
     }
-}
-
 /// Extract value from MySQL Row by column index
 pub fn extract_value_by_index(row: &Row, index: usize) -> MySqlResult<SqlValue> {
     match row.get_opt::<MySqlValue, usize>(index) {
-        Some(Ok(value)) => convert_to_sql_value(value),
         Some(Err(e)) => Err(MySqlError::type_conversion_error(
-            "MySQL Row value",
             &format!("SqlValue (index {}): {}", index, e)
-        )),
-        None => Ok(SqlValue::Null),
     }
 }
 
 /// Extract value from MySQL Row by column name
 pub fn extract_value_by_name(row: &Row, name: &str) -> MySqlResult<SqlValue> {
     match row.get_opt::<MySqlValue, &str>(name) {
-        Some(Ok(value)) => convert_to_sql_value(value),
         Some(Err(e)) => Err(MySqlError::type_conversion_error(
-            "MySQL Row value",
             &format!("SqlValue (column '{}'): {}", name, e)
-        )),
-        None => Ok(SqlValue::Null),
     }
 }
 
@@ -126,11 +98,7 @@ pub fn get_column_info(row: &Row) -> (Vec<String>, Vec<String>) {
     for column in columns {
         column_names.push(column.name_str().to_string());
         column_types.push(format!("{:?}", column.column_type()));
-    }
-    
     (column_names, column_types)
-}
-
 /// Convert MySQL isolation level to CURSED isolation level
 // pub fn convert_isolation_level(level: crate::stdlib::database::SqlIsolationLevel) -> MySqlResult<mysql::IsolationLevel> {
     match level {
@@ -143,8 +111,6 @@ pub fn get_column_info(row: &Row) -> (Vec<String>, Vec<String>) {
             Ok(mysql::IsolationLevel::ReadCommitted)
         }
     }
-}
-
 /// Escape SQL string for safe query construction
 pub fn escape_string(s: &str) -> String {
     s.replace('\\', "\\\\")
@@ -154,8 +120,6 @@ pub fn escape_string(s: &str) -> String {
      .replace('\r', "\\r")
      .replace('\t', "\\t")
      .replace('\0', "\\0")
-}
-
 /// Build parameter placeholders for prepared statements
 pub fn build_placeholders(count: usize) -> String {
     if count == 0 {
@@ -174,18 +138,12 @@ pub fn build_placeholders(count: usize) -> String {
 pub fn validate_connection_string(dsn: &str) -> MySqlResult<()> {
     if dsn.is_empty() {
         return Err(MySqlError::configuration_error("Connection string cannot be empty"));
-    }
-    
     // Basic validation - should contain mysql:// or be in standard format
     if !dsn.starts_with("mysql://") && !dsn.contains("@") {
         return Err(MySqlError::configuration_error(
             "Invalid MySQL connection string format. Expected mysql://user:pass@host:port/database or user:pass@host:port/database"
         ));
-    }
-    
     Ok(())
-}
-
 /// Parse MySQL connection string into components
 pub fn parse_connection_string(dsn: &str) -> MySqlResult<MySqlConnectionInfo> {
     validate_connection_string(dsn)?;
@@ -194,14 +152,11 @@ pub fn parse_connection_string(dsn: &str) -> MySqlResult<MySqlConnectionInfo> {
         &dsn[8..] // Remove mysql:// prefix
     } else {
         dsn
-    };
     
     // Parse user:pass@host:port/database format
     let parts: Vec<&str> = dsn.split('@').collect();
     if parts.len() != 2 {
         return Err(MySqlError::configuration_error("Invalid connection string format"));
-    }
-    
     let auth_part = parts[0];
     let host_db_part = parts[1];
     
@@ -212,14 +167,11 @@ pub fn parse_connection_string(dsn: &str) -> MySqlResult<MySqlConnectionInfo> {
         auth_parts[1].to_string()
     } else {
         String::new()
-    };
     
     // Parse host:port/database
     let host_db_parts: Vec<&str> = host_db_part.split('/').collect();
     if host_db_parts.len() != 2 {
         return Err(MySqlError::configuration_error("Database name missing from connection string"));
-    }
-    
     let host_port = host_db_parts[0];
     let database = host_db_parts[1].to_string();
     
@@ -231,24 +183,9 @@ pub fn parse_connection_string(dsn: &str) -> MySqlResult<MySqlConnectionInfo> {
             .map_err(|_| MySqlError::configuration_error("Invalid port number"))?
     } else {
         3306 // Default MySQL port
-    };
     
     Ok(MySqlConnectionInfo {
-        host,
-        port,
-        user,
-        password,
-        database,
     })
-}
-
 /// MySQL connection information
 #[derive(Debug, Clone)]
 pub struct MySqlConnectionInfo {
-    pub host: String,
-    pub port: u16,
-    pub user: String,
-    pub password: String,
-    pub database: String,
-}
-

@@ -27,8 +27,6 @@ pub trait Interface {
     
     /// Removes and returns the last element (highest index)
     fn pop(&mut self) -> Option<Value>;
-}
-
 /// Establish heap ordering in the given collection.
 /// This function rearranges the elements to satisfy the heap property.
 /// Time complexity: O(n)
@@ -65,8 +63,6 @@ pub fn init<H: Interface>(h: &mut H) {
 pub fn push<H: Interface>(h: &mut H, x: Value) {
     h.push(x);
     up(h, h.len() - 1);
-}
-
 /// Pop the minimum element from the heap and restore ordering.
 /// Returns None if the heap is empty.
 /// Time complexity: O(log n)
@@ -87,18 +83,12 @@ pub fn pop<H: Interface>(h: &mut H) -> HeapResult<Option<Value>> {
     let n = h.len();
     if n == 0 {
         return Ok(None);
-    }
-    
     h.swap(0, n - 1);
     let result = h.pop();
     
     if h.len() > 0 {
         down(h, 0, h.len());
-    }
-    
     Ok(result)
-}
-
 /// Remove the element at index i from the heap and restore ordering.
 /// Time complexity: O(log n)
 ///
@@ -126,19 +116,13 @@ pub fn remove<H: Interface>(h: &mut H, i: i32) -> HeapResult<Value> {
     if i == n - 1 {
         // Removing last element, just pop
         return Ok(h.pop().unwrap());
-    }
-    
     h.swap(i, n - 1);
     let result = h.pop().unwrap();
     
     if i < h.len() {
         // Fix the heap property at position i
         fix(h, i)?;
-    }
-    
     Ok(result)
-}
-
 /// Fix re-establishes the heap ordering after element i's value has changed.
 /// This function should be called when an element's priority changes.
 /// Time complexity: O(log n)
@@ -162,8 +146,6 @@ pub fn fix<H: Interface>(h: &mut H, i: i32) -> HeapResult<()> {
         up(h, i);
     }
     Ok(())
-}
-
 /// Check if a heap is properly ordered.
 /// This function verifies that the heap property is satisfied.
 /// Time complexity: O(n)
@@ -188,16 +170,12 @@ pub fn is_heap<H: Interface>(h: &H) -> bool {
         // Check left child
         if left < n && h.less(left, i) {
             return false;
-        }
-        
         // Check right child
         if right < n && h.less(right, i) {
             return false;
         }
     }
     true
-}
-
 /// Move element at index i up the heap until heap property is satisfied.
 /// Time complexity: O(log n)
 fn up<H: Interface>(h: &mut H, mut i: i32) {
@@ -228,17 +206,9 @@ fn down<H: Interface>(h: &mut H, mut i: i32, n: i32) -> bool {
         }
         if right < n && h.less(right, smallest) {
             smallest = right;
-        }
-        
         if smallest == i {
             break;
-        }
-        
         h.swap(i, smallest);
         swapped = true;
         i = smallest;
-    }
-    
     swapped
-}
-

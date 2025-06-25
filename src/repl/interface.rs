@@ -12,37 +12,17 @@ use crate::repl::{ReplOutput, ReplResult};
 /// REPL interface configuration
 #[derive(Debug, Clone)]
 pub struct InterfaceConfig {
-    pub use_colors: bool,
-    pub show_line_numbers: bool,
-    pub show_timing: bool,
-    pub show_types: bool,
-    pub verbose_errors: bool,
-}
-
 impl Default for InterfaceConfig {
     fn default() -> Self {
         Self {
-            use_colors: atty::is(atty::Stream::Stdout),
-            show_line_numbers: true,
-            show_timing: false,
-            show_types: true,
-            verbose_errors: false,
         }
     }
-}
-
 /// REPL user interface manager
 pub struct ReplInterface {
-    config: InterfaceConfig,
-    line_number: usize,
-}
-
 impl ReplInterface {
     /// Create a new REPL interface
     pub fn new(config: InterfaceConfig) -> Self {
         Self {
-            config,
-            line_number: 1,
         }
     }
 
@@ -55,8 +35,6 @@ impl ReplInterface {
         } else {
             println!("🔥 CURSED REPL v{}", version);
             println!("Welcome to the most fire programming language! 🚀");
-        }
-        
         println!("Type :help for available commands or :exit to quit");
         
         if let Some(dir) = working_dir {
@@ -68,8 +46,6 @@ impl ReplInterface {
         }
         
         println!();
-    }
-
     /// Print a formatted output
     pub fn print_output(&self, output: &ReplOutput) {
         if output.is_error {
@@ -94,8 +70,6 @@ impl ReplInterface {
                 print!("{}", output.content.bright_white());
             } else {
                 print!("{}", output.content);
-            }
-
             if output.show_type && self.config.show_types {
                 if self.config.use_colors {
                     print!(" {}", " : <type>".bright_black());
@@ -112,8 +86,6 @@ impl ReplInterface {
                         print!(" ({}ms)", duration.as_millis());
                     }
                 }
-            }
-
             println!();
         }
     }
@@ -126,8 +98,6 @@ impl ReplInterface {
             print!(" {}", output.content.bright_red());
         } else {
             print!("🔥 CursedError: {}", output.content);
-        }
-
         if let Some(duration) = output.execution_time {
             if self.config.show_timing {
                 if self.config.use_colors {
@@ -136,11 +106,7 @@ impl ReplInterface {
                     print!(" ({}ms)", duration.as_millis());
                 }
             }
-        }
-
         println!();
-    }
-
     /// Print a general message
     pub fn print_message(&self, message: &str, message_type: MessageType) {
         match message_type {
@@ -183,8 +149,6 @@ impl ReplInterface {
             print!("\r⏳ {} [{}/{}]", message, current, total);
         }
         io::stdout().flush().unwrap();
-    }
-
     /// Clear progress indicator
     pub fn clear_progress(&self) {
         print!("\r");
@@ -193,8 +157,6 @@ impl ReplInterface {
         }
         print!("\r");
         io::stdout().flush().unwrap();
-    }
-
     /// Prompt for user input
     pub fn prompt_input(&self, message: &str) -> ReplResult<String> {
         if self.config.use_colors {
@@ -209,8 +171,6 @@ impl ReplInterface {
             .map_err(|e| CursedError::repl_error(e.to_string()))?;
 
         Ok(input.trim().to_string())
-    }
-
     /// Prompt for confirmation
     pub fn prompt_confirmation(&self, message: &str) -> ReplResult<bool> {
         loop {
@@ -218,8 +178,6 @@ impl ReplInterface {
             let input = self.prompt_input(&prompt)?;
             
             match input.to_lowercase().as_str() {
-                "y" | "yes" => return Ok(true),
-                "n" | "no" => return Ok(false),
                 _ => {
                     self.print_message("Please enter 'y' or 'n'", MessageType::Warning);
                     continue;
@@ -232,8 +190,6 @@ impl ReplInterface {
     pub fn print_table(&self, headers: &[&str], rows: &[Vec<String>]) {
         if rows.is_empty() {
             return;
-        }
-
         // Calculate column widths
         let mut widths: Vec<usize> = headers.iter().map(|h| h.len()).collect();
         
@@ -243,8 +199,6 @@ impl ReplInterface {
                     widths[i] = widths[i].max(cell.len());
                 }
             }
-        }
-
         // Print header
         if self.config.use_colors {
             for (i, header) in headers.iter().enumerate() {
@@ -283,13 +237,9 @@ impl ReplInterface {
     /// Increment line number
     pub fn increment_line(&mut self) {
         self.line_number += 1;
-    }
-
     /// Get current line number
     pub fn line_number(&self) -> usize {
         self.line_number
-    }
-
     /// Clear the screen
     pub fn clear_screen(&self) {
         print!("\x1B[2J\x1B[1;1H");
@@ -300,12 +250,6 @@ impl ReplInterface {
 /// Message types for output formatting
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum MessageType {
-    Info,
-    Warning,
-    Success,
-    CursedError,
-}
-
 impl Default for ReplInterface {
     fn default() -> Self {
         Self::new(InterfaceConfig::default())

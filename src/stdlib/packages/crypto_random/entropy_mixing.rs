@@ -13,51 +13,28 @@ pub enum MixingAlgorithm {
     VonNeumann,       // Von Neumann bias removal
     Whitening,        // Statistical whitening
     Cryptographic,    // Cryptographic mixing (SHA-256 + key stretching)
-}
-
 /// Entropy mixing configuration
 #[derive(Debug, Clone)]
 pub struct MixingConfig {
-    pub algorithm: MixingAlgorithm,
     pub output_size: usize,         // Desired output size in bytes
     pub compression_ratio: f64,     // Input to output ratio (e.g., 2.0 = compress 2:1)
     pub conditioning_passes: usize, // Number of conditioning passes
     pub use_salt: bool,            // Whether to use salt in mixing
     pub salt: Vec<u8>,             // Salt value for mixing
-}
-
 impl Default for MixingConfig {
     fn default() -> Self {
         Self {
-            algorithm: MixingAlgorithm::Cryptographic,
-            output_size: 256,
-            compression_ratio: 2.0,
-            conditioning_passes: 3,
-            use_salt: true,
-            salt: b"CURSED_CRYPTO_RANDOM_SALT_2024".to_vec(),
         }
     }
-}
-
 /// Entropy mixer that combines and conditions entropy from multiple sources
 pub struct EntropyMixer {
-    config: MixingConfig,
-    internal_state: Vec<u8>,
-    mixing_counter: u64,
-}
-
 impl EntropyMixer {
     /// Create new entropy mixer with default configuration
     pub fn new() -> Self {
         Self::with_config(MixingConfig::default())
-    }
-    
     /// Create entropy mixer with custom configuration
     pub fn with_config(config: MixingConfig) -> Self {
         Self {
-            config,
-            internal_state: Vec::new(),
-            mixing_counter: 0,
         }
     }
     
@@ -65,21 +42,11 @@ impl EntropyMixer {
     pub fn mix_entropy(&mut self, entropy_sources: &[Vec<u8>]) -> AdvancedCryptoResult<Vec<u8>> {
         if entropy_sources.is_empty() {
             return Err("No entropy sources provided for mixing".into());
-        }
-        
         // Combine all entropy sources
         let combined_entropy = self.combine_sources(entropy_sources);
         
         // Apply mixing algorithm
         let mixed_entropy = match self.config.algorithm {
-            MixingAlgorithm::Sha256 => self.mix_sha256(&combined_entropy)?,
-            MixingAlgorithm::Blake3 => self.mix_blake3(&combined_entropy)?,
-            MixingAlgorithm::XorShift => self.mix_xor_shift(&combined_entropy)?,
-            MixingAlgorithm::LinearCongruent => self.mix_linear_congruent(&combined_entropy)?,
-            MixingAlgorithm::VonNeumann => self.mix_von_neumann(&combined_entropy)?,
-            MixingAlgorithm::Whitening => self.mix_whitening(&combined_entropy)?,
-            MixingAlgorithm::Cryptographic => self.mix_cryptographic(&combined_entropy)?,
-        };
         
         // Apply conditioning passes
         let conditioned = self.apply_conditioning(mixed_entropy)?;
@@ -89,8 +56,6 @@ impl EntropyMixer {
         self.mixing_counter += 1;
         
         Ok(conditioned)
-    }
-    
     /// Combine entropy from multiple sources
     fn combine_sources(&self, sources: &[Vec<u8>]) -> Vec<u8> {
         let mut combined = Vec::new();
@@ -108,15 +73,11 @@ impl EntropyMixer {
                     combined.push(source[i]);
                 }
             }
-        }
-        
         // Add mixing counter for uniqueness
         let counter_bytes = self.mixing_counter.to_le_bytes();
         combined.extend_from_slice(&counter_bytes);
         
         combined
-    }
-    
     /// Mix using SHA-256
     fn mix_sha256(&self, data: &[u8]) -> AdvancedCryptoResult<Vec<u8>> {
         // Simple SHA-256 implementation using std library hash
@@ -124,8 +85,6 @@ impl EntropyMixer {
         
         if self.config.use_salt {
             self.config.salt.hash(&mut hasher);
-        }
-        
         data.hash(&mut hasher);
         let hash = hasher.finish();
         
@@ -145,11 +104,7 @@ impl EntropyMixer {
             let mut next_hasher = DefaultHasher::new();
             current_hash.hash(&mut next_hasher);
             current_hash = next_hasher.finish();
-        }
-        
         Ok(output)
-    }
-    
     /// Mix using BLAKE3 (simplified implementation)
     fn mix_blake3(&self, data: &[u8]) -> AdvancedCryptoResult<Vec<u8>> {
         // Simplified BLAKE3-like mixing
@@ -162,7 +117,6 @@ impl EntropyMixer {
             })
         } else {
             0x6a09e667f3bcc908u64 // BLAKE2 IV
-        };
         
         // Process input data in chunks
         for chunk in data.chunks(64) {
@@ -187,11 +141,7 @@ impl EntropyMixer {
             
             // Update state for next round
             state = state.wrapping_mul(0x9e3779b97f4a7c15u64);
-        }
-        
         Ok(output)
-    }
-    
     /// Mix using XOR-shift
     fn mix_xor_shift(&self, data: &[u8]) -> AdvancedCryptoResult<Vec<u8>> {
         let mut output = Vec::with_capacity(self.config.output_size);
@@ -207,8 +157,6 @@ impl EntropyMixer {
         
         for &byte in data {
             state ^= (byte as u64) << (state & 7);
-        }
-        
         // Generate output using XorShift algorithm
         while output.len() < self.config.output_size {
             state ^= state << 13;
@@ -221,11 +169,7 @@ impl EntropyMixer {
                     output.push(byte);
                 }
             }
-        }
-        
         Ok(output)
-    }
-    
     /// Mix using linear congruential generator
     fn mix_linear_congruent(&self, data: &[u8]) -> AdvancedCryptoResult<Vec<u8>> {
         let mut output = Vec::with_capacity(self.config.output_size);
@@ -246,8 +190,6 @@ impl EntropyMixer {
         
         for &byte in data {
             seed = seed.wrapping_mul(31).wrapping_add(byte as u64);
-        }
-        
         // Generate output using LCG
         while output.len() < self.config.output_size {
             seed = (a.wrapping_mul(seed).wrapping_add(c)) % m;
@@ -258,11 +200,7 @@ impl EntropyMixer {
                     output.push(byte);
                 }
             }
-        }
-        
         Ok(output)
-    }
-    
     /// Mix using Von Neumann bias removal
     fn mix_von_neumann(&self, data: &[u8]) -> AdvancedCryptoResult<Vec<u8>> {
         let mut output = Vec::new();
@@ -284,14 +222,8 @@ impl EntropyMixer {
             let bit2 = bits[i + 1];
             
             match (bit1, bit2) {
-                (0, 1) => debiased_bits.push(0),
-                (1, 0) => debiased_bits.push(1),
                 _ => {} // Discard (0,0) and (1,1) pairs
-            }
-            
             i += 2;
-        }
-        
         // Convert bits back to bytes
         for chunk in debiased_bits.chunks(8) {
             let mut byte = 0u8;
@@ -310,8 +242,6 @@ impl EntropyMixer {
             let mut state = 0x123456789abcdef0u64;
             for &byte in &output {
                 state ^= (byte as u64) << (state & 7);
-            }
-            
             while output.len() < self.config.output_size {
                 state ^= state << 13;
                 state ^= state >> 7;
@@ -321,14 +251,10 @@ impl EntropyMixer {
         }
         
         Ok(output)
-    }
-    
     /// Mix using statistical whitening
     fn mix_whitening(&self, data: &[u8]) -> AdvancedCryptoResult<Vec<u8>> {
         if data.is_empty() {
             return Ok(vec![0; self.config.output_size]);
-        }
-        
         let mut output = Vec::with_capacity(self.config.output_size);
         
         // Calculate mean and variance for whitening
@@ -348,7 +274,6 @@ impl EntropyMixer {
                 ((byte as f64 - mean) / std_dev * 64.0 + 128.0).round() as u8
             } else {
                 byte
-            };
             output.push(whitened);
             
             if output.len() >= self.config.output_size {
@@ -360,12 +285,8 @@ impl EntropyMixer {
         while output.len() < self.config.output_size {
             let idx = output.len() % data.len();
             output.push(data[idx] ^ (output.len() as u8));
-        }
-        
         output.truncate(self.config.output_size);
         Ok(output)
-    }
-    
     /// Mix using cryptographic approach (SHA-256 + key stretching)
     fn mix_cryptographic(&self, data: &[u8]) -> AdvancedCryptoResult<Vec<u8>> {
         // First pass: SHA-256-like mixing
@@ -383,16 +304,12 @@ impl EntropyMixer {
             // Add salt if configured
             if self.config.use_salt {
                 self.config.salt.hash(&mut hasher);
-            }
-            
             // Add current data
             current.hash(&mut hasher);
             
             // Add internal state for extra mixing
             if !self.internal_state.is_empty() {
                 self.internal_state.hash(&mut hasher);
-            }
-            
             let hash = hasher.finish();
             let hash_bytes = hash.to_le_bytes();
             
@@ -405,14 +322,10 @@ impl EntropyMixer {
             
             // Rotate and mix
             current.rotate_left(round % current.len().max(1));
-        }
-        
         // Final BLAKE3-like pass for additional security
         let final_mix = self.mix_blake3(&current)?;
         
         Ok(final_mix)
-    }
-    
     /// Apply conditioning passes to improve entropy distribution
     fn apply_conditioning(&self, mut data: Vec<u8>) -> AdvancedCryptoResult<Vec<u8>> {
         for pass in 0..self.config.conditioning_passes {
@@ -427,8 +340,6 @@ impl EntropyMixer {
             
             for (i, &byte) in rotated.iter().enumerate() {
                 data[i] ^= byte;
-            }
-            
             // Apply bit-level transformations
             for byte in &mut data {
                 *byte = self.condition_byte(*byte, pass);
@@ -436,8 +347,6 @@ impl EntropyMixer {
         }
         
         Ok(data)
-    }
-    
     /// Condition a single byte to improve randomness
     fn condition_byte(&self, byte: u8, pass: usize) -> u8 {
         let mut result = byte;
@@ -459,18 +368,12 @@ impl EntropyMixer {
             3 => {
                 // Lookup table transformation (simple S-box)
                 let sbox = [
-                    0x63, 0x7c, 0x77, 0x7b, 0xf2, 0x6b, 0x6f, 0xc5,
-                    0x30, 0x01, 0x67, 0x2b, 0xfe, 0xd7, 0xab, 0x76,
                     // ... (simplified S-box)
                 ];
                 result = sbox[(result as usize) % sbox.len()];
             }
             _ => {}
-        }
-        
         result
-    }
-    
     /// Update internal state for future mixing
     fn update_internal_state(&mut self, new_data: &[u8]) {
         // Limit internal state size
@@ -482,8 +385,6 @@ impl EntropyMixer {
             // Keep most recent data
             let excess = self.internal_state.len() - max_state_size;
             self.internal_state.drain(0..excess);
-        }
-        
         // Mix internal state with XOR
         for i in 0..self.internal_state.len().min(new_data.len()) {
             self.internal_state[i] ^= new_data[i];
@@ -494,8 +395,6 @@ impl EntropyMixer {
     pub fn extract_bytes(&mut self, size: usize) -> AdvancedCryptoResult<Vec<u8>> {
         if self.internal_state.is_empty() {
             return Err("No entropy available for extraction".into());
-        }
-        
         // Use internal state as entropy source
         let entropy_sources = vec![self.internal_state.clone()];
         
@@ -509,15 +408,9 @@ impl EntropyMixer {
         self.config.output_size = original_size;
         
         result
-    }
-    
     /// Get current mixing statistics
     pub fn get_mixing_stats(&self) -> MixingStats {
         MixingStats {
-            total_mixes: self.mixing_counter,
-            internal_state_size: self.internal_state.len(),
-            algorithm: self.config.algorithm.clone(),
-            conditioning_passes: self.config.conditioning_passes,
         }
     }
     
@@ -525,8 +418,6 @@ impl EntropyMixer {
     pub fn reset(&mut self) {
         self.internal_state.clear();
         self.mixing_counter = 0;
-    }
-    
     /// Set mixing configuration
     pub fn set_config(&mut self, config: MixingConfig) {
         self.config = config;
@@ -536,12 +427,6 @@ impl EntropyMixer {
 /// Mixing statistics
 #[derive(Debug, Clone)]
 pub struct MixingStats {
-    pub total_mixes: u64,
-    pub internal_state_size: usize,
-    pub algorithm: MixingAlgorithm,
-    pub conditioning_passes: usize,
-}
-
 impl Default for EntropyMixer {
     fn default() -> Self {
         Self::new()

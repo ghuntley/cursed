@@ -9,65 +9,34 @@ use std::collections::HashMap;
 
 /// Registry for runtime functions
 pub struct RuntimeFunctionRegistry {
-    builtin_functions: HashMap<String, BuiltinFunction>,
-    external_functions: HashMap<String, ExternalFunction>,
-}
-
 /// A built-in function that can be called from CURSED code
 pub struct BuiltinFunction {
-    pub name: String,
-    pub parameter_types: Vec<ValueType>,
-    pub return_type: ValueType,
-    pub implementation: fn(&[CursedValue]) -> crate::error::Result<()>,
-    pub description: String,
-}
-
 /// An external function (from C/Rust libraries)
 pub struct ExternalFunction {
-    pub name: String,
-    pub parameter_types: Vec<ValueType>,
-    pub return_type: ValueType,
-    pub symbol_name: String,
-    pub library_path: Option<String>,
-}
-
 impl RuntimeFunctionRegistry {
     /// Create a new runtime function registry
     pub fn new() -> Self {
         let mut registry = Self {
-            builtin_functions: HashMap::new(),
-            external_functions: HashMap::new(),
-        };
         
         register_builtin_functions(&mut registry);
         registry
-    }
-
     /// Register a built-in function
     pub fn register_builtin(&mut self, function: BuiltinFunction) {
         self.builtin_functions.insert(function.name.clone(), function);
-    }
-
     /// Register an external function
     pub fn register_external(&mut self, function: ExternalFunction) {
         self.external_functions.insert(function.name.clone(), function);
-    }
-
     /// Call a built-in function
     pub fn call_builtin(&self, name: &str, args: &[CursedValue]) -> crate::error::Result<()> {
         if let Some(function) = self.builtin_functions.get(name) {
             // Validate argument types
             if args.len() != function.parameter_types.len() {
                 return Err(CursedError::RuntimeError(format!(
-                    "Function '{}' expects {} arguments, got {}",
                     name, function.parameter_types.len(), args.len()
                 )));
-            }
-
             for (i, (arg, expected_type)) in args.iter().zip(&function.parameter_types).enumerate() {
                 if arg.get_type() != *expected_type {
                     return Err(CursedError::RuntimeError(format!(
-                        "Function '{}' argument {} expects type {:?}, got {:?}",
                         name, i, expected_type, arg.get_type()
                     )));
                 }
@@ -83,8 +52,6 @@ impl RuntimeFunctionRegistry {
     /// Check if a function is available
     pub fn has_function(&self, name: &str) -> bool {
         self.builtin_functions.contains_key(name) || self.external_functions.contains_key(name)
-    }
-
     /// Get function signature
     pub fn get_function_signature(&self, name: &str) -> Option<(Vec<ValueType>, ValueType)> {
         if let Some(function) = self.builtin_functions.get(name) {
@@ -102,156 +69,71 @@ impl RuntimeFunctionRegistry {
         names.extend(self.external_functions.keys().cloned());
         names.sort();
         names
-    }
-
     /// Get function help text
     pub fn get_function_help(&self, name: &str) -> Option<String> {
         if let Some(function) = self.builtin_functions.get(name) {
             Some(format!(
-                "{}: {} -> {} - {}",
-                function.name,
                 function.parameter_types.iter()
                     .map(|t| format!("{:?}", t))
                     .collect::<Vec<_>>()
-                    .join(", "),
-                format!("{:?}", function.return_type),
                 function.description
             ))
         } else {
             None
         }
     }
-}
-
 /// Register all built-in functions
 pub fn register_builtin_functions(registry: &mut RuntimeFunctionRegistry) {
     // Math functions
     registry.register_builtin(BuiltinFunction {
-        name: "add".to_string(),
-        parameter_types: vec![ValueType::Integer, ValueType::Integer],
-        return_type: ValueType::Integer,
-        implementation: builtin_add,
-        description: "Add two integers".to_string(),
     });
 
     registry.register_builtin(BuiltinFunction {
-        name: "subtract".to_string(),
-        parameter_types: vec![ValueType::Integer, ValueType::Integer],
-        return_type: ValueType::Integer,
-        implementation: builtin_subtract,
-        description: "Subtract two integers".to_string(),
     });
 
     registry.register_builtin(BuiltinFunction {
-        name: "multiply".to_string(),
-        parameter_types: vec![ValueType::Integer, ValueType::Integer],
-        return_type: ValueType::Integer,
-        implementation: builtin_multiply,
-        description: "Multiply two integers".to_string(),
     });
 
     registry.register_builtin(BuiltinFunction {
-        name: "divide".to_string(),
-        parameter_types: vec![ValueType::Integer, ValueType::Integer],
-        return_type: ValueType::Integer,
-        implementation: builtin_divide,
-        description: "Divide two integers".to_string(),
     });
 
     // String functions
     registry.register_builtin(BuiltinFunction {
-        name: "concat".to_string(),
-        parameter_types: vec![ValueType::String, ValueType::String],
-        return_type: ValueType::String,
-        implementation: builtin_concat,
-        description: "Concatenate two strings".to_string(),
     });
 
     registry.register_builtin(BuiltinFunction {
-        name: "length".to_string(),
-        parameter_types: vec![ValueType::String],
-        return_type: ValueType::Integer,
-        implementation: builtin_length,
-        description: "Get string length".to_string(),
     });
 
     // I/O functions
     registry.register_builtin(BuiltinFunction {
-        name: "print".to_string(),
-        parameter_types: vec![ValueType::String],
-        return_type: ValueType::Nil,
-        implementation: builtin_print,
-        description: "Print string to stdout".to_string(),
     });
 
     registry.register_builtin(BuiltinFunction {
-        name: "println".to_string(),
-        parameter_types: vec![ValueType::String],
-        return_type: ValueType::Nil,
-        implementation: builtin_println,
-        description: "Print string to stdout with newline".to_string(),
     });
 
     // Type conversion functions
     registry.register_builtin(BuiltinFunction {
-        name: "to_string".to_string(),
-        parameter_types: vec![ValueType::Integer],
-        return_type: ValueType::String,
-        implementation: builtin_to_string,
-        description: "Convert integer to string".to_string(),
     });
 
     registry.register_builtin(BuiltinFunction {
-        name: "to_int".to_string(),
-        parameter_types: vec![ValueType::String],
-        return_type: ValueType::Integer,
-        implementation: builtin_to_int,
-        description: "Convert string to integer".to_string(),
     });
 
     // Comparison functions
     registry.register_builtin(BuiltinFunction {
-        name: "equals".to_string(),
-        parameter_types: vec![ValueType::Integer, ValueType::Integer],
-        return_type: ValueType::Boolean,
-        implementation: builtin_equals,
-        description: "Check if two integers are equal".to_string(),
     });
 
     registry.register_builtin(BuiltinFunction {
-        name: "less_than".to_string(),
-        parameter_types: vec![ValueType::Integer, ValueType::Integer],
-        return_type: ValueType::Boolean,
-        implementation: builtin_less_than,
-        description: "Check if first integer is less than second".to_string(),
     });
 
     // Utility functions
     registry.register_builtin(BuiltinFunction {
-        name: "abs".to_string(),
-        parameter_types: vec![ValueType::Integer],
-        return_type: ValueType::Integer,
-        implementation: builtin_abs,
-        description: "Get absolute value of integer".to_string(),
     });
 
     registry.register_builtin(BuiltinFunction {
-        name: "max".to_string(),
-        parameter_types: vec![ValueType::Integer, ValueType::Integer],
-        return_type: ValueType::Integer,
-        implementation: builtin_max,
-        description: "Get maximum of two integers".to_string(),
     });
 
     registry.register_builtin(BuiltinFunction {
-        name: "min".to_string(),
-        parameter_types: vec![ValueType::Integer, ValueType::Integer],
-        return_type: ValueType::Integer,
-        implementation: builtin_min,
-        description: "Get minimum of two integers".to_string(),
     });
-}
-
 // Built-in function implementations
 
 fn builtin_add(args: &[CursedValue]) -> crate::error::Result<()> {
@@ -338,8 +220,6 @@ fn builtin_to_string(args: &[CursedValue]) -> crate::error::Result<()> {
 fn builtin_to_int(args: &[CursedValue]) -> crate::error::Result<()> {
     if let CursedValue::String(s) = &args[0] {
         match s.parse::<i64>() {
-            Ok(i) => Ok(CursedValue::Integer(i)),
-            Err(_) => Err(CursedError::RuntimeError(format!("Cannot convert '{}' to integer", s))),
         }
     } else {
         Err(CursedError::RuntimeError("Invalid argument for to_int function".to_string()))
@@ -395,29 +275,14 @@ pub fn register_runtime_functions(context: &mut ExecutionContext) -> crate::erro
     
     for (name, function) in &registry.builtin_functions {
         let function_info = FunctionInfo {
-            name: name.clone(),
-            parameter_types: function.parameter_types.clone(),
-            return_type: function.return_type.clone(),
-            is_compiled: true,
-            source_location: None,
-        };
         
         context.register_function(function_info);
         
         // Mark as compiled (they're implemented in Rust)
         let compiled_function = CompiledFunction {
-            name: name.clone(),
-            ir_code: format!("; Built-in function: {}", name),
-            entry_point: format!("builtin_{}", name),
-            compiled_at: std::time::SystemTime::now(),
-        };
         
         context.add_compiled_function(compiled_function);
-    }
-
     Ok(())
-}
-
 impl Default for RuntimeFunctionRegistry {
     fn default() -> Self {
         Self::new()

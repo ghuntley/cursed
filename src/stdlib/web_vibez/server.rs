@@ -29,140 +29,61 @@ use tracing::{debug, info, warn, error, instrument, span, Level};
 /// HTTP server for the web_vibez framework
 pub struct HttpServer {
     /// Server configuration
-    config: Arc<WebVibezConfig>,
     /// Router for request dispatching
-    router: Arc<Router>,
     /// Middleware chain for request processing
-    middleware: Arc<MiddlewareChain>,
     /// Health checker for server monitoring
-    health_checker: Arc<HealthChecker>,
     /// Server state
-    state: Arc<ServerState>,
     /// Connection pool
-    connection_pool: Arc<ConnectionPool>,
     /// Signal handlers
-    signal_handlers: Vec<SignalHandler>,
-}
-
 /// Internal server state tracking
 #[derive(Debug)]
 pub struct ServerState {
     /// Whether server is running
-    pub running: AtomicBool,
     /// Whether shutdown has been requested
-    pub shutdown_requested: AtomicBool,
     /// Number of active connections
-    pub active_connections: AtomicU64,
     /// Total requests processed
-    pub total_requests: AtomicU64,
     /// Server start time
-    pub start_time: Instant,
     /// Last health check time
-    pub last_health_check: Mutex<Instant>,
-}
-
 /// Connection pool for managing client connections
 #[derive(Debug)]
 pub struct ConnectionPool {
     /// Maximum concurrent connections
-    max_connections: usize,
     /// Currently active connections
-    active_connections: RwLock<HashMap<u64, Arc<Connection>>>,
     /// Connection counter for unique IDs
-    connection_counter: AtomicU64,
     /// Connection timeout
-    connection_timeout: Duration,
-}
-
 /// Represents an active HTTP connection
 #[derive(Debug)]
 pub struct Connection {
     /// Unique connection ID
-    pub id: u64,
     /// Connection start time
-    pub start_time: Instant,
     /// Remote socket address
-    pub remote_addr: SocketAddr,
     /// Local socket address
-    pub local_addr: SocketAddr,
     /// Number of requests on this connection
-    pub request_count: AtomicU64,
     /// Last activity time
-    pub last_activity: Mutex<Instant>,
     /// Whether connection is keep-alive
-    pub keep_alive: AtomicBool,
-}
-
 /// Signal handler for graceful shutdown
 pub struct SignalHandler {
-    pub signal: Signal,
-    pub handler: Box<dyn Fn() + Send + Sync>,
-}
-
 /// Supported signals for server control
 #[derive(Debug, Clone, Copy)]
 pub enum Signal {
-    SIGTERM,
-    SIGINT,
-    SIGHUP,
-    SIGUSR1,
-}
-
 /// TLS configuration for HTTPS
 #[derive(Debug, Clone)]
 pub struct TlsConfig {
-    pub cert_path: String,
-    pub key_path: String,
-    pub cert_chain: Vec<u8>,
-    pub private_key: Vec<u8>,
-    pub protocols: Vec<TlsProtocol>,
-    pub cipher_suites: Vec<String>,
-}
-
 #[derive(Debug, Clone)]
 pub enum TlsProtocol {
-    TLSv1_2,
-    TLSv1_3,
-}
-
 /// HTTP request representation for internal processing
 #[derive(Debug, Clone)]
 pub struct HttpRequest {
-    pub method: HttpMethod,
-    pub path: String,
-    pub query: HashMap<String, String>,
-    pub headers: HashMap<String, String>,
-    pub body: Vec<u8>,
-    pub version: HttpVersion,
-    pub remote_addr: SocketAddr,
-    pub connection_id: u64,
-}
-
 /// HTTP response representation for internal processing
 #[derive(Debug, Clone)]
 pub struct HttpResponse {
-    pub status: StatusCode,
-    pub headers: HashMap<String, String>,
-    pub body: Vec<u8>,
-    pub version: HttpVersion,
-    pub keep_alive: bool,
-}
-
 /// HTTP version enumeration
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum HttpVersion {
-    Http1_0,
-    Http1_1,
-    Http2_0,
-}
-
 impl HttpServer {
     /// Create a new HTTP server with configuration
     #[instrument]
     pub fn new(
-        config: WebVibezConfig,
-        router: Router,
-        middleware: MiddlewareChain,
     ) -> crate::error::Result<()> {
         let config = Arc::new(config);
         let router = Arc::new(router);
@@ -171,37 +92,18 @@ impl HttpServer {
         let health_checker = Arc::new(HealthChecker::new());
         
         let state = Arc::new(ServerState {
-            running: AtomicBool::new(false),
-            shutdown_requested: AtomicBool::new(false),
-            active_connections: AtomicU64::new(0),
-            total_requests: AtomicU64::new(0),
-            start_time: Instant::now(),
-            last_health_check: Mutex::new(Instant::now()),
         });
         
         let connection_pool = Arc::new(ConnectionPool::new(
-            config.server.max_connections,
-            config.server.connection_timeout,
         ));
         
         Ok(HttpServer {
-            config,
-            router,
-            middleware,
-            health_checker,
-            state,
-            connection_pool,
-            signal_handlers: Vec::new(),
         })
-    }
-    
     /// Start the HTTP server
     #[instrument(skip(self))]
     pub fn start(&self) -> crate::error::Result<()> {
         if self.state.running.load(Ordering::Acquire) {
             return Err(ServerError::AlreadyRunning);
-        }
-        
         let bind_addr = format!("{}:{}", self.config.server.host, self.config.server.port);
         info!("Starting HTTP server on {}", bind_addr);
         
@@ -220,15 +122,11 @@ impl HttpServer {
         self.run_accept_loop(listener)?;
         
         Ok(())
-    }
-    
     /// Stop the HTTP server gracefully
     #[instrument(skip(self))]
     pub fn stop(&self) -> crate::error::Result<()> {
         if !self.state.running.load(Ordering::Acquire) {
             return Ok(());
-        }
-        
         info!("Initiating graceful shutdown");
         self.state.shutdown_requested.store(true, Ordering::Release);
         
@@ -242,26 +140,16 @@ impl HttpServer {
                 break;
             }
             thread::sleep(Duration::from_millis(100));
-        }
-        
         self.state.running.store(false, Ordering::Release);
         info!("Server shutdown complete");
         
         Ok(())
-    }
-    
     /// Check if server is running
     pub fn is_running(&self) -> bool {
         self.state.running.load(Ordering::Acquire)
-    }
-    
     /// Get server statistics
     pub fn get_stats(&self) -> ServerStats {
         ServerStats {
-            active_connections: self.state.active_connections.load(Ordering::Acquire),
-            total_requests: self.state.total_requests.load(Ordering::Acquire),
-            uptime: self.state.start_time.elapsed(),
-            health_status: self.health_checker.check().status,
         }
     }
     
@@ -282,9 +170,6 @@ impl HttpServer {
                         .map_err(|e| ServerError::ConnectionError(e.to_string()))?;
                     
                     let connection = Arc::new(Connection::new(
-                        connection_id,
-                        remote_addr,
-                        local_addr,
                     ));
                     
                     // Check connection limit
@@ -292,21 +177,12 @@ impl HttpServer {
                        >= self.config.server.max_connections as u64 {
                         warn!("Connection limit reached, rejecting connection");
                         continue;
-                    }
-                    
                     // Add to connection pool
                     self.connection_pool.add_connection(connection.clone());
                     self.state.active_connections.fetch_add(1, Ordering::Relaxed);
                     
                     // Spawn handler thread
                     let handler = ConnectionHandler::new(
-                        stream,
-                        connection,
-                        self.config.clone(),
-                        self.router.clone(),
-                        self.middleware.clone(),
-                        self.state.clone(),
-                        self.connection_pool.clone(),
                     );
                     
                     let handle = thread::spawn(move || {
@@ -316,12 +192,10 @@ impl HttpServer {
                     });
                     
                     thread_handles.push(handle);
-                },
                 Err(e) if e.kind() == std::io::ErrorKind::WouldBlock => {
                     // No pending connections, sleep briefly
                     thread::sleep(Duration::from_millis(10));
                     continue;
-                },
                 Err(e) => {
                     error!("Accept error: {}", e);
                     return Err(ServerError::AcceptError(e.to_string()));
@@ -330,16 +204,10 @@ impl HttpServer {
             
             // Clean up finished threads
             thread_handles.retain(|handle| !handle.is_finished());
-        }
-        
         // Wait for all connection handlers to finish
         for handle in thread_handles {
             let _ = handle.join();
-        }
-        
         Ok(())
-    }
-    
     /// Install signal handlers for graceful shutdown
     fn install_signal_handlers(&self) -> crate::error::Result<()> {
         // Note: In a real implementation, this would use proper signal handling
@@ -351,33 +219,10 @@ impl HttpServer {
 
 /// Connection handler for processing individual HTTP connections
 pub struct ConnectionHandler {
-    stream: std::net::TcpStream,
-    connection: Arc<Connection>,
-    config: Arc<WebVibezConfig>,
-    router: Arc<Router>,
-    middleware: Arc<MiddlewareChain>,
-    state: Arc<ServerState>,
-    connection_pool: Arc<ConnectionPool>,
-}
-
 impl ConnectionHandler {
     pub fn new(
-        stream: std::net::TcpStream,
-        connection: Arc<Connection>,
-        config: Arc<WebVibezConfig>,
-        router: Arc<Router>,
-        middleware: Arc<MiddlewareChain>,
-        state: Arc<ServerState>,
-        connection_pool: Arc<ConnectionPool>,
     ) -> Self {
         Self {
-            stream,
-            connection,
-            config,
-            router,
-            middleware,
-            state,
-            connection_pool,
         }
     }
     
@@ -401,43 +246,29 @@ impl ConnectionHandler {
                     if let Err(e) = self.send_response(response) {
                         error!("Failed to send response: {:?}", e);
                         break;
-                    }
-                    
                     self.state.total_requests.fetch_add(1, Ordering::Relaxed);
                     self.connection.request_count.fetch_add(1, Ordering::Relaxed);
                     
                     // Update last activity
                     *self.connection.last_activity.lock().unwrap() = Instant::now();
-                },
                 Err(ServerError::ConnectionClosed) => {
                     debug!("Connection closed by client");
                     break;
-                },
                 Err(e) => {
                     error!("Request processing error: {:?}", e);
                     
                     // Send error response
                     let error_response = HttpResponse {
-                        status: StatusCode::InternalServerError,
-                        headers: HashMap::new(),
-                        body: b"Internal Server CursedError".to_vec(),
-                        version: HttpVersion::Http1_1,
-                        keep_alive: false,
-                    };
                     
                     let _ = self.send_response(error_response);
                     break;
                 }
             }
-        }
-        
         // Clean up connection
         self.connection_pool.remove_connection(self.connection.id);
         self.state.active_connections.fetch_sub(1, Ordering::Relaxed);
         
         Ok(())
-    }
-    
     /// Process a single HTTP request
     #[instrument(skip(self))]
     fn process_request(&mut self) -> crate::error::Result<()> {
@@ -454,8 +285,6 @@ impl ConnectionHandler {
         let http_response = self.build_http_response(response_context)?;
         
         Ok(http_response)
-    }
-    
     /// Parse raw HTTP request from stream
     #[instrument(skip(self))]
     fn parse_http_request(&mut self) -> crate::error::Result<()> {
@@ -468,14 +297,10 @@ impl ConnectionHandler {
         
         if request_line.trim().is_empty() {
             return Err(ServerError::ConnectionClosed);
-        }
-        
         // Parse request line (METHOD PATH VERSION)
         let parts: Vec<&str> = request_line.trim().split_whitespace().collect();
         if parts.len() != 3 {
             return Err(ServerError::ParseError("Invalid request line".to_string()));
-        }
-        
         let method = HttpMethod::from_str(parts[0])
             .map_err(|e| ServerError::ParseError(e))?;
         
@@ -491,17 +316,7 @@ impl ConnectionHandler {
         let body = self.parse_body(&mut reader, &headers)?;
         
         Ok(HttpRequest {
-            method,
-            path,
-            query,
-            headers,
-            body,
-            version,
-            remote_addr: self.connection.remote_addr,
-            connection_id: self.connection.id,
         })
-    }
-    
     /// Parse path and query string
     fn parse_path_and_query(&self, path_and_query: &str) -> (String, HashMap<String, String>) {
         if let Some(question_mark) = path_and_query.find('?') {
@@ -529,15 +344,12 @@ impl ConnectionHandler {
         }
         
         query
-    }
-    
     /// Parse HTTP version
     fn parse_http_version(&self, version_str: &str) -> crate::error::Result<()> {
         match version_str {
             "HTTP/1.0" => Ok(HttpVersion::Http1_0),
             "HTTP/1.1" => Ok(HttpVersion::Http1_1),
             "HTTP/2.0" => Ok(HttpVersion::Http2_0),
-            _ => Err(ServerError::ParseError(format!("Unsupported HTTP version: {}", version_str))),
         }
     }
     
@@ -554,8 +366,6 @@ impl ConnectionHandler {
             let trimmed = header_line.trim();
             if trimmed.is_empty() {
                 break; // End of headers
-            }
-            
             if let Some(colon) = trimmed.find(':') {
                 let name = trimmed[..colon].trim().to_lowercase();
                 let value = trimmed[colon + 1..].trim().to_string();
@@ -564,12 +374,8 @@ impl ConnectionHandler {
         }
         
         Ok(headers)
-    }
-    
     /// Parse HTTP body
     fn parse_body(
-        &self, 
-        reader: &mut BufReader<&mut std::net::TcpStream>, 
         headers: &HashMap<String, String>
     ) -> crate::error::Result<()> {
         let mut body = Vec::new();
@@ -580,46 +386,29 @@ impl ConnectionHandler {
             
             if content_length > self.config.server.max_body_size {
                 return Err(ServerError::ParseError("Request body too large".to_string()));
-            }
-            
             body.resize(content_length, 0);
             reader.read_exact(&mut body)
                 .map_err(|e| ServerError::ParseError(format!("Failed to read body: {}", e)))?;
-        }
-        
         Ok(body)
-    }
-    
     /// Build RequestContext from HttpRequest
     fn build_request_context(&self, http_request: HttpRequest) -> crate::error::Result<()> {
         let mut context = RequestContext::new(
-            http_request.method,
-            &http_request.path,
-            &http_request.remote_addr.to_string(),
         );
         
         // Add headers
         for (name, value) in http_request.headers {
             context.add_header(&name, &value);
-        }
-        
         // Add query parameters
         for (name, value) in http_request.query {
             context.add_query_param(&name, &value);
-        }
-        
         // Set body
         if !http_request.body.is_empty() {
             context.set_body(http_request.body);
-        }
-        
         // Add connection info
         context.set_data("connection_id", ContextData::Integer(http_request.connection_id as i64));
         context.set_data("http_version", ContextData::String(format!("{:?}", http_request.version)));
         
         Ok(context)
-    }
-    
     /// Process request through middleware and router pipeline
     fn process_through_pipeline(&self, request_context: &mut RequestContext) -> crate::error::Result<()> {
         // Process through middleware chain
@@ -629,14 +418,11 @@ impl ConnectionHandler {
         // If middleware provided a response, use it
         if let Some(response) = middleware_result.response {
             return Ok(response);
-        }
-        
         // Otherwise, route through the router
         let handler_result = self.router.route(request_context)
             .map_err(|e| ServerError::RouterError(format!("{:?}", e)))?;
         
         match handler_result {
-            Some(response) => Ok(response),
             None => {
                 // No route found - return 404
                 let mut response = ResponseContext::new();
@@ -645,8 +431,6 @@ impl ConnectionHandler {
                 Ok(response)
             }
         }
-    }
-    
     /// Build HTTP response from ResponseContext
     fn build_http_response(&self, response_context: ResponseContext) -> crate::error::Result<()> {
         let status = response_context.status();
@@ -659,23 +443,13 @@ impl ConnectionHandler {
             .unwrap_or(true);
         
         Ok(HttpResponse {
-            status,
-            headers,
-            body,
-            version: HttpVersion::Http1_1,
-            keep_alive,
         })
-    }
-    
     /// Send HTTP response to client
     #[instrument(skip(self, response))]
     fn send_response(&mut self, response: HttpResponse) -> crate::error::Result<()> {
         let mut writer = BufWriter::new(&mut self.stream);
         
         // Write status line
-        let status_line = format!("{:?} {} {}\r\n", 
-            response.version, 
-            response.status, 
             self.status_code_text(response.status)
         );
         writer.write_all(status_line.as_bytes())
@@ -686,26 +460,19 @@ impl ConnectionHandler {
             let header_line = format!("{}: {}\r\n", name, value);
             writer.write_all(header_line.as_bytes())
                 .map_err(|e| ServerError::WriteError(e.to_string()))?;
-        }
-        
         // Write content-length if not present
         if !response.headers.contains_key("content-length") {
             let content_length = format!("Content-Length: {}\r\n", response.body.len());
             writer.write_all(content_length.as_bytes())
                 .map_err(|e| ServerError::WriteError(e.to_string()))?;
-        }
-        
         // Write connection header if not present
         if !response.headers.contains_key("connection") {
             let connection = if response.keep_alive {
                 "Connection: keep-alive\r\n"
             } else {
                 "Connection: close\r\n"
-            };
             writer.write_all(connection.as_bytes())
                 .map_err(|e| ServerError::WriteError(e.to_string()))?;
-        }
-        
         // End of headers
         writer.write_all(b"\r\n")
             .map_err(|e| ServerError::WriteError(e.to_string()))?;
@@ -718,39 +485,15 @@ impl ConnectionHandler {
             .map_err(|e| ServerError::WriteError(e.to_string()))?;
         
         Ok(())
-    }
-    
     /// Get status code text
     fn status_code_text(&self, status: StatusCode) -> &'static str {
         match status.0 {
-            200 => "OK",
-            201 => "Created",
-            204 => "No Content",
-            400 => "Bad Request",
-            401 => "Unauthorized",
-            403 => "Forbidden",
-            404 => "Not Found",
-            405 => "Method Not Allowed",
-            409 => "Conflict",
-            429 => "Too Many Requests",
-            500 => "Internal Server CursedError",
-            501 => "Not Implemented",
-            502 => "Bad Gateway",
-            503 => "Service Unavailable",
-            504 => "Gateway Timeout",
-            _ => "Unknown",
         }
     }
-}
-
 impl ConnectionPool {
     /// Create a new connection pool
     pub fn new(max_connections: usize, connection_timeout: Duration) -> Self {
         Self {
-            max_connections,
-            active_connections: RwLock::new(HashMap::new()),
-            connection_counter: AtomicU64::new(0),
-            connection_timeout,
         }
     }
     
@@ -758,19 +501,13 @@ impl ConnectionPool {
     pub fn add_connection(&self, connection: Arc<Connection>) {
         let mut connections = self.active_connections.write().unwrap();
         connections.insert(connection.id, connection);
-    }
-    
     /// Remove a connection from the pool
     pub fn remove_connection(&self, connection_id: u64) {
         let mut connections = self.active_connections.write().unwrap();
         connections.remove(&connection_id);
-    }
-    
     /// Get connection count
     pub fn connection_count(&self) -> usize {
         self.active_connections.read().unwrap().len()
-    }
-    
     /// Clean up timed out connections
     pub fn cleanup_timeouts(&self) {
         let mut connections = self.active_connections.write().unwrap();
@@ -787,43 +524,14 @@ impl Connection {
     /// Create a new connection
     pub fn new(id: u64, remote_addr: SocketAddr, local_addr: SocketAddr) -> Self {
         Self {
-            id,
-            start_time: Instant::now(),
-            remote_addr,
-            local_addr,
-            request_count: AtomicU64::new(0),
-            last_activity: Mutex::new(Instant::now()),
-            keep_alive: AtomicBool::new(true),
         }
     }
-}
-
 /// Server statistics
 #[derive(Debug, Clone)]
 pub struct ServerStats {
-    pub active_connections: u64,
-    pub total_requests: u64,
-    pub uptime: Duration,
-    pub health_status: HealthStatus,
-}
-
 /// Server error types
 #[derive(Debug, Clone)]
 pub enum ServerError {
-    AlreadyRunning,
-    BindError(String),
-    ConfigError(String),
-    AcceptError(String),
-    ConnectionError(String),
-    ParseError(String),
-    MiddlewareError(String),
-    RouterError(String),
-    WriteError(String),
-    ConnectionClosed,
-    TlsError(String),
-    SignalError(String),
-}
-
 // impl std::fmt::Display for ServerError {
 //     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
 //         match self {

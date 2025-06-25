@@ -14,19 +14,9 @@ static GLOBAL_SCHEDULER: OnceLock<Arc<Mutex<Option<GoroutineScheduler>>>> = Once
 /// Thread-local goroutine ID for current thread
 thread_local! {
     static CURRENT_GOROUTINE_ID: std::cell::Cell<Option<u64>> = std::cell::Cell::new(None);
-}
-
 /// Goroutine information structure
 #[derive(Debug, Clone)]
 pub struct GoroutineInfo {
-    pub id: u64,
-    pub state: GoroutineState,
-    pub runtime: Duration,
-    pub safe_points: usize,
-    pub stack_size: usize,
-    pub parent_id: Option<u64>,
-}
-
 /// Initialize the global goroutine scheduler
 pub fn init_scheduler() -> crate::error::Result<()> {
     let scheduler_ref = GLOBAL_SCHEDULER.get_or_init(|| {
@@ -40,18 +30,12 @@ pub fn init_scheduler() -> crate::error::Result<()> {
         let mut scheduler = GoroutineScheduler::new();
         scheduler.start()?;
         *scheduler_opt = Some(scheduler);
-    }
-    
     Ok(())
-}
-
 /// Get reference to global scheduler
 fn get_scheduler() -> crate::error::Result<()> {
     Ok(GLOBAL_SCHEDULER.get_or_init(|| {
         Arc::new(Mutex::new(None))
     }).clone())
-}
-
 /// Get the current number of goroutines
 pub fn num_goroutine() -> crate::error::Result<()> {
     let scheduler_ref = get_scheduler()?;
@@ -74,28 +58,20 @@ pub fn go_id() -> crate::error::Result<()> {
     
     if let Some(id) = current_id {
         return Ok(id as i64);
-    }
-    
     // Fallback: use thread ID hash for non-goroutine threads
     let thread_id = thread::current().id();
     let id_hash = format!("{:?}", thread_id).bytes()
         .fold(0u64, |acc, b| acc.wrapping_mul(31).wrapping_add(b as u64));
     
     Ok(id_hash as i64)
-}
-
 /// Set the current goroutine ID (called by goroutine runtime)
 pub fn set_current_goroutine_id(id: u64) {
     CURRENT_GOROUTINE_ID.with(|cell| cell.set(Some(id)));
-}
-
 /// Clear the current goroutine ID (called when goroutine exits)
 pub fn clear_current_goroutine_id() {
         // TODO: implement
     }
     CURRENT_GOROUTINE_ID.with(|cell| cell.set(None));
-}
-
 /// Get stack trace for all goroutines
 pub fn stack() -> crate::error::Result<()> {
     let scheduler_ref = get_scheduler()?;
@@ -111,7 +87,6 @@ pub fn stack() -> crate::error::Result<()> {
         for goroutine_id in active_goroutines {
             if let Some((state, runtime, safe_points)) = scheduler.get_goroutine_info(goroutine_id) {
                 stack_trace.push_str(&format!(
-                    "goroutine {} [{}] (runtime: {:?}, safe_points: {}):\n",
                     goroutine_id, format_state(state), runtime, safe_points
                 ));
                 
@@ -130,16 +105,10 @@ pub fn stack() -> crate::error::Result<()> {
         stack_trace.push_str("    main.main()\n");
         stack_trace.push_str("        main.cursed:1\n");
         stack_trace.push_str("\n");
-    }
-    
     Ok(stack_trace.into_bytes())
-}
-
 /// Get the number of logical CPUs usable by the current process
 pub fn num_cpu() -> crate::error::Result<()> {
     Ok(num_cpus::get() as i32)
-}
-
 /// Set/get maximum number of CPUs that can execute simultaneously
 pub fn gomaxprocs(n: i32) -> crate::error::Result<()> {
     static MAXPROCS: std::sync::atomic::AtomicI32 = std::sync::atomic::AtomicI32::new(0);
@@ -164,8 +133,6 @@ pub fn gomaxprocs(n: i32) -> crate::error::Result<()> {
             Ok(old)
         }
     }
-}
-
 /// Get detailed information about all goroutines
 pub fn get_all_goroutine_info() -> crate::error::Result<()> {
     let scheduler_ref = get_scheduler()?;
@@ -180,32 +147,17 @@ pub fn get_all_goroutine_info() -> crate::error::Result<()> {
         for goroutine_id in active_goroutines {
             if let Some((state, runtime, safe_points)) = scheduler.get_goroutine_info(goroutine_id) {
                 let info = GoroutineInfo {
-                    id: goroutine_id,
-                    state,
-                    runtime,
-                    safe_points,
                     stack_size: 64 * 1024, // Default stack size
                     parent_id: None, // Would need scheduler enhancement to track this
-                };
                 goroutine_infos.push((goroutine_id, info));
             }
         }
     } else {
         // No scheduler, create info for main thread
         let main_info = GoroutineInfo {
-            id: 1,
-            state: GoroutineState::Running,
-            runtime: Duration::from_secs(0),
-            safe_points: 0,
             stack_size: 1024 * 1024, // 1MB for main thread
-            parent_id: None,
-        };
         goroutine_infos.push((1, main_info));
-    }
-    
     Ok(goroutine_infos)
-}
-
 /// Enable blocking profile for goroutine debugging
 pub fn block_profile(enabled: bool) -> crate::error::Result<()> {
     // In a real implementation, this would enable collection of
@@ -215,11 +167,7 @@ pub fn block_profile(enabled: bool) -> crate::error::Result<()> {
         // This would involve instrumenting synchronization primitives
     } else {
         // Disable blocking profile collection
-    }
-    
     Ok(())
-}
-
 /// Get information about a specific goroutine
 pub fn goroutine_info(goroutine_id: u64) -> crate::error::Result<()> {
     let all_infos = get_all_goroutine_info()?;
@@ -231,8 +179,6 @@ pub fn goroutine_info(goroutine_id: u64) -> crate::error::Result<()> {
     }
     
     Ok(None)
-}
-
 /// Coordinate with garbage collection
 pub fn coordinate_gc(timeout_ms: u64) -> crate::error::Result<()> {
     let scheduler_ref = get_scheduler()?;
@@ -265,13 +211,6 @@ pub fn get_stack_bounds() -> crate::error::Result<()> {
 /// Format goroutine state for display
 fn format_state(state: GoroutineState) -> &'static str {
     match state {
-        GoroutineState::Created => "created",
-        GoroutineState::Ready => "ready",
-        GoroutineState::Running => "running",
-        GoroutineState::Waiting => "waiting",
-        GoroutineState::Yielded => "yielded", 
-        GoroutineState::Completed => "completed",
-        GoroutineState::Terminated => "terminated",
     }
 }
 

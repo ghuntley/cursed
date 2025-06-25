@@ -47,54 +47,27 @@ pub trait Allocator: Send + Sync {
     
     /// Get allocator type name for debugging
     fn allocator_type(&self) -> &'static str;
-}
-
 /// Result of an allocation operation
 #[derive(Debug, Clone)]
 pub struct AllocationResult {
     /// Pointer to allocated memory
-    pub ptr: NonNull<u8>,
     /// Actual size allocated (may be larger than requested)
-    pub size: usize,
     /// Offset within the memory region
-    pub offset: usize,
-}
-
 /// Statistics for allocator performance monitoring
 #[derive(Debug, Clone)]
 pub struct AllocatorStatistics {
     /// Total number of allocation requests
-    pub allocations: u64,
     /// Total number of deallocation requests
-    pub deallocations: u64,
     /// Total bytes allocated
-    pub bytes_allocated: usize,
     /// Total bytes deallocated
-    pub bytes_deallocated: usize,
     /// Current bytes in use
-    pub bytes_in_use: usize,
     /// Number of allocation failures
-    pub allocation_failures: u64,
     /// Average allocation size
-    pub average_allocation_size: f64,
     /// Fragmentation ratio
-    pub fragmentation_ratio: f64,
     /// Allocator-specific metrics
-    pub custom_metrics: HashMap<String, f64>,
-}
-
 impl AllocatorStatistics {
     pub fn new() -> Self {
         Self {
-            allocations: 0,
-            deallocations: 0,
-            bytes_allocated: 0,
-            bytes_deallocated: 0,
-            bytes_in_use: 0,
-            allocation_failures: 0,
-            average_allocation_size: 0.0,
-            fragmentation_ratio: 0.0,
-            custom_metrics: HashMap::new(),
         }
     }
     
@@ -103,14 +76,10 @@ impl AllocatorStatistics {
         self.bytes_allocated += size;
         self.bytes_in_use += size;
         self.average_allocation_size = self.bytes_allocated as f64 / self.allocations as f64;
-    }
-    
     pub fn record_deallocation(&mut self, size: usize) {
         self.deallocations += 1;
         self.bytes_deallocated += size;
         self.bytes_in_use = self.bytes_in_use.saturating_sub(size);
-    }
-    
     pub fn record_failure(&mut self) {
         self.allocation_failures += 1;
     }
@@ -123,34 +92,20 @@ impl AllocatorStatistics {
 /// Ideal for temporary allocations or generational garbage collection.
 pub struct BumpAllocator {
     /// Memory region for allocations
-    memory: Arc<RwLock<BumpMemory>>,
     /// Allocator statistics
-    statistics: Arc<Mutex<AllocatorStatistics>>,
-}
-
 struct BumpMemory {
     /// Base pointer to memory region
-    base: NonNull<u8>,
     /// Size of memory region
-    size: usize,
     /// Current allocation offset
-    offset: usize,
     /// High watermark for statistics
-    high_watermark: usize,
-}
-
 // Safety: BumpMemory is safe to send between threads because:
 // 1. NonNull<u8> points to heap-allocated memory that is owned by this allocator
 // 2. Access is coordinated through RwLock synchronization
 // 3. The pointer remains valid as long as the allocator exists
-unsafe impl Send for BumpMemory {}
-
 // Safety: BumpMemory is safe to share between threads because:
 // 1. All mutation is coordinated through RwLock
 // 2. The NonNull<u8> pointer is stable (doesn't change once allocated)
 // 3. Field access is atomic or protected by the containing lock
-unsafe impl Sync for BumpMemory {}
-
 impl BumpAllocator {
     /// Create a new bump allocator with the given memory region
     #[instrument]
@@ -159,12 +114,6 @@ impl BumpAllocator {
         
         Self {
             memory: Arc::new(RwLock::new(BumpMemory {
-                base,
-                size,
-                offset: 0,
-                high_watermark: 0,
-            })),
-            statistics: Arc::new(Mutex::new(AllocatorStatistics::new())),
         }
     }
     
@@ -176,8 +125,6 @@ impl BumpAllocator {
         memory.offset = 0;
         debug!("Reset bump allocator to start");
         Ok(())
-    }
-    
     /// Get current usage percentage
     pub fn usage_percentage(&self) -> Result<f64, String> {
         let memory = self.memory.read()
@@ -192,8 +139,6 @@ impl Allocator for BumpAllocator {
     fn allocate(&self, size: usize, alignment: usize) -> Result<AllocationResult, String> {
         if size == 0 {
             return Err("Cannot allocate zero bytes".to_string());
-        }
-        
         let mut memory = self.memory.write()
             .map_err(|_| "Failed to acquire write lock on bump memory")?;
         
@@ -205,38 +150,25 @@ impl Allocator for BumpAllocator {
             let mut stats = self.statistics.lock()
                 .map_err(|_| "Failed to acquire statistics lock")?;
             stats.record_failure();
-            return Err(format!("Bump allocator out of space: need {} bytes, have {}", 
                               aligned_offset + size, memory.size - aligned_offset));
-        }
-        
         // Update offset
         memory.offset = aligned_offset + size;
         if memory.offset > memory.high_watermark {
             memory.high_watermark = memory.offset;
-        }
-        
         // Calculate pointer
         let ptr = unsafe {
             NonNull::new(memory.base.as_ptr().add(aligned_offset))
                 .ok_or("Computed null pointer in bump allocator")?
-        };
         
         // Update statistics
         {
             let mut stats = self.statistics.lock()
                 .map_err(|_| "Failed to acquire statistics lock")?;
             stats.record_allocation(size);
-        }
-        
         debug!("Bump allocated {} bytes at offset {} (ptr {:p})", size, aligned_offset, ptr.as_ptr());
         
         Ok(AllocationResult {
-            ptr,
-            size,
-            offset: aligned_offset,
         })
-    }
-    
     fn deallocate(&self, _ptr: NonNull<u8>, size: usize) -> Result<(), String> {
         // Bump allocator can't deallocate individual objects
         // Just update statistics
@@ -245,8 +177,6 @@ impl Allocator for BumpAllocator {
         stats.record_deallocation(size);
         
         Ok(())
-    }
-    
     fn get_statistics(&self) -> AllocatorStatistics {
         let stats = self.statistics.lock().unwrap();
         let memory = self.memory.read().unwrap();
@@ -254,12 +184,9 @@ impl Allocator for BumpAllocator {
         let mut result = stats.clone();
         result.fragmentation_ratio = 0.0; // Bump allocator has no fragmentation
         result.custom_metrics.insert("high_watermark".to_string(), memory.high_watermark as f64);
-        result.custom_metrics.insert("utilization".to_string(), 
                                    memory.offset as f64 / memory.size as f64 * 100.0);
         
         result
-    }
-    
     fn reset(&self) -> Result<(), String> {
         self.reset_to_start()?;
         
@@ -268,8 +195,6 @@ impl Allocator for BumpAllocator {
         *stats = AllocatorStatistics::new();
         
         Ok(())
-    }
-    
     fn can_allocate(&self, size: usize) -> bool {
         if let Ok(memory) = self.memory.read() {
             memory.offset + size <= memory.size
@@ -290,42 +215,25 @@ impl Allocator for BumpAllocator {
 /// reasonable fragmentation characteristics.
 pub struct FreeListAllocator {
     /// Memory region for allocations
-    memory: Arc<RwLock<FreeListMemory>>,
     /// Allocator statistics
-    statistics: Arc<Mutex<AllocatorStatistics>>,
-}
-
 struct FreeListMemory {
     /// Base pointer to memory region
-    base: NonNull<u8>,
     /// Size of memory region
-    size: usize,
     /// List of free blocks
-    free_blocks: VecDeque<FreeBlock>,
     /// Set of allocated blocks for validation
     allocated_blocks: HashMap<usize, usize>, // offset -> size
-}
-
 // Safety: FreeListMemory is safe to send between threads because:
 // 1. NonNull<u8> points to heap-allocated memory that is owned by this allocator
 // 2. Access is coordinated through RwLock synchronization
 // 3. The pointer remains valid as long as the allocator exists
-unsafe impl Send for FreeListMemory {}
-
 // Safety: FreeListMemory is safe to share between threads because:
 // 1. All mutation is coordinated through RwLock
 // 2. The NonNull<u8> pointer is stable (doesn't change once allocated)
 // 3. Field access is atomic or protected by the containing lock
-unsafe impl Sync for FreeListMemory {}
-
 #[derive(Debug, Clone)]
 struct FreeBlock {
     /// Offset from base pointer
-    offset: usize,
     /// Size of free block
-    size: usize,
-}
-
 impl FreeListAllocator {
     /// Create a new free list allocator
     #[instrument]
@@ -337,12 +245,6 @@ impl FreeListAllocator {
         
         Self {
             memory: Arc::new(RwLock::new(FreeListMemory {
-                base,
-                size,
-                free_blocks,
-                allocated_blocks: HashMap::new(),
-            })),
-            statistics: Arc::new(Mutex::new(AllocatorStatistics::new())),
         }
     }
     
@@ -350,8 +252,6 @@ impl FreeListAllocator {
     fn coalesce_free_blocks(free_blocks: &mut VecDeque<FreeBlock>) {
         if free_blocks.len() <= 1 {
             return;
-        }
-        
         // Sort blocks by offset
         let mut blocks: Vec<_> = free_blocks.drain(..).collect();
         blocks.sort_by_key(|b| b.offset);
@@ -380,8 +280,6 @@ impl Allocator for FreeListAllocator {
     fn allocate(&self, size: usize, alignment: usize) -> Result<AllocationResult, String> {
         if size == 0 {
             return Err("Cannot allocate zero bytes".to_string());
-        }
-        
         let mut memory = self.memory.write()
             .map_err(|_| "Failed to acquire write lock on free list memory")?;
         
@@ -415,19 +313,11 @@ impl Allocator for FreeListAllocator {
         if allocation_offset > block.offset {
             // Space before allocation
             memory.free_blocks.push_back(FreeBlock {
-                offset: block.offset,
-                size: allocation_offset - block.offset,
             });
-        }
-        
         if allocation_offset + allocation_size < block.offset + block.size {
             // Space after allocation
             memory.free_blocks.push_back(FreeBlock {
-                offset: allocation_offset + allocation_size,
-                size: block.offset + block.size - (allocation_offset + allocation_size),
             });
-        }
-        
         // Record allocation
         memory.allocated_blocks.insert(allocation_offset, allocation_size);
         
@@ -435,25 +325,16 @@ impl Allocator for FreeListAllocator {
         let ptr = unsafe {
             NonNull::new(memory.base.as_ptr().add(allocation_offset))
                 .ok_or("Computed null pointer in free list allocator")?
-        };
         
         // Update statistics
         {
             let mut stats = self.statistics.lock()
                 .map_err(|_| "Failed to acquire statistics lock")?;
             stats.record_allocation(size);
-        }
-        
-        debug!("Free list allocated {} bytes at offset {} (ptr {:p})", 
                size, allocation_offset, ptr.as_ptr());
         
         Ok(AllocationResult {
-            ptr,
-            size: allocation_size,
-            offset: allocation_offset,
         })
-    }
-    
     #[instrument(skip(self))]
     fn deallocate(&self, ptr: NonNull<u8>, _size: usize) -> Result<(), String> {
         let mut memory = self.memory.write()
@@ -463,8 +344,6 @@ impl Allocator for FreeListAllocator {
         let offset = unsafe { ptr.as_ptr().offset_from(memory.base.as_ptr()) };
         if offset < 0 {
             return Err("Pointer not within allocator bounds".to_string());
-        }
-        
         let offset = offset as usize;
         
         // Find allocated block
@@ -482,12 +361,8 @@ impl Allocator for FreeListAllocator {
             let mut stats = self.statistics.lock()
                 .map_err(|_| "Failed to acquire statistics lock")?;
             stats.record_deallocation(size);
-        }
-        
         debug!("Free list deallocated {} bytes at offset {}", size, offset);
         Ok(())
-    }
-    
     fn get_statistics(&self) -> AllocatorStatistics {
         let stats = self.statistics.lock().unwrap();
         let memory = self.memory.read().unwrap();
@@ -502,15 +377,12 @@ impl Allocator for FreeListAllocator {
             1.0 - (largest_free as f64 / total_free as f64)
         } else {
             0.0
-        };
         
         result.custom_metrics.insert("free_blocks".to_string(), memory.free_blocks.len() as f64);
         result.custom_metrics.insert("total_free".to_string(), total_free as f64);
         result.custom_metrics.insert("largest_free".to_string(), largest_free as f64);
         
         result
-    }
-    
     fn reset(&self) -> Result<(), String> {
         let mut memory = self.memory.write()
             .map_err(|_| "Failed to acquire write lock on free list memory")?;
@@ -525,8 +397,6 @@ impl Allocator for FreeListAllocator {
         *stats = AllocatorStatistics::new();
         
         Ok(())
-    }
-    
     fn can_allocate(&self, size: usize) -> bool {
         if let Ok(memory) = self.memory.read() {
             memory.free_blocks.iter().any(|block| block.size >= size)
@@ -547,37 +417,21 @@ impl Allocator for FreeListAllocator {
 /// objects with predictable size patterns.
 pub struct SegregatedAllocator {
     /// Size classes and their allocators
-    size_classes: Arc<RwLock<Vec<SizeClass>>>,
     /// Allocator statistics
-    statistics: Arc<Mutex<AllocatorStatistics>>,
     /// Large object threshold
-    large_object_threshold: usize,
-}
-
 struct SizeClass {
     /// Maximum size for this class
-    max_size: usize,
     /// Free list allocator for this size class
-    allocator: FreeListAllocator,
     /// Statistics for this size class
-    allocations: u64,
     /// Base memory for this size class
-    memory_base: NonNull<u8>,
     /// Memory size for this size class
-    memory_size: usize,
-}
-
 // Safety: SizeClass is safe to send between threads because:
 // 1. All fields are either primitives or thread-safe types
 // 2. NonNull<u8> points to memory owned by this allocator
 // 3. FreeListAllocator is already declared Send/Sync
-unsafe impl Send for SizeClass {}
-
 // Safety: SizeClass is safe to share between threads because:
 // 1. Access is coordinated through containing RwLock
 // 2. All mutation goes through thread-safe methods
-unsafe impl Sync for SizeClass {}
-
 impl SegregatedAllocator {
     /// Create a new segregated allocator with default size classes
     #[instrument]
@@ -587,12 +441,8 @@ impl SegregatedAllocator {
         let size_classes = Self::create_size_classes(base, size)?;
         
         Ok(Self {
-            size_classes: Arc::new(RwLock::new(size_classes)),
-            statistics: Arc::new(Mutex::new(AllocatorStatistics::new())),
             large_object_threshold: size / 10, // 10% of total space for large objects
         })
-    }
-    
     /// Create default size classes
     fn create_size_classes(base: NonNull<u8>, total_size: usize) -> Result<Vec<SizeClass>, String> {
         let class_sizes = vec![16, 32, 64, 128, 256, 512, 1024, 2048, 4096];
@@ -604,23 +454,13 @@ impl SegregatedAllocator {
             let class_base = unsafe {
                 NonNull::new(base.as_ptr().add(offset))
                     .ok_or("Failed to compute size class base pointer")?
-            };
             
             let allocator = FreeListAllocator::new(class_base, class_memory_size);
             
             classes.push(SizeClass {
-                max_size,
-                allocator,
-                allocations: 0,
-                memory_base: class_base,
-                memory_size: class_memory_size,
             });
-        }
-        
         debug!("Created {} size classes with {} bytes each", class_sizes.len(), class_memory_size);
         Ok(classes)
-    }
-    
     /// Find appropriate size class for allocation
     fn find_size_class(&self, size: usize) -> Result<usize, String> {
         let classes = self.size_classes.read()
@@ -641,16 +481,11 @@ impl Allocator for SegregatedAllocator {
     fn allocate(&self, size: usize, alignment: usize) -> Result<AllocationResult, String> {
         if size == 0 {
             return Err("Cannot allocate zero bytes".to_string());
-        }
-        
         if size > self.large_object_threshold {
             let mut stats = self.statistics.lock()
                 .map_err(|_| "Failed to acquire statistics lock")?;
             stats.record_failure();
-            return Err(format!("Size {} exceeds large object threshold {}", 
                               size, self.large_object_threshold));
-        }
-        
         let class_index = self.find_size_class(size)?;
         
         let result = {
@@ -659,21 +494,15 @@ impl Allocator for SegregatedAllocator {
             
             classes[class_index].allocations += 1;
             classes[class_index].allocator.allocate(size, alignment)?
-        };
         
         // Update statistics
         {
             let mut stats = self.statistics.lock()
                 .map_err(|_| "Failed to acquire statistics lock")?;
             stats.record_allocation(size);
-        }
-        
-        debug!("Segregated allocated {} bytes in size class {} (ptr {:p})", 
                size, class_index, result.ptr.as_ptr());
         
         Ok(result)
-    }
-    
     #[instrument(skip(self))]
     fn deallocate(&self, ptr: NonNull<u8>, size: usize) -> Result<(), String> {
         let class_index = self.find_size_class(size)?;
@@ -682,19 +511,13 @@ impl Allocator for SegregatedAllocator {
             let classes = self.size_classes.read()
                 .map_err(|_| "Failed to acquire read lock on size classes")?;
             classes[class_index].allocator.deallocate(ptr, size)?;
-        }
-        
         // Update statistics
         {
             let mut stats = self.statistics.lock()
                 .map_err(|_| "Failed to acquire statistics lock")?;
             stats.record_deallocation(size);
-        }
-        
         debug!("Segregated deallocated {} bytes from size class {}", size, class_index);
         Ok(())
-    }
-    
     fn get_statistics(&self) -> AllocatorStatistics {
         let stats = self.statistics.lock().unwrap();
         let classes = self.size_classes.read().unwrap();
@@ -708,29 +531,22 @@ impl Allocator for SegregatedAllocator {
         for (i, class) in classes.iter().enumerate() {
             let class_stats = class.allocator.get_statistics();
             result.custom_metrics.insert(
-                format!("class_{}_allocations", i), 
                 class.allocations as f64
             );
             result.custom_metrics.insert(
-                format!("class_{}_fragmentation", i), 
                 class_stats.fragmentation_ratio
             );
             
             total_fragmentation += class_stats.fragmentation_ratio;
             class_count += 1;
-        }
-        
         result.fragmentation_ratio = if class_count > 0 {
             total_fragmentation / class_count as f64
         } else {
             0.0
-        };
         
         result.custom_metrics.insert("size_classes".to_string(), class_count as f64);
         
         result
-    }
-    
     fn reset(&self) -> Result<(), String> {
         let mut classes = self.size_classes.write()
             .map_err(|_| "Failed to acquire write lock on size classes")?;
@@ -738,31 +554,21 @@ impl Allocator for SegregatedAllocator {
         for class in classes.iter_mut() {
             class.allocator.reset()?;
             class.allocations = 0;
-        }
-        
         let mut stats = self.statistics.lock()
             .map_err(|_| "Failed to acquire statistics lock")?;
         *stats = AllocatorStatistics::new();
         
         Ok(())
-    }
-    
     fn can_allocate(&self, size: usize) -> bool {
         if size > self.large_object_threshold {
             return false;
-        }
-        
         if let Ok(classes) = self.size_classes.read() {
             for class in classes.iter() {
                 if size <= class.max_size {
                     return class.allocator.can_allocate(size);
                 }
             }
-        }
-        
         false
-    }
-    
     fn allocator_type(&self) -> &'static str {
         "SegregatedAllocator"
     }

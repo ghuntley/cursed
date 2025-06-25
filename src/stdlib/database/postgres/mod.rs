@@ -30,13 +30,9 @@ pub fn init_postgres() -> crate::error::Result<()> {
 //     crate::stdlib::database::driver::DriverRegistry::register("postgres", Box::new(driver))?;
 //     crate::stdlib::database::driver::DriverRegistry::register("postgresql", Box::new(driver.clone()))?;
     Ok(())
-}
-
 /// Create a new PostgreSQL driver instance
 pub fn new_postgres_driver() -> PostgresDriver {
     PostgresDriver::new()
-}
-
 /// Parse PostgreSQL connection string and create config
 pub fn parse_connection_string(dsn: &str) -> crate::error::Result<()> {
     PostgresConnectionString::parse(dsn)

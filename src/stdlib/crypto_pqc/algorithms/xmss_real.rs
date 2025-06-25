@@ -27,52 +27,32 @@ use super::{DigitalSignature, ParameterSet, AlgorithmPerformance, KeySizes};
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum XmssParams {
     /// XMSS-SHA2_10_256: h=10, w=16, n=32
-    XmssSha2_10_256,
     /// XMSS-SHA2_16_256: h=16, w=16, n=32
-    XmssSha2_16_256,
     /// XMSS-SHA2_20_256: h=20, w=16, n=32
-    XmssSha2_20_256,
-}
-
 impl XmssParams {
     fn h(&self) -> usize {
         match self {
-            XmssParams::XmssSha2_10_256 => 10,
-            XmssParams::XmssSha2_16_256 => 16,
-            XmssParams::XmssSha2_20_256 => 20,
         }
     }
 
     fn w(&self) -> usize {
         match self {
-            XmssParams::XmssSha2_10_256 => 16,
-            XmssParams::XmssSha2_16_256 => 16,
-            XmssParams::XmssSha2_20_256 => 16,
         }
     }
 
     fn n(&self) -> usize {
         match self {
-            XmssParams::XmssSha2_10_256 => 32,
-            XmssParams::XmssSha2_16_256 => 32,
-            XmssParams::XmssSha2_20_256 => 32,
         }
     }
 
     fn total_signatures(&self) -> u64 {
         1u64 << self.h()
-    }
-
     fn winternitz_len1(&self) -> usize {
         (8 * self.n() + (self.w().trailing_zeros() as usize) - 1) / self.w().trailing_zeros() as usize
-    }
-
     fn winternitz_len2(&self) -> usize {
         let len1 = self.winternitz_len1();
         let log_w = self.w().trailing_zeros() as usize;
         ((len1 * (self.w() - 1)).ilog2() as usize + log_w - 1) / log_w + 1
-    }
-
     fn winternitz_len(&self) -> usize {
         self.winternitz_len1() + self.winternitz_len2()
     }
@@ -81,24 +61,16 @@ impl XmssParams {
 impl ParameterSet for XmssParams {
     fn security_level(&self) -> SecurityLevel {
         match self {
-            XmssParams::XmssSha2_10_256 => SecurityLevel::Level1,
-            XmssParams::XmssSha2_16_256 => SecurityLevel::Level3,
-            XmssParams::XmssSha2_20_256 => SecurityLevel::Level5,
         }
     }
 
     fn public_key_size(&self) -> usize {
         self.n() + self.n() // root + SEED
-    }
-
     fn secret_key_size(&self) -> usize {
         4 + self.n() + self.n() + self.n() // idx + SK_PRF + SEED + root
-    }
-
     fn additional_sizes(&self) -> Vec<(&'static str, usize)> {
         let signature_size = 4 + self.n() + self.winternitz_len() * self.n() + self.h() * self.n();
         vec![
-            ("signature", signature_size),
         ]
     }
 }
@@ -106,54 +78,25 @@ impl ParameterSet for XmssParams {
 impl fmt::Display for XmssParams {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            XmssParams::XmssSha2_10_256 => write!(f, "XMSS-SHA2_10_256"),
-            XmssParams::XmssSha2_16_256 => write!(f, "XMSS-SHA2_16_256"),
-            XmssParams::XmssSha2_20_256 => write!(f, "XMSS-SHA2_20_256"),
         }
     }
-}
-
 /// XMSS Address structure for hash function domain separation
 #[derive(Debug, Clone)]
 struct XmssAddress {
-    layer: u32,
-    tree: u64,
-    ots_type: u32,
-    ots_address: u32,
-    chain_address: u32,
-    hash_address: u32,
-    key_and_mask: u32,
-}
-
 impl XmssAddress {
     fn new() -> Self {
         Self {
-            layer: 0,
-            tree: 0,
-            ots_type: 0,
-            ots_address: 0,
-            chain_address: 0,
-            hash_address: 0,
-            key_and_mask: 0,
         }
     }
 
     fn set_ots_address(&mut self, address: u32) {
         self.ots_address = address;
-    }
-
     fn set_chain_address(&mut self, address: u32) {
         self.chain_address = address;
-    }
-
     fn set_hash_address(&mut self, address: u32) {
         self.hash_address = address;
-    }
-
     fn set_key_and_mask(&mut self, value: u32) {
         self.key_and_mask = value;
-    }
-
     fn to_bytes(&self) -> [u8; 32] {
         let mut bytes = [0u8; 32];
         bytes[0..4].copy_from_slice(&self.layer.to_be_bytes());
@@ -176,8 +119,6 @@ fn prf(seed: &[u8], address: &XmssAddress) -> [u8; 32] {
     let mut result = [0u8; 32];
     result.copy_from_slice(&hash[..32]);
     result
-}
-
 /// Pseudorandom generator for XMSS
 fn prg(seed: &[u8]) -> ([u8; 32], [u8; 32]) {
     let mut hasher = Sha256::new();
@@ -195,8 +136,6 @@ fn prg(seed: &[u8]) -> ([u8; 32], [u8; 32]) {
     result1.copy_from_slice(&hash1[..32]);
     result2.copy_from_slice(&hash2[..32]);
     (result1, result2)
-}
-
 /// Hash function F for XMSS
 fn hash_f(seed: &[u8], address: &XmssAddress, m: &[u8]) -> [u8; 32] {
     let mut hasher = Sha256::new();
@@ -207,8 +146,6 @@ fn hash_f(seed: &[u8], address: &XmssAddress, m: &[u8]) -> [u8; 32] {
     let mut result = [0u8; 32];
     result.copy_from_slice(&hash[..32]);
     result
-}
-
 /// Hash function H for XMSS
 fn hash_h(seed: &[u8], address: &XmssAddress, m1: &[u8], m2: &[u8]) -> [u8; 32] {
     let mut hasher = Sha256::new();
@@ -220,14 +157,9 @@ fn hash_h(seed: &[u8], address: &XmssAddress, m1: &[u8], m2: &[u8]) -> [u8; 32] 
     let mut result = [0u8; 32];
     result.copy_from_slice(&hash[..32]);
     result
-}
-
 /// WOTS+ one-time signature
 #[derive(Debug, Clone)]
 struct WotsSignature {
-    signature: Vec<[u8; 32]>,
-}
-
 impl WotsSignature {
     fn new(signature: Vec<[u8; 32]>) -> Self {
         Self { signature }
@@ -239,29 +171,20 @@ impl WotsSignature {
             bytes.extend_from_slice(sig);
         }
         bytes
-    }
-
     fn from_bytes(data: &[u8], len: usize) -> PqcResult<Self> {
         if data.len() < len * 32 {
             return Err(PqcError::InvalidSignature("Insufficient WOTS signature data".to_string()));
-        }
-
         let mut signature = Vec::new();
         for i in 0..len {
             let mut sig = [0u8; 32];
             sig.copy_from_slice(&data[i*32..(i+1)*32]);
             signature.push(sig);
-        }
-
         Ok(Self::new(signature))
     }
 }
 
 /// WOTS+ operations
 struct WotsPlus {
-    params: XmssParams,
-}
-
 impl WotsPlus {
     fn new(params: XmssParams) -> Self {
         Self { params }
@@ -281,20 +204,14 @@ impl WotsPlus {
         }
         
         result
-    }
-
     fn checksum(&self, msg: &[u32]) -> Vec<u32> {
         let w = self.params.w() as u32;
         let mut csum = 0u32;
         
         for &m in msg {
             csum += w - 1 - m;
-        }
-        
         let csum_bytes = csum.to_be_bytes();
         self.base_w(&csum_bytes)
-    }
-
     fn chain(&self, x: &[u8; 32], i: u32, s: u32, seed: &[u8], address: &XmssAddress) -> [u8; 32] {
         let mut tmp = *x;
         let mut addr = address.clone();
@@ -303,11 +220,7 @@ impl WotsPlus {
             addr.set_hash_address(j);
             addr.set_key_and_mask(0);
             tmp = hash_f(seed, &addr, &tmp);
-        }
-        
         tmp
-    }
-
     fn keygen(&self, seed: &[u8], address: &XmssAddress) -> ([u8; 32], Vec<[u8; 32]>) {
         let mut sk = Vec::new();
         let mut pk = Vec::new();
@@ -321,8 +234,6 @@ impl WotsPlus {
             
             let pk_i = self.chain(&sk_i, 0, (self.params.w() - 1) as u32, seed, &addr);
             pk.push(pk_i);
-        }
-        
         // Compute public key hash
         addr.set_chain_address(0);
         addr.set_hash_address(0);
@@ -331,11 +242,7 @@ impl WotsPlus {
         let mut pk_hash = pk[0];
         for i in 1..pk.len() {
             pk_hash = hash_h(seed, &addr, &pk_hash, &pk[i]);
-        }
-        
         (pk_hash, sk)
-    }
-
     fn sign(&self, msg: &[u8], sk: &[[u8; 32]], seed: &[u8], address: &XmssAddress) -> WotsSignature {
         let msg_base_w = self.base_w(msg);
         let csum = self.checksum(&msg_base_w);
@@ -349,11 +256,7 @@ impl WotsPlus {
             addr.set_chain_address(i as u32);
             let sig_i = self.chain(&sk[i], 0, combined[i], seed, &addr);
             signature.push(sig_i);
-        }
-        
         WotsSignature::new(signature)
-    }
-
     fn verify(&self, msg: &[u8], signature: &WotsSignature, pk: &[u8; 32], seed: &[u8], address: &XmssAddress) -> bool {
         let msg_base_w = self.base_w(msg);
         let csum = self.checksum(&msg_base_w);
@@ -368,8 +271,6 @@ impl WotsPlus {
             let remaining = (self.params.w() - 1) as u32 - combined[i];
             let pk_i = self.chain(&signature.signature[i], combined[i], remaining, seed, &addr);
             computed_pk.push(pk_i);
-        }
-        
         // Compute public key hash
         addr.set_chain_address(0);
         addr.set_hash_address(0);
@@ -378,8 +279,6 @@ impl WotsPlus {
         let mut computed_pk_hash = computed_pk[0];
         for i in 1..computed_pk.len() {
             computed_pk_hash = hash_h(seed, &addr, &computed_pk_hash, &computed_pk[i]);
-        }
-        
         computed_pk_hash == *pk
     }
 }
@@ -387,26 +286,11 @@ impl WotsPlus {
 /// Merkle tree node
 #[derive(Debug, Clone)]
 struct MerkleNode {
-    value: [u8; 32],
-    left: Option<Box<MerkleNode>>,
-    right: Option<Box<MerkleNode>>,
-}
-
 /// XMSS Merkle tree
 struct XmssMerkleTree {
-    params: XmssParams,
-    seed: [u8; 32],
-    root: Option<MerkleNode>,
-    wots_keys: HashMap<u64, ([u8; 32], Vec<[u8; 32]>)>,
-}
-
 impl XmssMerkleTree {
     fn new(params: XmssParams, seed: [u8; 32]) -> Self {
         Self {
-            params,
-            seed,
-            root: None,
-            wots_keys: HashMap::new(),
         }
     }
 
@@ -421,8 +305,6 @@ impl XmssMerkleTree {
             
             let (pk, sk) = wots.keygen(&self.seed, &address);
             self.wots_keys.insert(i, (pk, sk));
-        }
-        
         // Build Merkle tree bottom-up
         let mut current_level: Vec<[u8; 32]> = self.wots_keys.values().map(|(pk, _)| *pk).collect();
         
@@ -437,25 +319,13 @@ impl XmssMerkleTree {
                     hash_h(&self.seed, &address, &current_level[i], &current_level[i + 1])
                 } else {
                     current_level[i]
-                };
                 
                 next_level.push(combined);
-            }
-            
             current_level = next_level;
-        }
-        
         if let Some(root_value) = current_level.first() {
             self.root = Some(MerkleNode {
-                value: *root_value,
-                left: None,
-                right: None,
             });
-        }
-        
         Ok(())
-    }
-
     fn get_auth_path(&self, leaf_index: u64) -> Vec<[u8; 32]> {
         // Simplified authentication path generation
         // In practice, this would traverse the actual tree structure
@@ -477,11 +347,7 @@ impl XmssMerkleTree {
             auth_path.push(node);
             
             index >>= 1;
-        }
-        
         auth_path
-    }
-
     fn get_root(&self) -> Option<[u8; 32]> {
         self.root.as_ref().map(|node| node.value)
     }
@@ -490,11 +356,6 @@ impl XmssMerkleTree {
 /// XMSS public key
 #[derive(Debug, Clone)]
 pub struct XmssPublicKey {
-    pub params: XmssParams,
-    pub root: [u8; 32],
-    pub seed: [u8; 32],
-}
-
 impl XmssPublicKey {
     pub fn new(params: XmssParams, root: [u8; 32], seed: [u8; 32]) -> Self {
         Self { params, root, seed }
@@ -502,20 +363,14 @@ impl XmssPublicKey {
 
     pub fn security_level(&self) -> SecurityLevel {
         self.params.security_level()
-    }
-
     pub fn as_bytes(&self) -> Vec<u8> {
         let mut bytes = Vec::new();
         bytes.extend_from_slice(&self.root);
         bytes.extend_from_slice(&self.seed);
         bytes
-    }
-
     pub fn from_bytes(params: XmssParams, data: &[u8]) -> PqcResult<Self> {
         if data.len() < 64 {
             return Err(PqcError::InvalidKey("Insufficient public key data".to_string()));
-        }
-
         let mut root = [0u8; 32];
         let mut seed = [0u8; 32];
         root.copy_from_slice(&data[..32]);
@@ -528,13 +383,6 @@ impl XmssPublicKey {
 /// XMSS secret key
 #[derive(Debug, Clone)]
 pub struct XmssSecretKey {
-    pub params: XmssParams,
-    pub index: u32,
-    pub sk_prf: [u8; 32],
-    pub seed: [u8; 32],
-    pub root: [u8; 32],
-}
-
 impl XmssSecretKey {
     pub fn new(params: XmssParams, index: u32, sk_prf: [u8; 32], seed: [u8; 32], root: [u8; 32]) -> Self {
         Self { params, index, sk_prf, seed, root }
@@ -542,8 +390,6 @@ impl XmssSecretKey {
 
     pub fn security_level(&self) -> SecurityLevel {
         self.params.security_level()
-    }
-
     pub fn as_bytes(&self) -> Vec<u8> {
         let mut bytes = Vec::new();
         bytes.extend_from_slice(&self.index.to_be_bytes());
@@ -551,13 +397,9 @@ impl XmssSecretKey {
         bytes.extend_from_slice(&self.seed);
         bytes.extend_from_slice(&self.root);
         bytes
-    }
-
     pub fn from_bytes(params: XmssParams, data: &[u8]) -> PqcResult<Self> {
         if data.len() < 100 {
             return Err(PqcError::InvalidKey("Insufficient secret key data".to_string()));
-        }
-
         let index = u32::from_be_bytes([data[0], data[1], data[2], data[3]]);
         
         let mut sk_prf = [0u8; 32];
@@ -569,8 +411,6 @@ impl XmssSecretKey {
         root.copy_from_slice(&data[68..100]);
 
         Ok(Self::new(params, index, sk_prf, seed, root))
-    }
-
     pub fn signatures_remaining(&self) -> u64 {
         self.params.total_signatures() - self.index as u64
     }
@@ -579,13 +419,6 @@ impl XmssSecretKey {
 /// XMSS signature
 #[derive(Debug, Clone)]
 pub struct XmssSignature {
-    pub params: XmssParams,
-    pub index: u32,
-    pub randomness: [u8; 32],
-    pub wots_signature: WotsSignature,
-    pub auth_path: Vec<[u8; 32]>,
-}
-
 impl XmssSignature {
     pub fn new(params: XmssParams, index: u32, randomness: [u8; 32], wots_signature: WotsSignature, auth_path: Vec<[u8; 32]>) -> Self {
         Self { params, index, randomness, wots_signature, auth_path }
@@ -599,16 +432,10 @@ impl XmssSignature {
         
         for node in &self.auth_path {
             bytes.extend_from_slice(node);
-        }
-        
         bytes
-    }
-
     pub fn from_bytes(params: XmssParams, data: &[u8]) -> PqcResult<Self> {
         if data.len() < 36 {
             return Err(PqcError::InvalidSignature("Insufficient signature data".to_string()));
-        }
-
         let index = u32::from_be_bytes([data[0], data[1], data[2], data[3]]);
         
         let mut randomness = [0u8; 32];
@@ -619,8 +446,6 @@ impl XmssSignature {
         
         if data.len() < 36 + wots_size {
             return Err(PqcError::InvalidSignature("Insufficient WOTS signature data".to_string()));
-        }
-
         let wots_signature = WotsSignature::from_bytes(&data[36..36+wots_size], wots_len)?;
 
         let auth_path_start = 36 + wots_size;
@@ -628,16 +453,12 @@ impl XmssSignature {
         
         if data.len() < auth_path_start + auth_path_size {
             return Err(PqcError::InvalidSignature("Insufficient auth path data".to_string()));
-        }
-
         let mut auth_path = Vec::new();
         for i in 0..params.h() {
             let mut node = [0u8; 32];
             let start = auth_path_start + i * 32;
             node.copy_from_slice(&data[start..start+32]);
             auth_path.push(node);
-        }
-
         Ok(Self::new(params, index, randomness, wots_signature, auth_path))
     }
 }
@@ -652,19 +473,11 @@ impl DigitalSignature for RealXmss {
 
     fn keygen(security_level: SecurityLevel) -> PqcResult<(Self::PublicKey, Self::SecretKey)> {
         let params = match security_level {
-            SecurityLevel::Level1 => XmssParams::XmssSha2_10_256,
-            SecurityLevel::Level3 => XmssParams::XmssSha2_16_256,
-            SecurityLevel::Level5 => XmssParams::XmssSha2_20_256,
-        };
 
         Self::keygen_with_params(params)
-    }
-
     fn sign(secret_key: &Self::SecretKey, message: &[u8]) -> PqcResult<Self::Signature> {
         if secret_key.signatures_remaining() == 0 {
             return Err(PqcError::SigningFailed("No signatures remaining".to_string()));
-        }
-
         let params = secret_key.params;
         
         // Generate randomness
@@ -693,13 +506,9 @@ impl DigitalSignature for RealXmss {
         let auth_path = tree.get_auth_path(secret_key.index as u64);
         
         Ok(XmssSignature::new(params, secret_key.index, randomness, wots_signature, auth_path))
-    }
-
     fn verify(public_key: &Self::PublicKey, message: &[u8], signature: &Self::Signature) -> PqcResult<bool> {
         if signature.params != public_key.params {
             return Err(PqcError::ParameterValidation("Parameter mismatch".to_string()));
-        }
-
         let params = public_key.params;
         
         // Hash message with randomness
@@ -719,8 +528,6 @@ impl DigitalSignature for RealXmss {
         
         if !wots.verify(&hashed_msg, &signature.wots_signature, &pk_wots, &public_key.seed, &address) {
             return Ok(false);
-        }
-        
         // Verify authentication path (simplified)
         let mut computed_root = pk_wots;
         let mut node_index = signature.index as u64;
@@ -733,14 +540,9 @@ impl DigitalSignature for RealXmss {
                 hash_h(&public_key.seed, &addr, &computed_root, &auth_node)
             } else {
                 hash_h(&public_key.seed, &addr, &auth_node, &computed_root)
-            };
             
             node_index /= 2;
-        }
-        
         Ok(computed_root == public_key.root)
-    }
-
     fn algorithm_type() -> AlgorithmType {
         AlgorithmType::Xmss
     }
@@ -766,30 +568,16 @@ impl RealXmss {
         let secret_key = XmssSecretKey::new(params, 0, sk_prf, seed, root);
         
         Ok((public_key, secret_key))
-    }
-
     pub fn performance_characteristics(params: XmssParams) -> AlgorithmPerformance {
         let (keygen_ms, sign_ms, verify_ms, sign_throughput, verify_throughput) = match params {
-            XmssParams::XmssSha2_10_256 => (1024.0, 12.5, 8.3, 80.0, 120.0),
-            XmssParams::XmssSha2_16_256 => (65536.0, 14.2, 9.1, 70.0, 110.0),
-            XmssParams::XmssSha2_20_256 => (1048576.0, 16.8, 10.2, 60.0, 98.0),
-        };
 
         AlgorithmPerformance {
-            keygen_time_ms: keygen_ms,
             operation_time_ms: (sign_ms + verify_ms) / 2.0,
             key_sizes: KeySizes {
-                public_key: params.public_key_size(),
-                secret_key: params.secret_key_size(),
                 ciphertext_or_signature: params.additional_sizes()
                     .iter()
                     .find(|(name, _)| *name == "signature")
                     .map(|(_, size)| *size)
-                    .unwrap_or(0),
-                shared_secret: None,
-            },
             throughput_ops_per_sec: (sign_throughput + verify_throughput) / 2.0,
         }
     }
-}
-

@@ -15,8 +15,6 @@ fn main() {
         eprintln!("  compile  Compile a .csd file");
         eprintln!("  version  Show version");
         process::exit(1);
-    }
-    
     match args[1].as_str() {
         "test" => {
             println!("CURSED compiler test mode");

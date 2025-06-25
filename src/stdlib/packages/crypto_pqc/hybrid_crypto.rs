@@ -27,10 +27,8 @@
 use crate::error::CursedError;
 use super::pqc_core::{PqcKey, SecurityLevel};
 use super::hybrid::{
-    HybridAlgorithmConfig, HybridKeyPair, HybridKemResult, HybridSignature,
-    X25519KyberHybrid, Ed25519DilithiumHybrid, HybridCryptoManager,
     HybridFallbackManager, FallbackStrategy, HybridSchemeType
-};
+// };
 
 use std::collections::HashMap;
 use std::time::{Duration, Instant};
@@ -44,8 +42,6 @@ use std::time::{Duration, Instant};
 pub fn generate_secure_keypair() -> AdvancedCryptoResult<HybridKeyPair> {
     let hybrid = X25519KyberHybrid::new(SecurityLevel::Level3)?;
     hybrid.generate_keypair()
-}
-
 /// Encrypt data using hybrid cryptography (simple interface)
 /// Returns encrypted data that requires both classical and PQC algorithms to decrypt
 pub fn hybrid_encrypt(data: &[u8], public_key: &HybridKeyPair) -> AdvancedCryptoResult<HybridEncryptionResult> {
@@ -56,55 +52,30 @@ pub fn hybrid_encrypt(data: &[u8], public_key: &HybridKeyPair) -> AdvancedCrypto
     let encrypted_data = simple_encrypt(data, &kem_result.shared_secret)?;
     
     Ok(HybridEncryptionResult {
-        classical_ciphertext: kem_result.classical_ciphertext,
-        pqc_ciphertext: kem_result.pqc_ciphertext,
-        encrypted_data,
-        algorithm: kem_result.algorithm,
-        timestamp: std::time::SystemTime::now(),
     })
-}
-
 /// Decrypt data using hybrid cryptography (simple interface)
 pub fn hybrid_decrypt(encryption_result: &HybridEncryptionResult, private_key: &HybridKeyPair) -> AdvancedCryptoResult<Vec<u8>> {
     let hybrid = X25519KyberHybrid::new(SecurityLevel::Level3)?;
     
     let kem_result = HybridKemResult {
-        classical_ciphertext: encryption_result.classical_ciphertext.clone(),
-        pqc_ciphertext: encryption_result.pqc_ciphertext.clone(),
         shared_secret: Vec::new(), // Will be computed during decapsulation
-        algorithm: encryption_result.algorithm.clone(),
-    };
     
     let shared_secret = hybrid.decapsulate(private_key, &kem_result)?;
     simple_decrypt(&encryption_result.encrypted_data, &shared_secret)
-}
-
 /// Sign data using hybrid digital signatures (simple interface)
 pub fn hybrid_sign(data: &[u8], private_key: &HybridKeyPair) -> AdvancedCryptoResult<HybridSignature> {
     let hybrid = Ed25519DilithiumHybrid::new(SecurityLevel::Level3);
     hybrid.sign(private_key, data)
-}
-
 /// Verify hybrid digital signature (simple interface)
 pub fn hybrid_verify(data: &[u8], signature: &HybridSignature, public_key: &HybridKeyPair) -> AdvancedCryptoResult<bool> {
     let hybrid = Ed25519DilithiumHybrid::new(SecurityLevel::Level3);
     hybrid.verify(public_key, data, signature)
-}
-
 // ================================================================================================
 // SECURE MESSAGING WORKFLOW
 // ================================================================================================
 
 /// Complete secure messaging session with hybrid cryptography
 pub struct SecureMessagingSession {
-    sender_keypair: HybridKeyPair,
-    receiver_public_key: Option<HybridKeyPair>,
-    session_id: String,
-    security_level: SecurityLevel,
-    message_counter: u64,
-    created_at: std::time::SystemTime,
-}
-
 impl SecureMessagingSession {
     /// Create new secure messaging session
     pub fn new(security_level: SecurityLevel) -> AdvancedCryptoResult<Self> {
@@ -112,23 +83,13 @@ impl SecureMessagingSession {
         let sender_keypair = hybrid.generate_keypair()?;
         
         Ok(Self {
-            sender_keypair,
-            receiver_public_key: None,
-            session_id: generate_session_id(),
-            security_level,
-            message_counter: 0,
-            created_at: std::time::SystemTime::now(),
         })
-    }
-    
     /// Set receiver's public key for the session
     pub fn set_receiver(&mut self, receiver_public_key: HybridKeyPair) -> AdvancedCryptoResult<()> {
         // Validate the receiver's key
         receiver_public_key.validate()?;
         self.receiver_public_key = Some(receiver_public_key);
         Ok(())
-    }
-    
     /// Send secure message
     pub fn send_message(&mut self, message: &str) -> AdvancedCryptoResult<SecureMessage> {
         let receiver_key = self.receiver_public_key.as_ref()
@@ -136,11 +97,6 @@ impl SecureMessagingSession {
         
         // Create message with metadata
         let message_data = MessageData {
-            content: message.as_bytes().to_vec(),
-            sender_id: self.session_id.clone(),
-            sequence: self.message_counter,
-            timestamp: std::time::SystemTime::now(),
-        };
         
         let serialized_message = serialize_message_data(&message_data)?;
         
@@ -153,21 +109,13 @@ impl SecureMessagingSession {
         self.message_counter += 1;
         
         Ok(SecureMessage {
-            encryption_result,
-            signature,
-            session_id: self.session_id.clone(),
-            sequence: message_data.sequence,
         })
-    }
-    
     /// Receive and decrypt secure message
     pub fn receive_message(&self, secure_message: &SecureMessage, sender_public_key: &HybridKeyPair) -> AdvancedCryptoResult<String> {
         // Verify signature first
         let signature_valid = hybrid_verify(&secure_message.encryption_result.encrypted_data, &secure_message.signature, sender_public_key)?;
         if !signature_valid {
             return Err(CursedError::CryptoError("Invalid message signature".to_string()));
-        }
-        
         // Decrypt the message
         let decrypted_data = hybrid_decrypt(&secure_message.encryption_result, &self.sender_keypair)?;
         
@@ -177,52 +125,30 @@ impl SecureMessagingSession {
         // Convert to string
         String::from_utf8(message_data.content)
             .map_err(|e| CursedError::InvalidInput(format!("Invalid UTF-8 in message: {}", e)))
-    }
-    
     /// Get session public key for sharing
     pub fn get_public_key(&self) -> AdvancedCryptoResult<Vec<u8>> {
         self.sender_keypair.get_combined_public_key()
-    }
-    
     /// Get session statistics
     pub fn get_statistics(&self) -> SessionStatistics {
         SessionStatistics {
-            session_id: self.session_id.clone(),
-            messages_sent: self.message_counter,
-            session_duration: self.created_at.elapsed().unwrap_or(Duration::from_secs(0)),
-            security_level: self.security_level.clone(),
         }
     }
-}
-
 // ================================================================================================
 // MIGRATION AND COMPATIBILITY TOOLS
 // ================================================================================================
 
 /// Migration helper for transitioning from classical to hybrid cryptography
 pub struct HybridMigrationHelper {
-    current_classical_keys: Vec<AsymmetricKeyPair>,
-    hybrid_keys: Vec<HybridKeyPair>,
-    migration_config: MigrationConfig,
-    compatibility_mode: bool,
-}
-
 impl HybridMigrationHelper {
     /// Create new migration helper
     pub fn new(migration_config: MigrationConfig) -> Self {
         Self {
-            current_classical_keys: Vec::new(),
-            hybrid_keys: Vec::new(),
-            migration_config,
-            compatibility_mode: true,
         }
     }
     
     /// Add existing classical keys to migration
     pub fn add_classical_keys(&mut self, keys: Vec<AsymmetricKeyPair>) {
         self.current_classical_keys.extend(keys);
-    }
-    
     /// Generate hybrid keys for migration
     pub fn generate_hybrid_keys(&mut self, count: usize) -> AdvancedCryptoResult<Vec<HybridKeyPair>> {
         let mut hybrid_keys = Vec::new();
@@ -231,23 +157,12 @@ impl HybridMigrationHelper {
             let hybrid = X25519KyberHybrid::new(self.migration_config.target_security_level)?;
             let keypair = hybrid.generate_keypair()?;
             hybrid_keys.push(keypair);
-        }
-        
         self.hybrid_keys.extend(hybrid_keys.clone());
         Ok(hybrid_keys)
-    }
-    
     /// Create compatibility bridge for gradual migration
     pub fn create_compatibility_bridge(&self) -> CompatibilityBridge {
         CompatibilityBridge {
-            classical_fallback: self.compatibility_mode,
-            hybrid_preferred: true,
-            migration_phase: self.migration_config.phase.clone(),
             supported_algorithms: vec![
-                "X25519+Kyber".to_string(),
-                "Ed25519+Dilithium".to_string(),
-                "RSA+SPHINCS+".to_string(),
-            ],
         }
     }
     
@@ -262,63 +177,38 @@ impl HybridMigrationHelper {
             1.0
         } else {
             hybrid_count as f64 / (classical_count + hybrid_count) as f64
-        };
         
         let estimated_time = match self.migration_config.phase {
             MigrationPhase::Planning => Duration::from_secs(30 * 24 * 3600), // 30 days
             MigrationPhase::Testing => Duration::from_secs(60 * 24 * 3600),  // 60 days
             MigrationPhase::Gradual => Duration::from_secs(90 * 24 * 3600),  // 90 days
             MigrationPhase::Complete => Duration::from_secs(7 * 24 * 3600),  // 7 days
-        };
         
         MigrationReadinessReport {
-            readiness_score,
-            classical_keys_count: classical_count,
-            hybrid_keys_count: hybrid_count,
-            estimated_migration_time: estimated_time,
-            recommendations: generate_migration_recommendations(readiness_score, &self.migration_config),
-            risks: assess_migration_risks(&self.migration_config),
         }
     }
-}
-
 // ================================================================================================
 // CONFIGURATION AND MANAGEMENT
 // ================================================================================================
 
 /// Advanced hybrid crypto configuration manager
 pub struct HybridConfigManager {
-    configs: HashMap<String, HybridAlgorithmConfig>,
-    performance_profiles: HashMap<String, PerformanceProfile>,
-    security_policies: HashMap<String, SecurityPolicy>,
-    current_config: Option<String>,
-}
-
 impl HybridConfigManager {
     /// Create new configuration manager with defaults
     pub fn new() -> Self {
         let mut manager = Self {
-            configs: HashMap::new(),
-            performance_profiles: HashMap::new(),
-            security_policies: HashMap::new(),
-            current_config: None,
-        };
         
         manager.load_default_configs();
         manager.load_default_profiles();
         manager.load_default_policies();
         
         manager
-    }
-    
     /// Load default configurations
     fn load_default_configs(&mut self) {
         // High security configuration
-        self.configs.insert("high_security".to_string(), 
             HybridAlgorithmConfig::x25519_kyber(SecurityLevel::Level5));
         
         // Balanced configuration
-        self.configs.insert("balanced".to_string(), 
             HybridAlgorithmConfig::x25519_kyber(SecurityLevel::Level3));
         
         // Performance optimized configuration
@@ -327,68 +217,30 @@ impl HybridConfigManager {
         self.configs.insert("performance".to_string(), perf_config);
         
         // Signature configurations
-        self.configs.insert("signature_standard".to_string(),
             HybridAlgorithmConfig::ed25519_dilithium(SecurityLevel::Level3));
         
         // Legacy compatibility
-        self.configs.insert("legacy_rsa".to_string(),
             HybridAlgorithmConfig::rsa_sphincs(3072));
-    }
-    
     /// Load default performance profiles
     fn load_default_profiles(&mut self) {
         self.performance_profiles.insert("web_server".to_string(), PerformanceProfile {
-            max_key_generation_time: Duration::from_millis(100),
-            max_encryption_time: Duration::from_millis(10),
-            max_signature_time: Duration::from_millis(50),
-            memory_limit_mb: 50,
-            cpu_intensive_operations: false,
         });
         
         self.performance_profiles.insert("high_throughput".to_string(), PerformanceProfile {
-            max_key_generation_time: Duration::from_millis(50),
-            max_encryption_time: Duration::from_millis(5),
-            max_signature_time: Duration::from_millis(20),
-            memory_limit_mb: 100,
-            cpu_intensive_operations: true,
         });
         
         self.performance_profiles.insert("iot_device".to_string(), PerformanceProfile {
-            max_key_generation_time: Duration::from_millis(500),
-            max_encryption_time: Duration::from_millis(100),
-            max_signature_time: Duration::from_millis(200),
-            memory_limit_mb: 10,
-            cpu_intensive_operations: false,
         });
-    }
-    
     /// Load default security policies
     fn load_default_policies(&mut self) {
         self.security_policies.insert("government".to_string(), SecurityPolicy {
-            minimum_security_level: SecurityLevel::Level5,
-            require_pqc: true,
-            allow_classical_fallback: false,
-            mandatory_signature: true,
-            key_rotation_days: 30,
         });
         
         self.security_policies.insert("enterprise".to_string(), SecurityPolicy {
-            minimum_security_level: SecurityLevel::Level3,
-            require_pqc: true,
-            allow_classical_fallback: true,
-            mandatory_signature: true,
-            key_rotation_days: 90,
         });
         
         self.security_policies.insert("standard".to_string(), SecurityPolicy {
-            minimum_security_level: SecurityLevel::Level1,
-            require_pqc: false,
-            allow_classical_fallback: true,
-            mandatory_signature: false,
-            key_rotation_days: 365,
         });
-    }
-    
     /// Set active configuration
     pub fn set_config(&mut self, config_name: &str) -> AdvancedCryptoResult<()> {
         if self.configs.contains_key(config_name) {
@@ -406,8 +258,6 @@ impl HybridConfigManager {
         
         self.configs.get(config_name)
             .ok_or_else(|| CursedError::InvalidState("Active configuration not found".to_string()))
-    }
-    
     /// Create optimized configuration for use case
     pub fn create_optimized_config(&self, use_case: &str, performance_profile: &str, security_policy: &str) -> AdvancedCryptoResult<HybridAlgorithmConfig> {
         let profile = self.performance_profiles.get(performance_profile)
@@ -418,29 +268,18 @@ impl HybridConfigManager {
         
         // Create configuration based on requirements
         let mut config = match use_case {
-            "messaging" | "communication" => HybridAlgorithmConfig::x25519_kyber(policy.minimum_security_level),
-            "document_signing" | "authentication" => HybridAlgorithmConfig::ed25519_dilithium(policy.minimum_security_level),
-            "legacy_support" => HybridAlgorithmConfig::rsa_sphincs(3072),
-            _ => HybridAlgorithmConfig::x25519_kyber(SecurityLevel::Level3),
-        };
         
         // Apply performance optimizations
         config.performance_priority = profile.cpu_intensive_operations;
         config.fallback_enabled = policy.allow_classical_fallback;
         
         Ok(config)
-    }
-    
     /// List available configurations
     pub fn list_configs(&self) -> Vec<String> {
         self.configs.keys().cloned().collect()
-    }
-    
     /// List available performance profiles
     pub fn list_performance_profiles(&self) -> Vec<String> {
         self.performance_profiles.keys().cloned().collect()
-    }
-    
     /// List available security policies
     pub fn list_security_policies(&self) -> Vec<String> {
         self.security_policies.keys().cloned().collect()
@@ -453,35 +292,18 @@ impl HybridConfigManager {
 
 /// Comprehensive hybrid crypto benchmarking suite
 pub struct HybridBenchmarkSuite {
-    configs_to_test: Vec<HybridAlgorithmConfig>,
-    test_data_sizes: Vec<usize>,
-    iterations: usize,
-}
-
 impl HybridBenchmarkSuite {
     /// Create new benchmark suite
     pub fn new() -> Self {
         Self {
             configs_to_test: vec![
-                HybridAlgorithmConfig::x25519_kyber(SecurityLevel::Level1),
-                HybridAlgorithmConfig::x25519_kyber(SecurityLevel::Level3),
-                HybridAlgorithmConfig::x25519_kyber(SecurityLevel::Level5),
-                HybridAlgorithmConfig::ed25519_dilithium(SecurityLevel::Level1),
-                HybridAlgorithmConfig::ed25519_dilithium(SecurityLevel::Level3),
-                HybridAlgorithmConfig::ed25519_dilithium(SecurityLevel::Level5),
-            ],
             test_data_sizes: vec![100, 1024, 10240, 102400], // 100B, 1KB, 10KB, 100KB
-            iterations: 100,
         }
     }
     
     /// Run comprehensive benchmark
     pub fn run_benchmark(&self) -> AdvancedCryptoResult<BenchmarkReport> {
         let mut report = BenchmarkReport {
-            algorithm_results: HashMap::new(),
-            summary: BenchmarkSummary::default(),
-            timestamp: std::time::SystemTime::now(),
-        };
         
         for config in &self.configs_to_test {
             let algorithm_name = format!("{}+{}", config.classical_algorithm, config.pqc_algorithm);
@@ -510,14 +332,10 @@ impl HybridBenchmarkSuite {
             }
             
             report.algorithm_results.insert(algorithm_name, algorithm_results);
-        }
-        
         // Calculate summary statistics
         report.summary = self.calculate_summary(&report.algorithm_results);
         
         Ok(report)
-    }
-    
     /// Benchmark key generation
     fn benchmark_key_generation(&self, config: &HybridAlgorithmConfig) -> AdvancedCryptoResult<Duration> {
         let start = Instant::now();
@@ -527,19 +345,14 @@ impl HybridBenchmarkSuite {
                 HybridSchemeType::Kem => {
                     let hybrid = X25519KyberHybrid::new(config.security_level)?;
                     let _ = hybrid.generate_keypair()?;
-                },
                 HybridSchemeType::Signature => {
                     let hybrid = Ed25519DilithiumHybrid::new(config.security_level);
                     let _ = hybrid.generate_keypair()?;
-                },
-                _ => return Err(CursedError::InvalidInput("Unsupported scheme type".to_string())),
             }
         }
         
         let total_time = start.elapsed();
         Ok(total_time / self.iterations as u32)
-    }
-    
     /// Benchmark encryption and decryption
     fn benchmark_encryption_decryption(&self, config: &HybridAlgorithmConfig, data_size: usize) -> AdvancedCryptoResult<(Duration, Duration)> {
         let hybrid = X25519KyberHybrid::new(config.security_level)?;
@@ -564,8 +377,6 @@ impl HybridBenchmarkSuite {
         let avg_dec_time = dec_start.elapsed() / self.iterations as u32;
         
         Ok((avg_enc_time, avg_dec_time))
-    }
-    
     /// Benchmark signing and verification
     fn benchmark_signing_verification(&self, config: &HybridAlgorithmConfig, data_size: usize) -> AdvancedCryptoResult<(Duration, Duration)> {
         let hybrid = Ed25519DilithiumHybrid::new(config.security_level);
@@ -590,16 +401,12 @@ impl HybridBenchmarkSuite {
         let avg_verify_time = verify_start.elapsed() / self.iterations as u32;
         
         Ok((avg_sign_time, avg_verify_time))
-    }
-    
     /// Calculate summary statistics
     fn calculate_summary(&self, results: &HashMap<String, AlgorithmBenchmarkResult>) -> BenchmarkSummary {
         let mut summary = BenchmarkSummary::default();
         
         if results.is_empty() {
             return summary;
-        }
-        
         // Calculate average times across all algorithms
         let key_gen_times: Vec<Duration> = results.values().map(|r| r.avg_key_generation_time).collect();
         summary.avg_key_generation_time = key_gen_times.iter().sum::<Duration>() / key_gen_times.len() as u32;
@@ -609,14 +416,10 @@ impl HybridBenchmarkSuite {
             .min_by_key(|(_, result)| result.avg_key_generation_time) {
             summary.fastest_algorithm = fastest_alg.clone();
             summary.fastest_key_generation = fastest_result.avg_key_generation_time;
-        }
-        
         if let Some((slowest_alg, slowest_result)) = results.iter()
             .max_by_key(|(_, result)| result.avg_key_generation_time) {
             summary.slowest_algorithm = slowest_alg.clone();
             summary.slowest_key_generation = slowest_result.avg_key_generation_time;
-        }
-        
         summary.total_algorithms_tested = results.len();
         summary
     }
@@ -705,18 +508,12 @@ pub fn run_hybrid_crypto_demo() -> AdvancedCryptoResult<()> {
     println!("Available configurations:");
     for config in config_manager.list_configs() {
         println!("   - {}", config);
-    }
-    
     println!("Available performance profiles:");
     for profile in config_manager.list_performance_profiles() {
         println!("   - {}", profile);
-    }
-    
     println!("Available security policies:");
     for policy in config_manager.list_security_policies() {
         println!("   - {}", policy);
-    }
-    
     // Create optimized configuration
     let web_config = config_manager.create_optimized_config("messaging", "web_server", "enterprise")?;
     println!("✅ Created optimized configuration for web messaging");
@@ -728,17 +525,11 @@ pub fn run_hybrid_crypto_demo() -> AdvancedCryptoResult<()> {
     println!("----------------------");
     
     let migration_config = MigrationConfig {
-        phase: MigrationPhase::Planning,
-        target_security_level: SecurityLevel::Level3,
-        timeline_months: 6,
-    };
     
     let mut migration_helper = HybridMigrationHelper::new(migration_config);
     
     // Simulate adding classical keys
     let classical_keys = vec![
-        create_mock_classical_keypair("RSA2048"),
-        create_mock_classical_keypair("ECDSA-P256"),
     ];
     migration_helper.add_classical_keys(classical_keys);
     
@@ -771,8 +562,6 @@ pub fn run_hybrid_crypto_demo() -> AdvancedCryptoResult<()> {
     println!("🚀 Ready for the post-quantum future!");
     
     Ok(())
-}
-
 // ================================================================================================
 // UTILITY FUNCTIONS AND DATA STRUCTURES
 // ================================================================================================
@@ -786,14 +575,10 @@ fn simple_encrypt(data: &[u8], key: &[u8]) -> AdvancedCryptoResult<Vec<u8>> {
         encrypted.push(byte ^ key_byte);
     }
     Ok(encrypted)
-}
-
 /// Simple symmetric decryption using a shared secret (placeholder implementation)
 fn simple_decrypt(encrypted_data: &[u8], key: &[u8]) -> AdvancedCryptoResult<Vec<u8>> {
     // XOR is symmetric, so decryption is the same as encryption
     simple_encrypt(encrypted_data, key)
-}
-
 /// Generate unique session ID
 fn generate_session_id() -> String {
     use std::collections::hash_map::DefaultHasher;
@@ -803,8 +588,6 @@ fn generate_session_id() -> String {
     let mut hasher = DefaultHasher::new();
     SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_nanos().hash(&mut hasher);
     format!("session_{:x}", hasher.finish())
-}
-
 /// Serialize message data (placeholder implementation)
 fn serialize_message_data(data: &MessageData) -> AdvancedCryptoResult<Vec<u8>> {
     // Placeholder: In production, use proper serialization like bincode or protobuf
@@ -828,26 +611,20 @@ fn serialize_message_data(data: &MessageData) -> AdvancedCryptoResult<Vec<u8>> {
     serialized.extend_from_slice(&data.content);
     
     Ok(serialized)
-}
-
 /// Deserialize message data (placeholder implementation)
 fn deserialize_message_data(data: &[u8]) -> AdvancedCryptoResult<MessageData> {
     if data.len() < 20 { // Minimum size check
         return Err(CursedError::InvalidInput("Invalid message data".to_string()));
-    }
-    
     let mut offset = 0;
     
     // Read sequence number
     let sequence = u64::from_be_bytes([
-        data[offset], data[offset+1], data[offset+2], data[offset+3],
         data[offset+4], data[offset+5], data[offset+6], data[offset+7]
     ]);
     offset += 8;
     
     // Read timestamp
     let timestamp_secs = u64::from_be_bytes([
-        data[offset], data[offset+1], data[offset+2], data[offset+3],
         data[offset+4], data[offset+5], data[offset+6], data[offset+7]
     ]);
     offset += 8;
@@ -860,8 +637,6 @@ fn deserialize_message_data(data: &[u8]) -> AdvancedCryptoResult<MessageData> {
     
     if offset + sender_len > data.len() {
         return Err(CursedError::InvalidInput("Invalid sender ID length".to_string()));
-    }
-    
     let sender_id = String::from_utf8(data[offset..offset + sender_len].to_vec())
         .map_err(|e| CursedError::InvalidInput(format!("Invalid sender ID: {}", e)))?;
     offset += sender_len;
@@ -872,18 +647,10 @@ fn deserialize_message_data(data: &[u8]) -> AdvancedCryptoResult<MessageData> {
     
     if offset + content_len > data.len() {
         return Err(CursedError::InvalidInput("Invalid content length".to_string()));
-    }
-    
     let content = data[offset..offset + content_len].to_vec();
     
     Ok(MessageData {
-        content,
-        sender_id,
-        sequence,
-        timestamp,
     })
-}
-
 /// Generate migration recommendations
 fn generate_migration_recommendations(readiness_score: f64, config: &MigrationConfig) -> Vec<String> {
     let mut recommendations = Vec::new();
@@ -900,30 +667,20 @@ fn generate_migration_recommendations(readiness_score: f64, config: &MigrationCo
         recommendations.push("Finalize transition to full hybrid cryptography".to_string());
         recommendations.push("Deprecate pure classical cryptography".to_string());
         recommendations.push("Implement quantum-safe key management".to_string());
-    }
-    
     match config.phase {
         MigrationPhase::Planning => {
             recommendations.push("Develop detailed migration timeline".to_string());
             recommendations.push("Assess current cryptographic inventory".to_string());
-        },
         MigrationPhase::Testing => {
             recommendations.push("Expand testing coverage of hybrid schemes".to_string());
             recommendations.push("Validate performance in production-like environments".to_string());
-        },
         MigrationPhase::Gradual => {
             recommendations.push("Monitor hybrid scheme performance metrics".to_string());
             recommendations.push("Gradually increase hybrid usage percentage".to_string());
-        },
         MigrationPhase::Complete => {
             recommendations.push("Verify full migration completion".to_string());
             recommendations.push("Implement post-migration security monitoring".to_string());
-        },
-    }
-    
     recommendations
-}
-
 /// Assess migration risks
 fn assess_migration_risks(config: &MigrationConfig) -> Vec<String> {
     let mut risks = Vec::new();
@@ -931,28 +688,17 @@ fn assess_migration_risks(config: &MigrationConfig) -> Vec<String> {
     match config.target_security_level {
         SecurityLevel::Level1 => {
             risks.push("Level 1 security may not be sufficient for sensitive applications".to_string());
-        },
         SecurityLevel::Level5 => {
             risks.push("Level 5 security may impact performance significantly".to_string());
-        },
-        _ => {},
-    }
-    
     if config.timeline_months < 3 {
         risks.push("Aggressive timeline may lead to implementation errors".to_string());
-    }
-    
     if config.timeline_months > 12 {
         risks.push("Extended timeline may delay quantum resistance".to_string());
-    }
-    
     risks.push("Hybrid schemes have larger key sizes and signatures".to_string());
     risks.push("Performance overhead during transition period".to_string());
     risks.push("Compatibility issues with legacy systems".to_string());
     
     risks
-}
-
 /// Create mock classical keypair for testing
 fn create_mock_classical_keypair(algorithm: &str) -> AsymmetricKeyPair {
     let key_size = match algorithm {
@@ -960,20 +706,10 @@ fn create_mock_classical_keypair(algorithm: &str) -> AsymmetricKeyPair {
         "RSA3072" => 384,   // 3072 bits = 384 bytes
         "ECDSA-P256" => 32, // P-256 = 32 bytes
         "Ed25519" => 32,    // Ed25519 = 32 bytes
-        _ => 32,
-    };
     
     AsymmetricKeyPair {
         private_key: AsymmetricKey {
-            algorithm: algorithm.to_string(),
-            key_data: vec![0u8; key_size],
-            is_private: true,
-        },
         public_key: AsymmetricKey {
-            algorithm: algorithm.to_string(),
-            key_data: vec![0u8; key_size],
-            is_private: false,
-        },
     }
 }
 
@@ -984,126 +720,42 @@ fn create_mock_classical_keypair(algorithm: &str) -> AsymmetricKeyPair {
 /// Result of hybrid encryption operation
 #[derive(Debug, Clone)]
 pub struct HybridEncryptionResult {
-    pub classical_ciphertext: Vec<u8>,
-    pub pqc_ciphertext: Vec<u8>,
-    pub encrypted_data: Vec<u8>,
-    pub algorithm: String,
-    pub timestamp: std::time::SystemTime,
-}
-
 /// Secure message for hybrid messaging
 #[derive(Debug, Clone)]
 pub struct SecureMessage {
-    pub encryption_result: HybridEncryptionResult,
-    pub signature: HybridSignature,
-    pub session_id: String,
-    pub sequence: u64,
-}
-
 /// Message data structure
 #[derive(Debug, Clone)]
 pub struct MessageData {
-    pub content: Vec<u8>,
-    pub sender_id: String,
-    pub sequence: u64,
-    pub timestamp: std::time::SystemTime,
-}
-
 /// Session statistics
 #[derive(Debug, Clone)]
 pub struct SessionStatistics {
-    pub session_id: String,
-    pub messages_sent: u64,
-    pub session_duration: Duration,
-    pub security_level: SecurityLevel,
-}
-
 /// Migration configuration
 #[derive(Debug, Clone)]
 pub struct MigrationConfig {
-    pub phase: MigrationPhase,
-    pub target_security_level: SecurityLevel,
-    pub timeline_months: u32,
-}
-
 /// Migration phases
 #[derive(Debug, Clone, PartialEq)]
 pub enum MigrationPhase {
-    Planning,
-    Testing,
-    Gradual,
-    Complete,
-}
-
 /// Migration readiness report
 #[derive(Debug)]
 pub struct MigrationReadinessReport {
-    pub readiness_score: f64,
-    pub classical_keys_count: usize,
-    pub hybrid_keys_count: usize,
-    pub estimated_migration_time: Duration,
-    pub recommendations: Vec<String>,
-    pub risks: Vec<String>,
-}
-
 /// Compatibility bridge for migration
 #[derive(Debug)]
 pub struct CompatibilityBridge {
-    pub classical_fallback: bool,
-    pub hybrid_preferred: bool,
-    pub migration_phase: MigrationPhase,
-    pub supported_algorithms: Vec<String>,
-}
-
 /// Performance profile for different use cases
 #[derive(Debug, Clone)]
 pub struct PerformanceProfile {
-    pub max_key_generation_time: Duration,
-    pub max_encryption_time: Duration,
-    pub max_signature_time: Duration,
-    pub memory_limit_mb: u32,
-    pub cpu_intensive_operations: bool,
-}
-
 /// Security policy configuration
 #[derive(Debug, Clone)]
 pub struct SecurityPolicy {
-    pub minimum_security_level: SecurityLevel,
-    pub require_pqc: bool,
-    pub allow_classical_fallback: bool,
-    pub mandatory_signature: bool,
-    pub key_rotation_days: u32,
-}
-
 /// Benchmark report
 #[derive(Debug)]
 pub struct BenchmarkReport {
-    pub algorithm_results: HashMap<String, AlgorithmBenchmarkResult>,
-    pub summary: BenchmarkSummary,
-    pub timestamp: std::time::SystemTime,
-}
-
 /// Algorithm benchmark result
 #[derive(Debug, Default)]
 pub struct AlgorithmBenchmarkResult {
-    pub avg_key_generation_time: Duration,
-    pub encryption_times: HashMap<usize, Duration>,
-    pub decryption_times: HashMap<usize, Duration>,
-    pub signing_times: HashMap<usize, Duration>,
-    pub verification_times: HashMap<usize, Duration>,
-}
-
 /// Benchmark summary
 #[derive(Debug, Default)]
 pub struct BenchmarkSummary {
-    pub total_algorithms_tested: usize,
-    pub avg_key_generation_time: Duration,
-    pub fastest_algorithm: String,
-    pub slowest_algorithm: String,
-    pub fastest_key_generation: Duration,
-    pub slowest_key_generation: Duration,
-}
-
 // ================================================================================================
 // TESTING
 // ================================================================================================

@@ -22,7 +22,6 @@ async fn main() {
                 .value_name("MODE")
                 .help("Server communication mode")
                 .value_parser(["stdio", "tcp", "socket"])
-                .default_value("stdio"),
         )
         .arg(
             Arg::new("port")
@@ -38,27 +37,23 @@ async fn main() {
                 .long("socket")
                 .short('s')
                 .value_name("PATH")
-                .help("Socket path for socket mode"),
         )
         .arg(
             Arg::new("debug")
                 .long("debug")
                 .short('d')
                 .help("Enable debug logging")
-                .action(ArgAction::SetTrue),
         )
         .arg(
             Arg::new("verbose")
                 .long("verbose")
                 .short('v')
                 .help("Enable verbose logging")
-                .action(ArgAction::SetTrue),
         )
         .arg(
             Arg::new("log-file")
                 .long("log-file")
                 .value_name("FILE")
-                .help("Write logs to file instead of stderr"),
         )
         .arg(
             Arg::new("max-concurrent")
@@ -66,7 +61,6 @@ async fn main() {
                 .value_name("NUM")
                 .help("Maximum number of concurrent requests")
                 .value_parser(clap::value_parser!(usize))
-                .default_value("100"),
         )
         .get_matches();
 
@@ -81,20 +75,14 @@ async fn main() {
     if let Err(err) = init_lsp_server() {
         error!("Failed to initialize LSP server: {}", err);
         process::exit(1);
-    }
-
     info!("Starting CURSED Language Server");
 
     // Parse server mode
     let mode = match matches.get_one::<String>("mode").unwrap().as_str() {
-        "stdio" => ServerMode::Stdio,
-        "tcp" => ServerMode::Tcp,
-        "socket" => ServerMode::Socket,
         _ => {
             error!("Invalid server mode");
             process::exit(1);
         }
-    };
 
     // Build server configuration
     let mut builder = LspServerBuilder::new()
@@ -104,12 +92,8 @@ async fn main() {
 
     if let Some(port) = matches.get_one::<u16>("port") {
         builder = builder.port(*port);
-    }
-
     if let Some(socket_path) = matches.get_one::<String>("socket") {
         builder = builder.socket_path(socket_path.clone());
-    }
-
     let server = builder.build();
 
     // Print server information
@@ -128,11 +112,7 @@ async fn main() {
     if let Err(err) = server.start().await {
         error!("LSP server error: {}", err);
         process::exit(1);
-    }
-
     info!("CURSED Language Server stopped");
-}
-
 /// Initialize logging based on command-line options
 fn init_logging(debug: bool, verbose: bool, log_file: Option<&str>) {
     let level = if debug {
@@ -141,7 +121,6 @@ fn init_logging(debug: bool, verbose: bool, log_file: Option<&str>) {
         "info"
     } else {
         "warn"
-    };
 
     let env_filter = tracing_subscriber::EnvFilter::try_from_default_env()
         .unwrap_or_else(|_| {
@@ -221,5 +200,3 @@ fn print_usage_examples() {
     println!(r#" (make-lsp-client :new-connection (lsp-stdio-connection "cursed-lsp")"#);
     println!(r#"                  :major-modes '(cursed-mode)"#);
     println!(r#"                  :server-id 'cursed-lsp))"#);
-}
-

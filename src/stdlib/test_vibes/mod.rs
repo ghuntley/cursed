@@ -22,61 +22,51 @@ pub mod utilities;
 
 // Core types re-exports
 pub use core::{
-    VibeTest, VibeBench, VibeTestingManager, TestMain,
     VibeTestState, VibeBenchState, TestResult, BenchmarkResult
-};
+// };
 
 // Assertion framework re-exports
 pub use assertions::{
     // Basic assertions
-    Assert, AssertEqual, AssertNotEqual, AssertNil, AssertNotNil,
-    AssertTrue, AssertFalse,
     
     // CursedError assertions
-    AssertError, AssertNoError, AssertErrorIs, AssertErrorContains,
     
     // Collection assertions
-    AssertLen, AssertEmpty, AssertNotEmpty, AssertContains, AssertNotContains,
     
     // Numeric assertions
-    AssertGreater, AssertGreaterOrEqual, AssertLess, AssertLessOrEqual,
-    AssertZero, AssertNotZero,
     
     // String assertions
-    AssertContainsSubtea, AssertHasPrefix, AssertHasSuffix, AssertMatchesRegex,
     
     // Type assertions
-    AssertType, AssertImplements,
     
     // Shook (panic) assertions
     AssertShooks, AssertShooksWithValue, AssertNoShook
-};
+// };
 
 // Test fixtures
 pub use fixtures::{
     FixtureVibe, NewFixtureVibe
-};
+// };
 
 // Table-driven tests
 pub use table_driven::{
     TestCase, RunTestCases
-};
+// };
 
 // Mocking framework
 pub use mocking::{
     MockVibe, Expectation, Stub
-};
+// };
 
 // Test utilities
 pub use utilities::{
-    TempFile, TempDir, Parallel, WithDeadline, WithSetup,
     RandomString, RandomInt, RandomFloat, RandomBytes
-};
+// };
 
 // Benchmarking utilities
 pub use benchmarking::{
     Benchmark, BenchmarkMemory, BenchmarkParallel
-};
+// };
 
 // CursedError handling
 use crate::error::CursedError;
@@ -88,23 +78,13 @@ pub type TestVibesResult<T> = std::result::Result<T, TestVibesError>;
 #[derive(Debug, Clone)]
 pub enum TestVibesError {
     /// Test execution failed
-    TestFailed(String),
     /// Test skipped
-    TestSkipped(String),
     /// Benchmark failed
-    BenchmarkFailed(String),
     /// Assertion failed
-    AssertionFailed(String),
     /// Mock expectation not met
-    ExpectationNotMet(String),
     /// Fixture setup/teardown failed
-    FixtureFailed(String),
     /// Timeout exceeded
-    TimeoutExceeded(String),
     /// Invalid test configuration
-    InvalidConfig(String),
-}
-
 // impl std::fmt::Display for TestVibesError {
 //     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
 //         match self {
@@ -131,20 +111,12 @@ pub enum TestVibesError {
 // Helper functions for creating errors
 pub fn test_failed(message: &str) -> TestVibesError {
     TestVibesError::TestFailed(message.to_string())
-}
-
 pub fn test_skipped(message: &str) -> TestVibesError {
     TestVibesError::TestSkipped(message.to_string())
-}
-
 pub fn assertion_failed(message: &str) -> TestVibesError {
     TestVibesError::AssertionFailed(message.to_string())
-}
-
 pub fn expectation_not_met(message: &str) -> TestVibesError {
     TestVibesError::ExpectationNotMet(message.to_string())
-}
-
 pub fn timeout_exceeded(message: &str) -> TestVibesError {
     TestVibesError::TimeoutExceeded(message.to_string())
 }

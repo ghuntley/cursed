@@ -15,23 +15,13 @@ use std::str::from_utf8;
 /// JSON decoder for converting JSON to CURSED values
 pub struct Decoder<'a> {
     /// Input JSON bytes
-    input: &'a [u8],
     /// Current position in input
-    position: usize,
     /// Current line number (for error reporting)
-    line: usize,
     /// Current column number (for error reporting)
-    column: usize,
-}
-
 impl<'a> Decoder<'a> {
     /// Create a new decoder
     pub fn new(input: &'a [u8]) -> Self {
         Self {
-            input,
-            position: 0,
-            line: 1,
-            column: 1,
         }
     }
     
@@ -43,14 +33,8 @@ impl<'a> Decoder<'a> {
         
         if self.position < self.input.len() {
             return Err(CursedError::json_syntax_error(
-                "Unexpected content after JSON value".to_string(),
-                self.position,
             ));
-        }
-        
         Ok(json_value.into())
-    }
-    
     /// Validate JSON without fully parsing
     pub fn validate_only(&mut self) -> JsonResult<()> {
         self.skip_whitespace();
@@ -59,33 +43,16 @@ impl<'a> Decoder<'a> {
         
         if self.position < self.input.len() {
             return Err(CursedError::json_syntax_error(
-                "Unexpected content after JSON value".to_string(),
-                self.position,
             ));
-        }
-        
         Ok(())
-    }
-    
     /// Parse a JSON value
     fn parse_value(&mut self) -> JsonResult<JsonValue> {
         self.skip_whitespace();
         
         if self.position >= self.input.len() {
             return Err(CursedError::json_unexpected_eof());
-        }
-        
         match self.current_byte()? {
-            b'n' => self.parse_null(),
-            b't' | b'f' => self.parse_bool(),
-            b'"' => self.parse_string(),
-            b'[' => self.parse_array(),
-            b'{' => self.parse_object(),
-            b'-' | b'0'..=b'9' => self.parse_number(),
             byte => Err(CursedError::json_syntax_error(
-                format!("Unexpected character '{}'", byte as char),
-                self.position,
-            )),
         }
     }
     
@@ -95,19 +62,8 @@ impl<'a> Decoder<'a> {
         
         if self.position >= self.input.len() {
             return Err(CursedError::json_unexpected_eof());
-        }
-        
         match self.current_byte()? {
-            b'n' => self.validate_null(),
-            b't' | b'f' => self.validate_bool(),
-            b'"' => self.validate_string(),
-            b'[' => self.validate_array(),
-            b'{' => self.validate_object(),
-            b'-' | b'0'..=b'9' => self.validate_number(),
             byte => Err(CursedError::json_syntax_error(
-                format!("Unexpected character '{}'", byte as char),
-                self.position,
-            )),
         }
     }
     
@@ -117,8 +73,6 @@ impl<'a> Decoder<'a> {
             Ok(JsonValue::Null)
         } else {
             Err(CursedError::json_syntax_error(
-                "Invalid null literal".to_string(),
-                self.position,
             ))
         }
     }
@@ -129,8 +83,6 @@ impl<'a> Decoder<'a> {
             Ok(())
         } else {
             Err(CursedError::json_syntax_error(
-                "Invalid null literal".to_string(),
-                self.position,
             ))
         }
     }
@@ -143,8 +95,6 @@ impl<'a> Decoder<'a> {
             Ok(JsonValue::Bool(false))
         } else {
             Err(CursedError::json_syntax_error(
-                "Invalid boolean literal".to_string(),
-                self.position,
             ))
         }
     }
@@ -155,8 +105,6 @@ impl<'a> Decoder<'a> {
             Ok(())
         } else {
             Err(CursedError::json_syntax_error(
-                "Invalid boolean literal".to_string(),
-                self.position,
             ))
         }
     }
@@ -165,11 +113,7 @@ impl<'a> Decoder<'a> {
     fn parse_string(&mut self) -> JsonResult<JsonValue> {
         if self.current_byte()? != b'"' {
             return Err(CursedError::json_syntax_error(
-                "Expected string".to_string(),
-                self.position,
             ));
-        }
-        
         self.advance(); // Skip opening quote
         let start = self.position;
         let mut escaped = false;
@@ -192,8 +136,6 @@ impl<'a> Decoder<'a> {
                 }
                 b'\n' | b'\r' if !escaped => {
                     return Err(CursedError::json_syntax_error(
-                        "Unescaped newline in string".to_string(),
-                        self.position,
                     ));
                 }
                 _ => {
@@ -201,23 +143,13 @@ impl<'a> Decoder<'a> {
                     self.advance();
                 }
             }
-        }
-        
         Err(CursedError::json_syntax_error(
-            "Unterminated string".to_string(),
-            self.position,
         ))
-    }
-    
     /// Validate string value
     fn validate_string(&mut self) -> JsonResult<()> {
         if self.current_byte()? != b'"' {
             return Err(CursedError::json_syntax_error(
-                "Expected string".to_string(),
-                self.position,
             ));
-        }
-        
         self.advance(); // Skip opening quote
         let mut escaped = false;
         
@@ -233,8 +165,6 @@ impl<'a> Decoder<'a> {
                 }
                 b'\n' | b'\r' if !escaped => {
                     return Err(CursedError::json_syntax_error(
-                        "Unescaped newline in string".to_string(),
-                        self.position,
                     ));
                 }
                 _ => {
@@ -242,14 +172,8 @@ impl<'a> Decoder<'a> {
                     self.advance();
                 }
             }
-        }
-        
         Err(CursedError::json_syntax_error(
-            "Unterminated string".to_string(),
-            self.position,
         ))
-    }
-    
     /// Parse number value
     fn parse_number(&mut self) -> JsonResult<JsonValue> {
         let start = self.position;
@@ -257,16 +181,10 @@ impl<'a> Decoder<'a> {
         // Handle negative sign
         if self.current_byte()? == b'-' {
             self.advance();
-        }
-        
         // Parse integer part
         if self.position >= self.input.len() {
             return Err(CursedError::json_syntax_error(
-                "Incomplete number".to_string(),
-                self.position,
             ));
-        }
-        
         let first_digit = self.current_byte()?;
         if first_digit == b'0' {
             self.advance();
@@ -276,22 +194,14 @@ impl<'a> Decoder<'a> {
             }
         } else {
             return Err(CursedError::json_syntax_error(
-                "Invalid number format".to_string(),
-                self.position,
             ));
-        }
-        
         // Parse fractional part
         if self.position < self.input.len() && self.current_byte()? == b'.' {
             self.advance();
             
             if self.position >= self.input.len() || !self.current_byte()?.is_ascii_digit() {
                 return Err(CursedError::json_syntax_error(
-                    "Invalid number: missing digits after decimal point".to_string(),
-                    self.position,
                 ));
-            }
-            
             while self.position < self.input.len() && self.current_byte()?.is_ascii_digit() {
                 self.advance();
             }
@@ -312,17 +222,11 @@ impl<'a> Decoder<'a> {
                 
                 if self.position >= self.input.len() || !self.current_byte()?.is_ascii_digit() {
                     return Err(CursedError::json_syntax_error(
-                        "Invalid number: missing digits in exponent".to_string(),
-                        self.position,
                     ));
-                }
-                
                 while self.position < self.input.len() && self.current_byte()?.is_ascii_digit() {
                     self.advance();
                 }
             }
-        }
-        
         let number_str = from_utf8(&self.input[start..self.position])
             .map_err(|e| CursedError::json_invalid_utf8(e.to_string()))?;
         
@@ -330,8 +234,6 @@ impl<'a> Decoder<'a> {
             .map_err(|_| CursedError::json_invalid_number(number_str.to_string()))?;
         
         Ok(JsonValue::Number(number))
-    }
-    
     /// Validate number value
     fn validate_number(&mut self) -> JsonResult<()> {
         let start = self.position;
@@ -339,16 +241,10 @@ impl<'a> Decoder<'a> {
         // Handle negative sign
         if self.current_byte()? == b'-' {
             self.advance();
-        }
-        
         // Parse integer part
         if self.position >= self.input.len() {
             return Err(CursedError::json_syntax_error(
-                "Incomplete number".to_string(),
-                self.position,
             ));
-        }
-        
         let first_digit = self.current_byte()?;
         if first_digit == b'0' {
             self.advance();
@@ -358,22 +254,14 @@ impl<'a> Decoder<'a> {
             }
         } else {
             return Err(CursedError::json_syntax_error(
-                "Invalid number format".to_string(),
-                self.position,
             ));
-        }
-        
         // Parse fractional part
         if self.position < self.input.len() && self.current_byte()? == b'.' {
             self.advance();
             
             if self.position >= self.input.len() || !self.current_byte()?.is_ascii_digit() {
                 return Err(CursedError::json_syntax_error(
-                    "Invalid number: missing digits after decimal point".to_string(),
-                    self.position,
                 ));
-            }
-            
             while self.position < self.input.len() && self.current_byte()?.is_ascii_digit() {
                 self.advance();
             }
@@ -394,29 +282,17 @@ impl<'a> Decoder<'a> {
                 
                 if self.position >= self.input.len() || !self.current_byte()?.is_ascii_digit() {
                     return Err(CursedError::json_syntax_error(
-                        "Invalid number: missing digits in exponent".to_string(),
-                        self.position,
                     ));
-                }
-                
                 while self.position < self.input.len() && self.current_byte()?.is_ascii_digit() {
                     self.advance();
                 }
             }
-        }
-        
         Ok(())
-    }
-    
     /// Parse array value
     fn parse_array(&mut self) -> JsonResult<JsonValue> {
         if self.current_byte()? != b'[' {
             return Err(CursedError::json_syntax_error(
-                "Expected array".to_string(),
-                self.position,
             ));
-        }
-        
         self.advance(); // Skip opening bracket
         self.skip_whitespace();
         
@@ -426,19 +302,13 @@ impl<'a> Decoder<'a> {
         if self.position < self.input.len() && self.current_byte()? == b']' {
             self.advance();
             return Ok(JsonValue::Array(elements));
-        }
-        
         loop {
             elements.push(self.parse_value()?);
             self.skip_whitespace();
             
             if self.position >= self.input.len() {
                 return Err(CursedError::json_syntax_error(
-                    "Unterminated array".to_string(),
-                    self.position,
                 ));
-            }
-            
             match self.current_byte()? {
                 b',' => {
                     self.advance();
@@ -450,25 +320,15 @@ impl<'a> Decoder<'a> {
                 }
                 byte => {
                     return Err(CursedError::json_syntax_error(
-                        format!("Expected ',' or ']' in array, found '{}'", byte as char),
-                        self.position,
                     ));
                 }
             }
-        }
-        
         Ok(JsonValue::Array(elements))
-    }
-    
     /// Validate array value
     fn validate_array(&mut self) -> JsonResult<()> {
         if self.current_byte()? != b'[' {
             return Err(CursedError::json_syntax_error(
-                "Expected array".to_string(),
-                self.position,
             ));
-        }
-        
         self.advance(); // Skip opening bracket
         self.skip_whitespace();
         
@@ -476,19 +336,13 @@ impl<'a> Decoder<'a> {
         if self.position < self.input.len() && self.current_byte()? == b']' {
             self.advance();
             return Ok(());
-        }
-        
         loop {
             self.validate_value()?;
             self.skip_whitespace();
             
             if self.position >= self.input.len() {
                 return Err(CursedError::json_syntax_error(
-                    "Unterminated array".to_string(),
-                    self.position,
                 ));
-            }
-            
             match self.current_byte()? {
                 b',' => {
                     self.advance();
@@ -500,25 +354,15 @@ impl<'a> Decoder<'a> {
                 }
                 byte => {
                     return Err(CursedError::json_syntax_error(
-                        format!("Expected ',' or ']' in array, found '{}'", byte as char),
-                        self.position,
                     ));
                 }
             }
-        }
-        
         Ok(())
-    }
-    
     /// Parse object value
     fn parse_object(&mut self) -> JsonResult<JsonValue> {
         if self.current_byte()? != b'{' {
             return Err(CursedError::json_syntax_error(
-                "Expected object".to_string(),
-                self.position,
             ));
-        }
-        
         self.advance(); // Skip opening brace
         self.skip_whitespace();
         
@@ -528,27 +372,19 @@ impl<'a> Decoder<'a> {
         if self.position < self.input.len() && self.current_byte()? == b'}' {
             self.advance();
             return Ok(JsonValue::Object(object));
-        }
-        
         loop {
             // Parse key
             let key = match self.parse_string()? {
-                JsonValue::String(s) => s,
                 _ => {
                     return Err(CursedError::json_syntax_error(
-                        "Object key must be a string".to_string(),
-                        self.position,
                     ));
                 }
-            };
             
             self.skip_whitespace();
             
             // Expect colon
             if self.position >= self.input.len() || self.current_byte()? != b':' {
                 return Err(CursedError::json_syntax_error(
-                    "Expected ':' after object key".to_string(),
-                    self.position,
                 ));
             }
             self.advance();
@@ -561,11 +397,7 @@ impl<'a> Decoder<'a> {
             
             if self.position >= self.input.len() {
                 return Err(CursedError::json_syntax_error(
-                    "Unterminated object".to_string(),
-                    self.position,
                 ));
-            }
-            
             match self.current_byte()? {
                 b',' => {
                     self.advance();
@@ -577,25 +409,15 @@ impl<'a> Decoder<'a> {
                 }
                 byte => {
                     return Err(CursedError::json_syntax_error(
-                        format!("Expected ',' or '}}' in object, found '{}'", byte as char),
-                        self.position,
                     ));
                 }
             }
-        }
-        
         Ok(JsonValue::Object(object))
-    }
-    
     /// Validate object value
     fn validate_object(&mut self) -> JsonResult<()> {
         if self.current_byte()? != b'{' {
             return Err(CursedError::json_syntax_error(
-                "Expected object".to_string(),
-                self.position,
             ));
-        }
-        
         self.advance(); // Skip opening brace
         self.skip_whitespace();
         
@@ -603,8 +425,6 @@ impl<'a> Decoder<'a> {
         if self.position < self.input.len() && self.current_byte()? == b'}' {
             self.advance();
             return Ok(());
-        }
-        
         loop {
             // Parse key
             self.validate_string()?;
@@ -613,8 +433,6 @@ impl<'a> Decoder<'a> {
             // Expect colon
             if self.position >= self.input.len() || self.current_byte()? != b':' {
                 return Err(CursedError::json_syntax_error(
-                    "Expected ':' after object key".to_string(),
-                    self.position,
                 ));
             }
             self.advance();
@@ -625,11 +443,7 @@ impl<'a> Decoder<'a> {
             
             if self.position >= self.input.len() {
                 return Err(CursedError::json_syntax_error(
-                    "Unterminated object".to_string(),
-                    self.position,
                 ));
-            }
-            
             match self.current_byte()? {
                 b',' => {
                     self.advance();
@@ -641,16 +455,10 @@ impl<'a> Decoder<'a> {
                 }
                 byte => {
                     return Err(CursedError::json_syntax_error(
-                        format!("Expected ',' or '}}' in object, found '{}'", byte as char),
-                        self.position,
                     ));
                 }
             }
-        }
-        
         Ok(())
-    }
-    
     /// Helper methods
     fn current_byte(&self) -> JsonResult<u8> {
         if self.position < self.input.len() {
@@ -675,12 +483,8 @@ impl<'a> Decoder<'a> {
     fn skip_whitespace(&mut self) {
         while self.position < self.input.len() {
             match self.input[self.position] {
-                b' ' | b'\t' | b'\n' | b'\r' => self.advance(),
-                _ => break,
             }
         }
-    }
-    
     fn consume_literal(&mut self, literal: &[u8]) -> JsonResult<bool> {
         if self.position + literal.len() <= self.input.len() {
             let slice = &self.input[self.position..self.position + literal.len()];
@@ -697,22 +501,10 @@ impl<'a> Decoder<'a> {
 
 /// Streaming decoder for reading JSON from a stream
 pub struct StreamingDecoder<R: Read> {
-    reader: R,
-    buffer: Vec<u8>,
-    position: usize,
-    line: usize,
-    column: usize,
-}
-
 impl<R: Read> StreamingDecoder<R> {
     /// Create a new streaming decoder
     pub fn new(reader: R) -> Self {
         Self {
-            reader,
-            buffer: Vec::new(),
-            position: 0,
-            line: 1,
-            column: 1,
         }
     }
     
@@ -728,14 +520,10 @@ impl<R: Read> StreamingDecoder<R> {
         self.position += decoder.position;
         
         Ok(value)
-    }
-    
     /// Check if there's more data to read
     pub fn has_more(&mut self) -> JsonResult<bool> {
         self.ensure_data()?;
         Ok(self.position < self.buffer.len())
-    }
-    
     /// Ensure we have data in the buffer
     fn ensure_data(&mut self) -> JsonResult<()> {
         if self.position >= self.buffer.len() {

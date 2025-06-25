@@ -25,23 +25,13 @@ use crate::memory::object_id::{ObjectId, SharedObjectRegistry};
 #[derive(Debug, Clone)]
 pub struct HeapConfiguration {
     /// Initial heap size in bytes
-    pub initial_heap_size: usize,
     /// Maximum heap size in bytes
-    pub max_heap_size: usize,
     /// Young generation size ratio (0.0 - 1.0)
-    pub young_gen_ratio: f64,
     /// Large object threshold in bytes
-    pub large_object_threshold: usize,
     /// Enable generational collection
-    pub generational_gc: bool,
     /// Memory alignment requirement
-    pub alignment: usize,
     /// Allocation algorithm preference
-    pub allocation_strategy: AllocationStrategy,
     /// Enable memory statistics tracking
-    pub track_statistics: bool,
-}
-
 impl Default for HeapConfiguration {
     fn default() -> Self {
         Self {
@@ -49,27 +39,16 @@ impl Default for HeapConfiguration {
             max_heap_size: 1024 * 1024 * 1024,  // 1GB
             young_gen_ratio: 0.3,                // 30% for young generation
             large_object_threshold: 85 * 1024,   // 85KB threshold
-            generational_gc: true,
             alignment: 8,                         // 8-byte alignment
-            allocation_strategy: AllocationStrategy::Hybrid,
-            track_statistics: true,
         }
     }
-}
-
 /// Allocation strategy preference
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum AllocationStrategy {
     /// Bump allocation for fast allocation
-    Bump,
     /// Free list for minimal fragmentation
-    FreeList,
     /// Segregated lists for different sizes
-    Segregated,
     /// Hybrid approach adapting to usage patterns
-    Hybrid,
-}
-
 /// Main heap structure coordinating all memory management
 /// 
 /// The heap provides a unified interface for memory allocation while
@@ -77,26 +56,16 @@ pub enum AllocationStrategy {
 /// characteristics and allocation patterns.
 pub struct Heap {
     /// Heap configuration
-    config: HeapConfiguration,
     /// Region manager for heap space organization
-    region_manager: Arc<RwLock<RegionManager>>,
     /// Metadata manager for object headers
-    metadata_manager: Arc<Mutex<MetadataManager>>,
     /// Object registry for GC integration
-    object_registry: SharedObjectRegistry,
     /// Memory profiler (optional)
-    profiler: Option<Arc<MemoryProfiler>>,
     /// Heap statistics
-    statistics: Arc<Mutex<HeapStatistics>>,
     /// Current allocation strategy
-    current_strategy: Mutex<AllocationStrategy>,
-}
-
 impl Heap {
     /// Create a new heap with the given configuration
     #[instrument]
     pub fn new(config: HeapConfiguration, object_registry: SharedObjectRegistry) -> Result<Self, String> {
-        info!("Creating heap with {} MB initial size, {} MB max size", 
               config.initial_heap_size / (1024 * 1024),
               config.max_heap_size / (1024 * 1024));
         
@@ -113,32 +82,18 @@ impl Heap {
         let allocation_strategy = config.allocation_strategy;
         
         Ok(Self {
-            config,
-            region_manager,
-            metadata_manager,
-            object_registry,
-            profiler: None,
-            statistics,
-            current_strategy: Mutex::new(allocation_strategy),
         })
-    }
-    
     /// Set memory profiler for heap monitoring
     pub fn set_profiler(&mut self, profiler: Arc<MemoryProfiler>) {
         info!("Enabling memory profiling for heap");
         self.profiler = Some(profiler);
-    }
-    
     /// Allocate memory for an object of the given size and type
     #[instrument(skip(self))]
     pub fn allocate(&self, size: usize, alignment: usize, type_name: &str) -> Result<(ObjectId, NonNull<u8>), String> {
         if size == 0 {
             return Err("Cannot allocate zero bytes".to_string());
-        }
-        
         let actual_alignment = alignment.max(self.config.alignment);
         
-        debug!("Allocating {} bytes for {} with {}-byte alignment", 
                size, type_name, actual_alignment);
         
         // Determine allocation region based on size and configuration
@@ -156,17 +111,11 @@ impl Heap {
         // Update statistics
         if self.config.track_statistics {
             self.update_allocation_statistics(size, type_name)?;
-        }
-        
         // Profile the allocation
         if let Some(profiler) = &self.profiler {
             let _ = profiler.track_allocation(size, allocation_result.ptr.as_ptr() as u64, Vec::new());
-        }
-        
         debug!("Successfully allocated object {} at {:p}", object_id, allocation_result.ptr.as_ptr());
         Ok((object_id, allocation_result.ptr))
-    }
-    
     /// Deallocate an object
     #[instrument(skip(self))]
     pub fn deallocate(&self, object_id: ObjectId, ptr: NonNull<u8>, size: usize) -> Result<(), String> {
@@ -180,22 +129,14 @@ impl Heap {
             region.deallocate(ptr, size)?;
         } else {
             return Err(format!("Object {:p} not found in any heap region", ptr.as_ptr()));
-        }
-        
         // Update statistics
         if self.config.track_statistics {
             self.update_deallocation_statistics(size, "unknown")?;
-        }
-        
         // Profile the deallocation
         if let Some(profiler) = &self.profiler {
             let _ = profiler.track_deallocation(ptr.as_ptr() as u64, Vec::new());
-        }
-        
         debug!("Successfully deallocated object {}", object_id);
         Ok(())
-    }
-    
     /// Allocate in young generation
     fn allocate_in_young_generation(&self, size: usize, alignment: usize, type_name: &str) 
         -> Result<AllocationResult, String> {
@@ -252,8 +193,6 @@ impl Heap {
         
         stats.record_allocation(size, type_name);
         Ok(())
-    }
-    
     /// Update deallocation statistics  
     fn update_deallocation_statistics(&self, size: usize, type_name: &str) -> Result<(), String> {
         let mut stats = self.statistics.lock()
@@ -261,8 +200,6 @@ impl Heap {
         
         stats.record_deallocation(size, type_name);
         Ok(())
-    }
-    
     /// Get comprehensive heap statistics
     pub fn get_statistics(&self) -> Result<HeapStatistics, String> {
         let stats = self.statistics.lock()
@@ -275,8 +212,6 @@ impl Heap {
         heap_stats.merge_region_statistics(&region_manager)?;
         
         Ok(heap_stats)
-    }
-    
     /// Perform garbage collection preparation
     /// 
     /// This prepares the heap for a garbage collection cycle by
@@ -291,14 +226,11 @@ impl Heap {
         
         debug!("Heap prepared for garbage collection");
         Ok(())
-    }
-    
     /// Complete garbage collection cleanup
     /// 
     /// This performs post-collection cleanup including compaction
     /// and statistics updates.
     pub fn complete_collection(&self, collected_objects: usize, collected_bytes: usize) -> Result<(), String> {
-        info!("Completing garbage collection: {} objects, {} bytes", 
               collected_objects, collected_bytes);
         
         // Update collection statistics
@@ -306,8 +238,6 @@ impl Heap {
             let mut stats = self.statistics.lock()
                 .map_err(|_| "Failed to acquire statistics lock")?;
             stats.record_collection(collected_objects, collected_bytes);
-        }
-        
         // Trigger region compaction if needed
         let region_manager = self.region_manager.read()
             .map_err(|_| "Failed to acquire region manager read lock")?;
@@ -315,8 +245,6 @@ impl Heap {
         
         debug!("Garbage collection cleanup completed");
         Ok(())
-    }
-    
     /// Check if pointer is within heap bounds
     pub fn contains_pointer(&self, ptr: *const u8) -> bool {
         if let Ok(region_manager) = self.region_manager.read() {
@@ -332,14 +260,10 @@ impl Heap {
             .map_err(|_| "Failed to acquire metadata manager lock")?;
         
         metadata_manager.get_metadata(ptr)
-    }
-    
     /// Adapt allocation strategy based on usage patterns
     pub fn adapt_allocation_strategy(&self) -> Result<(), String> {
         if self.config.allocation_strategy != AllocationStrategy::Hybrid {
             return Ok(()); // Only adapt if using hybrid strategy
-        }
-        
         let stats = self.get_statistics()?;
         let new_strategy = self.determine_optimal_strategy(&stats);
         
@@ -354,11 +278,7 @@ impl Heap {
             let region_manager = self.region_manager.read()
                 .map_err(|_| "Failed to acquire region manager read lock")?;
             region_manager.update_allocation_strategy(new_strategy)?;
-        }
-        
         Ok(())
-    }
-    
     /// Determine optimal allocation strategy based on statistics
     fn determine_optimal_strategy(&self, stats: &HeapStatistics) -> AllocationStrategy {
         // Simple heuristics for strategy selection
@@ -370,55 +290,27 @@ impl Heap {
             AllocationStrategy::Bump // Fast allocation for larger objects
         }
     }
-}
-
 
 
 /// Comprehensive heap statistics for monitoring and debugging
 #[derive(Debug, Clone)]
 pub struct HeapStatistics {
     /// Total bytes allocated
-    pub total_allocated: usize,
     /// Total bytes deallocated
-    pub total_deallocated: usize,
     /// Current heap usage
-    pub current_usage: usize,
     /// Peak heap usage
-    pub peak_usage: usize,
     /// Total number of allocations
-    pub allocation_count: u64,
     /// Total number of deallocations
-    pub deallocation_count: u64,
     /// Number of garbage collections
-    pub collection_count: u64,
     /// Total bytes collected
-    pub total_collected: usize,
     /// Average allocation size
-    pub average_allocation_size: f64,
     /// Fragmentation ratio (0.0 = no fragmentation, 1.0 = maximum fragmentation)
-    pub fragmentation_ratio: f64,
     /// Allocation statistics by type
-    pub type_statistics: HashMap<String, TypeStatistics>,
     /// Heap utilization percentage
-    pub utilization_percentage: f64,
-}
-
 impl HeapStatistics {
     /// Create new empty statistics
     pub fn new() -> Self {
         Self {
-            total_allocated: 0,
-            total_deallocated: 0,
-            current_usage: 0,
-            peak_usage: 0,
-            allocation_count: 0,
-            deallocation_count: 0,
-            collection_count: 0,
-            total_collected: 0,
-            average_allocation_size: 0.0,
-            fragmentation_ratio: 0.0,
-            type_statistics: HashMap::new(),
-            utilization_percentage: 0.0,
         }
     }
     
@@ -430,16 +322,12 @@ impl HeapStatistics {
         
         if self.current_usage > self.peak_usage {
             self.peak_usage = self.current_usage;
-        }
-        
         self.average_allocation_size = self.total_allocated as f64 / self.allocation_count as f64;
         
         // Update type statistics
         let type_stats = self.type_statistics.entry(type_name.to_string())
             .or_insert_with(TypeStatistics::new);
         type_stats.record_allocation(size);
-    }
-    
     /// Record a deallocation
     pub fn record_deallocation(&mut self, size: usize, type_name: &str) {
         self.total_deallocated += size;
@@ -457,8 +345,6 @@ impl HeapStatistics {
         self.collection_count += 1;
         self.total_collected += bytes_collected;
         self.current_usage = self.current_usage.saturating_sub(bytes_collected);
-    }
-    
     /// Merge statistics from region manager
     pub fn merge_region_statistics(&mut self, region_manager: &RegionManager) -> Result<(), String> {
         let region_stats = region_manager.get_statistics()?;
@@ -474,28 +360,14 @@ impl HeapStatistics {
 #[derive(Debug, Clone)]
 pub struct TypeStatistics {
     /// Total allocations for this type
-    pub allocation_count: u64,
     /// Total deallocations for this type
-    pub deallocation_count: u64,
     /// Total bytes allocated for this type
-    pub total_allocated: usize,
     /// Total bytes deallocated for this type
-    pub total_deallocated: usize,
     /// Current live objects of this type
-    pub live_objects: u64,
     /// Current bytes used by this type
-    pub current_usage: usize,
-}
-
 impl TypeStatistics {
     pub fn new() -> Self {
         Self {
-            allocation_count: 0,
-            deallocation_count: 0,
-            total_allocated: 0,
-            total_deallocated: 0,
-            live_objects: 0,
-            current_usage: 0,
         }
     }
     
@@ -504,8 +376,6 @@ impl TypeStatistics {
         self.total_allocated += size;
         self.live_objects += 1;
         self.current_usage += size;
-    }
-    
     pub fn record_deallocation(&mut self, size: usize) {
         self.deallocation_count += 1;
         self.total_deallocated += size;
@@ -516,7 +386,6 @@ impl TypeStatistics {
 
 impl std::fmt::Display for HeapStatistics {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f,
             "Heap Statistics:\n\
              - Current Usage: {:.2} MB ({:.1}%)\n\
              - Peak Usage: {:.2} MB\n\
@@ -524,16 +393,10 @@ impl std::fmt::Display for HeapStatistics {
              - Allocations: {} (avg {:.1} bytes)\n\
              - Collections: {} ({:.2} MB collected)\n\
              - Fragmentation: {:.1}%\n\
-             - Live Objects: {}",
             self.current_usage as f64 / (1024.0 * 1024.0),
-            self.utilization_percentage,
             self.peak_usage as f64 / (1024.0 * 1024.0),
             self.total_allocated as f64 / (1024.0 * 1024.0),
-            self.allocation_count,
-            self.average_allocation_size,
-            self.collection_count,
             self.total_collected as f64 / (1024.0 * 1024.0),
-            self.fragmentation_ratio * 100.0,
             self.allocation_count - self.deallocation_count
         )
     }

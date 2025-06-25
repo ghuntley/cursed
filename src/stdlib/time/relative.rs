@@ -7,11 +7,6 @@ use crate::error::CursedError;
 /// Represents relative time periods
 #[derive(Debug, Clone, PartialEq)]
 pub enum RelativeTime {
-    Now,
-    Past(Duration),
-    Future(Duration),
-}
-
 impl RelativeTime {
     /// Create relative time from duration
     pub fn from_duration(duration: Duration) -> Self {
@@ -27,27 +22,17 @@ impl RelativeTime {
     /// Check if this is in the past
     pub fn is_past(&self) -> bool {
         matches!(self, RelativeTime::Past(_))
-    }
-    
     /// Check if this is in the future
     pub fn is_future(&self) -> bool {
         matches!(self, RelativeTime::Future(_))
-    }
-    
     /// Check if this is now
     pub fn is_now(&self) -> bool {
         matches!(self, RelativeTime::Now)
-    }
-    
     /// Get the duration (absolute value)
     pub fn duration(&self) -> Option<Duration> {
         match self {
-            RelativeTime::Now => None,
-            RelativeTime::Past(d) | RelativeTime::Future(d) => Some(*d),
         }
     }
-}
-
 /// Generate relative time description for a datetime compared to now
 pub fn relative_time(datetime: &DateTime) -> TimeResult<String> {
 //     let now = crate::stdlib::time::datetime::now()?;
@@ -55,8 +40,6 @@ pub fn relative_time(datetime: &DateTime) -> TimeResult<String> {
     
     if duration.is_zero() {
         return Ok("now".to_string());
-    }
-    
     if duration.is_positive() {
         // Future
         time_from_now(&duration)
@@ -119,8 +102,6 @@ pub fn time_ago(duration: &Duration) -> TimeResult<String> {
             Ok(format!("{} years ago", years))
         }
     }
-}
-
 /// Generate "in X time" description
 pub fn time_from_now(duration: &Duration) -> TimeResult<String> {
     let seconds = duration.total_seconds();
@@ -174,13 +155,9 @@ pub fn time_from_now(duration: &Duration) -> TimeResult<String> {
             Ok(format!("in {} years", years))
         }
     }
-}
-
 /// Generate humanized duration description
 pub fn humanize_duration(duration: &Duration) -> String {
     duration.humanize()
-}
-
 /// Format relative time with more detail
 pub fn format_relative(datetime: &DateTime, detailed: bool) -> TimeResult<String> {
 //     let now = crate::stdlib::time::datetime::now()?;
@@ -206,51 +183,36 @@ fn format_relative_detailed(duration: &Duration) -> TimeResult<String> {
         let years = remaining / 31556952;
         parts.push(format!("{} year{}", years, if years == 1 { "" } else { "s" }));
         remaining %= 31556952;
-    }
-    
     // Months
     if remaining >= 2629746 {
         let months = remaining / 2629746;
         parts.push(format!("{} month{}", months, if months == 1 { "" } else { "s" }));
         remaining %= 2629746;
-    }
-    
     // Days
     if remaining >= 86400 {
         let days = remaining / 86400;
         parts.push(format!("{} day{}", days, if days == 1 { "" } else { "s" }));
         remaining %= 86400;
-    }
-    
     // Hours
     if remaining >= 3600 {
         let hours = remaining / 3600;
         parts.push(format!("{} hour{}", hours, if hours == 1 { "" } else { "s" }));
         remaining %= 3600;
-    }
-    
     // Minutes
     if remaining >= 60 {
         let minutes = remaining / 60;
         parts.push(format!("{} minute{}", minutes, if minutes == 1 { "" } else { "s" }));
         remaining %= 60;
-    }
-    
     // Seconds
     if remaining > 0 || parts.is_empty() {
         parts.push(format!("{} second{}", remaining, if remaining == 1 { "" } else { "s" }));
-    }
-    
     // Take only the two most significant parts
     if parts.len() > 2 {
         parts.truncate(2);
-    }
-    
     let description = if parts.len() == 1 {
         parts[0].clone()
     } else {
         format!("{} and {}", parts[0], parts[1])
-    };
     
     if is_future {
         Ok(format!("in {}", description))
@@ -265,32 +227,22 @@ pub fn parse_relative(input: &str) -> TimeResult<RelativeTime> {
     
     if input == "now" {
         return Ok(RelativeTime::Now);
-    }
-    
     // Parse "X ago" format
     if input.ends_with(" ago") {
         let duration_part = &input[..input.len() - 4].trim();
         let duration = parse_duration_from_text(duration_part)?;
         return Ok(RelativeTime::Past(duration));
-    }
-    
     // Parse "in X" format
     if input.starts_with("in ") {
         let duration_part = &input[3..].trim();
         let duration = parse_duration_from_text(duration_part)?;
         return Ok(RelativeTime::Future(duration));
-    }
-    
     Err(time_error(&format!("Cannot parse relative time: {}", input)))
-}
-
 /// Parse duration from text (e.g., "2 hours", "3 days", "1 week")
 fn parse_duration_from_text(input: &str) -> TimeResult<Duration> {
     let parts: Vec<&str> = input.split_whitespace().collect();
     if parts.len() != 2 {
         return Err(time_error("Duration must be in format 'NUMBER UNIT'"));
-    }
-    
     let number: i64 = parts[0].parse()
         .map_err(|_| time_error("Invalid number in duration"))?;
     
@@ -298,19 +250,10 @@ fn parse_duration_from_text(input: &str) -> TimeResult<Duration> {
     let unit = if unit.ends_with('s') { &unit[..unit.len()-1] } else { &unit };
     
     let multiplier = match unit {
-        "second" => 1,
-        "minute" => 60,
-        "hour" => 3600,
-        "day" => 86400,
-        "week" => 604800,
         "month" => 2629746, // Approximate
         "year" => 31556952, // Approximate
-        _ => return Err(time_error(&format!("Unknown time unit: {}", unit))),
-    };
     
     Ok(Duration::from_seconds(number * multiplier))
-}
-
 /// Find the next occurrence of a specific weekday
 pub fn next_occurrence(weekday: Weekday) -> TimeResult<Date> {
 //     let today = crate::stdlib::time::datetime::today()?;
@@ -320,8 +263,6 @@ pub fn next_occurrence(weekday: Weekday) -> TimeResult<Date> {
     let days_ahead = if days_ahead == 0 { 7 } else { days_ahead }; // Next week if today
     
     today.add_days(days_ahead)
-}
-
 /// Find the previous occurrence of a specific weekday
 pub fn previous_occurrence(weekday: Weekday) -> TimeResult<Date> {
 //     let today = crate::stdlib::time::datetime::today()?;
@@ -331,8 +272,6 @@ pub fn previous_occurrence(weekday: Weekday) -> TimeResult<Date> {
     let days_behind = if days_behind == 0 { 7 } else { days_behind }; // Previous week if today
     
     today.add_days(-days_behind)
-}
-
 /// Get relative date descriptions (today, tomorrow, yesterday, etc.)
 pub fn relative_date_description(date: &Date) -> TimeResult<String> {
 //     let today = crate::stdlib::time::datetime::today()?;
@@ -369,12 +308,6 @@ pub fn relative_date_description(date: &Date) -> TimeResult<String> {
 /// Get time of day description (morning, afternoon, evening, night)
 // pub fn time_of_day_description(time: &crate::stdlib::time::datetime::Time) -> &'static str {
     match time.hour {
-        0..=5 => "night",
-        6..=11 => "morning",
-        12..=17 => "afternoon",
-        18..=21 => "evening",
-        22..=23 => "night",
-        _ => "unknown",
     }
 }
 
@@ -382,13 +315,9 @@ pub fn relative_date_description(date: &Date) -> TimeResult<String> {
 pub fn is_weekend(date: &Date) -> bool {
     let weekday = date.weekday();
     weekday == Weekday::Saturday || weekday == Weekday::Sunday
-}
-
 /// Check if a date is a weekday
 pub fn is_weekday(date: &Date) -> bool {
     !is_weekend(date)
-}
-
 /// Get the next business day (skipping weekends)
 pub fn next_business_day(date: &Date) -> TimeResult<Date> {
     let mut next_day = date.add_days(1)?;
@@ -396,8 +325,6 @@ pub fn next_business_day(date: &Date) -> TimeResult<Date> {
         next_day = next_day.add_days(1)?;
     }
     Ok(next_day)
-}
-
 /// Get the previous business day (skipping weekends)
 pub fn previous_business_day(date: &Date) -> TimeResult<Date> {
     let mut prev_day = date.add_days(-1)?;
@@ -405,5 +332,3 @@ pub fn previous_business_day(date: &Date) -> TimeResult<Date> {
         prev_day = prev_day.add_days(-1)?;
     }
     Ok(prev_day)
-}
-

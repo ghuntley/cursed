@@ -15,37 +15,10 @@ pub struct BoostSignal(pub i32);
 impl BoostSignal {
     pub fn as_i32(self) -> i32 {
         self.0
-    }
-    
     pub fn name(self) -> &'static str {
         match self.0 {
-            2 => "SIGINT",
-            15 => "SIGTERM",
-            1 => "SIGHUP",
-            3 => "SIGQUIT",
-            4 => "SIGILL",
-            5 => "SIGTRAP",
-            6 => "SIGABRT",
-            7 => "SIGBUS",
-            8 => "SIGFPE",
-            9 => "SIGKILL",
-            11 => "SIGSEGV",
-            13 => "SIGPIPE",
-            14 => "SIGALRM",
-            17 => "SIGCHLD",
-            18 => "SIGCONT",
-            19 => "SIGSTOP",
-            20 => "SIGTSTP",
-            21 => "SIGTTIN",
-            22 => "SIGTTOU",
-            10 => "SIGUSR1",
-            12 => "SIGUSR2",
-            28 => "SIGWINCH",
-            _ => "UNKNOWN",
         }
     }
-}
-
 impl std::fmt::Display for BoostSignal {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "{}({})", self.name(), self.0)
@@ -77,8 +50,6 @@ mod platform_signals {
     pub const SIGUSR1: i32 = 10;
     pub const SIGUSR2: i32 = 12;
     pub const SIGWINCH: i32 = 28;
-}
-
 #[cfg(windows)]
 mod platform_signals {
     pub const SIGINT: i32 = 2;
@@ -103,8 +74,6 @@ mod platform_signals {
     pub const SIGUSR1: i32 = 10;  // Simulated on Windows
     pub const SIGUSR2: i32 = 12;  // Simulated on Windows
     pub const SIGWINCH: i32 = 28; // Simulated on Windows
-}
-
 use platform_signals::*;
 
 // Signal constants
@@ -133,17 +102,9 @@ pub const SIGWINCH: BoostSignal = BoostSignal(platform_signals::SIGWINCH);
 
 /// Handle for managing signal notifications
 pub struct NotifyHandle {
-    signals: Vec<BoostSignal>,
-    sender: Option<Sender<BoostSignal>>,
-    id: u64,
-}
-
 impl NotifyHandle {
     pub fn new(signals: Vec<BoostSignal>, sender: Sender<BoostSignal>, id: u64) -> Self {
         Self {
-            signals,
-            sender: Some(sender),
-            id,
         }
     }
     
@@ -167,12 +128,8 @@ impl NotifyHandle {
             }
         }
         Ok(())
-    }
-    
     pub fn signals(&self) -> &[BoostSignal] {
         &self.signals
-    }
-    
     pub fn is_active(&self) -> bool {
         self.sender.is_some()
     }
@@ -186,18 +143,12 @@ impl Drop for NotifyHandle {
 
 /// Internal notification entry
 struct NotificationEntry {
-    signals: Vec<BoostSignal>,
-    sender: Sender<BoostSignal>,
-}
-
 // Global state for signal management
 lazy_static::lazy_static! {
     pub static ref NOTIFICATION_REGISTRY: Mutex<HashMap<u64, NotificationEntry>> = Mutex::new(HashMap::new());
     pub static ref NEXT_HANDLE_ID: AtomicU64 = AtomicU64::new(1);
     pub static ref SIGNALS_PROCESSED: AtomicU64 = AtomicU64::new(0);
     pub static ref SIGNAL_THREAD_STARTED: Mutex<bool> = Mutex::new(false);
-}
-
 /// Notify causes SignalBoost to relay incoming signals to the channel
 pub fn notify(signals: &[BoostSignal]) -> SignalBoostResult<(Receiver<BoostSignal>, NotifyHandle)> {
     let (sender, receiver) = mpsc::channel();
@@ -207,21 +158,14 @@ pub fn notify(signals: &[BoostSignal]) -> SignalBoostResult<(Receiver<BoostSigna
     ensure_signal_thread_started()?;
     
     let entry = NotificationEntry {
-        signals: signals.to_vec(),
-        sender: sender.clone(),
-    };
     
     {
         let mut registry = NOTIFICATION_REGISTRY.lock().unwrap();
         registry.insert(handle_id, entry);
-    }
-    
     let handle = NotifyHandle::new(signals.to_vec(), sender, handle_id);
     
     tracing::info!("Created signal notification for signals: {:?}", signals);
     Ok((receiver, handle))
-}
-
 /// NotifyContext returns a context that is canceled when one of the signals arrives
 pub fn notify_context(parent: VibeContext, signals: &[BoostSignal]) -> SignalBoostResult<(VibeContext, Box<dyn Fn() + Send + Sync>)> {
     let (receiver, handle) = notify(signals)?;
@@ -243,13 +187,9 @@ pub fn notify_context(parent: VibeContext, signals: &[BoostSignal]) -> SignalBoo
     });
     
     Ok((ctx, stop_fn))
-}
-
 /// Stop causes SignalBoost to stop relaying incoming signals to the channel
 pub fn stop(handle: &mut NotifyHandle) {
     handle.stop();
-}
-
 /// Reset resets the signal handling for the given signals to default behavior
 pub fn reset(signals: &[BoostSignal]) -> SignalBoostResult<()> {
     #[cfg(unix)]
@@ -279,7 +219,6 @@ pub fn reset(signals: &[BoostSignal]) -> SignalBoostResult<()> {
                             ));
                         }
                     }
-                },
                 _ => {
                     // Simulated signals - just log the reset
                     tracing::debug!("Simulated reset of signal {} on Windows", signal.name());
@@ -290,8 +229,6 @@ pub fn reset(signals: &[BoostSignal]) -> SignalBoostResult<()> {
     
     tracing::info!("Reset signals to default behavior: {:?}", signals);
     Ok(())
-}
-
 /// Ignored reports whether the signal is currently ignored
 pub fn ignored(signal: BoostSignal) -> bool {
     #[cfg(unix)]
@@ -306,8 +243,6 @@ pub fn ignored(signal: BoostSignal) -> bool {
                 false
             }
         }
-    }
-    
     #[cfg(windows)]
     {
         // Windows implementation - check common ignored signals
@@ -322,17 +257,12 @@ pub fn ignored(signal: BoostSignal) -> bool {
                         false
                     }
                 }
-            },
             _ => false, // Simulated signals are never ignored
         }
     }
-}
-
 /// Get the number of signals processed
 pub fn get_signals_processed() -> u64 {
     SIGNALS_PROCESSED.load(Ordering::SeqCst)
-}
-
 /// Ensure the signal handling thread is started
 fn ensure_signal_thread_started() -> SignalBoostResult<()> {
     let mut started = SIGNAL_THREAD_STARTED.lock().unwrap();
@@ -341,8 +271,6 @@ fn ensure_signal_thread_started() -> SignalBoostResult<()> {
         *started = true;
     }
     Ok(())
-}
-
 /// Start the background signal handling thread
 fn start_signal_thread() -> SignalBoostResult<()> {
     thread::spawn(|| {
@@ -364,8 +292,6 @@ fn start_signal_thread() -> SignalBoostResult<()> {
     });
     
     Ok(())
-}
-
 /// Process any pending signals and notify registered handlers
 fn process_pending_signals() {
         // TODO: implement
@@ -378,19 +304,13 @@ fn process_pending_signals() {
         // Use signalfd or similar mechanism on Linux
         // Use kqueue on BSD/macOS
         // For now, we'll simulate signal processing
-    }
-    
     #[cfg(windows)]
     {
         // Use console event handling or similar on Windows
         // For now, we'll simulate signal processing
-    }
-    
     // Simulate receiving a signal occasionally for testing
     // This would be replaced with real signal handling in production
     // For now, we don't simulate signals to avoid dependencies in basic testing
-}
-
 /// Dispatch a signal to all registered handlers
 fn dispatch_signal(signal: BoostSignal) {
     let registry = NOTIFICATION_REGISTRY.lock().unwrap();
@@ -403,8 +323,6 @@ fn dispatch_signal(signal: BoostSignal) {
                 tracing::debug!("Dispatched signal {} to handler {}", signal, id);
             }
         }
-    }
-    
     if dispatched > 0 {
         SIGNALS_PROCESSED.fetch_add(1, Ordering::SeqCst);
         tracing::info!("Signal {} dispatched to {} handlers", signal, dispatched);

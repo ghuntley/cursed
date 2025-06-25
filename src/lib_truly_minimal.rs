@@ -23,8 +23,6 @@ pub mod prelude {
     pub use crate::minimal_lexer::{Lexer, Token, TokenType};
     pub use crate::minimal_parser::Parser;
     pub use crate::minimal_ast::*;
-}
-
 /// Library version information
 pub const VERSION: &str = env!("CARGO_PKG_VERSION");
 pub const NAME: &str = env!("CARGO_PKG_NAME");
@@ -35,14 +33,10 @@ pub fn init() {
     }
     // Just basic logging setup
     env_logger::init();
-}
-
 /// Basic tokenize function - tokenize CURSED source
 pub fn tokenize(source: &str) -> crate::error::Result<Vec<Token>> {
     let lexer = Lexer::new(source.to_string());
     Ok(lexer.collect())
-}
-
 /// Basic parse function - parse CURSED source into AST
 pub fn parse(source: &str) -> crate::error::Result<Program> {
     let lexer = Lexer::new(source.to_string());
@@ -53,26 +47,18 @@ pub fn parse(source: &str) -> crate::error::Result<Program> {
     let errors = parser.errors();
     if !errors.is_empty() {
         return Err(CursedError::Parse(format!("Parse errors: {}", errors.join(", "))));
-    }
-    
     Ok(program)
-}
-
 /// Check CURSED source for syntax errors only (minimal version)
 pub fn check(source: &str) -> crate::error::crate::error::Result<()> {
     let _ = parse(source)?;
     println!("✅ Syntax check passed!");
     Ok(())
-}
-
 /// Format CURSED source code (minimal version - just return original for now)
 pub fn format(source: &str) -> Result<String> {
     // Validate syntax first
     let _ = parse(source)?;
     // For now, just return original source
     Ok(source.to_string())
-}
-
 /// Minimal execution - just parse and report what we found
 pub fn run(source: &str) -> crate::error::Result<()> {
     let program = parse(source)?;
@@ -81,19 +67,13 @@ pub fn run(source: &str) -> crate::error::Result<()> {
         println!("  {}. {:?}", i + 1, stmt);
     }
     Ok(())
-}
-
 /// Minimal file execution - read file and run
 pub fn run_file(path: &str) -> crate::error::crate::error::Result<()> {
     let source = std::fs::read_to_string(path)?;
     run(&source)
-}
-
 /// Stub functions for CLI compatibility (always error for now)
 pub fn compile_to_ir(_source: &str) -> Result<String> {
     Err(CursedError::NotImplemented("LLVM codegen not available in minimal build".to_string()))
-}
-
 pub fn compile_to_ir_with_optimization(_source: &str, _opt_level: Option<&str>) -> crate::error::Result<String> {
     Err(CursedError::NotImplemented("LLVM codegen not available in minimal build".to_string()))
 }

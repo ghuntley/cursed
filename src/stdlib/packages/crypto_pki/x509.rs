@@ -30,8 +30,6 @@ pub type X509Encoding = String;
 
 pub fn parse_x509_certificate(_data: &[u8]) -> X509Result<X509Certificate> {
     Err(X509Error::Internal("Not implemented".to_string()))
-}
-
 pub fn create_x509_certificate(_subject: &str) -> X509Result<X509Certificate> {
     X509Certificate::new_self_signed(_subject)
 }

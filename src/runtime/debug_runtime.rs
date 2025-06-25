@@ -17,32 +17,16 @@ use std::time::{Duration, Instant};
 #[derive(Debug)]
 pub struct RuntimeDebugger {
     /// Debug info registry
-    registry: Arc<DebugInfoRegistry>,
     /// Runtime symbol table
-    symbol_table: Arc<RwLock<RuntimeSymbolTable>>,
     /// Active stack frames
-    stack_frames: Arc<RwLock<Vec<RuntimeStackFrame>>>,
     /// Breakpoint manager
-    breakpoints: Arc<RwLock<BreakpointManager>>,
     /// Variable inspector
-    inspector: Arc<VariableInspector>,
     /// Debug mode flag
-    debug_enabled: bool,
     /// Performance monitoring
-    performance_monitor: Arc<Mutex<PerformanceMonitor>>,
-}
-
 impl RuntimeDebugger {
     /// Create new runtime debugger
     pub fn new(debug_enabled: bool) -> Self {
         RuntimeDebugger {
-            registry: Arc::new(DebugInfoRegistry::new()),
-            symbol_table: Arc::new(RwLock::new(RuntimeSymbolTable::new())),
-            stack_frames: Arc::new(RwLock::new(Vec::new())),
-            breakpoints: Arc::new(RwLock::new(BreakpointManager::new())),
-            inspector: Arc::new(VariableInspector::new()),
-            debug_enabled,
-            performance_monitor: Arc::new(Mutex::new(PerformanceMonitor::new())),
         }
     }
 
@@ -50,31 +34,18 @@ impl RuntimeDebugger {
     pub fn register_debug_info(&self, debug_info: EnhancedDebugInfo) -> crate::error::Result<()> {
         if !self.debug_enabled {
             return Ok(());
-        }
-
-        let location_key = format!("{}:{}:{}", 
-            debug_info.debug_info.file_path.display(),
-            debug_info.debug_info.line,
             debug_info.debug_info.column
         );
 
         self.registry.register_debug_info(location_key, debug_info)
-    }
-
     /// Enter function scope
     pub fn enter_function(&self, function_name: &str, file_path: &Path, line: u32) -> crate::error::Result<()> {
         if !self.debug_enabled {
             return Ok(0);
-        }
-
         let start_time = Instant::now();
 
         // Create runtime stack frame
         let frame = RuntimeStackFrame::new(
-            function_name.to_string(),
-            file_path.to_path_buf(),
-            line,
-            HashMap::new(),
         );
 
         // Add to stack
@@ -93,17 +64,11 @@ impl RuntimeDebugger {
         // Record performance
         if let Ok(mut monitor) = self.performance_monitor.lock() {
             monitor.record_function_entry(function_name, start_time);
-        }
-
         Ok(frame_id)
-    }
-
     /// Exit function scope
     pub fn exit_function(&self, frame_id: u64) -> crate::error::Result<()> {
         if !self.debug_enabled {
             return Ok(());
-        }
-
         let start_time = Instant::now();
 
         // Remove from stack
@@ -126,20 +91,11 @@ impl RuntimeDebugger {
         symbol_table.exit_scope();
 
         Ok(())
-    }
-
     /// Register variable
     pub fn register_variable(
-        &self, 
-        name: String, 
-        value: Value, 
-        var_type: String,
-        line: u32,
     ) -> crate::error::Result<()> {
         if !self.debug_enabled {
             return Ok(());
-        }
-
         // Add to symbol table
         let mut symbol_table = self.symbol_table.write()
             .map_err(|_| CursedError::Runtime("Failed to acquire symbol table lock".to_string()))?;
@@ -148,48 +104,34 @@ impl RuntimeDebugger {
         symbol_table.register_variable(name, runtime_var);
 
         Ok(())
-    }
-
     /// Update variable value
     pub fn update_variable(&self, name: &str, value: Value) -> crate::error::Result<()> {
         if !self.debug_enabled {
             return Ok(());
-        }
-
         let mut symbol_table = self.symbol_table.write()
             .map_err(|_| CursedError::Runtime("Failed to acquire symbol table lock".to_string()))?;
         
         symbol_table.update_variable(name, value);
         
         Ok(())
-    }
-
     /// Get variable value
     pub fn get_variable(&self, name: &str) -> crate::error::Result<()> {
         if !self.debug_enabled {
             return Ok(None);
-        }
-
         let symbol_table = self.symbol_table.read()
             .map_err(|_| CursedError::Runtime("Failed to acquire symbol table lock".to_string()))?;
         
         Ok(symbol_table.get_variable(name).map(|var| var.value.clone()))
-    }
-
     /// Get current stack trace
     pub fn get_stack_trace(&self) -> crate::error::Result<()> {
         let stack_frames = self.stack_frames.read()
             .map_err(|_| CursedError::Runtime("Failed to acquire stack frames lock".to_string()))?;
         
         Ok(stack_frames.clone())
-    }
-
     /// Inspect variable with detailed information
     pub fn inspect_variable(&self, name: &str) -> crate::error::Result<()> {
         if !self.debug_enabled {
             return Ok(None);
-        }
-
         let symbol_table = self.symbol_table.read()
             .map_err(|_| CursedError::Runtime("Failed to acquire symbol table lock".to_string()))?;
         
@@ -206,36 +148,26 @@ impl RuntimeDebugger {
             .map_err(|_| CursedError::Runtime("Failed to acquire breakpoints lock".to_string()))?;
         
         breakpoints.set_breakpoint(file_path, line)
-    }
-
     /// Remove breakpoint
     pub fn remove_breakpoint(&self, breakpoint_id: u64) -> crate::error::Result<()> {
         let mut breakpoints = self.breakpoints.write()
             .map_err(|_| CursedError::Runtime("Failed to acquire breakpoints lock".to_string()))?;
         
         Ok(breakpoints.remove_breakpoint(breakpoint_id))
-    }
-
     /// Check if breakpoint should trigger
     pub fn check_breakpoint(&self, file_path: &Path, line: u32) -> crate::error::Result<()> {
         if !self.debug_enabled {
             return Ok(None);
-        }
-
         let breakpoints = self.breakpoints.read()
             .map_err(|_| CursedError::Runtime("Failed to acquire breakpoints lock".to_string()))?;
         
         Ok(breakpoints.check_breakpoint(file_path, line))
-    }
-
     /// Get all variables in current scope
     pub fn get_scope_variables(&self) -> crate::error::Result<()> {
         let symbol_table = self.symbol_table.read()
             .map_err(|_| CursedError::Runtime("Failed to acquire symbol table lock".to_string()))?;
         
         Ok(symbol_table.get_current_scope_variables())
-    }
-
     /// Generate debug report
     pub fn generate_debug_report(&self) -> crate::error::Result<()> {
         let stack_trace = self.get_stack_trace()?;
@@ -248,13 +180,7 @@ impl RuntimeDebugger {
             .map_err(|_| CursedError::Runtime("Failed to acquire performance monitor lock".to_string()))?;
 
         Ok(DebugReport {
-            stack_trace,
-            scope_variables: scope_vars,
-            active_breakpoints: breakpoints.get_all_breakpoints(),
-            performance_data: performance.get_summary(),
         })
-    }
-
     /// Get debug registry (for external access)
     pub fn get_registry(&self) -> Arc<DebugInfoRegistry> {
         self.registry.clone()
@@ -265,20 +191,12 @@ impl RuntimeDebugger {
 #[derive(Debug)]
 pub struct RuntimeSymbolTable {
     /// Scope stack
-    scope_stack: Vec<String>,
     /// Variables by scope
-    variables: HashMap<String, HashMap<String, RuntimeVariable>>,
     /// Current scope depth
-    scope_depth: usize,
-}
-
 impl RuntimeSymbolTable {
     /// Create new symbol table
     pub fn new() -> Self {
         RuntimeSymbolTable {
-            scope_stack: vec!["global".to_string()],
-            variables: HashMap::new(),
-            scope_depth: 0,
         }
     }
 
@@ -307,8 +225,6 @@ impl RuntimeSymbolTable {
                 scope_vars.insert(name, variable);
             }
         }
-    }
-
     /// Update variable value
     pub fn update_variable(&mut self, name: &str, value: Value) {
         // Search in reverse scope order (most recent first)
@@ -332,8 +248,6 @@ impl RuntimeSymbolTable {
             }
         }
         None
-    }
-
     /// Get all variables in current scope
     pub fn get_current_scope_variables(&self) -> HashMap<String, Value> {
         if let Some(current_scope) = self.scope_stack.last() {
@@ -351,75 +265,39 @@ impl RuntimeSymbolTable {
 #[derive(Debug, Clone)]
 pub struct RuntimeVariable {
     /// Variable name
-    pub name: String,
     /// Variable value
-    pub value: Value,
     /// Variable type
-    pub var_type: String,
     /// Declaration line
-    pub declaration_line: u32,
     /// Last modified time
-    pub last_modified: Instant,
-}
-
 impl RuntimeVariable {
     /// Create new runtime variable
     pub fn new(name: String, value: Value, var_type: String, declaration_line: u32) -> Self {
         RuntimeVariable {
-            name,
-            value,
-            var_type,
-            declaration_line,
-            last_modified: Instant::now(),
         }
     }
-}
-
 /// Runtime stack frame information
 #[derive(Debug, Clone)]
 pub struct RuntimeStackFrame {
     /// Function name
-    pub function_name: String,
     /// Source file
-    pub file_path: PathBuf,
     /// Current line
-    pub line: u32,
     /// Local variables
-    pub local_variables: HashMap<String, Value>,
     /// Frame creation time
-    pub created_at: Instant,
-}
-
 impl RuntimeStackFrame {
     /// Create new runtime stack frame
     pub fn new(
-        function_name: String,
-        file_path: PathBuf,
-        line: u32,
-        local_variables: HashMap<String, Value>,
     ) -> Self {
         RuntimeStackFrame {
-            function_name,
-            file_path,
-            line,
-            local_variables,
-            created_at: Instant::now(),
         }
     }
-}
-
 /// Variable inspector for detailed variable analysis
 #[derive(Debug)]
 pub struct VariableInspector {
     /// Maximum inspection depth for recursive structures
-    max_depth: usize,
-}
-
 impl VariableInspector {
     /// Create new variable inspector
     pub fn new() -> Self {
         VariableInspector {
-            max_depth: 10,
         }
     }
 
@@ -430,27 +308,10 @@ impl VariableInspector {
         let contents = self.dump_contents(&variable.value, 0)?;
 
         Ok(VariableInspection {
-            name: variable.name.clone(),
-            var_type: variable.var_type.clone(),
-            value: variable.value.clone(),
-            size_estimate,
-            type_info,
-            contents,
-            declaration_line: variable.declaration_line,
-            last_modified: variable.last_modified,
         })
-    }
-
     /// Estimate variable size in bytes
     fn estimate_size(&self, value: &Value) -> usize {
         match value {
-            Value::Null => 0,
-            Value::Bool(_) => 1,
-            Value::Integer(_) => 8,
-            Value::Number(_) => 8,
-            Value::String(s) => s.len(),
-            Value::Array(arr) => arr.iter().map(|v| self.estimate_size(v)).sum::<usize>() + 8,
-            Value::Object(obj) => obj.iter().map(|(k, v)| k.len() + self.estimate_size(v)).sum::<usize>() + 8,
             Value::Bytes(b) => b.len(), // Bytes size estimate
         }
     }
@@ -458,14 +319,6 @@ impl VariableInspector {
     /// Analyze type information
     fn analyze_type(&self, value: &Value) -> TypeAnalysis {
         match value {
-            Value::Null => TypeAnalysis::new("nil", false, false),
-            Value::Bool(_) => TypeAnalysis::new("facts", false, false),
-            Value::Integer(_) => TypeAnalysis::new("sus", false, false),
-            Value::Number(_) => TypeAnalysis::new("vibes", false, false),
-            Value::String(_) => TypeAnalysis::new("tea", false, false),
-            Value::Array(_) => TypeAnalysis::new("array", true, false),
-            Value::Object(_) => TypeAnalysis::new("object", true, true),
-            Value::Bytes(_) => TypeAnalysis::new("bytes", false, false),
         }
     }
 
@@ -473,14 +326,7 @@ impl VariableInspector {
     fn dump_contents(&self, value: &Value, depth: usize) -> crate::error::Result<()> {
         if depth > self.max_depth {
             return Ok("... (max depth reached)".to_string());
-        }
-
         match value {
-            Value::Null => Ok("nil".to_string()),
-            Value::Bool(b) => Ok(b.to_string()),
-            Value::Integer(i) => Ok(i.to_string()),
-            Value::Number(f) => Ok(f.to_string()),
-            Value::String(s) => Ok(format!("\"{}\"", s)),
             Value::Array(arr) => {
                 let items: Result<Vec<String>, _> = arr.iter()
                     .take(10) // Limit array elements shown
@@ -492,8 +338,6 @@ impl VariableInspector {
                 
                 if arr.len() > 10 {
                     result.push_str(&format!(" ... ({} more items)", arr.len() - 10));
-                }
-                
                 Ok(result)
             }
             Value::Object(obj) => {
@@ -501,67 +345,34 @@ impl VariableInspector {
                 for (k, v) in obj.iter().take(10) {
                     let value_str = self.dump_contents(v, depth + 1)?;
                     items.push(format!("{}: {}", k, value_str));
-                }
-                
                 let mut result = format!("{{{}}}", items.join(", "));
                 
                 if obj.len() > 10 {
                     result.push_str(&format!(" ... ({} more fields)", obj.len() - 10));
-                }
-                
                 Ok(result)
             }
-            Value::Bytes(b) => Ok(format!("bytes[{}]", b.len())),
         }
     }
-}
-
 /// Variable inspection result
 #[derive(Debug, Clone)]
 pub struct VariableInspection {
-    pub name: String,
-    pub var_type: String,
-    pub value: Value,
-    pub size_estimate: usize,
-    pub type_info: TypeAnalysis,
-    pub contents: String,
-    pub declaration_line: u32,
-    pub last_modified: Instant,
-}
-
 /// Type analysis information
 #[derive(Debug, Clone)]
 pub struct TypeAnalysis {
-    pub type_name: String,
-    pub is_collection: bool,
-    pub is_complex: bool,
-}
-
 impl TypeAnalysis {
     fn new(type_name: &str, is_collection: bool, is_complex: bool) -> Self {
         TypeAnalysis {
-            type_name: type_name.to_string(),
-            is_collection,
-            is_complex,
         }
     }
-}
-
 /// Breakpoint manager
 #[derive(Debug)]
 pub struct BreakpointManager {
     /// Active breakpoints
-    breakpoints: HashMap<u64, Breakpoint>,
     /// Next breakpoint ID
-    next_id: u64,
-}
-
 impl BreakpointManager {
     /// Create new breakpoint manager
     pub fn new() -> Self {
         BreakpointManager {
-            breakpoints: HashMap::new(),
-            next_id: 1,
         }
     }
 
@@ -574,20 +385,14 @@ impl BreakpointManager {
         self.breakpoints.insert(id, breakpoint);
 
         Ok(id)
-    }
-
     /// Remove breakpoint
     pub fn remove_breakpoint(&mut self, breakpoint_id: u64) -> bool {
         self.breakpoints.remove(&breakpoint_id).is_some()
-    }
-
     /// Check if breakpoint should trigger
     pub fn check_breakpoint(&self, file_path: &Path, line: u32) -> Option<Breakpoint> {
         self.breakpoints.values()
             .find(|bp| bp.file_path == file_path && bp.line == line)
             .cloned()
-    }
-
     /// Get all breakpoints
     pub fn get_all_breakpoints(&self) -> Vec<Breakpoint> {
         self.breakpoints.values().cloned().collect()
@@ -597,24 +402,10 @@ impl BreakpointManager {
 /// Breakpoint information
 #[derive(Debug, Clone)]
 pub struct Breakpoint {
-    pub id: u64,
-    pub file_path: PathBuf,
-    pub line: u32,
-    pub enabled: bool,
-    pub hit_count: u32,
-    pub created_at: Instant,
-}
-
 impl Breakpoint {
     /// Create new breakpoint
     pub fn new(id: u64, file_path: PathBuf, line: u32) -> Self {
         Breakpoint {
-            id,
-            file_path,
-            line,
-            enabled: true,
-            hit_count: 0,
-            created_at: Instant::now(),
         }
     }
 
@@ -628,36 +419,24 @@ impl Breakpoint {
 #[derive(Debug)]
 pub struct PerformanceMonitor {
     /// Function call counts
-    function_calls: HashMap<String, u64>,
     /// Function execution times
-    function_times: HashMap<String, Vec<Duration>>,
     /// Total debugging overhead
-    debug_overhead: Duration,
-}
-
 impl PerformanceMonitor {
     /// Create new performance monitor
     pub fn new() -> Self {
         PerformanceMonitor {
-            function_calls: HashMap::new(),
-            function_times: HashMap::new(),
-            debug_overhead: Duration::new(0, 0),
         }
     }
 
     /// Record function entry
     pub fn record_function_entry(&mut self, function_name: &str, _start_time: Instant) {
         *self.function_calls.entry(function_name.to_string()).or_insert(0) += 1;
-    }
-
     /// Record function exit
     pub fn record_function_exit(&mut self, function_name: &str, start_time: Instant) {
         let duration = start_time.elapsed();
         self.function_times.entry(function_name.to_string())
             .or_insert_with(Vec::new)
             .push(duration);
-    }
-
     /// Get performance summary
     pub fn get_summary(&self) -> PerformanceSummary {
         let total_calls: u64 = self.function_calls.values().sum();
@@ -666,54 +445,27 @@ impl PerformanceMonitor {
             .sum();
 
         PerformanceSummary {
-            total_function_calls: total_calls,
-            total_execution_time: total_time,
-            debug_overhead: self.debug_overhead,
-            function_call_counts: self.function_calls.clone(),
         }
     }
-}
-
 /// Performance summary
 #[derive(Debug, Clone)]
 pub struct PerformanceSummary {
-    pub total_function_calls: u64,
-    pub total_execution_time: Duration,
-    pub debug_overhead: Duration,
-    pub function_call_counts: HashMap<String, u64>,
-}
-
 /// Debug report
 #[derive(Debug)]
 pub struct DebugReport {
-    pub stack_trace: Vec<RuntimeStackFrame>,
-    pub scope_variables: HashMap<String, Value>,
-    pub active_breakpoints: Vec<Breakpoint>,
-    pub performance_data: PerformanceSummary,
-}
-
 impl fmt::Display for DebugReport {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         writeln!(f, "=== Debug Report ===")?;
         
         writeln!(f, "\nStack Trace ({} frames):", self.stack_trace.len())?;
         for (i, frame) in self.stack_trace.iter().enumerate() {
-            writeln!(f, "  {}: {} at {}:{}", 
-                i, frame.function_name, 
                 frame.file_path.display(), frame.line)?;
-        }
-        
         writeln!(f, "\nScope Variables ({}):", self.scope_variables.len())?;
         for (name, value) in &self.scope_variables {
             writeln!(f, "  {}: {:?}", name, value)?;
-        }
-        
         writeln!(f, "\nActive Breakpoints ({}):", self.active_breakpoints.len())?;
         for bp in &self.active_breakpoints {
-            writeln!(f, "  {}: {}:{} (hits: {})", 
                 bp.id, bp.file_path.display(), bp.line, bp.hit_count)?;
-        }
-        
         writeln!(f, "\nPerformance:")?;
         writeln!(f, "  Total function calls: {}", self.performance_data.total_function_calls)?;
         writeln!(f, "  Total execution time: {:?}", self.performance_data.total_execution_time)?;

@@ -6,33 +6,18 @@ use std::fmt;
 #[derive(Debug, Clone)]
 pub enum ArchiveError {
     // I/O related errors
-    IoError(String),
     
     // Format-specific errors
-    InvalidFormat(String),
-    CorruptArchive(String),
-    UnsupportedFormat(String),
     
     // Header errors
-    InvalidHeader(String),
-    HeaderTooLarge,
     
     // Compression errors
-    CompressionError(String),
-    DecompressionError(String),
     
     // Security errors
-    PathTraversal(String),
-    NameTooLong(String),
     
     // File operation errors
-    FileNotFound(String),
-    PermissionDenied(String),
     
     // General errors
-    General(String),
-}
-
 // impl fmt::Display for ArchiveError {
 //     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
 //         match self {
@@ -72,49 +57,25 @@ pub type ArchiveResult<T> = std::result::Result<T, ArchiveError>;
 // Helper functions for creating specific errors
 pub fn io_error(msg: &str) -> ArchiveError {
     ArchiveError::IoError(msg.to_string())
-}
-
 pub fn invalid_format(msg: &str) -> ArchiveError {
     ArchiveError::InvalidFormat(msg.to_string())
-}
-
 pub fn corrupt_archive(msg: &str) -> ArchiveError {
     ArchiveError::CorruptArchive(msg.to_string())
-}
-
 pub fn unsupported_format(msg: &str) -> ArchiveError {
     ArchiveError::UnsupportedFormat(msg.to_string())
-}
-
 pub fn invalid_header(msg: &str) -> ArchiveError {
     ArchiveError::InvalidHeader(msg.to_string())
-}
-
 pub fn compression_error(msg: &str) -> ArchiveError {
     ArchiveError::CompressionError(msg.to_string())
-}
-
 pub fn decompression_error(msg: &str) -> ArchiveError {
     ArchiveError::DecompressionError(msg.to_string())
-}
-
 pub fn path_traversal(msg: &str) -> ArchiveError {
     ArchiveError::PathTraversal(msg.to_string())
-}
-
 pub fn name_too_long(msg: &str) -> ArchiveError {
     ArchiveError::NameTooLong(msg.to_string())
-}
-
 pub fn file_not_found(msg: &str) -> ArchiveError {
     ArchiveError::FileNotFound(msg.to_string())
-}
-
 pub fn permission_denied(msg: &str) -> ArchiveError {
     ArchiveError::PermissionDenied(msg.to_string())
-}
-
 pub fn general_error(msg: &str) -> ArchiveError {
     ArchiveError::General(msg.to_string())
-}
-

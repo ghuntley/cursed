@@ -33,23 +33,15 @@ impl ObjectId {
     /// External code should use ObjectIdGenerator::next() instead.
     pub fn new(id: u64) -> Self {
         Self(id)
-    }
-    
     /// Get the raw ID value
     pub fn as_u64(self) -> u64 {
         self.0
-    }
-    
     /// Get a null/invalid object ID for sentinel values
     pub const fn null() -> Self {
         Self(0)
-    }
-    
     /// Check if this is a null/invalid ID
     pub fn is_null(&self) -> bool {
         self.0 == 0
-    }
-    
     /// Create ObjectId from raw u64 value
     /// 
     /// This should only be used for deserialization or low-level operations.
@@ -71,15 +63,11 @@ impl fmt::Display for ObjectId {
 /// allocation scenarios.
 #[derive(Debug)]
 pub struct ObjectIdGenerator {
-    next_id: AtomicU64,
-}
-
 impl ObjectIdGenerator {
     /// Create a new ID generator starting from ID 1
     /// (ID 0 is reserved for null/invalid objects)
     pub fn new() -> Self {
         Self {
-            next_id: AtomicU64::new(1),
         }
     }
     
@@ -94,12 +82,8 @@ impl ObjectIdGenerator {
         // Check for overflow (extremely unlikely but safety first)
         if id == u64::MAX {
             panic!("Object ID counter overflow - this should never happen in practice");
-        }
-        
         debug!("Generated new object ID: {}", id);
         ObjectId::new(id)
-    }
-    
     /// Get the current counter value (for debugging/stats)
     pub fn current_count(&self) -> u64 {
         self.next_id.load(Ordering::SeqCst)
@@ -119,87 +103,53 @@ impl Default for ObjectIdGenerator {
 #[derive(Debug, Clone)]
 pub struct ObjectMetadata {
     /// Unique identifier for this object
-    pub id: ObjectId,
     /// Size of the object in bytes (for memory usage tracking)
-    pub size: usize,
     /// Type name for debugging purposes
-    pub type_name: String,
     /// Generation for generational GC (future enhancement)
-    pub generation: u32,
     /// Mark bit for mark-and-sweep collection
-    pub marked: bool,
     /// Reference count for hybrid GC approaches
-    pub ref_count: usize,
     /// Creation timestamp for age tracking
-    pub created_at: std::time::Instant,
-}
-
 impl ObjectMetadata {
     /// Create new object metadata
     pub fn new(id: ObjectId, size: usize, type_name: String) -> Self {
         Self {
-            id,
-            size,
-            type_name,
-            generation: 0,
-            marked: false,
-            ref_count: 0,
-            created_at: std::time::Instant::now(),
         }
     }
     
     /// Mark this object as reachable during GC
     pub fn mark(&mut self) {
         self.marked = true;
-    }
-    
     /// Unmark this object (for next GC cycle)
     pub fn unmark(&mut self) {
         self.marked = false;
-    }
-    
     /// Check if object is marked as reachable
     pub fn is_marked(&self) -> bool {
         self.marked
-    }
-    
     /// Get the size of the object
     pub fn size(&self) -> usize {
         self.size
-    }
-    
     /// Get the creation timestamp
     pub fn created_at(&self) -> std::time::Instant {
         self.created_at
-    }
-    
     /// Increment reference count
     pub fn inc_ref(&mut self) {
         self.ref_count += 1;
-    }
-    
     /// Decrement reference count
     pub fn dec_ref(&mut self) {
         if self.ref_count > 0 {
             self.ref_count -= 1;
         }
     }
-}
-
 /// Registry for fast lookup of object metadata during GC
 /// 
 /// This provides O(1) lookup of object information needed during
 /// mark and sweep phases. Thread-safe through RwLock.
 #[derive(Debug)]
 pub struct ObjectRegistry {
-    objects: RwLock<HashMap<ObjectId, ObjectMetadata>>,
-}
-
 impl ObjectRegistry {
     /// Create a new empty object registry
     pub fn new() -> Self {
         Self {
-            objects: RwLock::new(HashMap::new()),
         }
     }
     
@@ -212,9 +162,6 @@ impl ObjectRegistry {
                 if objects.contains_key(&id) {
                     warn!("Attempting to register duplicate object ID: {}", id);
                     return Err(format!("Object {} already exists", id));
-                }
-                
-                debug!("Registering object {} (type: {}, size: {} bytes)", 
                        id, metadata.type_name, metadata.size);
                 objects.insert(id, metadata);
                 Ok(())
@@ -238,7 +185,6 @@ impl ObjectRegistry {
     /// Get object metadata by ID
     pub fn get(&self, id: ObjectId) -> Result<Option<ObjectMetadata>, String> {
         match self.objects.read() {
-            Ok(objects) => Ok(objects.get(&id).cloned()),
             Err(_) => Err("Failed to acquire read lock on object registry".to_string())
         }
     }
@@ -309,7 +255,6 @@ impl ObjectRegistry {
     /// Get total number of registered objects
     pub fn object_count(&self) -> Result<usize, String> {
         match self.objects.read() {
-            Ok(objects) => Ok(objects.len()),
             Err(_) => Err("Failed to acquire read lock on object registry".to_string())
         }
     }

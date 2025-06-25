@@ -1,14 +1,8 @@
 /// Core character classification and conversion functions
 // use crate::stdlib::glyph_gang::error::{GlyphGangResult, GlyphGangError, unicode_error, unicode_error_with_code_point, name_lookup_error};
-// use crate::stdlib::glyph_gang::ranges::{
-    RangeTable, 
-    LETTER, UPPERCASE_LETTER, LOWERCASE_LETTER, TITLECASE_LETTER, MODIFIER_LETTER, OTHER_LETTER,
-    NUMBER, DECIMAL_NUMBER, LETTER_NUMBER, OTHER_NUMBER,
-    PUNCT, SYMBOL, MARK, SPACE, CONTROL, FORMAT, 
-    SURROGATE, PRIVATE, CURRENCY_SYMBOL, MATH_SYMBOL,
-    EMOJI, EMOJI_MODIFIER, EMOJI_COMPONENT, EMOJI_MODIFIER_BASE,
+// Placeholder imports disabled
     get_range_table
-};
+// };
 use std::collections::HashMap;
 use once_cell::sync::Lazy;
 
@@ -19,136 +13,25 @@ static CHARACTER_NAMES: Lazy<HashMap<u32, &'static str>> = Lazy::new(|| {
     // Basic ASCII characters
     for i in 0x20..=0x7E {
         let name = match i {
-            0x20 => "SPACE",
-            0x21 => "EXCLAMATION MARK", 
-            0x22 => "QUOTATION MARK",
-            0x23 => "NUMBER SIGN",
-            0x24 => "DOLLAR SIGN",
-            0x25 => "PERCENT SIGN",
-            0x26 => "AMPERSAND",
-            0x27 => "APOSTROPHE",
-            0x28 => "LEFT PARENTHESIS",
-            0x29 => "RIGHT PARENTHESIS",
-            0x2A => "ASTERISK",
-            0x2B => "PLUS SIGN",
-            0x2C => "COMMA",
-            0x2D => "HYPHEN-MINUS",
-            0x2E => "FULL STOP",
-            0x2F => "SOLIDUS",
             0x30..=0x39 => "DIGIT ZERO",  // Will be adjusted below for 1-9
-            0x3A => "COLON",
-            0x3B => "SEMICOLON",
-            0x3C => "LESS-THAN SIGN",
-            0x3D => "EQUALS SIGN",
-            0x3E => "GREATER-THAN SIGN",
-            0x3F => "QUESTION MARK",
-            0x40 => "COMMERCIAL AT",
             0x41..=0x5A => "LATIN CAPITAL LETTER A", // Will be adjusted below
-            0x5B => "LEFT SQUARE BRACKET",
-            0x5C => "REVERSE SOLIDUS",
-            0x5D => "RIGHT SQUARE BRACKET",
-            0x5E => "CIRCUMFLEX ACCENT",
-            0x5F => "LOW LINE",
-            0x60 => "GRAVE ACCENT",
             0x61..=0x7A => "LATIN SMALL LETTER A", // Will be adjusted below
-            0x7B => "LEFT CURLY BRACKET",
-            0x7C => "VERTICAL LINE",
-            0x7D => "RIGHT CURLY BRACKET",
-            0x7E => "TILDE",
-            _ => continue,
-        };
         names.insert(i, name);
-    }
-    
     // Adjust digit names
     for i in 0x30..=0x39 {
         let digit = (i - 0x30) as u8;
         let name = match digit {
-            0 => "DIGIT ZERO",
-            1 => "DIGIT ONE", 
-            2 => "DIGIT TWO",
-            3 => "DIGIT THREE",
-            4 => "DIGIT FOUR",
-            5 => "DIGIT FIVE",
-            6 => "DIGIT SIX",
-            7 => "DIGIT SEVEN",
-            8 => "DIGIT EIGHT",
-            9 => "DIGIT NINE",
-            _ => unreachable!(),
-        };
         names.insert(i, name);
-    }
-    
     // Adjust capital letter names
     for i in 0x41..=0x5A {
         let letter = (i - 0x41) as u8 + b'A';
         let name = match letter as char {
-            'A' => "LATIN CAPITAL LETTER A",
-            'B' => "LATIN CAPITAL LETTER B",
-            'C' => "LATIN CAPITAL LETTER C",
-            'D' => "LATIN CAPITAL LETTER D",
-            'E' => "LATIN CAPITAL LETTER E",
-            'F' => "LATIN CAPITAL LETTER F",
-            'G' => "LATIN CAPITAL LETTER G",
-            'H' => "LATIN CAPITAL LETTER H",
-            'I' => "LATIN CAPITAL LETTER I",
-            'J' => "LATIN CAPITAL LETTER J",
-            'K' => "LATIN CAPITAL LETTER K",
-            'L' => "LATIN CAPITAL LETTER L",
-            'M' => "LATIN CAPITAL LETTER M",
-            'N' => "LATIN CAPITAL LETTER N",
-            'O' => "LATIN CAPITAL LETTER O",
-            'P' => "LATIN CAPITAL LETTER P",
-            'Q' => "LATIN CAPITAL LETTER Q",
-            'R' => "LATIN CAPITAL LETTER R",
-            'S' => "LATIN CAPITAL LETTER S",
-            'T' => "LATIN CAPITAL LETTER T",
-            'U' => "LATIN CAPITAL LETTER U",
-            'V' => "LATIN CAPITAL LETTER V",
-            'W' => "LATIN CAPITAL LETTER W",
-            'X' => "LATIN CAPITAL LETTER X",
-            'Y' => "LATIN CAPITAL LETTER Y",
-            'Z' => "LATIN CAPITAL LETTER Z",
-            _ => "LATIN CAPITAL LETTER A",
-        };
         names.insert(i, name);
-    }
-    
     // Adjust small letter names
     for i in 0x61..=0x7A {
         let letter = (i - 0x61) as u8 + b'a';
         let name = match letter as char {
-            'a' => "LATIN SMALL LETTER A",
-            'b' => "LATIN SMALL LETTER B",
-            'c' => "LATIN SMALL LETTER C",
-            'd' => "LATIN SMALL LETTER D",
-            'e' => "LATIN SMALL LETTER E",
-            'f' => "LATIN SMALL LETTER F",
-            'g' => "LATIN SMALL LETTER G",
-            'h' => "LATIN SMALL LETTER H",
-            'i' => "LATIN SMALL LETTER I",
-            'j' => "LATIN SMALL LETTER J",
-            'k' => "LATIN SMALL LETTER K",
-            'l' => "LATIN SMALL LETTER L",
-            'm' => "LATIN SMALL LETTER M",
-            'n' => "LATIN SMALL LETTER N",
-            'o' => "LATIN SMALL LETTER O",
-            'p' => "LATIN SMALL LETTER P",
-            'q' => "LATIN SMALL LETTER Q",
-            'r' => "LATIN SMALL LETTER R",
-            's' => "LATIN SMALL LETTER S",
-            't' => "LATIN SMALL LETTER T",
-            'u' => "LATIN SMALL LETTER U",
-            'v' => "LATIN SMALL LETTER V",
-            'w' => "LATIN SMALL LETTER W",
-            'x' => "LATIN SMALL LETTER X",
-            'y' => "LATIN SMALL LETTER Y",
-            'z' => "LATIN SMALL LETTER Z",
-            _ => "LATIN SMALL LETTER A",
-        };
         names.insert(i, name);
-    }
-    
     // Control characters
     names.insert(0x00, "NULL");
     names.insert(0x01, "START OF HEADING");
@@ -417,8 +300,6 @@ static BLOCK_NAMES: Lazy<HashMap<u32, &'static str>> = Lazy::new(|| {
     for i in 0xFE50..=0xFE6F { blocks.insert(i, "Small Form Variants"); }
     for i in 0xFE70..=0xFEFF { blocks.insert(i, "Arabic Presentation Forms-B"); }
     for i in 0xFF00..=0xFFEF { blocks.insert(i, "Halfwidth and Fullwidth Forms"); }
-    for i in 0xFFF0..=0xFFFF { blocks.insert(i, "Specials"); }
-    
     // Handle supplementary planes (simplified)
     for i in 0x10000..=0x1007F { blocks.insert(i, "Linear B Syllabary"); }
     for i in 0x10080..=0x100FF { blocks.insert(i, "Linear B Ideograms"); }
@@ -566,8 +447,6 @@ static BLOCK_NAMES: Lazy<HashMap<u32, &'static str>> = Lazy::new(|| {
     for i in 0xE0000..=0xE007F { blocks.insert(i, "Tags"); }
     for i in 0xE0100..=0xE01EF { blocks.insert(i, "Variation Selectors Supplement"); }
     for i in 0xF0000..=0xFFFFF { blocks.insert(i, "Supplementary Private Use Area-A"); }
-    for i in 0x100000..=0x10FFFF { blocks.insert(i, "Supplementary Private Use Area-B"); }
-    
     blocks
 });
 
@@ -676,113 +555,69 @@ static CATEGORIES: Lazy<HashMap<u32, &'static str>> = Lazy::new(|| {
 /// Test if a character is a letter
 pub fn is_letter(ch: char) -> bool {
     LETTER.contains(ch)
-}
-
 /// Test if a character is a digit
 pub fn is_digit(ch: char) -> bool {
     ch.is_ascii_digit() || DECIMAL_NUMBER.contains(ch)
-}
-
 /// Test if a character is a number (including digits, superscripts, fractions)
 pub fn is_number(ch: char) -> bool {
     NUMBER.contains(ch)
-}
-
 /// Test if a character is whitespace
 pub fn is_space(ch: char) -> bool {
     SPACE.contains(ch) || ch.is_whitespace()
-}
-
 /// Test if a character is punctuation
 pub fn is_punct(ch: char) -> bool {
     PUNCT.contains(ch)
-}
-
 /// Test if a character is a symbol
 pub fn is_symbol(ch: char) -> bool {
     SYMBOL.contains(ch)
-}
-
 /// Test if a character is a mark (combining character)
 pub fn is_mark(ch: char) -> bool {
     MARK.contains(ch)
-}
-
 /// Test if a character is a control character
 pub fn is_control(ch: char) -> bool {
     CONTROL.contains(ch)
-}
-
 /// Test if a character is graphic (printable, excluding spaces)
 pub fn is_graphic(ch: char) -> bool {
     !is_space(ch) && !is_control(ch) && !is_format(ch) && !is_surrogate(ch) && !is_private_use(ch)
-}
-
 /// Test if a character is printable (graphic or space)
 pub fn is_print(ch: char) -> bool {
     is_graphic(ch) || is_space(ch)
-}
-
 /// Test if a character is uppercase
 pub fn is_upper(ch: char) -> bool {
     UPPERCASE_LETTER.contains(ch)
-}
-
 /// Test if a character is lowercase
 pub fn is_lower(ch: char) -> bool {
     LOWERCASE_LETTER.contains(ch)
-}
-
 /// Test if a character is titlecase
 pub fn is_title(ch: char) -> bool {
     TITLECASE_LETTER.contains(ch)
-}
-
 /// Test if a character is an emoji
 pub fn is_emoji(ch: char) -> bool {
     EMOJI.contains(ch)
-}
-
 /// Test if a character is an emoji modifier
 pub fn is_emoji_modifier(ch: char) -> bool {
     EMOJI_MODIFIER.contains(ch)
-}
-
 /// Test if a character is an emoji component
 pub fn is_emoji_component(ch: char) -> bool {
     EMOJI_COMPONENT.contains(ch)
-}
-
 /// Test if a character is a currency symbol
 pub fn is_currency(ch: char) -> bool {
     CURRENCY_SYMBOL.contains(ch)
-}
-
 /// Test if a character is a mathematical symbol
 pub fn is_math(ch: char) -> bool {
     MATH_SYMBOL.contains(ch)
-}
-
 /// Test if a character is a format character
 pub fn is_format(ch: char) -> bool {
     FORMAT.contains(ch)
-}
-
 /// Test if a character is in the private use area
 pub fn is_private_use(ch: char) -> bool {
     PRIVATE.contains(ch)
-}
-
 /// Test if a character is a surrogate
 pub fn is_surrogate(ch: char) -> bool {
     SURROGATE.contains(ch)
-}
-
 /// Test if a character is ASCII
 pub fn is_ascii(ch: char) -> bool {
     ch.is_ascii()
-}
-
 /// Character conversion functions
 
 /// Convert a character to uppercase
@@ -790,22 +625,16 @@ pub fn to_upper(ch: char) -> char {
     // Use Rust's built-in conversion for now
     // In a production implementation, this would use Unicode case mapping tables
     ch.to_uppercase().next().unwrap_or(ch)
-}
-
 /// Convert a character to lowercase
 pub fn to_lower(ch: char) -> char {
     // Use Rust's built-in conversion for now
     // In a production implementation, this would use Unicode case mapping tables
     ch.to_lowercase().next().unwrap_or(ch)
-}
-
 /// Convert a character to titlecase
 pub fn to_title(ch: char) -> char {
     // For most characters, titlecase is the same as uppercase
     // In a production implementation, this would handle special titlecase characters
     to_upper(ch)
-}
-
 /// Convert a character to ASCII equivalent if possible
 pub fn to_ascii(ch: char) -> char {
     if ch.is_ascii() {
@@ -813,35 +642,20 @@ pub fn to_ascii(ch: char) -> char {
     } else {
         // Simple conversion for common characters
         match ch {
-            'à'..='ä' | 'À'..='Ä' => if ch.is_lowercase() { 'a' } else { 'A' },
-            'è'..='ë' | 'È'..='Ë' => if ch.is_lowercase() { 'e' } else { 'E' },
-            'ì'..='ï' | 'Ì'..='Ï' => if ch.is_lowercase() { 'i' } else { 'I' },
-            'ò'..='ö' | 'Ò'..='Ö' => if ch.is_lowercase() { 'o' } else { 'O' },
-            'ù'..='ü' | 'Ù'..='Ü' => if ch.is_lowercase() { 'u' } else { 'U' },
-            'ç' | 'Ç' => if ch.is_lowercase() { 'c' } else { 'C' },
-            'ñ' | 'Ñ' => if ch.is_lowercase() { 'n' } else { 'N' },
             _ => ch, // Return unchanged if no ASCII equivalent
         }
     }
-}
-
 /// Simple case folding for case-insensitive comparison
 pub fn simple_fold(ch: char) -> char {
     to_lower(ch)
-}
-
 /// Range and character set functions
 
 /// Test if a character is in a range table
 pub fn is_in_range(ch: char, range_table: &RangeTable) -> bool {
     range_table.contains(ch)
-}
-
 /// Test if a character is in any of the given range tables
 pub fn is_in_ranges(ch: char, range_tables: &[&RangeTable]) -> bool {
     range_tables.iter().any(|table| table.contains(ch))
-}
-
 /// Test if a character is in one of the named range tables
 pub fn is_one_of(range_table_names: &[&str], ch: char) -> GlyphGangResult<bool> {
     for name in range_table_names {
@@ -854,8 +668,6 @@ pub fn is_one_of(range_table_names: &[&str], ch: char) -> GlyphGangResult<bool> 
         }
     }
     Ok(false)
-}
-
 /// Character properties and information
 
 /// Get the Unicode name of a character
@@ -884,8 +696,6 @@ pub fn get_character_name(ch: char) -> String {
             format!("CHARACTER U+{:04X}", code_point)
         }
     }
-}
-
 /// Find a character by its Unicode name (simplified lookup)
 pub fn find_character_by_name(name: &str) -> GlyphGangResult<char> {
     let name_upper = name.to_uppercase();
@@ -897,8 +707,6 @@ pub fn find_character_by_name(name: &str) -> GlyphGangResult<char> {
                 return Ok(ch);
             }
         }
-    }
-    
     // Try to parse as a Unicode code point
     if name_upper.starts_with("U+") {
         let hex_part = &name_upper[2..];
@@ -907,11 +715,7 @@ pub fn find_character_by_name(name: &str) -> GlyphGangResult<char> {
                 return Ok(ch);
             }
         }
-    }
-    
     Err(name_lookup_error(&format!("Character not found: {}", name)))
-}
-
 /// Get the Unicode block name for a character
 pub fn get_block_name(ch: char) -> String {
     let code_point = ch as u32;
@@ -928,8 +732,6 @@ pub fn get_block_name(ch: char) -> String {
             format!("Supplementary Block U+{:06X}", code_point & 0xFFF000)
         }
     }
-}
-
 /// Get the Unicode general category for a character
 pub fn get_category(ch: char) -> String {
     let code_point = ch as u32;
@@ -968,8 +770,6 @@ pub fn get_category(ch: char) -> String {
             "Cn".to_string() // Other, not assigned
         }
     }
-}
-
 /// Get various Unicode properties for a character
 pub fn get_properties(ch: char) -> std::collections::HashMap<String, String> {
     let mut properties = std::collections::HashMap::new();
@@ -1007,8 +807,6 @@ pub fn get_properties(ch: char) -> std::collections::HashMap<String, String> {
     properties.insert("to_title".to_string(), to_title(ch).to_string());
     
     properties
-}
-
 /// Get the Unicode code point representation
 pub fn get_code_point(ch: char) -> String {
     let code_point = ch as u32;
@@ -1024,5 +822,3 @@ pub fn get_canonical_equivalent(ch: char) -> Vec<char> {
     // In a full implementation, this would decompose characters into their canonical forms
     // For now, just return the character itself
     vec![ch]
-}
-
