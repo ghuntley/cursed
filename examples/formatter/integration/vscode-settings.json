@@ -1,0 +1,32 @@
+{
+  "// CURSED language formatter settings for VSCode": "",
+  
+  "cursed.formatter.enable": true,
+  "cursed.formatter.onSave": true,
+  "cursed.formatter.command": "cursed-fmt",
+  "cursed.formatter.args": ["-w"],
+  
+  "[cursed]": {
+    "editor.formatOnSave": true,
+    "editor.formatOnPaste": true,
+    "editor.formatOnType": false,
+    "editor.defaultFormatter": "cursed.formatter",
+    "editor.tabSize": 4,
+    "editor.insertSpaces": true,
+    "editor.rulers": [80, 120]
+  },
+  
+  "// File associations": "",
+  "files.associations": {
+    "*.csd": "cursed"
+  },
+  
+  "// Auto-format on save for all CURSED files": "",
+  "editor.formatOnSave": true,
+  
+  "// Show formatting errors in problems panel": "",
+  "cursed.formatter.showErrors": true,
+  
+  "// Optional: Custom config file path": "",
+  "cursed.formatter.configPath": ".cursed-fmt.toml"
+}

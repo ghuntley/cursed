@@ -1,0 +1,4 @@
+vibe test
+
+slay empty() {
+}

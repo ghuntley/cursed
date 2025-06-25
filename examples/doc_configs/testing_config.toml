@@ -1,0 +1,151 @@
+# CURSED Documentation Testing Configuration
+#
+# This file demonstrates how to configure documentation testing
+# for comprehensive validation and quality assurance.
+
+# Enable different types of testing
+check_links = true
+verify_examples = true
+check_completeness = true
+check_accessibility = true
+
+# Network request timeout (seconds)
+request_timeout = 30
+
+# Maximum concurrent requests for link checking
+max_concurrent_requests = 10
+
+# Retry attempts for failed requests
+retry_attempts = 3
+
+# Example execution timeout (seconds)
+example_timeout = 60
+
+# Minimum documentation coverage required (percentage)
+min_coverage_percentage = 70.0
+
+# Link checking configuration
+[link_checking]
+enabled = true
+follow_redirects = true
+check_external_links = true
+check_internal_links = true
+timeout = 30
+max_redirects = 5
+user_agent = "CURSED-Doc-Checker/1.0"
+
+# Domains to skip during link checking
+skip_domains = [
+    "localhost",
+    "127.0.0.1",
+    "example.com",
+    "test.local"
+]
+
+# Example verification configuration
+[example_verification]
+enabled = true
+compile_examples = true
+run_examples = false  # Set to true to actually execute examples
+sandbox_execution = true
+memory_limit_mb = 256
+execution_timeout = 30
+
+# Languages to verify
+supported_languages = ["cursed", "rust", "javascript", "python"]
+
+# Completeness analysis configuration
+[completeness_analysis]
+enabled = true
+require_function_docs = true
+require_struct_docs = true
+require_enum_docs = true
+require_module_docs = true
+require_examples = false
+min_doc_length = 10  # Minimum characters for documentation
+
+# Items that don't require documentation
+exclude_patterns = [
+    "test_*",
+    "*_test",
+    "internal_*",
+    "private_*"
+]
+
+# Accessibility checking configuration
+[accessibility_checking]
+enabled = true
+check_alt_text = true
+check_heading_structure = true
+check_color_contrast = true
+check_keyboard_navigation = true
+check_screen_reader_support = true
+
+# WCAG compliance level (A, AA, AAA)
+wcag_level = "AA"
+
+# Performance testing configuration
+[performance]
+enabled = true
+max_page_load_time = 5000    # milliseconds
+max_search_response_time = 1000  # milliseconds
+max_file_size_mb = 10
+check_image_optimization = true
+check_css_minification = true
+check_js_minification = true
+
+# Quality metrics configuration
+[quality_metrics]
+enabled = true
+min_overall_score = 80.0
+min_completeness_score = 75.0
+min_example_coverage = 50.0
+min_link_health = 90.0
+max_broken_links = 5
+
+# Error reporting configuration
+[error_reporting]
+enabled = true
+include_stack_traces = true
+include_source_context = true
+max_errors_per_category = 50
+group_similar_errors = true
+
+# Output configuration
+[output]
+verbose = false
+progress_bars = true
+colored_output = true
+save_report = true
+report_format = "html"  # html, json, markdown, text
+
+# Development configuration
+[development]
+check_links = true
+verify_examples = false  # Skip in development for speed
+check_completeness = true
+check_accessibility = false
+min_coverage_percentage = 50.0
+request_timeout = 10
+
+# CI/CD configuration
+[ci_cd]
+check_links = true
+verify_examples = true
+check_completeness = true
+check_accessibility = true
+min_coverage_percentage = 80.0
+fail_on_warnings = false
+fail_on_broken_links = true
+max_test_duration = 300  # 5 minutes
+
+# Production configuration
+[production]
+check_links = true
+verify_examples = true
+check_completeness = true
+check_accessibility = true
+min_coverage_percentage = 90.0
+request_timeout = 60
+max_concurrent_requests = 20
+retry_attempts = 5

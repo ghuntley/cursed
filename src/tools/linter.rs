@@ -786,17 +786,3 @@ impl LinterConfig {
         self.custom_rules.insert(rule_id.to_string(), true);
     }
 }
-
-"#;
-        
-        let results = linter.lint(source).unwrap();
-        linter.results = results;
-        
-        let errors = linter.get_results_by_severity(LintSeverity::CursedError);
-        let warnings = linter.get_results_by_severity(LintSeverity::Warning);
-        let suggestions = linter.get_results_by_severity(LintSeverity::Suggestion);
-        
-        // Should have some results in each category
-        assert!(errors.len() + warnings.len() + suggestions.len() > 0);
-    }
-}

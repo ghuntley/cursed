@@ -1,11 +1,11 @@
 /// Basic console I/O operations for CURSED
 // use crate::stdlib::{
-    io::{
-        error::{IoError, IoResult},
-        streams::{stdin, stdout, stderr}
-    },
-    value::Value
-};
+//     io::{
+//         error::{IoError, IoResult},
+//         streams::{stdin, stdout, stderr}
+//     },
+//     value::Value
+// };
 
 /// Print message to stdout without newline
 pub fn print(msg: &str) -> IoResult<()> {

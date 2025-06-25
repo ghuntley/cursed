@@ -61,7 +61,7 @@ pub use types::{
 use crate::error::{CursedError, CursedError};
 
 /// Result type for heap operations
-pub type Heapcrate::error::Result<T> = std::result::Result<T>;
+pub type Result<T> = std::result::Result<T, Box<dyn std::error::Error>>;
 
 /// Create a heap-specific error
 pub fn heap_error(message: &str) -> CursedError {

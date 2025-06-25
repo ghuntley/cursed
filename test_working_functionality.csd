@@ -1,6 +1,9 @@
-facts greeting = "Hello CURSED!";
-facts number = 42;
+// CURSED Language Test Program
+// This demonstrates that the minimal build can parse and execute basic CURSED syntax
 
-slay test_function(x) {
-    facts result = x + 1;
+facts greeting = "Hello, CURSED World!"
+slay main() {
+    lowkey (greeting) {
+        print(greeting)
+    }
 }

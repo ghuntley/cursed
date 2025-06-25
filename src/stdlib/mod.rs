@@ -258,7 +258,7 @@ pub mod net {
     // Network utilities  
     pub use crate::common_types::*;
     
-    pub type Netcrate::error::Result<T> = std::result::Result<T>;
+    pub type Result<T> = std::result::Result<T, Box<dyn std::error::Error>>;
 }
 
 pub mod testing {

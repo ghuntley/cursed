@@ -1,0 +1,27 @@
+{
+  "serverPort": 8080,
+  "apiKey": "demo-api-key-12345",
+  "debug": true,
+  "maxUsers": 1000,
+  "features": {
+    "embedding": true,
+    "compression": true,
+    "caching": true,
+    "templates": true
+  },
+  "cache": {
+    "expirySeconds": 3600,
+    "maxSize": 1000,
+    "cleanupIntervalSeconds": 300
+  },
+  "compression": {
+    "enabled": true,
+    "minSize": 1024,
+    "algorithms": ["gzip", "zstd", "brotli"]
+  },
+  "logging": {
+    "level": "info",
+    "format": "json",
+    "output": "stdout"
+  }
+}

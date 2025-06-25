@@ -1,0 +1,653 @@
+/// LLVM debug information generation for comprehensive stack traces
+///
+/// Provides simplified debug metadata generation and integration with the enhanced
+/// stack trace system. This version focuses on compatibility across inkwell versions.
+
+use crate::error::Error as CursedError;
+use crate::runtime::debug_info::{DebugInfo, VariableInfo};
+use inkwell::context::Context;
+use inkwell::module::Module;
+use inkwell::values::{FunctionValue, PointerValue};
+use std::collections::HashMap;
+use std::path::{Path, PathBuf};
+use std::sync::{Arc, Mutex};
+
+/// Simplified LLVM debug information generator
+pub struct LlvmDebugGenerator<'ctx> {
+    /// LLVM context
+    context: &'ctx Context,
+    /// LLVM module
+    module: &'ctx Module<'ctx>,
+    /// Current source file path
+    current_file: Option<PathBuf>,
+    /// Function debug information
+    function_info: HashMap<String, DebugInfo>,
+    /// Type information cache
+    type_info: HashMap<String, String>,
+    /// Source file cache
+    file_cache: HashMap<PathBuf, String>,
+    /// Debug metadata counter
+    metadata_counter: Arc<Mutex<u64>>,
+    /// Whether debug info generation is enabled
+    debug_enabled: bool,
+}
+
+impl<'ctx> LlvmDebugGenerator<'ctx> {
+    /// Create a new debug information generator
+    pub fn new(
+        context: &'ctx Context,
+        module: &'ctx Module<'ctx>,
+        source_file: &Path,
+        _producer: &str,
+    ) -> Result<Self, CursedError> {
+        let mut generator = LlvmDebugGenerator {
+            context,
+            module,
+            current_file: Some(source_file.to_path_buf()),
+            function_info: HashMap::new(),
+            type_info: HashMap::new(),
+            file_cache: HashMap::new(),
+            metadata_counter: Arc::new(Mutex::new(1)),
+            debug_enabled: true,
+        };
+
+        // Cache the initial file
+        if let Ok(content) = std::fs::read_to_string(source_file) {
+            generator.file_cache.insert(source_file.to_path_buf(), content);
+        }
+
+        Ok(generator)
+    }
+
+    /// Get or create a debug file for the given path
+    pub fn get_or_create_file(&mut self, file_path: &Path) -> DIFile<'ctx> {
+        if let Some(file) = self.file_cache.get(file_path) {
+            return *file;
+        }
+
+        let file = self.debug_builder.create_file(
+            file_path.file_name()
+                .and_then(|name| name.to_str())
+                .unwrap_or("unknown.csd"),
+            file_path.parent()
+                .and_then(|parent| parent.to_str())
+                .unwrap_or("."),
+        );
+
+        self.file_cache.insert(file_path.to_path_buf(), file);
+        file
+    }
+
+    /// Create debug information for a function
+    pub fn create_function_debug(
+        &mut self,
+        function: FunctionValue<'ctx>,
+        name: &str,
+        file_path: &Path,
+        line: u32,
+        return_type: Option<DIType<'ctx>>,
+        parameter_types: &[DIType<'ctx>],
+        is_local: bool,
+    ) -> Result<DISubprogram<'ctx>, CursedError> {
+        let file = self.get_or_create_file(file_path);
+        
+        // Create function type
+        let function_type = self.debug_builder.create_subroutine_type(
+            file,
+            return_type,
+            parameter_types,
+            DIFlags::zero(),
+        );
+
+        // Create subprogram
+        let subprogram = self.debug_builder.create_function(
+            self.current_scope(),
+            name,
+            None, // linkage_name
+            file,
+            line,
+            function_type,
+            is_local,
+            true, // is_definition
+            line, // scope_line
+            DIFlags::zero(),
+            false, // is_optimized
+        );
+
+        // Set subprogram for the function
+        function.set_subprogram(subprogram);
+
+        // Cache the function scope
+        self.function_scopes.insert(name.to_string(), subprogram);
+
+        Ok(subprogram)
+    }
+
+    /// Enter a function scope
+    pub fn enter_function_scope(&mut self, function_name: &str) -> Result<(), CursedError> {
+        if let Some(subprogram) = self.function_scopes.get(function_name) {
+            self.scope_stack.push(subprogram.as_debug_info_scope());
+            Ok(())
+        } else {
+            Err(CursedError::Runtime(format!("Function debug info not found: {}", function_name)))
+        }
+    }
+
+    /// Exit the current scope
+    pub fn exit_scope(&mut self) {
+        if self.scope_stack.len() > 1 {
+            self.scope_stack.pop();
+        }
+    }
+
+    /// Create debug location
+    pub fn create_debug_location(
+        &mut self,
+        line: u32,
+        column: u32,
+        file_path: Option<&Path>,
+    ) -> DILocation<'ctx> {
+        let file = if let Some(path) = file_path {
+            self.get_or_create_file(path)
+        } else {
+            self.current_file.unwrap_or_else(|| {
+                self.debug_builder.create_file("unknown.csd", ".")
+            })
+        };
+
+        let location = self.debug_builder.create_debug_location(
+            self.context,
+            line,
+            column,
+            self.current_scope(),
+            None, // inlined_at
+        );
+
+        self.current_location = Some(location);
+        location
+    }
+
+    /// Set debug location for an instruction
+    pub fn set_debug_location<T>(&self, instruction: T, location: DILocation<'ctx>)
+    where
+        T: AsRef<dyn InstructionValue<'ctx>>,
+    {
+        instruction.as_ref().set_debug_location(self.context, location);
+    }
+
+    /// Create debug information for a variable
+    pub fn create_variable_debug(
+        &mut self,
+        name: &str,
+        type_name: &str,
+        file_path: &Path,
+        line: u32,
+        is_parameter: bool,
+        argument_index: Option<u32>,
+    ) -> Result<DIVariable<'ctx>, CursedError> {
+        let file = self.get_or_create_file(file_path);
+        let di_type = self.get_or_create_type(type_name)?;
+
+        let variable = if is_parameter {
+            self.debug_builder.create_parameter_variable(
+                self.current_scope(),
+                name,
+                argument_index.unwrap_or(0),
+                file,
+                line,
+                di_type,
+                true, // always_preserve
+                DIFlags::zero(),
+            )
+        } else {
+            self.debug_builder.create_auto_variable(
+                self.current_scope(),
+                name,
+                file,
+                line,
+                di_type,
+                true, // always_preserve
+                DIFlags::zero(),
+                None, // align_in_bits
+            )
+        };
+
+        self.variable_info.insert(name.to_string(), variable);
+        Ok(variable)
+    }
+
+    /// Declare a variable with debug info
+    pub fn declare_variable(
+        &self,
+        variable: DIVariable<'ctx>,
+        storage: PointerValue<'ctx>,
+        location: DILocation<'ctx>,
+    ) {
+        self.debug_builder.insert_declare_at_end(
+            storage,
+            Some(variable),
+            None, // expression
+            location,
+            &self.context.append_basic_block(
+                self.context.i32_type().fn_type(&[], false).add_function(self.module, "dummy", None),
+                "dummy",
+            ),
+        );
+    }
+
+    /// Get or create a debug type
+    pub fn get_or_create_type(&mut self, type_name: &str) -> Result<DIType<'ctx>, CursedError> {
+        if let Some(cached_type) = self.type_cache.get(type_name) {
+            return Ok(*cached_type);
+        }
+
+        let di_type = match type_name {
+            "sus" => {
+                let basic_type = self.debug_builder.create_basic_type(
+                    "sus",
+                    32, // size_in_bits
+                    0x05, // DW_ATE_signed
+                    DIFlags::zero(),
+                )?;
+                basic_type.as_type()
+            }
+            "facts" => {
+                let basic_type = self.debug_builder.create_basic_type(
+                    "facts",
+                    1, // size_in_bits
+                    0x02, // DW_ATE_boolean
+                    DIFlags::zero(),
+                )?;
+                basic_type.as_type()
+            }
+            "vibes" => {
+                let basic_type = self.debug_builder.create_basic_type(
+                    "vibes",
+                    64, // size_in_bits
+                    0x04, // DW_ATE_float
+                    DIFlags::zero(),
+                )?;
+                basic_type.as_type()
+            }
+            "tea" => {
+                let basic_type = self.debug_builder.create_basic_type(
+                    "tea",
+                    8, // size_in_bits per char
+                    0x06, // DW_ATE_signed_char
+                    DIFlags::zero(),
+                )?;
+                // Create pointer type for string
+                let ptr_type = self.debug_builder.create_pointer_type(
+                    "tea",
+                    basic_type.as_type(),
+                    64, // size_in_bits
+                    0, // align_in_bits
+                    AddressSpace::default(),
+                )?;
+                ptr_type.as_type()
+            }
+            _ => {
+                // Unknown type, create as void pointer
+                let void_type = self.debug_builder.create_basic_type(
+                    "void",
+                    0,
+                    0x00, // DW_ATE_void
+                    DIFlags::zero(),
+                )?;
+                let ptr_type = self.debug_builder.create_pointer_type(
+                    type_name,
+                    void_type.as_type(),
+                    64,
+                    0,
+                    AddressSpace::default(),
+                )?;
+                ptr_type.as_type()
+            }
+        };
+
+        self.type_cache.insert(type_name.to_string(), di_type);
+        Ok(di_type)
+    }
+
+    /// Create debug information for a struct type
+    pub fn create_struct_type(
+        &mut self,
+        name: &str,
+        file_path: &Path,
+        line: u32,
+        size_in_bits: u64,
+        align_in_bits: u32,
+        fields: &[(String, String, u64)], // (name, type, offset_in_bits)
+    ) -> Result<DICompositeType<'ctx>, CursedError> {
+        let file = self.get_or_create_file(file_path);
+        
+        // Create forward declaration first
+        let struct_type = self.debug_builder.create_struct_type(
+            self.current_scope(),
+            name,
+            file,
+            line,
+            size_in_bits,
+            align_in_bits,
+            DIFlags::zero(),
+            None, // derived_from
+            &[], // elements (will be set later)
+            0, // runtime_lang
+            None, // vtable_holder
+        )?;
+
+        // Create field types
+        let mut field_types = Vec::new();
+        for (field_name, field_type_name, offset) in fields {
+            let field_type = self.get_or_create_type(field_type_name)?;
+            let member = self.debug_builder.create_member_type(
+                struct_type.as_debug_info_scope(),
+                field_name,
+                file,
+                line,
+                64, // size_in_bits (simplified)
+                32, // align_in_bits
+                *offset,
+                DIFlags::zero(),
+                field_type,
+            )?;
+            field_types.push(member.as_type());
+        }
+
+        // Set the fields
+        self.debug_builder.replace_temporary(struct_type, &field_types);
+
+        Ok(struct_type)
+    }
+
+    /// Generate debug metadata ID
+    pub fn generate_metadata_id(&self) -> u64 {
+        if let Ok(mut counter) = self.metadata_counter.lock() {
+            let id = *counter;
+            *counter += 1;
+            id
+        } else {
+            0
+        }
+    }
+
+    /// Extract debug information for runtime use
+    pub fn extract_debug_info(
+        &self,
+        function_name: &str,
+        line: u32,
+        column: u32,
+        file_path: &Path,
+    ) -> DebugInfo {
+        let mut debug_info = DebugInfo::new(file_path, line, column, function_name.to_string());
+        
+        // Add variables in scope
+        for (var_name, _var_debug) in &self.variable_info {
+            debug_info = debug_info.with_variable(var_name.clone(), "unknown".to_string());
+        }
+
+        debug_info.with_debug_metadata(self.generate_metadata_id())
+    }
+
+    /// Get current debug scope
+    fn current_scope(&self) -> DIScope<'ctx> {
+        *self.scope_stack.last().unwrap_or(&self.compile_unit.as_debug_info_scope())
+    }
+
+    /// Finalize debug information
+    pub fn finalize(&mut self) {
+        self.debug_builder.finalize();
+    }
+}
+
+/// LLVM debug integration trait
+pub trait LlvmDebugIntegration<'ctx> {
+    /// Set up debug information for a function
+    fn setup_function_debug(
+        &mut self,
+        function: FunctionValue<'ctx>,
+        name: &str,
+        file_path: &Path,
+        line: u32,
+    ) -> Result<(), CursedError>;
+
+    /// Create debug location for an expression
+    fn create_expression_debug(
+        &mut self,
+        line: u32,
+        column: u32,
+        file_path: Option<&Path>,
+    ) -> Result<DILocation<'ctx>, CursedError>;
+
+    /// Add variable debug information
+    fn add_variable_debug(
+        &mut self,
+        name: &str,
+        type_name: &str,
+        storage: PointerValue<'ctx>,
+        line: u32,
+        file_path: &Path,
+    ) -> Result<(), CursedError>;
+
+    /// Extract runtime debug information
+    fn extract_runtime_debug(&self, location: DILocation<'ctx>) -> DebugInfo;
+}
+
+/// Debug information manager for LLVM integration
+pub struct LlvmDebugManager<'ctx> {
+    /// Debug generator
+    generator: LlvmDebugGenerator<'ctx>,
+    /// Current function being compiled
+    current_function: Option<String>,
+    /// Whether debug info is enabled
+    debug_enabled: bool,
+}
+
+impl<'ctx> LlvmDebugManager<'ctx> {
+    pub fn new(
+        context: &'ctx Context,
+        module: &'ctx Module<'ctx>,
+        source_file: &Path,
+        debug_enabled: bool,
+    ) -> Result<Self, CursedError> {
+        let generator = if debug_enabled {
+            LlvmDebugGenerator::new(context, module, source_file, "CURSED Compiler")?
+        } else {
+            // Create a minimal generator even when disabled
+            LlvmDebugGenerator::new(context, module, source_file, "CURSED Compiler")?
+        };
+
+        Ok(LlvmDebugManager {
+            generator,
+            current_function: None,
+            debug_enabled,
+        })
+    }
+
+    pub fn finalize(&mut self) {
+        if self.debug_enabled {
+            self.generator.finalize();
+        }
+    }
+}
+
+impl<'ctx> LlvmDebugIntegration<'ctx> for LlvmDebugManager<'ctx> {
+    fn setup_function_debug(
+        &mut self,
+        function: FunctionValue<'ctx>,
+        name: &str,
+        file_path: &Path,
+        line: u32,
+    ) -> Result<(), CursedError> {
+        if !self.debug_enabled {
+            return Ok(());
+        }
+
+        let return_type = self.generator.get_or_create_type("void")?;
+        self.generator.create_function_debug(
+            function,
+            name,
+            file_path,
+            line,
+            Some(return_type),
+            &[],
+            false,
+        )?;
+
+        self.generator.enter_function_scope(name)?;
+        self.current_function = Some(name.to_string());
+
+        Ok(())
+    }
+
+    fn create_expression_debug(
+        &mut self,
+        line: u32,
+        column: u32,
+        file_path: Option<&Path>,
+    ) -> Result<DILocation<'ctx>, CursedError> {
+        if !self.debug_enabled {
+            // Return a dummy location when debug is disabled
+            return Ok(self.generator.create_debug_location(line, column, file_path));
+        }
+
+        Ok(self.generator.create_debug_location(line, column, file_path))
+    }
+
+    fn add_variable_debug(
+        &mut self,
+        name: &str,
+        type_name: &str,
+        storage: PointerValue<'ctx>,
+        line: u32,
+        file_path: &Path,
+    ) -> Result<(), CursedError> {
+        if !self.debug_enabled {
+            return Ok(());
+        }
+
+        let variable = self.generator.create_variable_debug(
+            name,
+            type_name,
+            file_path,
+            line,
+            false, // is_parameter
+            None,
+        )?;
+
+        let location = self.generator.create_debug_location(line, 0, Some(file_path));
+        self.generator.declare_variable(variable, storage, location);
+
+        Ok(())
+    }
+
+    fn extract_runtime_debug(&self, location: DILocation<'ctx>) -> DebugInfo {
+        let line = location.get_line();
+        let column = location.get_column();
+        
+        // Extract file information from location
+        let file_path = PathBuf::from("unknown.csd"); // Simplified for now
+        let function_name = self.current_function.clone().unwrap_or_else(|| "unknown".to_string());
+
+        DebugInfo::new(file_path, line, column, function_name)
+            .with_debug_metadata(self.generator.generate_metadata_id())
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use inkwell::context::Context;
+
+    #[test]
+    fn test_debug_generator_creation() {
+        let context = Context::create();
+        let module = context.create_module("test_module");
+        let source_file = Path::new("test.csd");
+
+        let generator = LlvmDebugGenerator::new(&context, &module, source_file, "Test Producer");
+        assert!(generator.is_ok());
+    }
+
+    #[test]
+    fn test_debug_manager_creation() {
+        let context = Context::create();
+        let module = context.create_module("test_module");
+        let source_file = Path::new("test.csd");
+
+        let manager = LlvmDebugManager::new(&context, &module, source_file, true);
+        assert!(manager.is_ok());
+
+        let disabled_manager = LlvmDebugManager::new(&context, &module, source_file, false);
+        assert!(disabled_manager.is_ok());
+    }
+
+    #[test]
+    fn test_type_creation() {
+        let context = Context::create();
+        let module = context.create_module("test_module");
+        let source_file = Path::new("test.csd");
+        
+        let mut generator = LlvmDebugGenerator::new(&context, &module, source_file, "Test").unwrap();
+        
+        let sus_type = generator.get_or_create_type("sus");
+        assert!(sus_type.is_ok());
+        
+        let facts_type = generator.get_or_create_type("facts");
+        assert!(facts_type.is_ok());
+        
+        let vibes_type = generator.get_or_create_type("vibes");
+        assert!(vibes_type.is_ok());
+        
+        let tea_type = generator.get_or_create_type("tea");
+        assert!(tea_type.is_ok());
+    }
+
+    #[test]
+    fn test_function_debug_integration() {
+        let context = Context::create();
+        let module = context.create_module("test_module");
+        let source_file = Path::new("test.csd");
+        
+        let mut manager = LlvmDebugManager::new(&context, &module, source_file, true).unwrap();
+        
+        let function_type = context.i32_type().fn_type(&[], false);
+        let function = module.add_function("test_function", function_type, None);
+        
+        let result = manager.setup_function_debug(function, "test_function", source_file, 10);
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn test_debug_location_creation() {
+        let context = Context::create();
+        let module = context.create_module("test_module");
+        let source_file = Path::new("test.csd");
+        
+        let mut manager = LlvmDebugManager::new(&context, &module, source_file, true).unwrap();
+        
+        let location = manager.create_expression_debug(42, 10, Some(source_file));
+        assert!(location.is_ok());
+    }
+
+    #[test]
+    fn test_debug_info_extraction() {
+        let context = Context::create();
+        let module = context.create_module("test_module");
+        let source_file = Path::new("test.csd");
+        
+        let generator = LlvmDebugGenerator::new(&context, &module, source_file, "Test").unwrap();
+        
+        let debug_info = generator.extract_debug_info(
+            "test_function",
+            42,
+            10,
+            source_file,
+        );
+        
+        assert_eq!(debug_info.function_name, "test_function");
+        assert_eq!(debug_info.line, 42);
+        assert_eq!(debug_info.column, 10);
+        assert!(debug_info.debug_metadata_id.is_some());
+    }
+}
