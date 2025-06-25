@@ -11,7 +11,6 @@ use crate::error::Error as CursedError;
 use crate::object::Object as CursedObject;
 use super::template_core::{TemplateConfig, TemplateContext, TemplateLoader};
 use super::template_syntax::{
-use crate::stdlib::web_vibez::SecurityContext;
     TemplateAst, TemplateNode, BlockNode, TemplateExpression, FilterCall, BinaryOperator, UnaryOperator
 };
 

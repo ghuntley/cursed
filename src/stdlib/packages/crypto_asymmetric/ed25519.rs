@@ -105,7 +105,7 @@ impl From<pkcs8::Error> for Ed25519Error {
     }
 }
 
-type Ed25519Result<(), Error>;
+type Ed25519Result<T> = Result<T, Error>;
 
 /// fr fr Ed25519 engine for cryptographic operations
 pub struct Ed25519Engine {

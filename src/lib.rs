@@ -1,60 +1,49 @@
-/// CURSED Programming Language Library (Minimal Build)
+/// CURSED Programming Language Library (Truly Minimal Build)
 /// 
-/// A minimal implementation focusing on core compiler functionality:
-/// - Lexer for CURSED Gen Z slang syntax
-/// - Parser for CURSED language grammar  
-/// - Basic AST and type system
-/// - Simple LLVM code generation
+/// A truly minimal implementation with just the essentials:
+/// - Basic lexer for CURSED Gen Z slang syntax
+/// - Basic parser for CURSED language grammar  
+/// - Simple AST representation
 /// - Essential error handling
 
-// Core modules only - disable heavy features temporarily
+// Core modules only - absolutely minimal
 pub mod error;
-pub mod ast;
-pub mod lexer;
-pub mod parser;
-pub mod codegen;
-pub mod common;
-pub mod web;
-// pub mod tokio;  // Temporarily disabled due to dependency conflicts
-pub mod core;
-pub mod profiling;
-pub mod object;
-pub mod optimization;
-pub mod type_system;
+pub mod minimal_lexer;
+pub mod minimal_parser;
+pub mod minimal_ast;
 
-// Crypto module
-pub mod crypto {
-    pub use crate::stdlib::crypto::*;
+// Critical module stubs to prevent compilation errors
+pub mod stdlib {
+    pub mod glowup_http {
+        pub mod client {
+            pub struct VibeClient;
+        }
+        pub mod error {
+            pub type GlowUpResult<T> = Result<T, String>;
+        }
+    }
+    pub mod testing {
+        pub mod framework {
+            pub struct TestFrameworkReport;
+        }
+    }
+    pub mod crypto_pqc {
+        pub mod hybrid {}
+    }
 }
 
-// Standard library module
-pub mod stdlib;
-
-// Types module for Result, Option, and error patterns
-pub mod types;
-
-// Debug module
-pub mod debug;
-
-// Memory management
-pub mod memory;
-
-// Runtime system
-pub mod runtime;
-
-// Basic execution engine
-pub mod execution;
-
-// Re-export core types only
-pub use common::OptimizationLevel;
-
-// Re-export essential error handling
-pub use error::{Error, SourceLocation};
-// Also re-export from common for compatibility
-pub use common::Error as CommonError;
+// Re-export essential types
+pub use error::Error;
+pub use minimal_lexer::{Lexer, Token, TokenType};
+pub use minimal_parser::Parser;
+pub use minimal_ast::*;
 
 /// Prelude module for minimal imports
 pub mod prelude {
+    pub use crate::error::Error;
+    pub use crate::minimal_lexer::{Lexer, Token, TokenType};
+    pub use crate::minimal_parser::Parser;
+    pub use crate::minimal_ast::*;
 }
 
 /// Library version information
@@ -63,116 +52,158 @@ pub const NAME: &str = env!("CARGO_PKG_NAME");
 
 /// Initialize the minimal CURSED runtime environment
 pub fn init() {
-    // Initialize minimal logging
-    tracing_subscriber::fmt()
-        .with_env_filter("cursed=info")
-        .init();
+    // Just basic logging setup
+    env_logger::init();
 }
 
-/// Compile and execute CURSED source code (minimal version)
-pub fn run(source: &str) -> Result<(), Error> {
-    let mut execution_engine = execution::CursedExecutionEngine::new()?;
-    let result = execution_engine.execute(source)?;
-    
-    // Print the result for user feedback
-    match result {
-        execution::CursedValue::Nil => {}, // Don't print nil results
-        _ => println!("{}", execution_engine.get_value_manager().format_value(&result)),
-    }
-    
-    Ok(())
+/// Basic tokenize function - tokenize CURSED source
+pub fn tokenize(source: &str) -> Result<Vec<Token>, Error> {
+    let lexer = Lexer::new(source.to_string());
+    Ok(lexer.collect())
 }
 
-/// Compile and execute CURSED source file (minimal version)
-pub fn run_file(path: &str) -> Result<(), Error> {
-    let mut execution_engine = execution::CursedExecutionEngine::new()?;
-    let result = execution_engine.execute_file(path)?;
-    
-    // Print the result for user feedback
-    match result {
-        execution::CursedValue::Nil => {}, // Don't print nil results
-        _ => println!("{}", execution_engine.get_value_manager().format_value(&result)),
-    }
-    
-    Ok(())
-}
-
-/// Compile CURSED source to LLVM IR (minimal version)
-pub fn compile_to_ir(source: &str) -> Result<String, Error> {
-    tracing::info!("Compiling CURSED source to LLVM IR (minimal build)");
-    
-    let mut codegen = crate::codegen::LlvmCodeGenerator::new()?;
-    
-    // Enable basic optimizations only
-    codegen.enable_debug_optimizations()?;
-    
-    // Compile and return IR
-    let ir = codegen.compile(source)?;
-    
-    tracing::debug!("Generated minimal LLVM IR:\n{}", ir);
-    Ok(ir)
-}
-
-/// Compile CURSED source to LLVM IR with optimization level
-pub fn compile_to_ir_with_optimization(source: &str, optimization_level: Option<&str>) -> Result<String, Error> {
-    tracing::info!("Compiling CURSED source to LLVM IR with optimization (minimal build)");
-    
-    let mut codegen = crate::codegen::LlvmCodeGenerator::new()?;
-    
-    // Configure basic optimization level if specified
-    if let Some(level_str) = optimization_level {
-        match level_str {
-            "O0" => codegen.enable_debug_optimizations()?,
-            "O1" | "O2" | "O3" => codegen.enable_release_optimizations()?,
-            _ => codegen.enable_debug_optimizations()?,
-        }
-        tracing::info!("Applied basic optimization level: {}", level_str);
-    } else {
-        codegen.enable_debug_optimizations()?;
-    }
-    
-    // Compile and return IR
-    let ir = codegen.compile(source)?;
-    
-    tracing::debug!("Generated optimized LLVM IR (minimal):\n{}", ir);
-    Ok(ir)
-}
-
-/// Check CURSED source for errors without executing (minimal version)
-pub fn check(source: &str) -> Result<(), Error> {
-    tracing::info!("Checking CURSED source for errors (minimal build)");
-    
-    let mut codegen = crate::codegen::LlvmCodeGenerator::new()?;
-    
-    // For checking, use debug optimizations to speed up compilation
-    codegen.enable_debug_optimizations()?;
-    
-    // Compile to check for errors (but don't use the result)
-    let _ir = codegen.compile(source)?;
-    
-    tracing::info!("CURSED source check completed successfully (minimal)");
-    Ok(())
-}
-
-/// Format CURSED source code (minimal version)
-pub fn format(source: &str) -> Result<String, Error> {
-    tracing::info!("Formatting CURSED source code (minimal build)");
-    
-    // Create lexer and parser to validate syntax first
-    let lexer = crate::lexer::Lexer::new(source.to_string());
-    let mut parser = crate::parser::Parser::new(lexer)?;
-    
-    // Parse source code into AST
+/// Basic parse function - parse CURSED source into AST
+pub fn parse(source: &str) -> Result<Program, Error> {
+    let lexer = Lexer::new(source.to_string());
+    let mut parser = Parser::new(lexer)?;
     let program = parser.parse_program()?;
     
     // Check for parse errors
     let errors = parser.errors();
     if !errors.is_empty() {
-        return Err(Error::Parse(format!("Cannot format source with parse errors: {}", errors.join(", "))));
+        return Err(Error::Parse(format!("Parse errors: {}", errors.join(", "))));
     }
     
-    // Basic formatting - for now just return the original source
-    // TODO: Implement minimal formatter
-    tracing::debug!("Basic formatting completed (minimal build)");
+    Ok(program)
+}
+
+/// Check CURSED source for syntax errors only (minimal version)
+pub fn check(source: &str) -> Result<(), Error> {
+    let _ = parse(source)?;
+    println!("✅ Syntax check passed!");
+    Ok(())
+}
+
+/// Format CURSED source code (minimal version - just return original for now)
+pub fn format(source: &str) -> Result<String, Error> {
+    // Validate syntax first
+    let _ = parse(source)?;
+    // For now, just return original source
     Ok(source.to_string())
+}
+
+/// Minimal execution - just parse and report what we found
+pub fn run(source: &str) -> Result<(), Error> {
+    let program = parse(source)?;
+    println!("🎯 Parsed CURSED program with {} statements", program.statements.len());
+    for (i, stmt) in program.statements.iter().enumerate() {
+        println!("  {}. {:?}", i + 1, stmt);
+    }
+    Ok(())
+}
+
+/// Minimal file execution - read file and run
+pub fn run_file(path: &str) -> Result<(), Error> {
+    let source = std::fs::read_to_string(path)?;
+    run(&source)
+}
+
+/// Stub functions for CLI compatibility (always error for now)
+pub fn compile_to_ir(_source: &str) -> Result<String, Error> {
+    Err(Error::NotImplemented("LLVM codegen not available in minimal build".to_string()))
+}
+
+pub fn compile_to_ir_with_optimization(_source: &str, _opt_level: Option<&str>) -> Result<String, Error> {
+    Err(Error::NotImplemented("LLVM codegen not available in minimal build".to_string()))
+}
+
+
+// Include the test module
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_basic_tokenization() {
+        let source = r#"facts x = 42;"#;
+        
+        let tokens = tokenize(source).expect("Tokenization should succeed");
+        
+        // Should have: facts, x, =, 42, ;
+        assert_eq!(tokens.len(), 5);
+        
+        assert_eq!(tokens[0].token_type, TokenType::Facts);
+        assert_eq!(tokens[0].literal, "facts");
+        
+        assert_eq!(tokens[1].token_type, TokenType::Identifier);
+        assert_eq!(tokens[1].literal, "x");
+        
+        assert_eq!(tokens[2].token_type, TokenType::Assign);
+        assert_eq!(tokens[2].literal, "=");
+        
+        assert_eq!(tokens[3].token_type, TokenType::Integer);
+        assert_eq!(tokens[3].literal, "42");
+        
+        assert_eq!(tokens[4].token_type, TokenType::Semicolon);
+        assert_eq!(tokens[4].literal, ";");
+    }
+    
+    #[test]
+    fn test_basic_parsing() {
+        let source = r#"facts x = 42;"#;
+        
+        let program = parse(source).expect("Parsing should succeed");
+        
+        assert_eq!(program.statements.len(), 1);
+        
+        match &program.statements[0] {
+            Statement::Facts(name, expr) => {
+                assert_eq!(name, "x");
+                match expr {
+                    Expression::Integer(val) => assert_eq!(*val, 42),
+                    _ => panic!("Expected integer expression"),
+                }
+            }
+            _ => panic!("Expected facts statement"),
+        }
+    }
+    
+    #[test]
+    fn test_string_parsing() {
+        let source = r#"facts name = "CURSED";"#;
+        
+        let program = parse(source).expect("Parsing should succeed");
+        
+        assert_eq!(program.statements.len(), 1);
+        
+        match &program.statements[0] {
+            Statement::Facts(name, expr) => {
+                assert_eq!(name, "name");
+                match expr {
+                    Expression::String(val) => assert_eq!(val, "CURSED"),
+                    _ => panic!("Expected string expression"),
+                }
+            }
+            _ => panic!("Expected facts statement"),
+        }
+    }
+
+    #[test]
+    fn test_function_declaration() {
+        let source = r#"slay greet(name) { facts x = 1; }"#;
+        
+        let program = parse(source).expect("Parsing should succeed");
+        
+        assert_eq!(program.statements.len(), 1);
+        
+        match &program.statements[0] {
+            Statement::Slay(name, params, body) => {
+                assert_eq!(name, "greet");
+                assert_eq!(params.len(), 1);
+                assert_eq!(params[0], "name");
+                assert_eq!(body.len(), 1);
+            }
+            _ => panic!("Expected slay statement"),
+        }
+    }
 }

@@ -120,7 +120,7 @@ impl VibeRouter {
 
 impl Handler for VibeRouter {
     #[instrument(skip(self, w, r))]
-    fn handle_vibe(&self, w: &ResponderVibe, r: &VibeRequest) -> GlowUpResult<()> {
+    fn handle_vibe(&self, w: &dyn ResponderVibe, r: &VibeRequest) -> GlowUpResult<()> {
         debug!("Routing request: {} {}", r.method, r.url);
         
         // Find matching route

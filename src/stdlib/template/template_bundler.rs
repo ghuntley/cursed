@@ -213,7 +213,7 @@ impl DependencyAnalyzer {
     
     /// Analyze dependencies for a template
     #[instrument(skip(self, ast))]
-    pub fn analyze_dependencies(&mut self, template_name: &str, ast: &TemplateAst) -> Result<(), Error> {
+    pub fn analyze_dependencies(&mut self, template_name: &str, ast: &TemplateAst) -> Result<HashSet<String>, Error> {
         let mut deps = HashSet::new();
         self.analyze_nodes(&ast.nodes, &mut deps)?;
         self.dependencies.insert(template_name.to_string(), deps.clone());
@@ -294,7 +294,7 @@ impl DependencyAnalyzer {
     }
     
     /// Get all dependencies for a template (recursive)
-    pub fn get_all_dependencies(&self, template_name: &str) -> HashSet<String> {
+    pub fn get_all_dependencies(&self, template_name: &str) -> Vec<String> {
         let mut all_deps = HashSet::new();
         let mut to_process = VecDeque::new();
         to_process.push_back(template_name.to_string());
@@ -309,11 +309,11 @@ impl DependencyAnalyzer {
             }
         }
         
-        all_deps
+        all_deps.into_iter().collect()
     }
     
     /// Detect circular dependencies
-    pub fn detect_circular_dependencies(&self) -> Result<(), Error> {
+    pub fn detect_circular_dependencies(&self) -> Result<Vec<String>, Error> {
         let mut cycles = Vec::new();
         let mut visited = HashSet::new();
         let mut rec_stack = HashSet::new();
@@ -405,7 +405,7 @@ impl TemplateBundler {
     
     /// Create a bundle from a list of template names
     #[instrument(skip(self, template_names))]
-    pub async fn create_bundle(&mut self, template_names: &[String], bundle_id: &str) -> Result<(), Error> {
+    pub async fn create_bundle(&mut self, template_names: &[String], bundle_id: &str) -> Result<TemplateBundle, Error> {
         let start_time = Instant::now();
         info!(bundle_id = bundle_id, template_count = template_names.len(), "Creating template bundle");
         
@@ -554,7 +554,7 @@ impl TemplateBundler {
     }
     
     /// Parse template source into AST
-    fn parse_template(&self, source: &str) -> Result<(), Error> {
+    fn parse_template(&self, source: &str) -> Result<TemplateAst, Error> {
         use super::template_syntax::{TemplateLexer, TemplateParser};
         use super::template_core::TemplateDelimiters;
         
@@ -570,8 +570,31 @@ impl TemplateBundler {
         parser.parse()
     }
     
+    /// Calculate bundle checksum
+    fn calculate_checksum(&self, entries: &HashMap<String, BundleEntry>) -> Result<String, Error> {
+        use std::collections::hash_map::DefaultHasher;
+        use std::hash::{Hash, Hasher};
+        
+        let mut hasher = DefaultHasher::new();
+        for (name, entry) in entries {
+            name.hash(&mut hasher);
+            entry.content.hash(&mut hasher);
+        }
+        Ok(format!("{:x}", hasher.finish()))
+    }
+    
+    /// Create bundle manifest
+    fn create_bundle_manifest(&self, entries: &HashMap<String, BundleEntry>, metadata: &BundleMetadata) -> Result<BundleManifest, Error> {
+        Ok(BundleManifest {
+            version: metadata.version.clone(),
+            created_at: metadata.created_at,
+            templates: entries.keys().cloned().collect(),
+            checksum: metadata.checksum.clone(),
+        })
+    }
+    
     /// Generate bundle version based on versioning strategy
-    fn generate_version(&self, templates: &HashSet<String>) -> Result<(), Error> {
+    fn generate_version(&self, templates: &HashSet<String>) -> Result<String, Error> {
         match &self.config.versioning_strategy {
             VersioningStrategy::None => Ok("1.0.0".to_string()),
             VersioningStrategy::Timestamp => {
@@ -745,10 +768,12 @@ pub enum OptimizerType {
     Compression,
 }
 
+
+
 /// Template optimizer trait
 pub trait TemplateOptimizer: Send + Sync {
     /// Optimize template content and AST
-    fn optimize(&self, content: &mut String, ast: &mut TemplateAst) -> Result<(), Error>;
+    fn optimize(&self, content: &mut String, ast: &mut TemplateAst) -> Result<OptimizationResult, Error>;
     
     /// Get optimizer type
     fn optimizer_type(&self) -> OptimizerType;

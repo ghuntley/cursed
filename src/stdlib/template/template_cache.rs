@@ -330,7 +330,7 @@ impl TemplateCache {
         // Check if file has been modified before returning cached entry
         if self.is_file_modified(key).await {
             debug!(key = key, "Template file has been modified, invalidating cache");
-            self.invalidate(key).await;
+            self.invalidate_template(key).await;
             return None;
         }
         
@@ -553,7 +553,7 @@ impl TemplateCache {
         }
     }
 
-    async fn compress_entry_type(&self, entry_type: CacheEntryType) -> Result<(), Error> {
+    async fn compress_entry_type(&self, entry_type: CacheEntryType) -> Result<CacheEntryType, Error> {
         // Simplified compression - in a real implementation, you'd use actual compression
         match entry_type {
             CacheEntryType::RenderedOutput(output) => {
@@ -777,7 +777,7 @@ impl TemplateCache {
             if let Some(level_config) = self.config.level_configs.get(&level) {
                 if let Some(ttl) = level_config.ttl {
                     let now = Instant::now();
-                    let mut expired_keys = Vec::new();
+                    let mut expired_keys: Vec<String> = Vec::new();
 
                     {
                         let entries = self.entries.read().await;
@@ -895,8 +895,8 @@ impl TemplateCache {
                                 debug!("Template '{}' has been modified, invalidating cache", template_name);
                                 
                                 // Remove from cache
-                                if let Ok(mut cache) = self.cache.write() {
-                                    cache.remove(template_name);
+                                if let Ok(mut entries) = self.entries.write() {
+                                    entries.remove(template_name);
                                 }
                                 
                                 // Update timestamp in watcher
@@ -913,8 +913,8 @@ impl TemplateCache {
                     Err(e) => {
                         warn!("Failed to check metadata for template '{}': {}", template_name, e);
                         // If file doesn't exist, remove from cache and watchers
-                        if let Ok(mut cache) = self.cache.write() {
-                            cache.remove(template_name);
+                        if let Ok(mut entries) = self.entries.write() {
+                            entries.remove(template_name);
                         }
                         drop(watchers);
                         if let Ok(mut watchers_mut) = self.file_watchers.write() {
@@ -956,7 +956,7 @@ impl TemplateCache {
     }
 
     /// Invalidate a cached template entry
-    async fn invalidate(&self, template_name: &str) {
+    async fn invalidate_template(&self, template_name: &str) {
         // Remove from cache
         let mut entries = self.entries.write().await;
         entries.remove(template_name);

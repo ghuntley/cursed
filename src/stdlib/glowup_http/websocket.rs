@@ -39,7 +39,7 @@ impl WebSocketUpgrader {
     
     /// Upgrade HTTP connection to WebSocket
     #[instrument(skip(self, w, r))]
-    pub fn upgrade(&self, w: &ResponderVibe, r: &VibeRequest) -> GlowUpResult<WebSocketConn> {
+    pub fn upgrade(&self, w: &dyn ResponderVibe, r: &VibeRequest) -> GlowUpResult<WebSocketConn> {
         debug!("Attempting WebSocket upgrade for {}", r.url);
         
         // Check for required headers

@@ -22,7 +22,7 @@ pub type HandlerFunc = Arc<dyn Fn(&ResponderVibe, &VibeRequest) -> GlowUpResult<
 /// Adapter to use functions as handlers
 impl Handler for HandlerFunc {
     #[instrument(skip(self, w, r))]
-    fn handle_vibe(&self, w: &ResponderVibe, r: &VibeRequest) -> GlowUpResult<()> {
+    fn handle_vibe(&self, w: &dyn ResponderVibe, r: &VibeRequest) -> GlowUpResult<()> {
         debug!("Executing handler function for {} {}", r.method, r.url);
         self(w, r)
     }
@@ -30,14 +30,14 @@ impl Handler for HandlerFunc {
 
 /// Box wrapper for handlers
 impl Handler for Box<dyn Handler> {
-    fn handle_vibe(&self, w: &ResponderVibe, r: &VibeRequest) -> GlowUpResult<()> {
+    fn handle_vibe(&self, w: &dyn ResponderVibe, r: &VibeRequest) -> GlowUpResult<()> {
         (**self).handle_vibe(w, r)
     }
 }
 
 /// Arc wrapper for handlers
 impl Handler for Arc<dyn Handler> {
-    fn handle_vibe(&self, w: &ResponderVibe, r: &VibeRequest) -> GlowUpResult<()> {
+    fn handle_vibe(&self, w: &dyn ResponderVibe, r: &VibeRequest) -> GlowUpResult<()> {
         (**self).handle_vibe(w, r)
     }
 }
@@ -72,7 +72,7 @@ impl StaticHandler {
 
 impl Handler for StaticHandler {
     #[instrument(skip(self, w, r))]
-    fn handle_vibe(&self, w: &ResponderVibe, r: &VibeRequest) -> GlowUpResult<()> {
+    fn handle_vibe(&self, w: &dyn ResponderVibe, r: &VibeRequest) -> GlowUpResult<()> {
         debug!("Serving static content for {} {}", r.method, r.url);
         
         // Set content type
@@ -109,7 +109,7 @@ impl FileHandler {
 
 impl Handler for FileHandler {
     #[instrument(skip(self, w, r))]
-    fn handle_vibe(&self, w: &ResponderVibe, r: &VibeRequest) -> GlowUpResult<()> {
+    fn handle_vibe(&self, w: &dyn ResponderVibe, r: &VibeRequest) -> GlowUpResult<()> {
         use std::path::{Path, PathBuf};
         use std::fs;
         use crate::web::StatusCode;
@@ -239,7 +239,7 @@ impl RedirectHandler {
 
 impl Handler for RedirectHandler {
     #[instrument(skip(self, w, r))]
-    fn handle_vibe(&self, w: &ResponderVibe, r: &VibeRequest) -> GlowUpResult<()> {
+    fn handle_vibe(&self, w: &dyn ResponderVibe, r: &VibeRequest) -> GlowUpResult<()> {
         use crate::web::StatusCode;
         
         debug!("Redirecting {} {} to {}", r.method, r.url, self.url);
@@ -258,7 +258,7 @@ impl Handler for RedirectHandler {
 /// Helper function to create a handler from a closure
 pub fn handler_func<F>(f: F) -> HandlerFunc
 where
-    F: Fn(&ResponderVibe, &VibeRequest) -> GlowUpResult<()> + Send + Sync + 'static,
+    F: Fn(&dyn ResponderVibe, &VibeRequest) -> GlowUpResult<()> + Send + Sync + 'static,
 {
     Arc::new(f)
 }

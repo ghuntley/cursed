@@ -19,6 +19,35 @@ pub enum OptimizationPreset {
     Release,
 }
 
+/// Optimization level
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum OptimizationLevel {
+    None,
+    Less,
+    Default,
+    Aggressive,
+}
+
+/// Optimization configuration
+#[derive(Debug, Clone)]
+pub struct OptConfig {
+    pub level: OptimizationLevel,
+    pub preset: OptimizationPreset,
+    pub enable_vectorization: bool,
+    pub enable_inlining: bool,
+}
+
+impl Default for OptConfig {
+    fn default() -> Self {
+        Self {
+            level: OptimizationLevel::None,
+            preset: OptimizationPreset::Development,
+            enable_vectorization: false,
+            enable_inlining: false,
+        }
+    }
+}
+
 // Add inkwell imports for real LLVM compilation
 use inkwell::{
     context::Context,

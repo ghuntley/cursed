@@ -190,7 +190,7 @@ impl From<X25519Error> for KeyGeneratorError {
     }
 }
 
-type KeyGeneratorResult<(), Error>;
+type KeyGeneratorResult<T> = Result<T, Error>;
 
 /// fr fr Unified key generator for all asymmetric algorithms
 /// 

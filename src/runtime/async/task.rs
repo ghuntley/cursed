@@ -251,6 +251,7 @@ struct TaskHandleState<T> {
     result: Option<Result<(), Error>>,
     wakers: Vec<Waker>,
     completed: bool,
+    _phantom: std::marker::PhantomData<T>,
 }
 
 impl<T> TaskHandle<T> {
@@ -259,6 +260,7 @@ impl<T> TaskHandle<T> {
             result: None,
             wakers: Vec::new(),
             completed: false,
+            _phantom: std::marker::PhantomData,
         }));
 
         let cancelled = Arc::new(AtomicBool::new(false));
