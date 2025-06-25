@@ -1,4 +1,3 @@
-/// Code generation modules
-pub mod llvm;
+pub mod minimal;
 
-pub use llvm::LlvmCodeGenerator;
+pub use minimal::*;
