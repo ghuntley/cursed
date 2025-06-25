@@ -1,5 +1,4 @@
-/// Minimal lexer for CURSED - just enough to tokenize basic programs
-
+//! Minimal lexer for CURSED - just enough to tokenize basic programs
 use crate::error::Error;
 
 #[derive(Debug, Clone, PartialEq)]

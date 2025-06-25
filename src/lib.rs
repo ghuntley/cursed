@@ -1,11 +1,10 @@
 /// CURSED Programming Language Library (Truly Minimal Build)
-/// 
+///
 /// A truly minimal implementation with just the essentials:
 /// - Basic lexer for CURSED Gen Z slang syntax
-/// - Basic parser for CURSED language grammar  
+/// - Basic parser for CURSED language grammar
 /// - Simple AST representation
 /// - Essential error handling
-
 // Core modules only - absolutely minimal
 pub mod error;
 pub mod minimal_lexer;
