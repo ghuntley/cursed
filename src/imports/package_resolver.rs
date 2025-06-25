@@ -5,7 +5,7 @@ use std::collections::HashMap;
 use std::path::PathBuf;
 use std::sync::{Arc, Mutex};
 
-use crate::package_manager::{PackageManager, PackageMetadata};
+// use crate::package_manager::{PackageManager, PackageMetadata};
 use super::{ImportError, ResolvedImport, ImportSource};
 
 /// Package-specific import resolution

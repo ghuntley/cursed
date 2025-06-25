@@ -1,4 +1,4 @@
-use crate::types::SecurityContext;
+
 use crate::error::Error;
 /// Template Renderer - Executes template AST and generates output
 use std::collections::HashMap;

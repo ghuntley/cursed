@@ -17,6 +17,7 @@ use std::sync::{Arc, Mutex, RwLock};
 use tracing::{instrument, debug, warn, error};
 
 use crate::memory::metadata::ObjectHeader;
+use crate::error_types::Error;
 
 /// Common interface for all memory allocators
 /// 

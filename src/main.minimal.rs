@@ -1,4 +1,4 @@
-use crate::error::Error;
+use crate::error_types::Error;
 #!/usr/bin/env rust
 // CURSED Programming Language CLI (Minimal Build)
 // 

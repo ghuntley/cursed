@@ -1,4 +1,40 @@
 use crate::error::Error;
+
+// Placeholder macros for logging when log crate is not available
+macro_rules! trace {
+    ($($arg:tt)*) => {
+        #[cfg(feature = "logging")]
+        log::trace!($($arg)*);
+    };
+}
+
+macro_rules! debug {
+    ($($arg:tt)*) => {
+        #[cfg(feature = "logging")]
+        log::debug!($($arg)*);
+    };
+}
+
+macro_rules! info {
+    ($($arg:tt)*) => {
+        #[cfg(feature = "logging")]
+        log::info!($($arg)*);
+    };
+}
+
+macro_rules! warn {
+    ($($arg:tt)*) => {
+        #[cfg(feature = "logging")]
+        log::warn!($($arg)*);
+    };
+}
+
+macro_rules! error {
+    ($($arg:tt)*) => {
+        #[cfg(feature = "logging")]
+        log::error!($($arg)*);
+    };
+}
 /// Channel selection and multiplexing for CURSED channels
 /// Provides Go-like select statement functionality for non-blocking operations on multiple channels
 

@@ -3,7 +3,7 @@
 /// Provides panic catching, recovery scopes, and panic-to-error conversion
 /// utilities for handling recoverable errors in CURSED programs.
 
-use crate::error::{Error as CursedError, SourceLocation};
+use crate::error_types::Error;
 use crate::runtime::panic::{
     PanicRuntime, CursedPanicInfo, PanicSeverity, PanicCategory, RecoveryAction,
     get_panic_runtime
@@ -171,7 +171,7 @@ impl RecoveryManager {
         scope.activate();
 
         let mut scopes = self.scopes.lock()
-            .map_err(|_| CursedError::Runtime("Failed to acquire recovery scopes lock".to_string()))?;
+            .map_err(|_| Error::Runtime("Failed to acquire recovery scopes lock".to_string()))?;
         
         let thread_scopes = scopes.entry(thread_id).or_insert_with(Vec::new);
         
@@ -187,7 +187,7 @@ impl RecoveryManager {
         let thread_id = thread::current().id();
         
         let mut scopes = self.scopes.lock()
-            .map_err(|_| CursedError::Runtime("Failed to acquire recovery scopes lock".to_string()))?;
+            .map_err(|_| Error::Runtime("Failed to acquire recovery scopes lock".to_string()))?;
         
         if let Some(thread_scopes) = scopes.get_mut(&thread_id) {
             if let Some(mut scope) = thread_scopes.pop() {
@@ -204,7 +204,7 @@ impl RecoveryManager {
         let thread_id = thread::current().id();
         
         let scopes = self.scopes.lock()
-            .map_err(|_| CursedError::Runtime("Failed to acquire recovery scopes lock".to_string()))?;
+            .map_err(|_| Error::Runtime("Failed to acquire recovery scopes lock".to_string()))?;
         
         if let Some(thread_scopes) = scopes.get(&thread_id) {
             Ok(thread_scopes.last().cloned())
@@ -231,7 +231,7 @@ impl RecoveryManager {
     pub fn get_statistics(&self) -> Result<(), Error> {
         self.stats.read()
             .map(|stats| stats.clone())
-            .map_err(|_| CursedError::Runtime("Failed to access recovery statistics".to_string()))
+            .map_err(|_| Error::Runtime("Failed to access recovery statistics".to_string()))
     }
 
     /// Update recovery statistics
@@ -240,7 +240,7 @@ impl RecoveryManager {
         F: FnOnce(&mut RecoveryStatistics),
     {
         let mut stats = self.stats.write()
-            .map_err(|_| CursedError::Runtime("Failed to acquire recovery statistics lock".to_string()))?;
+            .map_err(|_| Error::Runtime("Failed to acquire recovery statistics lock".to_string()))?;
         
         updater(&mut *stats);
         Ok(())
@@ -261,7 +261,7 @@ pub fn initialize_recovery_manager() -> Result<(), Error> {
     let manager = Arc::new(RecoveryManager::new());
     
     RECOVERY_MANAGER.set(manager)
-        .map_err(|_| CursedError::Runtime("Failed to initialize recovery manager".to_string()))?;
+        .map_err(|_| Error::Runtime("Failed to initialize recovery manager".to_string()))?;
     
     Ok(())
 }
@@ -307,7 +307,7 @@ where
             Ok(value) => Ok(value),
             Err(panic_payload) => {
                 let message = extract_panic_message(&panic_payload);
-                Err(CursedError::Recovery {
+                Err(Error::Recovery {
                     message: format!("Panic caught: {}", message),
                     recovery_attempts: 1,
                     source_location: None,
@@ -359,8 +359,8 @@ fn extract_panic_message(panic_payload: &Box<dyn Any + Send>) -> String {
 }
 
 /// Convert panic to error
-pub fn panic_to_error(panic_info: &CursedPanicInfo) -> CursedError {
-    CursedError::Panic {
+pub fn panic_to_error(panic_info: &CursedPanicInfo) -> Error {
+    Error::Panic {
         message: panic_info.message.clone(),
         panic_id: Some(panic_info.panic_id),
         recoverable: panic_info.severity != PanicSeverity::Fatal,
@@ -369,12 +369,12 @@ pub fn panic_to_error(panic_info: &CursedPanicInfo) -> CursedError {
 }
 
 /// Convert error to recovery action
-pub fn error_to_recovery_action(error: CursedError) -> RecoveryAction {
+pub fn error_to_recovery_action(error: Error) -> RecoveryAction {
     match error {
-        CursedError::Panic { recoverable: true, .. } => {
+        Error::Panic { recoverable: true, .. } => {
             RecoveryAction::Continue(error)
         }
-        CursedError::Panic { recoverable: false, .. } => {
+        Error::Panic { recoverable: false, .. } => {
             RecoveryAction::TerminateGoroutine
         }
         _ => RecoveryAction::Continue(error),
@@ -382,14 +382,14 @@ pub fn error_to_recovery_action(error: CursedError) -> RecoveryAction {
 }
 
 /// Check if an error is recoverable
-pub fn is_recoverable_error(error: &CursedError) -> bool {
+pub fn is_recoverable_error(error: &Error) -> bool {
     match error {
-        CursedError::Panic { recoverable, .. } => *recoverable,
-        CursedError::Recovery { .. } => true,
-        CursedError::Runtime(_) => true,
-        CursedError::Parse(_) => false,
-        CursedError::Compile(_) => false,
-        CursedError::Io(_) => true,
+        Error::Panic { recoverable, .. } => *recoverable,
+        Error::Recovery { .. } => true,
+        Error::Runtime(_) => true,
+        Error::Parse(_) => false,
+        Error::Compile(_) => false,
+        Error::Io(_) => true,
         _ => false,
     }
 }
@@ -601,7 +601,7 @@ mod tests {
         });
         
         assert!(result.is_err());
-        if let Err(CursedError::Recovery { message, .. }) = result {
+        if let Err(Error::Recovery { message, .. }) = result {
             assert!(message.contains("Test panic"));
         }
     }
@@ -625,7 +625,7 @@ mod tests {
         
         let error = panic_to_error(&panic_info);
         
-        if let CursedError::Panic { message, recoverable, .. } = error {
+        if let Error::Panic { message, recoverable, .. } = error {
             assert_eq!(message, "Test panic");
             assert!(recoverable);
         } else {
@@ -635,14 +635,14 @@ mod tests {
 
     #[test]
     fn test_error_recoverability() {
-        let recoverable_error = CursedError::Panic {
+        let recoverable_error = Error::Panic {
             message: "Recoverable".to_string(),
             panic_id: Some(1),
             recoverable: true,
             source_location: None,
         };
         
-        let unrecoverable_error = CursedError::Panic {
+        let unrecoverable_error = Error::Panic {
             message: "Fatal".to_string(),
             panic_id: Some(2),
             recoverable: false,
@@ -652,16 +652,16 @@ mod tests {
         assert!(is_recoverable_error(&recoverable_error));
         assert!(!is_recoverable_error(&unrecoverable_error));
         
-        let compile_error = CursedError::Compile("Compile error".to_string());
+        let compile_error = Error::Compile("Compile error".to_string());
         assert!(!is_recoverable_error(&compile_error));
         
-        let runtime_error = CursedError::Runtime("Runtime error".to_string());
+        let runtime_error = Error::Runtime("Runtime error".to_string());
         assert!(is_recoverable_error(&runtime_error));
     }
 
     #[test]
     fn test_error_to_recovery_action() {
-        let recoverable_panic = CursedError::Panic {
+        let recoverable_panic = Error::Panic {
             message: "Recoverable".to_string(),
             panic_id: Some(1),
             recoverable: true,
@@ -674,7 +674,7 @@ mod tests {
             _ => panic!("Wrong recovery action"),
         }
         
-        let fatal_panic = CursedError::Panic {
+        let fatal_panic = Error::Panic {
             message: "Fatal".to_string(),
             panic_id: Some(2),
             recoverable: false,

@@ -1105,7 +1105,7 @@ mod tests {
     use super::*;
     use std::sync::Arc;
     use tracing_test::traced_test;
-use crate::error::Error;
+use crate::error_types::Error;
 
     #[derive(Debug, Clone)]
     struct TestUser {

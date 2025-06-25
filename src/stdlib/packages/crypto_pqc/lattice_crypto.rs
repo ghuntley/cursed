@@ -10,6 +10,45 @@ use crate::error::Error;
 use std::collections::HashMap;
 use std::fmt;
 
+/// Result type for lattice operations
+pub type LatticeResult<T> = Result<T, LatticeError>;
+
+/// Lattice cryptography errors
+#[derive(Debug, Clone)]
+pub enum LatticeError {
+    InvalidConfig(String),
+    InvalidDimension(String),
+    InvalidDimensions(String),
+    InvalidModulus(String),
+    KeyGenerationFailed(String),
+    EncryptionFailed(String),
+    DecryptionFailed(String),
+    InvalidInput(String),
+    ComputationError(String),
+    SamplingError(String),
+    Internal(String),
+}
+
+impl fmt::Display for LatticeError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            LatticeError::InvalidConfig(msg) => write!(f, "Invalid configuration: {}", msg),
+            LatticeError::InvalidDimension(msg) => write!(f, "Invalid dimension: {}", msg),
+            LatticeError::InvalidDimensions(msg) => write!(f, "Invalid dimensions: {}", msg),
+            LatticeError::InvalidModulus(msg) => write!(f, "Invalid modulus: {}", msg),
+            LatticeError::KeyGenerationFailed(msg) => write!(f, "Key generation failed: {}", msg),
+            LatticeError::EncryptionFailed(msg) => write!(f, "Encryption failed: {}", msg),
+            LatticeError::DecryptionFailed(msg) => write!(f, "Decryption failed: {}", msg),
+            LatticeError::InvalidInput(msg) => write!(f, "Invalid input: {}", msg),
+            LatticeError::ComputationError(msg) => write!(f, "Computation error: {}", msg),
+            LatticeError::SamplingError(msg) => write!(f, "Sampling error: {}", msg),
+            LatticeError::Internal(msg) => write!(f, "Internal error: {}", msg),
+        }
+    }
+}
+
+impl std::error::Error for LatticeError {}
+
 /// fr fr Lattice cryptography configuration
 #[derive(Debug, Clone)]
 pub struct LatticeConfig {
@@ -50,7 +89,7 @@ impl LatticeConfig {
     }
     
     /// vibes Validate lattice configuration
-    pub fn validate(&self) -> Result<(), Error> {
+    pub fn validate(&self) -> Result<(), LatticeError> {
         if self.dimension < 256 {
             return Err(LatticeError::InvalidConfig("Dimension must be at least 256 for security".to_string()));
         }
@@ -451,27 +490,7 @@ impl LatticeRng for SecureRng {
     }
 }
 
-/// fr fr Lattice cryptography errors
-#[derive(Debug, Clone)]
-pub enum LatticeError {
-    InvalidConfig(String),
-    InvalidDimensions(String),
-    ComputationError(String),
-    SamplingError(String),
-}
 
-impl fmt::Display for LatticeError {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
-            LatticeError::InvalidConfig(msg) => write!(f, "Lattice configuration error: {}", msg),
-            LatticeError::InvalidDimensions(msg) => write!(f, "Lattice dimension error: {}", msg),
-            LatticeError::ComputationError(msg) => write!(f, "Lattice computation error: {}", msg),
-            LatticeError::SamplingError(msg) => write!(f, "Lattice sampling error: {}", msg),
-        }
-    }
-}
-
-impl std::error::Error for LatticeError {}
 
 impl From<LatticeError> for CursedError {
     fn from(err: LatticeError) -> Self {

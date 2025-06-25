@@ -1,4 +1,4 @@
-use crate::error::Error;
+use crate::error_types::Error;
 // Main CURSED REPL Implementation
 // 
 // Provides the core interactive Read-Eval-Print Loop functionality
@@ -18,7 +18,7 @@ use crate::repl::{
     MultiLineEditor, BuildIntegration, ReplEvaluator
 };
 
-use crate::error::CursedError;
+use crate::error::Error;
 
 /// Main CURSED REPL structure
 pub struct CursedRepl {
@@ -99,7 +99,7 @@ impl CursedRepl {
     pub fn with_working_directory(mut self, dir: &str) -> ReplResult<Self> {
         let path = PathBuf::from(dir);
         if !path.exists() {
-            return Err(CursedError::repl_error(format!("Directory does not exist: {}", dir)));
+            return Err(Error::repl_error(format!("Directory does not exist: {}", dir)));
         }
         
         self.config.working_directory = Some(path.clone());
@@ -110,7 +110,7 @@ impl CursedRepl {
     /// Load and execute a CURSED file
     pub fn load_file(&mut self, file_path: &str) -> ReplResult<()> {
         let content = std::fs::read_to_string(file_path)
-            .map_err(|e| CursedError::repl_error(format!("Failed to read file {}: {}", file_path, e)))?;
+            .map_err(|e| Error::repl_error(format!("Failed to read file {}: {}", file_path, e)))?;
 
         if self.config.verbose {
             println!("📁 Loading file: {}", file_path);
@@ -230,7 +230,7 @@ impl CursedRepl {
                 self.state = ReplState::Exiting;
             }
             Err(err) => {
-                return Err(CursedError::repl_error(format!("Input error: {}", err)));
+                return Err(Error::repl_error(format!("Input error: {}", err)));
             }
         }
 

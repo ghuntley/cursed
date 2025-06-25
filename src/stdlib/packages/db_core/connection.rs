@@ -4,8 +4,10 @@
 /// and connection lifecycle. Because proper connection management is crucial bestie!
 
 use crate::stdlib::packages::db_core::{
-    DatabaseError, ErrorKind, ConnectionError,
     TransactionIsolation
+};
+use crate::stdlib::packages::db_core::error::{
+    DatabaseError, ErrorKind, ConnectionError
 };
 use crate::error::Error;
 use crate::stdlib::packages::db_core::error::{DatabaseResult as DbResult};

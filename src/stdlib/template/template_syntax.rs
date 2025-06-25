@@ -378,7 +378,7 @@ impl<'a> TemplateLexer<'a> {
     }
 
     #[instrument(skip(self))]
-    pub fn tokenize(&mut self) -> Result<(), Error> {
+    pub fn tokenize(&mut self) -> Result<(), CursedError> {
         debug!(input_length = self.input.len(), "Starting template tokenization");
         let mut tokens = Vec::new();
 
@@ -396,7 +396,7 @@ impl<'a> TemplateLexer<'a> {
         Ok(tokens)
     }
 
-    fn tokenize_text(&mut self, tokens: &mut Vec<TemplateToken>) -> Result<(), Error> {
+    fn tokenize_text(&mut self, tokens: &mut Vec<TemplateToken>) -> Result<(), CursedError> {
         let start = self.position;
 
         while !self.is_at_end() {
@@ -433,7 +433,7 @@ impl<'a> TemplateLexer<'a> {
         Ok(())
     }
 
-    fn tokenize_variable(&mut self, tokens: &mut Vec<TemplateToken>) -> Result<(), Error> {
+    fn tokenize_variable(&mut self, tokens: &mut Vec<TemplateToken>) -> Result<(), CursedError> {
         self.skip_whitespace();
 
         if self.check_delimiter(&self.delimiters.variable.1) {
@@ -521,7 +521,7 @@ impl<'a> TemplateLexer<'a> {
         Ok(())
     }
 
-    fn tokenize_block(&mut self, tokens: &mut Vec<TemplateToken>) -> Result<(), Error> {
+    fn tokenize_block(&mut self, tokens: &mut Vec<TemplateToken>) -> Result<(), CursedError> {
         self.skip_whitespace();
 
         if self.check_delimiter(&self.delimiters.block.1) {
@@ -647,7 +647,7 @@ impl<'a> TemplateLexer<'a> {
         Ok(())
     }
 
-    fn tokenize_comment(&mut self, tokens: &mut Vec<TemplateToken>) -> Result<(), Error> {
+    fn tokenize_comment(&mut self, tokens: &mut Vec<TemplateToken>) -> Result<(), CursedError> {
         let start = self.position;
 
         while !self.is_at_end() && !self.check_delimiter(&self.delimiters.comment.1) {
@@ -668,7 +668,7 @@ impl<'a> TemplateLexer<'a> {
         Ok(())
     }
 
-    fn read_string(&mut self) -> Result<(), Error> {
+    fn read_string(&mut self) -> Result<(), CursedError> {
         let quote_char = self.current_char();
         self.advance(); // Skip opening quote
 
@@ -697,7 +697,7 @@ impl<'a> TemplateLexer<'a> {
         }
 
         if self.is_at_end() {
-            return Err(CursedError::TemplateError {
+            return Err(CursedError::TemplateCursedError {
                 message: "Unterminated string literal".to_string(),
                 source_location: None,
             });
@@ -707,7 +707,7 @@ impl<'a> TemplateLexer<'a> {
         Ok(value)
     }
 
-    fn read_number(&mut self) -> Result<(), Error> {
+    fn read_number(&mut self) -> Result<(), CursedError> {
         let start = self.position;
         while !self.is_at_end() && (self.current_char().is_ascii_digit() || self.current_char() == '.') {
             self.advance();
@@ -715,7 +715,7 @@ impl<'a> TemplateLexer<'a> {
 
         let number_str = &self.input[start..self.position];
         number_str.parse::<f64>()
-            .map_err(|_| CursedError::TemplateError {
+            .map_err(|_| CursedError::TemplateCursedError {
                 message: format!("Invalid number: {}", number_str),
                 source_location: None,
             })
@@ -782,7 +782,7 @@ impl TemplateParser {
     }
 
     #[instrument(skip(self))]
-    pub fn parse(&mut self) -> Result<(), Error> {
+    pub fn parse(&mut self) -> Result<(), CursedError> {
         debug!(token_count = self.tokens.len(), "Starting template parsing");
         let mut nodes = Vec::new();
 
@@ -794,7 +794,7 @@ impl TemplateParser {
         Ok(TemplateAst { nodes })
     }
 
-    fn parse_node(&mut self) -> Result<(), Error> {
+    fn parse_node(&mut self) -> Result<(), CursedError> {
         match &self.tokens[self.current] {
             TemplateToken::Text(text) => {
                 let text = text.clone();
@@ -832,7 +832,7 @@ impl TemplateParser {
         }
     }
 
-    fn parse_variable(&mut self) -> Result<(), Error> {
+    fn parse_variable(&mut self) -> Result<(), CursedError> {
         let location = self.current_location();
         let expression = self.parse_expression()?;
 
@@ -857,10 +857,10 @@ impl TemplateParser {
         ErrorSourceLocation::new(1, 1) // Convert to error module's SourceLocation
     }
 
-    fn parse_filter(&mut self) -> Result<(), Error> {
+    fn parse_filter(&mut self) -> Result<(), CursedError> {
         let name = match &self.tokens[self.current] {
             TemplateToken::Identifier(name) => name.clone(),
-            _ => return Err(CursedError::TemplateError {
+            _ => return Err(CursedError::TemplateCursedError {
                 message: "Expected filter name".to_string(),
                 source_location: None,
             }),
@@ -876,7 +876,7 @@ impl TemplateParser {
         Ok(FilterCall { name, args })
     }
 
-    fn parse_block(&mut self) -> Result<(), Error> {
+    fn parse_block(&mut self) -> Result<(), CursedError> {
         let location = self.current_location();
         
         match &self.tokens[self.current] {
@@ -930,7 +930,7 @@ impl TemplateParser {
                 self.advance();
                 let variable = match &self.tokens[self.current] {
                     TemplateToken::Identifier(name) => name.clone(),
-                    _ => return Err(CursedError::TemplateError {
+                    _ => return Err(CursedError::TemplateCursedError {
                         message: "Expected variable name in for loop".to_string(),
                         source_location: Some(self.current_error_location()),
                     }),
@@ -986,7 +986,7 @@ impl TemplateParser {
                 self.advance();
                 let variable = match &self.tokens[self.current] {
                     TemplateToken::Identifier(name) => name.clone(),
-                    _ => return Err(CursedError::TemplateError {
+                    _ => return Err(CursedError::TemplateCursedError {
                         message: "Expected variable name in stan loop".to_string(),
                         source_location: Some(self.current_error_location()),
                     }),
@@ -1009,7 +1009,7 @@ impl TemplateParser {
                 self.advance();
                 let template_name = match &self.tokens[self.current] {
                     TemplateToken::String(name) => name.clone(),
-                    _ => return Err(CursedError::TemplateError {
+                    _ => return Err(CursedError::TemplateCursedError {
                         message: "Expected template name for include".to_string(),
                         source_location: Some(self.current_error_location()),
                     }),
@@ -1026,7 +1026,7 @@ impl TemplateParser {
                 self.advance();
                 let name = match &self.tokens[self.current] {
                     TemplateToken::Identifier(name) => name.clone(),
-                    _ => return Err(CursedError::TemplateError {
+                    _ => return Err(CursedError::TemplateCursedError {
                         message: "Expected variable name for set".to_string(),
                         source_location: Some(self.current_error_location()),
                     }),
@@ -1041,14 +1041,14 @@ impl TemplateParser {
                     location: Some(location),
                 })
             }
-            _ => Err(CursedError::TemplateError {
+            _ => Err(CursedError::TemplateCursedError {
                 message: format!("Unexpected block token: {:?}", self.tokens[self.current]),
                 source_location: None,
             }),
         }
     }
 
-    fn parse_block_body(&mut self) -> Result<(), Error> {
+    fn parse_block_body(&mut self) -> Result<(), CursedError> {
         let mut body = Vec::new();
 
         while !self.is_at_end() {
@@ -1073,11 +1073,11 @@ impl TemplateParser {
         Ok(body)
     }
 
-    fn parse_expression(&mut self) -> Result<(), Error> {
+    fn parse_expression(&mut self) -> Result<(), CursedError> {
         self.parse_conditional_expression()
     }
 
-    fn parse_conditional_expression(&mut self) -> Result<(), Error> {
+    fn parse_conditional_expression(&mut self) -> Result<(), CursedError> {
         let mut expr = self.parse_logical_or_expression()?;
 
         if matches!(self.tokens[self.current], TemplateToken::Question) {
@@ -1095,7 +1095,7 @@ impl TemplateParser {
         Ok(expr)
     }
 
-    fn parse_logical_or_expression(&mut self) -> Result<(), Error> {
+    fn parse_logical_or_expression(&mut self) -> Result<(), CursedError> {
         let mut left = self.parse_logical_and_expression()?;
 
         while matches!(self.tokens[self.current], TemplateToken::Or) {
@@ -1111,7 +1111,7 @@ impl TemplateParser {
         Ok(left)
     }
 
-    fn parse_logical_and_expression(&mut self) -> Result<(), Error> {
+    fn parse_logical_and_expression(&mut self) -> Result<(), CursedError> {
         let mut left = self.parse_equality_expression()?;
 
         while matches!(self.tokens[self.current], TemplateToken::And) {
@@ -1127,7 +1127,7 @@ impl TemplateParser {
         Ok(left)
     }
 
-    fn parse_equality_expression(&mut self) -> Result<(), Error> {
+    fn parse_equality_expression(&mut self) -> Result<(), CursedError> {
         let mut left = self.parse_relational_expression()?;
 
         while matches!(self.tokens[self.current], 
@@ -1152,7 +1152,7 @@ impl TemplateParser {
         Ok(left)
     }
 
-    fn parse_relational_expression(&mut self) -> Result<(), Error> {
+    fn parse_relational_expression(&mut self) -> Result<(), CursedError> {
         let mut left = self.parse_additive_expression()?;
 
         while matches!(self.tokens[self.current], 
@@ -1180,7 +1180,7 @@ impl TemplateParser {
         Ok(left)
     }
 
-    fn parse_additive_expression(&mut self) -> Result<(), Error> {
+    fn parse_additive_expression(&mut self) -> Result<(), CursedError> {
         let mut left = self.parse_multiplicative_expression()?;
 
         while matches!(self.tokens[self.current], TemplateToken::Plus | TemplateToken::Minus) {
@@ -1201,7 +1201,7 @@ impl TemplateParser {
         Ok(left)
     }
 
-    fn parse_multiplicative_expression(&mut self) -> Result<(), Error> {
+    fn parse_multiplicative_expression(&mut self) -> Result<(), CursedError> {
         let mut left = self.parse_unary_expression()?;
 
         while matches!(self.tokens[self.current], 
@@ -1224,7 +1224,7 @@ impl TemplateParser {
         Ok(left)
     }
 
-    fn parse_unary_expression(&mut self) -> Result<(), Error> {
+    fn parse_unary_expression(&mut self) -> Result<(), CursedError> {
         match &self.tokens[self.current] {
             TemplateToken::Not => {
                 self.advance();
@@ -1261,7 +1261,7 @@ impl TemplateParser {
         }
     }
 
-    fn parse_postfix_expression(&mut self) -> Result<(), Error> {
+    fn parse_postfix_expression(&mut self) -> Result<(), CursedError> {
         let mut expr = self.parse_primary_expression()?;
 
         loop {
@@ -1270,7 +1270,7 @@ impl TemplateParser {
                     self.advance(); // Skip .
                     let property = match &self.tokens[self.current] {
                         TemplateToken::Identifier(name) => name.clone(),
-                        _ => return Err(CursedError::TemplateError {
+                        _ => return Err(CursedError::TemplateCursedError {
                             message: "Expected property name after '.'".to_string(),
                             source_location: Some(self.current_error_location()),
                         }),
@@ -1305,7 +1305,7 @@ impl TemplateParser {
                     if let TemplateExpression::Variable(name) = expr {
                         expr = TemplateExpression::FunctionCall { name, args };
                     } else {
-                        return Err(CursedError::TemplateError {
+                        return Err(CursedError::TemplateCursedError {
                             message: "Invalid function call".to_string(),
                             source_location: Some(self.current_error_location()),
                         });
@@ -1318,7 +1318,7 @@ impl TemplateParser {
         Ok(expr)
     }
 
-    fn parse_primary_expression(&mut self) -> Result<(), Error> {
+    fn parse_primary_expression(&mut self) -> Result<(), CursedError> {
         match &self.tokens[self.current] {
             TemplateToken::Identifier(name) => {
                 let name = name.clone();
@@ -1370,7 +1370,7 @@ impl TemplateParser {
                 while !matches!(self.tokens[self.current], TemplateToken::RightBrace) {
                     let key = match &self.tokens[self.current] {
                         TemplateToken::Identifier(key) | TemplateToken::String(key) => key.clone(),
-                        _ => return Err(CursedError::TemplateError {
+                        _ => return Err(CursedError::TemplateCursedError {
                             message: "Expected object key".to_string(),
                             source_location: Some(self.current_error_location()),
                         }),
@@ -1387,19 +1387,19 @@ impl TemplateParser {
                 self.expect(&TemplateToken::RightBrace)?;
                 Ok(TemplateExpression::Object(object))
             }
-            _ => Err(CursedError::TemplateError {
+            _ => Err(CursedError::TemplateCursedError {
                 message: format!("Unexpected expression token: {:?}", self.tokens[self.current]),
                 source_location: Some(self.current_error_location()),
             }),
         }
     }
 
-    fn expect(&mut self, expected: &TemplateToken) -> Result<(), Error> {
+    fn expect(&mut self, expected: &TemplateToken) -> Result<(), CursedError> {
         if std::mem::discriminant(&self.tokens[self.current]) == std::mem::discriminant(expected) {
             self.advance();
             Ok(())
         } else {
-            Err(CursedError::TemplateError {
+            Err(CursedError::TemplateCursedError {
                 message: format!("Expected {:?}, found {:?}", expected, self.tokens[self.current]),
                 source_location: None,
             })

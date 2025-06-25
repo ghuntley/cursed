@@ -1,7 +1,7 @@
 /// Production-ready password hashing with modern algorithms (Argon2, scrypt, PBKDF2)
-use crate::error::CursedError;
+use crate::error_types::Error;
 use crate::stdlib::packages::crypto_hash_advanced::hash_traits::*;
-use crate::error::Error;
+use crate::stdlib::crypto::types::CryptoError;
 use std::time::{Duration, Instant};
 
 /// Result type for password operations
@@ -115,7 +115,7 @@ impl PasswordHash {
         let parts: Vec<&str> = phc_string.split('$').collect();
         
         if parts.len() < 4 {
-            return Err(CursedError::InvalidArgument("Invalid PHC string format".to_string()));
+            return Err(Error::InvalidArgument("Invalid PHC string format".to_string()));
         }
         
         // Parse algorithm
@@ -125,7 +125,7 @@ impl PasswordHash {
             "argon2d" => PasswordAlgorithm::Argon2d,
             "scrypt" => PasswordAlgorithm::Scrypt,
             "pbkdf2" => PasswordAlgorithm::Pbkdf2,
-            _ => return Err(CursedError::InvalidArgument("Unknown algorithm".to_string())),
+            _ => return Err(Error::InvalidArgument("Unknown algorithm".to_string())),
         };
         
         // Parse parameters
@@ -162,7 +162,7 @@ impl PasswordHash {
             let kv: Vec<&str> = param.split('=').collect();
             if kv.len() == 2 {
                 let value = kv[1].parse::<u32>()
-                    .map_err(|_| CursedError::InvalidArgument("Invalid parameter value".to_string()))?;
+                    .map_err(|_| Error::InvalidArgument("Invalid parameter value".to_string()))?;
                 params.insert(kv[0], value);
             }
         }
@@ -185,7 +185,7 @@ impl PasswordHash {
                     b'0'..=b'9' => byte - b'0' + 52,
                     b'+' => 62,
                     b'/' => 63,
-                    _ => return Err(CursedError::InvalidArgument("Invalid base64 character".to_string())),
+                    _ => return Err(Error::InvalidArgument("Invalid base64 character".to_string())),
                 };
             }
             

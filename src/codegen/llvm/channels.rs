@@ -27,11 +27,11 @@ use tracing::{debug, error, info, instrument, warn};
 
 /// LLVM channel operations compiler
 #[derive(Debug)]
-pub struct LlvmChannelCompiler {
+pub struct LlvmChannelCompiler<'ctx> {
     /// Type registry for channel type management
     type_registry: LlvmTypeRegistry,
     /// Expression context for variable and type management
-    context: ExpressionContext,
+    context: ExpressionContext<'ctx>,
     /// Generated LLVM IR output
     ir_output: Vec<String>,
     /// Channel type instances cache
@@ -77,13 +77,13 @@ pub struct ChannelOperation {
     error_handling: Option<Vec<String>>,
 }
 
-impl LlvmChannelCompiler {
+impl<'ctx> LlvmChannelCompiler<'ctx> {
     /// Create new channel compiler with type registry
     #[instrument]
-    pub fn new(type_registry: LlvmTypeRegistry) -> Self {
+    pub fn new(type_registry: LlvmTypeRegistry, context: ExpressionContext<'ctx>) -> Self {
         let mut compiler = Self {
             type_registry,
-            context: ExpressionContext::new(),
+            context,
             ir_output: Vec::new(),
             channel_types: HashMap::new(),
             runtime_functions: HashMap::new(),
@@ -558,7 +558,7 @@ pub trait ChannelExpressionCompiler {
     fn compile_channel_creation_expression(&mut self, element_type: &LlvmType, buffer_size: Option<usize>) -> Result<(), Error>;
 }
 
-impl ChannelExpressionCompiler for LlvmChannelCompiler {
+impl<'ctx> ChannelExpressionCompiler for LlvmChannelCompiler<'ctx> {
     #[instrument(skip(self))]
     fn compile_send_expression(&mut self, channel: &dyn Expression, value: &dyn Expression) -> Result<(), Error> {
         let operation = self.compile_send_operation(channel, value, true)?;

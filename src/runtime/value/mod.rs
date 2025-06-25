@@ -273,6 +273,53 @@ impl From<Vec<u8>> for Value {
     }
 }
 
+/// Alias for Value for compatibility with runtime
+pub type CursedValue = Value;
+
+/// Value manager for runtime memory management
+#[derive(Debug, Default)]
+pub struct ValueManager {
+    /// Value allocation stats
+    allocated_values: std::sync::atomic::AtomicUsize,
+    /// Garbage collection enabled
+    gc_enabled: bool,
+}
+
+impl ValueManager {
+    pub fn new() -> Self {
+        Self {
+            allocated_values: std::sync::atomic::AtomicUsize::new(0),
+            gc_enabled: true,
+        }
+    }
+
+    pub fn allocate_value(&self, value: Value) -> CursedValue {
+        self.allocated_values.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+        value
+    }
+
+    pub fn get_allocation_count(&self) -> usize {
+        self.allocated_values.load(std::sync::atomic::Ordering::Relaxed)
+    }
+
+    pub fn enable_gc(&mut self) {
+        self.gc_enabled = true;
+    }
+
+    pub fn disable_gc(&mut self) {
+        self.gc_enabled = false;
+    }
+
+    pub fn is_gc_enabled(&self) -> bool {
+        self.gc_enabled
+    }
+
+    pub fn collect_garbage(&self) -> usize {
+        // Placeholder for GC implementation
+        0
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

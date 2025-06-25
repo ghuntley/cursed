@@ -11,7 +11,8 @@ use std::net::{IpAddr, Ipv4Addr, Ipv6Addr, SocketAddr, SocketAddrV4, SocketAddrV
 use std::sync::{Arc, Mutex};
 use std::time::{Duration, SystemTime};
 use std::io::{Read, Write};
-use crate::error::CursedError;
+use crate::error_types::Error;
+use crate::stdlib::vibe_net::error::NetError;
 
 pub mod error;
 pub mod ip;
@@ -29,7 +30,6 @@ pub mod enhanced;
 pub mod utils;
 pub mod security;
 pub mod monitoring;
-use crate::error::Error;
 
 // Re-export core types for convenient access
 pub use ip::{IPVibe, IPNetVibe, IPMaskVibe};
@@ -150,7 +150,7 @@ pub fn listen(network: &str, address: &str) -> NetResult<Box<dyn ListenerVibe>> 
             let listener = UnixListenerVibe::listen(network, Some(&addr))?;
             Ok(Box::new(listener))
         }
-        _ => Err(CursedError::new(&format!("Unsupported network type: {}", network)))
+        _ => Err(Error::new(&format!("Unsupported network type: {}", network)))
     }
 }
 
@@ -169,7 +169,7 @@ pub fn listen_packet(network: &str, address: &str) -> NetResult<Box<dyn PacketCo
             let conn = UDPConnVibe::listen(network, Some(&addr))?;
             Ok(Box::new(conn))
         }
-        _ => Err(CursedError::new(&format!("Unsupported packet network type: {}", network)))
+        _ => Err(Error::new(&format!("Unsupported packet network type: {}", network)))
     }
 }
 

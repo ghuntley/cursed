@@ -3,7 +3,7 @@
 /// This module provides a production-ready implementation of X448 elliptic curve
 /// key exchange based on Curve448 with proper security considerations.
 
-use crate::error::CursedError;
+use crate::error_types::Error;
 use crate::stdlib::value::Value;
 
 /// fr fr X448 key size in bytes (448 bits / 8 = 56 bytes)
@@ -33,7 +33,7 @@ impl X448PublicKey {
     pub fn from_bytes(bytes: [u8; X448_KEY_SIZE]) -> Result<(), Error> {
         // Check for all-zero key (invalid)
         if bytes == [0u8; X448_KEY_SIZE] {
-            return Err(CursedError::CryptoError("Invalid X448 public key: all zeros".to_string()));
+            return Err(Error::CryptoError("Invalid X448 public key: all zeros".to_string()));
         }
         
         Ok(Self { bytes })
@@ -42,7 +42,7 @@ impl X448PublicKey {
     /// vibes Create from slice with validation
     pub fn from_slice(slice: &[u8]) -> Result<(), Error> {
         if slice.len() != X448_KEY_SIZE {
-            return Err(CursedError::InvalidArgument(format!("X448 public key must be {} bytes, got {}", X448_KEY_SIZE, slice.len())));
+            return Err(Error::InvalidArgument(format!("X448 public key must be {} bytes, got {}", X448_KEY_SIZE, slice.len())));
         }
         
         let mut bytes = [0u8; X448_KEY_SIZE];
@@ -63,7 +63,7 @@ impl X448PublicKey {
     /// bestie Parse from hex string
     pub fn from_hex(hex_str: &str) -> Result<(), Error> {
         let bytes = hex::decode(hex_str)
-            .map_err(|e| CursedError::InvalidArgument(format!("Invalid hex string: {}", e)))?;
+            .map_err(|e| Error::InvalidArgument(format!("Invalid hex string: {}", e)))?;
         Self::from_slice(&bytes)
     }
 }
@@ -77,7 +77,7 @@ impl X448PrivateKey {
     /// vibes Create from slice
     pub fn from_slice(slice: &[u8]) -> Result<(), Error> {
         if slice.len() != X448_KEY_SIZE {
-            return Err(CursedError::InvalidArgument(format!("X448 private key must be {} bytes, got {}", X448_KEY_SIZE, slice.len())));
+            return Err(Error::InvalidArgument(format!("X448 private key must be {} bytes, got {}", X448_KEY_SIZE, slice.len())));
         }
         
         let mut bytes = [0u8; X448_KEY_SIZE];
@@ -98,7 +98,7 @@ impl X448PrivateKey {
     /// bestie Parse from hex string
     pub fn from_hex(hex_str: &str) -> Result<(), Error> {
         let bytes = hex::decode(hex_str)
-            .map_err(|e| CursedError::InvalidArgument(format!("Invalid hex string: {}", e)))?;
+            .map_err(|e| Error::InvalidArgument(format!("Invalid hex string: {}", e)))?;
         Self::from_slice(&bytes)
     }
     
@@ -150,7 +150,7 @@ impl X448Engine {
         
         // Check for weak shared secret (all zeros)
         if shared_secret == [0u8; X448_KEY_SIZE] {
-            return Err(CursedError::CryptoError("Weak public key resulted in zero shared secret".to_string()));
+            return Err(Error::CryptoError("Weak public key resulted in zero shared secret".to_string()));
         }
         
         Ok(shared_secret)
@@ -165,7 +165,7 @@ impl X448Engine {
         let mut okm = vec![0u8; length];
         
         hk.expand(info, &mut okm)
-            .map_err(|e| CursedError::CryptoError(format!("Key derivation failed: {}", e)))?;
+            .map_err(|e| Error::CryptoError(format!("Key derivation failed: {}", e)))?;
         
         Ok(okm)
     }
@@ -186,12 +186,12 @@ impl X448Engine {
     pub fn validate_public_key(&self, public_key: &X448PublicKey) -> Result<(), Error> {
         // Check for invalid all-zero key
         if public_key.bytes == [0u8; X448_KEY_SIZE] {
-            return Err(CursedError::CryptoError("Invalid public key: all zeros".to_string()));
+            return Err(Error::CryptoError("Invalid public key: all zeros".to_string()));
         }
         
         // Check for invalid all-one key  
         if public_key.bytes == [0xFF; X448_KEY_SIZE] {
-            return Err(CursedError::CryptoError("Invalid public key: all ones".to_string()));
+            return Err(Error::CryptoError("Invalid public key: all ones".to_string()));
         }
         
         // Additional validation could be added here for curve membership
@@ -334,7 +334,7 @@ fn field_square(a: &[u8; X448_KEY_SIZE], result: &mut [u8; X448_KEY_SIZE]) {
 fn montgomery_invert(x: &[u8; X448_KEY_SIZE], z: &[u8; X448_KEY_SIZE]) -> Result<(), Error> {
     // Simplified inversion - in production, use proper modular inverse
     if z == &[0u8; X448_KEY_SIZE] {
-        return Err(CursedError::CryptoError("Division by zero in Montgomery inversion".to_string()));
+        return Err(Error::CryptoError("Division by zero in Montgomery inversion".to_string()));
     }
     
     // For simplicity, just return x (this would be x/z mod p in a real implementation)
@@ -360,17 +360,17 @@ pub fn x448_generate_keypair(args: Vec<Value>) -> Result<(), Error> {
 /// slay Perform X448 key exchange
 pub fn x448_key_exchange(args: Vec<Value>) -> Result<(), Error> {
     if args.len() < 2 {
-        return Err(CursedError::InvalidArgument("X448 key exchange requires: private_key, public_key".to_string()));
+        return Err(Error::InvalidArgument("X448 key exchange requires: private_key, public_key".to_string()));
     }
     
     let private_key_hex = match &args[0] {
         Value::String(s) => s.clone(),
-        _ => return Err(CursedError::InvalidArgument("Private key must be a string".to_string())),
+        _ => return Err(Error::InvalidArgument("Private key must be a string".to_string())),
     };
     
     let public_key_hex = match &args[1] {
         Value::String(s) => s.clone(),
-        _ => return Err(CursedError::InvalidArgument("Public key must be a string".to_string())),
+        _ => return Err(Error::InvalidArgument("Public key must be a string".to_string())),
     };
     
     let private_key = X448PrivateKey::from_hex(&private_key_hex)?;
@@ -399,12 +399,12 @@ pub fn x448_key_exchange(args: Vec<Value>) -> Result<(), Error> {
 /// slay Validate X448 public key
 pub fn x448_validate_public_key(args: Vec<Value>) -> Result<(), Error> {
     if args.is_empty() {
-        return Err(CursedError::InvalidArgument("x448_validate_public_key requires: public_key".to_string()));
+        return Err(Error::InvalidArgument("x448_validate_public_key requires: public_key".to_string()));
     }
     
     let public_key_hex = match &args[0] {
         Value::String(s) => s.clone(),
-        _ => return Err(CursedError::InvalidArgument("Public key must be a string".to_string())),
+        _ => return Err(Error::InvalidArgument("Public key must be a string".to_string())),
     };
     
     let public_key = X448PublicKey::from_hex(&public_key_hex)?;
@@ -419,12 +419,12 @@ pub fn x448_validate_public_key(args: Vec<Value>) -> Result<(), Error> {
 /// slay Get X448 public key from private key
 pub fn x448_get_public_key(args: Vec<Value>) -> Result<(), Error> {
     if args.is_empty() {
-        return Err(CursedError::InvalidArgument("x448_get_public_key requires: private_key".to_string()));
+        return Err(Error::InvalidArgument("x448_get_public_key requires: private_key".to_string()));
     }
     
     let private_key_hex = match &args[0] {
         Value::String(s) => s.clone(),
-        _ => return Err(CursedError::InvalidArgument("Private key must be a string".to_string())),
+        _ => return Err(Error::InvalidArgument("Private key must be a string".to_string())),
     };
     
     let private_key = X448PrivateKey::from_hex(&private_key_hex)?;
@@ -436,7 +436,6 @@ pub fn x448_get_public_key(args: Vec<Value>) -> Result<(), Error> {
 #[cfg(test)]
 mod tests {
     use super::*;
-use crate::error::Error;
     
     #[test]
     fn test_x448_key_generation() {

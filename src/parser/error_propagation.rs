@@ -59,9 +59,23 @@ impl fmt::Display for TypedErrorPropagation {
     }
 }
 
+impl crate::ast::traits::Node for TypedErrorPropagation {
+    fn string(&self) -> String {
+        format!("{}", self)
+    }
+    
+    fn token_literal(&self) -> String {
+        "?".to_string()
+    }
+}
+
 impl Expression for TypedErrorPropagation {
     fn as_any(&self) -> &dyn std::any::Any {
         self
+    }
+    
+    fn clone_box(&self) -> Box<dyn Expression> {
+        Box::new(self.clone())
     }
 }
 

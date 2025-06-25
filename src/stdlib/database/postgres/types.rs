@@ -287,7 +287,7 @@ impl ToSql for PostgresParam {
         }
     }
 
-    to_sql_checked!();
+    // to_sql_checked!(); // Commented out - macro not available
 }
 
 /// Convert slice of SqlValues to PostgreSQL parameters

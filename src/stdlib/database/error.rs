@@ -440,42 +440,43 @@ impl std::error::Error for DatabaseError {
 }
 
 /// fr fr Convert DatabaseError to CursedError for integration with the language error system
-impl From<DatabaseError> for CursedError {
-    fn from(err: DatabaseError) -> Self {
-        let error_code = match err.kind {
-            DatabaseErrorKind::ConnectionError => "DB_CONNECTION_ERROR",
-            DatabaseErrorKind::QueryError => "DB_QUERY_ERROR",
-            DatabaseErrorKind::TransactionError => "DB_TRANSACTION_ERROR",
-            DatabaseErrorKind::ConstraintError => "DB_CONSTRAINT_ERROR",
-            DatabaseErrorKind::ScanError => "DB_SCAN_ERROR",
-            DatabaseErrorKind::SerializationError => "DB_SERIALIZATION_ERROR",
-            DatabaseErrorKind::PoolError => "DB_POOL_ERROR",
-            DatabaseErrorKind::DriverError => "DB_DRIVER_ERROR",
-            DatabaseErrorKind::TimeoutError => "DB_TIMEOUT_ERROR",
-            DatabaseErrorKind::NoRows => "DB_NO_ROWS",
-            DatabaseErrorKind::NoLastInsertId => "DB_NO_LAST_INSERT_ID",
-            DatabaseErrorKind::ResourceExhaustion => "DB_RESOURCE_EXHAUSTION",
-            DatabaseErrorKind::ConfigurationError => "DB_CONFIGURATION_ERROR",
-            DatabaseErrorKind::MigrationError => "DB_MIGRATION_ERROR",
-            DatabaseErrorKind::Unknown => "DB_UNKNOWN_ERROR",
-            DatabaseErrorKind::NotImplemented => "DB_NOT_IMPLEMENTED",
-            DatabaseErrorKind::Timeout => "DB_TIMEOUT",
-            DatabaseErrorKind::ConstraintViolation => "DB_CONSTRAINT_VIOLATION",
-            DatabaseErrorKind::AuthenticationError => "DB_AUTHENTICATION_ERROR",
-            DatabaseErrorKind::ResourceError => "DB_RESOURCE_ERROR",
-            DatabaseErrorKind::InternalError => "DB_INTERNAL_ERROR",
-            DatabaseErrorKind::SyntaxError => "DB_SYNTAX_ERROR",
-            DatabaseErrorKind::DataIntegrityError => "DB_DATA_INTEGRITY_ERROR",
-            DatabaseErrorKind::ResourceExhausted => "DB_RESOURCE_EXHAUSTED",
-            DatabaseErrorKind::TypeMismatch => "DB_TYPE_MISMATCH",
-            DatabaseErrorKind::SchemaError => "DB_SCHEMA_ERROR",
-            DatabaseErrorKind::SqlError => "DB_SQL_ERROR",
-            DatabaseErrorKind::ConversionError => "DB_CONVERSION_ERROR",
-        };
-
-        CursedError::Repl(format!("{}: {}", error_code, err.message))
-    }
-}
+// COMMENTED OUT: Conflicts with implementation in error/mod.rs
+// impl From<DatabaseError> for CursedError {
+//     fn from(err: DatabaseError) -> Self {
+//         let error_code = match err.kind {
+//             DatabaseErrorKind::ConnectionError => "DB_CONNECTION_ERROR",
+//             DatabaseErrorKind::QueryError => "DB_QUERY_ERROR",
+//             DatabaseErrorKind::TransactionError => "DB_TRANSACTION_ERROR",
+//             DatabaseErrorKind::ConstraintError => "DB_CONSTRAINT_ERROR",
+//             DatabaseErrorKind::ScanError => "DB_SCAN_ERROR",
+//             DatabaseErrorKind::SerializationError => "DB_SERIALIZATION_ERROR",
+//             DatabaseErrorKind::PoolError => "DB_POOL_ERROR",
+//             DatabaseErrorKind::DriverError => "DB_DRIVER_ERROR",
+//             DatabaseErrorKind::TimeoutError => "DB_TIMEOUT_ERROR",
+//             DatabaseErrorKind::NoRows => "DB_NO_ROWS",
+//             DatabaseErrorKind::NoLastInsertId => "DB_NO_LAST_INSERT_ID",
+//             DatabaseErrorKind::ResourceExhaustion => "DB_RESOURCE_EXHAUSTION",
+//             DatabaseErrorKind::ConfigurationError => "DB_CONFIGURATION_ERROR",
+//             DatabaseErrorKind::MigrationError => "DB_MIGRATION_ERROR",
+//             DatabaseErrorKind::Unknown => "DB_UNKNOWN_ERROR",
+//             DatabaseErrorKind::NotImplemented => "DB_NOT_IMPLEMENTED",
+//             DatabaseErrorKind::Timeout => "DB_TIMEOUT",
+//             DatabaseErrorKind::ConstraintViolation => "DB_CONSTRAINT_VIOLATION",
+//             DatabaseErrorKind::AuthenticationError => "DB_AUTHENTICATION_ERROR",
+//             DatabaseErrorKind::ResourceError => "DB_RESOURCE_ERROR",
+//             DatabaseErrorKind::InternalError => "DB_INTERNAL_ERROR",
+//             DatabaseErrorKind::SyntaxError => "DB_SYNTAX_ERROR",
+//             DatabaseErrorKind::DataIntegrityError => "DB_DATA_INTEGRITY_ERROR",
+//             DatabaseErrorKind::ResourceExhausted => "DB_RESOURCE_EXHAUSTED",
+//             DatabaseErrorKind::TypeMismatch => "DB_TYPE_MISMATCH",
+//             DatabaseErrorKind::SchemaError => "DB_SCHEMA_ERROR",
+//             DatabaseErrorKind::SqlError => "DB_SQL_ERROR",
+//             DatabaseErrorKind::ConversionError => "DB_CONVERSION_ERROR",
+//         };
+//
+//         CursedError::Repl(format!("{}: {}", error_code, err.message))
+//     }
+// }
 
 /// fr fr Error severity levels for proper logging and handling
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]

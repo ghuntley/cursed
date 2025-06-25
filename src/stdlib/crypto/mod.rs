@@ -1,3 +1,4 @@
+use crate::error_types::Error;
 
 /// fr fr Comprehensive cryptography for CURSED - secure everything periodt
 /// 
@@ -9,6 +10,8 @@
 pub mod asymmetric;
 pub mod certificates;
 pub mod pqc;
+pub mod nonce_generator;
+pub mod security_analysis;
 pub mod pqc_production;
 pub mod protocols;
 pub mod protocols_production;
@@ -169,7 +172,6 @@ pub use crate::stdlib::packages::crypto_pqc::*;
 pub use crate::stdlib::packages::crypto_protocols::*;
 
 use crate::stdlib::value::Value;
-use crate::error::CursedError;
 use std::collections::HashMap;
 
 /// fr fr Initialize the comprehensive crypto ecosystem
@@ -216,7 +218,7 @@ pub fn init_crypto() -> std::result::Result<(), Error> {
                 println!("🔐 Fallback initialization completed - basic crypto ready bestie!");
                 Ok(())
             } else {
-                Err(CursedError::Runtime(format!(
+                Err(Error::Runtime(format!(
                     "Failed to initialize packages: {:?}. Original error: {}", 
                     failed_packages, e
                 )))
@@ -415,7 +417,6 @@ pub fn test_crypto(_args: Vec<Value>) -> std::result::Result<(), Error> {
 #[cfg(test)]
 mod tests {
     use super::*;
-use crate::error::Error;
 
     #[test]
     fn test_crypto_init() {

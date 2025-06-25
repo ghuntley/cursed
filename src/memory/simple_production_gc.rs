@@ -16,7 +16,7 @@ use crate::memory::{
     object_id::{ObjectRegistry, SharedObjectRegistry},
     object_store::Storable,
 };
-use crate::error::Error;
+use crate::error_types::Error;
 
 /// Simplified production GC configuration
 #[derive(Debug, Clone)]

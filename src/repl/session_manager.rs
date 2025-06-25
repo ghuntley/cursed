@@ -1,4 +1,4 @@
-use crate::error::Error;
+use crate::error_types::Error;
 // Session Management for CURSED REPL
 // 
 // Manages REPL session state including variables, functions,
@@ -8,7 +8,7 @@ use std::collections::HashMap;
 use std::time::SystemTime;
 
 use crate::repl::ReplResult;
-use crate::error::CursedError;
+use crate::error::Error;
 
 /// Session variable information
 #[derive(Debug, Clone)]
@@ -103,7 +103,7 @@ impl SessionManager {
         
         // Execute the code using the new evaluation system
         let result = crate::execute_repl_code(code, self)
-            .map_err(|e| CursedError::repl_error(e.to_string()))?;
+            .map_err(|e| Error::repl_error(e.to_string()))?;
         
         let execution_time = start_time.elapsed();
         
@@ -122,7 +122,7 @@ impl SessionManager {
     pub fn format_session_code(&self) -> ReplResult<String> {
         let code = self.get_session_code();
         // This would use the CURSED formatter
-        crate::format(&code).map_err(|e| CursedError::repl_error(e.to_string()))
+        crate::format(&code).map_err(|e| Error::repl_error(e.to_string()))
     }
 
     /// Lint the session code

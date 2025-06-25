@@ -200,6 +200,9 @@ pub trait WithSourceLocation {
     fn set_source_location(&mut self, location: SourceLocation);
 }
 
+/// Alias for compatibility
+pub type SourceLocationInfo = SourceLocation;
+
 #[cfg(test)]
 mod tests {
     use super::*;

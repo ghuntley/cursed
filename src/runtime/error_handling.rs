@@ -7,7 +7,7 @@
 /// - Thread-safe error coordination
 /// - Goroutine-aware error handling
 
-use crate::error::{Error as CursedError, SourceLocation};
+use crate::error_types::{Error, SourceLocation};
 use crate::runtime::panic::{
     PanicRuntime, CursedPanicInfo, PanicSeverity, PanicCategory, 
     RecoveryAction, get_panic_runtime
@@ -245,7 +245,7 @@ impl ErrorRuntime {
     #[instrument(skip(self))]
     pub fn initialize(&self) -> Result<(), Error> {
         if self.active.load(Ordering::SeqCst) {
-            return Err(CursedError::Runtime("Error runtime already initialized".to_string()));
+            return Err(Error::Runtime("Error runtime already initialized".to_string()));
         }
 
         info!("Initializing CURSED error handling runtime");
@@ -275,7 +275,7 @@ impl ErrorRuntime {
     #[instrument(skip(self, error), fields(error_id = %next_error_id()))]
     pub fn propagate_error(
         &self,
-        error: CursedError,
+        error: Error,
         source_location: Option<SourceLocation>,
         function_name: Option<String>,
     ) -> Result<(), Error> {
@@ -372,7 +372,7 @@ impl ErrorRuntime {
     #[instrument(skip(self, error))]
     pub fn convert_error_to_panic(
         &self,
-        error: CursedError,
+        error: Error,
         source_location: Option<SourceLocation>,
         function_name: Option<String>,
     ) -> Result<(), Error> {
@@ -391,9 +391,9 @@ impl ErrorRuntime {
         };
 
         let category = match &error {
-            CursedError::Type(_) => PanicCategory::TypeAssertion,
-            CursedError::Runtime(_) => PanicCategory::System,
-            CursedError::Parse(_) | CursedError::Compile(_) => PanicCategory::User,
+            Error::Type(_) => PanicCategory::TypeAssertion,
+            Error::Runtime(_) => PanicCategory::System,
+            Error::Parse(_) | Error::Compile(_) => PanicCategory::User,
             _ => PanicCategory::Generic,
         };
 
@@ -420,10 +420,10 @@ impl ErrorRuntime {
     #[instrument(skip(self, error))]
     pub fn handle_question_mark_error(
         &self,
-        error: CursedError,
+        error: Error,
         source_location: Option<SourceLocation>,
         function_name: Option<String>,
-    ) -> CursedError {
+    ) -> Error {
         match self.propagate_error(error.clone(), source_location, function_name) {
             Ok(()) => {
                 // This shouldn't happen as propagate_error always returns Err
@@ -461,7 +461,7 @@ impl ErrorRuntime {
     pub fn get_statistics(&self) -> Result<(), Error> {
         self.stats.lock()
             .map(|stats| stats.clone())
-            .map_err(|_| CursedError::Runtime("Failed to access error handling statistics".to_string()))
+            .map_err(|_| Error::Runtime("Failed to access error handling statistics".to_string()))
     }
 
     /// Update error propagation configuration
@@ -473,7 +473,7 @@ impl ErrorRuntime {
             updater(&mut *config);
             Ok(())
         } else {
-            Err(CursedError::Runtime("Failed to update error propagation configuration".to_string()))
+            Err(Error::Runtime("Failed to update error propagation configuration".to_string()))
         }
     }
 
@@ -494,10 +494,10 @@ impl ErrorRuntime {
     /// Create an enhanced error with context information
     pub fn create_contextual_error(
         &self,
-        base_error: CursedError,
+        base_error: Error,
         additional_context: &str,
         source_location: Option<SourceLocation>,
-    ) -> CursedError {
+    ) -> Error {
         let mut context = ErrorContext::new();
         
         if let Some(location) = source_location {
@@ -518,7 +518,7 @@ impl ErrorRuntime {
 
         // For now, return the base error with additional context
         // In a full implementation, we might create a new error variant
-        CursedError::Runtime(format!("{}: {}", additional_context, base_error))
+        Error::Runtime(format!("{}: {}", additional_context, base_error))
     }
 }
 
@@ -534,7 +534,7 @@ pub fn initialize_error_runtime() -> Result<(), Error> {
     runtime.initialize()?;
     
     ERROR_RUNTIME.set(runtime)
-        .map_err(|_| CursedError::Runtime("Failed to initialize error runtime".to_string()))?;
+        .map_err(|_| Error::Runtime("Failed to initialize error runtime".to_string()))?;
     
     Ok(())
 }
@@ -599,10 +599,10 @@ pub extern "C" fn cursed_propagate_error(
 
     // Create appropriate error based on error code
     let error = match error_code {
-        1 => CursedError::Parse(error_message),
-        2 => CursedError::Compile(error_message),
-        3 => CursedError::Type(error_message),
-        _ => CursedError::Runtime(error_message),
+        1 => Error::Parse(error_message),
+        2 => Error::Compile(error_message),
+        3 => Error::Type(error_message),
+        _ => Error::Runtime(error_message),
     };
 
     if let Some(runtime) = get_error_runtime() {
@@ -706,7 +706,7 @@ mod tests {
         let runtime = ErrorRuntime::new();
         runtime.initialize().unwrap();
 
-        let error = CursedError::Runtime("Test error".to_string());
+        let error = Error::Runtime("Test error".to_string());
         let location = Some(SourceLocation::new(20, 15));
         let function = Some("test_function".to_string());
 
@@ -725,7 +725,7 @@ mod tests {
         assert!(!runtime.is_in_error_handling());
 
         // After propagating an error, we should have context
-        let error = CursedError::Runtime("Test error".to_string());
+        let error = Error::Runtime("Test error".to_string());
         let _ = runtime.propagate_error(error, None, None);
 
         // Clear context
@@ -744,7 +744,7 @@ mod tests {
         assert_eq!(stats.total_errors, 0);
 
         // Propagate an error
-        let error = CursedError::Runtime("Test error".to_string());
+        let error = Error::Runtime("Test error".to_string());
         let _ = runtime.propagate_error(error, None, None);
 
         let updated_stats = runtime.get_statistics().unwrap();
@@ -758,7 +758,7 @@ mod tests {
         let runtime = ErrorRuntime::new();
         runtime.initialize().unwrap();
 
-        let base_error = CursedError::Type("Invalid type".to_string());
+        let base_error = Error::Type("Invalid type".to_string());
         let enhanced_error = runtime.create_contextual_error(
             base_error,
             "During type checking",

@@ -449,7 +449,7 @@ impl<T: Entity> Repository<T> {
         debug!(entity = T::table_name(), "Updating existing entity");
         
         let pk_value = entity.primary_key_value()
-            .ok_or_else(|| DatabaseError::validation_error("Entity must have primary key for update"))?;
+            .ok_or_else(|| Error::Runtime("Entity must have primary key for update".to_string()))?;
         
         let fields = entity.to_fields();
         let mut field_assignments = Vec::new();
@@ -482,7 +482,7 @@ impl<T: Entity> Repository<T> {
         let result = self.db.exec(sql, field_values)?;
         
         if result.rows_affected()? == 0 {
-            return Err(DatabaseError::not_found("No rows were updated"));
+            return Err(DatabaseError::not_found("No rows were updated").into());
         }
         
         info!("Entity updated successfully");

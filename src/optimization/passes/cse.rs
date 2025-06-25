@@ -370,7 +370,7 @@ impl CommonSubexpressionEliminationPass {
     }
     
     /// Build control flow graph from statements
-    fn build_cfg(&self, statements: &[dyn Statement], context: &mut CseContext) -> Result<()> {
+    fn build_cfg(&self, statements: &[Box<dyn Statement>], context: &mut CseContext) -> Result<()> {
         let mut current_block = BasicBlock::new(0);
         let mut block_counter = 0;
         

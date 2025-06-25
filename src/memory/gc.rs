@@ -2,6 +2,13 @@
 
 use crate::error::{Error, Result};
 
+// Re-export types from gc_types module
+pub use crate::memory::gc_types::{
+    CollectionAlgorithm, CollectionTrigger, EnhancedCollectionStats,
+    HeapStats as GcHeapStats, AlgorithmStats, ComprehensiveGcStats,
+    WeakGc, GcStats, CollectionStats, HeapStats
+};
+
 /// Garbage collector configuration
 #[derive(Debug, Clone)]
 pub struct GcConfig {

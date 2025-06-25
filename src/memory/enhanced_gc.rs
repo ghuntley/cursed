@@ -14,7 +14,7 @@ use crate::memory::gc::{
     GarbageCollector, GcConfig, EnhancedCollectionStats, CollectionAlgorithm, 
     CollectionTrigger, AlgorithmStats, HeapStats, Gc, ComprehensiveGcStats
 };
-use crate::error::Error;
+use crate::error_types::Error;
 use crate::memory::object_store::ObjectHandle;
 use crate::memory::heap_manager::{HeapManager, HeapConfig, AllocationMetrics};
 use crate::memory::real_heap_manager::{RealHeapManager, RealHeapConfig};

@@ -448,12 +448,12 @@ impl StackTraceCapture {
     }
 
     /// Capture a stack trace at the current location
-    pub fn capture(&self) -> Result<(), Error> {
+    pub fn capture(&self) -> Result<(), CursedError> {
         self.capture_with_context(None)
     }
 
     /// Capture a stack trace with optional goroutine context
-    pub fn capture_with_context(&self, goroutine_id: Option<u64>) -> Result<(), Error> {
+    pub fn capture_with_context(&self, goroutine_id: Option<u64>) -> Result<(), CursedError> {
         let mut trace = EnhancedStackTrace::new();
         
         if let Some(gid) = goroutine_id {
@@ -474,7 +474,7 @@ impl StackTraceCapture {
     }
 
     /// Build enhanced stack frames with debug information
-    fn build_enhanced_frames(&self) -> Result<(), Error> {
+    fn build_enhanced_frames(&self) -> Result<(), CursedError> {
         let mut frames = Vec::new();
         
         // For now, create sample frames - in a real implementation,
@@ -519,7 +519,7 @@ impl StackTraceCapture {
     }
 
     /// Extract source code snippet around a location
-    pub fn extract_source_snippet(&self, file_path: &Path, line: u32, context_lines: u32) -> Result<(), Error> {
+    pub fn extract_source_snippet(&self, file_path: &Path, line: u32, context_lines: u32) -> Result<(), CursedError> {
         use std::fs;
         use std::io::{BufRead, BufReader};
 
@@ -527,7 +527,7 @@ impl StackTraceCapture {
             .map_err(|e| CursedError::Runtime(format!("Failed to open source file {}: {}", file_path.display(), e)))?;
 
         let reader = BufReader::new(file);
-        let lines: Result<(), Error> = reader.split("\n").collect();
+        let lines: Result<Vec<_>, _> = reader.lines().collect();
         let lines = lines
             .map_err(|e| CursedError::Runtime(format!("Failed to read source file: {}", e)))?;
 

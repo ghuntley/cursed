@@ -406,7 +406,7 @@ impl Default for TemplateConfig {
 /// Trait for loading templates from various sources
 pub trait TemplateLoader: Send + Sync {
     /// Load a template by name/path
-    fn load(&self, name: &str) -> Result<(), Error>;
+    fn load(&self, name: &str) -> Result<String, Error>;
     
     /// Check if a template exists
     fn exists(&self, name: &str) -> bool;
@@ -442,7 +442,7 @@ impl FileSystemLoader {
 
 impl TemplateLoader for FileSystemLoader {
     #[instrument(skip(self))]
-    fn load(&self, name: &str) -> Result<(), Error> {
+    fn load(&self, name: &str) -> Result<String, Error> {
         let template_path = self.base_dir.join(name);
         
         // Security check: ensure template is within base directory

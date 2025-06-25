@@ -1,4 +1,4 @@
-use crate::error::Error;
+use crate::error_types::Error;
 // Tokio compatibility module for CURSED
 // Provides async runtime compatibility for tokio-based code
 

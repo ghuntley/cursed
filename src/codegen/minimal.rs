@@ -1,4 +1,4 @@
-use crate::error::Error;
+use crate::error_types::Error;
 use crate::minimal_ast::*;
 use inkwell::context::Context;
 use inkwell::module::Module;

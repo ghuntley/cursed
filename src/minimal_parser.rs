@@ -1,5 +1,5 @@
 //! Minimal parser for CURSED - just enough to parse basic programs
-use crate::error::Error;
+use crate::error_types::Error;
 use crate::minimal_ast::*;
 use crate::lexer::{Lexer, Token, TokenType};
 

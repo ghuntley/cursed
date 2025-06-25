@@ -16,7 +16,7 @@ use crate::memory::{
     collection_triggers::{CollectionTriggerManager, TriggerType, TriggerConfig},
     heap_manager::{HeapStats, MemoryPressure, AllocationMetrics},
 };
-use crate::error::Error;
+use crate::error_types::Error;
 
 /// Adaptive collection strategy based on application behavior
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]

@@ -895,9 +895,8 @@ impl TemplateCache {
                                 debug!("Template '{}' has been modified, invalidating cache", template_name);
                                 
                                 // Remove from cache
-                                if let Ok(mut entries) = self.entries.write() {
-                                    entries.remove(template_name);
-                                }
+                                let mut entries = self.entries.write().await;
+                                entries.remove(template_name);
                                 
                                 // Update timestamp in watcher
                                 drop(watchers);
@@ -913,9 +912,8 @@ impl TemplateCache {
                     Err(e) => {
                         warn!("Failed to check metadata for template '{}': {}", template_name, e);
                         // If file doesn't exist, remove from cache and watchers
-                        if let Ok(mut entries) = self.entries.write() {
-                            entries.remove(template_name);
-                        }
+                        let mut entries = self.entries.write().await;
+                        entries.remove(template_name);
                         drop(watchers);
                         if let Ok(mut watchers_mut) = self.file_watchers.write() {
                             watchers_mut.remove(template_name);

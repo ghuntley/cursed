@@ -1,7 +1,7 @@
 /// Production-ready hash function performance analysis and benchmarking
-use crate::error::CursedError;
+use crate::error_types::Error;
 use crate::stdlib::packages::crypto_hash_advanced::hash_traits::*;
-use crate::error::Error;
+use crate::stdlib::crypto::types::CryptoError;
 use std::time::{Duration, Instant};
 use std::collections::HashMap;
 
@@ -190,7 +190,7 @@ impl HashBenchmark {
             .collect();
         
         if small_results.is_empty() {
-            return Err(CursedError::InvalidArgument("No small input results available".to_string()));
+            return Err(Error::InvalidArgument("No small input results available".to_string()));
         }
         
         let avg_latency = small_results.iter()
@@ -234,7 +234,7 @@ impl HashBenchmark {
             .collect();
         
         if large_results.is_empty() {
-            return Err(CursedError::InvalidArgument("No large input results available".to_string()));
+            return Err(Error::InvalidArgument("No large input results available".to_string()));
         }
         
         let throughput_mb_per_second = large_results.iter()

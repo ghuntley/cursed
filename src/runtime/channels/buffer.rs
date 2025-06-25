@@ -3,14 +3,14 @@
 // Provides both buffered and unbuffered channel implementations with efficient
 // ring buffer storage and proper synchronization primitives.
 
-use crate::error::Error;
 
 use std::collections::VecDeque;
 use std::sync::{Arc, Mutex, Condvar, atomic::{AtomicUsize, Ordering}};
 use std::time::{Duration, Instant};
 use tracing::{debug, warn, error, instrument, trace};
+use crate::error_types::Error;
 use crate::memory::gc::GarbageCollector;
-use crate::error::Error as CursedError;
+use crate::runtime::channels::ChannelError;
 
 /// Result type for buffer operations
 pub type BufferResult<T> = std::result::Result<T, ChannelError>;
@@ -50,9 +50,9 @@ impl std::fmt::Display for ChannelBufferError {
 
 impl std::error::Error for ChannelBufferError {}
 
-impl From<ChannelBufferError> for CursedError {
+impl From<ChannelBufferError> for Error {
     fn from(err: ChannelBufferError) -> Self {
-        CursedError::from_str(&err.to_string())
+        Error::from_str(&err.to_string())
     }
 }
 

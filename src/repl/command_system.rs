@@ -1,4 +1,4 @@
-use crate::error::Error;
+use crate::error_types::Error;
 // Built-in Command System for CURSED REPL
 // 
 // Provides a comprehensive set of built-in commands for development
@@ -10,7 +10,7 @@ use std::fs;
 use std::path::Path;
 
 use crate::repl::{ReplResult, SessionManager, BuildIntegration};
-use crate::error::CursedError;
+use crate::error::Error;
 
 /// Type alias for command handler functions
 type CommandHandler = Box<dyn Fn(&[String], &mut SessionManager, &mut BuildIntegration) -> ReplResult<String>>;
@@ -52,7 +52,7 @@ impl CommandSystem {
         if let Some(handler) = self.commands.get(command) {
             handler(args, session_manager, build_integration)
         } else {
-            Err(CursedError::repl_error(format!(
+            Err(Error::repl_error(format!(
                 "Unknown command: {}. Type :help for available commands.", 
                 command
             )))
@@ -105,16 +105,16 @@ impl CommandSystem {
             &["l"],
             Box::new(|args, session, _build| {
                 if args.is_empty() {
-                    return Err(CursedError::repl_error("Usage: :load <file>".to_string()));
+                    return Err(Error::repl_error("Usage: :load <file>".to_string()));
                 }
 
                 let file_path = &args[0];
                 if !Path::new(file_path).exists() {
-                    return Err(CursedError::repl_error(format!("File not found: {}", file_path)));
+                    return Err(Error::repl_error(format!("File not found: {}", file_path)));
                 }
 
                 let content = fs::read_to_string(file_path)
-                    .map_err(|e| CursedError::repl_error(format!("Failed to read file: {}", e)))?;
+                    .map_err(|e| Error::repl_error(format!("Failed to read file: {}", e)))?;
 
                 // Execute the loaded content
                 session.execute_code(&content)?;
@@ -131,14 +131,14 @@ impl CommandSystem {
             &["s"],
             Box::new(|args, session, _build| {
                 if args.is_empty() {
-                    return Err(CursedError::repl_error("Usage: :save <file>".to_string()));
+                    return Err(Error::repl_error("Usage: :save <file>".to_string()));
                 }
 
                 let file_path = &args[0];
                 let session_code = session.get_session_code();
 
                 fs::write(file_path, session_code)
-                    .map_err(|e| CursedError::repl_error(format!("Failed to write file: {}", e)))?;
+                    .map_err(|e| Error::repl_error(format!("Failed to write file: {}", e)))?;
 
                 Ok(format!("✅ Session saved to: {}", file_path))
             }),
@@ -190,7 +190,7 @@ impl CommandSystem {
             &["t"],
             Box::new(|args, session, _build| {
                 if args.is_empty() {
-                    return Err(CursedError::repl_error("Usage: :type <expression>".to_string()));
+                    return Err(Error::repl_error("Usage: :type <expression>".to_string()));
                 }
 
                 let expr = args.join(" ");
@@ -355,7 +355,7 @@ impl CommandSystem {
                         "report" => Ok("📊 JIT performance report would be shown here".to_string()),
                         "functions" => Ok("📦 Available JIT functions would be listed here".to_string()),
                         "status" => Ok("✅ JIT compilation system is active".to_string()),
-                        _ => Err(CursedError::repl_error("Unknown JIT command. Use ':help jit' for usage.".to_string()))
+                        _ => Err(Error::repl_error("Unknown JIT command. Use ':help jit' for usage.".to_string()))
                     }
                 }
             }),
@@ -368,7 +368,7 @@ impl CommandSystem {
             &["opt"],
             Box::new(|args, _session, _build| {
                 if !args.is_empty() {
-                    return Err(CursedError::repl_error("Usage: :optimize".to_string()));
+                    return Err(Error::repl_error("Usage: :optimize".to_string()));
                 }
                 Ok("🔥 Hot path optimization triggered (if JIT is available)".to_string())
             }),
@@ -381,7 +381,7 @@ impl CommandSystem {
             &["perf"],
             Box::new(|args, _session, _build| {
                 if args.is_empty() {
-                    return Err(CursedError::repl_error("Usage: :profile <function_name> [iterations]".to_string()));
+                    return Err(Error::repl_error("Usage: :profile <function_name> [iterations]".to_string()));
                 }
                 let function_name = &args[0];
                 let iterations = if args.len() > 1 {

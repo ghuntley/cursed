@@ -155,13 +155,13 @@ pub async fn sleep(duration: Duration) {
 }
 
 /// Async timeout wrapper
-pub async fn timeout<F>(duration: Duration, future: F) -> Result<(), Error>
+pub async fn timeout<F>(duration: Duration, future: F) -> Result<F::Output, Error>
 where
     F: Future + Send,
 {
     match tokio::time::timeout(duration, future).await {
         Ok(result) => Ok(result),
-        Err(_) => Err(FutureError::Timeout),
+        Err(_) => Err(Error::from(FutureError::Timeout)),
     }
 }
 

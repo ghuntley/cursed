@@ -1,4 +1,4 @@
-use crate::error::Error;
+use crate::error_types::Error;
 // Syntax Highlighting for CURSED REPL
 // 
 // Provides real-time syntax highlighting for CURSED keywords,

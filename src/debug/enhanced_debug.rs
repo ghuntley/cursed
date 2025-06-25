@@ -466,7 +466,7 @@ impl DebugInfoRegistry {
     }
 
     /// Get debug information by location
-    pub fn get_debug_info(&self, location_key: &str) -> Result<(), Error> {
+    pub fn get_debug_info(&self, location_key: &str) -> Result<Option<EnhancedDebugInfo>, Error> {
         let debug_info = self.debug_info.read()
             .map_err(|_| CursedError::Runtime("Failed to acquire debug info lock".to_string()))?;
         
@@ -483,7 +483,7 @@ impl DebugInfoRegistry {
     }
 
     /// Get source map for file
-    pub fn get_source_map(&self, file_path: &Path) -> Result<(), Error> {
+    pub fn get_source_map(&self, file_path: &Path) -> Result<Option<SourceMap>, Error> {
         let source_maps = self.source_maps.read()
             .map_err(|_| CursedError::Runtime("Failed to acquire source maps lock".to_string()))?;
         
@@ -500,7 +500,7 @@ impl DebugInfoRegistry {
     }
 
     /// Get symbol metadata
-    pub fn get_symbol(&self, qualified_name: &str) -> Result<(), Error> {
+    pub fn get_symbol(&self, qualified_name: &str) -> Result<Option<SymbolMetadata>, Error> {
         let symbols = self.symbols.read()
             .map_err(|_| CursedError::Runtime("Failed to acquire symbols lock".to_string()))?;
         
@@ -517,7 +517,7 @@ impl DebugInfoRegistry {
     }
 
     /// Get type information
-    pub fn get_type(&self, type_name: &str) -> Result<(), Error> {
+    pub fn get_type(&self, type_name: &str) -> Result<Option<TypeDebugInfo>, Error> {
         let types = self.types.read()
             .map_err(|_| CursedError::Runtime("Failed to acquire types lock".to_string()))?;
         
@@ -525,7 +525,7 @@ impl DebugInfoRegistry {
     }
 
     /// Create new scope
-    pub fn create_scope(&self, scope_info: ScopeInfo) -> Result<(), Error> {
+    pub fn create_scope(&self, scope_info: ScopeInfo) -> Result<u64, Error> {
         let mut next_id = self.next_scope_id.write()
             .map_err(|_| CursedError::Runtime("Failed to acquire scope ID lock".to_string()))?;
         
@@ -540,7 +540,7 @@ impl DebugInfoRegistry {
     }
 
     /// Get scope information
-    pub fn get_scope(&self, scope_id: u64) -> Result<(), Error> {
+    pub fn get_scope(&self, scope_id: u64) -> Result<Option<ScopeInfo>, Error> {
         let scopes = self.scopes.read()
             .map_err(|_| CursedError::Runtime("Failed to acquire scopes lock".to_string()))?;
         
@@ -548,7 +548,7 @@ impl DebugInfoRegistry {
     }
 
     /// Find all symbols matching pattern
-    pub fn find_symbols(&self, pattern: &str) -> Result<(), Error> {
+    pub fn find_symbols(&self, pattern: &str) -> Result<Vec<(String, SymbolMetadata)>, Error> {
         let symbols = self.symbols.read()
             .map_err(|_| CursedError::Runtime("Failed to acquire symbols lock".to_string()))?;
         
@@ -562,7 +562,7 @@ impl DebugInfoRegistry {
     }
 
     /// Get debug statistics
-    pub fn get_statistics(&self) -> Result<(), Error> {
+    pub fn get_statistics(&self) -> Result<DebugStatistics, Error> {
         let debug_info = self.debug_info.read()
             .map_err(|_| CursedError::Runtime("Failed to acquire debug info lock".to_string()))?;
         let symbols = self.symbols.read()

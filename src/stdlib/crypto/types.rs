@@ -1,3 +1,4 @@
+// Note: CryptoError is defined in this module
 /// Cryptographic type definitions for the CURSED standard library
 /// 
 /// This module provides type definitions for cryptographic functionality
@@ -687,7 +688,7 @@ pub struct KeySizeRecommendations {
 #[cfg(test)]
 mod tests {
     use super::*;
-use crate::error::Error;
+use crate::error_types::Error;
 
     #[test]
     fn test_ed25519_key_generation() {

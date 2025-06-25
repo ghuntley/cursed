@@ -89,7 +89,7 @@ pub mod ast {
 
 /// Prelude module for minimal imports
 pub mod prelude {
-    pub use crate::error::Error;
+    pub use crate::error_types::Error;
     pub use crate::lexer::{Lexer, Token, TokenType};
     pub use crate::minimal_parser::Parser;
     pub use crate::minimal_ast::*;

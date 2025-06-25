@@ -1,65 +1,154 @@
-use crate::error::Error;
-/// ByteFit - Comprehensive byte slice manipulation library for CURSED
-/// 
-/// Provides functions for manipulating byte slices, offering efficient, 
-/// fit-for-purpose operations on binary data with enhanced functionality
-/// and a modern approach to byte manipulation.
+// ByteFit - Binary data manipulation library for CURSED
+// Provides utilities for working with binary data, bit manipulation, and byte operations
 
-pub mod basic;
-pub mod search;
-pub mod transform;
-pub mod split;
-pub mod trim;
-pub mod buffer;
-pub mod binary;
-pub mod pattern;
-pub mod error;
+use std::convert::TryFrom;
 
-// Re-export all public functions and types
-pub use error::{
-    ByteFitError, ByteFitResult, 
-    invalid_utf8, invalid_base64, invalid_hex, invalid_pattern, 
-    index_out_of_bounds, invalid_input, buffer_overflow, 
-    encoding_error, regex_error
-};
+/// Byte manipulation utilities
+pub struct ByteFit;
 
-// Basic operations
-pub use basic::{
-    compare, equal, equal_fold, repeat, runes
-};
+impl ByteFit {
+    /// Convert bytes to hex string
+    pub fn bytes_to_hex(bytes: &[u8]) -> String {
+        bytes.iter()
+            .map(|b| format!("{:02x}", b))
+            .collect::<Vec<_>>()
+            .join("")
+    }
 
-// Search functions
-pub use search::{
-    contains, contains_any, contains_rune, count, has_prefix, has_suffix,
-    index, index_any, index_byte, index_rune, 
-    last_index, last_index_any, last_index_byte
-};
+    /// Convert hex string to bytes
+    pub fn hex_to_bytes(hex: &str) -> Result<Vec<u8>, String> {
+        if hex.len() % 2 != 0 {
+            return Err("Hex string must have even length".to_string());
+        }
 
-// Transformation functions
-pub use transform::{
-    join, replace, replace_all, map, to_upper, to_lower, to_title
-};
+        let mut bytes = Vec::new();
+        for i in (0..hex.len()).step_by(2) {
+            let byte_str = &hex[i..i+2];
+            match u8::from_str_radix(byte_str, 16) {
+                Ok(byte) => bytes.push(byte),
+                Err(_) => return Err(format!("Invalid hex byte: {}", byte_str)),
+            }
+        }
+        Ok(bytes)
+    }
 
-// Splitting functions
-pub use split::{
-    split, split_n, split_after, split_after_n, fields, fields_func
-};
+    /// Get bit at position
+    pub fn get_bit(byte: u8, position: u8) -> bool {
+        if position >= 8 {
+            return false;
+        }
+        (byte & (1 << position)) != 0
+    }
 
-// Trimming functions
-pub use trim::{
-    trim, trim_left, trim_right, trim_space, trim_prefix, trim_suffix, trim_func
-};
+    /// Set bit at position
+    pub fn set_bit(byte: u8, position: u8, value: bool) -> u8 {
+        if position >= 8 {
+            return byte;
+        }
+        if value {
+            byte | (1 << position)
+        } else {
+            byte & !(1 << position)
+        }
+    }
 
-// Enhanced Buffer type
-pub use buffer::{FitBuffer, new_fit_buffer};
+    /// Count set bits
+    pub fn count_ones(byte: u8) -> u32 {
+        byte.count_ones()
+    }
 
-// Binary data manipulation
-pub use binary::{
-    from_hex, to_hex, from_base64, to_base64,
-    and, or, xor, not, shift_left, shift_right
-};
+    /// Reverse bits in byte
+    pub fn reverse_bits(byte: u8) -> u8 {
+        byte.reverse_bits()
+    }
+}
 
-// Pattern matching
-pub use pattern::{
-    wildcard_match, regex_match, regex_find_all, regex_replace
-};
+/// Bit manipulation trait
+pub trait BitOps {
+    fn get_bit(&self, position: u8) -> bool;
+    fn set_bit(&mut self, position: u8, value: bool);
+    fn count_ones(&self) -> u32;
+    fn reverse_bits(&self) -> Self;
+}
+
+impl BitOps for u8 {
+    fn get_bit(&self, position: u8) -> bool {
+        ByteFit::get_bit(*self, position)
+    }
+
+    fn set_bit(&mut self, position: u8, value: bool) {
+        *self = ByteFit::set_bit(*self, position, value);
+    }
+
+    fn count_ones(&self) -> u32 {
+        ByteFit::count_ones(*self)
+    }
+
+    fn reverse_bits(&self) -> Self {
+        ByteFit::reverse_bits(*self)
+    }
+}
+
+/// Byte array utilities
+pub struct ByteArray;
+
+impl ByteArray {
+    /// XOR two byte arrays
+    pub fn xor(a: &[u8], b: &[u8]) -> Vec<u8> {
+        a.iter()
+            .zip(b.iter())
+            .map(|(x, y)| x ^ y)
+            .collect()
+    }
+
+    /// Rotate left
+    pub fn rotate_left(bytes: &[u8], positions: usize) -> Vec<u8> {
+        if bytes.is_empty() {
+            return Vec::new();
+        }
+        let len = bytes.len();
+        let pos = positions % len;
+        let mut result = Vec::with_capacity(len);
+        result.extend_from_slice(&bytes[pos..]);
+        result.extend_from_slice(&bytes[..pos]);
+        result
+    }
+
+    /// Rotate right
+    pub fn rotate_right(bytes: &[u8], positions: usize) -> Vec<u8> {
+        if bytes.is_empty() {
+            return Vec::new();
+        }
+        let len = bytes.len();
+        let pos = positions % len;
+        let mut result = Vec::with_capacity(len);
+        result.extend_from_slice(&bytes[len - pos..]);
+        result.extend_from_slice(&bytes[..len - pos]);
+        result
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_hex_conversion() {
+        let bytes = vec![0x12, 0x34, 0xAB, 0xCD];
+        let hex = ByteFit::bytes_to_hex(&bytes);
+        assert_eq!(hex, "1234abcd");
+        
+        let decoded = ByteFit::hex_to_bytes(&hex).unwrap();
+        assert_eq!(decoded, bytes);
+    }
+
+    #[test]
+    fn test_bit_operations() {
+        let byte = 0b10101010;
+        assert!(ByteFit::get_bit(byte, 1));
+        assert!(!ByteFit::get_bit(byte, 0));
+        
+        let modified = ByteFit::set_bit(byte, 0, true);
+        assert_eq!(modified, 0b10101011);
+    }
+}

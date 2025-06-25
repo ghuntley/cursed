@@ -1,6 +1,6 @@
 /// Multi-Factor Authentication and Authentication Protocols Implementation
 use crate::error::CursedError;
-use crate::stdlib::packages::crypto_advanced::AdvancedCryptoResult;
+use crate::stdlib::packages::crypto_advanced::errors::AdvancedCryptoResult;
 use crate::stdlib::packages::crypto_random::SecureRandom;
 use crate::stdlib::packages::crypto_hash_advanced::HashRegistry;
 use crate::error::Error;

@@ -7,6 +7,7 @@ use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
 use tracing::{instrument, debug, info, warn, error};
 
+use crate::error_types::Error;
 use super::super::{DatabaseError, DatabaseErrorKind, SqlValue};
 use super::entity::{Entity, SqlColumnType};
 

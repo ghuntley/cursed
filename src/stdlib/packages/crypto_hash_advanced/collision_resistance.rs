@@ -1,7 +1,7 @@
 /// Production-ready collision resistance analysis for hash functions
-use crate::error::CursedError;
+use crate::error_types::Error;
 use crate::stdlib::packages::crypto_hash_advanced::hash_traits::*;
-use crate::error::Error;
+use crate::stdlib::crypto::types::CryptoError;
 use std::collections::{HashMap, HashSet};
 use std::time::{Duration, Instant};
 

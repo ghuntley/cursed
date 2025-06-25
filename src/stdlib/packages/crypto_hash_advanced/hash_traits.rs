@@ -1,8 +1,8 @@
 /// Production-ready hash traits and interfaces for advanced cryptographic hashing
-use crate::error::CursedError;
-use crate::error::Error;
 use std::io::{Read, Write};
 use std::fmt::{Debug, Display};
+use crate::error_types::Error;
+use crate::stdlib::crypto::types::CryptoError;
 
 /// Result type for hash operations
 pub type HashResult<T> = std::result::Result<T, CryptoError>;
@@ -50,7 +50,7 @@ pub trait Hasher: Clone + Debug + Send + Sync {
             match reader.read(&mut buffer) {
                 Ok(0) => break,
                 Ok(n) => self.update(&buffer[..n]),
-                Err(e) => return Err(CursedError::General(format!("Read error: {}", e))),
+                Err(e) => return Err(Error::General(format!("Read error: {}", e))),
             }
         }
         Ok(self.clone().finalize())

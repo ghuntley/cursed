@@ -1,10 +1,16 @@
 // Debug modules for CURSED
 pub mod enhanced_debug;
 pub mod source_location;
+pub mod debug_info_types;
+pub mod debug_info;
 
 // Re-export key types
 pub use crate::error::SourceLocation;
-pub use enhanced_debug::EnhancedDebug;
+pub use enhanced_debug::{
+    EnhancedDebugInfo as EnhancedDebugInfo, DebugInfoRegistry, SymbolMetadata, 
+    TypeDebugInfo, SourceMap, SymbolType, TypeKind
+};
+pub use debug_info_types::{EnhancedDebugInfo as DebugInfoTypes, EnhancedStackTraceConfig as StackTraceConfig};
 pub use source_location::SourceLocationInfo;
 
 #[derive(Debug, Clone)]

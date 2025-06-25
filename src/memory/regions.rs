@@ -22,6 +22,7 @@ use tracing::{instrument, debug, info, warn, error, span, Level};
 use crate::memory::allocator::{Allocator, BumpAllocator, FreeListAllocator, SegregatedAllocator, AllocationResult};
 use crate::memory::heap::AllocationStrategy;
 use crate::memory::heap::HeapConfiguration;
+use crate::error_types::Error;
 
 /// Trait for memory regions within the heap
 /// 

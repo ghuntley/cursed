@@ -3,7 +3,7 @@
 /// This module provides transaction handling, isolation levels, savepoints,
 /// and transaction coordination for database operations. ACID compliance bestie!
 
-use crate::stdlib::packages::db_core::{
+use crate::stdlib::packages::db_core::error::{
     DatabaseError, ErrorKind, TransactionError
 };
 use crate::error::Error;

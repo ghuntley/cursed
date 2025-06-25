@@ -6,7 +6,7 @@ use std::net::SocketAddr;
 use std::str::FromStr;
 use std::sync::Arc;
 use tracing::{debug, instrument};
-use crate::error::Error;
+use crate::error_types::Error;
 
 /// HTTP methods
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
