@@ -158,14 +158,18 @@ impl Lexer {
     }
     
     fn read_string(&mut self) -> String {
-        let position = self.position + 1;
+        let start_pos = self.position + 1;
+        let mut result = String::new();
+        
         loop {
             self.read_char();
             if self.ch == '"' || self.ch == '\0' {
                 break;
             }
+            result.push(self.ch);
         }
-        self.input[position..self.position].to_string()
+        
+        result
     }
     
     fn lookup_ident(&self, ident: &str) -> TokenType {

@@ -124,9 +124,15 @@ impl Lexer {
             '}' => Token::new(TokenType::RightBrace, "}"),
             ';' => Token::new(TokenType::Semicolon, ";"),
             ',' => Token::new(TokenType::Comma, ","),
+            '"' => {
+                let literal = self.read_string();
+                let token = Token::new(TokenType::String, &literal);
+                self.read_char(); // Skip the closing quote
+                return token;
+            },
             '\0' => Token::new(TokenType::Eof, ""),
             _ => {
-                if self.ch.is_ascii_letter() || self.ch == '_' {
+                if self.ch.is_alphabetic() || self.ch == '_' {
                     let literal = self.read_identifier();
                     let token_type = self.lookup_ident(&literal);
                     return Token {
@@ -135,7 +141,7 @@ impl Lexer {
                         line: self.line,
                         column: self.column,
                     };
-                } else if self.ch.is_ascii_digit() {
+                } else if self.ch.is_numeric() {
                     let literal = self.read_number();
                     return Token::new(TokenType::Integer, &literal);
                 } else {
@@ -156,7 +162,7 @@ impl Lexer {
     
     fn read_identifier(&mut self) -> String {
         let position = self.position;
-        while self.ch.is_ascii_alphanumeric() || self.ch == '_' {
+        while self.ch.is_alphanumeric() || self.ch == '_' {
             self.read_char();
         }
         self.input[position..self.position].to_string()
@@ -164,10 +170,24 @@ impl Lexer {
     
     fn read_number(&mut self) -> String {
         let position = self.position;
-        while self.ch.is_ascii_digit() {
+        while self.ch.is_numeric() {
             self.read_char();
         }
         self.input[position..self.position].to_string()
+    }
+    
+    fn read_string(&mut self) -> String {
+        let mut result = String::new();
+        
+        loop {
+            self.read_char();
+            if self.ch == '"' || self.ch == '\0' {
+                break;
+            }
+            result.push(self.ch);
+        }
+        
+        result
     }
     
     fn lookup_ident(&self, ident: &str) -> TokenType {
@@ -184,6 +204,19 @@ impl Lexer {
             "flex" => TokenType::Flex,
             "true" | "false" => TokenType::Boolean,
             _ => TokenType::Identifier,
+        }
+    }
+}
+
+impl Iterator for Lexer {
+    type Item = Token;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        let token = self.next_token();
+        if token.token_type == TokenType::Eof {
+            None
+        } else {
+            Some(token)
         }
     }
 }
