@@ -1,14 +1,14 @@
 ; ModuleID = 'test_simple.csd'
 source_filename = "test_simple.csd"
 
-@msg = global [20 x i8] c"Hello, CURSED world!"
+@msg = global [5 x i8] c"Hello"
 
 define i32 @main() {
 entry:
   ret i32 0
 }
 
-define void @greet() {
+define i32 @main.1() {
 entry:
-  ret void
+  ret i32 0
 }

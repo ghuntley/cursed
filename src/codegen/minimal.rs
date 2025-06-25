@@ -210,7 +210,7 @@ pub fn compile_cursed_to_object(program: &Program, module_name: &str, output_fil
     
     // Get the target triple for the current platform
     let target_triple = TargetMachine::get_default_triple();
-    codegen.compile_to_object_file(&target_triple.as_str().to_str().unwrap(), output_file)
+    codegen.compile_to_object_file(target_triple.as_str().to_str().unwrap(), output_file)
 }
 
 pub fn compile_cursed_to_executable(program: &Program, module_name: &str, output_file: &str) -> Result<(), Error> {
@@ -224,7 +224,7 @@ pub fn compile_cursed_to_executable(program: &Program, module_name: &str, output
     
     // First create an object file
     let temp_obj = format!("{}.o", output_file);
-    codegen.compile_to_object_file(&target_triple.as_str().to_str().unwrap(), &temp_obj)?;
+    codegen.compile_to_object_file(target_triple.as_str().to_str().unwrap(), &temp_obj)?;
     
     // Then link it into an executable using gcc
     let link_result = std::process::Command::new("gcc")
