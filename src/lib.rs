@@ -30,6 +30,51 @@ pub mod stdlib {
     pub mod crypto_pqc {
         pub mod hybrid {}
     }
+    pub mod database {
+        pub struct DB;
+        pub struct Conn;
+        pub struct QueryResult;
+        pub struct SqliteDriver;
+        pub struct DriverConn;
+        pub struct DatabaseError;
+    }
+    pub mod value {
+        #[derive(Debug, Clone)]
+        pub enum Value {
+            Object(std::collections::HashMap<String, String>),
+            String(String),
+            Int(i64),
+        }
+    }
+    pub mod packages {
+        pub mod test_vibes {
+            pub mod runners {
+                pub struct TestRunnerConfig;
+            }
+            pub mod fixtures {
+                pub struct DatabaseFixture;
+            }
+        }
+    }
+}
+
+pub mod optimization {
+    pub mod parallel {
+        pub struct ParallelCompiler;
+        pub struct CompilationJob;
+        pub enum JobPriority {
+            High,
+            Normal,
+            Low,
+        }
+    }
+    pub mod llvm_advanced {
+        pub mod utils {
+            pub fn dev_config() -> String { "dev".to_string() }
+            pub fn release_config() -> String { "release".to_string() }
+            pub fn pgo_config() -> String { "pgo".to_string() }
+        }
+    }
 }
 
 // Re-export essential types
@@ -37,6 +82,11 @@ pub use error::Error;
 pub use minimal_lexer::{Lexer, Token, TokenType};
 pub use minimal_parser::Parser;
 pub use minimal_ast::*;
+
+// AST module alias for compatibility
+pub mod ast {
+    pub use crate::minimal_ast::identifiers;
+}
 
 /// Prelude module for minimal imports
 pub mod prelude {

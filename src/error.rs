@@ -17,6 +17,8 @@ pub enum Error {
     General(String),
     /// Debug errors
     Debug(String),
+    /// Type errors for compatibility
+    Type(String),
 }
 
 impl fmt::Display for Error {
@@ -29,6 +31,7 @@ impl fmt::Display for Error {
             Error::NotImplemented(msg) => write!(f, "Not implemented: {}", msg),
             Error::General(msg) => write!(f, "General error: {}", msg),
             Error::Debug(msg) => write!(f, "Debug error: {}", msg),
+            Error::Type(msg) => write!(f, "Type error: {}", msg),
         }
     }
 }
@@ -52,3 +55,9 @@ impl From<&str> for Error {
         Error::Runtime(msg.to_string())
     }
 }
+
+/// Result type alias for CURSED operations
+pub type Result<T> = std::result::Result<T, Error>;
+
+/// Legacy aliases for compatibility
+pub type CursedError = Error;

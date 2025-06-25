@@ -1,5 +1,20 @@
 /// Minimal AST for CURSED - just enough to parse basic programs
 
+/// Identifier module for compatibility
+pub mod identifiers {
+    #[derive(Debug, Clone, PartialEq)]
+    pub struct Identifier {
+        pub name: String,
+        pub value: String,
+    }
+    
+    impl Identifier {
+        pub fn new(name: String, value: String) -> Self {
+            Self { name, value }
+        }
+    }
+}
+
 #[derive(Debug, Clone)]
 pub struct Program {
     pub statements: Vec<Statement>,

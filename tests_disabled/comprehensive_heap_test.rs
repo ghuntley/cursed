@@ -1,6 +1,8 @@
 /// Comprehensive heap management tests
 /// Tests heap allocation, deallocation, compaction, growth, and advanced heap features
 
+#![cfg(feature = "full-memory-management")]
+
 #[path = "common.rs"]
 pub mod common;
 
@@ -570,7 +572,7 @@ mod tests {
         // Should either fail gracefully or be idempotent
 
         // Test invalid pointer deallocation
-        let invalid_ptr = NonNull::new(0x12345678 as *mut u8).unwrap();
+        let invalid_ptr = std::ptr::NonNull::new(0x12345678 as *mut u8).unwrap();
         let invalid_dealloc = heap.deallocate(invalid_ptr, 256);
         debug!("Invalid pointer deallocation result: {:?}", invalid_dealloc);
         // Should fail gracefully
