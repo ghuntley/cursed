@@ -1,10 +1,10 @@
 use crate::web::StatusCode;
 // HTTP client implementation for GlowUpHTTP
 
-use crate::stdlib::glowup_http::error::{GlowUpError, GlowUpResult};
-use crate::stdlib::glowup_http::request::{VibeRequest, Method};
-use crate::error::Error;
-pub use crate::stdlib::glowup_http::response::VibeResponse;
+// use crate::stdlib::glowup_http::error::{GlowUpError, GlowUpResult};
+// use crate::stdlib::glowup_http::request::{VibeRequest, Method};
+use crate::error::CursedError;
+// pub use crate::stdlib::glowup_http::response::VibeResponse;
 use reqwest;
 #[cfg(feature = "multipart")]
 use reqwest::multipart;
@@ -595,7 +595,7 @@ impl VibeClientBuilder {
 }
 
 /// Convert reqwest error to GlowUpError
-fn convert_reqwest_error(error: reqwest::Error) -> GlowUpError {
+fn convert_reqwest_error(error: reqwest::CursedError) -> GlowUpError {
     if error.is_timeout() {
         GlowUpError::timeout("Request timed out")
     } else if error.is_connect() {

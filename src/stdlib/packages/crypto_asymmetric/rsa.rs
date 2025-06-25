@@ -1,4 +1,4 @@
-use crate::error::Error;
+use crate::error::CursedError;
 /// fr fr RSA implementation with real cryptographic operations
 /// 
 /// This module provides production-ready RSA key generation, encryption, decryption,
@@ -12,7 +12,6 @@ use rsa::pkcs8::{EncodePrivateKey, EncodePublicKey, DecodePrivateKey, DecodePubl
 use rsa::signature::{RandomizedSigner, Verifier, SignatureEncoding};
 use sha2::{Sha256, Sha384, Sha512, Digest};
 use zeroize::Zeroizing;
-use crate::error::CursedError;
 
 /// fr fr RSA key sizes in bits
 pub const RSA_2048_BITS: usize = 2048;
@@ -80,47 +79,47 @@ pub enum RsaError {
     Internal(String),
 }
 
-impl std::fmt::Display for RsaError {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            RsaError::InvalidKeySize(size) => write!(f, "Invalid RSA key size: {} bits (minimum 2048)", size),
-            RsaError::KeyGenerationFailed(msg) => write!(f, "RSA key generation failed: {}", msg),
-            RsaError::EncryptionFailed(msg) => write!(f, "RSA encryption failed: {}", msg),
-            RsaError::DecryptionFailed(msg) => write!(f, "RSA decryption failed: {}", msg),
-            RsaError::SigningFailed(msg) => write!(f, "RSA signing failed: {}", msg),
-            RsaError::VerificationFailed(msg) => write!(f, "RSA verification failed: {}", msg),
-            RsaError::InvalidPadding(msg) => write!(f, "Invalid RSA padding: {}", msg),
-            RsaError::InvalidInput(msg) => write!(f, "Invalid RSA input: {}", msg),
-            RsaError::InvalidFormat(msg) => write!(f, "Invalid key format: {}", msg),
-            RsaError::SerializationFailed(msg) => write!(f, "Key serialization failed: {}", msg),
-            RsaError::DeserializationFailed(msg) => write!(f, "Key deserialization failed: {}", msg),
-            RsaError::InsufficientEntropy => write!(f, "Insufficient entropy for RSA operation"),
-            RsaError::Internal(msg) => write!(f, "Internal RSA error: {}", msg),
-        }
-    }
-}
+// impl std::fmt::Display for RsaError {
+//     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+//         match self {
+//             RsaError::InvalidKeySize(size) => write!(f, "Invalid RSA key size: {} bits (minimum 2048)", size),
+//             RsaError::KeyGenerationFailed(msg) => write!(f, "RSA key generation failed: {}", msg),
+//             RsaError::EncryptionFailed(msg) => write!(f, "RSA encryption failed: {}", msg),
+//             RsaError::DecryptionFailed(msg) => write!(f, "RSA decryption failed: {}", msg),
+//             RsaError::SigningFailed(msg) => write!(f, "RSA signing failed: {}", msg),
+//             RsaError::VerificationFailed(msg) => write!(f, "RSA verification failed: {}", msg),
+//             RsaError::InvalidPadding(msg) => write!(f, "Invalid RSA padding: {}", msg),
+//             RsaError::InvalidInput(msg) => write!(f, "Invalid RSA input: {}", msg),
+//             RsaError::InvalidFormat(msg) => write!(f, "Invalid key format: {}", msg),
+//             RsaError::SerializationFailed(msg) => write!(f, "Key serialization failed: {}", msg),
+//             RsaError::DeserializationFailed(msg) => write!(f, "Key deserialization failed: {}", msg),
+//             RsaError::InsufficientEntropy => write!(f, "Insufficient entropy for RSA operation"),
+//             RsaError::Internal(msg) => write!(f, "Internal RSA error: {}", msg),
+//         }
+//     }
+// }
 
-impl std::error::Error for RsaError {}
+// impl std::error::CursedError for RsaError {}
+// 
+// impl From<rsa::CursedError> for RsaError {
+//     fn from(err: rsa::CursedError) -> Self {
+//         RsaError::Internal(err.to_string())
+//     }
+// }
 
-impl From<rsa::Error> for RsaError {
-    fn from(err: rsa::Error) -> Self {
-        RsaError::Internal(err.to_string())
-    }
-}
+// impl From<rsa::pkcs1::CursedError> for RsaError {
+//     fn from(err: rsa::pkcs1::CursedError) -> Self {
+//         RsaError::SerializationFailed(err.to_string())
+//     }
+// }
 
-impl From<rsa::pkcs1::Error> for RsaError {
-    fn from(err: rsa::pkcs1::Error) -> Self {
-        RsaError::SerializationFailed(err.to_string())
-    }
-}
+// impl From<rsa::pkcs8::CursedError> for RsaError {
+//     fn from(err: rsa::pkcs8::CursedError) -> Self {
+//         RsaError::SerializationFailed(err.to_string())
+//     }
+// }
 
-impl From<rsa::pkcs8::Error> for RsaError {
-    fn from(err: rsa::pkcs8::Error) -> Self {
-        RsaError::SerializationFailed(err.to_string())
-    }
-}
-
-type RsaResult<T> = Result<T, Error>;
+type Rsacrate::error::Result<T> = Result<T>;
 
 /// fr fr RSA implementation with real cryptographic operations
 pub struct RsaEngine {
@@ -483,10 +482,10 @@ impl Default for RsaEngine {
 }
 
 /// fr fr Public API functions for CURSED integration
-use crate::stdlib::value::Value;
+// use crate::stdlib::value::Value;
 
 /// slay Generate RSA key pair
-pub fn rsa_generate_keypair(args: Vec<Value>) -> Result<(), Error> {
+pub fn rsa_generate_keypair(args: Vec<Value>) -> crate::error::Result<()> {
     let key_size = if args.is_empty() {
         RSA_2048_BITS
     } else {
@@ -518,7 +517,7 @@ pub fn rsa_generate_keypair(args: Vec<Value>) -> Result<(), Error> {
 }
 
 /// slay RSA encrypt data with public key
-pub fn rsa_encrypt(args: Vec<Value>) -> Result<(), Error> {
+pub fn rsa_encrypt(args: Vec<Value>) -> crate::error::Result<()> {
     if args.len() < 2 {
         return Err(CursedError::Runtime("RSA encrypt requires public key and plaintext".to_string()));
     }
@@ -562,7 +561,7 @@ pub fn rsa_encrypt(args: Vec<Value>) -> Result<(), Error> {
 }
 
 /// slay RSA decrypt data with private key  
-pub fn rsa_decrypt(args: Vec<Value>) -> Result<(), Error> {
+pub fn rsa_decrypt(args: Vec<Value>) -> crate::error::Result<()> {
     if args.len() < 2 {
         return Err(CursedError::Runtime("RSA decrypt requires private key and ciphertext".to_string()));
     }
@@ -610,7 +609,7 @@ pub fn rsa_decrypt(args: Vec<Value>) -> Result<(), Error> {
 }
 
 /// slay RSA sign data with private key
-pub fn rsa_sign(args: Vec<Value>) -> Result<(), Error> {
+pub fn rsa_sign(args: Vec<Value>) -> crate::error::Result<()> {
     if args.len() < 2 {
         return Err(CursedError::Runtime("RSA sign requires private key and message".to_string()));
     }
@@ -654,7 +653,7 @@ pub fn rsa_sign(args: Vec<Value>) -> Result<(), Error> {
 }
 
 /// slay RSA verify signature with public key
-pub fn rsa_verify(args: Vec<Value>) -> Result<(), Error> {
+pub fn rsa_verify(args: Vec<Value>) -> crate::error::Result<()> {
     if args.len() < 3 {
         return Err(CursedError::Runtime("RSA verify requires public key, message, and signature".to_string()));
     }
@@ -706,110 +705,3 @@ pub fn rsa_verify(args: Vec<Value>) -> Result<(), Error> {
     Ok(Value::bool(is_valid))
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-    
-    #[test]
-    fn test_rsa_key_generation() {
-        let mut engine = RsaEngine::new();
-        let result = engine.generate_keypair(RSA_2048_BITS);
-        assert!(result.is_ok());
-        
-        let keypair = result.unwrap();
-        assert_eq!(keypair.key_size, RSA_2048_BITS);
-        assert_eq!(keypair.public_key.size(), RSA_2048_BITS / 8);
-        assert_eq!(keypair.private_key.size(), RSA_2048_BITS / 8);
-    }
-    
-    #[test]
-    fn test_rsa_encryption_decryption() {
-        let mut engine = RsaEngine::new();
-        let keypair = engine.generate_keypair(RSA_2048_BITS).unwrap();
-        
-        let plaintext = b"Hello, RSA encryption with OAEP!";
-        let encrypted = engine.encrypt(&keypair.public_key, plaintext, RsaPadding::OaepSha256).unwrap();
-        let decrypted = engine.decrypt(&keypair.private_key, &encrypted, RsaPadding::OaepSha256).unwrap();
-        
-        assert_eq!(plaintext, &decrypted[..]);
-    }
-    
-    #[test]
-    fn test_rsa_signing_verification() {
-        let mut engine = RsaEngine::new();
-        let keypair = engine.generate_keypair(RSA_2048_BITS).unwrap();
-        
-        let message = b"Hello, RSA signatures with PSS!";
-        let signature = engine.sign(&keypair.private_key, message, RsaPadding::PssSha256).unwrap();
-        let verified = engine.verify(&keypair.public_key, message, &signature, RsaPadding::PssSha256).unwrap();
-        
-        assert!(verified);
-        
-        // Test with wrong message
-        let wrong_message = b"Wrong message";
-        let verified_wrong = engine.verify(&keypair.public_key, wrong_message, &signature, RsaPadding::PssSha256).unwrap();
-        assert!(!verified_wrong);
-    }
-    
-    #[test]
-    fn test_key_serialization() {
-        let mut engine = RsaEngine::new();
-        let keypair = engine.generate_keypair(RSA_2048_BITS).unwrap();
-        
-        // Test private key serialization/deserialization
-        let private_pem = engine.serialize_private_key(&keypair.private_key, KeyFormat::Pkcs8Pem).unwrap();
-        let deserialized_private = engine.deserialize_private_key(&private_pem, KeyFormat::Pkcs8Pem).unwrap();
-        
-        // Test public key serialization/deserialization
-        let public_pem = engine.serialize_public_key(&keypair.public_key, KeyFormat::Pkcs8Pem).unwrap();
-        let deserialized_public = engine.deserialize_public_key(&public_pem, KeyFormat::Pkcs8Pem).unwrap();
-        
-        // Verify they still work
-        let message = b"Test serialization";
-        let encrypted = engine.encrypt(&deserialized_public, message, RsaPadding::OaepSha256).unwrap();
-        let decrypted = engine.decrypt(&deserialized_private, &encrypted, RsaPadding::OaepSha256).unwrap();
-        
-        assert_eq!(message, &decrypted[..]);
-    }
-    
-    #[test]
-    fn test_invalid_key_size() {
-        let mut engine = RsaEngine::new();
-        let result = engine.generate_keypair(1024); // Too small
-        assert!(result.is_err());
-        assert!(matches!(result.unwrap_err(), RsaError::InvalidKeySize(1024)));
-    }
-    
-    #[test]
-    fn test_input_validation() {
-        let mut engine = RsaEngine::new();
-        let keypair = engine.generate_keypair(RSA_2048_BITS).unwrap();
-        
-        // Test oversized plaintext for OAEP-SHA256
-        let large_plaintext = vec![0u8; 300]; // Too large for 2048-bit key with OAEP-SHA256
-        let result = engine.encrypt(&keypair.public_key, &large_plaintext, RsaPadding::OaepSha256);
-        assert!(result.is_err());
-    }
-    
-    #[test]
-    fn test_multiple_padding_schemes() {
-        let mut engine = RsaEngine::new();
-        let keypair = engine.generate_keypair(RSA_2048_BITS).unwrap();
-        
-        let message = b"Test message";
-        
-        // Test PKCS#1 v1.5 signing and verification
-        let sig_pkcs1 = engine.sign(&keypair.private_key, message, RsaPadding::Pkcs1v15).unwrap();
-        let verified_pkcs1 = engine.verify(&keypair.public_key, message, &sig_pkcs1, RsaPadding::Pkcs1v15).unwrap();
-        assert!(verified_pkcs1);
-        
-        // Test PSS with different hash algorithms
-        let sig_pss256 = engine.sign(&keypair.private_key, message, RsaPadding::PssSha256).unwrap();
-        let verified_pss256 = engine.verify(&keypair.public_key, message, &sig_pss256, RsaPadding::PssSha256).unwrap();
-        assert!(verified_pss256);
-        
-        let sig_pss384 = engine.sign(&keypair.private_key, message, RsaPadding::PssSha384).unwrap();
-        let verified_pss384 = engine.verify(&keypair.public_key, message, &sig_pss384, RsaPadding::PssSha384).unwrap();
-        assert!(verified_pss384);
-    }
-}

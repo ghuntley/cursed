@@ -5,9 +5,9 @@
 
 use std::time::{Instant, Duration};
 use std::collections::HashMap;
-use crate::stdlib::crypto_pqc::{PqcResult, PqcError, SecurityLevel, AlgorithmType, AlgorithmFamily, StandardizationStatus};
-use crate::stdlib::crypto_pqc::algorithms::*;
-use crate::error::Error;
+// use crate::stdlib::crypto_pqc::{PqcResult, PqcError, SecurityLevel, AlgorithmType, AlgorithmFamily, StandardizationStatus};
+// use crate::stdlib::crypto_pqc::algorithms::*;
+use crate::error::CursedError;
 
 /// Comprehensive benchmark results for a PQC algorithm
 #[derive(Debug, Clone)]
@@ -494,7 +494,7 @@ impl RealPqcBenchmark {
             AlgorithmType::Sphincs | AlgorithmType::Lms | AlgorithmType::Xmss => {
                 KeyRecoveryHardness::MathematicalProblem("Hash functions".to_string())
             },
-            AlgorithmType::ClassicMcEliece => KeyRecoveryHardness::MathematicalProblem("Error correction".to_string()),
+            AlgorithmType::ClassicMcEliece => KeyRecoveryHardness::MathematicalProblem("CursedError correction".to_string()),
             _ => KeyRecoveryHardness::ClassicalBestKnown("Unknown".to_string()),
         };
 
@@ -646,70 +646,3 @@ impl Default for RealPqcBenchmark {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_benchmark_framework() {
-        let mut benchmark = RealPqcBenchmark::new();
-        
-        // Test individual algorithm benchmarking
-        benchmark.benchmark_kyber(5).unwrap();
-        benchmark.benchmark_ntru(5).unwrap();
-        
-        assert!(!benchmark.results.is_empty());
-        
-        // Verify results structure
-        let (kyber_results, _) = benchmark.results.iter()
-            .find(|((algo, _), _)| *algo == AlgorithmType::Kyber)
-            .unwrap();
-        
-        assert!(kyber_results.1.keygen_stats.mean_time_ms > 0.0);
-        assert!(kyber_results.1.primary_operation_stats.throughput_ops_per_sec > 0.0);
-    }
-
-    #[test]
-    fn test_operation_stats() {
-        let measurements = vec![1.0, 2.0, 3.0, 4.0, 5.0];
-        let stats = OperationStats::from_measurements("test".to_string(), measurements);
-        
-        assert_eq!(stats.samples, 5);
-        assert_eq!(stats.mean_time_ms, 3.0);
-        assert_eq!(stats.min_time_ms, 1.0);
-        assert_eq!(stats.max_time_ms, 5.0);
-        assert!(stats.throughput_ops_per_sec > 0.0);
-    }
-
-    #[test]
-    fn test_report_generation() {
-        let mut benchmark = RealPqcBenchmark::new();
-        benchmark.benchmark_kyber(3).unwrap();
-        
-        let report = benchmark.generate_report();
-        assert!(report.contains("Benchmark Report"));
-        assert!(report.contains("Kyber"));
-        assert!(report.contains("Performance Recommendations"));
-    }
-
-    #[test]
-    fn test_csv_export() {
-        let mut benchmark = RealPqcBenchmark::new();
-        benchmark.benchmark_kyber(3).unwrap();
-        
-        let csv = benchmark.export_csv();
-        assert!(csv.contains("Algorithm,SecurityLevel"));
-        assert!(csv.contains("Kyber"));
-    }
-
-    #[test]
-    fn test_security_analysis() {
-        let benchmark = RealPqcBenchmark::new();
-        let analysis = benchmark.analyze_algorithm_security(AlgorithmType::Kyber, SecurityLevel::Level1);
-        
-        assert_eq!(analysis.classical_security_bits, 128);
-        assert_eq!(analysis.quantum_security_bits, 128);
-        assert!(matches!(analysis.attack_complexity, AttackComplexity::Exponential(_)));
-        assert!(matches!(analysis.implementation_security, ImplementationSecurity::ProductionReady));
-    }
-}

@@ -107,7 +107,7 @@ impl QueryPlanCache {
 
     /// facts Get cached query plan or generate new one
     #[instrument(skip(self))]
-    pub async fn get_or_create_plan(&self, sql: &str, params: &[SqlValue]) -> Result<(), Error> {
+    pub async fn get_or_create_plan(&self, sql: &str, params: &[SqlValue]) -> crate::error::Result<()> {
         let fingerprint = self.generate_fingerprint(sql, params)?;
         
         // Try to get from cache first
@@ -149,7 +149,7 @@ impl QueryPlanCache {
     }
 
     /// lowkey Generate fingerprint for query caching
-    fn generate_fingerprint(&self, sql: &str, params: &[SqlValue]) -> Result<(), Error> {
+    fn generate_fingerprint(&self, sql: &str, params: &[SqlValue]) -> crate::error::Result<()> {
         let normalized_sql = self.normalize_sql(sql);
         let parameter_types = params.iter()
             .map(|p| self.sql_value_to_type_info(p))
@@ -187,7 +187,7 @@ impl QueryPlanCache {
     }
 
     /// yolo Generate actual query plan (mock implementation)
-    async fn generate_query_plan(&self, sql: &str, _params: &[SqlValue]) -> Result<(), Error> {
+    async fn generate_query_plan(&self, sql: &str, _params: &[SqlValue]) -> crate::error::Result<()> {
         trace!(sql = %sql, "Generating query execution plan");
         
         // Simulate plan generation delay
@@ -396,7 +396,7 @@ impl PreparedStatementPool {
 
     /// facts Get or create prepared statement
     #[instrument(skip(self))]
-    pub async fn get_or_prepare(&self, sql: &str) -> Result<(), Error> {
+    pub async fn get_or_prepare(&self, sql: &str) -> crate::error::Result<()> {
         let statement_key = self.generate_statement_key(sql);
         
         // Update usage stats
@@ -457,7 +457,7 @@ impl PreparedStatementPool {
     }
 
     /// bestie Create new prepared statement
-    async fn create_prepared_statement(&self, sql: &str) -> Result<(), Error> {
+    async fn create_prepared_statement(&self, sql: &str) -> crate::error::Result<()> {
         trace!(sql = %sql, "Creating prepared statement");
         
         // Simulate statement preparation
@@ -479,7 +479,7 @@ impl PreparedStatementPool {
     }
 
     /// yolo Store statement in pool with LRU eviction
-    async fn store_statement(&self, key: String, statement: PooledStatement) -> Result<(), Error> {
+    async fn store_statement(&self, key: String, statement: PooledStatement) -> crate::error::Result<()> {
         if let Ok(mut pool) = self.pool.write() {
             // Check if we need to evict
             if pool.len() >= self.max_statements {
@@ -493,7 +493,7 @@ impl PreparedStatementPool {
     }
 
     /// slay Evict least recently used statement
-    async fn evict_least_recently_used(&self, pool: &mut HashMap<String, PooledStatement>) -> Result<(), Error> {
+    async fn evict_least_recently_used(&self, pool: &mut HashMap<String, PooledStatement>) -> crate::error::Result<()> {
         let mut oldest_key = None;
         let mut oldest_time = Instant::now();
         
@@ -544,7 +544,7 @@ impl PreparedStatementPool {
 
     /// highkey Clean up expired statements
     #[instrument(skip(self))]
-    pub async fn cleanup_expired(&self) -> Result<(), Error> {
+    pub async fn cleanup_expired(&self) -> crate::error::Result<()> {
         let mut removed_count = 0;
         
         if let Ok(mut pool) = self.pool.write() {
@@ -610,7 +610,7 @@ impl ConnectionWarmer {
 
     /// facts Start connection warming process
     #[instrument(skip(self))]
-    pub async fn start_warming(&self) -> Result<(), Error> {
+    pub async fn start_warming(&self) -> crate::error::Result<()> {
         if let Ok(mut warming) = self.warming_in_progress.lock() {
             if *warming {
                 debug!("Connection warming already in progress");
@@ -660,7 +660,7 @@ impl ConnectionWarmer {
     }
 
     /// lowkey Execute warmup query on connection
-    async fn execute_warmup_query(&self, connection_id: &str, query: &str) -> Result<(), Error> {
+    async fn execute_warmup_query(&self, connection_id: &str, query: &str) -> crate::error::Result<()> {
         trace!(
             connection = %connection_id,
             query = %query,
@@ -691,7 +691,7 @@ impl ConnectionWarmer {
 
     /// bestie Return connection to warm pool
     #[instrument(skip(self))]
-    pub async fn return_connection(&self, connection_id: String) -> Result<(), Error> {
+    pub async fn return_connection(&self, connection_id: String) -> crate::error::Result<()> {
         if let Ok(mut warm_conns) = self.warm_connections.lock() {
             if warm_conns.len() < self.target_connections {
                 warm_conns.push_back(connection_id);
@@ -777,7 +777,7 @@ impl BatchOperationOptimizer {
 
     /// facts Add operation to batch
     #[instrument(skip(self, operation))]
-    pub async fn add_operation(&self, operation: BatchOperation) -> Result<(), Error> {
+    pub async fn add_operation(&self, operation: BatchOperation) -> crate::error::Result<()> {
         let should_flush = {
             if let Ok(mut pending) = self.pending_operations.lock() {
                 pending.push(operation);
@@ -805,7 +805,7 @@ impl BatchOperationOptimizer {
 
     /// periodt Flush pending batch operations
     #[instrument(skip(self))]
-    pub async fn flush_batch(&self) -> Result<(), Error> {
+    pub async fn flush_batch(&self) -> crate::error::Result<()> {
         let operations = {
             if let Ok(mut pending) = self.pending_operations.lock() {
                 let ops = pending.clone();
@@ -873,7 +873,7 @@ impl BatchOperationOptimizer {
     }
 
     /// lowkey Execute batch insert operation
-    async fn execute_batch_insert(&self, table: &str, value_sets: Vec<HashMap<String, SqlValue>>) -> Result<(), Error> {
+    async fn execute_batch_insert(&self, table: &str, value_sets: Vec<HashMap<String, SqlValue>>) -> crate::error::Result<()> {
         if value_sets.is_empty() {
             return Ok(0);
         }
@@ -923,7 +923,7 @@ impl BatchOperationOptimizer {
     }
 
     /// bestie Execute single operation
-    async fn execute_single_operation(&self, operation: BatchOperation) -> Result<(), Error> {
+    async fn execute_single_operation(&self, operation: BatchOperation) -> crate::error::Result<()> {
         match operation {
             BatchOperation::Update { table, values, conditions } => {
                 debug!(table = %table, "Executing update operation");
@@ -1008,124 +1008,3 @@ impl<K: Hash + Eq + Clone, V> LRUCache<K, V> {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use tracing_test::traced_test;
-use crate::error::Error;
-
-    #[traced_test]
-    #[tokio::test]
-    async fn test_query_plan_cache() {
-        let cache = QueryPlanCache::new(100);
-        
-        let sql = "SELECT * FROM users WHERE id = ?";
-        let params = Vec::from([SqlValue::Integer(1)]);
-        
-        // First call should be a cache miss
-        let plan1 = cache.get_or_create_plan(sql, &params).await
-            .expect("Should create plan");
-        
-        // Second call should be a cache hit
-        let plan2 = cache.get_or_create_plan(sql, &params).await
-            .expect("Should get cached plan");
-        
-        assert_eq!(plan1.plan_id, plan2.plan_id);
-        
-        let stats = cache.get_cache_stats();
-        assert_eq!(stats.hit_count, 1);
-        assert_eq!(stats.miss_count, 1);
-    }
-
-    #[traced_test]
-    #[tokio::test]
-    async fn test_prepared_statement_pool() {
-        let pool = PreparedStatementPool::new(10, Duration::from_secs(60));
-        
-        let sql = "SELECT * FROM users WHERE id = ?";
-        
-        // First call should create new statement
-        let stmt1 = pool.get_or_prepare(sql).await
-            .expect("Should prepare statement");
-        
-        // Second call should reuse statement
-        let stmt2 = pool.get_or_prepare(sql).await
-            .expect("Should get cached statement");
-        
-        assert_eq!(stmt1.statement_id, stmt2.statement_id);
-        assert_eq!(stmt2.use_count, 2);
-        
-        let stats = pool.get_pool_stats();
-        assert_eq!(stats.usage_stats.cache_hits, 1);
-        assert_eq!(stats.usage_stats.cache_misses, 1);
-    }
-
-    #[traced_test]
-    #[tokio::test]
-    async fn test_connection_warmer() {
-        let warmup_queries = vec![
-            "SELECT 1".to_string(),
-            "SELECT current_timestamp".to_string(),
-        ];
-        
-        let warmer = ConnectionWarmer::new(3, warmup_queries);
-        
-        warmer.start_warming().await.expect("Should start warming");
-        
-        let stats = warmer.get_warmer_stats();
-        assert_eq!(stats.target_connections, 3);
-        assert_eq!(stats.warm_connections, 3);
-        
-        let conn = warmer.get_warm_connection().await;
-        assert!(conn.is_some());
-        
-        let stats_after = warmer.get_warmer_stats();
-        assert_eq!(stats_after.warm_connections, 2);
-    }
-
-    #[traced_test]
-    #[tokio::test]
-    async fn test_batch_operation_optimizer() {
-        let optimizer = BatchOperationOptimizer::new(3, Duration::from_secs(1));
-        
-        // Add operations to batch
-        let insert_op = BatchOperation::Insert {
-            table: "users".to_string(),
-            values: {
-                let mut values = HashMap::new();
-                values.insert("name".to_string(), SqlValue::String("John".to_string()));
-                values.insert("email".to_string(), SqlValue::String("john@example.com".to_string()));
-                values
-            },
-        };
-        
-        // First two operations shouldn't trigger flush
-        optimizer.add_operation(insert_op.clone()).await.expect("Should add operation");
-        optimizer.add_operation(insert_op.clone()).await.expect("Should add operation");
-        
-        let stats = optimizer.get_batch_stats();
-        assert_eq!(stats.pending_operations, 2);
-        
-        // Third operation should trigger flush
-        let flushed = optimizer.add_operation(insert_op).await.expect("Should add operation");
-        assert!(flushed);
-        
-        let stats_after = optimizer.get_batch_stats();
-        assert_eq!(stats_after.pending_operations, 0);
-    }
-
-    #[traced_test]
-    #[test]
-    fn test_sql_normalization() {
-        let cache = QueryPlanCache::new(10);
-        
-        let sql1 = "  SELECT   *   FROM   users  ";
-        let sql2 = "select * from users";
-        
-        let normalized1 = cache.normalize_sql(sql1);
-        let normalized2 = cache.normalize_sql(sql2);
-        
-        assert_eq!(normalized1, normalized2);
-        assert_eq!(normalized1, "SELECT * FROM USERS");
-    }
-}

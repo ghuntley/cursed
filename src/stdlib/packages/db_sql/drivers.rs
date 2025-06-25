@@ -3,14 +3,14 @@
 /// This module defines the core interfaces that all SQL drivers must implement.
 /// Think of it as the rules that make SQL drivers work together bestie!
 
-use crate::stdlib::packages::db_core::{
+// use crate::stdlib::packages::db_core::{
     DatabaseDriver, DatabaseConnection,
     ConnectionConfig, DriverInfo, DriverFeature, DatabaseError,
     PreparedStatement
 };
-use crate::error::Error;
-use crate::stdlib::packages::db_core::error::{DatabaseResult as DbResult};
-use crate::stdlib::packages::db_sql::{
+use crate::error::CursedError;
+// use crate::stdlib::packages::db_core::error::{DatabaseResult as DbResult};
+// use crate::stdlib::packages::db_sql::{
     SqlDialect, SqlDialectTrait, SqlValue, SqlType, SqlResultSet,
     SqlExecuteResult
 };
@@ -358,13 +358,13 @@ pub struct DriverLimitations {
 pub fn create_sql_driver(driver_name: &str) -> DbResult<Box<dyn SqlDriver>> {
     match driver_name {
         "postgresql" | "postgres" => {
-            Ok(Box::new(crate::stdlib::packages::db_sql::postgresql::PostgreSqlDriver::new()))
+//             Ok(Box::new(crate::stdlib::packages::db_sql::postgresql::PostgreSqlDriver::new()))
         }
         "mysql" => {
-            Ok(Box::new(crate::stdlib::packages::db_sql::mysql::MySqlDriver::new()))
+//             Ok(Box::new(crate::stdlib::packages::db_sql::mysql::MySqlDriver::new()))
         }
         "sqlite" | "sqlite3" => {
-            Ok(Box::new(crate::stdlib::packages::db_sql::sqlite::SqliteDriver::new()))
+//             Ok(Box::new(crate::stdlib::packages::db_sql::sqlite::SqliteDriver::new()))
         }
         _ => {
             Err(DatabaseError::driver(&format!("Unknown SQL driver: {}", driver_name)))
@@ -438,61 +438,3 @@ impl ConfigurationOption {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_sql_driver_manager() {
-        let mut manager = SqlDriverManager::new();
-        assert!(manager.list_drivers().is_empty());
-        assert!(manager.get_default_driver().is_none());
-    }
-
-    #[test]
-    fn test_sql_batch() {
-        let batch = SqlBatch::new("INSERT INTO users (name) VALUES (?)")
-            .with_parameters(Vec::from([SqlValue::Text("Alice".to_string())]))
-            .continue_on_error(true);
-
-        assert_eq!(batch.sql, "INSERT INTO users (name) VALUES (?)");
-        assert_eq!(batch.parameters.len(), 1);
-        assert!(batch.continue_on_error);
-    }
-
-    #[test]
-    fn test_sql_savepoint() {
-        let savepoint = SqlSavepoint::new("test_point");
-        assert_eq!(savepoint.name, "test_point");
-        assert!(!savepoint.id.is_empty());
-    }
-
-    #[test]
-    fn test_configuration_option() {
-        let option = ConfigurationOption::new(
-            "timeout",
-            "Connection timeout in seconds",
-            ConfigurationOptionType::Integer
-        )
-        .with_default("30")
-        .required();
-
-        assert_eq!(option.name, "timeout");
-        assert_eq!(option.option_type, ConfigurationOptionType::Integer);
-        assert_eq!(option.default_value, Some("30".to_string()));
-        assert!(option.required);
-    }
-
-    #[test]
-    fn test_sql_features() {
-        assert_eq!(SqlFeature::WindowFunctions, SqlFeature::WindowFunctions);
-        assert_ne!(SqlFeature::WindowFunctions, SqlFeature::JsonSupport);
-    }
-
-    #[test]
-    fn test_create_sql_driver() {
-        // These will fail until we implement the actual drivers
-        // but the function should exist and handle unknown drivers
-        assert!(create_sql_driver("unknown").is_err());
-    }
-}

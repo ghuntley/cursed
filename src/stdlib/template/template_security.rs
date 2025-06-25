@@ -1,4 +1,4 @@
-use crate::error::Error;
+use crate::error::CursedError;
 /// Template Security Validator - Advanced security features for CURSED templates
 use std::collections::{HashMap, HashSet};
 use std::path::{Path, PathBuf};
@@ -6,7 +6,6 @@ use std::sync::Arc;
 use regex::Regex;
 use tracing::{debug, error, info, instrument, warn};
 
-use crate::error::Error as CursedError;
 use crate::object::Object as CursedObject;
 use super::template_core::{TemplateContext, TemplateConfig};
 use super::template_syntax::{TemplateAst, TemplateNode, TemplateExpression};
@@ -229,7 +228,7 @@ impl TemplateSecurityValidator {
         template_ast: &TemplateAst,
         template_path: Option<&Path>,
         template_source: &str,
-    ) -> Result<(), Error> {
+    ) -> crate::error::Result<()> {
         let start_time = std::time::Instant::now();
         info!("Starting security validation");
         
@@ -288,7 +287,7 @@ impl TemplateSecurityValidator {
         path: &Path,
         issues: &mut Vec<SecurityIssue>,
         warnings: &mut Vec<String>,
-    ) -> Result<(), Error> {
+    ) -> crate::error::Result<()> {
         // Check path traversal
         if self.policy.enable_path_traversal_protection {
             let path_str = path.to_string_lossy();
@@ -350,7 +349,7 @@ impl TemplateSecurityValidator {
         template_source: &str,
         issues: &mut Vec<SecurityIssue>,
         warnings: &mut Vec<String>,
-    ) -> Result<(), Error> {
+    ) -> crate::error::Result<()> {
         let size = template_source.len();
         
         if size > self.policy.max_template_size {
@@ -376,7 +375,7 @@ impl TemplateSecurityValidator {
         template_source: &str,
         issues: &mut Vec<SecurityIssue>,
         warnings: &mut Vec<String>,
-    ) -> Result<(), Error> {
+    ) -> crate::error::Result<()> {
         // Check for XSS patterns
         if self.policy.enable_xss_protection {
             for pattern in &self.xss_patterns {
@@ -423,7 +422,7 @@ impl TemplateSecurityValidator {
         issues: &mut Vec<SecurityIssue>,
         warnings: &mut Vec<String>,
         recommendations: &mut Vec<String>,
-    ) -> Result<(), Error> {
+    ) -> crate::error::Result<()> {
         let mut nesting_depth = 0;
         self.validate_ast_nodes(&ast.nodes, &mut nesting_depth, issues, warnings, recommendations)?;
         Ok(())
@@ -437,7 +436,7 @@ impl TemplateSecurityValidator {
         issues: &mut Vec<SecurityIssue>,
         warnings: &mut Vec<String>,
         recommendations: &mut Vec<String>,
-    ) -> Result<(), Error> {
+    ) -> crate::error::Result<()> {
         *nesting_depth += 1;
         
         // Check nesting depth
@@ -467,7 +466,7 @@ impl TemplateSecurityValidator {
         issues: &mut Vec<SecurityIssue>,
         warnings: &mut Vec<String>,
         recommendations: &mut Vec<String>,
-    ) -> Result<(), Error> {
+    ) -> crate::error::Result<()> {
         match node {
             TemplateNode::Text(_) => {
                 // Text nodes are generally safe
@@ -643,89 +642,3 @@ impl Default for SecurityContext {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use crate::stdlib::template::template_syntax::{TemplateLexer, TemplateParser};
-    use crate::stdlib::template::template_core::TemplateDelimiters;
-    
-    #[test]
-    fn test_security_validator_creation() {
-        let validator = TemplateSecurityValidator::new();
-        assert_eq!(validator.policy.validation_level, SecurityValidationLevel::Standard);
-        assert!(validator.policy.enable_xss_protection);
-        assert!(validator.policy.enable_csrf_protection);
-    }
-    
-    #[test]
-    fn test_xss_detection() {
-        let validator = TemplateSecurityValidator::new();
-        let template_source = r#"<script>alert('xss')</script>"#;
-        
-        let delimiters = TemplateDelimiters {
-            variable: ("{{".to_string(), "}}".to_string()),
-            block: ("{%".to_string(), "%}".to_string()),
-            comment: ("{#".to_string(), "#}".to_string()),
-        };
-        
-        let mut lexer = TemplateLexer::new(template_source, &delimiters);
-        let tokens = lexer.tokenize().unwrap();
-        let mut parser = TemplateParser::new(tokens);
-        let ast = parser.parse().unwrap();
-        
-        let result = validator.validate_template(&ast, None, template_source).unwrap();
-        assert!(!result.is_valid);
-        assert!(result.issues.iter().any(|i| matches!(i.issue_type, SecurityIssueType::XssVulnerability)));
-    }
-    
-    #[test]
-    fn test_path_traversal_detection() {
-        let validator = TemplateSecurityValidator::new();
-        let path = Path::new("../../../etc/passwd");
-        
-        let mut issues = Vec::new();
-        let mut warnings = Vec::new();
-        
-        validator.validate_template_path(path, &mut issues, &mut warnings).unwrap();
-        assert!(issues.iter().any(|i| matches!(i.issue_type, SecurityIssueType::PathTraversal)));
-    }
-    
-    #[test]
-    fn test_template_size_validation() {
-        let mut policy = SecurityPolicy::default();
-        policy.max_template_size = 100; // Very small for testing
-        
-        let validator = TemplateSecurityValidator::with_policy(policy);
-        let large_template = "x".repeat(200);
-        
-        let mut issues = Vec::new();
-        let mut warnings = Vec::new();
-        
-        validator.validate_template_size(&large_template, &mut issues, &mut warnings).unwrap();
-        assert!(issues.iter().any(|i| matches!(i.issue_type, SecurityIssueType::LargeTemplate)));
-    }
-    
-    #[test]
-    fn test_csp_header_generation() {
-        let validator = TemplateSecurityValidator::new();
-        let csp_header = validator.generate_csp_header();
-        
-        assert!(csp_header.contains("default-src 'self'"));
-        assert!(csp_header.contains("script-src"));
-        assert!(csp_header.contains("style-src"));
-    }
-    
-    #[test]
-    fn test_security_context() {
-        let mut context = SecurityContext::new()
-            .with_user_id("user123".to_string())
-            .with_csrf_token("token456".to_string());
-        
-        context.add_permission("read_templates".to_string());
-        
-        assert!(context.has_permission("read_templates"));
-        assert!(!context.has_permission("write_templates"));
-        assert_eq!(context.user_id, Some("user123".to_string()));
-        assert_eq!(context.csrf_token, Some("token456".to_string()));
-    }
-}

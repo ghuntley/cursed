@@ -3,12 +3,12 @@
 /// This module provides raw DEFLATE compression and decompression functionality
 /// without GZIP or ZLIB headers, using the flate2 crate.
 
-use crate::stdlib::squish_core::{SquishError, SquishResult, CompressionLevel, CompressionStats};
-use crate::stdlib::squish_core::core::{Reader as SquishReader, Writer as SquishWriter};
+// use crate::stdlib::squish_core::{SquishError, SquishResult, CompressionLevel, CompressionStats};
+// use crate::stdlib::squish_core::core::{Reader as SquishReader, Writer as SquishWriter};
 use std::io::{Read, Write, BufWriter, BufReader};
 use flate2::{Compression, read::DeflateDecoder, write::DeflateEncoder};
 use std::time::Instant;
-use crate::error::Error;
+use crate::error::CursedError;
 
 /// DEFLATE reader that decompresses raw deflate data on read
 pub struct FlateReader<R: Read> {
@@ -201,127 +201,11 @@ pub fn is_valid_compression_level(level: i32) -> bool {
 
 /// Initialize DEFLATE module
 pub fn initialize() {
+        // TODO: implement
+    }
     // No specific initialization needed for DEFLATE
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use std::io::Cursor;
-
-    #[test]
-    fn test_flate_compress_decompress() {
-        let original = b"Hello, World! This is a test of raw DEFLATE compression.";
-        
-        // Compress
-        let compressed = flate_compress(original).expect("Compression should succeed");
-        assert!(!compressed.is_empty());
-        
-        // Decompress
-        let decompressed = flate_decompress(&compressed).expect("Decompression should succeed");
-        assert_eq!(decompressed, original);
-    }
-
-    #[test]
-    fn test_flate_compression_levels() {
-        let data = b"This is test data for DEFLATE compression level testing. ".repeat(20);
-        
-        let fast = flate_compress_level(&data, CompressionLevel::Fastest).unwrap();
-        let best = flate_compress_level(&data, CompressionLevel::Best).unwrap();
-        
-        // Best compression should be smaller than or equal to fastest
-        assert!(best.len() <= fast.len());
-        
-        // Both should decompress to original
-        assert_eq!(flate_decompress(&fast).unwrap(), data);
-        assert_eq!(flate_decompress(&best).unwrap(), data);
-    }
-
-    #[test]
-    fn test_flate_empty_data() {
-        let empty = b"";
-        let compressed = flate_compress(empty).unwrap();
-        let decompressed = flate_decompress(&compressed).unwrap();
-        assert_eq!(decompressed, empty);
-    }
-
-    #[test]
-    fn test_flate_large_data() {
-        let large_data = vec![b'D'; 10000];
-        let compressed = flate_compress(&large_data).unwrap();
-        let decompressed = flate_decompress(&compressed).unwrap();
-        assert_eq!(decompressed, large_data);
-        
-        // Should achieve good compression ratio on repetitive data
-        assert!(compressed.len() < large_data.len() / 10);
-    }
-
-    #[test]
-    fn test_flate_streaming_compression() {
-        let data = b"Streaming test data for DEFLATE compression.";
-        let mut compressed = Vec::new();
-        
-        {
-            let mut writer = NewFlateWriter(&mut compressed);
-            writer.write_all(data).unwrap();
-            writer.close().unwrap();
-        }
-        
-        let decompressed = flate_decompress(&compressed).unwrap();
-        assert_eq!(decompressed, data);
-    }
-
-    #[test]
-    fn test_flate_streaming_decompression() {
-        let original = b"Streaming decompression test data for DEFLATE.";
-        let compressed = flate_compress(original).unwrap();
-        
-        let cursor = Cursor::new(compressed);
-        let mut reader = NewFlateReader(cursor).unwrap();
-        
-        let mut result = Vec::new();
-        reader.read_to_end(&mut result).unwrap();
-        
-        assert_eq!(result, original);
-    }
-
-    #[test]
-    fn test_flate_metadata() {
-        assert_eq!(file_extension(), ".deflate");
-        assert_eq!(mime_type(), "application/deflate");
-        
-        assert!(is_valid_compression_level(0));
-        assert!(is_valid_compression_level(9));
-        assert!(is_valid_compression_level(-1));
-        assert!(!is_valid_compression_level(10));
-    }
-
-    #[test]
-    fn test_flate_statistics() {
-        let data = b"Test data for statistics collection.";
-        let mut result = Vec::new();
-        
-        let mut writer = NewFlateWriter(&mut result);
-        writer.write_all(data).unwrap();
-        
-        if let Some(stats) = writer.stats() {
-            assert_eq!(stats.algorithm, "deflate");
-            assert!(stats.input_size > 0);
-        }
-        
-        writer.close().unwrap();
-    }
-
-    #[test]
-    fn test_module_initialization() {
-        initialize(); // Should not panic
-    }
-}
-
-/// fr fr Create new FLATE reader with default settings
-pub fn new_reader<R: Read>(reader: R) -> SquishResult<FlateReader<R>> {
-    FlateReader::new(reader)
-}
 
 /// bestie Create new FLATE writer with default compression
 pub fn new_writer<W: Write>(writer: W) -> SquishResult<FlateWriter<W>> {

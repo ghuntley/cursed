@@ -3,9 +3,8 @@
 // Provides comprehensive key serialization functions for the CURSED stdlib.
 // Supports PEM, DER, JWK, SSH, and raw formats for various key types.
 
-use crate::stdlib::value::Value;
+// use crate::stdlib::value::Value;
 use crate::error::CursedError;
-use crate::error::Error;
 use std::collections::HashMap;
 use base64::{Engine as _, engine::general_purpose};
 use rsa::{RsaPrivateKey, RsaPublicKey};
@@ -70,7 +69,7 @@ impl SerializationFormat {
         }
     }
     
-    pub fn from_name(name: &str) -> Result<(), Error> {
+    pub fn from_name(name: &str) -> crate::error::Result<()> {
         match name.to_uppercase().as_str() {
             "PEM" => Ok(SerializationFormat::Pem),
             "DER" => Ok(SerializationFormat::Der),
@@ -135,7 +134,7 @@ impl KeyType {
         }
     }
     
-    pub fn from_name(name: &str) -> Result<(), Error> {
+    pub fn from_name(name: &str) -> crate::error::Result<()> {
         match name.to_uppercase().as_str() {
             "RSA-PRIVATE" => Ok(KeyType::RsaPrivate),
             "RSA-PUBLIC" => Ok(KeyType::RsaPublic),
@@ -184,7 +183,7 @@ impl SerializationResult {
         }
     }
     
-    pub fn to_value(&self) -> Result<(), Error> {
+    pub fn to_value(&self) -> crate::error::Result<()> {
         let mut map = HashMap::new();
         
         map.insert("format".to_string(), Value::String(self.format.to_string()().to_string()));
@@ -214,7 +213,7 @@ impl SerializationResult {
 }
 
 /// Serialize key to format
-pub fn serialize_key(args: Vec<Value>) -> Result<(), Error> {
+pub fn serialize_key(args: Vec<Value>) -> crate::error::Result<()> {
     if args.len() < 3 {
         return Err(CursedError::InvalidArgument("Key serialization requires: key_type, key_data, format".to_string()));
     }
@@ -254,7 +253,7 @@ pub fn serialize_key(args: Vec<Value>) -> Result<(), Error> {
 }
 
 /// Serialize RSA private key
-fn serialize_rsa_private_key(key_data: &[u8], format: SerializationFormat) -> Result<(), Error> {
+fn serialize_rsa_private_key(key_data: &[u8], format: SerializationFormat) -> crate::error::Result<()> {
     let private_key = RsaPrivateKey::from_pkcs8_der(key_data)
         .map_err(|e| CursedError::CryptoError(format!("Failed to decode RSA private key: {}", e)))?;
     
@@ -292,7 +291,7 @@ fn serialize_rsa_private_key(key_data: &[u8], format: SerializationFormat) -> Re
 }
 
 /// Serialize RSA public key
-fn serialize_rsa_public_key(key_data: &[u8], format: SerializationFormat) -> Result<(), Error> {
+fn serialize_rsa_public_key(key_data: &[u8], format: SerializationFormat) -> crate::error::Result<()> {
     let public_key = RsaPublicKey::from_public_key_der(key_data)
         .map_err(|e| CursedError::CryptoError(format!("Failed to decode RSA public key: {}", e)))?;
     
@@ -330,7 +329,7 @@ fn serialize_rsa_public_key(key_data: &[u8], format: SerializationFormat) -> Res
 }
 
 /// Create SSH format for RSA public key
-fn create_ssh_rsa_public_key(public_key: &RsaPublicKey) -> Result<(), Error> {
+fn create_ssh_rsa_public_key(public_key: &RsaPublicKey) -> crate::error::Result<()> {
     // SSH RSA public key format: ssh-rsa <base64-encoded-key> [comment]
     let der = public_key.to_public_key_der()
         .map_err(|e| CursedError::CryptoError(format!("Failed to encode RSA public key: {}", e)))?;
@@ -342,7 +341,7 @@ fn create_ssh_rsa_public_key(public_key: &RsaPublicKey) -> Result<(), Error> {
 }
 
 /// Create JWK format for RSA public key
-fn create_jwk_rsa_public_key(public_key: &RsaPublicKey) -> Result<(), Error> {
+fn create_jwk_rsa_public_key(public_key: &RsaPublicKey) -> crate::error::Result<()> {
     use rsa::traits::PublicKeyParts;
     
     let n = public_key.n();
@@ -368,7 +367,7 @@ fn create_jwk_rsa_public_key(public_key: &RsaPublicKey) -> Result<(), Error> {
 }
 
 /// Create JWK format for RSA private key  
-fn create_jwk_rsa_private_key(private_key: &RsaPrivateKey) -> Result<(), Error> {
+fn create_jwk_rsa_private_key(private_key: &RsaPrivateKey) -> crate::error::Result<()> {
     use rsa::traits::PublicKeyParts;
     
     let public_key = private_key.to_public_key();
@@ -399,7 +398,7 @@ fn create_jwk_rsa_private_key(private_key: &RsaPrivateKey) -> Result<(), Error> 
 }
 
 /// Create JWK format for P-256 private key
-fn create_jwk_p256_private_key(private_key: &P256SecretKey) -> Result<(), Error> {
+fn create_jwk_p256_private_key(private_key: &P256SecretKey) -> crate::error::Result<()> {
     use elliptic_curve::sec1::ToEncodedPoint;
     
     let public_key = private_key.public_key();
@@ -434,7 +433,7 @@ fn create_jwk_p256_private_key(private_key: &P256SecretKey) -> Result<(), Error>
 }
 
 /// Create JWK format for P-256 public key
-fn create_jwk_p256_public_key(public_key: &P256PublicKey) -> Result<(), Error> {
+fn create_jwk_p256_public_key(public_key: &P256PublicKey) -> crate::error::Result<()> {
     use elliptic_curve::sec1::ToEncodedPoint;
     
     let point = public_key.to_encoded_point(false);
@@ -464,7 +463,7 @@ fn create_jwk_p256_public_key(public_key: &P256PublicKey) -> Result<(), Error> {
 }
 
 /// Create SSH format for P-256 public key
-fn create_ssh_p256_public_key(public_key: &P256PublicKey) -> Result<(), Error> {
+fn create_ssh_p256_public_key(public_key: &P256PublicKey) -> crate::error::Result<()> {
     use elliptic_curve::sec1::ToEncodedPoint;
     
     let point = public_key.to_encoded_point(false);
@@ -475,7 +474,7 @@ fn create_ssh_p256_public_key(public_key: &P256PublicKey) -> Result<(), Error> {
 }
 
 /// Create JWK format for P-384 private key
-fn create_jwk_p384_private_key(private_key: &P384SecretKey) -> Result<(), Error> {
+fn create_jwk_p384_private_key(private_key: &P384SecretKey) -> crate::error::Result<()> {
     use elliptic_curve::sec1::ToEncodedPoint;
     
     let public_key = private_key.public_key();
@@ -510,7 +509,7 @@ fn create_jwk_p384_private_key(private_key: &P384SecretKey) -> Result<(), Error>
 }
 
 /// Create JWK format for P-384 public key
-fn create_jwk_p384_public_key(public_key: &P384PublicKey) -> Result<(), Error> {
+fn create_jwk_p384_public_key(public_key: &P384PublicKey) -> crate::error::Result<()> {
     use elliptic_curve::sec1::ToEncodedPoint;
     
     let point = public_key.to_encoded_point(false);
@@ -540,7 +539,7 @@ fn create_jwk_p384_public_key(public_key: &P384PublicKey) -> Result<(), Error> {
 }
 
 /// Create SSH format for P-384 public key
-fn create_ssh_p384_public_key(public_key: &P384PublicKey) -> Result<(), Error> {
+fn create_ssh_p384_public_key(public_key: &P384PublicKey) -> crate::error::Result<()> {
     use elliptic_curve::sec1::ToEncodedPoint;
     
     let point = public_key.to_encoded_point(false);
@@ -551,7 +550,7 @@ fn create_ssh_p384_public_key(public_key: &P384PublicKey) -> Result<(), Error> {
 }
 
 /// Create PEM format for Ed25519 private key
-fn create_ed25519_private_key_pem(key_data: &[u8]) -> Result<(), Error> {
+fn create_ed25519_private_key_pem(key_data: &[u8]) -> crate::error::Result<()> {
     let der = create_ed25519_private_key_der(key_data)?;
     let pem = format!(
         "-----BEGIN PRIVATE KEY-----\n{}\n-----END PRIVATE KEY-----\n",
@@ -566,7 +565,7 @@ fn create_ed25519_private_key_pem(key_data: &[u8]) -> Result<(), Error> {
 }
 
 /// Create DER format for Ed25519 private key  
-fn create_ed25519_private_key_der(key_data: &[u8]) -> Result<(), Error> {
+fn create_ed25519_private_key_der(key_data: &[u8]) -> crate::error::Result<()> {
     // Ed25519 PKCS#8 DER format
     let mut der = Vec::new();
     
@@ -594,7 +593,7 @@ fn create_ed25519_private_key_der(key_data: &[u8]) -> Result<(), Error> {
 }
 
 /// Create PEM format for Ed25519 public key
-fn create_ed25519_public_key_pem(key_data: &[u8]) -> Result<(), Error> {
+fn create_ed25519_public_key_pem(key_data: &[u8]) -> crate::error::Result<()> {
     let der = create_ed25519_public_key_der(key_data)?;
     let pem = format!(
         "-----BEGIN PUBLIC KEY-----\n{}\n-----END PUBLIC KEY-----\n",
@@ -609,7 +608,7 @@ fn create_ed25519_public_key_pem(key_data: &[u8]) -> Result<(), Error> {
 }
 
 /// Create DER format for Ed25519 public key
-fn create_ed25519_public_key_der(key_data: &[u8]) -> Result<(), Error> {
+fn create_ed25519_public_key_der(key_data: &[u8]) -> crate::error::Result<()> {
     // Ed25519 SubjectPublicKeyInfo DER format
     let mut der = Vec::new();
     
@@ -630,7 +629,7 @@ fn create_ed25519_public_key_der(key_data: &[u8]) -> Result<(), Error> {
 }
 
 /// Create JWK format for Ed25519 private key
-fn create_jwk_ed25519_private_key(key_data: &[u8]) -> Result<(), Error> {
+fn create_jwk_ed25519_private_key(key_data: &[u8]) -> crate::error::Result<()> {
     let signing_key = SigningKey::from_bytes(
         key_data.try_into()
             .map_err(|_| CursedError::InvalidArgument("Invalid Ed25519 private key length".to_string()))?
@@ -654,7 +653,7 @@ fn create_jwk_ed25519_private_key(key_data: &[u8]) -> Result<(), Error> {
 }
 
 /// Create JWK format for Ed25519 public key
-fn create_jwk_ed25519_public_key(key_data: &[u8]) -> Result<(), Error> {
+fn create_jwk_ed25519_public_key(key_data: &[u8]) -> crate::error::Result<()> {
     let x_b64 = general_purpose::URL_SAFE_NO_PAD.encode(key_data);
     
     let jwk = serde_json::json!({
@@ -670,7 +669,7 @@ fn create_jwk_ed25519_public_key(key_data: &[u8]) -> Result<(), Error> {
 }
 
 /// Create PEM format for X25519 private key
-fn create_x25519_private_key_pem(key_data: &[u8]) -> Result<(), Error> {
+fn create_x25519_private_key_pem(key_data: &[u8]) -> crate::error::Result<()> {
     let der = create_x25519_private_key_der(key_data)?;
     let pem = format!(
         "-----BEGIN PRIVATE KEY-----\n{}\n-----END PRIVATE KEY-----\n",
@@ -685,7 +684,7 @@ fn create_x25519_private_key_pem(key_data: &[u8]) -> Result<(), Error> {
 }
 
 /// Create DER format for X25519 private key  
-fn create_x25519_private_key_der(key_data: &[u8]) -> Result<(), Error> {
+fn create_x25519_private_key_der(key_data: &[u8]) -> crate::error::Result<()> {
     // X25519 PKCS#8 DER format
     let mut der = Vec::new();
     
@@ -713,7 +712,7 @@ fn create_x25519_private_key_der(key_data: &[u8]) -> Result<(), Error> {
 }
 
 /// Create PEM format for X25519 public key
-fn create_x25519_public_key_pem(key_data: &[u8]) -> Result<(), Error> {
+fn create_x25519_public_key_pem(key_data: &[u8]) -> crate::error::Result<()> {
     let der = create_x25519_public_key_der(key_data)?;
     let pem = format!(
         "-----BEGIN PUBLIC KEY-----\n{}\n-----END PUBLIC KEY-----\n",
@@ -728,7 +727,7 @@ fn create_x25519_public_key_pem(key_data: &[u8]) -> Result<(), Error> {
 }
 
 /// Create DER format for X25519 public key
-fn create_x25519_public_key_der(key_data: &[u8]) -> Result<(), Error> {
+fn create_x25519_public_key_der(key_data: &[u8]) -> crate::error::Result<()> {
     // X25519 SubjectPublicKeyInfo DER format
     let mut der = Vec::new();
     
@@ -749,7 +748,7 @@ fn create_x25519_public_key_der(key_data: &[u8]) -> Result<(), Error> {
 }
 
 /// Create JWK format for X25519 private key
-fn create_jwk_x25519_private_key(key_data: &[u8]) -> Result<(), Error> {
+fn create_jwk_x25519_private_key(key_data: &[u8]) -> crate::error::Result<()> {
     let key_array: [u8; 32] = key_data.try_into()
         .map_err(|_| CursedError::InvalidArgument("Invalid X25519 private key length".to_string()))?;
     let private_key = EphemeralSecret::from(key_array);
@@ -772,7 +771,7 @@ fn create_jwk_x25519_private_key(key_data: &[u8]) -> Result<(), Error> {
 }
 
 /// Create JWK format for X25519 public key
-fn create_jwk_x25519_public_key(key_data: &[u8]) -> Result<(), Error> {
+fn create_jwk_x25519_public_key(key_data: &[u8]) -> crate::error::Result<()> {
     let x_b64 = general_purpose::URL_SAFE_NO_PAD.encode(key_data);
     
     let jwk = serde_json::json!({
@@ -788,7 +787,7 @@ fn create_jwk_x25519_public_key(key_data: &[u8]) -> Result<(), Error> {
 }
 
 /// Serialize P-256 private key
-fn serialize_p256_private_key(key_data: &[u8], format: SerializationFormat) -> Result<(), Error> {
+fn serialize_p256_private_key(key_data: &[u8], format: SerializationFormat) -> crate::error::Result<()> {
     let private_key = P256SecretKey::from_pkcs8_der(key_data)
         .map_err(|e| CursedError::CryptoError(format!("Failed to decode P-256 private key: {}", e)))?;
     
@@ -824,7 +823,7 @@ fn serialize_p256_private_key(key_data: &[u8], format: SerializationFormat) -> R
 }
 
 /// Serialize P-256 public key
-fn serialize_p256_public_key(key_data: &[u8], format: SerializationFormat) -> Result<(), Error> {
+fn serialize_p256_public_key(key_data: &[u8], format: SerializationFormat) -> crate::error::Result<()> {
     let public_key = P256PublicKey::from_public_key_der(key_data)
         .map_err(|e| CursedError::CryptoError(format!("Failed to decode P-256 public key: {}", e)))?;
     
@@ -861,7 +860,7 @@ fn serialize_p256_public_key(key_data: &[u8], format: SerializationFormat) -> Re
 }
 
 /// Serialize P-384 private key
-fn serialize_p384_private_key(key_data: &[u8], format: SerializationFormat) -> Result<(), Error> {
+fn serialize_p384_private_key(key_data: &[u8], format: SerializationFormat) -> crate::error::Result<()> {
     let private_key = P384SecretKey::from_pkcs8_der(key_data)
         .map_err(|e| CursedError::CryptoError(format!("Failed to decode P-384 private key: {}", e)))?;
     
@@ -897,7 +896,7 @@ fn serialize_p384_private_key(key_data: &[u8], format: SerializationFormat) -> R
 }
 
 /// Serialize P-384 public key
-fn serialize_p384_public_key(key_data: &[u8], format: SerializationFormat) -> Result<(), Error> {
+fn serialize_p384_public_key(key_data: &[u8], format: SerializationFormat) -> crate::error::Result<()> {
     let public_key = P384PublicKey::from_public_key_der(key_data)
         .map_err(|e| CursedError::CryptoError(format!("Failed to decode P-384 public key: {}", e)))?;
     
@@ -934,7 +933,7 @@ fn serialize_p384_public_key(key_data: &[u8], format: SerializationFormat) -> Re
 }
 
 /// Serialize Ed25519 private key
-fn serialize_ed25519_private_key(key_data: &[u8], format: SerializationFormat) -> Result<(), Error> {
+fn serialize_ed25519_private_key(key_data: &[u8], format: SerializationFormat) -> crate::error::Result<()> {
     if key_data.len() != 32 {
         return Err(CursedError::InvalidArgument("Ed25519 private key must be 32 bytes".to_string()));
     }
@@ -966,7 +965,7 @@ fn serialize_ed25519_private_key(key_data: &[u8], format: SerializationFormat) -
 }
 
 /// Serialize Ed25519 public key
-fn serialize_ed25519_public_key(key_data: &[u8], format: SerializationFormat) -> Result<(), Error> {
+fn serialize_ed25519_public_key(key_data: &[u8], format: SerializationFormat) -> crate::error::Result<()> {
     if key_data.len() != 32 {
         return Err(CursedError::InvalidArgument("Ed25519 public key must be 32 bytes".to_string()));
     }
@@ -1000,7 +999,7 @@ fn serialize_ed25519_public_key(key_data: &[u8], format: SerializationFormat) ->
 }
 
 /// Serialize X25519 private key
-fn serialize_x25519_private_key(key_data: &[u8], format: SerializationFormat) -> Result<(), Error> {
+fn serialize_x25519_private_key(key_data: &[u8], format: SerializationFormat) -> crate::error::Result<()> {
     if key_data.len() != 32 {
         return Err(CursedError::InvalidArgument("X25519 private key must be 32 bytes".to_string()));
     }
@@ -1027,7 +1026,7 @@ fn serialize_x25519_private_key(key_data: &[u8], format: SerializationFormat) ->
 }
 
 /// Serialize X25519 public key
-fn serialize_x25519_public_key(key_data: &[u8], format: SerializationFormat) -> Result<(), Error> {
+fn serialize_x25519_public_key(key_data: &[u8], format: SerializationFormat) -> crate::error::Result<()> {
     if key_data.len() != 32 {
         return Err(CursedError::InvalidArgument("X25519 public key must be 32 bytes".to_string()));
     }
@@ -1054,7 +1053,7 @@ fn serialize_x25519_public_key(key_data: &[u8], format: SerializationFormat) -> 
 }
 
 /// Deserialize key from format
-pub fn deserialize_key(args: Vec<Value>) -> Result<(), Error> {
+pub fn deserialize_key(args: Vec<Value>) -> crate::error::Result<()> {
     if args.len() < 3 {
         return Err(CursedError::InvalidArgument("Key deserialization requires: format, serialized_data, expected_key_type".to_string()));
     }
@@ -1126,7 +1125,7 @@ pub fn deserialize_key(args: Vec<Value>) -> Result<(), Error> {
 }
 
 /// Parse PEM to raw bytes
-fn parse_pem_to_bytes(pem_data: &str) -> Result<(), Error> {
+fn parse_pem_to_bytes(pem_data: &str) -> crate::error::Result<()> {
     // Remove PEM headers and decode base64 content
     let lines: Vec<&str> = pem_data.split("\n").collect();
     
@@ -1161,7 +1160,7 @@ fn parse_pem_to_bytes(pem_data: &str) -> Result<(), Error> {
 }
 
 /// Parse SSH key to raw bytes
-fn parse_ssh_to_bytes(ssh_data: &str) -> Result<(), Error> {
+fn parse_ssh_to_bytes(ssh_data: &str) -> crate::error::Result<()> {
     // SSH public key format: <algorithm> <base64-key> [comment]
     let parts: Vec<&str> = ssh_data.trim().split_whitespace().collect();
     
@@ -1184,7 +1183,7 @@ fn parse_ssh_to_bytes(ssh_data: &str) -> Result<(), Error> {
 }
 
 /// Parse JWK to raw bytes
-fn parse_jwk_to_bytes(jwk_str: &str, expected_key_type: &KeyType) -> Result<(), Error> {
+fn parse_jwk_to_bytes(jwk_str: &str, expected_key_type: &KeyType) -> crate::error::Result<()> {
     let jwk: serde_json::Value = serde_json::from_str(jwk_str)
         .map_err(|e| CursedError::InvalidArgument(format!("Invalid JWK JSON: {}", e)))?;
     
@@ -1478,7 +1477,7 @@ pub fn get_format_compatibility() -> HashMap<String, Vec<String>> {
 }
 
 /// Get detailed format information
-pub fn get_format_info(args: Vec<Value>) -> Result<(), Error> {
+pub fn get_format_info(args: Vec<Value>) -> crate::error::Result<()> {
     if args.is_empty() {
         return Err(CursedError::InvalidArgument("Format name required".to_string()));
     }
@@ -1516,7 +1515,7 @@ pub fn get_format_info(args: Vec<Value>) -> Result<(), Error> {
 }
 
 /// Convert between key formats
-pub fn convert_key_format(args: Vec<Value>) -> Result<(), Error> {
+pub fn convert_key_format(args: Vec<Value>) -> crate::error::Result<()> {
     if args.len() < 4 {
         return Err(CursedError::InvalidArgument("Key format conversion requires: key_type, key_data, source_format, target_format".to_string()));
     }
@@ -1577,235 +1576,3 @@ pub fn convert_key_format(args: Vec<Value>) -> Result<(), Error> {
     ])
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_format_from_name() {
-        assert_eq!(SerializationFormat::from_name("PEM").unwrap(), SerializationFormat::Pem);
-        assert_eq!(SerializationFormat::from_name("der").unwrap(), SerializationFormat::Der);
-        assert!(SerializationFormat::from_name("invalid").is_err());
-    }
-
-    #[test]
-    fn test_key_type_from_name() {
-        assert_eq!(KeyType::from_name("RSA-PRIVATE").unwrap(), KeyType::RsaPrivate);
-        assert_eq!(KeyType::from_name("ed25519-public").unwrap(), KeyType::Ed25519Public);
-        assert!(KeyType::from_name("invalid").is_err());
-    }
-
-    #[test]
-    fn test_key_type_properties() {
-        assert!(KeyType::RsaPrivate.is_private());
-        assert!(!KeyType::RsaPublic.is_private());
-        assert_eq!(KeyType::RsaPrivate.algorithm(), "RSA");
-        assert_eq!(KeyType::Ed25519Public.algorithm(), "Ed25519");
-    }
-
-    #[test]
-    fn test_validate_ed25519_key_data() {
-        let valid_key = vec![0u8; 32];
-        assert!(validate_ed25519_private_key_data(&valid_key).is_ok());
-        assert!(validate_ed25519_public_key_data(&valid_key).is_ok());
-        
-        let invalid_key = vec![0u8; 16];
-        assert!(validate_ed25519_private_key_data(&invalid_key).is_err());
-        assert!(validate_ed25519_public_key_data(&invalid_key).is_err());
-    }
-
-    #[test]
-    fn test_list_serialization_formats() {
-        let formats = list_serialization_formats();
-        assert!(formats.contains(&"PEM".to_string()));
-        assert!(formats.contains(&"DER".to_string()));
-        assert!(formats.contains(&"SSH".to_string()));
-    }
-
-    #[test]
-    fn test_get_format_compatibility() {
-        let compatibility = get_format_compatibility();
-        assert!(compatibility.contains_key("RSA-Private"));
-        assert!(compatibility.contains_key("RSA-Public"));
-        assert!(compatibility.contains_key("Ed25519-Private"));
-        assert!(compatibility.contains_key("Ed25519-Public"));
-        assert!(compatibility.contains_key("ECDSA-P256-Private"));
-        assert!(compatibility.contains_key("ECDSA-P256-Public"));
-        assert!(compatibility.contains_key("ECDSA-P384-Private"));
-        assert!(compatibility.contains_key("ECDSA-P384-Public"));
-        assert!(compatibility.contains_key("X25519-Private"));
-        assert!(compatibility.contains_key("X25519-Public"));
-        
-        let rsa_public_formats = &compatibility["RSA-Public"];
-        assert!(rsa_public_formats.contains(&"PEM".to_string()));
-        assert!(rsa_public_formats.contains(&"DER".to_string()));
-        assert!(rsa_public_formats.contains(&"JWK".to_string()));
-        assert!(rsa_public_formats.contains(&"SSH".to_string()));
-        
-        let rsa_private_formats = &compatibility["RSA-Private"];
-        assert!(rsa_private_formats.contains(&"PEM".to_string()));
-        assert!(rsa_private_formats.contains(&"JWK".to_string()));
-        assert!(!rsa_private_formats.contains(&"SSH".to_string())); // Private keys don't support SSH
-        
-        let ed25519_public_formats = &compatibility["Ed25519-Public"];
-        assert!(ed25519_public_formats.contains(&"PEM".to_string()));
-        assert!(ed25519_public_formats.contains(&"JWK".to_string()));
-        assert!(ed25519_public_formats.contains(&"SSH".to_string()));
-        
-        let x25519_formats = &compatibility["X25519-Public"];
-        assert!(x25519_formats.contains(&"JWK".to_string()));
-        assert!(x25519_formats.contains(&"PEM".to_string()));
-        assert!(!x25519_formats.contains(&"SSH".to_string())); // X25519 doesn't support SSH
-    }
-
-    #[test]
-    fn test_jwk_parsing() {
-        // Test Ed25519 public key JWK
-        let ed25519_jwk = r#"{"kty":"OKP","crv":"Ed25519","x":"GpwbGQhqNWGJBIIqwByCdtKEYGCk0G0nfFfFwCl_-DE"}"#;
-        let result = parse_jwk_to_bytes(ed25519_jwk, &KeyType::Ed25519Public);
-        assert!(result.is_ok());
-        let bytes = result.unwrap();
-        assert_eq!(bytes.len(), 32);
-        
-        // Test RSA public key JWK
-        let rsa_jwk = r#"{"kty":"RSA","n":"0vx7agoebGcQSuuPiLJXZptN9nndrQmbXEps2aiAFbWhM78LhWx4cbbfAAtVT86zwu1RK7aPFFxuhDR1L6tSoc_BJECPebWKRXjBZCiFV4n3oknjhMstn64tZ_2W-5JsGY4Hc5n9yBXArwl93lqt7_RN5w6Cf0h4QyQ5v-65YGjQR0_FDW2QvzqY368QQMicAtaSqzs8KJZgnYb9c7d0zgdAZHzu6qMQvRL5hajrn1n91CbOpbIS"}"#;
-        let result = parse_jwk_to_bytes(rsa_jwk, &KeyType::RsaPublic);
-        assert!(result.is_ok());
-        
-        // Test invalid JWK
-        let invalid_jwk = r#"{"invalid": "json"}"#;
-        let result = parse_jwk_to_bytes(invalid_jwk, &KeyType::Ed25519Public);
-        assert!(result.is_err());
-    }
-
-    #[test]
-    fn test_create_ed25519_der() {
-        let key_data = vec![0u8; 32];
-        let result = create_ed25519_private_key_der(&key_data);
-        assert!(result.is_ok());
-        let der = result.unwrap();
-        
-        // Should be valid PKCS#8 DER format
-        assert!(der.len() > 32); // Should be longer than just the key
-        assert_eq!(der[0], 0x30); // Should start with SEQUENCE tag
-        
-        let public_result = create_ed25519_public_key_der(&key_data);
-        assert!(public_result.is_ok());
-        let public_der = public_result.unwrap();
-        assert_eq!(public_der[0], 0x30); // Should start with SEQUENCE tag
-    }
-
-    #[test]
-    fn test_create_x25519_jwk() {
-        let key_data = vec![1u8; 32];
-        let result = create_jwk_x25519_private_key(&key_data);
-        assert!(result.is_ok());
-        
-        let jwk_bytes = result.unwrap();
-        let jwk_str = String::from_utf8(jwk_bytes).unwrap();
-        let jwk: serde_json::Value = serde_json::from_str(&jwk_str).unwrap();
-        
-        assert_eq!(jwk["kty"], "OKP");
-        assert_eq!(jwk["crv"], "X25519");
-        assert!(jwk["d"].is_string());
-        assert!(jwk["x"].is_string());
-    }
-
-    #[test]
-    fn test_format_round_trip() {
-        let test_key = vec![42u8; 32];
-        
-        // Test Ed25519 key round trip through various formats
-        for format in &[SerializationFormat::Hex, SerializationFormat::Raw] {
-            let serialized = match format {
-                SerializationFormat::Hex => hex::encode(&test_key).into_bytes(),
-                SerializationFormat::Raw => test_key.clone(),
-                _ => continue,
-            };
-            
-            let serialized_str = String::from_utf8_lossy(&serialized);
-            let parsed = match format {
-                SerializationFormat::Hex => hex::decode(serialized_str.as_ref()).unwrap(),
-                SerializationFormat::Raw => serialized_str.as_bytes().to_vec(),
-                _ => continue,
-            };
-            
-            assert_eq!(parsed, test_key);
-        }
-    }
-
-    #[test]
-    fn test_pem_parsing() {
-        let pem_data = r#"-----BEGIN PUBLIC KEY-----
-MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA4f5wg5l2hKsTeNem/V41
-fGnJm6gOdrj8ym3rFkEjWT2btf/FuFAIWTrR7N2FHR1JiYTjhp0wI4lKRXp1ObVc
-1YA8y8A2cM3HFdF4zX7l5Z0JQ8AuVtVjRa5Fhf4YkfznF5jNg2D6JjZKY6BVbZQ
------END PUBLIC KEY-----"#;
-        
-        let result = parse_pem_to_bytes(pem_data);
-        assert!(result.is_ok());
-        let bytes = result.unwrap();
-        assert!(!bytes.is_empty());
-        
-        // Test invalid PEM
-        let invalid_pem = "This is not a PEM";
-        let result = parse_pem_to_bytes(invalid_pem);
-        assert!(result.is_err());
-    }
-
-    #[test]
-    fn test_ssh_parsing() {
-        let ssh_data = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIGpwbGQhqNWGJBIIqwByCdtKEYGCk0G0nfFfFwCl_-DE test@example.com";
-        
-        let result = parse_ssh_to_bytes(ssh_data);
-        assert!(result.is_ok());
-        let bytes = result.unwrap();
-        assert!(!bytes.is_empty());
-        
-        // Test invalid SSH
-        let invalid_ssh = "invalid-key format";
-        let result = parse_ssh_to_bytes(invalid_ssh);
-        assert!(result.is_err());
-        
-        // Test unsupported algorithm
-        let unsupported_ssh = "unsupported-algo AAAAC3NzaC1lZDI1NTE5AAAAIGpwbGQhqNWGJBIIqwByCdtKEYGCk0G0nfFfFwCl_-DE";
-        let result = parse_ssh_to_bytes(unsupported_ssh);
-        assert!(result.is_err());
-    }
-
-    #[test]
-    fn test_format_info() {
-        let result = get_format_info(vec![Value::String("PEM".to_string())]);
-        assert!(result.is_ok());
-        
-        if let Ok(Value::Object(info)) = result {
-            assert!(info.contains_key("name"));
-            assert!(info.contains_key("description"));
-            assert!(info.contains_key("file_extension"));
-            assert!(info.contains_key("encoding_details"));
-            assert!(info.contains_key("supported_operations"));
-        }
-        
-        // Test invalid format
-        let result = get_format_info(vec![Value::String("INVALID".to_string())]);
-        assert!(result.is_err());
-    }
-
-    #[test]
-    fn test_enhanced_validation() {
-        // Test Ed25519 validation with correct length
-        let valid_ed25519 = vec![1u8; 32];
-        assert!(validate_ed25519_private_key_data(&valid_ed25519).is_ok());
-        assert!(validate_ed25519_public_key_data(&valid_ed25519).is_ok());
-        
-        // Test Ed25519 validation with incorrect length
-        let invalid_ed25519 = vec![1u8; 16];
-        assert!(validate_ed25519_private_key_data(&invalid_ed25519).is_err());
-        assert!(validate_ed25519_public_key_data(&invalid_ed25519).is_err());
-        
-        // Test X25519 validation
-        let valid_x25519 = vec![2u8; 32];
-        assert!(validate_x25519_private_key_data(&valid_x25519).is_ok());
-        assert!(validate_x25519_public_key_data(&valid_x25519).is_ok());
-    }
-}

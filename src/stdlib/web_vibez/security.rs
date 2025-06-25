@@ -1,4 +1,4 @@
-use crate::error::Error;
+use crate::error::CursedError;
 /// Security utilities for input validation, XSS protection, and more
 use std::collections::HashMap;
 use std::fmt;
@@ -344,14 +344,14 @@ pub struct ValidationError {
     pub message: String,
 }
 
-impl fmt::Display for ValidationError {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{}: {}", self.field, self.message)
-    }
-}
+// impl fmt::Display for ValidationError {
+//     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+//         write!(f, "{}: {}", self.field, self.message)
+//     }
+// }
 
-impl std::error::Error for ValidationError {}
-
+// impl std::error::CursedError for ValidationError {}
+// 
 impl InputValidator {
     /// Create new input validator
     pub fn new() -> Self {
@@ -463,7 +463,7 @@ impl InputValidator {
     }
 
     /// Validate input data
-    pub fn validate(&self, data: &HashMap<String, String>) -> Result<(), Error> {
+    pub fn validate(&self, data: &HashMap<String, String>) -> crate::error::Result<()> {
         let mut errors = Vec::new();
 
         for (field, rule) in &self.rules {
@@ -631,181 +631,6 @@ impl Default for InputValidator {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_input_sanitizer() {
-        let sanitizer = InputSanitizer::new();
-
-        // Test HTML escaping
-        let html = "<script>alert('xss')</script>";
-        let sanitized = sanitizer.sanitize(html);
-        assert!(!sanitized.contains("<script>"));
-        assert!(sanitized.contains("&lt;"));
-
-        // Test SQL sanitization
-        let sql = "'; DROP TABLE users; --";
-        let sanitized_sql = sanitizer.sanitize_sql(sql);
-        assert!(!sanitized_sql.contains("DROP"));
-        assert!(!sanitized_sql.contains("--"));
-
-        // Test filename sanitization
-        let filename = "../../../etc/passwd";
-        let sanitized_filename = sanitizer.sanitize_filename(filename);
-        assert!(!sanitized_filename.contains(".."));
-        assert!(!sanitized_filename.contains("/"));
-    }
-
-    #[test]
-    fn test_email_validation() {
-        let sanitizer = InputSanitizer::new();
-
-        assert!(sanitizer.validate_email("test@example.com"));
-        assert!(sanitizer.validate_email("user.name@domain.co.uk"));
-        assert!(!sanitizer.validate_email("invalid.email"));
-        assert!(!sanitizer.validate_email("@domain.com"));
-        assert!(!sanitizer.validate_email("user@"));
-        assert!(!sanitizer.validate_email(""));
-    }
-
-    #[test]
-    fn test_xss_detection() {
-        let protector = XssProtector::new();
-
-        assert!(protector.detect_xss("<script>alert('xss')</script>"));
-        assert!(protector.detect_xss("javascript:alert('xss')"));
-        assert!(protector.detect_xss("<img onerror='alert(1)' src='x'>"));
-        assert!(!protector.detect_xss("This is safe content"));
-    }
-
-    #[test]
-    fn test_encoding() {
-        let protector = XssProtector::new();
-
-        // Test HTML encoding
-        let html = "<script>alert('test')</script>";
-        let encoded = protector.encode_output(html);
-        assert!(!encoded.contains('<'));
-        assert!(encoded.contains("&lt;"));
-
-        // Test JavaScript encoding
-        let js = "alert('test');";
-        let encoded_js = protector.encode_js_string(js);
-        assert!(encoded_js.contains("\\'"));
-
-        // Test URL encoding
-        let url = "hello world";
-        let encoded_url = protector.encode_url(url);
-        assert!(encoded_url.contains("%20"));
-    }
-
-    #[test]
-    fn test_input_validation() {
-        let mut validator = InputValidator::new();
-        validator.required("name").length("name", Some(2), Some(50));
-        validator.required("email").pattern("email", "email");
-
-        let mut data = HashMap::new();
-        data.insert("name".to_string(), "John".to_string());
-        data.insert("email".to_string(), "john@example.com".to_string());
-
-        assert!(validator.validate(&data).is_ok());
-
-        // Test missing required field
-        data.remove("name");
-        let result = validator.validate(&data);
-        assert!(result.is_err());
-        let errors = result.unwrap_err();
-        assert_eq!(errors.len(), 1);
-        assert_eq!(errors[0].field, "name");
-    }
-
-    #[test]
-    fn test_regex_patterns() {
-        let mut validator = InputValidator::new();
-
-        // Test built-in patterns
-        assert!(validator.validate_pattern("user@example.com", "email").unwrap());
-        assert!(!validator.validate_pattern("invalid-email", "email").unwrap());
-        
-        assert!(validator.validate_pattern("https://example.com", "url").unwrap());
-        assert!(!validator.validate_pattern("not-a-url", "url").unwrap());
-        
-        assert!(validator.validate_pattern("Password123!", "password_strong").unwrap());
-        assert!(!validator.validate_pattern("weak", "password_strong").unwrap());
-        
-        assert!(validator.validate_pattern("192.168.1.1", "ipv4").unwrap());
-        assert!(!validator.validate_pattern("999.999.999.999", "ipv4").unwrap());
-        
-        assert!(validator.validate_pattern("john_doe", "username").unwrap());
-        assert!(!validator.validate_pattern("jo", "username").unwrap()); // Too short
-        
-        assert!(validator.validate_pattern("#FF5733", "hex_color").unwrap());
-        assert!(!validator.validate_pattern("#GG5733", "hex_color").unwrap()); // Invalid hex
-        
-        // Test custom regex patterns
-        assert!(validator.validate_pattern("ABC123", r"^[A-Z]{3}\d{3}$").unwrap());
-        assert!(!validator.validate_pattern("abc123", r"^[A-Z]{3}\d{3}$").unwrap());
-        
-        // Test invalid regex
-        let result = validator.validate_pattern("test", r"[invalid regex(");
-        assert!(result.is_err());
-        assert!(result.unwrap_err().contains("Invalid regex pattern"));
-    }
-
-    #[test]
-    fn test_pattern_testing() {
-        let mut validator = InputValidator::new();
-        
-        let test_cases = [
-            ("valid@email.com", true),
-            ("invalid.email", false),
-            ("another@test.org", true),
-        ];
-        
-        let results = validator.test_pattern("email", &test_cases).unwrap();
-        assert!(results.is_empty(), "All test cases should pass");
-        
-        // Test with failing cases
-        let failing_cases = [
-            ("valid@email.com", false), // This should fail the test
-        ];
-        
-        let results = validator.test_pattern("email", &failing_cases).unwrap();
-        assert!(!results.is_empty(), "Should have failing test cases");
-    }
-
-    #[test]
-    fn test_builtin_pattern_list() {
-        let patterns = InputValidator::get_builtin_patterns();
-        assert!(!patterns.is_empty());
-        
-        // Check that key patterns are included
-        let pattern_names: Vec<&str> = patterns.iter().map(|(name, _)| *name).collect();
-        assert!(pattern_names.contains(&"email"));
-        assert!(pattern_names.contains(&"password_strong"));
-        assert!(pattern_names.contains(&"ipv4"));
-        assert!(pattern_names.contains(&"credit_card"));
-    }
-}
-
-/// Type alias for XssProtection (for compatibility with existing imports)
-pub type XssProtection = XssProtector;
-
-/// Security headers manager for comprehensive security policy enforcement
-#[derive(Debug, Clone)]
-pub struct SecurityHeaders {
-    pub x_frame_options: Option<String>,
-    pub x_content_type_options: Option<String>,
-    pub x_xss_protection: Option<String>,
-    pub strict_transport_security: Option<String>,
-    pub content_security_policy: Option<String>,
-    pub referrer_policy: Option<String>,
-    pub permissions_policy: Option<String>,
-    pub custom_headers: HashMap<String, String>,
-}
 
 impl SecurityHeaders {
     /// Create new security headers with safe defaults

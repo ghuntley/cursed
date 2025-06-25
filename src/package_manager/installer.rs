@@ -1,4 +1,4 @@
-use crate::error::Error;
+use crate::error::CursedError;
 /// Package Installation System
 /// 
 /// Provides comprehensive package extraction, installation, and management functionality:
@@ -17,7 +17,6 @@ use tar::{Archive, Entry};
 use zip::ZipArchive;
 use tempfile::TempDir;
 use serde::{Deserialize, Serialize};
-use thiserror::Error;
 use tracing::{info, warn, error, debug, instrument};
 use chrono;
 
@@ -87,7 +86,7 @@ pub enum PackageFormat {
 }
 
 /// Installation errors
-#[derive(Error, Debug)]
+#[derive(CursedError, Debug)]
 pub enum InstallError {
     #[error("Package format not supported: {format}")]
     UnsupportedFormat { format: String },
@@ -128,7 +127,7 @@ impl PackageInstaller {
     pub fn new(
         database: Arc<Mutex<PackageDatabase>>,
         config: InstallerConfig,
-    ) -> Result<(), Error> {
+    ) -> crate::error::Result<()> {
         let temp_dir = TempDir::new()
             .map_err(|e| InstallError::Io(e))?;
         
@@ -151,7 +150,7 @@ impl PackageInstaller {
         &mut self,
         package: &PackageMetadata,
         package_data: &[u8],
-    ) -> Result<(), Error> {
+    ) -> crate::error::Result<()> {
         info!("Starting installation");
         
         // Check if already installed
@@ -196,7 +195,7 @@ impl PackageInstaller {
         &mut self,
         package: &PackageMetadata,
         package_data: &[u8],
-    ) -> Result<(), Error> {
+    ) -> crate::error::Result<()> {
         info!("Starting package upgrade");
         
         let existing = self.get_installed_package(&package.name)?;
@@ -221,7 +220,7 @@ impl PackageInstaller {
     
     /// Uninstall a package
     #[instrument(skip(self), fields(package_name))]
-    pub fn uninstall_package(&mut self, package_name: &str) -> Result<(), Error> {
+    pub fn uninstall_package(&mut self, package_name: &str) -> crate::error::Result<()> {
         info!("Starting package uninstallation");
         
         let installed = self.get_installed_package(package_name)?;
@@ -246,7 +245,7 @@ impl PackageInstaller {
     }
     
     /// List all installed packages
-    pub fn list_installed(&self) -> Result<(), Error> {
+    pub fn list_installed(&self) -> crate::error::Result<()> {
         let db = self.database.lock()
             .map_err(|e| InstallError::Database(format!("Lock failed: {}", e)))?;
         db.list_packages()
@@ -254,7 +253,7 @@ impl PackageInstaller {
     }
     
     /// Get specific installed package
-    pub fn get_installed_package(&self, name: &str) -> Result<(), Error> {
+    pub fn get_installed_package(&self, name: &str) -> crate::error::Result<()> {
         let db = self.database.lock()
             .map_err(|e| InstallError::Database(format!("Lock failed: {}", e)))?;
         db.get_package(name)
@@ -262,7 +261,7 @@ impl PackageInstaller {
     }
     
     /// Check package integrity
-    pub fn verify_package(&self, package_name: &str) -> Result<(), Error> {
+    pub fn verify_package(&self, package_name: &str) -> crate::error::Result<()> {
         let installed = self.get_installed_package(package_name)?;
         
         for file_op in &installed.file_operations {
@@ -288,7 +287,7 @@ impl PackageInstaller {
     fn create_installation_context(
         &self,
         package: &PackageMetadata,
-    ) -> Result<(), Error> {
+    ) -> crate::error::Result<()> {
         let temp_extract_dir = self.temp_dir.path().join(format!("{}-{}", package.name, package.version));
         fs::create_dir_all(&temp_extract_dir)?;
         
@@ -317,7 +316,7 @@ impl PackageInstaller {
         &self,
         package_data: &[u8],
         context: &mut InstallationContext,
-    ) -> Result<(), Error> {
+    ) -> crate::error::Result<()> {
         let format = self.detect_package_format(package_data)?;
         
         match format {
@@ -334,7 +333,7 @@ impl PackageInstaller {
         &self,
         package_data: &[u8],
         context: &mut InstallationContext,
-    ) -> Result<(), Error> {
+    ) -> crate::error::Result<()> {
         let gz_decoder = GzDecoder::new(package_data);
         let mut archive = Archive::new(gz_decoder);
         
@@ -388,7 +387,7 @@ impl PackageInstaller {
         &self,
         package_data: &[u8],
         context: &mut InstallationContext,
-    ) -> Result<(), Error> {
+    ) -> crate::error::Result<()> {
         let cursor = std::io::Cursor::new(package_data);
         let mut archive = ZipArchive::new(cursor)
             .map_err(|e| InstallError::ExtractionFailed { reason: e.to_string() })?;
@@ -444,7 +443,7 @@ impl PackageInstaller {
     }
     
     /// Detect package format from data
-    fn detect_package_format(&self, data: &[u8]) -> Result<(), Error> {
+    fn detect_package_format(&self, data: &[u8]) -> crate::error::Result<()> {
         if data.len() < 4 {
             return Err(InstallError::UnsupportedFormat {
                 format: "Unknown format - insufficient data".to_string(),
@@ -467,7 +466,7 @@ impl PackageInstaller {
     }
     
     /// Validate extracted files
-    fn validate_extracted_files(&self, context: &InstallationContext) -> Result<(), Error> {
+    fn validate_extracted_files(&self, context: &InstallationContext) -> crate::error::Result<()> {
         // Check for required files (customize based on package requirements)
         let required_files = vec!["CursedPackage.toml"];
         
@@ -487,7 +486,7 @@ impl PackageInstaller {
     async fn execute_pre_install_scripts(
         &self,
         context: &InstallationContext,
-    ) -> Result<(), Error> {
+    ) -> crate::error::Result<()> {
         for script in &context.scripts {
             if script.phase == "pre-install" {
                 let script_context = ScriptContext {
@@ -512,7 +511,7 @@ impl PackageInstaller {
     async fn execute_post_install_scripts(
         &self,
         context: &InstallationContext,
-    ) -> Result<(), Error> {
+    ) -> crate::error::Result<()> {
         for script in &context.scripts {
             if script.phase == "post-install" {
                 let script_context = ScriptContext {
@@ -537,7 +536,7 @@ impl PackageInstaller {
     fn install_files(
         &mut self,
         context: &mut InstallationContext,
-    ) -> Result<(), Error> {
+    ) -> crate::error::Result<()> {
         let mut file_operations = Vec::new();
         
         for file_path in &context.installed_files {
@@ -607,7 +606,7 @@ impl PackageInstaller {
         &self,
         context: &InstallationContext,
         file_operations: Vec<FileOperation>,
-    ) -> Result<(), Error> {
+    ) -> crate::error::Result<()> {
         let installed_package = InstalledPackage {
             name: context.package.name.clone(),
             version: context.package.version.clone(),
@@ -627,7 +626,7 @@ impl PackageInstaller {
     }
     
     /// Calculate file checksum (SHA-256)
-    fn calculate_file_checksum(&self, path: &Path) -> Result<(), Error> {
+    fn calculate_file_checksum(&self, path: &Path) -> crate::error::Result<()> {
         use sha2::{Sha256, Digest};
         
         let mut file = File::open(path)?;
@@ -667,7 +666,7 @@ impl PackageInstaller {
     }
     
     /// Create rollback point for upgrade
-    fn create_rollback_point(&self, package: &InstalledPackage) -> Result<(), Error> {
+    fn create_rollback_point(&self, package: &InstalledPackage) -> crate::error::Result<()> {
         info!("Creating rollback point for package {}", package.name);
         
         let rollback_dir = self.temp_dir.path().join(format!("rollback-{}-{}", package.name, package.version));
@@ -761,7 +760,7 @@ impl PackageInstaller {
         &mut self,
         package: &PackageMetadata,
         package_data: &[u8],
-    ) -> Result<(), Error> {
+    ) -> crate::error::Result<()> {
         // Remove old version first
         self.uninstall_package(&package.name)?;
         
@@ -774,7 +773,7 @@ impl PackageInstaller {
         &mut self,
         package: &PackageMetadata,
         package_data: &[u8],
-    ) -> Result<(), Error> {
+    ) -> crate::error::Result<()> {
         info!("Starting direct installation");
         
         // Create installation context
@@ -803,13 +802,13 @@ impl PackageInstaller {
     }
     
     /// Cleanup rollback point
-    fn cleanup_rollback_point(&self, _rollback_data: RollbackData) -> Result<(), Error> {
+    fn cleanup_rollback_point(&self, _rollback_data: RollbackData) -> crate::error::Result<()> {
         // Implementation would clean up rollback data
         Ok(())
     }
     
     /// Perform rollback
-    fn perform_rollback(&self, rollback_data: RollbackData) -> Result<(), Error> {
+    fn perform_rollback(&self, rollback_data: RollbackData) -> crate::error::Result<()> {
         info!("Performing rollback for package {}@{}", rollback_data.package_name, rollback_data.package_version);
         
         // Verify rollback data exists
@@ -968,20 +967,20 @@ impl PackageInstaller {
     }
     
     /// Check dependencies before uninstall
-    fn check_uninstall_dependencies(&self, _package: &InstalledPackage) -> Result<(), Error> {
+    fn check_uninstall_dependencies(&self, _package: &InstalledPackage) -> crate::error::Result<()> {
         // Check if other packages depend on this one
         // For now, just succeed
         Ok(())
     }
     
     /// Execute uninstall scripts
-    fn execute_uninstall_scripts(&self, _package: &InstalledPackage, _phase: &str) -> Result<(), Error> {
+    fn execute_uninstall_scripts(&self, _package: &InstalledPackage, _phase: &str) -> crate::error::Result<()> {
         // Implementation would execute uninstall scripts
         Ok(())
     }
     
     /// Remove package files
-    fn remove_package_files(&self, package: &InstalledPackage) -> Result<(), Error> {
+    fn remove_package_files(&self, package: &InstalledPackage) -> crate::error::Result<()> {
         for file_op in &package.file_operations {
             if file_op.path.exists() {
                 if file_op.path.is_dir() {
@@ -1005,7 +1004,7 @@ impl PackageInstaller {
     }
     
     /// Unregister package from database
-    fn unregister_package(&self, package_name: &str) -> Result<(), Error> {
+    fn unregister_package(&self, package_name: &str) -> crate::error::Result<()> {
         let mut db = self.database.lock()
             .map_err(|e| InstallError::Database(format!("Lock failed: {}", e)))?;
         

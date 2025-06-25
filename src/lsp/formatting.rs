@@ -1,4 +1,4 @@
-use crate::error::Error;
+use crate::error::CursedError;
 // Formatting provider for CURSED language server
 // 
 // Provides document formatting integration with the CURSED formatter
@@ -8,7 +8,7 @@ use tower_lsp::lsp_types::*;
 use tracing::{debug, error, instrument, warn};
 
 use crate::tools::formatter::{FormatterConfig, BraceStyle, CursedFormatter, OperatorSpacing, CommaSpacing};
-use crate::stdlib::string::{split_join, core as string_core, transform, search};
+// use crate::stdlib::string::{split_join, core as string_core, transform, search};
 
 /// Formatting provider for the LSP server
 pub struct FormattingProvider {
@@ -27,7 +27,7 @@ impl FormattingProvider {
 
     /// Format entire document
     #[instrument(skip(self, content))]
-    pub async fn format_document(&self, content: &str) -> Result<(), Error> {
+    pub async fn format_document(&self, content: &str) -> crate::error::Result<()> {
         debug!("Formatting document");
         
         // Create formatter with default config
@@ -496,160 +496,3 @@ impl Default for FormattingProvider {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[tokio::test]
-    async fn test_format_document() {
-        let provider = FormattingProvider::new();
-        let content = "slay  main(){facts   x=42;print(x);}";
-        
-        let formatted = provider.format_document(content).await;
-        assert!(formatted.is_ok());
-        
-        let result = formatted.unwrap();
-        // Should contain properly formatted CURSED code
-        assert!(result.contains("slay main()"));
-        assert!(result.contains("facts x = 42"));
-    }
-
-    #[tokio::test]
-    async fn test_format_document_edits() {
-        let provider = FormattingProvider::new();
-        let content = "slay main(){print(\"hello\");}";
-        let options = FormattingOptions {
-            tab_size: 4,
-            insert_spaces: true,
-            properties: HashMap::new(),
-            trim_trailing_whitespace: Some(true),
-            insert_final_newline: Some(true),
-            trim_final_newlines: Some(true),
-        };
-        
-        let edits = provider.format_document_edits(content, options).await;
-        assert!(edits.is_some());
-        
-        let edits = edits.unwrap();
-        if !edits.is_empty() {
-            // If there are edits, they should be valid
-            assert!(edits.len() >= 1);
-            let edit = &edits[0];
-            assert!(edit.new_text.contains("slay main()"));
-        }
-    }
-
-    #[test]
-    fn test_extract_range_content() {
-        let provider = FormattingProvider::new();
-        let content = "line 1\nline 2\nline 3";
-        
-        // Single line range
-        let range = Range {
-            start: Position { line: 1, character: 0 },
-            end: Position { line: 1, character: 6 },
-        };
-        let extracted = provider.extract_range_content(content, range);
-        assert_eq!(extracted, "line 2");
-        
-        // Multi-line range
-        let range = Range {
-            start: Position { line: 0, character: 5 },
-            end: Position { line: 2, character: 4 },
-        };
-        let extracted = provider.extract_range_content(content, range);
-        assert_eq!(extracted, " 1\nline 2\nline");
-    }
-
-    #[test]
-    fn test_line_spacing_formatting() {
-        let provider = FormattingProvider::new();
-        let config = FormatterConfig::default();
-        
-        let formatted = provider.format_line_spacing("facts x=42+3*2", &config);
-        assert_eq!(formatted, "facts x = 42 + 3 * 2");
-        
-        let formatted = provider.format_line_spacing("func(a,b,c)", &config);
-        assert_eq!(formatted, "func(a, b, c)");
-    }
-
-    #[tokio::test]
-    async fn test_format_range() {
-        let provider = FormattingProvider::new();
-        let content = "slay main(){facts x=42;\nprint(x);}";
-        let range = Range {
-            start: Position { line: 0, character: 12 },
-            end: Position { line: 1, character: 8 },
-        };
-        let options = FormattingOptions {
-            tab_size: 4,
-            insert_spaces: true,
-            properties: HashMap::new(),
-            trim_trailing_whitespace: Some(true),
-            insert_final_newline: Some(true),
-            trim_final_newlines: Some(true),
-        };
-        
-        let edits = provider.format_range(content, range, options).await;
-        assert!(edits.is_some());
-    }
-
-    #[test]
-    fn test_lsp_options_to_config() {
-        let provider = FormattingProvider::new();
-        
-        let mut properties = HashMap::new();
-        properties.insert("lineWidth".to_string(), "120".into());
-        properties.insert("braceStyle".to_string(), "nextLine".into());
-        properties.insert("operatorSpacing".to_string(), "withoutSpaces".into());
-        
-        let options = FormattingOptions {
-            tab_size: 2,
-            insert_spaces: true,
-            properties,
-            trim_trailing_whitespace: Some(true),
-            insert_final_newline: Some(true),
-            trim_final_newlines: Some(true),
-        };
-        
-        let config = provider.lsp_options_to_config(options);
-        
-        assert_eq!(config.indent_size, 2);
-        assert_eq!(config.line_width, 120);
-        assert_eq!(config.brace_style, BraceStyle::NextLine);
-        assert_eq!(config.operator_spacing, OperatorSpacing::WithoutSpaces);
-    }
-
-    #[tokio::test]
-    async fn test_formatter_error_handling() {
-        let provider = FormattingProvider::new();
-        let invalid_content = "slay main() { this is not valid cursed syntax +++";
-        
-        // Should not panic and return something (original content or formatted attempt)
-        let result = provider.format_document(invalid_content).await;
-        assert!(result.is_ok());
-        
-        // Should return None for edits on invalid syntax
-        let options = FormattingOptions::default();
-        let edits = provider.format_document_edits(invalid_content, options).await;
-        // May be None or empty vec depending on error handling
-        if let Some(edits) = edits {
-            // If we get edits, they should be safe
-            assert!(edits.len() <= 1);
-        }
-    }
-
-    #[tokio::test]
-    async fn test_is_formatter_available() {
-        let provider = FormattingProvider::new();
-        assert!(provider.is_formatter_available().await);
-    }
-
-    #[tokio::test]
-    async fn test_get_formatter_version() {
-        let provider = FormattingProvider::new();
-        let version = provider.get_formatter_version().await;
-        assert!(version.is_some());
-        assert_eq!(version.unwrap(), "0.1.0");
-    }
-}

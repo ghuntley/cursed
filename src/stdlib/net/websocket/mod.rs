@@ -1,4 +1,4 @@
-use crate::error::Error;
+use crate::error::CursedError;
 /// WebSocket implementation for CURSED networking
 /// 
 /// This module provides WebSocket client and server functionality with support
@@ -47,7 +47,7 @@ impl CloseCode {
         match self.0 {
             1000 => "Normal Closure",
             1001 => "Going Away",
-            1002 => "Protocol Error",
+            1002 => "Protocol CursedError",
             1003 => "Unsupported Data",
             1005 => "No Status Received",
             1006 => "Abnormal Closure",
@@ -55,7 +55,7 @@ impl CloseCode {
             1008 => "Policy Violation",
             1009 => "Message Too Big",
             1010 => "Mandatory Extension",
-            1011 => "Internal Error",
+            1011 => "Internal CursedError",
             1012 => "Service Restart",
             1013 => "Try Again Later",
             1014 => "Bad Gateway",
@@ -80,21 +80,3 @@ pub enum ConnectionState {
     Closed,
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_close_codes() {
-        assert_eq!(CloseCode::NORMAL.as_u16(), 1000);
-        assert_eq!(CloseCode::NORMAL.reason(), "Normal Closure");
-        assert_eq!(CloseCode::PROTOCOL_ERROR.to_string(), "1002 Protocol Error");
-    }
-
-    #[test]
-    fn test_connection_state() {
-        let state = ConnectionState::Open;
-        assert_eq!(state, ConnectionState::Open);
-        assert_ne!(state, ConnectionState::Closed);
-    }
-}

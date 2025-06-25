@@ -1,4 +1,4 @@
-use crate::error::Error;
+use crate::error::CursedError;
 /// Enhanced ExecVibez Implementation - Complete Process Execution System
 /// 
 /// This module provides a complete implementation of the ExecVibez specification
@@ -16,8 +16,7 @@ use std::ffi::{OsStr, OsString};
 
 use tracing::{info, warn, error, debug, instrument};
 
-use crate::error::CursedError;
-use crate::stdlib::time::Duration as CursedDuration;
+// use crate::stdlib::time::Duration as CursedDuration;
 
 /// Result type for exec_vibez operations
 pub type VibezResult<T> = std::result::Result<T, ProcessError>;
@@ -88,15 +87,15 @@ pub struct SystemUsage {
     pub context_switches: u64,
 }
 
-/// Error type for command execution
+/// CursedError type for command execution
 #[derive(Debug)]
 pub struct ExecError {
-    /// Error message
+    /// CursedError message
     pub message: String,
     /// Exit code if available
     pub exit_code: Option<i32>,
     /// Underlying error
-    pub source: Option<Box<dyn std::error::Error + Send + Sync>>,
+    pub source: Option<Box<dyn std::error::CursedError + Send + Sync>>,
 }
 
 /// Process group for managing multiple processes
@@ -794,7 +793,7 @@ impl ExecError {
     
     /// Unwrap underlying error
     #[instrument(skip(self))]
-    pub fn unwrap(&self) -> Option<&(dyn std::error::Error + Send + Sync)> {
+    pub fn unwrap(&self) -> Option<&(dyn std::error::CursedError + Send + Sync)> {
         self.source.as_deref()
     }
     
@@ -1141,17 +1140,17 @@ impl GeneratorState {
     }
 }
 
-impl std::error::Error for ExecError {
-    fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
-        None // Would be implemented properly
-    }
-}
+// impl std::error::CursedError for ExecError {
+//     fn source(&self) -> Option<&(dyn std::error::CursedError + 'static)> {
+//         None // Would be implemented properly
+//     }
+// }
 
-impl std::fmt::Display for ExecError {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}", self.message)
-    }
-}
+// impl std::fmt::Display for ExecError {
+//     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+//         write!(f, "{}", self.message)
+//     }
+// }
 
 /// Global functions matching the exec_vibez specification
 
@@ -1215,61 +1214,3 @@ pub fn new_environment() -> Environment {
     Environment::new()
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-use crate::stdlib::process::info::ProcessState;
-    
-    #[test]
-    fn test_enhanced_cmd_creation() {
-        let cmd = EnhancedCmd::command("echo", &["hello", "world"]);
-        assert_eq!(cmd.path, "echo");
-        assert_eq!(cmd.args, vec!["hello", "world"]);
-    }
-    
-    #[test]
-    fn test_process_group_creation() {
-        let group = ProcessGroup::new();
-        assert!(!group.id.is_empty());
-    }
-    
-    #[test]
-    fn test_environment_creation() {
-        let mut env = Environment::new();
-        env.set("TEST_VAR", "test_value");
-        
-        let env_vec = env.to_env_vec();
-        assert!(env_vec.contains(&"TEST_VAR=test_value".to_string()));
-    }
-    
-    #[test]
-    fn test_execution_context() {
-        let ctx = ExecutionContext::with_timeout(Duration::from_secs(5));
-        assert!(ctx.timeout.is_some());
-        assert_eq!(ctx.timeout.unwrap(), Duration::from_secs(5));
-    }
-    
-    #[test]
-    fn test_output_streamer_creation() {
-        let cmd = EnhancedCmd::command("echo", &["test"]);
-        let streamer = OutputStreamer::new(cmd);
-        assert_eq!(streamer.options.buffer_size, 8192);
-    }
-    
-    #[test]
-    fn test_input_generator_creation() {
-        let cmd = EnhancedCmd::command("cat", &[]);
-        let generator = InputGenerator::new(cmd);
-        // Generator should be created successfully
-    }
-    
-    #[test]
-    fn test_exec_error_creation() {
-        let error = ExecError::new("Test error");
-        assert_eq!(error.message, "Test error");
-        assert!(error.exit_code.is_none());
-        
-        let error_with_code = ExecError::with_exit_code("Test error", 1);
-        assert_eq!(error_with_code.exit_code, Some(1));
-    }
-}

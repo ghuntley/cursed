@@ -32,7 +32,7 @@ pub use assertions::{
     Assert, AssertEqual, AssertNotEqual, AssertNil, AssertNotNil,
     AssertTrue, AssertFalse,
     
-    // Error assertions
+    // CursedError assertions
     AssertError, AssertNoError, AssertErrorIs, AssertErrorContains,
     
     // Collection assertions
@@ -78,14 +78,13 @@ pub use benchmarking::{
     Benchmark, BenchmarkMemory, BenchmarkParallel
 };
 
-// Error handling
-use crate::crate::stdlib::errors_simple::CursedError;
-use crate::error::Error;
+// CursedError handling
+use crate::error::CursedError;
 
 /// Result type for TestVibes operations
 pub type TestVibesResult<T> = std::result::Result<T, TestVibesError>;
 
-/// Error types specific to TestVibes
+/// CursedError types specific to TestVibes
 #[derive(Debug, Clone)]
 pub enum TestVibesError {
     /// Test execution failed
@@ -106,28 +105,28 @@ pub enum TestVibesError {
     InvalidConfig(String),
 }
 
-impl std::fmt::Display for TestVibesError {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            TestVibesError::TestFailed(msg) => write!(f, "Test failed: {}", msg),
-            TestVibesError::TestSkipped(msg) => write!(f, "Test skipped: {}", msg),
-            TestVibesError::BenchmarkFailed(msg) => write!(f, "Benchmark failed: {}", msg),
-            TestVibesError::AssertionFailed(msg) => write!(f, "Assertion failed: {}", msg),
-            TestVibesError::ExpectationNotMet(msg) => write!(f, "Mock expectation not met: {}", msg),
-            TestVibesError::FixtureFailed(msg) => write!(f, "Fixture failed: {}", msg),
-            TestVibesError::TimeoutExceeded(msg) => write!(f, "Timeout exceeded: {}", msg),
-            TestVibesError::InvalidConfig(msg) => write!(f, "Invalid configuration: {}", msg),
-        }
-    }
-}
+// impl std::fmt::Display for TestVibesError {
+//     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+//         match self {
+//             TestVibesError::TestFailed(msg) => write!(f, "Test failed: {}", msg),
+//             TestVibesError::TestSkipped(msg) => write!(f, "Test skipped: {}", msg),
+//             TestVibesError::BenchmarkFailed(msg) => write!(f, "Benchmark failed: {}", msg),
+//             TestVibesError::AssertionFailed(msg) => write!(f, "Assertion failed: {}", msg),
+//             TestVibesError::ExpectationNotMet(msg) => write!(f, "Mock expectation not met: {}", msg),
+//             TestVibesError::FixtureFailed(msg) => write!(f, "Fixture failed: {}", msg),
+//             TestVibesError::TimeoutExceeded(msg) => write!(f, "Timeout exceeded: {}", msg),
+//             TestVibesError::InvalidConfig(msg) => write!(f, "Invalid configuration: {}", msg),
+//         }
+//     }
+// }
 
-impl std::error::Error for TestVibesError {}
-
-impl From<TestVibesError> for CursedError {
-    fn from(err: TestVibesError) -> Self {
-        CursedError::Runtime(err.to_string())
-    }
-}
+// impl std::error::CursedError for TestVibesError {}
+// 
+// impl From<TestVibesError> for CursedError {
+//     fn from(err: TestVibesError) -> Self {
+//         CursedError::Runtime(err.to_string())
+//     }
+// }
 
 // Helper functions for creating errors
 pub fn test_failed(message: &str) -> TestVibesError {

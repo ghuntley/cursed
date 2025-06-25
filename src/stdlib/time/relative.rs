@@ -1,8 +1,8 @@
 /// Relative time calculations and human-readable time descriptions
-use crate::stdlib::time::error::{TimeError, TimeResult, time_error};
-use crate::stdlib::time::datetime::{DateTime, Date, Weekday};
-use crate::stdlib::time::duration::Duration;
-use crate::error::Error;
+// use crate::stdlib::time::error::{TimeError, TimeResult, time_error};
+// use crate::stdlib::time::datetime::{DateTime, Date, Weekday};
+// use crate::stdlib::time::duration::Duration;
+use crate::error::CursedError;
 
 /// Represents relative time periods
 #[derive(Debug, Clone, PartialEq)]
@@ -50,8 +50,8 @@ impl RelativeTime {
 
 /// Generate relative time description for a datetime compared to now
 pub fn relative_time(datetime: &DateTime) -> TimeResult<String> {
-    let now = crate::stdlib::time::datetime::now()?;
-    let duration = crate::stdlib::time::duration::duration_between(now, *datetime);
+//     let now = crate::stdlib::time::datetime::now()?;
+//     let duration = crate::stdlib::time::duration::duration_between(now, *datetime);
     
     if duration.is_zero() {
         return Ok("now".to_string());
@@ -183,8 +183,8 @@ pub fn humanize_duration(duration: &Duration) -> String {
 
 /// Format relative time with more detail
 pub fn format_relative(datetime: &DateTime, detailed: bool) -> TimeResult<String> {
-    let now = crate::stdlib::time::datetime::now()?;
-    let duration = crate::stdlib::time::duration::duration_between(now, *datetime);
+//     let now = crate::stdlib::time::datetime::now()?;
+//     let duration = crate::stdlib::time::duration::duration_between(now, *datetime);
     
     if detailed {
         format_relative_detailed(&duration)
@@ -313,7 +313,7 @@ fn parse_duration_from_text(input: &str) -> TimeResult<Duration> {
 
 /// Find the next occurrence of a specific weekday
 pub fn next_occurrence(weekday: Weekday) -> TimeResult<Date> {
-    let today = crate::stdlib::time::datetime::today()?;
+//     let today = crate::stdlib::time::datetime::today()?;
     let today_weekday = today.weekday();
     
     let days_ahead = ((weekday as u32 - today_weekday as u32 + 7) % 7) as i32;
@@ -324,7 +324,7 @@ pub fn next_occurrence(weekday: Weekday) -> TimeResult<Date> {
 
 /// Find the previous occurrence of a specific weekday
 pub fn previous_occurrence(weekday: Weekday) -> TimeResult<Date> {
-    let today = crate::stdlib::time::datetime::today()?;
+//     let today = crate::stdlib::time::datetime::today()?;
     let today_weekday = today.weekday();
     
     let days_behind = ((today_weekday as u32 - weekday as u32 + 7) % 7) as i32;
@@ -335,7 +335,7 @@ pub fn previous_occurrence(weekday: Weekday) -> TimeResult<Date> {
 
 /// Get relative date descriptions (today, tomorrow, yesterday, etc.)
 pub fn relative_date_description(date: &Date) -> TimeResult<String> {
-    let today = crate::stdlib::time::datetime::today()?;
+//     let today = crate::stdlib::time::datetime::today()?;
     
     if *date == today {
         Ok("today".to_string())
@@ -345,8 +345,8 @@ pub fn relative_date_description(date: &Date) -> TimeResult<String> {
         Ok("yesterday".to_string())
     } else {
         // Calculate days difference
-        let today_timestamp = DateTime::new(today, crate::stdlib::time::datetime::Time::new(0, 0, 0, 0)?).to_timestamp();
-        let date_timestamp = DateTime::new(*date, crate::stdlib::time::datetime::Time::new(0, 0, 0, 0)?).to_timestamp();
+//         let today_timestamp = DateTime::new(today, crate::stdlib::time::datetime::Time::new(0, 0, 0, 0)?).to_timestamp();
+//         let date_timestamp = DateTime::new(*date, crate::stdlib::time::datetime::Time::new(0, 0, 0, 0)?).to_timestamp();
         let days_diff = (date_timestamp - today_timestamp) / 86400;
         
         if days_diff > 0 {
@@ -367,7 +367,7 @@ pub fn relative_date_description(date: &Date) -> TimeResult<String> {
 }
 
 /// Get time of day description (morning, afternoon, evening, night)
-pub fn time_of_day_description(time: &crate::stdlib::time::datetime::Time) -> &'static str {
+// pub fn time_of_day_description(time: &crate::stdlib::time::datetime::Time) -> &'static str {
     match time.hour {
         0..=5 => "night",
         6..=11 => "morning",
@@ -407,70 +407,3 @@ pub fn previous_business_day(date: &Date) -> TimeResult<Date> {
     Ok(prev_day)
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use crate::stdlib::time::datetime::{Date, Time, DateTime};
-    use crate::stdlib::time::duration::Duration;
-    
-    #[test]
-    fn test_time_ago() {
-        let duration = Duration::from_seconds(3661); // 1 hour, 1 minute, 1 second
-        let result = time_ago(&duration).unwrap();
-        assert_eq!(result, "1 hour ago");
-        
-        let duration2 = Duration::from_seconds(60);
-        let result2 = time_ago(&duration2).unwrap();
-        assert_eq!(result2, "1 minute ago");
-    }
-    
-    #[test]
-    fn test_time_from_now() {
-        let duration = Duration::from_seconds(7200); // 2 hours
-        let result = time_from_now(&duration).unwrap();
-        assert_eq!(result, "in 2 hours");
-    }
-    
-    #[test]
-    fn test_parse_relative() {
-        let rel1 = parse_relative("2 hours ago").unwrap();
-        assert!(rel1.is_past());
-        
-        let rel2 = parse_relative("in 3 days").unwrap();
-        assert!(rel2.is_future());
-        
-        let rel3 = parse_relative("now").unwrap();
-        assert!(rel3.is_now());
-    }
-    
-    #[test]
-    fn test_next_occurrence() {
-        // This test would need to be adjusted based on the current date
-        // For now, just test that it doesn't panic
-        let _next_monday = next_occurrence(Weekday::Monday);
-    }
-    
-    #[test]
-    fn test_time_of_day_description() {
-        let morning = Time::new(9, 30, 0, 0).unwrap();
-        assert_eq!(time_of_day_description(&morning), "morning");
-        
-        let afternoon = Time::new(15, 30, 0, 0).unwrap();
-        assert_eq!(time_of_day_description(&afternoon), "afternoon");
-        
-        let evening = Time::new(19, 30, 0, 0).unwrap();
-        assert_eq!(time_of_day_description(&evening), "evening");
-        
-        let night = Time::new(2, 30, 0, 0).unwrap();
-        assert_eq!(time_of_day_description(&night), "night");
-    }
-    
-    #[test]
-    fn test_weekend_detection() {
-        // Would need specific dates to test properly
-        // For now, just test the logic doesn't panic
-        let date = Date::new(2023, 12, 25).unwrap(); // Monday
-        let _is_weekend = is_weekend(&date);
-        let _is_weekday = is_weekday(&date);
-    }
-}

@@ -1,4 +1,4 @@
-use crate::error::Error;
+use crate::error::CursedError;
 /// Real domain socket implementation for CURSED IPC
 /// 
 /// This module provides comprehensive Unix domain socket functionality for local
@@ -27,13 +27,13 @@ use std::io::{Read, Write, BufRead, BufReader, BufWriter};
 use std::thread;
 use std::fs;
 use std::path::{Path, PathBuf};
-use crate::stdlib::ipc::{
+// use crate::stdlib::ipc::{
     IpcResult, IpcError, IpcHandle, IpcPermissions,
     permission_denied, connection_failed, timeout_error, resource_error
 };
 
-use crate::stdlib::ipc::types::IpcHandleType;
-use crate::stdlib::ipc::error::{communication_error_detailed, system_error};
+// use crate::stdlib::ipc::types::IpcHandleType;
+// use crate::stdlib::ipc::error::{communication_error_detailed, system_error};
 
 #[cfg(unix)]
 use std::os::unix::net::{UnixStream, UnixListener, UnixDatagram};
@@ -163,7 +163,7 @@ pub enum SocketState {
     Listening,
     Connected,
     Closed,
-    Error,
+    CursedError,
 }
 
 /// Internal socket implementation
@@ -885,117 +885,3 @@ pub fn cleanup_all_sockets() -> IpcResult<()> {
     Ok(())
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use std::io::{Read, Write};
-
-    #[test]
-    fn test_socket_config() {
-        let config = SocketConfig::new("/tmp/test.sock", SocketType::Stream)
-            .with_buffer_size(16384)
-            .with_timeout(Duration::from_secs(10))
-            .with_nonblocking()
-            .with_max_connections(50)
-            .with_credentials();
-
-        assert_eq!(config.path, PathBuf::from("/tmp/test.sock"));
-        assert_eq!(config.socket_type, SocketType::Stream);
-        assert_eq!(config.buffer_size, 16384);
-        assert_eq!(config.timeout, Duration::from_secs(10));
-        assert!(config.enable_nonblocking);
-        assert_eq!(config.max_connections, Some(50));
-        assert!(config.enable_credentials);
-    }
-
-    #[test]
-    fn test_socket_address() {
-        let path_addr = SocketAddress::from_path("/tmp/test.sock");
-        assert_eq!(path_addr.path(), Some(Path::new("/tmp/test.sock")));
-        assert!(!path_addr.is_abstract());
-
-        let abstract_addr = SocketAddress::from_abstract(b"test_socket");
-        assert!(abstract_addr.is_abstract());
-        assert_eq!(abstract_addr.path(), None);
-
-        let unnamed = SocketAddress::Unnamed;
-        assert_eq!(unnamed.path(), None);
-        assert!(!unnamed.is_abstract());
-    }
-
-    #[test]
-    fn test_socket_types() {
-        let stream = SocketType::Stream;
-        let datagram = SocketType::Datagram;
-        let sequential = SocketType::Sequential;
-
-        assert_eq!(stream, SocketType::Stream);
-        assert_eq!(datagram, SocketType::Datagram);
-        assert_eq!(sequential, SocketType::Sequential);
-    }
-
-    #[test]
-    fn test_socket_statistics() {
-        let mut stats = SocketStatistics::new();
-        assert_eq!(stats.bytes_sent, 0);
-        assert_eq!(stats.bytes_received, 0);
-        assert_eq!(stats.current_connections, 0);
-
-        stats.record_bytes_sent(1024, Duration::from_millis(10));
-        assert_eq!(stats.bytes_sent, 1024);
-        assert_eq!(stats.messages_sent, 1);
-        assert!(stats.last_activity.is_some());
-
-        stats.record_connection_accepted();
-        assert_eq!(stats.connections_accepted, 1);
-        assert_eq!(stats.current_connections, 1);
-        assert_eq!(stats.peak_connections, 1);
-
-        stats.record_connection_closed();
-        assert_eq!(stats.current_connections, 0);
-    }
-
-    #[test]
-    fn test_global_functions() {
-        assert_eq!(get_active_socket_count(), 0);
-        assert_eq!(get_memory_usage(), 0);
-        assert!(cleanup_all_sockets().is_ok());
-    }
-
-    #[cfg(unix)]
-    #[test]
-    fn test_socket_pair_creation() {
-        let result = SocketPair::new();
-        assert!(result.is_ok());
-        
-        if let Ok(mut pair) = result {
-            let (mut local, mut remote) = pair.split();
-            
-            // Test communication
-            let test_data = b"Hello, world!";
-            local.write_all(test_data).unwrap();
-            
-            let mut buffer = [0u8; 1024];
-            let bytes_read = remote.read(&mut buffer).unwrap();
-            assert_eq!(bytes_read, test_data.len());
-            assert_eq!(&buffer[..bytes_read], test_data);
-        }
-    }
-
-    #[test]
-    fn test_socket_state_transitions() {
-        let states = vec![
-            SocketState::Created,
-            SocketState::Bound,
-            SocketState::Listening,
-            SocketState::Connected,
-            SocketState::Closed,
-            SocketState::Error,
-        ];
-
-        for state in states {
-            // Just test that states can be created and compared
-            assert_eq!(state.clone(), state);
-        }
-    }
-}

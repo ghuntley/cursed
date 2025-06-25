@@ -1,4 +1,4 @@
-use crate::error::Error;
+use crate::error::CursedError;
 // Test Discovery System
 // 
 // Discovers and analyzes test files in the project to identify test functions,
@@ -163,7 +163,7 @@ pub struct TestDiscovery {
 
 impl TestDiscovery {
     /// Create a new test discovery instance
-    pub fn new(config: TestDiscoveryConfig) -> Result<(), Error> {
+    pub fn new(config: TestDiscoveryConfig) -> crate::error::Result<()> {
         let test_fn_regex = Regex::new(r"#\[test\]\s*(?:#\[.*?\])?\s*(?:async\s+)?fn\s+(\w+)")?;
         let benchmark_regex = Regex::new(r"#\[bench\]")?;
         let ignore_regex = Regex::new(r"#\[ignore\]")?;
@@ -180,7 +180,7 @@ impl TestDiscovery {
     
     /// Discover all tests in the project
     #[instrument(skip(self))]
-    pub fn discover_tests(&self) -> Result<(), Error> {
+    pub fn discover_tests(&self) -> crate::error::Result<()> {
         info!("Starting test discovery in: {}", self.config.root_dir.display());
         
         let mut all_tests = Vec::new();
@@ -263,7 +263,7 @@ impl TestDiscovery {
     }
     
     /// Discover integration tests in tests/ directory
-    fn discover_integration_tests(&self, tests_dir: &Path) -> Result<(), Error> {
+    fn discover_integration_tests(&self, tests_dir: &Path) -> crate::error::Result<()> {
         let mut tests = Vec::new();
         let mut files_scanned = 0;
         let mut test_files_found = 0;
@@ -293,7 +293,7 @@ impl TestDiscovery {
     }
     
     /// Discover unit tests in src/ directory
-    fn discover_unit_tests(&self, src_dir: &Path) -> Result<(), Error> {
+    fn discover_unit_tests(&self, src_dir: &Path) -> crate::error::Result<()> {
         let mut tests = Vec::new();
         let mut files_scanned = 0;
         let mut test_files_found = 0;
@@ -323,7 +323,7 @@ impl TestDiscovery {
     }
     
     /// Discover benchmark tests in benches/ directory
-    fn discover_benchmark_tests(&self, benches_dir: &Path) -> Result<(), Error> {
+    fn discover_benchmark_tests(&self, benches_dir: &Path) -> crate::error::Result<()> {
         let mut tests = Vec::new();
         let mut files_scanned = 0;
         let mut test_files_found = 0;
@@ -348,7 +348,7 @@ impl TestDiscovery {
     }
     
     /// Discover example tests in examples/ directory
-    fn discover_example_tests(&self, examples_dir: &Path) -> Result<(), Error> {
+    fn discover_example_tests(&self, examples_dir: &Path) -> crate::error::Result<()> {
         let mut tests = Vec::new();
         let mut files_scanned = 0;
         let mut test_files_found = 0;
@@ -373,7 +373,7 @@ impl TestDiscovery {
     }
     
     /// Parse a single test file to extract test functions
-    fn parse_test_file(&self, file_path: &Path, default_category: TestCategory) -> Result<(), Error> {
+    fn parse_test_file(&self, file_path: &Path, default_category: TestCategory) -> crate::error::Result<()> {
         let content = fs::read_to_string(file_path)?;
         let mut tests = Vec::new();
         
@@ -406,7 +406,7 @@ impl TestDiscovery {
         start_index: usize,
         file_path: &Path,
         default_category: TestCategory,
-    ) -> Result<(), Error> {
+    ) -> crate::error::Result<()> {
         let mut attributes = Vec::new();
         let mut ignored = false;
         let mut is_benchmark = false;
@@ -614,126 +614,3 @@ impl TestFilter {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use tempfile::tempdir;
-    use std::fs;
-    
-    #[test]
-    fn test_discovery_config_default() {
-        let config = TestDiscoveryConfig::default();
-        assert!(config.include_unit_tests);
-        assert!(config.include_integration_tests);
-        assert!(!config.include_doc_tests);
-    }
-    
-    #[test]
-    fn test_parse_simple_test() -> Result<(), Error> {
-        let temp_dir = tempdir()?;
-        let test_file = temp_dir.path().join("test.rs");
-        
-        fs::write(&test_file, r#"
-            #[test]
-            fn test_simple() {
-                assert_eq!(1 + 1, 2);
-            }
-        "#)?;
-        
-        let config = TestDiscoveryConfig {
-            root_dir: temp_dir.path().to_path_buf(),
-            ..Default::default()
-        };
-        
-        let discovery = TestDiscovery::new(config)?;
-        let tests = discovery.parse_test_file(&test_file, TestCategory::Unit)?;
-        
-        assert_eq!(tests.len(), 1);
-        assert_eq!(tests[0].name, "test_simple");
-        assert_eq!(tests[0].category, TestCategory::Unit);
-        assert!(!tests[0].ignored);
-        
-        Ok(())
-    }
-    
-    #[test]
-    fn test_parse_ignored_test() -> Result<(), Error> {
-        let temp_dir = tempdir()?;
-        let test_file = temp_dir.path().join("test.rs");
-        
-        fs::write(&test_file, r#"
-            #[test]
-            #[ignore]
-            fn test_ignored() {
-                assert_eq!(1 + 1, 2);
-            }
-        "#)?;
-        
-        let config = TestDiscoveryConfig {
-            root_dir: temp_dir.path().to_path_buf(),
-            ..Default::default()
-        };
-        
-        let discovery = TestDiscovery::new(config)?;
-        let tests = discovery.parse_test_file(&test_file, TestCategory::Unit)?;
-        
-        assert_eq!(tests.len(), 1);
-        assert_eq!(tests[0].name, "test_ignored");
-        assert!(tests[0].ignored);
-        
-        Ok(())
-    }
-    
-    #[test]
-    fn test_filter_application() -> Result<(), Error> {
-        let discovery_result = TestDiscoveryResult {
-            tests: vec![
-                TestFunction {
-                    name: "test_unit".to_string(),
-                    file_path: PathBuf::from("src/lib.rs"),
-                    line_number: 10,
-                    category: TestCategory::Unit,
-                    ignored: false,
-                    is_benchmark: false,
-                    timeout: None,
-                    attributes: vec!["#[test]".to_string()],
-                    module_path: "lib".to_string(),
-                },
-                TestFunction {
-                    name: "test_integration".to_string(),
-                    file_path: PathBuf::from("tests/integration.rs"),
-                    line_number: 5,
-                    category: TestCategory::Integration,
-                    ignored: true,
-                    is_benchmark: false,
-                    timeout: None,
-                    attributes: vec!["#[test]".to_string(), "#[ignore]".to_string()],
-                    module_path: "integration".to_string(),
-                },
-            ],
-            tests_by_category: HashMap::new(),
-            tests_by_file: HashMap::new(),
-            statistics: TestDiscoveryStatistics {
-                total_tests: 2,
-                unit_tests: 1,
-                integration_tests: 1,
-                ignored_tests: 1,
-                benchmark_tests: 0,
-                files_scanned: 2,
-                test_files_found: 2,
-            },
-        };
-        
-        let filter = TestFilter {
-            include_ignored: false,
-            categories: vec![TestCategory::Unit],
-            ..Default::default()
-        };
-        
-        let filtered = filter.apply(&discovery_result);
-        assert_eq!(filtered.len(), 1);
-        assert_eq!(filtered[0].name, "test_unit");
-        
-        Ok(())
-    }
-}

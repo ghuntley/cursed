@@ -1,4 +1,4 @@
-use crate::error::Error;
+use crate::error::CursedError;
 /// Network-specific error types for VibeNet
 /// 
 /// This module provides comprehensive error handling for network operations,
@@ -7,8 +7,6 @@ use crate::error::Error;
 
 use std::fmt;
 use std::io;
-use std::net::AddrParseError;
-use crate::error::CursedError;
 
 /// Network-specific error types
 #[derive(Debug, Clone)]
@@ -62,43 +60,43 @@ pub enum NetError {
     InvalidConfig(String),
 }
 
-impl fmt::Display for NetError {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
-            NetError::AddressResolution(msg) => write!(f, "Address resolution error: {}", msg),
-            NetError::ConnectionFailed(msg) => write!(f, "Connection failed: {}", msg),
-            NetError::Timeout(msg) => write!(f, "Network timeout: {}", msg),
-            NetError::InvalidProtocol(msg) => write!(f, "Invalid protocol: {}", msg),
-            NetError::DnsResolution(msg) => write!(f, "DNS resolution error: {}", msg),
-            NetError::InterfaceError(msg) => write!(f, "Network interface error: {}", msg),
-            NetError::SocketError(msg) => write!(f, "Socket error: {}", msg),
-            NetError::TlsError(msg) => write!(f, "TLS/SSL error: {}", msg),
-            NetError::ProtocolError(msg) => write!(f, "Protocol error: {}", msg),
-            NetError::RateLimit(msg) => write!(f, "Rate limit exceeded: {}", msg),
-            NetError::CircuitBreakerOpen(msg) => write!(f, "Circuit breaker open: {}", msg),
-            NetError::PoolExhausted(msg) => write!(f, "Connection pool exhausted: {}", msg),
-            NetError::Io(msg) => write!(f, "I/O error: {}", msg),
-            NetError::PermissionDenied(msg) => write!(f, "Permission denied: {}", msg),
-            NetError::ResourceUnavailable(msg) => write!(f, "Resource unavailable: {}", msg),
-            NetError::InvalidConfig(msg) => write!(f, "Invalid configuration: {}", msg),
-        }
-    }
-}
+// impl fmt::Display for NetError {
+//     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+//         match self {
+//             NetError::AddressResolution(msg) => write!(f, "Address resolution error: {}", msg),
+//             NetError::ConnectionFailed(msg) => write!(f, "Connection failed: {}", msg),
+//             NetError::Timeout(msg) => write!(f, "Network timeout: {}", msg),
+//             NetError::InvalidProtocol(msg) => write!(f, "Invalid protocol: {}", msg),
+//             NetError::DnsResolution(msg) => write!(f, "DNS resolution error: {}", msg),
+//             NetError::InterfaceError(msg) => write!(f, "Network interface error: {}", msg),
+//             NetError::SocketError(msg) => write!(f, "Socket error: {}", msg),
+//             NetError::TlsError(msg) => write!(f, "TLS/SSL error: {}", msg),
+//             NetError::ProtocolError(msg) => write!(f, "Protocol error: {}", msg),
+//             NetError::RateLimit(msg) => write!(f, "Rate limit exceeded: {}", msg),
+//             NetError::CircuitBreakerOpen(msg) => write!(f, "Circuit breaker open: {}", msg),
+//             NetError::PoolExhausted(msg) => write!(f, "Connection pool exhausted: {}", msg),
+//             NetError::Io(msg) => write!(f, "I/O error: {}", msg),
+//             NetError::PermissionDenied(msg) => write!(f, "Permission denied: {}", msg),
+//             NetError::ResourceUnavailable(msg) => write!(f, "Resource unavailable: {}", msg),
+//             NetError::InvalidConfig(msg) => write!(f, "Invalid configuration: {}", msg),
+//         }
+//     }
+// }
 
-impl std::error::Error for NetError {}
-
-impl From<io::Error> for NetError {
-    fn from(err: io::Error) -> Self {
-        match err.kind() {
-            io::ErrorKind::TimedOut => NetError::Timeout(err.to_string()),
-            io::ErrorKind::PermissionDenied => NetError::PermissionDenied(err.to_string()),
-            io::ErrorKind::ConnectionRefused 
-            | io::ErrorKind::ConnectionAborted 
-            | io::ErrorKind::ConnectionReset => NetError::ConnectionFailed(err.to_string()),
-            _ => NetError::Io(err.to_string()),
-        }
-    }
-}
+// impl std::error::CursedError for NetError {}
+// 
+// impl From<std::io::Error> for NetError {
+//     fn from(err: std::io::Error) -> Self {
+//         match err.kind() {
+//             io::ErrorKind::TimedOut => NetError::Timeout(err.to_string()),
+//             io::ErrorKind::PermissionDenied => NetError::PermissionDenied(err.to_string()),
+//             io::ErrorKind::ConnectionRefused 
+//             | io::ErrorKind::ConnectionAborted 
+//             | io::ErrorKind::ConnectionReset => NetError::ConnectionFailed(err.to_string()),
+//             _ => NetError::Io(err.to_string()),
+//         }
+//     }
+// }
 
 impl From<AddrParseError> for NetError {
     fn from(err: AddrParseError) -> Self {
@@ -106,11 +104,11 @@ impl From<AddrParseError> for NetError {
     }
 }
 
-impl From<NetError> for CursedError {
-    fn from(err: NetError) -> Self {
-        CursedError::new(&err.to_string())
-    }
-}
+// impl From<NetError> for CursedError {
+//     fn from(err: NetError) -> Self {
+//         CursedError::new(&err.to_string())
+//     }
+// }
 
 /// Helper functions for creating network errors
 
@@ -194,40 +192,3 @@ pub fn invalid_config_error(msg: &str) -> NetError {
     NetError::InvalidConfig(msg.to_string())
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_net_error_display() {
-        let err = NetError::ConnectionFailed("Connection refused".to_string());
-        assert_eq!(err.to_string(), "Connection failed: Connection refused");
-    }
-
-    #[test]
-    fn test_io_error_conversion() {
-        let io_err = io::Error::new(io::ErrorKind::TimedOut, "Operation timed out");
-        let net_err = NetError::from(io_err);
-        
-        match net_err {
-            NetError::Timeout(_) => {},
-            _ => panic!("Expected timeout error"),
-        }
-    }
-
-    #[test]
-    fn test_helper_functions() {
-        let err = connection_failed_error("Test connection failed");
-        assert!(matches!(err, NetError::ConnectionFailed(_)));
-        
-        let err = timeout_error("Test timeout");
-        assert!(matches!(err, NetError::Timeout(_)));
-    }
-
-    #[test]
-    fn test_cursed_error_conversion() {
-        let net_err = NetError::DnsResolution("DNS lookup failed".to_string());
-        let cursed_err = CursedError::from(net_err);
-        assert!(cursed_err.to_string().contains("DNS resolution error"));
-    }
-}

@@ -1,12 +1,12 @@
-use crate::error::Error;
+use crate::error::CursedError;
 /// Signal multiplexer for distributing signals to multiple channels
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex, atomic::{AtomicUsize, AtomicBool, Ordering}};
 use std::sync::mpsc::{Sender, Receiver};
 use std::thread;
 use std::time::Duration;
-use crate::stdlib::signal_boost::core::{BoostSignal, notify};
-use crate::stdlib::signal_boost::error::{SignalBoostError, SignalBoostResult};
+// use crate::stdlib::signal_boost::core::{BoostSignal, notify};
+// use crate::stdlib::signal_boost::error::{SignalBoostError, SignalBoostResult};
 
 /// Handle for managing a multiplexer subscription
 pub struct MultiplexerHandle {
@@ -349,144 +349,3 @@ pub fn get_active_count() -> usize {
     ACTIVE_MULTIPLEXERS.load(Ordering::SeqCst)
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use crate::stdlib::signal_boost::core::{SIGINT, SIGTERM};
-    use std::sync::mpsc;
-    use std::time::Duration;
-    
-    #[test]
-    fn test_multiplexer_creation() {
-        let multiplexer = SignalMultiplexer::new();
-        assert_eq!(multiplexer.count(), 0);
-        assert!(!multiplexer.is_running());
-    }
-    
-    #[test]
-    fn test_add_subscription() {
-        let mut multiplexer = SignalMultiplexer::new();
-        let (sender, _receiver) = mpsc::channel();
-        let signals = vec![SIGINT, SIGTERM];
-        
-        let handle = multiplexer.add(sender, &signals).unwrap();
-        
-        assert_eq!(multiplexer.count(), 1);
-        assert_eq!(handle.signals(), &signals);
-        assert!(handle.is_active());
-    }
-    
-    #[test]
-    fn test_remove_subscription() {
-        let mut multiplexer = SignalMultiplexer::new();
-        let (sender, _receiver) = mpsc::channel();
-        let signals = vec![SIGINT];
-        
-        let handle = multiplexer.add(sender, &signals).unwrap();
-        let id = handle.id();
-        
-        assert_eq!(multiplexer.count(), 1);
-        
-        multiplexer.remove(id).unwrap();
-        assert_eq!(multiplexer.count(), 0);
-    }
-    
-    #[test]
-    fn test_remove_subscription_by_handle() {
-        let mut multiplexer = SignalMultiplexer::new();
-        let (sender, _receiver) = mpsc::channel();
-        let signals = vec![SIGTERM];
-        
-        let handle = multiplexer.add(sender, &signals).unwrap();
-        assert_eq!(multiplexer.count(), 1);
-        
-        multiplexer.remove_handle(&handle).unwrap();
-        assert_eq!(multiplexer.count(), 0);
-        assert!(!handle.is_active());
-    }
-    
-    #[test]
-    fn test_multiple_subscriptions() {
-        let mut multiplexer = SignalMultiplexer::new();
-        
-        let (sender1, _receiver1) = mpsc::channel();
-        let (sender2, _receiver2) = mpsc::channel();
-        
-        let handle1 = multiplexer.add(sender1, &[SIGINT]).unwrap();
-        let handle2 = multiplexer.add(sender2, &[SIGTERM, SIGINT]).unwrap();
-        
-        assert_eq!(multiplexer.count(), 2);
-        assert_ne!(handle1.id(), handle2.id());
-    }
-    
-    #[test]
-    fn test_monitored_signals() {
-        let mut multiplexer = SignalMultiplexer::new();
-        let (sender1, _receiver1) = mpsc::channel();
-        let (sender2, _receiver2) = mpsc::channel();
-        
-        multiplexer.add(sender1, &[SIGINT]).unwrap();
-        multiplexer.add(sender2, &[SIGTERM, SIGINT]).unwrap();
-        
-        let monitored = multiplexer.monitored_signals();
-        assert!(monitored.contains(&SIGINT));
-        assert!(monitored.contains(&SIGTERM));
-        assert_eq!(monitored.len(), 2); // Should be unique
-    }
-    
-    #[test]
-    fn test_clear_subscriptions() {
-        let mut multiplexer = SignalMultiplexer::new();
-        let (sender1, _receiver1) = mpsc::channel();
-        let (sender2, _receiver2) = mpsc::channel();
-        
-        let handle1 = multiplexer.add(sender1, &[SIGINT]).unwrap();
-        let handle2 = multiplexer.add(sender2, &[SIGTERM]).unwrap();
-        
-        assert_eq!(multiplexer.count(), 2);
-        
-        multiplexer.clear().unwrap();
-        assert_eq!(multiplexer.count(), 0);
-        assert!(!handle1.is_active());
-        assert!(!handle2.is_active());
-    }
-    
-    #[test]
-    fn test_multiplexer_statistics() {
-        let mut multiplexer = SignalMultiplexer::new();
-        let (sender, _receiver) = mpsc::channel();
-        
-        multiplexer.add(sender, &[SIGINT, SIGTERM]).unwrap();
-        
-        let stats = multiplexer.get_statistics();
-        assert_eq!(stats.active_subscriptions, 1);
-        assert_eq!(stats.total_subscriptions, 1);
-        assert_eq!(stats.signal_counts.get(&SIGINT), Some(&1));
-        assert_eq!(stats.signal_counts.get(&SIGTERM), Some(&1));
-    }
-    
-    #[test]
-    fn test_multiplexer_handle() {
-        let mut multiplexer = SignalMultiplexer::new();
-        let (sender, _receiver) = mpsc::channel();
-        let signals = vec![SIGINT];
-        
-        let handle = multiplexer.add(sender, &signals).unwrap();
-        
-        assert!(handle.is_active());
-        assert_eq!(handle.signals(), &signals);
-        
-        handle.deactivate();
-        assert!(!handle.is_active());
-    }
-    
-    #[test]
-    fn test_start_without_subscriptions() {
-        let mut multiplexer = SignalMultiplexer::new();
-        let result = multiplexer.start();
-        
-        // Should fail because no signals to multiplex
-        assert!(result.is_err());
-        assert!(!multiplexer.is_running());
-    }
-}

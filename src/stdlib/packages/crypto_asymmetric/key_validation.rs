@@ -3,9 +3,8 @@
 // Provides comprehensive validation for RSA, elliptic curve, and EdDSA keys
 // with mathematical verification and security parameter checking.
 
-use crate::stdlib::value::Value;
+// use crate::stdlib::value::Value;
 use crate::error::CursedError;
-use crate::error::Error;
 use std::collections::HashMap;
 use num_bigint::BigUint;
 use num_traits::{Zero, One, ToPrimitive};
@@ -62,7 +61,7 @@ pub struct EdDSAKeyParams {
 }
 
 /// Main key validation function
-pub fn validate_key(args: Vec<Value>) -> Result<(), Error> {
+pub fn validate_key(args: Vec<Value>) -> crate::error::Result<()> {
     if args.is_empty() {
         return Err(CursedError::InvalidArgument("No key provided for validation".to_string()));
     }
@@ -90,7 +89,7 @@ pub fn validate_key(args: Vec<Value>) -> Result<(), Error> {
 }
 
 /// Determine key type from key object
-fn determine_key_type(key_obj: &HashMap<String, Value>) -> Result<(), Error> {
+fn determine_key_type(key_obj: &HashMap<String, Value>) -> crate::error::Result<()> {
     if key_obj.contains_key("n") && key_obj.contains_key("e") {
         Ok(KeyType::RSA)
     } else if key_obj.contains_key("curve") || key_obj.contains_key("x") {
@@ -105,7 +104,7 @@ fn determine_key_type(key_obj: &HashMap<String, Value>) -> Result<(), Error> {
 }
 
 /// Validate RSA key parameters
-fn validate_rsa_key(key_obj: &HashMap<String, Value>, _options: Option<&Value>) -> Result<(), Error> {
+fn validate_rsa_key(key_obj: &HashMap<String, Value>, _options: Option<&Value>) -> crate::error::Result<()> {
     let params = parse_rsa_params(key_obj)?;
     let mut result = KeyValidationResult {
         valid: true,
@@ -139,7 +138,7 @@ fn validate_rsa_key(key_obj: &HashMap<String, Value>, _options: Option<&Value>) 
 }
 
 /// Parse RSA parameters from key object
-fn parse_rsa_params(key_obj: &HashMap<String, Value>) -> Result<(), Error> {
+fn parse_rsa_params(key_obj: &HashMap<String, Value>) -> crate::error::Result<()> {
     let n = extract_bigint(key_obj, "n")?;
     let e = extract_bigint(key_obj, "e")?;
     
@@ -335,7 +334,7 @@ fn validate_rsa_mathematical_consistency(params: &RSAKeyParams, result: &mut Key
 }
 
 /// Validate elliptic curve key
-fn validate_ecc_key(key_obj: &HashMap<String, Value>, _options: Option<&Value>) -> Result<(), Error> {
+fn validate_ecc_key(key_obj: &HashMap<String, Value>, _options: Option<&Value>) -> crate::error::Result<()> {
     let params = parse_ecc_params(key_obj)?;
     let mut result = KeyValidationResult {
         valid: true,
@@ -366,7 +365,7 @@ fn validate_ecc_key(key_obj: &HashMap<String, Value>, _options: Option<&Value>) 
 }
 
 /// Parse ECC parameters from key object
-fn parse_ecc_params(key_obj: &HashMap<String, Value>) -> Result<(), Error> {
+fn parse_ecc_params(key_obj: &HashMap<String, Value>) -> crate::error::Result<()> {
     let curve_name = extract_string(key_obj, "curve").unwrap_or_else(|| "unknown".to_string());
     let public_key = extract_bytes(key_obj, "public_key").unwrap_or_default();
     let private_key = extract_bytes_optional(key_obj, "private_key");
@@ -506,7 +505,7 @@ fn validate_ecc_strength(strength_bits: u32, result: &mut KeyValidationResult) {
 }
 
 /// Validate Ed25519/X25519 key
-fn validate_eddsa_key(key_obj: &HashMap<String, Value>, _options: Option<&Value>) -> Result<(), Error> {
+fn validate_eddsa_key(key_obj: &HashMap<String, Value>, _options: Option<&Value>) -> crate::error::Result<()> {
     let params = parse_eddsa_params(key_obj)?;
     let mut result = KeyValidationResult {
         valid: true,
@@ -533,7 +532,7 @@ fn validate_eddsa_key(key_obj: &HashMap<String, Value>, _options: Option<&Value>
 }
 
 /// Parse EdDSA parameters from key object
-fn parse_eddsa_params(key_obj: &HashMap<String, Value>) -> Result<(), Error> {
+fn parse_eddsa_params(key_obj: &HashMap<String, Value>) -> crate::error::Result<()> {
     let key_type = if key_obj.contains_key("ed25519_public") || key_obj.contains_key("ed25519_private") {
         KeyType::Ed25519
     } else if key_obj.contains_key("x25519_public") || key_obj.contains_key("x25519_private") {
@@ -633,7 +632,7 @@ fn validate_eddsa_key_consistency(params: &EdDSAKeyParams, result: &mut KeyValid
 }
 
 /// Validate encoded key (PEM/DER format)
-fn validate_encoded_key(key_str: &str, _options: Option<&Value>) -> Result<(), Error> {
+fn validate_encoded_key(key_str: &str, _options: Option<&Value>) -> crate::error::Result<()> {
     let mut result = KeyValidationResult {
         valid: false,
         key_type: KeyType::RSA, // Will be updated
@@ -739,7 +738,7 @@ fn serialize_validation_result(result: KeyValidationResult) -> Value {
 // Helper functions
 
 /// Extract BigUint from object
-fn extract_bigint(obj: &HashMap<String, Value>, key: &str) -> Result<(), Error> {
+fn extract_bigint(obj: &HashMap<String, Value>, key: &str) -> crate::error::Result<()> {
     match obj.get(key) {
         Some(Value::String(s)) => {
             BigUint::parse_bytes(s.as_bytes(), 10)
@@ -887,7 +886,7 @@ fn mod_exp(base: &BigUint, exp: &BigUint, modulus: &BigUint) -> BigUint {
 // Additional validation functions for key pair validation
 
 /// Validate key pair consistency
-pub fn validate_key_pair(args: Vec<Value>) -> Result<(), Error> {
+pub fn validate_key_pair(args: Vec<Value>) -> crate::error::Result<()> {
     if args.len() < 2 {
         return Err(CursedError::InvalidArgument("Key pair validation requires private and public keys".to_string()));
     }
@@ -940,7 +939,7 @@ fn extract_bool_from_result(result: &Value, key: &str) -> Option<bool> {
 }
 
 /// Validate key strength according to current standards
-pub fn validate_key_strength(args: Vec<Value>) -> Result<(), Error> {
+pub fn validate_key_strength(args: Vec<Value>) -> crate::error::Result<()> {
     if args.is_empty() {
         return Err(CursedError::InvalidArgument("No key provided for strength validation".to_string()));
     }

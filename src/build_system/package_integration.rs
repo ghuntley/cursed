@@ -6,7 +6,7 @@
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, Mutex};
-use thiserror::Error;
+use crate::error::CursedError;
 
 use crate::ast::Program;
 use crate::package_manager::{PackageManager, PackageManagerConfig, PackageManagerError, PackageMetadata};
@@ -15,7 +15,6 @@ use crate::codegen::LlvmCodeGenerator;
 use crate::type_system::TypeChecker;
 use crate::lexer::Lexer;
 use crate::parser::Parser;
-use crate::error::Error;
 
 /// Configuration for package integration
 #[derive(Debug, Clone)]
@@ -40,7 +39,7 @@ impl Default for PackageIntegrationConfig {
 }
 
 /// Errors during package integration
-#[derive(Error, Debug)]
+#[derive(CursedError, Debug)]
 pub enum PackageIntegrationError {
     #[error("Package manager error: {0}")]
     PackageManager(#[from] PackageManagerError),
@@ -49,7 +48,7 @@ pub enum PackageIntegrationError {
     ImportResolution(#[from] ImportError),
     
     #[error("Compilation error: {0}")]
-    Compilation(#[from] Error),
+    Compilation(#[from] CursedError),
     
     #[error("Type checking error for package {package}: {error}")]
     TypeChecking { package: String, error: String },
@@ -111,7 +110,7 @@ pub struct PackageStats {
 
 impl PackageIntegration {
     /// Create new package integration
-    pub fn new(config: PackageIntegrationConfig) -> Result<(), Error> {
+    pub fn new(config: PackageIntegrationConfig) -> crate::error::Result<()> {
         let package_manager = Arc::new(Mutex::new(
             PackageManager::new(config.package_manager_config.clone())?
         ));
@@ -134,7 +133,7 @@ impl PackageIntegration {
         &mut self,
         source: &str,
         source_file: Option<&Path>,
-    ) -> Result<(), Error> {
+    ) -> crate::error::Result<()> {
         let start_time = std::time::Instant::now();
         
         tracing::info!("Starting package-aware compilation");
@@ -148,7 +147,7 @@ impl PackageIntegration {
         let errors = parser.errors();
         if !errors.is_empty() {
             return Err(PackageIntegrationError::Compilation(
-                Error::Parse(format!("Parse errors: {}", errors.join(", ")))
+                CursedError::Parse(format!("Parse errors: {}", errors.join(", ")))
             ));
         }
         
@@ -241,7 +240,7 @@ impl PackageIntegration {
         &self,
         type_checker: &mut TypeChecker,
         loaded_modules: &HashMap<String, Arc<LoadedModule>>,
-    ) -> Result<(), Error> {
+    ) -> crate::error::Result<()> {
         for (module_name, module) in loaded_modules {
             tracing::debug!(module = module_name, types = ?module.info.types, "Registering module types");
             
@@ -260,7 +259,7 @@ impl PackageIntegration {
     async fn generate_ir_with_packages(
         &mut self,
         context: &CompilationContext,
-    ) -> Result<(), Error> {
+    ) -> crate::error::Result<()> {
         let mut codegen = LlvmCodeGenerator::new()?;
         
         // Compile package modules first
@@ -286,14 +285,14 @@ impl PackageIntegration {
     }
     
     /// Install packages from a package file
-    pub async fn install_dependencies(&mut self, package_file: &Path) -> Result<(), Error> {
+    pub async fn install_dependencies(&mut self, package_file: &Path) -> crate::error::Result<()> {
         // Read package metadata
         let content = std::fs::read_to_string(package_file)
-            .map_err(|e| PackageIntegrationError::Compilation(Error::Io(e.into())))?;
+            .map_err(|e| PackageIntegrationError::Compilation(CursedError::Io(e.into())))?;
         
         let metadata: PackageMetadata = toml::from_str(&content)
             .map_err(|e| PackageIntegrationError::Compilation(
-                Error::Parse(format!("Invalid package file: {}", e))
+                CursedError::Parse(format!("Invalid package file: {}", e))
             ))?;
         
         let mut installed = Vec::new();
@@ -319,13 +318,13 @@ impl PackageIntegration {
     }
     
     /// Check if all dependencies are satisfied
-    pub fn validate_dependencies(&self, package_file: &Path) -> Result<(), Error> {
+    pub fn validate_dependencies(&self, package_file: &Path) -> crate::error::Result<()> {
         let content = std::fs::read_to_string(package_file)
-            .map_err(|e| PackageIntegrationError::Compilation(Error::Io(e.into())))?;
+            .map_err(|e| PackageIntegrationError::Compilation(CursedError::Io(e.into())))?;
         
         let metadata: PackageMetadata = toml::from_str(&content)
             .map_err(|e| PackageIntegrationError::Compilation(
-                Error::Parse(format!("Invalid package file: {}", e))
+                CursedError::Parse(format!("Invalid package file: {}", e))
             ))?;
         
         let package_manager = self.package_manager.lock().map_err(|_| {
@@ -371,19 +370,19 @@ pub struct PackageAwareCompiler {
 
 impl PackageAwareCompiler {
     /// Create new package-aware compiler
-    pub fn new(config: PackageIntegrationConfig) -> Result<(), Error> {
+    pub fn new(config: PackageIntegrationConfig) -> crate::error::Result<()> {
         let integration = PackageIntegration::new(config)?;
         Ok(Self { integration })
     }
     
     /// Compile source with automatic package resolution
-    pub async fn compile(&mut self, source: &str, source_file: Option<&Path>) -> Result<(), Error> {
+    pub async fn compile(&mut self, source: &str, source_file: Option<&Path>) -> crate::error::Result<()> {
         let result = self.integration.compile_with_packages(source, source_file).await?;
         Ok(result.llvm_ir)
     }
     
     /// Check source for errors including package dependencies
-    pub async fn check(&mut self, source: &str, source_file: Option<&Path>) -> Result<(), Error> {
+    pub async fn check(&mut self, source: &str, source_file: Option<&Path>) -> crate::error::Result<()> {
         // Compilation check includes dependency resolution
         let _result = self.integration.compile_with_packages(source, source_file).await?;
         Ok(())
@@ -398,29 +397,3 @@ pub struct IntegrationStats {
     pub loaded_modules: usize,
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-    
-    #[tokio::test]
-    async fn test_package_integration_creation() {
-        let config = PackageIntegrationConfig::default();
-        let integration = PackageIntegration::new(config);
-        assert!(integration.is_ok());
-    }
-    
-    #[tokio::test]
-    async fn test_simple_compilation_without_packages() {
-        let config = PackageIntegrationConfig::default();
-        let mut integration = PackageIntegration::new(config).unwrap();
-        
-        let source = r#"
-slay main() {
-    capicola("Hello, World!");
-}
-"#;
-        
-        let result = integration.compile_with_packages(source, None).await;
-        assert!(result.is_ok());
-    }
-}

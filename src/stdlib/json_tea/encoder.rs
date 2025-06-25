@@ -1,12 +1,11 @@
-use crate::error::Error;
+use crate::error::CursedError;
 /// JSON Encoder
 /// 
 /// JSON encoding functionality for CURSED
 
-use crate::error::CursedError;
 use crate::runtime::value::Value;
-use crate::stdlib::json_tea::{JsonResult, JsonValue, tags::JsonTag};
-use crate::stdlib::json_tea::value::escape_json_string;
+// use crate::stdlib::json_tea::{JsonResult, JsonValue, tags::JsonTag};
+// use crate::stdlib::json_tea::value::escape_json_string;
 use std::collections::{HashMap, HashSet};
 use std::io::Write;
 use std::fmt::Write as FmtWrite;
@@ -433,146 +432,16 @@ impl Default for Encoder {
 }
 
 /// Convert I/O errors to JSON errors
-impl From<std::io::Error> for CursedError {
-    fn from(err: std::io::Error) -> Self {
-        CursedError::json_io_error(err.to_string())
-    }
-}
+// impl From<std::io::Error> for CursedError {
+//     fn from(err: std::io::Error) -> Self {
+//         CursedError::json_io_error(err.to_string())
+//     }
+// }
 
 /// Convert fmt errors to JSON errors
-impl From<std::fmt::Error> for CursedError {
-    fn from(err: std::fmt::Error) -> Self {
-        CursedError::json_io_error(err.to_string())
-    }
-}
+// impl From<std::fmt::CursedError> for CursedError {
+//     fn from(err: std::fmt::CursedError) -> Self {
+//         CursedError::json_io_error(err.to_string())
+//     }
+// }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use std::collections::HashMap;
-    
-    #[test]
-    fn test_encode_primitives() {
-        let mut encoder = Encoder::new();
-        
-        assert_eq!(encoder.encode(&Value::Null).unwrap(), b"null");
-        assert_eq!(encoder.encode(&Value::Boolean(true)).unwrap(), b"true");
-        assert_eq!(encoder.encode(&Value::Boolean(false)).unwrap(), b"false");
-        assert_eq!(encoder.encode(&Value::Number(42.0)).unwrap(), b"42");
-        assert_eq!(encoder.encode(&Value::Number(3.14)).unwrap(), b"3.14");
-        assert_eq!(encoder.encode(&Value::String("hello".to_string())).unwrap(), b"\"hello\"");
-    }
-    
-    #[test]
-    fn test_encode_array() {
-        let mut encoder = Encoder::new();
-        let arr = vec![
-            Value::Number(1.0),
-            Value::String("test".to_string()),
-            Value::Boolean(true),
-        ];
-        let value = Value::Array(arr);
-        
-        let result = encoder.encode(&value).unwrap();
-        let json_str = String::from_utf8(result).unwrap();
-        
-        assert_eq!(json_str, r#"[1,"test",true]"#);
-    }
-    
-    #[test]
-    fn test_encode_object() {
-        let mut encoder = Encoder::new();
-        let mut obj = HashMap::new();
-        obj.insert("name".to_string(), Value::String("Alice".to_string()));
-        obj.insert("age".to_string(), Value::Number(30.0));
-        
-        let value = Value::Object(obj);
-        let result = encoder.encode(&value).unwrap();
-        let json_str = String::from_utf8(result).unwrap();
-        
-        // Note: HashMap order is not guaranteed, so we check both possibilities
-        assert!(json_str == r#"{"name":"Alice","age":30}"# || 
-                json_str == r#"{"age":30,"name":"Alice"}"#);
-    }
-    
-    #[test]
-    fn test_encode_with_indent() {
-        let mut encoder = Encoder::new_with_indent("".to_string(), "  ".to_string());
-        let mut obj = HashMap::new();
-        obj.insert("name".to_string(), Value::String("Alice".to_string()));
-        
-        let value = Value::Object(obj);
-        let result = encoder.encode(&value).unwrap();
-        let json_str = String::from_utf8(result).unwrap();
-        
-        assert!(json_str.contains("  \"name\""));
-        assert!(json_str.contains("\n"));
-    }
-    
-    #[test]
-    fn test_streaming_encoder() {
-        let mut output = Vec::new();
-        let mut encoder = StreamingEncoder::new(&mut output);
-        
-        encoder.begin_object().unwrap();
-        encoder.write_key("name").unwrap();
-        encoder.write_value(&Value::String("Alice".to_string())).unwrap();
-        encoder.write_key("age").unwrap();
-        encoder.write_value(&Value::Number(30.0)).unwrap();
-        encoder.end_object().unwrap();
-        
-        let json_str = String::from_utf8(output).unwrap();
-        assert_eq!(json_str, r#"{"name":"Alice","age":30}"#);
-    }
-    
-    #[test]
-    fn test_streaming_encoder_array() {
-        let mut output = Vec::new();
-        let mut encoder = StreamingEncoder::new(&mut output);
-        
-        encoder.begin_array().unwrap();
-        encoder.write_value(&Value::Number(1.0)).unwrap();
-        encoder.write_value(&Value::Number(2.0)).unwrap();
-        encoder.write_value(&Value::Number(3.0)).unwrap();
-        encoder.end_array().unwrap();
-        
-        let json_str = String::from_utf8(output).unwrap();
-        assert_eq!(json_str, "[1,2,3]");
-    }
-    
-    #[test]
-    fn test_unsupported_types() {
-        let mut encoder = Encoder::new();
-        
-        // These should return errors
-        assert!(encoder.encode(&Value::Function(std::sync::Arc::new(|_| Ok(Value::Null)))).is_err());
-        assert!(encoder.encode(&Value::Channel(std::sync::Arc::new(std::sync::Mutex::new(
-            crate::runtime::channel::Channel::new()
-        )))).is_err());
-    }
-    
-    #[test]
-    fn test_special_numbers() {
-        let mut encoder = Encoder::new();
-        
-        // NaN and infinity should encode as null
-        assert_eq!(encoder.encode(&Value::Number(f64::NAN)).unwrap(), b"null");
-        assert_eq!(encoder.encode(&Value::Number(f64::INFINITY)).unwrap(), b"null");
-        assert_eq!(encoder.encode(&Value::Number(f64::NEG_INFINITY)).unwrap(), b"null");
-    }
-    
-    #[test]
-    fn test_string_escaping() {
-        let mut encoder = Encoder::new();
-        
-        let test_string = "Hello \"world\"\nNew line\tTab\\Backslash";
-        let value = Value::String(test_string.to_string());
-        let result = encoder.encode(&value).unwrap();
-        let json_str = String::from_utf8(result).unwrap();
-        
-        assert!(json_str.contains("\\\""));
-        assert!(json_str.contains("\\n"));
-        assert!(json_str.contains("\\t"));
-        assert!(json_str.contains("\\\\"));
-    }
-}

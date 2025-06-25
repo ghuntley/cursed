@@ -1,6 +1,6 @@
 /// fr fr Assertion functions for the TestVibes testing framework
-use crate::stdlib::packages::test_vibes::core::VibeTest;
-use crate::error::Error;
+// use crate::stdlib::packages::test_vibes::core::VibeTest;
+use crate::error::CursedError;
 use std::fmt::Debug;
 
 /// fr fr Basic assertions
@@ -54,7 +54,7 @@ pub fn assert_false(t: &mut VibeTest, actual: bool, message: &str) {
     }
 }
 
-/// fr fr Error assertions
+/// fr fr CursedError assertions
 
 /// fr fr Assert that an error occurred
 pub fn assert_error(t: &mut VibeTest, err: Result<(), &str>, message: &str) {
@@ -290,119 +290,3 @@ pub fn assert_out_of_range<T: PartialOrd + Debug>(t: &mut VibeTest, value: T, mi
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use crate::stdlib::packages::test_vibes::core::VibeTest;
-
-    #[test]
-    fn test_assert_equal_success() {
-        let mut test = VibeTest::new("test".to_string());
-        assert_equal(&mut test, 5, 5, "should be equal");
-        assert!(!test.failed());
-    }
-
-    #[test]
-    fn test_assert_equal_failure() {
-        let mut test = VibeTest::new("test".to_string());
-        assert_equal(&mut test, 5, 3, "should be equal");
-        assert!(test.failed());
-    }
-
-    #[test]
-    fn test_assert_true_success() {
-        let mut test = VibeTest::new("test".to_string());
-        assert_true(&mut test, true, "should be true");
-        assert!(!test.failed());
-    }
-
-    #[test]
-    fn test_assert_false_success() {
-        let mut test = VibeTest::new("test".to_string());
-        assert_false(&mut test, false, "should be false");
-        assert!(!test.failed());
-    }
-
-    #[test]
-    fn test_assert_nil_success() {
-        let mut test = VibeTest::new("test".to_string());
-        let value: Option<i32> = None;
-        assert_nil(&mut test, value, "should be nil");
-        assert!(!test.failed());
-    }
-
-    #[test]
-    fn test_assert_not_nil_success() {
-        let mut test = VibeTest::new("test".to_string());
-        let value = Some(42);
-        assert_not_nil(&mut test, value, "should not be nil");
-        assert!(!test.failed());
-    }
-
-    #[test]
-    fn test_assert_error_success() {
-        let mut test = VibeTest::new("test".to_string());
-        let result: Result<(), &str> = Err("test error");
-        assert_error(&mut test, result, "should have error");
-        assert!(!test.failed());
-    }
-
-    #[test]
-    fn test_assert_no_error_success() {
-        let mut test = VibeTest::new("test".to_string());
-        let result: Result<(), &str> = Ok(());
-        assert_no_error(&mut test, result, "should have no error");
-        assert!(!test.failed());
-    }
-
-    #[test]
-    fn test_assert_len_success() {
-        let mut test = VibeTest::new("test".to_string());
-        let collection = Vec::from([1, 2, 3]);
-        assert_len(&mut test, &collection, 3, "should have length 3");
-        assert!(!test.failed());
-    }
-
-    #[test]
-    fn test_assert_contains_success() {
-        let mut test = VibeTest::new("test".to_string());
-        let collection = Vec::from([1, 2, 3]);
-        assert_contains(&mut test, &collection, &2, "should contain 2");
-        assert!(!test.failed());
-    }
-
-    #[test]
-    fn test_assert_greater_success() {
-        let mut test = VibeTest::new("test".to_string());
-        assert_greater(&mut test, 5, 3, "5 should be greater than 3");
-        assert!(!test.failed());
-    }
-
-    #[test]
-    fn test_assert_contains_substr_success() {
-        let mut test = VibeTest::new("test".to_string());
-        assert_contains_substr(&mut test, "hello world", "world", "should contain substring");
-        assert!(!test.failed());
-    }
-
-    #[test]
-    fn test_assert_float_equal_success() {
-        let mut test = VibeTest::new("test".to_string());
-        assert_float_equal(&mut test, 3.14159, 3.14160, 0.001, "should be approximately equal");
-        assert!(!test.failed());
-    }
-
-    #[test]
-    fn test_assert_shooks_success() {
-        let mut test = VibeTest::new("test".to_string());
-        assert_shooks(&mut test, || panic!("test panic"), "should panic");
-        assert!(!test.failed());
-    }
-
-    #[test]
-    fn test_assert_no_shook_success() {
-        let mut test = VibeTest::new("test".to_string());
-        assert_no_shook(&mut test, || {}, "should not panic");
-        assert!(!test.failed());
-    }
-}

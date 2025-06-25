@@ -1,7 +1,7 @@
 // Note: Ed25519PublicKey is defined in this module
 /// Ed25519 cryptographic key types for CURSED
 
-use crate::error::{Error, Result};
+use crate::error::{CursedError, Result};
 
 use serde::{Serialize, Deserialize};
 use std::fmt;
@@ -32,10 +32,10 @@ impl Ed25519PublicKey {
     /// Create from hex string
     pub fn from_hex(hex_str: &str) -> Result<Self> {
         let bytes = hex::decode(hex_str)
-            .map_err(|e| Error::General(format!("Invalid hex: {}", e)))?;
+            .map_err(|e| CursedError::General(format!("Invalid hex: {}", e)))?;
         
         if bytes.len() != 32 {
-            return Err(Error::General("Ed25519 public key must be 32 bytes".to_string()));
+            return Err(CursedError::General("Ed25519 public key must be 32 bytes".to_string()));
         }
 
         let mut key_bytes = [0u8; 32];
@@ -101,10 +101,10 @@ impl Ed25519PrivateKey {
     /// Create from hex string
     pub fn from_hex(hex_str: &str) -> Result<Self> {
         let bytes = hex::decode(hex_str)
-            .map_err(|e| Error::General(format!("Invalid hex: {}", e)))?;
+            .map_err(|e| CursedError::General(format!("Invalid hex: {}", e)))?;
         
         if bytes.len() != 32 {
-            return Err(Error::General("Ed25519 private key must be 32 bytes".to_string()));
+            return Err(CursedError::General("Ed25519 private key must be 32 bytes".to_string()));
         }
 
         let mut key_bytes = [0u8; 32];
@@ -192,10 +192,10 @@ impl Ed25519Signature {
     /// Create from hex string
     pub fn from_hex(hex_str: &str) -> Result<Self> {
         let bytes = hex::decode(hex_str)
-            .map_err(|e| Error::General(format!("Invalid hex: {}", e)))?;
+            .map_err(|e| CursedError::General(format!("Invalid hex: {}", e)))?;
         
         if bytes.len() != 64 {
-            return Err(Error::General("Ed25519 signature must be 64 bytes".to_string()));
+            return Err(CursedError::General("Ed25519 signature must be 64 bytes".to_string()));
         }
 
         let mut sig_bytes = [0u8; 64];

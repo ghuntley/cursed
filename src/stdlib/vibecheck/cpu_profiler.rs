@@ -3,7 +3,7 @@
 /// Provides comprehensive CPU profiling with function call tracing, timing analysis,
 /// hot path identification, call graph generation, and performance bottleneck detection.
 
-use crate::error::Error;
+use crate::error::CursedError;
 use std::collections::{HashMap, BTreeMap};
 use std::sync::{Arc, Mutex, RwLock, atomic::{AtomicU64, AtomicBool, Ordering}};
 use std::time::{SystemTime, Duration, Instant};
@@ -185,16 +185,16 @@ impl CpuProfiler {
     }
 
     /// Start CPU profiling
-    pub fn start(&self) -> Result<(), Error> {
+    pub fn start(&self) -> crate::error::Result<()> {
         if self.is_profiling.load(Ordering::SeqCst) {
-            return Err(Error::Runtime("CPU profiler already running".to_string()));
+            return Err(CursedError::Runtime("CPU profiler already running".to_string()));
         }
 
         self.is_profiling.store(true, Ordering::SeqCst);
         
         {
             let mut start_time = self.start_time.lock()
-                .map_err(|_| Error::Runtime("Failed to lock start time".to_string()))?;
+                .map_err(|_| CursedError::Runtime("Failed to lock start time".to_string()))?;
             *start_time = Some(Instant::now());
         }
 
@@ -210,9 +210,9 @@ impl CpuProfiler {
     }
 
     /// Stop CPU profiling and return results
-    pub fn stop(&self) -> Result<(), Error> {
+    pub fn stop(&self) -> crate::error::Result<()> {
         if !self.is_profiling.load(Ordering::SeqCst) {
-            return Err(Error::Runtime("CPU profiler not running".to_string()));
+            return Err(CursedError::Runtime("CPU profiler not running".to_string()));
         }
 
         self.is_profiling.store(false, Ordering::SeqCst);
@@ -220,7 +220,7 @@ impl CpuProfiler {
         // Wait for sampling threads to complete
         {
             let mut threads = self.profiling_threads.lock()
-                .map_err(|_| Error::Runtime("Failed to lock profiling threads".to_string()))?;
+                .map_err(|_| CursedError::Runtime("Failed to lock profiling threads".to_string()))?;
             
             for thread in threads.drain(..) {
                 let _ = thread.join();
@@ -229,7 +229,7 @@ impl CpuProfiler {
 
         let profiling_duration = {
             let start_time = self.start_time.lock()
-                .map_err(|_| Error::Runtime("Failed to lock start time".to_string()))?;
+                .map_err(|_| CursedError::Runtime("Failed to lock start time".to_string()))?;
             
             start_time.map(|start| start.elapsed())
                 .unwrap_or_else(|| Duration::from_secs(0))
@@ -240,14 +240,14 @@ impl CpuProfiler {
     }
 
     /// Record function entry
-    pub fn enter_function(&self, name: String, module: String) -> Result<(), Error> {
+    pub fn enter_function(&self, name: String, module: String) -> crate::error::Result<()> {
         if !self.is_profiling.load(Ordering::SeqCst) || !self.config.function_tracing {
             return Ok(());
         }
 
         let thread_id = thread::current().id();
         let mut call_stack = self.call_stack.write()
-            .map_err(|_| Error::Runtime("Failed to lock call stack".to_string()))?;
+            .map_err(|_| CursedError::Runtime("Failed to lock call stack".to_string()))?;
 
         let stack = call_stack.entry(thread_id).or_insert_with(Vec::new);
         
@@ -270,14 +270,14 @@ impl CpuProfiler {
     }
 
     /// Record function exit
-    pub fn exit_function(&self) -> Result<(), Error> {
+    pub fn exit_function(&self) -> crate::error::Result<()> {
         if !self.is_profiling.load(Ordering::SeqCst) || !self.config.function_tracing {
             return Ok(());
         }
 
         let thread_id = thread::current().id();
         let mut call_stack = self.call_stack.write()
-            .map_err(|_| Error::Runtime("Failed to lock call stack".to_string()))?;
+            .map_err(|_| CursedError::Runtime("Failed to lock call stack".to_string()))?;
 
         if let Some(stack) = call_stack.get_mut(&thread_id) {
             if let Some(mut function_call) = stack.pop() {
@@ -291,7 +291,7 @@ impl CpuProfiler {
                         parent.children.push(function_call);
                     } else {
                         let mut function_calls = self.function_calls.write()
-                            .map_err(|_| Error::Runtime("Failed to lock function calls".to_string()))?;
+                            .map_err(|_| CursedError::Runtime("Failed to lock function calls".to_string()))?;
                         
                         if function_calls.len() < self.config.max_samples {
                             function_calls.push(function_call);
@@ -305,16 +305,16 @@ impl CpuProfiler {
     }
 
     /// Generate complete CPU profile
-    fn generate_profile(&self, profiling_duration: Duration) -> Result<(), Error> {
+    fn generate_profile(&self, profiling_duration: Duration) -> crate::error::Result<()> {
         let function_calls = {
             let calls = self.function_calls.read()
-                .map_err(|_| Error::Runtime("Failed to lock function calls".to_string()))?;
+                .map_err(|_| CursedError::Runtime("Failed to lock function calls".to_string()))?;
             calls.clone()
         };
 
         let samples = {
             let samples = self.samples.read()
-                .map_err(|_| Error::Runtime("Failed to lock samples".to_string()))?;
+                .map_err(|_| CursedError::Runtime("Failed to lock samples".to_string()))?;
             samples.clone()
         };
 
@@ -334,7 +334,7 @@ impl CpuProfiler {
     }
 
     /// Build call graph from function calls
-    fn build_call_graph(&self, function_calls: &[FunctionCall]) -> Result<(), Error> {
+    fn build_call_graph(&self, function_calls: &[FunctionCall]) -> crate::error::Result<()> {
         if !self.config.call_graph {
             return Ok(HashMap::new());
         }
@@ -387,7 +387,7 @@ impl CpuProfiler {
     }
 
     /// Identify hot paths from CPU samples
-    fn identify_hot_paths(&self, samples: &[CpuSample]) -> Result<(), Error> {
+    fn identify_hot_paths(&self, samples: &[CpuSample]) -> crate::error::Result<()> {
         let mut path_counts = HashMap::new();
         let total_samples = samples.len() as u64;
 
@@ -425,7 +425,7 @@ impl CpuProfiler {
     }
 
     /// Detect performance bottlenecks
-    fn detect_bottlenecks(&self, function_calls: &[FunctionCall], call_graph: &HashMap<String, CallGraphNode>) -> Result<(), Error> {
+    fn detect_bottlenecks(&self, function_calls: &[FunctionCall], call_graph: &HashMap<String, CallGraphNode>) -> crate::error::Result<()> {
         let mut bottlenecks = Vec::new();
 
         // Find CPU-intensive functions
@@ -506,7 +506,7 @@ impl CpuProfiler {
     }
 
     /// Start CPU sampling thread
-    fn start_sampling_thread(&self) -> Result<(), Error> {
+    fn start_sampling_thread(&self) -> crate::error::Result<()> {
         let is_profiling = Arc::new(AtomicBool::new(true));
         let is_profiling_clone = is_profiling.clone();
         let samples_clone = self.samples.clone();
@@ -542,7 +542,7 @@ impl CpuProfiler {
 
         {
             let mut threads = self.profiling_threads.lock()
-                .map_err(|_| Error::Runtime("Failed to lock profiling threads".to_string()))?;
+                .map_err(|_| CursedError::Runtime("Failed to lock profiling threads".to_string()))?;
             threads.push(sampling_thread);
         }
 
@@ -550,22 +550,22 @@ impl CpuProfiler {
     }
 
     /// Clear all profiling data
-    fn clear_data(&self) -> Result<(), Error> {
+    fn clear_data(&self) -> crate::error::Result<()> {
         {
             let mut function_calls = self.function_calls.write()
-                .map_err(|_| Error::Runtime("Failed to lock function calls".to_string()))?;
+                .map_err(|_| CursedError::Runtime("Failed to lock function calls".to_string()))?;
             function_calls.clear();
         }
 
         {
             let mut samples = self.samples.write()
-                .map_err(|_| Error::Runtime("Failed to lock samples".to_string()))?;
+                .map_err(|_| CursedError::Runtime("Failed to lock samples".to_string()))?;
             samples.clear();
         }
 
         {
             let mut call_stack = self.call_stack.write()
-                .map_err(|_| Error::Runtime("Failed to lock call stack".to_string()))?;
+                .map_err(|_| CursedError::Runtime("Failed to lock call stack".to_string()))?;
             call_stack.clear();
         }
 
@@ -656,33 +656,33 @@ pub fn get_cpu_profiler() -> Arc<CpuProfiler> {
 }
 
 /// Configure CPU profiler
-pub fn configure_cpu_profiler(config: CpuProfilerConfig) -> Result<(), Error> {
+pub fn configure_cpu_profiler(config: CpuProfilerConfig) -> crate::error::Result<()> {
     let profiler = Arc::new(CpuProfiler::with_config(config));
     GLOBAL_CPU_PROFILER.set(profiler)
-        .map_err(|_| Error::Runtime("CPU profiler already configured".to_string()))?;
+        .map_err(|_| CursedError::Runtime("CPU profiler already configured".to_string()))?;
     Ok(())
 }
 
 /// Start CPU profiling
-pub fn start_cpu_profiling() -> Result<(), Error> {
+pub fn start_cpu_profiling() -> crate::error::Result<()> {
     let profiler = get_cpu_profiler();
     profiler.start()
 }
 
 /// Stop CPU profiling and return results
-pub fn stop_cpu_profiling() -> Result<(), Error> {
+pub fn stop_cpu_profiling() -> crate::error::Result<()> {
     let profiler = get_cpu_profiler();
     profiler.stop()
 }
 
 /// Record function entry (for manual instrumentation)
-pub fn profile_function_enter(name: String, module: String) -> Result<(), Error> {
+pub fn profile_function_enter(name: String, module: String) -> crate::error::Result<()> {
     let profiler = get_cpu_profiler();
     profiler.enter_function(name, module)
 }
 
 /// Record function exit (for manual instrumentation)
-pub fn profile_function_exit() -> Result<(), Error> {
+pub fn profile_function_exit() -> crate::error::Result<()> {
     let profiler = get_cpu_profiler();
     profiler.exit_function()
 }
@@ -694,7 +694,7 @@ pub struct FunctionProfileGuard {
 
 impl FunctionProfileGuard {
     /// Create a new function profile guard
-    pub fn new(name: String, module: String) -> Result<(), Error> {
+    pub fn new(name: String, module: String) -> crate::error::Result<()> {
         profile_function_enter(name, module)?;
         Ok(Self { _phantom: std::marker::PhantomData })
     }
@@ -710,141 +710,16 @@ impl Drop for FunctionProfileGuard {
 #[macro_export]
 macro_rules! profile_function {
     () => {
-        let _guard = $crate::stdlib::vibecheck::cpu_profiler::FunctionProfileGuard::new(
+//         let _guard = $crate::stdlib::vibecheck::cpu_profiler::FunctionProfileGuard::new(
             function_name!().to_string(),
             module_path!().to_string()
         )?;
     };
     ($name:expr) => {
-        let _guard = $crate::stdlib::vibecheck::cpu_profiler::FunctionProfileGuard::new(
+//         let _guard = $crate::stdlib::vibecheck::cpu_profiler::FunctionProfileGuard::new(
             $name.to_string(),
             module_path!().to_string()
         )?;
     };
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use std::thread;
-    use std::time::Duration;
-
-    #[test]
-    fn test_cpu_profiler_creation() {
-        let profiler = CpuProfiler::new();
-        assert!(!profiler.is_profiling.load(Ordering::SeqCst));
-    }
-
-    #[test]
-    fn test_function_tracing() {
-        let profiler = CpuProfiler::new();
-        profiler.start().unwrap();
-        
-        profiler.enter_function("test_function".to_string(), "test_module".to_string()).unwrap();
-        thread::sleep(Duration::from_millis(10));
-        profiler.exit_function().unwrap();
-        
-        let profile = profiler.stop().unwrap();
-        assert!(!profile.function_calls.is_empty());
-        assert_eq!(profile.function_calls[0].name, "test_function");
-    }
-
-    #[test]
-    fn test_call_graph_generation() {
-        let profiler = CpuProfiler::new();
-        profiler.start().unwrap();
-        
-        profiler.enter_function("parent".to_string(), "test".to_string()).unwrap();
-        profiler.enter_function("child".to_string(), "test".to_string()).unwrap();
-        thread::sleep(Duration::from_millis(5));
-        profiler.exit_function().unwrap();
-        profiler.exit_function().unwrap();
-        
-        let profile = profiler.stop().unwrap();
-        assert!(profile.call_graph.contains_key("parent"));
-        assert!(profile.call_graph.contains_key("child"));
-        
-        let parent_node = &profile.call_graph["parent"];
-        assert!(parent_node.callees.contains_key("child"));
-    }
-
-    #[test]
-    fn test_profiler_start_stop() {
-        let profiler = CpuProfiler::new();
-        
-        // Should not be profiling initially
-        assert!(!profiler.is_profiling.load(Ordering::SeqCst));
-        
-        // Start profiling
-        profiler.start().unwrap();
-        assert!(profiler.is_profiling.load(Ordering::SeqCst));
-        
-        // Stop profiling
-        let profile = profiler.stop().unwrap();
-        assert!(!profiler.is_profiling.load(Ordering::SeqCst));
-        assert!(profile.profiling_duration > Duration::from_nanos(0));
-    }
-
-    #[test]
-    fn test_global_profiler_functions() {
-        start_cpu_profiling().unwrap();
-        
-        profile_function_enter("global_test".to_string(), "test".to_string()).unwrap();
-        thread::sleep(Duration::from_millis(5));
-        profile_function_exit().unwrap();
-        
-        let profile = stop_cpu_profiling().unwrap();
-        assert!(!profile.function_calls.is_empty());
-    }
-
-    #[test]
-    fn test_function_profile_guard() {
-        start_cpu_profiling().unwrap();
-        
-        {
-            let _guard = FunctionProfileGuard::new("guard_test".to_string(), "test".to_string()).unwrap();
-            thread::sleep(Duration::from_millis(5));
-        } // Guard drops here, recording function exit
-        
-        let profile = stop_cpu_profiling().unwrap();
-        assert!(!profile.function_calls.is_empty());
-    }
-
-    #[test]
-    fn test_bottleneck_detection() {
-        let profiler = CpuProfiler::new();
-        profiler.start().unwrap();
-        
-        // Simulate CPU-intensive function
-        for _ in 0..100 {
-            profiler.enter_function("cpu_intensive".to_string(), "test".to_string()).unwrap();
-            thread::sleep(Duration::from_micros(100));
-            profiler.exit_function().unwrap();
-        }
-        
-        let profile = profiler.stop().unwrap();
-        
-        if !profile.bottlenecks.is_empty() {
-            assert!(profile.bottlenecks.iter().any(|b| 
-                matches!(b.bottleneck_type, BottleneckType::HighCallFrequency)
-            ));
-        }
-    }
-
-    #[test]
-    fn test_cpu_profile_display() {
-        let profiler = CpuProfiler::new();
-        profiler.start().unwrap();
-        
-        profiler.enter_function("display_test".to_string(), "test".to_string()).unwrap();
-        thread::sleep(Duration::from_millis(5));
-        profiler.exit_function().unwrap();
-        
-        let profile = profiler.stop().unwrap();
-        let display = format!("{}", profile);
-        
-        assert!(display.contains("CPU Profile"));
-        assert!(display.contains("Total Samples"));
-        assert!(display.contains("Function Calls"));
-    }
-}

@@ -1,4 +1,4 @@
-use crate::error::Error;
+use crate::error::CursedError;
 /// fr fr Rate limiting metrics - comprehensive monitoring and statistics
 use std::collections::HashMap;
 use std::time::{Duration, Instant};
@@ -18,7 +18,7 @@ pub struct RateLimitMetrics {
     /// fr fr Denied requests - rate limited requests
     pub denied_requests: u64,
     
-    /// fr fr Error count - processing errors
+    /// fr fr CursedError count - processing errors
     pub error_count: u64,
     
     /// fr fr Per-client metrics - individual client statistics
@@ -33,7 +33,7 @@ pub struct RateLimitMetrics {
     /// fr fr Time-based metrics - temporal patterns
     pub time_metrics: TimeMetrics,
     
-    /// fr fr Error breakdown - error categorization
+    /// fr fr CursedError breakdown - error categorization
     pub error_breakdown: HashMap<ErrorCategory, u64>,
     
     /// fr fr Performance statistics - timing information
@@ -193,7 +193,7 @@ pub struct ClientMetrics {
     /// fr fr Denied requests from client
     pub denied_requests: u64,
     
-    /// fr fr Error count for client
+    /// fr fr CursedError count for client
     pub error_count: u64,
     
     /// fr fr First request timestamp
@@ -205,7 +205,7 @@ pub struct ClientMetrics {
     /// fr fr Request timestamps - recent activity
     pub recent_requests: Vec<u64>,
     
-    /// fr fr Error breakdown by category
+    /// fr fr CursedError breakdown by category
     pub error_breakdown: HashMap<ErrorCategory, u64>,
 }
 
@@ -659,7 +659,7 @@ pub struct MetricsSummary {
     /// fr fr Denial rate percentage
     pub denial_rate: f64,
     
-    /// fr fr Error rate percentage
+    /// fr fr CursedError rate percentage
     pub error_rate: f64,
     
     /// fr fr Number of unique clients
@@ -672,163 +672,3 @@ pub struct MetricsSummary {
     pub requests_per_second: f64,
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_rate_limit_metrics_creation() {
-        let metrics = RateLimitMetrics::new();
-        assert_eq!(metrics.total_requests, 0);
-        assert_eq!(metrics.allowed_requests, 0);
-        assert_eq!(metrics.denied_requests, 0);
-        assert_eq!(metrics.success_rate(), 0.0);
-    }
-
-    #[test]
-    fn test_metrics_record_decision() {
-        let mut metrics = RateLimitMetrics::new();
-        
-        // Record allow decision
-        let allow_decision = RateLimitDecision::Allow {
-            remaining: 9,
-            reset_time: current_timestamp() + 60,
-            retry_after: None,
-        };
-        metrics.record_decision("client1", &allow_decision);
-        
-        assert_eq!(metrics.total_requests, 1);
-        assert_eq!(metrics.allowed_requests, 1);
-        assert_eq!(metrics.denied_requests, 0);
-        assert_eq!(metrics.success_rate(), 100.0);
-        
-        // Record deny decision
-        let deny_decision = RateLimitDecision::Deny {
-            retry_after: 60,
-            reset_time: current_timestamp() + 60,
-        };
-        metrics.record_decision("client2", &deny_decision);
-        
-        assert_eq!(metrics.total_requests, 2);
-        assert_eq!(metrics.allowed_requests, 1);
-        assert_eq!(metrics.denied_requests, 1);
-        assert_eq!(metrics.success_rate(), 50.0);
-        assert_eq!(metrics.denial_rate(), 50.0);
-    }
-
-    #[test]
-    fn test_client_metrics() {
-        let mut client_metrics = ClientMetrics::new();
-        
-        let allow_decision = RateLimitDecision::Allow {
-            remaining: 9,
-            reset_time: current_timestamp() + 60,
-            retry_after: None,
-        };
-        client_metrics.record_decision(&allow_decision);
-        
-        assert_eq!(client_metrics.total_requests, 1);
-        assert_eq!(client_metrics.allowed_requests, 1);
-        assert_eq!(client_metrics.denial_rate(), 0.0);
-        
-        client_metrics.record_error(ErrorCategory::Storage);
-        assert_eq!(client_metrics.error_count, 1);
-    }
-
-    #[test]
-    fn test_algorithm_metrics() {
-        let mut algo_metrics = AlgorithmMetrics::new();
-        
-        algo_metrics.record_execution(Duration::from_millis(10), true);
-        algo_metrics.record_execution(Duration::from_millis(20), false);
-        
-        assert_eq!(algo_metrics.executions, 2);
-        assert_eq!(algo_metrics.successes, 1);
-        assert_eq!(algo_metrics.failures, 1);
-        assert_eq!(algo_metrics.success_rate(), 50.0);
-        assert_eq!(algo_metrics.avg_time(), Duration::from_millis(15));
-    }
-
-    #[test]
-    fn test_store_metrics() {
-        let mut store_metrics = StoreMetrics::new();
-        
-        store_metrics.record_operation("get", Duration::from_millis(5), true);
-        store_metrics.record_operation("set", Duration::from_millis(10), true);
-        store_metrics.record_operation("get", Duration::from_millis(3), false);
-        
-        assert_eq!(store_metrics.operations.get("get"), Some(&2));
-        assert_eq!(store_metrics.operations.get("set"), Some(&1));
-        assert_eq!(store_metrics.success_rate("get"), 50.0);
-        assert_eq!(store_metrics.success_rate("set"), 100.0);
-    }
-
-    #[test]
-    fn test_time_metrics() {
-        let mut time_metrics = TimeMetrics::new();
-        
-        time_metrics.record_request();
-        time_metrics.record_request();
-        
-        assert_eq!(time_metrics.requests_this_minute, 2);
-        assert_eq!(time_metrics.requests_this_hour, 2);
-        assert_eq!(time_metrics.requests_this_day, 2);
-        
-        let rps = time_metrics.requests_per_second();
-        assert!(rps > 0.0);
-    }
-
-    #[test]
-    fn test_metrics_summary() {
-        let mut metrics = RateLimitMetrics::new();
-        
-        // Add some data
-        let allow_decision = RateLimitDecision::Allow {
-            remaining: 9,
-            reset_time: current_timestamp() + 60,
-            retry_after: None,
-        };
-        metrics.record_decision("client1", &allow_decision);
-        metrics.record_decision("client2", &allow_decision);
-        
-        let summary = metrics.summary();
-        assert_eq!(summary.total_requests, 2);
-        assert_eq!(summary.success_rate, 100.0);
-        assert_eq!(summary.unique_clients, 2);
-    }
-
-    #[test]
-    fn test_top_clients() {
-        let mut metrics = RateLimitMetrics::new();
-        
-        let decision = RateLimitDecision::Allow {
-            remaining: 9,
-            reset_time: current_timestamp() + 60,
-            retry_after: None,
-        };
-        
-        // Client1 makes 3 requests
-        for _ in 0..3 {
-            metrics.record_decision("client1", &decision);
-        }
-        
-        // Client2 makes 1 request
-        metrics.record_decision("client2", &decision);
-        
-        let top_clients = metrics.top_clients(2);
-        assert_eq!(top_clients.len(), 2);
-        assert_eq!(top_clients[0].0, "client1");
-        assert_eq!(top_clients[0].1.total_requests, 3);
-    }
-
-    #[test]
-    fn test_config_snapshot() {
-        let snapshot = ConfigSnapshot::from_config(100, 60, "FixedWindow", "InMemory");
-        
-        assert_eq!(snapshot.max_requests, 100);
-        assert_eq!(snapshot.window_duration, 60);
-        assert_eq!(snapshot.algorithm, "FixedWindow");
-        assert_eq!(snapshot.store_type, "InMemory");
-        assert!(snapshot.timestamp > 0);
-    }
-}

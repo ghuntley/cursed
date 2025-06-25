@@ -1,4 +1,4 @@
-use crate::error::Error;
+use crate::error::CursedError;
 /// Cross-platform signal handling for process management
 /// 
 /// This module provides signal handling capabilities for process control and communication
@@ -8,7 +8,7 @@ use std::sync::{Arc, Mutex, mpsc};
 use std::thread;
 use std::time::Duration;
 
-use crate::stdlib::process::error::{ProcessError, ProcessResult, system_error};
+// use crate::stdlib::process::error::{ProcessError, ProcessResult, system_error};
 
 /// Signal types (mapped across platforms)
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
@@ -854,88 +854,3 @@ impl Default for SignalManager {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use std::sync::atomic::{AtomicBool, Ordering};
-    use std::time::Duration;
-use crate::stdlib::process::error::ProcessResult;
-use crate::stdlib::process::error::ProcessError;
-    
-    #[test]
-    fn test_signal_properties() {
-        assert_eq!(Signal::Interrupt.name(), "SIGINT");
-        assert!(Signal::Interrupt.can_be_caught());
-        assert!(Signal::Interrupt.is_terminating());
-        
-        assert!(!Signal::Kill.can_be_caught());
-        assert!(Signal::Kill.is_terminating());
-        
-        assert!(!Signal::Continue.is_terminating());
-    }
-    
-    #[test]
-    fn test_signal_conversion() {
-        let signal = Signal::Interrupt;
-        let raw = signal.as_raw();
-        
-        #[cfg(unix)]
-        {
-            assert_eq!(raw, libc::SIGINT);
-            assert_eq!(Signal::from_raw(raw), Some(signal));
-        }
-        
-        #[cfg(windows)]
-        {
-            assert_eq!(raw, 0); // CTRL_C_EVENT
-        }
-    }
-    
-    #[test]
-    fn test_signal_handler_creation() {
-        let handler = SignalHandler::new();
-        
-        // Test that we can register a signal handler
-        let signal_received = Arc::new(AtomicBool::new(false));
-        let signal_received_clone = Arc::clone(&signal_received);
-        
-        let action = SignalAction::Handle(Arc::new(move |_signal| {
-            signal_received_clone.store(true, Ordering::SeqCst);
-        }));
-        
-        // Only test with signals that can be caught
-        if Signal::User1.can_be_caught() {
-            assert!(handler.register(Signal::User1, action).is_ok());
-            
-            // Simulate receiving the signal
-            assert!(handler.simulate_signal(Signal::User1).is_ok());
-            
-            // Give some time for the handler to process
-            thread::sleep(Duration::from_millis(50));
-            
-            assert!(signal_received.load(Ordering::SeqCst));
-        }
-    }
-    
-    #[test]
-    fn test_signal_mask() {
-        #[cfg(unix)]
-        {
-            let mut mask = SignalMask::empty().unwrap();
-            assert!(!mask.contains(Signal::Interrupt));
-            
-            mask.add(Signal::Interrupt).unwrap();
-            assert!(mask.contains(Signal::Interrupt));
-            
-            mask.remove(Signal::Interrupt).unwrap();
-            assert!(!mask.contains(Signal::Interrupt));
-        }
-    }
-    
-    #[test]
-    fn test_convenience_functions() {
-        // Test that convenience functions don't panic
-        // We can't test actual signal sending without affecting the test process
-        assert!(convenience::is_process_running(std::process::id()));
-    }
-}

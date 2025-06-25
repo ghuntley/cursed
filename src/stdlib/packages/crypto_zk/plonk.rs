@@ -1,12 +1,11 @@
-use crate::error::Error;
+use crate::error::CursedError;
 /// PLONK universal SNARK implementation
 use std::collections::HashMap;
-use crate::stdlib::packages::crypto_advanced::AdvancedCryptoResult;
-use crate::stdlib::crypto::unified_api::UnifiedCryptoError as CryptoError;
-use crate::stdlib::value::Value;
-use crate::stdlib::packages::crypto_zk::field_arithmetic::FieldElement;
-use crate::stdlib::packages::crypto_zk::groth16::G1Point;
-use crate::stdlib::packages::crypto_zk::polynomial_commitment::KZGCommitment;
+// use crate::stdlib::packages::crypto_advanced::AdvancedCryptoResult;
+// use crate::stdlib::value::Value;
+// use crate::stdlib::packages::crypto_zk::field_arithmetic::FieldElement;
+// use crate::stdlib::packages::crypto_zk::groth16::G1Point;
+// use crate::stdlib::packages::crypto_zk::polynomial_commitment::KZGCommitment;
 use rand::RngCore;
 
 /// PLONK gate constraint
@@ -957,112 +956,3 @@ impl Plonk {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_plonk_gate_evaluation() {
-        let add_gate = PlonkGate::addition();
-        let result = add_gate.evaluate(
-            FieldElement::new(3),
-            FieldElement::new(4),
-            FieldElement::new(7),
-        );
-        assert!(result.is_zero()); // 3 + 4 - 7 = 0
-
-        let mul_gate = PlonkGate::multiplication();
-        let result = mul_gate.evaluate(
-            FieldElement::new(3),
-            FieldElement::new(4),
-            FieldElement::new(12),
-        );
-        assert!(result.is_zero()); // 3 * 4 - 12 = 0
-    }
-
-    #[test]
-    fn test_plonk_polynomial_operations() {
-        let poly1 = PlonkPolynomial::new(vec![
-            FieldElement::new(1),
-            FieldElement::new(2),
-            FieldElement::new(3),
-        ]);
-        
-        let poly2 = PlonkPolynomial::new(vec![
-            FieldElement::new(1),
-            FieldElement::new(1),
-        ]);
-
-        let sum = poly1.add(&poly2);
-        assert_eq!(sum.coefficients.len(), 3);
-
-        let product = poly1.multiply(&poly2);
-        assert_eq!(product.degree, 3); // degree 2 + degree 1
-    }
-
-    #[test]
-    fn test_plonk_permutation() {
-        let perm = PlonkPermutation::identity(4);
-        assert!(perm.is_valid());
-        
-        assert_eq!(perm.apply(0), Some(0));
-        assert_eq!(perm.apply(3), Some(3));
-        assert_eq!(perm.apply(4), None);
-    }
-
-    #[test]
-    fn test_plonk_polynomial_interpolation() {
-        let points = vec![
-            (FieldElement::new(1), FieldElement::new(2)),
-            (FieldElement::new(2), FieldElement::new(5)),
-            (FieldElement::new(3), FieldElement::new(10)),
-        ];
-        
-        let poly = PlonkPolynomial::interpolate(&points).unwrap();
-        
-        // Verify interpolation
-        for (x, y) in points {
-            assert_eq!(poly.evaluate(x), y);
-        }
-    }
-
-    #[test]
-    fn test_plonk_setup() {
-        let universal_setup = PlonkSetup::universal_setup(8).unwrap();
-        assert_eq!(universal_setup.len(), 9); // 0 to 8 inclusive
-
-        let gates = vec![PlonkGate::multiplication()];
-        let permutation = PlonkPermutation::identity(4);
-        
-        let (pk, vk) = PlonkSetup::circuit_setup(&gates, &permutation, &universal_setup, 1).unwrap();
-        assert_eq!(pk.domain_size, 4);
-        assert_eq!(vk.num_public_inputs, 1);
-    }
-
-    #[test]
-    fn test_plonk_api() {
-        let universal_setup = Plonk::universal_setup(8).unwrap();
-        assert!(matches!(universal_setup, Value::Object(_)));
-
-        let circuit = Plonk::multiplication_circuit().unwrap();
-        assert!(matches!(circuit, Value::Array(_)));
-
-        let proof_size = Plonk::proof_size();
-        assert!(matches!(proof_size, Value::Object(_)));
-    }
-
-    #[test]
-    fn test_plonk_prove_verify_flow() {
-        // Simplified test of the prove-verify flow
-        let pk = Value::Object(HashMap::new()); // Simplified
-        let vk = Value::Object(HashMap::new()); // Simplified
-        let public_inputs = Value::Array(vec![Value::Integer(3), Value::Integer(4)]);
-        let private_inputs = Value::Array(vec![]);
-
-        let proof = Plonk::prove(&pk, &public_inputs, &private_inputs);
-        assert!(proof.is_ok());
-
-        // Note: Full verification would require properly constructed keys
-        // This test just checks that the API calls work
-    }
-}

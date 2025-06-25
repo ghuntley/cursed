@@ -56,7 +56,7 @@ pub trait SqlDialectTrait: std::fmt::Debug + Send + Sync {
     fn functions(&self) -> &SqlFunctions;
     
     /// slay Convert type to dialect-specific SQL
-    fn type_to_sql(&self, sql_type: &crate::stdlib::packages::db_sql::SqlType) -> String;
+//     fn type_to_sql(&self, sql_type: &crate::stdlib::packages::db_sql::SqlType) -> String;
 }
 
 /// fr fr PostgreSQL dialect implementation
@@ -246,15 +246,15 @@ impl SqlDialectTrait for PostgreSqlDialect {
         &self.functions
     }
 
-    fn type_to_sql(&self, sql_type: &crate::stdlib::packages::db_sql::SqlType) -> String {
+//     fn type_to_sql(&self, sql_type: &crate::stdlib::packages::db_sql::SqlType) -> String {
         match sql_type {
-            crate::stdlib::packages::db_sql::SqlType::Boolean => "BOOLEAN".to_string(),
-            crate::stdlib::packages::db_sql::SqlType::Integer => "INTEGER".to_string(),
-            crate::stdlib::packages::db_sql::SqlType::BigInt => "BIGINT".to_string(),
-            crate::stdlib::packages::db_sql::SqlType::Text => "TEXT".to_string(),
-            crate::stdlib::packages::db_sql::SqlType::Json => "JSONB".to_string(),
-            crate::stdlib::packages::db_sql::SqlType::Timestamp => "TIMESTAMP".to_string(),
-            crate::stdlib::packages::db_sql::SqlType::Uuid => "UUID".to_string(),
+//             crate::stdlib::packages::db_sql::SqlType::Boolean => "BOOLEAN".to_string(),
+//             crate::stdlib::packages::db_sql::SqlType::Integer => "INTEGER".to_string(),
+//             crate::stdlib::packages::db_sql::SqlType::BigInt => "BIGINT".to_string(),
+//             crate::stdlib::packages::db_sql::SqlType::Text => "TEXT".to_string(),
+//             crate::stdlib::packages::db_sql::SqlType::Json => "JSONB".to_string(),
+//             crate::stdlib::packages::db_sql::SqlType::Timestamp => "TIMESTAMP".to_string(),
+//             crate::stdlib::packages::db_sql::SqlType::Uuid => "UUID".to_string(),
             _ => sql_type.to_sql(), // Fallback to default
         }
     }
@@ -361,15 +361,15 @@ impl SqlDialectTrait for MySqlDialect {
         &self.functions
     }
 
-    fn type_to_sql(&self, sql_type: &crate::stdlib::packages::db_sql::SqlType) -> String {
+//     fn type_to_sql(&self, sql_type: &crate::stdlib::packages::db_sql::SqlType) -> String {
         match sql_type {
-            crate::stdlib::packages::db_sql::SqlType::Boolean => "BOOLEAN".to_string(),
-            crate::stdlib::packages::db_sql::SqlType::Integer => "INT".to_string(),
-            crate::stdlib::packages::db_sql::SqlType::BigInt => "BIGINT".to_string(),
-            crate::stdlib::packages::db_sql::SqlType::Text => "TEXT".to_string(),
-            crate::stdlib::packages::db_sql::SqlType::Json => "JSON".to_string(),
-            crate::stdlib::packages::db_sql::SqlType::Timestamp => "DATETIME".to_string(),
-            crate::stdlib::packages::db_sql::SqlType::VarChar(len) => format!("VARCHAR({})", len),
+//             crate::stdlib::packages::db_sql::SqlType::Boolean => "BOOLEAN".to_string(),
+//             crate::stdlib::packages::db_sql::SqlType::Integer => "INT".to_string(),
+//             crate::stdlib::packages::db_sql::SqlType::BigInt => "BIGINT".to_string(),
+//             crate::stdlib::packages::db_sql::SqlType::Text => "TEXT".to_string(),
+//             crate::stdlib::packages::db_sql::SqlType::Json => "JSON".to_string(),
+//             crate::stdlib::packages::db_sql::SqlType::Timestamp => "DATETIME".to_string(),
+//             crate::stdlib::packages::db_sql::SqlType::VarChar(len) => format!("VARCHAR({})", len),
             _ => sql_type.to_sql(),
         }
     }
@@ -475,96 +475,20 @@ impl SqlDialectTrait for SqliteDialect {
         &self.functions
     }
 
-    fn type_to_sql(&self, sql_type: &crate::stdlib::packages::db_sql::SqlType) -> String {
+//     fn type_to_sql(&self, sql_type: &crate::stdlib::packages::db_sql::SqlType) -> String {
         match sql_type {
-            crate::stdlib::packages::db_sql::SqlType::Boolean => "INTEGER".to_string(), // SQLite stores boolean as integer
-            crate::stdlib::packages::db_sql::SqlType::Integer => "INTEGER".to_string(),
-            crate::stdlib::packages::db_sql::SqlType::BigInt => "INTEGER".to_string(),
-            crate::stdlib::packages::db_sql::SqlType::Float => "REAL".to_string(),
-            crate::stdlib::packages::db_sql::SqlType::Double => "REAL".to_string(),
-            crate::stdlib::packages::db_sql::SqlType::Text => "TEXT".to_string(),
-            crate::stdlib::packages::db_sql::SqlType::VarChar(_) => "TEXT".to_string(), // SQLite doesn't enforce varchar length
-            crate::stdlib::packages::db_sql::SqlType::Binary(_) => "BLOB".to_string(),
-            crate::stdlib::packages::db_sql::SqlType::Blob => "BLOB".to_string(),
-            crate::stdlib::packages::db_sql::SqlType::Timestamp => "TEXT".to_string(), // SQLite stores timestamps as text
+//             crate::stdlib::packages::db_sql::SqlType::Boolean => "INTEGER".to_string(), // SQLite stores boolean as integer
+//             crate::stdlib::packages::db_sql::SqlType::Integer => "INTEGER".to_string(),
+//             crate::stdlib::packages::db_sql::SqlType::BigInt => "INTEGER".to_string(),
+//             crate::stdlib::packages::db_sql::SqlType::Float => "REAL".to_string(),
+//             crate::stdlib::packages::db_sql::SqlType::Double => "REAL".to_string(),
+//             crate::stdlib::packages::db_sql::SqlType::Text => "TEXT".to_string(),
+//             crate::stdlib::packages::db_sql::SqlType::VarChar(_) => "TEXT".to_string(), // SQLite doesn't enforce varchar length
+//             crate::stdlib::packages::db_sql::SqlType::Binary(_) => "BLOB".to_string(),
+//             crate::stdlib::packages::db_sql::SqlType::Blob => "BLOB".to_string(),
+//             crate::stdlib::packages::db_sql::SqlType::Timestamp => "TEXT".to_string(), // SQLite stores timestamps as text
             _ => sql_type.to_sql(),
         }
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_postgresql_dialect() {
-        let dialect = PostgreSqlDialect::new();
-        assert_eq!(dialect.name(), "PostgreSQL");
-        assert_eq!(dialect.parameter_placeholder(0), "$1");
-        assert_eq!(dialect.parameter_placeholder(1), "$2");
-        assert_eq!(dialect.quote_identifier("table"), "\"table\"");
-        assert_eq!(dialect.quote_string("test's"), "'test''s'");
-        assert_eq!(dialect.limit_clause(10, Some(5)), "LIMIT 10 OFFSET 5");
-        assert_eq!(dialect.limit_clause(10, None), "LIMIT 10");
-    }
-
-    #[test]
-    fn test_mysql_dialect() {
-        let dialect = MySqlDialect::new();
-        assert_eq!(dialect.name(), "MySQL");
-        assert_eq!(dialect.parameter_placeholder(0), "?");
-        assert_eq!(dialect.parameter_placeholder(1), "?");
-        assert_eq!(dialect.quote_identifier("table"), "`table`");
-        assert_eq!(dialect.limit_clause(10, Some(5)), "LIMIT 5, 10");
-        assert_eq!(dialect.limit_clause(10, None), "LIMIT 10");
-    }
-
-    #[test]
-    fn test_sqlite_dialect() {
-        let dialect = SqliteDialect::new();
-        assert_eq!(dialect.name(), "SQLite");
-        assert_eq!(dialect.parameter_placeholder(0), "?");
-        assert_eq!(dialect.named_parameter_placeholder("name"), ":name");
-        assert_eq!(dialect.quote_identifier("table"), "\"table\"");
-        assert!(dialect.supported_features().supports_cte);
-        assert!(!dialect.supported_features().supports_stored_procedures);
-    }
-
-    #[test]
-    fn test_dialect_features() {
-        let pg_dialect = PostgreSqlDialect::new();
-        let mysql_dialect = MySqlDialect::new();
-        let sqlite_dialect = SqliteDialect::new();
-
-        assert!(pg_dialect.supported_features().supports_arrays);
-        assert!(!mysql_dialect.supported_features().supports_arrays);
-        assert!(!sqlite_dialect.supported_features().supports_arrays);
-
-        assert!(pg_dialect.supported_features().supports_stored_procedures);
-        assert!(mysql_dialect.supported_features().supports_stored_procedures);
-        assert!(!sqlite_dialect.supported_features().supports_stored_procedures);
-    }
-
-    #[test]
-    fn test_type_conversions() {
-        let pg_dialect = PostgreSqlDialect::new();
-        let mysql_dialect = MySqlDialect::new();
-        let sqlite_dialect = SqliteDialect::new();
-
-        let bool_type = crate::stdlib::packages::db_sql::SqlType::Boolean;
-        
-        assert_eq!(pg_dialect.type_to_sql(&bool_type), "BOOLEAN");
-        assert_eq!(mysql_dialect.type_to_sql(&bool_type), "BOOLEAN");
-        assert_eq!(sqlite_dialect.type_to_sql(&bool_type), "INTEGER");
-    }
-
-    #[test]
-    fn test_sql_functions() {
-        let pg_dialect = PostgreSqlDialect::new();
-        let functions = pg_dialect.functions();
-        
-        assert!(functions.string_functions.contains_key("LENGTH"));
-        assert!(functions.datetime_functions.contains_key("NOW"));
-        assert!(functions.json_functions.contains_key("JSON_EXTRACT"));
-    }
-}

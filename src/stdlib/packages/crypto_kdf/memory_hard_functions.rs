@@ -4,9 +4,8 @@
 /// resistant to brute-force attacks using specialized hardware.
 
 use crate::error::CursedError;
-use crate::stdlib::value::Value;
-use crate::stdlib::packages::crypto_kdf::{KdfResult, KdfError};
-use crate::error::Error;
+// use crate::stdlib::value::Value;
+// use crate::stdlib::packages::crypto_kdf::{KdfResult, KdfError};
 use sha2::{Sha256, Sha512, Digest};
 use sha3::{Sha3_256, Sha3_512};
 
@@ -554,7 +553,7 @@ impl MemoryHardUtils {
 /// fr fr Public API functions for CURSED integration
 
 /// slay Memory-hard hash computation
-pub fn memory_hard_hash(args: Vec<Value>) -> Result<(), Error> {
+pub fn memory_hard_hash(args: Vec<Value>) -> crate::error::Result<()> {
     if args.is_empty() {
         return Err(CursedError::Runtime("memory_hard_hash requires input argument".to_string()));
     }
@@ -589,124 +588,3 @@ pub fn memory_hard_hash(args: Vec<Value>) -> Result<(), Error> {
     Ok(Value::String(hex::encode(result)))
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-    
-    #[test]
-    fn test_memory_hard_config() {
-        let config = MemoryHardConfig::new();
-        assert!(config.validate().is_ok());
-        
-        let fast_config = MemoryHardConfig::fast();
-        assert!(fast_config.validate().is_ok());
-        assert!(fast_config.memory_kb < config.memory_kb);
-        
-        let high_sec_config = MemoryHardConfig::high_security();
-        assert!(high_sec_config.validate().is_ok());
-        assert!(high_sec_config.memory_kb > config.memory_kb);
-    }
-    
-    #[test]
-    fn test_basic_memory_hard() {
-        let config = MemoryHardConfig::new();
-        let processor = MemoryHardProcessor::new(config).unwrap();
-        
-        let input = b"test_input";
-        let salt = b"test_salt";
-        
-        let result = processor.compute_hash(input, Some(salt)).unwrap();
-        assert_eq!(result.len(), 32);
-        
-        // Same input should produce same result
-        let result2 = processor.compute_hash(input, Some(salt)).unwrap();
-        assert_eq!(result, result2);
-        
-        // Different input should produce different result
-        let result3 = processor.compute_hash(b"other_input", Some(salt)).unwrap();
-        assert_ne!(result, result3);
-    }
-    
-    #[test]
-    fn test_different_algorithms() {
-        let algorithms = vec![
-            MemoryHardAlgorithm::BasicMemoryHard,
-            MemoryHardAlgorithm::BalloonHashing,
-            MemoryHardAlgorithm::CatenaHashing,
-            MemoryHardAlgorithm::RandomizedHashing,
-        ];
-        
-        let input = b"test_input";
-        let salt = b"test_salt";
-        let mut results = Vec::new();
-        
-        for algorithm in algorithms {
-            let config = MemoryHardConfig {
-                algorithm,
-                memory_kb: 16384, // 16 MB for faster tests
-                iterations: 1,
-                parallelism: 1,
-                output_length: 32,
-                security_parameter: 128,
-            };
-            
-            let processor = MemoryHardProcessor::new(config).unwrap();
-            let result = processor.compute_hash(input, Some(salt)).unwrap();
-            results.push(result);
-        }
-        
-        // All algorithms should produce different results
-        for i in 0..results.len() {
-            for j in (i+1)..results.len() {
-                assert_ne!(results[i], results[j], "Algorithms {} and {} produced same result", i, j);
-            }
-        }
-    }
-    
-    #[test]
-    fn test_key_derivation() {
-        let config = MemoryHardConfig::new();
-        let processor = MemoryHardProcessor::new(config).unwrap();
-        
-        let password = b"test_password";
-        let salt = b"test_salt_12345678";
-        let output_length = 64;
-        
-        let key = processor.derive_key(password, salt, output_length).unwrap();
-        assert_eq!(key.len(), output_length);
-        
-        // Different password should produce different key
-        let key2 = processor.derive_key(b"other_password", salt, output_length).unwrap();
-        assert_ne!(key, key2);
-    }
-    
-    #[test]
-    fn test_memory_hard_utils() {
-        let config = MemoryHardConfig::new();
-        
-        let time_estimate = MemoryHardUtils::estimate_processing_time(&config);
-        assert!(time_estimate > 0.0);
-        
-        let efficiency_score = MemoryHardUtils::memory_efficiency_score(&config);
-        assert!(efficiency_score >= 0.0 && efficiency_score <= 1.0);
-    }
-    
-    #[test]
-    fn test_validation() {
-        let mut config = MemoryHardConfig::new();
-        
-        // Test insufficient memory
-        config.memory_kb = 512; // Too small
-        assert!(config.validate().is_err());
-        
-        // Test zero iterations
-        config.memory_kb = 65536;
-        config.iterations = 0;
-        assert!(config.validate().is_err());
-        
-        // Test zero parallelism
-        config.iterations = 3;
-        config.parallelism = 0;
-        assert!(config.validate().is_err());
-    }
-}

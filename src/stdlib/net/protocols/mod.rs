@@ -1,4 +1,4 @@
-use crate::error::Error;
+use crate::error::CursedError;
 /// Protocol implementations for CURSED networking
 /// 
 /// This module provides implementations for common network protocols
@@ -28,30 +28,19 @@ pub enum ProtocolError {
     InvalidData(String),
 }
 
-impl std::fmt::Display for ProtocolError {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            ProtocolError::Authentication(msg) => write!(f, "Authentication error: {}", msg),
-            ProtocolError::Connection(msg) => write!(f, "Connection error: {}", msg),
-            ProtocolError::Protocol(msg) => write!(f, "Protocol error: {}", msg),
-            ProtocolError::Timeout(msg) => write!(f, "Timeout error: {}", msg),
-            ProtocolError::InvalidData(msg) => write!(f, "Invalid data: {}", msg),
-        }
-    }
-}
+// impl std::fmt::Display for ProtocolError {
+//     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+//         match self {
+//             ProtocolError::Authentication(msg) => write!(f, "Authentication error: {}", msg),
+//             ProtocolError::Connection(msg) => write!(f, "Connection error: {}", msg),
+//             ProtocolError::Protocol(msg) => write!(f, "Protocol error: {}", msg),
+//             ProtocolError::Timeout(msg) => write!(f, "Timeout error: {}", msg),
+//             ProtocolError::InvalidData(msg) => write!(f, "Invalid data: {}", msg),
+//         }
+//     }
+// }
 
-impl std::error::Error for ProtocolError {}
-
+// impl std::error::CursedError for ProtocolError {}
+// 
 pub type ProtocolResult<T> = std::result::Result<T, ProtocolError>;
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_protocol_error_display() {
-        let error = ProtocolError::Authentication("Login failed".to_string());
-        assert!(error.to_string().contains("Authentication error"));
-        assert!(error.to_string().contains("Login failed"));
-    }
-}

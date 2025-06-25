@@ -1,4 +1,4 @@
-use crate::error::Error;
+use crate::error::CursedError;
 /// Test discovery system for CURSED testing framework
 /// 
 /// Handles finding and cataloging test functions across CURSED source files
@@ -8,7 +8,6 @@ use std::collections::HashMap;
 use std::fs;
 use std::path::{Path, PathBuf};
 use std::time::SystemTime;
-use crate::crate::stdlib::errors_simple::CursedError;
 use super::{TestError, TestFrameworkResult};
 
 /// Information about a discovered test

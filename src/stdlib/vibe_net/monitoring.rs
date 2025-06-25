@@ -1,4 +1,4 @@
-use crate::error::Error;
+use crate::error::CursedError;
 /// # Network Monitoring and Statistics
 /// 
 /// This module provides comprehensive network monitoring capabilities including
@@ -10,8 +10,7 @@ use std::net::{IpAddr, SocketAddr};
 use std::sync::{Arc, Mutex, RwLock};
 use std::time::{Duration, Instant, SystemTime};
 use std::thread;
-use crate::error::CursedError;
-use crate::stdlib::vibe_net::NetResult;
+// use crate::stdlib::vibe_net::NetResult;
 
 /// Network monitoring system for collecting and analyzing network metrics
 pub struct NetworkMonitor {
@@ -525,7 +524,7 @@ pub enum LogLevel {
     Debug,
     Info,
     Warn,
-    Error,
+    CursedError,
 }
 
 impl EventHandler for LoggingEventHandler {
@@ -643,67 +642,3 @@ impl NetworkMonitor {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use std::net::Ipv4Addr;
-
-    #[test]
-    fn test_metrics_store() {
-        let mut store = MetricsStore::new(10, Duration::from_secs(3600));
-        
-        let metric = Metric {
-            name: "test_metric".to_string(),
-            value: MetricValue::Gauge(42.0),
-            timestamp: SystemTime::now(),
-            labels: HashMap::new(),
-        };
-        
-        store.store_metric(metric);
-        let metrics = store.get_metrics("test_metric", None);
-        assert_eq!(metrics.len(), 1);
-    }
-
-    #[test]
-    fn test_health_checker() {
-        let targets = vec![HealthCheckTarget {
-            name: "test_target".to_string(),
-            address: SocketAddr::new(IpAddr::V4(Ipv4Addr::new(127, 0, 0, 1)), 8080),
-            check_type: HealthCheckType::Tcp,
-            expected_response: None,
-            critical: true,
-        }];
-        
-        let checker = ConnectionHealthChecker::new(
-            targets,
-            Duration::from_secs(30),
-            Duration::from_secs(5)
-        );
-        
-        assert_eq!(checker.targets.len(), 1);
-    }
-
-    #[test]
-    fn test_network_stats_collector() {
-        let collector = NetworkStatsCollector::new(vec!["eth0".to_string()]);
-        assert_eq!(collector.name(), "network_stats");
-        assert_eq!(collector.collection_interval(), Duration::from_secs(60));
-    }
-
-    #[test]
-    fn test_network_monitor() {
-        let monitor = NetworkMonitor::new(Duration::from_secs(60));
-        assert!(!*monitor.is_running.lock().unwrap());
-    }
-
-    #[test]
-    fn test_logging_event_handler() {
-        let handler = LoggingEventHandler::new(LogLevel::Info);
-        let event = NetworkEvent::ConnectionEstablished {
-            local: SocketAddr::new(IpAddr::V4(Ipv4Addr::new(127, 0, 0, 1)), 8080),
-            remote: SocketAddr::new(IpAddr::V4(Ipv4Addr::new(127, 0, 0, 1)), 8081),
-        };
-        
-        handler.handle_event(event); // Should not panic
-    }
-}

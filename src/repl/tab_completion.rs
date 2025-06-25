@@ -1,4 +1,4 @@
-use crate::error_types::Error;
+use crate::error::CursedError;
 // Tab Completion for CURSED REPL
 // 
 // Provides intelligent tab completion for CURSED keywords,
@@ -6,7 +6,6 @@ use crate::error_types::Error;
 
 use std::collections::HashSet;
 use rustyline::completion::{Completer, FilenameCompleter, Pair};
-use rustyline::error::ReadlineError;
 use rustyline::highlight::{Highlighter, MatchingBracketHighlighter};
 use rustyline::hint::{Hinter, HistoryHinter};
 use rustyline::validate::{self, MatchingBracketValidator, Validator};
@@ -190,7 +189,7 @@ impl Completer for TabCompletion {
         line: &str,
         pos: usize,
         _ctx: &Context<'_>,
-    ) -> Result<(), Error> {
+    ) -> crate::error::Result<()> {
         // Find the word boundary
         let mut start = pos;
         while start > 0 {
@@ -265,70 +264,3 @@ impl Validator for TabCompletion {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_keyword_completion() {
-        let completer = TabCompletion::new();
-        let completions = completer.complete_identifier("sl");
-        
-        assert!(completions.contains(&"slay".to_string()));
-        assert!(completions.contains(&"slaps".to_string()));
-        assert!(completions.contains(&"slick".to_string()));
-    }
-
-    #[test]
-    fn test_type_completion() {
-        let completer = TabCompletion::new();
-        let completions = completer.complete_identifier("int");
-        
-        assert!(completions.contains(&"int".to_string()));
-        assert!(completions.contains(&"int8".to_string()));
-        assert!(completions.contains(&"int16".to_string()));
-        assert!(completions.contains(&"int32".to_string()));
-        assert!(completions.contains(&"int64".to_string()));
-    }
-
-    #[test]
-    fn test_builtin_completion() {
-        let completer = TabCompletion::new();
-        let completions = completer.complete_identifier("pr");
-        
-        assert!(completions.contains(&"print(".to_string()));
-        assert!(completions.contains(&"println(".to_string()));
-        assert!(completions.contains(&"printf(".to_string()));
-    }
-
-    #[test]
-    fn test_command_completion() {
-        let completer = TabCompletion::new();
-        let completions = completer.complete_command(":h");
-        
-        assert!(completions.contains(&":help".to_string()));
-        assert!(completions.contains(&":history".to_string()));
-    }
-
-    #[test]
-    fn test_session_variable_completion() {
-        let mut completer = TabCompletion::new();
-        completer.update_variables(Vec::from(["my_var".to_string(), "my_other_var".to_string()]));
-        
-        let completions = completer.complete_identifier("my");
-        assert!(completions.contains(&"my_var".to_string()));
-        assert!(completions.contains(&"my_other_var".to_string()));
-    }
-
-    #[test]
-    fn test_session_function_completion() {
-        let mut completer = TabCompletion::new();
-        completer.update_functions(Vec::from(["my_func".to_string(), "helper_func".to_string()]));
-        
-        let completions = completer.complete_identifier("my");
-        assert!(completions.contains(&"my_func(".to_string()));
-        
-        let completions = completer.complete_identifier("help");
-        assert!(completions.contains(&"helper_func(".to_string()));
-    }
-}

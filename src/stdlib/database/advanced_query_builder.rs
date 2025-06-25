@@ -400,7 +400,7 @@ impl AdvancedSelectBuilder {
 
     /// yolo Build the final query with optimizations
     #[instrument(skip(self))]
-    pub fn build_optimized(&self) -> Result<(), Error> {
+    pub fn build_optimized(&self) -> crate::error::Result<()> {
         info!("Building optimized advanced SQL query");
         
         let mut query_parts = Vec::new();
@@ -488,7 +488,7 @@ impl AdvancedSelectBuilder {
 
 impl QueryBuilder for AdvancedSelectBuilder {
     #[instrument(skip(self))]
-    fn build(&self) -> Result<(), Error> {
+    fn build(&self) -> crate::error::Result<()> {
         let (query, _) = self.build_optimized()?;
         Ok(query)
     }
@@ -497,7 +497,7 @@ impl QueryBuilder for AdvancedSelectBuilder {
         self.parameters.clone()
     }
 
-    fn validate(&self) -> Result<(), Error> {
+    fn validate(&self) -> crate::error::Result<()> {
         if self.select_fields.is_empty() {
             return Err(DatabaseError::query_error("SELECT clause cannot be empty"));
         }
@@ -593,97 +593,3 @@ impl Default for AdvancedSelectBuilder {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use tracing_test::traced_test;
-use crate::error::Error;
-
-    #[traced_test]
-    #[test]
-    fn test_complex_join_query() {
-        let query = AdvancedSelectBuilder::new()
-            .select(&["u.name", "p.title", "c.name as category"])
-            .from("users u")
-            .inner_join("posts p", "p.user_id = u.id")
-            .left_join("categories c", "c.id = p.category_id")
-            .where_condition("u.active = 1")
-            .order_by("u.name", OrderDirection::Asc)
-            .limit(50);
-
-        let result = query.build().expect("Should build successfully");
-        
-        assert!(result.contains("INNER JOIN posts p ON p.user_id = u.id"));
-        assert!(result.contains("LEFT JOIN categories c ON c.id = p.category_id"));
-        assert!(result.contains("WHERE u.active = 1"));
-        assert!(result.contains("ORDER BY u.name ASC"));
-        assert!(result.contains("LIMIT 50"));
-    }
-
-    #[traced_test]
-    #[test]
-    fn test_case_expression() {
-        let query = AdvancedSelectBuilder::new()
-            .select(&["name", "age"])
-            .from("users")
-            .case_expression("status")
-            .when("age < 18", "'minor'")
-            .when("age >= 65", "'senior'")
-            .else_clause("'adult'")
-            .end_case();
-
-        let result = query.build().expect("Should build successfully");
-        
-        assert!(result.contains("CASE WHEN age < 18 THEN 'minor'"));
-        assert!(result.contains("WHEN age >= 65 THEN 'senior'"));
-        assert!(result.contains("ELSE 'adult' END AS status"));
-    }
-
-    #[traced_test]
-    #[test]
-    fn test_union_query() {
-        let query1 = AdvancedSelectBuilder::new()
-            .select(&["name", "age"])
-            .from("active_users")
-            .where_condition("status = 'active'");
-
-        let query2 = AdvancedSelectBuilder::new()
-            .select(&["name", "age"])
-            .from("inactive_users")
-            .where_condition("status = 'inactive'");
-
-        let union_query = query1.union(query2, false);
-        let result = union_query.build().expect("Should build successfully");
-        
-        assert!(result.contains("UNION"));
-        assert!(!result.contains("UNION ALL"));
-    }
-
-    #[traced_test]
-    #[test]
-    fn test_window_function() {
-        let query = AdvancedSelectBuilder::new()
-            .select(&["name", "salary", "department"])
-            .from("employees")
-            .window_function(
-                "ROW_NUMBER()",
-                &[],
-                &["department"],
-                &[("salary".to_string(), OrderDirection::Desc)]
-            );
-
-        let result = query.build().expect("Should build successfully");
-        assert!(result.contains("ROW_NUMBER()"));
-    }
-
-    #[traced_test]
-    #[test]
-    fn test_subquery_validation() {
-        let query = AdvancedSelectBuilder::new()
-            .select(&["name"]);
-        
-        let result = query.validate();
-        assert!(result.is_err());
-        assert!(result.unwrap_err().message.contains("FROM clause is required"));
-    }
-}

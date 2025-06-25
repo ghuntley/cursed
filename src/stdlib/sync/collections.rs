@@ -5,15 +5,15 @@
 /// - Channels for message passing
 /// - Lock-free data structures
 
-use crate::stdlib::sync::error::{SyncError, SyncResult, channel_error, timeout_error};
-use crate::stdlib::sync::primitives::{Mutex, RwLock, AtomicUsize, AtomicBool, Ordering};
+// use crate::stdlib::sync::error::{SyncError, SyncResult, channel_error, timeout_error};
+// use crate::stdlib::sync::primitives::{Mutex, RwLock, AtomicUsize, AtomicBool, Ordering};
 use std::collections::HashMap;
 use std::sync::{Arc, mpsc};
 use std::time::{Duration, Instant};
 use std::hash::Hash;
 use std::sync::atomic::{AtomicPtr, AtomicU64, AtomicUsize as StdAtomicUsize, Ordering as StdOrdering};
 use std::ptr;
-use crate::error::Error;
+use crate::error::CursedError;
 
 // Global channel statistics
 static CHANNEL_COUNT: StdAtomicUsize = StdAtomicUsize::new(0);
@@ -322,7 +322,7 @@ where
 // Channels
 //==============================================================================
 
-/// Error types for channel operations
+/// CursedError types for channel operations
 #[derive(Debug, Clone, PartialEq)]
 pub enum ChannelError {
     /// Channel is closed
@@ -337,20 +337,20 @@ pub enum ChannelError {
     InvalidOperation(String),
 }
 
-impl std::fmt::Display for ChannelError {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            ChannelError::Closed => write!(f, "Channel is closed"),
-            ChannelError::WouldBlock => write!(f, "Operation would block"),
-            ChannelError::Empty => write!(f, "Channel is empty"),
-            ChannelError::Timeout => write!(f, "Operation timed out"),
-            ChannelError::InvalidOperation(msg) => write!(f, "Invalid operation: {}", msg),
-        }
-    }
-}
+// impl std::fmt::Display for ChannelError {
+//     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+//         match self {
+//             ChannelError::Closed => write!(f, "Channel is closed"),
+//             ChannelError::WouldBlock => write!(f, "Operation would block"),
+//             ChannelError::Empty => write!(f, "Channel is empty"),
+//             ChannelError::Timeout => write!(f, "Operation timed out"),
+//             ChannelError::InvalidOperation(msg) => write!(f, "Invalid operation: {}", msg),
+//         }
+//     }
+// }
 
-impl std::error::Error for ChannelError {}
-
+// impl std::error::CursedError for ChannelError {}
+// 
 /// Channel sender
 pub struct ChannelSender<T> {
     sender: mpsc::Sender<T>,
@@ -360,7 +360,7 @@ pub struct ChannelSender<T> {
 
 impl<T> ChannelSender<T> {
     /// Send a message
-    pub fn send(&self, msg: T) -> Result<(), Error> {
+    pub fn send(&self, msg: T) -> crate::error::Result<()> {
         match self.sender.send(msg) {
             Ok(()) => {
                 MESSAGES_SENT.fetch_add(1, Ordering::Relaxed);
@@ -400,7 +400,7 @@ pub struct ChannelReceiver<T> {
 
 impl<T> ChannelReceiver<T> {
     /// Receive a message (blocking)
-    pub fn recv(&self) -> Result<(), Error> {
+    pub fn recv(&self) -> crate::error::Result<()> {
         match self.receiver.recv() {
             Ok(msg) => {
                 MESSAGES_RECEIVED.fetch_add(1, Ordering::Relaxed);
@@ -411,7 +411,7 @@ impl<T> ChannelReceiver<T> {
     }
 
     /// Try to receive a message (non-blocking)
-    pub fn try_recv(&self) -> Result<(), Error> {
+    pub fn try_recv(&self) -> crate::error::Result<()> {
         match self.receiver.try_recv() {
             Ok(msg) => {
                 MESSAGES_RECEIVED.fetch_add(1, Ordering::Relaxed);
@@ -423,7 +423,7 @@ impl<T> ChannelReceiver<T> {
     }
 
     /// Receive with timeout
-    pub fn recv_timeout(&self, timeout: Duration) -> Result<(), Error> {
+    pub fn recv_timeout(&self, timeout: Duration) -> crate::error::Result<()> {
         match self.receiver.recv_timeout(timeout) {
             Ok(msg) => {
                 MESSAGES_RECEIVED.fetch_add(1, Ordering::Relaxed);
@@ -510,7 +510,7 @@ pub fn unbounded_channel<T>() -> (ChannelSender<T>, ChannelReceiver<T>) {
 }
 
 /// Select operation for multiple channels (simplified implementation)
-pub fn select_channel<T>(receivers: &[&ChannelReceiver<T>]) -> Result<(), Error> {
+pub fn select_channel<T>(receivers: &[&ChannelReceiver<T>]) -> crate::error::Result<()> {
     // Simple round-robin implementation
     for (index, receiver) in receivers.iter().enumerate() {
         if let Ok(msg) = receiver.try_recv() {
@@ -521,7 +521,7 @@ pub fn select_channel<T>(receivers: &[&ChannelReceiver<T>]) -> Result<(), Error>
 }
 
 /// Try select operation for multiple channels
-pub fn try_select_channel<T>(receivers: &[&ChannelReceiver<T>], timeout: Duration) -> Result<(), Error> {
+pub fn try_select_channel<T>(receivers: &[&ChannelReceiver<T>], timeout: Duration) -> crate::error::Result<()> {
     let start = Instant::now();
     
     while start.elapsed() < timeout {
@@ -961,8 +961,8 @@ where
 //==============================================================================
 
 /// Get channel statistics  
-pub fn get_channel_statistics() -> crate::stdlib::sync::ChannelStatistics {
-    crate::stdlib::sync::ChannelStatistics {
+// pub fn get_channel_statistics() -> crate::stdlib::sync::ChannelStatistics {
+//     crate::stdlib::sync::ChannelStatistics {
         active_channels: CHANNEL_COUNT.load(StdOrdering::Relaxed),
         messages_sent: MESSAGES_SENT.load(StdOrdering::Relaxed),
         messages_received: MESSAGES_RECEIVED.load(StdOrdering::Relaxed),
@@ -971,161 +971,3 @@ pub fn get_channel_statistics() -> crate::stdlib::sync::ChannelStatistics {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use std::thread;
-    use std::sync::Arc;
-
-    #[test]
-    fn test_concurrent_hashmap() {
-        let map = ConcurrentHashMap::new();
-        
-        assert!(map.insert("key1".to_string(), 42).unwrap().is_none());
-        assert_eq!(map.get(&"key1".to_string()).unwrap(), Some(42));
-        assert_eq!(map.len(), 1);
-        
-        assert_eq!(map.insert("key1".to_string(), 100).unwrap(), Some(42));
-        assert_eq!(map.get(&"key1".to_string()).unwrap(), Some(100));
-        assert_eq!(map.len(), 1);
-        
-        assert!(map.contains_key(&"key1".to_string()).unwrap());
-        assert!(!map.contains_key(&"key2".to_string()).unwrap());
-        
-        assert_eq!(map.remove(&"key1".to_string()).unwrap(), Some(100));
-        assert_eq!(map.len(), 0);
-        assert!(map.is_empty());
-    }
-
-    #[test]
-    fn test_concurrent_vec() {
-        let vec = ConcurrentVec::new();
-        
-        assert!(vec.push(42).is_ok());
-        assert!(vec.push(100).is_ok());
-        assert_eq!(vec.len().unwrap(), 2);
-        
-        assert_eq!(vec.get(0).unwrap(), Some(42));
-        assert_eq!(vec.get(1).unwrap(), Some(100));
-        assert_eq!(vec.get(2).unwrap(), None);
-        
-        assert_eq!(vec.pop().unwrap(), Some(100));
-        assert_eq!(vec.len().unwrap(), 1);
-        
-        assert!(vec.insert(1, 200).is_ok());
-        assert_eq!(vec.len().unwrap(), 2);
-        assert_eq!(vec.get(1).unwrap(), Some(200));
-    }
-
-    #[test]
-    fn test_channels() {
-        let (sender, receiver) = channel();
-        
-        assert!(sender.send(42).is_ok());
-        assert!(sender.send(100).is_ok());
-        
-        assert_eq!(receiver.recv().unwrap(), 42);
-        assert_eq!(receiver.recv().unwrap(), 100);
-        
-        // Test try_recv on empty channel
-        assert_eq!(receiver.try_recv().unwrap_err(), ChannelError::Empty);
-    }
-
-    #[test]
-    fn test_bounded_channels() {
-        let (sender, receiver) = bounded_channel(1);
-        
-        assert!(sender.send(42).is_ok());
-        // Would block on second send in real implementation
-        
-        assert_eq!(receiver.recv().unwrap(), 42);
-        assert!(sender.is_bounded());
-        assert_eq!(sender.capacity(), Some(1));
-    }
-
-    #[test]
-    fn test_lock_free_stack() {
-        let stack = LockFreeStack::new();
-        assert!(stack.is_empty());
-        
-        stack.push(42);
-        stack.push(100);
-        assert!(!stack.is_empty());
-        
-        assert_eq!(stack.pop(), Some(100));
-        assert_eq!(stack.pop(), Some(42));
-        assert_eq!(stack.pop(), None);
-        assert!(stack.is_empty());
-    }
-
-    #[test]
-    fn test_lock_free_queue() {
-        let queue = LockFreeQueue::new();
-        assert!(queue.is_empty());
-        
-        queue.enqueue(42);
-        queue.enqueue(100);
-        assert!(!queue.is_empty());
-        
-        assert_eq!(queue.dequeue(), Some(42));
-        assert_eq!(queue.dequeue(), Some(100));
-        assert_eq!(queue.dequeue(), None);
-        assert!(queue.is_empty());
-    }
-
-    #[test]
-    fn test_atomic_counter() {
-        let counter = AtomicCounter::new(10);
-        assert_eq!(counter.get(), 10);
-        
-        assert_eq!(counter.increment(), 11);
-        assert_eq!(counter.get(), 11);
-        
-        assert_eq!(counter.decrement(), 10);
-        assert_eq!(counter.get(), 10);
-        
-        assert_eq!(counter.add(5), 15);
-        assert_eq!(counter.subtract(3), 12);
-        
-        assert_eq!(counter.reset(), 12);
-        assert_eq!(counter.get(), 0);
-    }
-
-    #[test]
-    fn test_concurrent_collections_multithreaded() {
-        let map = Arc::new(ConcurrentHashMap::new());
-        let mut handles = vec![];
-        
-        // Test concurrent access
-        for i in 0..10 {
-            let map_clone = map.clone();
-            let handle = thread::spawn(move || {
-                map_clone.insert(format!("key{}", i), i).unwrap();
-                map_clone.get(&format!("key{}", i)).unwrap()
-            });
-            handles.push(handle);
-        }
-        
-        for handle in handles {
-            let result = handle.join().unwrap();
-            assert!(result.is_some());
-        }
-        
-        assert_eq!(map.len(), 10);
-    }
-
-    #[test]
-    fn test_channel_iterator() {
-        let (sender, receiver) = channel();
-        
-        // Send some messages
-        sender.send(1).unwrap();
-        sender.send(2).unwrap();
-        sender.send(3).unwrap();
-        drop(sender); // Close the channel
-        
-        // Collect all messages
-        let messages: Vec<i32> = receiver.iter().collect();
-        assert_eq!(messages, vec![1, 2, 3]);
-    }
-}

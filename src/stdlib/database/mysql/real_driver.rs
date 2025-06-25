@@ -9,10 +9,10 @@ use mysql::{Pool, PooledConn, Conn, OptsBuilder, TxOpts};
 use mysql::prelude::*;
 use super::super::{Driver, DriverConn, DriverStmt, DriverTx, DatabaseError, DatabaseErrorKind, SqlValue, TxOptions};
 use super::super::driver::{QueryResult, ExecuteResult, ConnectionMetadata, DriverCapabilities};
-use crate::error::Error;
+use crate::error::CursedError;
 
 /// MySQL error type
-#[derive(Debug, thiserror::Error)]
+#[derive(Debug, thiserror::CursedError)]
 pub enum MySqlError {
     #[error("Connection error: {0}")]
     Connection(String),
@@ -102,7 +102,7 @@ impl RealMySqlDriver {
 }
 
 impl Driver for RealMySqlDriver {
-    fn open(&self, _data_source_name: &str) -> Result<(), Error> {
+    fn open(&self, _data_source_name: &str) -> crate::error::Result<()> {
         let conn = RealMySqlConnection::new(self.pool.clone())
             .map_err(|e| e.to_database_error())?;
         Ok(Box::new(conn))
@@ -159,14 +159,14 @@ impl RealMySqlConnection {
     }
 
     /// Get a connection from the pool
-    fn get_conn(&self) -> Result<(), Error> {
+    fn get_conn(&self) -> crate::error::Result<()> {
         self.pool.get_conn()
             .map_err(|e| DatabaseError::new(DatabaseErrorKind::ConnectionError, &format!("Failed to get connection: {}", e)))
     }
 }
 
 impl DriverConn for RealMySqlConnection {
-    fn prepare(&self, query: &str) -> Result<(), Error> {
+    fn prepare(&self, query: &str) -> crate::error::Result<()> {
         let stmt = RealMySqlStatement::new(
             self.pool.clone(),
             query.to_string()
@@ -174,7 +174,7 @@ impl DriverConn for RealMySqlConnection {
         Ok(Box::new(stmt))
     }
 
-    fn query(&self, query: &str, args: &[SqlValue]) -> Result<(), Error> {
+    fn query(&self, query: &str, args: &[SqlValue]) -> crate::error::Result<()> {
         let mut conn = self.get_conn()?;
         
         // For simplicity, execute query without parameters for now
@@ -210,7 +210,7 @@ impl DriverConn for RealMySqlConnection {
         })
     }
 
-    fn execute(&self, query: &str, args: &[SqlValue]) -> Result<(), Error> {
+    fn execute(&self, query: &str, args: &[SqlValue]) -> crate::error::Result<()> {
         let mut conn = self.get_conn()?;
         
         // For simplicity, execute query without parameters for now
@@ -226,7 +226,7 @@ impl DriverConn for RealMySqlConnection {
         })
     }
 
-    fn begin_transaction(&self, opts: TxOptions) -> Result<(), Error> {
+    fn begin_transaction(&self, opts: TxOptions) -> crate::error::Result<()> {
         let tx = RealMySqlTransaction::new(
             self.pool.clone(),
             opts
@@ -234,14 +234,14 @@ impl DriverConn for RealMySqlConnection {
         Ok(Box::new(tx))
     }
 
-    fn ping(&self) -> Result<(), Error> {
+    fn ping(&self) -> crate::error::Result<()> {
         let mut conn = self.get_conn()?;
         conn.query_drop("SELECT 1")
             .map_err(|e| DatabaseError::new(DatabaseErrorKind::ConnectionError, &format!("Ping failed: {}", e)))?;
         Ok(())
     }
 
-    fn close(&self) -> Result<(), Error> {
+    fn close(&self) -> crate::error::Result<()> {
         // Connection pool handles cleanup automatically
         Ok(())
     }
@@ -287,7 +287,7 @@ impl RealMySqlStatement {
 }
 
 impl DriverStmt for RealMySqlStatement {
-    fn execute(&mut self, args: &[SqlValue]) -> Result<(), Error> {
+    fn execute(&mut self, args: &[SqlValue]) -> crate::error::Result<()> {
         let mut conn = self.pool.get_conn()
             .map_err(|e| DatabaseError::new(DatabaseErrorKind::ConnectionError, &format!("Failed to get connection: {}", e)))?;
         
@@ -304,7 +304,7 @@ impl DriverStmt for RealMySqlStatement {
         })
     }
 
-    fn query(&mut self, args: &[SqlValue]) -> Result<(), Error> {
+    fn query(&mut self, args: &[SqlValue]) -> crate::error::Result<()> {
         let mut conn = self.pool.get_conn()
             .map_err(|e| DatabaseError::new(DatabaseErrorKind::ConnectionError, &format!("Failed to get connection: {}", e)))?;
         
@@ -339,7 +339,7 @@ impl DriverStmt for RealMySqlStatement {
         })
     }
 
-    fn close(&mut self) -> Result<(), Error> {
+    fn close(&mut self) -> crate::error::Result<()> {
         Ok(())
     }
 }
@@ -360,19 +360,19 @@ impl RealMySqlTransaction {
 }
 
 impl DriverTx for RealMySqlTransaction {
-    fn commit(&mut self) -> Result<(), Error> {
+    fn commit(&mut self) -> crate::error::Result<()> {
         // Simplified implementation
         Ok(())
     }
 
-    fn rollback(&mut self) -> Result<(), Error> {
+    fn rollback(&mut self) -> crate::error::Result<()> {
         // Simplified implementation
         Ok(())
     }
 }
 
 /// Convert MySQL value to CURSED SqlValue
-fn convert_value_from_mysql(row: &mysql::Row, index: usize) -> Result<(), Error> {
+fn convert_value_from_mysql(row: &mysql::Row, index: usize) -> crate::error::Result<()> {
     // This is a simplified conversion
     match row.get_opt::<mysql::Value, usize>(index) {
         Some(Ok(mysql::Value::NULL)) => Ok(SqlValue::Null),

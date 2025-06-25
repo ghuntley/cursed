@@ -1,5 +1,5 @@
-use crate::error::Error;
-/// Error handling for ByteFit operations
+use crate::error::CursedError;
+/// CursedError handling for ByteFit operations
 use std::fmt;
 
 #[derive(Debug, Clone, PartialEq)]
@@ -15,24 +15,24 @@ pub enum ByteFitError {
     RegexError(String),
 }
 
-impl fmt::Display for ByteFitError {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
-            ByteFitError::InvalidUtf8(msg) => write!(f, "Invalid UTF-8: {}", msg),
-            ByteFitError::InvalidBase64(msg) => write!(f, "Invalid Base64: {}", msg),
-            ByteFitError::InvalidHex(msg) => write!(f, "Invalid hex: {}", msg),
-            ByteFitError::InvalidPattern(msg) => write!(f, "Invalid pattern: {}", msg),
-            ByteFitError::IndexOutOfBounds(msg) => write!(f, "Index out of bounds: {}", msg),
-            ByteFitError::InvalidInput(msg) => write!(f, "Invalid input: {}", msg),
-            ByteFitError::BufferOverflow(msg) => write!(f, "Buffer overflow: {}", msg),
-            ByteFitError::EncodingError(msg) => write!(f, "Encoding error: {}", msg),
-            ByteFitError::RegexError(msg) => write!(f, "Regex error: {}", msg),
-        }
-    }
-}
+// impl fmt::Display for ByteFitError {
+//     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+//         match self {
+//             ByteFitError::InvalidUtf8(msg) => write!(f, "Invalid UTF-8: {}", msg),
+//             ByteFitError::InvalidBase64(msg) => write!(f, "Invalid Base64: {}", msg),
+//             ByteFitError::InvalidHex(msg) => write!(f, "Invalid hex: {}", msg),
+//             ByteFitError::InvalidPattern(msg) => write!(f, "Invalid pattern: {}", msg),
+//             ByteFitError::IndexOutOfBounds(msg) => write!(f, "Index out of bounds: {}", msg),
+//             ByteFitError::InvalidInput(msg) => write!(f, "Invalid input: {}", msg),
+//             ByteFitError::BufferOverflow(msg) => write!(f, "Buffer overflow: {}", msg),
+//             ByteFitError::EncodingError(msg) => write!(f, "Encoding error: {}", msg),
+//             ByteFitError::RegexError(msg) => write!(f, "Regex error: {}", msg),
+//         }
+//     }
+// }
 
-impl std::error::Error for ByteFitError {}
-
+// impl std::error::CursedError for ByteFitError {}
+// 
 /// Result type for ByteFit operations
 pub type ByteFitResult<T> = std::result::Result<T, ByteFitError>;
 

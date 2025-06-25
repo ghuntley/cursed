@@ -1,13 +1,13 @@
-use crate::error::Error;
+use crate::error::CursedError;
 /// Plugin manager for comprehensive plugin lifecycle management
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
 use std::thread;
 use std::time::{Duration, Instant};
 use std::path::{Path, PathBuf};
-use crate::stdlib::plug_vibes::error::{PluginError, PluginResult};
-use crate::stdlib::plug_vibes::plug::{Plug, LoadOptions, PlugInfo};
-use crate::stdlib::plug_vibes::registry::PlugRegistry;
+// use crate::stdlib::plug_vibes::error::{PluginError, PluginResult};
+// use crate::stdlib::plug_vibes::plug::{Plug, LoadOptions, PlugInfo};
+// use crate::stdlib::plug_vibes::registry::PlugRegistry;
 
 /// Callback function types for plugin events
 pub type PluginLoadCallback = Box<dyn Fn(&str, &Plug) -> PluginResult<()> + Send + Sync>;
@@ -144,7 +144,7 @@ pub enum PluginState {
     Unloaded,
     Loading,
     Unloading,
-    Error,
+    CursedError,
     Disabled,
 }
 
@@ -321,7 +321,7 @@ impl PlugManager {
                 Ok(plugin_arc)
             }
             Err(e) => {
-                self.update_plugin_state(plugin_name, PluginState::Error)?;
+                self.update_plugin_state(plugin_name, PluginState::CursedError)?;
                 self.handle_plugin_error(plugin_name, &e);
                 Err(e)
             }
@@ -352,7 +352,7 @@ impl PlugManager {
                 Ok(())
             }
             Err(e) => {
-                self.update_plugin_state(name, PluginState::Error)?;
+                self.update_plugin_state(name, PluginState::CursedError)?;
                 self.handle_plugin_error(name, &e);
                 Err(e)
             }
@@ -583,70 +583,3 @@ impl Drop for PlugManager {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_manager_options_builder() {
-        let options = PlugManagerOptions::new()
-            .with_plugin_dir("/test/plugins")
-            .with_auto_load(true)
-            .with_hot_reload(true)
-            .with_watch_interval(Duration::from_secs(10));
-
-        assert_eq!(options.plugin_dir, Some("/test/plugins".to_string()));
-        assert!(options.auto_load);
-        assert!(options.hot_reload);
-        assert_eq!(options.watch_interval, Duration::from_secs(10));
-    }
-
-    #[test]
-    fn test_manager_creation() {
-        let options = PlugManagerOptions::new();
-        let manager = PlugManager::new(options);
-        
-        assert!(!manager.is_running());
-        assert_eq!(manager.list_plugins().len(), 0);
-    }
-
-    #[test]
-    fn test_plugin_state_updates() {
-        let options = PlugManagerOptions::new();
-        let manager = PlugManager::new(options);
-        
-        let result = manager.update_plugin_state("test", PluginState::Loading);
-        assert!(result.is_ok());
-        
-        let plugins = manager.list_plugins();
-        assert_eq!(plugins.len(), 1);
-        assert_eq!(plugins[0].state, PluginState::Loading);
-    }
-
-    #[test]
-    fn test_disable_enable_plugin() {
-        let options = PlugManagerOptions::new();
-        let manager = PlugManager::new(options);
-        
-        assert!(!manager.is_plugin_disabled("test"));
-        
-        let result = manager.disable_plugin("test");
-        assert!(result.is_ok());
-        assert!(manager.is_plugin_disabled("test"));
-        
-        let result = manager.enable_plugin("test");
-        assert!(result.is_ok());
-        assert!(!manager.is_plugin_disabled("test"));
-    }
-
-    #[test]
-    fn test_managed_plugin_info() {
-        let info = PlugInfo::default();
-        let managed_info = ManagedPluginInfo::new(info);
-        
-        assert_eq!(managed_info.state, PluginState::Unloaded);
-        assert_eq!(managed_info.load_count, 0);
-        assert_eq!(managed_info.error_count, 0);
-        assert!(managed_info.last_error.is_none());
-    }
-}

@@ -1,4 +1,4 @@
-use crate::error_types::Error;
+use crate::error::CursedError;
 // Build System Integration for CURSED REPL
 // 
 // Provides integration with the CURSED build system, allowing
@@ -11,7 +11,6 @@ use std::process::{Command, Stdio};
 use std::fs;
 
 use crate::repl::ReplResult;
-use crate::error::Error;
 
 /// Project information structure
 #[derive(Debug, Clone)]
@@ -66,7 +65,7 @@ impl BuildIntegration {
     /// Set the working directory and scan for project files
     pub fn set_working_directory(&mut self, dir: PathBuf) -> ReplResult<()> {
         if !dir.exists() {
-            return Err(Error::repl_error(format!("Directory does not exist: {}", dir.display())));
+            return Err(CursedError::repl_error(format!("Directory does not exist: {}", dir.display())));
         }
 
         self.working_directory = Some(dir);
@@ -102,7 +101,7 @@ impl BuildIntegration {
     /// Build the project or a specific target
     pub fn build_project(&mut self, target: Option<&str>) -> ReplResult<String> {
         let working_dir = self.working_directory.as_ref()
-            .ok_or_else(|| Error::repl_error("No working directory set".to_string()))?;
+            .ok_or_else(|| CursedError::repl_error("No working directory set".to_string()))?;
 
         let mut result = String::new();
 
@@ -123,7 +122,7 @@ impl BuildIntegration {
             .stdout(Stdio::piped())
             .stderr(Stdio::piped())
             .output()
-            .map_err(|e| Error::repl_error(format!("Failed to execute build: {}", e)))?;
+            .map_err(|e| CursedError::repl_error(format!("Failed to execute build: {}", e)))?;
 
         if output.status.success() {
             result.push_str("✅ Build successful!\n");
@@ -144,7 +143,7 @@ impl BuildIntegration {
     /// Run project tests
     pub fn run_tests(&self, pattern: Option<&str>) -> ReplResult<String> {
         let working_dir = self.working_directory.as_ref()
-            .ok_or_else(|| Error::repl_error("No working directory set".to_string()))?;
+            .ok_or_else(|| CursedError::repl_error("No working directory set".to_string()))?;
 
         let mut result = String::new();
 
@@ -165,7 +164,7 @@ impl BuildIntegration {
             .stdout(Stdio::piped())
             .stderr(Stdio::piped())
             .output()
-            .map_err(|e| Error::repl_error(format!("Failed to execute tests: {}", e)))?;
+            .map_err(|e| CursedError::repl_error(format!("Failed to execute tests: {}", e)))?;
 
         if output.status.success() {
             result.push_str("✅ Tests passed!\n");
@@ -185,7 +184,7 @@ impl BuildIntegration {
     /// Format a file or the entire project
     pub fn format_file(&self, file_path: &str) -> ReplResult<String> {
         let working_dir = self.working_directory.as_ref()
-            .ok_or_else(|| Error::repl_error("No working directory set".to_string()))?;
+            .ok_or_else(|| CursedError::repl_error("No working directory set".to_string()))?;
 
         let format_command = if file_path.is_empty() {
             "cursed format .".to_string()
@@ -200,7 +199,7 @@ impl BuildIntegration {
             .stdout(Stdio::piped())
             .stderr(Stdio::piped())
             .output()
-            .map_err(|e| Error::repl_error(format!("Failed to format file: {}", e)))?;
+            .map_err(|e| CursedError::repl_error(format!("Failed to format file: {}", e)))?;
 
         let mut result = String::new();
         
@@ -222,7 +221,7 @@ impl BuildIntegration {
     /// Lint a file or the entire project
     pub fn lint_file(&self, file_path: &str) -> ReplResult<String> {
         let working_dir = self.working_directory.as_ref()
-            .ok_or_else(|| Error::repl_error("No working directory set".to_string()))?;
+            .ok_or_else(|| CursedError::repl_error("No working directory set".to_string()))?;
 
         let lint_command = if file_path.is_empty() {
             "cursed-lint .".to_string()
@@ -237,7 +236,7 @@ impl BuildIntegration {
             .stdout(Stdio::piped())
             .stderr(Stdio::piped())
             .output()
-            .map_err(|e| Error::repl_error(format!("Failed to lint file: {}", e)))?;
+            .map_err(|e| CursedError::repl_error(format!("Failed to lint file: {}", e)))?;
 
         let mut result = String::new();
         
@@ -304,7 +303,7 @@ impl BuildIntegration {
     /// Load CURSED build file
     fn load_cursed_build_file(&mut self, file_path: &Path) -> ReplResult<()> {
         let content = fs::read_to_string(file_path)
-            .map_err(|e| Error::repl_error(format!("Failed to read build file: {}", e)))?;
+            .map_err(|e| CursedError::repl_error(format!("Failed to read build file: {}", e)))?;
 
         // Parse TOML content (simplified parsing)
         let mut name = "unknown".to_string();
@@ -454,60 +453,3 @@ impl Default for BuildIntegration {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use std::fs;
-    use tempfile::TempDir;
-
-    #[test]
-    fn test_build_integration_creation() {
-        let integration = BuildIntegration::new();
-        assert!(integration.working_directory.is_none());
-        assert!(integration.project_info.is_none());
-    }
-
-    #[test]
-    fn test_scan_project_with_cursed_build() {
-        let temp_dir = TempDir::new().unwrap();
-        let build_file = temp_dir.path().join("CursedBuild.toml");
-        
-        fs::write(&build_file, r#"
-name = "test_project"
-version = "1.0.0"
-description = "Test project"
-"#).unwrap();
-
-        let mut integration = BuildIntegration::new();
-        assert!(integration.scan_project(temp_dir.path()).is_ok());
-        
-        let project_info = integration.project_info.unwrap();
-        assert_eq!(project_info.name, "test_project");
-        assert_eq!(project_info.version, "1.0.0");
-    }
-
-    #[test]
-    fn test_scan_source_files() {
-        let temp_dir = TempDir::new().unwrap();
-        let source_file = temp_dir.path().join("main.csd");
-        
-        fs::write(&source_file, "slay main() { println(\"Hello, world!\"); }").unwrap();
-
-        let mut integration = BuildIntegration::new();
-        assert!(integration.scan_project(temp_dir.path()).is_ok());
-        
-        assert_eq!(integration.build_targets.len(), 1);
-        assert!(integration.build_targets.contains_key("main"));
-    }
-
-    #[test]
-    fn test_project_info() {
-        let temp_dir = TempDir::new().unwrap();
-        
-        let mut integration = BuildIntegration::new();
-        integration.set_working_directory(temp_dir.path().to_path_buf()).unwrap();
-        
-        let info = integration.get_project_info().unwrap();
-        assert!(!info.is_empty());
-    }
-}

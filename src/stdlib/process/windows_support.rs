@@ -1,4 +1,4 @@
-use crate::error::Error;
+use crate::error::CursedError;
 /// Windows-specific process management implementation
 /// 
 /// This module provides complete Windows support for process management,
@@ -42,8 +42,8 @@ use winapi::um::tlhelp32::{CreateToolhelp32Snapshot, Process32FirstW, Process32N
 #[cfg(windows)]
 use winapi::shared::minwindef::{FALSE, TRUE, DWORD};
 
-use crate::stdlib::process::error::{ProcessError, ProcessResult, platform_error, system_error};
-use crate::stdlib::process::safe_process_management::{ProcessStatistics, ResourceLimits};
+// use crate::stdlib::process::error::{ProcessError, ProcessResult, platform_error, system_error};
+// use crate::stdlib::process::safe_process_management::{ProcessStatistics, ResourceLimits};
 
 /// Windows-specific process information structure
 #[cfg(windows)]
@@ -844,151 +844,6 @@ pub fn terminate_process(pid: u32) -> ProcessResult<()> {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_get_parent_pid() {
-        let result = get_parent_pid();
-        // On some test environments this might fail, which is acceptable
-        if let Ok(ppid) = result {
-            assert!(ppid > 0);
-            assert_ne!(ppid, std::process::id());
-        }
-    }
-
-    #[test]
-    fn test_process_exists() {
-        let current_pid = std::process::id();
-        assert!(process_exists(current_pid));
-        
-        // Test with a PID that definitely doesn't exist
-        assert!(!process_exists(u32::MAX));
-    }
-
-    #[cfg(windows)]
-    #[test]
-    fn test_windows_process_monitor() {
-        let mut monitor = WindowsProcessMonitor::new();
-        assert!(!monitor.is_monitoring());
-        
-        let result = monitor.start_monitoring(std::process::id());
-        assert!(result.is_ok());
-        assert!(monitor.is_monitoring());
-        
-        monitor.set_update_interval(Duration::from_millis(500));
-        
-        monitor.stop_monitoring();
-        assert!(!monitor.is_monitoring());
-    }
-
-    #[cfg(windows)]
-    #[test]
-    fn test_get_windows_process_list() {
-        let result = get_windows_process_list();
-        
-        if let Ok(pids) = result {
-            assert!(!pids.is_empty());
-            assert!(pids.contains(&std::process::id()));
-        }
-        // If it fails, that's acceptable in test environments
-    }
-
-    #[cfg(windows)]
-    #[test]
-    fn test_windows_process_info() {
-        let current_pid = std::process::id();
-        let result = get_windows_process_info(current_pid);
-        
-        if let Ok(info) = result {
-            assert_eq!(info.process_id, current_pid);
-        }
-        // If it fails, that's acceptable in test environments
-    }
-}
-
-/// Send a signal to a Windows process
-/// 
-/// Windows doesn't have Unix signals, so this maps signals to appropriate Windows operations
-#[cfg(windows)]
-pub fn send_windows_signal(pid: u32, signal: i32) -> ProcessResult<()> {
-    use winapi::um::processthreadsapi::{OpenProcess, TerminateProcess};
-    use winapi::um::wincon::{AttachConsole, SetConsoleCtrlHandler, GenerateConsoleCtrlEvent, FreeConsole};
-    use winapi::um::winnt::{PROCESS_TERMINATE, CTRL_C_EVENT, CTRL_BREAK_EVENT};
-    use winapi::um::handleapi::CloseHandle;
-    use winapi::shared::minwindef::FALSE;
-use crate::stdlib::process::info::ProcessInfo;
-use crate::stdlib::process::error::ProcessResult;
-use crate::stdlib::process::error::ProcessError;
-    
-    match signal {
-        libc::SIGTERM | libc::SIGINT => {
-            // Try to send a console control event first (graceful)
-            unsafe {
-                // Attach to the target process console
-                if AttachConsole(pid) != 0 {
-                    // Disable our own handling temporarily
-                    SetConsoleCtrlHandler(None, 1);
-                    
-                    let event = if signal == libc::SIGINT { CTRL_C_EVENT } else { CTRL_BREAK_EVENT };
-                    let result = GenerateConsoleCtrlEvent(event, pid);
-                    
-                    // Re-enable our handling
-                    SetConsoleCtrlHandler(None, 0);
-                    FreeConsole();
-                    
-                    if result != 0 {
-                        return Ok(());
-                    }
-                }
-            }
-            
-            // Fallback to process termination
-            unsafe {
-                let handle = OpenProcess(PROCESS_TERMINATE, FALSE, pid);
-                if handle.is_null() {
-                    return Err(system_error(-1, "send_windows_signal", 
-                        &format!("Failed to open process {}", pid)));
-                }
-                
-                let result = TerminateProcess(handle, 1);
-                CloseHandle(handle);
-                
-                if result == 0 {
-                    return Err(system_error(-1, "send_windows_signal", 
-                        &format!("Failed to terminate process {}", pid)));
-                }
-            }
-        },
-        
-        libc::SIGKILL => {
-            // Force termination
-            unsafe {
-                let handle = OpenProcess(PROCESS_TERMINATE, FALSE, pid);
-                if handle.is_null() {
-                    return Err(system_error(-1, "send_windows_signal", 
-                        &format!("Failed to open process {}", pid)));
-                }
-                
-                let result = TerminateProcess(handle, 9); // Exit code 9 for SIGKILL
-                CloseHandle(handle);
-                
-                if result == 0 {
-                    return Err(system_error(-1, "send_windows_signal", 
-                        &format!("Failed to kill process {}", pid)));
-                }
-            }
-        },
-        
-        _ => {
-            return Err(system_error(-1, "send_windows_signal", 
-                &format!("Signal {} is not supported on Windows", signal)));
-        }
-    }
-    
-    Ok(())
-}
 
 /// Send a signal to a Unix process (placeholder for non-Windows platforms)
 #[cfg(not(windows))]

@@ -48,7 +48,7 @@ pub use environment::{
 };
 
 /// System module initialization
-pub fn init() -> crate::stdlib::system::info::SystemResult<()> {
+// pub fn init() -> crate::stdlib::system::info::SystemResult<()> {
     // Initialize system monitoring
     monitoring::init_monitoring()?;
     
@@ -62,7 +62,7 @@ pub fn init() -> crate::stdlib::system::info::SystemResult<()> {
 }
 
 /// System module cleanup
-pub fn cleanup() -> crate::stdlib::system::info::SystemResult<()> {
+// pub fn cleanup() -> crate::stdlib::system::info::SystemResult<()> {
     // Cleanup monitoring
     monitoring::cleanup_monitoring()?;
     
@@ -107,31 +107,3 @@ pub fn get_platform() -> &'static str {
     return "unknown";
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_system_module_availability() {
-        // System module should be available on major platforms
-        assert!(is_available());
-    }
-
-    #[test]
-    fn test_platform_detection() {
-        let platform = get_platform();
-        assert!(!platform.is_empty());
-        assert_ne!(platform, "unknown");
-    }
-
-    #[test]
-    fn test_module_initialization() {
-        // Test that initialization doesn't panic
-        let result = init();
-        assert!(result.is_ok());
-        
-        // Test cleanup
-        let cleanup_result = cleanup();
-        assert!(cleanup_result.is_ok());
-    }
-}

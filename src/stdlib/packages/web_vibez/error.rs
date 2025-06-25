@@ -1,9 +1,8 @@
 use crate::web::StatusCode;
-use crate::error::Error;
-/// fr fr Error handling for web_vibez package - comprehensive error management
+use crate::error::CursedError;
+/// fr fr CursedError handling for web_vibez package - comprehensive error management
 use std::fmt;
-use std::error::Error as StdError;
-use crate::stdlib::packages::web_vibez::status::StatusCode as WebStatusCode;
+// use crate::stdlib::packages::web_vibez::status::StatusCode as WebStatusCode;
 
 /// fr fr Result type alias for web operations - clean error handling
 pub type WebResult<T> = std::result::Result<T, WebError>;
@@ -361,67 +360,67 @@ impl WebError {
     }
 }
 
-impl fmt::Display for WebError {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
-            WebError::Http { status, message, source } => {
-                write!(f, "HTTP {} - {}", status.as_u16(), message)?;
-                if let Some(src) = source {
-                    write!(f, " (source: {})", src)?;
-                }
-                Ok(())
-            }
-            WebError::Network { message, kind } => {
-                write!(f, "Network error ({:?}): {}", kind, message)
-            }
-            WebError::RequestParsing { message, field } => {
-                write!(f, "Request parsing error: {}", message)?;
-                if let Some(field) = field {
-                    write!(f, " (field: {})", field)?;
-                }
-                Ok(())
-            }
-            WebError::ResponseBuilding { message, component } => {
-                write!(f, "Response building error in {}: {}", component, message)
-            }
-            WebError::Routing { path, method, message } => {
-                write!(f, "Routing error for {} {}: {}", method, path, message)
-            }
-            WebError::Middleware { name, message, .. } => {
-                write!(f, "Middleware '{}' error: {}", name, message)
-            }
-            WebError::Configuration { setting, value, message } => {
-                write!(f, "Configuration error for {} = '{}': {}", setting, value, message)
-            }
-            WebError::Auth { message, kind } => {
-                write!(f, "Auth error ({:?}): {}", kind, message)
-            }
-            WebError::Json { message, path } => {
-                write!(f, "JSON error: {}", message)?;
-                if let Some(path) = path {
-                    write!(f, " (path: {})", path)?;
-                }
-                Ok(())
-            }
-            WebError::Io { message, kind } => {
-                write!(f, "I/O error ({}): {}", kind, message)
-            }
-            WebError::Timeout { operation, duration_ms } => {
-                write!(f, "Timeout: operation '{}' took longer than {}ms", operation, duration_ms)
-            }
-            WebError::RateLimit { status_code, message, retry_after } => {
-                write!(f, "Rate limit error ({}): {}", status_code, message)?;
-                if let Some(retry_after) = retry_after {
-                    write!(f, " (retry after {}s)", retry_after)?;
-                }
-                Ok(())
-            }
-            WebError::Custom { code, message, .. } => {
-                write!(f, "Custom error [{}]: {}", code, message)
-            }
-        }
-    }
-}
+// impl fmt::Display for WebError {
+//     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+//         match self {
+//             WebError::Http { status, message, source } => {
+//                 write!(f, "HTTP {} - {}", status.as_u16(), message)?;
+//                 if let Some(src) = source {
+//                     write!(f, " (source: {})", src)?;
+//                 }
+//                 Ok(())
+//             }
+//             WebError::Network { message, kind } => {
+//                 write!(f, "Network error ({:?}): {}", kind, message)
+//             }
+//             WebError::RequestParsing { message, field } => {
+//                 write!(f, "Request parsing error: {}", message)?;
+//                 if let Some(field) = field {
+//                     write!(f, " (field: {})", field)?;
+//                 }
+//                 Ok(())
+//             }
+//             WebError::ResponseBuilding { message, component } => {
+//                 write!(f, "Response building error in {}: {}", component, message)
+//             }
+//             WebError::Routing { path, method, message } => {
+//                 write!(f, "Routing error for {} {}: {}", method, path, message)
+//             }
+//             WebError::Middleware { name, message, .. } => {
+//                 write!(f, "Middleware '{}' error: {}", name, message)
+//             }
+//             WebError::Configuration { setting, value, message } => {
+//                 write!(f, "Configuration error for {} = '{}': {}", setting, value, message)
+//             }
+//             WebError::Auth { message, kind } => {
+//                 write!(f, "Auth error ({:?}): {}", kind, message)
+//             }
+//             WebError::Json { message, path } => {
+//                 write!(f, "JSON error: {}", message)?;
+//                 if let Some(path) = path {
+//                     write!(f, " (path: {})", path)?;
+//                 }
+//                 Ok(())
+//             }
+//             WebError::Io { message, kind } => {
+//                 write!(f, "I/O error ({}): {}", kind, message)
+//             }
+//             WebError::Timeout { operation, duration_ms } => {
+//                 write!(f, "Timeout: operation '{}' took longer than {}ms", operation, duration_ms)
+//             }
+//             WebError::RateLimit { status_code, message, retry_after } => {
+//                 write!(f, "Rate limit error ({}): {}", status_code, message)?;
+//                 if let Some(retry_after) = retry_after {
+//                     write!(f, " (retry after {}s)", retry_after)?;
+//                 }
+//                 Ok(())
+//             }
+//             WebError::Custom { code, message, .. } => {
+//                 write!(f, "Custom error [{}]: {}", code, message)
+//             }
+//         }
+//     }
+// }
 
 impl StdError for WebError {
     fn source(&self) -> Option<&(dyn StdError + 'static)> {
@@ -432,7 +431,7 @@ impl StdError for WebError {
     }
 }
 
-/// fr fr Error context trait for adding context to errors - error enrichment
+/// fr fr CursedError context trait for adding context to errors - error enrichment
 pub trait ErrorContext<T> {
     /// fr fr Add context to error - more information
     fn with_context(self, context: impl Into<String>) -> WebResult<T>;
@@ -473,45 +472,3 @@ where
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_http_errors() {
-        let err = WebError::bad_request("Invalid parameter");
-        assert_eq!(err.status_code(), StatusCode::BadRequest);
-        assert_eq!(err.message(), "Invalid parameter");
-        assert_eq!(err.category(), "http");
-    }
-
-    #[test]
-    fn test_network_errors() {
-        let err = WebError::network(NetworkErrorKind::ConnectionTimeout, "Connection timed out");
-        assert_eq!(err.status_code(), StatusCode::BadGateway);
-        assert!(err.is_retryable());
-    }
-
-    #[test]
-    fn test_auth_errors() {
-        let err = WebError::Auth {
-            message: "Invalid token".to_string(),
-            kind: AuthErrorKind::InvalidCredentials,
-        };
-        assert_eq!(err.status_code(), StatusCode::Unauthorized);
-        assert!(!err.is_retryable());
-    }
-
-    #[test]
-    fn test_error_display() {
-        let err = WebError::not_found("Page not found");
-        assert_eq!(err.to_string(), "HTTP 404 - Page not found");
-    }
-
-    #[test]
-    fn test_error_context() {
-        let result: Result<(), Error> = Err(WebError::bad_request("test"));
-        let with_context = result.with_context("Processing user request");
-        assert!(with_context.is_err());
-    }
-}

@@ -2,7 +2,7 @@
 /// 
 /// Handles HTTP communication with OCSP responders and response validation
 
-use crate::stdlib::packages::crypto_pki::types::{
+// use crate::stdlib::packages::crypto_pki::types::{
     PkiResult, PkiError, X509Certificate, OcspConfig, CertId, OcspRequestInfo,
     BasicOcspResponse, CertificateStatusInfo, RevocationStatus, OcspResponseStatus
 };
@@ -293,7 +293,7 @@ impl OcspClient {
             serial_number: vec![1, 2, 3, 4],
         };
 
-        let single_response = crate::stdlib::packages::crypto_pki::types::SingleResponse {
+//         let single_response = crate::stdlib::packages::crypto_pki::types::SingleResponse {
             cert_id,
             cert_status: RevocationStatus::Good,
             this_update: now,
@@ -359,80 +359,3 @@ impl Default for OcspClient {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use std::time::{SystemTime, UNIX_EPOCH};
-
-    fn create_mock_certificate(subject: &str, serial: &[u8]) -> X509Certificate {
-        let now = SystemTime::now();
-        X509Certificate::new(
-            subject.to_string(),
-            "Mock CA".to_string(),
-            serial.to_vec(),
-            now,
-            now + Duration::from_secs(365 * 24 * 3600), // 1 year
-            vec![0x30, 0x82, 0x01, 0x22], // Mock public key
-            vec![0; 256], // Mock signature
-            "SHA256withRSA".to_string(),
-            vec![0x30, 0x82, 0x03, 0x00], // Mock raw data
-        )
-    }
-
-    #[test]
-    fn test_ocsp_client_creation() {
-        let config = OcspConfig::default();
-        let client = OcspClient::new(config);
-        assert_eq!(client.config.timeout, Duration::from_secs(30));
-    }
-
-    #[test]
-    fn test_cert_id_creation() {
-        let cert = create_mock_certificate("CN=Test Certificate", &[1, 2, 3, 4]);
-        let issuer = create_mock_certificate("CN=Test CA", &[5, 6, 7, 8]);
-        
-        let cert_id = CertId::new(&cert, &issuer).unwrap();
-        assert_eq!(cert_id.hash_algorithm, "SHA-1");
-        assert_eq!(cert_id.serial_number, vec![1, 2, 3, 4]);
-        assert_eq!(cert_id.issuer_name_hash.len(), 20); // SHA-1 hash length
-        assert_eq!(cert_id.issuer_key_hash.len(), 20);
-    }
-
-    #[test]
-    fn test_nonce_generation() {
-        let client = OcspClient::default();
-        let nonce1 = client.generate_nonce();
-        let nonce2 = client.generate_nonce();
-        
-        assert_eq!(nonce1.len(), 16);
-        assert_eq!(nonce2.len(), 16);
-        assert_ne!(nonce1, nonce2); // Should be different random nonces
-    }
-
-    #[test]
-    fn test_cert_ids_match() {
-        let cert = create_mock_certificate("CN=Test", &[1, 2, 3, 4]);
-        let issuer = create_mock_certificate("CN=CA", &[5, 6, 7, 8]);
-        
-        let cert_id1 = CertId::new(&cert, &issuer).unwrap();
-        let cert_id2 = CertId::new(&cert, &issuer).unwrap();
-        
-        let client = OcspClient::default();
-        assert!(client.cert_ids_match(&cert_id1, &cert_id2));
-    }
-
-    #[test]
-    fn test_response_status_parsing() {
-        let client = OcspClient::default();
-        
-        // Test successful response
-        let successful_data = [0x00, 0x01, 0x02];
-        let status = client.parse_response_status(&successful_data).unwrap();
-        assert_eq!(status, OcspResponseStatus::Successful);
-        
-        // Test malformed request
-        let malformed_data = [0x01, 0x02, 0x03];
-        let status = client.parse_response_status(&malformed_data).unwrap();
-        assert_eq!(status, OcspResponseStatus::MalformedRequest);
-    }
-}

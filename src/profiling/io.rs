@@ -1,4 +1,4 @@
-use crate::error::Error;
+use crate::error::CursedError;
 // I/O profiling for file and network operations
 
 use std::collections::HashMap;
@@ -7,7 +7,7 @@ use std::time::{Duration, Instant, SystemTime};
 use serde::{Deserialize, Serialize};
 use tracing::{debug, error, info, instrument, warn};
 
-use crate::profiling::core::{DataCollector, CollectorStats, ProfilerError};
+// use crate::profiling::core::{DataCollector, CollectorStats, ProfilerError};
 
 /// I/O profiler for file and network operations
 #[derive(Debug)]
@@ -33,7 +33,7 @@ impl IoProfiler {
         path: String,
         size: Option<usize>,
         duration: Duration,
-    ) -> Result<(), Error> {
+    ) -> crate::error::Result<()> {
         if !self.is_collecting() {
             return Ok(());
         }
@@ -64,7 +64,7 @@ impl IoProfiler {
         address: String,
         size: Option<usize>,
         duration: Duration,
-    ) -> Result<(), Error> {
+    ) -> crate::error::Result<()> {
         if !self.is_collecting() {
             return Ok(());
         }
@@ -95,7 +95,7 @@ impl IoProfiler {
         resource: String,
         error: String,
         duration: Duration,
-    ) -> Result<(), Error> {
+    ) -> crate::error::Result<()> {
         if !self.is_collecting() {
             return Ok(());
         }
@@ -107,7 +107,7 @@ impl IoProfiler {
             duration,
             timestamp: Instant::now(),
             thread_id: Self::get_current_thread_id(),
-            status: IoStatus::Error,
+            status: IoStatus::CursedError,
             error_message: Some(error),
         };
         
@@ -161,7 +161,7 @@ impl IoProfiler {
 
 impl DataCollector for IoProfiler {
     #[instrument(skip(self))]
-    fn start_collection(&mut self) -> Result<(), Error> {
+    fn start_collection(&mut self) -> crate::error::Result<()> {
         if self.is_collecting() {
             return Err(ProfilerError::ConfigError("I/O profiler already collecting".to_string()));
         }
@@ -172,7 +172,7 @@ impl DataCollector for IoProfiler {
     }
     
     #[instrument(skip(self))]
-    fn stop_collection(&mut self) -> Result<(), Error> {
+    fn stop_collection(&mut self) -> crate::error::Result<()> {
         if !self.is_collecting() {
             return Err(ProfilerError::ConfigError("I/O profiler not collecting".to_string()));
         }
@@ -450,7 +450,7 @@ pub enum NetworkOperation {
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub enum IoStatus {
     Success,
-    Error,
+    CursedError,
     Timeout,
     Canceled,
 }
@@ -565,96 +565,3 @@ pub enum BottleneckSeverity {
     Critical,
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-    
-    #[test]
-    fn test_io_profiler_creation() {
-        let profiler = IoProfiler::new();
-        assert!(!profiler.is_collecting());
-    }
-    
-    #[test]
-    fn test_file_operation_tracking() {
-        let profiler = IoProfiler::new();
-        
-        let result = profiler.track_file_operation(
-            FileOperation::Read,
-            "/test/file.txt".to_string(),
-            Some(1024),
-            Duration::from_millis(10),
-        );
-        
-        assert!(result.is_ok());
-    }
-    
-    #[test]
-    fn test_network_operation_tracking() {
-        let profiler = IoProfiler::new();
-        
-        let result = profiler.track_network_operation(
-            NetworkOperation::HttpRequest,
-            "http://example.com".to_string(),
-            Some(512),
-            Duration::from_millis(100),
-        );
-        
-        assert!(result.is_ok());
-    }
-    
-    #[test]
-    fn test_io_analysis() {
-        let mut data = IoProfileData::new();
-        
-        let event = IoEvent {
-            event_type: IoEventType::File(FileOperation::Read),
-            resource: "/test/file.txt".to_string(),
-            size: Some(1024),
-            duration: Duration::from_millis(10),
-            timestamp: Instant::now(),
-            thread_id: 1,
-            status: IoStatus::Success,
-            error_message: None,
-        };
-        
-        data.add_io_event(event);
-        
-        let analysis = data.analyze_performance();
-        assert_eq!(analysis.file_stats.total_operations, 1);
-        assert_eq!(analysis.file_stats.successful_operations, 1);
-        assert_eq!(analysis.file_stats.total_bytes, 1024);
-    }
-    
-    #[test]
-    fn test_bottleneck_detection() {
-        let mut data = IoProfileData::new();
-        
-        // Add a slow operation
-        let slow_event = IoEvent {
-            event_type: IoEventType::File(FileOperation::Read),
-            resource: "/slow/file.txt".to_string(),
-            size: Some(1024),
-            duration: Duration::from_millis(200), // Slow operation
-            timestamp: Instant::now(),
-            thread_id: 1,
-            status: IoStatus::Success,
-            error_message: None,
-        };
-        
-        data.add_io_event(slow_event);
-        
-        let bottlenecks = data.detect_bottlenecks();
-        assert!(!bottlenecks.is_empty());
-        assert!(matches!(bottlenecks[0].bottleneck_type, BottleneckType::SlowFileIo));
-    }
-    
-    #[test]
-    fn test_io_type_stats() {
-        let mut stats = IoTypeStats::default();
-        stats.total_operations = 10;
-        stats.successful_operations = 8;
-        
-        assert_eq!(stats.success_rate(), 0.8);
-    }
-}

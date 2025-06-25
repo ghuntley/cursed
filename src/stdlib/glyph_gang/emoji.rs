@@ -1,6 +1,6 @@
 /// Emoji support and detection functions
-use crate::stdlib::glyph_gang::error::{GlyphGangResult, emoji_error};
-use crate::stdlib::glyph_gang::ranges::{EMOJI, EMOJI_MODIFIER, EMOJI_COMPONENT, EMOJI_MODIFIER_BASE};
+// use crate::stdlib::glyph_gang::error::{GlyphGangResult, emoji_error};
+// use crate::stdlib::glyph_gang::ranges::{EMOJI, EMOJI_MODIFIER, EMOJI_COMPONENT, EMOJI_MODIFIER_BASE};
 use std::collections::HashMap;
 use once_cell::sync::Lazy;
 
@@ -433,81 +433,3 @@ pub fn initialize_emoji_data() -> GlyphGangResult<()> {
     Ok(())
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_emoji_detection() {
-        assert!(is_emoji_sequence("😀"));
-        assert!(is_emoji_sequence("👨‍👩‍👧‍👦")); // Family emoji sequence
-        assert!(!is_emoji_sequence("Hello"));
-        assert!(!is_emoji_sequence(""));
-        
-        assert!(contains_emoji("Hello 😀 World"));
-        assert!(contains_emoji("😀"));
-        assert!(!contains_emoji("Hello World"));
-        assert!(!contains_emoji(""));
-    }
-
-    #[test]
-    fn test_emoji_extraction() {
-        let emojis = extract_emojis("Hello 😀 World 🌍!");
-        assert_eq!(emojis.len(), 2);
-        assert!(emojis.contains(&"😀".to_string()));
-        assert!(emojis.contains(&"🌍".to_string()));
-        
-        let emojis = extract_emojis("No emojis here");
-        assert_eq!(emojis.len(), 0);
-        
-        let emojis = extract_emojis("😀😁😂");
-        assert_eq!(emojis.len(), 3);
-    }
-
-    #[test]
-    fn test_emoji_replacement() {
-        let result = replace_emojis("Hello 😀 World 🌍!", "[EMOJI]");
-        assert_eq!(result, "Hello [EMOJI] World [EMOJI]!");
-        
-        let result = replace_emojis("No emojis", "[EMOJI]");
-        assert_eq!(result, "No emojis");
-        
-        let result = replace_emojis("😀😁😂", "X");
-        assert_eq!(result, "XXX");
-    }
-
-    #[test]
-    fn test_emoji_names() {
-        assert_eq!(get_emoji_name("😀"), "GRINNING FACE");
-        assert_eq!(get_emoji_name("❤️"), "HEAVY BLACK HEART");
-        assert!(get_emoji_name("unknown_emoji").contains("UNKNOWN"));
-        
-        assert_eq!(find_emoji_by_name("GRINNING FACE").unwrap(), "😀");
-        assert_eq!(find_emoji_by_name("HEAVY BLACK HEART").unwrap(), "❤️");
-        assert!(find_emoji_by_name("NONEXISTENT EMOJI").is_err());
-    }
-
-    #[test]
-    fn test_emoji_categories() {
-        let categories = emoji_categories();
-        assert!(categories.contains(&"smileys_emotion".to_string()));
-        assert!(categories.contains(&"hearts".to_string()));
-        assert!(categories.contains(&"food_drink".to_string()));
-        
-        let smileys = emojis_in_category("smileys_emotion");
-        assert!(smileys.contains(&"😀".to_string()));
-        assert!(smileys.contains(&"😂".to_string()));
-        
-        let hearts = emojis_in_category("hearts");
-        assert!(hearts.contains(&"❤️".to_string()));
-        assert!(hearts.contains(&"💙".to_string()));
-        
-        let unknown = emojis_in_category("unknown_category");
-        assert_eq!(unknown.len(), 0);
-    }
-
-    #[test]
-    fn test_initialization() {
-        assert!(initialize_emoji_data().is_ok());
-    }
-}

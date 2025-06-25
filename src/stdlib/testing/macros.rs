@@ -1,11 +1,10 @@
-use crate::error::Error;
+use crate::error::CursedError;
 /// Test macros and code generation for CURSED testing framework
 /// 
 /// Provides utility functions for generating test code and handling
 /// test attribute macros in CURSED syntax.
 
 use std::collections::HashMap;
-use crate::crate::stdlib::errors_simple::CursedError;
 use super::{TestError, TestFrameworkResult};
 
 /// Generate a test function with proper CURSED syntax

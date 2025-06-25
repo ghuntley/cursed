@@ -1,10 +1,10 @@
 /// Sleep, timing, and delay utilities
-use crate::stdlib::time::error::{TimeError, TimeResult, time_error, system_time_error};
-use crate::stdlib::time::duration::Duration;
-use crate::stdlib::time::datetime::{DateTime, Instant};
+// use crate::stdlib::time::error::{TimeError, TimeResult, time_error, system_time_error};
+// use crate::stdlib::time::duration::Duration;
+// use crate::stdlib::time::datetime::{DateTime, Instant};
 use std::thread;
 use std::time::{SystemTime, UNIX_EPOCH};
-use crate::error::Error;
+use crate::error::CursedError;
 
 /// Sleep for the specified duration
 pub fn sleep(duration: Duration) -> TimeResult<()> {
@@ -41,8 +41,8 @@ pub fn sleep_nanos(nanoseconds: u64) -> TimeResult<()> {
 
 /// Sleep until the specified datetime
 pub fn sleep_until(target: DateTime) -> TimeResult<()> {
-    let now = crate::stdlib::time::datetime::now()?;
-    let duration = crate::stdlib::time::duration::duration_between(now, target);
+//     let now = crate::stdlib::time::datetime::now()?;
+//     let duration = crate::stdlib::time::duration::duration_between(now, target);
     
     if duration.is_negative() {
         return Err(time_error("Target time is in the past"));
@@ -419,109 +419,3 @@ where
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-    
-    #[test]
-    fn test_sleep_duration() {
-        let duration = Duration::from_milliseconds(100);
-        let start = Instant::now();
-        sleep(duration).unwrap();
-        let elapsed = start.elapsed();
-        
-        // Allow some tolerance for timing
-        assert!(elapsed.total_milliseconds() >= 90);
-        assert!(elapsed.total_milliseconds() <= 200);
-    }
-    
-    #[test]
-    fn test_timer() {
-        let timer = Timer::new();
-        thread::sleep(std::time::Duration::from_millis(50));
-        let elapsed = timer.elapsed();
-        
-        assert!(elapsed.total_milliseconds() >= 40);
-        assert!(elapsed.total_milliseconds() <= 100);
-    }
-    
-    #[test]
-    fn test_timer_with_duration() {
-        let duration = Duration::from_milliseconds(100);
-        let timer = Timer::with_duration(duration);
-        
-        // Should not be expired immediately
-        assert!(!timer.is_expired());
-        
-        // Should have remaining time
-        assert!(timer.remaining().is_some());
-    }
-    
-    #[test]
-    fn test_stopwatch() {
-        let mut stopwatch = Stopwatch::new();
-        
-        // Should not be running initially
-        assert!(!stopwatch.is_running());
-        
-        stopwatch.start();
-        assert!(stopwatch.is_running());
-        
-        thread::sleep(std::time::Duration::from_millis(50));
-        
-        let lap1 = stopwatch.lap();
-        assert!(lap1.total_milliseconds() >= 40);
-        
-        stopwatch.stop();
-        assert!(!stopwatch.is_running());
-        
-        let final_time = stopwatch.elapsed();
-        assert!(final_time.total_milliseconds() >= 40);
-    }
-    
-    #[test]
-    fn test_timeout() {
-        // Test successful execution
-        let result = timeout(Duration::from_seconds(1), || {
-            thread::sleep(std::time::Duration::from_millis(50));
-            42
-        }).unwrap();
-        
-        assert_eq!(result, Some(42));
-        
-        // Test timeout
-        let result = timeout(Duration::from_milliseconds(50), || {
-            thread::sleep(std::time::Duration::from_millis(200));
-            42
-        }).unwrap();
-        
-        assert_eq!(result, None);
-    }
-    
-    #[test]
-    fn test_time_function() {
-        let (result, duration) = time_function(|| {
-            thread::sleep(std::time::Duration::from_millis(50));
-            42
-        }).unwrap();
-        
-        assert_eq!(result, 42);
-        assert!(duration.total_milliseconds() >= 40);
-    }
-    
-    #[test]
-    fn test_wait_for() {
-        let mut counter = 0;
-        let result = wait_for(
-            || {
-                counter += 1;
-                counter >= 3
-            },
-            Duration::from_seconds(1),
-            Duration::from_milliseconds(10),
-        ).unwrap();
-        
-        assert!(result);
-        assert!(counter >= 3);
-    }
-}

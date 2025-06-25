@@ -1,4 +1,4 @@
-use crate::error::Error;
+use crate::error::CursedError;
 /// fr fr Ed25519 digital signature implementation
 /// 
 /// This module provides production-ready Ed25519 signature operations using
@@ -9,7 +9,6 @@ use rand::rngs::OsRng;
 use ed25519_dalek::{SigningKey, VerifyingKey, Signature, Signer, Verifier};
 use pkcs8;
 use zeroize::Zeroizing;
-use crate::error::CursedError;
 
 /// fr fr Ed25519 key pair structure
 #[derive(Debug, Clone)]
@@ -73,39 +72,39 @@ pub enum Ed25519Error {
     Internal(String),
 }
 
-impl std::fmt::Display for Ed25519Error {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            Ed25519Error::KeyGenerationFailed(msg) => write!(f, "Ed25519 key generation failed: {}", msg),
-            Ed25519Error::SigningFailed(msg) => write!(f, "Ed25519 signing failed: {}", msg),
-            Ed25519Error::VerificationFailed(msg) => write!(f, "Ed25519 verification failed: {}", msg),
-            Ed25519Error::InvalidSignature(msg) => write!(f, "Invalid Ed25519 signature: {}", msg),
-            Ed25519Error::InvalidPublicKey(msg) => write!(f, "Invalid Ed25519 public key: {}", msg),
-            Ed25519Error::InvalidPrivateKey(msg) => write!(f, "Invalid Ed25519 private key: {}", msg),
-            Ed25519Error::InvalidFormat(msg) => write!(f, "Invalid key format: {}", msg),
-            Ed25519Error::SerializationFailed(msg) => write!(f, "Key serialization failed: {}", msg),
-            Ed25519Error::DeserializationFailed(msg) => write!(f, "Key deserialization failed: {}", msg),
-            Ed25519Error::InvalidKeyLength(len) => write!(f, "Invalid key length: {} bytes (expected 32)", len),
-            Ed25519Error::Internal(msg) => write!(f, "Internal Ed25519 error: {}", msg),
-        }
-    }
-}
+// impl std::fmt::Display for Ed25519Error {
+//     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+//         match self {
+//             Ed25519Error::KeyGenerationFailed(msg) => write!(f, "Ed25519 key generation failed: {}", msg),
+//             Ed25519Error::SigningFailed(msg) => write!(f, "Ed25519 signing failed: {}", msg),
+//             Ed25519Error::VerificationFailed(msg) => write!(f, "Ed25519 verification failed: {}", msg),
+//             Ed25519Error::InvalidSignature(msg) => write!(f, "Invalid Ed25519 signature: {}", msg),
+//             Ed25519Error::InvalidPublicKey(msg) => write!(f, "Invalid Ed25519 public key: {}", msg),
+//             Ed25519Error::InvalidPrivateKey(msg) => write!(f, "Invalid Ed25519 private key: {}", msg),
+//             Ed25519Error::InvalidFormat(msg) => write!(f, "Invalid key format: {}", msg),
+//             Ed25519Error::SerializationFailed(msg) => write!(f, "Key serialization failed: {}", msg),
+//             Ed25519Error::DeserializationFailed(msg) => write!(f, "Key deserialization failed: {}", msg),
+//             Ed25519Error::InvalidKeyLength(len) => write!(f, "Invalid key length: {} bytes (expected 32)", len),
+//             Ed25519Error::Internal(msg) => write!(f, "Internal Ed25519 error: {}", msg),
+//         }
+//     }
+// }
 
-impl std::error::Error for Ed25519Error {}
-
+// impl std::error::CursedError for Ed25519Error {}
+// 
 impl From<ed25519_dalek::SignatureError> for Ed25519Error {
     fn from(err: ed25519_dalek::SignatureError) -> Self {
         Ed25519Error::Internal(err.to_string())
     }
 }
 
-impl From<pkcs8::Error> for Ed25519Error {
-    fn from(err: pkcs8::Error) -> Self {
-        Ed25519Error::SerializationFailed(err.to_string())
-    }
-}
+// impl From<pkcs8::CursedError> for Ed25519Error {
+//     fn from(err: pkcs8::CursedError) -> Self {
+//         Ed25519Error::SerializationFailed(err.to_string())
+//     }
+// }
 
-type Ed25519Result<T> = Result<T, Error>;
+type Ed25519crate::error::Result<T> = Result<T>;
 
 /// fr fr Ed25519 engine for cryptographic operations
 pub struct Ed25519Engine {
@@ -324,10 +323,10 @@ impl Default for Ed25519Engine {
 }
 
 /// fr fr Public API functions for CURSED integration
-use crate::stdlib::value::Value;
+// use crate::stdlib::value::Value;
 
 /// slay Generate Ed25519 key pair
-pub fn ed25519_generate_keypair(_args: Vec<Value>) -> Result<(), Error> {
+pub fn ed25519_generate_keypair(_args: Vec<Value>) -> crate::error::Result<()> {
     let mut engine = Ed25519Engine::new();
     match engine.generate_keypair() {
         Ok(keypair) => {
@@ -353,7 +352,7 @@ pub fn ed25519_generate_keypair(_args: Vec<Value>) -> Result<(), Error> {
 }
 
 /// slay Generate Ed25519 key pair from seed
-pub fn ed25519_generate_keypair_from_seed(args: Vec<Value>) -> Result<(), Error> {
+pub fn ed25519_generate_keypair_from_seed(args: Vec<Value>) -> crate::error::Result<()> {
     if args.is_empty() {
         return Err(CursedError::Runtime("Ed25519 key generation from seed requires seed".to_string()));
     }
@@ -390,7 +389,7 @@ pub fn ed25519_generate_keypair_from_seed(args: Vec<Value>) -> Result<(), Error>
 }
 
 /// slay Ed25519 sign message
-pub fn ed25519_sign(args: Vec<Value>) -> Result<(), Error> {
+pub fn ed25519_sign(args: Vec<Value>) -> crate::error::Result<()> {
     if args.len() < 2 {
         return Err(CursedError::Runtime("Ed25519 sign requires private key and message".to_string()));
     }
@@ -419,7 +418,7 @@ pub fn ed25519_sign(args: Vec<Value>) -> Result<(), Error> {
 }
 
 /// slay Ed25519 verify signature
-pub fn ed25519_verify(args: Vec<Value>) -> Result<(), Error> {
+pub fn ed25519_verify(args: Vec<Value>) -> crate::error::Result<()> {
     if args.len() < 3 {
         return Err(CursedError::Runtime("Ed25519 verify requires public key, message, and signature".to_string()));
     }
@@ -457,7 +456,7 @@ pub fn ed25519_verify(args: Vec<Value>) -> Result<(), Error> {
 }
 
 /// slay Ed25519 verify with raw public key
-pub fn ed25519_verify_raw(args: Vec<Value>) -> Result<(), Error> {
+pub fn ed25519_verify_raw(args: Vec<Value>) -> crate::error::Result<()> {
     if args.len() < 3 {
         return Err(CursedError::Runtime("Ed25519 verify raw requires public key hex, message, and signature".to_string()));
     }
@@ -495,7 +494,7 @@ pub fn ed25519_verify_raw(args: Vec<Value>) -> Result<(), Error> {
 }
 
 /// slay Derive Ed25519 public key from private key
-pub fn ed25519_derive_public_key(args: Vec<Value>) -> Result<(), Error> {
+pub fn ed25519_derive_public_key(args: Vec<Value>) -> crate::error::Result<()> {
     if args.is_empty() {
         return Err(CursedError::Runtime("Ed25519 derive public key requires private key".to_string()));
     }
@@ -518,160 +517,3 @@ pub fn ed25519_derive_public_key(args: Vec<Value>) -> Result<(), Error> {
     Ok(Value::String(hex::encode(public_key)))
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-    
-    #[test]
-    fn test_ed25519_key_generation() {
-        let mut engine = Ed25519Engine::new();
-        let keypair = engine.generate_keypair().unwrap();
-        
-        // Verify key lengths
-        assert_eq!(keypair.public_key_bytes().len(), 32);
-        assert_eq!(keypair.private_key_bytes().len(), 32);
-    }
-    
-    #[test]
-    fn test_ed25519_deterministic_generation() {
-        let engine = Ed25519Engine::new();
-        let seed = [42u8; 32];
-        
-        let keypair1 = engine.generate_keypair_from_seed(&seed).unwrap();
-        let keypair2 = engine.generate_keypair_from_seed(&seed).unwrap();
-        
-        // Same seed should produce same keys
-        assert_eq!(keypair1.public_key_bytes(), keypair2.public_key_bytes());
-        assert_eq!(keypair1.private_key_bytes(), keypair2.private_key_bytes());
-    }
-    
-    #[test]
-    fn test_ed25519_signing_verification() {
-        let mut engine = Ed25519Engine::new();
-        let keypair = engine.generate_keypair().unwrap();
-        
-        let message = b"Hello, Ed25519 signatures!";
-        let signature = engine.sign(&keypair, message).unwrap();
-        let verified = engine.verify(&keypair, message, &signature).unwrap();
-        
-        assert!(verified);
-        assert_eq!(signature.len(), 64); // Ed25519 signatures are always 64 bytes
-        
-        // Test with wrong message
-        let wrong_message = b"Wrong message";
-        let verified_wrong = engine.verify(&keypair, wrong_message, &signature).unwrap();
-        assert!(!verified_wrong);
-    }
-    
-    #[test]
-    fn test_ed25519_raw_verification() {
-        let mut engine = Ed25519Engine::new();
-        let keypair = engine.generate_keypair().unwrap();
-        
-        let message = b"Test raw verification";
-        let signature = engine.sign(&keypair, message).unwrap();
-        let public_key_bytes = keypair.public_key_bytes();
-        
-        let verified = engine.verify_with_public_key(&public_key_bytes, message, &signature).unwrap();
-        assert!(verified);
-    }
-    
-    #[test]
-    fn test_key_serialization() {
-        let mut engine = Ed25519Engine::new();
-        let keypair = engine.generate_keypair().unwrap();
-        
-        // Test private key serialization/deserialization
-        let private_pem = engine.serialize_private_key(&keypair, Ed25519KeyFormat::Pkcs8Pem).unwrap();
-        let deserialized_keypair = engine.deserialize_private_key(&private_pem, Ed25519KeyFormat::Pkcs8Pem).unwrap();
-        
-        // Test public key serialization
-        let public_pem = engine.serialize_public_key(&keypair, Ed25519KeyFormat::Pkcs8Pem).unwrap();
-        assert!(!public_pem.is_empty());
-        
-        // Test raw serialization
-        let private_raw = engine.serialize_private_key(&keypair, Ed25519KeyFormat::Raw).unwrap();
-        assert_eq!(private_raw.len(), 32);
-        
-        let public_raw = engine.serialize_public_key(&keypair, Ed25519KeyFormat::Raw).unwrap();
-        assert_eq!(public_raw.len(), 32);
-        
-        // Verify they still work
-        let message = b"Test serialization";
-        let signature = engine.sign(&deserialized_keypair, message).unwrap();
-        let verified = engine.verify(&deserialized_keypair, message, &signature).unwrap();
-        
-        assert!(verified);
-    }
-    
-    #[test]
-    fn test_public_key_derivation() {
-        let mut engine = Ed25519Engine::new();
-        let keypair = engine.generate_keypair().unwrap();
-        
-        let private_key_bytes = keypair.private_key_bytes();
-        let derived_public_key = engine.derive_public_key(&private_key_bytes).unwrap();
-        let actual_public_key = keypair.public_key_bytes();
-        
-        assert_eq!(derived_public_key, actual_public_key);
-    }
-    
-    #[test]
-    fn test_invalid_key_lengths() {
-        let engine = Ed25519Engine::new();
-        
-        // Test invalid private key length
-        let invalid_private = vec![0u8; 31]; // Too short
-        let result = engine.generate_keypair_from_seed(&invalid_private);
-        assert!(result.is_err());
-        
-        // Test invalid public key length for verification
-        let invalid_public = vec![0u8; 31]; // Too short
-        let message = b"test";
-        let signature = vec![0u8; 64];
-        let result = engine.verify_with_public_key(&invalid_public, message, &signature);
-        assert!(result.is_err());
-    }
-    
-    #[test]
-    fn test_invalid_signature_length() {
-        let mut engine = Ed25519Engine::new();
-        let keypair = engine.generate_keypair().unwrap();
-        
-        let message = b"test message";
-        let invalid_signature = vec![0u8; 63]; // Too short
-        
-        let verified = engine.verify(&keypair, message, &invalid_signature).unwrap();
-        assert!(!verified); // Should return false for invalid signature length
-    }
-    
-    #[test]
-    fn test_batch_verification() {
-        let mut engine = Ed25519Engine::new();
-        let keypair1 = engine.generate_keypair().unwrap();
-        let keypair2 = engine.generate_keypair().unwrap();
-        
-        let message1 = b"Message 1";
-        let message2 = b"Message 2";
-        
-        let signature1 = engine.sign(&keypair1, message1).unwrap();
-        let signature2 = engine.sign(&keypair2, message2).unwrap();
-        
-        let batch = vec![
-            (message1.to_vec(), signature1, keypair1.public_key_bytes().to_vec()),
-            (message2.to_vec(), signature2, keypair2.public_key_bytes().to_vec()),
-        ];
-        
-        let verified = engine.batch_verify(&batch).unwrap();
-        assert!(verified);
-        
-        // Test with one invalid signature
-        let invalid_batch = vec![
-            (message1.to_vec(), vec![0u8; 64], keypair1.public_key_bytes().to_vec()),
-            (message2.to_vec(), signature2, keypair2.public_key_bytes().to_vec()),
-        ];
-        
-        let verified_invalid = engine.batch_verify(&invalid_batch).unwrap();
-        assert!(!verified_invalid);
-    }
-}

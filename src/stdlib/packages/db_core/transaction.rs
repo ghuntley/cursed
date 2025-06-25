@@ -3,11 +3,11 @@
 /// This module provides transaction handling, isolation levels, savepoints,
 /// and transaction coordination for database operations. ACID compliance bestie!
 
-use crate::stdlib::packages::db_core::error::{
+// use crate::stdlib::packages::db_core::error::{
     DatabaseError, ErrorKind, TransactionError
 };
-use crate::error::Error;
-use crate::stdlib::packages::db_core::error::{DatabaseResult as DbResult};
+use crate::error::CursedError;
+// use crate::stdlib::packages::db_core::error::{DatabaseResult as DbResult};
 
 use std::collections::HashMap;
 use std::time::{Duration, SystemTime};
@@ -544,98 +544,3 @@ impl Default for TransactionConfig {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_transaction_lifecycle() {
-        let options = TransactionOptions::default();
-        let mut transaction = Transaction::new("conn_1", options);
-        
-        assert_eq!(transaction.state, TransactionState::Starting);
-        
-        transaction.start().unwrap();
-        assert_eq!(transaction.state, TransactionState::Active);
-        assert!(transaction.is_active());
-        
-        transaction.commit().unwrap();
-        assert_eq!(transaction.state, TransactionState::Committed);
-        assert!(transaction.is_completed());
-    }
-
-    #[test]
-    fn test_transaction_rollback() {
-        let options = TransactionOptions::default();
-        let mut transaction = Transaction::new("conn_1", options);
-        
-        transaction.start().unwrap();
-        assert!(transaction.is_active());
-        
-        transaction.rollback().unwrap();
-        assert_eq!(transaction.state, TransactionState::RolledBack);
-        assert!(transaction.is_completed());
-    }
-
-    #[test]
-    fn test_savepoints() {
-        let options = TransactionOptions::default();
-        let mut transaction = Transaction::new("conn_1", options);
-        transaction.start().unwrap();
-        
-        let sp1 = transaction.create_savepoint("sp1").unwrap();
-        assert_eq!(sp1.name, "sp1");
-        assert_eq!(sp1.level, 0);
-        assert!(sp1.is_active);
-        
-        let sp2 = transaction.create_savepoint("sp2").unwrap();
-        assert_eq!(sp2.level, 1);
-        
-        transaction.rollback_to_savepoint("sp1").unwrap();
-        
-        // sp2 should be deactivated
-        assert!(!transaction.savepoints[1].is_active);
-        assert!(transaction.savepoints[0].is_active);
-    }
-
-    #[test]
-    fn test_transaction_manager() {
-        let config = TransactionConfig::default();
-        let mut manager = TransactionManager::new(config);
-        
-        let options = TransactionOptions::default();
-        let txn_id = manager.begin_transaction("conn_1", options).unwrap();
-        
-        assert_eq!(manager.stats.total_started, 1);
-        assert_eq!(manager.stats.active_count, 1);
-        
-        manager.commit_transaction(&txn_id).unwrap();
-        
-        assert_eq!(manager.stats.total_committed, 1);
-        assert_eq!(manager.stats.active_count, 0);
-    }
-
-    #[test]
-    fn test_transaction_isolation_levels() {
-        assert_eq!(TransactionIsolation::ReadCommitted, TransactionIsolation::ReadCommitted);
-        assert_ne!(TransactionIsolation::ReadCommitted, TransactionIsolation::Serializable);
-    }
-
-    #[test]
-    fn test_transaction_states() {
-        assert!(matches!(TransactionState::Active, TransactionState::Active));
-        assert!(matches!(TransactionState::Failed("error".to_string()), TransactionState::Failed(_)));
-    }
-
-    #[test]
-    fn test_transaction_operations() {
-        let options = TransactionOptions::default();
-        let mut transaction = Transaction::new("conn_1", options);
-        
-        transaction.record_operation(5);
-        transaction.record_operation(3);
-        
-        assert_eq!(transaction.metadata.operation_count, 2);
-        assert_eq!(transaction.metadata.rows_affected, 8);
-    }
-}

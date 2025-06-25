@@ -1,4 +1,4 @@
-use crate::error::Error;
+use crate::error::CursedError;
 /// Comprehensive logarithmic and exponential functions for CURSED
 /// 
 /// This module provides extensive mathematical functions for logarithmic and exponential

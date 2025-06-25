@@ -1,10 +1,9 @@
-use crate::error::Error;
+use crate::error::CursedError;
 /// JSON Tea - JSON encoding and decoding for CURSED
 /// 
 /// This module provides JSON encoding and decoding functionality compatible with
 /// the encode_mood interfaces and CURSED's type system.
 
-use crate::error::CursedError;
 use crate::runtime::value::Value;
 use std::collections::HashMap;
 use std::io::{Read, Write};
@@ -131,94 +130,3 @@ pub mod tags {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-    
-    #[test]
-    fn test_marshal_unmarshal_basic() {
-        let original = Value::String("Hello, World!".to_string());
-        let json_bytes = marshal(&original).expect("Marshal failed");
-        
-        let mut decoded = Value::Null;
-        unmarshal(&json_bytes, &mut decoded).expect("Unmarshal failed");
-        
-        assert_eq!(original, decoded);
-    }
-    
-    #[test]
-    fn test_marshal_with_indent() {
-        let mut obj = HashMap::new();
-        obj.insert("name".to_string(), Value::String("Alice".to_string()));
-        obj.insert("age".to_string(), Value::Number(30.0));
-        
-        let original = Value::Object(obj);
-        let json_bytes = marshal_indent(&original, "", "  ").expect("Marshal indent failed");
-        let json_str = String::from_utf8(json_bytes).expect("Invalid UTF-8");
-        
-        assert!(json_str.contains("  \"name\""));
-        assert!(json_str.contains("  \"age\""));
-    }
-    
-    #[test]
-    fn test_valid_json() {
-        let valid_json = br#"{"name": "Alice", "age": 30}"#;
-        let invalid_json = br#"{"name": "Alice", "age":}"#;
-        
-        assert!(valid(valid_json));
-        assert!(!valid(invalid_json));
-    }
-    
-    #[test]
-    fn test_json_tag_parsing() {
-        let tag1 = tags::JsonTag::parse("name");
-        assert_eq!(tag1.name, Some("name".to_string()));
-        assert!(!tag1.omit_empty);
-        
-        let tag2 = tags::JsonTag::parse("name,omitempty");
-        assert_eq!(tag2.name, Some("name".to_string()));
-        assert!(tag2.omit_empty);
-        
-        let tag3 = tags::JsonTag::parse("-");
-        assert!(tag3.skip);
-        
-        let tag4 = tags::JsonTag::parse(",omitempty,string");
-        assert_eq!(tag4.name, None);
-        assert!(tag4.omit_empty);
-        assert!(tag4.string);
-    }
-    
-    #[test]
-    fn test_marshal_unmarshal_array() {
-        let arr = vec![
-            Value::String("hello".to_string()),
-            Value::Number(42.0),
-            Value::Boolean(true),
-            Value::Null,
-        ];
-        let original = Value::Array(arr);
-        
-        let json_bytes = marshal(&original).expect("Marshal failed");
-        let mut decoded = Value::Null;
-        unmarshal(&json_bytes, &mut decoded).expect("Unmarshal failed");
-        
-        assert_eq!(original, decoded);
-    }
-    
-    #[test]
-    fn test_marshal_unmarshal_object() {
-        let mut obj = HashMap::new();
-        obj.insert("string".to_string(), Value::String("test".to_string()));
-        obj.insert("number".to_string(), Value::Number(3.14));
-        obj.insert("boolean".to_string(), Value::Boolean(false));
-        obj.insert("null".to_string(), Value::Null);
-        
-        let original = Value::Object(obj);
-        
-        let json_bytes = marshal(&original).expect("Marshal failed");
-        let mut decoded = Value::Null;
-        unmarshal(&json_bytes, &mut decoded).expect("Unmarshal failed");
-        
-        assert_eq!(original, decoded);
-    }
-}

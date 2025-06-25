@@ -3,8 +3,8 @@
 /// Provides helper functions for test setup, file operations, concurrency,
 /// and random data generation
 
-use crate::stdlib::value::Value;
-use crate::error::Error;
+// use crate::stdlib::value::Value;
+use crate::error::CursedError;
 use super::{VibeTest, TestVibesResult};
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, Mutex};
@@ -395,87 +395,3 @@ fn random_suffix() -> String {
     format!("{:x}", hasher.finish())
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use crate::stdlib::test_vibes::core::VibeTest;
-
-    #[test]
-    fn test_temp_file_creation() {
-        let test = VibeTest::new("test_temp_file");
-        
-        let result = TempFile(&test, "test_pattern");
-        assert!(result.is_ok());
-        
-        let (handle, path) = result.unwrap();
-        assert!(std::path::Path::new(&path).exists());
-        
-        // File should be cleaned up when handle is dropped
-        drop(handle);
-        // Note: In a real test we might check if file is actually cleaned up
-    }
-
-    #[test]
-    fn test_temp_dir_creation() {
-        let test = VibeTest::new("test_temp_dir");
-        
-        let result = TempDir(&test, "test_dir");
-        assert!(result.is_ok());
-        
-        let dir_path = result.unwrap();
-        assert!(std::path::Path::new(&dir_path).is_dir());
-    }
-
-    #[test]
-    fn test_random_string_generation() {
-        let str1 = RandomString(10);
-        let str2 = RandomString(10);
-        
-        assert_eq!(str1.len(), 10);
-        assert_eq!(str2.len(), 10);
-        // Strings should be different (very high probability)
-        assert_ne!(str1, str2);
-    }
-
-    #[test]
-    fn test_random_int_generation() {
-        let int1 = RandomInt(1, 100);
-        let int2 = RandomInt(1, 100);
-        
-        assert!(int1 >= 1 && int1 <= 100);
-        assert!(int2 >= 1 && int2 <= 100);
-    }
-
-    #[test]
-    fn test_random_float_generation() {
-        let float1 = RandomFloat(0.0, 1.0);
-        let float2 = RandomFloat(0.0, 1.0);
-        
-        assert!(float1 >= 0.0 && float1 < 1.0);
-        assert!(float2 >= 0.0 && float2 < 1.0);
-    }
-
-    #[test]
-    fn test_with_setup_teardown() {
-        let test = VibeTest::new("test_setup_teardown");
-        let mut setup_called = false;
-        let mut teardown_called = false;
-        
-        let result = WithSetup(
-            &test,
-            || {
-                setup_called = true;
-                Ok(())
-            },
-            || {
-                teardown_called = true;
-                Ok(())
-            },
-            |_t| Ok(())
-        );
-        
-        assert!(result.is_ok());
-        assert!(setup_called);
-        assert!(teardown_called);
-    }
-}

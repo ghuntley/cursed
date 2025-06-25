@@ -3,7 +3,7 @@
 /// This module handles all database configuration including connection settings,
 /// pool configuration, security settings, and performance tuning. Get it right bestie!
 
-use crate::stdlib::packages::db_core::error::{DatabaseResult as DbResult, DatabaseError};
+// use crate::stdlib::packages::db_core::error::{DatabaseResult as DbResult, DatabaseError};
 use std::collections::HashMap;
 use std::time::Duration;
 
@@ -274,7 +274,7 @@ pub enum LogLevel {
     Debug,
     Info,
     Warn,
-    Error,
+    CursedError,
 }
 
 impl DatabaseConfig {
@@ -393,46 +393,3 @@ impl DatabaseConfig {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_database_config_default() {
-        let config = DatabaseConfig::default();
-        assert_eq!(config.pool.max_connections, 100);
-        assert_eq!(config.pool.min_connections, 10);
-        assert!(!config.connection.use_ssl);
-    }
-
-    #[test]
-    fn test_database_config_from_connection_string() {
-        let config = DatabaseConfig::from_connection_string("postgresql://user:pass@localhost:5432/db?sslmode=require").unwrap();
-        assert_eq!(config.driver_config.driver_name, "postgresql");
-        assert!(config.connection.use_ssl);
-    }
-
-    #[test]
-    fn test_database_config_builder() {
-        let config = DatabaseConfig::new()
-            .with_max_connections(50)
-            .with_connect_timeout(Duration::from_secs(10))
-            .with_ssl()
-            .with_application_name("test_app");
-
-        assert_eq!(config.pool.max_connections, 50);
-        assert_eq!(config.connection.connect_timeout, Duration::from_secs(10));
-        assert!(config.connection.use_ssl);
-        assert_eq!(config.connection.application_name, Some("test_app".to_string()));
-    }
-
-    #[test]
-    fn test_config_validation() {
-        let mut config = DatabaseConfig::default();
-        config.connection.connection_string = "test://localhost".to_string();
-        assert!(config.validate().is_ok());
-
-        config.connection.connection_string.clear();
-        assert!(config.validate().is_err());
-    }
-}

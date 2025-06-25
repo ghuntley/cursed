@@ -1,7 +1,6 @@
-use crate::error::Error;
-/// Error handling for the PlugVibes plugin system
-use std::fmt;
 use crate::error::CursedError;
+/// CursedError handling for the PlugVibes plugin system
+use std::fmt;
 
 /// Errors that can occur during plugin operations
 #[derive(Debug, Clone, PartialEq)]
@@ -46,39 +45,39 @@ pub enum PluginError {
     General(String),
 }
 
-impl fmt::Display for PluginError {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
-            PluginError::PluginNotFound(path) => write!(f, "Plugin not found: {}", path),
-            PluginError::LoadError(msg) => write!(f, "Failed to load plugin: {}", msg),
-            PluginError::SymbolNotFound(symbol) => write!(f, "Symbol not found: {}", symbol),
-            PluginError::FunctionNotFound(func) => write!(f, "Function not found: {}", func),
-            PluginError::InitializationFailed(msg) => write!(f, "Plugin initialization failed: {}", msg),
-            PluginError::CleanupFailed(msg) => write!(f, "Plugin cleanup failed: {}", msg),
-            PluginError::VersionIncompatible(msg) => write!(f, "Plugin version incompatible: {}", msg),
-            PluginError::SignatureVerificationFailed(msg) => write!(f, "Signature verification failed: {}", msg),
-            PluginError::AlreadyLoaded(name) => write!(f, "Plugin already loaded: {}", name),
-            PluginError::NotLoaded(name) => write!(f, "Plugin not loaded: {}", name),
-            PluginError::SandboxViolation(msg) => write!(f, "Sandbox violation: {}", msg),
-            PluginError::SecurityViolation(msg) => write!(f, "Security violation: {}", msg),
-            PluginError::DependencyMissing(dep) => write!(f, "Missing dependency: {}", dep),
-            PluginError::Timeout(msg) => write!(f, "Plugin operation timeout: {}", msg),
-            PluginError::RegistryError(msg) => write!(f, "Plugin registry error: {}", msg),
-            PluginError::ManagerError(msg) => write!(f, "Plugin manager error: {}", msg),
-            PluginError::HookError(msg) => write!(f, "Plugin hook error: {}", msg),
-            PluginError::DistributionError(msg) => write!(f, "Plugin distribution error: {}", msg),
-            PluginError::General(msg) => write!(f, "Plugin error: {}", msg),
-        }
-    }
-}
+// impl fmt::Display for PluginError {
+//     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+//         match self {
+//             PluginError::PluginNotFound(path) => write!(f, "Plugin not found: {}", path),
+//             PluginError::LoadError(msg) => write!(f, "Failed to load plugin: {}", msg),
+//             PluginError::SymbolNotFound(symbol) => write!(f, "Symbol not found: {}", symbol),
+//             PluginError::FunctionNotFound(func) => write!(f, "Function not found: {}", func),
+//             PluginError::InitializationFailed(msg) => write!(f, "Plugin initialization failed: {}", msg),
+//             PluginError::CleanupFailed(msg) => write!(f, "Plugin cleanup failed: {}", msg),
+//             PluginError::VersionIncompatible(msg) => write!(f, "Plugin version incompatible: {}", msg),
+//             PluginError::SignatureVerificationFailed(msg) => write!(f, "Signature verification failed: {}", msg),
+//             PluginError::AlreadyLoaded(name) => write!(f, "Plugin already loaded: {}", name),
+//             PluginError::NotLoaded(name) => write!(f, "Plugin not loaded: {}", name),
+//             PluginError::SandboxViolation(msg) => write!(f, "Sandbox violation: {}", msg),
+//             PluginError::SecurityViolation(msg) => write!(f, "Security violation: {}", msg),
+//             PluginError::DependencyMissing(dep) => write!(f, "Missing dependency: {}", dep),
+//             PluginError::Timeout(msg) => write!(f, "Plugin operation timeout: {}", msg),
+//             PluginError::RegistryError(msg) => write!(f, "Plugin registry error: {}", msg),
+//             PluginError::ManagerError(msg) => write!(f, "Plugin manager error: {}", msg),
+//             PluginError::HookError(msg) => write!(f, "Plugin hook error: {}", msg),
+//             PluginError::DistributionError(msg) => write!(f, "Plugin distribution error: {}", msg),
+//             PluginError::General(msg) => write!(f, "Plugin error: {}", msg),
+//         }
+//     }
+// }
 
-impl std::error::Error for PluginError {}
-
-impl From<PluginError> for CursedError {
-    fn from(err: PluginError) -> Self {
-        CursedError::Runtime(format!("Plugin error: {}", err))
-    }
-}
+// impl std::error::CursedError for PluginError {}
+// 
+// impl From<PluginError> for CursedError {
+//     fn from(err: PluginError) -> Self {
+//         CursedError::Runtime(format!("Plugin error: {}", err))
+//     }
+// }
 
 /// Result type for plugin operations
 pub type PluginResult<T> = std::result::Result<T, PluginError>;

@@ -151,7 +151,6 @@ pub use templates::{
 };
 
 use crate::error::CursedError;
-use crate::error::Error;
 use std::sync::Arc;
 
 /// fr fr Global PKI configuration
@@ -255,7 +254,7 @@ pub mod pki {
 
 
 /// fr fr Initialize the crypto_pki package
-pub fn init_crypto_pki() -> Result<(), Error> {
+pub fn init_crypto_pki() -> crate::error::Result<()> {
     println!("🏛️ Initializing PKI package...");
     
     // Test certificate parsing

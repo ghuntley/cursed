@@ -6,7 +6,7 @@
 
 use crate::ast::*;
 use crate::documentation::extractors::ast_node_support::{ExpressionType, Literal};
-use crate::error::Error;
+use crate::error::CursedError;
 use crate::documentation::extractors::ast_extractor::{CompleteTypeInfo, TypeKind, SizeInfo};
 use serde::{Deserialize, Serialize};
 use std::collections::{HashMap, HashSet};
@@ -25,7 +25,7 @@ pub struct TypeExtractor {
 impl TypeExtractor {
     /// Create a new type extractor
     #[instrument]
-    pub fn new() -> Result<(), Error> {
+    pub fn new() -> crate::error::Result<()> {
         let mut primitives = HashSet::new();
         
         // CURSED primitive types
@@ -99,7 +99,7 @@ impl TypeExtractor {
     pub fn extract_function_type_info(
         &self,
         func_decl: &FunctionDeclaration,
-    ) -> Result<(), Error> {
+    ) -> crate::error::Result<()> {
         debug!("Extracting function type info for: {}", func_decl.to_string());
 
         // Build function signature
@@ -129,7 +129,7 @@ impl TypeExtractor {
                     .unwrap_or_else(|| "any".to_string());
                 Ok(format!("{}: {}", param.to_string(), type_str))
             })
-            .collect::<Result<(), Error>>()?;
+            .collect::<crate::error::Result<()>>()?;
 
         signature_parts.push(format!("({})", param_strings.join(", ")));
 
@@ -175,7 +175,7 @@ impl TypeExtractor {
     pub fn extract_struct_type_info(
         &self,
         struct_decl: &StructDeclaration,
-    ) -> Result<(), Error> {
+    ) -> crate::error::Result<()> {
         debug!("Extracting struct type info for: {}", struct_decl.to_string());
 
         // Build struct signature
@@ -199,7 +199,7 @@ impl TypeExtractor {
                     .unwrap_or_else(|| "any".to_string());
                 Ok(format!("{}: {}", field.to_string(), type_str))
             })
-            .collect::<Result<(), Error>>()?;
+            .collect::<crate::error::Result<()>>()?;
 
         signature_parts.push(format!("{{ {} }}", field_strings.join(", ")));
 
@@ -232,7 +232,7 @@ impl TypeExtractor {
     pub fn extract_interface_type_info(
         &self,
         interface_decl: &InterfaceDeclaration,
-    ) -> Result<(), Error> {
+    ) -> crate::error::Result<()> {
         debug!("Extracting interface type info for: {}", interface_decl.to_string());
 
         // Build interface signature
@@ -258,7 +258,7 @@ impl TypeExtractor {
                             .unwrap_or_else(|| "any".to_string());
                         Ok(format!("{}: {}", param.to_string(), type_str))
                     })
-                    .collect::<Result<(), Error>>()?;
+                    .collect::<crate::error::Result<()>>()?;
 
                 let return_str = method.return_type.as_ref()
                     .map(|t| format!(" -> {}", self.format_type_expression(t)?))
@@ -267,7 +267,7 @@ impl TypeExtractor {
 
                 Ok(format!("{}({}){}", method.to_string(), param_strings.join(", "), return_str))
             })
-            .collect::<Result<(), Error>>()?;
+            .collect::<crate::error::Result<()>>()?;
 
         signature_parts.push(format!("{{ {} }}", method_strings.join("; ")));
 
@@ -297,7 +297,7 @@ impl TypeExtractor {
     pub fn extract_enum_type_info(
         &self,
         enum_decl: &EnumDeclaration,
-    ) -> Result<(), Error> {
+    ) -> crate::error::Result<()> {
         debug!("Extracting enum type info for: {}", enum_decl.to_string());
 
         // Build enum signature
@@ -317,11 +317,11 @@ impl TypeExtractor {
                                 .transpose()
                                 .map(|opt| opt.unwrap_or_else(|| "any".to_string()))
                         })
-                        .collect::<Result<(), Error>>()?;
+                        .collect::<crate::error::Result<()>>()?;
                     Ok(format!("{}({})", variant.to_string(), field_strings.join(", ")))
                 }
             })
-            .collect::<Result<(), Error>>()?;
+            .collect::<crate::error::Result<()>>()?;
 
         signature_parts.push(format!("{{ {} }}", variant_strings.join(" | ")));
 
@@ -353,7 +353,7 @@ impl TypeExtractor {
     pub fn extract_type_alias_info(
         &self,
         type_alias: &TypeAliasDeclaration,
-    ) -> Result<(), Error> {
+    ) -> crate::error::Result<()> {
         debug!("Extracting type alias info for: {}", type_alias.to_string());
 
         let target_type_str = self.format_type_expression(&type_alias.target_type)?;
@@ -377,7 +377,7 @@ impl TypeExtractor {
     pub fn extract_type_info_from_expression(
         &self,
         expr: &dyn Expression,
-    ) -> Result<(), Error> {
+    ) -> crate::error::Result<()> {
         match &expr.expr_type {
             ExpressionType::Identifier(id) => {
                 self.extract_identifier_type_info(&id.to_string())
@@ -404,7 +404,7 @@ impl TypeExtractor {
                 let base_type = self.extract_type_info_from_expression(&call.function)?;
                 let arg_types: Vec<CompleteTypeInfo> = call.arguments.iter()
                     .map(|arg| self.extract_type_info_from_expression(arg))
-                    .collect::<Result<(), Error>>()?;
+                    .collect::<crate::error::Result<()>>()?;
 
                 let type_args: Vec<String> = arg_types.iter()
                     .map(|t| t.type_name.clone())
@@ -451,7 +451,7 @@ impl TypeExtractor {
     }
 
     /// Extract type information for an identifier
-    fn extract_identifier_type_info(&self, name: &str) -> Result<(), Error> {
+    fn extract_identifier_type_info(&self, name: &str) -> crate::error::Result<()> {
         let type_kind = if self.primitives.contains(name) {
             TypeKind::Primitive
         } else {
@@ -470,7 +470,7 @@ impl TypeExtractor {
     }
 
     /// Extract type information for a literal
-    fn extract_literal_type_info(&self, literal: &Literal) -> Result<(), Error> {
+    fn extract_literal_type_info(&self, literal: &Literal) -> crate::error::Result<()> {
         let (type_name, type_kind, size_info) = match literal {
             Literal::String(_) => ("string", TypeKind::Primitive, Some(SizeInfo {
                 size_bytes: None, // Variable size
@@ -495,7 +495,7 @@ impl TypeExtractor {
             Literal::Array(arr) => {
                 let element_types: Vec<CompleteTypeInfo> = arr.iter()
                     .map(|elem| self.extract_type_info_from_expression(elem))
-                    .collect::<Result<(), Error>>()?;
+                    .collect::<crate::error::Result<()>>()?;
 
                 return Ok(CompleteTypeInfo {
                     type_name: format!("[{}; {}]", 
@@ -537,7 +537,7 @@ impl TypeExtractor {
 
     /// Format a type expression as a string
     #[instrument(skip(self, expr))]
-    pub fn format_type_expression(&self, expr: &dyn Expression) -> Result<(), Error> {
+    pub fn format_type_expression(&self, expr: &dyn Expression) -> crate::error::Result<()> {
         match &expr.expr_type {
             ExpressionType::Identifier(id) => Ok(id.to_string().clone()),
             ExpressionType::ArrayAccess(arr) => {
@@ -546,7 +546,7 @@ impl TypeExtractor {
             ExpressionType::FunctionCall(call) => {
                 let args: Vec<String> = call.arguments.iter()
                     .map(|arg| self.format_type_expression(arg))
-                    .collect::<Result<(), Error>>()?;
+                    .collect::<crate::error::Result<()>>()?;
                 Ok(format!("{}<{}>", 
                     self.format_type_expression(&call.function)?,
                     args.join(", ")))
@@ -565,13 +565,13 @@ impl TypeExtractor {
                     Literal::Array(arr) => {
                         let elements: Vec<String> = arr.iter()
                             .map(|elem| self.format_type_expression(elem))
-                            .collect::<Result<(), Error>>()?;
+                            .collect::<crate::error::Result<()>>()?;
                         Ok(format!("[{}]", elements.join(", ")))
                     }
                     Literal::Object(obj) => {
                         let fields: Vec<String> = obj.iter()
                             .map(|(k, v)| Ok(format!("{}: {}", k, self.format_type_expression(v)?)))
-                            .collect::<Result<(), Error>>()?;
+                            .collect::<crate::error::Result<()>>()?;
                         Ok(format!("{{{}}}", fields.join(", ")))
                     }
                 }
@@ -581,7 +581,7 @@ impl TypeExtractor {
     }
 
     /// Calculate struct size (simplified)
-    fn calculate_struct_size(&self, struct_decl: &StructDeclaration) -> Result<(), Error> {
+    fn calculate_struct_size(&self, struct_decl: &StructDeclaration) -> crate::error::Result<()> {
         let mut total_size = 0;
         let mut max_alignment = 1;
         let mut has_dst = false;
@@ -619,7 +619,7 @@ impl TypeExtractor {
     }
 
     /// Calculate enum size (simplified)
-    fn calculate_enum_size(&self, enum_decl: &EnumDeclaration) -> Result<(), Error> {
+    fn calculate_enum_size(&self, enum_decl: &EnumDeclaration) -> crate::error::Result<()> {
         let discriminant_size = std::mem::size_of::<u32>(); // Enum discriminant
         let mut max_variant_size = 0;
         let mut max_alignment = std::mem::align_of::<u32>();

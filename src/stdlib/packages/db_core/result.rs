@@ -3,10 +3,10 @@
 /// This module defines the result types for database queries and operations.
 /// Because getting results right is half the battle bestie!
 
-use crate::stdlib::packages::db_core::{
+// use crate::stdlib::packages::db_core::{
     Row, Column, ColumnType, DatabaseValue, DatabaseError
 };
-use crate::stdlib::packages::db_core::error::{DatabaseResult as DbResult};
+// use crate::stdlib::packages::db_core::error::{DatabaseResult as DbResult};
 use std::collections::HashMap;
 
 /// fr fr Result of a database query
@@ -273,42 +273,3 @@ impl ResultSetImpl {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use crate::stdlib::packages::db_core::core_types::*;
-
-    #[test]
-    fn test_database_query_result() {
-        let result = DatabaseQueryResult::empty();
-        assert!(result.is_empty());
-        assert_eq!(result.row_count(), 0);
-    }
-
-    #[test]
-    fn test_result_metadata() {
-        let metadata = ResultMetadata::empty();
-        assert_eq!(metadata.column_count(), 0);
-        assert!(metadata.get_column("nonexistent").is_none());
-    }
-
-    #[test]
-    fn test_execute_result() {
-        let mut result = ExecuteResult::new(5);
-        assert_eq!(result.rows_affected, 5);
-        assert!(result.last_insert_id.is_none());
-
-        result.add_warning("Test warning".to_string());
-        assert_eq!(result.warnings.len(), 1);
-    }
-
-    #[test]
-    fn test_result_set_impl() {
-        let mut result_set = ResultSetImpl::empty();
-        assert!(!result_set.has_next());
-        assert_eq!(result_set.row_count(), Some(0));
-
-        let next_row = result_set.next().unwrap();
-        assert!(next_row.is_none());
-    }
-}

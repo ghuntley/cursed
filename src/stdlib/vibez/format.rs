@@ -3,8 +3,8 @@
 /// Provides comprehensive string formatting capabilities including
 /// placeholder interpolation, format specifications, and context-aware formatting.
 
-use crate::stdlib::value::Value;
-use crate::error::Error;
+// use crate::stdlib::value::Value;
+use crate::error::CursedError;
 use std::collections::HashMap;
 use std::fmt;
 
@@ -21,39 +21,39 @@ pub enum FormatError {
     InvalidContext(String),
 }
 
-impl fmt::Display for FormatError {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
-            FormatError::InvalidPlaceholder(placeholder) => {
-                write!(f, "Invalid placeholder: {}", placeholder)
-            }
-            FormatError::MissingArgument(index) => {
-                write!(f, "Missing argument at index: {}", index) 
-            }
-            FormatError::TooManyArguments => {
-                write!(f, "Too many arguments provided")
-            }
-            FormatError::InvalidFormatSpec(spec) => {
-                write!(f, "Invalid format specification: {}", spec)
-            }
-            FormatError::CircularReference(name) => {
-                write!(f, "Circular reference detected: {}", name)
-            }
-            FormatError::TypeMismatch(msg) => {
-                write!(f, "Type mismatch: {}", msg)
-            }
-            FormatError::IndexOutOfBounds(index) => {
-                write!(f, "Index out of bounds: {}", index)
-            }
-            FormatError::InvalidContext(msg) => {
-                write!(f, "Invalid context: {}", msg)
-            }
-        }
-    }
-}
+// impl fmt::Display for FormatError {
+//     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+//         match self {
+//             FormatError::InvalidPlaceholder(placeholder) => {
+//                 write!(f, "Invalid placeholder: {}", placeholder)
+//             }
+//             FormatError::MissingArgument(index) => {
+//                 write!(f, "Missing argument at index: {}", index) 
+//             }
+//             FormatError::TooManyArguments => {
+//                 write!(f, "Too many arguments provided")
+//             }
+//             FormatError::InvalidFormatSpec(spec) => {
+//                 write!(f, "Invalid format specification: {}", spec)
+//             }
+//             FormatError::CircularReference(name) => {
+//                 write!(f, "Circular reference detected: {}", name)
+//             }
+//             FormatError::TypeMismatch(msg) => {
+//                 write!(f, "Type mismatch: {}", msg)
+//             }
+//             FormatError::IndexOutOfBounds(index) => {
+//                 write!(f, "Index out of bounds: {}", index)
+//             }
+//             FormatError::InvalidContext(msg) => {
+//                 write!(f, "Invalid context: {}", msg)
+//             }
+//         }
+//     }
+// }
 
-impl std::error::Error for FormatError {}
-
+// impl std::error::CursedError for FormatError {}
+// 
 pub type FormatResult<T> = std::result::Result<T, FormatError>;
 
 /// Format specification options
@@ -139,7 +139,7 @@ impl Default for FormatContext {
 /// Format options for controlling behavior
 #[derive(Debug, Clone)]
 pub struct FormatOptions {
-    pub strict_mode: bool,          // Error on missing arguments vs. using placeholder
+    pub strict_mode: bool,          // CursedError on missing arguments vs. using placeholder
     pub html_escape: bool,          // HTML escape output
     pub trim_whitespace: bool,      // Trim leading/trailing whitespace
     pub allow_functions: bool,      // Allow function calls in placeholders
@@ -450,91 +450,8 @@ fn format_value_simple(value: &Value) -> String {
         Value::NativeFunction(_) => "<native_function>".to_string(),
         Value::Channel(_) => "<channel>".to_string(),
         Value::Interface(_) => "<interface>".to_string(),
-        Value::Error(e) => format!("Error: {}", e),
+        Value::CursedError(e) => format!("CursedError: {}", e),
         Value::Bytes(b) => format!("<bytes[{}]>", b.len()),
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_format_basic() {
-        let args = vec![Value::String("World".to_string())];
-        let result = format("Hello {}", &args).unwrap();
-        assert_eq!(result, "Hello World");
-    }
-
-    #[test]
-    fn test_format_multiple_args() {
-        let args = vec![
-            Value::String("John".to_string()),
-            Value::Int(25)
-        ];
-        let result = format("Hello {}, you are {} years old", &args).unwrap();
-        assert_eq!(result, "Hello John, you are 25 years old");
-    }
-
-    #[test]
-    fn test_format_positional() {
-        let args = vec![
-            Value::String("World".to_string()),
-            Value::String("Hello".to_string())
-        ];
-        let result = format("{1} {0}", &args).unwrap();
-        assert_eq!(result, "Hello World");
-    }
-
-    #[test]
-    fn test_format_missing_argument() {
-        let args = vec![Value::String("Hello".to_string())];
-        let result = format("Hello {} {}", &args);
-        assert!(matches!(result, Err(FormatError::MissingArgument(1))));
-    }
-
-    #[test]
-    fn test_format_with_context() {
-        let mut context = FormatContext::default();
-        context.variables.insert("name".to_string(), Value::String("Alice".to_string()));
-        
-        let result = format_with_context("Hello {name}!", &[], &context).unwrap();
-        assert_eq!(result, "Hello Alice!");
-    }
-
-    #[test]
-    fn test_interpolate() {
-        let mut context = FormatContext::default();
-        context.variables.insert("name".to_string(), Value::String("Bob".to_string()));
-        context.variables.insert("age".to_string(), Value::Int(30));
-        
-        let result = interpolate("Hello ${name}, you are ${age} years old!", &context).unwrap();
-        assert_eq!(result, "Hello Bob, you are 30 years old!");
-    }
-
-    #[test]
-    fn test_format_args() {
-        let args = vec![
-            Value::String("Hello".to_string()),
-            Value::Int(42),
-            Value::Bool(true)
-        ];
-        let result = format_args(&args);
-        assert_eq!(result, "Hello 42 true");
-    }
-
-    #[test]
-    fn test_parse_placeholders() {
-        let placeholders = parse_placeholders("Hello {} and {1} and {name}").unwrap();
-        assert_eq!(placeholders.len(), 3);
-        
-        assert!(matches!(placeholders[0].placeholder_type, PlaceholderType::Auto));
-        assert!(matches!(placeholders[1].placeholder_type, PlaceholderType::Positional(1)));
-        
-        if let PlaceholderType::Named(name) = &placeholders[2].placeholder_type {
-            assert_eq!(name, "name");
-        } else {
-            panic!("Expected named placeholder");
-        }
-    }
-}

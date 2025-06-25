@@ -88,8 +88,8 @@ pub use eddsa::{
     EdDsaContext, EdDsaVerificationResult, EdDsaBatchVerificationResult
 };
 
-use crate::stdlib::packages::crypto_advanced::AdvancedCryptoResult;
-use crate::error::Error;
+// use crate::stdlib::packages::crypto_advanced::AdvancedCryptoResult;
+use crate::error::CursedError;
 use std::sync::{Arc, Mutex, LazyLock};
 use std::collections::HashMap;
 
@@ -401,7 +401,7 @@ pub mod utils {
 pub fn init_crypto_signatures() -> AdvancedCryptoResult<()> {
     // Initialize the global registry (lazy initialization will happen automatically)
     let _registry = SIGNATURE_REGISTRY.lock()
-        .map_err(|_| crate::stdlib::packages::crypto_advanced::AdvancedCryptoError::Internal(
+//         .map_err(|_| crate::stdlib::packages::crypto_advanced::AdvancedCryptoError::Internal(
             "Failed to initialize signature registry".to_string()
         ))?;
     

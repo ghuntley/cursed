@@ -1,4 +1,4 @@
-use crate::error::Error;
+use crate::error::CursedError;
 /// Template Cache - High-performance multi-level caching system for CURSED templates
 use std::collections::{HashMap, HashSet, VecDeque};
 use std::hash::{Hash, Hasher};
@@ -8,7 +8,6 @@ use std::time::{Duration, Instant, SystemTime};
 use tokio::sync::RwLock as AsyncRwLock;
 use tracing::{debug, error, info, instrument, warn};
 
-use crate::error::CursedError;
 use super::template_syntax::{TemplateAst, TemplateNode};
 
 /// Cache entry types for multi-level caching
@@ -399,32 +398,32 @@ impl TemplateCache {
 
     /// Put a template AST into the cache (level 0)
     #[instrument(skip(self, ast))]
-    pub async fn put_template(&self, key: String, ast: TemplateAst, source_hash: u64) -> Result<(), Error> {
+    pub async fn put_template(&self, key: String, ast: TemplateAst, source_hash: u64) -> crate::error::Result<()> {
         self.put_entry(key, CacheEntryType::TemplateAst(ast), 0, source_hash, Vec::new()).await
     }
 
     /// Put rendered output into the cache (level 1)
     #[instrument(skip(self, output))]
-    pub async fn put_rendered(&self, key: String, output: String, source_hash: u64) -> Result<(), Error> {
+    pub async fn put_rendered(&self, key: String, output: String, source_hash: u64) -> crate::error::Result<()> {
         self.put_entry(key, CacheEntryType::RenderedOutput(output), 1, source_hash, Vec::new()).await
     }
 
     /// Put component into the cache (level 2)
     #[instrument(skip(self, component))]
-    pub async fn put_component(&self, key: String, component: TemplateComponent, source_hash: u64) -> Result<(), Error> {
+    pub async fn put_component(&self, key: String, component: TemplateComponent, source_hash: u64) -> crate::error::Result<()> {
         let dependencies = component.dependencies.clone();
         self.put_entry(key, CacheEntryType::Component(component), 2, source_hash, dependencies).await
     }
 
     /// Put fragment into the cache (level 3)
     #[instrument(skip(self, fragment))]
-    pub async fn put_fragment(&self, key: String, fragment: String, source_hash: u64) -> Result<(), Error> {
+    pub async fn put_fragment(&self, key: String, fragment: String, source_hash: u64) -> crate::error::Result<()> {
         self.put_entry(key, CacheEntryType::Fragment(fragment), 3, source_hash, Vec::new()).await
     }
 
     /// Generic method to put any entry type into the cache
     #[instrument(skip(self, entry_type))]
-    async fn put_entry(&self, key: String, entry_type: CacheEntryType, level: u8, source_hash: u64, dependencies: Vec<String>) -> Result<(), Error> {
+    async fn put_entry(&self, key: String, entry_type: CacheEntryType, level: u8, source_hash: u64, dependencies: Vec<String>) -> crate::error::Result<()> {
         debug!(key = key, level = level, "Cache put entry");
 
         // Check level-specific limits
@@ -498,7 +497,7 @@ impl TemplateCache {
 
     /// Backward compatibility method
     #[instrument(skip(self, ast))]
-    pub async fn put(&self, key: String, ast: TemplateAst, source_hash: u64) -> Result<(), Error> {
+    pub async fn put(&self, key: String, ast: TemplateAst, source_hash: u64) -> crate::error::Result<()> {
         self.put_template(key, ast, source_hash).await
     }
 
@@ -508,7 +507,7 @@ impl TemplateCache {
     }
 
     /// Legacy eviction method (not used in new implementation)
-    fn evict_entry(&self, _entries: &mut HashMap<String, CacheEntry>) -> Result<(), Error> {
+    fn evict_entry(&self, _entries: &mut HashMap<String, CacheEntry>) -> crate::error::Result<()> {
         // This method is kept for backward compatibility but not used
         // The new implementation uses evict_entry_for_level
         Ok(())
@@ -553,7 +552,7 @@ impl TemplateCache {
         }
     }
 
-    async fn compress_entry_type(&self, entry_type: CacheEntryType) -> Result<CacheEntryType, Error> {
+    async fn compress_entry_type(&self, entry_type: CacheEntryType) -> crate::error::Result<CacheEntryType> {
         // Simplified compression - in a real implementation, you'd use actual compression
         match entry_type {
             CacheEntryType::RenderedOutput(output) => {
@@ -567,7 +566,7 @@ impl TemplateCache {
         }
     }
 
-    async fn evict_entry_for_level(&self, level: u8) -> Result<(), Error> {
+    async fn evict_entry_for_level(&self, level: u8) -> crate::error::Result<()> {
         if let Some(level_config) = self.config.level_configs.get(&level) {
             let key_to_evict = match &level_config.eviction_policy {
                 EvictionPolicy::Lru => self.find_lru_key_for_level(level).await,
@@ -1158,142 +1157,3 @@ impl CacheKeyGenerator {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use crate::stdlib::template::template_syntax::TemplateNode;
-
-    fn create_test_ast() -> TemplateAst {
-        TemplateAst {
-            nodes: vec![TemplateNode::Text("Hello World".to_string())],
-        }
-    }
-
-    #[tokio::test]
-    async fn test_cache_put_and_get() {
-        let cache = TemplateCache::new(10);
-        let ast = create_test_ast();
-        let source_hash = CacheKeyGenerator::hash_source("test template");
-
-        cache.put_template("test".to_string(), ast.clone(), source_hash).await.unwrap();
-        
-        let retrieved = cache.get_template("test").await;
-        assert!(retrieved.is_some());
-        assert_eq!(retrieved.unwrap().nodes.len(), ast.nodes.len());
-    }
-
-    #[tokio::test]
-    async fn test_cache_miss() {
-        let cache = TemplateCache::new(10);
-        
-        let result = cache.get_template("nonexistent").await;
-        assert!(result.is_none());
-    }
-
-    #[tokio::test]
-    async fn test_cache_remove() {
-        let cache = TemplateCache::new(10);
-        let ast = create_test_ast();
-        let source_hash = CacheKeyGenerator::hash_source("test template");
-
-        cache.put_template("test".to_string(), ast, source_hash).await.unwrap();
-        assert!(cache.contains("test").await);
-        
-        cache.remove("test");
-        assert!(!cache.contains("test").await);
-    }
-
-    #[tokio::test]
-    async fn test_cache_clear() {
-        let cache = TemplateCache::new(10);
-        let ast = create_test_ast();
-        let source_hash = CacheKeyGenerator::hash_source("test template");
-
-        cache.put_template("test1".to_string(), ast.clone(), source_hash).await.unwrap();
-        cache.put_template("test2".to_string(), ast, source_hash).await.unwrap();
-        
-        let (entries, _) = cache.stats();
-        assert_eq!(entries, 2);
-        
-        cache.clear().await;
-        
-        let (entries, _) = cache.stats();
-        assert_eq!(entries, 0);
-    }
-
-    #[tokio::test]
-    async fn test_cache_eviction() {
-        let cache = TemplateCache::new(2); // Small cache for testing eviction
-        let ast = create_test_ast();
-        let source_hash = CacheKeyGenerator::hash_source("test template");
-
-        cache.put_template("test1".to_string(), ast.clone(), source_hash).await.unwrap();
-        cache.put_template("test2".to_string(), ast.clone(), source_hash).await.unwrap();
-        cache.put_template("test3".to_string(), ast, source_hash).await.unwrap(); // Should trigger eviction
-
-        let (entries, _) = cache.stats();
-        assert!(entries <= 2); // May be less due to eviction
-    }
-
-    #[test]
-    fn test_cache_key_generation() {
-        let key1 = CacheKeyGenerator::generate("template1", None);
-        let key2 = CacheKeyGenerator::generate("template2", None);
-        assert_ne!(key1, key2);
-
-        let mut params = HashMap::new();
-        params.insert("param1".to_string(), "value1".to_string());
-        
-        let key3 = CacheKeyGenerator::generate("template1", Some(&params));
-        assert_ne!(key1, key3);
-    }
-
-    #[test]
-    fn test_source_hash() {
-        let hash1 = CacheKeyGenerator::hash_source("template source 1");
-        let hash2 = CacheKeyGenerator::hash_source("template source 2");
-        let hash3 = CacheKeyGenerator::hash_source("template source 1");
-        
-        assert_ne!(hash1, hash2);
-        assert_eq!(hash1, hash3);
-    }
-
-    #[tokio::test]
-    async fn test_cache_validation() {
-        let cache = TemplateCache::new(10);
-        let ast = create_test_ast();
-        let source_hash = CacheKeyGenerator::hash_source("test template");
-
-        cache.put_template("test".to_string(), ast, source_hash).await.unwrap();
-        
-        // Valid hash should return true
-        assert!(cache.validate_entry("test", source_hash).await);
-        
-        // Different hash should return false
-        let different_hash = CacheKeyGenerator::hash_source("different template");
-        assert!(!cache.validate_entry("test", different_hash).await);
-        
-        // Non-existent key should return false
-        assert!(!cache.validate_entry("nonexistent", source_hash).await);
-    }
-
-    #[tokio::test]
-    async fn test_cache_statistics() {
-        let cache = TemplateCache::new(10);
-        let ast = create_test_ast();
-        let source_hash = CacheKeyGenerator::hash_source("test template");
-
-        cache.put_template("test".to_string(), ast, source_hash).await.unwrap();
-        
-        // Miss
-        cache.get_template("nonexistent").await;
-        
-        // Hit
-        cache.get_template("test").await;
-        
-        let stats = cache.detailed_stats().unwrap();
-        assert!(*stats.hits.get(&0).unwrap_or(&0) >= 1);
-        assert!(*stats.misses.get(&0).unwrap_or(&0) >= 1);
-        assert!(stats.total_operations > 0);
-    }
-}

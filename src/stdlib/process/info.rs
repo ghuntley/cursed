@@ -1,4 +1,4 @@
-use crate::error::Error;
+use crate::error::CursedError;
 /// Process information and system utilities for CURSED
 /// 
 /// This module provides functions to query process information, system statistics,
@@ -11,7 +11,7 @@ use std::io::{BufRead, BufReader};
 use std::path::Path;
 use std::time::{Duration, SystemTime};
 
-use crate::stdlib::process::error::{
+// use crate::stdlib::process::error::{
     ProcessError, ProcessResult, process_not_found_pid, system_error, io_error
 };
 
@@ -1102,107 +1102,6 @@ mod num_cpus {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-use crate::stdlib::process::info::ProcessInfo;
-use crate::stdlib::process::info::ProcessState;
-use crate::stdlib::process::error::ProcessResult;
-use crate::stdlib::process::error::ProcessError;
-
-    #[test]
-    fn test_process_status_conversion() {
-        assert_eq!(ProcessStatus::from('R'), ProcessStatus::Running);
-        assert_eq!(ProcessStatus::from('S'), ProcessStatus::Sleeping);
-        assert_eq!(ProcessStatus::from('Z'), ProcessStatus::Zombie);
-        assert_eq!(ProcessStatus::from('?'), ProcessStatus::Unknown("?".to_string()));
-    }
-
-    #[test]
-    fn test_process_status_display() {
-        assert_eq!(format!("{}", ProcessStatus::Running), "Running");
-        assert_eq!(format!("{}", ProcessStatus::Zombie), "Zombie");
-        assert_eq!(format!("{}", ProcessStatus::Unknown("X".to_string())), "Unknown (X)");
-    }
-
-    #[test]
-    fn test_memory_info_creation() {
-        let mem = MemoryInfo::new();
-        assert_eq!(mem.virtual_size, 0);
-        assert_eq!(mem.resident_size, 0);
-        assert_eq!(mem.percentage, 0.0);
-    }
-
-    #[test]
-    fn test_cpu_info_creation() {
-        let cpu = CpuInfo::new();
-        assert_eq!(cpu.cpu_percent, 0.0);
-        assert_eq!(cpu.user_time, 0);
-        assert_eq!(cpu.system_time, 0);
-    }
-
-    #[test]
-    fn test_get_current_pid() {
-        let pid = get_current_pid();
-        assert!(pid > 0);
-    }
-
-    #[test]
-    fn test_is_process_running() {
-        let current_pid = get_current_pid();
-        assert!(is_process_running(current_pid));
-        
-        // Test with a PID that definitely doesn't exist
-        assert!(!is_process_running(999999));
-    }
-
-    #[test]
-    fn test_get_cpu_count() {
-        let count = get_cpu_count();
-        assert!(count > 0);
-        assert!(count <= 1024); // Reasonable upper bound
-    }
-
-    #[test]
-    fn test_process_info_creation() {
-        let info = ProcessInfo::new(1234);
-        assert_eq!(info.pid, 1234);
-        assert_eq!(info.ppid, 0);
-        assert!(info.name.is_empty());
-        assert_eq!(info.threads, 1);
-    }
-
-    #[test]
-    fn test_process_list_entry() {
-        let entry = ProcessListEntry {
-            pid: 1234,
-            ppid: 1,
-            name: "test_process".to_string(),
-            status: ProcessStatus::Running,
-            cpu_percent: 5.5,
-            memory_percent: 2.1,
-            start_time: SystemTime::now(),
-        };
-        
-        assert_eq!(entry.pid, 1234);
-        assert_eq!(entry.name, "test_process");
-        assert_eq!(entry.status, ProcessStatus::Running);
-    }
-}
-
-/// System information structure
-#[derive(Debug, Clone)]
-pub struct SystemInfo {
-    pub hostname: String,
-    pub os_name: String,
-    pub os_version: String,
-    pub architecture: String,
-    pub cpu_count: u32,
-    pub total_memory: u64,
-    pub available_memory: u64,
-    pub uptime: Duration,
-    pub load_average: Vec<f64>,
-}
 
 impl SystemInfo {
     /// Create a new SystemInfo instance

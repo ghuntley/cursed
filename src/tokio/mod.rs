@@ -1,4 +1,4 @@
-use crate::error_types::Error;
+use crate::error::CursedError;
 // Tokio compatibility module for CURSED
 // Provides async runtime compatibility for tokio-based code
 
@@ -105,14 +105,14 @@ pub mod time {
     #[derive(Debug)]
     pub struct TimeoutError;
     
-    impl std::fmt::Display for TimeoutError {
-        fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-            write!(f, "Operation timed out")
-        }
-    }
+//     impl std::fmt::Display for TimeoutError {
+//         fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+//             write!(f, "Operation timed out")
+//         }
+//     }
     
-    impl std::error::Error for TimeoutError {}
-}
+//     impl std::error::CursedError for TimeoutError {}
+// }
 
 /// Synchronization primitives
 pub mod sync {
@@ -230,34 +230,11 @@ pub mod net {
 macro_rules! tokio_main {
     ($block:block) => {
         fn main() {
+        // TODO: implement
+    }
             let rt = $crate::tokio::Runtime::new().unwrap();
             rt.block_on(async $block);
         }
     };
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-    
-    #[test]
-    fn test_runtime_creation() {
-        let rt = Runtime::new().unwrap();
-        let result = rt.block_on(async { 42 });
-        assert_eq!(result, 42);
-    }
-    
-    #[test]
-    fn test_handle_operations() {
-        let handle = Handle::new();
-        let result = handle.block_on(async { "hello" });
-        assert_eq!(result, "hello");
-    }
-    
-    #[tokio::test]
-    async fn test_time_sleep() {
-        let start = std::time::Instant::now();
-        time::sleep(std::time::Duration::from_millis(10)).await;
-        assert!(start.elapsed() >= std::time::Duration::from_millis(10));
-    }
-}

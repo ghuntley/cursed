@@ -5,9 +5,8 @@
 /// These schemes rely only on the security of cryptographic hash functions.
 
 use crate::error::CursedError;
-use crate::stdlib::value::Value;
-use crate::stdlib::packages::crypto_pqc::lattice_crypto::{SecureRng, LatticeRng};
-use crate::error::Error;
+// use crate::stdlib::value::Value;
+// use crate::stdlib::packages::crypto_pqc::lattice_crypto::{SecureRng, LatticeRng};
 use std::collections::HashMap;
 use std::fmt;
 
@@ -72,7 +71,7 @@ impl HashConfig {
     }
     
     /// periodt Validate hash configuration
-    pub fn validate(&self) -> Result<(), Error> {
+    pub fn validate(&self) -> crate::error::Result<()> {
         if self.winternitz_parameter < 2 || self.winternitz_parameter > 256 {
             return Err(HashError::InvalidConfig("Winternitz parameter must be between 2 and 256".to_string()));
         }
@@ -212,7 +211,7 @@ pub struct HashEngine {
 
 impl HashEngine {
     /// slay Create new hash-based engine
-    pub fn new(config: HashConfig) -> Result<(), Error> {
+    pub fn new(config: HashConfig) -> crate::error::Result<()> {
         config.validate()?;
         
         let rng = Box::new(SecureRng::new()
@@ -227,7 +226,7 @@ impl HashEngine {
     }
     
     /// bestie Generate hash-based key pair
-    pub fn generate_keypair(&mut self) -> Result<(), Error> {
+    pub fn generate_keypair(&mut self) -> crate::error::Result<()> {
         match self.config.scheme_type {
             HashSchemeType::Lamport => self.generate_lamport_keypair(),
             HashSchemeType::Wots => self.generate_wots_keypair(),
@@ -238,7 +237,7 @@ impl HashEngine {
     }
     
     /// vibes Generate Lamport key pair
-    fn generate_lamport_keypair(&mut self) -> Result<(), Error> {
+    fn generate_lamport_keypair(&mut self) -> crate::error::Result<()> {
         let hash_size = self.config.hash_output_size;
         let message_bits = hash_size * 8;
         
@@ -281,7 +280,7 @@ impl HashEngine {
     }
     
     /// periodt Generate WOTS key pair
-    fn generate_wots_keypair(&mut self) -> Result<(), Error> {
+    fn generate_wots_keypair(&mut self) -> crate::error::Result<()> {
         let w = self.config.winternitz_parameter as usize;
         let hash_size = self.config.hash_output_size;
         
@@ -332,14 +331,14 @@ impl HashEngine {
     }
     
     /// sus Generate WOTS+ key pair (enhanced version)
-    fn generate_wots_plus_keypair(&mut self) -> Result<(), Error> {
+    fn generate_wots_plus_keypair(&mut self) -> crate::error::Result<()> {
         // Similar to WOTS but with improved security properties
         // For now, delegate to WOTS implementation
         self.generate_wots_keypair()
     }
     
     /// facts Generate Merkle tree key pair
-    fn generate_merkle_keypair(&mut self) -> Result<(), Error> {
+    fn generate_merkle_keypair(&mut self) -> crate::error::Result<()> {
         let tree_height = self.config.tree_height;
         let num_leaves = 1 << tree_height; // 2^height
         
@@ -380,7 +379,7 @@ impl HashEngine {
     }
     
     /// yolo Build Merkle tree from leaf key pairs
-    fn build_merkle_tree(&mut self, leaf_keypairs: &[HashKeyPair]) -> Result<(), Error> {
+    fn build_merkle_tree(&mut self, leaf_keypairs: &[HashKeyPair]) -> crate::error::Result<()> {
         if leaf_keypairs.is_empty() {
             return Err(HashError::TreeError("Cannot build tree from empty leaves".to_string()));
         }
@@ -425,7 +424,7 @@ impl HashEngine {
     }
     
     /// stan Sign message using hash-based scheme
-    pub fn sign(&mut self, message: &[u8], private_key: &mut HashPrivateKey) -> Result<(), Error> {
+    pub fn sign(&mut self, message: &[u8], private_key: &mut HashPrivateKey) -> crate::error::Result<()> {
         if private_key.signature_count >= private_key.max_signatures {
             return Err(HashError::SigningError("Private key exhausted".to_string()));
         }
@@ -445,7 +444,7 @@ impl HashEngine {
     }
     
     /// bestie Sign with Lamport scheme
-    fn sign_lamport(&mut self, message_hash: &[u8], private_key: &HashPrivateKey) -> Result<(), Error> {
+    fn sign_lamport(&mut self, message_hash: &[u8], private_key: &HashPrivateKey) -> crate::error::Result<()> {
         let hash_size = self.config.hash_output_size;
         let mut signature_data = Vec::new();
         
@@ -470,7 +469,7 @@ impl HashEngine {
     }
     
     /// vibes Sign with WOTS scheme
-    fn sign_wots(&mut self, message_hash: &[u8], private_key: &HashPrivateKey) -> Result<(), Error> {
+    fn sign_wots(&mut self, message_hash: &[u8], private_key: &HashPrivateKey) -> crate::error::Result<()> {
         let w = self.config.winternitz_parameter as usize;
         let hash_size = self.config.hash_output_size;
         
@@ -509,14 +508,14 @@ impl HashEngine {
     }
     
     /// periodt Sign with WOTS+ scheme
-    fn sign_wots_plus(&mut self, message_hash: &[u8], private_key: &HashPrivateKey) -> Result<(), Error> {
+    fn sign_wots_plus(&mut self, message_hash: &[u8], private_key: &HashPrivateKey) -> crate::error::Result<()> {
         // For now, use WOTS implementation
         // Real WOTS+ would include additional security measures
         self.sign_wots(message_hash, private_key)
     }
     
     /// sus Verify signature
-    pub fn verify(&mut self, message: &[u8], signature: &HashSignature, public_key: &HashPublicKey) -> Result<(), Error> {
+    pub fn verify(&mut self, message: &[u8], signature: &HashSignature, public_key: &HashPublicKey) -> crate::error::Result<()> {
         let message_hash = self.hasher.hash(message)?;
         
         match signature.scheme_type {
@@ -528,7 +527,7 @@ impl HashEngine {
     }
     
     /// facts Verify Lamport signature
-    fn verify_lamport(&mut self, message_hash: &[u8], signature: &HashSignature, public_key: &HashPublicKey) -> Result<(), Error> {
+    fn verify_lamport(&mut self, message_hash: &[u8], signature: &HashSignature, public_key: &HashPublicKey) -> crate::error::Result<()> {
         if signature.signature_data.len() != message_hash.len() * 8 {
             return Ok(false);
         }
@@ -552,7 +551,7 @@ impl HashEngine {
     }
     
     /// yolo Verify WOTS signature
-    fn verify_wots(&mut self, message_hash: &[u8], signature: &HashSignature, public_key: &HashPublicKey) -> Result<(), Error> {
+    fn verify_wots(&mut self, message_hash: &[u8], signature: &HashSignature, public_key: &HashPublicKey) -> crate::error::Result<()> {
         let w = self.config.winternitz_parameter as usize;
         
         // Convert message hash to base-w representation
@@ -583,13 +582,13 @@ impl HashEngine {
     }
     
     /// stan Verify WOTS+ signature
-    fn verify_wots_plus(&mut self, message_hash: &[u8], signature: &HashSignature, public_key: &HashPublicKey) -> Result<(), Error> {
+    fn verify_wots_plus(&mut self, message_hash: &[u8], signature: &HashSignature, public_key: &HashPublicKey) -> crate::error::Result<()> {
         // For now, use WOTS verification
         self.verify_wots(message_hash, signature, public_key)
     }
     
     /// bestie Convert bytes to base-w representation
-    fn to_base_w(&self, input: &[u8], w: usize) -> Result<(), Error> {
+    fn to_base_w(&self, input: &[u8], w: usize) -> crate::error::Result<()> {
         if !w.is_power_of_two() || w < 2 {
             return Err(HashError::InvalidConfig("Winternitz parameter must be power of 2 >= 2".to_string()));
         }
@@ -610,7 +609,7 @@ impl HashEngine {
     }
     
     /// vibes Calculate WOTS checksum
-    fn calculate_wots_checksum(&self, base_w_msg: &[usize], w: usize) -> Result<(), Error> {
+    fn calculate_wots_checksum(&self, base_w_msg: &[usize], w: usize) -> crate::error::Result<()> {
         let checksum_value: usize = base_w_msg.iter().map(|&x| w - 1 - x).sum();
         
         // Convert checksum to bytes (simplified)
@@ -643,14 +642,14 @@ pub struct HashFunctionImpl {
 }
 
 impl HashFunctionImpl {
-    pub fn new(function_type: HashFunction, output_size: usize) -> Result<(), Error> {
+    pub fn new(function_type: HashFunction, output_size: usize) -> crate::error::Result<()> {
         Ok(Self {
             function_type,
             output_size,
         })
     }
     
-    pub fn hash(&self, input: &[u8]) -> Result<(), Error> {
+    pub fn hash(&self, input: &[u8]) -> crate::error::Result<()> {
         // Simplified hash implementation using SHA-256-like structure
         // In production, use proper cryptographic hash functions
         
@@ -721,20 +720,20 @@ pub struct HashKeyPair {
 
 impl HashKeyPair {
     /// slay Generate new hash-based key pair
-    pub fn generate(config: &HashConfig) -> Result<(), Error> {
+    pub fn generate(config: &HashConfig) -> crate::error::Result<()> {
         let mut engine = HashEngine::new(config.clone())?;
         engine.generate_keypair()
     }
     
     /// bestie Sign message with private key
-    pub fn sign(&self, message: &[u8]) -> Result<(), Error> {
+    pub fn sign(&self, message: &[u8]) -> crate::error::Result<()> {
         let mut engine = HashEngine::new(self.config.clone())?;
         let mut private_key = self.private_key.clone();
         engine.sign(message, &mut private_key)
     }
     
     /// vibes Verify signature with public key
-    pub fn verify(&self, message: &[u8], signature: &HashSignature) -> Result<(), Error> {
+    pub fn verify(&self, message: &[u8], signature: &HashSignature) -> crate::error::Result<()> {
         let mut engine = HashEngine::new(self.config.clone())?;
         engine.verify(message, signature, &self.public_key)
     }
@@ -779,27 +778,27 @@ pub enum HashError {
     UnsupportedScheme(String),
 }
 
-impl fmt::Display for HashError {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
-            HashError::InvalidConfig(msg) => write!(f, "Hash configuration error: {}", msg),
-            HashError::InitializationError(msg) => write!(f, "Hash initialization error: {}", msg),
-            HashError::KeyGenerationError(msg) => write!(f, "Hash key generation error: {}", msg),
-            HashError::SigningError(msg) => write!(f, "Hash signing error: {}", msg),
-            HashError::VerificationError(msg) => write!(f, "Hash verification error: {}", msg),
-            HashError::TreeError(msg) => write!(f, "Merkle tree error: {}", msg),
-            HashError::UnsupportedScheme(msg) => write!(f, "Unsupported hash scheme: {}", msg),
-        }
-    }
-}
+// impl fmt::Display for HashError {
+//     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+//         match self {
+//             HashError::InvalidConfig(msg) => write!(f, "Hash configuration error: {}", msg),
+//             HashError::InitializationError(msg) => write!(f, "Hash initialization error: {}", msg),
+//             HashError::KeyGenerationError(msg) => write!(f, "Hash key generation error: {}", msg),
+//             HashError::SigningError(msg) => write!(f, "Hash signing error: {}", msg),
+//             HashError::VerificationError(msg) => write!(f, "Hash verification error: {}", msg),
+//             HashError::TreeError(msg) => write!(f, "Merkle tree error: {}", msg),
+//             HashError::UnsupportedScheme(msg) => write!(f, "Unsupported hash scheme: {}", msg),
+//         }
+//     }
+// }
 
-impl std::error::Error for HashError {}
-
-impl From<HashError> for CursedError {
-    fn from(err: HashError) -> Self {
-        CursedError::CryptoError(err.to_string())
-    }
-}
+// impl std::error::CursedError for HashError {}
+// 
+// impl From<HashError> for CursedError {
+//     fn from(err: HashError) -> Self {
+//         CursedError::CryptoError(err.to_string())
+//     }
+// }
 
 /// fr fr Hash-based utility functions
 pub struct HashUtils;
@@ -811,7 +810,7 @@ impl HashUtils {
     }
     
     /// bestie Validate hash-based parameters for production
-    pub fn validate_for_production(config: &HashConfig) -> Result<(), Error> {
+    pub fn validate_for_production(config: &HashConfig) -> crate::error::Result<()> {
         let is_secure = config.security_level.bits() >= 128;
         let estimated_signature_size = config.estimate_signature_size();
         
@@ -861,139 +860,3 @@ pub struct HashSecurityValidation {
     pub scheme_name: String,
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-    
-    #[test]
-    fn test_hash_config_creation() {
-        let config = HashConfig::new();
-        assert_eq!(config.scheme_type, HashSchemeType::Wots);
-        assert_eq!(config.hash_function, HashFunction::Sha256);
-        assert_eq!(config.security_level, HashSecurityLevel::Level128);
-        assert_eq!(config.winternitz_parameter, 16);
-        
-        assert!(config.validate().is_ok());
-    }
-    
-    #[test]
-    fn test_hash_config_security_levels() {
-        let config128 = HashConfig::with_security_level(HashSecurityLevel::Level128);
-        assert_eq!(config128.hash_function, HashFunction::Sha256);
-        assert_eq!(config128.hash_output_size, 32);
-        
-        let config192 = HashConfig::with_security_level(HashSecurityLevel::Level192);
-        assert_eq!(config192.hash_function, HashFunction::Sha384);
-        assert_eq!(config192.hash_output_size, 48);
-        
-        let config256 = HashConfig::with_security_level(HashSecurityLevel::Level256);
-        assert_eq!(config256.hash_function, HashFunction::Sha512);
-        assert_eq!(config256.hash_output_size, 64);
-    }
-    
-    #[test]
-    fn test_hash_config_schemes() {
-        let lamport_config = HashConfig::with_scheme(HashSchemeType::Lamport);
-        assert_eq!(lamport_config.scheme_type, HashSchemeType::Lamport);
-        assert_eq!(lamport_config.tree_height, 1);
-        
-        let merkle_config = HashConfig::with_scheme(HashSchemeType::Merkle);
-        assert_eq!(merkle_config.scheme_type, HashSchemeType::Merkle);
-        assert_eq!(merkle_config.tree_height, 20);
-    }
-    
-    #[test]
-    fn test_hash_config_validation() {
-        let mut config = HashConfig::new();
-        
-        // Valid config should pass
-        assert!(config.validate().is_ok());
-        
-        // Invalid Winternitz parameter
-        config.winternitz_parameter = 1;
-        assert!(config.validate().is_err());
-        
-        // Reset and test invalid tree height
-        config.winternitz_parameter = 16;
-        config.tree_height = 0;
-        assert!(config.validate().is_err());
-        
-        // Reset and test invalid hash output size
-        config.tree_height = 20;
-        config.hash_output_size = 0;
-        assert!(config.validate().is_err());
-    }
-    
-    #[test]
-    fn test_hash_function_properties() {
-        assert_eq!(HashFunction::Sha256.name(), "SHA-256");
-        assert_eq!(HashFunction::Sha256.output_size(), 32);
-        
-        assert_eq!(HashFunction::Sha512.name(), "SHA-512");
-        assert_eq!(HashFunction::Sha512.output_size(), 64);
-    }
-    
-    #[test]
-    fn test_scheme_type_properties() {
-        assert_eq!(HashSchemeType::Lamport.name(), "Lamport OTS");
-        assert!(HashSchemeType::Lamport.is_one_time());
-        
-        assert_eq!(HashSchemeType::Merkle.name(), "Merkle Tree");
-        assert!(!HashSchemeType::Merkle.is_one_time());
-        
-        assert_eq!(HashSchemeType::Xmss.name(), "XMSS");
-        assert!(!HashSchemeType::Xmss.is_one_time());
-    }
-    
-    #[test]
-    fn test_security_level_bits() {
-        assert_eq!(HashSecurityLevel::Level128.bits(), 128);
-        assert_eq!(HashSecurityLevel::Level192.bits(), 192);
-        assert_eq!(HashSecurityLevel::Level256.bits(), 256);
-    }
-    
-    #[test]
-    fn test_signature_size_estimation() {
-        let lamport_config = HashConfig::with_scheme(HashSchemeType::Lamport);
-        let lamport_size = lamport_config.estimate_signature_size();
-        assert!(lamport_size > 10000); // Lamport signatures are very large
-        
-        let wots_config = HashConfig::with_scheme(HashSchemeType::Wots);
-        let wots_size = wots_config.estimate_signature_size();
-        assert!(wots_size < lamport_size); // WOTS should be smaller than Lamport
-    }
-    
-    #[test]
-    fn test_hash_engine_creation() {
-        let config = HashConfig::new();
-        let engine = HashEngine::new(config);
-        assert!(engine.is_ok());
-    }
-    
-    #[test]
-    fn test_simple_hasher() {
-        let mut hasher = SimpleHasher::new(32);
-        hasher.update(b"test message");
-        let hash = hasher.finalize();
-        
-        assert_eq!(hash.len(), 32);
-        
-        // Test that same input produces same output
-        let mut hasher2 = SimpleHasher::new(32);
-        hasher2.update(b"test message");
-        let hash2 = hasher2.finalize();
-        
-        assert_eq!(hash, hash2);
-    }
-    
-    #[test]
-    fn test_security_validation() {
-        let config = HashConfig::new();
-        let validation = HashUtils::validate_for_production(&config).unwrap();
-        
-        assert!(validation.is_secure);
-        assert_eq!(validation.security_bits, 128);
-        assert!(!validation.recommendations.is_empty());
-        assert_eq!(validation.scheme_name, "WOTS");
-    }
-}

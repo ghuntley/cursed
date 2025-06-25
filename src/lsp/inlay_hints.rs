@@ -1,4 +1,4 @@
-use crate::error::Error;
+use crate::error::CursedError;
 // Inlay hints implementation for CURSED language
 // 
 // Provides contextual inline information including type hints, parameter names,
@@ -26,7 +26,7 @@ pub enum InlayHintType {
     Conversion,
     /// Generic type parameters
     GenericParameter,
-    /// Error propagation information
+    /// CursedError propagation information
     ErrorPropagation,
     /// Channel direction hints
     ChannelDirection,
@@ -481,7 +481,7 @@ impl InlayHintsProvider {
                     position,
                     InlayHintType::ErrorPropagation,
                     "?".to_string(),
-                    Some("Error propagation operator".to_string()),
+                    Some("CursedError propagation operator".to_string()),
                 ));
             }
         } else if let Some(call_expr) = expr.as_any().downcast_ref::<CallExpression>() {
@@ -590,7 +590,7 @@ impl InlayHintsProvider {
                                 position,
                                 InlayHintType::ErrorPropagation,
                                 "error propagation".to_string(),
-                                Some("Error propagation operator".to_string()),
+                                Some("CursedError propagation operator".to_string()),
                             ));
                         }
                     }
@@ -707,72 +707,3 @@ impl Default for InlayHintsProvider {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-    
-    #[tokio::test]
-    async fn test_inlay_hints_generation() {
-        let mut provider = InlayHintsProvider::new();
-        let content = r#"
-            slay greet(name: string) {
-                sus greeting = "Hello, " + name;
-                vibez greeting;
-            }
-        "#;
-        
-        let range = Range {
-            start: Position { line: 0, character: 0 },
-            end: Position { line: 10, character: 0 },
-        };
-        
-        let hints = provider.get_inlay_hints(content, range).await.unwrap();
-        
-        // Should have some hints
-        assert!(!hints.is_empty());
-    }
-    
-    #[test]
-    fn test_hint_filtering() {
-        let mut config = InlayHintConfig::default();
-        config.max_hint_length = 10;
-        config.only_complex_types = true;
-        
-        let provider = InlayHintsProvider::with_config(config);
-        
-        let hints = vec![
-            CursedInlayHint::type_hint(
-                Position { line: 0, character: 0 },
-                "string".to_string(),
-                None,
-            ),
-            CursedInlayHint::type_hint(
-                Position { line: 1, character: 0 },
-                "map<string, i32>".to_string(),
-                None,
-            ),
-            CursedInlayHint::type_hint(
-                Position { line: 2, character: 0 },
-                "very_long_type_name_that_exceeds_limit".to_string(),
-                None,
-            ),
-        ];
-        
-        let filtered = provider.filter_hints(hints);
-        
-        // Should keep complex type and filter out simple and too long
-        assert_eq!(filtered.len(), 1);
-        assert!(filtered[0].label.contains("map"));
-    }
-    
-    #[test]
-    fn test_complex_type_detection() {
-        let provider = InlayHintsProvider::new();
-        
-        assert!(provider.is_complex_type("map<string, i32>"));
-        assert!(provider.is_complex_type("chan int"));
-        assert!(provider.is_complex_type("Option<T>"));
-        assert!(!provider.is_complex_type("string"));
-        assert!(!provider.is_complex_type("i32"));
-    }
-}

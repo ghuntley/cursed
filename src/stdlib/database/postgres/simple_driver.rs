@@ -8,7 +8,7 @@ use std::time::SystemTime;
 use super::super::{Driver, DriverConn, DatabaseError, DatabaseErrorKind};
 use super::driver::PostgresDriver;
 use super::config::PostgresConnectionString;
-use crate::error::Error;
+use crate::error::CursedError;
 
 /// Simple PostgreSQL driver (now redirects to full implementation)
 #[derive(Debug, Clone)]
@@ -44,7 +44,7 @@ impl Default for SimplePostgresDriver {
 }
 
 impl Driver for SimplePostgresDriver {
-    fn open(&self, data_source_name: &str) -> Result<(), Error> {
+    fn open(&self, data_source_name: &str) -> crate::error::Result<()> {
         // Validate connection string first
         PostgresConnectionString::parse(data_source_name)
             .map_err(|e| DatabaseError::new(

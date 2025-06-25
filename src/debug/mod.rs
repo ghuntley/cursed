@@ -46,7 +46,7 @@ impl Default for DebugInfoManager {
 
 /// DWARF generator module
 pub mod dwarf_gen {
-    use crate::error::Error;
+    use crate::error::CursedError;
     
     #[derive(Debug)]
     pub struct DwarfGenerator {
@@ -54,7 +54,7 @@ pub mod dwarf_gen {
     }
     
     impl DwarfGenerator {
-        pub fn new() -> Result<Self, Error> {
+        pub fn new() -> crate::error::Result<Self> {
             Ok(Self { enabled: false })
         }
     }

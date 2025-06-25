@@ -4,7 +4,7 @@
 // handling multi-line comments, inline documentation, JSDoc-style tags,
 // code examples, and cross-references.
 
-use crate::error::{Error, SourceLocation};
+use crate::error::{CursedError, SourceLocation};
 use crate::documentation::comment_parser::{ParsedComment, DocTag, CodeExample};
 use crate::lexer::{Token, TokenType};
 
@@ -117,7 +117,7 @@ pub struct JSDocTag {
 impl CommentExtractor {
     /// Create a new enhanced comment extractor
     #[instrument]
-    pub fn new() -> Result<(), Error> {
+    pub fn new() -> crate::error::Result<()> {
         let mut jsdoc_tags = HashSet::new();
         
         // Standard JSDoc tags
@@ -183,7 +183,7 @@ impl CommentExtractor {
     pub fn extract_comments_from_tokens(
         &self,
         tokens: &[Token],
-    ) -> Result<(), Error> {
+    ) -> crate::error::Result<()> {
         debug!("Extracting comments from {} tokens", tokens.len());
         
         let mut comments = Vec::new();
@@ -207,7 +207,7 @@ impl CommentExtractor {
         &self,
         tokens: &[Token],
         index: &mut usize,
-    ) -> Result<(), Error> {
+    ) -> crate::error::Result<()> {
         if *index >= tokens.len() {
             return Ok(None);
         }
@@ -270,7 +270,7 @@ impl CommentExtractor {
         &self,
         location: &SourceLocation,
         source_code: &str,
-    ) -> Result<(), Error> {
+    ) -> crate::error::Result<()> {
         let lines: Vec<&str> = source_code.split("\n").collect();
         
         if location.line <= 1 || location.line > lines.len() {
@@ -364,7 +364,7 @@ impl CommentExtractor {
         content: &str,
         line: usize,
         column: usize,
-    ) -> Result<(), Error> {
+    ) -> crate::error::Result<()> {
         let mut description_lines = Vec::new();
         let mut tags = Vec::new();
         let mut examples = Vec::new();
@@ -461,7 +461,7 @@ impl CommentExtractor {
     }
 
     /// Parse JSDoc-style tag with type information
-    fn parse_jsdoc_tag(&self, tag_content: &str) -> Result<(), Error> {
+    fn parse_jsdoc_tag(&self, tag_content: &str) -> crate::error::Result<()> {
         // Handle typed parameters: @param {string} name - The name parameter
         if let Some(type_end) = tag_content.find('}') {
             if tag_content.starts_with("param {") || tag_content.starts_with("return {") {
@@ -491,7 +491,7 @@ impl CommentExtractor {
 
     /// Extract cross-references from comment text
     #[instrument(skip(self, text))]
-    fn extract_cross_references(&self, text: &str) -> Result<(), Error> {
+    fn extract_cross_references(&self, text: &str) -> crate::error::Result<()> {
         let mut references = Vec::new();
 
         for pattern in &self.crossref_patterns {
@@ -513,7 +513,7 @@ impl CommentExtractor {
     fn extract_enhanced_examples(
         &self,
         examples: &[CodeExample],
-    ) -> Result<(), Error> {
+    ) -> crate::error::Result<()> {
         let mut enhanced = Vec::new();
 
         for example in examples {
@@ -533,7 +533,7 @@ impl CommentExtractor {
     }
 
     /// Validate example syntax (simplified)
-    fn validate_example_syntax(&self, code: &str) -> Result<(), Error> {
+    fn validate_example_syntax(&self, code: &str) -> crate::error::Result<()> {
         // Basic validation - check for balanced braces and semicolons
         let mut brace_count = 0;
         let mut in_string = false;
@@ -558,7 +558,7 @@ impl CommentExtractor {
     }
 
     /// Extract dependencies from example code
-    fn extract_example_dependencies(&self, code: &str) -> Result<(), Error> {
+    fn extract_example_dependencies(&self, code: &str) -> crate::error::Result<()> {
         let mut dependencies = Vec::new();
 
         // Look for import statements
@@ -579,7 +579,7 @@ impl CommentExtractor {
     }
 
     /// Extract JSDoc tags from parsed tags
-    fn extract_jsdoc_tags(&self, tags: &[DocTag]) -> Result<(), Error> {
+    fn extract_jsdoc_tags(&self, tags: &[DocTag]) -> crate::error::Result<()> {
         let mut jsdoc_tags = Vec::new();
 
         for tag in tags {
@@ -600,7 +600,7 @@ impl CommentExtractor {
     }
 
     /// Parse type information from tag value
-    fn parse_tag_type_info(&self, value: &str) -> Result<(), Error> {
+    fn parse_tag_type_info(&self, value: &str) -> crate::error::Result<()> {
         // Handle typed format: {string} name - Description
         if value.starts_with('{') {
             if let Some(type_end) = value.find('}') {

@@ -1,4 +1,4 @@
-use crate::error::Error;
+use crate::error::CursedError;
 /// CURSED Optimization Profiler CLI
 /// 
 /// Comprehensive CLI tool for profiling and analyzing CURSED compiler optimizations,
@@ -19,7 +19,7 @@ use serde_json;
 use tracing::{info, debug, error, Level};
 use tracing_subscriber;
 
-fn main() -> Result<(), Error> {
+fn main() -> crate::error::Result<()> {
     // Initialize tracing
     tracing_subscriber::fmt()
         .with_max_level(Level::INFO)
@@ -868,6 +868,6 @@ fn print_cursed_analysis_summary(analysis: &CursedSpecificAnalysis) {
     println!("Channel usage: {}", analysis.analysis.channel_usage);
     println!("Slang usage: {}", analysis.analysis.slang_usage);
     println!("Interface complexity: {:.2}", analysis.analysis.interface_complexity);
-    println!("Error propagation: {}", analysis.analysis.error_propagation);
+    println!("CursedError propagation: {}", analysis.analysis.error_propagation);
     println!("Recommendations: {}", analysis.recommendations.len());
 }

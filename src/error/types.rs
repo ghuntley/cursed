@@ -63,15 +63,15 @@ impl ErrorContext {
     }
 }
 
-impl fmt::Display for ErrorContext {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        if let Some(location) = &self.location {
-            write!(f, "{}: {}", location, self.message)
-        } else {
-            write!(f, "{}", self.message)
-        }
-    }
-}
+// impl fmt::Display for ErrorContext {
+//     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+//         if let Some(location) = &self.location {
+//             write!(f, "{}: {}", location, self.message)
+//         } else {
+//             write!(f, "{}", self.message)
+//         }
+//     }
+// }
 
 /// Trait for CURSED error types
 pub trait CursedErrorTrait: fmt::Debug + fmt::Display + Send + Sync {
@@ -112,17 +112,17 @@ pub struct ParseError {
     pub column: usize,
 }
 
-impl fmt::Display for ParseError {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "Parse error at {}:{}: {}", self.line, self.column, self.message)
-    }
-}
+// impl fmt::Display for ParseError {
+//     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+//         write!(f, "Parse error at {}:{}: {}", self.line, self.column, self.message)
+//     }
+// }
 
-impl CursedErrorTrait for ParseError {
-    fn error_code(&self) -> u32 { 1001 }
-    fn category(&self) -> ErrorCategory { ErrorCategory::Syntax }
-    fn severity(&self) -> ErrorSeverity { ErrorSeverity::Error }
-}
+// impl CursedErrorTrait for ParseError {
+//     fn error_code(&self) -> u32 { 1001 }
+//     fn category(&self) -> ErrorCategory { ErrorCategory::Syntax }
+//     fn severity(&self) -> ErrorSeverity { ErrorSeverity::Error }
+// }
 
 /// Runtime error type
 #[derive(Debug, Clone)]
@@ -131,17 +131,17 @@ pub struct RuntimeError {
     pub stack_trace: Option<Vec<String>>,
 }
 
-impl fmt::Display for RuntimeError {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "Runtime error: {}", self.message)
-    }
-}
+// impl fmt::Display for RuntimeError {
+//     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+//         write!(f, "Runtime error: {}", self.message)
+//     }
+// }
 
-impl CursedErrorTrait for RuntimeError {
-    fn error_code(&self) -> u32 { 2001 }
-    fn category(&self) -> ErrorCategory { ErrorCategory::Runtime }
-    fn severity(&self) -> ErrorSeverity { ErrorSeverity::Error }
-}
+// impl CursedErrorTrait for RuntimeError {
+//     fn error_code(&self) -> u32 { 2001 }
+//     fn category(&self) -> ErrorCategory { ErrorCategory::Runtime }
+//     fn severity(&self) -> ErrorSeverity { ErrorSeverity::Error }
+// }
 
 /// IO error type
 #[derive(Debug, Clone)]
@@ -150,21 +150,21 @@ pub struct IoError {
     pub path: Option<String>,
 }
 
-impl fmt::Display for IoError {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        if let Some(path) = &self.path {
-            write!(f, "IO error on '{}': {}", path, self.message)
-        } else {
-            write!(f, "IO error: {}", self.message)
-        }
-    }
-}
+// impl fmt::Display for IoError {
+//     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+//         if let Some(path) = &self.path {
+//             write!(f, "IO error on '{}': {}", path, self.message)
+//         } else {
+//             write!(f, "IO error: {}", self.message)
+//         }
+//     }
+// }
 
-impl CursedErrorTrait for IoError {
-    fn error_code(&self) -> u32 { 3001 }
-    fn category(&self) -> ErrorCategory { ErrorCategory::IO }
-    fn severity(&self) -> ErrorSeverity { ErrorSeverity::Error }
-}
+// impl CursedErrorTrait for IoError {
+//     fn error_code(&self) -> u32 { 3001 }
+//     fn category(&self) -> ErrorCategory { ErrorCategory::IO }
+//     fn severity(&self) -> ErrorSeverity { ErrorSeverity::Error }
+// }
 
 /// Error manager configuration
 #[derive(Debug, Clone)]

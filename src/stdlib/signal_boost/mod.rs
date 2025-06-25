@@ -1,6 +1,6 @@
-use crate::error::Error as CursedError;
+use crate::error::CursedError;
 // Module error types
-pub type Error = ModuleError;
+pub type CursedError = ModuleError;
 
 #[derive(Debug, Clone)]
 pub enum ModuleError {
@@ -11,19 +11,19 @@ pub enum ModuleError {
     RuntimeError(String),
 }
 
-impl std::fmt::Display for ModuleError {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            ModuleError::InvalidInput => write!(f, "Invalid input"),
-            ModuleError::InvalidOperation => write!(f, "Invalid operation"),
-            ModuleError::OperationFailed(msg) => write!(f, "Operation failed: {}", msg),
-            ModuleError::ConfigurationError(msg) => write!(f, "Configuration error: {}", msg),
-            ModuleError::RuntimeError(msg) => write!(f, "Runtime error: {}", msg),
-        }
-    }
-}
+// impl std::fmt::Display for ModuleError {
+//     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+//         match self {
+//             ModuleError::InvalidInput => write!(f, "Invalid input"),
+//             ModuleError::InvalidOperation => write!(f, "Invalid operation"),
+//             ModuleError::OperationFailed(msg) => write!(f, "Operation failed: {}", msg),
+//             ModuleError::ConfigurationError(msg) => write!(f, "Configuration error: {}", msg),
+//             ModuleError::RuntimeError(msg) => write!(f, "Runtime error: {}", msg),
+//         }
+//     }
+// }
 
-impl std::error::Error for ModuleError {}
+// impl std::error::CursedError for ModuleError {}
 /// SignalBoost - Enhanced signal handling for CURSED
 /// Provides comprehensive OS signal management with graceful shutdown patterns
 pub mod core;

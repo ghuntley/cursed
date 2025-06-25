@@ -1,4 +1,4 @@
-use crate::error_types::Error;
+use crate::error::CursedError;
 // Main CURSED REPL Implementation
 // 
 // Provides the core interactive Read-Eval-Print Loop functionality
@@ -9,7 +9,6 @@ use std::path::PathBuf;
 use std::time::{Duration, Instant};
 use rustyline::{Editor, Result as RustylineResult, DefaultEditor};
 use rustyline::config::Configurer;
-use rustyline::error::ReadlineError;
 use rustyline::history::DefaultHistory;
 
 use crate::repl::{
@@ -18,7 +17,6 @@ use crate::repl::{
     MultiLineEditor, BuildIntegration, ReplEvaluator
 };
 
-use crate::error::Error;
 
 /// Main CURSED REPL structure
 pub struct CursedRepl {
@@ -99,7 +97,7 @@ impl CursedRepl {
     pub fn with_working_directory(mut self, dir: &str) -> ReplResult<Self> {
         let path = PathBuf::from(dir);
         if !path.exists() {
-            return Err(Error::repl_error(format!("Directory does not exist: {}", dir)));
+            return Err(CursedError::repl_error(format!("Directory does not exist: {}", dir)));
         }
         
         self.config.working_directory = Some(path.clone());
@@ -110,7 +108,7 @@ impl CursedRepl {
     /// Load and execute a CURSED file
     pub fn load_file(&mut self, file_path: &str) -> ReplResult<()> {
         let content = std::fs::read_to_string(file_path)
-            .map_err(|e| Error::repl_error(format!("Failed to read file {}: {}", file_path, e)))?;
+            .map_err(|e| CursedError::repl_error(format!("Failed to read file {}: {}", file_path, e)))?;
 
         if self.config.verbose {
             println!("📁 Loading file: {}", file_path);
@@ -135,16 +133,16 @@ impl CursedRepl {
                 ReplState::Interactive => {
                     if let Err(e) = self.handle_interactive_input() {
                         if self.config.verbose {
-                            eprintln!("🔥 Error: {}", e);
+                            eprintln!("🔥 CursedError: {}", e);
                         } else {
-                            eprintln!("Error: {}", e);
+                            eprintln!("CursedError: {}", e);
                         }
-                        self.state = ReplState::Error(e.to_string());
+                        self.state = ReplState::CursedError(e.to_string());
                     }
                 }
                 ReplState::MultiLine => {
                     if let Err(e) = self.handle_multiline_input() {
-                        eprintln!("Error: {}", e);
+                        eprintln!("CursedError: {}", e);
                         self.state = ReplState::Interactive;
                         self.current_input.clear();
                     }
@@ -157,7 +155,7 @@ impl CursedRepl {
                     self.cleanup()?;
                     break;
                 }
-                ReplState::Error(ref _msg) => {
+                ReplState::CursedError(ref _msg) => {
                     // Reset to interactive mode after error
                     self.state = ReplState::Interactive;
                     self.current_input.clear();
@@ -230,7 +228,7 @@ impl CursedRepl {
                 self.state = ReplState::Exiting;
             }
             Err(err) => {
-                return Err(Error::repl_error(format!("Input error: {}", err)));
+                return Err(CursedError::repl_error(format!("Input error: {}", err)));
             }
         }
 
@@ -395,7 +393,7 @@ impl CursedRepl {
             if self.config.verbose {
                 print!("🔥 ");
             }
-            print!("Error: {}", output.content);
+            print!("CursedError: {}", output.content);
         } else {
             print!("{}", output.content);
         }

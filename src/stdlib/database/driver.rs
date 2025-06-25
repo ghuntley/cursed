@@ -14,7 +14,7 @@ use std::collections::HashMap;
 use std::sync::{Arc, Mutex, RwLock};
 use std::time::Duration;
 use super::{DatabaseError, DatabaseErrorKind, SqlValue, TxOptions, VibeContext};
-use crate::error::Error;
+use crate::error::CursedError;
 
 /// fr fr Result structure for query operations
 #[derive(Debug, Clone)]
@@ -25,7 +25,7 @@ pub struct QueryResult {
     pub column_types: Vec<String>,
     /// fr fr Rows of data
     pub rows: Vec<Vec<SqlValue>>,
-    /// fr fr Error if query failed
+    /// fr fr CursedError if query failed
     pub error: Option<DatabaseError>,
 }
 
@@ -73,7 +73,7 @@ impl ExecuteResult {
 /// fr fr Main driver interface that all database drivers must implement
 pub trait Driver: Send + Sync + std::fmt::Debug {
     /// slay Open a new connection to the database
-    fn open(&self, data_source_name: &str) -> Result<(), Error>;
+    fn open(&self, data_source_name: &str) -> crate::error::Result<()>;
     
     /// slay Get the name of this driver
     fn name(&self) -> &str;
@@ -88,22 +88,22 @@ pub trait Driver: Send + Sync + std::fmt::Debug {
 /// fr fr Database connection interface for driver implementations
 pub trait DriverConn: Send + Sync + std::fmt::Debug {
     /// slay Prepare a statement on this connection
-    fn prepare(&self, query: &str) -> Result<(), Error>;
+    fn prepare(&self, query: &str) -> crate::error::Result<()>;
     
     /// slay Execute a query that returns rows
-    fn query(&self, query: &str, args: &[SqlValue]) -> Result<(), Error>;
+    fn query(&self, query: &str, args: &[SqlValue]) -> crate::error::Result<()>;
     
     /// slay Execute a query that doesn't return rows
-    fn execute(&self, query: &str, args: &[SqlValue]) -> Result<(), Error>;
+    fn execute(&self, query: &str, args: &[SqlValue]) -> crate::error::Result<()>;
     
     /// slay Begin a transaction
-    fn begin_transaction(&self, opts: TxOptions) -> Result<(), Error>;
+    fn begin_transaction(&self, opts: TxOptions) -> crate::error::Result<()>;
     
     /// slay Ping the database to check connectivity
-    fn ping(&self) -> Result<(), Error>;
+    fn ping(&self) -> crate::error::Result<()>;
     
     /// slay Close this connection
-    fn close(&self) -> Result<(), Error>;
+    fn close(&self) -> crate::error::Result<()>;
     
     /// slay Check if this connection is still alive
     fn is_alive(&self) -> bool;
@@ -118,13 +118,13 @@ pub trait DriverConn: Send + Sync + std::fmt::Debug {
 /// fr fr Prepared statement interface for driver implementations
 pub trait DriverStmt: Send + Sync + std::fmt::Debug {
     /// slay Execute this statement with arguments that returns rows
-    fn query(&self, args: &[SqlValue]) -> Result<(), Error>;
+    fn query(&self, args: &[SqlValue]) -> crate::error::Result<()>;
     
     /// slay Execute this statement with arguments that doesn't return rows
-    fn execute(&self, args: &[SqlValue]) -> Result<(), Error>;
+    fn execute(&self, args: &[SqlValue]) -> crate::error::Result<()>;
     
     /// slay Close this statement
-    fn close(&self) -> Result<(), Error>;
+    fn close(&self) -> crate::error::Result<()>;
     
     /// slay Get the original query string
     fn query_string(&self) -> &str;
@@ -142,19 +142,19 @@ pub trait DriverStmt: Send + Sync + std::fmt::Debug {
 /// fr fr Transaction interface for driver implementations
 pub trait DriverTx: Send + Sync + std::fmt::Debug {
     /// slay Prepare a statement within this transaction
-    fn prepare(&self, query: &str) -> Result<(), Error>;
+    fn prepare(&self, query: &str) -> crate::error::Result<()>;
     
     /// slay Execute a query that returns rows within this transaction
-    fn query(&self, query: &str, args: &[SqlValue]) -> Result<(), Error>;
+    fn query(&self, query: &str, args: &[SqlValue]) -> crate::error::Result<()>;
     
     /// slay Execute a query that doesn't return rows within this transaction
-    fn execute(&self, query: &str, args: &[SqlValue]) -> Result<(), Error>;
+    fn execute(&self, query: &str, args: &[SqlValue]) -> crate::error::Result<()>;
     
     /// slay Commit this transaction
-    fn commit(&self) -> Result<(), Error>;
+    fn commit(&self) -> crate::error::Result<()>;
     
     /// slay Rollback this transaction
-    fn rollback(&self) -> Result<(), Error>;
+    fn rollback(&self) -> crate::error::Result<()>;
     
     /// slay Get transaction options
     fn options(&self) -> &TxOptions;
@@ -261,7 +261,7 @@ impl DriverRegistry {
     }
 
     /// slay Register a driver with the given name
-    pub fn register(&self, name: String, driver: Box<dyn Driver>) -> Result<(), Error> {
+    pub fn register(&self, name: String, driver: Box<dyn Driver>) -> crate::error::Result<()> {
         let mut drivers = self.drivers.write().map_err(|_| {
             DatabaseError::new(DatabaseErrorKind::DriverError, "Failed to acquire driver registry lock")
         })?;
@@ -278,7 +278,7 @@ impl DriverRegistry {
     }
 
     /// slay Unregister a driver
-    pub fn unregister(&self, name: &str) -> Result<(), Error> {
+    pub fn unregister(&self, name: &str) -> crate::error::Result<()> {
         let mut drivers = self.drivers.write().map_err(|_| {
             DatabaseError::new(DatabaseErrorKind::DriverError, "Failed to acquire driver registry lock")
         })?;
@@ -288,7 +288,7 @@ impl DriverRegistry {
     }
 
     /// slay Get a driver by name
-    pub fn get(&self, name: &str) -> Result<(), Error> {
+    pub fn get(&self, name: &str) -> crate::error::Result<()> {
         let drivers = self.drivers.read().map_err(|_| {
             DatabaseError::new(DatabaseErrorKind::DriverError, "Failed to acquire driver registry lock")
         })?;
@@ -302,7 +302,7 @@ impl DriverRegistry {
     }
 
     /// slay List all registered driver names
-    pub fn list_drivers(&self) -> Result<(), Error> {
+    pub fn list_drivers(&self) -> crate::error::Result<()> {
         let drivers = self.drivers.read().map_err(|_| {
             DatabaseError::new(DatabaseErrorKind::DriverError, "Failed to acquire driver registry lock")
         })?;
@@ -311,7 +311,7 @@ impl DriverRegistry {
     }
 
     /// slay Check if a driver is registered
-    pub fn has_driver(&self, name: &str) -> Result<(), Error> {
+    pub fn has_driver(&self, name: &str) -> crate::error::Result<()> {
         let drivers = self.drivers.read().map_err(|_| {
             DatabaseError::new(DatabaseErrorKind::DriverError, "Failed to acquire driver registry lock")
         })?;
@@ -320,7 +320,7 @@ impl DriverRegistry {
     }
 
     /// slay Get capabilities for a driver
-    pub fn get_capabilities(&self, name: &str) -> Result<(), Error> {
+    pub fn get_capabilities(&self, name: &str) -> crate::error::Result<()> {
         let driver = self.get(name)?;
         Ok(driver.capabilities())
     }
@@ -338,27 +338,27 @@ lazy_static::lazy_static! {
 }
 
 /// slay Register a driver globally
-pub fn register_driver(name: String, driver: Box<dyn Driver>) -> Result<(), Error> {
+pub fn register_driver(name: String, driver: Box<dyn Driver>) -> crate::error::Result<()> {
     GLOBAL_DRIVER_REGISTRY.register(name, driver)
 }
 
 /// slay Get a driver from the global registry
-pub fn get_driver(name: &str) -> Result<(), Error> {
+pub fn get_driver(name: &str) -> crate::error::Result<()> {
     GLOBAL_DRIVER_REGISTRY.get(name)
 }
 
 /// slay List all globally registered drivers
-pub fn list_drivers() -> Result<(), Error> {
+pub fn list_drivers() -> crate::error::Result<()> {
     GLOBAL_DRIVER_REGISTRY.list_drivers()
 }
 
 /// slay Check if a driver is globally registered
-pub fn has_driver(name: &str) -> Result<(), Error> {
+pub fn has_driver(name: &str) -> crate::error::Result<()> {
     GLOBAL_DRIVER_REGISTRY.has_driver(name)
 }
 
 /// slay Get capabilities for a globally registered driver
-pub fn get_driver_capabilities(name: &str) -> Result<(), Error> {
+pub fn get_driver_capabilities(name: &str) -> crate::error::Result<()> {
     GLOBAL_DRIVER_REGISTRY.get_capabilities(name)
 }
 
@@ -390,7 +390,7 @@ impl MockDriver {
 }
 
 impl Driver for MockDriver {
-    fn open(&self, data_source_name: &str) -> Result<(), Error> {
+    fn open(&self, data_source_name: &str) -> crate::error::Result<()> {
         Ok(Box::new(MockDriverConn::new(data_source_name.to_string())))
     }
 
@@ -437,11 +437,11 @@ impl MockDriverConn {
 }
 
 impl DriverConn for MockDriverConn {
-    fn prepare(&self, query: &str) -> Result<(), Error> {
+    fn prepare(&self, query: &str) -> crate::error::Result<()> {
         Ok(Box::new(MockDriverStmt::new(query.to_string())))
     }
 
-    fn query(&self, query: &str, args: &[SqlValue]) -> Result<(), Error> {
+    fn query(&self, query: &str, args: &[SqlValue]) -> crate::error::Result<()> {
         // Mock implementation returns empty result
         Ok(QueryResult::new(
             Vec::from(["column1".to_string(), "column2".to_string()]),
@@ -450,16 +450,16 @@ impl DriverConn for MockDriverConn {
         ))
     }
 
-    fn execute(&self, query: &str, args: &[SqlValue]) -> Result<(), Error> {
+    fn execute(&self, query: &str, args: &[SqlValue]) -> crate::error::Result<()> {
         // Mock implementation returns 1 row affected
         Ok(ExecuteResult::new(Some(1), 1))
     }
 
-    fn begin_transaction(&self, opts: TxOptions) -> Result<(), Error> {
+    fn begin_transaction(&self, opts: TxOptions) -> crate::error::Result<()> {
         Ok(Box::new(MockDriverTx::new(opts)))
     }
 
-    fn ping(&self) -> Result<(), Error> {
+    fn ping(&self) -> crate::error::Result<()> {
         if self.alive {
             Ok(())
         } else {
@@ -467,7 +467,7 @@ impl DriverConn for MockDriverConn {
         }
     }
 
-    fn close(&self) -> Result<(), Error> {
+    fn close(&self) -> crate::error::Result<()> {
         Ok(())
     }
 
@@ -499,7 +499,7 @@ impl MockDriverStmt {
 }
 
 impl DriverStmt for MockDriverStmt {
-    fn query(&self, args: &[SqlValue]) -> Result<(), Error> {
+    fn query(&self, args: &[SqlValue]) -> crate::error::Result<()> {
         Ok(QueryResult::new(
             vec!["column1".to_string()],
             vec!["TEXT".to_string()],
@@ -507,11 +507,11 @@ impl DriverStmt for MockDriverStmt {
         ))
     }
 
-    fn execute(&self, args: &[SqlValue]) -> Result<(), Error> {
+    fn execute(&self, args: &[SqlValue]) -> crate::error::Result<()> {
         Ok(ExecuteResult::new(Some(1), 1))
     }
 
-    fn close(&self) -> Result<(), Error> {
+    fn close(&self) -> crate::error::Result<()> {
         Ok(())
     }
 
@@ -549,11 +549,11 @@ impl MockDriverTx {
 }
 
 impl DriverTx for MockDriverTx {
-    fn prepare(&self, query: &str) -> Result<(), Error> {
+    fn prepare(&self, query: &str) -> crate::error::Result<()> {
         Ok(Box::new(MockDriverStmt::new(query.to_string())))
     }
 
-    fn query(&self, query: &str, args: &[SqlValue]) -> Result<(), Error> {
+    fn query(&self, query: &str, args: &[SqlValue]) -> crate::error::Result<()> {
         if !self.active {
             return Err(DatabaseError::transaction_error("Transaction is not active"));
         }
@@ -564,21 +564,21 @@ impl DriverTx for MockDriverTx {
         ))
     }
 
-    fn execute(&self, query: &str, args: &[SqlValue]) -> Result<(), Error> {
+    fn execute(&self, query: &str, args: &[SqlValue]) -> crate::error::Result<()> {
         if !self.active {
             return Err(DatabaseError::transaction_error("Transaction is not active"));
         }
         Ok(ExecuteResult::new(None, 1))
     }
 
-    fn commit(&self) -> Result<(), Error> {
+    fn commit(&self) -> crate::error::Result<()> {
         if !self.active {
             return Err(DatabaseError::transaction_error("Transaction is not active"));
         }
         Ok(())
     }
 
-    fn rollback(&self) -> Result<(), Error> {
+    fn rollback(&self) -> crate::error::Result<()> {
         if !self.active {
             return Err(DatabaseError::transaction_error("Transaction is not active"));
         }
@@ -599,7 +599,7 @@ impl DriverTx for MockDriverTx {
 }
 
 /// fr fr Helper function to initialize common drivers
-pub fn init_common_drivers() -> Result<(), Error> {
+pub fn init_common_drivers() -> crate::error::Result<()> {
     // Register mock driver for testing
     register_driver("mock".to_string(), Box::new(MockDriver::new("mock".to_string())))?;
     

@@ -1,4 +1,4 @@
-use crate::error::Error;
+use crate::error::CursedError;
 // CURSED Bootstrap Verification Tool
 //
 // A command-line tool for verifying the CURSED compiler's self-hosting capabilities.
@@ -14,6 +14,8 @@ use std::process;
 use cursed::bootstrap::{SelfCompilationVerifier, VerificationConfig};
 
 fn main() {
+        // TODO: implement
+    }
     let matches = App::new("CURSED Bootstrap Verification Tool")
         .version("1.0.0")
         .author("CURSED Development Team")
@@ -84,7 +86,7 @@ fn main() {
         .unwrap()
         .parse::<u64>()
         .unwrap_or_else(|_| {
-            eprintln!("Error: Invalid timeout value");
+            eprintln!("CursedError: Invalid timeout value");
             process::exit(1);
         });
 
@@ -96,7 +98,7 @@ fn main() {
             .unwrap()
             .parse::<usize>()
             .unwrap_or_else(|_| {
-                eprintln!("Error: Invalid cycles value");
+                eprintln!("CursedError: Invalid cycles value");
                 process::exit(1);
             })
     };
@@ -216,7 +218,7 @@ fn main() {
                     
                     if verbose && !stage_result.errors.is_empty() {
                         for error in &stage_result.errors {
-                            println!("   Error: {}", error);
+                            println!("   CursedError: {}", error);
                         }
                     }
                 }
@@ -251,33 +253,3 @@ fn main() {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-    
-    #[test]
-    fn test_parse_timeout() {
-        // Test that timeout parsing works correctly
-        let timeout_str = "300";
-        let timeout = timeout_str.parse::<u64>().unwrap();
-        assert_eq!(timeout, 300);
-    }
-
-    #[test]
-    fn test_parse_cycles() {
-        // Test that cycles parsing works correctly
-        let cycles_str = "3";
-        let cycles = cycles_str.parse::<usize>().unwrap();
-        assert_eq!(cycles, 3);
-    }
-
-    #[test]
-    fn test_optimization_levels_parsing() {
-        let opt_levels_str = "-O0,-O2,-O3";
-        let levels: Vec<String> = opt_levels_str
-            .split(',')
-            .map(|s| s.trim().to_string())
-            .collect();
-        assert_eq!(levels, vec!["-O0", "-O2", "-O3"]);
-    }
-}

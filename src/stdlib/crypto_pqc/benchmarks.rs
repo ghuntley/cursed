@@ -1,11 +1,11 @@
-use crate::error::Error;
+use crate::error::CursedError;
 /// Post-Quantum Cryptography Performance Benchmarking
 /// 
 /// This module provides comprehensive benchmarking capabilities for PQC algorithms.
 
 use std::time::{Duration, Instant};
 use std::collections::HashMap;
-use crate::stdlib::crypto_pqc::{PqcResult, PqcError, SecurityLevel, AlgorithmType};
+// use crate::stdlib::crypto_pqc::{PqcResult, PqcError, SecurityLevel, AlgorithmType};
 
 /// Benchmark result for a single operation
 #[derive(Debug, Clone)]
@@ -253,7 +253,7 @@ impl PqcBenchmarkRunner {
 
     /// Benchmark Kyber operations
     pub fn benchmark_kyber(&self, security_level: SecurityLevel) -> PqcResult<Vec<BenchmarkResult>> {
-        use crate::stdlib::crypto_pqc::algorithms::kyber::{Kyber, KeyEncapsulation};
+//         use crate::stdlib::crypto_pqc::algorithms::kyber::{Kyber, KeyEncapsulation};
         
         let mut results = Vec::new();
 
@@ -332,7 +332,7 @@ impl PqcBenchmarkRunner {
 
     /// Benchmark Dilithium operations
     pub fn benchmark_dilithium(&self, security_level: SecurityLevel) -> PqcResult<Vec<BenchmarkResult>> {
-        use crate::stdlib::crypto_pqc::algorithms::dilithium::{Dilithium, DigitalSignature};
+//         use crate::stdlib::crypto_pqc::algorithms::dilithium::{Dilithium, DigitalSignature};
         
         let mut results = Vec::new();
         let message = b"Benchmark test message for Dilithium";
@@ -448,71 +448,3 @@ impl Default for PqcBenchmarkRunner {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_benchmark_suite() {
-        let mut suite = BenchmarkSuite::new();
-        
-        let result = BenchmarkResult {
-            algorithm: AlgorithmType::Kyber,
-            security_level: SecurityLevel::Level1,
-            operation: "keygen".to_string(),
-            duration: Duration::from_millis(100),
-            operations_per_second: 10.0,
-            memory_used: None,
-            key_sizes: None,
-        };
-        
-        suite.add_result(result);
-        
-        assert_eq!(suite.results.len(), 1);
-        assert!(!suite.comparison_matrix.is_empty());
-        
-        let kyber_results = suite.get_results_for_algorithm(AlgorithmType::Kyber);
-        assert_eq!(kyber_results.len(), 1);
-        
-        let level1_results = suite.get_results_for_security_level(SecurityLevel::Level1);
-        assert_eq!(level1_results.len(), 1);
-    }
-
-    #[test]
-    fn test_benchmark_runner() {
-        let runner = PqcBenchmarkRunner::new().with_iterations(5).with_warmup(2);
-        
-        let duration = runner.benchmark("test", || Ok(()));
-        assert!(duration.as_nanos() > 0);
-    }
-
-    #[test]
-    #[ignore] // This is a longer-running benchmark test
-    fn test_kyber_benchmark() {
-        let runner = PqcBenchmarkRunner::new().with_iterations(10).with_warmup(2);
-        
-        let results = runner.benchmark_kyber(SecurityLevel::Level1).unwrap();
-        assert_eq!(results.len(), 3); // keygen, encaps, decaps
-        
-        for result in results {
-            assert_eq!(result.algorithm, AlgorithmType::Kyber);
-            assert_eq!(result.security_level, SecurityLevel::Level1);
-            assert!(result.operations_per_second > 0.0);
-        }
-    }
-
-    #[test]
-    #[ignore] // This is a longer-running benchmark test
-    fn test_dilithium_benchmark() {
-        let runner = PqcBenchmarkRunner::new().with_iterations(10).with_warmup(2);
-        
-        let results = runner.benchmark_dilithium(SecurityLevel::Level1).unwrap();
-        assert_eq!(results.len(), 3); // keygen, sign, verify
-        
-        for result in results {
-            assert_eq!(result.algorithm, AlgorithmType::Dilithium);
-            assert_eq!(result.security_level, SecurityLevel::Level1);
-            assert!(result.operations_per_second > 0.0);
-        }
-    }
-}

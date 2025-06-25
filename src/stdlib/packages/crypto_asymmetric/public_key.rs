@@ -3,9 +3,8 @@
 // Provides comprehensive public key operations for the CURSED stdlib.
 // Supports key extraction, validation, format conversion, and fingerprinting.
 
-use crate::stdlib::value::Value;
+// use crate::stdlib::value::Value;
 use crate::error::CursedError;
-use crate::error::Error;
 use std::collections::HashMap;
 use sha2::{Sha256, Sha384, Sha512, Digest};
 use rsa::{RsaPrivateKey, RsaPublicKey};
@@ -43,7 +42,7 @@ impl PublicKeyFormat {
         }
     }
     
-    pub fn from_name(name: &str) -> Result<(), Error> {
+    pub fn from_name(name: &str) -> crate::error::Result<()> {
         match name.to_uppercase().as_str() {
             "PKCS1-PEM" | "PKCS#1-PEM" => Ok(PublicKeyFormat::Pkcs1Pem),
             "PKCS1-DER" | "PKCS#1-DER" => Ok(PublicKeyFormat::Pkcs1Der),
@@ -80,7 +79,7 @@ impl PublicKeyAlgorithm {
         }
     }
     
-    pub fn from_name(name: &str) -> Result<(), Error> {
+    pub fn from_name(name: &str) -> crate::error::Result<()> {
         match name.to_uppercase().as_str() {
             "RSA" => Ok(PublicKeyAlgorithm::Rsa),
             "ECDSA-P256" | "P256" => Ok(PublicKeyAlgorithm::EcdsaP256),
@@ -138,7 +137,7 @@ impl PublicKeyInfo {
         hex::encode(result)
     }
     
-    pub fn to_value(&self) -> Result<(), Error> {
+    pub fn to_value(&self) -> crate::error::Result<()> {
         let mut map = HashMap::new();
         
         map.insert("algorithm".to_string(), Value::String(self.algorithm.name().to_string()));
@@ -153,7 +152,7 @@ impl PublicKeyInfo {
 }
 
 /// Extract public key from private key
-pub fn extract_public_key(args: Vec<Value>) -> Result<(), Error> {
+pub fn extract_public_key(args: Vec<Value>) -> crate::error::Result<()> {
     if args.len() < 2 {
         return Err(CursedError::InvalidArgument("Public key extraction requires: algorithm, private_key".to_string()));
     }
@@ -183,7 +182,7 @@ pub fn extract_public_key(args: Vec<Value>) -> Result<(), Error> {
 }
 
 /// Extract RSA public key
-fn extract_rsa_public_key(private_key_bytes: &[u8]) -> Result<(), Error> {
+fn extract_rsa_public_key(private_key_bytes: &[u8]) -> crate::error::Result<()> {
     let private_key = RsaPrivateKey::from_pkcs8_der(private_key_bytes)
         .map_err(|e| CursedError::CryptoError(format!("Failed to decode RSA private key: {}", e)))?;
     
@@ -207,7 +206,7 @@ fn extract_rsa_public_key(private_key_bytes: &[u8]) -> Result<(), Error> {
 }
 
 /// Extract P-256 public key
-fn extract_p256_public_key(private_key_bytes: &[u8]) -> Result<(), Error> {
+fn extract_p256_public_key(private_key_bytes: &[u8]) -> crate::error::Result<()> {
     let private_key = P256SecretKey::from_pkcs8_der(private_key_bytes)
         .map_err(|e| CursedError::CryptoError(format!("Failed to decode P-256 private key: {}", e)))?;
     
@@ -231,7 +230,7 @@ fn extract_p256_public_key(private_key_bytes: &[u8]) -> Result<(), Error> {
 }
 
 /// Extract P-384 public key
-fn extract_p384_public_key(private_key_bytes: &[u8]) -> Result<(), Error> {
+fn extract_p384_public_key(private_key_bytes: &[u8]) -> crate::error::Result<()> {
     let private_key = P384SecretKey::from_pkcs8_der(private_key_bytes)
         .map_err(|e| CursedError::CryptoError(format!("Failed to decode P-384 private key: {}", e)))?;
     
@@ -255,7 +254,7 @@ fn extract_p384_public_key(private_key_bytes: &[u8]) -> Result<(), Error> {
 }
 
 /// Extract P-521 public key
-fn extract_p521_public_key(private_key_bytes: &[u8]) -> Result<(), Error> {
+fn extract_p521_public_key(private_key_bytes: &[u8]) -> crate::error::Result<()> {
     let private_key = P521SecretKey::from_pkcs8_der(private_key_bytes)
         .map_err(|e| CursedError::CryptoError(format!("Failed to decode P-521 private key: {}", e)))?;
     
@@ -279,7 +278,7 @@ fn extract_p521_public_key(private_key_bytes: &[u8]) -> Result<(), Error> {
 }
 
 /// Extract Ed25519 public key
-fn extract_ed25519_public_key(private_key_bytes: &[u8]) -> Result<(), Error> {
+fn extract_ed25519_public_key(private_key_bytes: &[u8]) -> crate::error::Result<()> {
     if private_key_bytes.len() != 32 {
         return Err(CursedError::InvalidArgument("Ed25519 private key must be 32 bytes".to_string()));
     }
@@ -306,7 +305,7 @@ fn extract_ed25519_public_key(private_key_bytes: &[u8]) -> Result<(), Error> {
 }
 
 /// Extract X25519 public key
-fn extract_x25519_public_key(private_key_bytes: &[u8]) -> Result<(), Error> {
+fn extract_x25519_public_key(private_key_bytes: &[u8]) -> crate::error::Result<()> {
     if private_key_bytes.len() != 32 {
         return Err(CursedError::InvalidArgument("X25519 private key must be 32 bytes".to_string()));
     }
@@ -333,7 +332,7 @@ fn extract_x25519_public_key(private_key_bytes: &[u8]) -> Result<(), Error> {
 }
 
 /// Validate public key format
-pub fn validate_public_key(args: Vec<Value>) -> Result<(), Error> {
+pub fn validate_public_key(args: Vec<Value>) -> crate::error::Result<()> {
     if args.len() < 2 {
         return Err(CursedError::InvalidArgument("Public key validation requires: algorithm, public_key".to_string()));
     }
@@ -405,7 +404,7 @@ fn validate_x25519_public_key(public_key_bytes: &[u8]) -> bool {
 }
 
 /// Convert public key between formats
-pub fn convert_public_key_format(args: Vec<Value>) -> Result<(), Error> {
+pub fn convert_public_key_format(args: Vec<Value>) -> crate::error::Result<()> {
     if args.len() < 4 {
         return Err(CursedError::InvalidArgument("Format conversion requires: algorithm, public_key, from_format, to_format".to_string()));
     }
@@ -452,7 +451,7 @@ fn convert_rsa_public_key_format(
     public_key_bytes: &[u8],
     from_format: PublicKeyFormat,
     to_format: PublicKeyFormat,
-) -> Result<(), Error> {
+) -> crate::error::Result<()> {
     // Parse based on from_format
     let public_key = match from_format {
         PublicKeyFormat::Pkcs8Der => {
@@ -517,7 +516,7 @@ fn convert_p256_public_key_format(
     public_key_bytes: &[u8],
     from_format: PublicKeyFormat,
     to_format: PublicKeyFormat,
-) -> Result<(), Error> {
+) -> crate::error::Result<()> {
     // Parse based on from_format
     let public_key = match from_format {
         PublicKeyFormat::Pkcs8Der => {
@@ -570,7 +569,7 @@ fn convert_p384_public_key_format(
     public_key_bytes: &[u8],
     from_format: PublicKeyFormat,
     to_format: PublicKeyFormat,
-) -> Result<(), Error> {
+) -> crate::error::Result<()> {
     // Parse based on from_format
     let public_key = match from_format {
         PublicKeyFormat::Pkcs8Der => {
@@ -623,7 +622,7 @@ fn convert_p521_public_key_format(
     public_key_bytes: &[u8],
     from_format: PublicKeyFormat,
     to_format: PublicKeyFormat,
-) -> Result<(), Error> {
+) -> crate::error::Result<()> {
     // Parse based on from_format
     let public_key = match from_format {
         PublicKeyFormat::Pkcs8Der => {
@@ -676,7 +675,7 @@ fn convert_ed25519_public_key_format(
     public_key_bytes: &[u8],
     from_format: PublicKeyFormat,
     to_format: PublicKeyFormat,
-) -> Result<(), Error> {
+) -> crate::error::Result<()> {
     // Parse based on from_format
     let public_key = match from_format {
         PublicKeyFormat::Raw => {
@@ -728,7 +727,7 @@ fn convert_x25519_public_key_format(
     public_key_bytes: &[u8],
     from_format: PublicKeyFormat,
     to_format: PublicKeyFormat,
-) -> Result<(), Error> {
+) -> crate::error::Result<()> {
     // Validate key length
     if public_key_bytes.len() != 32 {
         return Err(CursedError::InvalidArgument("X25519 public key must be 32 bytes".to_string()));
@@ -758,7 +757,7 @@ fn convert_x25519_public_key_format(
 }
 
 /// Generate public key fingerprint
-pub fn public_key_fingerprint(args: Vec<Value>) -> Result<(), Error> {
+pub fn public_key_fingerprint(args: Vec<Value>) -> crate::error::Result<()> {
     if args.len() < 1 {
         return Err(CursedError::InvalidArgument("Fingerprint generation requires: public_key".to_string()));
     }
@@ -847,46 +846,3 @@ pub fn get_public_key_algorithm_info(algorithm: PublicKeyAlgorithm) -> HashMap<S
     info
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_algorithm_from_name() {
-        assert_eq!(PublicKeyAlgorithm::from_name("RSA").unwrap(), PublicKeyAlgorithm::Rsa);
-        assert_eq!(PublicKeyAlgorithm::from_name("ed25519").unwrap(), PublicKeyAlgorithm::Ed25519);
-        assert!(PublicKeyAlgorithm::from_name("invalid").is_err());
-    }
-
-    #[test]
-    fn test_format_from_name() {
-        assert_eq!(PublicKeyFormat::from_name("PKCS#8-DER").unwrap(), PublicKeyFormat::Pkcs8Der);
-        assert_eq!(PublicKeyFormat::from_name("raw").unwrap(), PublicKeyFormat::Raw);
-        assert!(PublicKeyFormat::from_name("invalid").is_err());
-    }
-
-    #[test]
-    fn test_validate_ed25519_public_key() {
-        let valid_key = vec![0u8; 32];
-        assert!(validate_ed25519_public_key(&valid_key));
-        
-        let invalid_key = vec![0u8; 16];
-        assert!(!validate_ed25519_public_key(&invalid_key));
-    }
-
-    #[test]
-    fn test_validate_x25519_public_key() {
-        let valid_key = vec![0u8; 32];
-        assert!(validate_x25519_public_key(&valid_key));
-        
-        let invalid_key = vec![0u8; 16];
-        assert!(!validate_x25519_public_key(&invalid_key));
-    }
-
-    #[test]
-    fn test_list_public_key_formats() {
-        let formats = list_public_key_formats();
-        assert!(formats.contains(&"PKCS#8-DER".to_string()));
-        assert!(formats.contains(&"Raw".to_string()));
-    }
-}

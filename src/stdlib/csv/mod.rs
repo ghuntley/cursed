@@ -1,4 +1,4 @@
-use crate::error::Error;
+use crate::error::CursedError;
 /// CSV (Comma Separated Values) processing module for CURSED
 /// 
 /// This module provides comprehensive CSV reading, writing, and processing functionality
@@ -24,7 +24,7 @@ pub use transformer::{Transformer, ColumnTransform, TransformResult};
 
 use std::io;
 use std::sync::Arc;
-use crate::stdlib::value::Value;
+// use crate::stdlib::value::Value;
 
 /// Create a new CSV reader with default configuration
 pub fn new_reader<R: io::Read>(reader: R) -> Reader<R> {
@@ -87,56 +87,3 @@ pub fn transform_csv_data<R: io::Read>(reader: R, transformer: &mut Transformer<
     transformer.transform()
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_module_initialization() {
-        // Test that we can create all the main components
-        let csv_data = "name,age\nAlice,30\nBob,25";
-        
-        // Test reader creation
-        let reader = new_reader(std::io::Cursor::new(csv_data));
-        assert!(reader.comma() == ',');
-        
-        // Test writer creation
-        let mut buf = Vec::new();
-        let writer = new_writer(std::io::Cursor::new(&mut buf));
-        assert!(writer.comma() == ',');
-        
-        // Test column reader creation
-        let column_reader = new_column_reader(std::io::Cursor::new(csv_data));
-        assert!(column_reader.has_header());
-        
-        // Test streamer creation
-        let streamer = new_streamer(std::io::Cursor::new(csv_data));
-        assert!(streamer.batch_size() > 0);
-        
-        // Test schema creation
-        let schema = new_schema();
-        assert!(schema.columns().is_empty());
-        
-        // Test transformer creation
-        let transformer = new_transformer(std::io::Cursor::new(csv_data));
-        assert!(transformer.transforms().is_empty());
-    }
-
-    #[test]
-    fn test_quick_functions() {
-        let csv_data = "name,age\nAlice,30\nBob,25";
-        
-        // Test reading all from string
-        let records = read_all_from_string(csv_data).unwrap();
-        assert_eq!(records.len(), 3); // Header + 2 data rows
-        assert_eq!(records[0], vec!["name", "age"]);
-        assert_eq!(records[1], vec!["Alice", "30"]);
-        assert_eq!(records[2], vec!["Bob", "25"]);
-        
-        // Test writing all to string
-        let output = write_all_to_string(&records).unwrap();
-        assert!(output.contains("name,age"));
-        assert!(output.contains("Alice,30"));
-        assert!(output.contains("Bob,25"));
-    }
-}

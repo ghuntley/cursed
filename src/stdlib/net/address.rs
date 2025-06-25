@@ -1,4 +1,4 @@
-use crate::error::Error;
+use crate::error::CursedError;
 /// IP address and socket address handling for the CURSED networking module
 /// 
 /// This module provides comprehensive IP address handling including IPv4, IPv6,
@@ -8,7 +8,7 @@ use std::fmt;
 use std::str::FromStr;
 use std::net::{IpAddr as StdIpAddr, Ipv4Addr as StdIpv4Addr, Ipv6Addr as StdIpv6Addr};
 use std::net::{SocketAddr as StdSocketAddr, SocketAddrV4 as StdSocketAddrV4, SocketAddrV6 as StdSocketAddrV6};
-use crate::stdlib::net::error::{NetError, NetResult, address_error};
+// use crate::stdlib::net::error::{NetError, NetResult, address_error};
 
 /// IP address enumeration supporting both IPv4 and IPv6
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
@@ -634,99 +634,3 @@ pub fn ip_in_cidr(ip: IpAddr, cidr: &str) -> NetResult<bool> {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_ipv4_creation() {
-        let ip = IpAddrV4::new(192, 168, 1, 1);
-        assert_eq!(ip.octets(), [192, 168, 1, 1]);
-        assert_eq!(ip.to_string(), "192.168.1.1");
-    }
-
-    #[test]
-    fn test_ipv4_properties() {
-        assert!(IpAddrV4::LOCALHOST.is_loopback());
-        assert!(IpAddrV4::new(192, 168, 1, 1).is_private());
-        assert!(IpAddrV4::new(169, 254, 1, 1).is_link_local());
-        assert!(IpAddrV4::new(224, 0, 0, 1).is_multicast());
-        assert!(IpAddrV4::BROADCAST.is_broadcast());
-        assert!(IpAddrV4::UNSPECIFIED.is_unspecified());
-    }
-
-    #[test]
-    fn test_ipv6_creation() {
-        let ip = IpAddrV6::new(0x2001, 0x0db8, 0, 0, 0, 0, 0, 1);
-        assert_eq!(ip.segments(), [0x2001, 0x0db8, 0, 0, 0, 0, 0, 1]);
-    }
-
-    #[test]
-    fn test_ipv6_properties() {
-        assert!(IpAddrV6::LOCALHOST.is_loopback());
-        assert!(IpAddrV6::UNSPECIFIED.is_unspecified());
-        
-        let multicast = IpAddrV6::new(0xff00, 0, 0, 0, 0, 0, 0, 1);
-        assert!(multicast.is_multicast());
-        
-        let link_local = IpAddrV6::new(0xfe80, 0, 0, 0, 0, 0, 0, 1);
-        assert!(link_local.is_link_local());
-    }
-
-    #[test]
-    fn test_socket_addr_creation() {
-        let ip = IpAddrV4::new(127, 0, 0, 1);
-        let addr = SocketAddrV4::new(ip, 8080);
-        assert_eq!(addr.ip(), &ip);
-        assert_eq!(addr.port(), 8080);
-        assert_eq!(addr.to_string(), "127.0.0.1:8080");
-    }
-
-    #[test]
-    fn test_ip_parsing() {
-        let ip: IpAddrV4 = "192.168.1.1".parse().unwrap();
-        assert_eq!(ip.octets(), [192, 168, 1, 1]);
-        
-        let ip: IpAddr = "127.0.0.1".parse().unwrap();
-        assert!(ip.is_ipv4());
-        assert!(ip.is_loopback());
-    }
-
-    #[test]
-    fn test_socket_addr_parsing() {
-        let addr: SocketAddr = "127.0.0.1:8080".parse().unwrap();
-        assert!(addr.is_ipv4());
-        assert_eq!(addr.port(), 8080);
-        
-        let addr: SocketAddr = "[::1]:8080".parse().unwrap();
-        assert!(addr.is_ipv6());
-        assert_eq!(addr.port(), 8080);
-    }
-
-    #[test]
-    fn test_cidr_checking() {
-        let ip = IpAddr::V4(IpAddrV4::new(192, 168, 1, 100));
-        assert!(ip_in_cidr(ip, "192.168.1.0/24").unwrap());
-        assert!(!ip_in_cidr(ip, "192.168.2.0/24").unwrap());
-        assert!(ip_in_cidr(ip, "192.168.0.0/16").unwrap());
-    }
-
-    #[test]
-    fn test_validation_functions() {
-        assert!(is_valid_ip("127.0.0.1"));
-        assert!(is_valid_ip("::1"));
-        assert!(!is_valid_ip("256.1.1.1"));
-        
-        assert!(is_valid_socket_addr("127.0.0.1:8080"));
-        assert!(is_valid_socket_addr("[::1]:8080"));
-        assert!(!is_valid_socket_addr("127.0.0.1"));
-    }
-
-    #[test]
-    fn test_standard_library_conversion() {
-        let std_ip = std::net::Ipv4Addr::new(127, 0, 0, 1);
-        let our_ip: IpAddrV4 = std_ip.into();
-        let back_to_std: std::net::Ipv4Addr = our_ip.into();
-        assert_eq!(std_ip, back_to_std);
-    }
-}

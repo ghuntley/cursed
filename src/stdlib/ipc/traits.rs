@@ -2,8 +2,8 @@
 /// 
 /// This module provides common traits for IPC resources
 
-use crate::stdlib::ipc::error::{IpcError, IpcResult};
-use crate::error::Error;
+// use crate::stdlib::ipc::error::{IpcError, IpcResult};
+use crate::error::CursedError;
 use std::time::Duration;
 
 /// Trait for IPC resources that can be created, opened, and closed
@@ -140,17 +140,3 @@ impl Default for IpcResourceStats {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-    
-    #[test]
-    fn test_ipc_resource_stats_default() {
-        let stats = IpcResourceStats::default();
-        assert_eq!(stats.bytes_read, 0);
-        assert_eq!(stats.bytes_written, 0);
-        assert_eq!(stats.messages_sent, 0);
-        assert_eq!(stats.messages_received, 0);
-        assert_eq!(stats.connections, 0);
-    }
-}

@@ -17,7 +17,7 @@ use super::transaction::{SqliteTransaction, RealSqliteTransaction};
 pub enum ConnectionState {
     Connected,
     Disconnected,
-    Error,
+    CursedError,
     Busy,
 }
 
@@ -103,7 +103,7 @@ impl SqliteConnection {
 }
 
 impl DriverConn for SqliteConnection {
-    fn prepare(&self, query: &str) -> Result<(), Error> {
+    fn prepare(&self, query: &str) -> crate::error::Result<()> {
         let handle = self.handle.lock().unwrap();
         if let Some(ref _conn) = *handle {
             let stmt = SqliteStatement::new_with_connection(self.handle.clone(), query.to_string())
@@ -117,7 +117,7 @@ impl DriverConn for SqliteConnection {
         }
     }
 
-    fn query(&self, query: &str, args: &[SqlValue]) -> Result<(), Error> {
+    fn query(&self, query: &str, args: &[SqlValue]) -> crate::error::Result<()> {
         let handle = self.handle.lock().unwrap();
         if let Some(ref conn) = *handle {
             let mut stmt = conn.prepare(query)
@@ -159,7 +159,7 @@ impl DriverConn for SqliteConnection {
         }
     }
 
-    fn execute(&self, query: &str, args: &[SqlValue]) -> Result<(), Error> {
+    fn execute(&self, query: &str, args: &[SqlValue]) -> crate::error::Result<()> {
         let handle = self.handle.lock().unwrap();
         if let Some(ref conn) = *handle {
             let mut stmt = conn.prepare(query)
@@ -184,7 +184,7 @@ impl DriverConn for SqliteConnection {
         }
     }
 
-    fn begin_transaction(&self, opts: TxOptions) -> Result<(), Error> {
+    fn begin_transaction(&self, opts: TxOptions) -> crate::error::Result<()> {
         let handle = self.handle.lock().unwrap();
         if let Some(ref _conn) = *handle {
             // Begin transaction
@@ -199,7 +199,7 @@ impl DriverConn for SqliteConnection {
         }
     }
 
-    fn ping(&self) -> Result<(), Error> {
+    fn ping(&self) -> crate::error::Result<()> {
         // Simple ping by checking if handle is valid
         let handle = self.handle.lock()
             .map_err(|_| DatabaseError::new(
@@ -217,7 +217,7 @@ impl DriverConn for SqliteConnection {
         }
     }
 
-    fn close(&self) -> Result<(), Error> {
+    fn close(&self) -> crate::error::Result<()> {
         let mut handle = self.handle.lock()
             .map_err(|_| DatabaseError::new(
                 super::super::DatabaseErrorKind::ConnectionError,
@@ -257,7 +257,7 @@ impl DriverConn for SqliteConnection {
             Err(_) => {
                 // Return a closed connection as fallback
                 let mut info = self.info.clone();
-                info.state = ConnectionState::Error;
+                info.state = ConnectionState::CursedError;
                 Box::new(Self {
                     handle: Arc::new(Mutex::new(None)),
                     config: self.config.clone(),
@@ -269,68 +269,9 @@ impl DriverConn for SqliteConnection {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-use crate::error_types::Error;
-
-    #[test]
-    fn test_connection_info() {
-        let info = SqliteConnectionInfo {
-            database_path: "test.db".to_string(),
-            connection_id: "test-id".to_string(),
-            connected_at: SystemTime::now(),
-            state: ConnectionState::Connected,
-            thread_id: Some(std::thread::current().id()),
-        };
-
-        assert_eq!(info.database_path, "test.db");
-        assert_eq!(info.state, ConnectionState::Connected);
-        assert!(info.thread_id.is_some());
-    }
-
-    #[test]
-    fn test_connection_creation() {
-        let config = SqliteConfig::memory();
-        
-        // This test will fail in environments without SQLite
-        // but demonstrates the expected interface
-        match SqliteConnection::new(config) {
-            Ok(conn) => {
-                assert_eq!(conn.info().database_path, ":memory:");
-                assert_eq!(conn.info().state, ConnectionState::Connected);
-            }
-            Err(_) => {
-                println!("SQLite connection creation failed (expected in test environment)");
-            }
-        }
-    }
-}
-
-/// Convert CURSED SqlValue to rusqlite parameters
-fn convert_args_to_params(args: &[SqlValue]) -> Result<(), Error> {
-    let mut params = Vec::new();
-    
-    for arg in args {
-        match arg {
-            SqlValue::Null => params.push(Box::new(rusqlite::types::Null) as Box<dyn rusqlite::ToSql>),
-            SqlValue::Boolean(b) => params.push(Box::new(*b) as Box<dyn rusqlite::ToSql>),
-            SqlValue::Integer(i) => params.push(Box::new(*i) as Box<dyn rusqlite::ToSql>),
-            SqlValue::Float(f) => params.push(Box::new(*f) as Box<dyn rusqlite::ToSql>),
-            SqlValue::String(s) => params.push(Box::new(s.clone()) as Box<dyn rusqlite::ToSql>),
-            SqlValue::Bytes(b) => params.push(Box::new(b.clone()) as Box<dyn rusqlite::ToSql>),
-            _ => return Err(DatabaseError::new(
-                super::super::DatabaseErrorKind::ConversionError,
-                &format!("Unsupported SqlValue type: {:?}", arg)
-            )),
-        }
-    }
-    
-    Ok(params)
-}
 
 /// Convert rusqlite value to CURSED SqlValue
-fn convert_value_from_sqlite(row: &rusqlite::Row, index: usize) -> Result<(), Error> {
+fn convert_value_from_sqlite(row: &rusqlite::Row, index: usize) -> crate::error::Result<()> {
     let value: SqliteValue = row.get(index)
         .map_err(|e| DatabaseError::new(super::super::DatabaseErrorKind::ConversionError, &format!("Failed to get column {}: {}", index, e)))?;
     

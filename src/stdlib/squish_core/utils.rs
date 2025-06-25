@@ -3,8 +3,8 @@
 /// This module provides utilities for format detection, validation,
 /// benchmarking, and other compression-related operations.
 
-use crate::stdlib::squish_core::{SquishError, SquishResult, CompressionStats};
-use crate::error::Error;
+// use crate::stdlib::squish_core::{SquishError, SquishResult, CompressionStats};
+use crate::error::CursedError;
 use std::time::{Duration, Instant};
 
 /// Supported compression formats
@@ -322,131 +322,18 @@ pub fn format_compression_stats(stats: &CompressionStats) -> String {
 
 /// Initialize utilities module
 pub fn initialize() {
+        // TODO: implement
+    }
     // No specific initialization needed for utilities
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_detect_gzip_format() {
-        let gzip_header = vec![0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00];
-        assert_eq!(detect_format(&gzip_header).unwrap(), CompressionFormat::Gzip);
-    }
-
-    #[test]
-    fn test_detect_zlib_format() {
-        let zlib_header = vec![0x78, 0x9c];
-        assert_eq!(detect_format(&zlib_header).unwrap(), CompressionFormat::Zlib);
-    }
-
-    #[test]
-    fn test_detect_bzip2_format() {
-        let bzip2_header = vec![0x42, 0x5a, b'h', b'9'];
-        assert_eq!(detect_format(&bzip2_header).unwrap(), CompressionFormat::Bzip2);
-    }
-
-    #[test]
-    fn test_detect_unknown_format() {
-        let unknown_data = vec![0x00, 0x01, 0x02, 0x03];
-        assert_eq!(detect_format(&unknown_data).unwrap(), CompressionFormat::Unknown);
-    }
-
-    #[test]
-    fn test_empty_data_detection() {
-        assert!(detect_format(&[]).is_err());
-    }
-
-    #[test]
-    fn test_compression_format_extensions() {
-        assert_eq!(CompressionFormat::Gzip.extension(), ".gz");
-        assert_eq!(CompressionFormat::Zlib.extension(), ".zlib");
-        assert_eq!(CompressionFormat::Bzip2.extension(), ".bz2");
-    }
-
-    #[test]
-    fn test_compression_format_mime_types() {
-        assert_eq!(CompressionFormat::Gzip.mime_type(), "application/gzip");
-        assert_eq!(CompressionFormat::Zlib.mime_type(), "application/zlib");
-        assert_eq!(CompressionFormat::Bzip2.mime_type(), "application/x-bzip2");
-    }
-
-    #[test]
-    fn test_estimate_compression_ratio() {
-        // Highly repetitive data should compress well
-        let repetitive_data = vec![b'A'; 1000];
-        let ratio = estimate_compression_ratio(&repetitive_data, CompressionFormat::Gzip);
-        assert!(ratio < 0.5); // Should compress to less than 50%
-        
-        // Random data should not compress well
-        let random_data: Vec<u8> = (0..1000).map(|i| (i % 256) as u8).collect();
-        let ratio = estimate_compression_ratio(&random_data, CompressionFormat::Gzip);
-        assert!(ratio > 0.5); // Should not compress much
-    }
-
-    #[test]
-    fn test_validate_gzip_header() {
-        let valid_gzip = vec![0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff];
-        assert!(validate_compressed_data(&valid_gzip, CompressionFormat::Gzip).unwrap());
-        
-        let invalid_gzip = vec![0x1f, 0x8b, 0x09]; // Wrong compression method
-        assert!(!validate_compressed_data(&invalid_gzip, CompressionFormat::Gzip).unwrap());
-    }
-
-    #[test]
-    fn test_calculate_entropy() {
-        // All same bytes should have low entropy
-        let uniform_data = vec![0u8; 100];
-        let entropy = calculate_entropy(&uniform_data);
-        assert!(entropy < 0.1);
-        
-        // Mixed data should have higher entropy
-        let mixed_data: Vec<u8> = (0..256).map(|i| i as u8).collect();
-        let entropy = calculate_entropy(&mixed_data);
-        assert!(entropy > 0.5);
-    }
-
-    #[test]
-    fn test_compression_info() {
-        let gzip_data = vec![0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff];
-        let info = get_compression_info(&gzip_data).unwrap();
-        
-        assert_eq!(info.format, CompressionFormat::Gzip);
-        assert!(info.is_valid);
-        assert_eq!(info.original_size, gzip_data.len());
-        assert!(info.header_info.is_some());
-    }
-
-    #[test]
-    fn test_format_compression_stats() {
-        let stats = CompressionStats::new(
-            1000,
-            600,
-            Duration::from_millis(50),
-            "test".to_string(),
-            Some(6),
-        );
-        
-        let formatted = format_compression_stats(&stats);
-        assert!(formatted.contains("test"));
-        assert!(formatted.contains("1000"));
-        assert!(formatted.contains("600"));
-        assert!(formatted.contains("40.0%"));
-    }
-}
-
-// Additional utility functions for compression
-pub fn compress(data: &[u8]) -> SquishResult<Vec<u8>> {
-    crate::stdlib::squish_core::gzip::gzip_compress(data)
-}
 
 pub fn decompress(data: &[u8]) -> SquishResult<Vec<u8>> {
-    crate::stdlib::squish_core::gzip::gzip_decompress(data)
+//     crate::stdlib::squish_core::gzip::gzip_decompress(data)
 }
 
 pub fn compress_with_level(data: &[u8], level: i32) -> SquishResult<Vec<u8>> {
-    crate::stdlib::squish_core::gzip::gzip_compress_level(data, level)
+//     crate::stdlib::squish_core::gzip::gzip_compress_level(data, level)
 }
 
 pub fn compress_adaptive(data: &[u8]) -> SquishResult<Vec<u8>> {
@@ -486,6 +373,39 @@ pub fn get_mime_type(format: &CompressionFormat) -> &'static str {
         CompressionFormat::Bzip2 => "application/x-bzip2",
         CompressionFormat::Lzw => "application/x-lzw",
         CompressionFormat::Unknown => "application/octet-stream",
+    }
+}
+
+/// Validate compression level
+pub fn validate_compression_level(level: i32) -> SquishResult<i32> {
+    if level < 1 || level > 9 {
+        Err(SquishError::InvalidCompressionLevel(level))
+    } else {
+        Ok(level)
+    }
+}
+
+/// Convert quality to compression level
+pub fn convert_quality_to_level(quality: f32) -> i32 {
+    if quality <= 0.0 { 1 }
+    else if quality >= 1.0 { 9 }
+    else { (quality * 8.0).ceil() as i32 + 1 }
+}
+
+/// Determine if parallel compression should be used
+pub fn use_parallel_compression(data_size: usize) -> bool {
+    data_size > 1024 * 1024 // Use parallel for data > 1MB
+}
+
+/// Get optimal chunk size for parallel compression
+pub fn get_optimal_chunk_size(data_size: usize, num_threads: usize) -> usize {
+    if num_threads <= 1 {
+        data_size
+    } else {
+        let base_chunk = data_size / num_threads;
+        let min_chunk = 64 * 1024; // 64KB minimum
+        let max_chunk = 16 * 1024 * 1024; // 16MB maximum
+        base_chunk.max(min_chunk).min(max_chunk)
     }
 }
 

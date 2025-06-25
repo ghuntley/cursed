@@ -2,7 +2,7 @@
 // 
 // Parses documentation comments from CURSED source code and extracts structured information.
 
-use crate::error::{Error, SourceLocation};
+use crate::error::{CursedError, SourceLocation};
 use crate::docs::generator::Example;
 
 use std::collections::HashMap;
@@ -31,7 +31,7 @@ pub struct CommentParser {
 
 impl CommentParser {
     /// Create a new comment parser with default settings
-    pub fn new() -> Result<(), Error> {
+    pub fn new() -> crate::error::Result<()> {
         Ok(Self {
             allow_html: true,
             extract_examples: true,
@@ -49,7 +49,7 @@ impl CommentParser {
     }
 
     /// Parse documentation content from a raw string
-    pub fn parse_doc_content(&self, content: &str) -> Result<(), Error> {
+    pub fn parse_doc_content(&self, content: &str) -> crate::error::Result<()> {
         let mut parsed = ParsedDocumentation {
             summary: String::new(),
             description: String::new(),
@@ -142,13 +142,13 @@ impl CommentParser {
     }
 
     /// Parse documentation for a specific item at a location
-    pub fn parse_item_documentation(&self, source: &str, location: &SourceLocation) -> Result<(), Error> {
+    pub fn parse_item_documentation(&self, source: &str, location: &SourceLocation) -> crate::error::Result<()> {
         let doc_content = self.extract_doc_comments_at_location(source, location)?;
         self.parse_doc_content(&doc_content)
     }
 
     /// Extract documentation comments preceding a location
-    fn extract_doc_comments_at_location(&self, source: &str, location: &SourceLocation) -> Result<(), Error> {
+    fn extract_doc_comments_at_location(&self, source: &str, location: &SourceLocation) -> crate::error::Result<()> {
         let lines = source.split("\n").collect::<Vec<_>>();
         let mut doc_lines = Vec::new();
         
@@ -212,7 +212,7 @@ impl CommentParser {
     }
 
     /// Process a parsed tag
-    fn process_tag(&self, parsed: &mut ParsedDocumentation, current_example: &mut Option<ExampleBuilder>, tag: TagInfo) -> Result<(), Error> {
+    fn process_tag(&self, parsed: &mut ParsedDocumentation, current_example: &mut Option<ExampleBuilder>, tag: TagInfo) -> crate::error::Result<()> {
         match tag.name.as_str() {
             "param" | "parameter" => {
                 parsed.tags.entry("parameters".to_string())
@@ -274,7 +274,7 @@ impl CommentParser {
     }
 
     /// Post-process parsed documentation
-    fn post_process(&self, parsed: &mut ParsedDocumentation) -> Result<(), Error> {
+    fn post_process(&self, parsed: &mut ParsedDocumentation) -> crate::error::Result<()> {
         // Clean up summary and description
         parsed.summary = parsed.summary.trim().to_string();
         parsed.description = parsed.description.trim().to_string();
@@ -319,14 +319,14 @@ impl CommentParser {
     }
 
     /// Validate links in documentation
-    fn validate_documentation_links(&self, _parsed: &ParsedDocumentation) -> Result<(), Error> {
+    fn validate_documentation_links(&self, _parsed: &ParsedDocumentation) -> crate::error::Result<()> {
         // TODO: Implement link validation
         // This would check for broken internal references, invalid URLs, etc.
         Ok(())
     }
 
     /// Extract all documentation from source file
-    pub fn extract_all_documentation(&self, source: &str) -> Result<(), Error> {
+    pub fn extract_all_documentation(&self, source: &str) -> crate::error::Result<()> {
         let lines = source.split("\n").collect::<Vec<_>>();
         let mut results = Vec::new();
         let mut current_doc_start: Option<usize> = None;

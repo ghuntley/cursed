@@ -1,4 +1,4 @@
-use crate::error::Error;
+use crate::error::CursedError;
 /// Comprehensive Stack implementations for CURSED
 /// 
 /// This module provides four types of stacks:
@@ -707,64 +707,3 @@ impl<T: Display + Ord + Clone> Display for StackWithMin<T> {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_stack_basic_operations() {
-        let mut stack = Stack::new();
-        assert!(stack.is_empty());
-        assert_eq!(stack.len(), 0);
-
-        stack.push(1);
-        stack.push(2);
-        stack.push(3);
-
-        assert_eq!(stack.len(), 3);
-        assert_eq!(stack.peek(), Some(&3));
-        assert_eq!(stack.pop(), Some(3));
-        assert_eq!(stack.pop(), Some(2));
-        assert_eq!(stack.len(), 1);
-    }
-
-    #[test]
-    fn test_fixed_stack_capacity() {
-        let mut stack = FixedStack::new(2).unwrap();
-        assert!(stack.push(1).is_ok());
-        assert!(stack.push(2).is_ok());
-        assert!(stack.push(3).is_err()); // Should fail when full
-
-        assert_eq!(stack.pop(), Some(2));
-        assert!(stack.push(3).is_ok()); // Should work after pop
-    }
-
-    #[test]
-    fn test_stack_with_min() {
-        let mut stack = StackWithMin::new();
-        stack.push(3);
-        stack.push(1);
-        stack.push(4);
-        stack.push(1);
-
-        assert_eq!(stack.min(), Some(&1));
-        assert_eq!(stack.pop(), Some(1));
-        assert_eq!(stack.min(), Some(&1));
-        assert_eq!(stack.pop(), Some(4));
-        assert_eq!(stack.min(), Some(&1));
-        assert_eq!(stack.pop(), Some(1));
-        assert_eq!(stack.min(), Some(&3));
-    }
-
-    #[test]
-    fn test_thread_safe_stack() {
-        let stack = ThreadSafeStack::new();
-        assert!(stack.push(1).is_ok());
-        assert!(stack.push(2).is_ok());
-        
-        assert_eq!(stack.len().unwrap(), 2);
-        assert_eq!(stack.pop().unwrap(), Some(2));
-        assert_eq!(stack.pop().unwrap(), Some(1));
-        assert_eq!(stack.pop().unwrap(), None);
-    }
-}

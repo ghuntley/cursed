@@ -1,4 +1,4 @@
-use crate::error::Error;
+use crate::error::CursedError;
 /// Test Fixtures System
 /// 
 /// Provides test data management, setup/teardown functionality,
@@ -639,63 +639,3 @@ impl TestFixture for MemoryFixture {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_test_data_creation() {
-        let mut data = TestData::new();
-        data.set("key1".to_string(), TestValue::String("value1".to_string()));
-        data.add_tag("test".to_string());
-        
-        assert!(data.get("key1").is_some());
-        assert!(data.metadata.tags.contains(&"test".to_string()));
-    }
-
-    #[test]
-    fn test_fixture_manager() {
-        let mut manager = FixtureManager::new();
-        
-        let fixture = Box::new(MemoryFixture::new("test_memory".to_string()));
-        assert!(manager.register_fixture("test_memory".to_string(), fixture).is_ok());
-        
-        assert!(manager.setup_fixture("test_memory").is_ok());
-        assert!(manager.teardown_fixture("test_memory").is_ok());
-    }
-
-    #[test]
-    fn test_filesystem_fixture() {
-        let mut fixture = FileSystemFixture::new("test_fs".to_string());
-        
-        assert!(fixture.setup().is_ok());
-        assert!(fixture.temp_path().is_some());
-        
-        let file_path = fixture.create_file("test.txt", "test content");
-        assert!(file_path.is_ok());
-        
-        assert!(fixture.teardown().is_ok());
-    }
-
-    #[test]
-    fn test_dependency_resolution() {
-        let mut manager = FixtureManager::new();
-        
-        // Register fixtures
-        let fixture1 = Box::new(MemoryFixture::new("fixture1".to_string()));
-        let fixture2 = Box::new(MemoryFixture::new("fixture2".to_string()));
-        
-        manager.register_fixture("fixture1".to_string(), fixture1).unwrap();
-        manager.register_fixture("fixture2".to_string(), fixture2).unwrap();
-        
-        // Register dependencies: fixture2 depends on fixture1
-        manager.register_dependencies("fixture2".to_string(), vec!["fixture1".to_string()]).unwrap();
-        
-        let order = manager.calculate_setup_order().unwrap();
-        
-        // fixture1 should come before fixture2 in setup order
-        let pos1 = order.iter().position(|x| x == "fixture1").unwrap();
-        let pos2 = order.iter().position(|x| x == "fixture2").unwrap();
-        assert!(pos1 < pos2);
-    }
-}

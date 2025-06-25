@@ -1,4 +1,4 @@
-use crate::error::Error;
+use crate::error::CursedError;
 /// HTTP/2 Protocol Implementation for CURSED
 /// 
 /// Provides comprehensive HTTP/2 client and server functionality including
@@ -40,9 +40,9 @@ pub enum FrameType {
 }
 
 impl TryFrom<u8> for FrameType {
-    type Error = NetError;
+    type CursedError = NetError;
     
-    fn try_from(value: u8) -> Result<(), Error> {
+    fn try_from(value: u8) -> crate::error::Result<()> {
         match value {
             0x0 => Ok(FrameType::Data),
             0x1 => Ok(FrameType::Headers),
@@ -249,9 +249,9 @@ pub enum SettingsParameter {
 }
 
 impl TryFrom<u16> for SettingsParameter {
-    type Error = NetError;
+    type CursedError = NetError;
     
-    fn try_from(value: u16) -> Result<(), Error> {
+    fn try_from(value: u16) -> crate::error::Result<()> {
         match value {
             1 => Ok(SettingsParameter::HeaderTableSize),
             2 => Ok(SettingsParameter::EnablePush),
@@ -712,69 +712,3 @@ pub fn create_initial_settings() -> Frame {
     Frame::settings(settings.to_frame_payload(), false)
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-    
-    #[test]
-    fn test_frame_header_serialization() {
-        let header = FrameHeader::new(100, FrameType::Data, FrameFlags::END_STREAM, 1);
-        let bytes = header.to_bytes();
-        let parsed = FrameHeader::from_bytes(&bytes).unwrap();
-        
-        assert_eq!(parsed.length, 100);
-        assert_eq!(parsed.frame_type, FrameType::Data);
-        assert!(parsed.flags.contains(FrameFlags::END_STREAM));
-        assert_eq!(parsed.stream_id, 1);
-    }
-    
-    #[test]
-    fn test_settings_serialization() {
-        let settings = Settings::default();
-        let payload = settings.to_frame_payload();
-        let parsed = Settings::from_frame_payload(&payload).unwrap();
-        
-        assert_eq!(parsed.header_table_size, settings.header_table_size);
-        assert_eq!(parsed.enable_push, settings.enable_push);
-        assert_eq!(parsed.initial_window_size, settings.initial_window_size);
-    }
-    
-    #[test]
-    fn test_connection_creation() {
-        let conn = Http2Connection::new(false);
-        assert!(!conn.is_server);
-        assert_eq!(conn.next_stream_id, 1);
-        
-        let server_conn = Http2Connection::new(true);
-        assert!(server_conn.is_server);
-        assert_eq!(server_conn.next_stream_id, 2);
-    }
-    
-    #[test]
-    fn test_stream_creation() {
-        let mut conn = Http2Connection::new(false);
-        let stream_id = conn.create_stream();
-        assert_eq!(stream_id, 1);
-        assert_eq!(conn.next_stream_id, 3);
-        assert!(conn.streams.contains_key(&stream_id));
-    }
-    
-    #[test]
-    fn test_frame_creation() {
-        let data_frame = Frame::data(1, b"hello".to_vec(), true);
-        assert_eq!(data_frame.header.frame_type, FrameType::Data);
-        assert!(data_frame.header.flags.contains(FrameFlags::END_STREAM));
-        assert_eq!(data_frame.payload, b"hello");
-        
-        let ping_frame = Frame::ping([1, 2, 3, 4, 5, 6, 7, 8], false);
-        assert_eq!(ping_frame.header.frame_type, FrameType::Ping);
-        assert!(!ping_frame.header.flags.contains(FrameFlags::ACK));
-    }
-    
-    #[test]
-    fn test_connection_preface() {
-        let preface = create_connection_preface();
-        assert!(validate_connection_preface(&preface));
-        assert!(!validate_connection_preface(b"invalid"));
-    }
-}

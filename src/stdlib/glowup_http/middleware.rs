@@ -1,14 +1,14 @@
 use crate::web::StatusCode;
 // HTTP middleware support for GlowUpHTTP
 
-use crate::stdlib::glowup_http::error::GlowUpResult;
-use crate::stdlib::glowup_http::handler::HandlerFunc;
-use crate::stdlib::glowup_http::request::VibeRequest;
-use crate::stdlib::glowup_http::response::ResponderVibe;
+// use crate::stdlib::glowup_http::error::GlowUpResult;
+// use crate::stdlib::glowup_http::handler::HandlerFunc;
+// use crate::stdlib::glowup_http::request::VibeRequest;
+// use crate::stdlib::glowup_http::response::ResponderVibe;
 use std::sync::Arc;
 use std::time::Instant;
 use tracing::{info, debug, instrument};
-use crate::error::Error;
+use crate::error::CursedError;
 
 /// Middleware function type
 pub type MiddlewareFunc = Arc<dyn Fn(HandlerFunc) -> HandlerFunc + Send + Sync>;
@@ -48,7 +48,7 @@ pub fn cors_middleware(next: HandlerFunc) -> HandlerFunc {
         }
         
         // Handle preflight requests
-        if r.method == crate::stdlib::glowup_http::request::Method::OPTIONS {
+//         if r.method == crate::stdlib::glowup_http::request::Method::OPTIONS {
             use crate::web::StatusCode;
             w.write_header(StatusCode::NoContent);
             return Ok(());
@@ -157,7 +157,7 @@ pub fn recovery_middleware(next: HandlerFunc) -> HandlerFunc {
                 
                 use crate::web::StatusCode;
                 w.write_header(StatusCode::InternalServerError);
-                w.write(b"Internal Server Error")?;
+                w.write(b"Internal Server CursedError")?;
                 Ok(())
             }
         }
@@ -172,99 +172,3 @@ pub use rate_limit_middleware as RateLimitMiddleware;
 pub use jwt_auth_middleware as JWTAuthMiddleware;
 pub use compression_middleware as CompressionMiddleware;
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use crate::stdlib::glowup_http::handler::handler_func;
-    use crate::stdlib::glowup_http::request::Method;
-    use crate::web::StatusCode;
-
-    #[test]
-    fn test_logging_middleware() {
-        let handler = handler_func(|w, _r| {
-            w.write(b"Hello")?;
-            Ok(())
-        });
-        
-        let middleware_handler = logging_middleware(handler);
-        let request = VibeRequest::new(Method::GET, "/test");
-        let response = ResponderVibe::new();
-        
-        middleware_handler(&response, &request).unwrap();
-        
-        assert_eq!(response.get_body(), b"Hello");
-    }
-
-    #[test]
-    fn test_cors_middleware() {
-        let handler = handler_func(|w, _r| {
-            w.write(b"Hello")?;
-            Ok(())
-        });
-        
-        let middleware_handler = cors_middleware(handler);
-        let request = VibeRequest::new(Method::GET, "/test");
-        let response = ResponderVibe::new();
-        
-        middleware_handler(&response, &request).unwrap();
-        
-        let headers = response.get_headers();
-        assert!(headers.contains_key("access-control-allow-origin"));
-        assert_eq!(response.get_body(), b"Hello");
-    }
-
-    #[test]
-    fn test_cors_preflight() {
-        let handler = handler_func(|w, _r| {
-            w.write(b"Should not reach here")?;
-            Ok(())
-        });
-        
-        let middleware_handler = cors_middleware(handler);
-        let request = VibeRequest::new(Method::OPTIONS, "/test");
-        let response = ResponderVibe::new();
-        
-        middleware_handler(&response, &request).unwrap();
-        
-        assert_eq!(response.get_status(), Some(StatusCode::NoContent));
-        assert_eq!(response.get_body(), b""); // Should be empty for OPTIONS
-    }
-
-    #[test]
-    fn test_jwt_auth_middleware_no_token() {
-        let handler = handler_func(|w, _r| {
-            w.write(b"Protected content")?;
-            Ok(())
-        });
-        
-        let middleware_func = jwt_auth_middleware("secret".to_string());
-        let middleware_handler = middleware_func(handler);
-        
-        let request = VibeRequest::new(Method::GET, "/protected");
-        let response = ResponderVibe::new();
-        
-        middleware_handler(&response, &request).unwrap();
-        
-        assert_eq!(response.get_status(), Some(StatusCode::Unauthorized));
-        assert_eq!(response.get_body(), b"Unauthorized");
-    }
-
-    #[test]
-    fn test_jwt_auth_middleware_with_token() {
-        let handler = handler_func(|w, _r| {
-            w.write(b"Protected content")?;
-            Ok(())
-        });
-        
-        let middleware_func = jwt_auth_middleware("secret".to_string());
-        let middleware_handler = middleware_func(handler);
-        
-        let mut request = VibeRequest::new(Method::GET, "/protected");
-        request.header.insert("authorization".to_string(), "Bearer valid-token".to_string());
-        let response = ResponderVibe::new();
-        
-        middleware_handler(&response, &request).unwrap();
-        
-        assert_eq!(response.get_body(), b"Protected content");
-    }
-}

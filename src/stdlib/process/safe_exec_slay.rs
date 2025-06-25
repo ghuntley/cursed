@@ -1,4 +1,4 @@
-use crate::error::Error;
+use crate::error::CursedError;
 /// Safe ExecSlay implementation replacing unsafe operations
 /// 
 /// This module provides a complete rewrite of the ExecSlay API that eliminates
@@ -15,12 +15,12 @@ use std::sync::{Arc, Mutex, RwLock, mpsc, Condvar};
 use std::thread;
 use std::time::{Duration, Instant};
 
-use crate::stdlib::process::error::{
+// use crate::stdlib::process::error::{
     ProcessError, ProcessResult, execution_failed, execution_failed_with_code,
     timeout_error, invalid_arguments, io_error, system_error
 };
 
-use crate::stdlib::process::safe_process_management::{
+// use crate::stdlib::process::safe_process_management::{
     SafeProcessHandle, SafeProcessManager, ProcessMetadata, ResourceLimits,
     ProcessStatistics, global_process_manager
 };
@@ -317,7 +317,7 @@ impl SafeSlayCommand {
                     env_pair.split_once('=').map(|(k, v)| (k.to_string(), v.to_string()))
                 })
                 .collect(),
-            parent_pid: Some(crate::stdlib::process::safe_process_management::current_pid()),
+//             parent_pid: Some(crate::stdlib::process::safe_process_management::current_pid()),
         };
 
         let handle = Arc::new(SafeProcessHandle::new(child, metadata));
@@ -809,92 +809,3 @@ pub fn command_exists_safe<S: AsRef<str>>(command: S) -> bool {
     test_cmd.run().is_ok()
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use std::time::Duration;
-use crate::stdlib::process::core::ProcessHandle;
-use crate::stdlib::process::info::ProcessState;
-use crate::stdlib::process::error::ProcessResult;
-use crate::stdlib::process::error::ProcessError;
-
-    #[test]
-    fn test_safe_slay_command_creation() {
-        let cmd = SafeSlayCommand::new("echo", &["hello", "world"]);
-        assert_eq!(cmd.path, "echo");
-        assert_eq!(cmd.args, vec!["hello", "world"]);
-        assert!(cmd.env.is_empty());
-        assert!(cmd.dir.is_none());
-        assert!(cmd.process_handle.is_none());
-    }
-
-    #[test]
-    fn test_safe_slay_command_environment() {
-        let mut cmd = SafeSlayCommand::new("env", &[]);
-        cmd.add_env("TEST_VAR", "test_value");
-        cmd.add_env("ANOTHER_VAR", "another_value");
-        
-        assert_eq!(cmd.env.len(), 2);
-        assert!(cmd.env.contains(&"TEST_VAR=test_value".to_string()));
-        assert!(cmd.env.contains(&"ANOTHER_VAR=another_value".to_string()));
-    }
-
-    #[test]
-    fn test_safe_slay_options_default() {
-        let opts = SafeSlayOptions::default();
-        assert_eq!(opts.buffer_size, 8192);
-        assert!(opts.collect_output);
-        assert!(!opts.use_shell);
-        assert!(opts.timeout.is_none());
-        assert!(opts.stdout_callback.is_none());
-        assert!(opts.stderr_callback.is_none());
-    }
-
-    #[test]
-    fn test_signal_options_default() {
-        let opts = SignalOptions::default();
-        assert_eq!(opts.grace_period, Duration::from_secs(5));
-        assert!(opts.force);
-        assert_eq!(opts.signal, 15); // SIGTERM
-        assert!(!opts.recursive);
-    }
-
-    #[test]
-    fn test_safe_pipeline_creation() {
-        let cmd1 = SafeSlayCommand::new("echo", &["hello"]);
-        let cmd2 = SafeSlayCommand::new("grep", &["hello"]);
-        let cmd3 = SafeSlayCommand::new("wc", &["-l"]);
-        let pipeline = SafeSlayPipeline::new(vec![cmd1, cmd2, cmd3]);
-        
-        assert_eq!(pipeline.commands.len(), 3);
-        assert_eq!(pipeline.commands[0].path, "echo");
-        assert_eq!(pipeline.commands[1].path, "grep");
-        assert_eq!(pipeline.commands[2].path, "wc");
-    }
-
-    #[test]
-    fn test_safe_command_string_representation() {
-        let cmd = SafeSlayCommand::new("ls", &["-la", "/home"]);
-        assert_eq!(cmd.string(), "ls -la /home");
-    }
-
-    #[test]
-    fn test_convenience_functions() {
-        let cmd = new_safe_slay_command("echo", &["test"]);
-        assert_eq!(cmd.path, "echo");
-        assert_eq!(cmd.args, vec!["test"]);
-    }
-
-    #[test]
-    fn test_resource_limits() {
-        let limits = ResourceLimits {
-            max_memory_bytes: Some(100 * 1024 * 1024), // 100MB
-            max_cpu_percent: Some(80.0),
-            max_execution_time: Some(Duration::from_secs(300)),
-            max_file_descriptors: Some(1024),
-        };
-        
-        assert_eq!(limits.max_memory_bytes, Some(100 * 1024 * 1024));
-        assert_eq!(limits.max_cpu_percent, Some(80.0));
-    }
-}

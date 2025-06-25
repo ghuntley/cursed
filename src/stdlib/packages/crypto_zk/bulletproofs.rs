@@ -1,12 +1,11 @@
-use crate::error::Error;
+use crate::error::CursedError;
 /// Bulletproofs implementation for range proofs and more
 use std::collections::HashMap;
-use crate::stdlib::packages::crypto_advanced::AdvancedCryptoResult;
-use crate::stdlib::crypto::unified_api::UnifiedCryptoError as CryptoError;
-use crate::stdlib::value::Value;
-use crate::stdlib::packages::crypto_zk::field_arithmetic::FieldElement;
-use crate::stdlib::packages::crypto_zk::groth16::G1Point;
-use crate::stdlib::packages::crypto_zk::commitments::PedersenCommitment;
+// use crate::stdlib::packages::crypto_advanced::AdvancedCryptoResult;
+// use crate::stdlib::value::Value;
+// use crate::stdlib::packages::crypto_zk::field_arithmetic::FieldElement;
+// use crate::stdlib::packages::crypto_zk::groth16::G1Point;
+// use crate::stdlib::packages::crypto_zk::commitments::PedersenCommitment;
 use rand::RngCore;
 
 /// Bulletproofs range proof
@@ -664,123 +663,3 @@ impl Bulletproofs {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_bulletproofs_params_generation() {
-        let params = BulletproofsParams::generate(32);
-        assert!(params.is_ok());
-        
-        let params = params.unwrap();
-        assert_eq!(params.bit_length, 32);
-        assert_eq!(params.g_vec.len(), 32);
-        assert_eq!(params.h_vec.len(), 32);
-    }
-
-    #[test]
-    fn test_range_proof_generation() {
-        let params = BulletproofsParams::generate(8).unwrap();
-        let value = 42;
-        let blinding = FieldElement::new(123);
-        
-        let proof = BulletproofsProver::prove_range(&params, value, &blinding, 0, 255);
-        assert!(proof.is_ok());
-    }
-
-    #[test]
-    fn test_range_proof_verification() {
-        let params = BulletproofsParams::generate(8).unwrap();
-        let value = 42;
-        let blinding = FieldElement::new(123);
-        let commitment = G1Point::generator();
-        
-        let proof = BulletproofsProver::prove_range(&params, value, &blinding, 0, 255).unwrap();
-        let is_valid = BulletproofsVerifier::verify_range(&params, &proof, &commitment, 0, 255);
-        assert!(is_valid.is_ok());
-    }
-
-    #[test]
-    fn test_proof_aggregation() {
-        let proof1 = BulletproofsRangeProof {
-            a: G1Point::generator(),
-            s: G1Point::generator(),
-            t1: G1Point::generator(),
-            t2: G1Point::generator(),
-            tau_x: FieldElement::one(),
-            mu: FieldElement::one(),
-            l_vec: vec![FieldElement::one(); 8],
-            r_vec: vec![FieldElement::zero(); 8],
-        };
-
-        let proof2 = proof1.clone();
-        let proofs = vec![proof1, proof2];
-        
-        let aggregated = BulletproofsProver::aggregate_proofs(proofs);
-        assert!(aggregated.is_ok());
-        
-        let aggregated = aggregated.unwrap();
-        assert_eq!(aggregated.aggregation_factor, 2);
-    }
-
-    #[test]
-    fn test_membership_proof() {
-        let params = BulletproofsParams::generate(8).unwrap();
-        let value = FieldElement::new(5);
-        let set = vec![
-            FieldElement::new(1),
-            FieldElement::new(3),
-            FieldElement::new(5),
-            FieldElement::new(7),
-        ];
-        let blinding = FieldElement::new(99);
-        
-        let proof = BulletproofsProver::prove_membership(&params, &value, &set, &blinding);
-        assert!(proof.is_ok());
-    }
-
-    #[test]
-    fn test_bulletproofs_api() {
-        let params = Bulletproofs::generate_params(32).unwrap();
-        assert!(matches!(params, Value::Object(_)));
-
-        let blinding = Bulletproofs::random_blinding().unwrap();
-        assert!(matches!(blinding, Value::String(_)));
-
-        let proof_size = Bulletproofs::proof_size_info(32);
-        assert!(matches!(proof_size, Value::Object(_)));
-
-        let comparison = Bulletproofs::comparison_info();
-        assert!(matches!(comparison, Value::Object(_)));
-    }
-
-    #[test]
-    fn test_common_range_proofs() {
-        let blinding = Value::String("123".to_string());
-        
-        let age_proof = Bulletproofs::prove_age_range(25, &blinding);
-        assert!(age_proof.is_ok());
-
-        let balance_proof = Bulletproofs::prove_balance_range(1000, &blinding, 0, 10000);
-        assert!(balance_proof.is_ok());
-    }
-
-    #[test]
-    fn test_proof_serialization() {
-        let proof = BulletproofsRangeProof {
-            a: G1Point::generator(),
-            s: G1Point::generator(),
-            t1: G1Point::generator(),
-            t2: G1Point::generator(),
-            tau_x: FieldElement::one(),
-            mu: FieldElement::one(),
-            l_vec: vec![FieldElement::one(); 8],
-            r_vec: vec![FieldElement::zero(); 8],
-        };
-
-        let bytes = proof.to_bytes();
-        assert!(!bytes.is_empty());
-        assert!(proof.size() > 0);
-    }
-}

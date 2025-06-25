@@ -1,4 +1,4 @@
-use crate::error::Error;
+use crate::error::CursedError;
 /// Comprehensive trigonometric functions for CURSED programming language
 /// 
 /// This module provides all standard trigonometric and hyperbolic functions with

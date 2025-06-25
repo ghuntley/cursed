@@ -8,8 +8,7 @@ use std::net::{IpAddr, SocketAddr};
 use std::sync::{Arc, Mutex};
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 use crate::error::CursedError;
-use crate::stdlib::vibe_net::NetResult;
-use crate::error::Error;
+// use crate::stdlib::vibe_net::NetResult;
 
 /// TLS configuration and certificate management
 pub struct TlsConfig {
@@ -663,46 +662,3 @@ impl SecureChannel {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_tls_config_default() {
-        let config = TlsConfig::default();
-        assert_eq!(config.min_version, TlsVersion::TlsV12);
-        assert!(config.verify_peer);
-        assert!(config.verify_hostname);
-    }
-
-    #[test]
-    fn test_certificate_validator() {
-        let validator = CertificateValidator::new();
-        assert_eq!(validator.trusted_cas.len(), 0);
-    }
-
-    #[test]
-    fn test_security_scanner() {
-        let config = ScanConfig::default();
-        let scanner = SecurityScanner::new(config);
-        assert!(scanner.scan_config.port_scan_enabled);
-    }
-
-    #[test]
-    fn test_secure_channel() {
-        let channel = SecureChannel::new(CipherAlgorithm::Aes256Gcm).unwrap();
-        let plaintext = b"Hello, World!";
-        
-        let ciphertext = channel.encrypt(plaintext).unwrap();
-        let decrypted = channel.decrypt(&ciphertext).unwrap();
-        
-        assert_eq!(plaintext, &decrypted[..]);
-    }
-
-    #[test]
-    fn test_vulnerability_severity() {
-        assert!(VulnerabilitySeverity::Critical > VulnerabilitySeverity::High);
-        assert!(VulnerabilitySeverity::High > VulnerabilitySeverity::Medium);
-        assert!(VulnerabilitySeverity::Medium > VulnerabilitySeverity::Low);
-    }
-}

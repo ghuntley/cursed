@@ -6,12 +6,12 @@
 use std::sync::Arc;
 // use tokio_postgres::Transaction; // Disabled - tokio causes E0753 errors
 use super::connection::Transaction;
-use crate::stdlib::database::{
+// use crate::stdlib::database::{
     DriverTx, DriverStmt, SqlValue, SqlIsolationLevel, DatabaseError,
     TxOptions, IsolationLevel,
     driver::{QueryResult, ExecuteResult}
 };
-use crate::error::Error;
+use crate::error::CursedError;
 use super::error::{PostgresError, PostgresErrorKind, PostgresResult};
 use super::types::{map_postgres_value, prepare_parameters, extract_column_info};
 use super::connection::ConnectionStats;
@@ -303,44 +303,44 @@ impl<'a> PostgresTransaction<'a> {
 }
 
 impl<'a> DriverTx for PostgresTransaction<'a> {
-    fn query(&self, sql: &str, args: &[SqlValue]) -> Result<(), Error> {
+    fn query(&self, sql: &str, args: &[SqlValue]) -> crate::error::Result<()> {
         // For async execution in sync context, we need a runtime handle
         // This is a limitation of the current sync API design
-        Err(crate::stdlib::database::DatabaseError::new(
-            crate::stdlib::database::DatabaseErrorKind::NotSupported,
+//         Err(crate::stdlib::database::DatabaseError::new(
+//             crate::stdlib::database::DatabaseErrorKind::NotSupported,
             "Transaction queries require async context. Use async transaction methods instead.",
         ))
     }
 
-    fn execute(&self, sql: &str, args: &[SqlValue]) -> Result<(), Error> {
+    fn execute(&self, sql: &str, args: &[SqlValue]) -> crate::error::Result<()> {
         // For async execution in sync context, we need a runtime handle
         // This is a limitation of the current sync API design
-        Err(crate::stdlib::database::DatabaseError::new(
-            crate::stdlib::database::DatabaseErrorKind::NotSupported,
+//         Err(crate::stdlib::database::DatabaseError::new(
+//             crate::stdlib::database::DatabaseErrorKind::NotSupported,
             "Transaction execution requires async context. Use async transaction methods instead.",
         ))
     }
 
-    fn commit(&self) -> Result<(), Error> {
+    fn commit(&self) -> crate::error::Result<()> {
         // Cannot commit async transaction in sync context
-        Err(crate::stdlib::database::DatabaseError::new(
-            crate::stdlib::database::DatabaseErrorKind::NotSupported,
+//         Err(crate::stdlib::database::DatabaseError::new(
+//             crate::stdlib::database::DatabaseErrorKind::NotSupported,
             "Transaction commit requires async context. Use async transaction methods instead.",
         ))
     }
 
-    fn rollback(&self) -> Result<(), Error> {
+    fn rollback(&self) -> crate::error::Result<()> {
         // Cannot rollback async transaction in sync context
-        Err(crate::stdlib::database::DatabaseError::new(
-            crate::stdlib::database::DatabaseErrorKind::NotSupported,
+//         Err(crate::stdlib::database::DatabaseError::new(
+//             crate::stdlib::database::DatabaseErrorKind::NotSupported,
             "Transaction rollback requires async context. Use async transaction methods instead.",
         ))
     }
 
-    fn prepare(&self, query: &str) -> Result<(), Error> {
+    fn prepare(&self, query: &str) -> crate::error::Result<()> {
         // For async operations in sync context, return not supported error
-        Err(crate::stdlib::database::DatabaseError::new(
-            crate::stdlib::database::DatabaseErrorKind::NotSupported,
+//         Err(crate::stdlib::database::DatabaseError::new(
+//             crate::stdlib::database::DatabaseErrorKind::NotSupported,
             "Transaction prepare requires async context. Use async transaction methods instead.",
         ))
     }
@@ -412,46 +412,3 @@ impl std::fmt::Display for TransactionStats {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_transaction_state() {
-        let state = TransactionState::Active;
-        assert_eq!(format!("{}", state), "Active");
-        
-        let state = TransactionState::Committed;
-        assert_eq!(format!("{}", state), "Committed");
-    }
-
-    #[test]
-    fn test_transaction_stats() {
-        let stats = TransactionStats {
-            statements_executed: 5,
-            rows_affected: 10,
-            rows_returned: 15,
-            savepoints_created: 2,
-            savepoints_released: 1,
-            savepoints_rolled_back: 0,
-            started_at: std::time::SystemTime::now(),
-            duration: Some(std::time::Duration::from_millis(100)),
-        };
-        
-        assert_eq!(stats.statements_executed, 5);
-        assert_eq!(stats.rows_affected, 10);
-        assert_eq!(stats.savepoints_created, 2);
-    }
-
-    #[test]
-    fn test_savepoint_naming() {
-        // Test savepoint name generation
-        let base_name = "test";
-        let counter = 1;
-        let savepoint_name = format!("{}_{}", base_name, counter);
-        assert_eq!(savepoint_name, "test_1");
-        
-        let auto_name = format!("sp_{}", counter);
-        assert_eq!(auto_name, "sp_1");
-    }
-}

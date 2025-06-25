@@ -1,11 +1,11 @@
-use crate::error::Error;
+use crate::error::CursedError;
 /// Connection pooling and resource management for IPC
 use std::collections::{HashMap, VecDeque};
 use std::sync::{Arc, Mutex, RwLock, Condvar};
 use std::time::{Duration, Instant};
 use std::thread;
 
-use crate::stdlib::ipc::error::{IpcError, IpcResult, out_of_resources, timeout_error, not_found};
+// use crate::stdlib::ipc::error::{IpcError, IpcResult, out_of_resources, timeout_error, not_found};
 
 /// Connection pool configuration
 #[derive(Debug, Clone)]

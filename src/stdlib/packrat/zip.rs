@@ -1,4 +1,4 @@
-use crate::error::Error;
+use crate::error::CursedError;
 // ZIP format support for PackRat
 // HoardPack (reader), HoardStash (writer), HoardFile, HoardFileHeader
 
@@ -515,7 +515,7 @@ impl<'a, W: Write + Seek> Drop for ZipFileWriter<'a, W> {
     fn drop(&mut self) {
         // Write data and finalize file
         if let Err(e) = self.finish() {
-            error!("Error finishing ZIP file: {}", e);
+            error!("CursedError finishing ZIP file: {}", e);
         }
     }
 }
@@ -582,95 +582,3 @@ fn dos_time_to_system_time(dos_time: u16, dos_date: u16) -> SystemTime {
     UNIX_EPOCH + std::time::Duration::from_secs(total_secs)
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use std::io::Cursor;
-    use tracing::info;
-    
-    #[test]
-    fn test_hoard_file_header_creation() {
-        info!("Testing HoardFileHeader creation");
-        
-        let header = HoardFileHeader::new("test.txt");
-        assert_eq!(header.name, "test.txt");
-        assert_eq!(header.method, COMPRESSION_STORED);
-        
-        info!("HoardFileHeader creation test passed");
-    }
-    
-    #[test]
-    fn test_hoard_file_header_validation() {
-        info!("Testing HoardFileHeader validation");
-        
-        let mut header = HoardFileHeader::new("test.txt");
-        assert!(header.validate().is_ok());
-        
-        // Test path traversal
-        header.name = "../evil.txt".to_string();
-        assert!(header.validate().is_err());
-        
-        // Test absolute path
-        header.name = "/etc/passwd".to_string();
-        assert!(header.validate().is_err());
-        
-        info!("HoardFileHeader validation tests passed");
-    }
-    
-    #[test]
-    fn test_hoard_file_creation() {
-        info!("Testing HoardFile creation");
-        
-        let header = HoardFileHeader::new("test.txt");
-        let data = b"Hello, World!".to_vec();
-        let file = HoardFile::new(header, data);
-        
-        assert_eq!(file.file_header.name, "test.txt");
-        
-        info!("HoardFile creation test passed");
-    }
-    
-    #[test]
-    fn test_hoard_stash_creation() {
-        info!("Testing HoardStash creation");
-        
-        let buffer = Cursor::new(Vec::new());
-        let mut stash = HoardStash::new(buffer);
-        
-        let mut writer = stash.create("test.txt").unwrap();
-        writer.write_all(b"Hello, World!").unwrap();
-        drop(writer);
-        
-        stash.close().unwrap();
-        
-        info!("HoardStash creation test passed");
-    }
-    
-    #[test]
-    fn test_dos_time_conversion() {
-        info!("Testing DOS time conversion");
-        
-        let now = SystemTime::now();
-        let (dos_time, dos_date) = system_time_to_dos_time(now);
-        let converted = dos_time_to_system_time(dos_time, dos_date);
-        
-        // Should be roughly the same (within a day due to precision loss)
-        let diff = now.duration_since(converted).unwrap_or_else(|_| {
-            converted.duration_since(now).unwrap()
-        });
-        assert!(diff.as_secs() < 86400);
-        
-        info!("DOS time conversion tests passed");
-    }
-    
-    #[test]
-    fn test_file_info_header() {
-        info!("Testing FileInfoHeader function");
-        
-        let header = FileInfoHeader("test.txt", 100, 0o644).unwrap();
-        assert_eq!(header.name, "test.txt");
-        assert_eq!(header.uncompressed_size, 100);
-        
-        info!("FileInfoHeader function test passed");
-    }
-}

@@ -1,11 +1,11 @@
-use crate::error::Error;
+use crate::error::CursedError;
 /// Enhanced session management with connection pooling and transaction safety
 use std::collections::HashMap;
 use std::fmt;
 use std::path::PathBuf;
 use std::time::{SystemTime, UNIX_EPOCH};
 
-use crate::stdlib::web_vibez::config::{SessionConfig, SessionStoreType, SameSitePolicy};
+// use crate::stdlib::web_vibez::config::{SessionConfig, SessionStoreType, SameSitePolicy};
 
 /// Session data structure
 #[derive(Debug, Clone)]
@@ -247,7 +247,7 @@ impl Session {
     }
 
     /// Deserialize session from string
-    pub fn deserialize(data: &str) -> Result<(), Error> {
+    pub fn deserialize(data: &str) -> crate::error::Result<()> {
         let mut session = Session::new();
         session.is_new = false;
 
@@ -298,7 +298,7 @@ impl Session {
     }
 
     /// Deserialize session value from string
-    fn deserialize_value(data: &str) -> Result<(), Error> {
+    fn deserialize_value(data: &str) -> crate::error::Result<()> {
         let parts: Vec<&str> = data.splitn(2, ':').collect();
         if parts.len() != 2 {
             return Err(SessionError::InvalidData("value".to_string()));
@@ -331,10 +331,10 @@ impl Default for Session {
 
 /// Session store trait
 pub trait SessionStore {
-    fn load(&self, session_id: &str) -> Result<(), Error>;
-    fn save(&mut self, session: &Session) -> Result<(), Error>;
-    fn delete(&mut self, session_id: &str) -> Result<(), Error>;
-    fn cleanup_expired(&mut self) -> Result<(), Error>;
+    fn load(&self, session_id: &str) -> crate::error::Result<()>;
+    fn save(&mut self, session: &Session) -> crate::error::Result<()>;
+    fn delete(&mut self, session_id: &str) -> crate::error::Result<()>;
+    fn cleanup_expired(&mut self) -> crate::error::Result<()>;
     fn exists(&self, session_id: &str) -> bool;
     fn count(&self) -> usize;
 }
@@ -371,7 +371,7 @@ impl Default for DatabaseStoreConfig {
 
 /// Database connection pool for session management
 pub struct DatabaseConnectionPool {
-    connections: std::sync::Arc<std::sync::Mutex<Vec<crate::stdlib::database::DB>>>,
+//     connections: std::sync::Arc<std::sync::Mutex<Vec<crate::stdlib::database::DB>>>,
     connection_string: String,
     driver_name: String,
     config: DatabaseStoreConfig,
@@ -380,7 +380,7 @@ pub struct DatabaseConnectionPool {
 }
 
 impl DatabaseConnectionPool {
-    pub fn new(connection_string: String, config: DatabaseStoreConfig) -> Result<(), Error> {
+    pub fn new(connection_string: String, config: DatabaseStoreConfig) -> crate::error::Result<()> {
         let driver_name = Self::detect_driver(&connection_string);
         
         let pool = Self {
@@ -415,7 +415,7 @@ impl DatabaseConnectionPool {
         }
     }
     
-    fn initialize_pool(&self) -> Result<(), Error> {
+    fn initialize_pool(&self) -> crate::error::Result<()> {
         let mut connections = self.connections.lock()
             .map_err(|_| SessionError::StoreError("Failed to acquire connection pool lock".to_string()))?;
             
@@ -427,8 +427,8 @@ impl DatabaseConnectionPool {
         Ok(())
     }
     
-    fn create_connection(&self) -> Result<(), Error> {
-        let mut db = crate::stdlib::database::DB::open(
+    fn create_connection(&self) -> crate::error::Result<()> {
+//         let mut db = crate::stdlib::database::DB::open(
             self.driver_name.clone(), 
             self.connection_string.clone()
         ).map_err(|e| SessionError::StoreError(format!("Database connection failed: {}", e)))?;
@@ -439,7 +439,7 @@ impl DatabaseConnectionPool {
         Ok(db)
     }
     
-    fn configure_connection(&self, db: &mut crate::stdlib::database::DB) -> Result<(), Error> {
+//     fn configure_connection(&self, db: &mut crate::stdlib::database::DB) -> crate::error::Result<()> {
         if self.driver_name == "sqlite" {
             // SQLite-specific optimizations
             if self.config.enable_wal_mode {
@@ -477,7 +477,7 @@ impl DatabaseConnectionPool {
         Ok(())
     }
     
-    pub fn get_connection(&self) -> Result<(), Error> {
+    pub fn get_connection(&self) -> crate::error::Result<()> {
         if self.is_shutdown.load(std::sync::atomic::Ordering::SeqCst) {
             return Err(SessionError::StoreError("Connection pool is shutdown".to_string()));
         }
@@ -558,15 +558,15 @@ impl DatabaseConnectionPool {
 
 /// A connection borrowed from the pool with transaction support
 pub struct PooledConnection {
-    db: Option<crate::stdlib::database::DB>,
-    pool: std::sync::Arc<std::sync::Mutex<Vec<crate::stdlib::database::DB>>>,
+//     db: Option<crate::stdlib::database::DB>,
+//     pool: std::sync::Arc<std::sync::Mutex<Vec<crate::stdlib::database::DB>>>,
     active_connections: std::sync::Arc<std::sync::atomic::AtomicUsize>,
 }
 
 impl PooledConnection {
-    pub fn execute_transaction<F, R>(&mut self, transaction_fn: F) -> Result<(), Error>
+    pub fn execute_transaction<F, R>(&mut self, transaction_fn: F) -> crate::error::Result<()>
     where
-        F: FnOnce(&mut crate::stdlib::database::DB) -> Result<(), Error>,
+//         F: FnOnce(&mut crate::stdlib::database::DB) -> crate::error::Result<()>,
     {
         if let Some(ref mut db) = self.db {
             // Begin transaction
@@ -591,9 +591,9 @@ impl PooledConnection {
         }
     }
     
-    pub fn execute_with_retry<F, R>(&mut self, operation: F) -> Result<(), Error>
+    pub fn execute_with_retry<F, R>(&mut self, operation: F) -> crate::error::Result<()>
     where
-        F: Fn(&mut crate::stdlib::database::DB) -> Result<(), Error>,
+//         F: Fn(&mut crate::stdlib::database::DB) -> crate::error::Result<()>,
     {
         if let Some(ref mut db) = self.db {
             let mut retries = 0;
@@ -619,7 +619,7 @@ impl PooledConnection {
         }
     }
     
-    pub fn as_mut(&mut self) -> Option<&mut crate::stdlib::database::DB> {
+//     pub fn as_mut(&mut self) -> Option<&mut crate::stdlib::database::DB> {
         self.db.as_mut()
     }
 }
@@ -657,11 +657,11 @@ pub struct DatabaseSessionStore {
 }
 
 impl DatabaseSessionStore {
-    pub fn new(connection_string: String) -> Result<(), Error> {
+    pub fn new(connection_string: String) -> crate::error::Result<()> {
         Self::new_with_config(connection_string, DatabaseStoreConfig::default())
     }
     
-    pub fn new_with_config(connection_string: String, config: DatabaseStoreConfig) -> Result<(), Error> {
+    pub fn new_with_config(connection_string: String, config: DatabaseStoreConfig) -> crate::error::Result<()> {
         let pool = std::sync::Arc::new(DatabaseConnectionPool::new(connection_string.clone(), config.clone())?);
         
         let store = Self {
@@ -683,7 +683,7 @@ impl DatabaseSessionStore {
     }
     
     /// Initialize database schema with proper indexing and constraints
-    fn init_schema(&self) -> Result<(), Error> {
+    fn init_schema(&self) -> crate::error::Result<()> {
         let mut connection = self.pool.get_connection()?;
         
         connection.execute_transaction(|db| {
@@ -761,7 +761,7 @@ impl DatabaseSessionStore {
                             table_name
                         );
                         
-                        db.exec(cleanup_sql, vec![crate::stdlib::database::SqlValue::Integer(now)])
+//                         db.exec(cleanup_sql, vec![crate::stdlib::database::SqlValue::Integer(now)])
                             .map_err(|e| SessionError::StoreError(format!("Cleanup failed: {}", e)))?;
                         
                         // Also run VACUUM INCREMENTAL for SQLite
@@ -806,7 +806,7 @@ impl DatabaseSessionStore {
 }
 
 impl SessionStore for DatabaseSessionStore {
-    fn load(&self, session_id: &str) -> Result<(), Error> {
+    fn load(&self, session_id: &str) -> crate::error::Result<()> {
         let mut connection = self.pool.get_connection()?;
         
         connection.execute_with_retry(|db| {
@@ -815,13 +815,13 @@ impl SessionStore for DatabaseSessionStore {
                 self.table_name
             );
             
-            match db.query_row(sql, vec![crate::stdlib::database::SqlValue::Text(session_id.to_string())]) {
+//             match db.query_row(sql, vec![crate::stdlib::database::SqlValue::Text(session_id.to_string())]) {
                 Ok(row) => {
-                    if let (Some(crate::stdlib::database::SqlValue::Text(data)), checksum) = 
+//                     if let (Some(crate::stdlib::database::SqlValue::Text(data)), checksum) = 
                         (row.get("session_data"), row.get("data_checksum")) {
                         
                         // Verify data integrity if checksum exists
-                        if let Some(crate::stdlib::database::SqlValue::Text(stored_checksum)) = checksum {
+//                         if let Some(crate::stdlib::database::SqlValue::Text(stored_checksum)) = checksum {
                             let calculated_checksum = self.calculate_checksum(data);
                             if calculated_checksum != *stored_checksum {
                                 return Err(SessionError::StoreError("Session data corruption detected".to_string()));
@@ -848,7 +848,7 @@ impl SessionStore for DatabaseSessionStore {
         })
     }
 
-    fn save(&mut self, session: &Session) -> Result<(), Error> {
+    fn save(&mut self, session: &Session) -> crate::error::Result<()> {
         let mut connection = self.pool.get_connection()?;
         
         connection.execute_transaction(|db| {
@@ -861,37 +861,37 @@ impl SessionStore for DatabaseSessionStore {
                 VALUES (?, ?, ?, ?, ?, ?, ?)
             "#, self.table_name);
             
-            let expires_at = session.expires_at.map(|t| crate::stdlib::database::SqlValue::Integer(t as i64))
-                .unwrap_or(crate::stdlib::database::SqlValue::Null);
+//             let expires_at = session.expires_at.map(|t| crate::stdlib::database::SqlValue::Integer(t as i64))
+//                 .unwrap_or(crate::stdlib::database::SqlValue::Null);
             
             db.exec(sql, vec![
-                crate::stdlib::database::SqlValue::Text(session.id.clone()),
-                crate::stdlib::database::SqlValue::Text(session_data),
-                crate::stdlib::database::SqlValue::Integer(session.created_at as i64),
-                crate::stdlib::database::SqlValue::Integer(session.last_accessed as i64),
+//                 crate::stdlib::database::SqlValue::Text(session.id.clone()),
+//                 crate::stdlib::database::SqlValue::Text(session_data),
+//                 crate::stdlib::database::SqlValue::Integer(session.created_at as i64),
+//                 crate::stdlib::database::SqlValue::Integer(session.last_accessed as i64),
                 expires_at,
-                crate::stdlib::database::SqlValue::Text(checksum),
-                crate::stdlib::database::SqlValue::Integer(self.schema_version as i64),
+//                 crate::stdlib::database::SqlValue::Text(checksum),
+//                 crate::stdlib::database::SqlValue::Integer(self.schema_version as i64),
             ]).map_err(|e| SessionError::StoreError(format!("Failed to save session: {}", e)))?;
             
             Ok(())
         })
     }
 
-    fn delete(&mut self, session_id: &str) -> Result<(), Error> {
+    fn delete(&mut self, session_id: &str) -> crate::error::Result<()> {
         let mut connection = self.pool.get_connection()?;
         
         connection.execute_transaction(|db| {
             let sql = format!("DELETE FROM {} WHERE id = ?", self.table_name);
             
-            db.exec(sql, vec![crate::stdlib::database::SqlValue::Text(session_id.to_string())])
+//             db.exec(sql, vec![crate::stdlib::database::SqlValue::Text(session_id.to_string())])
                 .map_err(|e| SessionError::StoreError(format!("Failed to delete session: {}", e)))?;
             
             Ok(())
         })
     }
 
-    fn cleanup_expired(&mut self) -> Result<(), Error> {
+    fn cleanup_expired(&mut self) -> crate::error::Result<()> {
         let mut connection = self.pool.get_connection()?;
         
         connection.execute_transaction(|db| {
@@ -905,7 +905,7 @@ impl SessionStore for DatabaseSessionStore {
                 self.table_name
             );
             
-            let result = db.exec(sql, vec![crate::stdlib::database::SqlValue::Integer(now)])
+//             let result = db.exec(sql, vec![crate::stdlib::database::SqlValue::Integer(now)])
                 .map_err(|e| SessionError::StoreError(format!("Failed to cleanup expired sessions: {}", e)))?;
             
             // Run incremental vacuum after cleanup
@@ -921,7 +921,7 @@ impl SessionStore for DatabaseSessionStore {
                 connection.execute_with_retry(|db| {
                     let sql = format!("SELECT 1 FROM {} WHERE id = ? LIMIT 1", self.table_name);
                     
-                    match db.query_row(sql, vec![crate::stdlib::database::SqlValue::Text(session_id.to_string())]) {
+//                     match db.query_row(sql, vec![crate::stdlib::database::SqlValue::Text(session_id.to_string())]) {
                         Ok(_) => Ok(true),
                         Err(_) => Ok(false),
                     }
@@ -938,7 +938,7 @@ impl SessionStore for DatabaseSessionStore {
                     
                     match db.query_row(sql, vec![]) {
                         Ok(row) => {
-                            if let Some(crate::stdlib::database::SqlValue::Integer(count)) = row.get("count") {
+//                             if let Some(crate::stdlib::database::SqlValue::Integer(count)) = row.get("count") {
                                 Ok(*count as usize)
                             } else {
                                 Ok(0)
@@ -970,22 +970,22 @@ pub enum SessionError {
     TransactionFailed(String),
 }
 
-impl fmt::Display for SessionError {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        match self {
-            SessionError::InvalidData(field) => write!(f, "Invalid session data: {}", field),
-            SessionError::StoreError(msg) => write!(f, "Session store error: {}", msg),
-            SessionError::SerializationError(msg) => write!(f, "Session serialization error: {}", msg),
-            SessionError::NotFound(id) => write!(f, "Session not found: {}", id),
-            SessionError::CorruptedData(msg) => write!(f, "Session data corrupted: {}", msg),
-            SessionError::ConnectionPoolExhausted => write!(f, "Database connection pool exhausted"),
-            SessionError::TransactionFailed(msg) => write!(f, "Database transaction failed: {}", msg),
-        }
-    }
-}
+// impl fmt::Display for SessionError {
+//     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+//         match self {
+//             SessionError::InvalidData(field) => write!(f, "Invalid session data: {}", field),
+//             SessionError::StoreError(msg) => write!(f, "Session store error: {}", msg),
+//             SessionError::SerializationError(msg) => write!(f, "Session serialization error: {}", msg),
+//             SessionError::NotFound(id) => write!(f, "Session not found: {}", id),
+//             SessionError::CorruptedData(msg) => write!(f, "Session data corrupted: {}", msg),
+//             SessionError::ConnectionPoolExhausted => write!(f, "Database connection pool exhausted"),
+//             SessionError::TransactionFailed(msg) => write!(f, "Database transaction failed: {}", msg),
+//         }
+//     }
+// }
 
-impl std::error::Error for SessionError {}
-
+// impl std::error::CursedError for SessionError {}
+// 
 // TODO: Implement full enhanced session manager functionality
 /// Enhanced session manager with advanced features
 #[derive(Debug)]
@@ -1015,13 +1015,13 @@ impl EnhancedSessionManager {
     }
 
     /// Create session manager with database store
-    pub fn with_database(connection_string: String, config: SessionConfig) -> Result<(), Error> {
+    pub fn with_database(connection_string: String, config: SessionConfig) -> crate::error::Result<()> {
         let store = Box::new(DatabaseSessionStore::new(connection_string)?);
         Ok(Self::new(store, config))
     }
 
     /// Load session by ID
-    pub fn load_session(&mut self, session_id: &str) -> Result<(), Error> {
+    pub fn load_session(&mut self, session_id: &str) -> crate::error::Result<()> {
         // Check cache first
         if let Some(session) = self.session_cache.get(session_id) {
             if !session.is_expired() {
@@ -1046,14 +1046,14 @@ impl EnhancedSessionManager {
     }
 
     /// Save session
-    pub fn save_session(&mut self, session: &Session) -> Result<(), Error> {
+    pub fn save_session(&mut self, session: &Session) -> crate::error::Result<()> {
         self.store.save(session)?;
         self.cache_session(&session.id, session);
         Ok(())
     }
 
     /// Create new session
-    pub fn create_session(&mut self) -> Result<(), Error> {
+    pub fn create_session(&mut self) -> crate::error::Result<()> {
         let mut session = Session::new();
         
         // Apply configuration defaults
@@ -1066,13 +1066,13 @@ impl EnhancedSessionManager {
     }
 
     /// Delete session
-    pub fn delete_session(&mut self, session_id: &str) -> Result<(), Error> {
+    pub fn delete_session(&mut self, session_id: &str) -> crate::error::Result<()> {
         self.session_cache.remove(session_id);
         self.store.delete(session_id)
     }
 
     /// Cleanup expired sessions
-    pub fn cleanup_expired(&mut self) -> Result<(), Error> {
+    pub fn cleanup_expired(&mut self) -> crate::error::Result<()> {
         // Cleanup cache
         let now = std::time::SystemTime::now()
             .duration_since(std::time::UNIX_EPOCH)

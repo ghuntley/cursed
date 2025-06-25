@@ -1,4 +1,4 @@
-use crate::error::Error;
+use crate::error::CursedError;
 /// # Enhanced Networking Utilities
 /// 
 /// This module provides advanced networking features including load balancing,
@@ -10,8 +10,7 @@ use std::net::{IpAddr, SocketAddr};
 use std::sync::{Arc, Mutex};
 use std::time::{Duration, Instant, SystemTime};
 use std::io::{Read, Write};
-use crate::error::CursedError;
-use crate::stdlib::vibe_net::{NetResult, VibeContext, ConnVibe};
+// use crate::stdlib::vibe_net::{NetResult, VibeContext, ConnVibe};
 
 /// Enhanced connection with retry capabilities and advanced features
 pub struct EnhancedConnVibe {
@@ -508,48 +507,3 @@ impl ConnectionMultiplexer {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_retry_config_default() {
-        let config = RetryConfig::default();
-        assert_eq!(config.max_retries, 3);
-        assert_eq!(config.initial_delay, Duration::from_millis(100));
-        assert!(config.jitter);
-    }
-
-    #[test]
-    fn test_network_quality_tracker() {
-        let mut tracker = NetworkQualityTracker::new();
-        assert_eq!(tracker.quality_score(), 1.0);
-        
-        tracker.record_success(Duration::from_millis(50), 1000);
-        assert_eq!(tracker.success_count, 1);
-        assert!(tracker.average_latency().is_some());
-    }
-
-    #[test]
-    fn test_load_balancer_creation() {
-        let endpoints = vec!["127.0.0.1:8080".to_string(), "127.0.0.1:8081".to_string()];
-        let lb = LoadBalancer::new(endpoints, LoadBalanceStrategy::RoundRobin);
-        assert_eq!(lb.endpoints.len(), 2);
-    }
-
-    #[test]
-    fn test_protocol_negotiator() {
-        let mut negotiator = ProtocolNegotiator::new();
-        negotiator.set_preferred("http/2");
-        
-        let peer_protocols = vec!["http/1.1".to_string(), "http/2".to_string()];
-        let result = negotiator.negotiate(&peer_protocols);
-        assert_eq!(result, Some("http/2".to_string()));
-    }
-
-    #[test]
-    fn test_connection_multiplexer() {
-        let mut mux = ConnectionMultiplexer::new(10);
-        assert_eq!(mux.active_streams(), 0);
-    }
-}

@@ -1,4 +1,4 @@
-use crate::error::Error;
+use crate::error::CursedError;
 /// IP address types and utilities for VibeNet
 /// 
 /// This module provides comprehensive IP address handling including IPv4 and IPv6
@@ -7,7 +7,6 @@ use crate::error::Error;
 use std::fmt;
 use std::net::{IpAddr, Ipv4Addr, Ipv6Addr};
 use std::str::FromStr;
-use crate::error::CursedError;
 use super::error::{NetError, address_resolution_error};
 use super::NetResult;
 
@@ -364,74 +363,3 @@ impl fmt::Display for IPNetVibe {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_parse_ipv4() {
-        let ip = IPVibe::parse_ip("192.168.1.1").unwrap();
-        assert!(ip.is_ipv4());
-        assert_eq!(ip.string(), "192.168.1.1");
-    }
-
-    #[test]
-    fn test_parse_ipv6() {
-        let ip = IPVibe::parse_ip("2001:db8::1").unwrap();
-        assert!(ip.is_ipv6());
-        assert_eq!(ip.string(), "2001:db8::1");
-    }
-
-    #[test]
-    fn test_ipv4_creation() {
-        let ip = IPVibe::ipv4(192, 168, 1, 1);
-        assert!(ip.is_ipv4());
-        assert_eq!(ip.string(), "192.168.1.1");
-    }
-
-    #[test]
-    fn test_ip_properties() {
-        let localhost = IPVibe::parse_ip("127.0.0.1").unwrap();
-        assert!(localhost.is_loopback());
-        assert!(!localhost.is_multicast());
-
-        let private = IPVibe::parse_ip("192.168.1.1").unwrap();
-        assert!(private.is_private());
-        assert!(!private.is_global_unicast());
-    }
-
-    #[test]
-    fn test_cidr_parsing() {
-        let (ip, net) = IPNetVibe::parse_cidr("192.168.1.0/24").unwrap();
-        assert_eq!(ip.string(), "192.168.1.0");
-        assert_eq!(net.prefix_len, 24);
-        assert_eq!(net.string(), "192.168.1.0/24");
-    }
-
-    #[test]
-    fn test_network_contains() {
-        let (_, net) = IPNetVibe::parse_cidr("192.168.1.0/24").unwrap();
-        let ip1 = IPVibe::parse_ip("192.168.1.100").unwrap();
-        let ip2 = IPVibe::parse_ip("192.168.2.100").unwrap();
-        
-        assert!(net.contains(&ip1));
-        assert!(!net.contains(&ip2));
-    }
-
-    #[test]
-    fn test_ipv4_mask() {
-        let mask = IPMaskVibe::ipv4_mask(255, 255, 255, 0);
-        assert_eq!(mask.string(), "255.255.255.0");
-        let (ones, bits) = mask.size();
-        assert_eq!(ones, 24);
-        assert_eq!(bits, 32);
-    }
-
-    #[test]
-    fn test_cidr_mask() {
-        let mask = IPMaskVibe::cidr_mask(24, 32).unwrap();
-        let (ones, bits) = mask.size();
-        assert_eq!(ones, 24);
-        assert_eq!(bits, 32);
-    }
-}

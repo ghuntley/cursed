@@ -1,4 +1,4 @@
-use crate::error::Error;
+use crate::error::CursedError;
 // Workspace management for CURSED language server
 // 
 // Handles multi-file projects, workspace folders, and project-wide operations
@@ -15,7 +15,6 @@ use crate::lexer::Lexer;
 use crate::parser::Parser;
 use crate::type_system::TypeChecker, Type;
 use crate::ast::Program;
-use crate::error::Error as CursedError;
 use crate::imports::{ImportResolver, ImportResolverConfig};
 
 /// Workspace manager for the LSP server

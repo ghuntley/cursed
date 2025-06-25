@@ -1,7 +1,7 @@
-use crate::error::Error;
+use crate::error::CursedError;
 /// Socket operations at the system level
 use std::mem;
-use crate::stdlib::sys_core::error::{SysCoreResult, system_call_error, not_supported, invalid_argument};
+// use crate::stdlib::sys_core::error::{SysCoreResult, system_call_error, not_supported, invalid_argument};
 
 #[cfg(unix)]
 use std::os::unix::io::RawFd;

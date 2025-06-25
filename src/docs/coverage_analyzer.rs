@@ -3,7 +3,7 @@
 /// Provides comprehensive analysis of documentation coverage across CURSED source files,
 /// including missing documentation detection, quality metrics, and improvement suggestions.
 
-use crate::error::{Error, SourceLocation};
+use crate::error::{CursedError, SourceLocation};
 use crate::lexer::{Lexer, TokenType};
 use crate::parser::{Parser, ParsedProgram};
 use crate::ast::{AstNode, Statement, Expression, Declaration};
@@ -265,7 +265,7 @@ impl CoverageAnalyzer {
     }
 
     /// Analyze documentation coverage for a set of files
-    pub fn analyze_files(&mut self, files: &[PathBuf]) -> Result<(), Error> {
+    pub fn analyze_files(&mut self, files: &[PathBuf]) -> crate::error::Result<()> {
         self.stats = CoverageStatistics::default();
         self.quality_metrics = QualityMetrics::default();
 
@@ -278,7 +278,7 @@ impl CoverageAnalyzer {
             }
 
             let file_content = fs::read_to_string(file_path)
-                .map_err(|e| Error::SystemError(format!("Failed to read file {}: {}", file_path.display(), e)))?;
+                .map_err(|e| CursedError::SystemError(format!("Failed to read file {}: {}", file_path.display(), e)))?;
 
             let items = self.extract_items_from_file(&file_content, file_path)?;
             let file_coverage = self.analyze_file_coverage(&items, file_path);
@@ -304,17 +304,17 @@ impl CoverageAnalyzer {
     }
 
     /// Extract documentable items from a file
-    fn extract_items_from_file(&self, content: &str, file_path: &Path) -> Result<(), Error> {
+    fn extract_items_from_file(&self, content: &str, file_path: &Path) -> crate::error::Result<()> {
         let mut items = Vec::new();
 
         // Parse the file to get AST
         let mut lexer = Lexer::new(content.to_string());
         let tokens = lexer.tokenize()
-            .map_err(|e| Error::SystemError(format!("Failed to tokenize file {}: {:?}", file_path.display(), e)))?;
+            .map_err(|e| CursedError::SystemError(format!("Failed to tokenize file {}: {:?}", file_path.display(), e)))?;
 
         let mut parser = Parser::new(tokens);
         let program = parser.parse()
-            .map_err(|e| Error::SystemError(format!("Failed to parse file {}: {:?}", file_path.display(), e)))?;
+            .map_err(|e| CursedError::SystemError(format!("Failed to parse file {}: {:?}", file_path.display(), e)))?;
 
         // Extract items from AST
         self.extract_items_from_program(&program, &mut items);
@@ -786,17 +786,17 @@ impl CoverageAnalyzer {
     }
 
     /// Generate HTML coverage report
-    pub fn generate_html_report(&self, report: &CoverageReport, output_path: &Path) -> Result<(), Error> {
+    pub fn generate_html_report(&self, report: &CoverageReport, output_path: &Path) -> crate::error::Result<()> {
         let html_content = self.generate_html_content(report);
         fs::write(output_path, html_content)
-            .map_err(|e| Error::SystemError(format!("Failed to write HTML report: {}", e)))
+            .map_err(|e| CursedError::SystemError(format!("Failed to write HTML report: {}", e)))
     }
 
     /// Generate markdown coverage report
-    pub fn generate_markdown_report(&self, report: &CoverageReport, output_path: &Path) -> Result<(), Error> {
+    pub fn generate_markdown_report(&self, report: &CoverageReport, output_path: &Path) -> crate::error::Result<()> {
         let markdown_content = self.generate_markdown_content(report);
         fs::write(output_path, markdown_content)
-            .map_err(|e| Error::SystemError(format!("Failed to write Markdown report: {}", e)))
+            .map_err(|e| CursedError::SystemError(format!("Failed to write Markdown report: {}", e)))
     }
 
     /// Generate HTML content for coverage report

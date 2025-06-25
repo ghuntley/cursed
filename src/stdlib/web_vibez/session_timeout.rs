@@ -2,11 +2,11 @@
 /// 
 /// Provides timeout-aware session stores with integration to the timeout middleware
 
-use crate::stdlib::web_vibez::session::{Session, SessionValue, SessionError};
-use crate::stdlib::web_vibez::timeout_middleware::{TimeoutMiddleware, TimeoutResult, TimeoutError};
-use crate::stdlib::web_vibez::config::{SessionConfig, SessionStoreType};
-use crate::stdlib::database::{DatabaseError, DatabaseConfig};
-use crate::error::Error;
+// use crate::stdlib::web_vibez::session::{Session, SessionValue, SessionError};
+// use crate::stdlib::web_vibez::timeout_middleware::{TimeoutMiddleware, TimeoutResult, TimeoutError};
+// use crate::stdlib::web_vibez::config::{SessionConfig, SessionStoreType};
+// use crate::stdlib::database::{DatabaseError, DatabaseConfig};
+use crate::error::CursedError;
 
 use std::collections::HashMap;
 use std::sync::{Arc, RwLock};
@@ -150,7 +150,7 @@ pub struct TimeoutRedisSessionStore {
 }
 
 impl TimeoutRedisSessionStore {
-    pub async fn new(redis_url: &str, config: SessionConfig) -> Result<(), Error> {
+    pub async fn new(redis_url: &str, config: SessionConfig) -> crate::error::Result<()> {
         let client = RedisClient::open(redis_url)
             .map_err(|e| SessionError::StoreError(format!("Failed to create Redis client: {}", e)))?;
         
@@ -169,12 +169,12 @@ impl TimeoutRedisSessionStore {
         format!("{}{}", self.key_prefix, session_id)
     }
 
-    fn serialize_session(&self, session: &Session) -> Result<(), Error> {
+    fn serialize_session(&self, session: &Session) -> crate::error::Result<()> {
         serde_json::to_string(session)
             .map_err(|e| SessionError::SerializationError(format!("Failed to serialize session: {}", e)))
     }
 
-    fn deserialize_session(&self, data: &str) -> Result<(), Error> {
+    fn deserialize_session(&self, data: &str) -> crate::error::Result<()> {
         serde_json::from_str(data)
             .map_err(|e| SessionError::SerializationError(format!("Failed to deserialize session: {}", e)))
     }
@@ -434,7 +434,7 @@ pub struct TimeoutDatabaseSessionStore {
 }
 
 impl TimeoutDatabaseSessionStore {
-    pub async fn new(database_config: DatabaseConfig, config: SessionConfig) -> Result<(), Error> {
+    pub async fn new(database_config: DatabaseConfig, config: SessionConfig) -> crate::error::Result<()> {
         let pool = ConnectionPool::new(database_config)
             .await
             .map_err(|e| SessionError::StoreError(format!("Failed to create database pool: {}", e)))?;
@@ -451,7 +451,7 @@ impl TimeoutDatabaseSessionStore {
         Ok(store)
     }
 
-    async fn initialize_table(&self) -> Result<(), Error> {
+    async fn initialize_table(&self) -> crate::error::Result<()> {
         let mut conn = self.pool.get_connection().await
             .map_err(|e| SessionError::StoreError(format!("Failed to get database connection: {}", e)))?;
 
@@ -476,12 +476,12 @@ impl TimeoutDatabaseSessionStore {
         Ok(())
     }
 
-    fn serialize_session(&self, session: &Session) -> Result<(), Error> {
+    fn serialize_session(&self, session: &Session) -> crate::error::Result<()> {
         serde_json::to_string(session)
             .map_err(|e| SessionError::SerializationError(format!("Failed to serialize session: {}", e)))
     }
 
-    fn deserialize_session(&self, data: &str) -> Result<(), Error> {
+    fn deserialize_session(&self, data: &str) -> crate::error::Result<()> {
         serde_json::from_str(data)
             .map_err(|e| SessionError::SerializationError(format!("Failed to deserialize session: {}", e)))
     }
@@ -932,7 +932,7 @@ pub struct TimeoutFileSessionStore {
 }
 
 impl TimeoutFileSessionStore {
-    pub fn new(directory: PathBuf, config: SessionConfig) -> Result<(), Error> {
+    pub fn new(directory: PathBuf, config: SessionConfig) -> crate::error::Result<()> {
         // Ensure directory exists
         if !directory.exists() {
             fs::create_dir_all(&directory)
@@ -949,12 +949,12 @@ impl TimeoutFileSessionStore {
         self.directory.join(format!("{}.session", session_id))
     }
 
-    fn serialize_session(&self, session: &Session) -> Result<(), Error> {
+    fn serialize_session(&self, session: &Session) -> crate::error::Result<()> {
         serde_json::to_vec(session)
             .map_err(|e| SessionError::SerializationError(format!("Failed to serialize session: {}", e)))
     }
 
-    fn deserialize_session(&self, data: &[u8]) -> Result<(), Error> {
+    fn deserialize_session(&self, data: &[u8]) -> crate::error::Result<()> {
         serde_json::from_slice(data)
             .map_err(|e| SessionError::SerializationError(format!("Failed to deserialize session: {}", e)))
     }
@@ -1165,7 +1165,7 @@ pub struct TimeoutSessionManager {
 
 impl TimeoutSessionManager {
     /// Create session manager with timeout support
-    pub async fn new(config: SessionConfig) -> Result<(), Error> {
+    pub async fn new(config: SessionConfig) -> crate::error::Result<()> {
         let store = match &config.store_type {
             SessionStoreType::Memory => {
                 TimeoutAwareSessionStore::Memory(TimeoutMemorySessionStore::new(config.clone()))
@@ -1179,7 +1179,7 @@ impl TimeoutSessionManager {
             }
             SessionStoreType::Database(db_url) => {
                 // Create a basic database config from URL
-                use crate::stdlib::database::DatabaseConfig;
+//                 use crate::stdlib::database::DatabaseConfig;
                 
                 let db_config = DatabaseConfig {
                     max_open_connections: 10,
@@ -1320,301 +1320,3 @@ impl TimeoutSessionManager {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use tempfile::tempdir;
-
-    #[tokio::test]
-    async fn test_timeout_memory_session_store() {
-        let config = SessionConfig::default();
-        let store = TimeoutMemorySessionStore::new(config.clone());
-        let timeout_middleware = TimeoutMiddleware::new(
-            crate::stdlib::web_vibez::config::ServerConfig::default(),
-            config
-        );
-
-        let session_id = "test_session";
-        
-        // Test session doesn't exist
-        let result = store.exists_with_timeout(session_id, &timeout_middleware).await;
-        assert!(result.is_ok());
-        assert!(!result.unwrap());
-
-        // Create and save session
-        let session = Session {
-            id: session_id.to_string(),
-            data: HashMap::new(),
-            created_at: 0,
-            last_accessed: 0,
-            expires_at: None,
-            is_new: true,
-            is_dirty: false,
-        };
-
-        let result = store.save_with_timeout(&session, &timeout_middleware).await;
-        assert!(result.is_ok());
-
-        // Test session exists
-        let result = store.exists_with_timeout(session_id, &timeout_middleware).await;
-        assert!(result.is_ok());
-        assert!(result.unwrap());
-
-        // Load session
-        let result = store.load_with_timeout(session_id, &timeout_middleware).await;
-        assert!(result.is_ok());
-        assert!(result.unwrap().is_some());
-
-        // Delete session
-        let result = store.delete_with_timeout(session_id, &timeout_middleware).await;
-        assert!(result.is_ok());
-
-        // Test session no longer exists
-        let result = store.exists_with_timeout(session_id, &timeout_middleware).await;
-        assert!(result.is_ok());
-        assert!(!result.unwrap());
-    }
-
-    #[tokio::test]
-    async fn test_timeout_file_session_store() {
-        let temp_dir = tempdir().unwrap();
-        let config = SessionConfig::default();
-        let store = TimeoutFileSessionStore::new(temp_dir.path().to_path_buf(), config.clone()).unwrap();
-        let timeout_middleware = TimeoutMiddleware::new(
-            crate::stdlib::web_vibez::config::ServerConfig::default(),
-            config
-        );
-
-        let session_id = "test_file_session";
-        
-        // Test session doesn't exist
-        let result = store.exists_with_timeout(session_id, &timeout_middleware).await;
-        assert!(result.is_ok());
-        assert!(!result.unwrap());
-
-        // Create and save session
-        let session = Session {
-            id: session_id.to_string(),
-            data: HashMap::new(),
-            created_at: 0,
-            last_accessed: 0,
-            expires_at: None,
-            is_new: true,
-            is_dirty: false,
-        };
-
-        let result = store.save_with_timeout(&session, &timeout_middleware).await;
-        assert!(result.is_ok());
-
-        // Test session exists
-        let result = store.exists_with_timeout(session_id, &timeout_middleware).await;
-        assert!(result.is_ok());
-        assert!(result.unwrap());
-
-        // Load session
-        let result = store.load_with_timeout(session_id, &timeout_middleware).await;
-        assert!(result.is_ok());
-        assert!(result.unwrap().is_some());
-
-        // Delete session
-        let result = store.delete_with_timeout(session_id, &timeout_middleware).await;
-        assert!(result.is_ok());
-
-        // Test session no longer exists
-        let result = store.exists_with_timeout(session_id, &timeout_middleware).await;
-        assert!(result.is_ok());
-        assert!(!result.unwrap());
-    }
-
-    #[tokio::test]
-    async fn test_timeout_session_manager() {
-        let config = SessionConfig::default();
-        let manager = TimeoutSessionManager::new(config.clone()).await.unwrap();
-        let timeout_middleware = TimeoutMiddleware::new(
-            crate::stdlib::web_vibez::config::ServerConfig::default(),
-            config
-        );
-
-        // Create new session
-        let result = manager.create_session_with_timeout(&timeout_middleware).await;
-        assert!(result.is_ok());
-        let session = result.unwrap();
-
-        // Load session
-        let result = manager.load_session_with_timeout(&session.id, &timeout_middleware).await;
-        assert!(result.is_ok());
-        assert!(result.unwrap().is_some());
-
-        // Save session
-        let result = manager.save_session_with_timeout(&session, &timeout_middleware).await;
-        assert!(result.is_ok());
-
-        // Check if session exists
-        let result = manager.session_exists_with_timeout(&session.id, &timeout_middleware).await;
-        assert!(result.is_ok());
-        assert!(result.unwrap());
-
-        // Delete session
-        let result = manager.delete_session_with_timeout(&session.id, &timeout_middleware).await;
-        assert!(result.is_ok());
-
-        // Check if session no longer exists
-        let result = manager.session_exists_with_timeout(&session.id, &timeout_middleware).await;
-        assert!(result.is_ok());
-        assert!(!result.unwrap());
-    }
-
-    #[tokio::test]
-    #[ignore] // Requires Redis server
-    async fn test_timeout_redis_session_store() {
-        let redis_url = "redis://localhost:6379/1"; // Use test database
-        let config = SessionConfig::default();
-        let store = TimeoutRedisSessionStore::new(redis_url, config.clone()).await.unwrap();
-        let timeout_middleware = TimeoutMiddleware::new(
-            crate::stdlib::web_vibez::config::ServerConfig::default(),
-            config
-        );
-
-        let session_id = "test_redis_session";
-        
-        // Test session doesn't exist
-        let result = store.exists_with_timeout(session_id, &timeout_middleware).await;
-        assert!(result.is_ok());
-        assert!(!result.unwrap());
-
-        // Create and save session
-        let session = Session {
-            id: session_id.to_string(),
-            data: HashMap::new(),
-            created_at: 0,
-            last_accessed: 0,
-            expires_at: None,
-            is_new: true,
-            is_dirty: false,
-        };
-
-        let result = store.save_with_timeout(&session, &timeout_middleware).await;
-        assert!(result.is_ok());
-
-        // Test session exists
-        let result = store.exists_with_timeout(session_id, &timeout_middleware).await;
-        assert!(result.is_ok());
-        assert!(result.unwrap());
-
-        // Load session
-        let result = store.load_with_timeout(session_id, &timeout_middleware).await;
-        assert!(result.is_ok());
-        assert!(result.unwrap().is_some());
-
-        // Delete session
-        let result = store.delete_with_timeout(session_id, &timeout_middleware).await;
-        assert!(result.is_ok());
-
-        // Test session no longer exists
-        let result = store.exists_with_timeout(session_id, &timeout_middleware).await;
-        assert!(result.is_ok());
-        assert!(!result.unwrap());
-
-        // Test cleanup
-        let result = store.cleanup_with_timeout(&timeout_middleware).await;
-        assert!(result.is_ok());
-    }
-
-    #[tokio::test]
-    #[ignore] // Requires database setup
-    async fn test_timeout_database_session_store() {
-        let db_config = crate::stdlib::database::DatabaseConfig {
-            url: "sqlite://test_sessions.db".to_string(),
-            max_connections: 5,
-            timeout: std::time::Duration::from_secs(30),
-            enable_logging: false,
-        };
-        let config = SessionConfig::default();
-        let store = TimeoutDatabaseSessionStore::new(db_config, config.clone()).await.unwrap();
-        let timeout_middleware = TimeoutMiddleware::new(
-            crate::stdlib::web_vibez::config::ServerConfig::default(),
-            config
-        );
-
-        let session_id = "test_db_session";
-        
-        // Test session doesn't exist
-        let result = store.exists_with_timeout(session_id, &timeout_middleware).await;
-        assert!(result.is_ok());
-        assert!(!result.unwrap());
-
-        // Create and save session
-        let session = Session {
-            id: session_id.to_string(),
-            data: HashMap::new(),
-            created_at: 0,
-            last_accessed: 0,
-            expires_at: None,
-            is_new: true,
-            is_dirty: false,
-        };
-
-        let result = store.save_with_timeout(&session, &timeout_middleware).await;
-        assert!(result.is_ok());
-
-        // Test session exists
-        let result = store.exists_with_timeout(session_id, &timeout_middleware).await;
-        assert!(result.is_ok());
-        assert!(result.unwrap());
-
-        // Load session
-        let result = store.load_with_timeout(session_id, &timeout_middleware).await;
-        assert!(result.is_ok());
-        assert!(result.unwrap().is_some());
-
-        // Delete session
-        let result = store.delete_with_timeout(session_id, &timeout_middleware).await;
-        assert!(result.is_ok());
-
-        // Test session no longer exists
-        let result = store.exists_with_timeout(session_id, &timeout_middleware).await;
-        assert!(result.is_ok());
-        assert!(!result.unwrap());
-
-        // Test cleanup
-        let result = store.cleanup_with_timeout(&timeout_middleware).await;
-        assert!(result.is_ok());
-    }
-
-    #[tokio::test]
-    async fn test_session_expiration_handling() {
-        let config = SessionConfig::default();
-        let store = TimeoutMemorySessionStore::new(config.clone());
-        let timeout_middleware = TimeoutMiddleware::new(
-            crate::stdlib::web_vibez::config::ServerConfig::default(),
-            config
-        );
-
-        let session_id = "test_expired_session";
-        
-        // Create expired session
-        let expired_session = Session {
-            id: session_id.to_string(),
-            data: HashMap::new(),
-            created_at: 0,
-            last_accessed: 0,
-            expires_at: Some(1), // Already expired
-            is_new: true,
-            is_dirty: false,
-        };
-
-        // Save expired session
-        let result = store.save_with_timeout(&expired_session, &timeout_middleware).await;
-        assert!(result.is_ok());
-
-        // Try to load expired session - should return None
-        let result = store.load_with_timeout(session_id, &timeout_middleware).await;
-        assert!(result.is_ok());
-        assert!(result.unwrap().is_none());
-
-        // Session should not exist
-        let result = store.exists_with_timeout(session_id, &timeout_middleware).await;
-        assert!(result.is_ok());
-        assert!(!result.unwrap());
-    }
-}

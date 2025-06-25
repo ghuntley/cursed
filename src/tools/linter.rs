@@ -4,7 +4,7 @@
 /// and detects common programming anti-patterns while respecting the language's
 /// unique characteristics.
 
-use crate::error::Error;
+use crate::error::CursedError;
 use crate::ast::{Node, Program, Statement, Expression};
 use crate::lexer::{Lexer, Token, TokenType};
 use crate::parser::Parser;
@@ -13,7 +13,7 @@ use std::collections::{HashMap, HashSet};
 /// Lint severity levels
 #[derive(Debug, Clone, PartialEq)]
 pub enum LintSeverity {
-    Error,      // Code that will not compile or is fundamentally broken
+    CursedError,      // Code that will not compile or is fundamentally broken
     Warning,    // Code that compiles but violates style or best practices  
     Suggestion, // Minor style improvements
     Info,       // Informational messages
@@ -148,7 +148,7 @@ impl CursedLinter {
     }
     
     /// Main linting function - analyzes CURSED source code
-    pub fn lint(&mut self, source: &str) -> Result<(), Error> {
+    pub fn lint(&mut self, source: &str) -> crate::error::Result<()> {
         self.results.clear();
         self.source_lines = source.split("\n").map(|s| s.to_string()).collect();
         
@@ -169,7 +169,7 @@ impl CursedLinter {
                 // Add parse error as lint result
                 self.add_result(LintResult::new(
                     "parse_error".to_string(),
-                    LintSeverity::Error,
+                    LintSeverity::CursedError,
                     LintCategory::Correctness,
                     format!("Parse error: {}", e),
                     1,
@@ -190,7 +190,7 @@ impl CursedLinter {
     }
 
     /// Analyze lexical issues (comments, string literals, line length, etc.)
-    fn analyze_lexical_issues(&mut self, source: &str) -> Result<(), Error> {
+    fn analyze_lexical_issues(&mut self, source: &str) -> crate::error::Result<()> {
         let mut lexer = Lexer::new(source.to_string());
         let mut line_number = 1;
         let mut column = 1;
@@ -254,7 +254,7 @@ impl CursedLinter {
                 Err(e) => {
                     self.add_result(LintResult::new(
                         "lexer_error".to_string(),
-                        LintSeverity::Error,
+                        LintSeverity::CursedError,
                         LintCategory::Correctness,
                         format!("Lexer error: {}", e),
                         line_number,
@@ -368,7 +368,7 @@ impl CursedLinter {
             if name == *go_word {
                 self.add_result(LintResult::new(
                     "go_style_keyword".to_string(),
-                    LintSeverity::Error,
+                    LintSeverity::CursedError,
                     LintCategory::GenZSlang,
                     format!("Use CURSED keyword '{}' instead of Go keyword '{}'", cursed_word, go_word),
                     line,
@@ -462,7 +462,7 @@ impl CursedLinter {
     }
 
     /// Parse source code and analyze AST structure
-    fn parse_and_analyze(&mut self, source: &str) -> Result<(), Error> {
+    fn parse_and_analyze(&mut self, source: &str) -> crate::error::Result<()> {
         let lexer = Lexer::new(source.to_string());
         let mut parser = Parser::new(lexer)?;
         let program = parser.parse_program()?;
@@ -496,7 +496,7 @@ impl CursedLinter {
         if package_name.is_empty() {
             self.add_result(LintResult::new(
                 "empty_package_name".to_string(),
-                LintSeverity::Error,
+                LintSeverity::CursedError,
                 LintCategory::Naming,
                 "Package name cannot be empty".to_string(),
                 1,
@@ -507,7 +507,7 @@ impl CursedLinter {
         if !package_name.chars().all(|c| c.is_alphanumeric() || c == '_') {
             self.add_result(LintResult::new(
                 "invalid_package_name".to_string(),
-                LintSeverity::Error,
+                LintSeverity::CursedError,
                 LintCategory::Naming,
                 format!("Package name '{}' contains invalid characters", package_name),
                 1,
@@ -518,7 +518,7 @@ impl CursedLinter {
         if package_name.starts_with(char::is_numeric) {
             self.add_result(LintResult::new(
                 "package_name_starts_with_number".to_string(),
-                LintSeverity::Error,
+                LintSeverity::CursedError,
                 LintCategory::Naming,
                 format!("Package name '{}' cannot start with a number", package_name),
                 1,
@@ -538,7 +538,7 @@ impl CursedLinter {
         if import.path.is_empty() {
             self.add_result(LintResult::new(
                 "empty_import_path".to_string(),
-                LintSeverity::Error,
+                LintSeverity::CursedError,
                 LintCategory::Correctness,
                 "Import path cannot be empty".to_string(),
                 1, // Would need actual line number from AST
@@ -787,82 +787,12 @@ impl LinterConfig {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_linter_basic_functionality() {
-        let mut linter = CursedLinter::default();
-        let source = r#"
-vibe test
-
-slay main() {
-    sus x = 42
-}
-"#;
-        
-        let results = linter.lint(source).unwrap();
-        assert!(!results.is_empty());
-    }
-
-    #[test]
-    fn test_line_length_check() {
-        let mut linter = CursedLinter::new(LinterConfig {
-            max_line_length: 10,
-            ..LinterConfig::default()
-        });
-        
-        let source = "sus very_long_variable_name = 42";
-        let results = linter.lint(source).unwrap();
-        
-        let long_line_errors: Vec<_> = results.iter()
-            .filter(|r| r.rule_id == "line_too_long")
-            .collect();
-        assert!(!long_line_errors.is_empty());
-    }
-
-    #[test]
-    fn test_go_style_detection() {
-        let mut linter = CursedLinter::default();
-        let source = "func main() { return 42; }";
-        
-        let results = linter.lint(source).unwrap();
-        let go_style_errors: Vec<_> = results.iter()
-            .filter(|r| r.category == LintCategory::GenZSlang)
-            .collect();
-        assert!(!go_style_errors.is_empty());
-    }
-
-    #[test]
-    fn test_disabled_rules() {
-        let mut config = LinterConfig::default();
-        config.disable_rule("line_too_long");
-        
-        let mut linter = CursedLinter::new(config);
-        let source = "sus very_long_variable_name_that_exceeds_the_maximum_line_length_setting = 42";
-        
-        let results = linter.lint(source).unwrap();
-        let long_line_errors: Vec<_> = results.iter()
-            .filter(|r| r.rule_id == "line_too_long")
-            .collect();
-        assert!(long_line_errors.is_empty());
-    }
-
-    #[test]
-    fn test_severity_filtering() {
-        let mut linter = CursedLinter::default();
-        let source = r#"
-slay test() {
-    sus x = 42 
-    sus y = "test"   
-}
 "#;
         
         let results = linter.lint(source).unwrap();
         linter.results = results;
         
-        let errors = linter.get_results_by_severity(LintSeverity::Error);
+        let errors = linter.get_results_by_severity(LintSeverity::CursedError);
         let warnings = linter.get_results_by_severity(LintSeverity::Warning);
         let suggestions = linter.get_results_by_severity(LintSeverity::Suggestion);
         

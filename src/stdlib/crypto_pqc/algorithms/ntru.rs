@@ -1,4 +1,4 @@
-use crate::error::Error;
+use crate::error::CursedError;
 /// NTRU Lattice-based Encryption Implementation
 /// 
 /// NTRU is a lattice-based public key encryption scheme that was one of the finalists
@@ -7,7 +7,7 @@ use crate::error::Error;
 use std::fmt;
 use rand::rngs::OsRng;
 use sha3::{Sha3_256, Digest};
-use crate::stdlib::crypto_pqc::{PqcResult, PqcError, SecurityLevel, AlgorithmType};
+// use crate::stdlib::crypto_pqc::{PqcResult, PqcError, SecurityLevel, AlgorithmType};
 use super::{PublicKeyEncryption, ParameterSet, AlgorithmPerformance, KeySizes};
 
 /// NTRU parameter sets

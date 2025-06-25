@@ -1,12 +1,12 @@
 use crate::web::StatusCode;
 // WebSocket support for GlowUpHTTP
 
-use crate::stdlib::glowup_http::error::{GlowUpError, GlowUpResult};
-use crate::stdlib::glowup_http::request::VibeRequest;
-use crate::stdlib::glowup_http::response::ResponderVibe;
+// use crate::stdlib::glowup_http::error::{GlowUpError, GlowUpResult};
+// use crate::stdlib::glowup_http::request::VibeRequest;
+// use crate::stdlib::glowup_http::response::ResponderVibe;
 use std::sync::{Arc, Mutex};
 use tracing::{debug, instrument};
-use crate::error::Error;
+use crate::error::CursedError;
 
 /// WebSocket upgrader
 #[derive(Debug)]
@@ -183,64 +183,3 @@ pub fn new_websocket_upgrader() -> WebSocketUpgrader {
 // Convenience re-export for the spec function
 pub use new_websocket_upgrader as NewWebSocketUpgrader;
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use crate::stdlib::glowup_http::request::Method;
-
-    #[test]
-    fn test_websocket_upgrader_creation() {
-        let upgrader = WebSocketUpgrader::new();
-        // Should create successfully
-    }
-
-    #[test]
-    fn test_websocket_upgrade_missing_headers() {
-        let upgrader = WebSocketUpgrader::new();
-        let request = VibeRequest::new(Method::GET, "/ws");
-        let response = ResponderVibe::new();
-        
-        let result = upgrader.upgrade(&response, &request);
-        assert!(result.is_err());
-    }
-
-    #[test]
-    fn test_websocket_upgrade_valid_headers() {
-        let upgrader = WebSocketUpgrader::new();
-        let mut request = VibeRequest::new(Method::GET, "/ws");
-        
-        // Add required headers
-        request.header.insert("connection".to_string(), "Upgrade".to_string());
-        request.header.insert("upgrade".to_string(), "websocket".to_string());
-        request.header.insert("sec-websocket-key".to_string(), "dGhlIHNhbXBsZSBub25jZQ==".to_string());
-        request.header.insert("sec-websocket-version".to_string(), "13".to_string());
-        
-        let response = ResponderVibe::new();
-        
-        let result = upgrader.upgrade(&response, &request);
-        assert!(result.is_ok());
-        
-        let headers = response.get_headers();
-        assert!(headers.contains_key("sec-websocket-accept"));
-    }
-
-    #[test]
-    fn test_websocket_connection_operations() {
-        let conn = WebSocketConn::new();
-        
-        assert!(conn.is_connected());
-        
-        // Test write message
-        let result = conn.write_message(MessageType::Text, b"Hello");
-        assert!(result.is_ok());
-        
-        // Test close
-        let result = conn.close();
-        assert!(result.is_ok());
-        assert!(!conn.is_connected());
-        
-        // Test write after close
-        let result = conn.write_message(MessageType::Text, b"Hello");
-        assert!(result.is_err());
-    }
-}

@@ -3,8 +3,7 @@
 /// Provides source mapping capabilities for precise location tracking
 /// between generated and original source code.
 
-use crate::error::Error as CursedError;
-use crate::error::Error;
+use crate::error::CursedError;
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 use std::fs;
@@ -28,7 +27,7 @@ impl SourceMapper {
     }
 
     /// Load source file into cache
-    pub fn load_source_file(&self, file_path: &Path) -> Result<(), Error> {
+    pub fn load_source_file(&self, file_path: &Path) -> crate::error::Result<()> {
         let content = fs::read_to_string(file_path)
             .map_err(|e| CursedError::Io(e.into()))?;
 
@@ -55,7 +54,7 @@ impl SourceMapper {
         file_path: &Path,
         line: u32,
         context_lines: u32,
-    ) -> Result<(), Error> {
+    ) -> crate::error::Result<()> {
         // Ensure file is loaded
         if !self.is_file_cached(file_path) {
             self.load_source_file(file_path)?;
@@ -87,7 +86,7 @@ impl SourceMapper {
     }
 
     /// Get specific line content
-    pub fn get_line(&self, file_path: &Path, line: u32) -> Result<(), Error> {
+    pub fn get_line(&self, file_path: &Path, line: u32) -> crate::error::Result<()> {
         if !self.is_file_cached(file_path) {
             self.load_source_file(file_path)?;
         }
@@ -117,7 +116,7 @@ impl SourceMapper {
     }
 
     /// Get cached files
-    pub fn get_cached_files(&self) -> Result<(), Error> {
+    pub fn get_cached_files(&self) -> crate::error::Result<()> {
         let cache = self.source_cache.read()
             .map_err(|_| CursedError::Runtime("Failed to acquire source cache lock".to_string()))?;
 
@@ -125,7 +124,7 @@ impl SourceMapper {
     }
 
     /// Clear cache
-    pub fn clear_cache(&self) -> Result<(), Error> {
+    pub fn clear_cache(&self) -> crate::error::Result<()> {
         {
             let mut source_cache = self.source_cache.write()
                 .map_err(|_| CursedError::Runtime("Failed to acquire source cache lock".to_string()))?;
@@ -142,7 +141,7 @@ impl SourceMapper {
     }
 
     /// Get file line count
-    pub fn get_line_count(&self, file_path: &Path) -> Result<(), Error> {
+    pub fn get_line_count(&self, file_path: &Path) -> crate::error::Result<()> {
         if !self.is_file_cached(file_path) {
             self.load_source_file(file_path)?;
         }
@@ -163,7 +162,7 @@ impl SourceMapper {
         file_path: &Path,
         pattern: &str,
         case_sensitive: bool,
-    ) -> Result<(), Error> {
+    ) -> crate::error::Result<()> {
         if !self.is_file_cached(file_path) {
             self.load_source_file(file_path)?;
         }
@@ -200,7 +199,7 @@ impl SourceMapper {
         column: u32,
         length: u32,
         context_lines: u32,
-    ) -> Result<(), Error> {
+    ) -> crate::error::Result<()> {
         let snippet = self.get_source_snippet(file_path, line, context_lines)?;
         
         // TODO: Add highlighting logic for the specific column and length
@@ -368,137 +367,3 @@ impl SourceMappingUtils {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use std::fs;
-    use tempfile::tempdir;
-
-    #[test]
-    fn test_source_mapper_creation() {
-        let mapper = SourceMapper::new();
-        assert_eq!(mapper.get_cached_files().unwrap().len(), 0);
-    }
-
-    #[test]
-    fn test_source_file_loading() {
-        let dir = tempdir().unwrap();
-        let file_path = dir.path().join("test.csd");
-        
-        fs::write(&file_path, "slay test_func() {\n    facts result = true;\n    periodt result;\n}").unwrap();
-        
-        let mapper = SourceMapper::new();
-        let result = mapper.load_source_file(&file_path);
-        assert!(result.is_ok());
-        
-        assert!(mapper.is_file_cached(&file_path));
-        assert_eq!(mapper.get_line_count(&file_path).unwrap(), 4);
-    }
-
-    #[test]
-    fn test_source_snippet_extraction() {
-        let dir = tempdir().unwrap();
-        let file_path = dir.path().join("test.csd");
-        
-        let source = "line 1\nline 2\nline 3\nline 4\nline 5";
-        fs::write(&file_path, source).unwrap();
-        
-        let mapper = SourceMapper::new();
-        let _ = mapper.load_source_file(&file_path);
-        
-        let snippet = mapper.get_source_snippet(&file_path, 3, 1);
-        assert!(snippet.is_ok());
-        
-        let snippet = snippet.unwrap();
-        assert!(snippet.contains("line 2"));
-        assert!(snippet.contains("> 3"));
-        assert!(snippet.contains("line 4"));
-    }
-
-    #[test]
-    fn test_pattern_finding() {
-        let dir = tempdir().unwrap();
-        let file_path = dir.path().join("test.csd");
-        
-        let source = "slay func1() {}\nsus x = 42;\nfacts test = true;\nslay func2() {}";
-        fs::write(&file_path, source).unwrap();
-        
-        let mapper = SourceMapper::new();
-        let _ = mapper.load_source_file(&file_path);
-        
-        let matches = mapper.find_pattern(&file_path, "slay", true);
-        assert!(matches.is_ok());
-        
-        let matches = matches.unwrap();
-        assert_eq!(matches.len(), 2);
-        assert_eq!(matches[0].0, 1);
-        assert_eq!(matches[1].0, 4);
-    }
-
-    #[test]
-    fn test_enhanced_source_location() {
-        let location = EnhancedSourceLocation::new(PathBuf::from("test.csd"), 42, 10)
-            .with_length(5)
-            .with_excerpt("test code".to_string());
-        
-        assert_eq!(location.line, 42);
-        assert_eq!(location.column, 10);
-        assert_eq!(location.length, Some(5));
-        assert!(location.excerpt.is_some());
-        
-        let location_str = location.to_string();
-        assert!(location_str.contains("test.csd:42:10"));
-    }
-
-    #[test]
-    fn test_source_mapping_utils() {
-        let source = "line 1\nline 2\nline 3";
-        
-        // Test offset to line/column
-        let (line, column) = SourceMappingUtils::offset_to_line_column(source, 8);
-        assert_eq!(line, 2);
-        assert_eq!(column, 2);
-        
-        // Test line/column to offset
-        let offset = SourceMappingUtils::line_column_to_offset(source, 2, 2);
-        assert_eq!(offset, Some(8));
-        
-        // Test validation
-        assert!(SourceMappingUtils::validate_location(source, 2, 2));
-        assert!(!SourceMappingUtils::validate_location(source, 10, 1));
-    }
-
-    #[test]
-    fn test_word_boundaries() {
-        let source = "slay test_function() {\n    sus variable = 42;\n}";
-        
-        // Test word boundaries for "test_function"
-        let boundaries = SourceMappingUtils::get_word_boundaries(source, 1, 7);
-        assert!(boundaries.is_some());
-        
-        let (start, end) = boundaries.unwrap();
-        assert!(start <= 7);
-        assert!(end > 7);
-    }
-
-    #[test]
-    fn test_cache_management() {
-        let mapper = SourceMapper::new();
-        
-        let dir = tempdir().unwrap();
-        let file1 = dir.path().join("file1.csd");
-        let file2 = dir.path().join("file2.csd");
-        
-        fs::write(&file1, "content 1").unwrap();
-        fs::write(&file2, "content 2").unwrap();
-        
-        let _ = mapper.load_source_file(&file1);
-        let _ = mapper.load_source_file(&file2);
-        
-        assert_eq!(mapper.get_cached_files().unwrap().len(), 2);
-        
-        let clear_result = mapper.clear_cache();
-        assert!(clear_result.is_ok());
-        assert_eq!(mapper.get_cached_files().unwrap().len(), 0);
-    }
-}

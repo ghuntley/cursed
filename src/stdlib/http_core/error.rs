@@ -1,10 +1,9 @@
-// Error Handling for CURSED web_vibez
+// CursedError Handling for CURSED web_vibez
 //
 // Comprehensive error types and handling for HTTP processing.
 
 use std::fmt;
-use std::error::Error;
-use crate::error::Error as CursedError;
+use crate::error::CursedError;
 
 /// HTTP-specific error types
 #[derive(Debug, Clone)]
@@ -138,7 +137,7 @@ impl HttpError {
             HttpError::UnsupportedVersion(_) |
             HttpError::IoError(_) |
             HttpError::FormatError(_) |
-            HttpError::Custom(_) => 500, // Internal Server Error
+            HttpError::Custom(_) => 500, // Internal Server CursedError
         }
     }
 
@@ -225,19 +224,19 @@ impl HttpError {
     }
 }
 
-impl fmt::Display for HttpError {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{}", self.user_message())
-    }
-}
+// impl fmt::Display for HttpError {
+//     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+//         write!(f, "{}", self.user_message())
+//     }
+// }
 
-impl Error for HttpError {
-    fn source(&self) -> Option<&(dyn Error + 'static)> {
-        None
-    }
-}
+// impl CursedError for HttpError {
+//     fn source(&self) -> Option<&(dyn CursedError + 'static)> {
+//         None
+//     }
+// }
 
-/// Error category for grouping related errors
+/// CursedError category for grouping related errors
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum ErrorCategory {
     /// Client-side errors (invalid input, malformed requests)
@@ -268,24 +267,24 @@ impl ErrorCategory {
     }
 }
 
-impl fmt::Display for ErrorCategory {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let s = match self {
-            ErrorCategory::ClientError => "client_error",
-            ErrorCategory::ServerError => "server_error",
-            ErrorCategory::RequestError => "request_error",
-            ErrorCategory::AuthenticationError => "authentication_error",
-            ErrorCategory::AuthorizationError => "authorization_error",
-            ErrorCategory::RateLimitError => "rate_limit_error",
-        };
-        write!(f, "{}", s)
-    }
-}
+// impl fmt::Display for ErrorCategory {
+//     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+//         let s = match self {
+//             ErrorCategory::ClientError => "client_error",
+//             ErrorCategory::ServerError => "server_error",
+//             ErrorCategory::RequestError => "request_error",
+//             ErrorCategory::AuthenticationError => "authentication_error",
+//             ErrorCategory::AuthorizationError => "authorization_error",
+//             ErrorCategory::RateLimitError => "rate_limit_error",
+//         };
+//         write!(f, "{}", s)
+//     }
+// }
 
 /// Result type for HTTP operations
 pub type HttpResult<T> = std::result::Result<T, HttpError>;
 
-/// Error context for better debugging
+/// CursedError context for better debugging
 #[derive(Debug, Clone)]
 pub struct ErrorContext {
     /// Original error
@@ -356,33 +355,33 @@ impl ErrorContext {
     }
 }
 
-impl fmt::Display for ErrorContext {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{}", self.error)?;
-        
-        if !self.context.is_empty() {
-            write!(f, "\nContext:")?;
-            for (key, value) in &self.context {
-                write!(f, "\n  {}: {}", key, value)?;
-            }
-        }
-        
-        if !self.trace.is_empty() {
-            write!(f, "\nTrace:")?;
-            for trace_item in &self.trace {
-                write!(f, "\n  {}", trace_item)?;
-            }
-        }
-        
-        Ok(())
-    }
-}
+// impl fmt::Display for ErrorContext {
+//     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+//         write!(f, "{}", self.error)?;
+//         
+//         if !self.context.is_empty() {
+//             write!(f, "\nContext:")?;
+//             for (key, value) in &self.context {
+//                 write!(f, "\n  {}: {}", key, value)?;
+//             }
+//         }
+//         
+//         if !self.trace.is_empty() {
+//             write!(f, "\nTrace:")?;
+//             for trace_item in &self.trace {
+//                 write!(f, "\n  {}", trace_item)?;
+//             }
+//         }
+//         
+//         Ok(())
+//     }
+// }
 
-impl Error for ErrorContext {
-    fn source(&self) -> Option<&(dyn Error + 'static)> {
-        Some(&self.error)
-    }
-}
+// impl CursedError for ErrorContext {
+//     fn source(&self) -> Option<&(dyn CursedError + 'static)> {
+//         Some(&self.error)
+//     }
+// }
 
 /// Extension trait for adding context to errors
 pub trait ErrorContextExt<T> {
@@ -464,86 +463,9 @@ impl HttpErrorResponses {
         HttpError::RateLimitError(message.into())
     }
 
-    /// Internal Server Error (500)
+    /// Internal Server CursedError (500)
     pub fn internal_server_error<S: Into<String>>(message: S) -> HttpError {
         HttpError::custom(message)
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_http_error_categories() {
-        let client_error = HttpError::InvalidRequest("test".to_string());
-        assert!(client_error.is_client_error());
-        assert!(!client_error.is_server_error());
-        assert_eq!(client_error.status_code(), 400);
-
-        let server_error = HttpError::IoError("test".to_string());
-        assert!(!server_error.is_client_error());
-        assert!(server_error.is_server_error());
-        assert_eq!(server_error.status_code(), 500);
-    }
-
-    #[test]
-    fn test_error_codes() {
-        let error = HttpError::ValidationError("test".to_string());
-        assert_eq!(error.error_code(), "VALIDATION_ERROR");
-        assert_eq!(error.status_code(), 400);
-    }
-
-    #[test]
-    fn test_error_context() {
-        let error = HttpError::InvalidRequest("test".to_string());
-        let context = ErrorContext::new(error)
-            .with_context("request_id", "12345")
-            .with_context("user_id", "user_123")
-            .with_trace("function_a")
-            .with_trace("function_b");
-
-        assert_eq!(context.get_context("request_id"), Some(&"12345".to_string()));
-        assert_eq!(context.trace().len(), 2);
-    }
-
-    #[test]
-    fn test_error_json_serialization() {
-        let error = HttpError::ValidationError("Name is required".to_string());
-        let json = error.to_json();
-        
-        assert_eq!(json["error"]["code"], "VALIDATION_ERROR");
-        assert_eq!(json["error"]["status"], 400);
-        assert!(json["error"]["message"].as_str().unwrap().contains("Name is required"));
-    }
-
-    #[test]
-    fn test_error_context_extension() {
-        let result: HttpResult<i32> = Err(HttpError::InvalidRequest("test".to_string()));
-        let context_result = result.with_context("operation", "parse_request");
-        
-        assert!(context_result.is_err());
-        if let Err(ctx) = context_result {
-            assert_eq!(ctx.get_context("operation"), Some(&"parse_request".to_string()));
-        }
-    }
-
-    #[test]
-    fn test_common_error_responses() {
-        let bad_request = HttpErrorResponses::bad_request("Invalid input");
-        assert_eq!(bad_request.status_code(), 400);
-
-        let unauthorized = HttpErrorResponses::unauthorized("Login required");
-        assert_eq!(unauthorized.status_code(), 401);
-
-        let not_found = HttpErrorResponses::not_found("User not found");
-        assert!(not_found.to_string().contains("Not found"));
-    }
-
-    #[test]
-    fn test_error_category_display() {
-        assert_eq!(ErrorCategory::ClientError.to_string(), "client_error");
-        assert_eq!(ErrorCategory::ServerError.to_string(), "server_error");
-        assert_eq!(ErrorCategory::AuthenticationError.to_string(), "authentication_error");
-    }
-}

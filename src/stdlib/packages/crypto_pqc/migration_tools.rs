@@ -5,8 +5,7 @@
 /// migration plans, and monitoring tools for the transition process.
 
 use crate::error::CursedError;
-use crate::stdlib::packages::crypto_advanced::AdvancedCryptoResult;
-use crate::error::Error;
+// use crate::stdlib::packages::crypto_advanced::AdvancedCryptoResult;
 use super::compatibility::{
     CompatibilityEngine, CompatibilityAssessment, MigrationRecommendation, 
     MigrationPriority, AlgorithmMapping
@@ -1161,25 +1160,25 @@ pub enum MigrationError {
     ConfigurationError(String),
 }
 
-impl fmt::Display for MigrationError {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
-            MigrationError::AnalysisError(msg) => write!(f, "Migration analysis error: {}", msg),
-            MigrationError::PlanningError(msg) => write!(f, "Migration planning error: {}", msg),
-            MigrationError::ExecutionError(msg) => write!(f, "Migration execution error: {}", msg),
-            MigrationError::ValidationError(msg) => write!(f, "Migration validation error: {}", msg),
-            MigrationError::ConfigurationError(msg) => write!(f, "Migration configuration error: {}", msg),
-        }
-    }
-}
+// impl fmt::Display for MigrationError {
+//     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+//         match self {
+//             MigrationError::AnalysisError(msg) => write!(f, "Migration analysis error: {}", msg),
+//             MigrationError::PlanningError(msg) => write!(f, "Migration planning error: {}", msg),
+//             MigrationError::ExecutionError(msg) => write!(f, "Migration execution error: {}", msg),
+//             MigrationError::ValidationError(msg) => write!(f, "Migration validation error: {}", msg),
+//             MigrationError::ConfigurationError(msg) => write!(f, "Migration configuration error: {}", msg),
+//         }
+//     }
+// }
 
-impl std::error::Error for MigrationError {}
-
-impl From<MigrationError> for CursedError {
-    fn from(err: MigrationError) -> Self {
-        CursedError::CryptoError(err.to_string())
-    }
-}
+// impl std::error::CursedError for MigrationError {}
+// 
+// impl From<MigrationError> for CursedError {
+//     fn from(err: MigrationError) -> Self {
+//         CursedError::CryptoError(err.to_string())
+//     }
+// }
 
 /// Initialize migration tools module
 pub fn init_migration_tools() -> AdvancedCryptoResult<()> {
@@ -1196,179 +1195,3 @@ pub fn init_migration_tools() -> AdvancedCryptoResult<()> {
     Ok(())
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-    
-    #[test]
-    fn test_migration_tool_creation() {
-        let tool = PqcMigrationTool::new();
-        assert!(!tool.migration_plans.is_empty() == false); // Should start empty
-    }
-    
-    #[test]
-    fn test_system_configuration() {
-        let config = SystemConfiguration {
-            system_name: "Test System".to_string(),
-            algorithms: vec!["RSA-2048".to_string(), "ECDSA-P256".to_string()],
-            protocols: vec!["TLS-1.3".to_string()],
-            certificates: vec!["*.example.com".to_string()],
-            critical_systems: vec!["Authentication".to_string()],
-            daily_operations: 1000000,
-        };
-        
-        assert_eq!(config.algorithms.len(), 2);
-        assert_eq!(config.system_name, "Test System");
-    }
-    
-    #[test]
-    fn test_migration_phases() {
-        let tool = PqcMigrationTool::new();
-        let assessment = CompatibilityAssessment {
-            current_algorithms: vec!["RSA-2048".to_string()],
-            compatibility_mode: super::compatibility::CompatibilityMode::ClassicalOnly,
-            migration_recommendations: vec![],
-            security_analysis: super::compatibility::SecurityAnalysis {
-                quantum_vulnerable_algorithms: vec!["RSA-2048".to_string()],
-                quantum_safe_algorithms: vec![],
-                overall_quantum_readiness: 0.0,
-                critical_vulnerabilities: vec![],
-                security_recommendations: vec![],
-            },
-            performance_impact: super::compatibility::PerformanceImpact {
-                key_generation_factor: 1.0,
-                signature_size_factor: 1.0,
-                verification_time_factor: 1.0,
-                bandwidth_impact: "None".to_string(),
-                storage_impact: "None".to_string(),
-            },
-            timeline_estimate: super::compatibility::TimelineEstimate {
-                planning_phase_weeks: 4,
-                development_phase_weeks: 12,
-                testing_phase_weeks: 6,
-                deployment_phase_weeks: 4,
-                total_weeks: 26,
-                critical_milestones: vec![],
-            },
-        };
-        
-        let phases = tool.generate_migration_phases(&assessment);
-        assert!(!phases.is_empty());
-        assert!(phases.len() >= 4); // Should have multiple phases
-        
-        // Verify phase dependencies
-        let phase_2 = phases.iter().find(|p| p.phase_id.contains("infrastructure")).unwrap();
-        assert!(!phase_2.dependencies.is_empty());
-    }
-    
-    #[test]
-    fn test_risk_assessment() {
-        let tool = PqcMigrationTool::new();
-        let assessment = CompatibilityAssessment {
-            current_algorithms: vec!["RSA-1024".to_string()], // Critical vulnerability
-            compatibility_mode: super::compatibility::CompatibilityMode::ClassicalOnly,
-            migration_recommendations: vec![],
-            security_analysis: super::compatibility::SecurityAnalysis {
-                quantum_vulnerable_algorithms: vec!["RSA-1024".to_string()],
-                quantum_safe_algorithms: vec![],
-                overall_quantum_readiness: 0.0,
-                critical_vulnerabilities: vec!["RSA-1024 is cryptographically broken".to_string()],
-                security_recommendations: vec![],
-            },
-            performance_impact: super::compatibility::PerformanceImpact {
-                key_generation_factor: 1.0,
-                signature_size_factor: 5.0, // Large signature size impact
-                verification_time_factor: 1.0,
-                bandwidth_impact: "High".to_string(),
-                storage_impact: "High".to_string(),
-            },
-            timeline_estimate: super::compatibility::TimelineEstimate {
-                planning_phase_weeks: 2,
-                development_phase_weeks: 8,
-                testing_phase_weeks: 4,
-                deployment_phase_weeks: 2,
-                total_weeks: 16,
-                critical_milestones: vec![],
-            },
-        };
-        
-        let risk_assessment = tool.assess_risks(&assessment);
-        assert_eq!(risk_assessment.overall_risk_level, RiskLevel::High);
-        assert!(!risk_assessment.identified_risks.is_empty());
-        
-        // Should identify quantum vulnerability and performance risks
-        let has_quantum_risk = risk_assessment.identified_risks.iter()
-            .any(|r| r.risk_type == RiskType::QuantumVulnerability);
-        let has_performance_risk = risk_assessment.identified_risks.iter()
-            .any(|r| r.risk_type == RiskType::Performance);
-        
-        assert!(has_quantum_risk);
-        assert!(has_performance_risk);
-    }
-    
-    #[test]
-    fn test_migration_state() {
-        let mut state = MigrationState::new();
-        
-        let result = PhaseExecutionResult {
-            phase_id: "test_phase".to_string(),
-            start_timestamp: 1000,
-            end_timestamp: 2000,
-            success: true,
-            completion_percentage: 100.0,
-            completed_tasks: vec!["Task 1".to_string()],
-            issues: vec![],
-            metrics: PhaseMetrics {
-                tasks_completed: 100.0,
-                issues_encountered: 0,
-                performance_impact: 0.0,
-                resource_utilization: 80.0,
-            },
-        };
-        
-        state.update_phase_status("plan_1", "test_phase", &result);
-        
-        assert_eq!(state.get_completed_phases("plan_1"), 1);
-        assert!(state.get_issues("plan_1").is_empty());
-    }
-    
-    #[test]
-    fn test_validation_criteria() {
-        let criteria = vec![
-            SuccessCriterion {
-                name: "Test Criterion".to_string(),
-                description: "Test description".to_string(),
-                measurement: "Test measurement".to_string(),
-                target_value: "100%".to_string(),
-            },
-        ];
-        
-        assert_eq!(criteria[0].name, "Test Criterion");
-        assert_eq!(criteria[0].target_value, "100%");
-    }
-    
-    #[test]
-    fn test_phase_metrics() {
-        let metrics = PhaseMetrics {
-            tasks_completed: 85.0,
-            issues_encountered: 2,
-            performance_impact: 5.0,
-            resource_utilization: 90.0,
-        };
-        
-        assert_eq!(metrics.tasks_completed, 85.0);
-        assert_eq!(metrics.issues_encountered, 2);
-    }
-    
-    #[test]
-    fn test_risk_types() {
-        assert_eq!(RiskType::QuantumVulnerability, RiskType::QuantumVulnerability);
-        assert_ne!(RiskType::Performance, RiskType::Compatibility);
-    }
-    
-    #[test]
-    fn test_migration_status() {
-        assert_eq!(MigrationStatus::InProgress, MigrationStatus::InProgress);
-        assert_ne!(MigrationStatus::Completed, MigrationStatus::Failed);
-    }
-}

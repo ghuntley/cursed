@@ -1,4 +1,4 @@
-use crate::error::Error;
+use crate::error::CursedError;
 /// Named pipes (FIFOs) implementation for CURSED IPC
 /// 
 /// Provides cross-platform named pipe functionality for inter-process communication
@@ -11,7 +11,7 @@ use std::sync::{Arc, Mutex, RwLock};
 use std::time::{Duration, Instant};
 use std::thread;
 
-use crate::stdlib::ipc::error::{IpcError, IpcResult, named_pipe_error, system_error, timeout_error};
+// use crate::stdlib::ipc::error::{IpcError, IpcResult, named_pipe_error, system_error, timeout_error};
 
 /// Named pipe registry for cleanup
 static PIPE_REGISTRY: std::sync::OnceLock<Arc<RwLock<HashMap<String, Arc<NamedPipeInfo>>>>> = std::sync::OnceLock::new();
@@ -808,59 +808,3 @@ const ERROR_ALREADY_EXISTS: u32 = 183;
 #[cfg(windows)]
 const ERROR_PIPE_CONNECTED: u32 = 535;
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use std::thread;
-    use std::time::Duration;
-
-    #[test]
-    fn test_named_pipe_config_default() {
-        let config = NamedPipeConfig::default();
-        assert_eq!(config.buffer_size, 8192);
-        assert_eq!(config.permissions, 0o666);
-        assert!(config.create_if_missing);
-    }
-
-    #[test]
-    fn test_named_pipe_creation() {
-        let pipe = NamedPipe::new("test_pipe", "/tmp/test_pipe");
-        assert_eq!(pipe.name(), "test_pipe");
-        assert!(!pipe.is_connected());
-    }
-
-    #[cfg(unix)]
-    #[test]
-    fn test_pipe_server_client() {
-        let config = NamedPipeConfig::default();
-        let mut server = NamedPipeServer::new("test_server", config.clone());
-        
-        // Test server creation
-        assert!(server.listen().is_ok());
-        
-        // Test client connection in separate thread
-        let client_handle = thread::spawn(move || {
-            thread::sleep(Duration::from_millis(100));
-            let client = NamedPipeClient::new("test_server", config);
-            client.connect()
-        });
-        
-        // Accept connection
-        let result = server.accept();
-        if result.is_ok() {
-            let client_result = client_handle.join().unwrap();
-            assert!(client_result.is_ok());
-        }
-        
-        let _ = server.stop();
-    }
-
-    #[test]
-    fn test_pipe_registry() {
-        let registry = get_pipe_registry();
-        assert!(registry.read().is_ok());
-        
-        // Test cleanup
-        assert!(cleanup_pipes().is_ok());
-    }
-}

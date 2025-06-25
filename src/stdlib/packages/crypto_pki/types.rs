@@ -3,7 +3,6 @@
 /// This module provides fundamental types used throughout the PKI system
 
 use crate::error::CursedError;
-use crate::error::Error;
 use std::collections::HashMap;
 use std::time::{Duration, SystemTime};
 
@@ -29,27 +28,27 @@ pub enum PkiError {
     Internal(String),
 }
 
-impl std::fmt::Display for PkiError {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            PkiError::CertificateError(msg) => write!(f, "Certificate error: {}", msg),
-            PkiError::OcspError(msg) => write!(f, "OCSP error: {}", msg),
-            PkiError::NetworkError(msg) => write!(f, "Network error: {}", msg),
-            PkiError::Asn1Error(msg) => write!(f, "ASN.1 error: {}", msg),
-            PkiError::SignatureError(msg) => write!(f, "Signature error: {}", msg),
-            PkiError::RevocationError(msg) => write!(f, "Revocation error: {}", msg),
-            PkiError::Internal(msg) => write!(f, "Internal error: {}", msg),
-        }
-    }
-}
+// impl std::fmt::Display for PkiError {
+//     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+//         match self {
+//             PkiError::CertificateError(msg) => write!(f, "Certificate error: {}", msg),
+//             PkiError::OcspError(msg) => write!(f, "OCSP error: {}", msg),
+//             PkiError::NetworkError(msg) => write!(f, "Network error: {}", msg),
+//             PkiError::Asn1Error(msg) => write!(f, "ASN.1 error: {}", msg),
+//             PkiError::SignatureError(msg) => write!(f, "Signature error: {}", msg),
+//             PkiError::RevocationError(msg) => write!(f, "Revocation error: {}", msg),
+//             PkiError::Internal(msg) => write!(f, "Internal error: {}", msg),
+//         }
+//     }
+// }
 
-impl std::error::Error for PkiError {}
-
-impl From<PkiError> for CursedError {
-    fn from(err: PkiError) -> Self {
-        CursedError::RuntimeError(err.to_string())
-    }
-}
+// impl std::error::CursedError for PkiError {}
+// 
+// impl From<PkiError> for CursedError {
+//     fn from(err: PkiError) -> Self {
+//         CursedError::RuntimeError(err.to_string())
+//     }
+// }
 
 /// X.509 Certificate representation
 #[derive(Debug, Clone)]

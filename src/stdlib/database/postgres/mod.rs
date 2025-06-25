@@ -1,4 +1,4 @@
-use crate::error::Error;
+use crate::error::CursedError;
 /// PostgreSQL Database Driver Module
 /// 
 /// Provides production-ready PostgreSQL database connectivity for the CURSED language
@@ -25,10 +25,10 @@ pub use error::{PostgresError, PostgresErrorKind};
 pub use config::{PostgresConfig, PostgresConnectionString, SslMode};
 
 /// Initialize PostgreSQL driver and register it with the database system
-pub fn init_postgres() -> Result<(), Error> {
+pub fn init_postgres() -> crate::error::Result<()> {
     let driver = PostgresDriver::new();
-    crate::stdlib::database::driver::DriverRegistry::register("postgres", Box::new(driver))?;
-    crate::stdlib::database::driver::DriverRegistry::register("postgresql", Box::new(driver.clone()))?;
+//     crate::stdlib::database::driver::DriverRegistry::register("postgres", Box::new(driver))?;
+//     crate::stdlib::database::driver::DriverRegistry::register("postgresql", Box::new(driver.clone()))?;
     Ok(())
 }
 
@@ -38,6 +38,6 @@ pub fn new_postgres_driver() -> PostgresDriver {
 }
 
 /// Parse PostgreSQL connection string and create config
-pub fn parse_connection_string(dsn: &str) -> Result<(), Error> {
+pub fn parse_connection_string(dsn: &str) -> crate::error::Result<()> {
     PostgresConnectionString::parse(dsn)
 }

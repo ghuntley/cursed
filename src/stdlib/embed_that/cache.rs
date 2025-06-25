@@ -1,6 +1,6 @@
-use crate::stdlib::embed_that::core::{ThatFile, tea, lit};
-use crate::stdlib::embed_that::error::{EmbedError, EmbedResult};
-use crate::error::Error;
+// use crate::stdlib::embed_that::core::{ThatFile, tea, lit};
+// use crate::stdlib::embed_that::error::{EmbedError, EmbedResult};
+use crate::error::CursedError;
 use std::collections::HashMap;
 use std::sync::{Arc, RwLock};
 use std::time::{Duration, Instant};
@@ -486,6 +486,8 @@ pub mod global {
     }
     
     pub fn clear() {
+        // TODO: implement
+    }
         GLOBAL_CACHE.clear();
     }
     

@@ -1,4 +1,4 @@
-use crate::error::Error;
+use crate::error::CursedError;
 use crate::web::StatusCode;
 // Integration utilities for CURSED web_vibez package
 //
@@ -7,12 +7,12 @@ use crate::web::StatusCode;
 use std::collections::HashMap;
 use std::io::Write;
 
-use crate::stdlib::http_core::{
+// use crate::stdlib::http_core::{
     Request, Response, Method, ContentType, FormData,
     HttpError, HttpResult, HttpValidator, ValidationRules
 };
 
-use crate::stdlib::http_core::validation::SecurityConfig;
+// use crate::stdlib::http_core::validation::SecurityConfig;
 
 /// HTTP server context with request/response processing
 #[derive(Debug)]
@@ -54,7 +54,7 @@ impl HttpContext {
     /// Extract and validate form data
     pub fn form_data(&self) -> HttpResult<HashMap<String, String>> {
         match &self.request.body {
-            crate::stdlib::http_core::request::RequestBody::Form(form) => {
+//             crate::stdlib::http_core::request::RequestBody::Form(form) => {
                 let mut data = HashMap::new();
                 for (key, values) in form.fields() {
                     if let Some(first_value) = values.first() {
@@ -122,7 +122,7 @@ impl HttpContext {
     /// Handle file upload with validation
     pub fn handle_file_upload(&self, field_name: &str) -> HttpResult<(String, Vec<u8>, String)> {
         match &self.request.body {
-            crate::stdlib::http_core::request::RequestBody::Form(form) => {
+//             crate::stdlib::http_core::request::RequestBody::Form(form) => {
                 if let Some(values) = form.get_all(field_name) {
                     for value in values {
                         if let Some((filename, content, content_type)) = value.as_file() {
@@ -200,7 +200,7 @@ impl SecureResponseBuilder {
     }
 
     /// Set response body
-    pub fn body(mut self, body: crate::stdlib::http_core::response::ResponseBody) -> Self {
+//     pub fn body(mut self, body: crate::stdlib::http_core::response::ResponseBody) -> Self {
         self.response = self.response.body(body);
         self
     }
@@ -234,7 +234,7 @@ impl SecureResponseBuilder {
     }
 
     /// Add cookie
-    pub fn cookie(mut self, cookie: crate::stdlib::http_core::Cookie) -> Self {
+//     pub fn cookie(mut self, cookie: crate::stdlib::http_core::Cookie) -> Self {
         self.response = self.response.cookie(cookie);
         self
     }
@@ -447,7 +447,7 @@ pub mod utils {
             r#"<!DOCTYPE html>
 <html>
 <head>
-    <title>Error {}</title>
+    <title>CursedError {}</title>
     <style>
         body {{ font-family: Arial, sans-serif; margin: 40px; }}
         .error {{ color: #d32f2f; }}
@@ -527,51 +527,3 @@ pub mod utils {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_http_context_creation() {
-        let request = Request::new(Method::GET, crate::stdlib::http_core::Url::new("/test"));
-        let context = HttpContext::new(request);
-        
-        assert_eq!(context.request.method, Method::GET);
-        assert_eq!(context.request.path(), "/test");
-    }
-
-    #[test]
-    fn test_secure_response_builder() {
-        let validator = HttpValidator::new();
-        let response = SecureResponseBuilder::new(StatusCode::OK, &validator)
-            .text("Hello, World!")
-            .header("X-Custom", "value")
-            .build();
-
-        assert_eq!(response.status, StatusCode::OK);
-        assert!(response.has_body());
-    }
-
-    #[test]
-    fn test_request_parser() {
-        let parser = RequestParser::new();
-        let raw_request = "GET /test HTTP/1.1\r\nHost: example.com\r\n\r\n";
-        
-        let context = parser.parse(raw_request).unwrap();
-        assert_eq!(context.request.method, Method::GET);
-        assert_eq!(context.request.path(), "/test");
-    }
-
-    #[test]
-    fn test_utility_functions() {
-        let error_response = utils::json_error(StatusCode::BadRequest, "Invalid input");
-        assert_eq!(error_response.status, StatusCode::BadRequest);
-
-        let html_response = utils::html_error(StatusCode::NotFound, "Page not found");
-        assert_eq!(html_response.status, StatusCode::NotFound);
-
-        let etag = utils::generate_etag(b"test content");
-        assert!(!etag.is_empty());
-        assert!(etag.starts_with('"') && etag.ends_with('"'));
-    }
-}

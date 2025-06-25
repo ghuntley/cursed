@@ -3,7 +3,7 @@
 // Generates comprehensive Markdown documentation for GitHub and other markdown platforms.
 
 use crate::docs::generator::{DocGeneratorConfig, ExtractedDocumentation, DocumentationItem};
-use crate::error::Error;
+use crate::error::CursedError;
 use std::fs;
 use std::path::Path;
 
@@ -20,7 +20,7 @@ impl MarkdownGenerator {
     }
 
     /// Generate README.md file
-    pub fn generate_readme(&self, docs: &[ExtractedDocumentation], output_dir: &Path) -> Result<(), Error> {
+    pub fn generate_readme(&self, docs: &[ExtractedDocumentation], output_dir: &Path) -> crate::error::Result<()> {
         let readme_path = output_dir.join("README.md");
         
         let mut content = String::new();
@@ -102,12 +102,12 @@ impl MarkdownGenerator {
         content.push_str("## Documentation\n\n");
         content.push_str("This documentation was generated automatically by the CURSED documentation system.\n\n");
         
-        fs::write(readme_path, content).map_err(Error::Io)?;
+        fs::write(readme_path, content).map_err(CursedError::Io)?;
         Ok(())
     }
 
     /// Generate documentation for a single module
-    pub fn generate_module_doc(&self, doc: &ExtractedDocumentation, output_dir: &Path) -> Result<(), Error> {
+    pub fn generate_module_doc(&self, doc: &ExtractedDocumentation, output_dir: &Path) -> crate::error::Result<()> {
         let module_path = output_dir.join(self.get_module_filename(&doc.module_name));
         
         let mut content = String::new();
@@ -233,12 +233,12 @@ impl MarkdownGenerator {
             }
         }
         
-        fs::write(module_path, content).map_err(Error::Io)?;
+        fs::write(module_path, content).map_err(CursedError::Io)?;
         Ok(())
     }
 
     /// Generate documentation for a single item
-    fn generate_item_documentation(&self, item: &DocumentationItem) -> Result<(), Error> {
+    fn generate_item_documentation(&self, item: &DocumentationItem) -> crate::error::Result<()> {
         let mut content = String::new();
         
         // Item header

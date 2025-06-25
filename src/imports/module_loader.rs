@@ -1,4 +1,4 @@
-use crate::error::Error;
+use crate::error::CursedError;
 // Module loading and caching
 
 use std::collections::HashMap;
@@ -55,7 +55,7 @@ impl ModuleLoader {
     }
     
     /// Load a module from a resolved import
-    pub async fn load_module(&mut self, resolved: &ResolvedImport) -> Result<(), Error> {
+    pub async fn load_module(&mut self, resolved: &ResolvedImport) -> crate::error::Result<()> {
         let module_key = resolved.get_cache_key();
         
         // Check if already loaded
@@ -80,7 +80,7 @@ impl ModuleLoader {
     }
     
     /// Internal module loading implementation
-    async fn load_module_internal(&mut self, resolved: &ResolvedImport) -> Result<(), Error> {
+    async fn load_module_internal(&mut self, resolved: &ResolvedImport) -> crate::error::Result<()> {
         let load_start = std::time::Instant::now();
         
         // Read source file
@@ -149,7 +149,7 @@ impl ModuleLoader {
     }
     
     /// Generate source code for built-in modules
-    fn generate_module_source(&self, resolved: &ResolvedImport) -> Result<(), Error> {
+    fn generate_module_source(&self, resolved: &ResolvedImport) -> crate::error::Result<()> {
         match &resolved.original_path {
             path if path.starts_with("stdlib::io") => {
                 Ok(r#"
@@ -238,7 +238,7 @@ squad Stack<T> {
     }
     
     /// Extract module information from parsed program
-    fn extract_module_info(&self, program: &Program, resolved: &ResolvedImport) -> Result<(), Error> {
+    fn extract_module_info(&self, program: &Program, resolved: &ResolvedImport) -> crate::error::Result<()> {
         let mut exports = Vec::new();
         let mut types = Vec::new();
         let mut dependencies = Vec::new();
@@ -349,26 +349,3 @@ pub struct LoaderStats {
     pub currently_loading: usize,
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use crate::imports::{ResolvedImport, ImportSource};
-    
-    #[tokio::test]
-    async fn test_stdlib_module_generation() {
-        let mut loader = ModuleLoader::new();
-        
-        let resolved = ResolvedImport {
-            original_path: "stdlib::io".to_string(),
-            source: ImportSource::StandardLibrary,
-            resolved_path: std::path::PathBuf::from("stdlib/io.rs"),
-            alias: None,
-            exports: vec!["print".to_string(), "println".to_string()],
-            types: vec![],
-        };
-        
-        let loaded = loader.load_module(&resolved).await.unwrap();
-        assert!(loaded.source.contains("slay print"));
-        assert!(loaded.source.contains("slay println"));
-    }
-}

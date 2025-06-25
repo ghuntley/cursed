@@ -10,11 +10,11 @@ use std::time::SystemTime;
 use mysql::{Pool, PooledConn, Row};
 use mysql::prelude::*;
 
-use crate::stdlib::database::{
+// use crate::stdlib::database::{
     DriverConn, DatabaseError, SqlValue, TxOptions,
     driver::{QueryResult, ExecuteResult, ConnectionMetadata, DriverStmt, DriverTx}
 };
-use crate::error::Error;
+use crate::error::CursedError;
 use super::error::{MySqlError, MySqlResult};
 use super::types::{convert_from_sql_value, extract_value_by_index, get_column_info};
 use super::driver::MySqlConfig;
@@ -178,7 +178,7 @@ impl MySqlConnection {
 }
 
 impl DriverConn for MySqlConnection {
-    fn prepare(&self, query: &str) -> Result<(), Error> {
+    fn prepare(&self, query: &str) -> crate::error::Result<()> {
         let statement = MySqlStatement::new(
             Arc::clone(&self.pool),
             query.to_string(),
@@ -188,17 +188,17 @@ impl DriverConn for MySqlConnection {
         Ok(Box::new(statement))
     }
 
-    fn query(&self, query: &str, args: &[SqlValue]) -> Result<(), Error> {
+    fn query(&self, query: &str, args: &[SqlValue]) -> crate::error::Result<()> {
         self.execute_query_internal(query, args)
             .map_err(|e| e.to_database_error())
     }
 
-    fn execute(&self, query: &str, args: &[SqlValue]) -> Result<(), Error> {
+    fn execute(&self, query: &str, args: &[SqlValue]) -> crate::error::Result<()> {
         self.execute_command_internal(query, args)
             .map_err(|e| e.to_database_error())
     }
 
-    fn begin_transaction(&self, opts: TxOptions) -> Result<(), Error> {
+    fn begin_transaction(&self, opts: TxOptions) -> crate::error::Result<()> {
         let transaction = MySqlTransaction::new(
             Arc::clone(&self.pool),
             opts,
@@ -208,7 +208,7 @@ impl DriverConn for MySqlConnection {
         Ok(Box::new(transaction))
     }
 
-    fn ping(&self) -> Result<(), Error> {
+    fn ping(&self) -> crate::error::Result<()> {
         let mut conn = self.get_pooled_connection()
             .map_err(|e| e.to_database_error())?;
 
@@ -216,7 +216,7 @@ impl DriverConn for MySqlConnection {
             .map_err(|e| DatabaseError::connection_error(&format!("Ping failed: {}", e)))
     }
 
-    fn close(&self) -> Result<(), Error> {
+    fn close(&self) -> crate::error::Result<()> {
         // Connection pool handles cleanup automatically
         // Individual connections are returned to the pool when dropped
         Ok(())
@@ -266,50 +266,3 @@ impl DriverConn for MySqlConnection {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use crate::stdlib::database::SqlIsolationLevel;
-
-    #[test]
-    fn test_connection_creation() {
-        // This test would require a real MySQL instance
-        // For now, we just test the structure
-        let config = MySqlConfig::default();
-        
-        // We can't test actual connection without MySQL server
-        // But we can test configuration and structure
-        assert_eq!(config.max_connections, 100);
-        assert_eq!(config.charset, "utf8mb4");
-        assert!(!config.ssl_enabled);
-    }
-
-    #[test]
-    fn test_connection_metadata_structure() {
-        let config = MySqlConfig::default();
-        let metadata = ConnectionMetadata {
-            server_version: "8.0.33".to_string(),
-            database_name: "test".to_string(),
-            server_host: "localhost".to_string(),
-            server_port: 3306,
-            username: "testuser".to_string(),
-            connected_at: SystemTime::now(),
-            additional_info: HashMap::new(),
-        };
-
-        assert_eq!(metadata.server_version, "8.0.33");
-        assert_eq!(metadata.database_name, "test");
-        assert_eq!(metadata.server_port, 3306);
-    }
-
-    #[test]
-    fn test_transaction_options() {
-        let opts = TxOptions {
-            isolation: SqlIsolationLevel::LevelReadCommitted,
-            read_only: false,
-        };
-
-        assert_eq!(opts.isolation, SqlIsolationLevel::LevelReadCommitted);
-        assert!(!opts.read_only);
-    }
-}

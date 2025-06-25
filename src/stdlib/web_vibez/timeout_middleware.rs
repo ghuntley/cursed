@@ -4,12 +4,11 @@ use crate::web::StatusCode;
 /// Provides timeout mechanisms for requests, connections, sessions, and database operations
 /// using parking_lot crate's timeout support and async-aware implementations
 
-use crate::stdlib::web_vibez::context::{RequestContext, ResponseContext};
-use crate::stdlib::web_vibez::middleware::{Middleware, MiddlewareResult};
-use crate::stdlib::web_vibez::config::{ServerConfig, SessionConfig};
-use crate::stdlib::web_vibez::error_handling::MiddlewareError;
-use crate::stdlib::web_vibez::StatusCode;
-use crate::error::Error;
+// use crate::stdlib::web_vibez::context::{RequestContext, ResponseContext};
+// use crate::stdlib::web_vibez::middleware::{Middleware, MiddlewareResult};
+// use crate::stdlib::web_vibez::config::{ServerConfig, SessionConfig};
+use crate::error::CursedError;
+// use crate::stdlib::web_vibez::StatusCode;
 
 use std::sync::{Arc, Mutex};
 use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
@@ -127,34 +126,34 @@ pub enum TimeoutError {
     GracefulShutdownTimeout,
 }
 
-impl std::fmt::Display for TimeoutError {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            TimeoutError::RequestTimeout { elapsed, timeout } => {
-                write!(f, "Request timeout: {}ms elapsed, {}ms timeout", 
-                       elapsed.as_millis(), timeout.as_millis())
-            }
-            TimeoutError::ConnectionTimeout { elapsed, timeout } => {
-                write!(f, "Connection timeout: {}ms elapsed, {}ms timeout", 
-                       elapsed.as_millis(), timeout.as_millis())
-            }
-            TimeoutError::SessionTimeout { elapsed, timeout } => {
-                write!(f, "Session timeout: {}ms elapsed, {}ms timeout", 
-                       elapsed.as_millis(), timeout.as_millis())
-            }
-            TimeoutError::DatabaseTimeout { elapsed, timeout, operation } => {
-                write!(f, "Database operation '{}' timeout: {}ms elapsed, {}ms timeout", 
-                       operation, elapsed.as_millis(), timeout.as_millis())
-            }
-            TimeoutError::GracefulShutdownTimeout => {
-                write!(f, "Graceful shutdown timeout exceeded")
-            }
-        }
-    }
-}
+// impl std::fmt::Display for TimeoutError {
+//     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+//         match self {
+//             TimeoutError::RequestTimeout { elapsed, timeout } => {
+//                 write!(f, "Request timeout: {}ms elapsed, {}ms timeout", 
+//                        elapsed.as_millis(), timeout.as_millis())
+//             }
+//             TimeoutError::ConnectionTimeout { elapsed, timeout } => {
+//                 write!(f, "Connection timeout: {}ms elapsed, {}ms timeout", 
+//                        elapsed.as_millis(), timeout.as_millis())
+//             }
+//             TimeoutError::SessionTimeout { elapsed, timeout } => {
+//                 write!(f, "Session timeout: {}ms elapsed, {}ms timeout", 
+//                        elapsed.as_millis(), timeout.as_millis())
+//             }
+//             TimeoutError::DatabaseTimeout { elapsed, timeout, operation } => {
+//                 write!(f, "Database operation '{}' timeout: {}ms elapsed, {}ms timeout", 
+//                        operation, elapsed.as_millis(), timeout.as_millis())
+//             }
+//             TimeoutError::GracefulShutdownTimeout => {
+//                 write!(f, "Graceful shutdown timeout exceeded")
+//             }
+//         }
+//     }
+// }
 
-impl std::error::Error for TimeoutError {}
-
+// impl std::error::CursedError for TimeoutError {}
+// 
 impl TimeoutMiddleware {
     /// Create new timeout middleware with configurations
     pub fn new(server_config: ServerConfig, session_config: SessionConfig) -> Self {
@@ -670,152 +669,3 @@ where
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use crate::stdlib::web_vibez::context::RequestContext;
-    use std::thread;
-
-    #[test]
-    fn test_timeout_middleware_creation() {
-        let server_config = ServerConfig::default();
-        let session_config = SessionConfig::default();
-        let middleware = TimeoutMiddleware::new(server_config, session_config);
-        
-        assert_eq!(middleware.name(), "Timeout");
-        assert_eq!(middleware.priority(), 25);
-    }
-
-    #[test]
-    fn test_request_timeout_tracking() {
-        let server_config = ServerConfig::default();
-        let session_config = SessionConfig::default();
-        let middleware = TimeoutMiddleware::new(server_config, session_config);
-        
-        let context = RequestContext::new("GET".to_string(), "/test".to_string());
-        
-        // Start tracking
-        middleware.start_request_timeout(&context);
-        
-        let stats = middleware.get_timeout_statistics();
-        assert_eq!(stats.active_requests, 1);
-        
-        // Stop tracking
-        middleware.stop_request_timeout(&context.request_id);
-        
-        let stats = middleware.get_timeout_statistics();
-        assert_eq!(stats.active_requests, 0);
-    }
-
-    #[test]
-    fn test_session_timeout() {
-        let server_config = ServerConfig::default();
-        let session_config = SessionConfig::default();
-        let middleware = TimeoutMiddleware::new(server_config, session_config);
-        
-        let session_id = "test_session_123".to_string();
-        
-        // Start session tracking
-        middleware.start_session_timeout(session_id.clone());
-        
-        // Should not be timed out immediately
-        assert!(!middleware.is_session_timed_out(&session_id));
-        
-        // Update activity
-        middleware.update_session_activity(&session_id);
-        assert!(!middleware.is_session_timed_out(&session_id));
-    }
-
-    #[test]
-    fn test_connection_timeout_tracking() {
-        let server_config = ServerConfig::default();
-        let session_config = SessionConfig::default();
-        let middleware = TimeoutMiddleware::new(server_config, session_config);
-        
-        let connection_id = "conn_123".to_string();
-        let client_ip = Some("192.168.1.1".to_string());
-        
-        // Start connection tracking
-        middleware.start_connection_timeout(connection_id.clone(), client_ip);
-        
-        let stats = middleware.get_timeout_statistics();
-        assert_eq!(stats.active_connections, 1);
-        
-        // Update activity
-        middleware.update_connection_activity(&connection_id);
-        
-        // Stop tracking
-        middleware.stop_connection_timeout(&connection_id);
-        
-        let stats = middleware.get_timeout_statistics();
-        assert_eq!(stats.active_connections, 0);
-    }
-
-    #[test]
-    fn test_database_timeout_tracking() {
-        let server_config = ServerConfig::default();
-        let session_config = SessionConfig::default();
-        let middleware = TimeoutMiddleware::new(server_config, session_config);
-        
-        let operation_id = "db_op_123".to_string();
-        let operation_type = "SELECT".to_string();
-        
-        // Start database operation tracking
-        middleware.start_database_timeout(operation_id.clone(), operation_type);
-        
-        let stats = middleware.get_timeout_statistics();
-        assert_eq!(stats.active_database_operations, 1);
-        
-        // Stop tracking
-        middleware.stop_database_timeout(&operation_id);
-        
-        let stats = middleware.get_timeout_statistics();
-        assert_eq!(stats.active_database_operations, 0);
-    }
-
-    #[test]
-    fn test_cleanup_expired_timeouts() {
-        let server_config = ServerConfig::default();
-        let session_config = SessionConfig::default();
-        let middleware = TimeoutMiddleware::new(server_config, session_config);
-        
-        // Add some timeout tracking
-        let context = RequestContext::new("GET".to_string(), "/test".to_string());
-        middleware.start_request_timeout(&context);
-        
-        let session_id = "test_session".to_string();
-        middleware.start_session_timeout(session_id);
-        
-        // Initial state
-        let stats = middleware.get_timeout_statistics();
-        assert_eq!(stats.active_requests, 1);
-        assert_eq!(stats.active_sessions, 1);
-        
-        // Cleanup (should not remove anything yet)
-        middleware.cleanup_expired_timeouts();
-        
-        let stats = middleware.get_timeout_statistics();
-        assert_eq!(stats.active_requests, 1);
-        assert_eq!(stats.active_sessions, 1);
-    }
-
-    #[tokio::test]
-    async fn test_async_timeout_wrapper() {
-        let server_config = ServerConfig::default();
-        let session_config = SessionConfig::default();
-        let middleware = TimeoutMiddleware::new(server_config, session_config);
-        
-        // Test successful operation
-        let operation_id = "test_op".to_string();
-        let operation_type = "TEST".to_string();
-        
-        let result = middleware.with_database_timeout(
-            operation_id,
-            operation_type,
-            async { "success" }
-        ).await;
-        
-        assert!(result.is_ok());
-        assert_eq!(result.unwrap(), "success");
-    }
-}

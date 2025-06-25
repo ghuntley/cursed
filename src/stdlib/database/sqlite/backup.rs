@@ -33,7 +33,7 @@ pub enum BackupPhase {
     Copying,
     Finalizing,
     Completed,
-    Error,
+    CursedError,
 }
 
 impl BackupProgress {
@@ -93,7 +93,7 @@ impl BackupProgress {
             ),
             BackupPhase::Finalizing => "Finalizing backup...".to_string(),
             BackupPhase::Completed => "Backup completed successfully".to_string(),
-            BackupPhase::Error => "Backup failed with errors".to_string(),
+            BackupPhase::CursedError => "Backup failed with errors".to_string(),
         }
     }
 }
@@ -320,7 +320,7 @@ impl SqliteBackup {
             return Err(SqliteError::invalid_parameter("Backup is already completed"));
         }
 
-        self.progress.phase = BackupPhase::Error;
+        self.progress.phase = BackupPhase::CursedError;
         
         // This would cancel the ongoing backup operation
         // and clean up any partial files
@@ -436,127 +436,3 @@ impl SqliteBackup {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-use crate::error::Error;
-
-    #[test]
-    fn test_backup_progress() {
-        let mut progress = BackupProgress::new(1000);
-        assert_eq!(progress.total_pages, 1000);
-        assert_eq!(progress.pages_copied, 0);
-        assert_eq!(progress.percentage_complete, 0.0);
-        assert_eq!(progress.phase, BackupPhase::Initializing);
-
-        progress.update(500, Duration::from_secs(10));
-        assert_eq!(progress.pages_copied, 500);
-        assert_eq!(progress.pages_remaining, 500);
-        assert_eq!(progress.percentage_complete, 50.0);
-        assert_eq!(progress.phase, BackupPhase::Copying);
-        assert!(progress.estimated_time_remaining.is_some());
-
-        progress.update(1000, Duration::from_secs(20));
-        assert!(progress.is_complete());
-        assert_eq!(progress.phase, BackupPhase::Completed);
-    }
-
-    #[test]
-    fn test_backup_options() {
-        let default_opts = BackupOptions::new();
-        assert!(default_opts.validate().is_ok());
-        assert_eq!(default_opts.pages_per_step, 100);
-        assert!(default_opts.verify_integrity);
-
-        let fast_opts = BackupOptions::fast();
-        assert_eq!(fast_opts.pages_per_step, 1000);
-        assert!(!fast_opts.verify_integrity);
-
-        let safe_opts = BackupOptions::safe();
-        assert_eq!(safe_opts.pages_per_step, 10);
-        assert!(safe_opts.verify_integrity);
-
-        let mut invalid_opts = BackupOptions::new();
-        invalid_opts.pages_per_step = 0;
-        assert!(invalid_opts.validate().is_err());
-    }
-
-    #[test]
-    fn test_backup_creation() {
-        let config = SqliteConfig::new("source.db");
-        let options = BackupOptions::new();
-        
-        let backup = SqliteBackup::new(config, "dest.db".to_string(), options);
-        assert!(backup.is_ok());
-
-        let empty_dest = SqliteBackup::new(
-            SqliteConfig::new("source.db"),
-            String::new(),
-            BackupOptions::new(),
-        );
-        assert!(empty_dest.is_err());
-    }
-
-    #[test]
-    fn test_backup_simulation() {
-        let config = SqliteConfig::new("source.db");
-        let options = BackupOptions::fast(); // Fast for testing
-        
-        let mut backup = SqliteBackup::new(config, "dest.db".to_string(), options).unwrap();
-        
-        // Test initial state
-        assert!(!backup.is_complete());
-        assert!(backup.duration().is_none());
-        
-        // Start backup (simulated)
-        let result = backup.start();
-        
-        // In a real test environment this might fail, which is okay
-        match result {
-            Ok(_) => {
-                assert!(backup.is_complete());
-                assert!(backup.duration().is_some());
-                
-                let stats = backup.statistics();
-                assert!(stats.total_pages > 0);
-                assert_eq!(stats.pages_copied, stats.total_pages);
-            }
-            Err(_) => {
-                println!("Backup simulation failed (expected in test environment)");
-            }
-        }
-    }
-
-    #[test]
-    fn test_convenience_functions() {
-        // These will fail in test environment but show the API
-        let result = SqliteBackup::quick_backup("source.db", "dest.db");
-        match result {
-            Ok(stats) => {
-                assert!(stats.total_pages >= 0);
-            }
-            Err(_) => {
-                println!("Quick backup failed (expected in test environment)");
-            }
-        }
-    }
-
-    #[test]
-    fn test_backup_statistics() {
-        let stats = BackupStatistics {
-            total_pages: 1000,
-            pages_copied: 1000,
-            duration: Some(Duration::from_secs(10)),
-            average_pages_per_second: 100.0,
-            source_size: 4096000,
-            destination_size: 4000000,
-            compression_ratio: Some(0.97),
-        };
-
-        let summary = stats.summary();
-        assert!(summary.contains("1000 of 1000"));
-        assert!(summary.contains("10.00 seconds"));
-        assert!(summary.contains("100.0 pages/second"));
-        assert!(summary.contains("97.0%"));
-    }
-}

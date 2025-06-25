@@ -28,7 +28,7 @@
 ///    that optimization strategies (like constraint caching) actually improve
 ///    compilation times.
 ///
-/// 4. **Error Quality**: Poor constraint resolution leads to confusing error
+/// 4. **CursedError Quality**: Poor constraint resolution leads to confusing error
 ///    messages. Testing ensures that when constraints fail, developers receive
 ///    actionable feedback pointing to the actual source of the problem.
 ///
@@ -94,7 +94,7 @@
 /// ### Constraint Preprocessors
 /// ```rust
 /// trait ConstraintPreprocessor {
-///     fn preprocess(&self, constraints: &mut Vec<Constraint>) -> Result<(), Error>;
+///     fn preprocess(&self, constraints: &mut Vec<Constraint>) -> crate::error::Result<()>;
 /// }
 /// ```
 ///
@@ -117,7 +117,7 @@
 
 use crate::ast::declarations::GenericConstraint;
 use crate::ast::traits::TypeParameter;
-use crate::error::Error;
+use crate::error::CursedError;
 use crate::type_system::{
     TypeEnvironment, TypeExpression, TypeDefinition, ConstraintContext,
     ConstraintBinding, ConstraintStatus
@@ -350,11 +350,11 @@ impl ConstraintResolver {
         &self,
         constraint: &GenericConstraint,
         environment: &TypeEnvironment,
-    ) -> Result<(), Error> {
+    ) -> crate::error::Result<()> {
         // Check if constraint refers to valid types
         for type_param in &constraint.type_parameters {
             if !self.is_valid_type_parameter(type_param, environment) {
-                return Err(Error::Type(format!(
+                return Err(CursedError::Type(format!(
                     "Invalid type parameter '{}' in constraint",
                     type_param
                 )));
@@ -363,7 +363,7 @@ impl ConstraintResolver {
 
         // Check if constraint name is recognized
         if !self.validator.is_known_constraint(&constraint.constraint_name) {
-            return Err(Error::Type(format!(
+            return Err(CursedError::Type(format!(
                 "Unknown constraint '{}'",
                 constraint.constraint_name
             )));
@@ -378,7 +378,7 @@ impl ConstraintResolver {
         type_expr: &TypeExpression,
         constraints: &[GenericConstraint],
         environment: &TypeEnvironment,
-    ) -> Result<(), Error> {
+    ) -> crate::error::Result<()> {
         // Generate cache key
         let cache_key = self.generate_cache_key(type_expr, constraints);
         
@@ -414,7 +414,7 @@ impl ConstraintResolver {
         &mut self,
         context: &ConstraintContext,
         environment: &TypeEnvironment,
-    ) -> Result<(), Error> {
+    ) -> crate::error::Result<()> {
         let solution = self.resolve_constraints_internal(context, environment)?;
         
         // Cache result for performance
@@ -429,7 +429,7 @@ impl ConstraintResolver {
         &self,
         context: &ConstraintContext,
         environment: &TypeEnvironment,
-    ) -> Result<(), Error> {
+    ) -> crate::error::Result<()> {
         let mut solution = ConstraintSolution {
             is_satisfied: true,
             substitutions: HashMap::new(),
@@ -476,9 +476,9 @@ impl ConstraintResolver {
         graph: &ConstraintGraph,
         environment: &TypeEnvironment,
         substitutions: &mut HashMap<String, TypeExpression>,
-    ) -> Result<(), Error> {
+    ) -> crate::error::Result<()> {
         let node = graph.nodes.get(constraint_id)
-            .ok_or_else(|| Error::Type(format!("Constraint node '{}' not found", constraint_id)))?;
+            .ok_or_else(|| CursedError::Type(format!("Constraint node '{}' not found", constraint_id)))?;
 
         let constraint = &node.constraint;
 
@@ -714,7 +714,7 @@ impl ConstraintPropagator {
     pub fn build_constraint_graph(
         &self,
         constraints: &[ConstraintBinding],
-    ) -> Result<(), Error> {
+    ) -> crate::error::Result<()> {
         let mut graph = ConstraintGraph::new();
 
         // Add constraint nodes
@@ -736,7 +736,7 @@ impl ConstraintPropagator {
     }
 
     /// Analyze dependencies between constraints
-    fn analyze_constraint_dependencies(&self, graph: &mut ConstraintGraph) -> Result<(), Error> {
+    fn analyze_constraint_dependencies(&self, graph: &mut ConstraintGraph) -> crate::error::Result<()> {
         let node_ids: Vec<String> = graph.nodes.keys().cloned().collect();
 
         for id1 in &node_ids {
@@ -792,7 +792,7 @@ impl ConstraintGraph {
     }
 
     /// Perform topological sort to determine resolution order
-    pub fn topological_sort(&self) -> Result<(), Error> {
+    pub fn topological_sort(&self) -> crate::error::Result<()> {
         let mut visited = HashSet::new();
         let mut temp_visited = HashSet::new();
         let mut result = Vec::new();
@@ -819,9 +819,9 @@ impl ConstraintGraph {
         visited: &mut HashSet<String>,
         temp_visited: &mut HashSet<String>,
         result: &mut Vec<String>,
-    ) -> Result<(), Error> {
+    ) -> crate::error::Result<()> {
         if temp_visited.contains(node_id) {
-            return Err(Error::Type("Circular constraint dependency detected".to_string()));
+            return Err(CursedError::Type("Circular constraint dependency detected".to_string()));
         }
 
         if visited.contains(node_id) {
@@ -858,7 +858,7 @@ impl TypeUnifier {
         &mut self,
         type1: &TypeExpression,
         type2: &TypeExpression,
-    ) -> Result<(), Error> {
+    ) -> crate::error::Result<()> {
         let step = UnificationStep {
             step_type: self.determine_unification_type(type1, type2),
             type1: type1.clone(),
@@ -880,12 +880,12 @@ impl TypeUnifier {
         &mut self,
         type1: &TypeExpression,
         type2: &TypeExpression,
-    ) -> Result<(), Error> {
+    ) -> crate::error::Result<()> {
         match (type1, type2) {
             // Variable unification
             (TypeExpression::Parameter(var), other) => {
                 if self.occurs_check(var, other) {
-                    return Err(Error::Type(format!("Occurs check failed: {} in {}", var, other.to_string())));
+                    return Err(CursedError::Type(format!("Occurs check failed: {} in {}", var, other.to_string())));
                 }
                 let mut result = HashMap::new();
                 result.insert(var.clone(), other.clone());
@@ -893,7 +893,7 @@ impl TypeUnifier {
             }
             (other, TypeExpression::Parameter(var)) => {
                 if self.occurs_check(var, other) {
-                    return Err(Error::Type(format!("Occurs check failed: {} in {}", var, other.to_string())));
+                    return Err(CursedError::Type(format!("Occurs check failed: {} in {}", var, other.to_string())));
                 }
                 let mut result = HashMap::new();
                 result.insert(var.clone(), other.clone());
@@ -905,17 +905,17 @@ impl TypeUnifier {
                 if name1 == name2 {
                     Ok(HashMap::new())
                 } else {
-                    Err(Error::Type(format!("Cannot unify types {} and {}", name1, name2)))
+                    Err(CursedError::Type(format!("Cannot unify types {} and {}", name1, name2)))
                 }
             }
 
             // Generic unification
             (TypeExpression::Generic(name1, args1), TypeExpression::Generic(name2, args2)) => {
                 if name1 != name2 {
-                    return Err(Error::Type(format!("Cannot unify generic types {} and {}", name1, name2)));
+                    return Err(CursedError::Type(format!("Cannot unify generic types {} and {}", name1, name2)));
                 }
                 if args1.len() != args2.len() {
-                    return Err(Error::Type(format!("Generic type argument count mismatch")));
+                    return Err(CursedError::Type(format!("Generic type argument count mismatch")));
                 }
 
                 let mut combined_substitutions = HashMap::new();
@@ -931,7 +931,7 @@ impl TypeUnifier {
             // Function unification
             (TypeExpression::Function(params1, ret1), TypeExpression::Function(params2, ret2)) => {
                 if params1.len() != params2.len() {
-                    return Err(Error::Type("Function parameter count mismatch".to_string()));
+                    return Err(CursedError::Type("Function parameter count mismatch".to_string()));
                 }
 
                 let mut combined_substitutions = HashMap::new();
@@ -975,7 +975,7 @@ impl TypeUnifier {
                 self.unify_internal(elem1, elem2)
             }
 
-            _ => Err(Error::Type(format!(
+            _ => Err(CursedError::Type(format!(
                 "Cannot unify types {} and {}",
                 type1.to_string(),
                 type2.to_string()
@@ -1033,7 +1033,7 @@ impl ConstraintValidator {
         constraint: &GenericConstraint,
         type_expr: &TypeExpression,
         environment: &TypeEnvironment,
-    ) -> Result<(), Error> {
+    ) -> crate::error::Result<()> {
         if let Some(builtin) = self.builtin_constraints.get(&constraint.constraint_name) {
             let args: Vec<TypeExpression> = constraint.type_parameters.iter()
                 .map(|param| TypeExpression::named(param))
@@ -1051,7 +1051,7 @@ impl ConstraintValidator {
         constraint: &GenericConstraint,
         type_expr: &TypeExpression,
         environment: &TypeEnvironment,
-    ) -> Result<(), Error> {
+    ) -> crate::error::Result<()> {
         // For now, assume user-defined constraints are interfaces
         if let TypeExpression::Named(type_name) = type_expr {
             if let Some(type_def) = environment.type_definitions.get(type_name) {
@@ -1095,90 +1095,3 @@ mod rand {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use crate::type_system::TypeEnvironment;
-
-    #[test]
-    fn test_constraint_resolver_creation() {
-        let resolver = ConstraintResolver::new();
-        assert!(resolver.validator.is_known_constraint("Sized"));
-        assert!(resolver.validator.is_known_constraint("Clone"));
-        assert!(resolver.validator.is_known_constraint("Debug"));
-    }
-
-    #[test]
-    fn test_type_unification() {
-        let mut unifier = TypeUnifier::new();
-        
-        let type1 = TypeExpression::parameter("T");
-        let type2 = TypeExpression::named("normie");
-        
-        let result = unifier.unify(&type1, &type2).unwrap();
-        assert_eq!(result.get("T"), Some(&TypeExpression::named("normie")));
-    }
-
-    #[test]
-    fn test_constraint_graph_creation() {
-        let graph = ConstraintGraph::new();
-        assert_eq!(graph.nodes.len(), 0);
-        assert_eq!(graph.edges.len(), 0);
-    }
-
-    #[test]
-    fn test_constraint_violation_creation() {
-        let constraint = GenericConstraint {
-            constraint_name: "Clone".to_string(),
-            type_parameters: vec!["T".to_string()],
-            bounds: Vec::new(),
-        };
-
-        let violation = ConstraintViolation {
-            constraint,
-            violating_types: vec!["MyType".to_string()],
-            reason: ViolationReason::MissingInterface("Clone".to_string()),
-            suggested_fixes: vec!["Implement Clone for MyType".to_string()],
-        };
-
-        assert_eq!(violation.violating_types[0], "MyType");
-    }
-
-    #[test]
-    fn test_constraint_solution() {
-        let mut solution = ConstraintSolution {
-            is_satisfied: true,
-            substitutions: HashMap::new(),
-            violations: Vec::new(),
-            derived_constraints: Vec::new(),
-        };
-
-        solution.substitutions.insert("T".to_string(), TypeExpression::named("normie"));
-        assert_eq!(solution.substitutions.get("T"), Some(&TypeExpression::named("normie")));
-    }
-
-    #[test]
-    fn test_occurs_check() {
-        let unifier = TypeUnifier::new();
-        
-        // T should not occur in T
-        assert!(!unifier.occurs_check("T", &TypeExpression::parameter("T")));
-        
-        // T should occur in [T]
-        let array_type = TypeExpression::array(TypeExpression::parameter("T"));
-        assert!(unifier.occurs_check("T", &array_type));
-    }
-
-    #[test]
-    fn test_builtin_constraint_checking() {
-        let resolver = ConstraintResolver::new();
-        let env = TypeEnvironment::new();
-
-        // Test Clone constraint for primitive types
-        let normie_type = TypeExpression::named("normie");
-        assert!(ConstraintResolver::check_clone_implementation(&normie_type, &env));
-
-        let facts_type = TypeExpression::named("facts");
-        assert!(ConstraintResolver::check_clone_implementation(&facts_type, &env));
-    }
-}

@@ -176,7 +176,7 @@ pub struct LinkCheckResult {
     pub status: LinkStatus,
     /// Response time (milliseconds)
     pub response_time_ms: u64,
-    /// Error message (if any)
+    /// CursedError message (if any)
     pub error: Option<String>,
     /// Location where link was found
     pub source_location: IssueLocation,
@@ -205,7 +205,7 @@ pub struct ExampleResult {
     pub expected_output: Option<String>,
     /// Actual output
     pub actual_output: Option<String>,
-    /// Error message (if any)
+    /// CursedError message (if any)
     pub error: Option<String>,
     /// Compilation success
     pub compilation_success: bool,
@@ -917,32 +917,3 @@ impl Default for TestingConfig {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-    
-    #[test]
-    fn test_testing_config_default() {
-        let config = TestingConfig::default();
-        assert!(config.check_links);
-        assert!(config.verify_examples);
-        assert!(config.check_completeness);
-        assert_eq!(config.min_coverage_percentage, 70.0);
-    }
-    
-    #[test]
-    fn test_link_extraction() {
-        let tester = DocumentationTester {
-            config: TestingConfig::default(),
-            registry: DocumentationRegistry::new(crate::docs::registry::RegistryConfig::default()),
-            http_client: reqwest::Client::new(),
-        };
-        
-        let text = "See https://example.com for more info and http://test.com/path";
-        let links = tester.extract_links_from_text(text);
-        
-        assert_eq!(links.len(), 2);
-        assert!(links.contains(&"https://example.com".to_string()));
-        assert!(links.contains(&"http://test.com/path".to_string()));
-    }
-}

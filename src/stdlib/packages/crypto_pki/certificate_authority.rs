@@ -1,8 +1,8 @@
 /// Certificate Authority Implementation
 
-use crate::stdlib::packages::crypto_pki::types::{PkiResult, PkiError, X509Certificate};
-use crate::stdlib::packages::crypto_pki::certificate::Certificate;
-use crate::error::Error;
+// use crate::stdlib::packages::crypto_pki::types::{PkiResult, PkiError, X509Certificate};
+// use crate::stdlib::packages::crypto_pki::certificate::Certificate;
+use crate::error::CursedError;
 
 #[derive(Debug, Clone)]
 pub struct CaConfiguration {
@@ -40,7 +40,7 @@ impl CertificateAuthority {
         Ok((cert, key))
     }
 
-    pub fn issue_certificate(&self, _template: &crate::stdlib::packages::crypto_pki::templates::CertificateTemplate) -> PkiResult<Certificate> {
+//     pub fn issue_certificate(&self, _template: &crate::stdlib::packages::crypto_pki::templates::CertificateTemplate) -> PkiResult<Certificate> {
         Certificate::new_self_signed("CN=Issued Certificate")
     }
 }

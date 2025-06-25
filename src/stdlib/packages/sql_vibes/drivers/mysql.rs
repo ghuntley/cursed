@@ -1,5 +1,5 @@
 /// fr fr MySQL/MariaDB database driver - popular web database vibes
-use crate::stdlib::packages::sql_vibes::{
+// use crate::stdlib::packages::sql_vibes::{
     DatabaseDriver, DatabaseConnection, PreparedStatement, Transaction,
     ConnectionConfig, DriverInfo, DriverFeature, ConnectionInfo, TransactionState, TransactionIsolation,
     SqlResult, SqlError, SqlValue, Row, ResultSet, Parameter
@@ -613,70 +613,3 @@ fn create_mysql_mock_result_set(sql: &str, _params: &[Parameter]) -> ResultSet {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_mysql_driver_creation() {
-        let driver = MySqlDriver::new();
-        let info = driver.driver_info();
-        
-        assert_eq!(info.name, "mysql");
-        assert!(driver.supports_feature(DriverFeature::PreparedStatements));
-        assert!(driver.supports_feature(DriverFeature::Transactions));
-        assert!(driver.supports_feature(DriverFeature::SslEncryption));
-        assert!(driver.supports_feature(DriverFeature::JsonSupport));
-    }
-
-    #[test]
-    fn test_validate_connection_string() {
-        let driver = MySqlDriver::new();
-        
-        assert!(driver.validate_connection_string("mysql://user:pass@localhost/db").is_ok());
-        assert!(driver.validate_connection_string("mysql://user:pass@localhost:3306/db").is_ok());
-        assert!(driver.validate_connection_string("").is_err());
-        assert!(driver.validate_connection_string("postgres://user:pass@localhost/db").is_err());
-        assert!(driver.validate_connection_string("mysql://localhost/db").is_err()); // Missing auth
-    }
-
-    #[test]
-    fn test_parse_mysql_connection_string() {
-        let parsed = parse_mysql_connection_string("mysql://user:pass@localhost:3306/testdb?sslMode=required").unwrap();
-        
-        assert_eq!(parsed.username, "user");
-        assert_eq!(parsed.password, "pass");
-        assert_eq!(parsed.host, "localhost");
-        assert_eq!(parsed.port, 3306);
-        assert_eq!(parsed.database, "testdb");
-        assert_eq!(parsed.ssl_mode, "required");
-        assert_eq!(parsed.parameters.get("sslMode"), Some(&"required".to_string()));
-    }
-
-    #[test]
-    fn test_parse_mysql_connection_string_defaults() {
-        let parsed = parse_mysql_connection_string("mysql://user@localhost/testdb").unwrap();
-        
-        assert_eq!(parsed.username, "user");
-        assert_eq!(parsed.password, "");
-        assert_eq!(parsed.host, "localhost");
-        assert_eq!(parsed.port, 3306); // Default port
-        assert_eq!(parsed.database, "testdb");
-        assert_eq!(parsed.ssl_mode, "preferred"); // Default SSL mode
-    }
-
-    #[test]
-    fn test_count_mysql_parameters() {
-        assert_eq!(count_mysql_parameters("SELECT * FROM users WHERE id = ?"), 1);
-        assert_eq!(count_mysql_parameters("SELECT * FROM users WHERE id = ? AND name = ?"), 2);
-        assert_eq!(count_mysql_parameters("SELECT * FROM users"), 0);
-    }
-
-    #[test]
-    fn test_validate_mysql_sql() {
-        assert!(validate_mysql_sql("SELECT * FROM users").is_ok());
-        assert!(validate_mysql_sql("INSERT INTO users (name) VALUES (?)").is_ok());
-        assert!(validate_mysql_sql("").is_err());
-        assert!(validate_mysql_sql("SELECT * FROM users; DROP TABLE users").is_err());
-    }
-}

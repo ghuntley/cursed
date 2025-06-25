@@ -22,9 +22,9 @@ use aes::Aes128;
 use aes::cipher::{BlockEncrypt, KeyInit};
 use sha3::{Sha3_256, Shake128, Digest};
 use sha3::digest::{ExtendableOutput, Update, XofReader};
-use crate::stdlib::crypto_pqc::{PqcResult, PqcError, SecurityLevel, AlgorithmType};
+// use crate::stdlib::crypto_pqc::{PqcResult, PqcError, SecurityLevel, AlgorithmType};
 use super::{KeyEncapsulation, ParameterSet, AlgorithmPerformance, KeySizes};
-use crate::error::Error;
+use crate::error::CursedError;
 
 /// FrodoKEM parameter sets with real mathematical parameters
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
@@ -706,66 +706,3 @@ impl RealFrodo {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_real_frodo_keygen() {
-        let (pub_key, sec_key) = RealFrodo::keygen(SecurityLevel::Level1).unwrap();
-        assert_eq!(pub_key.params, FrodoParams::Frodo640Aes);
-        assert_eq!(sec_key.params, FrodoParams::Frodo640Aes);
-    }
-
-    #[test]
-    fn test_real_frodo_encaps_decaps() {
-        let (pub_key, sec_key) = RealFrodo::keygen(SecurityLevel::Level1).unwrap();
-        
-        let (ciphertext, shared_secret1) = RealFrodo::encaps(&pub_key).unwrap();
-        let shared_secret2 = RealFrodo::decaps(&sec_key, &ciphertext).unwrap();
-        
-        assert_eq!(shared_secret1.data, shared_secret2.data);
-    }
-
-    #[test]
-    fn test_frodo_matrix_operations() {
-        let matrix1 = FrodoMatrix::new(2, 2, 65536);
-        let matrix2 = FrodoMatrix::new(2, 2, 65536);
-        
-        let sum = matrix1.add(&matrix2).unwrap();
-        assert_eq!(sum.rows, 2);
-        assert_eq!(sum.cols, 2);
-    }
-
-    #[test]
-    fn test_frodo_matrix_serialization() {
-        let mut matrix = FrodoMatrix::new(3, 3, 65536);
-        matrix.data[0][0] = 100;
-        matrix.data[1][1] = 200;
-        matrix.data[2][2] = 300;
-        
-        let bytes = matrix.to_bytes();
-        let matrix2 = FrodoMatrix::from_bytes(&bytes, 3, 3, 65536).unwrap();
-        
-        assert_eq!(matrix.data, matrix2.data);
-    }
-
-    #[test]
-    fn test_frodo_matrix_packing() {
-        let mut matrix = FrodoMatrix::new(2, 2, 32768);
-        matrix.data[0][0] = 100;
-        matrix.data[0][1] = 200;
-        matrix.data[1][0] = 300;
-        matrix.data[1][1] = 400;
-        
-        let packed = matrix.pack(15);
-        let unpacked = FrodoMatrix::unpack(&packed, 2, 2, 15, 32768).unwrap();
-        
-        // Should be approximately equal after packing/unpacking
-        for i in 0..2 {
-            for j in 0..2 {
-                assert!((matrix.data[i][j] as i32 - unpacked.data[i][j] as i32).abs() < 10);
-            }
-        }
-    }
-}

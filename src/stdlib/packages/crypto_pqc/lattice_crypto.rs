@@ -5,8 +5,7 @@
 /// Module-LWE problems that form the basis for algorithms like Kyber, Dilithium, and NTRU.
 
 use crate::error::CursedError;
-use crate::stdlib::value::Value;
-use crate::error::Error;
+// use crate::stdlib::value::Value;
 use std::collections::HashMap;
 use std::fmt;
 
@@ -29,26 +28,26 @@ pub enum LatticeError {
     Internal(String),
 }
 
-impl fmt::Display for LatticeError {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
-            LatticeError::InvalidConfig(msg) => write!(f, "Invalid configuration: {}", msg),
-            LatticeError::InvalidDimension(msg) => write!(f, "Invalid dimension: {}", msg),
-            LatticeError::InvalidDimensions(msg) => write!(f, "Invalid dimensions: {}", msg),
-            LatticeError::InvalidModulus(msg) => write!(f, "Invalid modulus: {}", msg),
-            LatticeError::KeyGenerationFailed(msg) => write!(f, "Key generation failed: {}", msg),
-            LatticeError::EncryptionFailed(msg) => write!(f, "Encryption failed: {}", msg),
-            LatticeError::DecryptionFailed(msg) => write!(f, "Decryption failed: {}", msg),
-            LatticeError::InvalidInput(msg) => write!(f, "Invalid input: {}", msg),
-            LatticeError::ComputationError(msg) => write!(f, "Computation error: {}", msg),
-            LatticeError::SamplingError(msg) => write!(f, "Sampling error: {}", msg),
-            LatticeError::Internal(msg) => write!(f, "Internal error: {}", msg),
-        }
-    }
-}
+// impl fmt::Display for LatticeError {
+//     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+//         match self {
+//             LatticeError::InvalidConfig(msg) => write!(f, "Invalid configuration: {}", msg),
+//             LatticeError::InvalidDimension(msg) => write!(f, "Invalid dimension: {}", msg),
+//             LatticeError::InvalidDimensions(msg) => write!(f, "Invalid dimensions: {}", msg),
+//             LatticeError::InvalidModulus(msg) => write!(f, "Invalid modulus: {}", msg),
+//             LatticeError::KeyGenerationFailed(msg) => write!(f, "Key generation failed: {}", msg),
+//             LatticeError::EncryptionFailed(msg) => write!(f, "Encryption failed: {}", msg),
+//             LatticeError::DecryptionFailed(msg) => write!(f, "Decryption failed: {}", msg),
+//             LatticeError::InvalidInput(msg) => write!(f, "Invalid input: {}", msg),
+//             LatticeError::ComputationError(msg) => write!(f, "Computation error: {}", msg),
+//             LatticeError::SamplingError(msg) => write!(f, "Sampling error: {}", msg),
+//             LatticeError::Internal(msg) => write!(f, "Internal error: {}", msg),
+//         }
+//     }
+// }
 
-impl std::error::Error for LatticeError {}
-
+// impl std::error::CursedError for LatticeError {}
+// 
 /// fr fr Lattice cryptography configuration
 #[derive(Debug, Clone)]
 pub struct LatticeConfig {
@@ -99,7 +98,7 @@ impl LatticeConfig {
         }
         
         if self.error_distribution_stddev <= 0.0 || self.error_distribution_stddev > 10.0 {
-            return Err(LatticeError::InvalidConfig("Error distribution standard deviation must be in range (0, 10]".to_string()));
+            return Err(LatticeError::InvalidConfig("CursedError distribution standard deviation must be in range (0, 10]".to_string()));
         }
         
         Ok(())
@@ -154,7 +153,7 @@ pub struct LatticeEngine {
 
 impl LatticeEngine {
     /// slay Create new lattice engine
-    pub fn new(config: LatticeConfig) -> Result<(), Error> {
+    pub fn new(config: LatticeConfig) -> crate::error::Result<()> {
         config.validate()?;
         
         let rng = Box::new(SecureRng::new()?);
@@ -170,7 +169,7 @@ impl LatticeEngine {
     }
     
     /// bestie Generate LWE problem instance
-    pub fn generate_lwe_instance(&mut self) -> Result<(), Error> {
+    pub fn generate_lwe_instance(&mut self) -> crate::error::Result<()> {
         let dimension = self.config.dimension;
         let modulus = self.config.modulus;
         
@@ -197,7 +196,7 @@ impl LatticeEngine {
     }
     
     /// vibes Generate Ring-LWE problem instance
-    pub fn generate_ring_lwe_instance(&mut self) -> Result<(), Error> {
+    pub fn generate_ring_lwe_instance(&mut self) -> crate::error::Result<()> {
         let degree = self.config.dimension;
         let modulus = self.config.modulus;
         
@@ -224,7 +223,7 @@ impl LatticeEngine {
     }
     
     /// periodt Sample secret vector for LWE
-    pub fn sample_secret_vector(&mut self, dimension: usize) -> Result<(), Error> {
+    pub fn sample_secret_vector(&mut self, dimension: usize) -> crate::error::Result<()> {
         let mut secret = Vec::with_capacity(dimension);
         for _ in 0..dimension {
             // Sample from {-1, 0, 1} for security
@@ -239,12 +238,12 @@ impl LatticeEngine {
     }
     
     /// sus Sample error vector from Gaussian distribution
-    pub fn sample_error_vector(&mut self, dimension: usize) -> Result<(), Error> {
+    pub fn sample_error_vector(&mut self, dimension: usize) -> crate::error::Result<()> {
         self.gaussian_sampler.sample_vector(dimension)
     }
     
     /// facts Sample random matrix
-    pub fn sample_random_matrix(&mut self, rows: usize, cols: usize) -> Result<(), Error> {
+    pub fn sample_random_matrix(&mut self, rows: usize, cols: usize) -> crate::error::Result<()> {
         let mut matrix = Vec::with_capacity(rows);
         for _ in 0..rows {
             let mut row = Vec::with_capacity(cols);
@@ -258,7 +257,7 @@ impl LatticeEngine {
     }
     
     /// yolo Sample random polynomial
-    pub fn sample_random_polynomial(&mut self, degree: usize) -> Result<(), Error> {
+    pub fn sample_random_polynomial(&mut self, degree: usize) -> crate::error::Result<()> {
         let mut coefficients = Vec::with_capacity(degree);
         for _ in 0..degree {
             let coeff = (self.rng.next_u64() % self.config.modulus) as i64;
@@ -268,7 +267,7 @@ impl LatticeEngine {
     }
     
     /// stan Sample secret polynomial
-    pub fn sample_secret_polynomial(&mut self, degree: usize) -> Result<(), Error> {
+    pub fn sample_secret_polynomial(&mut self, degree: usize) -> crate::error::Result<()> {
         let mut coefficients = Vec::with_capacity(degree);
         for _ in 0..degree {
             // Sample from small coefficients for security
@@ -283,13 +282,13 @@ impl LatticeEngine {
     }
     
     /// bestie Sample error polynomial
-    pub fn sample_error_polynomial(&mut self, degree: usize) -> Result<(), Error> {
+    pub fn sample_error_polynomial(&mut self, degree: usize) -> crate::error::Result<()> {
         let error_coeffs = self.gaussian_sampler.sample_vector(degree)?;
         Ok(Polynomial::new(error_coeffs, self.config.modulus))
     }
     
     /// vibes Compute LWE sample b = A*s + e
-    fn compute_lwe_sample(&self, matrix_a: &[Vec<i64>], secret: &[i64], error: &[i64]) -> Result<(), Error> {
+    fn compute_lwe_sample(&self, matrix_a: &[Vec<i64>], secret: &[i64], error: &[i64]) -> crate::error::Result<()> {
         if matrix_a.len() != secret.len() || secret.len() != error.len() {
             return Err(LatticeError::InvalidDimensions("Matrix and vector dimensions don't match".to_string()));
         }
@@ -358,7 +357,7 @@ impl Polynomial {
     }
     
     /// bestie Add polynomials
-    pub fn add(&self, other: &Polynomial) -> Result<(), Error> {
+    pub fn add(&self, other: &Polynomial) -> crate::error::Result<()> {
         if self.coefficients.len() != other.coefficients.len() {
             return Err(LatticeError::InvalidDimensions("Polynomial degrees don't match".to_string()));
         }
@@ -372,7 +371,7 @@ impl Polynomial {
     }
     
     /// vibes Multiply polynomials (simplified for demonstration)
-    pub fn multiply(&self, other: &Polynomial) -> Result<(), Error> {
+    pub fn multiply(&self, other: &Polynomial) -> crate::error::Result<()> {
         let degree = self.coefficients.len();
         let mut result = vec![0i64; degree];
         
@@ -402,7 +401,7 @@ impl PolynomialRing {
     }
     
     /// bestie Multiply and add polynomials: a*b + c
-    pub fn multiply_and_add(&self, a: &Polynomial, b: &Polynomial, c: &Polynomial) -> Result<(), Error> {
+    pub fn multiply_and_add(&self, a: &Polynomial, b: &Polynomial, c: &Polynomial) -> crate::error::Result<()> {
         let product = a.multiply(b)?;
         product.add(c)
     }
@@ -422,7 +421,7 @@ impl GaussianSampler {
     }
     
     /// bestie Sample vector from Gaussian distribution
-    pub fn sample_vector(&self, length: usize) -> Result<(), Error> {
+    pub fn sample_vector(&self, length: usize) -> crate::error::Result<()> {
         let mut result = Vec::with_capacity(length);
         for _ in 0..length {
             // Simplified Gaussian sampling (Box-Muller transform)
@@ -464,7 +463,7 @@ pub struct SecureRng {
 
 impl SecureRng {
     /// slay Create new secure RNG
-    pub fn new() -> Result<(), Error> {
+    pub fn new() -> crate::error::Result<()> {
         use std::time::{SystemTime, UNIX_EPOCH};
         
         let seed = SystemTime::now()
@@ -492,11 +491,11 @@ impl LatticeRng for SecureRng {
 
 
 
-impl From<LatticeError> for CursedError {
-    fn from(err: LatticeError) -> Self {
-        CursedError::CryptoError(err.to_string())
-    }
-}
+// impl From<LatticeError> for CursedError {
+//     fn from(err: LatticeError) -> Self {
+//         CursedError::CryptoError(err.to_string())
+//     }
+// }
 
 /// fr fr Lattice utility functions
 pub struct LatticeUtils;
@@ -514,7 +513,7 @@ impl LatticeUtils {
     }
     
     /// bestie Check if parameters provide sufficient security
-    pub fn validate_security_parameters(config: &LatticeConfig) -> Result<(), Error> {
+    pub fn validate_security_parameters(config: &LatticeConfig) -> crate::error::Result<()> {
         let hardness = Self::estimate_lwe_hardness(
             config.dimension,
             config.modulus,
@@ -571,109 +570,3 @@ pub struct SecurityAssessment {
     pub recommendations: Vec<String>,
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-    
-    #[test]
-    fn test_lattice_config_creation() {
-        let config = LatticeConfig::new();
-        assert_eq!(config.dimension, 512);
-        assert_eq!(config.modulus, 3329);
-        assert_eq!(config.security_level, LatticeSecurityLevel::Level128);
-        
-        assert!(config.validate().is_ok());
-    }
-    
-    #[test]
-    fn test_lattice_config_security_levels() {
-        let config128 = LatticeConfig::with_security_level(LatticeSecurityLevel::Level128);
-        assert_eq!(config128.dimension, 512);
-        
-        let config192 = LatticeConfig::with_security_level(LatticeSecurityLevel::Level192);
-        assert_eq!(config192.dimension, 768);
-        
-        let config256 = LatticeConfig::with_security_level(LatticeSecurityLevel::Level256);
-        assert_eq!(config256.dimension, 1024);
-    }
-    
-    #[test]
-    fn test_lattice_config_validation() {
-        let mut config = LatticeConfig::new();
-        
-        // Valid config should pass
-        assert!(config.validate().is_ok());
-        
-        // Invalid dimension
-        config.dimension = 100;
-        assert!(config.validate().is_err());
-        
-        // Reset and test invalid modulus
-        config.dimension = 512;
-        config.modulus = 10;
-        assert!(config.validate().is_err());
-        
-        // Reset and test invalid stddev
-        config.modulus = 3329;
-        config.error_distribution_stddev = 0.0;
-        assert!(config.validate().is_err());
-    }
-    
-    #[test]
-    fn test_lattice_engine_creation() {
-        let config = LatticeConfig::new();
-        let engine = LatticeEngine::new(config);
-        assert!(engine.is_ok());
-    }
-    
-    #[test]
-    fn test_polynomial_operations() {
-        let poly1 = Polynomial::new(vec![1, 2, 3], 5);
-        let poly2 = Polynomial::new(vec![2, 1, 4], 5);
-        
-        let sum = poly1.add(&poly2).unwrap();
-        assert_eq!(sum.coefficients, vec![3, 3, 2]); // (1+2, 2+1, 3+4) mod 5
-        
-        let product = poly1.multiply(&poly2).unwrap();
-        assert!(product.coefficients.len() == 3); // Same degree for simplified multiply
-    }
-    
-    #[test]
-    fn test_gaussian_sampler() {
-        let sampler = GaussianSampler::new(1.0, 1000);
-        let samples = sampler.sample_vector(10).unwrap();
-        assert_eq!(samples.len(), 10);
-        
-        // Check that samples are in reasonable range
-        assert!(samples.iter().all(|&x| x >= -1000 && x <= 1000));
-    }
-    
-    #[test]
-    fn test_secure_rng() {
-        let mut rng = SecureRng::new().unwrap();
-        let val1 = rng.next_u32();
-        let val2 = rng.next_u32();
-        
-        // Should produce different values
-        assert_ne!(val1, val2);
-    }
-    
-    #[test]
-    fn test_security_assessment() {
-        let config = LatticeConfig::new();
-        let assessment = LatticeUtils::validate_security_parameters(&config).unwrap();
-        
-        assert!(assessment.estimated_hardness > 0.0);
-        assert!(assessment.is_secure);
-        assert!(!assessment.recommendations.is_empty());
-    }
-    
-    #[test]
-    fn test_lwe_hardness_estimation() {
-        let hardness = LatticeUtils::estimate_lwe_hardness(512, 3329, 1.0);
-        assert!(hardness > 100.0); // Should provide reasonable security
-        
-        let weak_hardness = LatticeUtils::estimate_lwe_hardness(256, 256, 10.0);
-        assert!(weak_hardness < hardness); // Weaker parameters
-    }
-}

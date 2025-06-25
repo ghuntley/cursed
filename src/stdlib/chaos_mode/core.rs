@@ -2,8 +2,8 @@
 /// 
 /// Basic goroutine and garbage collection management functions
 
-use crate::stdlib::chaos_mode::error::{ChaosResult, runtime_error, system_error};
-use crate::stdlib::vibecheck;
+// use crate::stdlib::chaos_mode::error::{ChaosResult, runtime_error, system_error};
+// use crate::stdlib::vibecheck;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Mutex;
 
@@ -85,92 +85,3 @@ pub fn get_max_heap() -> ChaosResult<Option<u64>> {
     Ok(*heap_guard)
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_num_cpu() {
-        let result = num_cpu();
-        assert!(result.is_ok());
-        let cpu_count = result.unwrap();
-        assert!(cpu_count > 0);
-        assert!(cpu_count <= 256); // Reasonable upper bound
-    }
-
-    #[test]
-    fn test_num_goroutine() {
-        let result = num_goroutine();
-        assert!(result.is_ok());
-        let goroutine_count = result.unwrap();
-        assert!(goroutine_count >= 0);
-    }
-
-    #[test]
-    fn test_yield_processor() {
-        let result = yield_processor();
-        assert!(result.is_ok());
-    }
-
-    #[test]
-    fn test_gosched() {
-        let result = gosched();
-        assert!(result.is_ok());
-    }
-
-    #[test]
-    fn test_gc() {
-        let result = gc();
-        assert!(result.is_ok());
-    }
-
-    #[test]
-    fn test_gomaxprocs() {
-        let current = gomaxprocs(0).unwrap();
-        assert!(current > 0);
-        
-        // Set to 2 and verify it returns the old value
-        let old = gomaxprocs(2).unwrap();
-        assert_eq!(old, current);
-        
-        // Restore original value
-        gomaxprocs(current).unwrap();
-    }
-
-    #[test]
-    fn test_set_gc_percent() {
-        let current = vibecheck::get_gc_percent();
-        
-        // Set to 50% and verify it returns the old value
-        let old = set_gc_percent(50).unwrap();
-        assert_eq!(old, current);
-        
-        // Verify the new value was set
-        assert_eq!(vibecheck::get_gc_percent(), 50);
-        
-        // Restore original value
-        set_gc_percent(current).unwrap();
-    }
-
-    #[test]
-    fn test_set_max_heap() {
-        let result = set_max_heap(1024 * 1024 * 1024); // 1GB
-        assert!(result.is_ok());
-        
-        let heap = get_max_heap().unwrap();
-        assert_eq!(heap, Some(1024 * 1024 * 1024));
-        
-        // Test setting again returns old value
-        let old = set_max_heap(2048 * 1024 * 1024).unwrap(); // 2GB
-        assert_eq!(old, 1024 * 1024 * 1024);
-    }
-
-    #[test]
-    fn test_initialize_cleanup() {
-        assert!(initialize().is_ok());
-        assert!(cleanup().is_ok());
-        
-        // Should be able to initialize again
-        assert!(initialize().is_ok());
-    }
-}

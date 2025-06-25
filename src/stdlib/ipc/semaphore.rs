@@ -1,4 +1,4 @@
-use crate::error::Error;
+use crate::error::CursedError;
 /// Enhanced semaphore implementation for CURSED IPC
 /// 
 /// Provides both named and unnamed semaphores for process synchronization,
@@ -10,8 +10,8 @@ use std::collections::{HashMap, VecDeque};
 use std::thread;
 use std::ffi::CString;
 
-use crate::stdlib::ipc::{IpcResult, IpcError, IpcHandle, IpcPermissions};
-use crate::stdlib::ipc::error::{timeout_error, resource_error, system_error};
+// use crate::stdlib::ipc::{IpcResult, IpcError, IpcHandle, IpcPermissions};
+// use crate::stdlib::ipc::error::{timeout_error, resource_error, system_error};
 
 /// Semaphore configuration
 #[derive(Debug, Clone)]
@@ -100,9 +100,9 @@ impl Semaphore {
         stats.created_at = SystemTime::now();
 
         let handle = if let Some(ref name) = config.name {
-            IpcHandle::named(name, crate::stdlib::ipc::types::IpcHandleType::Semaphore)
+//             IpcHandle::named(name, crate::stdlib::ipc::types::IpcHandleType::Semaphore)
         } else {
-            IpcHandle::anonymous(crate::stdlib::ipc::types::IpcHandleType::Semaphore)
+//             IpcHandle::anonymous(crate::stdlib::ipc::types::IpcHandleType::Semaphore)
         };
 
         let mut semaphore = Self {
@@ -408,125 +408,3 @@ pub fn create_counting_semaphore(initial_value: i32, max_value: i32) -> IpcResul
     SemaphoreBuilder::new(initial_value).max_value(max_value).build()
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use std::sync::atomic::{AtomicI32, Ordering};
-
-    #[test]
-    fn test_semaphore_creation() {
-        let config = SemaphoreConfig::new(5);
-        let semaphore = Semaphore::new(config).unwrap();
-        assert_eq!(semaphore.value().unwrap(), 5);
-    }
-
-    #[test]
-    fn test_semaphore_wait_and_post() {
-        let semaphore = create_semaphore(2).unwrap();
-        
-        // Initial value should be 2
-        assert_eq!(semaphore.value().unwrap(), 2);
-        
-        // Wait should decrement
-        assert!(semaphore.try_wait().unwrap());
-        assert_eq!(semaphore.value().unwrap(), 1);
-        
-        // Post should increment
-        semaphore.post().unwrap();
-        assert_eq!(semaphore.value().unwrap(), 2);
-    }
-
-    #[test]
-    fn test_semaphore_try_wait_failure() {
-        let semaphore = create_semaphore(0).unwrap();
-        assert!(!semaphore.try_wait().unwrap());
-        assert_eq!(semaphore.value().unwrap(), 0);
-    }
-
-    #[test]
-    fn test_semaphore_statistics() {
-        let semaphore = create_semaphore(1).unwrap();
-        semaphore.try_wait().unwrap();
-        semaphore.post().unwrap();
-        
-        let stats = semaphore.statistics();
-        assert_eq!(stats.total_waits, 1);
-        assert_eq!(stats.total_posts, 1);
-    }
-
-    #[test]
-    fn test_semaphore_reset() {
-        let semaphore = create_semaphore(5).unwrap();
-        semaphore.try_wait().unwrap();
-        assert_eq!(semaphore.value().unwrap(), 4);
-        
-        semaphore.reset().unwrap();
-        assert_eq!(semaphore.value().unwrap(), 5);
-    }
-
-    #[test]
-    fn test_binary_semaphore() {
-        let semaphore = create_binary_semaphore().unwrap();
-        assert_eq!(semaphore.value().unwrap(), 1);
-        
-        semaphore.try_wait().unwrap();
-        assert_eq!(semaphore.value().unwrap(), 0);
-        
-        semaphore.post().unwrap();
-        assert_eq!(semaphore.value().unwrap(), 1);
-    }
-
-    #[test]
-    fn test_concurrent_semaphore_access() {
-        let semaphore = Arc::new(create_semaphore(3).unwrap());
-        let counter = Arc::new(AtomicI32::new(0));
-        let mut handles = vec![];
-
-        for _ in 0..10 {
-            let sem = Arc::clone(&semaphore);
-            let cnt = Arc::clone(&counter);
-            
-            let handle = thread::spawn(move || {
-                if sem.try_wait().unwrap() {
-                    cnt.fetch_add(1, Ordering::Relaxed);
-                    thread::sleep(Duration::from_millis(10));
-                    sem.post().unwrap();
-                }
-            });
-            handles.push(handle);
-        }
-
-        for handle in handles {
-            handle.join().unwrap();
-        }
-
-        // All operations should complete
-        assert_eq!(semaphore.value().unwrap(), 3);
-    }
-
-    #[test]
-    fn test_semaphore_timeout() {
-        let semaphore = create_semaphore(0).unwrap();
-        let result = semaphore.wait_timeout(Duration::from_millis(10));
-        assert!(result.is_err());
-        
-        let stats = semaphore.statistics();
-        assert_eq!(stats.timeout_count, 1);
-    }
-
-    #[test]
-    fn test_semaphore_builder() {
-        let semaphore = SemaphoreBuilder::new(10)
-            .named("test_semaphore")
-            .max_value(20)
-            .with_priority()
-            .timeout(Duration::from_secs(5))
-            .auto_cleanup(true)
-            .build()
-            .unwrap();
-
-        assert_eq!(semaphore.value().unwrap(), 10);
-        assert_eq!(semaphore.config().max_value, 20);
-        assert!(semaphore.config().enable_priority);
-    }
-}

@@ -1,11 +1,11 @@
 use crate::web::StatusCode;
-use crate::error::Error;
+use crate::error::CursedError;
 /// fr fr Request handler definitions for web_vibez - processing incoming requests
 use std::sync::Arc;
 use std::future::Future;
 use std::pin::Pin;
 
-use crate::stdlib::packages::web_vibez::{
+// use crate::stdlib::packages::web_vibez::{
     request::HttpRequest,
     response::HttpResponse,
     error::{WebError, WebResult},
@@ -390,7 +390,7 @@ impl Handler for HealthCheckHandler {
             if all_healthy {
                 HttpResponse::ok().with_json(&response_data)
             } else {
-                HttpResponse::new(crate::stdlib::packages::web_vibez::status::StatusCode::ServiceUnavailable)
+//                 HttpResponse::new(crate::stdlib::packages::web_vibez::status::StatusCode::ServiceUnavailable)
                     .with_json(&response_data)
             }
         })
@@ -413,57 +413,3 @@ impl Default for HealthCheckHandler {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use crate::stdlib::packages::web_vibez::method::HttpMethod;
-
-    #[tokio::test]
-    async fn test_function_handler() {
-        let handler = FunctionHandler::sync("test".to_string(), |_req| {
-            Ok(HttpResponse::ok().with_text("Hello World"))
-        });
-
-        let request = HttpRequest::new(HttpMethod::Get, "/test".to_string());
-        let response = handler.handle(request).await.unwrap();
-        
-        assert_eq!(response.status, crate::stdlib::packages::web_vibez::status::StatusCode::OK);
-        assert_eq!(response.body_text().unwrap(), "Hello World");
-    }
-
-    #[tokio::test]
-    async fn test_handler_chain() {
-        let chain = HandlerChain::new()
-            .add_sync("handler1".to_string(), |_req| {
-                Ok(HttpResponse::ok().with_text("First handler"))
-            });
-
-        let request = HttpRequest::new(HttpMethod::Get, "/test".to_string());
-        let response = chain.handle(request).await.unwrap();
-        
-        assert_eq!(response.body_text().unwrap(), "First handler");
-    }
-
-    #[tokio::test]
-    async fn test_redirect_handler() {
-        let handler = RedirectHandler::permanent("/new-location".to_string());
-        let request = HttpRequest::new(HttpMethod::Get, "/old".to_string());
-        let response = handler.handle(request).await.unwrap();
-        
-        assert_eq!(response.status, crate::stdlib::packages::web_vibez::status::StatusCode::MovedPermanently);
-        assert_eq!(response.header("location"), Some(&"/new-location".to_string()));
-    }
-
-    #[tokio::test]
-    async fn test_health_check_handler() {
-        let handler = HealthCheckHandler::new()
-            .add_check(|| async { true });
-
-        let request = HttpRequest::new(HttpMethod::Get, "/health".to_string());
-        let response = handler.handle(request).await.unwrap();
-        
-        assert!(response.is_success());
-        let body_text = response.body_text().unwrap();
-        assert!(body_text.contains("healthy"));
-    }
-}

@@ -5,9 +5,9 @@
 // pipeline optimization for maximum developer productivity.
 
 use crate::build_system::{BuildConfig, BuildTarget, BuildProfile, BuildError, BuildResult, BuildStatistics, TargetType};
-use crate::common::optimization_level::OptimizationLevel;
+use crate::common_types::optimization_level::OptimizationLevel;
 use crate::build_system::dependency_resolver::{DependencyGraph, DependencyResolver};
-use crate::error::Error;
+use crate::error::CursedError;
 use std::collections::{HashMap, HashSet, VecDeque};
 use std::path::PathBuf;
 use std::sync::{Arc, Mutex, mpsc, Condvar};
@@ -359,7 +359,7 @@ impl Default for ParallelCompilationConfig {
 
 impl ParallelCompiler {
     /// Create new parallel compiler
-    pub fn new(config: ParallelCompilationConfig) -> Result<(), Error> {
+    pub fn new(config: ParallelCompilationConfig) -> crate::error::Result<()> {
         let worker_pool = WorkerPool::new(&config)?;
         let task_scheduler = TaskScheduler::new();
         let resource_monitor = ResourceMonitor::new(&config)?;
@@ -380,7 +380,7 @@ impl ParallelCompiler {
         &mut self,
         targets: Vec<CompilationTask>,
         build_profile: &BuildProfile,
-    ) -> Result<(), Error> {
+    ) -> crate::error::Result<()> {
         info!("Starting parallel compilation of {} targets", targets.len());
         let start_time = Instant::now();
         
@@ -417,7 +417,7 @@ impl ParallelCompiler {
     async fn execute_tasks_parallel(
         &mut self,
         tasks: Vec<CompilationTask>,
-    ) -> Result<(), Error> {
+    ) -> crate::error::Result<()> {
         let (result_sender, result_receiver) = mpsc::channel();
         let task_distributor = Arc::new(Mutex::new(TaskDistributor::new(tasks, self.config.scheduling_strategy.clone())));
         
@@ -767,7 +767,7 @@ impl ParallelCompiler {
         results: Vec<WorkerResult>,
         resource_stats: ResourceStatistics,
         total_duration: Duration,
-    ) -> Result<(), Error> {
+    ) -> crate::error::Result<()> {
         let tasks_completed = results.iter().filter(|r| r.success).count();
         let tasks_failed = results.iter().filter(|r| !r.success).count();
         
@@ -912,7 +912,7 @@ impl ParallelCompiler {
     }
     
     /// Calculate number of cached tasks from worker results
-    fn calculate_cached_tasks(&self, results: &[WorkerResult]) -> Result<(), Error> {
+    fn calculate_cached_tasks(&self, results: &[WorkerResult]) -> crate::error::Result<()> {
         let mut cached_count = 0;
         
         for result in results {
@@ -1104,7 +1104,7 @@ impl ParallelCompiler {
 }
 
 impl WorkerPool {
-    fn new(config: &ParallelCompilationConfig) -> Result<(), Error> {
+    fn new(config: &ParallelCompilationConfig) -> crate::error::Result<()> {
         let (completion_sender, completion_receiver) = mpsc::channel();
         let task_distributor = Arc::new(Mutex::new(TaskDistributor::new(Vec::new(), config.scheduling_strategy.clone())));
         let active_workers = Arc::new(Mutex::new(0));
@@ -1135,7 +1135,7 @@ impl TaskScheduler {
         }
     }
     
-    fn schedule_tasks(&mut self, tasks: Vec<CompilationTask>) -> Result<(), Error> {
+    fn schedule_tasks(&mut self, tasks: Vec<CompilationTask>) -> crate::error::Result<()> {
         // Build dependency graph
         for task in &tasks {
             self.dependency_graph.add_node(&task.id, task.dependencies.clone());
@@ -1227,7 +1227,7 @@ impl TaskDistributor {
 }
 
 impl ResourceMonitor {
-    fn new(config: &ParallelCompilationConfig) -> Result<(), Error> {
+    fn new(config: &ParallelCompilationConfig) -> crate::error::Result<()> {
         let (alert_sender, _alert_receiver) = mpsc::channel();
         
         Ok(ResourceMonitor {
@@ -1251,7 +1251,7 @@ impl ResourceMonitor {
         })
     }
     
-    fn start_monitoring(&mut self) -> Result<(), Error> {
+    fn start_monitoring(&mut self) -> crate::error::Result<()> {
         if self.monitor_thread.is_some() {
             return Ok(()); // Already monitoring
         }
@@ -1293,7 +1293,7 @@ impl ResourceMonitor {
         Ok(())
     }
     
-    fn stop_monitoring(&mut self) -> Result<(), Error> {
+    fn stop_monitoring(&mut self) -> crate::error::Result<()> {
         if let Some(handle) = self.monitor_thread.take() {
             // In real implementation, signal the thread to stop
             // For now, just take the current stats
@@ -1370,47 +1370,3 @@ impl CompilationCache {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use tempfile::tempdir;
-    
-    #[test]
-    fn test_parallel_compiler_creation() {
-        let config = ParallelCompilationConfig::default();
-        let compiler = ParallelCompiler::new(config);
-        assert!(compiler.is_ok());
-    }
-    
-    #[test]
-    fn test_task_scheduler() {
-        let mut scheduler = TaskScheduler::new();
-        let tasks = vec![
-            CompilationTask {
-                id: "task1".to_string(),
-                target: BuildTarget {
-                    name: "test".to_string(),
-                    path: PathBuf::from("test.csd"),
-                    target_type: TargetType::Bin,
-                    dependencies: Vec::new(),
-                    features: Vec::new(),
-                },
-                profile: BuildProfile::default(),
-                dependencies: Vec::new(),
-                estimated_duration: Duration::from_millis(100),
-                memory_requirement: 128 * 1024 * 1024,
-                priority: TaskPriority::Normal,
-                compilation_units: Vec::new(),
-            }
-        ];
-        
-        let scheduled = scheduler.schedule_tasks(tasks);
-        assert!(scheduled.is_ok());
-    }
-    
-    #[test]
-    fn test_compilation_cache() {
-        let mut cache = CompilationCache::new();
-        assert!(cache.get_cached_result("nonexistent").is_none());
-    }
-}

@@ -1,10 +1,10 @@
-use crate::error::Error;
+use crate::error::CursedError;
 /// Template rendering integration utilities
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 use std::fs;
 use std::time::SystemTime;
-use crate::stdlib::web_vibez::config::TemplateConfig;
+// use crate::stdlib::web_vibez::config::TemplateConfig;
 
 /// Template engine types
 #[derive(Debug, Clone, PartialEq)]
@@ -80,7 +80,7 @@ impl TemplateEngine {
     }
 
     /// Load template from filesystem
-    pub fn load_template(&mut self, name: &str) -> Result<(), Error> {
+    pub fn load_template(&mut self, name: &str) -> crate::error::Result<()> {
         let template_path = self.resolve_template_path(name)?;
         
         // Check if template exists
@@ -158,7 +158,7 @@ impl TemplateEngine {
     }
 
     /// Render template with context
-    pub fn render(&self, name: &str, context: &TemplateContext) -> Result<(), Error> {
+    pub fn render(&self, name: &str, context: &TemplateContext) -> crate::error::Result<()> {
         let cached_template = self.templates.get(name)
             .ok_or_else(|| TemplateError::TemplateNotFound(name.to_string()))?;
 
@@ -184,13 +184,13 @@ impl TemplateEngine {
     }
 
     /// Render template with legacy string context (for backward compatibility)
-    pub fn render_legacy(&self, name: &str, context: &HashMap<String, String>) -> Result<(), Error> {
+    pub fn render_legacy(&self, name: &str, context: &HashMap<String, String>) -> crate::error::Result<()> {
         let template_context = TemplateContext::from_string_map(context);
         self.render(name, &template_context)
     }
 
     /// Resolve template file path
-    fn resolve_template_path(&self, name: &str) -> Result<(), Error> {
+    fn resolve_template_path(&self, name: &str) -> crate::error::Result<()> {
         let mut path = self.config.template_dir.join(name);
         
         // Add extension if not present
@@ -202,7 +202,7 @@ impl TemplateEngine {
     }
 
     /// Parse template metadata (extends, includes, variables)
-    fn parse_template_metadata(&self, content: &str) -> Result<(), Error> {
+    fn parse_template_metadata(&self, content: &str) -> crate::error::Result<()> {
         let mut extends = None;
         let mut includes = Vec::new();
         let mut variables = Vec::new();
@@ -269,7 +269,7 @@ impl TemplateEngine {
     }
 
     /// Build inheritance chain for template
-    fn build_inheritance_chain(&mut self, child: &str, parent: &str) -> Result<(), Error> {
+    fn build_inheritance_chain(&mut self, child: &str, parent: &str) -> crate::error::Result<()> {
         let mut chain = vec![child.to_string()];
         let mut current = parent;
 
@@ -306,14 +306,14 @@ impl TemplateEngine {
     }
 
     /// Compile template content
-    fn compile_template(&self, template: &Template) -> Result<(), Error> {
+    fn compile_template(&self, template: &Template) -> crate::error::Result<()> {
         // For now, return content as-is
         // In a full implementation, this would compile to an optimized format
         Ok(template.content.clone())
     }
 
     /// Render template with inheritance
-    fn render_with_inheritance(&self, child: &str, parent: &str, context: &TemplateContext) -> Result<(), Error> {
+    fn render_with_inheritance(&self, child: &str, parent: &str, context: &TemplateContext) -> crate::error::Result<()> {
         let parent_template = self.templates.get(parent)
             .ok_or_else(|| TemplateError::TemplateNotFound(parent.to_string()))?;
 
@@ -328,7 +328,7 @@ impl TemplateEngine {
     }
 
     /// Process template includes
-    fn process_includes(&self, content: &str, context: &TemplateContext) -> Result<(), Error> {
+    fn process_includes(&self, content: &str, context: &TemplateContext) -> crate::error::Result<()> {
         let mut result = content.to_string();
         
         // Find and replace include directives
@@ -359,7 +359,7 @@ impl TemplateEngine {
     }
 
     /// Simple template rendering
-    fn render_simple(&self, content: &str, context: &TemplateContext) -> Result<(), Error> {
+    fn render_simple(&self, content: &str, context: &TemplateContext) -> crate::error::Result<()> {
         let mut rendered = content.to_string();
         
         // Replace variables in context
@@ -380,19 +380,19 @@ impl TemplateEngine {
     }
 
     /// Handlebars-style template rendering
-    fn render_handlebars(&self, content: &str, context: &TemplateContext) -> Result<(), Error> {
+    fn render_handlebars(&self, content: &str, context: &TemplateContext) -> crate::error::Result<()> {
         // Basic handlebars-style rendering
         self.render_simple(content, context)
     }
 
     /// Mustache-style template rendering
-    fn render_mustache(&self, content: &str, context: &TemplateContext) -> Result<(), Error> {
+    fn render_mustache(&self, content: &str, context: &TemplateContext) -> crate::error::Result<()> {
         // Basic mustache-style rendering
         self.render_simple(content, context)
     }
 
     /// Jinja2-style template rendering
-    fn render_jinja2(&self, content: &str, context: &TemplateContext) -> Result<(), Error> {
+    fn render_jinja2(&self, content: &str, context: &TemplateContext) -> crate::error::Result<()> {
         // Basic jinja2-style rendering with different delimiters
         let mut rendered = content.to_string();
         
@@ -430,17 +430,17 @@ impl TemplateRenderer {
     }
 
     /// Render template to string with rich context
-    pub fn render_to_string(&self, template: &str, context: &TemplateContext) -> Result<(), Error> {
+    pub fn render_to_string(&self, template: &str, context: &TemplateContext) -> crate::error::Result<()> {
         self.engine.render(template, context)
     }
 
     /// Render template to string with string context (backward compatibility)
-    pub fn render_to_string_legacy(&self, template: &str, context: &HashMap<String, String>) -> Result<(), Error> {
+    pub fn render_to_string_legacy(&self, template: &str, context: &HashMap<String, String>) -> crate::error::Result<()> {
         self.engine.render_legacy(template, context)
     }
 
     /// Load template into the engine
-    pub fn load_template(&mut self, name: &str) -> Result<(), Error> {
+    pub fn load_template(&mut self, name: &str) -> crate::error::Result<()> {
         self.engine.load_template(name)
     }
 
@@ -465,21 +465,21 @@ pub enum TemplateError {
     CacheError(String),
 }
 
-impl std::fmt::Display for TemplateError {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        match self {
-            TemplateError::TemplateNotFound(name) => write!(f, "Template not found: {}", name),
-            TemplateError::RenderError(msg) => write!(f, "Render error: {}", msg),
-            TemplateError::LoadError(msg) => write!(f, "Load error: {}", msg),
-            TemplateError::ParseError(msg) => write!(f, "Parse error: {}", msg),
-            TemplateError::InheritanceError(msg) => write!(f, "Inheritance error: {}", msg),
-            TemplateError::CacheError(msg) => write!(f, "Cache error: {}", msg),
-        }
-    }
-}
+// impl std::fmt::Display for TemplateError {
+//     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+//         match self {
+//             TemplateError::TemplateNotFound(name) => write!(f, "Template not found: {}", name),
+//             TemplateError::RenderError(msg) => write!(f, "Render error: {}", msg),
+//             TemplateError::LoadError(msg) => write!(f, "Load error: {}", msg),
+//             TemplateError::ParseError(msg) => write!(f, "Parse error: {}", msg),
+//             TemplateError::InheritanceError(msg) => write!(f, "Inheritance error: {}", msg),
+//             TemplateError::CacheError(msg) => write!(f, "Cache error: {}", msg),
+//         }
+//     }
+// }
 
-impl std::error::Error for TemplateError {}
-
+// impl std::error::CursedError for TemplateError {}
+// 
 // Implementation for TemplateContext
 impl TemplateContext {
     pub fn new() -> Self {

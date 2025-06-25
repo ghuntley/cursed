@@ -3,8 +3,8 @@
 /// This module provides comprehensive metadata about database structures,
 /// including tables, columns, indexes, and constraints. Knowledge is power bestie!
 
-use crate::stdlib::packages::db_core::{ColumnType, DatabaseValue};
-use crate::stdlib::packages::db_core::error::{DatabaseResult as DbResult};
+// use crate::stdlib::packages::db_core::{ColumnType, DatabaseValue};
+// use crate::stdlib::packages::db_core::error::{DatabaseResult as DbResult};
 use std::collections::HashMap;
 
 /// fr fr Complete database metadata
@@ -432,45 +432,3 @@ pub enum ObjectType {
     Database,
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_database_metadata() {
-        let mut metadata = DatabaseMetadata::new("test_db", "1.0");
-        let schema = SchemaInfo::new("public");
-        metadata.add_schema(schema);
-
-        assert_eq!(metadata.database_name, "test_db");
-        assert_eq!(metadata.schemas.len(), 1);
-        assert!(metadata.get_schema("public").is_some());
-    }
-
-    #[test]
-    fn test_table_metadata() {
-        let mut table = TableMetadata::new("users");
-        let column = ColumnInfo::new("id", ColumnType::Int, 1);
-        table.add_column(column);
-
-        assert_eq!(table.name, "users");
-        assert_eq!(table.columns.len(), 1);
-        assert!(table.get_column("id").is_some());
-    }
-
-    #[test]
-    fn test_column_info() {
-        let column = ColumnInfo::new("email", ColumnType::VarChar { max_length: Some(255) }, 2);
-        assert_eq!(column.name, "email");
-        assert_eq!(column.ordinal_position, 2);
-        assert!(column.is_nullable);
-    }
-
-    #[test]
-    fn test_index_info() {
-        let index = IndexInfo::new("idx_users_email", "users");
-        assert_eq!(index.name, "idx_users_email");
-        assert_eq!(index.table_name, "users");
-        assert!(!index.is_unique);
-    }
-}

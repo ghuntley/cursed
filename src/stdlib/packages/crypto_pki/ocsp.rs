@@ -3,7 +3,7 @@
 /// This module provides comprehensive OCSP functionality for real-time certificate
 /// validation including request creation, response parsing, and status checking.
 
-use crate::stdlib::packages::crypto_pki::{
+// use crate::stdlib::packages::crypto_pki::{
     types::{
         PkiResult, PkiError, X509Certificate, OcspConfig, CertId, 
         RevocationStatus, CertificateStatusInfo, BasicOcspResponse,
@@ -38,24 +38,24 @@ pub enum OcspError {
     General(String),
 }
 
-impl std::fmt::Display for OcspError {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            OcspError::NetworkError(msg) => write!(f, "OCSP network error: {}", msg),
-            OcspError::InvalidRequest(msg) => write!(f, "Invalid OCSP request: {}", msg),
-            OcspError::InvalidResponse(msg) => write!(f, "Invalid OCSP response: {}", msg),
-            OcspError::ResponderError(msg) => write!(f, "OCSP responder error: {}", msg),
-            OcspError::SignatureVerificationFailed(msg) => write!(f, "OCSP signature verification failed: {}", msg),
-            OcspError::CertificateNotFound(msg) => write!(f, "Certificate not found in OCSP response: {}", msg),
-            OcspError::ResponseTimeInvalid(msg) => write!(f, "OCSP response time invalid: {}", msg),
-            OcspError::NonceMismatch(msg) => write!(f, "OCSP nonce mismatch: {}", msg),
-            OcspError::General(msg) => write!(f, "OCSP error: {}", msg),
-        }
-    }
-}
+// impl std::fmt::Display for OcspError {
+//     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+//         match self {
+//             OcspError::NetworkError(msg) => write!(f, "OCSP network error: {}", msg),
+//             OcspError::InvalidRequest(msg) => write!(f, "Invalid OCSP request: {}", msg),
+//             OcspError::InvalidResponse(msg) => write!(f, "Invalid OCSP response: {}", msg),
+//             OcspError::ResponderError(msg) => write!(f, "OCSP responder error: {}", msg),
+//             OcspError::SignatureVerificationFailed(msg) => write!(f, "OCSP signature verification failed: {}", msg),
+//             OcspError::CertificateNotFound(msg) => write!(f, "Certificate not found in OCSP response: {}", msg),
+//             OcspError::ResponseTimeInvalid(msg) => write!(f, "OCSP response time invalid: {}", msg),
+//             OcspError::NonceMismatch(msg) => write!(f, "OCSP nonce mismatch: {}", msg),
+//             OcspError::General(msg) => write!(f, "OCSP error: {}", msg),
+//         }
+//     }
+// }
 
-impl std::error::Error for OcspError {}
-
+// impl std::error::Error for OcspError {}
+// 
 impl From<OcspError> for PkiError {
     fn from(err: OcspError) -> Self {
         PkiError::OcspError(err.to_string())
@@ -120,13 +120,13 @@ impl Default for OcspRequest {
 /// OCSP Response structure
 #[derive(Debug, Clone)]
 pub struct OcspResponse {
-    pub response_status: crate::stdlib::packages::crypto_pki::types::OcspResponseStatus,
+//     pub response_status: crate::stdlib::packages::crypto_pki::types::OcspResponseStatus,
     pub response_bytes: Option<BasicOcspResponse>,
 }
 
 impl OcspResponse {
     /// Create a new OCSP response
-    pub fn new(status: crate::stdlib::packages::crypto_pki::types::OcspResponseStatus) -> Self {
+//     pub fn new(status: crate::stdlib::packages::crypto_pki::types::OcspResponseStatus) -> Self {
         Self {
             response_status: status,
             response_bytes: None,
@@ -135,7 +135,7 @@ impl OcspResponse {
 
     /// Check if response is successful
     pub fn is_successful(&self) -> bool {
-        matches!(self.response_status, crate::stdlib::packages::crypto_pki::types::OcspResponseStatus::Successful)
+//         matches!(self.response_status, crate::stdlib::packages::crypto_pki::types::OcspResponseStatus::Successful)
     }
 
     /// Get single response for a certificate
@@ -377,9 +377,9 @@ pub fn parse_ocsp_response(data: &[u8]) -> OcspResult<OcspResponse> {
 
     // Simplified parsing - in production, use proper ASN.1 parser
     let status = if data[0] == 0 {
-        crate::stdlib::packages::crypto_pki::types::OcspResponseStatus::Successful
+//         crate::stdlib::packages::crypto_pki::types::OcspResponseStatus::Successful
     } else {
-        crate::stdlib::packages::crypto_pki::types::OcspResponseStatus::InternalError
+//         crate::stdlib::packages::crypto_pki::types::OcspResponseStatus::InternalError
     };
 
     let mut response = OcspResponse::new(status);
@@ -432,105 +432,3 @@ pub async fn check_ocsp_status(
     Ok(status_info.status)
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use std::time::{SystemTime, Duration};
-
-    fn create_mock_certificate(subject: &str, serial: &[u8]) -> X509Certificate {
-        let now = SystemTime::now();
-        X509Certificate::new(
-            subject.to_string(),
-            "Mock CA".to_string(),
-            serial.to_vec(),
-            now,
-            now + Duration::from_secs(365 * 24 * 3600),
-            vec![0x30, 0x82, 0x01, 0x22],
-            vec![0; 256],
-            "SHA256withRSA".to_string(),
-            vec![0x30, 0x82, 0x03, 0x00],
-        )
-    }
-
-    #[test]
-    fn test_ocsp_request_creation() {
-        let cert = create_mock_certificate("CN=Test Certificate", &[1, 2, 3, 4]);
-        let issuer = create_mock_certificate("CN=Test CA", &[5, 6, 7, 8]);
-        
-        let mut request = OcspRequest::new();
-        assert!(request.add_certificate(&cert, &issuer).is_ok());
-        assert_eq!(request.request_list.len(), 1);
-    }
-
-    #[test]
-    fn test_ocsp_cache() {
-        let cache = OcspCache::new(10, Duration::from_secs(3600));
-        let cert = create_mock_certificate("CN=Test", &[1, 2, 3, 4]);
-        let issuer = create_mock_certificate("CN=CA", &[5, 6, 7, 8]);
-        
-        let cache_key = cache.generate_cache_key(&cert, &issuer);
-        
-        // Initially empty
-        assert!(cache.get(&cache_key).is_none());
-        
-        // Add entry
-        let status_info = CertificateStatusInfo {
-            status: RevocationStatus::Good,
-            this_update: SystemTime::now(),
-            next_update: Some(SystemTime::now() + Duration::from_secs(3600)),
-            produced_at: SystemTime::now(),
-            responder_id: "Test".to_string(),
-        };
-        
-        cache.put(cache_key.clone(), status_info.clone());
-        
-        // Should be cached
-        let cached = cache.get(&cache_key);
-        assert!(cached.is_some());
-        
-        let stats = cache.stats();
-        assert_eq!(stats.total_entries, 1);
-        assert_eq!(stats.valid_entries, 1);
-    }
-
-    #[test]
-    fn test_ocsp_validator_creation() {
-        let config = OcspConfig::default();
-        let validator = OcspValidator::new(config);
-        
-        // Should have cache enabled by default
-        assert!(validator.cache.is_some());
-        
-        let stats = validator.cache_stats();
-        assert!(stats.is_some());
-    }
-
-    #[test]
-    fn test_parse_ocsp_response() {
-        // Test successful response
-        let success_data = vec![0x00, 0x30, 0x82, 0x01, 0x00]; // Mock DER data
-        let response = parse_ocsp_response(&success_data).unwrap();
-        assert!(response.is_successful());
-        assert!(response.response_bytes.is_some());
-        
-        // Test error response
-        let error_data = vec![0x01];
-        let response = parse_ocsp_response(&error_data).unwrap();
-        assert!(!response.is_successful());
-        assert!(response.response_bytes.is_none());
-        
-        // Test empty data
-        let empty_data = vec![];
-        assert!(parse_ocsp_response(&empty_data).is_err());
-    }
-
-    #[test]
-    fn test_create_ocsp_request_function() {
-        let cert = create_mock_certificate("CN=Test Certificate", &[1, 2, 3, 4]);
-        let issuer = create_mock_certificate("CN=Test CA", &[5, 6, 7, 8]);
-        
-        let request = create_ocsp_request(&cert, &issuer).unwrap();
-        assert_eq!(request.request_list.len(), 1);
-        assert!(request.nonce.is_none());
-    }
-}

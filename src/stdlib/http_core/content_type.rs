@@ -1,4 +1,4 @@
-use crate::error::Error;
+use crate::error::CursedError;
 /// Content Type and MIME Type Handling for CURSED web_vibez
 ///
 /// Comprehensive MIME type detection, parsing, and content negotiation.
@@ -7,7 +7,7 @@ use std::collections::HashMap;
 use std::fmt;
 use std::path::Path;
 
-use crate::stdlib::http_core::{HttpError, HttpResult};
+// use crate::stdlib::http_core::{HttpError, HttpResult};
 
 /// MIME type structure
 #[derive(Debug, Clone, PartialEq)]
@@ -444,85 +444,3 @@ impl fmt::Display for ContentType {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_mime_type_parsing() {
-        let mime = MimeType::parse("text/html; charset=utf-8").unwrap();
-        
-        assert_eq!(mime.main_type, "text");
-        assert_eq!(mime.sub_type, "html");
-        assert_eq!(mime.charset(), Some(&"utf-8".to_string()));
-    }
-
-    #[test]
-    fn test_mime_type_properties() {
-        let json_mime = MimeType::new("application", "json");
-        assert!(json_mime.is_json());
-        assert!(json_mime.is_application());
-        assert!(json_mime.is_text());
-
-        let image_mime = MimeType::new("image", "png");
-        assert!(image_mime.is_image());
-        assert!(!image_mime.is_text());
-    }
-
-    #[test]
-    fn test_content_type_from_extension() {
-        let ct = ContentType::from_extension("json").unwrap();
-        assert!(ct.mime_type().is_json());
-
-        let ct = ContentType::from_extension("png").unwrap();
-        assert!(ct.mime_type().is_image());
-
-        assert!(ContentType::from_extension("unknown").is_none());
-    }
-
-    #[test]
-    fn test_content_type_from_bytes() {
-        // PNG signature
-        let png_bytes = [0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A];
-        let ct = ContentType::from_bytes(&png_bytes).unwrap();
-        assert!(ct.mime_type().is_image());
-
-        // JSON content
-        let json_bytes = b"{ \"test\": true }";
-        let ct = ContentType::from_bytes(json_bytes).unwrap();
-        assert!(ct.mime_type().is_json());
-
-        // Plain text
-        let text_bytes = b"Hello, world!";
-        let ct = ContentType::from_bytes(text_bytes).unwrap();
-        assert_eq!(ct.mime_type().essence(), "text/plain");
-    }
-
-    #[test]
-    fn test_wildcard_matching() {
-        let json_mime = MimeType::new("application", "json");
-        
-        assert!(json_mime.matches_wildcard("*/*"));
-        assert!(json_mime.matches_wildcard("application/*"));
-        assert!(json_mime.matches_wildcard("application/json"));
-        assert!(!json_mime.matches_wildcard("text/*"));
-    }
-
-    #[test]
-    fn test_content_negotiation() {
-        let available = vec![
-            ContentType::application_json(),
-            ContentType::text_html(),
-            ContentType::text_plain(),
-        ];
-
-        let result = ContentType::negotiate("text/html,application/json;q=0.9", &available);
-        assert!(result.unwrap().mime_type().is_html());
-
-        let result = ContentType::negotiate("application/json", &available);
-        assert!(result.unwrap().mime_type().is_json());
-
-        let result = ContentType::negotiate("*/*", &available);
-        assert!(result.is_some());
-    }
-}

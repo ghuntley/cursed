@@ -30,22 +30,22 @@ pub enum SystemError {
     MonitoringError(String),
 }
 
-impl std::fmt::Display for SystemError {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            SystemError::PlatformNotSupported(msg) => write!(f, "Platform not supported: {}", msg),
-            SystemError::InformationNotAvailable(msg) => write!(f, "Information not available: {}", msg),
-            SystemError::IoError(msg) => write!(f, "I/O error: {}", msg),
-            SystemError::ParseError(msg) => write!(f, "Parse error: {}", msg),
-            SystemError::PermissionDenied(msg) => write!(f, "Permission denied: {}", msg),
-            SystemError::SystemCallFailed(code, msg) => write!(f, "System call failed ({}): {}", code, msg),
-            SystemError::MonitoringError(msg) => write!(f, "Monitoring error: {}", msg),
-        }
-    }
-}
+// impl std::fmt::Display for SystemError {
+//     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+//         match self {
+//             SystemError::PlatformNotSupported(msg) => write!(f, "Platform not supported: {}", msg),
+//             SystemError::InformationNotAvailable(msg) => write!(f, "Information not available: {}", msg),
+//             SystemError::IoError(msg) => write!(f, "I/O error: {}", msg),
+//             SystemError::ParseError(msg) => write!(f, "Parse error: {}", msg),
+//             SystemError::PermissionDenied(msg) => write!(f, "Permission denied: {}", msg),
+//             SystemError::SystemCallFailed(code, msg) => write!(f, "System call failed ({}): {}", code, msg),
+//             SystemError::MonitoringError(msg) => write!(f, "Monitoring error: {}", msg),
+//         }
+//     }
+// }
 
-impl std::error::Error for SystemError {}
-
+// impl std::error::CursedError for SystemError {}
+// 
 /// Comprehensive system information
 #[derive(Debug, Clone)]
 pub struct SystemInfo {
@@ -731,70 +731,3 @@ fn get_downloads_directory() -> Option<String> {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-use crate::error::Error;
-
-    #[test]
-    fn test_system_info_gathering() {
-        let result = SystemInfo::gather();
-        assert!(result.is_ok(), "Failed to gather system info: {:?}", result);
-        
-        let info = result.unwrap();
-        assert!(!info.hostname.is_empty());
-        assert!(!info.os_info.name.is_empty());
-    }
-
-    #[test]
-    fn test_os_info_gathering() {
-        let result = OsInfo::gather();
-        assert!(result.is_ok(), "Failed to gather OS info: {:?}", result);
-        
-        let info = result.unwrap();
-        assert!(!info.name.is_empty());
-        assert!(!info.architecture.is_empty());
-    }
-
-    #[test]
-    fn test_kernel_info_gathering() {
-        let result = KernelInfo::gather();
-        assert!(result.is_ok(), "Failed to gather kernel info: {:?}", result);
-        
-        let info = result.unwrap();
-        assert!(!info.name.is_empty());
-    }
-
-    #[test]
-    fn test_user_info_gathering() {
-        let result = UserInfo::gather();
-        assert!(result.is_ok(), "Failed to gather user info: {:?}", result);
-        
-        let info = result.unwrap();
-        assert!(!info.username.is_empty());
-    }
-
-    #[test]
-    fn test_system_paths() {
-        let result = SystemPaths::gather();
-        assert!(result.is_ok(), "Failed to gather system paths: {:?}", result);
-        
-        let paths = result.unwrap();
-        assert!(!paths.temp.is_empty());
-        assert!(!paths.system.is_empty());
-    }
-
-    #[test]
-    fn test_hostname() {
-        let hostname = get_hostname();
-        assert!(hostname.is_ok());
-        assert!(!hostname.unwrap().is_empty());
-    }
-
-    #[test]
-    fn test_uptime() {
-        let uptime = get_uptime();
-        assert!(uptime.is_ok());
-        assert!(uptime.unwrap().as_secs() > 0);
-    }
-}

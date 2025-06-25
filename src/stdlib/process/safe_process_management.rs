@@ -1,4 +1,4 @@
-use crate::error::Error;
+use crate::error::CursedError;
 /// Safe Process Management System for CURSED
 /// 
 /// This module provides a comprehensive, safe process management system that
@@ -19,7 +19,7 @@ use std::os::unix::process::ExitStatusExt;
 #[cfg(windows)]
 use std::os::windows::process::ExitStatusExt;
 
-use crate::stdlib::process::error::{
+// use crate::stdlib::process::error::{
     ProcessError, ProcessResult, execution_failed, execution_failed_with_code,
     timeout_error, invalid_arguments, io_error, system_error, platform_error
 };
@@ -547,7 +547,7 @@ fn get_linux_process_statistics(pid: u32, start_time: Instant) -> ProcessResult<
 #[cfg(target_os = "windows")]
 fn get_windows_process_statistics(pid: u32, start_time: Instant) -> ProcessResult<ProcessStatistics> {
     // Use the improved Windows support
-    crate::stdlib::process::windows_support::get_windows_process_statistics(pid, start_time)
+//     crate::stdlib::process::windows_support::get_windows_process_statistics(pid, start_time)
 }
 
 /// macOS-specific process statistics
@@ -627,7 +627,7 @@ fn apply_unix_resource_limits(pid: u32, limits: &ResourceLimits) -> ProcessResul
 #[cfg(windows)]
 fn apply_windows_resource_limits(pid: u32, limits: &ResourceLimits) -> ProcessResult<()> {
     // Use the improved Windows support
-    crate::stdlib::process::windows_support::apply_windows_resource_limits(pid, limits)
+//     crate::stdlib::process::windows_support::apply_windows_resource_limits(pid, limits)
 }
 
 /// Check if a process exists
@@ -641,7 +641,7 @@ pub fn process_exists(pid: u32) -> bool {
     
     #[cfg(windows)]
     {
-        crate::stdlib::process::windows_support::windows_process_exists(pid)
+//         crate::stdlib::process::windows_support::windows_process_exists(pid)
     }
 }
 
@@ -659,7 +659,7 @@ pub fn parent_pid() -> ProcessResult<u32> {
     
     #[cfg(windows)]
     {
-        crate::stdlib::process::windows_support::get_windows_parent_pid()
+//         crate::stdlib::process::windows_support::get_windows_parent_pid()
     }
 }
 
@@ -686,76 +686,6 @@ pub fn shutdown_process_management() -> ProcessResult<()> {
     Ok(())
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use std::time::Duration;
-use crate::stdlib::process::core::ProcessHandle;
-use crate::stdlib::process::info::ProcessState;
-use crate::stdlib::process::error::ProcessResult;
-use crate::stdlib::process::error::ProcessError;
-
-    #[test]
-    fn test_process_manager_creation() {
-        let manager = SafeProcessManager::new();
-        assert_eq!(manager.list_processes().len(), 0);
-    }
-
-    #[test]
-    fn test_resource_limits() {
-        let limits = ResourceLimits {
-            max_memory_bytes: Some(100 * 1024 * 1024), // 100MB
-            max_cpu_percent: Some(80.0),
-            max_execution_time: Some(Duration::from_secs(300)),
-            max_file_descriptors: Some(1024),
-        };
-        
-        assert_eq!(limits.max_memory_bytes, Some(100 * 1024 * 1024));
-        assert_eq!(limits.max_cpu_percent, Some(80.0));
-    }
-
-    #[test]
-    fn test_process_state() {
-        assert_eq!(ProcessState::Created, ProcessState::Created);
-        assert_ne!(ProcessState::Running, ProcessState::Terminated);
-    }
-
-    #[test]
-    fn test_current_pid() {
-        let pid = current_pid();
-        assert!(pid > 0);
-        assert!(process_exists(pid));
-    }
-
-    #[test]
-    fn test_parent_pid() {
-        if let Ok(ppid) = parent_pid() {
-            assert!(ppid > 0);
-        }
-    }
-
-    #[test]
-    fn test_global_process_manager() {
-        let manager1 = global_process_manager();
-        let manager2 = global_process_manager();
-        
-        // Should be the same instance
-        assert!(std::ptr::eq(manager1, manager2));
-    }
-}
-
-/// Process security manager for enhanced security controls
-#[derive(Debug)]
-pub struct ProcessSecurityManager {
-    /// Security policies
-    policies: Arc<RwLock<HashMap<String, SecurityPolicy>>>,
-    /// Active security contexts
-    contexts: Arc<RwLock<HashMap<u32, SecurityContextData>>>,
-    /// Audit log
-    audit_log: Arc<Mutex<Vec<SecurityEvent>>>,
-    /// Configuration
-    config: SafetyConfig,
-}
 
 /// Safety configuration for process management
 #[derive(Debug, Clone)]

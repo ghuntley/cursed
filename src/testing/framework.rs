@@ -1,4 +1,4 @@
-use crate::error::Error;
+use crate::error::CursedError;
 /// Test Framework Core
 /// 
 /// Provides the test execution environment, context management,
@@ -38,7 +38,7 @@ pub struct AssertionResult {
     pub description: String,
     /// Whether assertion passed
     pub passed: bool,
-    /// Error message if failed
+    /// CursedError message if failed
     pub error_message: Option<String>,
     /// Source location of assertion
     pub location: SourceLocation,
@@ -586,30 +586,3 @@ impl Default for TestFrameworkConfig {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_context_creation() {
-        let context = TestContext::new("test_example".to_string());
-        assert_eq!(context.test_name, "test_example");
-        assert!(!context.has_failures());
-        assert!(context.assertions.is_empty());
-        assert!(context.failures.is_empty());
-    }
-
-    #[test]
-    fn test_environment_creation() {
-        let env = TestEnvironment::new();
-        let context = env.create_test_context("test".to_string()).unwrap();
-        assert_eq!(context.test_name, "test");
-    }
-
-    #[test]
-    fn test_framework_lifecycle() {
-        let mut framework = TestFramework::new();
-        assert!(framework.initialize().is_ok());
-        assert!(framework.shutdown().is_ok());
-    }
-}

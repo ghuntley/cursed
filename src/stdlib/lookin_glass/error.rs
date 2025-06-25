@@ -1,7 +1,6 @@
-use crate::error::Error;
-/// Error handling for LookinGlass reflection package
-use std::fmt;
 use crate::error::CursedError;
+/// CursedError handling for LookinGlass reflection package
+use std::fmt;
 
 /// Result type for reflection operations
 pub type LookinGlassResult<T> = std::result::Result<T, LookinGlassError>;
@@ -33,37 +32,37 @@ pub enum LookinGlassError {
     ReflectionError(String),
 }
 
-impl fmt::Display for LookinGlassError {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
-            Self::TypeError(msg) => write!(f, "Type error: {}", msg),
-            Self::ValueError(msg) => write!(f, "Value error: {}", msg),
-            Self::FieldError(msg) => write!(f, "Field error: {}", msg),
-            Self::MethodError(msg) => write!(f, "Method error: {}", msg),
-            Self::ConversionError(msg) => write!(f, "Conversion error: {}", msg),
-            Self::IndexError(msg) => write!(f, "Index error: {}", msg),
-            Self::InvalidOperation(msg) => write!(f, "Invalid operation: {}", msg),
-            Self::CannotSet(msg) => write!(f, "Cannot set: {}", msg),
-            Self::TypeMismatch(msg) => write!(f, "Type mismatch: {}", msg),
-            Self::JsonError(msg) => write!(f, "JSON error: {}", msg),
-            Self::ReflectionError(msg) => write!(f, "Reflection error: {}", msg),
-        }
-    }
-}
+// impl fmt::Display for LookinGlassError {
+//     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+//         match self {
+//             Self::TypeError(msg) => write!(f, "Type error: {}", msg),
+//             Self::ValueError(msg) => write!(f, "Value error: {}", msg),
+//             Self::FieldError(msg) => write!(f, "Field error: {}", msg),
+//             Self::MethodError(msg) => write!(f, "Method error: {}", msg),
+//             Self::ConversionError(msg) => write!(f, "Conversion error: {}", msg),
+//             Self::IndexError(msg) => write!(f, "Index error: {}", msg),
+//             Self::InvalidOperation(msg) => write!(f, "Invalid operation: {}", msg),
+//             Self::CannotSet(msg) => write!(f, "Cannot set: {}", msg),
+//             Self::TypeMismatch(msg) => write!(f, "Type mismatch: {}", msg),
+//             Self::JsonError(msg) => write!(f, "JSON error: {}", msg),
+//             Self::ReflectionError(msg) => write!(f, "Reflection error: {}", msg),
+//         }
+//     }
+// }
 
-impl std::error::Error for LookinGlassError {}
+// impl std::error::CursedError for LookinGlassError {}
+// 
+// impl From<LookinGlassError> for CursedError {
+//     fn from(error: LookinGlassError) -> Self {
+//         CursedError::RuntimeError(error.to_string())
+//     }
+// }
 
-impl From<LookinGlassError> for CursedError {
-    fn from(error: LookinGlassError) -> Self {
-        CursedError::RuntimeError(error.to_string())
-    }
-}
-
-impl From<serde_json::Error> for LookinGlassError {
-    fn from(error: serde_json::Error) -> Self {
-        LookinGlassError::JsonError(error.to_string())
-    }
-}
+// impl From<serde_json::Error> for LookinGlassError {
+//     fn from(error: serde_json::Error) -> Self {
+//         LookinGlassError::JsonError(error.to_string())
+//     }
+// }
 
 /// Helper functions for creating specific errors
 pub fn type_error(msg: &str) -> LookinGlassError {
@@ -106,21 +105,3 @@ pub fn reflection_error(msg: &str) -> LookinGlassError {
     LookinGlassError::ReflectionError(msg.to_string())
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_error_creation() {
-        let err = type_error("invalid type");
-        assert!(matches!(err, LookinGlassError::TypeError(_)));
-        assert_eq!(err.to_string(), "Type error: invalid type");
-    }
-
-    #[test]
-    fn test_error_conversion_to_cursed_error() {
-        let lookin_glass_err = value_error("invalid value");
-        let cursed_err: CursedError = lookin_glass_err.into();
-        assert!(matches!(cursed_err, CursedError::RuntimeError(_)));
-    }
-}

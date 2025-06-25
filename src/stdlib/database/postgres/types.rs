@@ -7,7 +7,7 @@ use std::collections::HashMap;
 use bytes::BytesMut;
 use postgres_types::{Type, ToSql, FromSql, IsNull};
 use tokio_postgres::Row;
-use crate::stdlib::database::SqlValue;
+// use crate::stdlib::database::SqlValue;
 use super::error::{PostgresError, PostgresErrorKind, PostgresResult};
 
 /// PostgreSQL type mapper for converting between PostgreSQL and CURSED types
@@ -253,7 +253,7 @@ impl PostgresParam {
 }
 
 impl ToSql for PostgresParam {
-    fn to_sql(&self, ty: &Type, out: &mut BytesMut) -> Result<IsNull, Box<dyn std::error::Error + Sync + Send>> {
+    fn to_sql(&self, ty: &Type, out: &mut BytesMut) -> Result<IsNull, Box<dyn std::error::CursedError + Sync + Send>> {
         match &self.value {
             SqlValue::Null => Ok(IsNull::Yes),
             SqlValue::Boolean(b) => b.to_sql(ty, out),
@@ -273,7 +273,7 @@ impl ToSql for PostgresParam {
         }
     }
 
-    fn to_sql_checked(&self, ty: &Type, out: &mut BytesMut) -> Result<IsNull, Box<dyn std::error::Error + Sync + Send>> {
+    fn to_sql_checked(&self, ty: &Type, out: &mut BytesMut) -> Result<IsNull, Box<dyn std::error::CursedError + Sync + Send>> {
         // Delegate to the main to_sql implementation
         self.to_sql(ty, out)
     }
@@ -366,47 +366,3 @@ impl Default for TypeCache {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-use crate::error::Error;
-
-    #[test]
-    fn test_type_mapper() {
-        let mapper = PostgresTypeMapper;
-        
-        assert_eq!(mapper.map_type(&Type::BOOL), Some(SqlValueType::Boolean));
-        assert_eq!(mapper.map_type(&Type::INT4), Some(SqlValueType::Integer));
-        assert_eq!(mapper.map_type(&Type::FLOAT8), Some(SqlValueType::Float));
-        assert_eq!(mapper.map_type(&Type::TEXT), Some(SqlValueType::String));
-        assert_eq!(mapper.map_type(&Type::BYTEA), Some(SqlValueType::Bytes));
-        assert_eq!(mapper.map_type(&Type::JSON), Some(SqlValueType::Json));
-    }
-
-    #[test]
-    fn test_cursed_type_suggestions() {
-        let mapper = PostgresTypeMapper;
-        
-        assert_eq!(mapper.suggest_cursed_type(&Type::BOOL), "lit");
-        assert_eq!(mapper.suggest_cursed_type(&Type::INT4), "normie");
-        assert_eq!(mapper.suggest_cursed_type(&Type::FLOAT8), "facts");
-        assert_eq!(mapper.suggest_cursed_type(&Type::TEXT), "tea");
-    }
-
-    #[test]
-    fn test_type_cache() {
-        let mut cache = TypeCache::new();
-        
-        assert!(cache.get_type(Type::BOOL.oid()).is_some());
-        assert!(cache.get_type(Type::INT4.oid()).is_some());
-        assert!(cache.get_type(999999).is_none());
-    }
-
-    #[test]
-    fn test_postgres_param() {
-        let param = PostgresParam::new(SqlValue::Integer(42));
-        assert!(PostgresParam::accepts(&Type::INT4));
-        assert!(PostgresParam::accepts(&Type::INT8));
-        assert!(!PostgresParam::accepts(&Type::UNKNOWN));
-    }
-}

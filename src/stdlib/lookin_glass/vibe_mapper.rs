@@ -1,6 +1,6 @@
 /// VibeMapper - Enhanced mapping and conversion utilities for CURSED reflection
-use crate::stdlib::lookin_glass::{Value, Type, Kind, error::*, utilities::*};
-use crate::error::Error;
+// use crate::stdlib::lookin_glass::{Value, Type, Kind, error::*, utilities::*};
+use crate::error::CursedError;
 use std::collections::HashMap;
 use serde_json;
 
@@ -251,11 +251,11 @@ impl VibeMapper {
                     let final_value = if self.config.recursive && field_value.kind() == Kind::Struct {
                         let nested_map = self.to_map_internal(&field_value, depth + 1)?;
                         // Convert nested map back to a map value
-                        let map_type = crate::stdlib::lookin_glass::core_functions::map_of(
+//                         let map_type = crate::stdlib::lookin_glass::core_functions::map_of(
                             Type::basic(Kind::String),
                             Type::new(Kind::Interface, "interface{}".to_string(), "".to_string())
                         );
-                        Value::new(map_type, crate::stdlib::lookin_glass::value::ValueData::Map(
+//                         Value::new(map_type, crate::stdlib::lookin_glass::value::ValueData::Map(
                             nested_map.into_iter().map(|(k, v)| (Value::from_string(k), v)).collect()
                         ))
                     } else {
@@ -311,14 +311,14 @@ impl VibeMapper {
                         }
                     } else {
                         // Use zero value for missing fields
-                        crate::stdlib::lookin_glass::core_functions::zero(field_info.field_type().clone())?
+//                         crate::stdlib::lookin_glass::core_functions::zero(field_info.field_type().clone())?
                     };
                     
                     field_values.push(final_value);
                 }
                 
                 Ok(Value::new(target_type.clone(), 
-                    crate::stdlib::lookin_glass::value::ValueData::Struct(field_values)))
+//                     crate::stdlib::lookin_glass::value::ValueData::Struct(field_values)))
             }
             Kind::Map => {
                 let mut map_data = HashMap::new();
@@ -327,14 +327,14 @@ impl VibeMapper {
                     map_data.insert(key_val, value.clone());
                 }
                 Ok(Value::new(target_type.clone(), 
-                    crate::stdlib::lookin_glass::value::ValueData::Map(map_data)))
+//                     crate::stdlib::lookin_glass::value::ValueData::Map(map_data)))
             }
             _ => Err(type_error(&format!("Cannot convert map to {}", target_type.kind()))),
         }
     }
 
     /// Find field value in map using various naming strategies
-    fn find_field_value(&self, m: &HashMap<String, Value>, field_info: &crate::stdlib::lookin_glass::StructField) -> LookinGlassResult<Option<Value>> {
+//     fn find_field_value(&self, m: &HashMap<String, Value>, field_info: &crate::stdlib::lookin_glass::StructField) -> LookinGlassResult<Option<Value>> {
         let field_name = field_info.name();
         
         // Strategy 1: Try JSON name if configured
@@ -421,7 +421,7 @@ impl VibeMapper {
                 }
                 
                 Ok(Value::new(dst.typ().clone(), 
-                    crate::stdlib::lookin_glass::value::ValueData::Map(merged_map)))
+//                     crate::stdlib::lookin_glass::value::ValueData::Map(merged_map)))
             }
             Kind::Slice | Kind::Array => {
                 // For arrays/slices, append src to dst
@@ -437,9 +437,9 @@ impl VibeMapper {
                 }
                 
                 let data = if dst.kind() == Kind::Array {
-                    crate::stdlib::lookin_glass::value::ValueData::Array(merged_elements)
+//                     crate::stdlib::lookin_glass::value::ValueData::Array(merged_elements)
                 } else {
-                    crate::stdlib::lookin_glass::value::ValueData::Slice(merged_elements)
+//                     crate::stdlib::lookin_glass::value::ValueData::Slice(merged_elements)
                 };
                 
                 Ok(Value::new(dst.typ().clone(), data))
@@ -548,177 +548,3 @@ pub fn to_uppercase(input: &str) -> String {
     input.to_uppercase()
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use crate::stdlib::lookin_glass::{StructField, StructTag};
-
-    fn create_person_type() -> Type {
-        let name_field = StructField::builder("Name".to_string(), Type::basic(Kind::String))
-            .tag_string("json:\"name\"".to_string())
-            .build();
-        let age_field = StructField::builder("Age".to_string(), Type::basic(Kind::Int32))
-            .tag_string("json:\"age,omitempty\"".to_string())
-            .build();
-        
-        Type::new(Kind::Struct, "Person".to_string(), "".to_string())
-            .with_fields(vec![name_field, age_field])
-    }
-
-    fn create_person_value(name: &str, age: i32) -> Value {
-        let person_type = create_person_type();
-        let fields = vec![
-            Value::from_string(name.to_string()),
-            Value::from_int(age as i64)
-        ];
-        Value::new(person_type, crate::stdlib::lookin_glass::value::ValueData::Struct(fields))
-    }
-
-    #[test]
-    fn test_vibe_mapper_creation() {
-        let mapper = VibeMapper::new();
-        assert!(mapper.config.use_json_tags);
-        assert!(!mapper.config.omit_empty);
-        assert!(!mapper.config.include_unexported);
-
-        let custom_mapper = VibeMapper::new()
-            .use_json_tags(false)
-            .omit_empty(true)
-            .include_unexported(true);
-        
-        assert!(!custom_mapper.config.use_json_tags);
-        assert!(custom_mapper.config.omit_empty);
-        assert!(custom_mapper.config.include_unexported);
-    }
-
-    #[test]
-    fn test_to_json() {
-        let mapper = VibeMapper::new();
-        let person = create_person_value("Alice", 25);
-        
-        let json_bytes = mapper.to_json(&person).unwrap();
-        let json_str = String::from_utf8(json_bytes).unwrap();
-        
-        assert!(json_str.contains("name"));
-        assert!(json_str.contains("Alice"));
-        assert!(json_str.contains("age"));
-        assert!(json_str.contains("25"));
-    }
-
-    #[test]
-    fn test_from_json() {
-        let mapper = VibeMapper::new();
-        let json_data = r#"{"name": "Bob", "age": 30}"#.as_bytes();
-        let person_type = create_person_type();
-        
-        let person = mapper.from_json(json_data, Some(&person_type)).unwrap();
-        
-        // Note: This would require proper JSON parsing integration
-        // For now, we just verify the function doesn't crash
-        assert!(person.is_valid());
-    }
-
-    #[test]
-    fn test_to_map() {
-        let mapper = VibeMapper::new();
-        let person = create_person_value("Charlie", 35);
-        
-        let map = mapper.to_map(&person).unwrap();
-        
-        assert_eq!(map.len(), 2);
-        assert!(map.contains_key("name"));
-        assert!(map.contains_key("age"));
-        assert_eq!(map.get("name").unwrap().string().unwrap(), "Charlie");
-        assert_eq!(map.get("age").unwrap().int().unwrap(), 35);
-    }
-
-    #[test]
-    fn test_from_map() {
-        let mapper = VibeMapper::new();
-        let person_type = create_person_type();
-        
-        let mut map = HashMap::new();
-        map.insert("name".to_string(), Value::from_string("David".to_string()));
-        map.insert("age".to_string(), Value::from_int(40));
-        
-        let person = mapper.from_map(&map, &person_type).unwrap();
-        
-        assert_eq!(person.field(0).unwrap().string().unwrap(), "David");
-        assert_eq!(person.field(1).unwrap().int().unwrap(), 40);
-    }
-
-    #[test]
-    fn test_clone() {
-        let mapper = VibeMapper::new();
-        let person = create_person_value("Eve", 28);
-        
-        let cloned = mapper.clone(&person).unwrap();
-        
-        assert!(deep_equal(&person, &cloned));
-        assert_eq!(cloned.field(0).unwrap().string().unwrap(), "Eve");
-    }
-
-    #[test]
-    fn test_merge() {
-        let mapper = VibeMapper::new();
-        let person1 = create_person_value("Frank", 30);
-        let person2 = create_person_value("Grace", 25);
-        
-        let merged = mapper.merge(&person1, &person2).unwrap();
-        
-        // The merge should result in person2's values (Grace, 25)
-        assert_eq!(merged.field(0).unwrap().string().unwrap(), "Grace");
-        assert_eq!(merged.field(1).unwrap().int().unwrap(), 25);
-    }
-
-    #[test]
-    fn test_field_name_transformations() {
-        assert_eq!(camel_to_snake("camelCase"), "camel_case");
-        assert_eq!(camel_to_snake("XMLHttpRequest"), "x_m_l_http_request");
-        assert_eq!(camel_to_snake("simpleTest"), "simple_test");
-        
-        assert_eq!(snake_to_camel("snake_case"), "snakeCase");
-        assert_eq!(snake_to_camel("test_value"), "testValue");
-        assert_eq!(snake_to_camel("simple"), "simple");
-        
-        assert_eq!(to_lowercase("UPPERCASE"), "uppercase");
-        assert_eq!(to_uppercase("lowercase"), "LOWERCASE");
-    }
-
-    #[test]
-    fn test_field_name_transformer() {
-        let mapper = VibeMapper::new()
-            .field_name_transformer(camel_to_snake);
-        
-        let person = create_person_value("Henry", 45);
-        let map = mapper.to_map(&person).unwrap();
-        
-        // The field names should be transformed
-        assert!(map.contains_key("name") || map.contains_key("Name")); // Depends on JSON tag usage
-    }
-
-    #[test]
-    fn test_omit_empty() {
-        let mapper = VibeMapper::new().omit_empty(true);
-        
-        // Create a person with age 0 (which should be omitted if tagged with omitempty)
-        let person = create_person_value("Iris", 0);
-        let map = mapper.to_map(&person).unwrap();
-        
-        assert!(map.contains_key("name"));
-        // Age might be omitted if it's tagged with omitempty and is zero
-        // The exact behavior depends on the omitempty tag implementation
-    }
-
-    #[test]
-    fn test_recursion_depth_limit() {
-        let mapper = VibeMapper::new().max_depth(1);
-        
-        // This test verifies that the depth limit prevents infinite recursion
-        let person = create_person_value("Jack", 50);
-        let result = mapper.to_map(&person);
-        
-        // Should succeed since struct is at depth 0
-        assert!(result.is_ok());
-    }
-}

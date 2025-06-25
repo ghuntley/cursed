@@ -5,14 +5,12 @@
 /// - Configuration and security
 /// - Monitoring and performance tracking
 /// - Transaction support
-/// - Error handling and recovery
+/// - CursedError handling and recovery
 
 use std::time::Duration;
 use tracing::{debug, error, info, instrument};
 
 use crate::error::CursedError;
-use super::error::DatabaseError;
-use crate::error::Error;
 
 pub mod config;
 pub mod connection;
@@ -73,7 +71,7 @@ pub struct RedisClient {
 impl RedisClient {
     /// Create new Redis client
     #[instrument]
-    pub fn new(config: RedisConfig) -> Result<(), Error> {
+    pub fn new(config: RedisConfig) -> crate::error::Result<()> {
         info!("Creating Redis client with config");
         
         let monitor = RedisMonitor::new()?;
@@ -87,7 +85,7 @@ impl RedisClient {
     
     /// Connect to Redis server
     #[instrument(skip(self))]
-    pub async fn connect(&mut self) -> Result<(), Error> {
+    pub async fn connect(&mut self) -> crate::error::Result<()> {
         info!("Connecting to Redis server");
         
         let pool = RedisConnectionPool::new(&self.config).await?;
@@ -98,7 +96,7 @@ impl RedisClient {
     
     /// Execute Redis command with timing
     #[instrument(skip(self, operation))]
-    pub async fn execute_with_timing<T>(&self, command: &str, operation: impl FnOnce() -> Result<(), Error>) -> Result<(), Error> {
+    pub async fn execute_with_timing<T>(&self, command: &str, operation: impl FnOnce() -> crate::error::Result<()>) -> crate::error::Result<()> {
         let start = std::time::Instant::now();
         
         debug!(command = command, "Executing Redis command");
@@ -123,7 +121,7 @@ impl RedisClient {
     
     /// Get value from Redis
     #[instrument(skip(self))]
-    pub async fn get(&self, key: &str) -> Result<(), Error> {
+    pub async fn get(&self, key: &str) -> crate::error::Result<()> {
         self.execute_with_timing("GET", || {
             // Placeholder implementation
             debug!(key = key, "Getting value from Redis");
@@ -133,7 +131,7 @@ impl RedisClient {
     
     /// Set value in Redis
     #[instrument(skip(self, value))]
-    pub async fn set(&self, key: &str, value: &str) -> Result<(), Error> {
+    pub async fn set(&self, key: &str, value: &str) -> crate::error::Result<()> {
         self.execute_with_timing("SET", || {
             debug!(key = key, "Setting value in Redis");
             Ok(())
@@ -142,7 +140,7 @@ impl RedisClient {
     
     /// Delete key from Redis
     #[instrument(skip(self))]
-    pub async fn del(&self, key: &str) -> Result<(), Error> {
+    pub async fn del(&self, key: &str) -> crate::error::Result<()> {
         self.execute_with_timing("DEL", || {
             debug!(key = key, "Deleting key from Redis");
             Ok(true)
@@ -151,7 +149,7 @@ impl RedisClient {
     
     /// Check if key exists
     #[instrument(skip(self))]
-    pub async fn exists(&self, key: &str) -> Result<(), Error> {
+    pub async fn exists(&self, key: &str) -> crate::error::Result<()> {
         self.execute_with_timing("EXISTS", || {
             debug!(key = key, "Checking if key exists in Redis");
             Ok(false)
@@ -160,7 +158,7 @@ impl RedisClient {
     
     /// Set expiration on key
     #[instrument(skip(self))]
-    pub async fn expire(&self, key: &str, seconds: u64) -> Result<(), Error> {
+    pub async fn expire(&self, key: &str, seconds: u64) -> crate::error::Result<()> {
         self.execute_with_timing("EXPIRE", || {
             debug!(key = key, seconds = seconds, "Setting expiration on key");
             Ok(true)
@@ -169,7 +167,7 @@ impl RedisClient {
     
     /// Get time to live for key
     #[instrument(skip(self))]
-    pub async fn ttl(&self, key: &str) -> Result<(), Error> {
+    pub async fn ttl(&self, key: &str) -> crate::error::Result<()> {
         self.execute_with_timing("TTL", || {
             debug!(key = key, "Getting TTL for key");
             Ok(-1) // Key doesn't exist or has no expiration
@@ -183,7 +181,7 @@ impl RedisClient {
     
     /// Close the Redis connection
     #[instrument(skip(self))]
-    pub async fn close(&mut self) -> Result<(), Error> {
+    pub async fn close(&mut self) -> crate::error::Result<()> {
         info!("Closing Redis connection");
         
         if let Some(pool) = self.pool.take() {

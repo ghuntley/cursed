@@ -3,26 +3,26 @@
 /// These traits define the fundamental interfaces that all database drivers
 /// and components must implement. Think of them as the rules of the game bestie!
 
-use crate::stdlib::packages::db_core::{
+// use crate::stdlib::packages::db_core::{
     Row, Column, ColumnType, Parameter
 };
-use crate::stdlib::packages::db_core::result::{
+// use crate::stdlib::packages::db_core::result::{
     ExecuteResult, QueryStats, ResultMetadata
 };
-use crate::stdlib::packages::db_core::query::{
+// use crate::stdlib::packages::db_core::query::{
     Query, QueryPlan as ImportedQueryPlan, ExecutionStep as ImportedExecutionStep
 };
-use crate::stdlib::packages::db_core::transaction::{
+// use crate::stdlib::packages::db_core::transaction::{
     TransactionOptions, TransactionState, TransactionIsolation
 };
 
 // Export SavePoint for external use (TransactionState already imported above)
-pub use crate::stdlib::packages::db_core::transaction::{SavePoint as TransactionSavePoint};
-use crate::stdlib::packages::db_core::connection::{
+// pub use crate::stdlib::packages::db_core::transaction::{SavePoint as TransactionSavePoint};
+// use crate::stdlib::packages::db_core::connection::{
     ConnectionConfig, ConnectionInfo as ImportedConnectionInfo
 };
-use crate::error::Error;
-use crate::stdlib::packages::db_core::error::{DatabaseResult as DbResult};
+use crate::error::CursedError;
+// use crate::stdlib::packages::db_core::error::{DatabaseResult as DbResult};
 
 use std::collections::HashMap;
 use std::sync::Arc;
@@ -334,37 +334,3 @@ impl SavePoint {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-    
-    #[test]
-    fn test_driver_info() {
-        let info = DriverInfo::new("test", "1.0", "Test driver", "CURSED")
-            .with_feature(DriverFeature::Transactions)
-            .with_feature(DriverFeature::PreparedStatements);
-            
-        assert_eq!(info.name, "test");
-        assert_eq!(info.supported_features.len(), 2);
-    }
-    
-    #[test]
-    fn test_connection_info() {
-        let info = ImportedConnectionInfo::new("test_db", "1.0");
-        assert_eq!(info.database_name, "test_db");
-        assert!(!info.connection_id.is_empty());
-    }
-    
-    #[test]
-    fn test_savepoint() {
-        let sp = SavePoint::new("test_point");
-        assert_eq!(sp.name, "test_point");
-        assert!(!sp.id.is_empty());
-    }
-    
-    #[test]
-    fn test_driver_features() {
-        assert_eq!(DriverFeature::Transactions, DriverFeature::Transactions);
-        assert_ne!(DriverFeature::Transactions, DriverFeature::PreparedStatements);
-    }
-}

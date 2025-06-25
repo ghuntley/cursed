@@ -3,7 +3,7 @@
 // Generates comprehensive XML documentation compatible with various tools and IDEs.
 
 use crate::docs::generator::{DocGeneratorConfig, ExtractedDocumentation, DocumentationItem, SearchIndexEntry};
-use crate::error::Error;
+use crate::error::CursedError;
 use std::fs;
 use std::path::Path;
 
@@ -20,7 +20,7 @@ impl XmlGenerator {
     }
 
     /// Generate comprehensive XML documentation
-    pub fn generate_documentation(&self, docs: &[ExtractedDocumentation], output_dir: &Path) -> Result<(), Error> {
+    pub fn generate_documentation(&self, docs: &[ExtractedDocumentation], output_dir: &Path) -> crate::error::Result<()> {
         let xml_path = output_dir.join("documentation.xml");
         
         let mut content = String::new();
@@ -79,12 +79,12 @@ impl XmlGenerator {
         
         content.push_str("</documentation>\n");
         
-        fs::write(xml_path, content).map_err(Error::Io)?;
+        fs::write(xml_path, content).map_err(CursedError::Io)?;
         Ok(())
     }
 
     /// Generate XML for a single module
-    fn generate_module_xml(&self, doc: &ExtractedDocumentation) -> Result<(), Error> {
+    fn generate_module_xml(&self, doc: &ExtractedDocumentation) -> crate::error::Result<()> {
         let mut content = String::new();
         
         content.push_str(&format!("    <module name=\"{}\">\n", self.xml_escape(&doc.module_name)));
@@ -128,7 +128,7 @@ impl XmlGenerator {
     }
 
     /// Generate XML for a single documentation item
-    fn generate_item_xml(&self, item: &DocumentationItem) -> Result<(), Error> {
+    fn generate_item_xml(&self, item: &DocumentationItem) -> crate::error::Result<()> {
         let mut content = String::new();
         
         let kind_str = match item.kind {
@@ -234,7 +234,7 @@ impl XmlGenerator {
     }
 
     /// Generate search index XML
-    pub fn generate_search_index(&self, search_index: &[SearchIndexEntry], output_dir: &Path) -> Result<(), Error> {
+    pub fn generate_search_index(&self, search_index: &[SearchIndexEntry], output_dir: &Path) -> crate::error::Result<()> {
         let search_path = output_dir.join("search_index.xml");
         
         let mut content = String::new();
@@ -270,12 +270,12 @@ impl XmlGenerator {
         
         content.push_str("</search_index>\n");
         
-        fs::write(search_path, content).map_err(Error::Io)?;
+        fs::write(search_path, content).map_err(CursedError::Io)?;
         Ok(())
     }
 
     /// Generate XML schema definition
-    pub fn generate_schema(&self, output_dir: &Path) -> Result<(), Error> {
+    pub fn generate_schema(&self, output_dir: &Path) -> crate::error::Result<()> {
         let schema_path = output_dir.join("documentation.xsd");
         
         let schema = r#"<?xml version="1.0" encoding="UTF-8"?>
@@ -450,7 +450,7 @@ impl XmlGenerator {
 
 </xs:schema>"#;
         
-        fs::write(schema_path, schema).map_err(Error::Io)?;
+        fs::write(schema_path, schema).map_err(CursedError::Io)?;
         Ok(())
     }
 

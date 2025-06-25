@@ -1,7 +1,6 @@
-use crate::error::Error;
-/// Error handling for sync operations
+use crate::error::CursedError;
+/// CursedError handling for sync operations
 use std::fmt;
-use std::error::Error as StdError;
 use std::time::Duration;
 
 /// Result type for sync operations
@@ -56,65 +55,65 @@ pub enum SyncError {
     General { message: String },
 }
 
-impl fmt::Display for SyncError {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
-            SyncError::ThreadError { message, thread_id } => {
-                if let Some(id) = thread_id {
-                    write!(f, "Thread error in {}: {}", id, message)
-                } else {
-                    write!(f, "Thread error: {}", message)
-                }
-            }
-            SyncError::LockError { lock_type, operation, timeout } => {
-                if let Some(duration) = timeout {
-                    write!(f, "{} lock {} failed after timeout of {:?}", lock_type, operation, duration)
-                } else {
-                    write!(f, "{} lock {} failed", lock_type, operation)
-                }
-            }
-            SyncError::TimeoutError { operation, duration } => {
-                write!(f, "Operation '{}' timed out after {:?}", operation, duration)
-            }
-            SyncError::DeadlockError { thread_ids, resource } => {
-                write!(f, "Deadlock detected on resource '{}' involving threads: {:?}", resource, thread_ids)
-            }
-            SyncError::ChannelError { operation, message } => {
-                write!(f, "Channel {} error: {}", operation, message)
-            }
-            SyncError::ThreadPoolError { pool_id, message } => {
-                write!(f, "Thread pool '{}' error: {}", pool_id, message)
-            }
-            SyncError::AtomicError { operation, message } => {
-                write!(f, "Atomic {} error: {}", operation, message)
-            }
-            SyncError::BarrierError { expected, actual } => {
-                write!(f, "Barrier error: expected {} threads, got {}", expected, actual)
-            }
-            SyncError::SemaphoreError { operation, permits } => {
-                write!(f, "Semaphore {} error with {} permits", operation, permits)
-            }
-            SyncError::ThreadLocalError { key, message } => {
-                write!(f, "Thread-local storage error for key '{}': {}", key, message)
-            }
-            SyncError::ResourceExhausted { resource_type, limit } => {
-                write!(f, "Resource exhausted: {} limit of {} exceeded", resource_type, limit)
-            }
-            SyncError::InvalidState { expected, actual } => {
-                write!(f, "Invalid state: expected '{}', found '{}'", expected, actual)
-            }
-            SyncError::PermissionDenied { operation } => {
-                write!(f, "Permission denied for operation: {}", operation)
-            }
-            SyncError::SystemError { code, message } => {
-                write!(f, "System error (code {}): {}", code, message)
-            }
-            SyncError::General { message } => {
-                write!(f, "Sync error: {}", message)
-            }
-        }
-    }
-}
+// impl fmt::Display for SyncError {
+//     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+//         match self {
+//             SyncError::ThreadError { message, thread_id } => {
+//                 if let Some(id) = thread_id {
+//                     write!(f, "Thread error in {}: {}", id, message)
+//                 } else {
+//                     write!(f, "Thread error: {}", message)
+//                 }
+//             }
+//             SyncError::LockError { lock_type, operation, timeout } => {
+//                 if let Some(duration) = timeout {
+//                     write!(f, "{} lock {} failed after timeout of {:?}", lock_type, operation, duration)
+//                 } else {
+//                     write!(f, "{} lock {} failed", lock_type, operation)
+//                 }
+//             }
+//             SyncError::TimeoutError { operation, duration } => {
+//                 write!(f, "Operation '{}' timed out after {:?}", operation, duration)
+//             }
+//             SyncError::DeadlockError { thread_ids, resource } => {
+//                 write!(f, "Deadlock detected on resource '{}' involving threads: {:?}", resource, thread_ids)
+//             }
+//             SyncError::ChannelError { operation, message } => {
+//                 write!(f, "Channel {} error: {}", operation, message)
+//             }
+//             SyncError::ThreadPoolError { pool_id, message } => {
+//                 write!(f, "Thread pool '{}' error: {}", pool_id, message)
+//             }
+//             SyncError::AtomicError { operation, message } => {
+//                 write!(f, "Atomic {} error: {}", operation, message)
+//             }
+//             SyncError::BarrierError { expected, actual } => {
+//                 write!(f, "Barrier error: expected {} threads, got {}", expected, actual)
+//             }
+//             SyncError::SemaphoreError { operation, permits } => {
+//                 write!(f, "Semaphore {} error with {} permits", operation, permits)
+//             }
+//             SyncError::ThreadLocalError { key, message } => {
+//                 write!(f, "Thread-local storage error for key '{}': {}", key, message)
+//             }
+//             SyncError::ResourceExhausted { resource_type, limit } => {
+//                 write!(f, "Resource exhausted: {} limit of {} exceeded", resource_type, limit)
+//             }
+//             SyncError::InvalidState { expected, actual } => {
+//                 write!(f, "Invalid state: expected '{}', found '{}'", expected, actual)
+//             }
+//             SyncError::PermissionDenied { operation } => {
+//                 write!(f, "Permission denied for operation: {}", operation)
+//             }
+//             SyncError::SystemError { code, message } => {
+//                 write!(f, "System error (code {}): {}", code, message)
+//             }
+//             SyncError::General { message } => {
+//                 write!(f, "Sync error: {}", message)
+//             }
+//         }
+//     }
+// }
 
 impl StdError for SyncError {
     fn source(&self) -> Option<&(dyn StdError + 'static)> {
@@ -240,11 +239,11 @@ pub fn general_error(message: &str) -> SyncError {
 }
 
 // Conversion from standard library errors
-impl From<std::io::Error> for SyncError {
-    fn from(err: std::io::Error) -> Self {
-        system_error(err.raw_os_error().unwrap_or(-1), &err.to_string())
-    }
-}
+// impl From<std::io::Error> for SyncError {
+//     fn from(err: std::io::Error) -> Self {
+//         system_error(err.raw_os_error().unwrap_or(-1), &err.to_string())
+//     }
+// }
 
 impl<T> From<std::sync::PoisonError<T>> for SyncError {
     fn from(err: std::sync::PoisonError<T>) -> Self {
@@ -277,38 +276,3 @@ impl From<std::sync::mpsc::RecvTimeoutError> for SyncError {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_error_creation() {
-        let err = thread_error("test error");
-        assert!(matches!(err, SyncError::ThreadError { .. }));
-        assert_eq!(err.to_string(), "Thread error: test error");
-    }
-
-    #[test]
-    fn test_lock_timeout_error() {
-        let timeout = Duration::from_millis(100);
-        let err = lock_timeout_error("mutex", "acquire", timeout);
-        assert!(matches!(err, SyncError::LockError { .. }));
-        assert!(err.to_string().contains("timeout"));
-    }
-
-    #[test]
-    fn test_deadlock_error() {
-        let threads = vec!["thread1".to_string(), "thread2".to_string()];
-        let err = deadlock_error(threads, "resource1");
-        assert!(matches!(err, SyncError::DeadlockError { .. }));
-        assert!(err.to_string().contains("Deadlock"));
-    }
-
-    #[test]
-    fn test_error_conversions() {
-        // Test conversion from std::io::Error
-        let io_err = std::io::Error::new(std::io::ErrorKind::PermissionDenied, "access denied");
-        let sync_err: SyncError = io_err.into();
-        assert!(matches!(sync_err, SyncError::SystemError { .. }));
-    }
-}

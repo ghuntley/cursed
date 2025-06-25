@@ -1,5 +1,5 @@
 use crate::web::StatusCode;
-use crate::error::Error;
+use crate::error::CursedError;
 /// CURSED Web Framework - web_vibez
 /// 
 /// A high-performance HTTP framework with flexible routing and middleware

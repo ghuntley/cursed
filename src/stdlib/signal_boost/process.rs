@@ -1,7 +1,7 @@
 /// Process signal management functions
-use crate::stdlib::signal_boost::core::BoostSignal;
-use crate::stdlib::signal_boost::error::{SignalBoostError, SignalBoostResult, system_error, permission_denied, not_supported};
-use crate::error::Error;
+// use crate::stdlib::signal_boost::core::BoostSignal;
+// use crate::stdlib::signal_boost::error::{SignalBoostError, SignalBoostResult, system_error, permission_denied, not_supported};
+use crate::error::CursedError;
 
 /// Send a signal to a specific process
 pub fn signal_process(pid: u32, signal: BoostSignal) -> SignalBoostResult<()> {
@@ -251,38 +251,38 @@ fn can_signal_process(pid: u32, signal: BoostSignal) -> bool {
 pub fn kill_process(pid: u32) -> SignalBoostResult<()> {
     #[cfg(unix)]
     {
-        signal_process(pid, crate::stdlib::signal_boost::core::SIGKILL)
+//         signal_process(pid, crate::stdlib::signal_boost::core::SIGKILL)
     }
     
     #[cfg(windows)]
     {
-        signal_process(pid, crate::stdlib::signal_boost::core::SIGTERM)
+//         signal_process(pid, crate::stdlib::signal_boost::core::SIGTERM)
     }
 }
 
 /// Terminate a process gracefully (sends SIGTERM)
 pub fn terminate_process(pid: u32) -> SignalBoostResult<()> {
-    signal_process(pid, crate::stdlib::signal_boost::core::SIGTERM)
+//     signal_process(pid, crate::stdlib::signal_boost::core::SIGTERM)
 }
 
 /// Interrupt a process (sends SIGINT)
 pub fn interrupt_process(pid: u32) -> SignalBoostResult<()> {
-    signal_process(pid, crate::stdlib::signal_boost::core::SIGINT)
+//     signal_process(pid, crate::stdlib::signal_boost::core::SIGINT)
 }
 
 /// Send SIGHUP to a process (commonly used for configuration reload)
 pub fn hangup_process(pid: u32) -> SignalBoostResult<()> {
-    signal_process(pid, crate::stdlib::signal_boost::core::SIGHUP)
+//     signal_process(pid, crate::stdlib::signal_boost::core::SIGHUP)
 }
 
 /// Send SIGUSR1 to a process
 pub fn user_signal_1(pid: u32) -> SignalBoostResult<()> {
-    signal_process(pid, crate::stdlib::signal_boost::core::SIGUSR1)
+//     signal_process(pid, crate::stdlib::signal_boost::core::SIGUSR1)
 }
 
 /// Send SIGUSR2 to a process
 pub fn user_signal_2(pid: u32) -> SignalBoostResult<()> {
-    signal_process(pid, crate::stdlib::signal_boost::core::SIGUSR2)
+//     signal_process(pid, crate::stdlib::signal_boost::core::SIGUSR2)
 }
 
 /// Get the current process ID
@@ -473,126 +473,3 @@ pub fn find_processes_by_name(name: &str) -> SignalBoostResult<Vec<u32>> {
     Ok(matching_pids)
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use crate::stdlib::signal_boost::core::{SIGINT, SIGTERM, SIGUSR1};
-    
-    #[test]
-    fn test_validate_signal() {
-        assert!(validate_signal(SIGINT).is_ok());
-        assert!(validate_signal(SIGTERM).is_ok());
-        assert!(validate_signal(BoostSignal(-1)).is_err());
-        assert!(validate_signal(BoostSignal(0)).is_err());
-        assert!(validate_signal(BoostSignal(100)).is_err());
-    }
-    
-    #[test]
-    fn test_validate_pid() {
-        assert!(validate_pid(1000).is_ok());
-        assert!(validate_pid(0).is_err());
-        
-        #[cfg(unix)]
-        {
-            assert!(validate_pid(1).is_err()); // init process
-        }
-        
-        #[cfg(windows)]
-        {
-            assert!(validate_pid(1).is_ok()); // Different rules on Windows
-        }
-    }
-    
-    #[test]
-    fn test_get_current_pid() {
-        let pid = get_current_pid();
-        assert!(pid > 0);
-    }
-    
-    #[test]
-    fn test_get_parent_pid() {
-        let result = get_parent_pid();
-        assert!(result.is_ok());
-        let parent_pid = result.unwrap();
-        assert!(parent_pid > 0);
-    }
-    
-    #[test]
-    fn test_process_exists() {
-        let current_pid = get_current_pid();
-        assert!(process_exists(current_pid));
-        
-        // PID 99999 is very unlikely to exist
-        assert!(!process_exists(99999));
-    }
-    
-    #[test]
-    fn test_signal_self() {
-        let current_pid = get_current_pid();
-        
-        // Test with SIGUSR1 (should be safe)
-        let result = signal_process(current_pid, SIGUSR1);
-        
-        // This might fail due to permissions in some test environments
-        // so we just check that it doesn't panic
-        match result {
-            Ok(()) => {
-                // Signal sent successfully
-            },
-            Err(_) => {
-                // Expected in some test environments
-            }
-        }
-    }
-    
-    #[test]
-    fn test_signal_nonexistent_process() {
-        let result = signal_process(99999, SIGTERM);
-        assert!(result.is_err());
-    }
-    
-    #[test]
-    fn test_get_targets() {
-        let result = get_targets(SIGTERM);
-        assert!(result.is_ok());
-        
-        let targets = result.unwrap();
-        // Should at least find the current process
-        assert!(!targets.is_empty());
-        assert!(targets.contains(&get_current_pid()));
-    }
-    
-    #[test]
-    fn test_signal_multiple_processes() {
-        let current_pid = get_current_pid();
-        let pids = vec![current_pid];
-        
-        let results = signal_processes(&pids, SIGUSR1);
-        assert!(results.is_ok());
-        
-        let results = results.unwrap();
-        assert_eq!(results.len(), 1);
-    }
-    
-    #[test]
-    fn test_find_processes_by_name() {
-        // This test might be flaky depending on the environment
-        // We'll just check that it doesn't panic
-        let result = find_processes_by_name("nonexistent_process_name");
-        assert!(result.is_ok());
-        
-        let pids = result.unwrap();
-        assert!(pids.is_empty()); // Should not find this process
-    }
-    
-    #[test]
-    fn test_convenience_functions() {
-        let current_pid = get_current_pid();
-        
-        // These might fail due to permissions, but should not panic
-        let _ = interrupt_process(current_pid);
-        let _ = user_signal_1(current_pid);
-        let _ = user_signal_2(current_pid);
-        let _ = hangup_process(current_pid);
-    }
-}

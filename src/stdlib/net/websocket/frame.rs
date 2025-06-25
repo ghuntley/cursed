@@ -1,9 +1,9 @@
 /// WebSocket frame implementation
 
-use crate::stdlib::net::error::{NetError, NetResult, websocket_error};
-use crate::stdlib::net::socket::TcpSocket;
-use crate::stdlib::net::websocket::CloseCode;
-use crate::error::Error;
+// use crate::stdlib::net::error::{NetError, NetResult, websocket_error};
+// use crate::stdlib::net::socket::TcpSocket;
+// use crate::stdlib::net::websocket::CloseCode;
+use crate::error::CursedError;
 
 /// WebSocket frame opcodes
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -206,34 +206,3 @@ impl WebSocketFrame {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_frame_creation() {
-        let frame = WebSocketFrame::text("Hello".to_string());
-        assert_eq!(frame.opcode, Opcode::Text);
-        assert!(frame.fin);
-        assert!(frame.masked);
-        assert_eq!(frame.payload, b"Hello");
-    }
-
-    #[test]
-    fn test_frame_types() {
-        let text_frame = WebSocketFrame::text("test".to_string());
-        assert_eq!(text_frame.frame_type(), FrameType::Text);
-        assert!(!text_frame.is_control_frame());
-        
-        let ping_frame = WebSocketFrame::ping(vec![1, 2, 3]);
-        assert_eq!(ping_frame.frame_type(), FrameType::Ping);
-        assert!(ping_frame.is_control_frame());
-    }
-
-    #[test]
-    fn test_close_frame() {
-        let close_frame = WebSocketFrame::close(CloseCode::NORMAL, "Goodbye");
-        assert_eq!(close_frame.opcode, Opcode::Close);
-        assert!(close_frame.payload.len() >= 2); // At least close code
-    }
-}

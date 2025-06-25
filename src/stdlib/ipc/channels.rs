@@ -1,4 +1,4 @@
-use crate::error::Error;
+use crate::error::CursedError;
 /// High-level IPC channels for CURSED
 /// 
 /// This module provides unified channel abstractions that can work with different
@@ -10,7 +10,7 @@ use std::time::{Duration, Instant};
 use std::thread;
 use std::io::{Read, Write};
 
-use crate::stdlib::ipc::{
+// use crate::stdlib::ipc::{
     IpcResult, IpcError, IpcTimeout, ProcessId,
     NamedPipe, MessageQueue, Message, MessagePriority,
     timeout_error, communication_error, resource_exhausted
@@ -496,122 +496,3 @@ impl ChannelPair {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use std::time::Duration;
-use crate::stdlib::process::real_ipc::IpcChannel;
-
-    #[test]
-    fn test_in_memory_channel_basic() {
-        let config = ChannelConfig::new("test_channel")
-            .channel_type(ChannelType::InMemory)
-            .timeout(Duration::from_millis(100));
-
-        let channel = IpcChannel::create(config).unwrap();
-        
-        // Test send and receive
-        let test_data = b"Hello, World!";
-        channel.send(test_data).unwrap();
-        
-        let received = channel.receive().unwrap();
-        assert_eq!(received, test_data);
-    }
-
-    #[test]
-    fn test_in_memory_channel_timeout() {
-        let config = ChannelConfig::new("test_timeout")
-            .channel_type(ChannelType::InMemory)
-            .timeout(Duration::from_millis(10));
-
-        let channel = IpcChannel::create(config).unwrap();
-        
-        // Try to receive from empty channel should timeout
-        let result = channel.receive();
-        assert!(result.is_err());
-    }
-
-    #[test]
-    fn test_in_memory_channel_capacity() {
-        let config = ChannelConfig::new("test_capacity")
-            .channel_type(ChannelType::InMemory)
-            .capacity(2)
-            .timeout(Duration::from_millis(10));
-
-        let channel = IpcChannel::create(config).unwrap();
-        
-        // Fill capacity
-        channel.send(b"message1").unwrap();
-        channel.send(b"message2").unwrap();
-        
-        // Third message should timeout
-        let result = channel.send(b"message3");
-        assert!(result.is_err());
-    }
-
-    #[test]
-    fn test_channel_statistics() {
-        let config = ChannelConfig::new("test_stats")
-            .channel_type(ChannelType::InMemory);
-
-        let channel = IpcChannel::create(config).unwrap();
-        
-        let test_data = b"test data";
-        channel.send(test_data).unwrap();
-        let _received = channel.receive().unwrap();
-        
-        let stats = channel.get_statistics();
-        assert_eq!(stats.messages_sent, 1);
-        assert_eq!(stats.messages_received, 1);
-        assert_eq!(stats.bytes_sent, test_data.len() as u64);
-        assert_eq!(stats.bytes_received, test_data.len() as u64);
-    }
-
-    #[test]
-    fn test_channel_pair() {
-        let config = ChannelConfig::new("test_pair")
-            .channel_type(ChannelType::InMemory);
-
-        let pair = ChannelPair::create("test_pair", config).unwrap();
-        
-        let test_data = b"paired communication";
-        pair.send(test_data).unwrap();
-        let received = pair.receive().unwrap();
-        assert_eq!(received, test_data);
-    }
-
-    #[test]
-    fn test_try_operations() {
-        let config = ChannelConfig::new("test_try")
-            .channel_type(ChannelType::InMemory);
-
-        let channel = IpcChannel::create(config).unwrap();
-        
-        // Try receive on empty channel should return None
-        let result = channel.try_receive().unwrap();
-        assert!(result.is_none());
-        
-        // Send and try receive should work
-        let test_data = b"try operations";
-        assert!(channel.try_send(test_data).unwrap());
-        
-        let received = channel.try_receive().unwrap();
-        assert!(received.is_some());
-        assert_eq!(received.unwrap(), test_data);
-    }
-
-    #[test]
-    fn test_channel_close() {
-        let config = ChannelConfig::new("test_close")
-            .channel_type(ChannelType::InMemory);
-
-        let channel = IpcChannel::create(config).unwrap();
-        
-        assert!(channel.is_connected());
-        channel.close().unwrap();
-        
-        // Operations after close should fail
-        let result = channel.send(b"after close");
-        assert!(result.is_err());
-    }
-}

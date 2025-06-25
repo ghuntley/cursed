@@ -14,8 +14,7 @@
 // - **Performance Testing**: Documentation generation performance validation
 
 use crate::documentation::interactive::{CodeExecutionRequest, CodeExecutionResult, InteractiveDocumentation};
-use crate::error::Error as CursedError;
-use crate::error::Error;
+use crate::error::CursedError;
 use serde::{Deserialize, Serialize};
 use std::collections::{HashMap, HashSet};
 use std::path::{Path, PathBuf};
@@ -262,7 +261,7 @@ pub struct ExampleTestResult {
     /// Test duration
     pub duration: Duration,
     
-    /// Error message if failed
+    /// CursedError message if failed
     pub error_message: Option<String>,
     
     /// Retry count
@@ -309,7 +308,7 @@ pub struct LinkCheckResult {
     /// HTTP status code (if applicable)
     pub status_code: Option<u16>,
     
-    /// Error message if invalid
+    /// CursedError message if invalid
     pub error_message: Option<String>,
     
     /// Response time
@@ -486,7 +485,7 @@ struct TestSession {
 impl DocumentationTester {
     /// Create a new documentation tester
     #[instrument(skip(config))]
-    pub fn new(config: DocumentationTestConfig) -> Result<(), Error> {
+    pub fn new(config: DocumentationTestConfig) -> crate::error::Result<()> {
         info!("Creating documentation tester");
         
         // Create test output directory
@@ -521,7 +520,7 @@ impl DocumentationTester {
     
     /// Run comprehensive documentation tests
     #[instrument(skip(self, docs_dir))]
-    pub async fn run_tests(&mut self, docs_dir: &Path) -> Result<(), Error> {
+    pub async fn run_tests(&mut self, docs_dir: &Path) -> crate::error::Result<()> {
         let test_run_id = Uuid::new_v4().to_string();
         let started_at = SystemTime::now();
         
@@ -619,7 +618,7 @@ impl DocumentationTester {
     
     /// Run example tests
     #[instrument(skip(self, docs_dir))]
-    async fn run_example_tests(&mut self, docs_dir: &Path) -> Result<(), Error> {
+    async fn run_example_tests(&mut self, docs_dir: &Path) -> crate::error::Result<()> {
         info!("Running example tests");
         
         let examples = self.extract_examples_from_docs(docs_dir).await?;
@@ -660,7 +659,7 @@ impl DocumentationTester {
         example: ExtractedExample,
         interactive_docs: &mut InteractiveDocumentation,
         config: &DocumentationTestConfig,
-    ) -> Result<(), Error> {
+    ) -> crate::error::Result<()> {
         let start_time = std::time::Instant::now();
         
         // Check if example should be skipped
@@ -756,7 +755,7 @@ impl DocumentationTester {
     
     /// Validate links in documentation
     #[instrument(skip(self, docs_dir))]
-    async fn validate_links(&self, docs_dir: &Path) -> Result<(), Error> {
+    async fn validate_links(&self, docs_dir: &Path) -> crate::error::Result<()> {
         let start_time = std::time::Instant::now();
         info!("Validating links in documentation");
         
@@ -874,7 +873,7 @@ impl DocumentationTester {
     
     /// Generate coverage report
     #[instrument(skip(self, docs_dir))]
-    async fn generate_coverage_report(&self, docs_dir: &Path) -> Result<(), Error> {
+    async fn generate_coverage_report(&self, docs_dir: &Path) -> crate::error::Result<()> {
         info!("Generating documentation coverage report");
         
         // This would analyze the source code and documentation to determine coverage
@@ -898,7 +897,7 @@ impl DocumentationTester {
     }
     
     /// Extract examples from documentation
-    async fn extract_examples_from_docs(&self, docs_dir: &Path) -> Result<(), Error> {
+    async fn extract_examples_from_docs(&self, docs_dir: &Path) -> crate::error::Result<()> {
         let mut examples = Vec::new();
         
         // Walk through documentation files
@@ -919,7 +918,7 @@ impl DocumentationTester {
     }
     
     /// Extract examples from a single file
-    async fn extract_examples_from_file(&self, file_path: &Path) -> Result<(), Error> {
+    async fn extract_examples_from_file(&self, file_path: &Path) -> crate::error::Result<()> {
         let content = std::fs::read_to_string(file_path)
             .map_err(|e| CursedError::system_error(&format!("Failed to read file: {}", e)))?;
         
@@ -975,7 +974,7 @@ impl DocumentationTester {
     }
     
     /// Extract links from documentation
-    async fn extract_links_from_docs(&self, docs_dir: &Path) -> Result<(), Error> {
+    async fn extract_links_from_docs(&self, docs_dir: &Path) -> crate::error::Result<()> {
         let mut links = Vec::new();
         
         // Walk through documentation files
@@ -996,7 +995,7 @@ impl DocumentationTester {
     }
     
     /// Extract links from a single file
-    async fn extract_links_from_file(&self, file_path: &Path) -> Result<(), Error> {
+    async fn extract_links_from_file(&self, file_path: &Path) -> crate::error::Result<()> {
         let content = std::fs::read_to_string(file_path)
             .map_err(|e| CursedError::system_error(&format!("Failed to read file: {}", e)))?;
         
@@ -1123,7 +1122,7 @@ impl DocumentationTester {
     }
     
     /// Generate test reports
-    async fn generate_test_reports(&self, result: &DocumentationTestResult) -> Result<(), Error> {
+    async fn generate_test_reports(&self, result: &DocumentationTestResult) -> crate::error::Result<()> {
         // Generate JSON report
         let json_report = serde_json::to_string_pretty(result)
             .map_err(|e| CursedError::system_error(&format!("Failed to serialize JSON report: {}", e)))?;
@@ -1146,7 +1145,7 @@ impl DocumentationTester {
     }
     
     /// Generate HTML test report
-    fn generate_html_report(&self, result: &DocumentationTestResult) -> Result<(), Error> {
+    fn generate_html_report(&self, result: &DocumentationTestResult) -> crate::error::Result<()> {
         let html = format!(
             r#"<!DOCTYPE html>
 <html>
@@ -1184,7 +1183,7 @@ impl DocumentationTester {
             <th>Line</th>
             <th>Status</th>
             <th>Duration</th>
-            <th>Error</th>
+            <th>CursedError</th>
         </tr>
         {}
     </table>
@@ -1196,7 +1195,7 @@ impl DocumentationTester {
             <th>File</th>
             <th>Line</th>
             <th>Status</th>
-            <th>Error</th>
+            <th>CursedError</th>
         </tr>
         {}
     </table>
@@ -1238,7 +1237,7 @@ impl DocumentationTester {
     }
     
     /// Create a test session
-    async fn create_test_session(&mut self, test_run_id: &str) -> Result<(), Error> {
+    async fn create_test_session(&mut self, test_run_id: &str) -> crate::error::Result<()> {
         let test_dir = self.config.test_output_dir.join(test_run_id);
         
         if !test_dir.exists() {

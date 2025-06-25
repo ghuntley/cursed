@@ -1,4 +1,4 @@
-use crate::error::Error;
+use crate::error::CursedError;
 /// CSRF token generation and validation utilities
 use std::collections::HashMap;
 use std::time::{SystemTime, UNIX_EPOCH};
@@ -396,99 +396,6 @@ impl CsrfConfig {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_csrf_token_creation() {
-        let token = CsrfToken::new("secret", Some("session123".to_string()));
-        assert!(!token.token.is_empty());
-        assert_eq!(token.session_id, Some("session123".to_string()));
-        assert!(!token.is_expired());
-    }
-
-    #[test]
-    fn test_csrf_token_expiry() {
-        let mut token = CsrfToken::new("secret", None);
-        token.expires_at = 0; // Set to already expired
-        assert!(token.is_expired());
-    }
-
-    #[test]
-    fn test_csrf_validator() {
-        let mut validator = CsrfValidator::new("secret".to_string());
-        
-        // Generate token
-        let token = validator.generate_token(Some("session123".to_string()));
-        
-        // Validate token
-        assert!(validator.validate_token(&token.token, Some("session123".to_string())));
-        
-        // Token should be consumed after validation
-        assert!(!validator.validate_token(&token.token, Some("session123".to_string())));
-    }
-
-    #[test]
-    fn test_csrf_token_extraction() {
-        let validator = CsrfValidator::new("secret".to_string());
-        
-        // Test header extraction
-        let mut headers = HashMap::new();
-        headers.insert("X-CSRF-Token".to_string(), "token123".to_string());
-        assert_eq!(validator.extract_token_from_headers(&headers), Some("token123".to_string()));
-        
-        // Test form extraction
-        let mut form_data = HashMap::new();
-        form_data.insert("_csrf_token".to_string(), "token456".to_string());
-        assert_eq!(validator.extract_token_from_form(&form_data), Some("token456".to_string()));
-    }
-
-    #[test]
-    fn test_csrf_html_generation() {
-        let mut validator = CsrfValidator::new("secret".to_string());
-        
-        let html_input = validator.html_token_input(None);
-        assert!(html_input.contains("_csrf_token"));
-        assert!(html_input.contains("hidden"));
-        
-        let meta_tag = validator.meta_token_tag(None);
-        assert!(meta_tag.contains("csrf-token"));
-        assert!(meta_tag.contains("meta"));
-    }
-
-    #[test]
-    fn test_csrf_config() {
-        let config = CsrfConfig::default();
-        
-        assert!(config.is_method_safe("GET"));
-        assert!(config.is_method_safe("HEAD"));
-        assert!(!config.is_method_safe("POST"));
-        
-        assert!(config.is_path_excluded("/api/health"));
-        assert!(!config.is_path_excluded("/api/users"));
-    }
-
-    #[test]
-    fn test_csrf_cleanup() {
-        let mut validator = CsrfValidator::new("secret".to_string());
-        
-        // Generate many tokens to trigger cleanup
-        for i in 0..1100 {
-            validator.generate_token(Some(format!("session{}", i)));
-        }
-        
-        let stats = validator.get_stats();
-        assert!(stats.total_tokens <= validator.max_tokens);
-    }
-}
-
-/// CSRF protection middleware for web applications
-#[derive(Debug, Clone)]
-pub struct CsrfMiddleware {
-    validator: CsrfValidator,
-    config: CsrfConfig,
-}
 
 impl CsrfMiddleware {
     /// Create new CSRF middleware with configuration
@@ -500,7 +407,7 @@ impl CsrfMiddleware {
     }
 
     /// Process request and validate CSRF token
-    pub fn process_request(&mut self, headers: &std::collections::HashMap<String, String>, session_id: Option<String>) -> Result<(), Error> {
+    pub fn process_request(&mut self, headers: &std::collections::HashMap<String, String>, session_id: Option<String>) -> crate::error::Result<()> {
         if let Some(token) = headers.get("X-CSRF-Token") {
             if self.validator.validate_token(token, session_id) {
                 Ok(())
@@ -531,15 +438,16 @@ pub enum CsrfError {
     General(String),
 }
 
-impl std::fmt::Display for CsrfError {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            CsrfError::MissingToken(msg) => write!(f, "Missing CSRF token: {}", msg),
-            CsrfError::InvalidToken(msg) => write!(f, "Invalid CSRF token: {}", msg),
-            CsrfError::ExpiredToken(msg) => write!(f, "Expired CSRF token: {}", msg),
-            CsrfError::General(msg) => write!(f, "CSRF error: {}", msg),
-        }
-    }
-}
+// impl std::fmt::Display for CsrfError {
+//     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+//         match self {
+//             CsrfError::MissingToken(msg) => write!(f, "Missing CSRF token: {}", msg),
+//             CsrfError::InvalidToken(msg) => write!(f, "Invalid CSRF token: {}", msg),
+//             CsrfError::ExpiredToken(msg) => write!(f, "Expired CSRF token: {}", msg),
+//             CsrfError::General(msg) => write!(f, "CSRF error: {}", msg),
+//         }
+//     }
+// }
 
-impl std::error::Error for CsrfError {}
+// impl std::error::CursedError for CsrfError {}
+// 

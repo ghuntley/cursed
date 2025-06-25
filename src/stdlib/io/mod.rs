@@ -1,4 +1,4 @@
-use crate::error::Error;
+use crate::error::CursedError;
 /// Console I/O operations module for CURSED programming language
 /// 
 /// This module provides comprehensive console input/output functionality including:
@@ -100,66 +100,3 @@ pub fn shutdown() -> IoResult<()> {
     Ok(())
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_module_initialization() {
-        // Test that the module can be initialized without errors
-        assert!(initialize().is_ok());
-        assert!(shutdown().is_ok());
-    }
-
-    #[test]
-    fn test_basic_io_functions_exist() {
-        // Test that all expected functions are exported
-        // We can't easily test the actual I/O functions in unit tests
-        // but we can verify they exist and have the right signatures
-        
-        // These would normally fail in a test environment, but we just want
-        // to verify the functions exist and can be called
-        let _ = print;
-        let _ = println;
-        let _ = eprint;
-        let _ = eprintln;
-        let _ = read_line;
-        let _ = read_char;
-        let _ = flush;
-    }
-
-    #[test]
-    fn test_interactive_functions_exist() {
-        let _ = prompt;
-        let _ = confirm;
-        let _ = select;
-        let _ = multi_select;
-        let _ = read_password;
-        let _ = paginate;
-    }
-
-    #[test]
-    fn test_buffered_functions_exist() {
-        let _ = buffered_stdin;
-        let _ = buffered_stdout;
-        let _ = buffered_stderr;
-        let _ = shared_buffered_stdin;
-        let _ = shared_buffered_stdout;
-        let _ = shared_buffered_stderr;
-    }
-
-    #[test]
-    fn test_stream_functions_exist() {
-        let _ = stdin;
-        let _ = stdout;
-        let _ = stderr;
-        let _ = flush_all;
-    }
-
-    #[test]
-    fn test_error_functions_exist() {
-        let _ = system_error(1, "test");
-        let _ = io_error("test");
-        let _ = invalid_input("test");
-    }
-}

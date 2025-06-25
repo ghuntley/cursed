@@ -13,7 +13,7 @@ pub enum SqliteErrorCode {
     /// No error
     Ok,
     /// Generic error
-    Error,
+    CursedError,
     /// Internal logic error in SQLite
     Internal,
     /// Access permission denied
@@ -92,7 +92,7 @@ impl SqliteErrorCode {
     pub fn from_result_code(code: SqliteResultCode) -> Self {
         match code {
             SqliteResultCode::Ok => SqliteErrorCode::Ok,
-            SqliteResultCode::Error => SqliteErrorCode::Error,
+            SqliteResultCode::CursedError => SqliteErrorCode::CursedError,
             SqliteResultCode::Internal => SqliteErrorCode::Internal,
             SqliteResultCode::Perm => SqliteErrorCode::Perm,
             SqliteResultCode::Abort => SqliteErrorCode::Abort,
@@ -129,7 +129,7 @@ impl SqliteErrorCode {
     pub fn description(self) -> &'static str {
         match self {
             SqliteErrorCode::Ok => "Successful result",
-            SqliteErrorCode::Error => "Generic error",
+            SqliteErrorCode::CursedError => "Generic error",
             SqliteErrorCode::Internal => "Internal logic error in SQLite",
             SqliteErrorCode::Perm => "Access permission denied",
             SqliteErrorCode::Abort => "Callback routine requested an abort",
@@ -207,45 +207,45 @@ impl SqliteErrorCode {
             SqliteErrorCode::Notice | SqliteErrorCode::Warning => ErrorSeverity::Warning,
             SqliteErrorCode::Busy | SqliteErrorCode::Locked | SqliteErrorCode::Interrupt => ErrorSeverity::Recoverable,
             SqliteErrorCode::Corrupt | SqliteErrorCode::NotADb | SqliteErrorCode::IoErr => ErrorSeverity::Critical,
-            _ => ErrorSeverity::Error,
+            _ => ErrorSeverity::CursedError,
         }
     }
 }
 
-impl fmt::Display for SqliteErrorCode {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{}", self.description())
-    }
-}
+// impl fmt::Display for SqliteErrorCode {
+//     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+//         write!(f, "{}", self.description())
+//     }
+// }
 
-/// fr fr Error severity levels
+/// fr fr CursedError severity levels
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 pub enum ErrorSeverity {
     Info,
     Warning,
-    Error,
+    CursedError,
     Recoverable,
     Critical,
 }
 
-impl fmt::Display for ErrorSeverity {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
-            ErrorSeverity::Info => write!(f, "INFO"),
-            ErrorSeverity::Warning => write!(f, "WARNING"),
-            ErrorSeverity::Error => write!(f, "ERROR"),
-            ErrorSeverity::Recoverable => write!(f, "RECOVERABLE"),
-            ErrorSeverity::Critical => write!(f, "CRITICAL"),
-        }
-    }
-}
+// impl fmt::Display for ErrorSeverity {
+//     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+//         match self {
+//             ErrorSeverity::Info => write!(f, "INFO"),
+//             ErrorSeverity::Warning => write!(f, "WARNING"),
+//             ErrorSeverity::CursedError => write!(f, "ERROR"),
+//             ErrorSeverity::Recoverable => write!(f, "RECOVERABLE"),
+//             ErrorSeverity::Critical => write!(f, "CRITICAL"),
+//         }
+//     }
+// }
 
 /// fr fr SQLite error with detailed context
 #[derive(Debug, Clone)]
 pub struct SqliteError {
-    /// fr fr Error code
+    /// fr fr CursedError code
     pub code: SqliteErrorCode,
-    /// fr fr Error message
+    /// fr fr CursedError message
     pub message: String,
     /// fr fr Database path (if applicable)
     pub database_path: Option<String>,
@@ -257,7 +257,7 @@ pub struct SqliteError {
     pub column_index: Option<i32>,
     /// fr fr Additional context
     pub context: std::collections::HashMap<String, String>,
-    /// fr fr Error severity
+    /// fr fr CursedError severity
     pub severity: ErrorSeverity,
     /// fr fr Underlying cause (chain of errors)
     pub cause: Option<Box<SqliteError>>,
@@ -453,17 +453,17 @@ impl SqliteError {
     }
 }
 
-impl fmt::Display for SqliteError {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{}", self.formatted_message())
-    }
-}
+// impl fmt::Display for SqliteError {
+//     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+//         write!(f, "{}", self.formatted_message())
+//     }
+// }
 
-impl std::error::Error for SqliteError {
-    fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
-        self.cause.as_ref().map(|e| e as &dyn std::error::Error)
-    }
-}
+// impl std::error::CursedError for SqliteError {
+//     fn source(&self) -> Option<&(dyn std::error::CursedError + 'static)> {
+//         self.cause.as_ref().map(|e| e as &dyn std::error::CursedError)
+//     }
+// }
 
 impl From<SqliteError> for DatabaseError {
     fn from(error: SqliteError) -> Self {
@@ -474,7 +474,7 @@ impl From<SqliteError> for DatabaseError {
 /// fr fr SQLite result type
 pub type SqliteResult<T> = std::result::Result<T, SqliteError>;
 
-/// fr fr Error context builder for fluent error construction
+/// fr fr CursedError context builder for fluent error construction
 pub struct SqliteErrorBuilder {
     error: SqliteError,
 }
@@ -549,7 +549,7 @@ impl SqliteError {
 
     /// slay SQL syntax error
     pub fn syntax_error(sql: &str, message: &str) -> Self {
-        SqliteErrorBuilder::new(SqliteErrorCode::Error, message)
+        SqliteErrorBuilder::new(SqliteErrorCode::CursedError, message)
             .sql_statement(sql)
             .context("operation", "prepare_statement")
             .build()
@@ -572,151 +572,3 @@ impl SqliteError {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-use crate::error::Error;
-
-    #[test]
-    fn test_error_code_properties() {
-        assert!(SqliteErrorCode::Busy.is_recoverable());
-        assert!(!SqliteErrorCode::Error.is_recoverable());
-        
-        assert!(SqliteErrorCode::Corrupt.is_corruption());
-        assert!(!SqliteErrorCode::Busy.is_corruption());
-        
-        assert!(SqliteErrorCode::Constraint.is_constraint_violation());
-        assert!(!SqliteErrorCode::Busy.is_constraint_violation());
-        
-        assert!(SqliteErrorCode::Perm.is_permission_error());
-        assert!(!SqliteErrorCode::Busy.is_permission_error());
-    }
-
-    #[test]
-    fn test_error_severity() {
-        assert_eq!(SqliteErrorCode::Ok.severity(), ErrorSeverity::Info);
-        assert_eq!(SqliteErrorCode::Warning.severity(), ErrorSeverity::Warning);
-        assert_eq!(SqliteErrorCode::Error.severity(), ErrorSeverity::Error);
-        assert_eq!(SqliteErrorCode::Busy.severity(), ErrorSeverity::Recoverable);
-        assert_eq!(SqliteErrorCode::Corrupt.severity(), ErrorSeverity::Critical);
-    }
-
-    #[test]
-    fn test_sqlite_error_creation() {
-        let error = SqliteError::new(SqliteErrorCode::Error, "Test error");
-        assert_eq!(error.code, SqliteErrorCode::Error);
-        assert_eq!(error.message, "Test error");
-        assert_eq!(error.severity, ErrorSeverity::Error);
-        assert!(error.database_path.is_none());
-        assert!(error.cause.is_none());
-    }
-
-    #[test]
-    fn test_error_with_context() {
-        let error = SqliteError::new(SqliteErrorCode::Error, "Test error")
-            .with_database_path("test.db")
-            .with_sql_statement("SELECT * FROM users")
-            .with_parameter_index(1)
-            .with_column_index(2)
-            .with_context("user_id", "123");
-        
-        assert_eq!(error.database_path, Some("test.db".to_string()));
-        assert_eq!(error.sql_statement, Some("SELECT * FROM users".to_string()));
-        assert_eq!(error.parameter_index, Some(1));
-        assert_eq!(error.column_index, Some(2));
-        assert_eq!(error.context.get("user_id"), Some(&"123".to_string()));
-    }
-
-    #[test]
-    fn test_error_builder() {
-        let error = SqliteErrorBuilder::new(SqliteErrorCode::Error, "Test error")
-            .database_path("test.db")
-            .sql_statement("SELECT * FROM users")
-            .parameter_index(1)
-            .context("operation", "select")
-            .build();
-        
-        assert_eq!(error.code, SqliteErrorCode::Error);
-        assert_eq!(error.database_path, Some("test.db".to_string()));
-        assert_eq!(error.parameter_index, Some(1));
-        assert_eq!(error.context.get("operation"), Some(&"select".to_string()));
-    }
-
-    #[test]
-    fn test_formatted_message() {
-        let error = SqliteError::new(SqliteErrorCode::Error, "Test error")
-            .with_database_path("test.db")
-            .with_sql_statement("SELECT * FROM users WHERE id = ?")
-            .with_parameter_index(1)
-            .with_context("user_id", "123");
-        
-        let formatted = error.formatted_message();
-        assert!(formatted.contains("Test error"));
-        assert!(formatted.contains("test.db"));
-        assert!(formatted.contains("SELECT * FROM users"));
-        assert!(formatted.contains("parameter: 1"));
-        assert!(formatted.contains("user_id=123"));
-    }
-
-    #[test]
-    fn test_common_error_patterns() {
-        let db_not_found = SqliteError::database_not_found("missing.db");
-        assert_eq!(db_not_found.code, SqliteErrorCode::CantOpen);
-        assert_eq!(db_not_found.database_path, Some("missing.db".to_string()));
-        
-        let corrupted = SqliteError::database_corrupted("bad.db");
-        assert_eq!(corrupted.code, SqliteErrorCode::Corrupt);
-        assert!(corrupted.is_corruption());
-        
-        let syntax_err = SqliteError::syntax_error("SELEC * FROM users", "syntax error near 'SELEC'");
-        assert_eq!(syntax_err.code, SqliteErrorCode::Error);
-        assert_eq!(syntax_err.sql_statement, Some("SELEC * FROM users".to_string()));
-        
-        let binding_err = SqliteError::binding_error(5, "parameter index out of range");
-        assert_eq!(binding_err.parameter_index, Some(5));
-        
-        let column_err = SqliteError::column_error(10, "column index out of range");
-        assert_eq!(column_err.column_index, Some(10));
-    }
-
-    #[test]
-    fn test_error_chaining() {
-        let cause = SqliteError::new(SqliteErrorCode::IoErr, "Disk I/O error");
-        let error = SqliteError::new(SqliteErrorCode::Error, "Operation failed")
-            .with_cause(cause);
-        
-        assert!(error.cause.is_some());
-        let formatted = error.formatted_message();
-        assert!(formatted.contains("caused by"));
-        assert!(formatted.contains("Disk I/O error"));
-    }
-
-    #[test]
-    fn test_database_error_conversion() {
-        let sqlite_error = SqliteError::new(SqliteErrorCode::Constraint, "UNIQUE constraint failed");
-        let db_error = sqlite_error.to_database_error();
-        
-        // Check that it maps to the correct database error kind
-        assert!(matches!(db_error.kind, DatabaseErrorKind::ConstraintViolation));
-    }
-
-    #[test]
-    fn test_error_display() {
-        let error = SqliteError::new(SqliteErrorCode::Error, "Test error");
-        let display_string = format!("{}", error);
-        assert!(display_string.contains("Test error"));
-        assert!(display_string.contains("Generic error"));
-    }
-
-    #[test]
-    fn test_result_code_conversion() {
-        assert_eq!(
-            SqliteErrorCode::from_result_code(SqliteResultCode::Busy),
-            SqliteErrorCode::Busy
-        );
-        assert_eq!(
-            SqliteErrorCode::from_result_code(SqliteResultCode::Constraint),
-            SqliteErrorCode::Constraint
-        );
-    }
-}

@@ -8,8 +8,7 @@
 /// - Cross-format conversion utilities
 
 use crate::error::CursedError;
-use crate::stdlib::value::Value;
-use crate::error::Error;
+// use crate::stdlib::value::Value;
 use std::collections::HashMap;
 
 // RSA key handling
@@ -29,9 +28,9 @@ use elliptic_curve::{
 // Ed25519 key handling
 use ed25519_dalek::{SigningKey, VerifyingKey};
 
-use crate::stdlib::packages::crypto_asymmetric::public_key::{PublicKeyAlgorithm, PublicKeyFormat};
-use crate::stdlib::packages::crypto_asymmetric::private_key::PrivateKeyFormat;
-use crate::stdlib::packages::crypto_asymmetric::ecc::EccCurve;
+// use crate::stdlib::packages::crypto_asymmetric::public_key::{PublicKeyAlgorithm, PublicKeyFormat};
+// use crate::stdlib::packages::crypto_asymmetric::private_key::PrivateKeyFormat;
+// use crate::stdlib::packages::crypto_asymmetric::ecc::EccCurve;
 
 // Additional dependencies for enhanced format support
 use base64::{Engine as _, engine::general_purpose};
@@ -43,7 +42,7 @@ pub fn convert_public_key_format_enhanced(
     algorithm: PublicKeyAlgorithm,
     from_format: PublicKeyFormat,
     to_format: PublicKeyFormat,
-) -> Result<(), Error> {
+) -> crate::error::Result<()> {
     let public_key_bytes = hex::decode(public_key_hex)
         .map_err(|e| CursedError::InvalidArgument(format!("Invalid public key hex: {}", e)))?;
     
@@ -70,7 +69,7 @@ pub fn convert_private_key_format_enhanced(
     algorithm: PublicKeyAlgorithm,
     from_format: PrivateKeyFormat,
     to_format: PrivateKeyFormat,
-) -> Result<(), Error> {
+) -> crate::error::Result<()> {
     let private_key_bytes = hex::decode(private_key_hex)
         .map_err(|e| CursedError::InvalidArgument(format!("Invalid private key hex: {}", e)))?;
     
@@ -96,7 +95,7 @@ fn convert_rsa_public_key_enhanced(
     public_key_bytes: &[u8],
     from_format: PublicKeyFormat,
     to_format: PublicKeyFormat,
-) -> Result<(), Error> {
+) -> crate::error::Result<()> {
     // Parse RSA public key from source format
     let public_key = match from_format {
         PublicKeyFormat::Pkcs8Der => {
@@ -164,7 +163,7 @@ fn convert_rsa_private_key_enhanced(
     private_key_bytes: &[u8],
     from_format: PrivateKeyFormat,
     to_format: PrivateKeyFormat,
-) -> Result<(), Error> {
+) -> crate::error::Result<()> {
     // Parse RSA private key from source format
     let private_key = match from_format {
         PrivateKeyFormat::Pkcs8Der => {
@@ -230,7 +229,7 @@ fn convert_ecc_public_key_enhanced(
     curve: EccCurve,
     from_format: PublicKeyFormat,
     to_format: PublicKeyFormat,
-) -> Result<(), Error> {
+) -> crate::error::Result<()> {
     match curve {
         EccCurve::P256 => convert_p256_public_key(public_key_bytes, from_format, to_format),
         EccCurve::P384 => convert_p384_public_key(public_key_bytes, from_format, to_format),
@@ -244,7 +243,7 @@ fn convert_ecc_private_key_enhanced(
     curve: EccCurve,
     from_format: PrivateKeyFormat,
     to_format: PrivateKeyFormat,
-) -> Result<(), Error> {
+) -> crate::error::Result<()> {
     match curve {
         EccCurve::P256 => convert_p256_private_key(private_key_bytes, from_format, to_format),
         EccCurve::P384 => convert_p384_private_key(private_key_bytes, from_format, to_format),
@@ -257,7 +256,7 @@ fn convert_p256_public_key(
     public_key_bytes: &[u8],
     from_format: PublicKeyFormat,
     to_format: PublicKeyFormat,
-) -> Result<(), Error> {
+) -> crate::error::Result<()> {
     // Parse P-256 public key
     let public_key = match from_format {
         PublicKeyFormat::Pkcs8Der => {
@@ -314,7 +313,7 @@ fn convert_p256_private_key(
     private_key_bytes: &[u8],
     from_format: PrivateKeyFormat,
     to_format: PrivateKeyFormat,
-) -> Result<(), Error> {
+) -> crate::error::Result<()> {
     // Parse P-256 private key
     let private_key = match from_format {
         PrivateKeyFormat::Pkcs8Der => {
@@ -368,7 +367,7 @@ fn convert_p384_public_key(
     public_key_bytes: &[u8],
     from_format: PublicKeyFormat,
     to_format: PublicKeyFormat,
-) -> Result<(), Error> {
+) -> crate::error::Result<()> {
     // Parse P-384 public key
     let public_key = match from_format {
         PublicKeyFormat::Pkcs8Der => {
@@ -424,7 +423,7 @@ fn convert_p384_private_key(
     private_key_bytes: &[u8],
     from_format: PrivateKeyFormat,
     to_format: PrivateKeyFormat,
-) -> Result<(), Error> {
+) -> crate::error::Result<()> {
     // Parse P-384 private key
     let private_key = match from_format {
         PrivateKeyFormat::Pkcs8Der => {
@@ -477,7 +476,7 @@ fn convert_p521_public_key(
     public_key_bytes: &[u8],
     from_format: PublicKeyFormat,
     to_format: PublicKeyFormat,
-) -> Result<(), Error> {
+) -> crate::error::Result<()> {
     // Parse P-521 public key
     let public_key = match from_format {
         PublicKeyFormat::Pkcs8Der => {
@@ -533,7 +532,7 @@ fn convert_p521_private_key(
     private_key_bytes: &[u8],
     from_format: PrivateKeyFormat,
     to_format: PrivateKeyFormat,
-) -> Result<(), Error> {
+) -> crate::error::Result<()> {
     // Parse P-521 private key
     let private_key = match from_format {
         PrivateKeyFormat::Pkcs8Der => {
@@ -587,7 +586,7 @@ fn convert_ed25519_public_key_enhanced(
     public_key_bytes: &[u8],
     from_format: PublicKeyFormat,
     to_format: PublicKeyFormat,
-) -> Result<(), Error> {
+) -> crate::error::Result<()> {
     // Parse Ed25519 public key
     let public_key = match from_format {
         PublicKeyFormat::Raw => {
@@ -636,7 +635,7 @@ fn convert_ed25519_private_key_enhanced(
     private_key_bytes: &[u8],
     from_format: PrivateKeyFormat,
     to_format: PrivateKeyFormat,
-) -> Result<(), Error> {
+) -> crate::error::Result<()> {
     // Parse Ed25519 private key
     let private_key = match from_format {
         PrivateKeyFormat::Raw => {
@@ -666,7 +665,7 @@ fn convert_ed25519_private_key_enhanced(
 
 /// fr fr JWK format parsers and encoders
 
-fn parse_rsa_public_key_from_jwk(jwk_bytes: &[u8]) -> Result<(), Error> {
+fn parse_rsa_public_key_from_jwk(jwk_bytes: &[u8]) -> crate::error::Result<()> {
     let jwk_str = String::from_utf8(jwk_bytes.to_vec())
         .map_err(|e| CursedError::InvalidArgument(format!("Invalid JWK string: {}", e)))?;
     
@@ -681,7 +680,7 @@ fn parse_rsa_public_key_from_jwk(jwk_bytes: &[u8]) -> Result<(), Error> {
     }
 }
 
-fn parse_rsa_private_key_from_jwk(jwk_bytes: &[u8]) -> Result<(), Error> {
+fn parse_rsa_private_key_from_jwk(jwk_bytes: &[u8]) -> crate::error::Result<()> {
     use serde_json::Value as JsonValue;
     
     let jwk_str = String::from_utf8(jwk_bytes.to_vec())
@@ -724,7 +723,7 @@ fn parse_rsa_private_key_from_jwk(jwk_bytes: &[u8]) -> Result<(), Error> {
     Ok(private_key)
 }
 
-fn encode_rsa_public_key_to_jwk(public_key: &RsaPublicKey) -> Result<(), Error> {
+fn encode_rsa_public_key_to_jwk(public_key: &RsaPublicKey) -> crate::error::Result<()> {
     // Basic JWK encoding for RSA public key
     // In production, would use proper base64url encoding and JSON formatting
     let n = public_key.n();
@@ -739,7 +738,7 @@ fn encode_rsa_public_key_to_jwk(public_key: &RsaPublicKey) -> Result<(), Error> 
     Ok(jwk)
 }
 
-fn encode_rsa_private_key_to_jwk(private_key: &RsaPrivateKey) -> Result<(), Error> {
+fn encode_rsa_private_key_to_jwk(private_key: &RsaPrivateKey) -> crate::error::Result<()> {
     // Extract RSA private key components
     let n = private_key.n();
     let e = private_key.e();
@@ -767,7 +766,7 @@ fn encode_rsa_private_key_to_jwk(private_key: &RsaPrivateKey) -> Result<(), Erro
     Ok(jwk)
 }
 
-fn encode_rsa_public_key_to_ssh(public_key: &RsaPublicKey) -> Result<(), Error> {
+fn encode_rsa_public_key_to_ssh(public_key: &RsaPublicKey) -> crate::error::Result<()> {
     // Get RSA parameters
     let n = public_key.n();
     let e = public_key.e();
@@ -799,26 +798,26 @@ fn encode_rsa_public_key_to_ssh(public_key: &RsaPublicKey) -> Result<(), Error> 
 
 fn encode_p256_public_key_to_ssh(
     public_key: &P256PublicKey
-) -> Result<(), Error> {
+) -> crate::error::Result<()> {
     encode_ecdsa_point_to_ssh(&public_key.to_encoded_point(false).as_bytes(), "nistp256")
 }
 
 fn encode_p384_public_key_to_ssh(
     public_key: &P384PublicKey
-) -> Result<(), Error> {
+) -> crate::error::Result<()> {
     encode_ecdsa_point_to_ssh(&public_key.to_encoded_point(false).as_bytes(), "nistp384")
 }
 
 fn encode_p521_public_key_to_ssh(
     public_key: &P521PublicKey
-) -> Result<(), Error> {
+) -> crate::error::Result<()> {
     encode_ecdsa_point_to_ssh(&public_key.to_encoded_point(false).as_bytes(), "nistp521")
 }
 
 fn encode_ecdsa_point_to_ssh(
     point_bytes: &[u8], 
     curve_name: &str
-) -> Result<(), Error> {
+) -> crate::error::Result<()> {
     let algorithm = format!("ecdsa-sha2-{}", curve_name);
     
     let mut ssh_data = Vec::new();
@@ -841,7 +840,7 @@ fn encode_ecdsa_point_to_ssh(
     Ok(format!("{} {} cursed-generated-key", algorithm, b64_data))
 }
 
-fn encode_ed25519_public_key_to_ssh(public_key: &VerifyingKey) -> Result<(), Error> {
+fn encode_ed25519_public_key_to_ssh(public_key: &VerifyingKey) -> crate::error::Result<()> {
     let algorithm = b"ssh-ed25519";
     
     let mut ssh_data = Vec::new();
@@ -861,7 +860,7 @@ fn encode_ed25519_public_key_to_ssh(public_key: &VerifyingKey) -> Result<(), Err
     Ok(format!("ssh-ed25519 {} cursed-generated-key", b64_data))
 }
 
-fn parse_p256_public_key_from_jwk(jwk_bytes: &[u8]) -> Result<(), Error> {
+fn parse_p256_public_key_from_jwk(jwk_bytes: &[u8]) -> crate::error::Result<()> {
     use serde_json::Value as JsonValue;
     
     let jwk_str = String::from_utf8(jwk_bytes.to_vec())
@@ -900,7 +899,7 @@ fn parse_p256_public_key_from_jwk(jwk_bytes: &[u8]) -> Result<(), Error> {
         .map_err(|e| CursedError::CryptoError(format!("Invalid P-256 public key from JWK: {}", e)))
 }
 
-fn parse_p256_private_key_from_jwk(jwk_bytes: &[u8]) -> Result<(), Error> {
+fn parse_p256_private_key_from_jwk(jwk_bytes: &[u8]) -> crate::error::Result<()> {
     use serde_json::Value as JsonValue;
     
     let jwk_str = String::from_utf8(jwk_bytes.to_vec())
@@ -930,7 +929,7 @@ fn parse_p256_private_key_from_jwk(jwk_bytes: &[u8]) -> Result<(), Error> {
         .map_err(|e| CursedError::CryptoError(format!("Invalid P-256 private key from JWK: {}", e)))
 }
 
-fn encode_p256_public_key_to_jwk(public_key: &P256PublicKey) -> Result<(), Error> {
+fn encode_p256_public_key_to_jwk(public_key: &P256PublicKey) -> crate::error::Result<()> {
     use elliptic_curve::sec1::ToEncodedPoint;
     
     let encoded_point = public_key.to_encoded_point(false);
@@ -953,7 +952,7 @@ fn encode_p256_public_key_to_jwk(public_key: &P256PublicKey) -> Result<(), Error
     Ok(jwk)
 }
 
-fn encode_p256_private_key_to_jwk(private_key: &P256SecretKey) -> Result<(), Error> {
+fn encode_p256_private_key_to_jwk(private_key: &P256SecretKey) -> crate::error::Result<()> {
     use elliptic_curve::sec1::ToEncodedPoint;
     
     let public_key = P256PublicKey::from(private_key);
@@ -979,7 +978,7 @@ fn encode_p256_private_key_to_jwk(private_key: &P256SecretKey) -> Result<(), Err
     Ok(jwk)
 }
 
-fn encode_ed25519_public_key_to_jwk(public_key: &VerifyingKey) -> Result<(), Error> {
+fn encode_ed25519_public_key_to_jwk(public_key: &VerifyingKey) -> crate::error::Result<()> {
     let jwk = format!(
         r#"{{"kty":"OKP","crv":"Ed25519","x":"{}"}}"#,
         general_purpose::URL_SAFE_NO_PAD.encode(public_key.as_bytes())
@@ -987,7 +986,7 @@ fn encode_ed25519_public_key_to_jwk(public_key: &VerifyingKey) -> Result<(), Err
     Ok(jwk)
 }
 
-fn encode_ed25519_private_key_to_jwk(private_key: &SigningKey) -> Result<(), Error> {
+fn encode_ed25519_private_key_to_jwk(private_key: &SigningKey) -> crate::error::Result<()> {
     let jwk = format!(
         r#"{{"kty":"OKP","crv":"Ed25519","d":"{}","x":"{}"}}"#,
         general_purpose::URL_SAFE_NO_PAD.encode(&private_key.to_bytes()),
@@ -997,7 +996,7 @@ fn encode_ed25519_private_key_to_jwk(private_key: &SigningKey) -> Result<(), Err
 }
 
 /// P-384 JWK functions
-fn parse_p384_public_key_from_jwk(jwk_bytes: &[u8]) -> Result<(), Error> {
+fn parse_p384_public_key_from_jwk(jwk_bytes: &[u8]) -> crate::error::Result<()> {
     use serde_json::Value as JsonValue;
     
     let jwk_str = String::from_utf8(jwk_bytes.to_vec())
@@ -1036,7 +1035,7 @@ fn parse_p384_public_key_from_jwk(jwk_bytes: &[u8]) -> Result<(), Error> {
         .map_err(|e| CursedError::CryptoError(format!("Invalid P-384 public key from JWK: {}", e)))
 }
 
-fn parse_p384_private_key_from_jwk(jwk_bytes: &[u8]) -> Result<(), Error> {
+fn parse_p384_private_key_from_jwk(jwk_bytes: &[u8]) -> crate::error::Result<()> {
     use serde_json::Value as JsonValue;
     
     let jwk_str = String::from_utf8(jwk_bytes.to_vec())
@@ -1066,7 +1065,7 @@ fn parse_p384_private_key_from_jwk(jwk_bytes: &[u8]) -> Result<(), Error> {
         .map_err(|e| CursedError::CryptoError(format!("Invalid P-384 private key from JWK: {}", e)))
 }
 
-fn encode_p384_public_key_to_jwk(public_key: &P384PublicKey) -> Result<(), Error> {
+fn encode_p384_public_key_to_jwk(public_key: &P384PublicKey) -> crate::error::Result<()> {
     use elliptic_curve::sec1::ToEncodedPoint;
     
     let encoded_point = public_key.to_encoded_point(false);
@@ -1089,7 +1088,7 @@ fn encode_p384_public_key_to_jwk(public_key: &P384PublicKey) -> Result<(), Error
     Ok(jwk)
 }
 
-fn encode_p384_private_key_to_jwk(private_key: &P384SecretKey) -> Result<(), Error> {
+fn encode_p384_private_key_to_jwk(private_key: &P384SecretKey) -> crate::error::Result<()> {
     use elliptic_curve::sec1::ToEncodedPoint;
     
     let public_key = P384PublicKey::from(private_key);
@@ -1116,7 +1115,7 @@ fn encode_p384_private_key_to_jwk(private_key: &P384SecretKey) -> Result<(), Err
 }
 
 /// P-521 JWK functions
-fn parse_p521_public_key_from_jwk(jwk_bytes: &[u8]) -> Result<(), Error> {
+fn parse_p521_public_key_from_jwk(jwk_bytes: &[u8]) -> crate::error::Result<()> {
     use serde_json::Value as JsonValue;
     
     let jwk_str = String::from_utf8(jwk_bytes.to_vec())
@@ -1155,7 +1154,7 @@ fn parse_p521_public_key_from_jwk(jwk_bytes: &[u8]) -> Result<(), Error> {
         .map_err(|e| CursedError::CryptoError(format!("Invalid P-521 public key from JWK: {}", e)))
 }
 
-fn parse_p521_private_key_from_jwk(jwk_bytes: &[u8]) -> Result<(), Error> {
+fn parse_p521_private_key_from_jwk(jwk_bytes: &[u8]) -> crate::error::Result<()> {
     use serde_json::Value as JsonValue;
     
     let jwk_str = String::from_utf8(jwk_bytes.to_vec())
@@ -1185,7 +1184,7 @@ fn parse_p521_private_key_from_jwk(jwk_bytes: &[u8]) -> Result<(), Error> {
         .map_err(|e| CursedError::CryptoError(format!("Invalid P-521 private key from JWK: {}", e)))
 }
 
-fn encode_p521_public_key_to_jwk(public_key: &P521PublicKey) -> Result<(), Error> {
+fn encode_p521_public_key_to_jwk(public_key: &P521PublicKey) -> crate::error::Result<()> {
     use elliptic_curve::sec1::ToEncodedPoint;
     
     let encoded_point = public_key.to_encoded_point(false);
@@ -1208,7 +1207,7 @@ fn encode_p521_public_key_to_jwk(public_key: &P521PublicKey) -> Result<(), Error
     Ok(jwk)
 }
 
-fn encode_p521_private_key_to_jwk(private_key: &P521SecretKey) -> Result<(), Error> {
+fn encode_p521_private_key_to_jwk(private_key: &P521SecretKey) -> crate::error::Result<()> {
     use elliptic_curve::sec1::ToEncodedPoint;
     
     let public_key = P521PublicKey::from(private_key);
@@ -1240,7 +1239,7 @@ fn create_conversion_result(
     from_format: PublicKeyFormat,
     to_format: PublicKeyFormat,
     converted_data: Vec<u8>,
-) -> Result<(), Error> {
+) -> crate::error::Result<()> {
     let mut result = HashMap::new();
     result.insert("algorithm".to_string(), Value::String(algorithm.to_string()));
     result.insert("from_format".to_string(), Value::String(from_format.name().to_string()));

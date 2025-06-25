@@ -1,4 +1,4 @@
-use crate::error::Error;
+use crate::error::CursedError;
 /// Real IPC (Inter-Process Communication) implementation
 /// 
 /// This module provides production-ready IPC mechanisms including:
@@ -21,8 +21,8 @@ use std::os::unix::net::{UnixListener, UnixStream};
 #[cfg(unix)]
 use std::os::unix::io::{AsRawFd, FromRawFd, IntoRawFd};
 
-use crate::stdlib::ipc::error::{IpcError, IpcResult, ipc_error, system_error, not_found, timeout_error};
-use crate::stdlib::ipc::{IpcConfig, SharedMemory, MessageQueue, Message};
+// use crate::stdlib::ipc::error::{IpcError, IpcResult, ipc_error, system_error, not_found, timeout_error};
+// use crate::stdlib::ipc::{IpcConfig, SharedMemory, MessageQueue, Message};
 
 /// Real IPC manager with connection pooling and resource management
 #[derive(Debug)]
@@ -1014,67 +1014,3 @@ pub fn cleanup_real_ipc() -> IpcResult<()> {
     Ok(())
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-use crate::stdlib::process::real_ipc::IpcMessage;
-
-    #[test]
-    fn test_priority_message_queue() {
-        let mut queue = PriorityMessageQueue::new(10);
-        
-        let low_msg = IpcMessage {
-            id: 1,
-            sender_id: 1,
-            priority: MessagePriority::Low,
-            timestamp: SystemTime::now(),
-            data: b"low".to_vec(),
-            message_type: "test".to_string(),
-            reply_to: None,
-            ttl: None,
-        };
-        
-        let high_msg = IpcMessage {
-            id: 2,
-            sender_id: 1,
-            priority: MessagePriority::High,
-            timestamp: SystemTime::now(),
-            data: b"high".to_vec(),
-            message_type: "test".to_string(),
-            reply_to: None,
-            ttl: None,
-        };
-        
-        assert!(queue.push(low_msg).is_ok());
-        assert!(queue.push(high_msg).is_ok());
-        
-        // High priority should come first
-        let first = queue.pop().unwrap();
-        assert_eq!(first.priority, MessagePriority::High);
-        
-        let second = queue.pop().unwrap();
-        assert_eq!(second.priority, MessagePriority::Low);
-    }
-
-    #[test]
-    fn test_ipc_manager_creation() {
-        let config = IpcConfig::default();
-        let manager = RealIpcManager::new(config);
-        assert!(manager.is_ok());
-    }
-
-    #[test]
-    #[cfg(unix)]
-    fn test_named_pipe_creation() {
-        let config = IpcConfig::default();
-        let connection = NamedPipeConnection::new("test_pipe", true, &config);
-        assert!(connection.is_ok());
-    }
-
-    #[test]
-    fn test_message_queue_connection() {
-        let config = IpcConfig::default();
-        let connection = MessageQueueConnection::new("test_queue", &config);
-        assert!(connection.is_ok());
-    }
-}

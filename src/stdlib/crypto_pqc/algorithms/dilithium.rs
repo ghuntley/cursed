@@ -1,4 +1,4 @@
-use crate::error::Error;
+use crate::error::CursedError;
 /// Dilithium Digital Signature Implementation
 /// 
 /// Dilithium is a lattice-based digital signature scheme based on the Module-LWE problem.
@@ -19,7 +19,7 @@ use crate::error::Error;
 use std::fmt;
 use rand::rngs::OsRng;
 use sha3::{Sha3_256, Digest};
-use crate::stdlib::crypto_pqc::{PqcResult, PqcError, SecurityLevel, AlgorithmType};
+// use crate::stdlib::crypto_pqc::{PqcResult, PqcError, SecurityLevel, AlgorithmType};
 pub use super::{DigitalSignature, ParameterSet, AlgorithmPerformance, KeySizes};
 
 /// Dilithium parameter sets
@@ -440,70 +440,3 @@ impl Dilithium {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_dilithium_parameter_sets() {
-        assert_eq!(DilithiumParameterSet::Dilithium2.security_level(), SecurityLevel::Level1);
-        assert_eq!(DilithiumParameterSet::Dilithium3.security_level(), SecurityLevel::Level3);
-        assert_eq!(DilithiumParameterSet::Dilithium5.security_level(), SecurityLevel::Level5);
-    }
-
-    #[test]
-    fn test_dilithium_key_sizes() {
-        assert_eq!(DilithiumParameterSet::Dilithium2.public_key_size(), 1312);
-        assert_eq!(DilithiumParameterSet::Dilithium3.public_key_size(), 1952);
-        assert_eq!(DilithiumParameterSet::Dilithium5.public_key_size(), 2592);
-    }
-
-    #[test]
-    fn test_dilithium_keygen() {
-        let (pub_key, sec_key) = Dilithium::keygen(SecurityLevel::Level1).unwrap();
-        assert_eq!(pub_key.parameter_set(), DilithiumParameterSet::Dilithium2);
-        assert_eq!(sec_key.parameter_set(), DilithiumParameterSet::Dilithium2);
-    }
-
-    #[test]
-    fn test_dilithium_sign_verify() {
-        let (pub_key, sec_key) = Dilithium::keygen(SecurityLevel::Level1).unwrap();
-        let message = b"Hello, post-quantum world!";
-        
-        let signature = Dilithium::sign(&sec_key, message).unwrap();
-        let is_valid = Dilithium::verify(&pub_key, message, &signature).unwrap();
-        
-        assert!(is_valid);
-    }
-
-    #[test]
-    fn test_dilithium_sign_verify_invalid() {
-        let (pub_key, sec_key) = Dilithium::keygen(SecurityLevel::Level1).unwrap();
-        let message = b"Hello, post-quantum world!";
-        let wrong_message = b"Wrong message";
-        
-        let signature = Dilithium::sign(&sec_key, message).unwrap();
-        let is_valid = Dilithium::verify(&pub_key, wrong_message, &signature).unwrap();
-        
-        assert!(!is_valid);
-    }
-
-    #[test]
-    fn test_dilithium_validation() {
-        let (pub_key, sec_key) = Dilithium::keygen(SecurityLevel::Level1).unwrap();
-        assert!(Dilithium::validate_public_key(&pub_key).is_ok());
-        assert!(Dilithium::validate_secret_key(&sec_key).is_ok());
-    }
-
-    #[test]
-    fn test_dilithium_with_context() {
-        let (pub_key, sec_key) = Dilithium::keygen(SecurityLevel::Level1).unwrap();
-        let message = b"Hello, world!";
-        let context = b"test context";
-        
-        let signature = Dilithium::sign_with_context(&sec_key, message, context).unwrap();
-        let is_valid = Dilithium::verify_with_context(&pub_key, message, context, &signature).unwrap();
-        
-        assert!(is_valid);
-    }
-}

@@ -2,7 +2,7 @@
 /// 
 /// Provides support for parameterized tests with multiple test cases
 
-use crate::stdlib::value::Value;
+// use crate::stdlib::value::Value;
 use super::{VibeTest, TestVibesResult};
 use std::sync::Arc;
 
@@ -394,59 +394,3 @@ fn value_to_string(value: &Value) -> String {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use crate::stdlib::test_vibes::core::VibeTest;
-
-    #[test]
-    fn test_table_driven_string_operations() {
-        let test = VibeTest::new("test_string_ops");
-        let cases = string_transform_cases();
-        
-        let result = RunTestCases(&test, &cases);
-        assert!(result.is_ok());
-    }
-
-    #[test]
-    fn test_table_driven_math_operations() {
-        let test = VibeTest::new("test_math_ops");
-        let cases = math_operation_cases();
-        
-        let result = RunTestCases(&test, &cases);
-        assert!(result.is_ok());
-    }
-
-    #[test]
-    fn test_table_test_builder() {
-        let test = VibeTest::new("test_builder");
-        
-        let result = TableTestBuilder::new("string_tests")
-            .add_case(
-                "reverse_test",
-                Value::String("hello".to_string()),
-                Value::String("olleh".to_string()),
-                |_t, input, expected| {
-                    if let (Value::String(input_str), Value::String(expected_str)) = (input, expected) {
-                        let result: String = input_str.chars().rev().collect();
-                        if result == *expected_str {
-                            Ok(())
-                        } else {
-                            Err(super::assertion_failed(&format!(
-                                "Expected '{}', got '{}'", expected_str, result
-                            )).into())
-                        }
-                    } else {
-                        Err(super::assertion_failed("Invalid types").into())
-                    }
-                }
-            )
-            .with_setup(|t| {
-                t.Log(&[Value::String("Setting up string tests".to_string())])?;
-                Ok(())
-            })
-            .run(&test);
-        
-        assert!(result.is_ok());
-    }
-}

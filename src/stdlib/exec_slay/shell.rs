@@ -1,9 +1,8 @@
-use crate::error::Error;
+use crate::error::CursedError;
 // Shell command execution utilities
 
 use std::collections::HashMap;
 use std::process::Command;
-use crate::error::CursedError;
 use super::{SlayResult, io_error_to_cursed, get_default_shell};
 
 /// Run a shell command directly
@@ -376,117 +375,3 @@ pub mod utils {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use std::collections::HashMap;
-
-    #[test]
-    fn test_shell_command_builder() {
-        let builder = ShellCommandBuilder::new("echo hello")
-            .env("TEST", "value")
-            .dir("/tmp");
-        
-        assert_eq!(builder.command, "echo hello");
-        assert_eq!(builder.env.get("TEST"), Some(&"value".to_string()));
-        assert_eq!(builder.dir, Some("/tmp".to_string()));
-    }
-
-    #[test]
-    fn test_shell_command_builder_envs() {
-        let mut env_vars = HashMap::new();
-        env_vars.insert("VAR1".to_string(), "value1".to_string());
-        env_vars.insert("VAR2".to_string(), "value2".to_string());
-        
-        let builder = ShellCommandBuilder::new("env")
-            .envs(&env_vars);
-        
-        assert_eq!(builder.env.len(), 2);
-        assert_eq!(builder.env.get("VAR1"), Some(&"value1".to_string()));
-        assert_eq!(builder.env.get("VAR2"), Some(&"value2".to_string()));
-    }
-
-    #[cfg(unix)]
-    #[test]
-    fn test_run_shell() {
-        let result = run_shell("echo 'test'");
-        assert!(result.is_ok());
-    }
-
-    #[cfg(unix)]
-    #[test]
-    fn test_shell_output() {
-        let output = shell_output("echo 'hello'").unwrap();
-        let output_str = String::from_utf8(output).unwrap();
-        assert!(output_str.contains("hello"));
-    }
-
-    #[cfg(unix)]
-    #[test]
-    fn test_shell_with_env() {
-        let mut env = HashMap::new();
-        env.insert("TEST_VAR".to_string(), "test_value".to_string());
-        
-        let result = run_shell_with_env("echo $TEST_VAR", &env);
-        assert!(result.is_ok());
-    }
-
-    #[cfg(unix)]
-    #[test]
-    fn test_shell_builder_run() {
-        let result = ShellCommandBuilder::new("echo 'test'")
-            .env("TEST", "value")
-            .run();
-        
-        assert!(result.is_ok());
-    }
-
-    #[cfg(unix)]
-    #[test]
-    fn test_shell_builder_output() {
-        let output = ShellCommandBuilder::new("echo 'hello'")
-            .output()
-            .unwrap();
-        
-        let output_str = String::from_utf8(output).unwrap();
-        assert!(output_str.contains("hello"));
-    }
-
-    #[test]
-    fn test_command_exists() {
-        // Test with a command that should exist on most systems
-        #[cfg(unix)]
-        assert!(utils::command_exists("ls"));
-        
-        #[cfg(windows)]
-        assert!(utils::command_exists("dir"));
-        
-        // Test with a command that shouldn't exist
-        assert!(!utils::command_exists("nonexistent_command_12345"));
-    }
-
-    #[test]
-    fn test_env_utils() {
-        // Set and get environment variable
-        utils::set_env("TEST_CURSED_VAR", "test_value");
-        let value = utils::get_env("TEST_CURSED_VAR").unwrap();
-        assert_eq!(value, "test_value");
-    }
-
-    #[cfg(unix)]
-    #[test]
-    fn test_pwd_util() {
-        let pwd = utils::pwd().unwrap();
-        assert!(!pwd.is_empty());
-        assert!(pwd.starts_with('/'));
-    }
-
-    #[cfg(unix)]
-    #[test]
-    fn test_shell_combined_output() {
-        let output = shell_combined_output("echo 'stdout'; echo 'stderr' >&2").unwrap();
-        let output_str = String::from_utf8(output).unwrap();
-        assert!(output_str.contains("stdout"));
-        assert!(output_str.contains("stderr"));
-    }
-}

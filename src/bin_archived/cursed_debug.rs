@@ -1,4 +1,4 @@
-use crate::error::Error;
+use crate::error::CursedError;
 /// CURSED Debug Information Generator
 /// 
 /// Command-line tool for generating and inspecting debug information
@@ -7,12 +7,13 @@ use crate::error::Error;
 use clap::{Arg, Command};
 use cursed::debug::{DebugConfig, DebugInfoManager};
 use cursed::codegen::llvm::LlvmCodeGenerator;
-use cursed::error::Error;
 use std::path::{Path, PathBuf};
 use std::fs;
 use tracing::{info, error, debug};
 
 fn main() {
+        // TODO: implement
+    }
     // Initialize logging
     tracing_subscriber::fmt()
         .with_env_filter("cursed_debug=info,cursed=debug")
@@ -111,13 +112,13 @@ fn main() {
     }
 }
 
-fn run_debug_tool(matches: &clap::ArgMatches) -> Result<(), Error> {
+fn run_debug_tool(matches: &clap::ArgMatches) -> crate::error::Result<()> {
     let input_file = matches.get_one::<String>("input").unwrap();
     let output_dir = matches.get_one::<String>("output").unwrap();
     let debug_level: u8 = matches.get_one::<String>("debug-level")
         .unwrap()
         .parse()
-        .map_err(|_| Error::Compile("Invalid debug level".to_string()))?;
+        .map_err(|_| CursedError::Compile("Invalid debug level".to_string()))?;
     let format = matches.get_one::<String>("format").unwrap();
     let optimized = matches.get_flag("optimized");
     let include_source = matches.get_flag("include-source");
@@ -126,7 +127,7 @@ fn run_debug_tool(matches: &clap::ArgMatches) -> Result<(), Error> {
     let dwarf_version: u8 = matches.get_one::<String>("dwarf-version")
         .unwrap()
         .parse()
-        .map_err(|_| Error::Compile("Invalid DWARF version".to_string()))?;
+        .map_err(|_| CursedError::Compile("Invalid DWARF version".to_string()))?;
     let validate = matches.get_flag("validate");
     let show_stats = matches.get_flag("statistics");
     let verbose = matches.get_flag("verbose");
@@ -142,12 +143,12 @@ fn run_debug_tool(matches: &clap::ArgMatches) -> Result<(), Error> {
     // Check input file exists
     let input_path = Path::new(input_file);
     if !input_path.exists() {
-        return Err(Error::Compile(format!("Input file '{}' does not exist", input_file)));
+        return Err(CursedError::Compile(format!("Input file '{}' does not exist", input_file)));
     }
 
     // Read source code
     let source = fs::read_to_string(input_path)
-        .map_err(|e| Error::Io(e.into()))?;
+        .map_err(|e| CursedError::Io(e.into()))?;
 
     // Create debug configuration
     let debug_config = cursed::debug::DebugConfig::default();
@@ -167,7 +168,7 @@ fn run_debug_tool(matches: &clap::ArgMatches) -> Result<(), Error> {
         "lldb-script" => generate_lldb_script(&mut generator, input_path, &source, output_dir)?,
         "vscode-config" => generate_vscode_config(&mut generator, input_path, output_dir)?,
         "report" => generate_debug_report(&mut generator, input_path, &source, output_dir)?,
-        _ => return Err(Error::Compile(format!("Unknown format: {}", format))),
+        _ => return Err(CursedError::Compile(format!("Unknown format: {}", format))),
     }
 
     // Validate debug information if requested
@@ -180,7 +181,7 @@ fn run_debug_tool(matches: &clap::ArgMatches) -> Result<(), Error> {
                 for error in errors {
                     error!("  - {}", error);
                 }
-                return Err(Error::Compile("Debug validation failed".to_string()));
+                return Err(CursedError::Compile("Debug validation failed".to_string()));
             }
         }
     }
@@ -213,7 +214,7 @@ fn generate_llvm_ir(
     input_path: &Path,
     source: &str,
     output_dir: &str,
-) -> Result<(), Error> {
+) -> crate::error::Result<()> {
     info!("Generating LLVM IR with debug information");
     
     let ir = generator.generate_ir_with_debug(input_path.to_path_buf(), source)?;
@@ -223,7 +224,7 @@ fn generate_llvm_ir(
     ).with_extension("ll");
     
     fs::write(&output_file, ir)
-        .map_err(|e| Error::Io(e.into()))?;
+        .map_err(|e| CursedError::Io(e.into()))?;
     
     info!("LLVM IR written to: {}", output_file.display());
     Ok(())
@@ -234,7 +235,7 @@ fn generate_dwarf_info(
     input_path: &Path,
     source: &str,
     output_dir: &str,
-) -> Result<(), Error> {
+) -> crate::error::Result<()> {
     info!("Generating DWARF debug information");
     
     // Generate IR first to populate debug info
@@ -263,7 +264,7 @@ fn generate_dwarf_info(
     ).with_extension("dwarf");
     
     fs::write(&output_file, content)
-        .map_err(|e| Error::Io(e.into()))?;
+        .map_err(|e| CursedError::Io(e.into()))?;
     
     info!("DWARF information written to: {}", output_file.display());
     Ok(())
@@ -274,7 +275,7 @@ fn generate_gdb_script(
     input_path: &Path,
     source: &str,
     output_dir: &str,
-) -> Result<(), Error> {
+) -> crate::error::Result<()> {
     info!("Generating GDB debugging script");
     
     // Generate IR to populate debug info
@@ -310,7 +311,7 @@ fn generate_gdb_script(
     ).with_extension("gdb");
     
     fs::write(&output_file, script)
-        .map_err(|e| Error::Io(e.into()))?;
+        .map_err(|e| CursedError::Io(e.into()))?;
     
     info!("GDB script written to: {}", output_file.display());
     Ok(())
@@ -321,7 +322,7 @@ fn generate_lldb_script(
     input_path: &Path,
     source: &str,
     output_dir: &str,
-) -> Result<(), Error> {
+) -> crate::error::Result<()> {
     info!("Generating LLDB debugging script");
     
     // Generate IR to populate debug info
@@ -354,7 +355,7 @@ fn generate_lldb_script(
     ).with_extension("lldb");
     
     fs::write(&output_file, script)
-        .map_err(|e| Error::Io(e.into()))?;
+        .map_err(|e| CursedError::Io(e.into()))?;
     
     info!("LLDB script written to: {}", output_file.display());
     Ok(())
@@ -364,7 +365,7 @@ fn generate_vscode_config(
     generator: &mut LlvmCodeGenerator,
     input_path: &Path,
     output_dir: &str,
-) -> Result<(), Error> {
+) -> crate::error::Result<()> {
     info!("Generating VS Code debugging configuration");
     
     let executable_path = Path::new(output_dir).join(
@@ -375,12 +376,12 @@ fn generate_vscode_config(
     let config = "{}".to_string(); // Placeholder VS Code config
     
     let config_str = serde_json::to_string_pretty(&config)
-        .map_err(|e| Error::Compile(format!("Failed to serialize VS Code config: {}", e)))?;
+        .map_err(|e| CursedError::Compile(format!("Failed to serialize VS Code config: {}", e)))?;
     
     let output_file = Path::new(output_dir).join("launch.json");
     
     fs::write(&output_file, config_str)
-        .map_err(|e| Error::Io(e.into()))?;
+        .map_err(|e| CursedError::Io(e.into()))?;
     
     info!("VS Code configuration written to: {}", output_file.display());
     Ok(())
@@ -391,7 +392,7 @@ fn generate_debug_report(
     input_path: &Path,
     source: &str,
     output_dir: &str,
-) -> Result<(), Error> {
+) -> crate::error::Result<()> {
     info!("Generating comprehensive debug report");
     
     // Generate IR to populate debug info
@@ -442,7 +443,7 @@ fn generate_debug_report(
     ).with_extension("debug_report.md");
     
     fs::write(&output_file, report)
-        .map_err(|e| Error::Io(e.into()))?;
+        .map_err(|e| CursedError::Io(e.into()))?;
     
     info!("Debug report written to: {}", output_file.display());
     Ok(())

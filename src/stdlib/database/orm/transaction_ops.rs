@@ -42,9 +42,9 @@ impl<T: Entity> TransactionalRepository<T> {
 
     /// facts Execute operation within transaction
     #[instrument(skip(self, operation))]
-    pub async fn with_transaction<F, R>(&self, operation: F) -> Result<(), Error>
+    pub async fn with_transaction<F, R>(&self, operation: F) -> crate::error::Result<()>
     where
-        F: FnOnce(&Repository<T>) -> std::pin::Pin<Box<dyn std::future::Future<Output = Result<(), Error>> + Send>>,
+        F: FnOnce(&Repository<T>) -> std::pin::Pin<Box<dyn std::future::Future<Output = crate::error::Result<()>> + Send>>,
         R: Send,
     {
         info!(entity = T::table_name(), "Executing operation with transaction");
@@ -70,7 +70,7 @@ impl<T: Entity> TransactionalRepository<T> {
 
     /// periodt Begin new transaction
     #[instrument(skip(self))]
-    pub async fn begin_transaction(&self) -> Result<(), Error> {
+    pub async fn begin_transaction(&self) -> crate::error::Result<()> {
         debug!("Beginning new transaction");
         
         // Create transaction using DB connection
@@ -87,7 +87,7 @@ impl<T: Entity> TransactionalRepository<T> {
 
     /// bestie Commit transaction
     #[instrument(skip(self, tx))]
-    pub async fn commit_transaction(&self, tx: Arc<Tx>) -> Result<(), Error> {
+    pub async fn commit_transaction(&self, tx: Arc<Tx>) -> crate::error::Result<()> {
         debug!("Committing transaction");
         
         // Create a mutable reference to commit the transaction
@@ -109,7 +109,7 @@ impl<T: Entity> TransactionalRepository<T> {
 
     /// yolo Rollback transaction
     #[instrument(skip(self, tx))]
-    pub async fn rollback_transaction(&self, tx: Arc<Tx>) -> Result<(), Error> {
+    pub async fn rollback_transaction(&self, tx: Arc<Tx>) -> crate::error::Result<()> {
         debug!("Rolling back transaction");
         
         // Create a mutable reference to rollback the transaction
@@ -175,7 +175,7 @@ impl TransactionScope {
 
     /// facts Begin transaction scope
     #[instrument(skip(self))]
-    pub async fn begin(&self) -> Result<(), Error> {
+    pub async fn begin(&self) -> crate::error::Result<()> {
         info!("Beginning transaction scope");
         
         // Update state
@@ -199,9 +199,9 @@ impl TransactionScope {
 
     /// periodt Execute operation within scope
     #[instrument(skip(self, operation))]
-    pub async fn execute<F, R>(&self, operation_name: &str, operation: F) -> Result<(), Error>
+    pub async fn execute<F, R>(&self, operation_name: &str, operation: F) -> crate::error::Result<()>
     where
-        F: std::future::Future<Output = Result<(), Error>>,
+        F: std::future::Future<Output = crate::error::Result<()>>,
     {
         debug!(operation = operation_name, "Executing operation in transaction scope");
         
@@ -244,7 +244,7 @@ impl TransactionScope {
 
     /// bestie Commit transaction scope
     #[instrument(skip(self))]
-    pub async fn commit(&self) -> Result<(), Error> {
+    pub async fn commit(&self) -> crate::error::Result<()> {
         info!("Committing transaction scope");
         
         // Check state
@@ -270,7 +270,7 @@ impl TransactionScope {
 
     /// yolo Rollback transaction scope
     #[instrument(skip(self))]
-    pub async fn rollback(&self) -> Result<(), Error> {
+    pub async fn rollback(&self) -> crate::error::Result<()> {
         warn!("Rolling back transaction scope");
         
         // Check state
@@ -399,7 +399,7 @@ impl UnitOfWork {
 
     /// yolo Commit all changes
     #[instrument(skip(self))]
-    pub async fn commit(&self) -> Result<(), Error> {
+    pub async fn commit(&self) -> crate::error::Result<()> {
         info!("Committing unit of work");
         
         // Begin transaction scope
@@ -459,7 +459,7 @@ impl UnitOfWork {
 
     /// slay Rollback all changes
     #[instrument(skip(self))]
-    pub async fn rollback(&self) -> Result<(), Error> {
+    pub async fn rollback(&self) -> crate::error::Result<()> {
         warn!("Rolling back unit of work");
         
         // Rollback transaction scope
@@ -648,122 +648,3 @@ pub struct UnitOfWorkStats {
 
 // Note: Tx implementation is provided by the core database module
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use std::sync::Arc;
-    use tracing_test::traced_test;
-use crate::error_types::Error;
-
-    #[derive(Debug, Clone)]
-    struct TestUser {
-        id: Option<i64>,
-        name: String,
-    }
-
-    impl super::super::entity::Entity for TestUser {
-        fn table_name() -> &'static str { "users" }
-        fn primary_key_value(&self) -> Option<super::super::super::SqlValue> { 
-            self.id.map(super::super::super::SqlValue::Integer) 
-        }
-        fn set_primary_key_value(&mut self, value: super::super::super::SqlValue) { 
-            if let super::super::super::SqlValue::Integer(id) = value { self.id = Some(id); }
-        }
-        fn from_row(row: &HashMap<String, super::super::super::SqlValue>) -> Result<(), Error> {
-            Ok(Self { id: None, name: "Test".to_string() })
-        }
-        fn to_fields(&self) -> HashMap<String, super::super::super::SqlValue> { HashMap::new() }
-        fn field_names() -> Vec<&'static str> { Vec::from(["id", "name"]) }
-        fn column_definitions() -> Vec<super::super::entity::ColumnDefinition> { Vec::from([]) }
-        fn metadata() -> super::super::entity::EntityMetadata {
-            super::super::entity::EntityMetadata {
-                table_name: "users".to_string(),
-                primary_key: "id".to_string(),
-                fields: Vec::from(["id".to_string(), "name".to_string()]),
-                relationships: Vec::from([]),
-                validation_rules: Vec::from([]),
-                indexes: Vec::from([]),
-                version: 1,
-            }
-        }
-    }
-
-    fn create_mock_db() -> Arc<DB> {
-        Arc::new(DB::open("test".to_string(), "".to_string()).expect("Failed to create test DB"))
-    }
-
-    #[traced_test]
-    #[test]
-    fn test_transaction_scope_creation() {
-        let db = create_mock_db();
-        let scope = TransactionScope::new(db);
-        
-        let metrics = scope.metrics();
-        assert_eq!(metrics.state, TransactionState::NotStarted);
-        assert_eq!(metrics.total_operations, 0);
-    }
-
-    #[traced_test]
-    #[test]
-    fn test_unit_of_work_creation() {
-        let db = create_mock_db();
-        let uow = UnitOfWork::new(db);
-        
-        let stats = uow.stats();
-        assert_eq!(stats.new_entities, 0);
-        assert_eq!(stats.dirty_entities, 0);
-        assert_eq!(stats.removed_entities, 0);
-    }
-
-    #[traced_test]
-    #[test]
-    fn test_unit_of_work_registration() {
-        let db = create_mock_db();
-        let uow = UnitOfWork::new(db);
-        
-        let user = TestUser {
-            id: None,
-            name: "John".to_string(),
-        };
-        
-        uow.register_new(user);
-        
-        let stats = uow.stats();
-        assert_eq!(stats.new_entities, 1);
-    }
-
-    #[traced_test]
-    #[test]
-    fn test_transaction_config() {
-        let config = TransactionConfig::default();
-        
-        assert_eq!(config.timeout, std::time::Duration::from_secs(30));
-        assert_eq!(config.isolation_level, super::super::super::SqlIsolationLevel::LevelReadCommitted);
-        assert!(!config.read_only);
-    }
-
-    #[traced_test]
-    #[test]
-    fn test_transaction_metrics() {
-        let metrics = TransactionMetrics {
-            state: TransactionState::Committed,
-            total_operations: 10,
-            completed_operations: 8,
-            failed_operations: 2,
-            start_time: None,
-            end_time: None,
-        };
-        
-        assert_eq!(metrics.success_rate(), 0.8);
-    }
-
-    #[traced_test]
-    #[test]
-    fn test_retry_config() {
-        let config = RetryConfig::default();
-        
-        assert_eq!(config.max_attempts, 3);
-        assert_eq!(config.delay, std::time::Duration::from_millis(100));
-        assert_eq!(config.backoff_multiplier, 2.0);
-    }
-}

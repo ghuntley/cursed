@@ -4,7 +4,7 @@
 /// with the sophisticated type system infrastructure including constraint
 /// resolution, type inference, and generic instantiation.
 
-use crate::error::Error;
+use crate::error::CursedError;
 use crate::ast::traits::{Node, Expression, Statement};
 use crate::ast::Program;
 use crate::type_system::{
@@ -74,7 +74,7 @@ impl TypeChecker {
     }
 
     /// Check type of an expression (legacy string interface)
-    pub fn check_type(&self, expr: &str) -> Result<(), Error> {
+    pub fn check_type(&self, expr: &str) -> crate::error::Result<()> {
         // For backward compatibility, try to parse basic type names
         match expr {
             "facts" | "true" | "false" => Ok(Type::Lit),
@@ -105,7 +105,7 @@ impl TypeChecker {
     pub fn check_expression_type(
         &mut self,
         expr: &dyn Expression,
-    ) -> Result<(), Error> {
+    ) -> crate::error::Result<()> {
         // Use inference context if available
         let default_context = InferenceContext::new();
         let context = self.current_context.as_ref().unwrap_or(&default_context);
@@ -126,7 +126,7 @@ impl TypeChecker {
     }
 
     /// Check an entire program for type correctness
-    pub fn check_program(&mut self, program: &Program) -> Result<(), Error> {
+    pub fn check_program(&mut self, program: &Program) -> crate::error::Result<()> {
         tracing::info!("Starting type checking for program");
         
         // Create new inference context for the program
@@ -148,7 +148,7 @@ impl TypeChecker {
     }
 
     /// Collect type definitions from a statement
-    fn collect_type_definitions(&mut self, statement: &Box<dyn Statement>) -> Result<(), Error> {
+    fn collect_type_definitions(&mut self, statement: &Box<dyn Statement>) -> crate::error::Result<()> {
         // This would analyze struct/interface declarations and register them
         // For now, we'll implement basic structure
         tracing::debug!("Collecting type definitions from statement: {}", statement.string());
@@ -167,7 +167,7 @@ impl TypeChecker {
     }
 
     /// Parse and register a struct definition
-    fn parse_and_register_struct_definition(&mut self, definition: &str) -> Result<(), Error> {
+    fn parse_and_register_struct_definition(&mut self, definition: &str) -> crate::error::Result<()> {
         // Basic parsing - in a real implementation this would use the AST
         let parts: Vec<&str> = definition.split_whitespace().collect();
         if parts.len() >= 2 && parts[0] == "squad" {
@@ -190,7 +190,7 @@ impl TypeChecker {
     }
 
     /// Parse and register an interface definition
-    fn parse_and_register_interface_definition(&mut self, definition: &str) -> Result<(), Error> {
+    fn parse_and_register_interface_definition(&mut self, definition: &str) -> crate::error::Result<()> {
         // Basic parsing - in a real implementation this would use the AST
         let parts: Vec<&str> = definition.split_whitespace().collect();
         if parts.len() >= 2 && parts[0] == "collab" {
@@ -217,7 +217,7 @@ impl TypeChecker {
         &mut self,
         statement: &Box<dyn Statement>,
         context: &mut InferenceContext,
-    ) -> Result<(), Error> {
+    ) -> crate::error::Result<()> {
         tracing::debug!("Type checking statement: {}", statement.string());
         
         // This would recursively check all expressions within the statement
@@ -236,7 +236,7 @@ impl TypeChecker {
     }
 
     /// Check a variable declaration
-    fn check_variable_declaration(&mut self, declaration: &str, _context: &InferenceContext) -> Result<(), Error> {
+    fn check_variable_declaration(&mut self, declaration: &str, _context: &InferenceContext) -> crate::error::Result<()> {
         tracing::debug!("Checking variable declaration: {}", declaration);
         
         // Basic parsing - extract variable name and type/value
@@ -260,7 +260,7 @@ impl TypeChecker {
     }
 
     /// Infer type from a literal value
-    fn infer_type_from_literal(&self, literal: &str) -> Result<(), Error> {
+    fn infer_type_from_literal(&self, literal: &str) -> crate::error::Result<()> {
         match literal {
             "true" | "false" => Ok(TypeExpression::named("facts")),
             s if s.parse::<i32>().is_ok() => Ok(TypeExpression::named("normie")),
@@ -274,7 +274,7 @@ impl TypeChecker {
                 if self.type_system.get_type_definition(literal).is_some() {
                     Ok(TypeExpression::named(literal))
                 } else {
-                    Err(Error::Type(format!("Cannot infer type for literal: {}", literal)))
+                    Err(CursedError::Type(format!("Cannot infer type for literal: {}", literal)))
                 }
             }
         }
@@ -354,7 +354,7 @@ impl TypeChecker {
     }
 
     /// Register a custom type
-    pub fn register_type(&mut self, type_def: TypeDefinition) -> Result<(), Error> {
+    pub fn register_type(&mut self, type_def: TypeDefinition) -> crate::error::Result<()> {
         self.type_system.register_type(type_def)
     }
 
@@ -363,7 +363,7 @@ impl TypeChecker {
         &self,
         type_expr: &TypeExpression,
         constraints: &[crate::ast::declarations::GenericConstraint],
-    ) -> Result<(), Error> {
+    ) -> crate::error::Result<()> {
         self.type_system.check_constraints(type_expr, constraints)
     }
 }

@@ -1,5 +1,5 @@
 //! Minimal lexer for CURSED - just enough to tokenize basic programs
-use crate::error_types::Error;
+use crate::error::CursedError;
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum TokenType {

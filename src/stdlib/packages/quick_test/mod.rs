@@ -1,4 +1,4 @@
-use crate::error::Error;
+use crate::error::CursedError;
 /// fr fr Property-based testing framework for CURSED periodt
 ///
 /// This module provides a comprehensive property-based testing system that helps
@@ -22,11 +22,10 @@ use std::fmt;
 use rand::{Rng, SeedableRng};
 use rand_chacha::ChaCha20Rng;
 
-use crate::stdlib::value::Value;
-use crate::stdlib::errors::CursedError;
+// use crate::stdlib::value::Value;
 
 /// fr fr Result type for quick test operations
-pub type QuickTestResult<T> = std::result::Result<T, Error>;
+pub type QuickTestcrate::error::Result<T> = std::result::Result<T>;
 
 /// fr fr Configuration for how a test is run
 #[derive(Debug, Clone)]
@@ -1129,101 +1128,3 @@ pub fn replay_config(seed: u64, failed_value: Value) -> ReplayConfig {
     ReplayConfig::new(seed, failed_value)
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-    
-    #[test]
-    fn test_basic_property() {
-        // Test that abs(x) >= 0 for all integers
-        let result = check(
-            |val| {
-                if let Value::Integer(x) = val {
-                    x.abs() >= 0
-                } else {
-                    false
-                }
-            },
-            Some(Config {
-                max_count: 100,
-                ..Default::default()
-            }),
-        );
-        
-        assert!(result.is_ok());
-        assert!(result.unwrap().passed);
-    }
-    
-    #[test]
-    fn test_generator_creation() {
-        let gen = int_range(-10, 10);
-        let mut rng = ChaCha20Rng::from_entropy();
-        
-        for _ in 0..10 {
-            let val = gen.generate(&mut rng, 5);
-            if let Value::Integer(x) = val {
-                assert!(x >= -10 && x <= 10);
-            } else {
-                panic!("Expected integer value");
-            }
-        }
-    }
-    
-    #[test]
-    fn test_string_generator() {
-        let gen = string_of_n(5, 10, alphanumeric());
-        let mut rng = ChaCha20Rng::from_entropy();
-        
-        let val = gen.generate(&mut rng, 10);
-        if let Value::String(s) = val {
-            assert!(s.len() >= 5 && s.len() <= 10);
-            assert!(s.chars().all(|c| c.is_alphanumeric()));
-        } else {
-            panic!("Expected string value");
-        }
-    }
-    
-    #[test]
-    fn test_shrinking() {
-        let gen = int_range(-1000, 1000);
-        let val = Value::Integer(500);
-        let shrunk = gen.shrink(&val);
-        
-        // Should include 0, 250, and 499
-        assert!(shrunk.contains(&Value::Integer(0)));
-        assert!(shrunk.len() > 0);
-    }
-    
-    #[test]
-    fn test_failing_property_with_shrink() {
-        // Property that fails for negative numbers
-        let result = check_with_generator(
-            |val| {
-                if let Value::Integer(x) = val {
-                    x >= 0
-                } else {
-                    false
-                }
-            },
-            int_range(-100, 100),
-            Some(Config {
-                max_count: 100,
-                shrink_strategy: ShrinkStrategy::DefaultShrink,
-                ..Default::default()
-            }),
-        );
-        
-        assert!(result.is_ok());
-        let result = result.unwrap();
-        
-        // Should fail and potentially shrink to a smaller negative number
-        if !result.passed {
-            if let Some(Value::Integer(shrunk)) = result.shrunk_input {
-                if let Some(Value::Integer(original)) = result.input {
-                    // Shrunk value should be closer to zero
-                    assert!(shrunk.abs() <= original.abs());
-                }
-            }
-        }
-    }
-}

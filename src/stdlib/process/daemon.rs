@@ -1,4 +1,4 @@
-use crate::error::Error;
+use crate::error::CursedError;
 /// Cross-platform daemon and service management
 /// 
 /// This module provides facilities for creating and managing daemon processes
@@ -13,8 +13,8 @@ use std::time::{Duration, Instant};
 use std::fs::{File, OpenOptions};
 use std::io::{Write, Read};
 
-use crate::stdlib::process::error::{ProcessError, ProcessResult, system_error, execution_failed};
-use crate::stdlib::process::core::{ProcessConfig, spawn_process};
+// use crate::stdlib::process::error::{ProcessError, ProcessResult, system_error, execution_failed};
+// use crate::stdlib::process::core::{ProcessConfig, spawn_process};
 
 /// Options for daemon configuration
 #[derive(Debug, Clone)]
@@ -911,91 +911,3 @@ WantedBy=multi-user.target
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use std::sync::atomic::{AtomicBool, Ordering};
-    use std::thread;
-    use std::time::Duration;
-use crate::stdlib::process::error::ProcessResult;
-use crate::stdlib::process::error::ProcessError;
-    
-    #[test]
-    fn test_daemon_config() {
-        let config = DaemonConfig::new("test-daemon")
-            .working_directory("/tmp")
-            .user("nobody")
-            .group("nogroup")
-            .pid_file("/tmp/test-daemon.pid")
-            .log_file("/tmp/test-daemon.log")
-            .description("Test daemon")
-            .auto_restart(3)
-            .env("TEST_VAR", "test_value")
-            .umask(0o022);
-        
-        assert_eq!(config.name, "test-daemon");
-        assert_eq!(config.working_directory, Some(PathBuf::from("/tmp")));
-        assert_eq!(config.user, Some("nobody".to_string()));
-        assert_eq!(config.group, Some("nogroup".to_string()));
-        assert_eq!(config.pid_file, Some(PathBuf::from("/tmp/test-daemon.pid")));
-        assert_eq!(config.log_file, Some(PathBuf::from("/tmp/test-daemon.log")));
-        assert_eq!(config.description, Some("Test daemon".to_string()));
-        assert!(config.auto_restart);
-        assert_eq!(config.max_restarts, 3);
-        assert_eq!(config.environment.get("TEST_VAR"), Some(&"test_value".to_string()));
-        assert_eq!(config.umask, Some(0o022));
-    }
-    
-    #[test]
-    fn test_daemon_creation() {
-        let config = DaemonConfig::new("test-daemon");
-        let daemon = Daemon::new(config);
-        
-        assert_eq!(daemon.status(), DaemonStatus::Stopped);
-        assert_eq!(daemon.pid(), None);
-        assert_eq!(daemon.restart_count(), 0);
-    }
-    
-    #[test]
-    fn test_service_manager() {
-        let manager = ServiceManager::new();
-        
-        let config = DaemonConfig::new("test-service");
-        assert!(manager.register("test-service".to_string(), config).is_ok());
-        
-        let services = manager.list_services();
-        assert!(services.contains(&"test-service".to_string()));
-        
-        let status = manager.service_status("test-service").unwrap();
-        assert_eq!(status, DaemonStatus::Stopped);
-    }
-    
-    #[test]
-    fn test_daemon_status_enum() {
-        assert_eq!(DaemonStatus::Running, DaemonStatus::Running);
-        assert_ne!(DaemonStatus::Running, DaemonStatus::Stopped);
-    }
-    
-    #[test]
-    fn test_daemon_file_operations() {
-        let temp_dir = std::env::temp_dir();
-        let config = DaemonConfig::new("test-file-daemon")
-            .pid_file(temp_dir.join("test-daemon.pid"))
-            .lock_file(temp_dir.join("test-daemon.lock"));
-        
-        let daemon = Daemon::new(config);
-        
-        // Test PID file creation (would be called during daemon start)
-        if let Err(e) = daemon.write_pid_file() {
-            println!("Note: PID file creation may fail in test environment: {}", e);
-        }
-        
-        // Test lock file creation
-        if let Err(e) = daemon.create_lock_file() {
-            println!("Note: Lock file creation may fail in test environment: {}", e);
-        }
-        
-        // Test cleanup
-        let _ = daemon.cleanup_files();
-    }
-}

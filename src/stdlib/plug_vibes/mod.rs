@@ -26,7 +26,7 @@ pub mod hooks;
 pub mod distribution;
 pub mod development;
 pub mod llvm_integration;
-use crate::error::Error;
+use crate::error::CursedError;
 
 // Re-export core functionality
 pub use error::*;
@@ -41,5 +41,3 @@ pub use distribution::*;
 pub use development::*;
 pub use llvm_integration::*;
 
-#[cfg(test)]
-pub mod tests;

@@ -1,12 +1,12 @@
-/// Error handling for system operations
+/// CursedError handling for system operations
 use std::fmt;
-use crate::error::Error;
+use crate::error::CursedError;
 use std::io;
 
 /// Result type for process operations
 pub type ProcessResult<T> = std::result::Result<T, ProcessError>;
 
-/// Error types for process operations
+/// CursedError types for process operations
 #[derive(Debug, Clone)]
 pub enum ProcessError {
     /// Process spawning failed
@@ -98,63 +98,63 @@ impl ProcessError {
     }
 }
 
-impl fmt::Display for ProcessError {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
-            ProcessError::SpawnError { command, error } => {
-                write!(f, "Failed to spawn process '{}': {}", command, error)
-            }
-            ProcessError::WaitError { pid, error } => {
-                write!(f, "Failed to wait for process {}: {}", pid, error)
-            }
-            ProcessError::SignalError { signal, target, error } => {
-                if let Some(pid) = target {
-                    write!(f, "Failed to send signal {} to process {}: {}", signal, pid, error)
-                } else {
-                    write!(f, "Failed to handle signal {}: {}", signal, error)
-                }
-            }
-            ProcessError::PermissionError { operation, error } => {
-                write!(f, "Permission denied for operation '{}': {}", operation, error)
-            }
-            ProcessError::ProcessNotFound { pid } => {
-                write!(f, "Process with PID {} not found", pid)
-            }
-            ProcessError::InvalidArguments { operation, details } => {
-                write!(f, "Invalid arguments for operation '{}': {}", operation, details)
-            }
-            ProcessError::SystemError { operation, error } => {
-                write!(f, "System error during operation '{}': {}", operation, error)
-            }
-            ProcessError::IoError { operation, error } => {
-                write!(f, "I/O error during operation '{}': {}", operation, error)
-            }
-            ProcessError::TimeoutError { operation, timeout_ms } => {
-                write!(f, "Operation '{}' timed out after {}ms", operation, timeout_ms)
-            }
-            ProcessError::ProcessTerminated { pid, exit_code, signal } => {
-                match (exit_code, signal) {
-                    (Some(code), None) => write!(f, "Process {} terminated with exit code {}", pid, code),
-                    (None, Some(sig)) => write!(f, "Process {} terminated by signal {}", pid, sig),
-                    (Some(code), Some(sig)) => write!(f, "Process {} terminated with exit code {} by signal {}", pid, code, sig),
-                    (None, None) => write!(f, "Process {} terminated abnormally", pid),
-                }
-            }
-            ProcessError::General(msg) => write!(f, "Process error: {}", msg),
-        }
-    }
-}
+// impl fmt::Display for ProcessError {
+//     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+//         match self {
+//             ProcessError::SpawnError { command, error } => {
+//                 write!(f, "Failed to spawn process '{}': {}", command, error)
+//             }
+//             ProcessError::WaitError { pid, error } => {
+//                 write!(f, "Failed to wait for process {}: {}", pid, error)
+//             }
+//             ProcessError::SignalError { signal, target, error } => {
+//                 if let Some(pid) = target {
+//                     write!(f, "Failed to send signal {} to process {}: {}", signal, pid, error)
+//                 } else {
+//                     write!(f, "Failed to handle signal {}: {}", signal, error)
+//                 }
+//             }
+//             ProcessError::PermissionError { operation, error } => {
+//                 write!(f, "Permission denied for operation '{}': {}", operation, error)
+//             }
+//             ProcessError::ProcessNotFound { pid } => {
+//                 write!(f, "Process with PID {} not found", pid)
+//             }
+//             ProcessError::InvalidArguments { operation, details } => {
+//                 write!(f, "Invalid arguments for operation '{}': {}", operation, details)
+//             }
+//             ProcessError::SystemError { operation, error } => {
+//                 write!(f, "System error during operation '{}': {}", operation, error)
+//             }
+//             ProcessError::IoError { operation, error } => {
+//                 write!(f, "I/O error during operation '{}': {}", operation, error)
+//             }
+//             ProcessError::TimeoutError { operation, timeout_ms } => {
+//                 write!(f, "Operation '{}' timed out after {}ms", operation, timeout_ms)
+//             }
+//             ProcessError::ProcessTerminated { pid, exit_code, signal } => {
+//                 match (exit_code, signal) {
+//                     (Some(code), None) => write!(f, "Process {} terminated with exit code {}", pid, code),
+//                     (None, Some(sig)) => write!(f, "Process {} terminated by signal {}", pid, sig),
+//                     (Some(code), Some(sig)) => write!(f, "Process {} terminated with exit code {} by signal {}", pid, code, sig),
+//                     (None, None) => write!(f, "Process {} terminated abnormally", pid),
+//                 }
+//             }
+//             ProcessError::General(msg) => write!(f, "Process error: {}", msg),
+//         }
+//     }
+// }
 
-impl std::error::Error for ProcessError {}
-
-impl From<io::Error> for ProcessError {
-    fn from(error: io::Error) -> Self {
-        ProcessError::IoError {
-            operation: "I/O operation".to_string(),
-            error: error.to_string(),
-        }
-    }
-}
+// impl std::error::CursedError for ProcessError {}
+// 
+// impl From<std::io::Error> for ProcessError {
+//     fn from(error: std::io::Error) -> Self {
+//         ProcessError::IoError {
+//             operation: "I/O operation".to_string(),
+//             error: error.to_string(),
+//         }
+//     }
+// }
 
 // Helper functions for creating specific error types
 pub fn spawn_error(command: &str, error: &str) -> ProcessError {

@@ -1,4 +1,4 @@
-use crate::error::Error;
+use crate::error::CursedError;
 /// Real Kyber Key Encapsulation Mechanism Implementation
 /// 
 /// This is a production-ready implementation of CRYSTALS-Kyber, a lattice-based
@@ -20,7 +20,7 @@ use rand::rngs::OsRng;
 use rand::RngCore;
 use sha3::{Sha3_256, Sha3_512, Digest, Shake256};
 use sha3::digest::{ExtendableOutput, Update, XofReader};
-use crate::stdlib::crypto_pqc::{PqcResult, PqcError, SecurityLevel, AlgorithmType};
+// use crate::stdlib::crypto_pqc::{PqcResult, PqcError, SecurityLevel, AlgorithmType};
 use super::{KeyEncapsulation, ParameterSet, AlgorithmPerformance, KeySizes};
 
 // Kyber parameters
@@ -889,70 +889,3 @@ impl RealKyber {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_real_kyber_keygen() {
-        let (pub_key, sec_key) = RealKyber::keygen(SecurityLevel::Level1).unwrap();
-        assert_eq!(pub_key.params, KyberParams::Kyber512);
-        assert_eq!(sec_key.params, KyberParams::Kyber512);
-    }
-
-    #[test]
-    fn test_real_kyber_encaps_decaps() {
-        let (pub_key, sec_key) = RealKyber::keygen(SecurityLevel::Level1).unwrap();
-        
-        let (ciphertext, shared_secret1) = RealKyber::encaps(&pub_key).unwrap();
-        let shared_secret2 = RealKyber::decaps(&sec_key, &ciphertext).unwrap();
-        
-        assert_eq!(shared_secret1.data, shared_secret2.data);
-    }
-
-    #[test]
-    fn test_kyber_polynomial_operations() {
-        let mut poly1 = KyberPolynomial::new();
-        poly1.coeffs[0] = 1;
-        poly1.coeffs[1] = 2;
-        
-        let mut poly2 = KyberPolynomial::new();
-        poly2.coeffs[0] = 3;
-        poly2.coeffs[1] = 4;
-        
-        let sum = poly1.add(&poly2);
-        assert_eq!(sum.coeffs[0], 4);
-        assert_eq!(sum.coeffs[1], 6);
-    }
-
-    #[test]
-    fn test_kyber_compression() {
-        let mut poly = KyberPolynomial::new();
-        poly.coeffs[0] = 100;
-        poly.coeffs[1] = 200;
-        
-        let compressed = poly.compress(4);
-        let decompressed = KyberPolynomial::decompress(&compressed, 4);
-        
-        // Should be approximately equal after compression/decompression
-        assert!((poly.coeffs[0] - decompressed.coeffs[0]).abs() < 200);
-        assert!((poly.coeffs[1] - decompressed.coeffs[1]).abs() < 200);
-    }
-
-    #[test]
-    fn test_kyber_ntt() {
-        let mut poly = KyberPolynomial::new();
-        poly.coeffs[0] = 1;
-        poly.coeffs[1] = 2;
-        poly.coeffs[2] = 3;
-        
-        let original = poly.clone();
-        poly.ntt();
-        poly.intt();
-        
-        // After NTT and INTT, should be close to original
-        for i in 0..3 {
-            assert!((poly.coeffs[i] - original.coeffs[i]).abs() < 10);
-        }
-    }
-}

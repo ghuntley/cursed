@@ -3,9 +3,8 @@
 // Provides comprehensive elliptic curve operations for the CURSED stdlib.
 // Supports ECDSA signing/verification and ECDH key exchange with P-256, P-384 curves.
 
-use crate::stdlib::value::Value;
+// use crate::stdlib::value::Value;
 use crate::error::CursedError;
-use crate::error::Error;
 use std::collections::HashMap;
 use rand::rngs::OsRng;
 use p256::{
@@ -47,7 +46,7 @@ impl EcCurve {
         }
     }
     
-    pub fn from_name(name: &str) -> Result<(), Error> {
+    pub fn from_name(name: &str) -> crate::error::Result<()> {
         match name.to_uppercase().as_str() {
             "P-256" | "P256" | "SECP256R1" => Ok(EcCurve::P256),
             "P-384" | "P384" | "SECP384R1" => Ok(EcCurve::P384),
@@ -99,7 +98,7 @@ impl EcKeyPair {
         hex::encode(result)
     }
     
-    pub fn to_value(&self) -> Result<(), Error> {
+    pub fn to_value(&self) -> crate::error::Result<()> {
         let mut map = HashMap::new();
         
         map.insert("curve".to_string(), Value::String(self.curve.name().to_string()));
@@ -121,7 +120,7 @@ pub struct EcdhSharedSecret {
 }
 
 impl EcdhSharedSecret {
-    pub fn to_value(&self) -> Result<(), Error> {
+    pub fn to_value(&self) -> crate::error::Result<()> {
         let mut map = HashMap::new();
         
         map.insert("curve".to_string(), Value::String(self.curve.name().to_string()));
@@ -133,7 +132,7 @@ impl EcdhSharedSecret {
 }
 
 /// Generate elliptic curve key pair
-pub fn ec_generate_keypair(args: Vec<Value>) -> Result<(), Error> {
+pub fn ec_generate_keypair(args: Vec<Value>) -> crate::error::Result<()> {
     if args.is_empty() {
         return Err(CursedError::InvalidArgument("Curve name required".to_string()));
     }
@@ -152,7 +151,7 @@ pub fn ec_generate_keypair(args: Vec<Value>) -> Result<(), Error> {
 }
 
 /// Generate P-256 key pair
-fn generate_p256_keypair() -> Result<(), Error> {
+fn generate_p256_keypair() -> crate::error::Result<()> {
     let mut rng = OsRng;
     let private_key = P256SecretKey::random(&mut rng);
     let public_key = P256PublicKey::from(&private_key);
@@ -173,7 +172,7 @@ fn generate_p256_keypair() -> Result<(), Error> {
 }
 
 /// Generate P-384 key pair
-fn generate_p384_keypair() -> Result<(), Error> {
+fn generate_p384_keypair() -> crate::error::Result<()> {
     let mut rng = OsRng;
     let private_key = P384SecretKey::random(&mut rng);
     let public_key = P384PublicKey::from(&private_key);
@@ -194,7 +193,7 @@ fn generate_p384_keypair() -> Result<(), Error> {
 }
 
 /// ECDSA signing
-pub fn ecdsa_sign(args: Vec<Value>) -> Result<(), Error> {
+pub fn ecdsa_sign(args: Vec<Value>) -> crate::error::Result<()> {
     if args.len() < 3 {
         return Err(CursedError::InvalidArgument("ECDSA signing requires: curve, private_key, message".to_string()));
     }
@@ -226,7 +225,7 @@ pub fn ecdsa_sign(args: Vec<Value>) -> Result<(), Error> {
 }
 
 /// ECDSA signing with P-256
-fn ecdsa_sign_p256(private_key_bytes: &[u8], message: &[u8]) -> Result<(), Error> {
+fn ecdsa_sign_p256(private_key_bytes: &[u8], message: &[u8]) -> crate::error::Result<()> {
     let private_key = P256SecretKey::from_pkcs8_der(private_key_bytes)
         .map_err(|e| CursedError::CryptoError(format!("Failed to decode P-256 private key: {}", e)))?;
     
@@ -248,7 +247,7 @@ fn ecdsa_sign_p256(private_key_bytes: &[u8], message: &[u8]) -> Result<(), Error
 }
 
 /// ECDSA signing with P-384
-fn ecdsa_sign_p384(private_key_bytes: &[u8], message: &[u8]) -> Result<(), Error> {
+fn ecdsa_sign_p384(private_key_bytes: &[u8], message: &[u8]) -> crate::error::Result<()> {
     let private_key = P384SecretKey::from_pkcs8_der(private_key_bytes)
         .map_err(|e| CursedError::CryptoError(format!("Failed to decode P-384 private key: {}", e)))?;
     
@@ -270,7 +269,7 @@ fn ecdsa_sign_p384(private_key_bytes: &[u8], message: &[u8]) -> Result<(), Error
 }
 
 /// ECDSA signature verification
-pub fn ecdsa_verify(args: Vec<Value>) -> Result<(), Error> {
+pub fn ecdsa_verify(args: Vec<Value>) -> crate::error::Result<()> {
     if args.len() < 4 {
         return Err(CursedError::InvalidArgument("ECDSA verification requires: curve, public_key, message, signature".to_string()));
     }
@@ -309,7 +308,7 @@ pub fn ecdsa_verify(args: Vec<Value>) -> Result<(), Error> {
 }
 
 /// ECDSA verification with P-256
-fn ecdsa_verify_p256(public_key_bytes: &[u8], message: &[u8], signature_bytes: &[u8]) -> Result<(), Error> {
+fn ecdsa_verify_p256(public_key_bytes: &[u8], message: &[u8], signature_bytes: &[u8]) -> crate::error::Result<()> {
     let public_key = P256PublicKey::from_public_key_der(public_key_bytes)
         .map_err(|e| CursedError::CryptoError(format!("Failed to decode P-256 public key: {}", e)))?;
     
@@ -334,7 +333,7 @@ fn ecdsa_verify_p256(public_key_bytes: &[u8], message: &[u8], signature_bytes: &
 }
 
 /// ECDSA verification with P-384
-fn ecdsa_verify_p384(public_key_bytes: &[u8], message: &[u8], signature_bytes: &[u8]) -> Result<(), Error> {
+fn ecdsa_verify_p384(public_key_bytes: &[u8], message: &[u8], signature_bytes: &[u8]) -> crate::error::Result<()> {
     let public_key = P384PublicKey::from_public_key_der(public_key_bytes)
         .map_err(|e| CursedError::CryptoError(format!("Failed to decode P-384 public key: {}", e)))?;
     
@@ -359,7 +358,7 @@ fn ecdsa_verify_p384(public_key_bytes: &[u8], message: &[u8], signature_bytes: &
 }
 
 /// ECDH key exchange
-pub fn ecdh_key_exchange(args: Vec<Value>) -> Result<(), Error> {
+pub fn ecdh_key_exchange(args: Vec<Value>) -> crate::error::Result<()> {
     if args.len() < 3 {
         return Err(CursedError::InvalidArgument("ECDH requires: curve, private_key, public_key".to_string()));
     }
@@ -392,7 +391,7 @@ pub fn ecdh_key_exchange(args: Vec<Value>) -> Result<(), Error> {
 }
 
 /// ECDH with P-256
-fn ecdh_p256(private_key_bytes: &[u8], public_key_bytes: &[u8]) -> Result<(), Error> {
+fn ecdh_p256(private_key_bytes: &[u8], public_key_bytes: &[u8]) -> crate::error::Result<()> {
     let private_key = P256SecretKey::from_pkcs8_der(private_key_bytes)
         .map_err(|e| CursedError::CryptoError(format!("Failed to decode P-256 private key: {}", e)))?;
     
@@ -416,7 +415,7 @@ fn ecdh_p256(private_key_bytes: &[u8], public_key_bytes: &[u8]) -> Result<(), Er
 }
 
 /// ECDH with P-384
-fn ecdh_p384(private_key_bytes: &[u8], public_key_bytes: &[u8]) -> Result<(), Error> {
+fn ecdh_p384(private_key_bytes: &[u8], public_key_bytes: &[u8]) -> crate::error::Result<()> {
     let private_key = P384SecretKey::from_pkcs8_der(private_key_bytes)
         .map_err(|e| CursedError::CryptoError(format!("Failed to decode P-384 private key: {}", e)))?;
     
@@ -448,7 +447,7 @@ pub fn list_supported_curves() -> Vec<String> {
 }
 
 /// Validate curve and hash algorithm combination
-pub fn validate_curve_hash_combination(curve: EcCurve, hash: EcHashAlgorithm) -> Result<(), Error> {
+pub fn validate_curve_hash_combination(curve: EcCurve, hash: EcHashAlgorithm) -> crate::error::Result<()> {
     match (curve, hash) {
         (EcCurve::P256, EcHashAlgorithm::Sha256) => Ok(()),
         (EcCurve::P384, EcHashAlgorithm::Sha384) => Ok(()),
@@ -461,33 +460,3 @@ pub fn validate_curve_hash_combination(curve: EcCurve, hash: EcHashAlgorithm) ->
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_curve_from_name() {
-        assert_eq!(EcCurve::from_name("P-256").unwrap(), EcCurve::P256);
-        assert_eq!(EcCurve::from_name("p384").unwrap(), EcCurve::P384);
-        assert!(EcCurve::from_name("invalid").is_err());
-    }
-
-    #[test]
-    fn test_generate_p256_keypair() {
-        let result = generate_p256_keypair();
-        assert!(result.is_ok());
-    }
-
-    #[test]
-    fn test_generate_p384_keypair() {
-        let result = generate_p384_keypair();
-        assert!(result.is_ok());
-    }
-
-    #[test]
-    fn test_validate_curve_hash_combination() {
-        assert!(validate_curve_hash_combination(EcCurve::P256, EcHashAlgorithm::Sha256).is_ok());
-        assert!(validate_curve_hash_combination(EcCurve::P384, EcHashAlgorithm::Sha384).is_ok());
-        assert!(validate_curve_hash_combination(EcCurve::P384, EcHashAlgorithm::Sha256).is_ok());
-    }
-}

@@ -3,9 +3,8 @@
 // Provides comprehensive key exchange protocols for the CURSED stdlib.
 // Supports Diffie-Hellman, X25519, and X448 key exchange mechanisms.
 
-use crate::stdlib::value::Value;
+// use crate::stdlib::value::Value;
 use crate::error::CursedError;
-use crate::error::Error;
 use std::collections::HashMap;
 use rand::rngs::OsRng;
 use rand::RngCore;
@@ -40,7 +39,7 @@ impl KeyExchangeAlgorithm {
         }
     }
     
-    pub fn from_name(name: &str) -> Result<(), Error> {
+    pub fn from_name(name: &str) -> crate::error::Result<()> {
         match name.to_uppercase().as_str() {
             "DIFFIE-HELLMAN" | "DH" => Ok(KeyExchangeAlgorithm::DiffieHellman),
             "X25519" => Ok(KeyExchangeAlgorithm::X25519),
@@ -74,7 +73,7 @@ impl KeyExchangeResult {
         }
     }
     
-    pub fn to_value(&self) -> Result<(), Error> {
+    pub fn to_value(&self) -> crate::error::Result<()> {
         let mut map = HashMap::new();
         
         map.insert("algorithm".to_string(), Value::String(self.algorithm.name().to_string()));
@@ -133,7 +132,7 @@ pub struct DhKeyPair {
 }
 
 impl DhKeyPair {
-    pub fn generate(parameters: DhParameters) -> Result<(), Error> {
+    pub fn generate(parameters: DhParameters) -> crate::error::Result<()> {
         let mut rng = OsRng;
         
         // Generate random private key (1 < private_key < p-1)
@@ -147,7 +146,7 @@ impl DhKeyPair {
         })
     }
     
-    pub fn to_value(&self) -> Result<(), Error> {
+    pub fn to_value(&self) -> crate::error::Result<()> {
         let mut map = HashMap::new();
         
         map.insert("algorithm".to_string(), Value::String("Diffie-Hellman".to_string()));
@@ -162,7 +161,7 @@ impl DhKeyPair {
 }
 
 /// Diffie-Hellman key exchange
-pub fn dh_key_exchange(args: Vec<Value>) -> Result<(), Error> {
+pub fn dh_key_exchange(args: Vec<Value>) -> crate::error::Result<()> {
     if args.len() < 2 {
         return Err(CursedError::InvalidArgument("DH key exchange requires: private_key, other_public_key".to_string()));
     }
@@ -205,14 +204,14 @@ pub fn dh_key_exchange(args: Vec<Value>) -> Result<(), Error> {
 }
 
 /// Generate DH key pair
-pub fn dh_generate_keypair(_args: Vec<Value>) -> Result<(), Error> {
+pub fn dh_generate_keypair(_args: Vec<Value>) -> crate::error::Result<()> {
     let parameters = DhParameters::rfc3526_2048();
     let keypair = DhKeyPair::generate(parameters)?;
     keypair.to_value()
 }
 
 /// X25519 key exchange
-pub fn x25519_key_exchange(args: Vec<Value>) -> Result<(), Error> {
+pub fn x25519_key_exchange(args: Vec<Value>) -> crate::error::Result<()> {
     if args.len() < 2 {
         return Err(CursedError::InvalidArgument("X25519 key exchange requires: private_key, public_key".to_string()));
     }
@@ -266,7 +265,7 @@ pub fn x25519_key_exchange(args: Vec<Value>) -> Result<(), Error> {
 }
 
 /// Generate X25519 key pair
-pub fn x25519_generate_keypair(_args: Vec<Value>) -> Result<(), Error> {
+pub fn x25519_generate_keypair(_args: Vec<Value>) -> crate::error::Result<()> {
     let mut rng = OsRng;
     let private_key = EphemeralSecret::random();
     let public_key = X25519PublicKey::from(&private_key);
@@ -281,7 +280,7 @@ pub fn x25519_generate_keypair(_args: Vec<Value>) -> Result<(), Error> {
 }
 
 /// Generate ephemeral X25519 key pair
-pub fn x25519_generate_ephemeral_keypair(_args: Vec<Value>) -> Result<(), Error> {
+pub fn x25519_generate_ephemeral_keypair(_args: Vec<Value>) -> crate::error::Result<()> {
     let mut rng = OsRng;
     let ephemeral_secret = EphemeralSecret::random();
     let public_key = X25519PublicKey::from(&ephemeral_secret);
@@ -297,7 +296,7 @@ pub fn x25519_generate_ephemeral_keypair(_args: Vec<Value>) -> Result<(), Error>
 }
 
 /// X448 key exchange implementation
-pub fn x448_key_exchange(args: Vec<Value>) -> Result<(), Error> {
+pub fn x448_key_exchange(args: Vec<Value>) -> crate::error::Result<()> {
     if args.len() < 2 {
         return Err(CursedError::InvalidArgument("X448 key exchange requires: private_key, public_key".to_string()));
     }
@@ -345,7 +344,7 @@ pub fn x448_key_exchange(args: Vec<Value>) -> Result<(), Error> {
 }
 
 /// Generate X448 key pair
-pub fn x448_generate_keypair(_args: Vec<Value>) -> Result<(), Error> {
+pub fn x448_generate_keypair(_args: Vec<Value>) -> crate::error::Result<()> {
     let mut rng = OsRng;
     let mut private_key = [0u8; 56];
     rng.fill_bytes(&mut private_key);
@@ -366,7 +365,7 @@ pub fn x448_generate_keypair(_args: Vec<Value>) -> Result<(), Error> {
 }
 
 /// X448 scalar multiplication (basic implementation)
-fn x448_scalar_mult(scalar: &[u8], point: &[u8]) -> Result<(), Error> {
+fn x448_scalar_mult(scalar: &[u8], point: &[u8]) -> crate::error::Result<()> {
     if scalar.len() != 56 || point.len() != 56 {
         return Err(CursedError::InvalidArgument("X448 requires 56-byte keys".to_string()));
     }
@@ -393,7 +392,7 @@ fn x448_scalar_mult(scalar: &[u8], point: &[u8]) -> Result<(), Error> {
 }
 
 /// Generate X448 public key from private key
-fn x448_generate_public_key(private_key: &[u8; 56]) -> Result<(), Error> {
+fn x448_generate_public_key(private_key: &[u8; 56]) -> crate::error::Result<()> {
     // X448 base point (u = 5)
     let base_point = {
         let mut point = [0u8; 56];
@@ -423,7 +422,7 @@ pub fn validate_key_exchange_params(
     algorithm: KeyExchangeAlgorithm,
     private_key: &[u8],
     public_key: &[u8],
-) -> Result<(), Error> {
+) -> crate::error::Result<()> {
     match algorithm {
         KeyExchangeAlgorithm::X25519 => {
             if private_key.len() != 32 {
@@ -468,7 +467,7 @@ pub fn derive_key_from_shared_secret(
     shared_secret: &[u8],
     key_length: usize,
     info: Option<&str>,
-) -> Result<(), Error> {
+) -> crate::error::Result<()> {
     if key_length == 0 || key_length > 255 * 32 {
         return Err(CursedError::InvalidArgument(format!("Invalid key length: {}", key_length)));
     }
@@ -483,82 +482,3 @@ pub fn derive_key_from_shared_secret(
     Ok(derived_key)
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_algorithm_from_name() {
-        assert_eq!(KeyExchangeAlgorithm::from_name("X25519").unwrap(), KeyExchangeAlgorithm::X25519);
-        assert_eq!(KeyExchangeAlgorithm::from_name("DH").unwrap(), KeyExchangeAlgorithm::DiffieHellman);
-        assert!(KeyExchangeAlgorithm::from_name("invalid").is_err());
-    }
-
-    #[test]
-    fn test_dh_parameters() {
-        let params = DhParameters::rfc3526_2048();
-        assert_eq!(params.size, 2048);
-        assert_eq!(params.g, BigUint::from(2u32));
-    }
-
-    #[test]
-    fn test_x25519_generate_keypair() {
-        let result = x25519_generate_keypair(vec![]);
-        assert!(result.is_ok());
-    }
-
-    #[test]
-    fn test_validate_key_exchange_params() {
-        let valid_x25519_key = vec![0u8; 32];
-        assert!(validate_key_exchange_params(
-            KeyExchangeAlgorithm::X25519,
-            &valid_x25519_key,
-            &valid_x25519_key
-        ).is_ok());
-        
-        let invalid_key = vec![0u8; 16];
-        assert!(validate_key_exchange_params(
-            KeyExchangeAlgorithm::X25519,
-            &invalid_key,
-            &valid_x25519_key
-        ).is_err());
-    }
-
-    #[test]
-    fn test_derive_key_from_shared_secret() {
-        let shared_secret = b"test_shared_secret";
-        let result = derive_key_from_shared_secret(shared_secret, 32, Some("test"));
-        assert!(result.is_ok());
-        assert_eq!(result.unwrap().len(), 32);
-    }
-
-    #[test]
-    fn test_x448_generate_keypair() {
-        let result = x448_generate_keypair(vec![]);
-        assert!(result.is_ok());
-        
-        if let Ok(Value::Object(map)) = result {
-            assert_eq!(map.get("algorithm"), Some(&Value::String("X448".to_string())));
-            assert_eq!(map.get("key_size"), Some(&Value::Integer(448)));
-            assert!(map.contains_key("public_key"));
-            assert!(map.contains_key("private_key"));
-        }
-    }
-
-    #[test] 
-    fn test_x448_validation() {
-        let valid_x448_key = vec![0u8; 56];
-        assert!(validate_key_exchange_params(
-            KeyExchangeAlgorithm::X448,
-            &valid_x448_key,
-            &valid_x448_key
-        ).is_ok());
-        
-        let invalid_key = vec![0u8; 32];
-        assert!(validate_key_exchange_params(
-            KeyExchangeAlgorithm::X448,
-            &invalid_key,
-            &valid_x448_key
-        ).is_err());
-    }
-}

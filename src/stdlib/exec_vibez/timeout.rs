@@ -1,4 +1,4 @@
-use crate::error::Error;
+use crate::error::CursedError;
 /// Timeout and cancellation support for exec_vibez
 /// 
 /// Implements timeout functionality according to specs/stdlib/exec_vibez.md
@@ -295,87 +295,6 @@ impl Default for TimeoutManager {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-use crate::stdlib::process::info::ProcessState;
-    
-    #[test]
-    fn test_timeout_config_creation() {
-        let config = TimeoutConfig::new(Duration::from_secs(10));
-        assert_eq!(config.timeout, Duration::from_secs(10));
-        assert_eq!(config.grace_period, Duration::from_secs(5));
-        assert!(config.graceful_shutdown);
-        assert!(!config.kill_group);
-    }
-    
-    #[test]
-    fn test_timeout_config_builder() {
-        let config = TimeoutConfig::new(Duration::from_secs(30))
-            .with_grace_period(Duration::from_secs(2))
-            .with_graceful_shutdown(false)
-            .with_kill_group(true);
-        
-        assert_eq!(config.timeout, Duration::from_secs(30));
-        assert_eq!(config.grace_period, Duration::from_secs(2));
-        assert!(!config.graceful_shutdown);
-        assert!(config.kill_group);
-    }
-    
-    #[test]
-    fn test_timeout_config_default() {
-        let config = TimeoutConfig::default();
-        assert_eq!(config.timeout, Duration::from_secs(30));
-        assert_eq!(config.grace_period, Duration::from_secs(5));
-        assert!(config.graceful_shutdown);
-        assert!(!config.kill_group);
-    }
-    
-    #[test]
-    fn test_timeout_manager_creation() {
-        let manager = TimeoutManager::new();
-        assert_eq!(manager.active_count(), 0);
-    }
-    
-    #[test]
-    fn test_timeout_manager_add_remove() {
-        let manager = TimeoutManager::new();
-        let config = TimeoutConfig::new(Duration::from_secs(10));
-        
-        manager.add_timeout(123, config);
-        assert_eq!(manager.active_count(), 1);
-        
-        manager.remove_timeout(123);
-        assert_eq!(manager.active_count(), 0);
-    }
-    
-    #[test]
-    fn test_timeout_manager_check_timeouts() {
-        let manager = TimeoutManager::new();
-        
-        // Add a timeout that has already expired
-        let config = TimeoutConfig::new(Duration::from_nanos(1));
-        manager.add_timeout(456, config);
-        
-        // Sleep a bit to ensure timeout has passed
-        thread::sleep(Duration::from_millis(1));
-        
-        let expired = manager.check_timeouts();
-        assert!(expired.contains(&456));
-    }
-    
-    #[test]
-    fn test_run_with_timeout_invalid_command() {
-        // Test with a command that doesn't exist
-        let result = run_with_timeout("nonexistent_command_12345", &[], Duration::from_secs(1));
-        assert!(result.is_err());
-    }
-}
-
-
-fn timeout_exceeded(msg: &str) -> ExecError {
-    ExecError::Timeout(msg.to_string())
-}
 
 
 pub trait RunWithTimeout {

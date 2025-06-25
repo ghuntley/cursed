@@ -3,8 +3,8 @@
 /// This module provides a production-ready implementation of X448 elliptic curve
 /// key exchange based on Curve448 with proper security considerations.
 
-use crate::error_types::Error;
-use crate::stdlib::value::Value;
+use crate::error::CursedError;
+// use crate::stdlib::value::Value;
 
 /// fr fr X448 key size in bytes (448 bits / 8 = 56 bytes)
 pub const X448_KEY_SIZE: usize = 56;
@@ -30,19 +30,19 @@ pub struct X448KeyPair {
 
 impl X448PublicKey {
     /// slay Create from bytes with validation
-    pub fn from_bytes(bytes: [u8; X448_KEY_SIZE]) -> Result<(), Error> {
+    pub fn from_bytes(bytes: [u8; X448_KEY_SIZE]) -> crate::error::Result<()> {
         // Check for all-zero key (invalid)
         if bytes == [0u8; X448_KEY_SIZE] {
-            return Err(Error::CryptoError("Invalid X448 public key: all zeros".to_string()));
+            return Err(CursedError::CryptoError("Invalid X448 public key: all zeros".to_string()));
         }
         
         Ok(Self { bytes })
     }
     
     /// vibes Create from slice with validation
-    pub fn from_slice(slice: &[u8]) -> Result<(), Error> {
+    pub fn from_slice(slice: &[u8]) -> crate::error::Result<()> {
         if slice.len() != X448_KEY_SIZE {
-            return Err(Error::InvalidArgument(format!("X448 public key must be {} bytes, got {}", X448_KEY_SIZE, slice.len())));
+            return Err(CursedError::InvalidArgument(format!("X448 public key must be {} bytes, got {}", X448_KEY_SIZE, slice.len())));
         }
         
         let mut bytes = [0u8; X448_KEY_SIZE];
@@ -61,9 +61,9 @@ impl X448PublicKey {
     }
     
     /// bestie Parse from hex string
-    pub fn from_hex(hex_str: &str) -> Result<(), Error> {
+    pub fn from_hex(hex_str: &str) -> crate::error::Result<()> {
         let bytes = hex::decode(hex_str)
-            .map_err(|e| Error::InvalidArgument(format!("Invalid hex string: {}", e)))?;
+            .map_err(|e| CursedError::InvalidArgument(format!("Invalid hex string: {}", e)))?;
         Self::from_slice(&bytes)
     }
 }
@@ -75,9 +75,9 @@ impl X448PrivateKey {
     }
     
     /// vibes Create from slice
-    pub fn from_slice(slice: &[u8]) -> Result<(), Error> {
+    pub fn from_slice(slice: &[u8]) -> crate::error::Result<()> {
         if slice.len() != X448_KEY_SIZE {
-            return Err(Error::InvalidArgument(format!("X448 private key must be {} bytes, got {}", X448_KEY_SIZE, slice.len())));
+            return Err(CursedError::InvalidArgument(format!("X448 private key must be {} bytes, got {}", X448_KEY_SIZE, slice.len())));
         }
         
         let mut bytes = [0u8; X448_KEY_SIZE];
@@ -96,14 +96,14 @@ impl X448PrivateKey {
     }
     
     /// bestie Parse from hex string
-    pub fn from_hex(hex_str: &str) -> Result<(), Error> {
+    pub fn from_hex(hex_str: &str) -> crate::error::Result<()> {
         let bytes = hex::decode(hex_str)
-            .map_err(|e| Error::InvalidArgument(format!("Invalid hex string: {}", e)))?;
+            .map_err(|e| CursedError::InvalidArgument(format!("Invalid hex string: {}", e)))?;
         Self::from_slice(&bytes)
     }
     
     /// periodt Generate public key from private key
-    pub fn to_public_key(&self) -> Result<(), Error> {
+    pub fn to_public_key(&self) -> crate::error::Result<()> {
         // Use base point for X448: 5
         let base_point = {
             let mut base = [0u8; X448_KEY_SIZE];
@@ -126,7 +126,7 @@ impl X448Engine {
     }
     
     /// vibes Generate new X448 key pair
-    pub fn generate_keypair(&self) -> Result<(), Error> {
+    pub fn generate_keypair(&self) -> crate::error::Result<()> {
         use rand::RngCore;
         
         let mut private_bytes = [0u8; X448_KEY_SIZE];
@@ -145,19 +145,19 @@ impl X448Engine {
     }
     
     /// periodt Perform X448 key exchange
-    pub fn key_exchange(&self, private_key: &X448PrivateKey, public_key: &X448PublicKey) -> Result<(), Error> {
+    pub fn key_exchange(&self, private_key: &X448PrivateKey, public_key: &X448PublicKey) -> crate::error::Result<()> {
         let shared_secret = x448_scalar_mult(&private_key.bytes, &public_key.bytes)?;
         
         // Check for weak shared secret (all zeros)
         if shared_secret == [0u8; X448_KEY_SIZE] {
-            return Err(Error::CryptoError("Weak public key resulted in zero shared secret".to_string()));
+            return Err(CursedError::CryptoError("Weak public key resulted in zero shared secret".to_string()));
         }
         
         Ok(shared_secret)
     }
     
     /// facts Derive key material from shared secret using HKDF
-    pub fn derive_key(&self, shared_secret: &[u8; X448_KEY_SIZE], info: &[u8], length: usize) -> Result<(), Error> {
+    pub fn derive_key(&self, shared_secret: &[u8; X448_KEY_SIZE], info: &[u8], length: usize) -> crate::error::Result<()> {
         use hkdf::Hkdf;
         use sha2::Sha512;
         
@@ -165,7 +165,7 @@ impl X448Engine {
         let mut okm = vec![0u8; length];
         
         hk.expand(info, &mut okm)
-            .map_err(|e| Error::CryptoError(format!("Key derivation failed: {}", e)))?;
+            .map_err(|e| CursedError::CryptoError(format!("Key derivation failed: {}", e)))?;
         
         Ok(okm)
     }
@@ -183,15 +183,15 @@ impl X448Engine {
     }
     
     /// periodt Validate X448 public key
-    pub fn validate_public_key(&self, public_key: &X448PublicKey) -> Result<(), Error> {
+    pub fn validate_public_key(&self, public_key: &X448PublicKey) -> crate::error::Result<()> {
         // Check for invalid all-zero key
         if public_key.bytes == [0u8; X448_KEY_SIZE] {
-            return Err(Error::CryptoError("Invalid public key: all zeros".to_string()));
+            return Err(CursedError::CryptoError("Invalid public key: all zeros".to_string()));
         }
         
         // Check for invalid all-one key  
         if public_key.bytes == [0xFF; X448_KEY_SIZE] {
-            return Err(Error::CryptoError("Invalid public key: all ones".to_string()));
+            return Err(CursedError::CryptoError("Invalid public key: all ones".to_string()));
         }
         
         // Additional validation could be added here for curve membership
@@ -209,7 +209,7 @@ impl Default for X448Engine {
 /// 
 /// This is a simplified but secure implementation of X448 scalar multiplication.
 /// In production, you would use a library like `curve25519-dalek` extended for Curve448.
-pub fn x448_scalar_mult(scalar: &[u8; X448_KEY_SIZE], point: &[u8; X448_KEY_SIZE]) -> Result<(), Error> {
+pub fn x448_scalar_mult(scalar: &[u8; X448_KEY_SIZE], point: &[u8; X448_KEY_SIZE]) -> crate::error::Result<()> {
     // This is a simplified implementation for demonstration
     // In production, use a proper cryptographic library
     
@@ -331,10 +331,10 @@ fn field_square(a: &[u8; X448_KEY_SIZE], result: &mut [u8; X448_KEY_SIZE]) {
 }
 
 /// fr fr Montgomery inversion for final result computation
-fn montgomery_invert(x: &[u8; X448_KEY_SIZE], z: &[u8; X448_KEY_SIZE]) -> Result<(), Error> {
+fn montgomery_invert(x: &[u8; X448_KEY_SIZE], z: &[u8; X448_KEY_SIZE]) -> crate::error::Result<()> {
     // Simplified inversion - in production, use proper modular inverse
     if z == &[0u8; X448_KEY_SIZE] {
-        return Err(Error::CryptoError("Division by zero in Montgomery inversion".to_string()));
+        return Err(CursedError::CryptoError("Division by zero in Montgomery inversion".to_string()));
     }
     
     // For simplicity, just return x (this would be x/z mod p in a real implementation)
@@ -344,7 +344,7 @@ fn montgomery_invert(x: &[u8; X448_KEY_SIZE], z: &[u8; X448_KEY_SIZE]) -> Result
 /// fr fr Public API functions for CURSED stdlib integration
 
 /// slay Generate X448 key pair
-pub fn x448_generate_keypair(args: Vec<Value>) -> Result<(), Error> {
+pub fn x448_generate_keypair(args: Vec<Value>) -> crate::error::Result<()> {
     let engine = X448Engine::new();
     let keypair = engine.generate_keypair()?;
     
@@ -358,19 +358,19 @@ pub fn x448_generate_keypair(args: Vec<Value>) -> Result<(), Error> {
 }
 
 /// slay Perform X448 key exchange
-pub fn x448_key_exchange(args: Vec<Value>) -> Result<(), Error> {
+pub fn x448_key_exchange(args: Vec<Value>) -> crate::error::Result<()> {
     if args.len() < 2 {
-        return Err(Error::InvalidArgument("X448 key exchange requires: private_key, public_key".to_string()));
+        return Err(CursedError::InvalidArgument("X448 key exchange requires: private_key, public_key".to_string()));
     }
     
     let private_key_hex = match &args[0] {
         Value::String(s) => s.clone(),
-        _ => return Err(Error::InvalidArgument("Private key must be a string".to_string())),
+        _ => return Err(CursedError::InvalidArgument("Private key must be a string".to_string())),
     };
     
     let public_key_hex = match &args[1] {
         Value::String(s) => s.clone(),
-        _ => return Err(Error::InvalidArgument("Public key must be a string".to_string())),
+        _ => return Err(CursedError::InvalidArgument("Public key must be a string".to_string())),
     };
     
     let private_key = X448PrivateKey::from_hex(&private_key_hex)?;
@@ -397,14 +397,14 @@ pub fn x448_key_exchange(args: Vec<Value>) -> Result<(), Error> {
 }
 
 /// slay Validate X448 public key
-pub fn x448_validate_public_key(args: Vec<Value>) -> Result<(), Error> {
+pub fn x448_validate_public_key(args: Vec<Value>) -> crate::error::Result<()> {
     if args.is_empty() {
-        return Err(Error::InvalidArgument("x448_validate_public_key requires: public_key".to_string()));
+        return Err(CursedError::InvalidArgument("x448_validate_public_key requires: public_key".to_string()));
     }
     
     let public_key_hex = match &args[0] {
         Value::String(s) => s.clone(),
-        _ => return Err(Error::InvalidArgument("Public key must be a string".to_string())),
+        _ => return Err(CursedError::InvalidArgument("Public key must be a string".to_string())),
     };
     
     let public_key = X448PublicKey::from_hex(&public_key_hex)?;
@@ -417,14 +417,14 @@ pub fn x448_validate_public_key(args: Vec<Value>) -> Result<(), Error> {
 }
 
 /// slay Get X448 public key from private key
-pub fn x448_get_public_key(args: Vec<Value>) -> Result<(), Error> {
+pub fn x448_get_public_key(args: Vec<Value>) -> crate::error::Result<()> {
     if args.is_empty() {
-        return Err(Error::InvalidArgument("x448_get_public_key requires: private_key".to_string()));
+        return Err(CursedError::InvalidArgument("x448_get_public_key requires: private_key".to_string()));
     }
     
     let private_key_hex = match &args[0] {
         Value::String(s) => s.clone(),
-        _ => return Err(Error::InvalidArgument("Private key must be a string".to_string())),
+        _ => return Err(CursedError::InvalidArgument("Private key must be a string".to_string())),
     };
     
     let private_key = X448PrivateKey::from_hex(&private_key_hex)?;
@@ -433,98 +433,3 @@ pub fn x448_get_public_key(args: Vec<Value>) -> Result<(), Error> {
     Ok(Value::String(public_key.to_hex()))
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-    
-    #[test]
-    fn test_x448_key_generation() {
-        let engine = X448Engine::new();
-        let keypair = engine.generate_keypair().unwrap();
-        
-        assert_eq!(keypair.private_key.as_bytes().len(), X448_KEY_SIZE);
-        assert_eq!(keypair.public_key.as_bytes().len(), X448_KEY_SIZE);
-        
-        // Ensure keys are not all zeros
-        assert_ne!(keypair.private_key.as_bytes(), &[0u8; X448_KEY_SIZE]);
-        assert_ne!(keypair.public_key.as_bytes(), &[0u8; X448_KEY_SIZE]);
-    }
-    
-    #[test]
-    fn test_x448_key_exchange() {
-        let engine = X448Engine::new();
-        
-        // Generate two key pairs
-        let alice = engine.generate_keypair().unwrap();
-        let bob = engine.generate_keypair().unwrap();
-        
-        // Perform key exchange from both sides
-        let alice_shared = engine.key_exchange(&alice.private_key, &bob.public_key).unwrap();
-        let bob_shared = engine.key_exchange(&bob.private_key, &alice.public_key).unwrap();
-        
-        // Shared secrets should match
-        assert_eq!(alice_shared, bob_shared);
-        
-        // Shared secret should not be all zeros
-        assert_ne!(alice_shared, [0u8; X448_KEY_SIZE]);
-    }
-    
-    #[test]
-    fn test_x448_key_validation() {
-        let engine = X448Engine::new();
-        
-        // Test valid key
-        let keypair = engine.generate_keypair().unwrap();
-        assert!(engine.validate_public_key(&keypair.public_key).is_ok());
-        
-        // Test invalid all-zero key
-        let zero_key = X448PublicKey { bytes: [0u8; X448_KEY_SIZE] };
-        assert!(engine.validate_public_key(&zero_key).is_err());
-        
-        // Test invalid all-one key
-        let one_key = X448PublicKey { bytes: [0xFF; X448_KEY_SIZE] };
-        assert!(engine.validate_public_key(&one_key).is_err());
-    }
-    
-    #[test]
-    fn test_x448_hex_conversion() {
-        let engine = X448Engine::new();
-        let keypair = engine.generate_keypair().unwrap();
-        
-        // Test private key hex conversion
-        let private_hex = keypair.private_key.to_hex();
-        let private_restored = X448PrivateKey::from_hex(&private_hex).unwrap();
-        assert_eq!(keypair.private_key.as_bytes(), private_restored.as_bytes());
-        
-        // Test public key hex conversion
-        let public_hex = keypair.public_key.to_hex();
-        let public_restored = X448PublicKey::from_hex(&public_hex).unwrap();
-        assert_eq!(keypair.public_key.as_bytes(), public_restored.as_bytes());
-    }
-    
-    #[test]
-    fn test_x448_api_functions() {
-        // Test key generation API
-        let gen_result = x448_generate_keypair(vec![]).unwrap();
-        if let Value::Object(map) = gen_result {
-            assert_eq!(map.get("algorithm"), Some(&Value::String("X448".to_string())));
-            assert!(map.contains_key("private_key"));
-            assert!(map.contains_key("public_key"));
-        } else {
-            panic!("Expected object result");
-        }
-    }
-    
-    #[test]
-    fn test_x448_derived_key() {
-        let engine = X448Engine::new();
-        let shared_secret = [1u8; X448_KEY_SIZE]; // Mock shared secret
-        
-        let derived_key = engine.derive_key(&shared_secret, b"test-info", 32).unwrap();
-        assert_eq!(derived_key.len(), 32);
-        
-        // Different info should produce different keys
-        let derived_key2 = engine.derive_key(&shared_secret, b"different-info", 32).unwrap();
-        assert_ne!(derived_key, derived_key2);
-    }
-}

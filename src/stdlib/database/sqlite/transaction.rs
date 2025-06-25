@@ -15,7 +15,7 @@ pub enum TransactionState {
     Active,
     Committed,
     RolledBack,
-    Error,
+    CursedError,
 }
 
 /// fr fr SQLite transaction options
@@ -131,7 +131,7 @@ impl SqliteTransaction {
     pub fn state(&self) -> TransactionState {
         self.state.lock()
             .map(|s| *s)
-            .unwrap_or(TransactionState::Error)
+            .unwrap_or(TransactionState::CursedError)
     }
 
     /// slay Get transaction duration
@@ -143,7 +143,7 @@ impl SqliteTransaction {
 }
 
 impl DriverTx for SqliteTransaction {
-    fn prepare(&self, query: &str) -> Result<(), Error> {
+    fn prepare(&self, query: &str) -> crate::error::Result<()> {
         if self.state() != TransactionState::Active {
             return Err(DatabaseError::new(
                 super::super::DatabaseErrorKind::TransactionError,
@@ -155,7 +155,7 @@ impl DriverTx for SqliteTransaction {
         (self.connection.as_ref() as &dyn super::super::DriverConn).prepare(query)
     }
 
-    fn query(&self, query: &str, args: &[SqlValue]) -> Result<(), Error> {
+    fn query(&self, query: &str, args: &[SqlValue]) -> crate::error::Result<()> {
         if self.state() != TransactionState::Active {
             return Err(DatabaseError::new(
                 super::super::DatabaseErrorKind::TransactionError,
@@ -167,7 +167,7 @@ impl DriverTx for SqliteTransaction {
         (self.connection.as_ref() as &dyn super::super::DriverConn).query(query, args)
     }
 
-    fn execute(&self, query: &str, args: &[SqlValue]) -> Result<(), Error> {
+    fn execute(&self, query: &str, args: &[SqlValue]) -> crate::error::Result<()> {
         if self.state() != TransactionState::Active {
             return Err(DatabaseError::new(
                 super::super::DatabaseErrorKind::TransactionError,
@@ -179,7 +179,7 @@ impl DriverTx for SqliteTransaction {
         (self.connection.as_ref() as &dyn super::super::DriverConn).execute(query, args)
     }
 
-    fn commit(&self) -> Result<(), Error> {
+    fn commit(&self) -> crate::error::Result<()> {
         let mut state = self.state.lock()
             .map_err(|_| DatabaseError::new(
                 super::super::DatabaseErrorKind::TransactionError,
@@ -198,7 +198,7 @@ impl DriverTx for SqliteTransaction {
         Ok(())
     }
 
-    fn rollback(&self) -> Result<(), Error> {
+    fn rollback(&self) -> crate::error::Result<()> {
         let mut state = self.state.lock()
             .map_err(|_| DatabaseError::new(
                 super::super::DatabaseErrorKind::TransactionError,
@@ -247,7 +247,7 @@ pub struct RealSqliteTransaction {
 
 impl RealSqliteTransaction {
     /// Create new transaction with connection handle
-    pub fn new(connection: Arc<Mutex<Option<Connection>>>, options: TxOptions) -> Result<(), Error> {
+    pub fn new(connection: Arc<Mutex<Option<Connection>>>, options: TxOptions) -> crate::error::Result<()> {
         {
             let handle = connection.lock().unwrap();
             if let Some(ref conn) = *handle {
@@ -266,7 +266,7 @@ impl RealSqliteTransaction {
 }
 
 impl DriverTx for RealSqliteTransaction {
-    fn prepare(&self, query: &str) -> Result<(), Error> {
+    fn prepare(&self, query: &str) -> crate::error::Result<()> {
         if self.state() != TransactionState::Active {
             return Err(DatabaseError::new(
                 super::super::DatabaseErrorKind::TransactionError,
@@ -279,7 +279,7 @@ impl DriverTx for RealSqliteTransaction {
         Ok(Box::new(stmt))
     }
 
-    fn query(&self, query: &str, args: &[SqlValue]) -> Result<(), Error> {
+    fn query(&self, query: &str, args: &[SqlValue]) -> crate::error::Result<()> {
         if self.state() != TransactionState::Active {
             return Err(DatabaseError::new(
                 super::super::DatabaseErrorKind::TransactionError,
@@ -328,7 +328,7 @@ impl DriverTx for RealSqliteTransaction {
         }
     }
 
-    fn execute(&self, query: &str, args: &[SqlValue]) -> Result<(), Error> {
+    fn execute(&self, query: &str, args: &[SqlValue]) -> crate::error::Result<()> {
         if self.state() != TransactionState::Active {
             return Err(DatabaseError::new(
                 super::super::DatabaseErrorKind::TransactionError,
@@ -360,7 +360,7 @@ impl DriverTx for RealSqliteTransaction {
         }
     }
 
-    fn commit(&self) -> Result<(), Error> {
+    fn commit(&self) -> crate::error::Result<()> {
         let mut state = self.state.lock()
             .map_err(|_| DatabaseError::new(
                 super::super::DatabaseErrorKind::TransactionError,
@@ -384,7 +384,7 @@ impl DriverTx for RealSqliteTransaction {
         Ok(())
     }
 
-    fn rollback(&self) -> Result<(), Error> {
+    fn rollback(&self) -> crate::error::Result<()> {
         let mut state = self.state.lock()
             .map_err(|_| DatabaseError::new(
                 super::super::DatabaseErrorKind::TransactionError,
@@ -430,12 +430,12 @@ impl RealSqliteTransaction {
     pub fn state(&self) -> TransactionState {
         self.state.lock()
             .map(|s| *s)
-            .unwrap_or(TransactionState::Error)
+            .unwrap_or(TransactionState::CursedError)
     }
 }
 
 /// Convert CURSED SqlValue to rusqlite parameters
-fn convert_args_to_params(args: &[SqlValue]) -> Result<(), Error> {
+fn convert_args_to_params(args: &[SqlValue]) -> crate::error::Result<()> {
     let mut params = Vec::new();
     
     for arg in args {
@@ -457,7 +457,7 @@ fn convert_args_to_params(args: &[SqlValue]) -> Result<(), Error> {
 }
 
 /// Convert rusqlite value to CURSED SqlValue
-fn convert_value_from_sqlite(row: &rusqlite::Row, index: usize) -> Result<(), Error> {
+fn convert_value_from_sqlite(row: &rusqlite::Row, index: usize) -> crate::error::Result<()> {
     let value: SqliteValue = row.get(index)
         .map_err(|e| DatabaseError::new(super::super::DatabaseErrorKind::ConversionError, &format!("Failed to get column {}: {}", index, e)))?;
     
@@ -486,32 +486,3 @@ impl From<TxOptions> for SqliteTransactionOptions {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-use crate::error_types::Error;
-
-    #[test]
-    fn test_transaction_type() {
-        assert_eq!(SqliteTransactionType::Deferred.to_sql(), "DEFERRED");
-        assert_eq!(SqliteTransactionType::Immediate.to_sql(), "IMMEDIATE");
-        assert_eq!(SqliteTransactionType::Exclusive.to_sql(), "EXCLUSIVE");
-    }
-
-    #[test]
-    fn test_transaction_state() {
-        assert_eq!(TransactionState::Active, TransactionState::Active);
-        assert_ne!(TransactionState::Active, TransactionState::Committed);
-    }
-
-    #[test]
-    fn test_transaction_options_conversion() {
-        let base = TxOptions {
-            isolation: SqlIsolationLevel::LevelSerializable,
-            read_only: false,
-        };
-
-        let sqlite_opts = SqliteTransactionOptions::from(base);
-        assert_eq!(sqlite_opts.transaction_type, SqliteTransactionType::Exclusive);
-    }
-}

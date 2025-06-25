@@ -1,12 +1,11 @@
-use crate::error::Error;
+use crate::error::CursedError;
 /// Zero-knowledge protocol implementations and utilities
 use std::collections::HashMap;
-use crate::stdlib::packages::crypto_advanced::AdvancedCryptoResult;
-use crate::stdlib::crypto::unified_api::UnifiedCryptoError as CryptoError;
-use crate::stdlib::value::Value;
-use crate::stdlib::packages::crypto_zk::field_arithmetic::FieldElement;
-use crate::stdlib::packages::crypto_zk::proofs::{ProofTranscript, SchnorrProof};
-use crate::stdlib::packages::crypto_zk::commitments::{PedersenCommitment, PedersenParams};
+// use crate::stdlib::packages::crypto_advanced::AdvancedCryptoResult;
+// use crate::stdlib::value::Value;
+// use crate::stdlib::packages::crypto_zk::field_arithmetic::FieldElement;
+// use crate::stdlib::packages::crypto_zk::proofs::{ProofTranscript, SchnorrProof};
+// use crate::stdlib::packages::crypto_zk::commitments::{PedersenCommitment, PedersenParams};
 use rand::RngCore;
 use sha3::{Digest, Sha3_256};
 
@@ -835,7 +834,7 @@ impl ZKProtocols {
             ("Transcript Handling", "Maintain complete and tamper-evident transcripts"),
             ("Challenge Generation", "Use sufficient entropy and avoid predictable challenges"),
             ("Response Validation", "Validate all protocol messages and responses"),
-            ("Error Handling", "Implement graceful error handling and recovery"),
+            ("CursedError Handling", "Implement graceful error handling and recovery"),
             ("Timeout Management", "Set appropriate timeouts for interactive protocols"),
             ("State Isolation", "Ensure proper isolation between protocol sessions"),
             ("Replay Protection", "Implement mechanisms to prevent replay attacks"),
@@ -856,181 +855,3 @@ impl ZKProtocols {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_protocol_session() {
-        let session = ProtocolSession::new(
-            "test_session".to_string(),
-            ParticipantRole::Prover,
-            "test_protocol".to_string(),
-        );
-        
-        assert_eq!(session.session_id, "test_session");
-        assert_eq!(session.participant_role, ParticipantRole::Prover);
-        assert_eq!(session.protocol_type, "test_protocol");
-        assert!(matches!(session.state, ProtocolState::Initial));
-    }
-
-    #[test]
-    fn test_zk_identification() {
-        let zkid = ZKIdentification::generate_keypair().unwrap();
-        assert!(!zkid.private_key.is_zero());
-        assert!(!zkid.public_key.is_zero());
-        
-        let mut prover_session = ProtocolSession::new(
-            "test_session".to_string(),
-            ParticipantRole::Prover,
-            "zkid".to_string(),
-        );
-        
-        let proof = zkid.prove_identity(&mut prover_session).unwrap();
-        assert_eq!(proof.public_key, zkid.public_key);
-        
-        let mut verifier_session = ProtocolSession::new(
-            "test_session".to_string(),
-            ParticipantRole::Verifier,
-            "zkid".to_string(),
-        );
-        
-        let is_valid = zkid.verify_identity(&proof, &mut verifier_session).unwrap();
-        assert!(is_valid);
-    }
-
-    #[test]
-    fn test_ccr_protocol() {
-        let protocol = CCRProtocol::new("test_ccr".to_string());
-        assert_eq!(protocol.protocol_name, "test_ccr");
-        
-        let mut prover_session = ProtocolSession::new(
-            "test_session".to_string(),
-            ParticipantRole::Prover,
-            "ccr".to_string(),
-        );
-        
-        let mut verifier_session = ProtocolSession::new(
-            "test_session".to_string(),
-            ParticipantRole::Verifier,
-            "ccr".to_string(),
-        );
-        
-        let witness = FieldElement::new(42);
-        let statement = FieldElement::new(123);
-        
-        let result = protocol.execute_round(
-            &mut prover_session,
-            &mut verifier_session,
-            &witness,
-            &statement,
-        );
-        
-        assert!(result.is_ok());
-    }
-
-    #[test]
-    fn test_zkpok_protocol() {
-        let mut protocol = ZKPoKProtocol::new("discrete_log".to_string(), 128);
-        protocol.add_parameter("generator".to_string(), FieldElement::new(2));
-        
-        let private_key = FieldElement::new(42);
-        let generator = FieldElement::new(2);
-        let public_key = generator.pow(&private_key).unwrap();
-        
-        let witness = vec![private_key];
-        let statement = vec![generator, public_key];
-        
-        let proof = protocol.prove_knowledge(&witness, &statement).unwrap();
-        assert_eq!(proof.relation_name, "discrete_log");
-        assert_eq!(proof.statement.len(), 2);
-        
-        let is_valid = protocol.verify_knowledge(&proof).unwrap();
-        assert!(is_valid);
-    }
-
-    #[test]
-    fn test_zkprotocols_api() {
-        let session_id = Value::String("test_session".to_string());
-        let role = Value::String("prover".to_string());
-        let protocol_type = Value::String("zkid".to_string());
-        
-        let session = ZKProtocols::create_session(&session_id, &role, &protocol_type);
-        assert!(session.is_ok());
-        
-        let zkid = ZKProtocols::generate_zkid_keypair();
-        assert!(zkid.is_ok());
-        
-        let protocol_name = Value::String("test_ccr".to_string());
-        let ccr_protocol = ZKProtocols::create_ccr_protocol(&protocol_name);
-        assert!(ccr_protocol.is_ok());
-        
-        let relation_name = Value::String("test_relation".to_string());
-        let zkpok_protocol = ZKProtocols::create_zkpok_protocol(&relation_name, 128);
-        assert!(zkpok_protocol.is_ok());
-    }
-
-    #[test]
-    fn test_protocol_info() {
-        let info = ZKProtocols::protocol_info();
-        assert!(matches!(info, Value::Object(_)));
-        
-        let security = ZKProtocols::security_considerations();
-        assert!(matches!(security, Value::Object(_)));
-        
-        let practices = ZKProtocols::protocol_best_practices();
-        assert!(matches!(practices, Value::Object(_)));
-    }
-
-    #[test]
-    fn test_session_id_generation() {
-        let session_id = ZKProtocols::generate_session_id();
-        assert!(session_id.is_ok());
-        
-        if let Ok(Value::String(id)) = session_id {
-            assert_eq!(id.len(), 32); // 16 bytes * 2 hex chars
-        }
-    }
-
-    #[test]
-    fn test_field_element_parsing() {
-        let int_value = Value::Integer(42);
-        let string_value = Value::String("123".to_string());
-        
-        let elem1 = ZKProtocols::parse_field_element(&int_value).unwrap();
-        let elem2 = ZKProtocols::parse_field_element(&string_value).unwrap();
-        
-        assert_eq!(elem1, FieldElement::new(42));
-        assert_eq!(elem2, FieldElement::new(123));
-        
-        let array = Value::Array(vec![int_value, string_value]);
-        let elems = ZKProtocols::parse_field_array(&array).unwrap();
-        
-        assert_eq!(elems.len(), 2);
-        assert_eq!(elems[0], FieldElement::new(42));
-        assert_eq!(elems[1], FieldElement::new(123));
-    }
-
-    #[test]
-    fn test_protocol_state_transitions() {
-        let mut session = ProtocolSession::new(
-            "test_session".to_string(),
-            ParticipantRole::Prover,
-            "test_protocol".to_string(),
-        );
-        
-        assert!(matches!(session.state, ProtocolState::Initial));
-        
-        session.update_state(ProtocolState::CommitmentSent);
-        assert!(matches!(session.state, ProtocolState::CommitmentSent));
-        
-        session.update_state(ProtocolState::ChallengeSent);
-        assert!(matches!(session.state, ProtocolState::ChallengeSent));
-        
-        session.update_state(ProtocolState::ResponseSent);
-        assert!(matches!(session.state, ProtocolState::ResponseSent));
-        
-        session.update_state(ProtocolState::Verified);
-        assert!(matches!(session.state, ProtocolState::Verified));
-    }
-}

@@ -48,9 +48,9 @@ pub use production_driver::{
 };
 
 /// fr fr Initialize MySQL support and register driver globally
-pub fn init_mysql() -> Result<(), Error> {
-    use crate::stdlib::database::driver::register_driver;
-use crate::error::Error;
+pub fn init_mysql() -> crate::error::Result<()> {
+//     use crate::stdlib::database::driver::register_driver;
+use crate::error::CursedError;
     
     let driver = Box::new(MySqlDriver::new());
     register_driver("mysql".to_string(), driver)

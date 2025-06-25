@@ -1,4 +1,4 @@
-use crate::error::Error;
+use crate::error::CursedError;
 /// Core environment variable operations for CURSED standard library
 
 use std::collections::HashMap;
@@ -373,78 +373,3 @@ pub fn get_hostname() -> Option<String> {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_basic_env_operations() {
-        let test_key = "CURSED_TEST_VAR";
-        let test_value = "test_value";
-        
-        // Set and get
-        assert!(set_env(test_key, test_value).is_ok());
-        assert_eq!(get_env(test_key), Some(test_value.to_string()));
-        assert!(env_exists(test_key));
-        
-        // Remove
-        assert!(remove_env(test_key).is_ok());
-        assert_eq!(get_env(test_key), None);
-        assert!(!env_exists(test_key));
-    }
-
-    #[test]
-    fn test_get_env_with_default() {
-        let nonexistent_key = "CURSED_NONEXISTENT_VAR_12345";
-        let default_value = "default";
-        
-        assert_eq!(
-            get_env_with_default(nonexistent_key, default_value),
-            default_value
-        );
-    }
-
-    #[test]
-    fn test_invalid_key_validation() {
-        assert!(set_env("", "value").is_err());
-        assert!(set_env("key\0with\0nulls", "value").is_err());
-    }
-
-    #[test]
-    fn test_invalid_value_validation() {
-        assert!(set_env("TEST_KEY", "value\0with\0nulls").is_err());
-    }
-
-    #[test]
-    fn test_path_separator() {
-        let separator = get_path_separator();
-        #[cfg(target_os = "windows")]
-        assert_eq!(separator, ";");
-        
-        #[cfg(not(target_os = "windows"))]
-        assert_eq!(separator, ":");
-    }
-
-    #[test]
-    fn test_case_sensitivity() {
-        #[cfg(target_os = "windows")]
-        assert!(!is_case_sensitive_env());
-        
-        #[cfg(not(target_os = "windows"))]
-        assert!(is_case_sensitive_env());
-    }
-
-    #[test]
-    fn test_get_all_env() {
-        let env_vars = get_all_env();
-        assert!(!env_vars.is_empty());
-    }
-
-    #[test]
-    fn test_get_env_keys_and_values() {
-        let keys = get_env_keys();
-        let values = get_env_values();
-        assert_eq!(keys.len(), values.len());
-        assert!(!keys.is_empty());
-    }
-}

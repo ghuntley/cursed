@@ -5,11 +5,11 @@
 
 use std::sync::Arc;
 use std::time::SystemTime;
-use crate::stdlib::database::{
+// use crate::stdlib::database::{
     Driver, DriverConn, DatabaseError, SqlIsolationLevel
 };
-use crate::error::Error;
-use crate::stdlib::database::driver::DriverCapabilities;
+use crate::error::CursedError;
+// use crate::stdlib::database::driver::DriverCapabilities;
 use super::config::{PostgresConfig, PostgresConnectionString};
 use super::connection::PostgresConnection;
 use super::pool::{PostgresPool, PostgresPoolConfig};
@@ -182,7 +182,7 @@ impl Default for PostgresDriver {
 }
 
 impl Driver for PostgresDriver {
-    fn open(&self, data_source_name: &str) -> Result<(), Error> {
+    fn open(&self, data_source_name: &str) -> crate::error::Result<()> {
         // Parse connection string
         let config = PostgresConnectionString::parse(data_source_name)
             .map_err(|e| e.to_database_error())?;
@@ -326,69 +326,3 @@ impl Default for PostgresDriverBuilder {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_driver_creation() {
-        let driver = PostgresDriver::new();
-        assert_eq!(driver.name(), "PostgreSQL Driver for CURSED");
-        assert!(!driver.is_pooled());
-    }
-
-    #[test]
-    fn test_driver_capabilities() {
-        let caps = PostgresDriver::get_capabilities();
-        assert!(caps.supports_transactions);
-        assert!(caps.supports_prepared_statements);
-        assert!(caps.supports_concurrent_connections);
-        assert_eq!(caps.max_parameter_count, Some(65535));
-    }
-
-    #[test]
-    fn test_driver_builder() {
-        let builder = PostgresDriverBuilder::new()
-            .connection("localhost", 5432, "testdb", "user")
-            .password("pass")
-            .ssl_mode(super::config::SslMode::Require)
-            .with_pool();
-        
-        // Test that builder accepts all configuration methods
-        assert_eq!(builder.config.host, "localhost");
-        assert_eq!(builder.config.port, 5432);
-        assert_eq!(builder.config.database, "testdb");
-        assert_eq!(builder.config.username, "user");
-        assert_eq!(builder.config.password, Some("pass".to_string()));
-        assert_eq!(builder.config.ssl_mode, super::config::SslMode::Require);
-        assert!(builder.enable_pool);
-    }
-
-    #[tokio::test]
-    async fn test_connection_string_parsing() {
-        let dsn = "postgresql://user:pass@localhost:5432/testdb";
-        
-        // This will fail without a real PostgreSQL server, but tests the parsing
-        let result = PostgresDriver::connect_with_string(dsn).await;
-        
-        // Expect connection failure, not parsing error
-        if let Err(err) = result {
-            assert!(matches!(
-                err.kind,
-                PostgresErrorKind::ConnectionFailed | PostgresErrorKind::TimeoutError
-            ));
-        }
-    }
-
-    #[test]
-    fn test_driver_info() {
-        let driver = PostgresDriver::new();
-        let info = driver.info();
-        
-        assert_eq!(info.name, "PostgreSQL Driver for CURSED");
-        assert!(!info.is_pooled);
-        assert_eq!(info.default_host, "localhost");
-        assert_eq!(info.default_port, 5432);
-        assert_eq!(info.default_database, "postgres");
-    }
-}

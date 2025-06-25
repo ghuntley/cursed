@@ -1,4 +1,4 @@
-use crate::error_types::Error;
+use crate::error::CursedError;
 #!/usr/bin/env rust
 // CURSED Programming Language CLI (Truly Minimal Build)
 // 
@@ -11,6 +11,8 @@ use std::process;
 use cursed::prelude::*;
 
 fn main() {
+        // TODO: implement
+    }
     // Initialize the minimal CURSED runtime
     cursed::init();
 
@@ -32,7 +34,7 @@ fn main() {
     match result {
         Ok(_) => process::exit(0),
         Err(e) => {
-            eprintln!("Error: {}", e);
+            eprintln!("CursedError: {}", e);
             process::exit(1);
         }
     }
@@ -105,7 +107,7 @@ fn build_minimal_cli() -> Command {
         )
 }
 
-fn handle_run_command(matches: &clap::ArgMatches) -> Result<(), Error> {
+fn handle_run_command(matches: &clap::ArgMatches) -> crate::error::Result<()> {
     let file = matches.get_one::<String>("file").unwrap();
     
     println!("🚀 Parsing CURSED program (minimal): {}", file);
@@ -122,7 +124,7 @@ fn handle_run_command(matches: &clap::ArgMatches) -> Result<(), Error> {
     Ok(())
 }
 
-fn handle_check_command(matches: &clap::ArgMatches) -> Result<(), Error> {
+fn handle_check_command(matches: &clap::ArgMatches) -> crate::error::Result<()> {
     let file = matches.get_one::<String>("file").unwrap();
     
     println!("🔍 Checking CURSED program (minimal): {}", file);
@@ -140,7 +142,7 @@ fn handle_check_command(matches: &clap::ArgMatches) -> Result<(), Error> {
     Ok(())
 }
 
-fn handle_format_command(matches: &clap::ArgMatches) -> Result<(), Error> {
+fn handle_format_command(matches: &clap::ArgMatches) -> crate::error::Result<()> {
     let file_opt = matches.get_one::<String>("file");
     let check_only = matches.get_flag("check");
     
@@ -181,7 +183,7 @@ fn handle_format_command(matches: &clap::ArgMatches) -> Result<(), Error> {
     Ok(())
 }
 
-fn handle_tokenize_command(matches: &clap::ArgMatches) -> Result<(), Error> {
+fn handle_tokenize_command(matches: &clap::ArgMatches) -> crate::error::Result<()> {
     let file = matches.get_one::<String>("file").unwrap();
     
     println!("🔤 Tokenizing CURSED program: {}", file);
@@ -204,7 +206,7 @@ fn handle_tokenize_command(matches: &clap::ArgMatches) -> Result<(), Error> {
 }
 
 
-fn handle_test_command() -> Result<(), Error> {
+fn handle_test_command() -> crate::error::Result<()> {
     let source = r#"
 facts x = 42;
 facts name = "CURSED";

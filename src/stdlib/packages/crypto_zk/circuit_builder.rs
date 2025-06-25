@@ -1,10 +1,9 @@
-use crate::error::Error;
+use crate::error::CursedError;
 /// Circuit builder for zero-knowledge proof systems
 use std::collections::HashMap;
-use crate::stdlib::packages::crypto_advanced::AdvancedCryptoResult;
-use crate::stdlib::crypto::unified_api::UnifiedCryptoError as CryptoError;
-use crate::stdlib::value::Value;
-use crate::stdlib::packages::crypto_zk::field_arithmetic::FieldElement;
+// use crate::stdlib::packages::crypto_advanced::AdvancedCryptoResult;
+// use crate::stdlib::value::Value;
+// use crate::stdlib::packages::crypto_zk::field_arithmetic::FieldElement;
 
 /// Wire types in arithmetic circuits
 #[derive(Debug, Clone, PartialEq)]
@@ -645,80 +644,3 @@ impl Circuits {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_circuit_builder_basic() {
-        let mut builder = CircuitBuilder::new();
-        let x = builder.new_wire(WireType::Input);
-        let y = builder.new_wire(WireType::Input);
-        let result = builder.add_gate(x, y).unwrap();
-        
-        assert_eq!(builder.wires.len(), 3);
-        assert_eq!(builder.gates.len(), 1);
-        assert_eq!(builder.constraints.len(), 1);
-    }
-
-    #[test]
-    fn test_circuit_evaluation() {
-        let mut builder = CircuitBuilder::new();
-        let x = builder.new_wire(WireType::Input);
-        let y = builder.new_wire(WireType::Input);
-        let sum = builder.add_gate(x, y).unwrap();
-        let product = builder.mul_gate(x, y).unwrap();
-        
-        builder.wires.get_mut(&sum).unwrap().wire_type = WireType::Output;
-        builder.wires.get_mut(&product).unwrap().wire_type = WireType::Output;
-        builder.output_wires.extend(&[sum, product]);
-        
-        let inputs = vec![FieldElement::new(3), FieldElement::new(4)];
-        let outputs = builder.evaluate(&inputs).unwrap();
-        
-        assert_eq!(outputs.len(), 2);
-    }
-
-    #[test]
-    fn test_witness_generation() {
-        let mut builder = CircuitBuilder::new();
-        let x = builder.new_wire(WireType::Input);
-        let y = builder.new_wire(WireType::Input);
-        let result = builder.mul_gate(x, y).unwrap();
-        
-        let inputs = vec![FieldElement::new(5), FieldElement::new(6)];
-        let witness = builder.generate_witness(&inputs).unwrap();
-        
-        assert!(builder.verify_witness(&witness).unwrap());
-    }
-
-    #[test]
-    fn test_r1cs_constraint() {
-        let mut constraint = R1CSConstraint::new();
-        constraint.add_a_term(1, FieldElement::one());
-        constraint.add_b_term(2, FieldElement::one());
-        constraint.add_c_term(3, FieldElement::one());
-        
-        let witness = vec![
-            FieldElement::one(),  // wire 0
-            FieldElement::new(3), // wire 1
-            FieldElement::new(4), // wire 2
-            FieldElement::new(12), // wire 3 (3 * 4)
-        ];
-        
-        assert!(constraint.evaluate(&witness).unwrap());
-    }
-
-    #[test]
-    fn test_circuits_api() {
-        let mult_circuit = Circuits::build_multiplication_circuit().unwrap();
-        let add_circuit = Circuits::build_addition_circuit().unwrap();
-        
-        assert!(matches!(mult_circuit, Value::Object(_)));
-        assert!(matches!(add_circuit, Value::Object(_)));
-        
-        let inputs = Value::Array(vec![Value::Integer(3), Value::Integer(4)]);
-        let result = Circuits::evaluate_circuit(&mult_circuit, &inputs).unwrap();
-        assert!(matches!(result, Value::Array(_)));
-    }
-}

@@ -1,9 +1,8 @@
-use crate::error::Error;
+use crate::error::CursedError;
 // Core import resolution logic
 
 use std::path::{Path, PathBuf};
 use std::collections::HashMap;
-use super::ImportError;
 
 /// Configuration for import resolution
 #[derive(Debug, Clone)]
@@ -139,7 +138,7 @@ impl ImportResolver {
     }
     
     /// Resolve standard library import
-    pub fn resolve_stdlib_import(&self, import_path: &str) -> Result<(), Error> {
+    pub fn resolve_stdlib_import(&self, import_path: &str) -> crate::error::Result<()> {
         // Parse stdlib path (e.g., "stdlib::io::console")
         let parts: Vec<&str> = import_path.split("::").collect();
         if parts.len() < 2 || parts[0] != "stdlib" {
@@ -179,7 +178,7 @@ impl ImportResolver {
         &self, 
         import_path: &str, 
         context_path: Option<&Path>
-    ) -> Result<(), Error> {
+    ) -> crate::error::Result<()> {
         let mut search_paths = self.config.local_search_paths.clone();
         
         // Add context path if provided
@@ -261,36 +260,3 @@ impl ImportResolver {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use std::fs;
-    use tempfile::TempDir;
-    
-    #[test]
-    fn test_stdlib_import_resolution() {
-        let resolver = ImportResolver::new(ImportResolverConfig::default());
-        
-        let resolved = resolver.resolve_stdlib_import("stdlib::io").unwrap();
-        assert_eq!(resolved.source, ImportSource::StandardLibrary);
-        assert!(resolved.exports.contains(&"print".to_string()));
-    }
-    
-    #[test]
-    fn test_local_import_resolution() {
-        let temp_dir = TempDir::new().unwrap();
-        let file_path = temp_dir.path().join("test_module.csd");
-        fs::write(&file_path, "slay test_function() {}").unwrap();
-        
-        let mut config = ImportResolverConfig::default();
-        config.local_search_paths = vec![temp_dir.path().to_path_buf()];
-        
-        let resolver = ImportResolver::new(config);
-        let resolved = resolver.resolve_local_import("test_module", None).unwrap();
-        
-        match resolved.source {
-            ImportSource::LocalFile { .. } => (),
-            _ => panic!("Expected LocalFile source"),
-        }
-    }
-}

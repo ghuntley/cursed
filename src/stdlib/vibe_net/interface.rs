@@ -1,7 +1,6 @@
 // Network interface information for VibeNet
 
 use crate::error::CursedError;
-use crate::error::Error;
 use super::addr::AddrVibe;
 use super::NetResult;
 

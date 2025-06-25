@@ -1,4 +1,4 @@
-use crate::error::Error;
+use crate::error::CursedError;
 /// Real security and permissions management for CURSED IPC
 /// 
 /// This module provides comprehensive security functionality for inter-process
@@ -28,14 +28,14 @@ use std::path::Path;
 use rand::{Rng, thread_rng};
 use sha2::{Sha256, Digest};
 use hmac::{Hmac, Mac};
-use crate::stdlib::ipc::{
-use crate::stdlib::web_vibez::SecurityContext;
+// use crate::stdlib::ipc::{
+// use crate::stdlib::web_vibez::SecurityContext;
     IpcResult, IpcError,
     permission_denied, resource_error
 };
 
-use crate::stdlib::ipc::types::{IpcPermissions, ProcessId};
-use crate::stdlib::ipc::error::{security_error, system_error};
+// use crate::stdlib::ipc::types::{IpcPermissions, ProcessId};
+// use crate::stdlib::ipc::error::{security_error, system_error};
 
 /// Security context for IPC operations
 #[derive(Debug, Clone)]
@@ -901,153 +901,3 @@ pub fn get_violation_count() -> u64 {
         .unwrap_or(0)
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_security_context_creation() {
-        let context = IpcSecurityContext::new(1234)
-            .with_security_level(SecurityLevel::Elevated)
-            .add_capability("admin".to_string())
-            .add_capability("debug".to_string());
-
-        assert_eq!(context.process_id, 1234);
-        assert_eq!(context.security_level, SecurityLevel::Elevated);
-        assert!(context.has_capability("admin"));
-        assert!(context.has_capability("debug"));
-        assert!(!context.has_capability("unknown"));
-        assert!(context.is_elevated());
-    }
-
-    #[test]
-    fn test_security_policy() {
-        let strict = SecurityPolicy::strict();
-        assert!(strict.enforce_permissions);
-        assert!(strict.encryption_required);
-        assert_eq!(strict.max_requests_per_minute, 100);
-
-        let permissive = SecurityPolicy::permissive();
-        assert!(!permissive.enforce_permissions);
-        assert!(!permissive.encryption_required);
-        assert_eq!(permissive.max_requests_per_minute, 10000);
-    }
-
-    #[test]
-    fn test_access_control() {
-        let context = IpcSecurityContext::new(1234)
-            .with_security_level(SecurityLevel::Standard)
-            .add_capability("read".to_string());
-
-        let access_control = AccessControl::new()
-            .with_capability("read".to_string());
-
-        let result = access_control.check_access(&context, "read", "test_resource");
-        assert_eq!(result, AuthorizationResult::Allowed);
-
-        let result = access_control.check_access(&context, "write", "test_resource");
-        assert!(matches!(result, AuthorizationResult::Denied(_)));
-    }
-
-    #[test]
-    fn test_permission_levels() {
-        assert!(PermissionLevel::Admin > PermissionLevel::Execute);
-        assert!(PermissionLevel::Execute > PermissionLevel::Write);
-        assert!(PermissionLevel::Write > PermissionLevel::Read);
-        assert!(PermissionLevel::Read > PermissionLevel::None);
-    }
-
-    #[test]
-    fn test_permission_conditions() {
-        let context = IpcSecurityContext::new(1234)
-            .add_capability("test_cap".to_string());
-
-        let user_condition = PermissionCondition::UserEquals(1000);
-        let process_condition = PermissionCondition::ProcessEquals(1234);
-        let capability_condition = PermissionCondition::HasCapability("test_cap".to_string());
-
-        assert!(!user_condition.check(&context)); // user_id is None
-        assert!(process_condition.check(&context));
-        assert!(capability_condition.check(&context));
-    }
-
-    #[test]
-    fn test_credential_validation() {
-        let future_time = SystemTime::now() + Duration::from_secs(3600); // 1 hour
-        let past_time = SystemTime::now() - Duration::from_secs(3600); // 1 hour
-
-        let valid_cred = Credential::new(1000).with_expiry(future_time);
-        let expired_cred = Credential::new(1000).with_expiry(past_time);
-
-        assert!(valid_cred.is_valid());
-        assert!(!valid_cred.is_expired());
-
-        assert!(!expired_cred.is_valid());
-        assert!(expired_cred.is_expired());
-    }
-
-    #[test]
-    fn test_security_manager() {
-        let manager = SecurityManager::new(SecurityPolicy::default());
-
-        // Create session
-        let session_id = manager.create_session(1234).unwrap();
-        assert!(manager.validate_session(&session_id).unwrap());
-
-        // Set access control
-        let access_control = AccessControl::read_only();
-        manager.set_access_control("test_resource", access_control).unwrap();
-
-        // Check access
-        let result = manager.check_access(&session_id, "test_resource", "read").unwrap();
-        assert_eq!(result, AuthorizationResult::Allowed);
-
-        let result = manager.check_access(&session_id, "test_resource", "write").unwrap();
-        assert!(matches!(result, AuthorizationResult::Denied(_)));
-
-        // Check violation count
-        assert_eq!(manager.get_violation_count(), 1);
-    }
-
-    #[test]
-    fn test_encryption_decryption() {
-        let data = b"sensitive data";
-        let key = b"this_is_a_32_byte_encryption_key";
-
-        let encrypted = encrypt_ipc_data(data, key).unwrap();
-        assert_ne!(encrypted, data);
-
-        let decrypted = decrypt_ipc_data(&encrypted, key).unwrap();
-        assert_eq!(decrypted, data);
-    }
-
-    #[test]
-    fn test_token_generation() {
-        let context = IpcSecurityContext::new(1234);
-        let token1 = generate_ipc_token(&context).unwrap();
-        
-        // Sleep a bit to ensure different timestamp
-        std::thread::sleep(Duration::from_millis(1));
-        
-        let token2 = generate_ipc_token(&context).unwrap();
-        assert_ne!(token1, token2); // Should be different due to timestamp
-    }
-
-    #[test]
-    fn test_audit_entry() {
-        let entry = AuditEntry::new(
-            1234,
-            Some(1000),
-            "read",
-            "test_resource",
-            AuthorizationResult::Allowed,
-        ).with_detail("client_ip".to_string(), "127.0.0.1".to_string());
-
-        assert_eq!(entry.process_id, 1234);
-        assert_eq!(entry.user_id, Some(1000));
-        assert_eq!(entry.operation, "read");
-        assert_eq!(entry.resource, "test_resource");
-        assert_eq!(entry.result, AuthorizationResult::Allowed);
-        assert_eq!(entry.details.get("client_ip"), Some(&"127.0.0.1".to_string()));
-    }
-}

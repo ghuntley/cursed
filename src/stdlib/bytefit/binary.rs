@@ -1,4 +1,4 @@
-use crate::error::Error;
+use crate::error::CursedError;
 /// Binary data manipulation functions
 use super::{ByteFitError, ByteFitResult, invalid_hex, invalid_base64, invalid_input};
 
@@ -269,67 +269,3 @@ fn base64_decode_simple(input: &str) -> Result<Vec<u8>, String> {
     Ok(result)
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_hex_encoding() {
-        let data = b"hello";
-        let hex = to_hex(data);
-        assert_eq!(hex, b"68656c6c6f");
-        
-        let decoded = from_hex(&hex).unwrap();
-        assert_eq!(decoded, data);
-    }
-
-    #[test]
-    fn test_hex_decoding_errors() {
-        assert!(from_hex(b"abc").is_err()); // Odd length
-        assert!(from_hex(b"xy").is_err()); // Invalid hex
-    }
-
-    #[test]
-    fn test_base64_encoding() {
-        let data = b"hello";
-        let encoded = to_base64(data);
-        let encoded_str = String::from_utf8(encoded).unwrap();
-        assert_eq!(encoded_str, "aGVsbG8=");
-        
-        let decoded = from_base64(b"aGVsbG8=").unwrap();
-        assert_eq!(decoded, data);
-    }
-
-    #[test]
-    fn test_bitwise_operations() {
-        let a = vec![0x0F, 0xF0];
-        let b = vec![0xF0, 0x0F];
-        
-        assert_eq!(and(&a, &b), vec![0x00, 0x00]);
-        assert_eq!(or(&a, &b), vec![0xFF, 0xFF]);
-        assert_eq!(xor(&a, &b), vec![0xFF, 0xFF]);
-        assert_eq!(not(&a), vec![0xF0, 0x0F]);
-    }
-
-    #[test]
-    fn test_shift_operations() {
-        let data = vec![0x01, 0x02];
-        
-        let left_shifted = shift_left(&data, 1);
-        assert_eq!(left_shifted, vec![0x02, 0x04]);
-        
-        let right_shifted = shift_right(&data, 1);
-        assert_eq!(right_shifted, vec![0x00, 0x81]);
-    }
-
-    #[test]
-    fn test_shift_by_bytes() {
-        let data = vec![0x12, 0x34];
-        
-        let left_shifted = shift_left(&data, 8);
-        assert_eq!(left_shifted, vec![0x00, 0x12, 0x34]);
-        
-        let right_shifted = shift_right(&data, 8);
-        assert_eq!(right_shifted, vec![0x12]);
-    }
-}

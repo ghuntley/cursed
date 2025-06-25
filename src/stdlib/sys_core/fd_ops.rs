@@ -1,11 +1,11 @@
-use crate::error::Error;
+use crate::error::CursedError;
 /// File descriptor operations and management
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex, RwLock};
 use std::os::unix::io::RawFd;
 use std::time::Duration;
 
-use crate::stdlib::sys_core::error::{SysCoreError, SysCoreResult, system_call_error, invalid_argument, not_supported};
+// use crate::stdlib::sys_core::error::{SysCoreError, SysCoreResult, system_call_error, invalid_argument, not_supported};
 
 /// File descriptor wrapper with metadata
 #[derive(Debug, Clone)]

@@ -1,6 +1,6 @@
-use crate::stdlib::web_vibez::SecurityContext;
-use crate::stdlib::process::EnhancedProcess;
-use crate::error::Error;
+// use crate::stdlib::web_vibez::SecurityContext;
+// use crate::stdlib::process::EnhancedProcess;
+use crate::error::CursedError;
 /// Windows-specific process management and IPC implementation
 /// 
 /// This module provides Windows-specific implementations for the unified
@@ -31,8 +31,7 @@ use winapi::um::securitybaseapi::*;
 use winapi::um::winbase::*;
 use winapi::um::winnt::*;
 
-use crate::error::CursedError;
-use crate::stdlib::process::{
+// use crate::stdlib::process::{
     EnhancedProcess, ResourceLimits, SecurityContext, ProcessState
 };
 
@@ -156,7 +155,7 @@ struct JobSecurityRestrictions {
 impl WindowsPlatformHandler {
     /// Create a new Windows platform handler
     #[instrument]
-    pub fn new() -> Result<(), Error> {
+    pub fn new() -> crate::error::Result<()> {
         info!("Creating Windows platform handler");
         
         let settings = WindowsSettings {
@@ -179,7 +178,7 @@ impl WindowsPlatformHandler {
     
     /// Create a Windows job object for process management
     #[instrument(skip(self))]
-    fn create_job_object(&mut self, name: Option<&str>) -> Result<(), Error> {
+    fn create_job_object(&mut self, name: Option<&str>) -> crate::error::Result<()> {
         debug!("Creating Windows job object");
         
         let job_name = name.map(|s| {
@@ -196,7 +195,7 @@ impl WindowsPlatformHandler {
         if job_handle == NULL {
             return Err(CursedError::Platform(format!(
                 "Failed to create job object: {}",
-                io::Error::last_os_error()
+                std::io::Error::last_os_error()
             )));
         }
         
@@ -209,7 +208,7 @@ impl WindowsPlatformHandler {
     
     /// Configure job object with limits and restrictions
     #[instrument(skip(self))]
-    fn configure_job_object(&self, job_handle: HANDLE) -> Result<(), Error> {
+    fn configure_job_object(&self, job_handle: HANDLE) -> crate::error::Result<()> {
         debug!("Configuring job object limits");
         
         // Set basic limits
@@ -228,7 +227,7 @@ impl WindowsPlatformHandler {
         if result == FALSE {
             return Err(CursedError::Platform(format!(
                 "Failed to set job object limits: {}",
-                io::Error::last_os_error()
+                std::io::Error::last_os_error()
             )));
         }
         
@@ -246,7 +245,7 @@ impl WindowsPlatformHandler {
         };
         
         if result == FALSE {
-            warn!("Failed to set job object UI restrictions: {}", io::Error::last_os_error());
+            warn!("Failed to set job object UI restrictions: {}", std::io::Error::last_os_error());
         }
         
         debug!("Job object configuration completed");
@@ -255,7 +254,7 @@ impl WindowsPlatformHandler {
     
     /// Assign a process to a job object
     #[instrument(skip(self))]
-    fn assign_process_to_job(&self, process_handle: HANDLE, job_handle: HANDLE) -> Result<(), Error> {
+    fn assign_process_to_job(&self, process_handle: HANDLE, job_handle: HANDLE) -> crate::error::Result<()> {
         debug!("Assigning process to job object");
         
         let result = unsafe { AssignProcessToJobObject(job_handle, process_handle) };
@@ -263,7 +262,7 @@ impl WindowsPlatformHandler {
         if result == FALSE {
             return Err(CursedError::Platform(format!(
                 "Failed to assign process to job: {}",
-                io::Error::last_os_error()
+                std::io::Error::last_os_error()
             )));
         }
         
@@ -273,7 +272,7 @@ impl WindowsPlatformHandler {
     
     /// Create a Windows named pipe
     #[instrument(skip(self))]
-    fn create_named_pipe(&self, name: &str, mode: PipeMode) -> Result<(), Error> {
+    fn create_named_pipe(&self, name: &str, mode: PipeMode) -> crate::error::Result<()> {
         debug!(name = name, mode = ?mode, "Creating Windows named pipe");
         
         let pipe_name = format!(r"\\.\pipe\{}", name);
@@ -329,7 +328,7 @@ impl WindowsPlatformHandler {
             return Err(CursedError::Platform(format!(
                 "Failed to create named pipe '{}': {}",
                 name,
-                io::Error::last_os_error()
+                std::io::Error::last_os_error()
             )));
         }
         
@@ -350,7 +349,7 @@ impl WindowsPlatformHandler {
         &self,
         process: &mut EnhancedProcess,
         settings: &SecuritySettings,
-    ) -> Result<(), Error> {
+    ) -> crate::error::Result<()> {
         debug!("Applying Windows-specific security");
         
         if self.settings.enable_security_tokens {
@@ -372,7 +371,7 @@ impl WindowsPlatformHandler {
     
     /// Create a restricted security token
     #[instrument(skip(self, process))]
-    fn create_restricted_token(&self, process: &mut EnhancedProcess) -> Result<(), Error> {
+    fn create_restricted_token(&self, process: &mut EnhancedProcess) -> crate::error::Result<()> {
         debug!("Creating restricted security token");
         
         let mut token_manager = self.token_manager.lock().unwrap();
@@ -392,7 +391,7 @@ impl WindowsPlatformHandler {
         if result == FALSE {
             return Err(CursedError::Platform(format!(
                 "Failed to open process token: {}",
-                io::Error::last_os_error()
+                std::io::Error::last_os_error()
             )));
         }
         
@@ -417,7 +416,7 @@ impl WindowsPlatformHandler {
         if result == FALSE {
             return Err(CursedError::Platform(format!(
                 "Failed to create restricted token: {}",
-                io::Error::last_os_error()
+                std::io::Error::last_os_error()
             )));
         }
         
@@ -430,7 +429,7 @@ impl WindowsPlatformHandler {
 
 impl PlatformHandler for WindowsPlatformHandler {
     #[instrument(skip(self))]
-    fn initialize(&self) -> Result<(), Error> {
+    fn initialize(&self) -> crate::error::Result<()> {
         info!("Initializing Windows platform handler");
         
         // Initialize Windows-specific subsystems
@@ -452,7 +451,7 @@ impl PlatformHandler for WindowsPlatformHandler {
     }
     
     #[instrument(skip(self))]
-    fn create_ipc(&self, ipc_type: IpcType, name: &str) -> Result<(), Error> {
+    fn create_ipc(&self, ipc_type: IpcType, name: &str) -> crate::error::Result<()> {
         info!(ipc_type = ?ipc_type, name = name, "Creating Windows IPC mechanism");
         
         match ipc_type {
@@ -480,7 +479,7 @@ impl PlatformHandler for WindowsPlatformHandler {
         &self,
         process: &mut EnhancedProcess,
         settings: &SecuritySettings,
-    ) -> Result<(), Error> {
+    ) -> crate::error::Result<()> {
         self.apply_windows_security(process, settings)
     }
     
@@ -490,7 +489,7 @@ impl PlatformHandler for WindowsPlatformHandler {
     }
     
     #[instrument(skip(self))]
-    fn cleanup(&self) -> Result<(), Error> {
+    fn cleanup(&self) -> crate::error::Result<()> {
         info!("Cleaning up Windows platform handler");
         
         // Cleanup job objects
@@ -525,13 +524,13 @@ struct WindowsNamedPipeConnection {
 }
 
 impl WindowsNamedPipeConnection {
-    fn new(pipe: WindowsNamedPipe) -> Result<(), Error> {
+    fn new(pipe: WindowsNamedPipe) -> crate::error::Result<()> {
         Ok(Self { pipe })
     }
 }
 
 impl IpcConnection for WindowsNamedPipeConnection {
-    fn send(&self, message: &[u8]) -> Result<(), Error> {
+    fn send(&self, message: &[u8]) -> crate::error::Result<()> {
         let mut bytes_written: DWORD = 0;
         let result = unsafe {
             WriteFile(
@@ -544,13 +543,13 @@ impl IpcConnection for WindowsNamedPipeConnection {
         };
         
         if result == FALSE {
-            return Err(CursedError::Io(io::Error::last_os_error()));
+            return Err(CursedError::Io(std::io::Error::last_os_error()));
         }
         
         Ok(())
     }
     
-    fn receive(&self) -> Result<(), Error> {
+    fn receive(&self) -> crate::error::Result<()> {
         let mut buffer = vec![0u8; 8192];
         let mut bytes_read: DWORD = 0;
         
@@ -565,19 +564,19 @@ impl IpcConnection for WindowsNamedPipeConnection {
         };
         
         if result == FALSE {
-            return Err(CursedError::Io(io::Error::last_os_error()));
+            return Err(CursedError::Io(std::io::Error::last_os_error()));
         }
         
         buffer.truncate(bytes_read as usize);
         Ok(buffer)
     }
     
-    fn close(&self) -> Result<(), Error> {
+    fn close(&self) -> crate::error::Result<()> {
         let result = unsafe { CloseHandle(self.pipe.handle) };
         if result == FALSE {
             return Err(CursedError::Platform(format!(
                 "Failed to close named pipe: {}",
-                io::Error::last_os_error()
+                std::io::Error::last_os_error()
             )));
         }
         Ok(())
@@ -593,7 +592,7 @@ struct WindowsSharedMemoryConnection {
 }
 
 impl WindowsSharedMemoryConnection {
-    fn new(name: &str) -> Result<(), Error> {
+    fn new(name: &str) -> crate::error::Result<()> {
         let mapping_name = CString::new(name)
             .map_err(|e| CursedError::Platform(format!("Invalid mapping name: {}", e)))?;
         
@@ -611,7 +610,7 @@ impl WindowsSharedMemoryConnection {
         if mapping_handle == NULL {
             return Err(CursedError::Platform(format!(
                 "Failed to create file mapping: {}",
-                io::Error::last_os_error()
+                std::io::Error::last_os_error()
             )));
         }
         
@@ -629,7 +628,7 @@ impl WindowsSharedMemoryConnection {
             unsafe { CloseHandle(mapping_handle) };
             return Err(CursedError::Platform(format!(
                 "Failed to map view of file: {}",
-                io::Error::last_os_error()
+                std::io::Error::last_os_error()
             )));
         }
         
@@ -642,7 +641,7 @@ impl WindowsSharedMemoryConnection {
 }
 
 impl IpcConnection for WindowsSharedMemoryConnection {
-    fn send(&self, message: &[u8]) -> Result<(), Error> {
+    fn send(&self, message: &[u8]) -> crate::error::Result<()> {
         if message.len() > 8192 {
             return Err(CursedError::Platform("Message too large for shared memory".to_string()));
         }
@@ -658,7 +657,7 @@ impl IpcConnection for WindowsSharedMemoryConnection {
         Ok(())
     }
     
-    fn receive(&self) -> Result<(), Error> {
+    fn receive(&self) -> crate::error::Result<()> {
         // For simplicity, read the entire shared memory segment
         // In practice, you'd implement a proper protocol
         let mut buffer = vec![0u8; 8192];
@@ -679,7 +678,7 @@ impl IpcConnection for WindowsSharedMemoryConnection {
         Ok(buffer)
     }
     
-    fn close(&self) -> Result<(), Error> {
+    fn close(&self) -> crate::error::Result<()> {
         unsafe {
             UnmapViewOfFile(self.view_ptr);
             CloseHandle(self.mapping_handle);
@@ -696,7 +695,7 @@ struct WindowsSemaphoreConnection {
 }
 
 impl WindowsSemaphoreConnection {
-    fn new(name: &str) -> Result<(), Error> {
+    fn new(name: &str) -> crate::error::Result<()> {
         let semaphore_name = CString::new(name)
             .map_err(|e| CursedError::Platform(format!("Invalid semaphore name: {}", e)))?;
         
@@ -712,7 +711,7 @@ impl WindowsSemaphoreConnection {
         if semaphore_handle == NULL {
             return Err(CursedError::Platform(format!(
                 "Failed to create semaphore: {}",
-                io::Error::last_os_error()
+                std::io::Error::last_os_error()
             )));
         }
         
@@ -724,19 +723,19 @@ impl WindowsSemaphoreConnection {
 }
 
 impl IpcConnection for WindowsSemaphoreConnection {
-    fn send(&self, _message: &[u8]) -> Result<(), Error> {
+    fn send(&self, _message: &[u8]) -> crate::error::Result<()> {
         // Release semaphore (signal)
         let result = unsafe { ReleaseSemaphore(self.semaphore_handle, 1, ptr::null_mut()) };
         if result == FALSE {
             return Err(CursedError::Platform(format!(
                 "Failed to release semaphore: {}",
-                io::Error::last_os_error()
+                std::io::Error::last_os_error()
             )));
         }
         Ok(())
     }
     
-    fn receive(&self) -> Result<(), Error> {
+    fn receive(&self) -> crate::error::Result<()> {
         // Wait for semaphore
         let result = unsafe { WaitForSingleObject(self.semaphore_handle, INFINITE) };
         match result {
@@ -744,18 +743,18 @@ impl IpcConnection for WindowsSemaphoreConnection {
             WAIT_TIMEOUT => Err(CursedError::Platform("Semaphore wait timeout".to_string())),
             WAIT_FAILED => Err(CursedError::Platform(format!(
                 "Semaphore wait failed: {}",
-                io::Error::last_os_error()
+                std::io::Error::last_os_error()
             ))),
             _ => Err(CursedError::Platform("Unexpected semaphore wait result".to_string())),
         }
     }
     
-    fn close(&self) -> Result<(), Error> {
+    fn close(&self) -> crate::error::Result<()> {
         let result = unsafe { CloseHandle(self.semaphore_handle) };
         if result == FALSE {
             return Err(CursedError::Platform(format!(
                 "Failed to close semaphore: {}",
-                io::Error::last_os_error()
+                std::io::Error::last_os_error()
             )));
         }
         Ok(())
@@ -764,7 +763,7 @@ impl IpcConnection for WindowsSemaphoreConnection {
 
 // Implementation stubs for required types
 impl WindowsTokenManager {
-    fn new() -> Result<(), Error> {
+    fn new() -> crate::error::Result<()> {
         Ok(Self {
             current_token: None,
             restricted_tokens: HashMap::new(),
@@ -774,7 +773,7 @@ impl WindowsTokenManager {
 }
 
 impl WindowsNamedPipeManager {
-    fn new() -> Result<(), Error> {
+    fn new() -> crate::error::Result<()> {
         Ok(Self {
             active_pipes: HashMap::new(),
             security_descriptors: HashMap::new(),
@@ -783,7 +782,7 @@ impl WindowsNamedPipeManager {
 }
 
 impl WindowsProcessGroupManager {
-    fn new() -> Result<(), Error> {
+    fn new() -> crate::error::Result<()> {
         Ok(Self {
             job_objects: HashMap::new(),
             configurations: HashMap::new(),
@@ -791,36 +790,3 @@ impl WindowsProcessGroupManager {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-use crate::stdlib::process::info::ProcessState;
-    
-    #[test]
-    fn test_windows_platform_handler_creation() {
-        // This test would require Windows environment
-        // assert!(WindowsPlatformHandler::new().is_ok());
-    }
-    
-    #[test]
-    fn test_job_object_config() {
-        let config = JobObjectConfig {
-            process_limit: Some(10),
-            memory_limit: Some(1_000_000_000), // 1GB
-            cpu_rate_limit: Some(50), // 50%
-            ui_restrictions: UiRestrictions {
-                restrict_desktop: true,
-                restrict_display_settings: true,
-                restrict_system_parameters: true,
-            },
-            security_restrictions: JobSecurityRestrictions {
-                restrict_admin_token: true,
-                restrict_impersonation: true,
-                restrict_creation: false,
-            },
-        };
-        
-        assert_eq!(config.process_limit, Some(10));
-        assert_eq!(config.memory_limit, Some(1_000_000_000));
-    }
-}

@@ -7,7 +7,7 @@
 use crate::ast::*;
 use crate::documentation::extractors::ast_node_support::{ExpressionType, Literal};
 use crate::documentation::ast_bridge::{AstBridge, ToDocumentationAst, SafeConverter};
-use crate::error::{Error, SourceLocation};
+use crate::error::{CursedError, SourceLocation};
 
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
@@ -233,7 +233,7 @@ pub struct DocumentationGenerator {
 impl DocumentationGenerator {
     /// Create a new documentation generator
     #[instrument(skip(config))]
-    pub fn new(config: super::DocumentationConfig) -> Result<(), Error> {
+    pub fn new(config: super::DocumentationConfig) -> crate::error::Result<()> {
         info!("Initializing documentation generator");
         
         let generator_config = DocGeneratorConfig {
@@ -261,7 +261,7 @@ impl DocumentationGenerator {
         ast: &AstNode,
         file_path: &Path,
         source_code: &str,
-    ) -> Result<(), Error> {
+    ) -> crate::error::Result<()> {
         let start_time = std::time::Instant::now();
         
         debug!("Extracting documentation from AST for: {:?}", file_path);
@@ -367,7 +367,7 @@ impl DocumentationGenerator {
         node: &AstNode,
         extracted: &mut super::ExtractedDocumentation,
         source_code: &str,
-    ) -> Result<(), Error> {
+    ) -> crate::error::Result<()> {
         match &node.node_type {
             AstNodeType::Program(program) => {
                 // Extract module-level documentation
@@ -430,7 +430,7 @@ impl DocumentationGenerator {
 
     /// Extract module documentation
     #[instrument(skip(self, source_code))]
-    fn extract_module_doc(&self, file_path: &Path, source_code: &str) -> Result<(), Error> {
+    fn extract_module_doc(&self, file_path: &Path, source_code: &str) -> crate::error::Result<()> {
         // Look for module-level documentation at the beginning of the file
         let lines: Vec<&str> = source_code.split("\n").collect();
         let mut description = None;
@@ -483,7 +483,7 @@ impl DocumentationGenerator {
     }
 
     /// Extract function documentation
-    fn extract_function_doc(&self, func_decl: &FunctionDeclaration, source_code: &str) -> Result<(), Error> {
+    fn extract_function_doc(&self, func_decl: &FunctionDeclaration, source_code: &str) -> crate::error::Result<()> {
         // Check visibility - skip private functions if not including them
         if !self.generator_config.include_private && !func_decl.is_public {
             return Ok(None);
@@ -557,7 +557,7 @@ impl DocumentationGenerator {
     }
 
     /// Extract struct documentation
-    fn extract_struct_doc(&self, struct_decl: &StructDeclaration, source_code: &str) -> Result<(), Error> {
+    fn extract_struct_doc(&self, struct_decl: &StructDeclaration, source_code: &str) -> crate::error::Result<()> {
         // Check visibility
         if !self.generator_config.include_private && !struct_decl.is_public {
             return Ok(None);
@@ -605,7 +605,7 @@ impl DocumentationGenerator {
     }
 
     /// Extract interface documentation
-    fn extract_interface_doc(&self, interface_decl: &InterfaceDeclaration, source_code: &str) -> Result<(), Error> {
+    fn extract_interface_doc(&self, interface_decl: &InterfaceDeclaration, source_code: &str) -> crate::error::Result<()> {
         // Check visibility
         if !self.generator_config.include_private && !interface_decl.is_public {
             return Ok(None);
@@ -641,7 +641,7 @@ impl DocumentationGenerator {
     }
 
     /// Convert variable statement to core variable declaration
-    fn convert_variable_statement_to_core(&self, var_stmt: &crate::ast::VariableStatement) -> Result<(), Error> {
+    fn convert_variable_statement_to_core(&self, var_stmt: &crate::ast::VariableStatement) -> crate::error::Result<()> {
         Ok(crate::ast::VariableDeclaration {
             name: var_stmt.to_string().to_string(),
             var_type: None, // Would need more sophisticated conversion
@@ -654,7 +654,7 @@ impl DocumentationGenerator {
     }
 
     /// Extract variable documentation
-    fn extract_variable_doc(&self, var_decl: &crate::ast::VariableDeclaration, source_code: &str) -> Result<(), Error> {
+    fn extract_variable_doc(&self, var_decl: &crate::ast::VariableDeclaration, source_code: &str) -> crate::error::Result<()> {
         // Check visibility
         if !self.generator_config.include_private && !var_decl.is_public {
             return Ok(None);
@@ -688,7 +688,7 @@ impl DocumentationGenerator {
     }
 
     /// Extract documentation comment before a location
-    fn extract_doc_comment_before(&self, location: &SourceLocation, source_code: &str) -> Result<(), Error> {
+    fn extract_doc_comment_before(&self, location: &SourceLocation, source_code: &str) -> crate::error::Result<()> {
         let lines: Vec<&str> = source_code.split("\n").collect();
         
         if location.line <= 1 || location.line > lines.len() {
@@ -731,7 +731,7 @@ impl DocumentationGenerator {
     }
 
     /// Extract source code snippet for a location
-    fn extract_source_snippet(&self, location: &SourceLocation, source_code: &str) -> Result<(), Error> {
+    fn extract_source_snippet(&self, location: &SourceLocation, source_code: &str) -> crate::error::Result<()> {
         let lines: Vec<&str> = source_code.split("\n").collect();
         
         if location.line > lines.len() {
@@ -786,7 +786,7 @@ impl DocumentationGenerator {
     }
 
     /// Extract examples from documentation description
-    fn extract_examples_from_description(&self, description: &Option<String>) -> Result<(), Error> {
+    fn extract_examples_from_description(&self, description: &Option<String>) -> crate::error::Result<()> {
         let mut examples = Vec::new();
         
         if let Some(desc) = description {
@@ -836,7 +836,7 @@ impl DocumentationGenerator {
         &self,
         enhanced_item: &crate::documentation::extractors::EnhancedDocumentationItem,
         source_code: &str,
-    ) -> Result<(), Error> {
+    ) -> crate::error::Result<()> {
         use crate::documentation::extractors::ast_extractor::{TypeKind, CompleteTypeInfo};
         
         let base = &enhanced_item.base;
@@ -909,7 +909,7 @@ impl DocumentationGenerator {
         &self,
         enhanced_item: &crate::documentation::extractors::EnhancedDocumentationItem,
         source_code: &str,
-    ) -> Result<(), Error> {
+    ) -> crate::error::Result<()> {
         use crate::documentation::extractors::ast_extractor::TypeKind;
         
         let base = &enhanced_item.base;
@@ -955,7 +955,7 @@ impl DocumentationGenerator {
     fn convert_to_module_doc(
         &self,
         enhanced_item: &crate::documentation::extractors::EnhancedDocumentationItem,
-    ) -> Result<(), Error> {
+    ) -> crate::error::Result<()> {
         let base = &enhanced_item.base;
         
         // Extract exports from relationships
@@ -998,7 +998,7 @@ impl DocumentationGenerator {
     fn extract_fields_from_enhanced_item(
         &self,
         enhanced_item: &crate::documentation::extractors::EnhancedDocumentationItem,
-    ) -> Result<(), Error> {
+    ) -> crate::error::Result<()> {
         let mut fields = Vec::new();
 
         // Extract fields from type information
@@ -1023,7 +1023,7 @@ impl DocumentationGenerator {
         &self,
         enhanced_item: &crate::documentation::extractors::EnhancedDocumentationItem,
         source_code: &str,
-    ) -> Result<(), Error> {
+    ) -> crate::error::Result<()> {
         let mut methods = Vec::new();
 
         // Extract methods from implementations
@@ -1295,7 +1295,7 @@ impl DocumentationGenerator {
         cross_references: &HashMap<String, Vec<super::CrossReference>>,
         search_index: &[super::SearchIndexEntry],
         format: OutputFormat,
-    ) -> Result<(), Error> {
+    ) -> crate::error::Result<()> {
         info!("Generating {} documentation", format);
         
         match format {
@@ -1313,10 +1313,10 @@ impl DocumentationGenerator {
         extracted_docs: &[super::ExtractedDocumentation],
         cross_references: &HashMap<String, Vec<super::CrossReference>>,
         search_index: &[super::SearchIndexEntry],
-    ) -> Result<(), Error> {
+    ) -> crate::error::Result<()> {
         let output_dir = &self.config.output_dir;
         std::fs::create_dir_all(output_dir)
-            .map_err(|e| Error::FileWriteError(output_dir.clone(), e.to_string()))?;
+            .map_err(|e| CursedError::FileWriteError(output_dir.clone(), e.to_string()))?;
         
         let mut output_files = Vec::new();
         
@@ -1324,7 +1324,7 @@ impl DocumentationGenerator {
         let index_content = self.generate_html_index(extracted_docs, search_index)?;
         let index_path = output_dir.join("index.html");
         std::fs::write(&index_path, index_content)
-            .map_err(|e| Error::FileWriteError(index_path.clone(), e.to_string()))?;
+            .map_err(|e| CursedError::FileWriteError(index_path.clone(), e.to_string()))?;
         output_files.push(index_path);
         
         // Generate page for each module
@@ -1335,17 +1335,17 @@ impl DocumentationGenerator {
             let page_content = self.generate_html_module_page(doc, cross_references)?;
             let page_path = output_dir.join(format!("{}.html", module_name));
             std::fs::write(&page_path, page_content)
-                .map_err(|e| Error::FileWriteError(page_path.clone(), e.to_string()))?;
+                .map_err(|e| CursedError::FileWriteError(page_path.clone(), e.to_string()))?;
             output_files.push(page_path);
         }
         
         // Generate search index file
         if self.config.options.generate_search_index {
             let search_content = serde_json::to_string_pretty(search_index)
-                .map_err(|e| Error::SerializationError(e.to_string()))?;
+                .map_err(|e| CursedError::SerializationError(e.to_string()))?;
             let search_path = output_dir.join("search-index.json");
             std::fs::write(&search_path, search_content)
-                .map_err(|e| Error::FileWriteError(search_path.clone(), e.to_string()))?;
+                .map_err(|e| CursedError::FileWriteError(search_path.clone(), e.to_string()))?;
             output_files.push(search_path);
         }
         
@@ -1360,7 +1360,7 @@ impl DocumentationGenerator {
         &self,
         extracted_docs: &[super::ExtractedDocumentation],
         search_index: &[super::SearchIndexEntry],
-    ) -> Result<(), Error> {
+    ) -> crate::error::Result<()> {
         let project = &self.config.project;
         
         let mut content = format!(
@@ -1427,7 +1427,7 @@ impl DocumentationGenerator {
         &self,
         doc: &super::ExtractedDocumentation,
         cross_references: &HashMap<String, Vec<super::CrossReference>>,
-    ) -> Result<(), Error> {
+    ) -> crate::error::Result<()> {
         let module_name = doc.source_file.file_stem()
             .unwrap_or_default()
             .to_string_lossy();
@@ -1502,7 +1502,7 @@ impl DocumentationGenerator {
     }
 
     /// Format function documentation as HTML
-    fn format_function_html(&self, func: &FunctionDoc) -> Result<(), Error> {
+    fn format_function_html(&self, func: &FunctionDoc) -> crate::error::Result<()> {
         let mut html = format!(
             r#"            <div class="function" id="{}">
                 <h3>{}</h3>
@@ -1568,7 +1568,7 @@ impl DocumentationGenerator {
     }
 
     /// Format type documentation as HTML
-    fn format_type_html(&self, type_doc: &TypeDoc) -> Result<(), Error> {
+    fn format_type_html(&self, type_doc: &TypeDoc) -> crate::error::Result<()> {
         let mut html = format!(
             r#"            <div class="type" id="{}">
                 <h3>{} ({})</h3>
@@ -1615,10 +1615,10 @@ impl DocumentationGenerator {
     async fn generate_markdown_output(
         &self,
         extracted_docs: &[super::ExtractedDocumentation],
-    ) -> Result<(), Error> {
+    ) -> crate::error::Result<()> {
         let output_dir = &self.config.output_dir;
         std::fs::create_dir_all(output_dir)
-            .map_err(|e| Error::FileWriteError(output_dir.clone(), e.to_string()))?;
+            .map_err(|e| CursedError::FileWriteError(output_dir.clone(), e.to_string()))?;
         
         let mut output_files = Vec::new();
         
@@ -1626,7 +1626,7 @@ impl DocumentationGenerator {
         let readme_content = self.generate_markdown_index(extracted_docs)?;
         let readme_path = output_dir.join("README.md");
         std::fs::write(&readme_path, readme_content)
-            .map_err(|e| Error::FileWriteError(readme_path.clone(), e.to_string()))?;
+            .map_err(|e| CursedError::FileWriteError(readme_path.clone(), e.to_string()))?;
         output_files.push(readme_path);
         
         // Generate page for each module
@@ -1637,7 +1637,7 @@ impl DocumentationGenerator {
             let page_content = self.generate_markdown_module_page(doc)?;
             let page_path = output_dir.join(format!("{}.md", module_name));
             std::fs::write(&page_path, page_content)
-                .map_err(|e| Error::FileWriteError(page_path.clone(), e.to_string()))?;
+                .map_err(|e| CursedError::FileWriteError(page_path.clone(), e.to_string()))?;
             output_files.push(page_path);
         }
         
@@ -1645,7 +1645,7 @@ impl DocumentationGenerator {
     }
 
     /// Generate Markdown index
-    fn generate_markdown_index(&self, extracted_docs: &[super::ExtractedDocumentation]) -> Result<(), Error> {
+    fn generate_markdown_index(&self, extracted_docs: &[super::ExtractedDocumentation]) -> crate::error::Result<()> {
         let project = &self.config.project;
         
         let mut content = format!(
@@ -1675,7 +1675,7 @@ impl DocumentationGenerator {
     }
 
     /// Generate Markdown module page
-    fn generate_markdown_module_page(&self, doc: &super::ExtractedDocumentation) -> Result<(), Error> {
+    fn generate_markdown_module_page(&self, doc: &super::ExtractedDocumentation) -> crate::error::Result<()> {
         let module_name = doc.source_file.file_stem()
             .unwrap_or_default()
             .to_string_lossy();
@@ -1715,7 +1715,7 @@ impl DocumentationGenerator {
     }
 
     /// Format function documentation as Markdown
-    fn format_function_markdown(&self, func: &FunctionDoc) -> Result<(), Error> {
+    fn format_function_markdown(&self, func: &FunctionDoc) -> crate::error::Result<()> {
         let mut markdown = format!("### {}\n\n", func.to_string());
         
         if let Some(ref description) = func.description {
@@ -1755,7 +1755,7 @@ impl DocumentationGenerator {
     }
 
     /// Format type documentation as Markdown
-    fn format_type_markdown(&self, type_doc: &TypeDoc) -> Result<(), Error> {
+    fn format_type_markdown(&self, type_doc: &TypeDoc) -> crate::error::Result<()> {
         let mut markdown = format!("### {} ({})\n\n", type_doc.to_string(), type_doc.type_def);
         
         if let Some(ref description) = type_doc.description {
@@ -1788,10 +1788,10 @@ impl DocumentationGenerator {
         extracted_docs: &[super::ExtractedDocumentation],
         cross_references: &HashMap<String, Vec<super::CrossReference>>,
         search_index: &[super::SearchIndexEntry],
-    ) -> Result<(), Error> {
+    ) -> crate::error::Result<()> {
         let output_dir = &self.config.output_dir;
         std::fs::create_dir_all(output_dir)
-            .map_err(|e| Error::FileWriteError(output_dir.clone(), e.to_string()))?;
+            .map_err(|e| CursedError::FileWriteError(output_dir.clone(), e.to_string()))?;
         
         let mut output_files = Vec::new();
         
@@ -1806,18 +1806,18 @@ impl DocumentationGenerator {
         });
         
         let json_content = serde_json::to_string_pretty(&json_doc)
-            .map_err(|e| Error::SerializationError(e.to_string()))?;
+            .map_err(|e| CursedError::SerializationError(e.to_string()))?;
         
         let json_path = output_dir.join("documentation.json");
         std::fs::write(&json_path, json_content)
-            .map_err(|e| Error::FileWriteError(json_path.clone(), e.to_string()))?;
+            .map_err(|e| CursedError::FileWriteError(json_path.clone(), e.to_string()))?;
         output_files.push(json_path);
         
         Ok(output_files)
     }
 
     /// Generate XML documentation
-    async fn generate_xml_output(&self, extracted_docs: &[super::ExtractedDocumentation]) -> Result<(), Error> {
+    async fn generate_xml_output(&self, extracted_docs: &[super::ExtractedDocumentation]) -> crate::error::Result<()> {
         use std::io::Write;
         
         info!("Generating XML documentation for {} files", extracted_docs.len());
@@ -1828,7 +1828,7 @@ impl DocumentationGenerator {
         let main_doc_xml = self.build_main_xml_doc(extracted_docs)?;
         let main_path = self.config.output_dir.join("documentation.xml");
         std::fs::write(&main_path, main_doc_xml)
-            .map_err(|e| Error::FileWriteError(main_path.clone(), e.to_string()))?;
+            .map_err(|e| CursedError::FileWriteError(main_path.clone(), e.to_string()))?;
         output_files.push(main_path);
         
         // Generate individual module files
@@ -1841,7 +1841,7 @@ impl DocumentationGenerator {
                     .replace(' ', "_"));
             let module_path = self.config.output_dir.join(module_filename);
             std::fs::write(&module_path, module_xml)
-                .map_err(|e| Error::FileWriteError(module_path.clone(), e.to_string()))?;
+                .map_err(|e| CursedError::FileWriteError(module_path.clone(), e.to_string()))?;
             output_files.push(module_path);
         }
         
@@ -1849,14 +1849,14 @@ impl DocumentationGenerator {
         let api_index_xml = self.build_api_index_xml(extracted_docs)?;
         let api_path = self.config.output_dir.join("api_index.xml");
         std::fs::write(&api_path, api_index_xml)
-            .map_err(|e| Error::FileWriteError(api_path.clone(), e.to_string()))?;
+            .map_err(|e| CursedError::FileWriteError(api_path.clone(), e.to_string()))?;
         output_files.push(api_path);
         
         // Generate DTD file for validation
         let dtd_content = self.build_dtd_content()?;
         let dtd_path = self.config.output_dir.join("cursed_docs.dtd");
         std::fs::write(&dtd_path, dtd_content)
-            .map_err(|e| Error::FileWriteError(dtd_path.clone(), e.to_string()))?;
+            .map_err(|e| CursedError::FileWriteError(dtd_path.clone(), e.to_string()))?;
         output_files.push(dtd_path);
         
         info!("Generated {} XML documentation files", output_files.len());
@@ -1864,7 +1864,7 @@ impl DocumentationGenerator {
     }
 
     /// Generate LaTeX documentation
-    async fn generate_latex_output(&self, extracted_docs: &[super::ExtractedDocumentation]) -> Result<(), Error> {
+    async fn generate_latex_output(&self, extracted_docs: &[super::ExtractedDocumentation]) -> crate::error::Result<()> {
         info!("Generating LaTeX documentation for {} files using enhanced LaTeX generator", extracted_docs.len());
         
         // Use the enhanced LaTeX generator
@@ -1896,7 +1896,7 @@ impl DocumentationGenerator {
     }
 
     /// Build main XML documentation structure
-    fn build_main_xml_doc(&self, docs: &[super::ExtractedDocumentation]) -> Result<(), Error> {
+    fn build_main_xml_doc(&self, docs: &[super::ExtractedDocumentation]) -> crate::error::Result<()> {
         let mut xml = String::new();
         
         // XML declaration with DTD reference
@@ -1980,7 +1980,7 @@ impl DocumentationGenerator {
     }
 
     /// Build module-specific XML documentation
-    fn build_module_xml_doc(&self, doc: &super::ExtractedDocumentation) -> Result<(), Error> {
+    fn build_module_xml_doc(&self, doc: &super::ExtractedDocumentation) -> crate::error::Result<()> {
         let mut xml = String::new();
         
         xml.push_str("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n");
@@ -2121,7 +2121,7 @@ impl DocumentationGenerator {
     }
 
     /// Build API index XML
-    fn build_api_index_xml(&self, docs: &[super::ExtractedDocumentation]) -> Result<(), Error> {
+    fn build_api_index_xml(&self, docs: &[super::ExtractedDocumentation]) -> crate::error::Result<()> {
         let mut xml = String::new();
         
         xml.push_str("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n");
@@ -2178,7 +2178,7 @@ impl DocumentationGenerator {
     }
 
     /// Build DTD content for XML validation
-    fn build_dtd_content(&self) -> Result<(), Error> {
+    fn build_dtd_content(&self) -> crate::error::Result<()> {
         let dtd = r#"<!-- CURSED Documentation DTD -->
 <!ELEMENT documentation (metadata, summary, files)>
 <!ELEMENT metadata (project_name, version, description?, authors?, homepage?, repository?, generated_at, generator)>
@@ -2263,18 +2263,18 @@ impl DocumentationGenerator {
     }
 
     /// Copy static files (CSS, JS, etc.) for HTML output
-    fn copy_static_files(&self, output_dir: &Path) -> Result<(), Error> {
+    fn copy_static_files(&self, output_dir: &Path) -> crate::error::Result<()> {
         // Create basic CSS file
         let css_content = include_str!("../../docs/styles.css");
         let css_path = output_dir.join("styles.css");
         std::fs::write(&css_path, css_content)
-            .map_err(|e| Error::FileWriteError(css_path.clone(), e.to_string()))?;
+            .map_err(|e| CursedError::FileWriteError(css_path.clone(), e.to_string()))?;
         
         Ok(())
     }
 
     /// Extract parameter documentation from function documentation
-    fn extract_param_documentation(&self, param_name: &str, func_location: &SourceLocation, source_code: &str) -> Result<(), Error> {
+    fn extract_param_documentation(&self, param_name: &str, func_location: &SourceLocation, source_code: &str) -> crate::error::Result<()> {
         let lines: Vec<&str> = source_code.split("\n").collect();
         
         if func_location.line <= 1 || func_location.line > lines.len() {
@@ -2342,7 +2342,7 @@ impl DocumentationGenerator {
     }
 
     /// Extract field documentation
-    fn extract_field_documentation(&self, field_name: &str, struct_location: &SourceLocation, source_code: &str) -> Result<(), Error> {
+    fn extract_field_documentation(&self, field_name: &str, struct_location: &SourceLocation, source_code: &str) -> crate::error::Result<()> {
         let lines: Vec<&str> = source_code.split("\n").collect();
         
         // Find the struct definition and look for field comments
@@ -2416,7 +2416,7 @@ impl DocumentationGenerator {
     }
 
     /// Extract associated methods for a type using enhanced AST-based parsing
-    fn extract_associated_methods(&self, type_name: &str, source_code: &str) -> Result<(), Error> {
+    fn extract_associated_methods(&self, type_name: &str, source_code: &str) -> crate::error::Result<()> {
         let mut methods = Vec::new();
         
         // Use the enhanced AST extractor for better parsing
@@ -2448,7 +2448,7 @@ impl DocumentationGenerator {
     }
 
     /// Parse implementation methods from source code using enhanced parsing
-    fn parse_impl_methods_from_source(&self, type_name: &str, source_code: &str) -> Result<(), Error> {
+    fn parse_impl_methods_from_source(&self, type_name: &str, source_code: &str) -> crate::error::Result<()> {
         let mut methods = Vec::new();
         let lines: Vec<&str> = source_code.split("\n").collect();
         
@@ -2465,7 +2465,7 @@ impl DocumentationGenerator {
     }
 
     /// Parse methods within an impl block with full AST-based parameter and return type extraction
-    fn parse_impl_block_methods(&self, lines: &[&str], start_idx: usize, type_name: &str) -> Result<(), Error> {
+    fn parse_impl_block_methods(&self, lines: &[&str], start_idx: usize, type_name: &str) -> crate::error::Result<()> {
         let mut methods = Vec::new();
         let mut brace_count = 0;
         let mut in_impl = false;
@@ -2508,7 +2508,7 @@ impl DocumentationGenerator {
     }
 
     /// Parse a complete method signature including parameters and return type
-    fn parse_method_signature(&self, lines: &[&str], start_idx: usize, type_name: &str) -> Result<(), Error> {
+    fn parse_method_signature(&self, lines: &[&str], start_idx: usize, type_name: &str) -> crate::error::Result<()> {
         let mut signature_lines = Vec::new();
         let mut paren_count = 0;
         let mut brace_count = 0;
@@ -2550,7 +2550,7 @@ impl DocumentationGenerator {
     }
 
     /// Extract method components (name, parameters, return type) from signature
-    fn extract_method_components(&self, signature: &str, line_number: usize, type_name: &str) -> Result<(), Error> {
+    fn extract_method_components(&self, signature: &str, line_number: usize, type_name: &str) -> crate::error::Result<()> {
         // Parse method visibility and modifiers
         let is_async = signature.contains("async");
         let is_public = signature.contains("pub");
@@ -2593,7 +2593,7 @@ impl DocumentationGenerator {
     }
 
     /// Extract method name from signature
-    fn extract_method_name(&self, signature: &str) -> Result<(), Error> {
+    fn extract_method_name(&self, signature: &str) -> crate::error::Result<()> {
         // Handle various function declaration patterns
         let patterns = [
             "pub async fn ",
@@ -2618,11 +2618,11 @@ impl DocumentationGenerator {
             }
         }
         
-        Err(Error::ParseError("Failed to extract method name".to_string()))
+        Err(CursedError::ParseError("Failed to extract method name".to_string()))
     }
 
     /// Extract method parameters with enhanced type parsing
-    fn extract_method_parameters(&self, signature: &str) -> Result<(), Error> {
+    fn extract_method_parameters(&self, signature: &str) -> crate::error::Result<()> {
         let mut parameters = Vec::new();
         
         // Find the parameter list between parentheses
@@ -2647,7 +2647,7 @@ impl DocumentationGenerator {
     }
 
     /// Smart parameter splitting that handles nested generics and complex types
-    fn split_parameters_smart(&self, params_str: &str) -> Result<(), Error> {
+    fn split_parameters_smart(&self, params_str: &str) -> crate::error::Result<()> {
         let mut parameters = Vec::new();
         let mut current_param = String::new();
         let mut angle_bracket_depth = 0;
@@ -2682,7 +2682,7 @@ impl DocumentationGenerator {
     }
 
     /// Parse individual parameter with type and default value
-    fn parse_parameter(&self, param_str: &str) -> Result<(), Error> {
+    fn parse_parameter(&self, param_str: &str) -> crate::error::Result<()> {
         // Handle different parameter patterns:
         // name: Type
         // name: Type = default
@@ -2741,7 +2741,7 @@ impl DocumentationGenerator {
     }
 
     /// Extract return type from method signature
-    fn extract_method_return_type(&self, signature: &str) -> Result<(), Error> {
+    fn extract_method_return_type(&self, signature: &str) -> crate::error::Result<()> {
         // Look for -> return_type pattern
         if let Some(arrow_pos) = signature.find("->") {
             let after_arrow = &signature[arrow_pos + 2..];
@@ -2776,7 +2776,7 @@ impl DocumentationGenerator {
     }
 
     /// Extract generic parameters from method signature
-    fn extract_method_generics(&self, signature: &str) -> Result<(), Error> {
+    fn extract_method_generics(&self, signature: &str) -> crate::error::Result<()> {
         let mut generics = Vec::new();
         
         // Look for generic parameters after function name
@@ -2810,7 +2810,7 @@ impl DocumentationGenerator {
     }
 
     /// Extract generic parameters from type string
-    fn extract_type_generics(&self, type_str: &str) -> Result<(), Error> {
+    fn extract_type_generics(&self, type_str: &str) -> crate::error::Result<()> {
         let mut generics = Vec::new();
         
         if let Some(generic_start) = type_str.find('<') {
@@ -2831,7 +2831,7 @@ impl DocumentationGenerator {
     }
 
     /// Smart generic splitting that handles nested generics
-    fn split_generics_smart(&self, generics_str: &str) -> Result<(), Error> {
+    fn split_generics_smart(&self, generics_str: &str) -> crate::error::Result<()> {
         let mut generics = Vec::new();
         let mut current_generic = String::new();
         let mut angle_bracket_depth = 0;
@@ -2865,7 +2865,7 @@ impl DocumentationGenerator {
     }
 
     /// Fallback line-based method extraction (legacy support)
-    fn extract_methods_line_based(&self, type_name: &str, source_code: &str) -> Result<(), Error> {
+    fn extract_methods_line_based(&self, type_name: &str, source_code: &str) -> crate::error::Result<()> {
         let mut methods = Vec::new();
         let lines: Vec<&str> = source_code.split("\n").collect();
         
@@ -2930,7 +2930,7 @@ impl DocumentationGenerator {
     }
 
     /// Extract exports from source code
-    fn extract_exports(&self, source_code: &str) -> Result<(), Error> {
+    fn extract_exports(&self, source_code: &str) -> crate::error::Result<()> {
         let mut exports = Vec::new();
         
         for line in source_code.split("\n") {
@@ -2950,7 +2950,7 @@ impl DocumentationGenerator {
     }
 
     /// Extract submodules from source code
-    fn extract_submodules(&self, source_code: &str) -> Result<(), Error> {
+    fn extract_submodules(&self, source_code: &str) -> crate::error::Result<()> {
         let mut submodules = Vec::new();
         
         for line in source_code.split("\n") {
@@ -2976,7 +2976,7 @@ impl DocumentationGenerator {
     }
 
     /// Build main LaTeX document
-    fn build_main_latex_doc(&self, docs: &[super::ExtractedDocumentation]) -> Result<(), Error> {
+    fn build_main_latex_doc(&self, docs: &[super::ExtractedDocumentation]) -> crate::error::Result<()> {
         let mut latex = String::new();
         
         // Document preamble
@@ -3115,7 +3115,7 @@ impl DocumentationGenerator {
     }
 
     /// Build module-specific LaTeX document
-    fn build_module_latex_doc(&self, doc: &super::ExtractedDocumentation) -> Result<(), Error> {
+    fn build_module_latex_doc(&self, doc: &super::ExtractedDocumentation) -> crate::error::Result<()> {
         let module_name = doc.source_file.file_stem()
             .unwrap_or_default()
             .to_string_lossy();
@@ -3144,7 +3144,7 @@ impl DocumentationGenerator {
     }
 
     /// Format function for LaTeX
-    fn format_function_latex(&self, func: &FunctionDoc) -> Result<(), Error> {
+    fn format_function_latex(&self, func: &FunctionDoc) -> crate::error::Result<()> {
         let mut latex = format!(r#"\subsubsection{{{}}}
 
 "#, self.escape_latex(&func.to_string()));
@@ -3197,7 +3197,7 @@ impl DocumentationGenerator {
     }
 
     /// Format type for LaTeX
-    fn format_type_latex(&self, type_doc: &TypeDoc) -> Result<(), Error> {
+    fn format_type_latex(&self, type_doc: &TypeDoc) -> crate::error::Result<()> {
         let mut latex = format!(r#"\subsubsection{{{} ({})}}
 
 "#, 
@@ -3228,7 +3228,7 @@ impl DocumentationGenerator {
     }
 
     /// Build bibliography
-    fn build_bibliography(&self, _docs: &[super::ExtractedDocumentation]) -> Result<(), Error> {
+    fn build_bibliography(&self, _docs: &[super::ExtractedDocumentation]) -> crate::error::Result<()> {
         let bib = format!(r#"@misc{{cursed_docs,
     title={{CURSED Programming Language Documentation}},
     author={{{}}},
@@ -3243,7 +3243,7 @@ impl DocumentationGenerator {
     }
 
     /// Build LaTeX Makefile
-    fn build_latex_makefile(&self) -> Result<(), Error> {
+    fn build_latex_makefile(&self) -> crate::error::Result<()> {
         let makefile = r#"# LaTeX Documentation Makefile
 
 MAIN = documentation

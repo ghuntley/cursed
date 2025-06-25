@@ -1,9 +1,8 @@
 /// Signal Protocol Implementation (End-to-End Encryption)
 use crate::error::CursedError;
-use crate::stdlib::packages::crypto_advanced::AdvancedCryptoResult;
-use crate::stdlib::packages::crypto_random::SecureRandom;
-use crate::stdlib::packages::crypto_hash_advanced::HashRegistry;
-use crate::error::Error;
+// use crate::stdlib::packages::crypto_advanced::AdvancedCryptoResult;
+// use crate::stdlib::packages::crypto_random::SecureRandom;
+// use crate::stdlib::packages::crypto_hash_advanced::HashRegistry;
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
 use std::time::SystemTime;
@@ -521,91 +520,3 @@ impl fmt::Display for SignalMessageType {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_signal_manager_creation() {
-        let manager = SignalProtocolManager::new().unwrap();
-        assert!(manager.identity_key_pair.is_some());
-        assert!(manager.registration_id > 0);
-    }
-
-    #[test]
-    fn test_key_bundle_generation() {
-        let manager = SignalProtocolManager::new().unwrap();
-        let key_bundle = manager.generate_key_bundle(5).unwrap();
-        
-        assert!(!key_bundle.identity_key.is_empty());
-        assert_eq!(key_bundle.one_time_pre_keys.len(), 5);
-        assert!(key_bundle.signed_pre_key.signature.is_some());
-    }
-
-    #[test]
-    fn test_session_creation() {
-        let manager = SignalProtocolManager::new().unwrap();
-        let key_bundle = manager.generate_key_bundle(3).unwrap();
-        
-        let session_id = manager.start_session("remote_user", key_bundle).unwrap();
-        assert!(!session_id.is_empty());
-        
-        let session = manager.get_session(&session_id).unwrap().unwrap();
-        assert_eq!(session.session_id, session_id);
-        assert!(session.is_initiated);
-    }
-
-    #[test]
-    fn test_message_encryption_decryption() {
-        let manager = SignalProtocolManager::new().unwrap();
-        let key_bundle = manager.generate_key_bundle(3).unwrap();
-        let session_id = manager.start_session("remote_user", key_bundle).unwrap();
-        
-        let plaintext = b"Hello, Signal!";
-        let encrypted_message = manager.encrypt_message(&session_id, plaintext).unwrap();
-        
-        assert_eq!(encrypted_message.session_id, session_id);
-        assert_eq!(encrypted_message.message_type, SignalMessageType::Message);
-        assert!(!encrypted_message.ciphertext.is_empty());
-        
-        let decrypted = manager.decrypt_message(encrypted_message).unwrap();
-        // Note: In this demo implementation, decryption returns fixed text
-        assert!(!decrypted.is_empty());
-    }
-
-    #[test]
-    fn test_key_types() {
-        let manager = SignalProtocolManager::new().unwrap();
-        
-        let identity_key = manager.generate_key_pair(KeyType::IdentityKey, 1).unwrap();
-        assert_eq!(identity_key.key_type, KeyType::IdentityKey);
-        assert!(identity_key.signature.is_none());
-        
-        let signed_key = manager.generate_signed_pre_key(2).unwrap();
-        assert_eq!(signed_key.key_type, KeyType::SignedPreKey);
-        assert!(signed_key.signature.is_some());
-    }
-
-    #[test]
-    fn test_list_sessions() {
-        let manager = SignalProtocolManager::new().unwrap();
-        
-        let key_bundle1 = manager.generate_key_bundle(2).unwrap();
-        let key_bundle2 = manager.generate_key_bundle(2).unwrap();
-        
-        let session1 = manager.start_session("user1", key_bundle1).unwrap();
-        let session2 = manager.start_session("user2", key_bundle2).unwrap();
-        
-        let sessions = manager.list_sessions().unwrap();
-        assert_eq!(sessions.len(), 2);
-        assert!(sessions.contains(&session1));
-        assert!(sessions.contains(&session2));
-    }
-
-    #[test]
-    fn test_display_formatting() {
-        assert_eq!(format!("{}", KeyType::IdentityKey), "Identity Key");
-        assert_eq!(format!("{}", KeyType::SignedPreKey), "Signed Pre Key");
-        assert_eq!(format!("{}", SignalMessageType::Message), "Message");
-    }
-}

@@ -3,7 +3,7 @@
 // Generates comprehensive HTML documentation with navigation, search, and responsive design.
 
 use crate::docs::generator::{DocGeneratorConfig, ExtractedDocumentation, DocumentationItem, SearchIndexEntry};
-use crate::error::Error;
+use crate::error::CursedError;
 use serde_json;
 use std::fs;
 use std::path::{Path, PathBuf};
@@ -22,7 +22,7 @@ impl HtmlGenerator {
     }
 
     /// Generate main index page
-    pub fn generate_index_page(&self, docs: &[ExtractedDocumentation], output_dir: &Path) -> Result<(), Error> {
+    pub fn generate_index_page(&self, docs: &[ExtractedDocumentation], output_dir: &Path) -> crate::error::Result<()> {
         let index_path = output_dir.join("index.html");
         
         let mut content = String::new();
@@ -80,12 +80,12 @@ impl HtmlGenerator {
         content.push_str("</main>\n");
         content.push_str(&self.get_html_footer()?);
         
-        fs::write(index_path, content).map_err(Error::Io)?;
+        fs::write(index_path, content).map_err(CursedError::Io)?;
         Ok(())
     }
 
     /// Generate module documentation page
-    pub fn generate_module_page(&self, doc: &ExtractedDocumentation, output_dir: &Path) -> Result<(), Error> {
+    pub fn generate_module_page(&self, doc: &ExtractedDocumentation, output_dir: &Path) -> crate::error::Result<()> {
         let module_path = output_dir.join(format!("{}.html", self.sanitize_filename(&doc.module_name)));
         
         let mut content = String::new();
@@ -173,12 +173,12 @@ impl HtmlGenerator {
         content.push_str("</main>\n");
         content.push_str(&self.get_html_footer()?);
         
-        fs::write(module_path, content).map_err(Error::Io)?;
+        fs::write(module_path, content).map_err(CursedError::Io)?;
         Ok(())
     }
 
     /// Generate documentation for a single item
-    fn generate_item_documentation(&self, item: &DocumentationItem) -> Result<(), Error> {
+    fn generate_item_documentation(&self, item: &DocumentationItem) -> crate::error::Result<()> {
         let mut content = String::new();
         
         content.push_str(&format!("<div class=\"item\" id=\"{}\">\n", item.name.to_lowercase()));
@@ -260,23 +260,23 @@ impl HtmlGenerator {
     }
 
     /// Generate search index
-    pub fn generate_search_index(&self, search_index: &[SearchIndexEntry], output_dir: &Path) -> Result<(), Error> {
+    pub fn generate_search_index(&self, search_index: &[SearchIndexEntry], output_dir: &Path) -> crate::error::Result<()> {
         let search_path = output_dir.join("search.js");
         
         let json_index = serde_json::to_string_pretty(search_index)
-            .map_err(|e| Error::General(format!("Failed to serialize search index: {}", e)))?;
+            .map_err(|e| CursedError::General(format!("Failed to serialize search index: {}", e)))?;
         
         let content = format!(
             "window.searchIndex = {};\n\n// Search functionality will be loaded by script.js",
             json_index
         );
         
-        fs::write(search_path, content).map_err(Error::Io)?;
+        fs::write(search_path, content).map_err(CursedError::Io)?;
         Ok(())
     }
 
     /// Copy static assets (CSS, JS, images)
-    pub fn copy_static_assets(&self, output_dir: &Path) -> Result<(), Error> {
+    pub fn copy_static_assets(&self, output_dir: &Path) -> crate::error::Result<()> {
         // Create CSS file
         let css_path = output_dir.join("styles.css");
         let css_content = if let Some(custom_css) = &self.config.custom_css {
@@ -284,17 +284,17 @@ impl HtmlGenerator {
         } else {
             self.get_default_css()
         };
-        fs::write(css_path, css_content).map_err(Error::Io)?;
+        fs::write(css_path, css_content).map_err(CursedError::Io)?;
         
         // Create JavaScript file
         let js_path = output_dir.join("script.js");
-        fs::write(js_path, self.get_default_js()).map_err(Error::Io)?;
+        fs::write(js_path, self.get_default_js()).map_err(CursedError::Io)?;
         
         Ok(())
     }
 
     /// Get HTML header with navigation
-    fn get_html_header(&self, title: &str, current_module: &str) -> Result<(), Error> {
+    fn get_html_header(&self, title: &str, current_module: &str) -> crate::error::Result<()> {
         let header = format!(r#"<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -325,7 +325,7 @@ impl HtmlGenerator {
     }
 
     /// Get HTML footer
-    fn get_html_footer(&self) -> Result<(), Error> {
+    fn get_html_footer(&self) -> crate::error::Result<()> {
         let footer = format!(r#"    <footer class="footer">
         <div class="container">
             <p>&copy; {} {}. Generated with CURSED documentation system.</p>

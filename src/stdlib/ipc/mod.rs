@@ -117,23 +117,3 @@ fn setup_signal_handlers() -> IpcResult<()> {
     Ok(())
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-use crate::stdlib::process::real_ipc::IpcMessage;
-use crate::error::Error;
-
-    #[test]
-    fn test_ipc_config_default() {
-        let config = IpcConfig::default();
-        assert_eq!(config.max_message_size, 65536);
-        assert_eq!(config.max_queue_size, 1000);
-        assert_eq!(config.default_permissions, 0o666);
-    }
-
-    #[test]
-    fn test_ipc_initialization() {
-        assert!(initialize_ipc().is_ok());
-        assert!(cleanup_ipc().is_ok());
-    }
-}

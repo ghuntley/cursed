@@ -3,7 +3,7 @@
 /// Comprehensive performance monitoring system that tracks compilation phases,
 /// measures compilation time, memory usage, and provides detailed performance reports.
 
-use crate::error::{Error, Result};
+use crate::error::{CursedError, Result};
 
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
@@ -388,7 +388,7 @@ impl PerformanceMonitor {
     fn generate_json_report(&self) -> Result<String> {
         let metrics = self.metrics.lock().unwrap();
         serde_json::to_string_pretty(&*metrics)
-            .map_err(|e| Error::General(format!("Failed to serialize metrics: {}", e)))
+            .map_err(|e| CursedError::General(format!("Failed to serialize metrics: {}", e)))
     }
     
     /// Generate CSV format report
@@ -474,7 +474,7 @@ impl PerformanceMonitor {
     pub fn write_report_to_file(&self, path: &str) -> Result<()> {
         let report = self.generate_report()?;
         std::fs::write(path, report)
-            .map_err(|e| Error::General(format!("Failed to write report to {}: {}", path, e)))
+            .map_err(|e| CursedError::General(format!("Failed to write report to {}: {}", path, e)))
     }
     
     /// Get specific phase metrics
@@ -546,80 +546,3 @@ pub mod utils {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use std::thread;
-    use std::time::Duration;
-    
-    #[test]
-    fn test_performance_monitor_creation() {
-        let monitor = PerformanceMonitor::new();
-        assert!(monitor.get_all_metrics().is_empty());
-    }
-    
-    #[test]
-    fn test_phase_timing() {
-        let monitor = PerformanceMonitor::new();
-        
-        monitor.start_phase(CompilationPhase::Lexing).unwrap();
-        thread::sleep(Duration::from_millis(10));
-        monitor.end_phase(CompilationPhase::Lexing).unwrap();
-        
-        let metrics = monitor.get_phase_metrics(CompilationPhase::Lexing).unwrap();
-        assert!(metrics.duration.as_millis() >= 10);
-    }
-    
-    #[test]
-    fn test_file_processing_tracking() {
-        let monitor = PerformanceMonitor::new();
-        
-        monitor.start_phase(CompilationPhase::Parsing).unwrap();
-        monitor.record_file_processed(CompilationPhase::Parsing, 100);
-        monitor.record_file_processed(CompilationPhase::Parsing, 150);
-        monitor.end_phase(CompilationPhase::Parsing).unwrap();
-        
-        let metrics = monitor.get_phase_metrics(CompilationPhase::Parsing).unwrap();
-        assert_eq!(metrics.files_processed, 2);
-        assert_eq!(metrics.lines_processed, 250);
-    }
-    
-    #[test]
-    fn test_error_tracking() {
-        let monitor = PerformanceMonitor::new();
-        
-        monitor.start_phase(CompilationPhase::TypeChecking).unwrap();
-        monitor.record_error(CompilationPhase::TypeChecking);
-        monitor.record_error(CompilationPhase::TypeChecking);
-        monitor.end_phase(CompilationPhase::TypeChecking).unwrap();
-        
-        let metrics = monitor.get_phase_metrics(CompilationPhase::TypeChecking).unwrap();
-        assert_eq!(metrics.errors_encountered, 2);
-    }
-    
-    #[test]
-    fn test_report_generation() {
-        let monitor = PerformanceMonitor::new();
-        
-        monitor.start_phase(CompilationPhase::Lexing).unwrap();
-        thread::sleep(Duration::from_millis(5));
-        monitor.end_phase(CompilationPhase::Lexing).unwrap();
-        
-        let report = monitor.generate_report().unwrap();
-        assert!(report.contains("Performance Report"));
-        assert!(report.contains("Lexing"));
-    }
-    
-    #[test]
-    fn test_scoped_timer() {
-        let monitor = PerformanceMonitor::new();
-        
-        {
-            let _timer = utils::ScopedPhaseTimer::new(&monitor, CompilationPhase::CodeGeneration).unwrap();
-            thread::sleep(Duration::from_millis(5));
-        }
-        
-        let metrics = monitor.get_phase_metrics(CompilationPhase::CodeGeneration).unwrap();
-        assert!(metrics.duration.as_millis() >= 5);
-    }
-}

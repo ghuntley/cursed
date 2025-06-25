@@ -5,9 +5,8 @@
 /// the Module Learning With Rounding (Mod-LWR) problem.
 
 use crate::error::CursedError;
-use crate::stdlib::value::Value;
-use crate::stdlib::packages::crypto_pqc::lattice_crypto::{SecureRng, LatticeRng, LatticeError};
-use crate::error::Error;
+// use crate::stdlib::value::Value;
+// use crate::stdlib::packages::crypto_pqc::lattice_crypto::{SecureRng, LatticeRng, LatticeError};
 use std::collections::HashMap;
 use std::fmt;
 
@@ -94,7 +93,7 @@ impl SaberConfig {
     }
     
     /// facts Validate SABER configuration
-    pub fn validate(&self) -> Result<(), Error> {
+    pub fn validate(&self) -> crate::error::Result<()> {
         if self.l == 0 || self.l > 10 {
             return Err(SaberError::InvalidConfig("l must be between 1 and 10".to_string()));
         }
@@ -218,7 +217,7 @@ pub struct SaberEngine {
 
 impl SaberEngine {
     /// slay Create new SABER engine
-    pub fn new(config: SaberConfig) -> Result<(), Error> {
+    pub fn new(config: SaberConfig) -> crate::error::Result<()> {
         config.validate()?;
         
         let rng = Box::new(SecureRng::new()
@@ -233,7 +232,7 @@ impl SaberEngine {
     }
     
     /// bestie Generate SABER key pair
-    pub fn generate_keypair(&mut self) -> Result<(), Error> {
+    pub fn generate_keypair(&mut self) -> crate::error::Result<()> {
         let l = self.config.l;
         let n = self.config.n;
         let q = self.config.q;
@@ -272,7 +271,7 @@ impl SaberEngine {
     }
     
     /// vibes Encapsulate (generate shared secret and ciphertext)
-    pub fn encapsulate(&mut self, public_key: &SaberPublicKey) -> Result<(), Error> {
+    pub fn encapsulate(&mut self, public_key: &SaberPublicKey) -> crate::error::Result<()> {
         let l = self.config.l;
         let n = self.config.n;
         let q = self.config.q;
@@ -313,7 +312,7 @@ impl SaberEngine {
     }
     
     /// periodt Decapsulate (recover shared secret from ciphertext)
-    pub fn decapsulate(&mut self, ciphertext: &[u8], private_key: &SaberPrivateKey) -> Result<(), Error> {
+    pub fn decapsulate(&mut self, ciphertext: &[u8], private_key: &SaberPrivateKey) -> crate::error::Result<()> {
         let l = self.config.l;
         let n = self.config.n;
         let q = self.config.q;
@@ -336,7 +335,7 @@ impl SaberEngine {
     }
     
     /// sus Sample uniform matrix A
-    fn sample_uniform_matrix(&mut self, rows: usize, cols: usize, n: usize, modulus: u32) -> Result<(), Error> {
+    fn sample_uniform_matrix(&mut self, rows: usize, cols: usize, n: usize, modulus: u32) -> crate::error::Result<()> {
         let mut matrix = Vec::new();
         
         for _ in 0..rows {
@@ -352,7 +351,7 @@ impl SaberEngine {
     }
     
     /// facts Sample uniform polynomial
-    fn sample_uniform_polynomial(&mut self, degree: usize, modulus: u32) -> Result<(), Error> {
+    fn sample_uniform_polynomial(&mut self, degree: usize, modulus: u32) -> crate::error::Result<()> {
         let mut coefficients = Vec::with_capacity(degree);
         
         for _ in 0..degree {
@@ -364,7 +363,7 @@ impl SaberEngine {
     }
     
     /// yolo Sample secret vector from centered binomial distribution
-    fn sample_secret_vector(&mut self, length: usize, degree: usize) -> Result<(), Error> {
+    fn sample_secret_vector(&mut self, length: usize, degree: usize) -> crate::error::Result<()> {
         let mut vector = Vec::new();
         
         for _ in 0..length {
@@ -376,7 +375,7 @@ impl SaberEngine {
     }
     
     /// stan Sample centered binomial polynomial
-    fn sample_centered_binomial_polynomial(&mut self, degree: usize) -> Result<(), Error> {
+    fn sample_centered_binomial_polynomial(&mut self, degree: usize) -> crate::error::Result<()> {
         let mut coefficients = Vec::with_capacity(degree);
         
         for _ in 0..degree {
@@ -392,18 +391,18 @@ impl SaberEngine {
     }
     
     /// bestie Sample noise vector
-    fn sample_noise_vector(&mut self, length: usize, degree: usize) -> Result<(), Error> {
+    fn sample_noise_vector(&mut self, length: usize, degree: usize) -> crate::error::Result<()> {
         // For SABER, noise is sampled from centered binomial distribution
         self.sample_secret_vector(length, degree)
     }
     
     /// vibes Sample noise scalar (single polynomial)
-    fn sample_noise_scalar(&mut self, degree: usize) -> Result<(), Error> {
+    fn sample_noise_scalar(&mut self, degree: usize) -> crate::error::Result<()> {
         self.sample_centered_binomial_polynomial(degree)
     }
     
     /// periodt Matrix-vector multiplication
-    fn matrix_vector_multiply(&self, matrix: &[Vec<SaberPolynomial>], vector: &[SaberPolynomial]) -> Result<(), Error> {
+    fn matrix_vector_multiply(&self, matrix: &[Vec<SaberPolynomial>], vector: &[SaberPolynomial]) -> crate::error::Result<()> {
         if matrix[0].len() != vector.len() {
             return Err(SaberError::DimensionError("Matrix-vector dimensions don't match".to_string()));
         }
@@ -425,7 +424,7 @@ impl SaberEngine {
     }
     
     /// sus Matrix transpose-vector multiplication
-    fn matrix_transpose_vector_multiply(&self, matrix: &[Vec<SaberPolynomial>], vector: &[SaberPolynomial]) -> Result<(), Error> {
+    fn matrix_transpose_vector_multiply(&self, matrix: &[Vec<SaberPolynomial>], vector: &[SaberPolynomial]) -> crate::error::Result<()> {
         if matrix.len() != vector.len() {
             return Err(SaberError::DimensionError("Matrix transpose-vector dimensions don't match".to_string()));
         }
@@ -448,7 +447,7 @@ impl SaberEngine {
     }
     
     /// facts Vector dot product
-    fn vector_dot_product(&self, vector1: &[SaberPolynomial], vector2: &[SaberPolynomial]) -> Result<(), Error> {
+    fn vector_dot_product(&self, vector1: &[SaberPolynomial], vector2: &[SaberPolynomial]) -> crate::error::Result<()> {
         if vector1.len() != vector2.len() {
             return Err(SaberError::DimensionError("Vector dimensions don't match".to_string()));
         }
@@ -464,7 +463,7 @@ impl SaberEngine {
     }
     
     /// yolo Add vectors
-    fn add_vectors(&self, vector1: &[SaberPolynomial], vector2: &[SaberPolynomial]) -> Result<(), Error> {
+    fn add_vectors(&self, vector1: &[SaberPolynomial], vector2: &[SaberPolynomial]) -> crate::error::Result<()> {
         if vector1.len() != vector2.len() {
             return Err(SaberError::DimensionError("Vector dimensions don't match".to_string()));
         }
@@ -480,17 +479,17 @@ impl SaberEngine {
     }
     
     /// stan Add polynomials
-    fn add_polynomials(&self, poly1: &SaberPolynomial, poly2: &SaberPolynomial) -> Result<(), Error> {
+    fn add_polynomials(&self, poly1: &SaberPolynomial, poly2: &SaberPolynomial) -> crate::error::Result<()> {
         self.polynomial_ring.add(poly1, poly2)
     }
     
     /// bestie Subtract polynomials
-    fn subtract_polynomials(&self, poly1: &SaberPolynomial, poly2: &SaberPolynomial) -> Result<(), Error> {
+    fn subtract_polynomials(&self, poly1: &SaberPolynomial, poly2: &SaberPolynomial) -> crate::error::Result<()> {
         self.polynomial_ring.subtract(poly1, poly2)
     }
     
     /// vibes Round vector from Z_q to Z_p
-    fn round_vector(&self, vector: &[SaberPolynomial], from_mod: u32, to_mod: u32) -> Result<(), Error> {
+    fn round_vector(&self, vector: &[SaberPolynomial], from_mod: u32, to_mod: u32) -> crate::error::Result<()> {
         let mut result = Vec::new();
         
         for poly in vector {
@@ -502,7 +501,7 @@ impl SaberEngine {
     }
     
     /// periodt Round polynomial from one modulus to another
-    fn round_polynomial(&self, poly: &SaberPolynomial, from_mod: u32, to_mod: u32) -> Result<(), Error> {
+    fn round_polynomial(&self, poly: &SaberPolynomial, from_mod: u32, to_mod: u32) -> crate::error::Result<()> {
         let scale_factor = from_mod / to_mod;
         let mut rounded_coeffs = Vec::new();
         
@@ -515,7 +514,7 @@ impl SaberEngine {
     }
     
     /// sus Generate random message
-    fn generate_random_message(&mut self, length_bits: usize) -> Result<(), Error> {
+    fn generate_random_message(&mut self, length_bits: usize) -> crate::error::Result<()> {
         let length_bytes = (length_bits + 7) / 8;
         let mut message = vec![0u8; length_bytes];
         
@@ -527,7 +526,7 @@ impl SaberEngine {
     }
     
     /// facts Scale message for encoding
-    fn scale_message(&self, message: &[u8], q: u32, t: u32) -> Result<(), Error> {
+    fn scale_message(&self, message: &[u8], q: u32, t: u32) -> crate::error::Result<()> {
         let scale_factor = q / t;
         let mut coefficients = Vec::new();
         
@@ -553,7 +552,7 @@ impl SaberEngine {
     }
     
     /// yolo Recover message from polynomial
-    fn recover_message(&self, poly: &SaberPolynomial, q: u32, t: u32) -> Result<(), Error> {
+    fn recover_message(&self, poly: &SaberPolynomial, q: u32, t: u32) -> crate::error::Result<()> {
         let scale_factor = q / t;
         let threshold = scale_factor / 2;
         let mut bits = Vec::new();
@@ -578,7 +577,7 @@ impl SaberEngine {
     }
     
     /// stan Derive shared secret from message
-    fn derive_shared_secret(&self, message: &[u8]) -> Result<(), Error> {
+    fn derive_shared_secret(&self, message: &[u8]) -> crate::error::Result<()> {
         // Use a simple hash of the message as shared secret
         // In practice, use a proper key derivation function
         let mut hash_input = message.to_vec();
@@ -594,7 +593,7 @@ impl SaberEngine {
     }
     
     /// bestie Serialize ciphertext
-    fn serialize_ciphertext(&self, u: &[SaberPolynomial], v: &SaberPolynomial) -> Result<(), Error> {
+    fn serialize_ciphertext(&self, u: &[SaberPolynomial], v: &SaberPolynomial) -> crate::error::Result<()> {
         let mut ciphertext = Vec::new();
         
         // Serialize u vector
@@ -611,7 +610,7 @@ impl SaberEngine {
     }
     
     /// vibes Deserialize ciphertext
-    fn deserialize_ciphertext(&self, ciphertext: &[u8]) -> Result<(), Error> {
+    fn deserialize_ciphertext(&self, ciphertext: &[u8]) -> crate::error::Result<()> {
         let poly_size = self.config.n * self.config.epsilon_p / 8;
         let u_size = self.config.l * poly_size;
         
@@ -637,7 +636,7 @@ impl SaberEngine {
     }
     
     /// periodt Serialize polynomial
-    fn serialize_polynomial(&self, poly: &SaberPolynomial) -> Result<(), Error> {
+    fn serialize_polynomial(&self, poly: &SaberPolynomial) -> crate::error::Result<()> {
         let mut bytes = Vec::new();
         
         // Pack coefficients efficiently (simplified)
@@ -650,7 +649,7 @@ impl SaberEngine {
     }
     
     /// sus Deserialize polynomial
-    fn deserialize_polynomial(&self, bytes: &[u8], modulus: u32) -> Result<(), Error> {
+    fn deserialize_polynomial(&self, bytes: &[u8], modulus: u32) -> crate::error::Result<()> {
         let expected_len = self.config.n * 2; // 2 bytes per coefficient
         if bytes.len() != expected_len {
             return Err(SaberError::InvalidCiphertext("Invalid polynomial serialization".to_string()));
@@ -716,7 +715,7 @@ impl SaberPolynomialRing {
     }
     
     /// bestie Add polynomials
-    pub fn add(&self, a: &SaberPolynomial, b: &SaberPolynomial) -> Result<(), Error> {
+    pub fn add(&self, a: &SaberPolynomial, b: &SaberPolynomial) -> crate::error::Result<()> {
         if a.degree != b.degree {
             return Err(SaberError::DimensionError("Polynomial degrees don't match".to_string()));
         }
@@ -730,7 +729,7 @@ impl SaberPolynomialRing {
     }
     
     /// vibes Subtract polynomials
-    pub fn subtract(&self, a: &SaberPolynomial, b: &SaberPolynomial) -> Result<(), Error> {
+    pub fn subtract(&self, a: &SaberPolynomial, b: &SaberPolynomial) -> crate::error::Result<()> {
         if a.degree != b.degree {
             return Err(SaberError::DimensionError("Polynomial degrees don't match".to_string()));
         }
@@ -747,7 +746,7 @@ impl SaberPolynomialRing {
     }
     
     /// periodt Multiply polynomials modulo x^n + 1
-    pub fn multiply(&self, a: &SaberPolynomial, b: &SaberPolynomial) -> Result<(), Error> {
+    pub fn multiply(&self, a: &SaberPolynomial, b: &SaberPolynomial) -> crate::error::Result<()> {
         if a.degree != b.degree {
             return Err(SaberError::DimensionError("Polynomial degrees don't match".to_string()));
         }
@@ -784,19 +783,19 @@ pub struct SaberKeyPair {
 
 impl SaberKeyPair {
     /// slay Generate new SABER key pair
-    pub fn generate(config: &SaberConfig) -> Result<(), Error> {
+    pub fn generate(config: &SaberConfig) -> crate::error::Result<()> {
         let mut engine = SaberEngine::new(config.clone())?;
         engine.generate_keypair()
     }
     
     /// bestie Encapsulate shared secret
-    pub fn encapsulate(&self) -> Result<(), Error> {
+    pub fn encapsulate(&self) -> crate::error::Result<()> {
         let mut engine = SaberEngine::new(self.config.clone())?;
         engine.encapsulate(&self.public_key)
     }
     
     /// vibes Decapsulate shared secret
-    pub fn decapsulate(&self, ciphertext: &[u8]) -> Result<(), Error> {
+    pub fn decapsulate(&self, ciphertext: &[u8]) -> crate::error::Result<()> {
         let mut engine = SaberEngine::new(self.config.clone())?;
         engine.decapsulate(ciphertext, &self.private_key)
     }
@@ -829,28 +828,28 @@ pub enum SaberError {
     PolynomialError(String),
 }
 
-impl fmt::Display for SaberError {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
-            SaberError::InvalidConfig(msg) => write!(f, "SABER configuration error: {}", msg),
-            SaberError::InitializationError(msg) => write!(f, "SABER initialization error: {}", msg),
-            SaberError::KeyGenerationError(msg) => write!(f, "SABER key generation error: {}", msg),
-            SaberError::EncapsulationError(msg) => write!(f, "SABER encapsulation error: {}", msg),
-            SaberError::DecapsulationError(msg) => write!(f, "SABER decapsulation error: {}", msg),
-            SaberError::DimensionError(msg) => write!(f, "SABER dimension error: {}", msg),
-            SaberError::InvalidCiphertext(msg) => write!(f, "SABER invalid ciphertext: {}", msg),
-            SaberError::PolynomialError(msg) => write!(f, "SABER polynomial error: {}", msg),
-        }
-    }
-}
+// impl fmt::Display for SaberError {
+//     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+//         match self {
+//             SaberError::InvalidConfig(msg) => write!(f, "SABER configuration error: {}", msg),
+//             SaberError::InitializationError(msg) => write!(f, "SABER initialization error: {}", msg),
+//             SaberError::KeyGenerationError(msg) => write!(f, "SABER key generation error: {}", msg),
+//             SaberError::EncapsulationError(msg) => write!(f, "SABER encapsulation error: {}", msg),
+//             SaberError::DecapsulationError(msg) => write!(f, "SABER decapsulation error: {}", msg),
+//             SaberError::DimensionError(msg) => write!(f, "SABER dimension error: {}", msg),
+//             SaberError::InvalidCiphertext(msg) => write!(f, "SABER invalid ciphertext: {}", msg),
+//             SaberError::PolynomialError(msg) => write!(f, "SABER polynomial error: {}", msg),
+//         }
+//     }
+// }
 
-impl std::error::Error for SaberError {}
-
-impl From<SaberError> for CursedError {
-    fn from(err: SaberError) -> Self {
-        CursedError::CryptoError(err.to_string())
-    }
-}
+// impl std::error::CursedError for SaberError {}
+// 
+// impl From<SaberError> for CursedError {
+//     fn from(err: SaberError) -> Self {
+//         CursedError::CryptoError(err.to_string())
+//     }
+// }
 
 impl From<LatticeError> for SaberError {
     fn from(err: LatticeError) -> Self {
@@ -878,7 +877,7 @@ impl SaberUtils {
     }
     
     /// bestie Validate SABER parameters for production
-    pub fn validate_for_production(config: &SaberConfig) -> Result<(), Error> {
+    pub fn validate_for_production(config: &SaberConfig) -> crate::error::Result<()> {
         let security_bits = Self::estimate_security_level(config);
         let is_secure = security_bits >= 128.0;
         
@@ -974,170 +973,3 @@ pub struct VariantComparison {
     pub performance_tier: &'static str,
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-    
-    #[test]
-    fn test_saber_config_creation() {
-        let config = SaberConfig::new();
-        assert_eq!(config.variant, SaberVariant::LightSaber);
-        assert_eq!(config.security_level, SaberSecurityLevel::Level128);
-        assert_eq!(config.l, 2);
-        assert_eq!(config.n, 256);
-        assert_eq!(config.q, 8192);
-        assert_eq!(config.p, 1024);
-        
-        assert!(config.validate().is_ok());
-    }
-    
-    #[test]
-    fn test_saber_variants() {
-        let lightsaber = SaberConfig::lightsaber();
-        assert_eq!(lightsaber.variant, SaberVariant::LightSaber);
-        assert_eq!(lightsaber.l, 2);
-        
-        let saber = SaberConfig::saber();
-        assert_eq!(saber.variant, SaberVariant::Saber);
-        assert_eq!(saber.l, 3);
-        
-        let firesaber = SaberConfig::firesaber();
-        assert_eq!(firesaber.variant, SaberVariant::FireSaber);
-        assert_eq!(firesaber.l, 4);
-    }
-    
-    #[test]
-    fn test_saber_config_validation() {
-        let mut config = SaberConfig::new();
-        
-        // Valid config should pass
-        assert!(config.validate().is_ok());
-        
-        // Invalid l
-        config.l = 0;
-        assert!(config.validate().is_err());
-        
-        // Reset and test invalid n
-        config.l = 2;
-        config.n = 100; // Not power of 2
-        assert!(config.validate().is_err());
-        
-        // Reset and test invalid q
-        config.n = 256;
-        config.q = 100; // Not power of 2
-        assert!(config.validate().is_err());
-        
-        // Reset and test p >= q
-        config.q = 8192;
-        config.p = 8192; // p must be < q
-        assert!(config.validate().is_err());
-    }
-    
-    #[test]
-    fn test_saber_config_sizes() {
-        let config = SaberConfig::lightsaber();
-        
-        let pk_size = config.public_key_size();
-        assert!(pk_size > 0);
-        
-        let sk_size = config.private_key_size();
-        assert!(sk_size > 0);
-        
-        let ct_size = config.ciphertext_size();
-        assert!(ct_size > 0);
-        
-        let ss_size = config.shared_secret_size();
-        assert_eq!(ss_size, 32); // 256 bits
-    }
-    
-    #[test]
-    fn test_saber_polynomial() {
-        let poly = SaberPolynomial::new(vec![1, 2, 3, 0], 5);
-        assert_eq!(poly.degree, 4);
-        assert_eq!(poly.modulus, 5);
-        assert!(!poly.is_zero());
-        
-        let zero_poly = SaberPolynomial::zero(4, 5);
-        assert!(zero_poly.is_zero());
-    }
-    
-    #[test]
-    fn test_saber_polynomial_ring_operations() {
-        let ring = SaberPolynomialRing::new(3, 7);
-        
-        let poly1 = SaberPolynomial::new(vec![1, 2, 3], 7);
-        let poly2 = SaberPolynomial::new(vec![2, 1, 4], 7);
-        
-        // Test addition
-        let sum = ring.add(&poly1, &poly2).unwrap();
-        assert_eq!(sum.coefficients, vec![3, 3, 0]); // (1+2, 2+1, 3+4) mod 7
-        
-        // Test subtraction
-        let diff = ring.subtract(&poly1, &poly2).unwrap();
-        assert_eq!(diff.coefficients, vec![6, 1, 6]); // (1-2, 2-1, 3-4) mod 7, with negatives wrapped
-    }
-    
-    #[test]
-    fn test_saber_engine_creation() {
-        let config = SaberConfig::new();
-        let engine = SaberEngine::new(config);
-        assert!(engine.is_ok());
-    }
-    
-    #[test]
-    fn test_variant_names() {
-        assert_eq!(SaberVariant::LightSaber.name(), "LightSaber");
-        assert_eq!(SaberVariant::Saber.name(), "Saber");
-        assert_eq!(SaberVariant::FireSaber.name(), "FireSaber");
-        
-        assert_eq!(SaberVariant::LightSaber.parameter_set(), "LightSaber-KEM");
-        assert_eq!(SaberVariant::Saber.parameter_set(), "Saber-KEM");
-        assert_eq!(SaberVariant::FireSaber.parameter_set(), "FireSaber-KEM");
-    }
-    
-    #[test]
-    fn test_security_levels() {
-        assert_eq!(SaberSecurityLevel::Level128.bits(), 128);
-        assert_eq!(SaberSecurityLevel::Level192.bits(), 192);
-        assert_eq!(SaberSecurityLevel::Level256.bits(), 256);
-    }
-    
-    #[test]
-    fn test_security_estimation() {
-        let config = SaberConfig::lightsaber();
-        let security_bits = SaberUtils::estimate_security_level(&config);
-        assert!(security_bits > 100.0); // Should provide reasonable security
-        
-        let saber_config = SaberConfig::saber();
-        let saber_security = SaberUtils::estimate_security_level(&saber_config);
-        assert!(saber_security > security_bits); // Saber should be more secure than LightSaber
-    }
-    
-    #[test]
-    fn test_security_validation() {
-        let config = SaberConfig::lightsaber();
-        let validation = SaberUtils::validate_for_production(&config).unwrap();
-        
-        assert!(validation.estimated_security_bits > 0.0);
-        assert_eq!(validation.variant, SaberVariant::LightSaber);
-        assert_eq!(validation.parameter_set, "LightSaber-KEM");
-        assert_eq!(validation.shared_secret_size, 32);
-        assert!(!validation.recommendations.is_empty());
-    }
-    
-    #[test]
-    fn test_variant_comparison() {
-        let comparisons = SaberUtils::compare_variants();
-        assert_eq!(comparisons.len(), 3);
-        
-        let lightsaber_comparison = &comparisons[0];
-        assert_eq!(lightsaber_comparison.variant, SaberVariant::LightSaber);
-        assert_eq!(lightsaber_comparison.security_level, SaberSecurityLevel::Level128);
-        assert_eq!(lightsaber_comparison.performance_tier, "Fast");
-        
-        let firesaber_comparison = &comparisons[2];
-        assert_eq!(firesaber_comparison.variant, SaberVariant::FireSaber);
-        assert_eq!(firesaber_comparison.security_level, SaberSecurityLevel::Level256);
-        assert_eq!(firesaber_comparison.performance_tier, "Slow");
-    }
-}

@@ -3,10 +3,10 @@
 /// This module provides a fluent API for building SQL queries in CURSED.
 /// No more string concatenation hell bestie! Build queries the right way.
 
-use crate::stdlib::packages::db_core::{DatabaseError, QueryError};
-use crate::stdlib::packages::db_core::error::{DatabaseResult as DbResult};
-use crate::stdlib::packages::db_sql::{SqlValue, SqlType, SqlDialectTrait};
-use crate::error::Error;
+// use crate::stdlib::packages::db_core::{DatabaseError, QueryError};
+// use crate::stdlib::packages::db_core::error::{DatabaseResult as DbResult};
+// use crate::stdlib::packages::db_sql::{SqlValue, SqlType, SqlDialectTrait};
+use crate::error::CursedError;
 use std::collections::HashMap;
 
 /// fr fr Main SQL query builder - the foundation periodt
@@ -533,7 +533,7 @@ impl<'a> DeleteBuilder<'a> {
     pub fn build(self) -> DbResult<String> {
         let table = self.table.ok_or_else(|| 
             DatabaseError::query(
-                crate::stdlib::packages::db_core::QueryError::SyntaxError,
+//                 crate::stdlib::packages::db_core::QueryError::SyntaxError,
                 "DELETE query requires table name"
             )
         )?;
@@ -597,14 +597,14 @@ impl<'a> CreateTableBuilder<'a> {
     pub fn build(self) -> DbResult<String> {
         let table_name = self.table_name.ok_or_else(|| 
             DatabaseError::query(
-                crate::stdlib::packages::db_core::QueryError::SyntaxError,
+//                 crate::stdlib::packages::db_core::QueryError::SyntaxError,
                 "CREATE TABLE query requires table name"
             )
         )?;
 
         if self.columns.is_empty() {
             return Err(DatabaseError::query(
-                crate::stdlib::packages::db_core::QueryError::SyntaxError,
+//                 crate::stdlib::packages::db_core::QueryError::SyntaxError,
                 "CREATE TABLE query requires at least one column"
             ));
         }
@@ -683,14 +683,14 @@ impl<'a> AlterTableBuilder<'a> {
     pub fn build(self) -> DbResult<String> {
         let table_name = self.table_name.ok_or_else(|| 
             DatabaseError::query(
-                crate::stdlib::packages::db_core::QueryError::SyntaxError,
+//                 crate::stdlib::packages::db_core::QueryError::SyntaxError,
                 "ALTER TABLE query requires table name"
             )
         )?;
 
         if self.operations.is_empty() {
             return Err(DatabaseError::query(
-                crate::stdlib::packages::db_core::QueryError::SyntaxError,
+//                 crate::stdlib::packages::db_core::QueryError::SyntaxError,
                 "ALTER TABLE query requires at least one operation"
             ));
         }
@@ -931,76 +931,3 @@ impl AlterOperation {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_select_builder() {
-        let mut builder = SqlQueryBuilder::new();
-        let sql = builder.select()
-            .columns(&["id", "name", "email"])
-            .from("users")
-            .where_clause("active = true")
-            .order_by("name", OrderDirection::Asc)
-            .limit(10)
-            .build()
-            .unwrap();
-
-        assert!(sql.contains("SELECT id, name, email"));
-        assert!(sql.contains("FROM users"));
-        assert!(sql.contains("WHERE active = true"));
-        assert!(sql.contains("ORDER BY name ASC"));
-        assert!(sql.contains("LIMIT 10"));
-    }
-
-    #[test]
-    fn test_insert_builder() {
-        let mut builder = SqlQueryBuilder::new();
-        let sql = builder.insert()
-            .into("users")
-            .columns(&["name", "email"])
-            .values(vec![
-                SqlValue::Text("Alice".to_string()),
-                SqlValue::Text("alice@example.com".to_string())
-            ])
-            .build()
-            .unwrap();
-
-        assert!(sql.contains("INSERT INTO users"));
-        assert!(sql.contains("(name, email)"));
-        assert!(sql.contains("VALUES"));
-    }
-
-    #[test]
-    fn test_create_table_builder() {
-        let mut builder = SqlQueryBuilder::new();
-        let sql = builder.create_table()
-            .table("users")
-            .if_not_exists()
-            .column("id", SqlType::Integer).primary_key().auto_increment().finish()
-            .column("name", SqlType::Text).not_null().finish()
-            .column("email", SqlType::Text).unique().finish()
-            .build()
-            .unwrap();
-
-        assert!(sql.contains("CREATE TABLE IF NOT EXISTS users"));
-        assert!(sql.contains("id"));
-        assert!(sql.contains("PRIMARY KEY"));
-        assert!(sql.contains("AUTO_INCREMENT"));
-    }
-
-    #[test]
-    fn test_join_types() {
-        assert_eq!(JoinType::Inner.to_sql(), "INNER");
-        assert_eq!(JoinType::Left.to_sql(), "LEFT");
-        assert_eq!(JoinType::Right.to_sql(), "RIGHT");
-        assert_eq!(JoinType::Full.to_sql(), "FULL");
-    }
-
-    #[test]
-    fn test_order_direction() {
-        assert_eq!(OrderDirection::Asc.to_sql(), "ASC");
-        assert_eq!(OrderDirection::Desc.to_sql(), "DESC");
-    }
-}

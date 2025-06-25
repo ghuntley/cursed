@@ -1,10 +1,10 @@
 /// fr fr SQL result implementation stubs
 
-use crate::stdlib::packages::db_core::{
+// use crate::stdlib::packages::db_core::{
     Row, ExecuteResult, ResultSet
 };
-use crate::error::Error;
-use crate::stdlib::packages::db_core::error::{DatabaseResult as DbResult};
+use crate::error::CursedError;
+// use crate::stdlib::packages::db_core::error::{DatabaseResult as DbResult};
 
 #[derive(Debug)]
 pub struct SqlResultSet {

@@ -8,7 +8,7 @@ use std::time::SystemTime;
 use super::super::{Driver, DriverConn, DriverStmt, DriverTx, DatabaseError, DatabaseErrorKind, SqlValue, TxOptions};
 use super::super::driver::{QueryResult, ExecuteResult, ConnectionMetadata, DriverCapabilities};
 use super::comprehensive_driver::{ComprehensiveMySqlDriver, MySqlConfig};
-use crate::error::Error;
+use crate::error::CursedError;
 
 /// fr fr Simple MySQL driver that uses comprehensive implementation under the hood
 #[derive(Debug, Clone)]
@@ -47,7 +47,7 @@ impl Default for SimpleMySqlDriver {
 }
 
 impl Driver for SimpleMySqlDriver {
-    fn open(&self, data_source_name: &str) -> Result<(), Error> {
+    fn open(&self, data_source_name: &str) -> crate::error::Result<()> {
         // Delegate to comprehensive driver for real functionality
         self.comprehensive_driver.open(data_source_name)
     }

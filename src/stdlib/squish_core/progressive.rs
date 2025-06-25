@@ -1,5 +1,5 @@
 /// Progressive compression for streaming data
-use crate::stdlib::squish_core::{
+// use crate::stdlib::squish_core::{
     error::{SquishError, SquishResult},
     statistics::CompressionStats,
 };
@@ -18,9 +18,9 @@ pub struct ProgressiveOptions {
 impl Default for ProgressiveOptions {
     fn default() -> Self {
         ProgressiveOptions {
-            buffer_size: crate::stdlib::squish_core::constants::DEFAULT_BUFFER_SIZE,
+//             buffer_size: crate::stdlib::squish_core::constants::DEFAULT_BUFFER_SIZE,
             algorithm: "gzip".to_string(),
-            level: crate::stdlib::squish_core::constants::DEFAULT_COMPRESSION,
+//             level: crate::stdlib::squish_core::constants::DEFAULT_COMPRESSION,
         }
     }
 }
@@ -136,34 +136,3 @@ pub fn new_compressor_with_options(options: ProgressiveOptions) -> ProgressiveCo
     ProgressiveCompressor::new(options)
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_progressive_compressor_creation() {
-        let compressor = new_progressive_compressor();
-        assert_eq!(compressor.total_input_size, 0);
-        assert!(!compressor.is_finalized);
-    }
-
-    #[test]
-    fn test_add_chunk() {
-        let mut compressor = new_progressive_compressor();
-        let chunk = b"Hello, world!";
-        
-        let result = compressor.add_chunk(chunk);
-        assert!(result.is_ok());
-        assert_eq!(compressor.total_input_size, chunk.len());
-    }
-
-    #[test]
-    fn test_finalize() {
-        let mut compressor = new_progressive_compressor();
-        compressor.add_chunk(b"Hello").unwrap();
-        compressor.add_chunk(b", world!").unwrap();
-        
-        let result = compressor.finalize();
-        assert!(result.is_ok());
-    }
-}

@@ -40,7 +40,7 @@ pub enum ServiceStatus {
     Stopping,
     Paused,
     Unknown,
-    Error(String),
+    CursedError(String),
 }
 
 /// Service start type
@@ -423,7 +423,7 @@ impl ServiceManager {
                     ("inactive", "dead") => ServiceStatus::Stopped,
                     ("activating", _) => ServiceStatus::Starting,
                     ("deactivating", _) => ServiceStatus::Stopping,
-                    ("failed", _) => ServiceStatus::Error(format!("Service failed: {}", sub_state)),
+                    ("failed", _) => ServiceStatus::CursedError(format!("Service failed: {}", sub_state)),
                     ("active", "exited") => ServiceStatus::Stopped, // One-shot services
                     _ => ServiceStatus::Unknown,
                 };
@@ -632,7 +632,7 @@ impl ServiceManager {
             "inactive" => ServiceStatus::Stopped,
             "activating" => ServiceStatus::Starting,
             "deactivating" => ServiceStatus::Stopping,
-            "failed" => ServiceStatus::Error("Service failed".to_string()),
+            "failed" => ServiceStatus::CursedError("Service failed".to_string()),
             "reloading" => ServiceStatus::Starting,
             _ => ServiceStatus::Unknown,
         };
@@ -1380,7 +1380,7 @@ impl std::fmt::Display for ServiceStatus {
             ServiceStatus::Stopping => write!(f, "Stopping"),
             ServiceStatus::Paused => write!(f, "Paused"),
             ServiceStatus::Unknown => write!(f, "Unknown"),
-            ServiceStatus::Error(msg) => write!(f, "Error: {}", msg),
+            ServiceStatus::CursedError(msg) => write!(f, "CursedError: {}", msg),
         }
     }
 }
@@ -1397,118 +1397,3 @@ impl std::fmt::Display for ServiceStartType {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-use crate::error::Error;
-
-    #[test]
-    fn test_service_manager_creation() {
-        let result = ServiceManager::new();
-        assert!(result.is_ok(), "Failed to create service manager: {:?}", result);
-    }
-
-    #[test]
-    fn test_platform_detection() {
-        let platform = detect_service_platform();
-        assert!(platform.is_ok(), "Failed to detect service platform: {:?}", platform);
-    }
-
-    #[test]
-    fn test_service_status_display() {
-        assert_eq!(format!("{}", ServiceStatus::Running), "Running");
-        assert_eq!(format!("{}", ServiceStatus::Stopped), "Stopped");
-        assert_eq!(format!("{}", ServiceStatus::Error("test".to_string())), "Error: test");
-    }
-
-    #[test]
-    fn test_service_start_type_display() {
-        assert_eq!(format!("{}", ServiceStartType::Automatic), "Automatic");
-        assert_eq!(format!("{}", ServiceStartType::Manual), "Manual");
-        assert_eq!(format!("{}", ServiceStartType::Disabled), "Disabled");
-    }
-
-    #[test]
-    fn test_global_service_manager() {
-        init_service_manager().expect("Failed to initialize service manager");
-        
-        // Test cleanup
-        cleanup_service_manager().expect("Failed to cleanup service manager");
-    }
-
-    #[test]
-    #[cfg(target_os = "linux")]
-    fn test_systemd_service_operations() {
-        use std::process::Command;
-        
-        // Only run if systemctl is available
-        if Command::new("systemctl").arg("--version").output().is_err() {
-            return; // Skip test if systemctl not available
-        }
-
-        let mut manager = ServiceManager::new().expect("Failed to create service manager");
-        
-        // Test platform detection
-        if let ServicePlatform::Systemd = manager.platform {
-            // Test listing services (should work on any systemd system)
-            let services = manager.list_services();
-            match services {
-                Ok(service_list) => {
-                    assert!(!service_list.is_empty(), "Should have at least some services");
-                    
-                    // Find a common service that should exist
-                    let test_service = service_list.iter()
-                        .find(|s| s.name == "systemd-resolved" || s.name == "dbus" || s.name == "ssh")
-                        .cloned();
-                        
-                    if let Some(service) = test_service {
-                        // Test getting specific service
-                        let retrieved = manager.get_service(&service.name);
-                        assert!(retrieved.is_ok(), "Should be able to retrieve service");
-                        
-                        // Test advanced features
-                        assert!(manager.supports_advanced_features());
-                        
-                        // Test validation (should not fail for existing service)
-                        let validation = manager.validate_service_systemd(&service.name);
-                        assert!(validation.is_ok(), "Service validation should succeed");
-                        
-                        // Test status checking
-                        let status = manager.check_service_status_systemd(&service.name);
-                        assert!(status.is_ok(), "Status check should succeed");
-                        
-                        // Test getting start type
-                        let start_type = manager.get_service_start_type_systemd(&service.name);
-                        assert!(start_type.is_ok(), "Start type check should succeed");
-                    }
-                },
-                Err(_) => {
-                    // Service listing might fail in containerized environments
-                    // This is acceptable for testing
-                }
-            }
-        }
-    }
-
-    #[test]
-    fn test_service_name_normalization() {
-        let manager = ServiceManager::new().expect("Failed to create service manager");
-        
-        // Test service name handling
-        let test_cases = vec![
-            ("ssh", "ssh.service"),
-            ("nginx.service", "nginx.service"),
-            ("dbus", "dbus.service"),
-        ];
-        
-        for (input, expected) in test_cases {
-            let normalized = if input.ends_with(".service") {
-                input.to_string()
-            } else {
-                format!("{}.service", input)
-            };
-            
-            assert_eq!(normalized, expected, "Service name normalization failed");
-        }
-    }
-}

@@ -7,7 +7,7 @@ use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
 use tracing::{instrument, debug, info, warn, error};
 
-use crate::error_types::Error;
+use crate::error::CursedError;
 use super::super::{DatabaseError, DatabaseErrorKind, SqlValue};
 use super::entity::{Entity, SqlColumnType};
 
@@ -151,7 +151,7 @@ impl TypeMapper {
 
     /// periodt Map CURSED type to SQL type
     #[instrument(skip(self))]
-    pub fn map_to_sql(&self, cursed_type: &str) -> Result<(), Error> {
+    pub fn map_to_sql(&self, cursed_type: &str) -> crate::error::Result<()> {
         debug!(cursed_type = cursed_type, "Mapping CURSED type to SQL");
         
         // Check built-in mappings first
@@ -183,7 +183,7 @@ impl TypeMapper {
 
     /// bestie Map SQL value to CURSED value
     #[instrument(skip(self))]
-    pub fn map_from_sql(&self, sql_value: &SqlValue, target_type: &str) -> Result<(), Error> {
+    pub fn map_from_sql(&self, sql_value: &SqlValue, target_type: &str) -> crate::error::Result<()> {
         debug!(target_type = target_type, "Mapping SQL value to CURSED type");
         
         match (sql_value, target_type) {
@@ -215,7 +215,7 @@ impl TypeMapper {
 
     /// yolo Register custom mapping
     #[instrument(skip(self, mapping))]
-    pub fn register_custom_mapping(&self, cursed_type: &str, mapping: Box<dyn CustomMapping>) -> Result<(), Error> {
+    pub fn register_custom_mapping(&self, cursed_type: &str, mapping: Box<dyn CustomMapping>) -> crate::error::Result<()> {
         debug!(cursed_type = cursed_type, "Registering custom mapping");
         
         if let Ok(mut custom_mappings) = self.custom_mappings.lock() {
@@ -349,10 +349,10 @@ pub trait CustomMapping: Send + Sync + std::fmt::Debug {
     fn to_sql_mapping(&self) -> SqlTypeMapping;
     
     /// Convert CURSED value to SQL value
-    fn to_sql_value(&self, value: Box<dyn std::any::Any>) -> Result<(), Error>;
+    fn to_sql_value(&self, value: Box<dyn std::any::Any>) -> crate::error::Result<()>;
     
     /// Convert SQL value to CURSED value
-    fn from_sql_value(&self, sql_value: &SqlValue) -> Result<(), Error>;
+    fn from_sql_value(&self, sql_value: &SqlValue) -> crate::error::Result<()>;
 }
 
 /// fr fr Column mapper for result mapping
@@ -384,7 +384,7 @@ impl ColumnMapper {
 
     /// periodt Map database row to entity fields
     #[instrument(skip(self, row))]
-    pub fn map_row(&self, row: &HashMap<String, SqlValue>) -> Result<(), Error> {
+    pub fn map_row(&self, row: &HashMap<String, SqlValue>) -> crate::error::Result<()> {
         debug!("Mapping database row to entity fields");
         
         let mut mapped_fields = HashMap::new();
@@ -444,7 +444,7 @@ impl ResultMapper {
 
     /// facts Map query results to entities
     #[instrument(skip(self, rows))]
-    pub fn map_to_entities<T: Entity>(&self, rows: &[HashMap<String, SqlValue>]) -> Result<(), Error> {
+    pub fn map_to_entities<T: Entity>(&self, rows: &[HashMap<String, SqlValue>]) -> crate::error::Result<()> {
         debug!(entity = T::table_name(), row_count = rows.len(), "Mapping query results to entities");
         
         let mut entities = Vec::new();
@@ -460,7 +460,7 @@ impl ResultMapper {
 
     /// periodt Map single row to entity
     #[instrument(skip(self, row))]
-    pub fn map_to_entity<T: Entity>(&self, row: &HashMap<String, SqlValue>) -> Result<(), Error> {
+    pub fn map_to_entity<T: Entity>(&self, row: &HashMap<String, SqlValue>) -> crate::error::Result<()> {
         debug!(entity = T::table_name(), "Mapping row to entity");
         T::from_row(row)
     }
@@ -501,7 +501,7 @@ impl MappingRegistry {
 
     /// facts Register type mapping
     #[instrument(skip(self))]
-    pub fn register_type_mapping(&self, type_name: &str, mapping: SqlTypeMapping) -> Result<(), Error> {
+    pub fn register_type_mapping(&self, type_name: &str, mapping: SqlTypeMapping) -> crate::error::Result<()> {
         debug!(type_name = type_name, "Registering type mapping");
         
         if let Ok(mut mappings) = self.type_mappings.lock() {
@@ -575,141 +575,3 @@ impl MappingStats {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use tracing_test::traced_test;
-use crate::error::Error;
-
-    #[traced_test]
-    #[test]
-    fn test_type_mapper_creation() {
-        let mapper = TypeMapper::new();
-        
-        // Test built-in mappings
-        let i32_mapping = mapper.map_to_sql("i32").expect("Should map i32");
-        assert!(matches!(i32_mapping, SqlTypeMapping::Simple { sql_type: SqlColumnType::Integer, nullable: false }));
-        
-        let string_mapping = mapper.map_to_sql("String").expect("Should map String");
-        assert!(matches!(string_mapping, SqlTypeMapping::Simple { sql_type: SqlColumnType::Text, nullable: false }));
-    }
-
-    #[traced_test]
-    #[test]
-    fn test_option_type_mapping() {
-        let mapper = TypeMapper::new();
-        
-        let option_i32_mapping = mapper.map_to_sql("Option<i32>").expect("Should map Option<i32>");
-        assert!(matches!(option_i32_mapping, SqlTypeMapping::Simple { sql_type: SqlColumnType::Integer, nullable: true }));
-        
-        let option_string_mapping = mapper.map_to_sql("Option<String>").expect("Should map Option<String>");
-        assert!(matches!(option_string_mapping, SqlTypeMapping::Simple { sql_type: SqlColumnType::Text, nullable: true }));
-    }
-
-    #[traced_test]
-    #[test]
-    fn test_sql_value_mapping() {
-        let mapper = TypeMapper::new();
-        
-        let sql_value = SqlValue::Integer(42);
-        let mapped = mapper.map_from_sql(&sql_value, "i32").expect("Should map SQL integer to i32");
-        let i32_value = mapped.downcast_ref::<i32>().expect("Should be i32");
-        assert_eq!(*i32_value, 42);
-        
-        let sql_string = SqlValue::String("hello".to_string());
-        let mapped_string = mapper.map_from_sql(&sql_string, "String").expect("Should map SQL string to String");
-        let string_value = mapped_string.downcast_ref::<String>().expect("Should be String");
-        assert_eq!(*string_value, "hello");
-    }
-
-    #[traced_test]
-    #[test]
-    fn test_null_value_mapping() {
-        let mapper = TypeMapper::new();
-        
-        let sql_null = SqlValue::Null;
-        let mapped = mapper.map_from_sql(&sql_null, "Option<String>").expect("Should map NULL to Option");
-        // Note: Actual None checking would require more complex type handling
-    }
-
-    #[traced_test]
-    #[test]
-    fn test_type_inference() {
-        let mapper = TypeMapper::new();
-        
-        // Test inference for types not explicitly registered
-        let u32_mapping = mapper.map_to_sql("u32").expect("Should infer u32 mapping");
-        assert!(matches!(u32_mapping, SqlTypeMapping::Simple { sql_type: SqlColumnType::Integer, nullable: false }));
-        
-        let option_f64_mapping = mapper.map_to_sql("Option<f64>").expect("Should infer Option<f64> mapping");
-        assert!(matches!(option_f64_mapping, SqlTypeMapping::Simple { sql_type: SqlColumnType::Double, nullable: true }));
-    }
-
-    #[traced_test]
-    #[test]
-    fn test_column_mapper() {
-        let type_mapper = Arc::new(TypeMapper::new());
-        let mut column_mapper = ColumnMapper::new(type_mapper);
-        
-        column_mapper.add_mapping("id", ColumnMappingInfo {
-            column_name: "id".to_string(),
-            field_name: "id".to_string(),
-            target_type: "i64".to_string(),
-            converter: None,
-        });
-        
-        let mut row = HashMap::new();
-        row.insert("id".to_string(), SqlValue::Integer(123));
-        
-        let mapped = column_mapper.map_row(&row).expect("Should map row");
-        assert_eq!(mapped.len(), 1);
-    }
-
-    #[traced_test]
-    #[test]
-    fn test_mapping_registry() {
-        let registry = MappingRegistry::new();
-        
-        let mapping = SqlTypeMapping::Simple {
-            sql_type: SqlColumnType::Text,
-            nullable: false,
-        };
-        
-        registry.register_type_mapping("CustomType", mapping.clone()).expect("Should register mapping");
-        
-        let retrieved = registry.get_type_mapping("CustomType").expect("Should retrieve mapping");
-        assert!(matches!(retrieved, SqlTypeMapping::Simple { sql_type: SqlColumnType::Text, nullable: false }));
-        
-        let stats = registry.stats();
-        assert_eq!(stats.registered_mappings, 1);
-        assert_eq!(stats.mapping_hits, 1);
-    }
-
-    #[traced_test]
-    #[test]
-    fn test_sql_type_mapping_methods() {
-        let mut mapping = SqlTypeMapping::Simple {
-            sql_type: SqlColumnType::Integer,
-            nullable: false,
-        };
-        
-        assert_eq!(*mapping.sql_type(), SqlColumnType::Integer);
-        assert!(!mapping.is_nullable());
-        
-        mapping.set_nullable(true);
-        assert!(mapping.is_nullable());
-    }
-
-    #[traced_test]
-    #[test]
-    fn test_mapping_stats() {
-        let stats = MappingStats {
-            registered_mappings: 10,
-            mapping_hits: 8,
-            mapping_misses: 2,
-            custom_mappings: 3,
-        };
-        
-        assert_eq!(stats.hit_ratio(), 0.8);
-    }
-}

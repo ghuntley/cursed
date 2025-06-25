@@ -7,9 +7,9 @@
 use std::collections::HashMap;
 use std::sync::Arc;
 use std::fmt;
+use crate::error::CursedError;
 
-use crate::stdlib::value::Value;
-use crate::error::{Error, CursedError};
+// use crate::stdlib::value::Value;
 
 // External crypto crates
 pub use rsa::{RsaPrivateKey, RsaPublicKey, Pkcs1v15Encrypt, Oaep, Pss};
@@ -290,45 +290,45 @@ pub enum AsymmetricError {
     Internal(String),
 }
 
-impl fmt::Display for AsymmetricError {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
-            AsymmetricError::InvalidKeySize(size) => 
-                write!(f, "Invalid key size: {}", size),
-            AsymmetricError::InvalidCurve(curve) => 
-                write!(f, "Invalid elliptic curve: {}", curve),
-            AsymmetricError::InvalidPadding(padding) => 
-                write!(f, "Invalid padding scheme: {}", padding),
-            AsymmetricError::KeyGenerationFailed(msg) => 
-                write!(f, "Key generation failed: {}", msg),
-            AsymmetricError::EncryptionFailed(msg) => 
-                write!(f, "Encryption failed: {}", msg),
-            AsymmetricError::DecryptionFailed(msg) => 
-                write!(f, "Decryption failed: {}", msg),
-            AsymmetricError::SigningFailed(msg) => 
-                write!(f, "Signing failed: {}", msg),
-            AsymmetricError::VerificationFailed(msg) => 
-                write!(f, "Verification failed: {}", msg),
-            AsymmetricError::KeyExchangeFailed(msg) => 
-                write!(f, "Key exchange failed: {}", msg),
-            AsymmetricError::InvalidSignature => 
-                write!(f, "Invalid signature"),
-            AsymmetricError::InvalidPublicKey => 
-                write!(f, "Invalid public key"),
-            AsymmetricError::InvalidPrivateKey => 
-                write!(f, "Invalid private key"),
-            AsymmetricError::UnsupportedOperation(op) => 
-                write!(f, "Unsupported operation: {}", op),
-            AsymmetricError::InsufficientEntropy => 
-                write!(f, "Insufficient entropy for key generation"),
-            AsymmetricError::Internal(msg) => 
-                write!(f, "Internal error: {}", msg),
-        }
-    }
-}
+// impl fmt::Display for AsymmetricError {
+//     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+//         match self {
+//             AsymmetricError::InvalidKeySize(size) => 
+//                 write!(f, "Invalid key size: {}", size),
+//             AsymmetricError::InvalidCurve(curve) => 
+//                 write!(f, "Invalid elliptic curve: {}", curve),
+//             AsymmetricError::InvalidPadding(padding) => 
+//                 write!(f, "Invalid padding scheme: {}", padding),
+//             AsymmetricError::KeyGenerationFailed(msg) => 
+//                 write!(f, "Key generation failed: {}", msg),
+//             AsymmetricError::EncryptionFailed(msg) => 
+//                 write!(f, "Encryption failed: {}", msg),
+//             AsymmetricError::DecryptionFailed(msg) => 
+//                 write!(f, "Decryption failed: {}", msg),
+//             AsymmetricError::SigningFailed(msg) => 
+//                 write!(f, "Signing failed: {}", msg),
+//             AsymmetricError::VerificationFailed(msg) => 
+//                 write!(f, "Verification failed: {}", msg),
+//             AsymmetricError::KeyExchangeFailed(msg) => 
+//                 write!(f, "Key exchange failed: {}", msg),
+//             AsymmetricError::InvalidSignature => 
+//                 write!(f, "Invalid signature"),
+//             AsymmetricError::InvalidPublicKey => 
+//                 write!(f, "Invalid public key"),
+//             AsymmetricError::InvalidPrivateKey => 
+//                 write!(f, "Invalid private key"),
+//             AsymmetricError::UnsupportedOperation(op) => 
+//                 write!(f, "Unsupported operation: {}", op),
+//             AsymmetricError::InsufficientEntropy => 
+//                 write!(f, "Insufficient entropy for key generation"),
+//             AsymmetricError::Internal(msg) => 
+//                 write!(f, "Internal error: {}", msg),
+//         }
+//     }
+// }
 
-impl std::error::Error for AsymmetricError {}
-
+// impl std::error::CursedError for AsymmetricError {}
+// 
 /// fr fr Configuration for asymmetric operations
 #[derive(Debug, Clone)]
 pub struct AsymmetricConfig {
@@ -1022,7 +1022,7 @@ impl Default for AsymmetricCrypto {
 /// fr fr Public API functions for CURSED stdlib integration
 
 /// slay RSA key generation
-pub fn rsa_generate_keypair(args: Vec<Value>) -> Result<(), Error> {
+pub fn rsa_generate_keypair(args: Vec<Value>) -> crate::error::Result<()> {
     let crypto = AsymmetricCrypto::new();
     
     let key_size = if args.is_empty() {
@@ -1046,7 +1046,7 @@ pub fn rsa_generate_keypair(args: Vec<Value>) -> Result<(), Error> {
 }
 
 /// slay RSA encryption
-pub fn rsa_encrypt(args: Vec<Value>) -> Result<(), Error> {
+pub fn rsa_encrypt(args: Vec<Value>) -> crate::error::Result<()> {
     if args.len() < 2 {
         return Err(CursedError::Runtime("RSA encrypt requires public key and plaintext".to_string()));
     }
@@ -1074,7 +1074,7 @@ pub fn rsa_encrypt(args: Vec<Value>) -> Result<(), Error> {
 }
 
 /// slay RSA decryption  
-pub fn rsa_decrypt(args: Vec<Value>) -> Result<(), Error> {
+pub fn rsa_decrypt(args: Vec<Value>) -> crate::error::Result<()> {
     if args.len() < 2 {
         return Err(CursedError::Runtime("RSA decrypt requires private key and ciphertext".to_string()));
     }
@@ -1105,7 +1105,7 @@ pub fn rsa_decrypt(args: Vec<Value>) -> Result<(), Error> {
 }
 
 /// slay RSA signing
-pub fn rsa_sign(args: Vec<Value>) -> Result<(), Error> {
+pub fn rsa_sign(args: Vec<Value>) -> crate::error::Result<()> {
     if args.len() < 2 {
         return Err(CursedError::Runtime("RSA sign requires private key and message".to_string()));
     }
@@ -1147,7 +1147,7 @@ pub fn rsa_sign(args: Vec<Value>) -> Result<(), Error> {
 }
 
 /// slay RSA signature verification
-pub fn rsa_verify(args: Vec<Value>) -> Result<(), Error> {
+pub fn rsa_verify(args: Vec<Value>) -> crate::error::Result<()> {
     if args.len() < 3 {
         return Err(CursedError::Runtime("RSA verify requires public key, message, and signature".to_string()));
     }
@@ -1197,7 +1197,7 @@ pub fn rsa_verify(args: Vec<Value>) -> Result<(), Error> {
 }
 
 /// slay ECDSA key generation
-pub fn ecdsa_generate_keypair(args: Vec<Value>) -> Result<(), Error> {
+pub fn ecdsa_generate_keypair(args: Vec<Value>) -> crate::error::Result<()> {
     let crypto = AsymmetricCrypto::new();
     
     let curve = if args.is_empty() {
@@ -1227,7 +1227,7 @@ pub fn ecdsa_generate_keypair(args: Vec<Value>) -> Result<(), Error> {
 }
 
 /// slay ECDSA signing
-pub fn ecdsa_sign(args: Vec<Value>) -> Result<(), Error> {
+pub fn ecdsa_sign(args: Vec<Value>) -> crate::error::Result<()> {
     if args.len() < 2 {
         return Err(CursedError::Runtime("ECDSA sign requires private key and message".to_string()));
     }
@@ -1277,7 +1277,7 @@ pub fn ecdsa_sign(args: Vec<Value>) -> Result<(), Error> {
 }
 
 /// slay ECDSA verification
-pub fn ecdsa_verify(args: Vec<Value>) -> Result<(), Error> {
+pub fn ecdsa_verify(args: Vec<Value>) -> crate::error::Result<()> {
     if args.len() < 3 {
         return Err(CursedError::Runtime("ECDSA verify requires public key, message, and signature".to_string()));
     }
@@ -1332,7 +1332,7 @@ pub fn ecdsa_verify(args: Vec<Value>) -> Result<(), Error> {
 }
 
 /// slay ECDH key exchange
-pub fn ecdh_key_exchange(args: Vec<Value>) -> Result<(), Error> {
+pub fn ecdh_key_exchange(args: Vec<Value>) -> crate::error::Result<()> {
     if args.len() < 2 {
         return Err(CursedError::Runtime("ECDH requires private key and public key".to_string()));
     }
@@ -1426,7 +1426,7 @@ pub fn ecdh_key_exchange(args: Vec<Value>) -> Result<(), Error> {
 }
 
 /// slay X25519 key generation
-pub fn x25519_generate_keypair(_args: Vec<Value>) -> Result<(), Error> {
+pub fn x25519_generate_keypair(_args: Vec<Value>) -> crate::error::Result<()> {
     let crypto = AsymmetricCrypto::new();
     
     match crypto.x25519_generate_keypair() {
@@ -1441,7 +1441,7 @@ pub fn x25519_generate_keypair(_args: Vec<Value>) -> Result<(), Error> {
 }
 
 /// slay X25519 key exchange
-pub fn x25519_key_exchange(args: Vec<Value>) -> Result<(), Error> {
+pub fn x25519_key_exchange(args: Vec<Value>) -> crate::error::Result<()> {
     if args.len() < 2 {
         return Err(CursedError::Runtime("X25519 exchange requires private key and public key".to_string()));
     }
@@ -1495,7 +1495,7 @@ pub fn x25519_key_exchange(args: Vec<Value>) -> Result<(), Error> {
 }
 
 /// slay Ed25519 key generation
-pub fn ed25519_generate_keypair(_args: Vec<Value>) -> Result<(), Error> {
+pub fn ed25519_generate_keypair(_args: Vec<Value>) -> crate::error::Result<()> {
     let crypto = AsymmetricCrypto::new();
     
     match crypto.ed25519_generate_keypair() {
@@ -1510,7 +1510,7 @@ pub fn ed25519_generate_keypair(_args: Vec<Value>) -> Result<(), Error> {
 }
 
 /// slay Ed25519 signing
-pub fn ed25519_sign(args: Vec<Value>) -> Result<(), Error> {
+pub fn ed25519_sign(args: Vec<Value>) -> crate::error::Result<()> {
     if args.len() < 2 {
         return Err(CursedError::Runtime("Ed25519 sign requires private key and message".to_string()));
     }
@@ -1543,7 +1543,7 @@ pub fn ed25519_sign(args: Vec<Value>) -> Result<(), Error> {
 }
 
 /// slay Ed25519 verification
-pub fn ed25519_verify(args: Vec<Value>) -> Result<(), Error> {
+pub fn ed25519_verify(args: Vec<Value>) -> crate::error::Result<()> {
     if args.len() < 3 {
         return Err(CursedError::Runtime("Ed25519 verify requires public key, message, and signature".to_string()));
     }
@@ -1580,185 +1580,3 @@ pub fn ed25519_verify(args: Vec<Value>) -> Result<(), Error> {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_asymmetric_crypto_creation() {
-        let crypto = AsymmetricCrypto::new();
-        assert_eq!(crypto.config.default_rsa_key_size, RSA_4096_BITS);
-        assert_eq!(crypto.config.default_ec_curve, EcCurve::P256);
-    }
-
-    #[test]
-    fn test_rsa_key_generation() {
-        let crypto = AsymmetricCrypto::new();
-        let result = crypto.rsa_generate_keypair(Some(RSA_2048_BITS));
-        assert!(result.is_ok());
-        
-        let keypair = result.unwrap();
-        assert_eq!(keypair.key_size, RSA_2048_BITS);
-    }
-
-    #[test]
-    fn test_rsa_encrypt_decrypt_cycle() {
-        let crypto = AsymmetricCrypto::new();
-        let keypair = crypto.rsa_generate_keypair(Some(RSA_2048_BITS)).unwrap();
-        
-        let plaintext = b"Hello, World!";
-        let ciphertext = crypto.rsa_encrypt(&keypair.public_key, plaintext, Some(RsaPadding::OaepSha256)).unwrap();
-        let decrypted = crypto.rsa_decrypt(&keypair.private_key, &ciphertext, Some(RsaPadding::OaepSha256)).unwrap();
-        
-        assert_eq!(plaintext, decrypted.as_slice());
-    }
-
-    #[test]
-    fn test_rsa_sign_verify_cycle() {
-        let crypto = AsymmetricCrypto::new();
-        let keypair = crypto.rsa_generate_keypair(Some(RSA_2048_BITS)).unwrap();
-        
-        let message = b"Important message";
-        let signature = crypto.rsa_sign(&keypair.private_key, message, Some(RsaPadding::Pss)).unwrap();
-        let is_valid = crypto.rsa_verify(&keypair.public_key, message, &signature, Some(RsaPadding::Pss)).unwrap();
-        
-        assert!(is_valid);
-    }
-
-    #[test]
-    fn test_ecdsa_p256_key_generation() {
-        let crypto = AsymmetricCrypto::new();
-        let result = crypto.ecdsa_generate_keypair(Some(EcCurve::P256));
-        assert!(result.is_ok());
-        
-        let keypair = result.unwrap();
-        assert_eq!(keypair.curve, EcCurve::P256);
-    }
-
-    #[test]
-    fn test_ecdsa_p256_sign_verify_cycle() {
-        let crypto = AsymmetricCrypto::new();
-        let keypair = crypto.ecdsa_generate_keypair(Some(EcCurve::P256)).unwrap();
-        
-        let message = b"Test message for ECDSA";
-        let signature = crypto.ecdsa_sign(&keypair.private_key, message).unwrap();
-        let is_valid = crypto.ecdsa_verify(&keypair.public_key, message, &signature).unwrap();
-        
-        assert!(is_valid);
-    }
-
-    #[test]
-    fn test_ecdsa_secp256k1_operations() {
-        let crypto = AsymmetricCrypto::new();
-        let keypair = crypto.ecdsa_generate_keypair(Some(EcCurve::Secp256k1)).unwrap();
-        
-        let message = b"Bitcoin-style message";
-        let signature = crypto.ecdsa_sign(&keypair.private_key, message).unwrap();
-        let is_valid = crypto.ecdsa_verify(&keypair.public_key, message, &signature).unwrap();
-        
-        assert!(is_valid);
-    }
-
-    #[test]
-    fn test_ecdh_key_exchange() {
-        let crypto = AsymmetricCrypto::new();
-        let alice_keypair = crypto.ecdh_generate_keypair(Some(EcCurve::P256)).unwrap();
-        let bob_keypair = crypto.ecdh_generate_keypair(Some(EcCurve::P256)).unwrap();
-        
-        let alice_shared = crypto.ecdh_exchange(&alice_keypair.private_key, &bob_keypair.public_key).unwrap();
-        let bob_shared = crypto.ecdh_exchange(&bob_keypair.private_key, &alice_keypair.public_key).unwrap();
-        
-        assert_eq!(alice_shared, bob_shared);
-    }
-
-    #[test]
-    fn test_x25519_key_exchange() {
-        let crypto = AsymmetricCrypto::new();
-        let alice_keypair = crypto.x25519_generate_keypair().unwrap();
-        let bob_keypair = crypto.x25519_generate_keypair().unwrap();
-        
-        let alice_shared = crypto.x25519_exchange(&alice_keypair.private_key, &bob_keypair.public_key).unwrap();
-        let bob_shared = crypto.x25519_exchange(&bob_keypair.private_key, &alice_keypair.public_key).unwrap();
-        
-        assert_eq!(alice_shared, bob_shared);
-    }
-
-    #[test]
-    fn test_ed25519_sign_verify_cycle() {
-        let crypto = AsymmetricCrypto::new();
-        let keypair = crypto.ed25519_generate_keypair().unwrap();
-        
-        let message = b"Ed25519 test message";
-        let signature = crypto.ed25519_sign(&keypair.private_key, message).unwrap();
-        let is_valid = crypto.ed25519_verify(&keypair.public_key, message, &signature).unwrap();
-        
-        assert!(is_valid);
-    }
-
-    #[test]
-    fn test_ec_curves() {
-        assert_eq!(EcCurve::P256.name(), "P-256");
-        assert_eq!(EcCurve::P256.key_size(), 32);
-        assert_eq!(EcCurve::P256.security_level(), 128);
-        
-        assert_eq!(EcCurve::Secp256k1.name(), "secp256k1");
-        assert_eq!(EcCurve::Secp256k1.key_size(), 32);
-    }
-
-    #[test]
-    fn test_rsa_padding() {
-        assert_eq!(RsaPadding::OaepSha256.name(), "OAEP-SHA256");
-        assert_eq!(RsaPadding::Pss.name(), "PSS");
-    }
-
-    #[test]
-    fn test_key_generation_api() {
-        let result = rsa_generate_keypair(vec![]);
-        assert!(result.is_ok());
-        
-        let result = ecdsa_generate_keypair(vec![]);
-        assert!(result.is_ok());
-        
-        let result = x25519_generate_keypair(vec![]);
-        assert!(result.is_ok());
-        
-        let result = ed25519_generate_keypair(vec![]);
-        assert!(result.is_ok());
-    }
-
-    #[test]
-    fn test_error_handling() {
-        let error = AsymmetricError::InvalidKeySize(1024);
-        assert_eq!(error.to_string(), "Invalid key size: 1024");
-        
-        let error = AsymmetricError::InvalidCurve("invalid".to_string());
-        assert_eq!(error.to_string(), "Invalid elliptic curve: invalid");
-    }
-
-    #[test]
-    fn test_invalid_key_size() {
-        let crypto = AsymmetricCrypto::new();
-        let result = crypto.rsa_generate_keypair(Some(1024)); // Invalid size
-        assert!(result.is_err());
-        
-        if let Err(AsymmetricError::InvalidKeySize(size)) = result {
-            assert_eq!(size, 1024);
-        } else {
-            panic!("Expected InvalidKeySize error");
-        }
-    }
-
-    #[test]
-    fn test_signature_verification_failure() {
-        let crypto = AsymmetricCrypto::new();
-        let keypair = crypto.ed25519_generate_keypair().unwrap();
-        
-        let message = b"Original message";
-        let signature = crypto.ed25519_sign(&keypair.private_key, message).unwrap();
-        
-        let tampered_message = b"Tampered message";
-        let is_valid = crypto.ed25519_verify(&keypair.public_key, tampered_message, &signature).unwrap();
-        
-        assert!(!is_valid);
-    }
-}

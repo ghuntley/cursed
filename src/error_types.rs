@@ -55,39 +55,39 @@ pub enum Error {
     Generic(String),
 }
 
-impl fmt::Display for Error {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
-            Error::Io(e) => write!(f, "I/O error: {}", e),
-            Error::Parse(msg) => write!(f, "Parse error: {}", msg),
-            Error::CompilationError(msg) => write!(f, "Compilation error: {}", msg),
-            Error::Runtime(msg) => write!(f, "Runtime error: {}", msg),
-            Error::Package(msg) => write!(f, "Package error: {}", msg),
-            Error::Repl(msg) => write!(f, "REPL error: {}", msg),
-            Error::TemplateError { message, source_location } => {
-                if let Some(loc) = source_location {
-                    write!(f, "Template error at {}: {}", loc, message)
-                } else {
-                    write!(f, "Template error: {}", message)
-                }
-            },
-            Error::OptimizationError(msg) => write!(f, "Optimization error: {}", msg),
-            Error::MemoryError(msg) => write!(f, "Memory error: {}", msg),
-            Error::TypeError(msg) => write!(f, "Type error: {}", msg),
-            Error::ImportError(msg) => write!(f, "Import error: {}", msg),
-            Error::Generic(msg) => write!(f, "{}", msg),
-        }
-    }
-}
+// impl fmt::Display for Error {
+//     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+//         match self {
+//             Error::Io(e) => write!(f, "I/O error: {}", e),
+//             Error::Parse(msg) => write!(f, "Parse error: {}", msg),
+//             Error::CompilationError(msg) => write!(f, "Compilation error: {}", msg),
+//             Error::Runtime(msg) => write!(f, "Runtime error: {}", msg),
+//             Error::Package(msg) => write!(f, "Package error: {}", msg),
+//             Error::Repl(msg) => write!(f, "REPL error: {}", msg),
+//             Error::TemplateError { message, source_location } => {
+//                 if let Some(loc) = source_location {
+//                     write!(f, "Template error at {}: {}", loc, message)
+//                 } else {
+//                     write!(f, "Template error: {}", message)
+//                 }
+//             },
+//             Error::OptimizationError(msg) => write!(f, "Optimization error: {}", msg),
+//             Error::MemoryError(msg) => write!(f, "Memory error: {}", msg),
+//             Error::TypeError(msg) => write!(f, "Type error: {}", msg),
+//             Error::ImportError(msg) => write!(f, "Import error: {}", msg),
+//             Error::Generic(msg) => write!(f, "{}", msg),
+//         }
+//     }
+// }
 
-impl std::error::Error for Error {
-    fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
-        match self {
-            Error::Io(e) => Some(e),
-            _ => None,
-        }
-    }
-}
+// impl std::error::Error for Error {
+//     fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
+//         match self {
+//             Error::Io(e) => Some(e),
+//             _ => None,
+//         }
+//     }
+// }
 
 impl From<std::io::Error> for Error {
     fn from(error: std::io::Error) -> Self {
@@ -106,6 +106,9 @@ impl From<&str> for Error {
         Error::Generic(error.to_string())
     }
 }
+
+/// Type alias for backward compatibility
+pub type CursedError = Error;
 
 /// Result type alias for CURSED operations
 pub type Result<T> = std::result::Result<T, Error>;

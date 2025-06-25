@@ -37,7 +37,7 @@ pub mod hqc;
 // Isogeny-based algorithms (research/deprecated)
 pub mod sike;
 
-use crate::stdlib::crypto_pqc::{PqcResult, SecurityLevel, AlgorithmType};
+// use crate::stdlib::crypto_pqc::{PqcResult, SecurityLevel, AlgorithmType};
 
 /// Common trait for Key Encapsulation Mechanisms (KEMs)
 pub trait KeyEncapsulation {

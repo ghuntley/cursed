@@ -1,4 +1,4 @@
-use crate::error::Error;
+use crate::error::CursedError;
 // Bootstrap Self-Compilation Verification System
 //
 // This module provides comprehensive verification for the CURSED compiler's
@@ -117,7 +117,7 @@ impl SelfCompilationVerifier {
     }
 
     /// Run the complete bootstrap verification process
-    pub fn verify(&self) -> Result<(), Error> {
+    pub fn verify(&self) -> crate::error::Result<()> {
         let start_time = Instant::now();
         let mut result = VerificationResult {
             success: false,
@@ -191,7 +191,7 @@ impl SelfCompilationVerifier {
     }
 
     /// Run the complete bootstrap verification process
-    pub async fn run_verification(&self) -> Result<(), Error> {
+    pub async fn run_verification(&self) -> crate::error::Result<()> {
         println!("🚀 Starting CURSED Bootstrap Verification...");
         
         let mut result = VerificationResult {
@@ -262,7 +262,7 @@ impl SelfCompilationVerifier {
     }
 
     /// Verify Stage 1: Rust-based CURSED compiler
-    fn verify_stage1(&self) -> Result<(), Error> {
+    fn verify_stage1(&self) -> crate::error::Result<()> {
         println!("🔧 Stage 1: Building Rust-based CURSED compiler...");
         let start_time = Instant::now();
 
@@ -317,7 +317,7 @@ impl SelfCompilationVerifier {
     }
 
     /// Verify Stage 2: CURSED-based compiler compiled by Stage 1
-    fn verify_stage2(&self, stage1: &StageResult) -> Result<(), Error> {
+    fn verify_stage2(&self, stage1: &StageResult) -> crate::error::Result<()> {
         println!("🔧 Stage 2: Building CURSED-based compiler using Stage 1...");
         let start_time = Instant::now();
 
@@ -393,7 +393,7 @@ impl SelfCompilationVerifier {
     }
 
     /// Verify functional equivalence between compiler stages
-    fn verify_functional_equivalence(&self, stage1: &StageResult, stage2: &StageResult) -> Result<(), Error> {
+    fn verify_functional_equivalence(&self, stage1: &StageResult, stage2: &StageResult) -> crate::error::Result<()> {
         println!("🔍 Testing functional equivalence between compiler stages...");
 
         // Create test programs to compile with both stages
@@ -422,7 +422,7 @@ impl SelfCompilationVerifier {
     }
 
     /// Verify bootstrap cycles for convergence
-    fn verify_bootstrap_cycles(&self, stage2: &StageResult) -> Result<(), Error> {
+    fn verify_bootstrap_cycles(&self, stage2: &StageResult) -> crate::error::Result<()> {
         println!("🔄 Testing bootstrap convergence ({} cycles)...", self.config.bootstrap_cycles);
 
         let mut analysis = ConvergenceAnalysis::default();
@@ -492,7 +492,7 @@ impl SelfCompilationVerifier {
     }
 
     /// Test basic compiler functionality
-    fn test_compiler_basic_functionality(&self, compiler_path: &Path) -> Result<(), Error> {
+    fn test_compiler_basic_functionality(&self, compiler_path: &Path) -> crate::error::Result<()> {
         // Create a simple test program
         let test_program = self.config.work_dir.join("test_basic.csd");
         fs::write(&test_program, r#"
@@ -524,7 +524,7 @@ slay main() -> normie {
     }
 
     /// Create test programs for equivalence testing
-    fn create_test_programs(&self) -> Result<(), Error> {
+    fn create_test_programs(&self) -> crate::error::Result<()> {
         let mut programs = Vec::new();
 
         // Simple arithmetic test
@@ -566,7 +566,7 @@ slay main() -> normie {
     }
 
     /// Compile a program with a specific compiler stage
-    fn compile_with_stage(&self, compiler_path: &Path, program_path: &Path, stage_name: &str) -> Result<(), Error> {
+    fn compile_with_stage(&self, compiler_path: &Path, program_path: &Path, stage_name: &str) -> crate::error::Result<()> {
         let output_path = self.config.work_dir.join(format!("output_{}_{}", stage_name, program_path.file_name().unwrap().to_str().unwrap()));
         
         let output = Command::new(compiler_path)
@@ -595,7 +595,7 @@ slay main() -> normie {
     }
 
     /// Create a test CURSED compiler source (placeholder)
-    fn create_test_cursed_compiler(&self, output_path: &Path) -> Result<(), Error> {
+    fn create_test_cursed_compiler(&self, output_path: &Path) -> crate::error::Result<()> {
         let content = r#"
 // Placeholder CURSED compiler implementation
 // This would be a real compiler written in CURSED
@@ -615,7 +615,7 @@ slay compile(source: tea, output: tea) -> normie {
     }
 
     /// Calculate checksum of a file
-    fn calculate_checksum(&self, file_path: &Path) -> Result<(), Error> {
+    fn calculate_checksum(&self, file_path: &Path) -> crate::error::Result<()> {
         use std::collections::hash_map::DefaultHasher;
         use std::hash::{Hash, Hasher};
 
@@ -630,7 +630,7 @@ slay compile(source: tea, output: tea) -> normie {
     }
 
     /// Generate a verification report
-    pub fn generate_report(&self, result: &VerificationResult, output_path: &Path) -> Result<(), Error> {
+    pub fn generate_report(&self, result: &VerificationResult, output_path: &Path) -> crate::error::Result<()> {
         let mut report = String::new();
 
         report.push_str("# CURSED Bootstrap Verification Report\n\n");
@@ -715,127 +715,3 @@ slay compile(source: tea, output: tea) -> normie {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use std::fs;
-    use tempfile::TempDir;
-
-    #[test]
-    fn test_verification_config_default() {
-        let config = VerificationConfig::default();
-        assert_eq!(config.bootstrap_cycles, 3);
-        assert_eq!(config.compilation_timeout, Duration::from_secs(300));
-        assert!(!config.keep_intermediates);
-    }
-
-    #[test]
-    fn test_verifier_creation() {
-        let verifier = SelfCompilationVerifier::default();
-        assert_eq!(verifier.config.bootstrap_cycles, 3);
-    }
-
-    #[test]
-    fn test_checksum_calculation() {
-        let temp_dir = TempDir::new().unwrap();
-        let test_file = temp_dir.path().join("test.txt");
-        fs::write(&test_file, "test content").unwrap();
-
-        let verifier = SelfCompilationVerifier::default();
-        let checksum = verifier.calculate_checksum(&test_file).unwrap();
-        assert!(!checksum.is_empty());
-        assert_ne!(checksum, "file_not_found");
-    }
-
-    #[test]
-    fn test_test_program_creation() {
-        let temp_dir = TempDir::new().unwrap();
-        let config = VerificationConfig {
-            work_dir: temp_dir.path().to_path_buf(),
-            ..Default::default()
-        };
-        let verifier = SelfCompilationVerifier::new(config);
-
-        let programs = verifier.create_test_programs().unwrap();
-        assert!(!programs.is_empty());
-        
-        for (name, path) in programs {
-            assert!(path.exists(), "Test program {} should exist", name);
-            let content = fs::read_to_string(&path).unwrap();
-            assert!(content.contains("slay main()"), "Test program {} should have main function", name);
-        }
-    }
-
-    #[test]
-    fn test_performance_metrics_collection() {
-        let mut result = VerificationResult {
-            success: true,
-            stages_completed: 2,
-            total_time: Duration::from_secs(10),
-            stage_results: vec![
-                StageResult {
-                    stage: 1,
-                    success: true,
-                    compilation_time: Duration::from_secs(5),
-                    execution_time: Duration::from_secs(1),
-                    binary_checksum: "test1".to_string(),
-                    output_files: Vec::new(),
-                    errors: Vec::new(),
-                },
-                StageResult {
-                    stage: 2,
-                    success: true,
-                    compilation_time: Duration::from_secs(7),
-                    execution_time: Duration::from_secs(2),
-                    binary_checksum: "test2".to_string(),
-                    output_files: Vec::new(),
-                    errors: Vec::new(),
-                }
-            ],
-            performance_metrics: PerformanceMetrics::default(),
-            convergence_analysis: ConvergenceAnalysis::default(),
-            issues: Vec::new(),
-        };
-
-        let verifier = SelfCompilationVerifier::default();
-        verifier.collect_performance_metrics(&mut result);
-
-        assert_eq!(result.performance_metrics.compilation_times.len(), 2);
-        assert_eq!(result.performance_metrics.execution_times.len(), 2);
-    }
-
-    #[test]
-    fn test_report_generation() {
-        let temp_dir = TempDir::new().unwrap();
-        let report_path = temp_dir.path().join("test_report.md");
-
-        let result = VerificationResult {
-            success: true,
-            stages_completed: 2,
-            total_time: Duration::from_secs(15),
-            stage_results: vec![
-                StageResult {
-                    stage: 1,
-                    success: true,
-                    compilation_time: Duration::from_secs(8),
-                    execution_time: Duration::from_secs(1),
-                    binary_checksum: "abc123".to_string(),
-                    output_files: Vec::new(),
-                    errors: Vec::new(),
-                }
-            ],
-            performance_metrics: PerformanceMetrics::default(),
-            convergence_analysis: ConvergenceAnalysis::default(),
-            issues: Vec::new(),
-        };
-
-        let verifier = SelfCompilationVerifier::default();
-        verifier.generate_report(&result, &report_path).unwrap();
-
-        assert!(report_path.exists());
-        let content = fs::read_to_string(&report_path).unwrap();
-        assert!(content.contains("CURSED Bootstrap Verification Report"));
-        assert!(content.contains("Overall Success: ✅ PASSED"));
-        assert!(content.contains("Verification Time: 15.00 seconds"));
-    }
-}

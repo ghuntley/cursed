@@ -1,4 +1,4 @@
-use crate::error::Error;
+use crate::error::CursedError;
 // Import Resolution System
 //
 // Handles resolution of imports including:
@@ -10,7 +10,6 @@ use crate::error::Error;
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, Mutex};
-use thiserror::Error;
 
 use crate::ast::ImportStatement;
 // use crate::package_manager::{PackageManager, PackageMetadata, PackageManagerError};
@@ -24,7 +23,7 @@ pub use module_loader::{ModuleLoader, ModuleInfo, LoadedModule};
 pub use package_resolver::{PackageImportResolver, PackageResolution};
 
 /// Errors that can occur during import resolution
-#[derive(Error, Debug)]
+#[derive(CursedError, Debug)]
 pub enum ImportError {
     #[error("Import not found: {import_path}")]
     NotFound { import_path: String },
@@ -70,7 +69,7 @@ impl ImportManager {
     pub fn new(
         // package_manager: Arc<Mutex<PackageManager>>, // Disabled for minimal build
         config: ImportResolverConfig,
-    ) -> Result<Self, Error> {
+    ) -> crate::error::Result<Self> {
         let resolver = ImportResolver::new(config);
         let package_resolver = PackageImportResolver::new(/* package_manager.clone() */);
         let module_loader = ModuleLoader::new();
@@ -90,7 +89,7 @@ impl ImportManager {
         &mut self,
         imports: &[ImportStatement],
         context_path: Option<&Path>,
-    ) -> Result<(), Error> {
+    ) -> crate::error::Result<()> {
         let mut resolved = Vec::new();
         let mut processing = std::collections::HashSet::new();
         
@@ -111,7 +110,7 @@ impl ImportManager {
         import: &ImportStatement,
         context_path: Option<&Path>,
         processing: &mut std::collections::HashSet<String>,
-    ) -> Result<(), Error> {
+    ) -> crate::error::Result<()> {
         let import_path = &import.path;
         
         // Check cache first
@@ -121,7 +120,7 @@ impl ImportManager {
         
         // Detect circular imports
         if processing.contains(import_path) {
-            return Err(Error::Import(format!("Circular import detected: {:?}", 
+            return Err(CursedError::Import(format!("Circular import detected: {:?}", 
                 processing.iter().cloned().collect::<Vec<_>>())));
         }
         processing.insert(import_path.clone());
@@ -150,7 +149,7 @@ impl ImportManager {
     pub async fn load_module(
         &mut self,
         resolved: &ResolvedImport,
-    ) -> Result<(), Error> {
+    ) -> crate::error::Result<()> {
         let module_key = resolved.get_cache_key();
         
         // Check cache first
@@ -169,7 +168,7 @@ impl ImportManager {
     }
     
     /// Ensure package is installed before resolving its imports
-    pub async fn ensure_package_installed(&mut self, package_name: &str) -> Result<(), Error> {
+    pub async fn ensure_package_installed(&mut self, package_name: &str) -> crate::error::Result<()> {
         let mut package_manager = self.package_manager.lock().map_err(|_| {
             ImportError::ModuleLoadError {
                 module: package_name.to_string(),
@@ -194,7 +193,7 @@ impl ImportManager {
     }
     
     /// Get all available packages for import resolution
-    pub fn get_available_packages(&self) -> Result<(), Error> {
+    pub fn get_available_packages(&self) -> crate::error::Result<()> {
         let package_manager = self.package_manager.lock().map_err(|_| {
             ImportError::ModuleLoadError {
                 module: "package_manager".to_string(),

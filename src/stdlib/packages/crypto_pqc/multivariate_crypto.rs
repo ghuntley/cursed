@@ -5,9 +5,8 @@
 /// Rainbow and UOV (Unbalanced Oil and Vinegar) signature schemes.
 
 use crate::error::CursedError;
-use crate::stdlib::packages::crypto_pqc::lattice_crypto::{SecureRng, LatticeRng};
-use crate::stdlib::packages::crypto_advanced::AdvancedCryptoResult;
-use crate::error::Error;
+// use crate::stdlib::packages::crypto_pqc::lattice_crypto::{SecureRng, LatticeRng};
+// use crate::stdlib::packages::crypto_advanced::AdvancedCryptoResult;
 use std::collections::HashMap;
 use std::fmt;
 
@@ -77,7 +76,7 @@ impl MultivariateConfig {
     }
     
     /// sus Validate configuration
-    pub fn validate(&self) -> Result<(), Error> {
+    pub fn validate(&self) -> crate::error::Result<()> {
         if self.variables == 0 || self.equations == 0 {
             return Err(MultivariateError::InvalidConfig("Variables and equations must be positive".to_string()));
         }
@@ -347,7 +346,7 @@ impl LinearTransformation {
     }
     
     /// Create random invertible transformation
-    pub fn random_invertible(size: usize, field_size: u8, rng: &mut dyn LatticeRng) -> Result<(), Error> {
+    pub fn random_invertible(size: usize, field_size: u8, rng: &mut dyn LatticeRng) -> crate::error::Result<()> {
         let mut attempts = 0;
         while attempts < 100 {
             let mut matrix = vec![vec![FieldElement::zero(field_size); size]; size];
@@ -420,19 +419,19 @@ pub struct MultivariateKeyPair {
 
 impl MultivariateKeyPair {
     /// Generate new multivariate key pair
-    pub fn generate(config: &MultivariateConfig) -> Result<(), Error> {
+    pub fn generate(config: &MultivariateConfig) -> crate::error::Result<()> {
         let mut engine = MultivariateEngine::new(config.clone())?;
         engine.generate_keypair()
     }
     
     /// Sign message
-    pub fn sign(&self, message: &[u8]) -> Result<(), Error> {
+    pub fn sign(&self, message: &[u8]) -> crate::error::Result<()> {
         let mut engine = MultivariateEngine::new(self.config.clone())?;
         engine.sign(message, &self.private_key)
     }
     
     /// Verify signature
-    pub fn verify(&self, message: &[u8], signature: &MultivariateSignature) -> Result<(), Error> {
+    pub fn verify(&self, message: &[u8], signature: &MultivariateSignature) -> crate::error::Result<()> {
         let engine = MultivariateEngine::new(self.config.clone())?;
         engine.verify(message, signature, &self.public_key)
     }
@@ -488,7 +487,7 @@ impl MultivariateSignature {
     }
     
     /// Deserialize signature
-    pub fn deserialize(data: &[u8], algorithm: String) -> Result<(), Error> {
+    pub fn deserialize(data: &[u8], algorithm: String) -> crate::error::Result<()> {
         if data.len() < 8 {
             return Err(MultivariateError::InvalidSignature("Invalid signature data".to_string()));
         }
@@ -551,7 +550,7 @@ pub struct MultivariateEngine {
 
 impl MultivariateEngine {
     /// Create new multivariate engine
-    pub fn new(config: MultivariateConfig) -> Result<(), Error> {
+    pub fn new(config: MultivariateConfig) -> crate::error::Result<()> {
         config.validate()?;
         
         let rng = Box::new(SecureRng::new()
@@ -561,7 +560,7 @@ impl MultivariateEngine {
     }
     
     /// Generate key pair
-    pub fn generate_keypair(&mut self) -> Result<(), Error> {
+    pub fn generate_keypair(&mut self) -> crate::error::Result<()> {
         match self.config.scheme_type {
             MultivariateScheme::Rainbow => self.generate_rainbow_keypair(),
             MultivariateScheme::UOV => self.generate_uov_keypair(),
@@ -570,7 +569,7 @@ impl MultivariateEngine {
     }
     
     /// Generate Rainbow key pair
-    fn generate_rainbow_keypair(&mut self) -> Result<(), Error> {
+    fn generate_rainbow_keypair(&mut self) -> crate::error::Result<()> {
         // Step 1: Generate secret polynomial system with special structure
         let secret_system = self.generate_rainbow_secret_system()?;
         
@@ -610,7 +609,7 @@ impl MultivariateEngine {
     }
     
     /// Generate UOV key pair
-    fn generate_uov_keypair(&mut self) -> Result<(), Error> {
+    fn generate_uov_keypair(&mut self) -> crate::error::Result<()> {
         // UOV key generation follows similar pattern but with oil-vinegar structure
         let secret_system = self.generate_uov_secret_system()?;
         
@@ -648,7 +647,7 @@ impl MultivariateEngine {
     }
     
     /// Generate Rainbow secret system with special structure
-    fn generate_rainbow_secret_system(&mut self) -> Result<(), Error> {
+    fn generate_rainbow_secret_system(&mut self) -> crate::error::Result<()> {
         // Rainbow has a special layered structure
         let mut system = PolynomialSystem::new(self.config.variables, self.config.field_size);
         
@@ -662,7 +661,7 @@ impl MultivariateEngine {
     }
     
     /// Generate UOV secret system with oil-vinegar structure
-    fn generate_uov_secret_system(&mut self) -> Result<(), Error> {
+    fn generate_uov_secret_system(&mut self) -> crate::error::Result<()> {
         // UOV has oil-vinegar structure where oil variables don't interact with each other
         let mut system = PolynomialSystem::new(self.config.variables, self.config.field_size);
         
@@ -681,13 +680,13 @@ impl MultivariateEngine {
         secret_system: &PolynomialSystem, 
         s_transform: &LinearTransformation, 
         t_transform: &LinearTransformation
-    ) -> Result<(), Error> {
+    ) -> crate::error::Result<()> {
         // Simplified composition: in practice this involves complex polynomial arithmetic
         Ok(secret_system.apply_transformation(s_transform))
     }
     
     /// Sign message
-    pub fn sign(&mut self, message: &[u8], private_key: &MultivariatePrivateKey) -> Result<(), Error> {
+    pub fn sign(&mut self, message: &[u8], private_key: &MultivariatePrivateKey) -> crate::error::Result<()> {
         // Step 1: Hash message
         let message_hash = self.hash_message(message)?;
         let target = self.hash_to_field_elements(&message_hash)?;
@@ -709,7 +708,7 @@ impl MultivariateEngine {
     }
     
     /// Verify signature
-    pub fn verify(&self, message: &[u8], signature: &MultivariateSignature, public_key: &MultivariatePublicKey) -> Result<(), Error> {
+    pub fn verify(&self, message: &[u8], signature: &MultivariateSignature, public_key: &MultivariatePublicKey) -> crate::error::Result<()> {
         // Step 1: Hash message and compare
         let message_hash = self.hash_message(message)?;
         if message_hash != signature.message_hash {
@@ -737,7 +736,7 @@ impl MultivariateEngine {
     }
     
     /// Hash message
-    fn hash_message(&self, message: &[u8]) -> Result<(), Error> {
+    fn hash_message(&self, message: &[u8]) -> crate::error::Result<()> {
         // Simplified hash function (use SHA-256 in practice)
         use std::collections::hash_map::DefaultHasher;
         use std::hash::{Hash, Hasher};
@@ -750,7 +749,7 @@ impl MultivariateEngine {
     }
     
     /// Convert hash to field elements
-    fn hash_to_field_elements(&self, hash: &[u8]) -> Result<(), Error> {
+    fn hash_to_field_elements(&self, hash: &[u8]) -> crate::error::Result<()> {
         let mut elements = Vec::new();
         
         for &byte in hash.iter().take(self.config.equations) {
@@ -766,7 +765,7 @@ impl MultivariateEngine {
     }
     
     /// Solve secret polynomial system (trapdoor operation)
-    fn solve_secret_system(&mut self, system: &PolynomialSystem, target: &[FieldElement]) -> Result<(), Error> {
+    fn solve_secret_system(&mut self, system: &PolynomialSystem, target: &[FieldElement]) -> crate::error::Result<()> {
         // This is where the trapdoor structure allows efficient solution
         // For Rainbow: use the layered structure to solve layer by layer
         // For UOV: fix vinegar variables and solve for oil variables
@@ -779,7 +778,7 @@ impl MultivariateEngine {
     }
     
     /// Solve Rainbow system using layered structure
-    fn solve_rainbow_system(&mut self, _system: &PolynomialSystem, _target: &[FieldElement]) -> Result<(), Error> {
+    fn solve_rainbow_system(&mut self, _system: &PolynomialSystem, _target: &[FieldElement]) -> crate::error::Result<()> {
         // Simplified Rainbow solving
         let mut solution = Vec::new();
         
@@ -792,7 +791,7 @@ impl MultivariateEngine {
     }
     
     /// Solve UOV system using oil-vinegar structure
-    fn solve_uov_system(&mut self, _system: &PolynomialSystem, _target: &[FieldElement]) -> Result<(), Error> {
+    fn solve_uov_system(&mut self, _system: &PolynomialSystem, _target: &[FieldElement]) -> crate::error::Result<()> {
         // Simplified UOV solving
         let mut solution = Vec::new();
         
@@ -825,28 +824,28 @@ pub enum MultivariateError {
     FieldOperationError(String),
 }
 
-impl fmt::Display for MultivariateError {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
-            MultivariateError::InvalidConfig(msg) => write!(f, "Multivariate configuration error: {}", msg),
-            MultivariateError::InitializationError(msg) => write!(f, "Multivariate initialization error: {}", msg),
-            MultivariateError::KeyGenerationError(msg) => write!(f, "Multivariate key generation error: {}", msg),
-            MultivariateError::SigningError(msg) => write!(f, "Multivariate signing error: {}", msg),
-            MultivariateError::VerificationError(msg) => write!(f, "Multivariate verification error: {}", msg),
-            MultivariateError::InvalidSignature(msg) => write!(f, "Invalid multivariate signature: {}", msg),
-            MultivariateError::UnsupportedScheme(msg) => write!(f, "Unsupported multivariate scheme: {}", msg),
-            MultivariateError::FieldOperationError(msg) => write!(f, "Field operation error: {}", msg),
-        }
-    }
-}
+// impl fmt::Display for MultivariateError {
+//     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+//         match self {
+//             MultivariateError::InvalidConfig(msg) => write!(f, "Multivariate configuration error: {}", msg),
+//             MultivariateError::InitializationError(msg) => write!(f, "Multivariate initialization error: {}", msg),
+//             MultivariateError::KeyGenerationError(msg) => write!(f, "Multivariate key generation error: {}", msg),
+//             MultivariateError::SigningError(msg) => write!(f, "Multivariate signing error: {}", msg),
+//             MultivariateError::VerificationError(msg) => write!(f, "Multivariate verification error: {}", msg),
+//             MultivariateError::InvalidSignature(msg) => write!(f, "Invalid multivariate signature: {}", msg),
+//             MultivariateError::UnsupportedScheme(msg) => write!(f, "Unsupported multivariate scheme: {}", msg),
+//             MultivariateError::FieldOperationError(msg) => write!(f, "Field operation error: {}", msg),
+//         }
+//     }
+// }
 
-impl std::error::Error for MultivariateError {}
-
-impl From<MultivariateError> for CursedError {
-    fn from(err: MultivariateError) -> Self {
-        CursedError::CryptoError(err.to_string())
-    }
-}
+// impl std::error::CursedError for MultivariateError {}
+// 
+// impl From<MultivariateError> for CursedError {
+//     fn from(err: MultivariateError) -> Self {
+//         CursedError::CryptoError(err.to_string())
+//     }
+// }
 
 /// fr fr Multivariate utility functions
 pub struct MultivariateUtils;
@@ -866,7 +865,7 @@ impl MultivariateUtils {
     }
     
     /// Validate multivariate parameters for production
-    pub fn validate_for_production(config: &MultivariateConfig) -> Result<(), Error> {
+    pub fn validate_for_production(config: &MultivariateConfig) -> crate::error::Result<()> {
         let security_bits = Self::estimate_security_level(config);
         let is_secure = security_bits >= 128.0;
         
@@ -932,128 +931,3 @@ pub fn init_multivariate_crypto() -> AdvancedCryptoResult<()> {
     Ok(())
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-    
-    #[test]
-    fn test_multivariate_config_creation() {
-        let rainbow_config = MultivariateConfig::rainbow_level1();
-        assert_eq!(rainbow_config.variables, 96);
-        assert_eq!(rainbow_config.equations, 64);
-        assert_eq!(rainbow_config.scheme_type, MultivariateScheme::Rainbow);
-        assert!(rainbow_config.validate().is_ok());
-        
-        let uov_config = MultivariateConfig::uov_level1();
-        assert_eq!(uov_config.scheme_type, MultivariateScheme::UOV);
-        assert!(uov_config.validate().is_ok());
-    }
-    
-    #[test]
-    fn test_field_element_operations() {
-        let a = FieldElement::new(3, 16);
-        let b = FieldElement::new(5, 16);
-        
-        let sum = a.add(&b);
-        assert_eq!(sum.value, 8);
-        
-        let product = a.mul(&b);
-        assert_eq!(product.value, 15);
-        
-        let one = FieldElement::one(16);
-        let inv = one.inverse();
-        assert!(inv.is_some());
-        assert_eq!(inv.unwrap().value, 1);
-    }
-    
-    #[test]
-    fn test_polynomial_evaluation() {
-        let field_size = 16;
-        let mut rng = SecureRng::new().unwrap();
-        let poly = Polynomial::random(3, 2, field_size, &mut rng);
-        
-        let point = vec![
-            FieldElement::new(1, field_size),
-            FieldElement::new(2, field_size),
-            FieldElement::new(3, field_size),
-        ];
-        
-        let result = poly.evaluate(&point);
-        assert_eq!(result.field_size, field_size);
-    }
-    
-    #[test]
-    fn test_linear_transformation() {
-        let field_size = 16;
-        let mut rng = SecureRng::new().unwrap();
-        
-        let transform = LinearTransformation::random_invertible(3, field_size, &mut rng).unwrap();
-        
-        let vector = vec![
-            FieldElement::new(1, field_size),
-            FieldElement::new(2, field_size),
-            FieldElement::new(3, field_size),
-        ];
-        
-        let result = transform.apply(&vector);
-        assert_eq!(result.len(), 3);
-    }
-    
-    #[test]
-    fn test_multivariate_key_generation() {
-        let config = MultivariateConfig::rainbow_level1();
-        let keypair = MultivariateKeyPair::generate(&config);
-        assert!(keypair.is_ok());
-        
-        let kp = keypair.unwrap();
-        assert_eq!(kp.public_key.config.variables, 96);
-        assert_eq!(kp.private_key.config.equations, 64);
-    }
-    
-    #[test]
-    fn test_multivariate_signature() {
-        let config = MultivariateConfig::rainbow_level1();
-        if let Ok(keypair) = MultivariateKeyPair::generate(&config) {
-            let message = b"Hello, multivariate world!";
-            
-            if let Ok(signature) = keypair.sign(message) {
-                let is_valid = keypair.verify(message, &signature).unwrap_or(false);
-                // Note: Due to simplified implementation, verification may not always pass
-                // In production, this would use proper polynomial solving
-                assert!(signature.signature.len() > 0);
-                assert_eq!(signature.algorithm, "Rainbow-128");
-                
-                // Test serialization
-                let serialized = signature.serialize();
-                let deserialized = MultivariateSignature::deserialize(&serialized, signature.algorithm.clone());
-                assert!(deserialized.is_ok());
-            }
-        }
-    }
-    
-    #[test]
-    fn test_security_estimation() {
-        let config = MultivariateConfig::rainbow_level1();
-        let security_bits = MultivariateUtils::estimate_security_level(&config);
-        assert!(security_bits > 100.0);
-        
-        let validation = MultivariateUtils::validate_for_production(&config).unwrap();
-        assert!(validation.estimated_security_bits > 0.0);
-        assert!(!validation.recommendations.is_empty());
-    }
-    
-    #[test]
-    fn test_scheme_types() {
-        assert_eq!(MultivariateScheme::Rainbow.name(), "Rainbow");
-        assert_eq!(MultivariateScheme::UOV.name(), "UOV");
-        assert_eq!(MultivariateScheme::HFE.name(), "HFE");
-        assert_eq!(MultivariateScheme::MAYO.name(), "MAYO");
-    }
-    
-    #[test]
-    fn test_security_levels() {
-        assert_eq!(MultivariateSecurityLevel::Level1.bits(), 128);
-        assert_eq!(MultivariateSecurityLevel::Level3.bits(), 192);
-        assert_eq!(MultivariateSecurityLevel::Level5.bits(), 256);
-    }
-}

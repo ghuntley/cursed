@@ -1,8 +1,7 @@
-use crate::error::Error;
+use crate::error::CursedError;
 /// Rate limiter implementation for VibeNet
 
 use std::time::Duration;
-use crate::error::CursedError;
 use super::{NetResult, VibeContext};
 
 /// RateLimiterVibe implements rate limiting functionality

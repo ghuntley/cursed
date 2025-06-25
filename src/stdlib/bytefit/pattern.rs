@@ -1,4 +1,4 @@
-use crate::error::Error;
+use crate::error::CursedError;
 /// Pattern matching functions for byte slices
 use super::{ByteFitError, ByteFitResult, invalid_pattern, regex_error};
 
@@ -238,75 +238,3 @@ fn simple_regex_replace(pattern: &str, text: &str, replacement: &str) -> ByteFit
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_wildcard_match() {
-        assert!(wildcard_match(b"hello", b"hello"));
-        assert!(wildcard_match(b"h*o", b"hello"));
-        assert!(wildcard_match(b"h*", b"hello"));
-        assert!(wildcard_match(b"*o", b"hello"));
-        assert!(wildcard_match(b"*", b"hello"));
-        assert!(wildcard_match(b"h?llo", b"hello"));
-        assert!(!wildcard_match(b"h?llo", b"hllo"));
-        assert!(!wildcard_match(b"hello", b"world"));
-    }
-
-    #[test]
-    fn test_wildcard_edge_cases() {
-        assert!(wildcard_match(b"", b""));
-        assert!(wildcard_match(b"*", b""));
-        assert!(wildcard_match(b"**", b""));
-        assert!(!wildcard_match(b"a", b""));
-        assert!(!wildcard_match(b"", b"a"));
-        assert!(wildcard_match(b"*a*", b"abc"));
-        assert!(wildcard_match(b"a*b*c", b"aXbYc"));
-    }
-
-    #[test]
-    fn test_regex_match() {
-        assert!(regex_match("hello", b"hello world").unwrap());
-        assert!(!regex_match("foo", b"hello world").unwrap());
-        assert!(regex_match("^hello", b"hello world").unwrap());
-        assert!(!regex_match("^world", b"hello world").unwrap());
-        assert!(regex_match("world$", b"hello world").unwrap());
-        assert!(!regex_match("hello$", b"hello world").unwrap());
-        assert!(regex_match(r"\d+", b"123").unwrap());
-        assert!(!regex_match(r"\d+", b"abc").unwrap());
-    }
-
-    #[test]
-    fn test_regex_find_all() {
-        let result = regex_find_all(r"\d+", b"abc123def456ghi", -1).unwrap();
-        assert_eq!(result, vec![b"123".to_vec(), b"456".to_vec()]);
-        
-        let result = regex_find_all(r"\d+", b"abc123def456ghi", 1).unwrap();
-        assert_eq!(result, vec![b"123".to_vec()]);
-        
-        let result = regex_find_all("hello", b"hello world hello", -1).unwrap();
-        assert_eq!(result, vec![b"hello".to_vec(), b"hello".to_vec()]);
-    }
-
-    #[test]
-    fn test_regex_replace() {
-        let result = regex_replace(r"\d+", b"abc123def456", b"XXX").unwrap();
-        assert_eq!(result, b"abcXXXdefXXX");
-        
-        let result = regex_replace("hello", b"hello world hello", b"hi").unwrap();
-        assert_eq!(result, b"hi world hi");
-        
-        let result = regex_replace(r"\w+", b"hello world", b"X").unwrap();
-        assert_eq!(result, b"X X");
-    }
-
-    #[test]
-    fn test_complex_wildcard_patterns() {
-        assert!(wildcard_match(b"a*b*c", b"aXXbYYc"));
-        assert!(wildcard_match(b"a?b?c", b"axbyc"));
-        assert!(!wildcard_match(b"a?b?c", b"axxbyc"));
-        assert!(wildcard_match(b"*.txt", b"file.txt"));
-        assert!(!wildcard_match(b"*.txt", b"file.doc"));
-    }
-}

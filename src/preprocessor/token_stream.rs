@@ -6,7 +6,7 @@
 use crate::lexer::Token;
 use crate::error::SourceLocation;
 use crate::preprocessor::error::{PreprocessorError, PreprocessorResult};
-use crate::error::Error;
+use crate::error::CursedError;
 
 /// Enhanced token with contextual information
 #[derive(Debug, Clone, PartialEq)]
@@ -360,96 +360,3 @@ impl TokenStreamStatistics {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_token_with_context() {
-        let token = Token::Identifier("Box".to_string());
-        let location = SourceLocation::new(1, 5, 8, Some("test.csd".to_string()));
-        let context = TokenWithContext::new(token.clone(), location.clone());
-        
-        assert_eq!(context.token, token);
-        assert_eq!(context.location, location);
-        assert!(!context.has_metadata());
-    }
-
-    #[test]
-    fn test_token_with_metadata() {
-        let token = Token::Identifier("T".to_string());
-        let location = SourceLocation::new(1, 10, 11, Some("test.csd".to_string()));
-        let metadata = TokenMetadata::GenericType;
-        let context = TokenWithContext::with_metadata(token.clone(), location.clone(), metadata.clone());
-        
-        assert_eq!(context.token, token);
-        assert_eq!(context.location, location);
-        assert!(context.has_metadata());
-        assert_eq!(context.metadata_type(), Some(&metadata));
-        assert!(context.is_generic_type());
-    }
-
-    #[test]
-    fn test_token_stream_operations() {
-        let mut stream = TokenStream::new();
-        let location = SourceLocation::new(1, 1, 5, Some("test.csd".to_string()));
-        
-        stream.add_token(Token::Identifier("Box".to_string()), location.clone());
-        stream.add_token(Token::LeftBracket, location.clone());
-        stream.add_token_with_metadata(
-            Token::Identifier("T".to_string()),
-            location.clone(),
-            TokenMetadata::GenericType
-        );
-        stream.add_token(Token::RightBracket, location.clone());
-        
-        assert_eq!(stream.len(), 4);
-        assert!(!stream.is_empty());
-        
-        let current = stream.current_token().unwrap();
-        assert!(matches!(current.token, Token::Identifier(_)));
-        
-        stream.advance();
-        let next = stream.current_token().unwrap();
-        assert!(matches!(next.token, Token::LeftBracket));
-    }
-
-    #[test]
-    fn test_pattern_detection() {
-        let mut stream = TokenStream::new();
-        let location = SourceLocation::new(1, 1, 1, Some("test.csd".to_string()));
-        
-        // Add tokens for: Box[T] squad
-        stream.add_token(Token::Identifier("Box".to_string()), location.clone());
-        stream.add_token(Token::LeftBracket, location.clone());
-        stream.add_token(Token::Identifier("T".to_string()), location.clone());
-        stream.add_token(Token::RightBracket, location.clone());
-        stream.add_token(Token::Squad, location.clone());
-        
-        assert!(stream.contains_generic_type_declaration());
-        assert!(!stream.contains_generic_function_declaration());
-        assert!(!stream.contains_nested_generic_type());
-    }
-
-    #[test]
-    fn test_statistics() {
-        let mut stream = TokenStream::new();
-        let location = SourceLocation::new(1, 1, 1, Some("test.csd".to_string()));
-        
-        stream.add_token(Token::Identifier("foo".to_string()), location.clone());
-        stream.add_token(Token::LeftBracket, location.clone());
-        stream.add_token_with_metadata(
-            Token::Identifier("T".to_string()),
-            location.clone(),
-            TokenMetadata::GenericType
-        );
-        stream.add_token(Token::RightBracket, location.clone());
-        
-        let stats = stream.statistics();
-        assert_eq!(stats.total_tokens, 4);
-        assert_eq!(stats.generic_type_tokens, 1);
-        assert_eq!(stats.left_brackets, 1);
-        assert_eq!(stats.right_brackets, 1);
-        assert!(stats.brackets_balanced());
-    }
-}

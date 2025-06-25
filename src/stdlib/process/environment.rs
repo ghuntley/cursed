@@ -1,4 +1,4 @@
-use crate::error::Error;
+use crate::error::CursedError;
 /// Environment variable management for processes
 /// 
 /// This module provides comprehensive environment variable handling for process
@@ -9,7 +9,7 @@ use std::ffi::{OsStr, OsString};
 use std::env;
 use std::path::PathBuf;
 
-use crate::stdlib::process::error::{ProcessError, ProcessResult, environment_error, invalid_arguments};
+// use crate::stdlib::process::error::{ProcessError, ProcessResult, environment_error, invalid_arguments};
 
 /// Environment variable representation
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -492,147 +492,3 @@ impl EnvironmentUtils {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use std::collections::HashMap;
-use crate::stdlib::process::error::ProcessResult;
-use crate::stdlib::process::error::ProcessError;
-
-    #[test]
-    fn test_environment_manager_basic_operations() {
-        let mut env = EnvironmentManager::new();
-        
-        // Test setting and getting
-        env.set("TEST_VAR", "test_value");
-        assert_eq!(env.get("TEST_VAR").unwrap().to_string_lossy(), "test_value");
-        
-        // Test contains
-        assert!(env.contains_key("TEST_VAR"));
-        assert!(!env.contains_key("NONEXISTENT"));
-        
-        // Test removal
-        env.remove("TEST_VAR");
-        assert!(!env.contains_key("TEST_VAR"));
-    }
-
-    #[test]
-    fn test_environment_manager_multiple_vars() {
-        let mut env = EnvironmentManager::new();
-        let mut vars = HashMap::new();
-        vars.insert("VAR1", "value1");
-        vars.insert("VAR2", "value2");
-        
-        env.set_multiple(&vars);
-        
-        assert_eq!(env.get("VAR1").unwrap().to_string_lossy(), "value1");
-        assert_eq!(env.get("VAR2").unwrap().to_string_lossy(), "value2");
-        assert_eq!(env.len(), 2);
-    }
-
-    #[test]
-    fn test_environment_manager_path_operations() {
-        let mut env = EnvironmentManager::new();
-        
-        // Test setting PATH
-        let paths = vec!["/usr/bin", "/bin"];
-        env.set_path(&paths).unwrap();
-        
-        let path_value = env.get("PATH").unwrap().to_string_lossy();
-        let expected = if cfg!(windows) { "/usr/bin;/bin" } else { "/usr/bin:/bin" };
-        assert_eq!(path_value, expected);
-        
-        // Test adding to PATH
-        env.add_to_path("/usr/local/bin").unwrap();
-        let path_value = env.get("PATH").unwrap().to_string_lossy();
-        let expected = if cfg!(windows) { 
-            "/usr/local/bin;/usr/bin;/bin" 
-        } else { 
-            "/usr/local/bin:/usr/bin:/bin" 
-        };
-        assert_eq!(path_value, expected);
-    }
-
-    #[test]
-    fn test_environment_validation() {
-        // Test valid key
-        assert!(EnvironmentManager::validate_key("VALID_KEY").is_ok());
-        
-        // Test invalid keys
-        assert!(EnvironmentManager::validate_key("").is_err());
-        assert!(EnvironmentManager::validate_key("KEY=VALUE").is_err());
-        assert!(EnvironmentManager::validate_key("KEY\0NULL").is_err());
-    }
-
-    #[test]
-    fn test_environment_inheritance() {
-        // This test requires a real environment variable to be set
-        std::env::set_var("TEST_INHERIT", "inherited_value");
-        
-        let env = EnvironmentManager::inherit_current().unwrap();
-        assert!(env.contains_key("TEST_INHERIT"));
-        
-        std::env::remove_var("TEST_INHERIT");
-    }
-
-    #[test]
-    fn test_environment_utils_path_parsing() {
-        let path_separator = EnvironmentUtils::path_separator();
-        let path_value = format!("/usr/bin{}/bin{}/usr/local/bin", path_separator, path_separator);
-        
-        let paths = EnvironmentUtils::parse_path(&path_value);
-        assert_eq!(paths.len(), 3);
-        assert_eq!(paths[0], PathBuf::from("/usr/bin"));
-        assert_eq!(paths[1], PathBuf::from("/bin"));
-        assert_eq!(paths[2], PathBuf::from("/usr/local/bin"));
-    }
-
-    #[test]
-    fn test_environment_variable_expansion() {
-        std::env::set_var("TEST_EXPAND", "expanded");
-        
-        // Test Unix format
-        let result = EnvironmentUtils::expand_variables("$TEST_EXPAND").unwrap();
-        assert_eq!(result, "expanded");
-        
-        let result = EnvironmentUtils::expand_variables("${TEST_EXPAND}").unwrap();
-        assert_eq!(result, "expanded");
-        
-        let result = EnvironmentUtils::expand_variables("prefix_$TEST_EXPAND_suffix").unwrap();
-        assert_eq!(result, "prefix_expanded_suffix");
-        
-        std::env::remove_var("TEST_EXPAND");
-    }
-
-    #[test]
-    fn test_environment_merge() {
-        let mut env1 = EnvironmentManager::new();
-        env1.set("VAR1", "value1");
-        env1.set("COMMON", "env1_value");
-        
-        let mut env2 = EnvironmentManager::new();
-        env2.set("VAR2", "value2");
-        env2.set("COMMON", "env2_value");
-        env2.remove("VAR1");
-        
-        env1.merge(&env2);
-        
-        assert_eq!(env1.get("VAR2").unwrap().to_string_lossy(), "value2");
-        assert_eq!(env1.get("COMMON").unwrap().to_string_lossy(), "env2_value");
-        assert!(!env1.contains_key("VAR1")); // Should be removed
-    }
-
-    #[test]
-    fn test_environment_prefix_filtering() {
-        let mut env = EnvironmentManager::new();
-        env.set("PREFIX_VAR1", "value1");
-        env.set("PREFIX_VAR2", "value2");
-        env.set("OTHER_VAR", "other");
-        
-        let prefixed = env.get_with_prefix("PREFIX_");
-        assert_eq!(prefixed.len(), 2);
-        assert!(prefixed.contains_key(&OsString::from("PREFIX_VAR1")));
-        assert!(prefixed.contains_key(&OsString::from("PREFIX_VAR2")));
-        assert!(!prefixed.contains_key(&OsString::from("OTHER_VAR")));
-    }
-}

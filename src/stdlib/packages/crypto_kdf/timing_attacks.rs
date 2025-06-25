@@ -3,7 +3,7 @@
 /// This module provides utilities to prevent timing attacks in cryptographic
 /// key derivation functions.
 
-use crate::stdlib::packages::crypto_kdf::KdfResult;
+// use crate::stdlib::packages::crypto_kdf::KdfResult;
 
 /// slay Constant-time comparison for KDF outputs
 pub fn constant_time_compare(a: &[u8], b: &[u8]) -> bool {

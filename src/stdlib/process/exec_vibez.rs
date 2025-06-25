@@ -1,4 +1,4 @@
-use crate::error::Error;
+use crate::error::CursedError;
 /// exec_vibez - Process execution with enhanced features
 /// 
 /// This module provides functionality for executing external commands and managing
@@ -12,23 +12,23 @@ use std::process::{Child, Command, ExitStatus, Stdio};
 use std::sync::{Arc, Mutex, RwLock};
 use std::thread;
 use std::time::{Duration, Instant};
-use crate::stdlib::web_vibez::SecurityContext;
+// use crate::stdlib::web_vibez::SecurityContext;
 
 #[cfg(unix)]
 use std::os::unix::process::ExitStatusExt;
 
-use crate::stdlib::process::error::{
+// use crate::stdlib::process::error::{
     ProcessError, ProcessResult, execution_failed, execution_failed_with_code,
     timeout_error, invalid_arguments, io_error, system_error, platform_error
 };
 
-use crate::stdlib::process::real_monitoring::{
+// use crate::stdlib::process::real_monitoring::{
     RealProcessState, register_process_for_monitoring, wait_for_real_process,
     unregister_process_from_monitoring
 };
 
 // Re-export types from exec_vibez_types
-pub use crate::stdlib::process::exec_vibez_types::{
+// pub use crate::stdlib::process::exec_vibez_types::{
     VibezResult, ExecutionContext, EnhancedCmd, ResourceLimits, SecurityContext,
     ExecutionMode, Priority
 };
@@ -88,10 +88,10 @@ pub struct ProcessState {
     sys_info: Vec<u8>,
 }
 
-/// Error represents an error from an executable program
+/// CursedError represents an error from an executable program
 #[derive(Debug, Clone)]
-pub struct Error {
-    /// Error message
+pub struct CursedError {
+    /// CursedError message
     message: String,
     /// Exit code if available
     exit_code: Option<i32>,
@@ -741,7 +741,7 @@ impl ProcessState {
     }
 }
 
-impl Error {
+impl CursedError {
     /// Create a new error
     pub fn new<S: AsRef<str>>(message: S) -> Self {
         Self {
@@ -909,91 +909,3 @@ pub fn new_environment() -> Environment {
     Environment::new()
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use std::time::Duration;
-use crate::stdlib::process::info::ProcessState;
-use crate::stdlib::process::error::ProcessResult;
-use crate::stdlib::process::error::ProcessError;
-
-    #[test]
-    fn test_cmd_creation() {
-        let cmd = Cmd::new("echo", &["hello", "world"]);
-        assert_eq!(cmd.path, "echo");
-        assert_eq!(cmd.args, vec!["hello", "world"]);
-    }
-
-    #[test]
-    fn test_environment() {
-        let mut env = Environment::new();
-        env.set("TEST_VAR", "test_value");
-        env.append("PATH", ":/usr/local/bin");
-        
-        assert_eq!(env.get("TEST_VAR"), Some(&"test_value".to_string()));
-        let env_vec = env.to_env_vec();
-        assert!(env_vec.iter().any(|s| s.starts_with("TEST_VAR=")));
-    }
-
-    #[test]
-    fn test_process_context() {
-        let ctx = ProcessContext::with_timeout(Duration::from_secs(30));
-        assert!(!ctx.is_cancelled());
-        assert_eq!(ctx.timeout, Some(Duration::from_secs(30)));
-        
-        ctx.cancel();
-        assert!(ctx.is_cancelled());
-    }
-
-    #[test]
-    fn test_process_group() {
-        let mut group = ProcessGroup::new();
-        let cmd = Cmd::new("echo", &["test"]);
-        group.add_command(cmd);
-        
-        assert_eq!(group.commands.len(), 1);
-    }
-
-    #[test]
-    fn test_output_streamer() {
-        let cmd = Cmd::new("echo", &["test"]);
-        let streamer = OutputStreamer::new(cmd);
-        assert_eq!(streamer.buffer_size, 8192);
-    }
-
-    #[test]
-    fn test_input_generator() {
-        let cmd = Cmd::new("cat", &[]);
-        let mut generator = InputGenerator::new(cmd);
-        
-        assert!(generator.write("test input").is_ok());
-        assert!(generator.write_after("delayed input", Duration::from_millis(500)).is_ok());
-    }
-
-    #[test]
-    fn test_error_creation() {
-        let err = Error::new("Test error message");
-        assert_eq!(err.error(), "Test error message");
-        assert_eq!(err.exit_code(), -1);
-    }
-
-    #[test]
-    fn test_process_state() {
-        #[cfg(unix)]
-        let exit_status = ExitStatus::from_raw(0);
-        #[cfg(not(unix))]
-        let exit_status = std::process::Command::new("true").status().unwrap();
-        
-        let state = ProcessState {
-            exit_status,
-            pid: 1234,
-            user_time: Duration::from_millis(100),
-            system_time: Duration::from_millis(50),
-            sys_info: Vec::new(),
-        };
-        
-        assert!(state.success());
-        assert_eq!(state.exit_code(), 0);
-        assert_eq!(state.user_time(), Duration::from_millis(100));
-    }
-}

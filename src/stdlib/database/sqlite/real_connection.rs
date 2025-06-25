@@ -10,7 +10,7 @@ use rusqlite::{Connection, OpenFlags, params, types::Value as SqliteValue};
 use super::{SqliteError, SqliteResult, SqliteConfig, SqliteStats};
 use super::super::{DriverConn, DatabaseError, SqlValue, TxOptions, DriverStmt, DriverTx};
 use super::super::driver::{QueryResult, ExecuteResult, ConnectionMetadata};
-use crate::error::Error;
+use crate::error::CursedError;
 
 /// Real SQLite connection implementation
 #[derive(Debug)]
@@ -78,13 +78,13 @@ impl RealSqliteConnection {
 }
 
 impl DriverConn for RealSqliteConnection {
-    fn prepare(&self, query: &str) -> Result<(), Error> {
+    fn prepare(&self, query: &str) -> crate::error::Result<()> {
         let stmt = RealSqliteStatement::new(self.handle.clone(), query)
             .map_err(|e| DatabaseError::new(super::super::DatabaseErrorKind::QueryError, &e.to_string()))?;
         Ok(Box::new(stmt))
     }
 
-    fn query(&self, query: &str, args: &[SqlValue]) -> Result<(), Error> {
+    fn query(&self, query: &str, args: &[SqlValue]) -> crate::error::Result<()> {
         let handle = self.handle.lock().unwrap();
         if let Some(ref conn) = *handle {
             let mut stmt = conn.prepare(query)
@@ -126,7 +126,7 @@ impl DriverConn for RealSqliteConnection {
         }
     }
 
-    fn execute(&self, query: &str, args: &[SqlValue]) -> Result<(), Error> {
+    fn execute(&self, query: &str, args: &[SqlValue]) -> crate::error::Result<()> {
         let handle = self.handle.lock().unwrap();
         if let Some(ref conn) = *handle {
             let mut stmt = conn.prepare(query)
@@ -151,7 +151,7 @@ impl DriverConn for RealSqliteConnection {
         }
     }
 
-    fn begin_transaction(&self, opts: TxOptions) -> Result<(), Error> {
+    fn begin_transaction(&self, opts: TxOptions) -> crate::error::Result<()> {
         let handle = self.handle.lock().unwrap();
         if let Some(ref _conn) = *handle {
             let tx = RealSqliteTransaction::new(self.handle.clone(), opts)
@@ -165,7 +165,7 @@ impl DriverConn for RealSqliteConnection {
         }
     }
 
-    fn ping(&self) -> Result<(), Error> {
+    fn ping(&self) -> crate::error::Result<()> {
         let handle = self.handle.lock().unwrap();
         if let Some(ref conn) = *handle {
             conn.execute("SELECT 1", [])
@@ -179,7 +179,7 @@ impl DriverConn for RealSqliteConnection {
         }
     }
 
-    fn close(&self) -> Result<(), Error> {
+    fn close(&self) -> crate::error::Result<()> {
         let mut handle = self.handle.lock().unwrap();
         if let Some(conn) = handle.take() {
             drop(conn); // Close the connection
@@ -225,7 +225,7 @@ pub struct RealSqliteStatement {
 }
 
 impl RealSqliteStatement {
-    pub fn new(connection: Arc<Mutex<Option<Connection>>>, query: &str) -> Result<(), Error> {
+    pub fn new(connection: Arc<Mutex<Option<Connection>>>, query: &str) -> crate::error::Result<()> {
         Ok(Self {
             query: query.to_string(),
             connection,
@@ -234,7 +234,7 @@ impl RealSqliteStatement {
 }
 
 impl DriverStmt for RealSqliteStatement {
-    fn execute(&self, args: &[SqlValue]) -> Result<(), Error> {
+    fn execute(&self, args: &[SqlValue]) -> crate::error::Result<()> {
         let handle = self.connection.lock().unwrap();
         if let Some(ref conn) = *handle {
             let mut stmt = conn.prepare(&self.query)
@@ -259,7 +259,7 @@ impl DriverStmt for RealSqliteStatement {
         }
     }
 
-    fn query(&self, args: &[SqlValue]) -> Result<(), Error> {
+    fn query(&self, args: &[SqlValue]) -> crate::error::Result<()> {
         let handle = self.connection.lock().unwrap();
         if let Some(ref conn) = *handle {
             let mut stmt = conn.prepare(&self.query)
@@ -301,7 +301,7 @@ impl DriverStmt for RealSqliteStatement {
         }
     }
 
-    fn close(&self) -> Result<(), Error> {
+    fn close(&self) -> crate::error::Result<()> {
         Ok(())
     }
 
@@ -329,7 +329,7 @@ pub struct RealSqliteTransaction {
 }
 
 impl RealSqliteTransaction {
-    pub fn new(connection: Arc<Mutex<Option<Connection>>>, opts: TxOptions) -> Result<(), Error> {
+    pub fn new(connection: Arc<Mutex<Option<Connection>>>, opts: TxOptions) -> crate::error::Result<()> {
         {
             let handle = connection.lock().unwrap();
             if let Some(ref conn) = *handle {
@@ -347,7 +347,7 @@ impl RealSqliteTransaction {
 }
 
 impl DriverTx for RealSqliteTransaction {
-    fn commit(&self) -> Result<(), Error> {
+    fn commit(&self) -> crate::error::Result<()> {
         let handle = self.connection.lock().unwrap();
         if let Some(ref conn) = *handle {
             conn.execute("COMMIT", [])
@@ -356,7 +356,7 @@ impl DriverTx for RealSqliteTransaction {
         Ok(())
     }
 
-    fn rollback(&self) -> Result<(), Error> {
+    fn rollback(&self) -> crate::error::Result<()> {
         let handle = self.connection.lock().unwrap();
         if let Some(ref conn) = *handle {
             conn.execute("ROLLBACK", [])
@@ -365,13 +365,13 @@ impl DriverTx for RealSqliteTransaction {
         Ok(())
     }
 
-    fn prepare(&self, query: &str) -> Result<(), Error> {
+    fn prepare(&self, query: &str) -> crate::error::Result<()> {
         let stmt = RealSqliteStatement::new(self.connection.clone(), query)
             .map_err(|e| DatabaseError::new(super::super::DatabaseErrorKind::QueryError, &e.to_string()))?;
         Ok(Box::new(stmt))
     }
 
-    fn query(&self, query: &str, args: &[SqlValue]) -> Result<(), Error> {
+    fn query(&self, query: &str, args: &[SqlValue]) -> crate::error::Result<()> {
         let handle = self.connection.lock().unwrap();
         if let Some(ref conn) = *handle {
             let mut stmt = conn.prepare(query)
@@ -413,7 +413,7 @@ impl DriverTx for RealSqliteTransaction {
         }
     }
 
-    fn execute(&self, query: &str, args: &[SqlValue]) -> Result<(), Error> {
+    fn execute(&self, query: &str, args: &[SqlValue]) -> crate::error::Result<()> {
         let handle = self.connection.lock().unwrap();
         if let Some(ref conn) = *handle {
             let mut stmt = conn.prepare(query)
@@ -456,7 +456,7 @@ impl DriverTx for RealSqliteTransaction {
 }
 
 /// Convert CURSED SqlValue to rusqlite parameters
-fn convert_args_to_params(args: &[SqlValue]) -> Result<(), Error> {
+fn convert_args_to_params(args: &[SqlValue]) -> crate::error::Result<()> {
     let mut params = Vec::new();
     
     for arg in args {
@@ -478,7 +478,7 @@ fn convert_args_to_params(args: &[SqlValue]) -> Result<(), Error> {
 }
 
 /// Convert rusqlite value to CURSED SqlValue
-fn convert_value_from_sqlite(row: &rusqlite::Row, index: usize) -> Result<(), Error> {
+fn convert_value_from_sqlite(row: &rusqlite::Row, index: usize) -> crate::error::Result<()> {
     let value: SqliteValue = row.get(index)
         .map_err(|e| DatabaseError::new(super::super::DatabaseErrorKind::ConversionError, &format!("Failed to get column {}: {}", index, e)))?;
     

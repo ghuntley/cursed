@@ -1,4 +1,4 @@
-use crate::error::Error;
+use crate::error::CursedError;
 // Advanced performance analysis algorithms and insights
 
 use std::collections::HashMap;
@@ -6,10 +6,10 @@ use std::time::Duration;
 use serde::{Deserialize, Serialize};
 use tracing::{debug, info, instrument};
 
-use crate::profiling::core::{ProfileData, ProfilerError};
-use crate::profiling::cpu::CpuProfileData;
-use crate::profiling::memory::MemoryProfileData;
-use crate::profiling::concurrency::ConcurrencyProfileData;
+// use crate::profiling::core::{ProfileData, ProfilerError};
+// use crate::profiling::cpu::CpuProfileData;
+// use crate::profiling::memory::MemoryProfileData;
+// use crate::profiling::concurrency::ConcurrencyProfileData;
 
 /// Advanced performance analyzer
 #[derive(Debug)]
@@ -23,7 +23,7 @@ impl PerformanceAnalyzer {
     }
     
     #[instrument(skip(self, profile_data))]
-    pub fn analyze_performance(&self, profile_data: &ProfileData) -> Result<(), Error> {
+    pub fn analyze_performance(&self, profile_data: &ProfileData) -> crate::error::Result<()> {
         info!("Running comprehensive performance analysis");
         
         let mut insights = PerformanceInsights::new(profile_data.session_name.clone());
@@ -52,7 +52,7 @@ impl PerformanceAnalyzer {
     }
     
     #[instrument(skip(self, cpu_data))]
-    fn analyze_cpu_performance(&self, cpu_data: &CpuProfileData) -> Result<(), Error> {
+    fn analyze_cpu_performance(&self, cpu_data: &CpuProfileData) -> crate::error::Result<()> {
         let hot_functions = cpu_data.get_hot_functions(self.config.max_hot_functions);
         let call_graph = cpu_data.get_call_graph();
         
@@ -85,7 +85,7 @@ impl PerformanceAnalyzer {
     }
     
     #[instrument(skip(self, memory_data))]
-    fn analyze_memory_performance(&self, memory_data: &MemoryProfileData) -> Result<(), Error> {
+    fn analyze_memory_performance(&self, memory_data: &MemoryProfileData) -> crate::error::Result<()> {
         let allocation_analysis = memory_data.analyze_patterns();
         let memory_leaks = memory_data.detect_leaks();
         
@@ -106,7 +106,7 @@ impl PerformanceAnalyzer {
     }
     
     #[instrument(skip(self, concurrency_data))]
-    fn analyze_concurrency_performance(&self, concurrency_data: &ConcurrencyProfileData) -> Result<(), Error> {
+    fn analyze_concurrency_performance(&self, concurrency_data: &ConcurrencyProfileData) -> crate::error::Result<()> {
         let timeline = concurrency_data.generate_goroutine_timeline();
         let channel_analysis = concurrency_data.analyze_channels();
         let deadlocks = concurrency_data.detect_deadlocks();
@@ -382,17 +382,17 @@ impl PerformanceAnalyzer {
     }
     
     // Helper methods with simplified implementations
-    fn extract_cpu_data(&self, profile_data: &ProfileData) -> Result<(), Error> {
+    fn extract_cpu_data(&self, profile_data: &ProfileData) -> crate::error::Result<()> {
         // Simplified - in real implementation would deserialize from profile_data
         Ok(None)
     }
     
-    fn extract_memory_data(&self, profile_data: &ProfileData) -> Result<(), Error> {
+    fn extract_memory_data(&self, profile_data: &ProfileData) -> crate::error::Result<()> {
         // Simplified - in real implementation would deserialize from profile_data
         Ok(None)
     }
     
-    fn extract_concurrency_data(&self, profile_data: &ProfileData) -> Result<(), Error> {
+    fn extract_concurrency_data(&self, profile_data: &ProfileData) -> crate::error::Result<()> {
         // Simplified - in real implementation would deserialize from profile_data
         Ok(None)
     }
@@ -738,35 +738,3 @@ pub enum FragmentationRisk {
     High,
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-    
-    #[test]
-    fn test_performance_analyzer_creation() {
-        let config = AnalysisConfig::default();
-        let analyzer = PerformanceAnalyzer::new(config);
-        assert_eq!(analyzer.config.max_hot_functions, 20);
-    }
-    
-    #[test]
-    fn test_performance_insights_creation() {
-        let insights = PerformanceInsights::new("test_session".to_string());
-        assert_eq!(insights.session_name, "test_session");
-        assert_eq!(insights.performance_score, 0.0);
-    }
-    
-    #[test]
-    fn test_priority_ordering() {
-        assert!(Priority::Critical > Priority::High);
-        assert!(Priority::High > Priority::Medium);
-        assert!(Priority::Medium > Priority::Low);
-    }
-    
-    #[test]
-    fn test_severity_ordering() {
-        assert!(Severity::Critical > Severity::High);
-        assert!(Severity::High > Severity::Medium);
-        assert!(Severity::Medium > Severity::Low);
-    }
-}

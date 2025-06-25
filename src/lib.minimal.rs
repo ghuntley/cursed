@@ -40,13 +40,12 @@ pub mod execution;
 
 // Re-export core types only
 pub use common::OptimizationLevel;
+use crate::error::CursedError;
 
 // Re-export essential error handling
-pub use error::{Error, SourceLocation};
 
 /// Prelude module for minimal imports
 pub mod prelude {
-    pub use crate::error::{Error, SourceLocation};
 }
 
 /// Library version information
@@ -55,6 +54,8 @@ pub const NAME: &str = env!("CARGO_PKG_NAME");
 
 /// Initialize the minimal CURSED runtime environment
 pub fn init() {
+        // TODO: implement
+    }
     // Initialize minimal logging
     tracing_subscriber::fmt()
         .with_env_filter("cursed=info")
@@ -62,7 +63,7 @@ pub fn init() {
 }
 
 /// Compile and execute CURSED source code (minimal version)
-pub fn run(source: &str) -> Result<(), Error> {
+pub fn run(source: &str) -> crate::error::Result<()> {
     let mut execution_engine = execution::CursedExecutionEngine::new()?;
     let result = execution_engine.execute(source)?;
     
@@ -76,7 +77,7 @@ pub fn run(source: &str) -> Result<(), Error> {
 }
 
 /// Compile and execute CURSED source file (minimal version)
-pub fn run_file(path: &str) -> Result<(), Error> {
+pub fn run_file(path: &str) -> crate::error::Result<()> {
     let mut execution_engine = execution::CursedExecutionEngine::new()?;
     let result = execution_engine.execute_file(path)?;
     
@@ -90,7 +91,7 @@ pub fn run_file(path: &str) -> Result<(), Error> {
 }
 
 /// Compile CURSED source to LLVM IR (minimal version)
-pub fn compile_to_ir(source: &str) -> Result<String, Error> {
+pub fn compile_to_ir(source: &str) -> crate::error::Result<String> {
     tracing::info!("Compiling CURSED source to LLVM IR (minimal build)");
     
     let mut codegen = crate::codegen::LlvmCodeGenerator::new()?;
@@ -106,7 +107,7 @@ pub fn compile_to_ir(source: &str) -> Result<String, Error> {
 }
 
 /// Compile CURSED source to LLVM IR with optimization level
-pub fn compile_to_ir_with_optimization(source: &str, optimization_level: Option<&str>) -> Result<String, Error> {
+pub fn compile_to_ir_with_optimization(source: &str, optimization_level: Option<&str>) -> crate::error::Result<String> {
     tracing::info!("Compiling CURSED source to LLVM IR with optimization (minimal build)");
     
     let mut codegen = crate::codegen::LlvmCodeGenerator::new()?;
@@ -131,7 +132,7 @@ pub fn compile_to_ir_with_optimization(source: &str, optimization_level: Option<
 }
 
 /// Check CURSED source for errors without executing (minimal version)
-pub fn check(source: &str) -> Result<(), Error> {
+pub fn check(source: &str) -> crate::error::Result<()> {
     tracing::info!("Checking CURSED source for errors (minimal build)");
     
     let mut codegen = crate::codegen::LlvmCodeGenerator::new()?;
@@ -147,7 +148,7 @@ pub fn check(source: &str) -> Result<(), Error> {
 }
 
 /// Format CURSED source code (minimal version)
-pub fn format(source: &str) -> Result<String, Error> {
+pub fn format(source: &str) -> crate::error::Result<String> {
     tracing::info!("Formatting CURSED source code (minimal build)");
     
     // Create lexer and parser to validate syntax first
@@ -160,7 +161,7 @@ pub fn format(source: &str) -> Result<String, Error> {
     // Check for parse errors
     let errors = parser.errors();
     if !errors.is_empty() {
-        return Err(Error::Parse(format!("Cannot format source with parse errors: {}", errors.join(", "))));
+        return Err(CursedError::Parse(format!("Cannot format source with parse errors: {}", errors.join(", "))));
     }
     
     // Basic formatting - for now just return the original source

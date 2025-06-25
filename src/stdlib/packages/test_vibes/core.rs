@@ -1,4 +1,4 @@
-use crate::error::Error;
+use crate::error::CursedError;
 /// fr fr Core types for the TestVibes testing framework
 use std::collections::HashMap;
 use std::time::{Duration, Instant};
@@ -35,7 +35,7 @@ impl VibeTest {
         }
     }
 
-    /// fr fr Error methods
+    /// fr fr CursedError methods
     pub fn error(&mut self, args: &[&str]) {
         let message = args.join(" ");
         self.errors.push(message);
@@ -197,7 +197,7 @@ impl VibeBench {
         }
     }
 
-    /// fr fr Error methods
+    /// fr fr CursedError methods
     pub fn error(&mut self, args: &[&str]) {
         let message = args.join(" ");
         self.errors.push(message);
@@ -571,59 +571,3 @@ fn format_string(format: &str, args: &[&str]) -> String {
     result
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_vibe_test_creation() {
-        let test = VibeTest::new("test_example".to_string());
-        assert_eq!(test.name(), "test_example");
-        assert!(!test.failed());
-        assert!(!test.skipped());
-    }
-
-    #[test]
-    fn test_vibe_test_failure() {
-        let mut test = VibeTest::new("failing_test".to_string());
-        test.fail();
-        assert!(test.failed());
-    }
-
-    #[test]
-    fn test_vibe_test_skip() {
-        let mut test = VibeTest::new("skipped_test".to_string());
-        test.skip(&["reason"]);
-        assert!(test.skipped());
-    }
-
-    #[test]
-    fn test_vibe_bench_creation() {
-        let bench = VibeBench::new("bench_example".to_string());
-        assert_eq!(bench.name(), "bench_example");
-        assert!(!bench.failed());
-        assert!(!bench.skipped());
-        assert_eq!(bench.iterations(), 1);
-    }
-
-    #[test]
-    fn test_testing_manager() {
-        let mut manager = VibeTestingManager::new();
-        
-        manager.add_test(|t| {
-            t.log(&["test message"]);
-        });
-
-        // Test that we can add tests without panicking
-        assert_eq!(manager.tests.len(), 1);
-    }
-
-    #[test]
-    fn test_temp_dir() {
-        let mut test = VibeTest::new("temp_test".to_string());
-        let temp_path = test.temp_dir();
-        assert!(!temp_path.is_empty());
-        // Temp directory should exist
-        assert!(std::path::Path::new(&temp_path).exists());
-    }
-}

@@ -1,4 +1,4 @@
-use crate::error::Error;
+use crate::error::CursedError;
 #!/usr/bin/env rust
 // CURSED REPL - Interactive Read-Eval-Print Loop
 // 
@@ -17,6 +17,8 @@ use std::process;
 use cursed::repl::CursedRepl;
 
 fn main() {
+        // TODO: implement
+    }
     // Initialize the CURSED runtime
     cursed::init();
 
@@ -28,7 +30,7 @@ fn main() {
     match result {
         Ok(_) => process::exit(0),
         Err(e) => {
-            eprintln!("Error: {}", e);
+            eprintln!("CursedError: {}", e);
             process::exit(1);
         }
     }
@@ -81,7 +83,7 @@ fn build_cli() -> Command {
         )
 }
 
-fn run_repl(matches: &clap::ArgMatches) -> Result<(), Error> {
+fn run_repl(matches: &clap::ArgMatches) -> crate::error::Result<()> {
     let verbose = matches.get_flag("verbose");
     let enable_history = !matches.get_flag("no-history");
     let enable_syntax_highlighting = !matches.get_flag("no-syntax-highlighting");

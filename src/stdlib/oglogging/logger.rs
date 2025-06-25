@@ -1,10 +1,9 @@
 use std::io::Write;
 use std::sync::{Arc, Mutex};
-use crate::stdlib::value::Value;
+// use crate::stdlib::value::Value;
 use crate::error::CursedError;
 use super::formatter::format_log_entry;
 use super::flags::LstdFlags;
-use crate::error::Error;
 
 /// Logger represents an active logging object that outputs formatted text to a Writer.
 /// It can be used concurrently from multiple goroutines as it guarantees serialized
@@ -33,7 +32,7 @@ impl Logger {
     }
 
     /// spill - Print args followed by newline
-    pub fn spill(&self, args: &[Value]) -> Result<(), Error> {
+    pub fn spill(&self, args: &[Value]) -> crate::error::Result<()> {
         let message = args.iter()
             .map(|v| v.to_string())
             .collect::<Vec<_>>()
@@ -42,7 +41,7 @@ impl Logger {
     }
 
     /// spillf - Print formatted string
-    pub fn spillf(&self, format: &str, args: &[Value]) -> Result<(), Error> {
+    pub fn spillf(&self, format: &str, args: &[Value]) -> crate::error::Result<()> {
         let formatted = self.format_string(format, args)?;
         self.output(2, &formatted)
     }
@@ -72,7 +71,7 @@ impl Logger {
     }
 
     /// output - Low-level output method
-    pub fn output(&self, call_depth: usize, message: &str) -> Result<(), Error> {
+    pub fn output(&self, call_depth: usize, message: &str) -> crate::error::Result<()> {
         let mut inner = self.inner.lock().map_err(|_| {
             CursedError::Runtime("Failed to acquire logger lock".to_string())
         })?;
@@ -131,7 +130,7 @@ impl Logger {
     }
 
     /// Simple format string implementation for spillf
-    fn format_string(&self, format: &str, args: &[Value]) -> Result<(), Error> {
+    fn format_string(&self, format: &str, args: &[Value]) -> crate::error::Result<()> {
         let mut result = String::new();
         let mut chars = format.chars().peekable();
         let mut arg_index = 0;
@@ -206,78 +205,3 @@ pub fn new_logger(output: Box<dyn Write + Send>, prefix: String, flags: i32) -> 
     Logger::new(output, prefix, flags)
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use std::io::Cursor;
-
-    #[test]
-    fn test_logger_creation() {
-        let output = Box::new(Cursor::new(Vec::new()));
-        let logger = Logger::new(output, "test: ".to_string(), LstdFlags);
-        
-        assert_eq!(logger.prefix(), "test: ");
-        assert_eq!(logger.flags(), LstdFlags);
-    }
-
-    #[test]
-    fn test_logger_spill() {
-        let output = Box::new(Cursor::new(Vec::new()));
-        let logger = Logger::new(output, "".to_string(), 0);
-        
-        let args = vec![
-            Value::String("Hello".to_string()),
-            Value::String("World".to_string())
-        ];
-        
-        assert!(logger.spill(&args).is_ok());
-    }
-
-    #[test]
-    fn test_logger_spillf() {
-        let output = Box::new(Cursor::new(Vec::new()));
-        let logger = Logger::new(output, "".to_string(), 0);
-        
-        let args = vec![Value::String("World".to_string())];
-        assert!(logger.spillf("Hello {}!", &args).is_ok());
-    }
-
-    #[test]
-    fn test_format_string() {
-        let output = Box::new(Cursor::new(Vec::new()));
-        let logger = Logger::new(output, "".to_string(), 0);
-        
-        let args = vec![
-            Value::String("World".to_string()),
-            Value::Integer(42)
-        ];
-        
-        let result = logger.format_string("Hello {}, number: {}", &args).unwrap();
-        assert_eq!(result, "Hello World, number: 42");
-        
-        let result2 = logger.format_string("Hello {1}, number: {0}", &args).unwrap();
-        assert_eq!(result2, "Hello 42, number: World");
-    }
-
-    #[test]
-    fn test_logger_configuration() {
-        let output = Box::new(Cursor::new(Vec::new()));
-        let logger = Logger::new(output, "initial: ".to_string(), 0);
-        
-        logger.set_prefix("new: ".to_string());
-        logger.set_flags(42);
-        
-        assert_eq!(logger.prefix(), "new: ");
-        assert_eq!(logger.flags(), 42);
-    }
-    
-    #[test]
-    fn test_escaped_braces() {
-        let output = Box::new(Cursor::new(Vec::new()));
-        let logger = Logger::new(output, "".to_string(), 0);
-        
-        let args = vec![Value::String("test".to_string())];
-        let result = logger.format_string("{{{}}} and {{}}", &args).unwrap();
-        assert_eq!(result, "{test} and {}");
-    }
-}

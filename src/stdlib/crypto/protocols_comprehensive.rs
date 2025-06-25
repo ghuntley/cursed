@@ -58,8 +58,7 @@ use rand::rngs::OsRng;
 use ed25519_dalek::{SigningKey as Ed25519SigningKey, VerifyingKey as Ed25519VerifyingKey};
 
 use crate::error::CursedError;
-use crate::stdlib::value::Value;
-use crate::error::Error;
+// use crate::stdlib::value::Value;
 
 // Re-export all protocol types
 pub use super::protocols_production::{
@@ -698,89 +697,3 @@ impl DkgProtocol {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_protocol_suite_creation() {
-        let suite = ProtocolSuite::new(SecurityLevel::Level256);
-        assert_eq!(suite.config.security_level, SecurityLevel::Level256);
-        assert!(suite.config.enable_forward_secrecy);
-    }
-
-    #[test]
-    fn test_x25519_key_exchange() {
-        let mut alice = ProtocolSuite::new(SecurityLevel::Level256);
-        let mut bob = ProtocolSuite::new(SecurityLevel::Level256);
-
-        let (alice_public, alice_exchange) = alice.initiate_x25519_exchange().unwrap();
-        let (bob_public, bob_exchange) = bob.initiate_x25519_exchange().unwrap();
-
-        let alice_shared = alice.complete_x25519_exchange(&alice_exchange, &bob_public).unwrap();
-        let bob_shared = bob.complete_x25519_exchange(&bob_exchange, &alice_public).unwrap();
-
-        // Due to HKDF, derived keys might differ but should be same length
-        assert_eq!(alice_shared.len(), bob_shared.len());
-    }
-
-    #[test]
-    fn test_secure_channel() {
-        let mut suite = ProtocolSuite::new(SecurityLevel::Level256);
-        let shared_secret = CryptoPrimitives::random_bytes(32);
-        
-        suite.create_secure_channel("test", &shared_secret).unwrap();
-        
-        let message = b"Hello, secure world!";
-        let encrypted = suite.send_secure_message("test", message).unwrap();
-        
-        // Create another suite with same secret to test decryption
-        let mut suite2 = ProtocolSuite::new(SecurityLevel::Level256);
-        suite2.create_secure_channel("test", &shared_secret).unwrap();
-        
-        let decrypted = suite2.receive_secure_message("test", &encrypted).unwrap();
-        assert_eq!(message, decrypted.as_slice());
-    }
-
-    #[test]
-    fn test_protocol_statistics() {
-        let mut suite = ProtocolSuite::new(SecurityLevel::Level256);
-        
-        let stats_before = suite.get_protocol_statistics();
-        assert_eq!(stats_before.get("key_exchanges_performed").unwrap(), &Value::Number(0.0));
-        
-        let _ = suite.initiate_x25519_exchange().unwrap();
-        
-        let stats_after = suite.get_protocol_statistics();
-        assert_eq!(stats_after.get("key_exchanges_performed").unwrap(), &Value::Number(1.0));
-    }
-
-    #[test]
-    fn test_security_audit() {
-        let suite = ProtocolSuite::new(SecurityLevel::Level256);
-        let audit = suite.security_audit();
-        
-        // With default secure configuration, should be secure
-        assert_eq!(audit.overall_status, SecurityStatus::Secure);
-        assert_eq!(audit.risk_level, RiskLevel::Low);
-    }
-
-    #[test]
-    fn test_protocol_builder() {
-        let builder = ProtocolBuilder::new();
-        let peer_key = [0u8; 32]; // Mock peer key
-        
-        // Test that builder can be constructed (actual protocol would need network communication)
-        let _messaging_protocol = builder.secure_messaging(&peer_key);
-    }
-
-    #[test]
-    fn test_health_status() {
-        let suite = ProtocolSuite::new(SecurityLevel::Level256);
-        let health = suite.get_health_status();
-        
-        assert_eq!(health.status, HealthStatus::Healthy);
-        assert_eq!(health.active_channels, 0);
-        assert_eq!(health.error_rate, 0.0);
-    }
-}

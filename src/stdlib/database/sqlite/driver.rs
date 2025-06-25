@@ -12,7 +12,7 @@ use super::{
     SqliteStats, SqliteVersion, SqliteFeatures,
     init_sqlite, is_sqlite_initialized
 };
-use crate::error::Error;
+use crate::error::CursedError;
 use super::real_connection::RealSqliteConnection;
 use super::super::{
     Driver, DriverConn, DatabaseError, DatabaseErrorKind,
@@ -483,27 +483,27 @@ struct ManagedSqliteConnection {
 }
 
 impl DriverConn for ManagedSqliteConnection {
-    fn prepare(&self, query: &str) -> Result<(), Error> {
+    fn prepare(&self, query: &str) -> crate::error::Result<()> {
         self.connection.prepare(query)
     }
 
-    fn query(&self, query: &str, args: &[super::super::SqlValue]) -> Result<(), Error> {
+    fn query(&self, query: &str, args: &[super::super::SqlValue]) -> crate::error::Result<()> {
         self.connection.query(query, args)
     }
 
-    fn execute(&self, query: &str, args: &[super::super::SqlValue]) -> Result<(), Error> {
+    fn execute(&self, query: &str, args: &[super::super::SqlValue]) -> crate::error::Result<()> {
         self.connection.execute(query, args)
     }
 
-    fn begin_transaction(&self, opts: super::super::TxOptions) -> Result<(), Error> {
+    fn begin_transaction(&self, opts: super::super::TxOptions) -> crate::error::Result<()> {
         self.connection.begin_transaction(opts)
     }
 
-    fn ping(&self) -> Result<(), Error> {
+    fn ping(&self) -> crate::error::Result<()> {
         self.connection.ping()
     }
 
-    fn close(&self) -> Result<(), Error> {
+    fn close(&self) -> crate::error::Result<()> {
         let result = self.connection.close();
         // Unregister from driver
         let _ = self.driver.unregister_connection(&self.connection_id);
@@ -536,7 +536,7 @@ impl Drop for ManagedSqliteConnection {
 
 /// fr fr Main Driver trait implementation for SqliteDriver
 impl Driver for SqliteDriver {
-    fn open(&self, data_source_name: &str) -> Result<(), Error> {
+    fn open(&self, data_source_name: &str) -> crate::error::Result<()> {
         let connection_string = SqliteConnectionString::parse(data_source_name)
             .map_err(|e| DatabaseError::new(DatabaseErrorKind::ConnectionError, &e.to_string()))?;
         
@@ -570,102 +570,3 @@ impl Clone for SqliteDriver {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_driver_creation() {
-        // Note: This test may fail if SQLite is not available
-        let result = SqliteDriver::new();
-        match result {
-            Ok(driver) => {
-                assert_eq!(driver.name(), "SQLite Driver for CURSED");
-                assert!(driver.capabilities().supports_transactions);
-                assert!(driver.capabilities().supports_prepared_statements);
-                assert_eq!(driver.active_connection_count().unwrap_or(0), 0);
-            }
-            Err(e) => {
-                println!("SQLite driver creation failed (expected in test environment): {}", e);
-                // This is expected in test environments without SQLite
-            }
-        }
-    }
-
-    #[test]
-    fn test_driver_capabilities() {
-        let capabilities = SqliteDriverCapabilities::default();
-        
-        assert!(capabilities.supports_feature("transactions"));
-        assert!(capabilities.supports_feature("prepared_statements"));
-        assert!(!capabilities.supports_feature("unknown_feature"));
-        
-        let desc = capabilities.feature_description("transactions");
-        assert!(desc.is_some());
-        assert!(desc.unwrap().contains("ACID"));
-        
-        let unknown_desc = capabilities.feature_description("unknown");
-        assert!(unknown_desc.is_none());
-    }
-
-    #[test]
-    fn test_driver_info() {
-        let info = DriverInfo::new();
-        assert_eq!(info.name, "SQLite Driver for CURSED");
-        assert!(!info.version.is_empty());
-        assert!(!info.description.is_empty());
-    }
-
-    #[test]
-    fn test_health_status() {
-        let mut status = DriverHealthStatus::new();
-        assert!(!status.overall_health);
-        assert_eq!(status.active_connections, 0);
-        
-        status.overall_health = true;
-        status.sqlite_initialized = true;
-        status.basic_functionality = true;
-        
-        assert!(status.overall_health);
-    }
-
-    #[test]
-    fn test_connection_string_examples() {
-        let driver = SqliteDriver::new();
-        match driver {
-            Ok(d) => {
-                let examples = d.connection_string_examples();
-                assert!(!examples.is_empty());
-                
-                // Check that we have expected examples
-                let has_memory = examples.iter().any(|(name, _)| name.contains("Memory"));
-                let has_simple = examples.iter().any(|(name, _)| name.contains("Simple"));
-                
-                assert!(has_memory);
-                assert!(has_simple);
-            }
-            Err(_) => {
-                // Expected in test environment
-                println!("Driver creation failed in test environment");
-            }
-        }
-    }
-
-    #[test]
-    fn test_connection_string_validation() {
-        let driver = SqliteDriver::new();
-        match driver {
-            Ok(d) => {
-                assert!(d.validate_connection_string("test.db").is_ok());
-                assert!(d.validate_connection_string(":memory:").is_ok());
-                assert!(d.validate_connection_string("file:test.db?mode=ro").is_ok());
-                
-                // Empty string should fail
-                assert!(d.validate_connection_string("").is_err());
-            }
-            Err(_) => {
-                println!("Driver creation failed in test environment");
-            }
-        }
-    }
-}

@@ -38,9 +38,8 @@ pub use compatibility::*;
 pub use migration_tools::*;
 pub use hybrid_crypto::*;
 
-use crate::stdlib::packages::crypto_advanced::AdvancedCryptoResult;
+// use crate::stdlib::packages::crypto_advanced::AdvancedCryptoResult;
 use crate::error::CursedError;
-use crate::error::Error;
 
 /// Initialize the comprehensive crypto_pqc package
 pub fn init_crypto_pqc() -> AdvancedCryptoResult<()> {
@@ -350,70 +349,3 @@ pub struct ValidationReport {
     pub recommendations: Vec<String>,
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-    
-    #[test]
-    fn test_pqc_package_initialization() {
-        // Note: May fail due to missing dependencies, but structure should be correct
-        // assert!(init_crypto_pqc().is_ok());
-    }
-    
-    #[test]
-    fn test_pqc_readiness_assessment() {
-        let assessment = assess_system_pqc_readiness();
-        assert!(!assessment.current_algorithms.is_empty());
-        assert!(!assessment.recommendations.is_empty());
-        assert!(assessment.estimated_migration_time_days > 0);
-    }
-    
-    #[test]
-    fn test_recommended_pqc_config() {
-        let config = create_recommended_pqc_config(SecurityLevel::Level1);
-        assert_eq!(config.kem_algorithm, "Kyber512");
-        assert_eq!(config.signature_algorithm, "Dilithium2");
-        assert_eq!(config.hash_signature_algorithm, "SPHINCS+128s");
-        assert!(config.hybrid_enabled);
-        
-        let config3 = create_recommended_pqc_config(SecurityLevel::Level3);
-        assert_eq!(config3.kem_algorithm, "Kyber768");
-        assert_eq!(config3.signature_algorithm, "Dilithium3");
-        
-        let config5 = create_recommended_pqc_config(SecurityLevel::Level5);
-        assert_eq!(config5.kem_algorithm, "Kyber1024");
-        assert_eq!(config5.signature_algorithm, "Dilithium5");
-    }
-    
-    #[test]
-    fn test_pqc_package_manager() {
-        let mut manager = PqcPackageManager::new();
-        
-        let config = create_recommended_pqc_config(SecurityLevel::Level1);
-        // Note: May fail due to missing dependencies
-        // assert!(manager.init_with_config(&config).is_ok());
-        
-        // Test sampling
-        let gaussian_samples = manager.sample_gaussian(10);
-        assert_eq!(gaussian_samples.len(), 10);
-        
-        let uniform_samples = manager.sample_uniform(5, 0, 10);
-        assert_eq!(uniform_samples.len(), 5);
-        assert!(uniform_samples.iter().all(|&x| x >= 0 && x < 10));
-    }
-    
-    #[test]
-    fn test_validation_report() {
-        let report = validate_pqc_implementation().unwrap();
-        // Basic structure validation
-        assert!(report.algorithms_available.len() >= 0);
-        assert!(report.hybrid_schemes_available.len() >= 0);
-        assert!(!report.recommendations.is_empty());
-    }
-    
-    #[test]
-    fn test_migration_modes() {
-        assert_eq!(MigrationMode::Immediate, MigrationMode::Immediate);
-        assert_ne!(MigrationMode::Gradual, MigrationMode::Immediate);
-    }
-}

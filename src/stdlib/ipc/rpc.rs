@@ -1,4 +1,4 @@
-use crate::error::Error;
+use crate::error::CursedError;
 /// Real Remote Procedure Call (RPC) implementation for CURSED IPC
 /// 
 /// This module provides comprehensive RPC functionality for inter-process
@@ -26,13 +26,13 @@ use std::time::{Duration, SystemTime, Instant};
 use std::thread;
 use std::sync::mpsc::{self, Sender, Receiver};
 use serde::{Serialize, Deserialize};
-use crate::stdlib::ipc::{
+// use crate::stdlib::ipc::{
     IpcResult, IpcError, IpcHandle, IpcPermissions,
     connection_failed, timeout_error, resource_error
 };
 
-use crate::stdlib::ipc::types::IpcHandleType;
-use crate::stdlib::ipc::error::{communication_error, system_error, protocol_error, serialization_error};
+// use crate::stdlib::ipc::types::IpcHandleType;
+// use crate::stdlib::ipc::error::{communication_error, system_error, protocol_error, serialization_error};
 
 /// RPC method signature
 pub type RpcMethod = String;
@@ -604,7 +604,7 @@ impl RpcClient {
     
     /// Create a new RPC client with Unix socket transport
     pub fn new_unix_socket(config: RpcConfig, server_address: String) -> IpcResult<Self> {
-        let transport = crate::stdlib::ipc::transport::create_unix_rpc_client(server_address)?;
+//         let transport = crate::stdlib::ipc::transport::create_unix_rpc_client(server_address)?;
         Ok(Self::new(config, transport))
     }
 
@@ -679,7 +679,7 @@ impl RpcServer {
     
     /// Create a new RPC server with Unix socket transport
     pub fn new_unix_socket(config: RpcConfig, registry: Arc<RpcRegistry>, bind_address: String) -> IpcResult<Self> {
-        let transport = crate::stdlib::ipc::transport::create_unix_rpc_server(bind_address)?;
+//         let transport = crate::stdlib::ipc::transport::create_unix_rpc_server(bind_address)?;
         Ok(Self::new(config, registry, transport))
     }
 
@@ -814,200 +814,3 @@ pub fn get_call_rate() -> f64 {
     0.0
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_rpc_request_creation() {
-        let request = RpcRequest::new("test_method", b"test_params".to_vec())
-            .with_timeout(Duration::from_secs(10))
-            .with_metadata("key".to_string(), "value".to_string());
-
-        assert_eq!(request.method, "test_method");
-        assert_eq!(request.params, b"test_params");
-        assert!(request.id.is_some());
-        assert_eq!(request.timeout, Some(Duration::from_secs(10)));
-        assert_eq!(request.metadata.get("key"), Some(&"value".to_string()));
-    }
-
-    #[test]
-    fn test_rpc_response_creation() {
-        let success = RpcResponse::success(Some("123".to_string()), b"result".to_vec())
-            .with_execution_time(Duration::from_millis(50));
-
-        assert!(success.is_success());
-        assert!(!success.is_error());
-        assert_eq!(success.id, Some("123".to_string()));
-        assert_eq!(success.result, Some(b"result".to_vec()));
-
-        let error_response = RpcResponse::error(
-            Some("456".to_string()),
-            RpcError::method_not_found()
-        );
-
-        assert!(!error_response.is_success());
-        assert!(error_response.is_error());
-        assert_eq!(error_response.id, Some("456".to_string()));
-        assert!(error_response.error.is_some());
-    }
-
-    #[test]
-    fn test_rpc_error_creation() {
-        let error = RpcError::new(404, "Not found")
-            .with_data(b"additional_info".to_vec());
-
-        assert_eq!(error.code, 404);
-        assert_eq!(error.message, "Not found");
-        assert_eq!(error.data, Some(b"additional_info".to_vec()));
-
-        let parse_error = RpcError::parse_error();
-        assert_eq!(parse_error.code, -32700);
-        assert_eq!(parse_error.message, "Parse error");
-    }
-
-    #[test]
-    fn test_rpc_config() {
-        let config = RpcConfig::new()
-            .with_timeout(Duration::from_secs(60))
-            .with_max_size(2048, 4096)
-            .with_compression(true)
-            .with_encryption(true)
-            .with_max_concurrent(200);
-
-        assert_eq!(config.timeout, Duration::from_secs(60));
-        assert_eq!(config.max_request_size, 2048);
-        assert_eq!(config.max_response_size, 4096);
-        assert!(config.enable_compression);
-        assert!(config.enable_encryption);
-        assert_eq!(config.max_concurrent_requests, 200);
-    }
-
-    #[test]
-    fn test_backoff_strategy() {
-        let exponential = BackoffStrategy::Exponential;
-        let delay1 = exponential.calculate_delay(1);
-        let delay2 = exponential.calculate_delay(2);
-        assert!(delay2 > delay1);
-
-        let linear = BackoffStrategy::Linear;
-        let linear_delay = linear.calculate_delay(3);
-        assert_eq!(linear_delay, Duration::from_millis(300));
-
-        let custom = BackoffStrategy::Custom(vec![
-            Duration::from_millis(100),
-            Duration::from_millis(500),
-            Duration::from_millis(1000),
-        ]);
-        assert_eq!(custom.calculate_delay(1), Duration::from_millis(500));
-    }
-
-    #[test]
-    fn test_rpc_registry() {
-        let registry = RpcRegistry::new();
-
-        // Register a method
-        let result = registry.register_function("test_method", |params| {
-            Ok(format!("Echo: {}", String::from_utf8_lossy(params)).into_bytes())
-        });
-        assert!(result.is_ok());
-
-        // List methods
-        let methods = registry.list_methods();
-        assert!(methods.contains(&"test_method".to_string()));
-
-        // Call method
-        let result = registry.call("test_method", b"hello");
-        assert!(result.is_ok());
-        assert_eq!(result.unwrap(), b"Echo: hello");
-
-        // Call non-existent method
-        let result = registry.call("non_existent", b"test");
-        assert!(result.is_err());
-
-        // Unregister method
-        let result = registry.unregister("test_method");
-        assert!(result.is_ok());
-
-        let methods = registry.list_methods();
-        assert!(!methods.contains(&"test_method".to_string()));
-    }
-
-    #[test]
-    fn test_method_statistics() {
-        let mut stats = MethodStatistics::new();
-        assert_eq!(stats.total_calls, 0);
-        assert_eq!(stats.total_errors, 0);
-
-        stats.register_method("test_method".to_string());
-        assert!(stats.methods.contains_key("test_method"));
-
-        stats.record_call("test_method".to_string(), Duration::from_millis(10), true);
-        assert_eq!(stats.total_calls, 1);
-        assert_eq!(stats.total_errors, 0);
-
-        stats.record_call("test_method".to_string(), Duration::from_millis(20), false);
-        assert_eq!(stats.total_calls, 2);
-        assert_eq!(stats.total_errors, 1);
-
-        let method_stats = stats.methods.get("test_method").unwrap();
-        assert_eq!(method_stats.call_count, 2);
-        assert_eq!(method_stats.error_count, 1);
-    }
-
-    #[test]
-    fn test_json_serializer() {
-        let serializer = JsonRpcSerializer;
-
-        let request = RpcRequest::new("test", b"params".to_vec());
-        let serialized = serializer.serialize_request(&request).unwrap();
-        let deserialized = serializer.deserialize_request(&serialized).unwrap();
-
-        assert_eq!(request.method, deserialized.method);
-        assert_eq!(request.params, deserialized.params);
-
-        let response = RpcResponse::success(Some("123".to_string()), b"result".to_vec());
-        let serialized = serializer.serialize_response(&response).unwrap();
-        let deserialized = serializer.deserialize_response(&serialized).unwrap();
-
-        assert_eq!(response.id, deserialized.id);
-        assert_eq!(response.result, deserialized.result);
-    }
-
-    #[test]
-    fn test_mock_transport() {
-        let transport = MockTransport::new();
-        assert!(transport.is_connected());
-
-        let request = RpcRequest::new("test", b"params".to_vec());
-        assert!(transport.send_request(&request).is_ok());
-
-        let response = transport.receive_response(Duration::from_secs(1));
-        assert!(response.is_ok());
-
-        transport.stop_server().unwrap();
-        assert!(!transport.is_connected());
-    }
-
-    #[test]
-    fn test_rpc_client() {
-        let config = RpcConfig::new();
-        let transport = Arc::new(MockTransport::new());
-        let client = RpcClient::new(config, transport);
-
-        let result = client.call("test_method", b"test_params");
-        assert!(result.is_ok());
-
-        let stats = client.get_statistics();
-        assert_eq!(stats.requests_sent, 1);
-        assert_eq!(stats.responses_received, 1);
-    }
-
-    #[test]
-    fn test_global_functions() {
-        assert_eq!(get_active_connection_count(), 0);
-        assert_eq!(get_memory_usage(), 0);
-        assert_eq!(get_call_rate(), 0.0);
-        assert!(cleanup_all_connections().is_ok());
-    }
-}

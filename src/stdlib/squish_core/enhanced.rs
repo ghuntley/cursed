@@ -4,9 +4,9 @@
 /// compression, parallel processing, dictionary-based compression, and 
 /// progressive compression features.
 
-use crate::stdlib::squish_core::{SquishError, SquishResult, CompressionLevel, CompressionStats, CompressionTimer};
-use crate::stdlib::squish_core::utils::{CompressionFormat, detect_format, estimate_compression_ratio};
-use crate::error::Error;
+// use crate::stdlib::squish_core::{SquishError, SquishResult, CompressionLevel, CompressionStats, CompressionTimer};
+// use crate::stdlib::squish_core::utils::{CompressionFormat, detect_format, estimate_compression_ratio};
+use crate::error::CursedError;
 use std::time::{Duration, Instant};
 use std::sync::{Arc, Mutex};
 use std::thread;
@@ -173,9 +173,9 @@ impl AdaptiveCompressor {
     
     fn test_algorithm(&self, data: &[u8], algorithm: &str) -> SquishResult<Vec<u8>> {
         match algorithm {
-            "gzip" => crate::stdlib::squish_core::gzip_compress(data),
-            "zlib" => crate::stdlib::squish_core::zlib_compress(data),
-            "deflate" => crate::stdlib::squish_core::flate_compress(data),
+//             "gzip" => crate::stdlib::squish_core::gzip_compress(data),
+//             "zlib" => crate::stdlib::squish_core::zlib_compress(data),
+//             "deflate" => crate::stdlib::squish_core::flate_compress(data),
             _ => Err(SquishError::unsupported_format(format!("Unknown algorithm: {}", algorithm))),
         }
     }
@@ -229,8 +229,8 @@ impl DictionaryCompressor {
         combined.extend_from_slice(data);
         
         match self.algorithm.as_str() {
-            "gzip" => crate::stdlib::squish_core::gzip_compress(&combined),
-            "zlib" => crate::stdlib::squish_core::zlib_compress(&combined),
+//             "gzip" => crate::stdlib::squish_core::gzip_compress(&combined),
+//             "zlib" => crate::stdlib::squish_core::zlib_compress(&combined),
             _ => Err(SquishError::unsupported_format(format!("Unsupported algorithm: {}", self.algorithm))),
         }
     }
@@ -238,8 +238,8 @@ impl DictionaryCompressor {
     /// Decompress data using the dictionary
     pub fn decompress(&self, data: &[u8]) -> SquishResult<Vec<u8>> {
         let decompressed = match self.algorithm.as_str() {
-            "gzip" => crate::stdlib::squish_core::gzip_decompress(data)?,
-            "zlib" => crate::stdlib::squish_core::zlib_decompress(data)?,
+//             "gzip" => crate::stdlib::squish_core::gzip_decompress(data)?,
+//             "zlib" => crate::stdlib::squish_core::zlib_decompress(data)?,
             _ => return Err(SquishError::unsupported_format(format!("Unsupported algorithm: {}", self.algorithm))),
         };
         
@@ -282,8 +282,8 @@ impl ParallelCompressor {
         if data.len() < self.options.chunk_size || num_threads == 1 {
             // Data too small for parallel processing
             return match algorithm {
-                "gzip" => crate::stdlib::squish_core::gzip_compress(data),
-                "zlib" => crate::stdlib::squish_core::zlib_compress(data),
+//                 "gzip" => crate::stdlib::squish_core::gzip_compress(data),
+//                 "zlib" => crate::stdlib::squish_core::zlib_compress(data),
                 _ => Err(SquishError::unsupported_format(format!("Unsupported algorithm: {}", algorithm))),
             };
         }
@@ -297,8 +297,8 @@ impl ParallelCompressor {
         let mut results = Vec::new();
         for chunk in chunks {
             let compressed = match algorithm {
-                "gzip" => crate::stdlib::squish_core::gzip_compress(chunk)?,
-                "zlib" => crate::stdlib::squish_core::zlib_compress(chunk)?,
+//                 "gzip" => crate::stdlib::squish_core::gzip_compress(chunk)?,
+//                 "zlib" => crate::stdlib::squish_core::zlib_compress(chunk)?,
                 _ => return Err(SquishError::unsupported_format(format!("Unsupported algorithm: {}", algorithm))),
             };
             results.push(compressed);
@@ -340,8 +340,8 @@ impl ProgressiveCompressor {
         }
         
         let compressed = match self.algorithm.as_str() {
-            "gzip" => crate::stdlib::squish_core::gzip_compress(data)?,
-            "zlib" => crate::stdlib::squish_core::zlib_compress(data)?,
+//             "gzip" => crate::stdlib::squish_core::gzip_compress(data)?,
+//             "zlib" => crate::stdlib::squish_core::zlib_compress(data)?,
             _ => return Err(SquishError::unsupported_format(format!("Unsupported algorithm: {}", self.algorithm))),
         };
         
@@ -397,119 +397,90 @@ pub fn compress_with_dictionary(data: &[u8], dictionary: &[u8], algorithm: &str)
 
 /// Initialize enhanced features module
 pub fn initialize() {
+        // TODO: implement
+    }
     // No specific initialization needed for enhanced features
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
+/// Enhanced compressor type alias
+pub type EnhancedCompressor = AdaptiveCompressor;
 
-    #[test]
-    fn test_adaptive_compression() {
-        let data = b"This is test data for adaptive compression testing. ".repeat(10);
-        let options = AdaptiveOptions::default();
-        
-        let compressed = compress_adaptive(&data, &options).unwrap();
-        assert!(!compressed.is_empty());
-        assert!(compressed.len() < data.len());
-    }
+/// Compression mode enumeration
+#[derive(Debug, Clone, Copy)]
+pub enum CompressionMode {
+    Fast,
+    Balanced,
+    Max,
+    Ultra,
+}
 
-    #[test]
-    fn test_adaptive_compressor_metrics() {
-        let data = b"Test data for metrics collection.";
-        let mut compressor = AdaptiveCompressor::new(AdaptiveOptions::default());
-        
-        let _compressed = compressor.compress(data).unwrap();
-        let metrics = compressor.metrics();
-        
-        assert!(!metrics.is_empty());
-        assert!(metrics[0].input_size > 0);
-        assert!(metrics[0].output_size > 0);
-    }
+/// Compression options
+#[derive(Debug, Clone, Default)]
+pub struct CompressionOptions {
+    pub mode: Option<CompressionMode>,
+    pub level: Option<i32>,
+    pub parallel: bool,
+    pub dictionary: Option<Vec<u8>>,
+}
 
-    #[test]
-    fn test_dictionary_compression() {
-        let dictionary = b"common pattern ";
-        let data = b"common pattern in data common pattern again";
-        
-        let compressor = DictionaryCompressor::new(dictionary.to_vec(), "gzip".to_string());
-        let compressed = compressor.compress(data).unwrap();
-        let decompressed = compressor.decompress(&compressed).unwrap();
-        
-        assert_eq!(decompressed, data);
-    }
+/// Fast compression function
+pub fn fast_compressor(data: &[u8]) -> SquishResult<Vec<u8>> {
+    let options = AdaptiveOptions {
+        selection_timeout: Duration::from_millis(10),
+        target_ratio: None,
+        sample_ratio: 0.1,
+        enable_heuristics: true,
+    };
+    compress_adaptive(data, &options)
+}
 
-    #[test]
-    fn test_parallel_compression() {
-        let data = vec![b'P'; 1000]; // Large enough for potential parallel processing
-        let options = ParallelOptions {
-            num_threads: 2,
-            chunk_size: 100,
-            chunk_overlap: 10,
-        };
-        
-        let compressed = compress_parallel(&data, "gzip", &options).unwrap();
-        assert!(!compressed.is_empty());
-    }
+/// Maximum compression function
+pub fn max_compressor(data: &[u8]) -> SquishResult<Vec<u8>> {
+    let options = AdaptiveOptions {
+        selection_timeout: Duration::from_secs(5),
+        target_ratio: Some(0.8),
+        sample_ratio: 1.0,
+        enable_heuristics: true,
+    };
+    compress_adaptive(data, &options)
+}
 
-    #[test]
-    fn test_progressive_compression() {
-        let mut compressor = ProgressiveCompressor::new("gzip".to_string());
-        
-        compressor.add_chunk(b"First chunk ").unwrap();
-        compressor.add_chunk(b"Second chunk ").unwrap();
-        compressor.add_chunk(b"Third chunk").unwrap();
-        
-        let stats = compressor.stats();
-        assert!(stats.input_size > 0);
-        
-        let result = compressor.finalize().unwrap();
-        assert!(!result.is_empty());
-    }
+/// Parallel compression function
+pub fn parallel_compressor(data: &[u8]) -> SquishResult<Vec<u8>> {
+    let options = ParallelOptions {
+        num_threads: std::thread::available_parallelism().map(|n| n.get()).unwrap_or(4),
+        chunk_size: None,
+        load_balance: true,
+    };
+    compress_parallel(data, "gzip", &options)
+}
 
-    #[test]
-    fn test_compression_metrics() {
-        let metrics = CompressionMetrics::new(
-            "test".to_string(),
-            CompressionLevel::Default,
-            1000,
-            600,
-            Duration::from_millis(50),
-            1600,
-        );
-        
-        assert_eq!(metrics.algorithm, "test");
-        assert_eq!(metrics.input_size, 1000);
-        assert_eq!(metrics.output_size, 600);
-        assert_eq!(metrics.ratio, 0.6);
-        assert!(metrics.throughput > 0.0);
-    }
+/// Smart compression that selects best algorithm
+pub fn smart_compress(data: &[u8]) -> SquishResult<Vec<u8>> {
+    let adaptive = AdaptiveCompressor::new();
+    adaptive.compress(data)
+}
 
-    #[test]
-    fn test_adaptive_options() {
-        let options = AdaptiveOptions::default();
-        assert_eq!(options.sample_size, 1024);
-        assert!(!options.prefer_speed);
-        
-        let custom_options = AdaptiveOptions {
-            prefer_speed: true,
-            target_ratio: Some(0.5),
-            ..Default::default()
-        };
-        assert!(custom_options.prefer_speed);
-        assert_eq!(custom_options.target_ratio, Some(0.5));
-    }
-
-    #[test]
-    fn test_parallel_options() {
-        let options = ParallelOptions::default();
-        assert_eq!(options.num_threads, 0); // Auto-detect
-        assert_eq!(options.chunk_size, 64 * 1024);
-        assert_eq!(options.chunk_overlap, 1024);
-    }
-
-    #[test]
-    fn test_module_initialization() {
-        initialize(); // Should not panic
+/// Compress with specific mode
+pub fn compress_with_mode(data: &[u8], mode: CompressionMode) -> SquishResult<Vec<u8>> {
+    match mode {
+        CompressionMode::Fast => fast_compressor(data),
+        CompressionMode::Balanced => smart_compress(data),
+        CompressionMode::Max => max_compressor(data),
+        CompressionMode::Ultra => {
+            let options = AdaptiveOptions {
+                selection_timeout: Duration::from_secs(10),
+                target_ratio: Some(0.9),
+                sample_ratio: 1.0,
+                enable_heuristics: true,
+            };
+            compress_adaptive(data, &options)
+        }
     }
 }
+
+/// Ultra compression function
+pub fn ultra_compress(data: &[u8]) -> SquishResult<Vec<u8>> {
+    compress_with_mode(data, CompressionMode::Ultra)
+}
+

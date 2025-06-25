@@ -1,4 +1,4 @@
-use crate::error::Error;
+use crate::error::CursedError;
 /// fr fr Asymmetric algorithms - re-export from key_generator
 /// 
 /// This module provides the algorithm enumeration and related functionality

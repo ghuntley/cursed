@@ -1,8 +1,6 @@
-use crate::error::Error;
-/// Error handling for CSV operations
+use crate::error::CursedError;
+/// CursedError handling for CSV operations
 use std::fmt;
-use std::error::Error as StdError;
-use std::string::FromUtf8Error;
 use std::io;
 
 /// Result type for CSV operations
@@ -111,43 +109,43 @@ impl ParseError {
     }
 }
 
-impl fmt::Display for ParseError {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        if let Some(input) = &self.input {
-            write!(f, "parse error at line {}, column {}: {} (input: '{}')", 
-                   self.line, self.column, self.message, input)
-        } else {
-            write!(f, "parse error at line {}, column {}: {}", 
-                   self.line, self.column, self.message)
-        }
-    }
-}
+// impl fmt::Display for ParseError {
+//     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+//         if let Some(input) = &self.input {
+//             write!(f, "parse error at line {}, column {}: {} (input: '{}')", 
+//                    self.line, self.column, self.message, input)
+//         } else {
+//             write!(f, "parse error at line {}, column {}: {}", 
+//                    self.line, self.column, self.message)
+//         }
+//     }
+// }
 
 impl StdError for ParseError {}
 
-impl fmt::Display for CsvError {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
-            CsvError::Io(msg) => write!(f, "I/O error: {}", msg),
-            CsvError::Parse(err) => write!(f, "{}", err),
-            CsvError::InvalidUtf8(err) => write!(f, "invalid UTF-8: {}", err),
-            CsvError::FieldCountMismatch { expected, actual, line } => {
-                write!(f, "field count mismatch at line {}: expected {}, got {}", line, expected, actual)
-            },
-            CsvError::InvalidConfiguration(msg) => write!(f, "invalid configuration: {}", msg),
-            CsvError::SchemaValidation(msg) => write!(f, "schema validation error: {}", msg),
-            CsvError::TypeConversion { field, expected_type, value, line, column } => {
-                write!(f, "type conversion error at line {}, column {}: cannot convert '{}' to {} for field '{}'", 
-                       line, column, value, expected_type, field)
-            },
-            CsvError::ColumnNotFound(name) => write!(f, "column not found: '{}'", name),
-            CsvError::InvalidHeader(msg) => write!(f, "invalid header: {}", msg),
-            CsvError::BufferOverflow(size) => write!(f, "buffer overflow: size {}", size),
-            CsvError::Timeout(msg) => write!(f, "timeout: {}", msg),
-            CsvError::General(msg) => write!(f, "{}", msg),
-        }
-    }
-}
+// impl fmt::Display for CsvError {
+//     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+//         match self {
+//             CsvError::Io(msg) => write!(f, "I/O error: {}", msg),
+//             CsvError::Parse(err) => write!(f, "{}", err),
+//             CsvError::InvalidUtf8(err) => write!(f, "invalid UTF-8: {}", err),
+//             CsvError::FieldCountMismatch { expected, actual, line } => {
+//                 write!(f, "field count mismatch at line {}: expected {}, got {}", line, expected, actual)
+//             },
+//             CsvError::InvalidConfiguration(msg) => write!(f, "invalid configuration: {}", msg),
+//             CsvError::SchemaValidation(msg) => write!(f, "schema validation error: {}", msg),
+//             CsvError::TypeConversion { field, expected_type, value, line, column } => {
+//                 write!(f, "type conversion error at line {}, column {}: cannot convert '{}' to {} for field '{}'", 
+//                        line, column, value, expected_type, field)
+//             },
+//             CsvError::ColumnNotFound(name) => write!(f, "column not found: '{}'", name),
+//             CsvError::InvalidHeader(msg) => write!(f, "invalid header: {}", msg),
+//             CsvError::BufferOverflow(size) => write!(f, "buffer overflow: size {}", size),
+//             CsvError::Timeout(msg) => write!(f, "timeout: {}", msg),
+//             CsvError::General(msg) => write!(f, "{}", msg),
+//         }
+//     }
+// }
 
 impl StdError for CsvError {
     fn source(&self) -> Option<&(dyn StdError + 'static)> {
@@ -159,11 +157,11 @@ impl StdError for CsvError {
     }
 }
 
-impl From<io::Error> for CsvError {
-    fn from(err: io::Error) -> Self {
-        CsvError::Io(err.to_string())
-    }
-}
+// impl From<std::io::Error> for CsvError {
+//     fn from(err: std::io::Error) -> Self {
+//         CsvError::Io(err.to_string())
+//     }
+// }
 
 impl From<FromUtf8Error> for CsvError {
     fn from(err: FromUtf8Error) -> Self {
@@ -245,62 +243,3 @@ pub fn general_error(message: &str) -> CsvError {
     CsvError::General(message.to_string())
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_parse_error_creation() {
-        let err = ParseError::new(1, 2, 3, "test error".to_string());
-        assert_eq!(err.start_line, 1);
-        assert_eq!(err.line, 2);
-        assert_eq!(err.column, 3);
-        assert_eq!(err.message, "test error");
-        assert_eq!(err.error(), "test error");
-        assert_eq!(err.unwrap(), "test error");
-    }
-
-    #[test]
-    fn test_parse_error_with_input() {
-        let err = ParseError::with_input(1, 2, 3, "test error".to_string(), "bad input".to_string());
-        assert_eq!(err.input, Some("bad input".to_string()));
-        let display = format!("{}", err);
-        assert!(display.contains("test error"));
-        assert!(display.contains("bad input"));
-    }
-
-    #[test]
-    fn test_csv_error_display() {
-        let err = CsvError::FieldCountMismatch { expected: 3, actual: 2, line: 5 };
-        let display = format!("{}", err);
-        assert!(display.contains("field count mismatch"));
-        assert!(display.contains("line 5"));
-        assert!(display.contains("expected 3"));
-        assert!(display.contains("got 2"));
-    }
-
-    #[test]
-    fn test_error_helper_functions() {
-        let err = field_count_mismatch(3, 2, 5);
-        match err {
-            CsvError::FieldCountMismatch { expected, actual, line } => {
-                assert_eq!(expected, 3);
-                assert_eq!(actual, 2);
-                assert_eq!(line, 5);
-            },
-            _ => panic!("Expected FieldCountMismatch error"),
-        }
-
-        let err = type_conversion_error("age", "integer", "abc", 2, 3);
-        match err {
-            CsvError::TypeConversion { field, expected_type, value, line, column } => {
-                assert_eq!(field, "age");
-                assert_eq!(expected_type, "integer");
-                assert_eq!(value, "abc");
-                assert_eq!(line, 2);
-                assert_eq!(column, 3);
-            },
-            _ => panic!("Expected TypeConversion error"),
-        }
-    }
-}

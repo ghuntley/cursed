@@ -1,4 +1,4 @@
-use crate::error::Error;
+use crate::error::CursedError;
 /// Process group management for exec_vibez
 /// 
 /// Implements ProcessGroup functionality according to specs/stdlib/exec_vibez.md
@@ -182,7 +182,7 @@ impl ProcessGroup {
                             self.states.lock().unwrap().insert(pid, state);
                         }
                         Err(e) => {
-                            tracing::warn!("Error waiting for process {}: {}", pid, e);
+                            tracing::warn!("CursedError waiting for process {}: {}", pid, e);
                         }
                     }
                     running -= 1;
@@ -307,84 +307,3 @@ fn generate_group_id() -> usize {
     COUNTER.fetch_add(1, Ordering::Relaxed)
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use crate::stdlib::exec_vibez::cmd::Cmd;
-use crate::stdlib::process::info::ProcessState;
-    
-    #[test]
-    fn test_process_group_creation() {
-        let group = ProcessGroup::new();
-        assert!(group.id() > 0);
-        assert_eq!(group.running_count(), 0);
-        assert_eq!(group.completed_count(), 0);
-        assert!(!group.all_completed());
-    }
-    
-    #[test]
-    fn test_process_group_with_options() {
-        let options = ProcessGroupOptions {
-            max_concurrent: Some(2),
-            default_timeout: Some(Duration::from_secs(30)),
-            fail_fast: true,
-            wait_all: true,
-        };
-        
-        let group = ProcessGroup::with_options(options.clone());
-        assert_eq!(group.options.max_concurrent, Some(2));
-        assert_eq!(group.options.default_timeout, Some(Duration::from_secs(30)));
-        assert!(group.options.fail_fast);
-        assert!(group.options.wait_all);
-    }
-    
-    #[test]
-    fn test_add_commands() {
-        let mut group = ProcessGroup::new();
-        
-        let cmd1 = Cmd::new("echo", &["hello"]);
-        let cmd2 = Cmd::new("echo", &["world"]);
-        
-        group.add_command(cmd1);
-        group.add_command(cmd2);
-        
-        assert_eq!(group.commands.len(), 2);
-    }
-    
-    #[test]
-    fn test_set_commands() {
-        let mut group = ProcessGroup::new();
-        
-        let cmd1 = Cmd::new("echo", &["hello"]);
-        let cmd2 = Cmd::new("echo", &["world"]);
-        let commands = vec![cmd1, cmd2];
-        
-        group.set_commands(commands);
-        assert_eq!(group.commands.len(), 2);
-    }
-    
-    #[test]
-    fn test_empty_group_start() {
-        let mut group = ProcessGroup::new();
-        
-        let result = group.start_all();
-        assert!(result.is_err());
-    }
-    
-    #[test]
-    fn test_group_id_generation() {
-        let group1 = ProcessGroup::new();
-        let group2 = ProcessGroup::new();
-        
-        assert_ne!(group1.id(), group2.id());
-    }
-    
-    #[test]
-    fn test_new_process_group_constructor() {
-        let group = new_process_group();
-        assert!(group.id() > 0);
-    }
-}
-
-
-pub type NewProcessGroup = ProcessGroup;

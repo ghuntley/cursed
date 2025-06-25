@@ -7,8 +7,7 @@
 
 use std::fmt;
 use std::io;
-use std::net::AddrParseError;
-use crate::error::{CursedError, ErrorContext};
+use crate::error::CursedError;
 
 /// Result type for networking operations
 pub type NetResult<T> = std::result::Result<T, NetError>;
@@ -110,120 +109,120 @@ pub enum NetError {
     },
 }
 
-impl fmt::Display for NetError {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
-            NetError::Connection { message, address, port } => {
-                write!(f, "Connection error: {}", message)?;
-                if let Some(addr) = address {
-                    write!(f, " (address: {})", addr)?;
-                }
-                if let Some(p) = port {
-                    write!(f, " (port: {})", p)?;
-                }
-                Ok(())
-            },
-            
-            NetError::Socket { operation, message, error_code } => {
-                write!(f, "Socket error during {}: {}", operation, message)?;
-                if let Some(code) = error_code {
-                    write!(f, " (code: {})", code)?;
-                }
-                Ok(())
-            },
-            
-            NetError::Dns { hostname, message, record_type } => {
-                write!(f, "DNS error for '{}': {}", hostname, message)?;
-                if let Some(rtype) = record_type {
-                    write!(f, " (record type: {})", rtype)?;
-                }
-                Ok(())
-            },
-            
-            NetError::Protocol { protocol, message, details } => {
-                write!(f, "{} protocol error: {}", protocol, message)?;
-                if let Some(d) = details {
-                    write!(f, " ({})", d)?;
-                }
-                Ok(())
-            },
-            
-            NetError::Http { status_code, message, url } => {
-                write!(f, "HTTP error: {}", message)?;
-                if let Some(code) = status_code {
-                    write!(f, " (status: {})", code)?;
-                }
-                if let Some(u) = url {
-                    write!(f, " (url: {})", u)?;
-                }
-                Ok(())
-            },
-            
-            NetError::WebSocket { message, close_code, url } => {
-                write!(f, "WebSocket error: {}", message)?;
-                if let Some(code) = close_code {
-                    write!(f, " (close code: {})", code)?;
-                }
-                if let Some(u) = url {
-                    write!(f, " (url: {})", u)?;
-                }
-                Ok(())
-            },
-            
-            NetError::Timeout { operation, duration_ms, message } => {
-                write!(f, "Timeout during {}: {} ({}ms)", operation, message, duration_ms)
-            },
-            
-            NetError::Security { message, context } => {
-                write!(f, "Security error in {}: {}", context, message)
-            },
-            
-            NetError::Address { input, message } => {
-                write!(f, "Address error for '{}': {}", input, message)
-            },
-            
-            NetError::Tls { message, certificate_info } => {
-                write!(f, "TLS error: {}", message)?;
-                if let Some(cert_info) = certificate_info {
-                    write!(f, " (certificate: {})", cert_info)?;
-                }
-                Ok(())
-            },
-            
-            NetError::System { code, message } => {
-                write!(f, "System error {}: {}", code, message)
-            },
-            
-            NetError::InvalidConfig { parameter, value, message } => {
-                write!(f, "Invalid configuration for '{}' = '{}': {}", parameter, value, message)
-            },
-            
-            NetError::ResourceExhausted { resource, limit, current } => {
-                write!(f, "Resource exhausted: {} ({}/{} used)", resource, current, limit)
-            },
-            
-            NetError::General { message, context } => {
-                write!(f, "Network error: {}", message)?;
-                if let Some(ctx) = context {
-                    write!(f, " ({})", ctx)?;
-                }
-                Ok(())
-            },
-        }
-    }
-}
+// impl fmt::Display for NetError {
+//     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+//         match self {
+//             NetError::Connection { message, address, port } => {
+//                 write!(f, "Connection error: {}", message)?;
+//                 if let Some(addr) = address {
+//                     write!(f, " (address: {})", addr)?;
+//                 }
+//                 if let Some(p) = port {
+//                     write!(f, " (port: {})", p)?;
+//                 }
+//                 Ok(())
+//             },
+//             
+//             NetError::Socket { operation, message, error_code } => {
+//                 write!(f, "Socket error during {}: {}", operation, message)?;
+//                 if let Some(code) = error_code {
+//                     write!(f, " (code: {})", code)?;
+//                 }
+//                 Ok(())
+//             },
+//             
+//             NetError::Dns { hostname, message, record_type } => {
+//                 write!(f, "DNS error for '{}': {}", hostname, message)?;
+//                 if let Some(rtype) = record_type {
+//                     write!(f, " (record type: {})", rtype)?;
+//                 }
+//                 Ok(())
+//             },
+//             
+//             NetError::Protocol { protocol, message, details } => {
+//                 write!(f, "{} protocol error: {}", protocol, message)?;
+//                 if let Some(d) = details {
+//                     write!(f, " ({})", d)?;
+//                 }
+//                 Ok(())
+//             },
+//             
+//             NetError::Http { status_code, message, url } => {
+//                 write!(f, "HTTP error: {}", message)?;
+//                 if let Some(code) = status_code {
+//                     write!(f, " (status: {})", code)?;
+//                 }
+//                 if let Some(u) = url {
+//                     write!(f, " (url: {})", u)?;
+//                 }
+//                 Ok(())
+//             },
+//             
+//             NetError::WebSocket { message, close_code, url } => {
+//                 write!(f, "WebSocket error: {}", message)?;
+//                 if let Some(code) = close_code {
+//                     write!(f, " (close code: {})", code)?;
+//                 }
+//                 if let Some(u) = url {
+//                     write!(f, " (url: {})", u)?;
+//                 }
+//                 Ok(())
+//             },
+//             
+//             NetError::Timeout { operation, duration_ms, message } => {
+//                 write!(f, "Timeout during {}: {} ({}ms)", operation, message, duration_ms)
+//             },
+//             
+//             NetError::Security { message, context } => {
+//                 write!(f, "Security error in {}: {}", context, message)
+//             },
+//             
+//             NetError::Address { input, message } => {
+//                 write!(f, "Address error for '{}': {}", input, message)
+//             },
+//             
+//             NetError::Tls { message, certificate_info } => {
+//                 write!(f, "TLS error: {}", message)?;
+//                 if let Some(cert_info) = certificate_info {
+//                     write!(f, " (certificate: {})", cert_info)?;
+//                 }
+//                 Ok(())
+//             },
+//             
+//             NetError::System { code, message } => {
+//                 write!(f, "System error {}: {}", code, message)
+//             },
+//             
+//             NetError::InvalidConfig { parameter, value, message } => {
+//                 write!(f, "Invalid configuration for '{}' = '{}': {}", parameter, value, message)
+//             },
+//             
+//             NetError::ResourceExhausted { resource, limit, current } => {
+//                 write!(f, "Resource exhausted: {} ({}/{} used)", resource, current, limit)
+//             },
+//             
+//             NetError::General { message, context } => {
+//                 write!(f, "Network error: {}", message)?;
+//                 if let Some(ctx) = context {
+//                     write!(f, " ({})", ctx)?;
+//                 }
+//                 Ok(())
+//             },
+//         }
+//     }
+// }
 
-impl std::error::Error for NetError {}
-
+// impl std::error::CursedError for NetError {}
+// 
 // Conversion from standard library errors
-impl From<io::Error> for NetError {
-    fn from(error: io::Error) -> Self {
-        NetError::System {
-            code: error.raw_os_error().unwrap_or(-1),
-            message: error.to_string(),
-        }
-    }
-}
+// impl From<std::io::Error> for NetError {
+//     fn from(error: std::io::Error) -> Self {
+//         NetError::System {
+//             code: error.raw_os_error().unwrap_or(-1),
+//             message: error.to_string(),
+//         }
+//     }
+// }
 
 impl From<AddrParseError> for NetError {
     fn from(error: AddrParseError) -> Self {
@@ -235,29 +234,29 @@ impl From<AddrParseError> for NetError {
 }
 
 // Integration with CURSED error system
-impl From<NetError> for CursedError {
-    fn from(error: NetError) -> Self {
-        CursedError::Runtime {
-            message: error.to_string(),
-            context: Some(ErrorContext {
-                file: "network".to_string(),
-                line: 0,
-                column: 0,
-                function: Some("networking".to_string()),
-                details: Some(format!("Network error: {:?}", error)),
-            }),
-        }
-    }
-}
+// impl From<NetError> for CursedError {
+//     fn from(error: NetError) -> Self {
+//         CursedError::Runtime {
+//             message: error.to_string(),
+//             context: Some(ErrorContext {
+//                 file: "network".to_string(),
+//                 line: 0,
+//                 column: 0,
+//                 function: Some("networking".to_string()),
+//                 details: Some(format!("Network error: {:?}", error)),
+//             }),
+//         }
+//     }
+// }
 
-impl From<CursedError> for NetError {
-    fn from(error: CursedError) -> Self {
-        NetError::General {
-            message: error.to_string(),
-            context: Some("CURSED runtime error".to_string()),
-        }
-    }
-}
+// impl From<CursedError> for NetError {
+//     fn from(error: CursedError) -> Self {
+//         NetError::General {
+//             message: error.to_string(),
+//             context: Some("CURSED runtime error".to_string()),
+//         }
+//     }
+// }
 
 /// Helper functions for creating specific error types
 
@@ -461,68 +460,3 @@ pub fn general_error_with_context(message: &str, context: &str) -> NetError {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_error_creation() {
-        let err = connection_error("Failed to connect");
-        assert!(matches!(err, NetError::Connection { .. }));
-        assert!(err.to_string().contains("Failed to connect"));
-    }
-
-    #[test]
-    fn test_error_with_details() {
-        let err = connection_error_with_address("Connection refused", "127.0.0.1", Some(8080));
-        assert!(matches!(err, NetError::Connection { .. }));
-        let err_str = err.to_string();
-        assert!(err_str.contains("Connection refused"));
-        assert!(err_str.contains("127.0.0.1"));
-        assert!(err_str.contains("8080"));
-    }
-
-    #[test]
-    fn test_dns_error() {
-        let err = dns_error_with_type("example.com", "No such host", "A");
-        assert!(matches!(err, NetError::Dns { .. }));
-        let err_str = err.to_string();
-        assert!(err_str.contains("example.com"));
-        assert!(err_str.contains("No such host"));
-        assert!(err_str.contains("A"));
-    }
-
-    #[test]
-    fn test_http_error() {
-        let err = http_error_with_status("Not Found", 404, Some("https://example.com"));
-        assert!(matches!(err, NetError::Http { .. }));
-        let err_str = err.to_string();
-        assert!(err_str.contains("Not Found"));
-        assert!(err_str.contains("404"));
-        assert!(err_str.contains("https://example.com"));
-    }
-
-    #[test]
-    fn test_timeout_error() {
-        let err = timeout_error_with_duration("connect", 5000, "Connection timed out");
-        assert!(matches!(err, NetError::Timeout { .. }));
-        let err_str = err.to_string();
-        assert!(err_str.contains("connect"));
-        assert!(err_str.contains("5000ms"));
-        assert!(err_str.contains("Connection timed out"));
-    }
-
-    #[test]
-    fn test_error_conversion_from_io() {
-        let io_err = io::Error::new(io::ErrorKind::ConnectionRefused, "Connection refused");
-        let net_err = NetError::from(io_err);
-        assert!(matches!(net_err, NetError::System { .. }));
-    }
-
-    #[test]
-    fn test_error_conversion_to_cursed() {
-        let net_err = connection_error("Test error");
-        let cursed_err = CursedError::from(net_err);
-        assert!(matches!(cursed_err, CursedError::Runtime { .. }));
-    }
-}

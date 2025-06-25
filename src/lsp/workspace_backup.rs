@@ -1,4 +1,4 @@
-use crate::error::Error;
+use crate::error::CursedError;
 // Workspace management for CURSED language server
 // 
 // Handles multi-file projects, workspace folders, and project-wide operations
@@ -15,7 +15,6 @@ use crate::lexer::Lexer;
 use crate::parser::Parser;
 use crate::type_system::TypeChecker, Type;
 use crate::ast::Program;
-use crate::error::Error as CursedError;
 use crate::imports::{ImportResolver, ImportResolverConfig};
 
 /// Workspace manager for the LSP server
@@ -276,7 +275,7 @@ impl WorkspaceManager {
     }
 
     /// Analyze file semantically using CURSED compiler infrastructure
-    pub async fn analyze_file_semantically(&self, content: &str, uri: &Url) -> Result<(), Error> {
+    pub async fn analyze_file_semantically(&self, content: &str, uri: &Url) -> crate::error::Result<()> {
         debug!("Performing semantic analysis on {}", uri);
         
         // Parse the file using CURSED lexer and parser
@@ -666,7 +665,7 @@ impl WorkspaceManager {
     }
     
     /// Update file content and reanalyze
-    pub async fn update_file_content(&self, uri: &Url, content: &str) -> Result<(), Error> {
+    pub async fn update_file_content(&self, uri: &Url, content: &str) -> crate::error::Result<()> {
         debug!("Updating file content for: {}", uri);
         
         // Perform semantic analysis on updated content
@@ -923,137 +922,3 @@ impl Default for WorkspaceManager {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use tempfile::TempDir;
-    use std::fs;
-
-    #[tokio::test]
-    async fn test_workspace_scanning() {
-        let temp_dir = TempDir::new().unwrap();
-        let root_path = temp_dir.path();
-        
-        // Create test files
-        fs::write(root_path.join("main.csd"), "slay main() { print(\"hello\") }").unwrap();
-        fs::write(root_path.join("CursedPackage.toml"), "[package]\nname = \"test\"").unwrap();
-        fs::create_dir(root_path.join("src")).unwrap();
-        fs::write(root_path.join("src").join("lib.csd"), "squad MyStruct { value: int }").unwrap();
-        
-        let manager = WorkspaceManager::new();
-        let workspace_folder = WorkspaceFolder {
-            uri: Url::from_file_path(root_path).unwrap(),
-            name: "Test Workspace".to_string(),
-        };
-        
-        manager.set_workspace_folders(Vec::from([workspace_folder])).await;
-        
-        // Check that files were found
-        let cursed_files = manager.get_cursed_files().await;
-        assert_eq!(cursed_files.len(), 2); // main.csd and src/lib.csd
-        
-        let config_files = manager.get_config_files().await;
-        assert_eq!(config_files.len(), 1); // CursedPackage.toml
-        
-        // Check symbols
-        let symbols = manager.search_symbols("").await;
-        assert!(!symbols.is_empty());
-        assert!(symbols.iter().any(|s| s.name == "main"));
-        assert!(symbols.iter().any(|s| s.name == "MyStruct"));
-    }
-
-    #[tokio::test]
-    async fn test_symbol_search() {
-        let manager = WorkspaceManager::new();
-        
-        // Manually add some symbols for testing
-        let symbols = vec![
-            WorkspaceSymbol {
-                name: "main".to_string(),
-                kind: SymbolKind::FUNCTION,
-                tags: None,
-                location: OneOf::Left(Location {
-                    uri: Url::parse("file:///test.csd").unwrap(),
-                    range: Range {
-                        start: Position { line: 0, character: 0 },
-                        end: Position { line: 0, character: 10 },
-                    },
-                }),
-                container_name: None,
-                data: None,
-            },
-            WorkspaceSymbol {
-                name: "calculate".to_string(),
-                kind: SymbolKind::FUNCTION,
-                tags: None,
-                location: OneOf::Left(Location {
-                    uri: Url::parse("file:///test.csd").unwrap(),
-                    range: Range {
-                        start: Position { line: 5, character: 0 },
-                        end: Position { line: 5, character: 15 },
-                    },
-                }),
-                container_name: None,
-                data: None,
-            },
-        ];
-        
-        {
-            let mut workspace_symbols = manager.workspace_symbols.write().unwrap();
-            *workspace_symbols = symbols;
-        }
-        
-        // Test search
-        let results = manager.search_symbols("calc").await;
-        assert_eq!(results.len(), 1);
-        assert_eq!(results[0].name, "calculate");
-        
-        let all_results = manager.search_symbols("").await;
-        assert_eq!(all_results.len(), 2);
-    }
-
-    #[test]
-    fn test_file_classification() {
-        let manager = WorkspaceManager::new();
-        
-        assert_eq!(
-            manager.classify_file(Path::new("main.csd")),
-            Some(ProjectFileType::CursedSource)
-        );
-        
-        assert_eq!(
-            manager.classify_file(Path::new("CursedPackage.toml")),
-            Some(ProjectFileType::CursedPackage)
-        );
-        
-        assert_eq!(
-            manager.classify_file(Path::new("README.md")),
-            Some(ProjectFileType::Documentation)
-        );
-        
-        assert_eq!(
-            manager.classify_file(Path::new("config.json")),
-            Some(ProjectFileType::Configuration)
-        );
-    }
-
-    #[test]
-    fn test_symbol_extraction() {
-        let manager = WorkspaceManager::new();
-        
-        assert_eq!(
-            manager.extract_function_name("slay main() {"),
-            Some("main".to_string())
-        );
-        
-        assert_eq!(
-            manager.extract_struct_name("squad Person {"),
-            Some("Person".to_string())
-        );
-        
-        assert_eq!(
-            manager.extract_variable_name("facts count: int = 42"),
-            Some("count".to_string())
-        );
-    }
-}

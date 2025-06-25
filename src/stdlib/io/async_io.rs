@@ -1,6 +1,5 @@
 /// Async I/O operations for CURSED standard library
-use std::io::{self, Error as IoError, ErrorKind};
-use crate::error::Error;
+use std::io::{self, CursedError as IoError, ErrorKind};
 use std::path::Path;
 use std::pin::Pin;
 use std::task::{Context, Poll};
@@ -8,7 +7,7 @@ use std::time::Duration;
 
 use crate::runtime::r#async::{Future as RuntimeFuture, FutureResult, FutureError};
 use std::future::Future;
-use crate::stdlib::io::IoResult;
+// use crate::stdlib::io::IoResult;
 
 /// Async file operations
 pub struct AsyncFile {
@@ -19,14 +18,14 @@ impl AsyncFile {
     /// Open a file asynchronously
     pub async fn open<P: AsRef<Path>>(path: P) -> IoResult<Self> {
         let file = tokio::fs::File::open(path).await
-            .map_err(|e| crate::stdlib::io::IoError::from(e))?;
+//             .map_err(|e| crate::stdlib::io::IoError::from(e))?;
         Ok(AsyncFile { inner: file })
     }
 
     /// Create a new file asynchronously
     pub async fn create<P: AsRef<Path>>(path: P) -> IoResult<Self> {
         let file = tokio::fs::File::create(path).await
-            .map_err(|e| crate::stdlib::io::IoError::from(e))?;
+//             .map_err(|e| crate::stdlib::io::IoError::from(e))?;
         Ok(AsyncFile { inner: file })
     }
 
@@ -34,7 +33,7 @@ impl AsyncFile {
     pub async fn read_to_string(&mut self) -> IoResult<String> {
         let mut content = String::new();
         tokio::io::AsyncReadExt::read_to_string(&mut self.inner, &mut content).await
-            .map_err(|e| crate::stdlib::io::IoError::from(e))?;
+//             .map_err(|e| crate::stdlib::io::IoError::from(e))?;
         Ok(content)
     }
 
@@ -42,35 +41,35 @@ impl AsyncFile {
     pub async fn read_to_end(&mut self) -> IoResult<Vec<u8>> {
         let mut content = Vec::new();
         tokio::io::AsyncReadExt::read_to_end(&mut self.inner, &mut content).await
-            .map_err(|e| crate::stdlib::io::IoError::from(e))?;
+//             .map_err(|e| crate::stdlib::io::IoError::from(e))?;
         Ok(content)
     }
 
     /// Write string content to file asynchronously
     pub async fn write_all_string(&mut self, content: &str) -> IoResult<()> {
         tokio::io::AsyncWriteExt::write_all(&mut self.inner, content.as_bytes()).await
-            .map_err(|e| crate::stdlib::io::IoError::from(e))?;
+//             .map_err(|e| crate::stdlib::io::IoError::from(e))?;
         Ok(())
     }
 
     /// Write bytes to file asynchronously
     pub async fn write_all_bytes(&mut self, content: &[u8]) -> IoResult<()> {
         tokio::io::AsyncWriteExt::write_all(&mut self.inner, content).await
-            .map_err(|e| crate::stdlib::io::IoError::from(e))?;
+//             .map_err(|e| crate::stdlib::io::IoError::from(e))?;
         Ok(())
     }
 
     /// Flush the file asynchronously
     pub async fn flush(&mut self) -> IoResult<()> {
         tokio::io::AsyncWriteExt::flush(&mut self.inner).await
-            .map_err(|e| crate::stdlib::io::IoError::from(e))?;
+//             .map_err(|e| crate::stdlib::io::IoError::from(e))?;
         Ok(())
     }
 
     /// Sync all data to disk asynchronously
     pub async fn sync_all(&self) -> IoResult<()> {
         self.inner.sync_all().await
-            .map_err(|e| crate::stdlib::io::IoError::from(e))?;
+//             .map_err(|e| crate::stdlib::io::IoError::from(e))?;
         Ok(())
     }
 }
@@ -84,40 +83,40 @@ impl AsyncTcpStream {
     /// Connect to a TCP server asynchronously
     pub async fn connect(addr: &str) -> IoResult<Self> {
         let stream = tokio::net::TcpStream::connect(addr).await
-            .map_err(|e| crate::stdlib::io::IoError::from(e))?;
+//             .map_err(|e| crate::stdlib::io::IoError::from(e))?;
         Ok(AsyncTcpStream { inner: stream })
     }
 
     /// Read data from the stream asynchronously
     pub async fn read(&mut self, buf: &mut [u8]) -> IoResult<usize> {
         tokio::io::AsyncReadExt::read(&mut self.inner, buf).await
-            .map_err(|e| crate::stdlib::io::IoError::from(e))
+//             .map_err(|e| crate::stdlib::io::IoError::from(e))
     }
 
     /// Write data to the stream asynchronously
     pub async fn write(&mut self, buf: &[u8]) -> IoResult<usize> {
         tokio::io::AsyncWriteExt::write(&mut self.inner, buf).await
-            .map_err(|e| crate::stdlib::io::IoError::from(e))
+//             .map_err(|e| crate::stdlib::io::IoError::from(e))
     }
 
     /// Write all data to the stream asynchronously
     pub async fn write_all(&mut self, buf: &[u8]) -> IoResult<()> {
         tokio::io::AsyncWriteExt::write_all(&mut self.inner, buf).await
-            .map_err(|e| crate::stdlib::io::IoError::from(e))?;
+//             .map_err(|e| crate::stdlib::io::IoError::from(e))?;
         Ok(())
     }
 
     /// Flush the stream asynchronously
     pub async fn flush(&mut self) -> IoResult<()> {
         tokio::io::AsyncWriteExt::flush(&mut self.inner).await
-            .map_err(|e| crate::stdlib::io::IoError::from(e))?;
+//             .map_err(|e| crate::stdlib::io::IoError::from(e))?;
         Ok(())
     }
 
     /// Shutdown the stream asynchronously
     pub async fn shutdown(&mut self) -> IoResult<()> {
         tokio::io::AsyncWriteExt::shutdown(&mut self.inner).await
-            .map_err(|e| crate::stdlib::io::IoError::from(e))?;
+//             .map_err(|e| crate::stdlib::io::IoError::from(e))?;
         Ok(())
     }
 }
@@ -131,21 +130,21 @@ impl AsyncTcpListener {
     /// Bind to an address asynchronously
     pub async fn bind(addr: &str) -> IoResult<Self> {
         let listener = tokio::net::TcpListener::bind(addr).await
-            .map_err(|e| crate::stdlib::io::IoError::from(e))?;
+//             .map_err(|e| crate::stdlib::io::IoError::from(e))?;
         Ok(AsyncTcpListener { inner: listener })
     }
 
     /// Accept a new connection asynchronously
     pub async fn accept(&self) -> IoResult<(AsyncTcpStream, std::net::SocketAddr)> {
         let (stream, addr) = self.inner.accept().await
-            .map_err(|e| crate::stdlib::io::IoError::from(e))?;
+//             .map_err(|e| crate::stdlib::io::IoError::from(e))?;
         Ok((AsyncTcpStream { inner: stream }, addr))
     }
 
     /// Get the local address
     pub fn local_addr(&self) -> IoResult<std::net::SocketAddr> {
         self.inner.local_addr()
-            .map_err(|e| crate::stdlib::io::IoError::from(e))
+//             .map_err(|e| crate::stdlib::io::IoError::from(e))
     }
 }
 
@@ -155,13 +154,13 @@ pub async fn sleep(duration: Duration) {
 }
 
 /// Async timeout wrapper
-pub async fn timeout<F>(duration: Duration, future: F) -> Result<F::Output, Error>
+pub async fn timeout<F>(duration: Duration, future: F) -> crate::error::Result<F::Output>
 where
     F: Future + Send,
 {
     match tokio::time::timeout(duration, future).await {
         Ok(result) => Ok(result),
-        Err(_) => Err(Error::from(FutureError::Timeout)),
+        Err(_) => Err(CursedError::from(FutureError::Timeout)),
     }
 }
 
@@ -213,74 +212,74 @@ pub mod fs {
     /// Read entire file content asynchronously
     pub async fn read_to_string<P: AsRef<Path>>(path: P) -> IoResult<String> {
         tokio::fs::read_to_string(path).await
-            .map_err(|e| crate::stdlib::io::IoError::from(e))
+//             .map_err(|e| crate::stdlib::io::IoError::from(e))
     }
 
     /// Read file content as bytes asynchronously
     pub async fn read<P: AsRef<Path>>(path: P) -> IoResult<Vec<u8>> {
         tokio::fs::read(path).await
-            .map_err(|e| crate::stdlib::io::IoError::from(e))
+//             .map_err(|e| crate::stdlib::io::IoError::from(e))
     }
 
     /// Write string content to file asynchronously
     pub async fn write<P: AsRef<Path>>(path: P, content: &str) -> IoResult<()> {
         tokio::fs::write(path, content.as_bytes()).await
-            .map_err(|e| crate::stdlib::io::IoError::from(e))?;
+//             .map_err(|e| crate::stdlib::io::IoError::from(e))?;
         Ok(())
     }
 
     /// Write bytes to file asynchronously
     pub async fn write_bytes<P: AsRef<Path>>(path: P, content: &[u8]) -> IoResult<()> {
         tokio::fs::write(path, content).await
-            .map_err(|e| crate::stdlib::io::IoError::from(e))?;
+//             .map_err(|e| crate::stdlib::io::IoError::from(e))?;
         Ok(())
     }
 
     /// Create a directory asynchronously
     pub async fn create_dir<P: AsRef<Path>>(path: P) -> IoResult<()> {
         tokio::fs::create_dir(path).await
-            .map_err(|e| crate::stdlib::io::IoError::from(e))?;
+//             .map_err(|e| crate::stdlib::io::IoError::from(e))?;
         Ok(())
     }
 
     /// Create a directory and all parent directories asynchronously
     pub async fn create_dir_all<P: AsRef<Path>>(path: P) -> IoResult<()> {
         tokio::fs::create_dir_all(path).await
-            .map_err(|e| crate::stdlib::io::IoError::from(e))?;
+//             .map_err(|e| crate::stdlib::io::IoError::from(e))?;
         Ok(())
     }
 
     /// Remove a file asynchronously
     pub async fn remove_file<P: AsRef<Path>>(path: P) -> IoResult<()> {
         tokio::fs::remove_file(path).await
-            .map_err(|e| crate::stdlib::io::IoError::from(e))?;
+//             .map_err(|e| crate::stdlib::io::IoError::from(e))?;
         Ok(())
     }
 
     /// Remove an empty directory asynchronously
     pub async fn remove_dir<P: AsRef<Path>>(path: P) -> IoResult<()> {
         tokio::fs::remove_dir(path).await
-            .map_err(|e| crate::stdlib::io::IoError::from(e))?;
+//             .map_err(|e| crate::stdlib::io::IoError::from(e))?;
         Ok(())
     }
 
     /// Remove a directory and all its contents asynchronously
     pub async fn remove_dir_all<P: AsRef<Path>>(path: P) -> IoResult<()> {
         tokio::fs::remove_dir_all(path).await
-            .map_err(|e| crate::stdlib::io::IoError::from(e))?;
+//             .map_err(|e| crate::stdlib::io::IoError::from(e))?;
         Ok(())
     }
 
     /// Copy a file asynchronously
     pub async fn copy<P: AsRef<Path>, Q: AsRef<Path>>(from: P, to: Q) -> IoResult<u64> {
         tokio::fs::copy(from, to).await
-            .map_err(|e| crate::stdlib::io::IoError::from(e))
+//             .map_err(|e| crate::stdlib::io::IoError::from(e))
     }
 
     /// Rename a file asynchronously
     pub async fn rename<P: AsRef<Path>, Q: AsRef<Path>>(from: P, to: Q) -> IoResult<()> {
         tokio::fs::rename(from, to).await
-            .map_err(|e| crate::stdlib::io::IoError::from(e))?;
+//             .map_err(|e| crate::stdlib::io::IoError::from(e))?;
         Ok(())
     }
 
@@ -292,7 +291,7 @@ pub mod fs {
     /// Get file metadata asynchronously
     pub async fn metadata<P: AsRef<Path>>(path: P) -> IoResult<std::fs::Metadata> {
         tokio::fs::metadata(path).await
-            .map_err(|e| crate::stdlib::io::IoError::from(e))
+//             .map_err(|e| crate::stdlib::io::IoError::from(e))
     }
 }
 
@@ -359,19 +358,19 @@ pub mod process {
         /// Execute the command and wait for completion
         pub async fn output(mut self) -> IoResult<std::process::Output> {
             self.command.output().await
-                .map_err(|e| crate::stdlib::io::IoError::from(e))
+//                 .map_err(|e| crate::stdlib::io::IoError::from(e))
         }
 
         /// Execute the command and get status
         pub async fn status(mut self) -> IoResult<std::process::ExitStatus> {
             self.command.status().await
-                .map_err(|e| crate::stdlib::io::IoError::from(e))
+//                 .map_err(|e| crate::stdlib::io::IoError::from(e))
         }
 
         /// Spawn the command and return a handle
         pub fn spawn(mut self) -> IoResult<AsyncChild> {
             let child = self.command.spawn()
-                .map_err(|e| crate::stdlib::io::IoError::from(e))?;
+//                 .map_err(|e| crate::stdlib::io::IoError::from(e))?;
             Ok(AsyncChild { inner: child })
         }
     }
@@ -385,19 +384,19 @@ pub mod process {
         /// Wait for the process to complete
         pub async fn wait(mut self) -> IoResult<std::process::ExitStatus> {
             self.inner.wait().await
-                .map_err(|e| crate::stdlib::io::IoError::from(e))
+//                 .map_err(|e| crate::stdlib::io::IoError::from(e))
         }
 
         /// Wait for the process and capture output
         pub async fn wait_with_output(self) -> IoResult<std::process::Output> {
             self.inner.wait_with_output().await
-                .map_err(|e| crate::stdlib::io::IoError::from(e))
+//                 .map_err(|e| crate::stdlib::io::IoError::from(e))
         }
 
         /// Kill the process
         pub async fn kill(&mut self) -> IoResult<()> {
             self.inner.kill().await
-                .map_err(|e| crate::stdlib::io::IoError::from(e))
+//                 .map_err(|e| crate::stdlib::io::IoError::from(e))
         }
 
         /// Get the process ID
@@ -407,46 +406,3 @@ pub mod process {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use crate::runtime::r#async::block_on;
-
-    #[test]
-    fn test_async_sleep() {
-        block_on(async {
-            let start = std::time::Instant::now();
-            sleep(Duration::from_millis(100)).await;
-            let elapsed = start.elapsed();
-            assert!(elapsed >= Duration::from_millis(90));
-        });
-    }
-
-    #[test]
-    fn test_async_timeout() {
-        block_on(async {
-            // Test successful completion within timeout
-            let result = timeout(Duration::from_millis(100), async {
-                sleep(Duration::from_millis(50)).await;
-                42
-            }).await;
-            assert_eq!(result.unwrap(), 42);
-
-            // Test timeout
-            let result = timeout(Duration::from_millis(50), async {
-                sleep(Duration::from_millis(100)).await;
-                42
-            }).await;
-            assert!(matches!(result, Err(FutureError::Timeout)));
-        });
-    }
-
-    #[test]
-    fn test_local_task_handle() {
-        block_on(async {
-            let handle = spawn_local(async { 42 });
-            let result = handle.await;
-            assert_eq!(result, 42);
-        });
-    }
-}

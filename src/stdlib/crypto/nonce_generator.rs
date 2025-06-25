@@ -1,6 +1,7 @@
 // Nonce generation utilities for cryptographic operations
 
 use std::time::{SystemTime, UNIX_EPOCH};
+use crate::error::CursedError;
 
 /// Secure nonce structure
 #[derive(Debug, Clone)]
@@ -66,14 +67,15 @@ pub const MIN_NONCE_SIZE: usize = 8;
 pub const DEFAULT_NONCE_SIZE: usize = 32;
 pub const TIMESTAMP_NONCE_MIN_SIZE: usize = 16;
 
-impl std::fmt::Display for NonceError {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            NonceError::InsufficientEntropy => write!(f, "Insufficient entropy for nonce generation"),
-            NonceError::InvalidSize => write!(f, "Invalid nonce size"),
-            NonceError::GenerationFailed => write!(f, "Nonce generation failed"),
-        }
-    }
-}
+// impl std::fmt::Display for NonceError {
+//     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+//         match self {
+//             NonceError::InsufficientEntropy => write!(f, "Insufficient entropy for nonce generation"),
+//             NonceError::InvalidSize => write!(f, "Invalid nonce size"),
+//             NonceError::GenerationFailed => write!(f, "Nonce generation failed"),
+//         }
+//     }
+// }
 
-impl std::error::Error for NonceError {}
+// impl std::error::CursedError for NonceError {}
+// 

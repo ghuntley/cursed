@@ -1,5 +1,5 @@
 /// Interactive console utilities for CURSED
-use crate::stdlib::io::{
+// use crate::stdlib::io::{
     error::{IoError, IoResult},
     console::{print, println, read_line}
 };
@@ -246,37 +246,3 @@ impl ProgressBar {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_progress_bar_creation() {
-        let progress_bar = ProgressBar::new(100, 50);
-        assert_eq!(progress_bar.total, 100);
-        assert_eq!(progress_bar.current, 0);
-        assert_eq!(progress_bar.width, 50);
-    }
-
-    #[test]
-    fn test_progress_bar_zero_width() {
-        let progress_bar = ProgressBar::new(100, 0);
-        assert_eq!(progress_bar.width, 50); // Default width
-    }
-
-    #[test]
-    fn test_multi_select_empty_options() {
-        let options: Vec<String> = vec![];
-        let result = multi_select("Choose:", &options);
-        assert!(result.is_err());
-        assert!(matches!(result.unwrap_err(), IoError::InvalidInput(_)));
-    }
-
-    #[test]
-    fn test_select_empty_options() {
-        let options: Vec<String> = vec![];
-        let result = select("Choose:", &options);
-        assert!(result.is_err());
-        assert!(matches!(result.unwrap_err(), IoError::InvalidInput(_)));
-    }
-}

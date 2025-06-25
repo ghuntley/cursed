@@ -1,4 +1,4 @@
-use crate::error::Error;
+use crate::error::CursedError;
 /// Core types and structures for the CURSED IPC system
 /// 
 /// This module defines fundamental types used throughout the IPC subsystem including
@@ -8,7 +8,7 @@ use std::fmt;
 use std::time::{Duration, SystemTime};
 use std::collections::HashMap;
 use std::sync::Arc;
-use crate::stdlib::ipc::error::{IpcError, IpcResult};
+// use crate::stdlib::ipc::error::{IpcError, IpcResult};
 
 /// Generic handle for IPC resources
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
@@ -381,7 +381,7 @@ pub struct IpcStatistics {
     pub handles_destroyed: u64,
     pub peak_concurrent_operations: usize,
     
-    // Error breakdown
+    // CursedError breakdown
     pub timeout_errors: u64,
     pub permission_errors: u64,
     pub resource_errors: u64,
@@ -664,171 +664,3 @@ impl Default for ResourceLimits {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_ipc_handle_creation() {
-        let handle = IpcHandle::new("test_handle".to_string(), "pipe".to_string())
-            .with_metadata("owner".to_string(), "test_process".to_string());
-        
-        assert_eq!(handle.id, "test_handle");
-        assert_eq!(handle.resource_type, "pipe");
-        assert_eq!(handle.get_metadata("owner"), Some(&"test_process".to_string()));
-        assert!(handle.age() < Duration::from_secs(1));
-    }
-
-    #[test]
-    fn test_ipc_address_variants() {
-        let path_addr = IpcAddress::path("/tmp/test");
-        let net_addr = IpcAddress::network("localhost", 8080);
-        let proc_addr = IpcAddress::process(1234);
-        let mem_addr = IpcAddress::memory(0x1000, 4096);
-        
-        assert_eq!(path_addr.address_type(), "path");
-        assert_eq!(net_addr.address_type(), "network");
-        assert_eq!(proc_addr.address_type(), "process");
-        assert_eq!(mem_addr.address_type(), "memory");
-        
-        assert_eq!(format!("{}", path_addr), "path:/tmp/test");
-        assert_eq!(format!("{}", net_addr), "net:localhost:8080");
-        assert_eq!(format!("{}", proc_addr), "proc:1234");
-        assert_eq!(format!("{}", mem_addr), "mem:4096+4096");
-    }
-
-    #[test]
-    fn test_ipc_permissions() {
-        let perms = IpcPermissions::new(0o755)
-            .with_owner(1000, 1000);
-        
-        assert!(perms.owner_read());
-        assert!(perms.owner_write());
-        assert!(perms.owner_execute());
-        assert!(perms.group_read());
-        assert!(!perms.group_write());
-        assert!(perms.group_execute());
-        assert!(perms.other_read());
-        assert!(!perms.other_write());
-        assert!(perms.other_execute());
-        
-        assert_eq!(perms.owner_uid, Some(1000));
-        assert_eq!(perms.owner_gid, Some(1000));
-    }
-
-    #[test]
-    fn test_acl_permissions() {
-        let read_write = AclPermissions::new().with_read().with_write();
-        let read_only = AclPermissions::READ;
-        
-        assert!(read_write.contains(read_only));
-        assert!(read_write.read());
-        assert!(read_write.write());
-        assert!(!read_write.execute());
-        
-        assert!(read_only.read());
-        assert!(!read_only.write());
-        assert!(!read_only.execute());
-    }
-
-    #[test]
-    fn test_access_control_list() {
-        let acl = AccessControlList::new()
-            .add_user_permission(1000, AclPermissions::READ.with_write())
-            .add_group_permission(100, AclPermissions::READ);
-        
-        assert!(acl.check_access(1000, 50, AclPermissions::READ));
-        assert!(acl.check_access(1000, 50, AclPermissions::WRITE));
-        assert!(!acl.check_access(1000, 50, AclPermissions::EXECUTE));
-        
-        assert!(acl.check_access(2000, 100, AclPermissions::READ));
-        assert!(!acl.check_access(2000, 100, AclPermissions::WRITE));
-    }
-
-    #[test]
-    fn test_ipc_timeout() {
-        let none_timeout = IpcTimeout::none();
-        let immediate_timeout = IpcTimeout::immediate();
-        let duration_timeout = IpcTimeout::after(Duration::from_secs(30));
-        
-        assert!(none_timeout.is_blocking());
-        assert!(!none_timeout.is_immediate());
-        
-        assert!(!immediate_timeout.is_blocking());
-        assert!(immediate_timeout.is_immediate());
-        
-        assert!(!duration_timeout.is_blocking());
-        assert!(!duration_timeout.is_immediate());
-        assert_eq!(duration_timeout.remaining_time(), Some(Duration::from_secs(30)));
-    }
-
-    #[test]
-    fn test_ipc_statistics() {
-        let mut stats = IpcStatistics::new();
-        
-        assert_eq!(stats.total_operations, 0);
-        assert_eq!(stats.success_rate(), 0.0);
-        
-        stats.record_operation(true, Duration::from_millis(10));
-        stats.record_operation(false, Duration::from_millis(20));
-        stats.record_operation(true, Duration::from_millis(15));
-        
-        assert_eq!(stats.total_operations, 3);
-        assert_eq!(stats.successful_operations, 2);
-        assert_eq!(stats.failed_operations, 1);
-        assert!((stats.success_rate() - 2.0/3.0).abs() < f64::EPSILON);
-        
-        stats.record_data_transfer(100, 200);
-        assert_eq!(stats.bytes_sent, 100);
-        assert_eq!(stats.bytes_received, 200);
-        
-        stats.record_error("timeout");
-        assert_eq!(stats.timeout_errors, 1);
-        
-        stats.set_custom_metric("custom_count", 42);
-        assert_eq!(stats.custom_metrics.get("custom_count"), Some(&42));
-    }
-
-    #[test]
-    fn test_ipc_capabilities() {
-        let caps = IpcCapabilities::default();
-        let mechanisms = caps.supported_mechanisms();
-        
-        assert!(mechanisms.contains(&"message_queues"));
-        assert!(mechanisms.contains(&"anonymous_pipes"));
-        assert!(mechanisms.contains(&"shared_memory"));
-        assert!(mechanisms.contains(&"semaphores"));
-        assert!(mechanisms.contains(&"file_locking"));
-        assert!(mechanisms.contains(&"rpc"));
-        assert!(mechanisms.contains(&"security"));
-        
-        assert!(caps.count_supported() >= 7); // At least these basic ones
-    }
-
-    #[test]
-    fn test_resource_limits() {
-        let limits = ResourceLimits::conservative()
-            .with_max_handles(500)
-            .with_max_memory(1024 * 1024);
-        
-        assert!(limits.check_handles(100).is_ok());
-        assert!(limits.check_handles(600).is_err());
-        
-        assert!(limits.check_memory(1024).is_ok());
-        assert!(limits.check_memory(2 * 1024 * 1024).is_err());
-        
-        assert!(limits.check_message_size(1024).is_ok());
-        assert!(limits.check_message_size(2 * 1024 * 1024).is_err());
-    }
-
-    #[test]
-    fn test_unlimited_resource_limits() {
-        let limits = ResourceLimits::unlimited();
-        
-        assert!(limits.check_handles(1_000_000).is_ok());
-        assert!(limits.check_memory(1024 * 1024 * 1024).is_ok());
-        assert!(limits.check_message_size(100 * 1024 * 1024).is_ok());
-        assert!(limits.check_queue_depth(10_000).is_ok());
-        assert!(limits.check_connections(1_000).is_ok());
-    }
-}

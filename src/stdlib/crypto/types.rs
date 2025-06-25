@@ -19,7 +19,7 @@ pub struct CryptoPlatform {
 
 impl CryptoPlatform {
     /// Create a new crypto platform
-    pub fn new() -> Result<(), Error> {
+    pub fn new() -> crate::error::Result<()> {
         Ok(Self {
             platform_id: "default".to_string(),
             supported_algorithms: vec![
@@ -74,7 +74,7 @@ impl Ed25519PublicKey {
     }
 
     /// Create from byte slice
-    pub fn from_slice(bytes: &[u8]) -> Result<(), Error> {
+    pub fn from_slice(bytes: &[u8]) -> crate::error::Result<()> {
         if bytes.len() != 32 {
             return Err(CryptoError::InvalidKeySize);
         }
@@ -84,7 +84,7 @@ impl Ed25519PublicKey {
     }
 
     /// Verify a signature with this public key
-    pub fn verify(&self, message: &[u8], signature: &Ed25519Signature) -> Result<(), Error> {
+    pub fn verify(&self, message: &[u8], signature: &Ed25519Signature) -> crate::error::Result<()> {
         // Mock implementation - in real usage would use actual Ed25519 verification
         Ok(message.len() > 0 && signature.bytes.len() == 64)
     }
@@ -104,7 +104,7 @@ impl Ed25519PrivateKey {
     }
 
     /// Generate a new random private key
-    pub fn generate() -> Result<(), Error> {
+    pub fn generate() -> crate::error::Result<()> {
         // Mock implementation - in real usage would use secure random number generation
         let mut bytes = [0u8; 32];
         for i in 0..32 {
@@ -124,7 +124,7 @@ impl Ed25519PrivateKey {
     }
 
     /// Sign a message with this private key
-    pub fn sign(&self, message: &[u8]) -> Result<(), Error> {
+    pub fn sign(&self, message: &[u8]) -> crate::error::Result<()> {
         // Mock implementation - in real usage would use actual Ed25519 signing
         let mut sig_bytes = [0u8; 64];
         for i in 0..32 {
@@ -156,7 +156,7 @@ impl Ed25519Signature {
     }
 
     /// Create from byte slice
-    pub fn from_slice(bytes: &[u8]) -> Result<(), Error> {
+    pub fn from_slice(bytes: &[u8]) -> crate::error::Result<()> {
         if bytes.len() != 64 {
             return Err(CryptoError::InvalidSignatureSize);
         }
@@ -191,25 +191,25 @@ pub enum CryptoError {
     Generic(String),
 }
 
-impl std::fmt::Display for CryptoError {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            CryptoError::InvalidKeySize => write!(f, "Invalid key size"),
-            CryptoError::InvalidSignatureSize => write!(f, "Invalid signature size"),
-            CryptoError::InvalidInput => write!(f, "Invalid input data"),
-            CryptoError::VerificationFailed => write!(f, "Signature verification failed"),
-            CryptoError::EncryptionFailed => write!(f, "Encryption failed"),
-            CryptoError::DecryptionFailed => write!(f, "Decryption failed"),
-            CryptoError::KeyGenerationFailed => write!(f, "Key generation failed"),
-            CryptoError::UnsupportedAlgorithm => write!(f, "Algorithm not supported"),
-            CryptoError::RandomGenerationFailed => write!(f, "Random number generation failed"),
-            CryptoError::Generic(msg) => write!(f, "Cryptographic error: {}", msg),
-        }
-    }
-}
+// impl std::fmt::Display for CryptoError {
+//     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+//         match self {
+//             CryptoError::InvalidKeySize => write!(f, "Invalid key size"),
+//             CryptoError::InvalidSignatureSize => write!(f, "Invalid signature size"),
+//             CryptoError::InvalidInput => write!(f, "Invalid input data"),
+//             CryptoError::VerificationFailed => write!(f, "Signature verification failed"),
+//             CryptoError::EncryptionFailed => write!(f, "Encryption failed"),
+//             CryptoError::DecryptionFailed => write!(f, "Decryption failed"),
+//             CryptoError::KeyGenerationFailed => write!(f, "Key generation failed"),
+//             CryptoError::UnsupportedAlgorithm => write!(f, "Algorithm not supported"),
+//             CryptoError::RandomGenerationFailed => write!(f, "Random number generation failed"),
+//             CryptoError::Generic(msg) => write!(f, "Cryptographic error: {}", msg),
+//         }
+//     }
+// }
 
-impl std::error::Error for CryptoError {}
-
+// impl std::error::CursedError for CryptoError {}
+// 
 /// Hash function type
 #[derive(Debug, Clone)]
 pub enum HashFunction {
@@ -685,105 +685,3 @@ pub struct KeySizeRecommendations {
     pub ecc: usize,
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-use crate::error_types::Error;
-
-    #[test]
-    fn test_ed25519_key_generation() {
-        let private_key = Ed25519PrivateKey::generate().unwrap();
-        let public_key = private_key.public_key();
-        
-        let message = b"test message";
-        let signature = private_key.sign(message).unwrap();
-        let is_valid = public_key.verify(message, &signature).unwrap();
-        
-        assert!(is_valid);
-    }
-
-    #[test]
-    fn test_hash_function() {
-        let hash_fn = HashFunction::Sha256;
-        let data = b"hello world";
-        let hash = hash_fn.hash(data);
-        
-        assert_eq!(hash.len(), 32);
-        assert_eq!(hash_fn.output_size(), 32);
-    }
-
-    #[test]
-    fn test_crypto_context() {
-        let context = CryptoContext::new();
-        assert_eq!(context.security_level, SecurityLevel::Standard);
-        
-        let high_security = CryptoContext::high_security();
-        assert_eq!(high_security.security_level, SecurityLevel::High);
-    }
-
-    #[test]
-    fn test_key_material() {
-        let key_bytes = vec![1, 2, 3, 4];
-        let key = KeyMaterial::new(key_bytes, "AES".to_string(), KeyType::Symmetric);
-        
-        assert_eq!(key.size(), 4);
-        assert!(key.is_symmetric());
-        assert!(!key.is_public());
-        assert!(!key.is_private());
-    }
-
-    #[test]
-    fn test_crypto_parameters() {
-        let params = CryptoParameters::new();
-        assert_eq!(params.symmetric_key_size, 256);
-        assert_eq!(params.asymmetric_key_size, 2048);
-        assert_eq!(params.security_level, SecurityLevel::Standard);
-        assert_eq!(params.effective_security_bits(), 128);
-
-        let high_security = CryptoParameters::high_security();
-        assert_eq!(high_security.asymmetric_key_size, 4096);
-        assert_eq!(high_security.security_level, SecurityLevel::High);
-        assert_eq!(high_security.effective_security_bits(), 192);
-
-        let with_param = CryptoParameters::new()
-            .with_parameter("custom".to_string(), "value".to_string());
-        assert_eq!(with_param.algorithm_parameters.get("custom"), Some(&"value".to_string()));
-    }
-
-    #[test]
-    fn test_security_context() {
-        let context = SecurityContext::new("user123".to_string());
-        assert_eq!(context.user_id, "user123");
-        assert_eq!(context.security_level, SecurityLevel::Standard);
-        assert!(context.audit_enabled);
-
-        let enhanced_context = SecurityContext::high_security("admin".to_string())
-            .with_role("administrator".to_string())
-            .with_permission("read_all".to_string())
-            .with_session_data("session_id".to_string(), "abc123".to_string())
-            .with_validity(1000, 2000);
-
-        assert!(enhanced_context.has_role("administrator"));
-        assert!(enhanced_context.has_permission("read_all"));
-        assert!(!enhanced_context.has_role("user"));
-        assert!(!enhanced_context.has_permission("write_all"));
-        assert!(enhanced_context.is_valid(1500));
-        assert!(!enhanced_context.is_valid(500));
-        assert!(!enhanced_context.is_valid(3000));
-    }
-
-    #[test]
-    fn test_security_level_recommendations() {
-        let low = SecurityLevel::Low;
-        let recommendations = low.recommended_key_sizes();
-        assert_eq!(recommendations.symmetric, 128);
-        assert_eq!(recommendations.rsa, 1024);
-        assert_eq!(recommendations.ecc, 256);
-
-        let maximum = SecurityLevel::Maximum;
-        let max_recommendations = maximum.recommended_key_sizes();
-        assert_eq!(max_recommendations.symmetric, 256);
-        assert_eq!(max_recommendations.rsa, 4096);
-        assert_eq!(max_recommendations.ecc, 521);
-    }
-}

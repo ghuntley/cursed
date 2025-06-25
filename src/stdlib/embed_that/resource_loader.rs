@@ -1,9 +1,9 @@
-use crate::stdlib::embed_that::core::{ThatFile, ThatFiles, tea, lit};
-use crate::stdlib::embed_that::error::{EmbedError, EmbedResult};
+// use crate::stdlib::embed_that::core::{ThatFile, ThatFiles, tea, lit};
+// use crate::stdlib::embed_that::error::{EmbedError, EmbedResult};
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
 use std::path::Path;
-use crate::error::Error;
+use crate::error::CursedError;
 
 /// Global registry for embedded files
 static EMBEDDED_REGISTRY: once_cell::sync::Lazy<Arc<Mutex<HashMap<tea, ThatFiles>>>> = 
@@ -328,17 +328,17 @@ pub fn initialize_resource_loader() -> EmbedResult<()> {
 macro_rules! embed_files {
     ($namespace:expr, $($path:expr),*) => {
         {
-            let mut files = $crate::stdlib::embed_that::core::ThatFiles::new();
+//             let mut files = $crate::stdlib::embed_that::core::ThatFiles::new();
             $(
                 if let Ok(content) = std::fs::read($path) {
-                    let file = $crate::stdlib::embed_that::core::ThatFile::new(
+//                     let file = $crate::stdlib::embed_that::core::ThatFile::new(
                         $path.to_string(), 
                         content
                     );
                     files.add_file(file);
                 }
             )*
-            $crate::stdlib::embed_that::resource_loader::ResourceLoader::register_embedded_files(
+//             $crate::stdlib::embed_that::resource_loader::ResourceLoader::register_embedded_files(
                 &$namespace.to_string(), 
                 files
             )
@@ -353,14 +353,14 @@ macro_rules! embed_dir {
         {
             #[cfg(feature = "filesystem_embedding")]
             {
-                $crate::stdlib::embed_that::resource_loader::ResourceLoader::load_from_filesystem(
+//                 $crate::stdlib::embed_that::resource_loader::ResourceLoader::load_from_filesystem(
                     &$dir.to_string(),
                     &$namespace.to_string()
                 )
             }
             #[cfg(not(feature = "filesystem_embedding"))]
             {
-                Ok($crate::stdlib::embed_that::core::ThatFiles::new())
+//                 Ok($crate::stdlib::embed_that::core::ThatFiles::new())
             }
         }
     };

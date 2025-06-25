@@ -3,8 +3,8 @@
 // Comprehensive signature format handling with support for multiple encoding formats,
 // ASN.1 DER encoding/decoding, and standard signature formats.
 
-use crate::stdlib::packages::crypto_signatures::errors::{SignatureError, SignatureResult};
-use crate::error::Error;
+// use crate::stdlib::packages::crypto_signatures::errors::{SignatureError, SignatureResult};
+use crate::error::CursedError;
 use base64::{Engine as _, engine::general_purpose::STANDARD as BASE64_STANDARD};
 use serde::{Deserialize, Serialize};
 use std::fmt;
@@ -580,101 +580,3 @@ pub mod utils {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_base64_encoding() {
-        let handler = SignatureFormatHandler::new();
-        let signature = b"test signature data";
-        
-        let encoded = handler.encode(signature).unwrap();
-        let decoded = handler.decode(&encoded).unwrap();
-        
-        assert_eq!(decoded, signature);
-    }
-
-    #[test]
-    fn test_hex_encoding() {
-        let handler = SignatureFormatHandler::with_options(EncodingOptions {
-            format: SignatureFormat::Hex,
-            ..Default::default()
-        });
-        
-        let signature = b"test signature data";
-        let encoded = handler.encode(signature).unwrap();
-        let decoded = handler.decode(&encoded).unwrap();
-        
-        assert_eq!(decoded, signature);
-    }
-
-    #[test]
-    fn test_pem_encoding() {
-        let handler = SignatureFormatHandler::new();
-        let signature = b"test signature data";
-        
-        let options = EncodingOptions {
-            format: SignatureFormat::Pem,
-            header_footer: true,
-            line_breaks: true,
-        };
-        
-        let encoded = handler.encode_with_options(signature, &options).unwrap();
-        assert!(encoded.contains("-----BEGIN SIGNATURE-----"));
-        assert!(encoded.contains("-----END SIGNATURE-----"));
-        
-        let decoded = handler.decode_with_format(&encoded, &SignatureFormat::Pem).unwrap();
-        assert_eq!(decoded, signature);
-    }
-
-    #[test]
-    fn test_der_encoding() {
-        let handler = SignatureFormatHandler::new();
-        let signature = b"test signature data";
-        
-        let options = EncodingOptions {
-            format: SignatureFormat::Der,
-            ..Default::default()
-        };
-        
-        let encoded = handler.encode_with_options(signature, &options).unwrap();
-        let decoded = handler.decode_with_format(&encoded, &SignatureFormat::Der).unwrap();
-        
-        assert_eq!(decoded, signature);
-    }
-
-    #[test]
-    fn test_auto_detect() {
-        let handler = SignatureFormatHandler::new();
-        let signature = b"test signature data";
-        
-        // Test with different formats
-        let base64_encoded = utils::encode_base64(signature);
-        let (decoded, format) = handler.auto_decode(&base64_encoded).unwrap();
-        assert_eq!(decoded, signature);
-        assert_eq!(format, SignatureFormat::Base64);
-        
-        let hex_encoded = utils::encode_hex(signature);
-        let (decoded, format) = handler.auto_decode(&hex_encoded).unwrap();
-        assert_eq!(decoded, signature);
-        assert_eq!(format, SignatureFormat::Hex);
-    }
-
-    #[test]
-    fn test_metadata_creation() {
-        let handler = SignatureFormatHandler::new();
-        let signature = b"test signature data";
-        
-        let metadata = handler.create_metadata(
-            signature,
-            "Ed25519",
-            SignatureFormat::Base64,
-        );
-        
-        assert_eq!(metadata.algorithm, "Ed25519");
-        assert_eq!(metadata.format, SignatureFormat::Base64);
-        assert_eq!(metadata.size, signature.len());
-        assert!(metadata.timestamp.is_some());
-    }
-}

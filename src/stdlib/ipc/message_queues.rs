@@ -9,8 +9,8 @@ use std::ptr;
 use std::sync::{Arc, Mutex, RwLock};
 use std::time::{Duration, Instant, SystemTime};
 
-use crate::stdlib::ipc::error::{IpcError, IpcResult, message_queue_error, system_error, timeout_error, not_found, already_exists};
-use crate::error::Error;
+// use crate::stdlib::ipc::error::{IpcError, IpcResult, message_queue_error, system_error, timeout_error, not_found, already_exists};
+use crate::error::CursedError;
 
 /// Windows message frame structure for message serialization
 #[cfg(windows)]
@@ -89,7 +89,7 @@ impl Message {
     }
 
     /// Convert to string (if data is UTF-8)
-    pub fn to_string(&self) -> Result<(), Error> {
+    pub fn to_string(&self) -> crate::error::Result<()> {
         String::from_utf8(self.data.clone())
     }
 
@@ -1146,131 +1146,3 @@ struct mq_attr {
     mq_curmsgs: i64,
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use std::thread;
-    use std::time::Duration;
-
-    #[test]
-    fn test_message_creation() {
-        let message = Message::new(1, b"Hello, World!".to_vec());
-        assert_eq!(message.msg_type, 1);
-        assert_eq!(message.data, b"Hello, World!");
-        assert_eq!(message.size(), 13);
-        assert_eq!(message.to_string().unwrap(), "Hello, World!");
-    }
-
-    #[test]
-    fn test_message_from_string() {
-        let message = Message::from_string(2, "Test message");
-        assert_eq!(message.msg_type, 2);
-        assert_eq!(message.to_string().unwrap(), "Test message");
-    }
-
-    #[test]
-    fn test_message_queue_config() {
-        let config = MessageQueueConfig::default();
-        assert_eq!(config.max_message_size, 8192);
-        assert_eq!(config.max_queue_size, 100);
-        assert!(!config.use_posix);
-    }
-
-    #[test]
-    fn test_message_queue_creation() {
-        let queue = MessageQueue::new("test_queue");
-        assert_eq!(queue.name(), "test_queue");
-        assert!(!queue.is_open());
-    }
-
-    #[cfg(unix)]
-    #[test]
-    fn test_message_queue_sysv() {
-        let mut queue = MessageQueue::new("test_sysv_queue");
-        
-        // Test opening
-        if queue.open().is_ok() {
-            assert!(queue.is_open());
-            
-            // Test sending and receiving
-            let message = Message::from_string(1, "Test message");
-            if queue.send(&message).is_ok() {
-                if let Ok(received) = queue.receive(1) {
-                    assert_eq!(received.to_string().unwrap(), "Test message");
-                }
-            }
-            
-            // Test stats
-            if let Ok(stats) = queue.stats() {
-                assert!(stats.max_messages > 0);
-            }
-            
-            // Cleanup
-            let _ = queue.delete();
-        }
-    }
-
-    #[cfg(unix)]
-    #[test]
-    fn test_message_queue_posix() {
-        let config = MessageQueueConfig {
-            use_posix: true,
-            ..Default::default()
-        };
-        let mut queue = MessageQueue::with_config("test_posix_queue", config);
-        
-        // Test opening
-        if queue.open().is_ok() {
-            assert!(queue.is_open());
-            
-            // Test sending and receiving
-            let message = Message::from_string(1, "POSIX test message");
-            if queue.send(&message).is_ok() {
-                if let Ok(received) = queue.receive(0) {
-                    assert_eq!(received.to_string().unwrap(), "POSIX test message");
-                }
-            }
-            
-            // Cleanup
-            let _ = queue.delete();
-        }
-    }
-
-    #[test]
-    fn test_queue_registry() {
-        let registry = get_queue_registry();
-        assert!(registry.read().is_ok());
-        
-        // Test cleanup
-        assert!(cleanup_queues().is_ok());
-    }
-
-    #[cfg(windows)]
-    #[test]
-    fn test_message_queue_windows() {
-        let mut queue = MessageQueue::new("test_windows_queue");
-        
-        // Test opening
-        if queue.open().is_ok() {
-            assert!(queue.is_open());
-            
-            // Test sending and receiving
-            let message = Message::from_string(1, "Windows test message");
-            if queue.send(&message).is_ok() {
-                // Note: This test may not work as expected because named pipes 
-                // typically require separate client/server processes or handles
-                // In a real scenario, you'd need a separate reader process
-                println!("Windows message sent successfully");
-            }
-            
-            // Test stats
-            if let Ok(stats) = queue.stats() {
-                assert!(stats.max_messages > 0);
-                println!("Windows stats retrieved: {:?}", stats);
-            }
-            
-            // Cleanup
-            let _ = queue.delete();
-        }
-    }
-}

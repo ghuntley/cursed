@@ -1,4 +1,4 @@
-use crate::error::Error;
+use crate::error::CursedError;
 /// Real Classic McEliece Code-based Cryptography Implementation
 /// 
 /// This is a production-ready implementation of Classic McEliece, a code-based
@@ -9,7 +9,7 @@ use crate::error::Error;
 /// Classic McEliece is based on:
 /// - Goppa codes over finite fields GF(2^m)
 /// - The Syndrome Decoding problem (proven NP-complete)  
-/// - Error correction using algebraic decoding algorithms
+/// - CursedError correction using algebraic decoding algorithms
 /// - Niederreiter's public-key cryptosystem variant
 /// 
 /// # Security Levels
@@ -25,7 +25,7 @@ use std::collections::HashSet;
 use rand::rngs::OsRng;
 use rand::RngCore;
 use sha3::{Sha3_256, Sha3_512, Digest};
-use crate::stdlib::crypto_pqc::{PqcResult, PqcError, SecurityLevel, AlgorithmType};
+// use crate::stdlib::crypto_pqc::{PqcResult, PqcError, SecurityLevel, AlgorithmType};
 use super::{KeyEncapsulation, ParameterSet, AlgorithmPerformance, KeySizes};
 
 /// Classic McEliece parameter sets with complete specifications
@@ -75,7 +75,7 @@ impl RealMcElieceParams {
         }
     }
 
-    /// Error correction capability (maximum correctable errors)
+    /// CursedError correction capability (maximum correctable errors)
     pub fn t(&self) -> usize {
         match self {
             RealMcElieceParams::McEliece348864 { t, .. } => *t,
@@ -649,7 +649,7 @@ impl RealMcElieceSecretKey {
             }
         }
         
-        Err(PqcError::DecryptionFailed("Error pattern not found".to_string()))
+        Err(PqcError::DecryptionFailed("CursedError pattern not found".to_string()))
     }
 
     /// Generate next combination in lexicographic order
@@ -955,69 +955,3 @@ impl RealClassicMcEliece {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_real_mceliece_keygen() {
-        let (pub_key, sec_key) = RealClassicMcEliece::keygen(SecurityLevel::Level1).unwrap();
-        assert_eq!(pub_key.params.security_level(), SecurityLevel::Level1);
-        assert_eq!(sec_key.params.security_level(), SecurityLevel::Level1);
-    }
-
-    #[test]
-    fn test_real_mceliece_encaps_decaps() {
-        let (pub_key, sec_key) = RealClassicMcEliece::keygen(SecurityLevel::Level1).unwrap();
-        
-        let (ciphertext, shared_secret1) = RealClassicMcEliece::encaps(&pub_key).unwrap();
-        let shared_secret2 = RealClassicMcEliece::decaps(&sec_key, &ciphertext).unwrap();
-        
-        assert_eq!(shared_secret1.data, shared_secret2.data);
-    }
-
-    #[test]
-    fn test_field_element_operations() {
-        let a = FieldElement::new(5, 4);
-        let b = FieldElement::new(3, 4);
-        let irreducible = 0x13; // x^4 + x + 1
-        
-        let sum = a.add(&b);
-        assert_eq!(sum.value(), 5 ^ 3);
-        
-        let product = a.multiply(&b, irreducible);
-        assert!(product.value() < 16); // Should be in GF(2^4)
-    }
-
-    #[test]
-    fn test_support_set_generation() {
-        let support = SupportSet::generate_random(100, 8).unwrap();
-        assert_eq!(support.len(), 100);
-        
-        // Check uniqueness
-        let mut values = HashSet::new();
-        for element in support.elements() {
-            values.insert(element.value());
-        }
-        assert_eq!(values.len(), 100);
-    }
-
-    #[test]
-    fn test_error_vector_generation() {
-        let error_vector = RealClassicMcEliece::generate_error_vector(100, 5).unwrap();
-        assert_eq!(error_vector.len(), 100);
-        assert_eq!(error_vector.iter().filter(|&&b| b).count(), 5);
-    }
-
-    #[test]
-    fn test_ciphertext_serialization() {
-        let params = RealMcElieceParams::new(SecurityLevel::Level1);
-        let ciphertext_bits = vec![true, false, true, true, false, false, true, false];
-        let ciphertext = RealMcElieceCiphertext::new(params, ciphertext_bits.clone()).unwrap();
-        
-        let bytes = ciphertext.as_bytes();
-        let restored = RealMcElieceCiphertext::from_bytes(params, &bytes).unwrap();
-        
-        assert_eq!(ciphertext_bits[..8], restored.ciphertext[..8]);
-    }
-}

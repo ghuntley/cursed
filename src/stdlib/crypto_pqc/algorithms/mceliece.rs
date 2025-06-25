@@ -1,4 +1,4 @@
-use crate::error::Error;
+use crate::error::CursedError;
 /// Production-Ready Classic McEliece Code-based Cryptography Implementation
 /// 
 /// Classic McEliece is a code-based Key Encapsulation Mechanism based on error-correcting codes.
@@ -10,7 +10,7 @@ use crate::error::Error;
 /// Classic McEliece is based on:
 /// - Goppa codes over finite fields GF(2^m)
 /// - The Syndrome Decoding problem (proven NP-complete)
-/// - Error correction using algebraic decoding algorithms
+/// - CursedError correction using algebraic decoding algorithms
 /// 
 /// # Security Levels
 /// 
@@ -33,7 +33,7 @@ use rand::rngs::OsRng;
 use rand::RngCore;
 use sha3::{Sha3_256, Digest};
 use hmac::{Hmac, Mac};
-use crate::stdlib::crypto_pqc::{PqcResult, PqcError, SecurityLevel, AlgorithmType};
+// use crate::stdlib::crypto_pqc::{PqcResult, PqcError, SecurityLevel, AlgorithmType};
 use super::{KeyEncapsulation, ParameterSet, AlgorithmPerformance, KeySizes};
 
 type HmacSha256 = Hmac<Sha3_256>;
@@ -76,7 +76,7 @@ impl McElieceParams {
         }
     }
 
-    /// Error correction capability (maximum correctable errors)
+    /// CursedError correction capability (maximum correctable errors)
     pub fn t(&self) -> usize {
         match self {
             McElieceParams::McEliece348864 => 64,
@@ -771,7 +771,7 @@ impl McElieceSecretKey {
         let computed_syndrome = self.parity_check_matrix.multiply_vector(&error_vector);
         if computed_syndrome != *syndrome {
             return Err(PqcError::DecryptionFailed(
-                "Error correction verification failed".to_string()
+                "CursedError correction verification failed".to_string()
             ));
         }
 
@@ -1321,7 +1321,7 @@ impl ClassicMcEliece {
         // Check error correction bound
         if 2 * t >= n - k {
             return Err(PqcError::ParameterValidation(
-                "Error correction capability exceeds code bounds".to_string()
+                "CursedError correction capability exceeds code bounds".to_string()
             ));
         }
         

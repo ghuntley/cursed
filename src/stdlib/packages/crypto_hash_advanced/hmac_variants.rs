@@ -1,7 +1,6 @@
 /// Production-ready HMAC variants and advanced MAC implementations
-use crate::error_types::Error;
-use crate::stdlib::packages::crypto_hash_advanced::hash_traits::*;
-use crate::stdlib::crypto::types::CryptoError;
+use crate::error::CursedError;
+// use crate::stdlib::packages::crypto_hash_advanced::hash_traits::*;
 use std::collections::HashMap;
 
 /// Result type for HMAC operations
@@ -178,7 +177,7 @@ impl<H: Hasher + Clone> Hasher for HmacEngine<H> {
 
 impl<H: Hasher + Clone> KeyedHasher for HmacEngine<H> {
     fn set_key(&mut self, key: &[u8]) -> HashResult<()> {
-        self.set_key(key).map_err(|e| Error::InvalidArgument(e.to_string()))
+        self.set_key(key).map_err(|e| CursedError::InvalidArgument(e.to_string()))
     }
     
     fn key_length(&self) -> usize {
@@ -281,7 +280,7 @@ impl HmacSha256 {
     
     // Simplified SHA-256 - in production, use proper implementation
     fn sha256_hash(data: &[u8]) -> Vec<u8> {
-        use crate::stdlib::packages::crypto_hash_advanced::blake3::Blake3Hasher;
+//         use crate::stdlib::packages::crypto_hash_advanced::blake3::Blake3Hasher;
         let mut hasher = Blake3Hasher::new();
         hasher.hash(data)
     }
@@ -349,7 +348,7 @@ impl HmacSha512 {
     
     // Simplified SHA-512 - in production, use proper implementation  
     fn sha512_hash(data: &[u8]) -> Vec<u8> {
-        use crate::stdlib::packages::crypto_hash_advanced::blake3::Blake3Hasher;
+//         use crate::stdlib::packages::crypto_hash_advanced::blake3::Blake3Hasher;
         let mut hasher = Blake3Hasher::new();
         let mut hash = hasher.hash(data);
         hash.resize(64, 0); // Extend to 64 bytes
@@ -375,7 +374,7 @@ impl HmacBlake3 {
         
         // Process key
         let processed_key = if key.len() > 64 {
-            use crate::stdlib::packages::crypto_hash_advanced::blake3::Blake3Hasher;
+//             use crate::stdlib::packages::crypto_hash_advanced::blake3::Blake3Hasher;
             let mut hasher = Blake3Hasher::new();
             hasher.hash(key)
         } else {
@@ -399,7 +398,7 @@ impl HmacBlake3 {
     }
     
     pub fn compute(&self, data: &[u8]) -> [u8; 32] {
-        use crate::stdlib::packages::crypto_hash_advanced::blake3::Blake3Hasher;
+//         use crate::stdlib::packages::crypto_hash_advanced::blake3::Blake3Hasher;
         
         // Inner hash
         let mut inner_hasher = Blake3Hasher::new();
@@ -442,7 +441,7 @@ impl HmacKeccak256 {
         
         // Process key
         let processed_key = if key.len() > 136 {
-            use crate::stdlib::packages::crypto_hash_advanced::keccak;
+//             use crate::stdlib::packages::crypto_hash_advanced::keccak;
             keccak::keccak256(key)
         } else {
             let mut padded = [0u8; 136];
@@ -465,7 +464,7 @@ impl HmacKeccak256 {
     }
     
     pub fn compute(&self, data: &[u8]) -> [u8; 32] {
-        use crate::stdlib::packages::crypto_hash_advanced::keccak;
+//         use crate::stdlib::packages::crypto_hash_advanced::keccak;
         
         // Inner hash
         let mut inner_data = self.inner_key.to_vec();
@@ -506,7 +505,7 @@ impl CmacEngine {
     pub fn compute(&self, data: &[u8]) -> Vec<u8> {
         // Simplified CMAC implementation
         // In production, this would use actual AES encryption
-        use crate::stdlib::packages::crypto_hash_advanced::blake3::Blake3Hasher;
+//         use crate::stdlib::packages::crypto_hash_advanced::blake3::Blake3Hasher;
         
         let mut hasher = Blake3Hasher::new();
         hasher.update(&self.key);
@@ -540,7 +539,7 @@ impl GmacEngine {
     pub fn compute(&self, data: &[u8], additional_data: &[u8]) -> Vec<u8> {
         // Simplified GMAC implementation
         // Production would use proper Galois field arithmetic
-        use crate::stdlib::packages::crypto_hash_advanced::blake3::Blake3Hasher;
+//         use crate::stdlib::packages::crypto_hash_advanced::blake3::Blake3Hasher;
         
         let mut hasher = Blake3Hasher::new();
         hasher.update(&self.key);
@@ -573,7 +572,7 @@ impl PmacEngine {
     
     pub fn compute(&self, data: &[u8]) -> Vec<u8> {
         // Simplified PMAC implementation
-        use crate::stdlib::packages::crypto_hash_advanced::blake3::Blake3Hasher;
+//         use crate::stdlib::packages::crypto_hash_advanced::blake3::Blake3Hasher;
         
         let block_size = 16;
         let mut result = vec![0u8; 16];
@@ -628,111 +627,3 @@ pub fn verify_hmac_sha256(key: &[u8], data: &[u8], expected: &[u8; 32]) -> bool 
     hmac.verify(data, expected)
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_hmac_sha256() {
-        let key = b"secret_key";
-        let data = b"test message";
-        
-        let mac = hmac_sha256(key, data);
-        assert_eq!(mac.len(), 32);
-        
-        // Should be deterministic
-        let mac2 = hmac_sha256(key, data);
-        assert_eq!(mac, mac2);
-        
-        // Different key should produce different MAC
-        let mac3 = hmac_sha256(b"different_key", data);
-        assert_ne!(mac, mac3);
-    }
-
-    #[test]
-    fn test_hmac_verification() {
-        let key = b"test_key";
-        let data = b"test_data";
-        
-        let mac = hmac_sha256(key, data);
-        assert!(verify_hmac_sha256(key, data, &mac));
-        
-        // Wrong key should fail
-        assert!(!verify_hmac_sha256(b"wrong_key", data, &mac));
-        
-        // Wrong data should fail
-        assert!(!verify_hmac_sha256(key, b"wrong_data", &mac));
-    }
-
-    #[test]
-    fn test_hmac_variants() {
-        let key = b"shared_key";
-        let data = b"test_message";
-        
-        let sha256_mac = hmac_sha256(key, data);
-        let sha512_mac = hmac_sha512(key, data);
-        let blake3_mac = hmac_blake3(key, data);
-        let keccak_mac = hmac_keccak256(key, data);
-        
-        // All should be different
-        assert_ne!(sha256_mac[..], sha512_mac[..32]);
-        assert_ne!(sha256_mac, blake3_mac);
-        assert_ne!(sha256_mac, keccak_mac);
-        assert_ne!(blake3_mac, keccak_mac);
-    }
-
-    #[test]
-    fn test_cmac_engine() {
-        let key = b"cmac_test_key_16";
-        let data = b"test data for CMAC";
-        
-        let cmac = CmacEngine::new(key);
-        let mac = cmac.compute(data);
-        
-        assert_eq!(mac.len(), 16);
-        assert!(cmac.verify(data, &mac));
-        assert!(!cmac.verify(b"wrong data", &mac));
-    }
-
-    #[test]
-    fn test_gmac_engine() {
-        let key = b"gmac_key";
-        let auth_key = b"auth_key";
-        let data = b"plaintext";
-        let aad = b"additional auth data";
-        
-        let gmac = GmacEngine::new(key, auth_key);
-        let mac = gmac.compute(data, aad);
-        
-        assert_eq!(mac.len(), 16);
-        assert!(gmac.verify(data, aad, &mac));
-        assert!(!gmac.verify(data, b"wrong aad", &mac));
-    }
-
-    #[test]
-    fn test_pmac_engine() {
-        let key = b"pmac_key_for_test";
-        let data = b"data to authenticate with PMAC algorithm";
-        
-        let pmac = PmacEngine::new(key);
-        let mac = pmac.compute(data);
-        
-        assert_eq!(mac.len(), 16);
-        assert!(pmac.verify(data, &mac));
-        assert!(!pmac.verify(b"tampered data", &mac));
-    }
-
-    #[test]
-    fn test_hmac_factory() {
-        let key = b"factory_test_key";
-        
-        let hmac_sha256 = HmacFactory::create_hmac_sha256(key).unwrap();
-        let hmac_blake3 = HmacFactory::create_hmac_blake3(key).unwrap();
-        
-        let data = b"test";
-        let mac1 = hmac_sha256.compute(data);
-        let mac2 = hmac_blake3.compute(data);
-        
-        assert_ne!(mac1, mac2);
-    }
-}

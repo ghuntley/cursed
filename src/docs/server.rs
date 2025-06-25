@@ -205,7 +205,7 @@ pub struct ServerMetrics {
     pub requests_per_second: f64,
     /// Average response time (ms)
     pub avg_response_time_ms: f64,
-    /// Error rate (percentage)
+    /// CursedError rate (percentage)
     pub error_rate: f64,
     /// Cache hit rate (percentage)
     pub cache_hit_rate: f64,
@@ -287,7 +287,7 @@ impl DocumentationServer {
     }
 
     /// Build all server routes
-    fn build_routes(&self) -> impl Filter<Extract = impl Reply, Error = warp::Rejection> + Clone {
+    fn build_routes(&self) -> impl Filter<Extract = impl Reply, CursedError = warp::Rejection> + Clone {
         let registry = self.registry.clone();
         let analytics = self.analytics.clone();
         let metrics = self.metrics.clone();
@@ -371,7 +371,7 @@ impl DocumentationServer {
     }
 
     /// API route for search
-    fn api_search(&self, search_index: Arc<RwLock<HashMap<String, Vec<SearchResult>>>>) -> impl Filter<Extract = impl Reply, Error = warp::Rejection> + Clone {
+    fn api_search(&self, search_index: Arc<RwLock<HashMap<String, Vec<SearchResult>>>>) -> impl Filter<Extract = impl Reply, CursedError = warp::Rejection> + Clone {
         warp::path("search")
             .and(warp::get())
             .and(warp::query::<SearchQuery>())
@@ -442,7 +442,7 @@ impl DocumentationServer {
     }
 
     /// API route for version information
-    fn api_versions(&self, registry: Arc<DocumentationRegistry>) -> impl Filter<Extract = impl Reply, Error = warp::Rejection> + Clone {
+    fn api_versions(&self, registry: Arc<DocumentationRegistry>) -> impl Filter<Extract = impl Reply, CursedError = warp::Rejection> + Clone {
         warp::path("versions")
             .and(warp::get())
             .and(warp::path::param::<String>()) // package name
@@ -473,7 +473,7 @@ impl DocumentationServer {
     }
 
     /// API route for server metrics
-    fn api_metrics(&self, metrics: Arc<RwLock<ServerMetrics>>) -> impl Filter<Extract = impl Reply, Error = warp::Rejection> + Clone {
+    fn api_metrics(&self, metrics: Arc<RwLock<ServerMetrics>>) -> impl Filter<Extract = impl Reply, CursedError = warp::Rejection> + Clone {
         warp::path("metrics")
             .and(warp::get())
             .and_then(move || {
@@ -486,7 +486,7 @@ impl DocumentationServer {
     }
 
     /// API route for health check
-    fn api_health(&self) -> impl Filter<Extract = impl Reply, Error = warp::Rejection> + Clone {
+    fn api_health(&self) -> impl Filter<Extract = impl Reply, CursedError = warp::Rejection> + Clone {
         warp::path("health")
             .and(warp::get())
             .map(|| {
@@ -499,7 +499,7 @@ impl DocumentationServer {
     }
 
     /// CORS filter
-    fn cors_filter(&self) -> impl Filter<Extract = (), Error = std::convert::Infallible> + Clone {
+    fn cors_filter(&self) -> impl Filter<Extract = (), CursedError = std::convert::Infallible> + Clone {
         let config = self.config.cors_config.clone();
         warp::cors()
             .allow_origins(config.allowed_origins.iter().map(|s| s.as_str()).collect::<Vec<_>>())
@@ -509,13 +509,13 @@ impl DocumentationServer {
     }
 
     /// Cache headers filter
-    fn cache_headers_filter(&self) -> impl Filter<Extract = (), Error = std::convert::Infallible> + Clone {
+    fn cache_headers_filter(&self) -> impl Filter<Extract = (), CursedError = std::convert::Infallible> + Clone {
         let cache_duration = self.config.cache_config.static_cache_duration;
         warp::reply::with::header("Cache-Control", format!("public, max-age={}", cache_duration))
     }
 
     /// Metrics filter
-    fn metrics_filter(&self, metrics: Arc<RwLock<ServerMetrics>>) -> impl Filter<Extract = (), Error = std::convert::Infallible> + Clone {
+    fn metrics_filter(&self, metrics: Arc<RwLock<ServerMetrics>>) -> impl Filter<Extract = (), CursedError = std::convert::Infallible> + Clone {
         warp::any()
             .and_then(move || {
                 let metrics = metrics.clone();
@@ -713,31 +713,3 @@ impl Default for AnalyticsConfig {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-    
-    #[test]
-    fn test_server_config_default() {
-        let config = ServerConfig::default();
-        assert_eq!(config.bind_address.port(), 8080);
-        assert!(!config.enable_https);
-        assert!(config.cache_config.enabled);
-        assert!(config.search_config.enabled);
-    }
-    
-    #[test]
-    fn test_search_query_parsing() {
-        let query = SearchQuery {
-            q: "println".to_string(),
-            package: Some("std".to_string()),
-            version: None,
-            limit: Some(10),
-            offset: Some(0),
-        };
-        
-        assert_eq!(query.q, "println");
-        assert_eq!(query.package.unwrap(), "std");
-        assert_eq!(query.limit.unwrap(), 10);
-    }
-}

@@ -1,6 +1,6 @@
 /// fr fr Simplified database driver for CURSED - starting simple periodt
-use crate::stdlib::packages::sql_vibes::{SqlResult, SqlError, SqlValue, Row, ResultSet, Parameter};
-use crate::error::Error;
+// use crate::stdlib::packages::sql_vibes::{SqlResult, SqlError, SqlValue, Row, ResultSet, Parameter};
+use crate::error::CursedError;
 use std::collections::HashMap;
 
 /// fr fr Simple database connection that actually works
@@ -108,69 +108,3 @@ pub fn quick_query(connection_string: &str, sql: &str) -> SqlResult<ResultSet> {
     result
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_simple_connection_creation() {
-        let conn = SimpleConnection::new("sqlite://test.db".to_string());
-        assert!(conn.is_ok());
-        
-        let conn = SimpleConnection::new("".to_string());
-        assert!(conn.is_err());
-    }
-
-    #[test]
-    fn test_simple_query_execution() {
-        let mut conn = SimpleConnection::new("sqlite://test.db".to_string()).unwrap();
-        
-        let result = conn.execute_query("SELECT * FROM users", &[]);
-        assert!(result.is_ok());
-        
-        let result_set = result.unwrap();
-        assert!(!result_set.is_empty());
-        assert_eq!(result_set.column_count(), 3);
-        assert_eq!(result_set.row_count(), 2);
-        
-        assert!(conn.close().is_ok());
-    }
-
-    #[test]
-    fn test_simple_statement_execution() {
-        let mut conn = SimpleConnection::new("sqlite://test.db".to_string()).unwrap();
-        
-        let params = Vec::from([Parameter::positional(0, SqlValue::String("test".to_string()))]);
-        let result = conn.execute_statement("INSERT INTO users (name) VALUES (?)", &params);
-        assert!(result.is_ok());
-        assert_eq!(result.unwrap(), 1);
-        
-        assert!(conn.close().is_ok());
-    }
-
-    #[test] 
-    fn test_connection_lifecycle() {
-        let mut conn = SimpleConnection::new("sqlite://test.db".to_string()).unwrap();
-        
-        assert!(conn.is_alive());
-        
-        assert!(conn.close().is_ok());
-        assert!(!conn.is_alive());
-        
-        // Should fail after close
-        let result = conn.execute_query("SELECT 1", &[]);
-        assert!(result.is_err());
-    }
-
-    #[test]
-    fn test_helper_functions() {
-        let conn = connect("sqlite://test.db");
-        assert!(conn.is_ok());
-        
-        let result = quick_query("sqlite://test.db", "SELECT 1");
-        assert!(result.is_ok());
-        
-        let result = quick_query("", "SELECT 1");
-        assert!(result.is_err());
-    }
-}

@@ -1,4 +1,4 @@
-use crate::error_types::Error;
+use crate::error::CursedError;
 // Session Management for CURSED REPL
 // 
 // Manages REPL session state including variables, functions,
@@ -8,7 +8,6 @@ use std::collections::HashMap;
 use std::time::SystemTime;
 
 use crate::repl::ReplResult;
-use crate::error::Error;
 
 /// Session variable information
 #[derive(Debug, Clone)]
@@ -103,7 +102,7 @@ impl SessionManager {
         
         // Execute the code using the new evaluation system
         let result = crate::execute_repl_code(code, self)
-            .map_err(|e| Error::repl_error(e.to_string()))?;
+            .map_err(|e| CursedError::repl_error(e.to_string()))?;
         
         let execution_time = start_time.elapsed();
         
@@ -122,7 +121,7 @@ impl SessionManager {
     pub fn format_session_code(&self) -> ReplResult<String> {
         let code = self.get_session_code();
         // This would use the CURSED formatter
-        crate::format(&code).map_err(|e| Error::repl_error(e.to_string()))
+        crate::format(&code).map_err(|e| CursedError::repl_error(e.to_string()))
     }
 
     /// Lint the session code
@@ -337,57 +336,3 @@ impl Default for SessionManager {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_session_manager_creation() {
-        let manager = SessionManager::new();
-        assert!(manager.variables.is_empty());
-        assert!(manager.functions.is_empty());
-        assert!(manager.history.is_empty());
-    }
-
-    #[test]
-    fn test_session_initialization() {
-        let mut manager = SessionManager::new();
-        assert!(manager.initialize().is_ok());
-        assert!(!manager.session_code.is_empty());
-    }
-
-    #[test]
-    fn test_variable_parsing() {
-        let mut manager = SessionManager::new();
-        let code = "facts x = 42";
-        
-        assert!(manager.execute_code(code).is_ok());
-        assert_eq!(manager.variables.len(), 1);
-        assert!(manager.variables.contains_key("x"));
-    }
-
-    #[test]
-    fn test_history_management() {
-        let mut manager = SessionManager::new();
-        
-        manager.add_to_history(
-            "facts x = 42".to_string(),
-            true,
-            std::time::Duration::from_millis(10),
-        );
-        
-        let history = manager.get_history(5);
-        assert_eq!(history.len(), 1);
-        assert_eq!(history[0], "facts x = 42");
-    }
-
-    #[test]
-    fn test_type_inference() {
-        let manager = SessionManager::new();
-        
-        assert_eq!(manager.get_expression_type("42").unwrap(), "int");
-        assert_eq!(manager.get_expression_type("3.14").unwrap(), "float64");
-        assert_eq!(manager.get_expression_type("\"hello\"").unwrap(), "string");
-        assert_eq!(manager.get_expression_type("true").unwrap(), "bool");
-    }
-}

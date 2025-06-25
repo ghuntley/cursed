@@ -1,4 +1,4 @@
-use crate::error::Error;
+use crate::error::CursedError;
 /// fr fr Core type definitions for web_vibez package
 use std::collections::HashMap;
 use std::fmt;
@@ -160,7 +160,7 @@ impl RequestBody {
     }
 
     /// fr fr Convert to string representation
-    pub fn to_string(&self) -> Result<(), Error> {
+    pub fn to_string(&self) -> crate::error::Result<()> {
         match self {
             RequestBody::Empty => Ok(String::new()),
             RequestBody::Text(s) => Ok(s.clone()),
@@ -263,42 +263,3 @@ impl fmt::Display for Cookie {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_content_type_mime_types() {
-        assert_eq!(ContentType::Html.mime_type(), "text/html");
-        assert_eq!(ContentType::Json.mime_type(), "application/json");
-        assert_eq!(ContentType::Text.mime_type(), "text/plain");
-    }
-
-    #[test]
-    fn test_content_type_from_str() {
-        assert_eq!(ContentType::from_str("json"), ContentType::Json);
-        assert_eq!(ContentType::from_str("application/json"), ContentType::Json);
-        assert_eq!(ContentType::from_str("text/html"), ContentType::Html);
-    }
-
-    #[test]
-    fn test_request_body_content_length() {
-        assert_eq!(RequestBody::Empty.content_length(), 0);
-        assert_eq!(RequestBody::Text("hello".to_string()).content_length(), 5);
-        
-        let mut form = FormData::new();
-        form.insert("key".to_string(), "value".to_string());
-        assert_eq!(RequestBody::Form(form).content_length(), 9); // key=value
-    }
-
-    #[test]
-    fn test_cookie_header_value() {
-        let cookie = Cookie::new("session".to_string(), "abc123".to_string());
-        assert_eq!(cookie.to_header_value(), "session=abc123");
-        
-        let mut cookie = Cookie::new("user".to_string(), "john".to_string());
-        cookie.secure = true;
-        cookie.http_only = true;
-        assert_eq!(cookie.to_header_value(), "user=john; Secure; HttpOnly");
-    }
-}

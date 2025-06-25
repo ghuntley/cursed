@@ -3,9 +3,9 @@
 /// High-performance implementation of Ed25519 digital signatures with constant-time operations
 /// and cryptographic security. Ed25519 is fast, secure, and quantum-resistant (for now).
 
-use crate::stdlib::packages::crypto_signatures::errors::{SignatureError, SignatureResult};
-use crate::stdlib::packages::crypto_signatures::key_management::{KeyPair, PublicKey, KeyType};
-use crate::error::Error;
+// use crate::stdlib::packages::crypto_signatures::errors::{SignatureError, SignatureResult};
+// use crate::stdlib::packages::crypto_signatures::key_management::{KeyPair, PublicKey, KeyType};
+use crate::error::CursedError;
 use std::sync::{Arc, Mutex};
 
 /// Ed25519 signature size in bytes
@@ -356,7 +356,7 @@ impl Ed25519Verifier {
 /// Utility functions for Ed25519
 pub mod utils {
     use super::*;
-    use crate::stdlib::packages::crypto_signatures::key_management::KeyGenerator;
+//     use crate::stdlib::packages::crypto_signatures::key_management::KeyGenerator;
     
     /// Generate a new Ed25519 key pair
     pub fn generate_keypair() -> SignatureResult<KeyPair> {

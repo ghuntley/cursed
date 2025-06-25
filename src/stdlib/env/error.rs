@@ -1,8 +1,7 @@
-use crate::error::Error;
+use crate::error::CursedError;
 /// Environment variable error handling for CURSED standard library
 
 use std::fmt;
-use crate::error::CursedError;
 
 /// Specialized error type for environment variable operations
 #[derive(Debug, Clone, PartialEq)]
@@ -52,49 +51,49 @@ pub enum EnvError {
     },
 }
 
-impl fmt::Display for EnvError {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
-            EnvError::NotFound { key, message } => {
-                write!(f, "Environment variable '{}' not found: {}", key, message)
-            }
-            EnvError::InvalidValue { key, value, expected_type, message } => {
-                write!(f, "Invalid value '{}' for environment variable '{}' (expected {}): {}", 
-                       value, key, expected_type, message)
-            }
-            EnvError::PermissionDenied { key, operation, message } => {
-                write!(f, "Permission denied for {} operation on environment variable '{}': {}", 
-                       operation, key, message)
-            }
-            EnvError::InvalidKey { key, message } => {
-                write!(f, "Invalid environment variable key '{}': {}", key, message)
-            }
-            EnvError::SystemError { operation, message, code } => {
-                match code {
-                    Some(code) => write!(f, "System error during {}: {} (code: {})", operation, message, code),
-                    None => write!(f, "System error during {}: {}", operation, message),
-                }
-            }
-            EnvError::UnicodeError { key, message } => {
-                write!(f, "Unicode error for environment variable '{}': {}", key, message)
-            }
-            EnvError::ExpansionError { input, message } => {
-                write!(f, "Environment variable expansion error for '{}': {}", input, message)
-            }
-            EnvError::General { message } => {
-                write!(f, "Environment error: {}", message)
-            }
-        }
-    }
-}
+// impl fmt::Display for EnvError {
+//     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+//         match self {
+//             EnvError::NotFound { key, message } => {
+//                 write!(f, "Environment variable '{}' not found: {}", key, message)
+//             }
+//             EnvError::InvalidValue { key, value, expected_type, message } => {
+//                 write!(f, "Invalid value '{}' for environment variable '{}' (expected {}): {}", 
+//                        value, key, expected_type, message)
+//             }
+//             EnvError::PermissionDenied { key, operation, message } => {
+//                 write!(f, "Permission denied for {} operation on environment variable '{}': {}", 
+//                        operation, key, message)
+//             }
+//             EnvError::InvalidKey { key, message } => {
+//                 write!(f, "Invalid environment variable key '{}': {}", key, message)
+//             }
+//             EnvError::SystemError { operation, message, code } => {
+//                 match code {
+//                     Some(code) => write!(f, "System error during {}: {} (code: {})", operation, message, code),
+//                     None => write!(f, "System error during {}: {}", operation, message),
+//                 }
+//             }
+//             EnvError::UnicodeError { key, message } => {
+//                 write!(f, "Unicode error for environment variable '{}': {}", key, message)
+//             }
+//             EnvError::ExpansionError { input, message } => {
+//                 write!(f, "Environment variable expansion error for '{}': {}", input, message)
+//             }
+//             EnvError::General { message } => {
+//                 write!(f, "Environment error: {}", message)
+//             }
+//         }
+//     }
+// }
 
-impl std::error::Error for EnvError {}
-
-impl From<EnvError> for CursedError {
-    fn from(err: EnvError) -> Self {
-        CursedError::Runtime(err.to_string())
-    }
-}
+// impl std::error::CursedError for EnvError {}
+// 
+// impl From<EnvError> for CursedError {
+//     fn from(err: EnvError) -> Self {
+//         CursedError::Runtime(err.to_string())
+//     }
+// }
 
 impl From<std::env::VarError> for EnvError {
     fn from(err: std::env::VarError) -> Self {

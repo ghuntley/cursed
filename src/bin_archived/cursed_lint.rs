@@ -1,4 +1,4 @@
-use crate::error::Error;
+use crate::error::CursedError;
 /// CURSED Language Linter CLI
 /// 
 /// Command-line interface for the CURSED linter with comprehensive
@@ -86,6 +86,8 @@ enum OutputFormat {
 }
 
 fn main() {
+        // TODO: implement
+    }
     let cli = Cli::parse();
 
     if cli.show_rules {
@@ -94,7 +96,7 @@ fn main() {
     }
 
     if cli.files.is_empty() {
-        eprintln!("{}", "Error: No files specified".red());
+        eprintln!("{}", "CursedError: No files specified".red());
         eprintln!("Use --help for usage information");
         process::exit(1);
     }
@@ -122,7 +124,7 @@ fn main() {
                 total_files += files;
             }
             Err(e) => {
-                eprintln!("{}: {}", "Error".red(), e);
+                eprintln!("{}: {}", "CursedError".red(), e);
                 process::exit(1);
             }
         }
@@ -179,7 +181,7 @@ fn process_path(
     linter: &mut CursedLinter, 
     path: &Path, 
     cli: &Cli
-) -> Result<(), Error> {
+) -> crate::error::Result<()> {
     let mut total_issues = 0;
     let mut total_errors = 0;
     let mut total_warnings = 0;
@@ -227,7 +229,7 @@ fn process_file(
     linter: &mut CursedLinter,
     file_path: &Path,
     cli: &Cli,
-) -> Result<(), Error> {
+) -> crate::error::Result<()> {
     let content = fs::read_to_string(file_path)?;
     let results = linter.lint(&content)?;
 
@@ -249,7 +251,7 @@ fn process_file(
 
             // Filter by severity based on quiet/verbose flags
             if cli.quiet {
-                matches!(result.severity, LintSeverity::Error | LintSeverity::Warning)
+                matches!(result.severity, LintSeverity::CursedError | LintSeverity::Warning)
             } else {
                 true
             }
@@ -257,7 +259,7 @@ fn process_file(
         .collect();
 
     // Count by severity
-    let errors = filtered_results.iter().filter(|r| r.severity == LintSeverity::Error).count();
+    let errors = filtered_results.iter().filter(|r| r.severity == LintSeverity::CursedError).count();
     let warnings = filtered_results.iter().filter(|r| r.severity == LintSeverity::Warning).count();
     let suggestions = filtered_results.iter().filter(|r| r.severity == LintSeverity::Suggestion).count();
 
@@ -287,7 +289,7 @@ fn output_human(file_path: &Path, results: &[&cursed::tools::linter::LintResult]
     
     for result in results {
         let severity_color = match result.severity {
-            LintSeverity::Error => "red",
+            LintSeverity::CursedError => "red",
             LintSeverity::Warning => "yellow", 
             LintSeverity::Suggestion => "blue",
             LintSeverity::Info => "cyan",
@@ -366,7 +368,7 @@ fn output_checkstyle(file_path: &Path, results: &[&cursed::tools::linter::LintRe
     
     for result in results {
         let severity = match result.severity {
-            LintSeverity::Error => "error",
+            LintSeverity::CursedError => "error",
             LintSeverity::Warning => "warning",
             LintSeverity::Suggestion => "info",
             LintSeverity::Info => "info",
@@ -415,6 +417,8 @@ fn show_statistics(files: usize, issues: usize, errors: usize, warnings: usize, 
 }
 
 fn show_rule_documentation() {
+        // TODO: implement
+    }
     println!("{}", "CURSED Linter Rules".bold());
     println!();
     

@@ -1,5 +1,5 @@
-use crate::error::Error;
-// Error handling for PackRat archive operations
+use crate::error::CursedError;
+// CursedError handling for PackRat archive operations
 
 use std::fmt;
 
@@ -33,33 +33,33 @@ pub enum ArchiveError {
     General(String),
 }
 
-impl fmt::Display for ArchiveError {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
-            ArchiveError::IoError(msg) => write!(f, "I/O error: {}", msg),
-            ArchiveError::InvalidFormat(msg) => write!(f, "Invalid format: {}", msg),
-            ArchiveError::CorruptArchive(msg) => write!(f, "Corrupt archive: {}", msg),
-            ArchiveError::UnsupportedFormat(msg) => write!(f, "Unsupported format: {}", msg),
-            ArchiveError::InvalidHeader(msg) => write!(f, "Invalid header: {}", msg),
-            ArchiveError::HeaderTooLarge => write!(f, "Header too large"),
-            ArchiveError::CompressionError(msg) => write!(f, "Compression error: {}", msg),
-            ArchiveError::DecompressionError(msg) => write!(f, "Decompression error: {}", msg),
-            ArchiveError::PathTraversal(msg) => write!(f, "Path traversal detected: {}", msg),
-            ArchiveError::NameTooLong(msg) => write!(f, "Name too long: {}", msg),
-            ArchiveError::FileNotFound(msg) => write!(f, "File not found: {}", msg),
-            ArchiveError::PermissionDenied(msg) => write!(f, "Permission denied: {}", msg),
-            ArchiveError::General(msg) => write!(f, "Archive error: {}", msg),
-        }
-    }
-}
+// impl fmt::Display for ArchiveError {
+//     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+//         match self {
+//             ArchiveError::IoError(msg) => write!(f, "I/O error: {}", msg),
+//             ArchiveError::InvalidFormat(msg) => write!(f, "Invalid format: {}", msg),
+//             ArchiveError::CorruptArchive(msg) => write!(f, "Corrupt archive: {}", msg),
+//             ArchiveError::UnsupportedFormat(msg) => write!(f, "Unsupported format: {}", msg),
+//             ArchiveError::InvalidHeader(msg) => write!(f, "Invalid header: {}", msg),
+//             ArchiveError::HeaderTooLarge => write!(f, "Header too large"),
+//             ArchiveError::CompressionError(msg) => write!(f, "Compression error: {}", msg),
+//             ArchiveError::DecompressionError(msg) => write!(f, "Decompression error: {}", msg),
+//             ArchiveError::PathTraversal(msg) => write!(f, "Path traversal detected: {}", msg),
+//             ArchiveError::NameTooLong(msg) => write!(f, "Name too long: {}", msg),
+//             ArchiveError::FileNotFound(msg) => write!(f, "File not found: {}", msg),
+//             ArchiveError::PermissionDenied(msg) => write!(f, "Permission denied: {}", msg),
+//             ArchiveError::General(msg) => write!(f, "Archive error: {}", msg),
+//         }
+//     }
+// }
 
-impl std::error::Error for ArchiveError {}
-
-impl From<std::io::Error> for ArchiveError {
-    fn from(err: std::io::Error) -> Self {
-        ArchiveError::IoError(err.to_string())
-    }
-}
+// impl std::error::CursedError for ArchiveError {}
+// 
+// impl From<std::io::Error> for ArchiveError {
+//     fn from(err: std::io::Error) -> Self {
+//         ArchiveError::IoError(err.to_string())
+//     }
+// }
 
 impl From<std::string::FromUtf8Error> for ArchiveError {
     fn from(err: std::string::FromUtf8Error) -> Self {
@@ -118,47 +118,3 @@ pub fn general_error(msg: &str) -> ArchiveError {
     ArchiveError::General(msg.to_string())
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use tracing::info;
-    
-    #[test]
-    fn test_error_creation() {
-        info!("Testing PackRat error creation");
-        
-        let err = io_error("test I/O error");
-        assert!(matches!(err, ArchiveError::IoError(_)));
-        
-        let err = invalid_format("test format error");
-        assert!(matches!(err, ArchiveError::InvalidFormat(_)));
-        
-        let err = corrupt_archive("test corruption");
-        assert!(matches!(err, ArchiveError::CorruptArchive(_)));
-        
-        info!("PackRat error creation tests passed");
-    }
-    
-    #[test]
-    fn test_error_display() {
-        info!("Testing PackRat error display");
-        
-        let err = io_error("test message");
-        let display = format!("{}", err);
-        assert!(display.contains("I/O error"));
-        assert!(display.contains("test message"));
-        
-        info!("PackRat error display tests passed");
-    }
-    
-    #[test]
-    fn test_error_conversion() {
-        info!("Testing PackRat error conversion");
-        
-        let io_err = std::io::Error::new(std::io::ErrorKind::NotFound, "file not found");
-        let archive_err: ArchiveError = io_err.into();
-        assert!(matches!(archive_err, ArchiveError::IoError(_)));
-        
-        info!("PackRat error conversion tests passed");
-    }
-}

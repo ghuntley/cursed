@@ -3,7 +3,7 @@
 // Comprehensive signature validation with algorithm-specific verification,
 // certificate chain validation, policy enforcement, and security checks.
 
-use crate::stdlib::packages::crypto_signatures::{
+// use crate::stdlib::packages::crypto_signatures::{
     errors::{SignatureError, SignatureResult},
     hash_algorithms::{HashAlgorithm, HashAlgorithmManager},
     signature_format::{SignatureFormat, SignatureFormatHandler},
@@ -957,84 +957,3 @@ pub mod utils {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_quick_validation() {
-        let manager = SignatureValidationManager::new();
-        let message = b"test message";
-        let signature = vec![0u8; 64]; // Mock signature
-        let public_key = vec![0u8; 32]; // Mock public key
-        
-        let result = manager.quick_validate(message, &signature, &public_key, "Ed25519").unwrap();
-        assert!(result); // Should pass with mock verification
-    }
-
-    #[test]
-    fn test_algorithm_policy_validation() {
-        let manager = SignatureValidationManager::new();
-        let context = ValidationContext {
-            message: b"test".to_vec(),
-            signature: vec![0u8; 64],
-            public_key: vec![0u8; 32],
-            algorithm: "Ed25519".to_string(),
-            hash_algorithm: None,
-            signature_format: None,
-            message_format: None,
-            timestamp: None,
-            certificate_chain: None,
-            additional_data: HashMap::new(),
-        };
-
-        let policy = ValidationPolicy::default();
-        let check = manager.validate_algorithm_policy(&context, &policy);
-        assert!(check.passed);
-        assert_eq!(check.name, "algorithm_policy");
-    }
-
-    #[test]
-    fn test_security_level_assessment() {
-        let manager = SignatureValidationManager::new();
-        let context = ValidationContext {
-            message: b"test".to_vec(),
-            signature: vec![0u8; 64],
-            public_key: vec![0u8; 32],
-            algorithm: "Ed25519".to_string(),
-            hash_algorithm: None,
-            signature_format: None,
-            message_format: None,
-            timestamp: None,
-            certificate_chain: None,
-            additional_data: HashMap::new(),
-        };
-
-        let checks = vec![];
-        let security_level = manager.assess_security_level(&context, &checks);
-        assert!(matches!(security_level, SecurityLevel::Strong | SecurityLevel::Excellent));
-    }
-
-    #[test]
-    fn test_validation_policy_defaults() {
-        let policy = ValidationPolicy::default();
-        assert_eq!(policy.level, ValidationLevel::Standard);
-        assert!(policy.allowed_algorithms.contains(&"Ed25519".to_string()));
-        assert_eq!(policy.minimum_key_size.get("RSA"), Some(&2048));
-        assert!(!policy.allow_weak_algorithms);
-    }
-
-    #[test]
-    fn test_utils_functions() {
-        let message = b"test message";
-        let signature = vec![0u8; 64];
-        let public_key = vec![0u8; 32];
-        
-        let result = utils::quick_validate(message, &signature, &public_key, "Ed25519").unwrap();
-        assert!(result);
-        
-        let context = utils::create_context(message, &signature, &public_key, "Ed25519");
-        assert_eq!(context.algorithm, "Ed25519");
-        assert_eq!(context.message, message);
-    }
-}

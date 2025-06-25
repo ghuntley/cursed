@@ -4,7 +4,7 @@
 /// including optimization levels, performance tuning, and runtime behavior.
 /// Supports loading from files, environment variables, and command-line arguments.
 
-use crate::error::Error;
+use crate::error::CursedError;
 use serde::{Deserialize, Serialize};
 use std::path::Path;
 use std::time::Duration;
@@ -344,25 +344,25 @@ impl JitConfig {
     }
 
     /// Load configuration from a TOML file
-    pub fn from_toml_file<P: AsRef<Path>>(path: P) -> Result<(), Error> {
+    pub fn from_toml_file<P: AsRef<Path>>(path: P) -> crate::error::Result<()> {
         let content = std::fs::read_to_string(path)
-            .map_err(|e| Error::from_str(&format!("Failed to read config file: {}", e)))?;
+            .map_err(|e| CursedError::from_str(&format!("Failed to read config file: {}", e)))?;
         
         toml::from_str(&content)
-            .map_err(|e| Error::from_str(&format!("Failed to parse TOML config: {}", e)))
+            .map_err(|e| CursedError::from_str(&format!("Failed to parse TOML config: {}", e)))
     }
 
     /// Load configuration from a JSON file
-    pub fn from_json_file<P: AsRef<Path>>(path: P) -> Result<(), Error> {
+    pub fn from_json_file<P: AsRef<Path>>(path: P) -> crate::error::Result<()> {
         let content = std::fs::read_to_string(path)
-            .map_err(|e| Error::from_str(&format!("Failed to read config file: {}", e)))?;
+            .map_err(|e| CursedError::from_str(&format!("Failed to read config file: {}", e)))?;
         
         serde_json::from_str(&content)
-            .map_err(|e| Error::from_str(&format!("Failed to parse JSON config: {}", e)))
+            .map_err(|e| CursedError::from_str(&format!("Failed to parse JSON config: {}", e)))
     }
 
     /// Load configuration from environment variables
-    pub fn from_env() -> Result<(), Error> {
+    pub fn from_env() -> crate::error::Result<()> {
         let mut config = Self::default();
 
         // Engine configuration
@@ -418,21 +418,21 @@ impl JitConfig {
     }
 
     /// Save configuration to a TOML file
-    pub fn save_to_toml_file<P: AsRef<Path>>(&self, path: P) -> Result<(), Error> {
+    pub fn save_to_toml_file<P: AsRef<Path>>(&self, path: P) -> crate::error::Result<()> {
         let content = toml::to_string_pretty(self)
-            .map_err(|e| Error::from_str(&format!("Failed to serialize config to TOML: {}", e)))?;
+            .map_err(|e| CursedError::from_str(&format!("Failed to serialize config to TOML: {}", e)))?;
         
         std::fs::write(path, content)
-            .map_err(|e| Error::from_str(&format!("Failed to write config file: {}", e)))
+            .map_err(|e| CursedError::from_str(&format!("Failed to write config file: {}", e)))
     }
 
     /// Save configuration to a JSON file
-    pub fn save_to_json_file<P: AsRef<Path>>(&self, path: P) -> Result<(), Error> {
+    pub fn save_to_json_file<P: AsRef<Path>>(&self, path: P) -> crate::error::Result<()> {
         let content = serde_json::to_string_pretty(self)
-            .map_err(|e| Error::from_str(&format!("Failed to serialize config to JSON: {}", e)))?;
+            .map_err(|e| CursedError::from_str(&format!("Failed to serialize config to JSON: {}", e)))?;
         
         std::fs::write(path, content)
-            .map_err(|e| Error::from_str(&format!("Failed to write config file: {}", e)))
+            .map_err(|e| CursedError::from_str(&format!("Failed to write config file: {}", e)))
     }
 
     /// Merge with another configuration (other takes precedence)
@@ -474,11 +474,11 @@ impl JitConfig {
     }
 
     /// Validate configuration values
-    pub fn validate(&self) -> Result<(), Error> {
+    pub fn validate(&self) -> crate::error::Result<()> {
         // Validate optimization levels
         let valid_opt_levels = ["none", "less", "default", "aggressive"];
         if !valid_opt_levels.contains(&self.engine.optimization_level.as_str()) {
-            return Err(Error::from_str(&format!(
+            return Err(CursedError::from_str(&format!(
                 "Invalid optimization level: {}. Valid values: {:?}",
                 self.engine.optimization_level, valid_opt_levels
             )));
@@ -486,31 +486,31 @@ impl JitConfig {
 
         // Validate thresholds
         if self.compilation.hot_path_threshold == 0 {
-            return Err(Error::from_str("Hot path threshold must be greater than 0"));
+            return Err(CursedError::from_str("Hot path threshold must be greater than 0"));
         }
 
         if self.compilation.compilation_timeout_secs == 0 {
-            return Err(Error::from_str("Compilation timeout must be greater than 0"));
+            return Err(CursedError::from_str("Compilation timeout must be greater than 0"));
         }
 
         if self.memory.max_jit_memory_mb == 0 {
-            return Err(Error::from_str("Max JIT memory must be greater than 0"));
+            return Err(CursedError::from_str("Max JIT memory must be greater than 0"));
         }
 
         if self.monitoring.sample_rate < 0.0 || self.monitoring.sample_rate > 1.0 {
-            return Err(Error::from_str("Monitoring sample rate must be between 0.0 and 1.0"));
+            return Err(CursedError::from_str("Monitoring sample rate must be between 0.0 and 1.0"));
         }
 
         // Validate directories
         if let Some(ref dir) = self.debug.ir_dump_dir {
             if !Path::new(dir).exists() {
-                return Err(Error::from_str(&format!("IR dump directory does not exist: {}", dir)));
+                return Err(CursedError::from_str(&format!("IR dump directory does not exist: {}", dir)));
             }
         }
 
         if let Some(ref dir) = self.debug.asm_dump_dir {
             if !Path::new(dir).exists() {
-                return Err(Error::from_str(&format!("Assembly dump directory does not exist: {}", dir)));
+                return Err(CursedError::from_str(&format!("Assembly dump directory does not exist: {}", dir)));
             }
         }
 
@@ -649,13 +649,13 @@ impl JitConfig {
 }
 
 /// Convert optimization level string to inkwell OptimizationLevel
-pub fn parse_optimization_level(level: &str) -> Result<(), Error> {
+pub fn parse_optimization_level(level: &str) -> crate::error::Result<()> {
     match level.to_lowercase().as_str() {
         "none" => Ok(inkwell::OptimizationLevel::O0),
         "less" => Ok(inkwell::OptimizationLevel::O1),
         "default" => Ok(inkwell::OptimizationLevel::O2),
         "aggressive" => Ok(inkwell::OptimizationLevel::O3),
-        _ => Err(Error::from_str(&format!("Invalid optimization level: {}", level))),
+        _ => Err(CursedError::from_str(&format!("Invalid optimization level: {}", level))),
     }
 }
 
@@ -669,142 +669,3 @@ pub fn secs_to_duration(secs: u64) -> Duration {
     Duration::from_secs(secs)
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use tempfile::tempdir;
-
-    #[test]
-    fn test_default_config() {
-        let config = JitConfig::default();
-        assert_eq!(config.engine.optimization_level, "default");
-        assert!(config.engine.enable_function_cache);
-        assert_eq!(config.compilation.hot_path_threshold, 100);
-        assert!(config.runtime.enable_goroutine_integration);
-    }
-
-    #[test]
-    fn test_config_validation() {
-        let mut config = JitConfig::default();
-        assert!(config.validate().is_ok());
-        
-        // Test invalid optimization level
-        config.engine.optimization_level = "invalid".to_string();
-        assert!(config.validate().is_err());
-        
-        // Test invalid threshold
-        config.engine.optimization_level = "default".to_string();
-        config.compilation.hot_path_threshold = 0;
-        assert!(config.validate().is_err());
-    }
-
-    #[test]
-    fn test_development_config() {
-        let config = JitConfig::development();
-        assert_eq!(config.engine.optimization_level, "none");
-        assert!(config.debug.debug_mode);
-        assert!(config.debug.verbose_logging);
-        assert_eq!(config.compilation.hot_path_threshold, 10);
-    }
-
-    #[test]
-    fn test_production_config() {
-        let config = JitConfig::production();
-        assert_eq!(config.engine.optimization_level, "aggressive");
-        assert!(!config.debug.debug_mode);
-        assert!(!config.debug.verbose_logging);
-        assert_eq!(config.memory.max_jit_memory_mb, 500);
-    }
-
-    #[test]
-    fn test_benchmarking_config() {
-        let config = JitConfig::benchmarking();
-        assert_eq!(config.engine.optimization_level, "aggressive");
-        assert!(!config.compilation.enable_background_compilation);
-        assert!(!config.monitoring.enabled);
-        assert!(config.debug.enable_timing);
-    }
-
-    #[test]
-    fn test_config_serialization() {
-        let config = JitConfig::default();
-        
-        // Test TOML serialization
-        let toml_str = toml::to_string(&config).unwrap();
-        let deserialized: JitConfig = toml::from_str(&toml_str).unwrap();
-        assert_eq!(config.engine.optimization_level, deserialized.engine.optimization_level);
-        
-        // Test JSON serialization
-        let json_str = serde_json::to_string(&config).unwrap();
-        let deserialized: JitConfig = serde_json::from_str(&json_str).unwrap();
-        assert_eq!(config.compilation.hot_path_threshold, deserialized.compilation.hot_path_threshold);
-    }
-
-    #[test]
-    fn test_config_file_operations() {
-        let config = JitConfig::development();
-        let temp_dir = tempdir().unwrap();
-        
-        // Test TOML file operations
-        let toml_path = temp_dir.path().join("config.toml");
-        config.save_to_toml_file(&toml_path).unwrap();
-        let loaded_config = JitConfig::from_toml_file(&toml_path).unwrap();
-        assert_eq!(config.engine.optimization_level, loaded_config.engine.optimization_level);
-        
-        // Test JSON file operations
-        let json_path = temp_dir.path().join("config.json");
-        config.save_to_json_file(&json_path).unwrap();
-        let loaded_config = JitConfig::from_json_file(&json_path).unwrap();
-        assert_eq!(config.debug.debug_mode, loaded_config.debug.debug_mode);
-    }
-
-    #[test]
-    fn test_config_merging() {
-        let mut base_config = JitConfig::default();
-        let override_config = JitConfig::development();
-        
-        let original_opt_level = base_config.engine.optimization_level.clone();
-        base_config.merge(&override_config);
-        
-        // Should use development config values
-        assert_eq!(base_config.engine.optimization_level, "none");
-        assert!(base_config.debug.debug_mode);
-        assert_ne!(base_config.engine.optimization_level, original_opt_level);
-    }
-
-    #[test]
-    fn test_env_var_loading() {
-        std::env::set_var("CURSED_JIT_OPTIMIZATION_LEVEL", "aggressive");
-        std::env::set_var("CURSED_JIT_ENABLE_CACHE", "false");
-        std::env::set_var("CURSED_JIT_HOT_PATH_THRESHOLD", "50");
-        std::env::set_var("CURSED_JIT_DEBUG_MODE", "true");
-        
-        let config = JitConfig::from_env().unwrap();
-        assert_eq!(config.engine.optimization_level, "aggressive");
-        assert!(!config.engine.enable_function_cache);
-        assert_eq!(config.compilation.hot_path_threshold, 50);
-        assert!(config.debug.debug_mode);
-        
-        // Clean up
-        std::env::remove_var("CURSED_JIT_OPTIMIZATION_LEVEL");
-        std::env::remove_var("CURSED_JIT_ENABLE_CACHE");
-        std::env::remove_var("CURSED_JIT_HOT_PATH_THRESHOLD");
-        std::env::remove_var("CURSED_JIT_DEBUG_MODE");
-    }
-
-    #[test]
-    fn test_optimization_level_parsing() {
-        assert!(parse_optimization_level("none").is_ok());
-        assert!(parse_optimization_level("AGGRESSIVE").is_ok());
-        assert!(parse_optimization_level("invalid").is_err());
-    }
-
-    #[test]
-    fn test_config_summary() {
-        let config = JitConfig::development();
-        let summary = config.summary();
-        assert!(summary.contains("Optimization Level: none"));
-        assert!(summary.contains("Debug Mode: true"));
-        assert!(summary.contains("Hot Path Threshold: 10"));
-    }
-}

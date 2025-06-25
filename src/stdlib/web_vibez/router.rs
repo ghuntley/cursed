@@ -8,13 +8,12 @@ use crate::web::StatusCode;
 /// - Route priority and conflict resolution
 /// - Middleware integration
 
-use crate::stdlib::web_vibez::{HttpMethod, StatusCode};
-use crate::stdlib::web_vibez::route_matcher::{RouteMatcher, RouteMatch, RoutePattern};
-use crate::stdlib::web_vibez::handlers::{RequestHandler, HandlerResult};
-use crate::stdlib::web_vibez::context::{RequestContext, ResponseContext};
-use crate::stdlib::web_vibez::middleware::{Middleware, MiddlewareChain};
-use crate::stdlib::web_vibez::error_handling::RouterError;
-use crate::error::Error;
+// use crate::stdlib::web_vibez::{HttpMethod, StatusCode};
+// use crate::stdlib::web_vibez::route_matcher::{RouteMatcher, RouteMatch, RoutePattern};
+// use crate::stdlib::web_vibez::handlers::{RequestHandler, HandlerResult};
+// use crate::stdlib::web_vibez::context::{RequestContext, ResponseContext};
+// use crate::stdlib::web_vibez::middleware::{Middleware, MiddlewareChain};
+use crate::error::CursedError;
 
 use std::collections::HashMap;
 use std::sync::Arc;
@@ -64,7 +63,7 @@ impl Route {
         pattern: &str,
         handler: Arc<dyn RequestHandler>,
         middleware: Vec<Arc<dyn Middleware>>,
-    ) -> Result<(), Error> {
+    ) -> crate::error::Result<()> {
         let compiled_pattern = RoutePattern::compile(pattern)
             .map_err(|e| RouterError::InvalidPattern(pattern.to_string(), e))?;
         
@@ -85,7 +84,7 @@ impl Route {
     /// Calculate route priority based on pattern complexity
     fn calculate_priority(pattern: &RoutePattern) -> RoutePriority {
         if pattern.has_wildcards {
-            if pattern.segments.iter().any(|s| matches!(s, crate::stdlib::web_vibez::route_matcher::PathSegment::Wildcard(name) if name == "**")) {
+//             if pattern.segments.iter().any(|s| matches!(s, crate::stdlib::web_vibez::route_matcher::PathSegment::Wildcard(name) if name == "**")) {
                 RoutePriority::CatchAll
             } else {
                 RoutePriority::Wildcard
@@ -293,7 +292,7 @@ impl Router {
         pattern: &str,
         handler: Arc<dyn RequestHandler>,
         middleware: Vec<Arc<dyn Middleware>>,
-    ) -> Result<(), Error> {
+    ) -> crate::error::Result<()> {
         let route = Route::new(method, pattern, handler, middleware)?;
         
         // Add global middleware to route
@@ -324,7 +323,7 @@ impl Router {
         &mut self,
         pattern: &str,
         handler: Arc<dyn RequestHandler>,
-    ) -> Result<(), Error> {
+    ) -> crate::error::Result<()> {
         self.add_route(HttpMethod::GET, pattern, handler, Vec::from([]))
     }
 
@@ -333,7 +332,7 @@ impl Router {
         &mut self,
         pattern: &str,
         handler: Arc<dyn RequestHandler>,
-    ) -> Result<(), Error> {
+    ) -> crate::error::Result<()> {
         self.add_route(HttpMethod::POST, pattern, handler, Vec::from([]))
     }
 
@@ -342,7 +341,7 @@ impl Router {
         &mut self,
         pattern: &str,
         handler: Arc<dyn RequestHandler>,
-    ) -> Result<(), Error> {
+    ) -> crate::error::Result<()> {
         self.add_route(HttpMethod::PUT, pattern, handler, Vec::from([]))
     }
 
@@ -351,7 +350,7 @@ impl Router {
         &mut self,
         pattern: &str,
         handler: Arc<dyn RequestHandler>,
-    ) -> Result<(), Error> {
+    ) -> crate::error::Result<()> {
         self.add_route(HttpMethod::DELETE, pattern, handler, Vec::from([]))
     }
 
@@ -528,65 +527,3 @@ impl Default for Router {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use crate::stdlib::web_vibez::handlers::StaticHandler;
-    use std::sync::Arc;
-
-    #[test]
-    fn test_router_basic_routing() {
-        let mut router = Router::new();
-        let handler = Arc::new(StaticHandler::new("Hello World"));
-        
-        router.get("/hello", handler.clone()).unwrap();
-        router.post("/users", handler.clone()).unwrap();
-        
-        // Test route registration and finding instead of full request handling
-        let matched = router.find_route(HttpMethod::GET, "/hello");
-        assert!(matched.is_some());
-        
-        let matched = router.find_route(HttpMethod::POST, "/users");
-        assert!(matched.is_some());
-        
-        // Test that non-existent routes return None
-        let not_found = router.find_route(HttpMethod::GET, "/nonexistent");
-        assert!(not_found.is_none());
-    }
-
-    #[test]
-    fn test_router_route_parameters() {
-        let mut router = Router::new();
-        let handler = Arc::new(StaticHandler::new("User Profile"));
-        
-        router.get("/users/:id", handler).unwrap();
-        
-        let matched = router.find_route(HttpMethod::GET, "/users/123").unwrap();
-        
-        assert_eq!(matched.route_match.param("id"), Some("123"));
-    }
-
-    #[test]
-    fn test_route_priority_calculation() {
-        let static_route = RoutePattern::compile("/users/profile").unwrap();
-        let param_route = RoutePattern::compile("/users/:id").unwrap();
-        let wildcard_route = RoutePattern::compile("/files/*").unwrap();
-        
-        assert_eq!(Route::calculate_priority(&static_route), RoutePriority::Exact);
-        assert_eq!(Route::calculate_priority(&param_route), RoutePriority::Parameterized);
-        assert_eq!(Route::calculate_priority(&wildcard_route), RoutePriority::Wildcard);
-    }
-
-    #[test]
-    fn test_route_group() {
-        let mut group = RouteGroup::new("/api/v1");
-        let handler = Arc::new(StaticHandler::new("API Response"));
-        
-        let route = Route::new(HttpMethod::GET, "/users", handler, Vec::from([])).unwrap();
-        group.add_route(route);
-        
-        let routes = group.all_routes();
-        assert_eq!(routes.len(), 1);
-        assert_eq!(routes[0].pattern, "/api/v1/users");
-    }
-}

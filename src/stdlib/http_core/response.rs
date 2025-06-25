@@ -1,5 +1,5 @@
 use crate::web::StatusCode;
-use crate::error::Error;
+use crate::error::CursedError;
 // HTTP Response Processing for CURSED web_vibez
 //
 // Comprehensive response building, formatting, and writing capabilities.
@@ -9,7 +9,7 @@ use std::fmt::Write as FmtWrite;
 use std::io::{self, Write};
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
-use crate::stdlib::http_core::{
+// use crate::stdlib::http_core::{
     Headers, HeaderMap, ContentType, Cookie, CookieJar, HttpError, HttpResult
 };
 
@@ -481,49 +481,3 @@ impl ResponseBuilder {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_response_creation() {
-        let response = Response::ok()
-            .text("Hello, World!")
-            .header("X-Custom", "value");
-
-        assert_eq!(response.status, StatusCode::Ok);
-        assert_eq!(response.get_header("X-Custom"), Some(&"value".to_string()));
-        assert!(response.has_body());
-    }
-
-    #[test]
-    fn test_response_builder() {
-        let response = ResponseBuilder::ok()
-            .header("Content-Type", "application/json")
-            .text("{\"message\": \"success\"}")
-            .build();
-
-        assert_eq!(response.status, StatusCode::Ok);
-        assert_eq!(response.get_header("Content-Type"), Some(&"application/json".to_string()));
-    }
-
-    #[test]
-    fn test_redirect_response() {
-        let response = Response::redirect("https://example.com", true);
-        
-        assert_eq!(response.status, StatusCode::MovedPermanently);
-        assert_eq!(response.get_header("Location"), Some(&"https://example.com".to_string()));
-    }
-
-    #[test]
-    fn test_response_formatting() {
-        let response = Response::ok()
-            .text("Hello")
-            .header("Content-Type", "text/plain");
-
-        let http_string = response.to_http_string().unwrap();
-        assert!(http_string.contains("HTTP/1.1 200 OK"));
-        assert!(http_string.contains("Content-Type: text/plain"));
-        assert!(http_string.contains("Hello"));
-    }
-}

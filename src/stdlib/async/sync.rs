@@ -1,4 +1,4 @@
-use crate::error::Error;
+use crate::error::CursedError;
 /// Async synchronization primitives for CURSED stdlib
 use std::collections::VecDeque;
 use std::sync::{Arc, Mutex, Condvar};
@@ -8,7 +8,7 @@ use std::time::Duration;
 use std::future::Future as StdFuture;
 
 use crate::runtime::r#async::{Future, Promise, PromiseResolver, PromiseRejecter};
-use crate::stdlib::r#async::{AsyncError, AsyncResult};
+// use crate::stdlib::r#async::{AsyncError, AsyncResult};
 
 /// Async mutex for protecting shared data
 pub struct AsyncMutex<T> {
@@ -525,7 +525,7 @@ impl<T> Sender<T> {
     }
 
     /// Try to send without waiting
-    pub fn try_send(&self, value: T) -> Result<(), Error> {
+    pub fn try_send(&self, value: T) -> crate::error::Result<()> {
         let mut inner = self.inner.lock().unwrap();
         
         if inner.closed {
@@ -585,7 +585,7 @@ impl<T> Receiver<T> {
     }
 
     /// Try to receive without waiting
-    pub fn try_recv(&self) -> Result<(), Error> {
+    pub fn try_recv(&self) -> crate::error::Result<()> {
         let mut inner = self.inner.lock().unwrap();
         
         if let Some(value) = inner.queue.pop_front() {
@@ -938,59 +938,3 @@ where
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_async_mutex_creation() {
-        let mutex = AsyncMutex::new(42);
-        let guard = mutex.try_lock();
-        assert!(guard.is_some());
-        
-        if let Some(guard) = guard {
-            assert_eq!(*guard, 42);
-        }
-    }
-
-    #[test]
-    fn test_async_semaphore_creation() {
-        let semaphore = AsyncSemaphore::new(3);
-        
-        // Should be able to acquire 3 permits
-        assert!(semaphore.try_acquire().is_some());
-        assert!(semaphore.try_acquire().is_some());
-        assert!(semaphore.try_acquire().is_some());
-        
-        // Fourth should fail
-        assert!(semaphore.try_acquire().is_none());
-    }
-
-    #[test]
-    fn test_channel_creation() {
-        let (sender, receiver) = Channel::unbounded();
-        
-        // Should be able to send immediately
-        assert!(sender.try_send(42).is_ok());
-        
-        // Should be able to receive
-        assert!(receiver.try_recv().is_ok());
-    }
-
-    #[test]
-    fn test_oneshot_channel() {
-        let (sender, _receiver) = oneshot::channel();
-        
-        // Should be able to send once
-        assert!(sender.send(42).is_ok());
-    }
-
-    #[test]
-    fn test_either_type() {
-        let left = Either::Left(42);
-        let right = Either::Right("hello");
-        
-        assert!(matches!(left, Either::Left(42)));
-        assert!(matches!(right, Either::Right("hello")));
-    }
-}

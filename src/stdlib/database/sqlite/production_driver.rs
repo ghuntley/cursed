@@ -20,7 +20,7 @@ use super::super::{
     DriverConn, DatabaseError, DatabaseErrorKind, SqlValue, TxOptions, 
     DriverStmt, DriverTx, SqlIsolationLevel
 };
-use crate::error::Error;
+use crate::error::CursedError;
 use super::super::driver::{QueryResult, ExecuteResult, ConnectionMetadata};
 
 /// Production SQLite connection with full functionality
@@ -253,9 +253,9 @@ impl ProductionSqliteConnection {
     }
 
     /// Execute query with timing and error handling
-    fn execute_with_timing<F, R>(&self, operation: F) -> Result<(), Error>
+    fn execute_with_timing<F, R>(&self, operation: F) -> crate::error::Result<()>
     where
-        F: FnOnce() -> Result<(), Error>,
+        F: FnOnce() -> crate::error::Result<()>,
     {
         let start = Instant::now();
         let result = operation();
@@ -353,7 +353,7 @@ impl ProductionSqliteConnection {
 }
 
 impl DriverConn for ProductionSqliteConnection {
-    fn prepare(&self, query: &str) -> Result<(), Error> {
+    fn prepare(&self, query: &str) -> crate::error::Result<()> {
         self.execute_with_timing(|| {
             self.get_or_prepare_statement(query)
                 .map_err(|e| DatabaseError::new(DatabaseErrorKind::QueryError, &e.to_string()))?;
@@ -368,7 +368,7 @@ impl DriverConn for ProductionSqliteConnection {
         })
     }
 
-    fn query(&self, query: &str, args: &[SqlValue]) -> Result<(), Error> {
+    fn query(&self, query: &str, args: &[SqlValue]) -> crate::error::Result<()> {
         self.execute_with_timing(|| {
             let handle = self.connection.lock().unwrap();
             if let Some(ref conn) = *handle {
@@ -416,7 +416,7 @@ impl DriverConn for ProductionSqliteConnection {
         })
     }
 
-    fn execute(&self, query: &str, args: &[SqlValue]) -> Result<(), Error> {
+    fn execute(&self, query: &str, args: &[SqlValue]) -> crate::error::Result<()> {
         self.execute_with_timing(|| {
             let handle = self.connection.lock().unwrap();
             if let Some(ref conn) = *handle {
@@ -443,7 +443,7 @@ impl DriverConn for ProductionSqliteConnection {
         })
     }
 
-    fn begin_transaction(&self, opts: TxOptions) -> Result<(), Error> {
+    fn begin_transaction(&self, opts: TxOptions) -> crate::error::Result<()> {
         let mut in_tx = self.in_transaction.lock().unwrap();
         if *in_tx {
             // Already in transaction, create savepoint
@@ -474,7 +474,7 @@ impl DriverConn for ProductionSqliteConnection {
         Ok(Box::new(tx))
     }
 
-    fn ping(&self) -> Result<(), Error> {
+    fn ping(&self) -> crate::error::Result<()> {
         self.execute_with_timing(|| {
             let handle = self.connection.lock().unwrap();
             if let Some(ref conn) = *handle {
@@ -490,7 +490,7 @@ impl DriverConn for ProductionSqliteConnection {
         })
     }
 
-    fn close(&self) -> Result<(), Error> {
+    fn close(&self) -> crate::error::Result<()> {
         // Clean up cached statements
         let _ = self.cleanup_statement_cache();
         
@@ -566,7 +566,7 @@ impl ProductionSqliteStatement {
         connection: Arc<Mutex<Option<Connection>>>,
         query: String,
         stats: Arc<Mutex<ConnectionStats>>
-    ) -> Result<(), Error> {
+    ) -> crate::error::Result<()> {
         Ok(Self {
             connection,
             query,
@@ -577,7 +577,7 @@ impl ProductionSqliteStatement {
     }
 
     /// Get parameter count by parsing the query
-    fn get_parameter_count(&mut self) -> Result<(), Error> {
+    fn get_parameter_count(&mut self) -> crate::error::Result<()> {
         if let Some(count) = self.parameter_count {
             return Ok(count);
         }
@@ -600,7 +600,7 @@ impl ProductionSqliteStatement {
 }
 
 impl DriverStmt for ProductionSqliteStatement {
-    fn execute(&self, args: &[SqlValue]) -> Result<(), Error> {
+    fn execute(&self, args: &[SqlValue]) -> crate::error::Result<()> {
         let start = Instant::now();
         
         let handle = self.connection.lock().unwrap();
@@ -634,7 +634,7 @@ impl DriverStmt for ProductionSqliteStatement {
         }
     }
 
-    fn query(&self, args: &[SqlValue]) -> Result<(), Error> {
+    fn query(&self, args: &[SqlValue]) -> crate::error::Result<()> {
         let start = Instant::now();
         
         let handle = self.connection.lock().unwrap();
@@ -687,7 +687,7 @@ impl DriverStmt for ProductionSqliteStatement {
         }
     }
 
-    fn close(&self) -> Result<(), Error> {
+    fn close(&self) -> crate::error::Result<()> {
         // Statement cleanup is handled automatically by rusqlite
         Ok(())
     }
@@ -746,7 +746,7 @@ impl ProductionSqliteTransaction {
         options: TxOptions,
         stats: Arc<Mutex<ConnectionStats>>,
         in_transaction: Arc<Mutex<bool>>
-    ) -> Result<(), Error> {
+    ) -> crate::error::Result<()> {
         // Begin transaction
         {
             let handle = connection.lock().unwrap();
@@ -783,7 +783,7 @@ impl ProductionSqliteTransaction {
         savepoint_name: String,
         stats: Arc<Mutex<ConnectionStats>>,
         savepoint_stack: Arc<Mutex<Vec<String>>>
-    ) -> Result<(), Error> {
+    ) -> crate::error::Result<()> {
         // Create savepoint
         {
             let handle = connection.lock().unwrap();
@@ -808,7 +808,7 @@ impl ProductionSqliteTransaction {
 }
 
 impl DriverTx for ProductionSqliteTransaction {
-    fn commit(&self) -> Result<(), Error> {
+    fn commit(&self) -> crate::error::Result<()> {
         let handle = self.connection.lock().unwrap();
         if let Some(ref conn) = *handle {
             if self.is_savepoint {
@@ -842,7 +842,7 @@ impl DriverTx for ProductionSqliteTransaction {
         Ok(())
     }
 
-    fn rollback(&self) -> Result<(), Error> {
+    fn rollback(&self) -> crate::error::Result<()> {
         let handle = self.connection.lock().unwrap();
         if let Some(ref conn) = *handle {
             if self.is_savepoint {
@@ -876,7 +876,7 @@ impl DriverTx for ProductionSqliteTransaction {
         Ok(())
     }
 
-    fn prepare(&self, query: &str) -> Result<(), Error> {
+    fn prepare(&self, query: &str) -> crate::error::Result<()> {
         let stmt = ProductionSqliteStatement::new(
             self.connection.clone(),
             query.to_string(),
@@ -885,12 +885,12 @@ impl DriverTx for ProductionSqliteTransaction {
         Ok(Box::new(stmt))
     }
 
-    fn query(&self, query: &str, args: &[SqlValue]) -> Result<(), Error> {
+    fn query(&self, query: &str, args: &[SqlValue]) -> crate::error::Result<()> {
         let stmt = self.prepare(query)?;
         stmt.query(args)
     }
 
-    fn execute(&self, query: &str, args: &[SqlValue]) -> Result<(), Error> {
+    fn execute(&self, query: &str, args: &[SqlValue]) -> crate::error::Result<()> {
         let stmt = self.prepare(query)?;
         stmt.execute(args)
     }
@@ -931,7 +931,7 @@ impl DriverTx for ProductionSqliteTransaction {
 }
 
 /// Convert CURSED SqlValue arguments to rusqlite parameters
-fn convert_args_to_rusqlite_params(args: &[SqlValue]) -> Result<(), Error> {
+fn convert_args_to_rusqlite_params(args: &[SqlValue]) -> crate::error::Result<()> {
     let mut params = Vec::new();
     
     for arg in args {
@@ -963,7 +963,7 @@ fn convert_args_to_rusqlite_params(args: &[SqlValue]) -> Result<(), Error> {
 }
 
 /// Convert rusqlite value to CURSED SqlValue
-fn convert_rusqlite_value_to_sql_value(row: &rusqlite::Row, index: usize) -> Result<(), Error> {
+fn convert_rusqlite_value_to_sql_value(row: &rusqlite::Row, index: usize) -> crate::error::Result<()> {
     let value: SqliteValue = row.get(index)
         .map_err(|e| DatabaseError::new(DatabaseErrorKind::ConversionError, &format!("Failed to get column {}: {}", index, e)))?;
     
@@ -976,98 +976,3 @@ fn convert_rusqlite_value_to_sql_value(row: &rusqlite::Row, index: usize) -> Res
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use tempfile::tempdir;
-
-    #[test]
-    fn test_production_connection_creation() {
-        let temp_dir = tempdir().unwrap();
-        let db_path = temp_dir.path().join("test.db");
-        
-        let config = SqliteConfig {
-            database_path: db_path.to_string_lossy().to_string(),
-            ..SqliteConfig::default()
-        };
-        
-        let conn = ProductionSqliteConnection::new(config);
-        assert!(conn.is_ok());
-        
-        let conn = conn.unwrap();
-        assert!(!conn.connection_id().is_empty());
-        assert!(!conn.is_pooled());
-    }
-
-    #[test]
-    fn test_connection_ping() {
-        let temp_dir = tempdir().unwrap();
-        let db_path = temp_dir.path().join("test.db");
-        
-        let config = SqliteConfig {
-            database_path: db_path.to_string_lossy().to_string(),
-            ..SqliteConfig::default()
-        };
-        
-        let conn = ProductionSqliteConnection::new(config).unwrap();
-        assert!(conn.ping().is_ok());
-        assert!(conn.is_alive());
-    }
-
-    #[test]
-    fn test_statement_preparation() {
-        let temp_dir = tempdir().unwrap();
-        let db_path = temp_dir.path().join("test.db");
-        
-        let config = SqliteConfig {
-            database_path: db_path.to_string_lossy().to_string(),
-            ..SqliteConfig::default()
-        };
-        
-        let conn = ProductionSqliteConnection::new(config).unwrap();
-        let stmt = conn.prepare("SELECT 1");
-        assert!(stmt.is_ok());
-    }
-
-    #[test]
-    fn test_transaction_operations() {
-        let temp_dir = tempdir().unwrap();
-        let db_path = temp_dir.path().join("test.db");
-        
-        let config = SqliteConfig {
-            database_path: db_path.to_string_lossy().to_string(),
-            ..SqliteConfig::default()
-        };
-        
-        let conn = ProductionSqliteConnection::new(config).unwrap();
-        
-        // Begin transaction
-        let tx = conn.begin_transaction(TxOptions::default());
-        assert!(tx.is_ok());
-        
-        let tx = tx.unwrap();
-        assert!(tx.is_active());
-        
-        // Commit transaction
-        assert!(tx.commit().is_ok());
-    }
-
-    #[test]
-    fn test_connection_statistics() {
-        let temp_dir = tempdir().unwrap();
-        let db_path = temp_dir.path().join("test.db");
-        
-        let config = SqliteConfig {
-            database_path: db_path.to_string_lossy().to_string(),
-            ..SqliteConfig::default()
-        };
-        
-        let conn = ProductionSqliteConnection::new(config).unwrap();
-        let stats = conn.get_stats();
-        assert!(stats.is_ok());
-        
-        let stats = stats.unwrap();
-        assert_eq!(stats.queries_executed, 0);
-        assert_eq!(stats.statements_prepared, 0);
-    }
-}

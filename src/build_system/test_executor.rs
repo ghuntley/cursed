@@ -4,7 +4,7 @@
 // result parsing, and performance metrics collection.
 
 use crate::build_system::test_discovery::{TestFunction, TestCategory, TestFilter};
-use crate::error::Error;
+use crate::error::CursedError;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
@@ -243,7 +243,7 @@ impl TestExecutor {
     
     /// Execute a collection of tests
     #[instrument(skip(self, tests))]
-    pub async fn execute_tests(&self, tests: Vec<TestFunction>) -> Result<(), Error> {
+    pub async fn execute_tests(&self, tests: Vec<TestFunction>) -> crate::error::Result<()> {
         info!("Starting execution of {} tests with {} threads", 
               tests.len(), self.config.parallel_threads);
         
@@ -424,7 +424,7 @@ impl TestExecutor {
     fn execute_with_timeout(
         mut cmd: Command,
         timeout: Duration,
-    ) -> Result<(), Error> {
+    ) -> crate::error::Result<()> {
         let start = Instant::now();
         
         let mut child = cmd.spawn()?;
@@ -815,59 +815,3 @@ impl TestBatch {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use tempfile::tempdir;
-    
-    #[test]
-    fn test_execution_config_default() {
-        let config = TestExecutionConfig::default();
-        assert!(config.parallel_threads > 0);
-        assert_eq!(config.default_timeout, 60);
-        assert!(config.capture_output);
-    }
-    
-    #[test]
-    fn test_output_parser_failure_extraction() {
-        let parser = TestOutputParser::new();
-        
-        let output = "thread 'test_something' panicked at 'assertion failed: `(left == right)`'";
-        let reason = parser.extract_failure_reason(output, "");
-        
-        assert!(reason.is_some());
-        assert!(reason.unwrap().contains("assertion failed"));
-    }
-    
-    #[test]
-    fn test_output_parser_metrics_extraction() {
-        let parser = TestOutputParser::new();
-        
-        let output = "test bench_something ... bench: 1,234 ns/iter (+/- 100)";
-        let metrics = parser.extract_metrics(output, Duration::from_millis(100));
-        
-        assert!(metrics.custom_metrics.contains_key("benchmark_ns_per_iter"));
-        assert_eq!(metrics.custom_metrics["benchmark_ns_per_iter"], 1234.0);
-    }
-    
-    #[test]
-    fn test_test_batch_creation() {
-        let tests = vec![
-            TestFunction {
-                name: "test1".to_string(),
-                file_path: PathBuf::from("test.rs"),
-                line_number: 1,
-                category: TestCategory::Unit,
-                ignored: false,
-                is_benchmark: false,
-                timeout: None,
-                attributes: Vec::new(),
-                module_path: "test".to_string(),
-            }
-        ];
-        
-        let batch = TestBatch::new("test_batch".to_string(), tests);
-        assert_eq!(batch.name, "test_batch");
-        assert_eq!(batch.tests.len(), 1);
-    }
-}

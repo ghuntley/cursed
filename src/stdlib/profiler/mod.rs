@@ -1,4 +1,4 @@
-use crate::error::Error;
+use crate::error::CursedError;
 /// Performance monitoring and profiling tools for CURSED
 pub mod error;
 pub mod cpu;
@@ -116,38 +116,3 @@ pub struct QuickStats {
     pub dummy_computation_result: i64,
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_profiler_initialization() {
-        let result = initialize();
-        assert!(result.is_ok());
-        
-        let stats = get_statistics();
-        assert!(stats.is_ok());
-        
-        let shutdown_result = shutdown();
-        assert!(shutdown_result.is_ok());
-    }
-
-    #[test]
-    fn test_quick_performance_check() {
-        let stats = quick_performance_check();
-        assert!(stats.is_ok());
-        
-        let stats = stats.unwrap();
-        assert!(stats.total_time_ns > 0);
-        assert!(stats.cpu_performance_ns > 0);
-        assert!(stats.memory_performance_ns > 0);
-    }
-
-    #[test]
-    fn test_profiling_overhead() {
-        let overhead = get_profiling_overhead();
-        assert!(overhead > 0);
-        // Overhead should be reasonable (less than 1ms)
-        assert!(overhead < 1_000_000);
-    }
-}

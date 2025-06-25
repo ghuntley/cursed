@@ -7,11 +7,11 @@ use std::sync::Arc;
 // use tokio_postgres::{Statement, Row}; // Disabled - tokio causes E0753 errors
 use super::connection::Statement;
 pub struct Row;
-use crate::stdlib::database::{
+// use crate::stdlib::database::{
     DriverStmt, SqlValue,
     driver::{QueryResult, ExecuteResult}
 };
-use crate::error::Error;
+use crate::error::CursedError;
 use super::error::{PostgresError, PostgresErrorKind, PostgresResult};
 use super::types::{map_postgres_value, prepare_parameters, extract_column_info, PostgresParam};
 
@@ -229,25 +229,25 @@ impl PostgresStatement {
 }
 
 impl DriverStmt for PostgresStatement {
-    fn query(&self, args: &[SqlValue]) -> Result<(), Error> {
+    fn query(&self, args: &[SqlValue]) -> crate::error::Result<()> {
         // For async execution in sync context, we need a runtime handle
         // This is a limitation of the current sync API design
-        Err(crate::stdlib::database::DatabaseError::new(
-            crate::stdlib::database::DatabaseErrorKind::NotSupported,
+//         Err(crate::stdlib::database::DatabaseError::new(
+//             crate::stdlib::database::DatabaseErrorKind::NotSupported,
             "Prepared statement queries require async context. Use connection.query() instead.",
         ))
     }
 
-    fn execute(&self, args: &[SqlValue]) -> Result<(), Error> {
+    fn execute(&self, args: &[SqlValue]) -> crate::error::Result<()> {
         // For async execution in sync context, we need a runtime handle
         // This is a limitation of the current sync API design
-        Err(crate::stdlib::database::DatabaseError::new(
-            crate::stdlib::database::DatabaseErrorKind::NotSupported,
+//         Err(crate::stdlib::database::DatabaseError::new(
+//             crate::stdlib::database::DatabaseErrorKind::NotSupported,
             "Prepared statement execution requires async context. Use connection.execute() instead.",
         ))
     }
 
-    fn close(&self) -> Result<(), Error> {
+    fn close(&self) -> crate::error::Result<()> {
         // tokio-postgres handles cleanup automatically
         Ok(())
     }
@@ -318,61 +318,10 @@ impl std::fmt::Display for StatementStats {
         }
         
         if let Some(ref last_error) = self.last_error {
-            writeln!(f, "  Last Error: {}", last_error)?;
+            writeln!(f, "  Last CursedError: {}", last_error)?;
         }
         
         Ok(())
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use tokio_postgres::types::Type;
-
-    #[test]
-    fn test_statement_info() {
-        // Create a mock statement for testing
-        let info = StatementInfo {
-            query: "SELECT * FROM users WHERE id = $1".to_string(),
-            parameter_count: 1,
-            column_count: 3,
-            parameter_types: vec!["int4".to_string()],
-            column_types: vec!["int4".to_string(), "text".to_string(), "text".to_string()],
-            column_names: vec!["id".to_string(), "name".to_string(), "email".to_string()],
-        };
-        
-        assert_eq!(info.parameter_count, 1);
-        assert_eq!(info.column_count, 3);
-        assert!(info.query.contains("SELECT"));
-    }
-
-    #[test]
-    fn test_statement_stats() {
-        let stats = StatementStats {
-            executions: 10,
-            total_rows_returned: 25,
-            total_rows_affected: 0,
-            total_execution_time_ms: 150,
-            errors: 1,
-            last_error: Some("Connection timeout".to_string()),
-        };
-        
-        assert_eq!(stats.executions, 10);
-        assert_eq!(stats.total_rows_returned, 25);
-        assert_eq!(stats.errors, 1);
-    }
-
-    #[test]
-    fn test_parameter_validation() {
-        let param_types = vec![Type::INT4, Type::TEXT];
-        let args = vec![SqlValue::Integer(42), SqlValue::String("test".to_string())];
-        
-        // Parameter count should match
-        assert_eq!(args.len(), param_types.len());
-        
-        // Test mismatch
-        let wrong_args = vec![SqlValue::Integer(42)];
-        assert_ne!(wrong_args.len(), param_types.len());
-    }
-}

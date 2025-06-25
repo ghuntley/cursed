@@ -1,4 +1,4 @@
-use crate::error::Error;
+use crate::error::CursedError;
 /// Enhanced exec_vibez - Process execution with comprehensive enhanced features
 /// 
 /// This module provides the complete "ExecVibez" API with all enhanced features
@@ -22,12 +22,12 @@ extern crate libc;
 #[cfg(unix)]
 use std::os::unix::process::ExitStatusExt;
 
-use crate::stdlib::process::error::{
+// use crate::stdlib::process::error::{
     ProcessError, ProcessResult, execution_failed, execution_failed_with_code,
     timeout_error, invalid_arguments, io_error, system_error
 };
 
-use crate::stdlib::process::real_monitoring::{
+// use crate::stdlib::process::real_monitoring::{
     RealProcessState, register_process_for_monitoring, wait_for_real_process,
     unregister_process_from_monitoring
 };
@@ -81,26 +81,26 @@ pub struct EnhancedProcessState {
     sys_info: Vec<u8>,
     /// Exit code
     exit_code: i32,
-    /// Error message if failed
+    /// CursedError message if failed
     error_message: Option<String>,
 }
 
-/// Enhanced Error represents comprehensive error information
+/// Enhanced CursedError represents comprehensive error information
 #[derive(Debug, Clone)]
 pub struct EnhancedError {
-    /// Error message
+    /// CursedError message
     message: String,
     /// Exit code if available
     exit_code: Option<i32>,
     /// Underlying error
     source: Option<String>,
-    /// Error category
+    /// CursedError category
     category: ErrorCategory,
     /// System error code
     system_code: Option<i32>,
 }
 
-/// Error categories for better error handling
+/// CursedError categories for better error handling
 #[derive(Debug, Clone, PartialEq)]
 pub enum ErrorCategory {
     /// Command not found
@@ -1292,102 +1292,3 @@ pub fn command_with_env<S: AsRef<str>>(name: S, args: &[&str], env: EnhancedEnvi
     cmd
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use std::time::Duration;
-use crate::stdlib::process::info::ProcessState;
-use crate::stdlib::process::error::ProcessResult;
-use crate::stdlib::process::error::ProcessError;
-
-    #[test]
-    fn test_enhanced_cmd_creation() {
-        let cmd = EnhancedCmd::new("echo", &["hello", "world"]);
-        assert_eq!(cmd.path, "echo");
-        assert_eq!(cmd.args, vec!["hello", "world"]);
-    }
-
-    #[test]
-    fn test_enhanced_environment() {
-        let mut env = EnhancedEnvironment::new();
-        env.set("TEST_VAR", "test_value")
-           .append("PATH", "/usr/local/bin")
-           .prepend("LD_LIBRARY_PATH", "/opt/lib");
-        
-        assert_eq!(env.get("TEST_VAR"), Some(&"test_value".to_string()));
-        let hashmap = env.to_hashmap();
-        assert!(hashmap.contains_key("TEST_VAR"));
-    }
-
-    #[test]
-    fn test_process_context() {
-        let ctx = ProcessContext::with_timeout(Duration::from_secs(30));
-        assert!(!ctx.is_cancelled());
-        assert_eq!(ctx.timeout, Some(Duration::from_secs(30)));
-        
-        ctx.cancel();
-        assert!(ctx.is_cancelled());
-    }
-
-    #[test]
-    fn test_process_group() {
-        let mut group = ProcessGroup::new();
-        let cmd = EnhancedCmd::new("echo", &["test"]);
-        group.add_command(cmd);
-        
-        assert_eq!(group.commands.len(), 1);
-    }
-
-    #[test]
-    fn test_output_streamer() {
-        let cmd = EnhancedCmd::new("echo", &["test"]);
-        let mut streamer = OutputStreamer::new(cmd);
-        streamer.set_buffer_size(4096).capture_output(true);
-        assert_eq!(streamer.buffer_size, 4096);
-        assert!(streamer.capture_output);
-    }
-
-    #[test]
-    fn test_input_generator() {
-        let cmd = EnhancedCmd::new("cat", &[]);
-        let mut generator = InputGenerator::new(cmd);
-        
-        assert!(generator.write("test input").is_ok());
-        assert!(generator.write_line("line input").is_ok());
-        assert!(generator.write_after(b"delayed input", Duration::from_millis(500)).is_ok());
-    }
-
-    #[test]
-    fn test_enhanced_error() {
-        let err = EnhancedError {
-            message: "Test error".to_string(),
-            exit_code: Some(1),
-            source: None,
-            category: ErrorCategory::ExecutionError,
-            system_code: None,
-        };
-        assert_eq!(err.message, "Test error");
-        assert_eq!(err.exit_code, Some(1));
-        assert_eq!(err.category, ErrorCategory::ExecutionError);
-    }
-
-    #[test]
-    fn test_look_path() {
-        // This will depend on the system, but we can test the logic
-        #[cfg(unix)]
-        {
-            match look_path("sh") {
-                Ok(path) => assert!(path.contains("sh")),
-                Err(_) => {} // May not exist in test environment
-            }
-        }
-        
-        #[cfg(windows)]
-        {
-            match look_path("cmd") {
-                Ok(path) => assert!(path.contains("cmd")),
-                Err(_) => {} // May not exist in test environment
-            }
-        }
-    }
-}

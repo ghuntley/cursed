@@ -1,5 +1,5 @@
 /// fr fr Database connection enum - supports different database types periodt
-use crate::stdlib::packages::sql_vibes::{
+// use crate::stdlib::packages::sql_vibes::{
     drivers::{
         sqlite::{SqliteConnection, SqlitePreparedStatement, SqliteTransaction},
         postgres::{PostgresConnection, PostgresPreparedStatement, PostgresTransaction},
@@ -83,7 +83,7 @@ impl DatabaseConnectionTrait for DatabaseConnection {
         }
     }
     
-    fn connection_info(&self) -> crate::stdlib::packages::sql_vibes::ConnectionInfo {
+//     fn connection_info(&self) -> crate::stdlib::packages::sql_vibes::ConnectionInfo {
         match self {
             DatabaseConnection::Sqlite(conn) => conn.connection_info(),
             DatabaseConnection::Postgres(conn) => conn.connection_info(),

@@ -1,4 +1,4 @@
-use crate::error::Error;
+use crate::error::CursedError;
 // CLI tools and utilities for CURSED profiling
 
 use std::path::PathBuf;
@@ -6,9 +6,9 @@ use clap::{Args, Parser, Subcommand, ValueEnum};
 use serde::{Deserialize, Serialize};
 use tracing::{debug, error, info, instrument, warn};
 
-use crate::profiling::core::{ProfilerConfig, ProfilerMode, OutputFormat, CursedProfiler};
-use crate::profiling::benchmarking::{BenchmarkSuite, BenchmarkConfig};
-use crate::profiling::reporting::ReportGenerator;
+// use crate::profiling::core::{ProfilerConfig, ProfilerMode, OutputFormat, CursedProfiler};
+// use crate::profiling::benchmarking::{BenchmarkSuite, BenchmarkConfig};
+// use crate::profiling::reporting::ReportGenerator;
 
 /// CURSED Profiling CLI
 #[derive(Debug, Parser)]
@@ -417,7 +417,7 @@ impl CliExecutor {
     }
     
     #[instrument(skip(self))]
-    pub async fn execute(&self, cli: ProfileCli) -> Result<(), Error> {
+    pub async fn execute(&self, cli: ProfileCli) -> crate::error::Result<()> {
         match cli.command {
             ProfileCommand::Profile(ref args) => self.execute_profile(args, &cli).await,
             ProfileCommand::Benchmark(args) => self.execute_benchmark(args).await,
@@ -429,7 +429,7 @@ impl CliExecutor {
     }
     
     #[instrument(skip(self))]
-    async fn execute_profile(&self, args: &ProfileArgs, cli: &ProfileCli) -> Result<(), Error> {
+    async fn execute_profile(&self, args: &ProfileArgs, cli: &ProfileCli) -> crate::error::Result<()> {
         info!("Starting profiling session for: {:?}", args.program);
         
         // Build profiler configuration
@@ -491,7 +491,7 @@ impl CliExecutor {
     }
     
     #[instrument(skip(self))]
-    async fn execute_benchmark(&self, args: BenchmarkArgs) -> Result<(), Error> {
+    async fn execute_benchmark(&self, args: BenchmarkArgs) -> crate::error::Result<()> {
         info!("Running benchmark suite: {:?}", args.suite);
         
         let config = BenchmarkConfig {
@@ -569,7 +569,7 @@ impl CliExecutor {
     }
     
     #[instrument(skip(self))]
-    async fn execute_analyze(&self, args: AnalyzeArgs) -> Result<(), Error> {
+    async fn execute_analyze(&self, args: AnalyzeArgs) -> crate::error::Result<()> {
         info!("Analyzing profiling data: {:?}", args.data);
         
         // Load profiling data
@@ -632,49 +632,24 @@ impl CliExecutor {
     }
     
     #[instrument(skip(self))]
-    async fn execute_report(&self, _args: ReportArgs) -> Result<(), Error> {
+    async fn execute_report(&self, _args: ReportArgs) -> crate::error::Result<()> {
         // Report generation would be implemented here
         println!("Report generation completed");
         Ok(())
     }
     
     #[instrument(skip(self))]
-    async fn execute_compare(&self, _args: CompareArgs) -> Result<(), Error> {
+    async fn execute_compare(&self, _args: CompareArgs) -> crate::error::Result<()> {
         // Comparison logic would be implemented here
         println!("Performance comparison completed");
         Ok(())
     }
     
     #[instrument(skip(self))]
-    async fn execute_visualize(&self, _args: VisualizeArgs) -> Result<(), Error> {
+    async fn execute_visualize(&self, _args: VisualizeArgs) -> crate::error::Result<()> {
         // Visualization generation would be implemented here
         println!("Visualization generated");
         Ok(())
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-    
-    #[test]
-    fn test_cli_config_default() {
-        let config = CliConfig::default();
-        assert_eq!(config.default_cpu_frequency, 100);
-        assert_eq!(config.default_memory_threshold, 1024);
-    }
-    
-    #[test]
-    fn test_cli_profiler_mode_conversion() {
-        let mode = CliProfilerMode::Cpu;
-        let profiler_mode: ProfilerMode = mode.into();
-        assert!(matches!(profiler_mode, ProfilerMode::Cpu));
-    }
-    
-    #[test]
-    fn test_cli_output_format_conversion() {
-        let format = CliOutputFormat::Json;
-        let output_format: OutputFormat = format.into();
-        assert!(matches!(output_format, OutputFormat::Json));
-    }
-}

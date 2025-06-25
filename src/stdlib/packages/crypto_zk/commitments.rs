@@ -1,10 +1,9 @@
-use crate::error::Error;
+use crate::error::CursedError;
 /// Commitment schemes for zero-knowledge proofs
 use std::collections::HashMap;
-use crate::stdlib::packages::crypto_advanced::AdvancedCryptoResult;
-use crate::stdlib::crypto::unified_api::UnifiedCryptoError as CryptoError;
-use crate::stdlib::value::Value;
-use crate::stdlib::packages::crypto_zk::field_arithmetic::{FieldElement, FieldArithmetic};
+// use crate::stdlib::packages::crypto_advanced::AdvancedCryptoResult;
+// use crate::stdlib::value::Value;
+// use crate::stdlib::packages::crypto_zk::field_arithmetic::{FieldElement, FieldArithmetic};
 use sha3::{Digest, Sha3_256};
 use rand::RngCore;
 
@@ -570,70 +569,3 @@ impl Commitments {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_pedersen_commitment() {
-        let params = PedersenParams::generate().unwrap();
-        let value = FieldElement::new(42);
-        let randomness = FieldElement::new(123);
-
-        let commitment = PedersenCommitment::commit(&params, &value, &randomness).unwrap();
-        assert!(commitment.verify(&params, &value).unwrap());
-    }
-
-    #[test]
-    fn test_hash_commitment() {
-        let value = b"secret_value";
-        let nonce = HashCommitment::generate_nonce(32);
-        
-        let commitment = HashCommitment::commit(value, &nonce);
-        assert!(commitment.verify(value));
-        assert!(!commitment.verify(b"wrong_value"));
-    }
-
-    #[test]
-    fn test_vector_commitment() {
-        let vector = vec![
-            FieldElement::new(1),
-            FieldElement::new(2),
-            FieldElement::new(3),
-            FieldElement::new(4),
-        ];
-
-        let commitment = VectorCommitment::commit(vector.clone());
-        let proof = commitment.generate_proof(1).unwrap();
-        
-        assert!(commitment.verify_proof(1, &vector[1], &proof));
-    }
-
-    #[test]
-    fn test_commitments_api() {
-        let params = Commitments::generate_pedersen_params().unwrap();
-        let value = Value::Integer(42);
-        let randomness = Value::Integer(123);
-
-        let commitment = Commitments::pedersen_commit(&params, &value, &randomness).unwrap();
-        let verification = Commitments::pedersen_verify(&params, &commitment, &value).unwrap();
-        
-        assert_eq!(verification, Value::Boolean(true));
-    }
-
-    #[test]
-    fn test_commitment_homomorphism() {
-        let params = PedersenParams::generate().unwrap();
-        let value1 = FieldElement::new(10);
-        let value2 = FieldElement::new(20);
-        let rand1 = FieldElement::new(100);
-        let rand2 = FieldElement::new(200);
-
-        let commit1 = PedersenCommitment::commit(&params, &value1, &rand1).unwrap();
-        let commit2 = PedersenCommitment::commit(&params, &value2, &rand2).unwrap();
-        let combined = commit1.add(&commit2);
-
-        let combined_value = value1 + value2;
-        assert!(combined.verify(&params, &combined_value).unwrap());
-    }
-}

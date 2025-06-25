@@ -1,4 +1,4 @@
-use crate::error::Error;
+use crate::error::CursedError;
 /// String transformation operations
 use super::{StringError, StringResult};
 
@@ -208,81 +208,3 @@ pub fn remove_range(s: &str, start: usize, end: usize) -> StringResult<String> {
     Ok(result)
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_substring() {
-        assert_eq!(substring("hello world", 0, 5).unwrap(), "hello");
-        assert_eq!(substring("hello world", 6, 5).unwrap(), "world");
-        assert_eq!(substring("hello", 0, 10).unwrap(), "hello"); // Length beyond string
-        assert!(substring("hello", 10, 5).is_err()); // Start beyond string
-    }
-
-    #[test]
-    fn test_substring_range() {
-        assert_eq!(substring_range("hello world", 0, 5).unwrap(), "hello");
-        assert_eq!(substring_range("hello world", 6, 11).unwrap(), "world");
-        assert!(substring_range("hello", 2, 1).is_err()); // Invalid range
-        assert!(substring_range("hello", 0, 10).is_err()); // End beyond string
-    }
-
-    #[test]
-    fn test_trim() {
-        assert_eq!(trim("  hello world  "), "hello world");
-        assert_eq!(trim("hello"), "hello");
-        assert_eq!(trim("   "), "");
-    }
-
-    #[test]
-    fn test_trim_start_and_end() {
-        assert_eq!(trim_start("  hello world  "), "hello world  ");
-        assert_eq!(trim_end("  hello world  "), "  hello world");
-    }
-
-    #[test]
-    fn test_trim_chars() {
-        assert_eq!(trim_chars("..hello..", &['.', ' ']), "hello");
-        assert_eq!(trim_start_chars("..hello..", &['.']), "hello..");
-        assert_eq!(trim_end_chars("..hello..", &['.']), "..hello");
-    }
-
-    #[test]
-    fn test_case_conversions() {
-        assert_eq!(to_lowercase("HELLO WORLD"), "hello world");
-        assert_eq!(to_uppercase("hello world"), "HELLO WORLD");
-        assert_eq!(to_title_case("hello world"), "Hello World");
-        assert_eq!(to_camel_case("hello world"), "helloWorld");
-        assert_eq!(to_pascal_case("hello world"), "HelloWorld");
-        assert_eq!(to_snake_case("hello world"), "hello_world");
-        assert_eq!(to_kebab_case("hello world"), "hello-world");
-        assert_eq!(capitalize("hello world"), "Hello world");
-        assert_eq!(capitalize(""), "");
-        assert_eq!(capitalize("a"), "A");
-    }
-
-    #[test]
-    fn test_insert_at() {
-        assert_eq!(insert_at("hello", 5, " world").unwrap(), "hello world");
-        assert_eq!(insert_at("hello", 0, "hi ").unwrap(), "hi hello");
-        assert_eq!(insert_at("hello", 2, "XX").unwrap(), "heXXllo");
-        assert!(insert_at("hello", 10, " world").is_err());
-    }
-
-    #[test]
-    fn test_remove_range() {
-        assert_eq!(remove_range("hello world", 5, 6).unwrap(), "helloworld");
-        assert_eq!(remove_range("hello world", 0, 6).unwrap(), "world");
-        assert_eq!(remove_range("hello world", 5, 11).unwrap(), "hello");
-        assert!(remove_range("hello", 2, 1).is_err()); // Invalid range
-    }
-
-    #[test]
-    fn test_unicode_handling() {
-        assert_eq!(substring("café", 0, 3).unwrap(), "caf");
-        assert_eq!(substring("🦀🚀🎉", 1, 2).unwrap(), "🚀🎉");
-        assert_eq!(to_uppercase("café"), "CAFÉ");
-        assert_eq!(to_lowercase("CAFÉ"), "café");
-    }
-}

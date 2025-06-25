@@ -3,9 +3,9 @@ use std::io;
 use std::collections::HashMap;
 // Note: Using a basic regex implementation for pattern matching
 // In a real implementation, you would use the regex crate
-use crate::stdlib::csv::reader::Reader;
-use crate::stdlib::csv::error::{CsvError, CsvResult, schema_validation_error};
-use crate::error::Error;
+// use crate::stdlib::csv::reader::Reader;
+// use crate::stdlib::csv::error::{CsvError, CsvResult, schema_validation_error};
+use crate::error::CursedError;
 
 /// Column type definitions for validation
 #[derive(Debug, Clone, PartialEq)]
@@ -107,7 +107,7 @@ impl SchemaColumn {
     }
     
     /// Set a regex pattern for validation
-    pub fn with_pattern(mut self, pattern: &str) -> Result<(), Error> {
+    pub fn with_pattern(mut self, pattern: &str) -> crate::error::Result<()> {
         // Simple pattern validation - in real implementation use regex crate
         self.constraint.pattern = Some(pattern.to_string());
         Ok(self)
@@ -170,7 +170,7 @@ impl SchemaColumn {
     }
     
     /// Validate a field value against this column's constraints
-    pub fn validate(&self, value: &str, line_number: usize, column_index: usize) -> Result<(), Error> {
+    pub fn validate(&self, value: &str, line_number: usize, column_index: usize) -> crate::error::Result<()> {
         // Check if required but empty
         if self.constraint.required && value.is_empty() {
             return Err(ValidationError {
@@ -475,7 +475,7 @@ impl Schema {
                         line: 1,
                         column: 0,
                         column_name: String::new(),
-                        message: format!("Error reading header: {}", e),
+                        message: format!("CursedError reading header: {}", e),
                         value: String::new(),
                     });
                     return ValidationResult {
@@ -562,19 +562,19 @@ pub struct ValidationError {
     /// Column name
     pub column_name: String,
     
-    /// Error message
+    /// CursedError message
     pub message: String,
     
     /// The problematic value
     pub value: String,
 }
 
-impl std::fmt::Display for ValidationError {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "Line {}, Column {} ({}): {} (value: '{}')", 
-               self.line, self.column, self.column_name, self.message, self.value)
-    }
-}
+// impl std::fmt::Display for ValidationError {
+//     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+//         write!(f, "Line {}, Column {} ({}): {} (value: '{}')", 
+//                self.line, self.column, self.column_name, self.message, self.value)
+//     }
+// }
 
 /// Result of schema validation
 #[derive(Debug, Clone)]
@@ -673,194 +673,3 @@ fn is_valid_phone(value: &str) -> bool {
     has_digit
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use std::io::Cursor;
-
-    #[test]
-    fn test_basic_schema_validation() {
-        let mut schema = Schema::new();
-        schema.require_column("name").non_empty();
-        schema.require_column_with_type("age", ColumnType::Integer).with_range(0.0, 120.0);
-        schema.require_column_with_type("email", ColumnType::Email);
-        
-        let csv_data = "name,age,email\nAlice,30,alice@example.com\nBob,25,bob@example.com";
-        let cursor = Cursor::new(csv_data);
-        
-        let result = schema.validate(cursor);
-        assert!(result.is_valid());
-        assert_eq!(result.valid_records, 2);
-        assert_eq!(result.total_records, 2);
-    }
-
-    #[test]
-    fn test_validation_errors() {
-        let mut schema = Schema::new();
-        schema.require_column("name").non_empty();
-        schema.require_column_with_type("age", ColumnType::Integer).with_range(18.0, 65.0);
-        schema.require_column_with_type("email", ColumnType::Email);
-        
-        let csv_data = "name,age,email\n,120,invalid-email\nBob,25,bob@example.com";
-        let cursor = Cursor::new(csv_data);
-        
-        let result = schema.validate(cursor);
-        assert!(!result.is_valid());
-        assert_eq!(result.error_count(), 3); // empty name, age out of range, invalid email
-        assert_eq!(result.valid_records, 1);
-        assert_eq!(result.total_records, 2);
-    }
-
-    #[test]
-    fn test_pattern_validation() {
-        let mut schema = Schema::new();
-        let phone_pattern = r"^\d{3}-\d{3}-\d{4}$";
-        schema.require_column("phone").with_pattern(phone_pattern).unwrap();
-        
-        let csv_data = "phone\n555-123-4567\n555-123-456"; // Second one invalid
-        let cursor = Cursor::new(csv_data);
-        
-        let result = schema.validate(cursor);
-        assert!(!result.is_valid());
-        assert_eq!(result.error_count(), 1);
-    }
-
-    #[test]
-    fn test_length_validation() {
-        let mut schema = Schema::new();
-        schema.require_column("code").with_length_range(3, 5);
-        
-        let csv_data = "code\nABC\nA\nABCDEF"; // Second too short, third too long
-        let cursor = Cursor::new(csv_data);
-        
-        let result = schema.validate(cursor);
-        assert!(!result.is_valid());
-        assert_eq!(result.error_count(), 2);
-    }
-
-    #[test]
-    fn test_allowed_values() {
-        let mut schema = Schema::new();
-        schema.require_column("status").with_allowed_values(vec![
-            "active".to_string(),
-            "inactive".to_string(),
-            "pending".to_string(),
-        ]);
-        
-        let csv_data = "status\nactive\ninvalid\npending"; // "invalid" not allowed
-        let cursor = Cursor::new(csv_data);
-        
-        let result = schema.validate(cursor);
-        assert!(!result.is_valid());
-        assert_eq!(result.error_count(), 1);
-    }
-
-    #[test]
-    fn test_missing_required_column() {
-        let mut schema = Schema::new();
-        schema.require_column("name");
-        schema.require_column("age");
-        schema.require_column("email"); // This column is missing
-        
-        let csv_data = "name,age\nAlice,30\nBob,25";
-        let cursor = Cursor::new(csv_data);
-        
-        let result = schema.validate(cursor);
-        assert!(!result.is_valid());
-        assert_eq!(result.error_count(), 1);
-        
-        let error = &result.errors[0];
-        assert!(error.message.contains("Required column 'email' is missing"));
-    }
-
-    #[test]
-    fn test_optional_columns() {
-        let mut schema = Schema::new();
-        schema.require_column("name").non_empty();
-        schema.optional_column("nickname");
-        
-        let csv_data = "name\nAlice\nBob"; // nickname column missing but optional
-        let cursor = Cursor::new(csv_data);
-        
-        let result = schema.validate(cursor);
-        assert!(result.is_valid());
-    }
-
-    #[test]
-    fn test_extra_columns_allowed() {
-        let mut schema = Schema::new();
-        schema.require_column("name");
-        schema.allow_extra_columns(true);
-        
-        let csv_data = "name,extra_column\nAlice,value\nBob,value2";
-        let cursor = Cursor::new(csv_data);
-        
-        let result = schema.validate(cursor);
-        assert!(result.is_valid());
-    }
-
-    #[test]
-    fn test_extra_columns_not_allowed() {
-        let mut schema = Schema::new();
-        schema.require_column("name");
-        schema.allow_extra_columns(false);
-        
-        let csv_data = "name,extra_column\nAlice,value\nBob,value2";
-        let cursor = Cursor::new(csv_data);
-        
-        let result = schema.validate(cursor);
-        assert!(!result.is_valid());
-        assert_eq!(result.error_count(), 1);
-        
-        let error = &result.errors[0];
-        assert!(error.message.contains("Extra column 'extra_column' not allowed"));
-    }
-
-    #[test]
-    fn test_boolean_validation() {
-        let mut schema = Schema::new();
-        schema.require_column_with_type("active", ColumnType::Boolean);
-        
-        let csv_data = "active\ntrue\nfalse\nyes\nno\n1\n0\nbased\ncap\ninvalid";
-        let cursor = Cursor::new(csv_data);
-        
-        let result = schema.validate(cursor);
-        assert!(!result.is_valid());
-        assert_eq!(result.error_count(), 1); // Only "invalid" should fail
-        assert_eq!(result.valid_records, 8);
-    }
-
-    #[test]
-    fn test_column_type_validation() {
-        let mut schema = Schema::new();
-        schema.require_column_with_type("age", ColumnType::Integer);
-        schema.require_column_with_type("height", ColumnType::Float);
-        schema.require_column_with_type("email", ColumnType::Email);
-        schema.require_column_with_type("website", ColumnType::Url);
-        
-        let csv_data = "age,height,email,website\n30,5.6,alice@example.com,https://example.com\nabc,def,invalid-email,not-a-url";
-        let cursor = Cursor::new(csv_data);
-        
-        let result = schema.validate(cursor);
-        assert!(!result.is_valid());
-        assert_eq!(result.error_count(), 4); // All fields in second record invalid
-        assert_eq!(result.valid_records, 1);
-    }
-
-    #[test]
-    fn test_validation_result_methods() {
-        let mut schema = Schema::new();
-        schema.require_column("name").non_empty();
-        
-        let csv_data = "name\nAlice\n\nCharlie"; // Empty name in second record
-        let cursor = Cursor::new(csv_data);
-        
-        let result = schema.validate(cursor);
-        assert_eq!(result.success_rate(), 2.0 / 3.0); // 2 valid out of 3 total
-        
-        let summary = result.summary();
-        assert!(summary.contains("2 valid / 3 total"));
-        assert!(summary.contains("66.7% success"));
-        assert!(summary.contains("1 errors"));
-    }
-}

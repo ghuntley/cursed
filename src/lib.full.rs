@@ -25,6 +25,7 @@ pub mod common;
 
 // Re-export common types for easy access
 pub use common::OptimizationLevel;
+use crate::error::CursedError;
 
 // Re-export enhanced debug information types
 pub use runtime::{
@@ -74,7 +75,7 @@ pub use optimization::{
 pub mod stdlib;
 
 // Re-export ByteFit for easy access
-pub use stdlib::bytefit;
+// pub use stdlib::bytefit;
 pub mod profiling;
 pub mod docs;
 pub mod documentation;
@@ -103,11 +104,9 @@ pub mod type_system;
 pub mod types;
 
 // Re-export commonly used types for convenience
-pub use error::{Error, SourceLocation};
 
 /// Prelude module for common imports
 pub mod prelude {
-    pub use crate::error::{Error, SourceLocation};
     pub use crate::repl::CursedRepl;
 }
 
@@ -117,6 +116,8 @@ pub const NAME: &str = env!("CARGO_PKG_NAME");
 
 /// Initialize the CURSED runtime environment
 pub fn init() {
+        // TODO: implement
+    }
     // Initialize logging
     tracing_subscriber::fmt()
         .with_env_filter("cursed=info")
@@ -124,7 +125,7 @@ pub fn init() {
 }
 
 /// Compile and execute CURSED source code
-pub fn run(source: &str) -> Result<(), Error> {
+pub fn run(source: &str) -> crate::error::Result<()> {
     let mut execution_engine = execution::CursedExecutionEngine::new()?;
     let result = execution_engine.execute(source)?;
     
@@ -138,19 +139,19 @@ pub fn run(source: &str) -> Result<(), Error> {
 }
 
 /// Compile and execute CURSED source code with package management
-pub fn run_with_packages(source: &str, source_file: Option<&std::path::Path>) -> Result<(), Error> {
+pub fn run_with_packages(source: &str, source_file: Option<&std::path::Path>) -> crate::error::Result<()> {
     tracing::info!("Running CURSED source code with package management");
     
     // Use enhanced LLVM package integration
     let rt = tokio::runtime::Runtime::new()
-        .map_err(|e| Error::Io(e.into()))?;
+        .map_err(|e| CursedError::Io(e.into()))?;
     
     rt.block_on(async {
         // Create package manager and LLVM code generator with package integration
         let package_manager_config = crate::package_manager::PackageManagerConfig::default();
         let package_manager = std::sync::Arc::new(std::sync::Mutex::new(
             crate::package_manager::PackageManager::new(package_manager_config)
-                .map_err(|e| Error::Parse(format!("Failed to create package manager: {}", e)))?
+                .map_err(|e| CursedError::Parse(format!("Failed to create package manager: {}", e)))?
         ));
         
         let mut codegen = crate::codegen::LlvmCodeGenerator::new()?;
@@ -170,7 +171,7 @@ pub fn run_with_packages(source: &str, source_file: Option<&std::path::Path>) ->
 }
 
 /// Compile and execute CURSED source file
-pub fn run_file(path: &str) -> Result<(), Error> {
+pub fn run_file(path: &str) -> crate::error::Result<()> {
     let mut execution_engine = execution::CursedExecutionEngine::new()?;
     let result = execution_engine.execute_file(path)?;
     
@@ -188,22 +189,22 @@ pub fn run_file_enhanced(
     path: &str, 
     optimization_config: crate::optimization::OptimizationConfig,
     use_enhanced_passes: bool
-) -> Result<(), Error> {
+) -> crate::error::Result<()> {
     tracing::info!("Running CURSED file with enhanced optimization: {}", path);
     
     // Read the source file
     let source = std::fs::read_to_string(path)
-        .map_err(|e| Error::Io(e.into()))?;
+        .map_err(|e| CursedError::Io(e.into()))?;
     
     // Use the compile and run approach with enhanced optimization
     let rt = tokio::runtime::Runtime::new()
-        .map_err(|e| Error::Io(e.into()))?;
+        .map_err(|e| CursedError::Io(e.into()))?;
     
     rt.block_on(async {
         let package_manager_config = crate::package_manager::PackageManagerConfig::default();
         let package_manager = std::sync::Arc::new(std::sync::Mutex::new(
             crate::package_manager::PackageManager::new(package_manager_config)
-                .map_err(|e| Error::Parse(format!("Failed to create package manager: {}", e)))?
+                .map_err(|e| CursedError::Parse(format!("Failed to create package manager: {}", e)))?
         ));
         
         let mut codegen = crate::codegen::LlvmCodeGenerator::new()?;
@@ -274,22 +275,22 @@ pub fn run_file_enhanced(
 }
 
 /// Compile and execute CURSED source file with optimization
-pub fn run_file_optimized(path: &str, optimization_config: crate::optimization::OptimizationConfig) -> Result<(), Error> {
+pub fn run_file_optimized(path: &str, optimization_config: crate::optimization::OptimizationConfig) -> crate::error::Result<()> {
     tracing::info!("Running CURSED file with optimization: {}", path);
     
     // Read the source file
     let source = std::fs::read_to_string(path)
-        .map_err(|e| Error::Io(e.into()))?;
+        .map_err(|e| CursedError::Io(e.into()))?;
     
     // Use the compile and run approach with optimization
     let rt = tokio::runtime::Runtime::new()
-        .map_err(|e| Error::Io(e.into()))?;
+        .map_err(|e| CursedError::Io(e.into()))?;
     
     rt.block_on(async {
         let package_manager_config = crate::package_manager::PackageManagerConfig::default();
         let package_manager = std::sync::Arc::new(std::sync::Mutex::new(
             crate::package_manager::PackageManager::new(package_manager_config)
-                .map_err(|e| Error::Parse(format!("Failed to create package manager: {}", e)))?
+                .map_err(|e| CursedError::Parse(format!("Failed to create package manager: {}", e)))?
         ));
         
         let mut codegen = crate::codegen::LlvmCodeGenerator::new()?;
@@ -325,12 +326,12 @@ pub fn run_file_optimized(path: &str, optimization_config: crate::optimization::
 }
 
 /// Compile CURSED source to LLVM IR
-pub fn compile_to_ir(source: &str) -> Result<(), Error> {
+pub fn compile_to_ir(source: &str) -> crate::error::Result<()> {
     compile_to_ir_with_packages(source, None)
 }
 
 /// Compile CURSED source to LLVM IR with specified optimization level
-pub fn compile_to_ir_with_optimization(source: &str, optimization_level: Option<&str>) -> Result<(), Error> {
+pub fn compile_to_ir_with_optimization(source: &str, optimization_level: Option<&str>) -> crate::error::Result<()> {
     compile_to_ir_with_optimization_and_packages(source, optimization_level, None)
 }
 
@@ -339,18 +340,18 @@ pub fn compile_to_ir_with_optimization_and_packages(
     source: &str, 
     optimization_level: Option<&str>, 
     source_file: Option<&std::path::Path>
-) -> Result<(), Error> {
+) -> crate::error::Result<()> {
     tracing::info!("Compiling CURSED source to LLVM IR with optimization and package management");
     
     let rt = tokio::runtime::Runtime::new()
-        .map_err(|e| Error::Io(e.into()))?;
+        .map_err(|e| CursedError::Io(e.into()))?;
     
     rt.block_on(async {
         // Create enhanced LLVM package integration
         let package_manager_config = crate::package_manager::PackageManagerConfig::default();
         let package_manager = std::sync::Arc::new(std::sync::Mutex::new(
             crate::package_manager::PackageManager::new(package_manager_config)
-                .map_err(|e| Error::Parse(format!("Failed to create package manager: {}", e)))?
+                .map_err(|e| CursedError::Parse(format!("Failed to create package manager: {}", e)))?
         ));
         
         let mut codegen = crate::codegen::LlvmCodeGenerator::new()?;
@@ -391,18 +392,18 @@ pub fn compile_to_ir_with_optimization_and_packages(
 }
 
 /// Compile CURSED source to LLVM IR with package management
-pub fn compile_to_ir_with_packages(source: &str, source_file: Option<&std::path::Path>) -> Result<(), Error> {
+pub fn compile_to_ir_with_packages(source: &str, source_file: Option<&std::path::Path>) -> crate::error::Result<()> {
     tracing::info!("Compiling CURSED source to LLVM IR with package management");
     
     let rt = tokio::runtime::Runtime::new()
-        .map_err(|e| Error::Io(e.into()))?;
+        .map_err(|e| CursedError::Io(e.into()))?;
     
     rt.block_on(async {
         // Create enhanced LLVM package integration
         let package_manager_config = crate::package_manager::PackageManagerConfig::default();
         let package_manager = std::sync::Arc::new(std::sync::Mutex::new(
             crate::package_manager::PackageManager::new(package_manager_config)
-                .map_err(|e| Error::Parse(format!("Failed to create package manager: {}", e)))?
+                .map_err(|e| CursedError::Parse(format!("Failed to create package manager: {}", e)))?
         ));
         
         let mut codegen = crate::codegen::LlvmCodeGenerator::new()?;
@@ -422,23 +423,23 @@ pub fn compile_to_ir_with_packages(source: &str, source_file: Option<&std::path:
 }
 
 /// Check CURSED source for errors without executing
-pub fn check(source: &str) -> Result<(), Error> {
+pub fn check(source: &str) -> crate::error::Result<()> {
     check_with_packages(source, None)
 }
 
 /// Check CURSED source for errors with package management
-pub fn check_with_packages(source: &str, source_file: Option<&std::path::Path>) -> Result<(), Error> {
+pub fn check_with_packages(source: &str, source_file: Option<&std::path::Path>) -> crate::error::Result<()> {
     tracing::info!("Checking CURSED source for errors with package management");
     
     let rt = tokio::runtime::Runtime::new()
-        .map_err(|e| Error::Io(e.into()))?;
+        .map_err(|e| CursedError::Io(e.into()))?;
     
     rt.block_on(async {
         // Create enhanced LLVM package integration for checking
         let package_manager_config = crate::package_manager::PackageManagerConfig::default();
         let package_manager = std::sync::Arc::new(std::sync::Mutex::new(
             crate::package_manager::PackageManager::new(package_manager_config)
-                .map_err(|e| Error::Parse(format!("Failed to create package manager: {}", e)))?
+                .map_err(|e| CursedError::Parse(format!("Failed to create package manager: {}", e)))?
         ));
         
         let mut codegen = crate::codegen::LlvmCodeGenerator::new()?;
@@ -458,7 +459,7 @@ pub fn check_with_packages(source: &str, source_file: Option<&std::path::Path>) 
 }
 
 /// Format CURSED source code
-pub fn format(source: &str) -> Result<(), Error> {
+pub fn format(source: &str) -> crate::error::Result<()> {
     tracing::info!("Formatting CURSED source code");
     
     // Create lexer and parser to validate syntax first
@@ -471,7 +472,7 @@ pub fn format(source: &str) -> Result<(), Error> {
     // Check for parse errors
     let errors = parser.errors();
     if !errors.is_empty() {
-        return Err(Error::Parse(format!("Cannot format source with parse errors: {}", errors.join(", "))));
+        return Err(CursedError::Parse(format!("Cannot format source with parse errors: {}", errors.join(", "))));
     }
     
     // Use the formatter
@@ -483,7 +484,7 @@ pub fn format(source: &str) -> Result<(), Error> {
 }
 
 /// Execute CURSED code in REPL context
-pub fn execute_repl_code(code: &str, session_manager: &mut repl::SessionManager) -> Result<(), Error> {
+pub fn execute_repl_code(code: &str, session_manager: &mut repl::SessionManager) -> crate::error::Result<()> {
     use crate::repl::SessionManager;
     
     tracing::info!("Executing REPL code: {}", code);
@@ -520,7 +521,7 @@ pub fn execute_repl_code(code: &str, session_manager: &mut repl::SessionManager)
 }
 
 /// Helper function to try parsing and evaluating REPL input
-fn try_parse_and_evaluate(code: &str) -> Result<(), Error> {
+fn try_parse_and_evaluate(code: &str) -> crate::error::Result<()> {
     // Create lexer and parser
     let lexer = crate::lexer::Lexer::new(code.to_string());
     let mut parser = crate::parser::Parser::new(lexer)?;
@@ -534,5 +535,5 @@ fn try_parse_and_evaluate(code: &str) -> Result<(), Error> {
         }
     }
     
-    Err(Error::Parse("Could not parse REPL input".to_string()))
+    Err(CursedError::Parse("Could not parse REPL input".to_string()))
 }

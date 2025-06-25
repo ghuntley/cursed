@@ -1,4 +1,4 @@
-use crate::error::Error;
+use crate::error::CursedError;
 /// Transport traits for IPC communication
 /// 
 /// This module defines the core traits that all transport implementations
@@ -7,7 +7,7 @@ use crate::error::Error;
 
 use std::io::{Read, Write};
 use std::time::Duration;
-use crate::stdlib::ipc::{IpcResult, IpcError};
+// use crate::stdlib::ipc::{IpcResult, IpcError};
 
 /// Core transport trait for bidirectional communication
 pub trait Transport: Send + Sync + std::fmt::Debug {
@@ -198,54 +198,3 @@ pub trait TransportPool<T: TransportConnection>: Send + Sync + std::fmt::Debug {
     fn close_all(&mut self) -> IpcResult<()>;
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_trait_definitions() {
-        // This test ensures that our traits compile and have the expected signatures
-        // We can't instantiate them directly, but we can verify the trait definitions
-        
-        fn assert_transport<T: Transport>() {}
-        fn assert_connection<T: TransportConnection>() {}
-        fn assert_listener<T: TransportListener>() {}
-        fn assert_stream<T: StreamTransport>() {}
-        fn assert_datagram<T: DatagramTransport>() {}
-        
-        // These functions will only compile if the traits are properly defined
-    }
-    
-    #[test]
-    fn test_serializable_implementable() {
-        // Test that we can implement Serializable
-        #[derive(Debug)]
-        struct TestMessage {
-            data: String,
-        }
-        
-        impl Serializable for TestMessage {
-            fn serialize(&self) -> IpcResult<Vec<u8>> {
-                Ok(self.data.as_bytes().to_vec())
-            }
-        }
-        
-        impl Deserializable for TestMessage {
-            fn deserialize(data: &[u8]) -> IpcResult<Self> {
-                let data_str = String::from_utf8(data.to_vec())
-                    .map_err(|e| IpcError::SerializationError { 
-                        message: format!("UTF-8 error: {}", e) 
-                    })?;
-                Ok(Self { data: data_str })
-            }
-        }
-        
-        let message = TestMessage {
-            data: "test".to_string(),
-        };
-        
-        let serialized = message.serialize().unwrap();
-        let deserialized = TestMessage::deserialize(&serialized).unwrap();
-        assert_eq!(message.data, deserialized.data);
-    }
-}

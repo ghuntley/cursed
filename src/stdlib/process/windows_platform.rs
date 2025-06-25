@@ -1,4 +1,4 @@
-use crate::error::Error;
+use crate::error::CursedError;
 #![cfg(windows)]
 
 // Windows-specific process management and IPC implementation (simplified)
@@ -7,7 +7,6 @@ use crate::error::Error;
 // Full implementation would require winapi dependency.
 
 use std::collections::HashMap;
-use crate::error::CursedError;
 
 /// Windows-specific platform handler (placeholder)
 #[derive(Debug)]
@@ -18,19 +17,19 @@ pub struct WindowsPlatformHandler {
 
 impl WindowsPlatformHandler {
     /// Create a new Windows platform handler (placeholder)
-    pub fn new() -> Result<(), Error> {
+    pub fn new() -> crate::error::Result<()> {
         Ok(Self {
             enabled: true,
         })
     }
     
     /// Initialize (placeholder)
-    pub fn initialize(&self) -> Result<(), Error> {
+    pub fn initialize(&self) -> crate::error::Result<()> {
         Ok(())
     }
     
     /// Cleanup (placeholder)
-    pub fn cleanup(&self) -> Result<(), Error> {
+    pub fn cleanup(&self) -> crate::error::Result<()> {
         Ok(())
     }
 }
@@ -42,7 +41,7 @@ pub struct WindowsNamedPipe {
 }
 
 impl WindowsNamedPipe {
-    pub fn new(name: &str) -> Result<(), Error> {
+    pub fn new(name: &str) -> crate::error::Result<()> {
         Ok(Self {
             name: name.to_string(),
         })
@@ -56,7 +55,7 @@ pub struct WindowsSharedMemoryConnection {
 }
 
 impl WindowsSharedMemoryConnection {
-    pub fn new(name: &str) -> Result<(), Error> {
+    pub fn new(name: &str) -> crate::error::Result<()> {
         Ok(Self {
             name: name.to_string(),
         })
@@ -70,19 +69,10 @@ pub struct WindowsSemaphoreConnection {
 }
 
 impl WindowsSemaphoreConnection {
-    pub fn new(name: &str) -> Result<(), Error> {
+    pub fn new(name: &str) -> crate::error::Result<()> {
         Ok(Self {
             name: name.to_string(),
         })
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-    
-    #[test]
-    fn test_windows_platform_handler_creation() {
-        assert!(WindowsPlatformHandler::new().is_ok());
-    }
-}

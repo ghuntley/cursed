@@ -1,4 +1,4 @@
-use crate::error::Error;
+use crate::error::CursedError;
 /// CURSED Build System CLI
 /// 
 /// Command-line interface for the CURSED build system providing project
@@ -337,7 +337,7 @@ fn parse_key_val(s: &str) -> Result<(String, String), String> {
 }
 
 #[tokio::main]
-async fn main() -> Result<(), Error> {
+async fn main() -> crate::error::Result<()> {
     let cli = Cli::parse();
     
     // Setup logging
@@ -358,7 +358,7 @@ async fn main() -> Result<(), Error> {
     }
 }
 
-async fn run_command(cli: Cli) -> Result<(), Error> {
+async fn run_command(cli: Cli) -> crate::error::Result<()> {
     match cli.command {
         Commands::Init { name, template, lib, target_dir, variables } => {
             let template_name = if lib { "lib" } else { &template };
@@ -439,7 +439,7 @@ async fn init_project(
     template: &str,
     target_dir: PathBuf,
     variables: Vec<(String, String)>,
-) -> Result<(), Error> {
+) -> crate::error::Result<()> {
     info!("Initializing project '{}' with template '{}'", name, template);
     
     let template_manager = TemplateManager::new();
@@ -474,7 +474,7 @@ async fn build_project(
     force: bool,
     parallel: bool,
     quick: bool,
-) -> Result<(), Error> {
+) -> crate::error::Result<()> {
     info!("Building project with profile: {}", profile);
     
     let work_dir = std::env::current_dir()?;
@@ -522,7 +522,7 @@ async fn run_project(
     bin: Option<String>,
     args: Vec<String>,
     _jobs: Option<usize>,
-) -> Result<(), Error> {
+) -> crate::error::Result<()> {
     info!("Running project with profile: {}", profile);
     
     // Build first
@@ -574,7 +574,7 @@ async fn test_project(
     _test_name: Vec<String>,
     _ignored: bool,
     _test_threads: Option<usize>,
-) -> Result<(), Error> {
+) -> crate::error::Result<()> {
     info!("Testing project with profile: {}", profile);
     
     let work_dir = std::env::current_dir()?;
@@ -597,7 +597,7 @@ async fn test_project(
     Ok(())
 }
 
-async fn clean_project(all: bool, _jobs: Option<usize>) -> Result<(), Error> {
+async fn clean_project(all: bool, _jobs: Option<usize>) -> crate::error::Result<()> {
     info!("Cleaning project artifacts");
     
     let work_dir = std::env::current_dir()?;
@@ -629,7 +629,7 @@ async fn clean_project(all: bool, _jobs: Option<usize>) -> Result<(), Error> {
     Ok(())
 }
 
-async fn check_project(all_targets: bool) -> Result<(), Error> {
+async fn check_project(all_targets: bool) -> crate::error::Result<()> {
     use cursed::parser::{Parser, ParseOptions};
     use cursed::core::type_checker::TypeChecker;
     use cursed::lexer::Lexer;
@@ -717,7 +717,7 @@ async fn check_project(all_targets: bool) -> Result<(), Error> {
     Ok(())
 }
 
-async fn check_single_file(file_path: &std::path::Path) -> Result<(), Error> {
+async fn check_single_file(file_path: &std::path::Path) -> crate::error::Result<()> {
     // Read file content
     let content = std::fs::read_to_string(file_path)?;
     
@@ -767,7 +767,7 @@ async fn format_code(
     check: bool,
     diff: bool,
     files: Vec<PathBuf>,
-) -> Result<(), Error> {
+) -> crate::error::Result<()> {
     info!("Formatting CURSED code");
     
     let mut cmd = std::process::Command::new("./target/debug/cursed-fmt");
@@ -801,7 +801,7 @@ async fn lint_code(
     fix: bool,
     stats: bool,
     files: Vec<PathBuf>,
-) -> Result<(), Error> {
+) -> crate::error::Result<()> {
     info!("Linting CURSED code");
     
     let mut cmd = std::process::Command::new("./target/debug/cursed_lint_new");
@@ -835,7 +835,7 @@ async fn generate_docs(
     open: bool,
     format: &str,
     output: Option<PathBuf>,
-) -> Result<(), Error> {
+) -> crate::error::Result<()> {
     info!("Generating documentation in {} format", format);
     
     let mut cmd = std::process::Command::new("./target/debug/cursed-doc");
@@ -875,7 +875,7 @@ async fn generate_docs(
     Ok(())
 }
 
-async fn handle_package_command(command: PackageCommands) -> Result<(), Error> {
+async fn handle_package_command(command: PackageCommands) -> crate::error::Result<()> {
     use cursed::package_manager::{PackageManager, PackageManagerConfig};
     
     // Initialize package manager
@@ -1104,7 +1104,7 @@ async fn handle_package_command(command: PackageCommands) -> Result<(), Error> {
 async fn list_templates(
     category: Option<String>,
     detailed: bool,
-) -> Result<(), Error> {
+) -> crate::error::Result<()> {
     let manager = TemplateManager::new();
     
     let templates = if let Some(cat) = category {
@@ -1144,7 +1144,7 @@ async fn show_project_info(
     deps: bool,
     config: bool,
     format: &str,
-) -> Result<(), Error> {
+) -> crate::error::Result<()> {
     let work_dir = std::env::current_dir()?;
     let config_path = work_dir.join("CursedBuild.toml");
     
@@ -1202,7 +1202,7 @@ async fn watch_project(
     patterns: Vec<String>, 
     ignore: Vec<String>,
     debounce: u64,
-) -> Result<(), Error> {
+) -> crate::error::Result<()> {
     use std::time::Duration;
     use tokio::signal;
     
@@ -1288,7 +1288,7 @@ async fn watch_build_project(
     force: bool,
     parallel: bool,
     quick: bool,
-) -> Result<(), Error> {
+) -> crate::error::Result<()> {
     use std::time::Duration;
     use tokio::signal;
     
@@ -1367,7 +1367,7 @@ async fn watch_test_project(
     _test_name: Vec<String>,
     _ignored: bool,
     _test_threads: Option<usize>,
-) -> Result<(), Error> {
+) -> crate::error::Result<()> {
     use std::time::Duration;
     use tokio::signal;
     
@@ -1436,7 +1436,7 @@ async fn benchmark_project(
     bench_name: Vec<String>,
     save_baseline: Option<String>,
     baseline: Option<String>,
-) -> Result<(), Error> {
+) -> crate::error::Result<()> {
     use cursed::profiling::benchmarking::{BenchmarkSuite, BenchmarkConfig, Benchmark, MicroBenchmark, MacroBenchmark};
     use std::time::Duration;
     

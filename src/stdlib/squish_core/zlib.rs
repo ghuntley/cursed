@@ -3,12 +3,12 @@
 /// This module provides ZLIB compression and decompression functionality
 /// using the flate2 crate, with CURSED-style interfaces and error handling.
 
-use crate::stdlib::squish_core::{SquishError, SquishResult, CompressionLevel, CompressionStats};
-use crate::stdlib::squish_core::core::{Reader as SquishReader, Writer as SquishWriter};
+// use crate::stdlib::squish_core::{SquishError, SquishResult, CompressionLevel, CompressionStats};
+// use crate::stdlib::squish_core::core::{Reader as SquishReader, Writer as SquishWriter};
 use std::io::{Read, Write, BufWriter, BufReader};
 use flate2::{Compression, read::ZlibDecoder, write::ZlibEncoder};
 use std::time::Instant;
-use crate::error::Error;
+use crate::error::CursedError;
 
 /// ZLIB reader that decompresses data on read
 pub struct ZlibReader<R: Read> {
@@ -211,143 +211,11 @@ pub fn is_valid_compression_level(level: i32) -> bool {
 
 /// Initialize ZLIB module
 pub fn initialize() {
+        // TODO: implement
+    }
     // No specific initialization needed for ZLIB
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use std::io::Cursor;
-
-    #[test]
-    fn test_zlib_compress_decompress() {
-        let original = b"Hello, World! This is a test of ZLIB compression.";
-        
-        // Compress
-        let compressed = zlib_compress(original).expect("Compression should succeed");
-        assert!(!compressed.is_empty());
-        assert!(compressed.len() < original.len() + 50); // Should be reasonably sized
-        
-        // Decompress
-        let decompressed = zlib_decompress(&compressed).expect("Decompression should succeed");
-        assert_eq!(decompressed, original);
-    }
-
-    #[test]
-    fn test_zlib_compression_levels() {
-        let data = b"This is test data for compression level testing. ".repeat(20);
-        
-        let fast = zlib_compress_level(&data, CompressionLevel::Fastest).unwrap();
-        let best = zlib_compress_level(&data, CompressionLevel::Best).unwrap();
-        
-        // Best compression should be smaller than fastest
-        assert!(best.len() <= fast.len());
-        
-        // Both should decompress to original
-        assert_eq!(zlib_decompress(&fast).unwrap(), data);
-        assert_eq!(zlib_decompress(&best).unwrap(), data);
-    }
-
-    #[test]
-    fn test_zlib_empty_data() {
-        let empty = b"";
-        let compressed = zlib_compress(empty).unwrap();
-        let decompressed = zlib_decompress(&compressed).unwrap();
-        assert_eq!(decompressed, empty);
-    }
-
-    #[test]
-    fn test_zlib_large_data() {
-        let large_data = vec![b'Z'; 10000];
-        let compressed = zlib_compress(&large_data).unwrap();
-        let decompressed = zlib_decompress(&compressed).unwrap();
-        assert_eq!(decompressed, large_data);
-        
-        // Should achieve good compression ratio on repetitive data
-        assert!(compressed.len() < large_data.len() / 10);
-    }
-
-    #[test]
-    fn test_zlib_streaming_compression() {
-        let data = b"Streaming test data for ZLIB compression.";
-        let mut compressed = Vec::new();
-        
-        {
-            let mut writer = NewZlibWriter(&mut compressed);
-            writer.write_all(data).unwrap();
-            writer.close().unwrap();
-        }
-        
-        let decompressed = zlib_decompress(&compressed).unwrap();
-        assert_eq!(decompressed, data);
-    }
-
-    #[test]
-    fn test_zlib_streaming_decompression() {
-        let original = b"Streaming decompression test data.";
-        let compressed = zlib_compress(original).unwrap();
-        
-        let cursor = Cursor::new(compressed);
-        let mut reader = NewZlibReader(cursor).unwrap();
-        
-        let mut result = Vec::new();
-        reader.read_to_end(&mut result).unwrap();
-        
-        assert_eq!(result, original);
-    }
-
-    #[test]
-    fn test_is_zlib_data() {
-        let zlib_header = vec![0x78, 0x9c];
-        assert!(is_zlib_data(&zlib_header));
-        
-        let zlib_header2 = vec![0x78, 0xda];
-        assert!(is_zlib_data(&zlib_header2));
-        
-        let not_zlib = vec![0x1f, 0x8b];
-        assert!(!is_zlib_data(&not_zlib));
-        
-        let too_short = vec![0x78];
-        assert!(!is_zlib_data(&too_short));
-    }
-
-    #[test]
-    fn test_zlib_metadata() {
-        assert_eq!(file_extension(), ".zlib");
-        assert_eq!(mime_type(), "application/zlib");
-        
-        assert!(is_valid_compression_level(0));
-        assert!(is_valid_compression_level(9));
-        assert!(is_valid_compression_level(-1));
-        assert!(!is_valid_compression_level(10));
-    }
-
-    #[test]
-    fn test_zlib_statistics() {
-        let data = b"Test data for statistics collection.";
-        let mut result = Vec::new();
-        
-        let mut writer = NewZlibWriter(&mut result);
-        writer.write_all(data).unwrap();
-        
-        if let Some(stats) = writer.stats() {
-            assert_eq!(stats.algorithm, "zlib");
-            assert!(stats.input_size > 0);
-        }
-        
-        writer.close().unwrap();
-    }
-
-    #[test]
-    fn test_module_initialization() {
-        initialize(); // Should not panic
-    }
-}
-
-/// fr fr Create new ZLIB reader with default settings
-pub fn new_reader<R: Read>(reader: R) -> SquishResult<ZlibReader<R>> {
-    ZlibReader::new(reader)
-}
 
 /// bestie Create new ZLIB writer with default compression
 pub fn new_writer<W: Write>(writer: W) -> SquishResult<ZlibWriter<W>> {

@@ -1,5 +1,5 @@
 /// Core interfaces for compression and decompression operations
-use crate::stdlib::squish_core::error::SquishResult;
+// use crate::stdlib::squish_core::error::SquishResult;
 use std::io;
 
 /// Reader interface for reading from compressed data streams
@@ -12,13 +12,13 @@ pub trait Reader: io::Read {
     fn close(&mut self) -> SquishResult<()>;
     
     /// Get compression statistics if available
-    fn stats(&self) -> Option<crate::stdlib::squish_core::statistics::CompressionStats> {
+//     fn stats(&self) -> Option<crate::stdlib::squish_core::statistics::CompressionStats> {
         None
     }
     
     /// Reset the reader to its initial state
     fn reset(&mut self) -> SquishResult<()> {
-        Err(crate::stdlib::squish_core::error::not_supported_error("Reset not supported"))
+//         Err(crate::stdlib::squish_core::error::not_supported_error("Reset not supported"))
     }
 }
 
@@ -35,20 +35,20 @@ pub trait Writer: io::Write {
     fn flush(&mut self) -> SquishResult<()>;
     
     /// Get compression statistics if available
-    fn stats(&self) -> Option<crate::stdlib::squish_core::statistics::CompressionStats> {
+//     fn stats(&self) -> Option<crate::stdlib::squish_core::statistics::CompressionStats> {
         None
     }
     
     /// Reset the writer to use a new destination
     fn reset(&mut self, dst: Box<dyn io::Write>) -> SquishResult<()> {
         let _ = dst; // Suppress unused parameter warning
-        Err(crate::stdlib::squish_core::error::not_supported_error("Reset not supported"))
+//         Err(crate::stdlib::squish_core::error::not_supported_error("Reset not supported"))
     }
     
     /// Set compression level (if supported)
     fn set_level(&mut self, level: i32) -> SquishResult<()> {
         let _ = level; // Suppress unused parameter warning
-        Err(crate::stdlib::squish_core::error::not_supported_error("Dynamic level setting not supported"))
+//         Err(crate::stdlib::squish_core::error::not_supported_error("Dynamic level setting not supported"))
     }
 }
 
@@ -67,7 +67,7 @@ pub trait Compressor {
     fn max_compressed_size(&self, input_size: usize) -> usize;
     
     /// Get compressor statistics
-    fn stats(&self) -> Option<crate::stdlib::squish_core::statistics::CompressionStats> {
+//     fn stats(&self) -> Option<crate::stdlib::squish_core::statistics::CompressionStats> {
         None
     }
     
@@ -90,7 +90,7 @@ pub trait Decompressor {
     }
     
     /// Get decompressor statistics
-    fn stats(&self) -> Option<crate::stdlib::squish_core::statistics::CompressionStats> {
+//     fn stats(&self) -> Option<crate::stdlib::squish_core::statistics::CompressionStats> {
         None
     }
     
@@ -120,7 +120,7 @@ pub trait ExtendedReader: Reader {
     /// Peek at upcoming data without consuming it
     fn peek(&mut self, buf: &mut [u8]) -> SquishResult<usize> {
         let _ = buf; // Suppress unused parameter warning
-        Err(crate::stdlib::squish_core::error::not_supported_error("Peek not supported"))
+//         Err(crate::stdlib::squish_core::error::not_supported_error("Peek not supported"))
     }
     
     /// Check if the reader has reached end of stream
@@ -137,7 +137,7 @@ pub trait ExtendedWriter: Writer {
         while written < buf.len() {
             let n = self.write(&buf[written..])?;
             if n == 0 {
-                return Err(crate::stdlib::squish_core::error::io_error("Failed to write all data"));
+//                 return Err(crate::stdlib::squish_core::error::io_error("Failed to write all data"));
             }
             written += n;
         }
@@ -160,7 +160,7 @@ pub trait SeekableReader: Reader + io::Seek {
     /// Seek to a specific position in the uncompressed data
     fn seek_uncompressed(&mut self, pos: u64) -> SquishResult<u64> {
         let _ = pos; // Suppress unused parameter warning
-        Err(crate::stdlib::squish_core::error::not_supported_error("Seek in uncompressed data not supported"))
+//         Err(crate::stdlib::squish_core::error::not_supported_error("Seek in uncompressed data not supported"))
     }
     
     /// Get the total uncompressed size if known

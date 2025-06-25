@@ -1,4 +1,4 @@
-use crate::error::Error;
+use crate::error::CursedError;
 /// fr fr Digital signatures error types for CURSED crypto
 /// 
 /// Comprehensive error handling for all signature algorithms and operations.
@@ -43,51 +43,51 @@ pub enum SignatureError {
     Internal(String),
 }
 
-impl fmt::Display for SignatureError {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
-            SignatureError::InvalidPrivateKey(msg) => 
-                write!(f, "Invalid private key: {}", msg),
-            SignatureError::InvalidPublicKey(msg) => 
-                write!(f, "Invalid public key: {}", msg),
-            SignatureError::InvalidSignature(msg) => 
-                write!(f, "Invalid signature: {}", msg),
-            SignatureError::MessageTooLarge(msg) => 
-                write!(f, "Message too large: {}", msg),
-            SignatureError::VerificationFailed(msg) => 
-                write!(f, "Signature verification failed: {}", msg),
-            SignatureError::UnsupportedAlgorithm(msg) => 
-                write!(f, "Unsupported algorithm: {}", msg),
-            SignatureError::InvalidKeySize(msg) => 
-                write!(f, "Invalid key size: {}", msg),
-            SignatureError::KeyGenerationFailed(msg) => 
-                write!(f, "Key generation failed: {}", msg),
-            SignatureError::InvalidHashAlgorithm(msg) => 
-                write!(f, "Invalid hash algorithm: {}", msg),
-            SignatureError::InvalidInput(msg) => 
-                write!(f, "Invalid input: {}", msg),
-            SignatureError::TimestampError(msg) => 
-                write!(f, "Timestamp error: {}", msg),
-            SignatureError::ThresholdNotMet(msg) => 
-                write!(f, "Multi-signature threshold not met: {}", msg),
-            SignatureError::InvalidMultiSigConfig(msg) => 
-                write!(f, "Invalid multi-signature configuration: {}", msg),
-            SignatureError::CryptographicError(msg) => 
-                write!(f, "Cryptographic error: {}", msg),
-            SignatureError::Internal(msg) => 
-                write!(f, "Internal signature error: {}", msg),
-        }
-    }
-}
+// impl fmt::Display for SignatureError {
+//     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+//         match self {
+//             SignatureError::InvalidPrivateKey(msg) => 
+//                 write!(f, "Invalid private key: {}", msg),
+//             SignatureError::InvalidPublicKey(msg) => 
+//                 write!(f, "Invalid public key: {}", msg),
+//             SignatureError::InvalidSignature(msg) => 
+//                 write!(f, "Invalid signature: {}", msg),
+//             SignatureError::MessageTooLarge(msg) => 
+//                 write!(f, "Message too large: {}", msg),
+//             SignatureError::VerificationFailed(msg) => 
+//                 write!(f, "Signature verification failed: {}", msg),
+//             SignatureError::UnsupportedAlgorithm(msg) => 
+//                 write!(f, "Unsupported algorithm: {}", msg),
+//             SignatureError::InvalidKeySize(msg) => 
+//                 write!(f, "Invalid key size: {}", msg),
+//             SignatureError::KeyGenerationFailed(msg) => 
+//                 write!(f, "Key generation failed: {}", msg),
+//             SignatureError::InvalidHashAlgorithm(msg) => 
+//                 write!(f, "Invalid hash algorithm: {}", msg),
+//             SignatureError::InvalidInput(msg) => 
+//                 write!(f, "Invalid input: {}", msg),
+//             SignatureError::TimestampError(msg) => 
+//                 write!(f, "Timestamp error: {}", msg),
+//             SignatureError::ThresholdNotMet(msg) => 
+//                 write!(f, "Multi-signature threshold not met: {}", msg),
+//             SignatureError::InvalidMultiSigConfig(msg) => 
+//                 write!(f, "Invalid multi-signature configuration: {}", msg),
+//             SignatureError::CryptographicError(msg) => 
+//                 write!(f, "Cryptographic error: {}", msg),
+//             SignatureError::Internal(msg) => 
+//                 write!(f, "Internal signature error: {}", msg),
+//         }
+//     }
+// }
 
-impl std::error::Error for SignatureError {}
-
+// impl std::error::CursedError for SignatureError {}
+// 
 /// Convert from various error types
-impl From<std::io::Error> for SignatureError {
-    fn from(err: std::io::Error) -> Self {
-        SignatureError::Internal(format!("I/O error: {}", err))
-    }
-}
+// impl From<std::io::Error> for SignatureError {
+//     fn from(err: std::io::Error) -> Self {
+//         SignatureError::Internal(format!("I/O error: {}", err))
+//     }
+// }
 
 impl From<String> for SignatureError {
     fn from(msg: String) -> Self {

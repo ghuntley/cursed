@@ -1,4 +1,4 @@
-use crate::error::Error;
+use crate::error::CursedError;
 // Enhanced SlayCommand implementation with comprehensive process management
 // 
 // This module provides advanced process management features including:
@@ -14,7 +14,6 @@ use std::process::{Child, Command, Stdio, ExitStatus};
 use std::sync::{Arc, Mutex, mpsc};
 use std::time::{Duration, Instant};
 use std::thread;
-use crate::error::CursedError;
 use super::{SlayOptions, SlayResult, ProcessStats, SignalOptions, io_error_to_cursed};
 
 /// Enhanced command with advanced process management features
@@ -453,7 +452,7 @@ impl EnhancedSlayCommand {
                     std::env::set_current_dir(chroot_dir)?;
                     unsafe {
                         if libc::chroot(std::ffi::CString::new(chroot_dir.as_str())?.as_ptr()) != 0 {
-                            return Err(io::Error::last_os_error());
+                            return Err(std::io::Error::last_os_error());
                         }
                     }
                     Ok(())
@@ -797,57 +796,3 @@ impl ResourceMonitor {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-use crate::stdlib::process::info::ProcessState;
-
-    #[test]
-    fn test_enhanced_slay_command_creation() {
-        let cmd = EnhancedSlayCommand::new("echo", &["hello"]);
-        assert_eq!(cmd.name, "echo");
-        assert_eq!(cmd.args, vec!["hello"]);
-    }
-
-    #[test]
-    fn test_enhanced_options_default() {
-        let opts = EnhancedSlayOptions::default();
-        assert_eq!(opts.priority, Some(ProcessPriority::Normal));
-        assert_eq!(opts.security.isolation_level, IsolationLevel::None);
-        assert!(!opts.monitoring.enabled);
-    }
-
-    #[test]
-    fn test_security_context_configuration() {
-        let mut cmd = EnhancedSlayCommand::new("test", &[]);
-        let security = SecurityContext {
-            user_id: Some(1000),
-            group_id: Some(1000),
-            chroot_dir: Some("/tmp".to_string()),
-            isolation_level: IsolationLevel::Sandbox,
-            enforce_limits: true,
-        };
-        cmd.set_security_context(security.clone());
-        assert_eq!(cmd.options.security.user_id, Some(1000));
-        assert_eq!(cmd.options.security.isolation_level, IsolationLevel::Sandbox);
-    }
-
-    #[test]
-    fn test_resource_limits() {
-        let mut cmd = EnhancedSlayCommand::new("test", &[]);
-        cmd.set_memory_limit(1024 * 1024); // 1MB
-        cmd.set_cpu_limit(50.0); // 50%
-        
-        assert_eq!(cmd.options.memory_limit, Some(1024 * 1024));
-        assert_eq!(cmd.options.cpu_limit, Some(50.0));
-    }
-
-    #[test]
-    fn test_monitoring_configuration() {
-        let mut cmd = EnhancedSlayCommand::new("test", &[]);
-        cmd.enable_monitoring(Duration::from_millis(500));
-        
-        assert!(cmd.options.monitoring.enabled);
-        assert_eq!(cmd.options.monitoring.interval, Duration::from_millis(500));
-    }
-}

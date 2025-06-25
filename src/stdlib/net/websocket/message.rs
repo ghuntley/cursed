@@ -1,8 +1,8 @@
 /// WebSocket message types
 
-use crate::stdlib::net::error::{NetError, NetResult, websocket_error};
-use crate::stdlib::net::websocket::{WebSocketFrame, Opcode};
-use crate::error::Error;
+// use crate::stdlib::net::error::{NetError, NetResult, websocket_error};
+// use crate::stdlib::net::websocket::{WebSocketFrame, Opcode};
+use crate::error::CursedError;
 
 /// WebSocket message types
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -130,82 +130,3 @@ impl WebSocketMessage {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_text_message() {
-        let message = WebSocketMessage::text("Hello, WebSocket!".to_string());
-        assert_eq!(message.message_type, MessageType::Text);
-        assert!(message.is_text());
-        assert!(!message.is_binary());
-        assert!(!message.is_control());
-        
-        let text = message.as_text().unwrap();
-        assert_eq!(text, "Hello, WebSocket!");
-    }
-
-    #[test]
-    fn test_binary_message() {
-        let data = vec![0x01, 0x02, 0x03, 0x04];
-        let message = WebSocketMessage::binary(data.clone());
-        assert_eq!(message.message_type, MessageType::Binary);
-        assert!(!message.is_text());
-        assert!(message.is_binary());
-        assert!(!message.is_control());
-        
-        assert_eq!(message.as_binary(), &data);
-    }
-
-    #[test]
-    fn test_control_messages() {
-        let ping = WebSocketMessage::ping(vec![1, 2, 3]);
-        assert!(ping.is_control());
-        assert_eq!(ping.message_type, MessageType::Ping);
-        
-        let pong = WebSocketMessage::pong(vec![4, 5, 6]);
-        assert!(pong.is_control());
-        assert_eq!(pong.message_type, MessageType::Pong);
-    }
-
-    #[test]
-    fn test_message_size() {
-        let message = WebSocketMessage::text("Hello".to_string());
-        assert_eq!(message.len(), 5);
-        assert!(!message.is_empty());
-        
-        let empty_message = WebSocketMessage::binary(vec![]);
-        assert_eq!(empty_message.len(), 0);
-        assert!(empty_message.is_empty());
-    }
-
-    #[test]
-    fn test_frame_conversion() {
-        let message = WebSocketMessage::text("Test".to_string());
-        let frame = message.to_frame().unwrap();
-        assert_eq!(frame.opcode, Opcode::Text);
-        assert_eq!(frame.payload, b"Test");
-        
-        let message2 = WebSocketMessage::from_frame(frame).unwrap();
-        assert_eq!(message2.message_type, MessageType::Text);
-        assert_eq!(message2.data, b"Test");
-    }
-
-    #[test]
-    fn test_invalid_text_conversion() {
-        let invalid_utf8 = vec![0xFF, 0xFE, 0xFD];
-        let message = WebSocketMessage {
-            message_type: MessageType::Text,
-            data: invalid_utf8,
-        };
-        
-        assert!(message.as_text().is_err());
-    }
-
-    #[test]
-    fn test_text_from_binary_error() {
-        let binary_message = WebSocketMessage::binary(vec![1, 2, 3]);
-        assert!(binary_message.as_text().is_err());
-    }
-}

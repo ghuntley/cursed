@@ -8,8 +8,7 @@ use std::sync::{Arc, Mutex};
 use std::time::{Duration, Instant};
 use tracing::{debug, info, instrument, warn};
 
-use super::DatabaseError;
-use crate::error::Error;
+use crate::error::CursedError;
 
 /// Redis monitoring system
 #[derive(Debug)]
@@ -35,7 +34,7 @@ pub struct MonitoringStats {
     pub peak_response_time: Duration,
     /// Commands by type
     pub commands_by_type: HashMap<String, u64>,
-    /// Error counts by type
+    /// CursedError counts by type
     pub errors_by_type: HashMap<String, u64>,
     /// Slow commands count
     pub slow_commands: u64,
@@ -96,7 +95,7 @@ pub enum AlertSeverity {
 impl RedisMonitor {
     /// Create new monitoring instance
     #[instrument]
-    pub fn new() -> Result<(), Error> {
+    pub fn new() -> crate::error::Result<()> {
         info!("Creating Redis monitor");
         
         Ok(Self {
@@ -220,7 +219,7 @@ impl RedisMonitor {
     
     /// Acknowledge alert
     #[instrument(skip(self))]
-    pub async fn acknowledge_alert(&self, alert_id: u64) -> Result<(), Error> {
+    pub async fn acknowledge_alert(&self, alert_id: u64) -> crate::error::Result<()> {
         debug!(alert_id = alert_id, "Acknowledging alert");
         
         let mut alerts = self.alerts.lock().unwrap();

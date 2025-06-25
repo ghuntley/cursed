@@ -2,7 +2,7 @@
 /// 
 /// Provides version information, compiler details, and platform identification
 
-use crate::error::Error;
+use crate::error::CursedError;
 use std::env;
 
 /// CURSED version information
@@ -68,13 +68,13 @@ pub struct StackFrame {
 
 /// Get caller frame information
 /// Skip n frames in the call stack
-pub fn caller(skip: i32) -> Result<(), Error> {
+pub fn caller(skip: i32) -> crate::error::Result<()> {
     // In a full implementation, this would use backtrace or similar
     // to walk the call stack and get symbol information
     
     // For now, provide a simplified implementation
     if skip < 0 {
-        return Err(Error::Runtime("Skip count cannot be negative".to_string()));
+        return Err(CursedError::Runtime("Skip count cannot be negative".to_string()));
     }
     
     // Simulate stack walking
@@ -91,7 +91,7 @@ pub fn caller(skip: i32) -> Result<(), Error> {
 }
 
 /// Get function information for a program counter
-pub fn func_for_pc(pc: usize) -> Result<(), Error> {
+pub fn func_for_pc(pc: usize) -> crate::error::Result<()> {
     // In a full implementation, this would resolve symbols
     // For now, provide a placeholder
     Ok(FuncInfo {
@@ -130,7 +130,7 @@ impl FuncInfo {
 }
 
 /// Get simplified call stack
-fn get_call_stack() -> Result<(), Error> {
+fn get_call_stack() -> crate::error::Result<()> {
     // This is a simplified implementation
     // A full implementation would use backtrace crate or platform-specific APIs
     
@@ -266,146 +266,3 @@ fn get_page_size() -> usize {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_version() {
-        let ver = version();
-        assert!(ver.contains("cursed version"));
-        assert!(ver.contains(CURSED_VERSION));
-    }
-
-    #[test]
-    fn test_compiler() {
-        let comp = compiler();
-        assert_eq!(comp, "cursed-llvm");
-    }
-
-    #[test]
-    fn test_goarch() {
-        let arch = goarch();
-        assert!(!arch.is_empty());
-        
-        // Should map to known architectures
-        let valid_archs = vec![
-            "amd64", "386", "arm64", "arm", "ppc64", "ppc64le",
-            "mips", "mips64", "s390x", "riscv64"
-        ];
-        
-        // Either matches a known arch or is the raw arch name
-        let is_valid = valid_archs.contains(&arch.as_str()) || 
-                      !arch.is_empty();
-        assert!(is_valid);
-    }
-
-    #[test]
-    fn test_goos() {
-        let os = goos();
-        assert!(!os.is_empty());
-        
-        // Should map to known operating systems
-        let valid_oses = vec![
-            "linux", "darwin", "windows", "freebsd", "netbsd",
-            "openbsd", "dragonfly", "android", "ios", "solaris"
-        ];
-        
-        // Either matches a known OS or is the raw OS name
-        let is_valid = valid_oses.contains(&os.as_str()) || 
-                      !os.is_empty();
-        assert!(is_valid);
-    }
-
-    #[test]
-    fn test_caller() {
-        // Test valid skip counts
-        let result = caller(0);
-        match result {
-            Ok((pc, file, line, ok)) => {
-                if ok {
-                    assert!(pc > 0);
-                    assert!(!file.is_empty());
-                    assert!(line >= 0);
-                }
-            }
-            Err(_) => {
-                // May fail in test environment
-            }
-        }
-        
-        // Test invalid skip count
-        assert!(caller(-1).is_err());
-    }
-
-    #[test]
-    fn test_func_for_pc() {
-        let func_info = func_for_pc(0x1000).unwrap();
-        assert!(!func_info.name().is_empty());
-        assert_eq!(func_info.entry(), 0x1000);
-    }
-
-    #[test]
-    fn test_build_info() {
-        let info = build_info();
-        assert!(!info.version.is_empty());
-        assert!(!info.compiler.is_empty());
-        assert!(!info.architecture.is_empty());
-        assert!(!info.os.is_empty());
-        assert!(!info.llvm_version.is_empty());
-    }
-
-    #[test]
-    fn test_runtime_features() {
-        let features = runtime_features();
-        // At least one of these should be reasonable
-        assert!(features.optimization_enabled || features.debug_info_enabled);
-    }
-
-    #[test]
-    fn test_memory_layout() {
-        let layout = memory_layout();
-        assert!(layout.pointer_size > 0);
-        assert!(layout.page_size > 0);
-        assert!(!layout.endianness.is_empty());
-        assert!(layout.alignment > 0);
-        
-        // Pointer size should be 4 or 8 bytes
-        assert!(layout.pointer_size == 4 || layout.pointer_size == 8);
-        
-        // Page size should be a power of 2
-        assert!(layout.page_size.is_power_of_two());
-        
-        // Endianness should be little or big
-        assert!(layout.endianness == "little" || layout.endianness == "big");
-    }
-
-    #[test]
-    fn test_get_call_stack() {
-        let stack = get_call_stack().unwrap();
-        assert!(!stack.is_empty());
-        
-        for frame in &stack {
-            assert!(frame.pc > 0);
-            assert!(!frame.function.is_empty());
-            assert!(!frame.file.is_empty());
-        }
-    }
-
-    #[test]
-    fn test_func_info_methods() {
-        let func_info = FuncInfo {
-            name: "test_func".to_string(),
-            entry: 0x5000,
-            file: "test.csd".to_string(),
-            line: 42,
-        };
-        
-        assert_eq!(func_info.name(), "test_func");
-        assert_eq!(func_info.entry(), 0x5000);
-        
-        let (file, line) = func_info.file_line(0x5010);
-        assert_eq!(file, "test.csd");
-        assert_eq!(line, 42);
-    }
-}

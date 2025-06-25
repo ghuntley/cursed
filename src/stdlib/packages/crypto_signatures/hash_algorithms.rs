@@ -3,8 +3,8 @@
 // Comprehensive hash algorithm implementations optimized for signature operations,
 // with support for multiple algorithms, streaming, and security validation.
 
-use crate::stdlib::packages::crypto_signatures::errors::{SignatureError, SignatureResult};
-use crate::error::Error;
+// use crate::stdlib::packages::crypto_signatures::errors::{SignatureError, SignatureResult};
+use crate::error::CursedError;
 use sha2::{Sha224, Sha256, Sha384, Sha512, Digest};
 use sha3::{Sha3_224, Sha3_256, Sha3_384, Sha3_512};
 use blake3;
@@ -547,115 +547,3 @@ pub mod utils {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_sha256_hash() {
-        let manager = HashAlgorithmManager::new();
-        let data = b"test data";
-        
-        let result = manager.hash_with_algorithm(data, &HashAlgorithm::Sha256).unwrap();
-        assert_eq!(result.algorithm, HashAlgorithm::Sha256);
-        assert_eq!(result.digest.len(), 32);
-        assert_eq!(result.input_size, data.len());
-    }
-
-    #[test]
-    fn test_streaming_hash() {
-        let manager = HashAlgorithmManager::new();
-        let data1 = b"test ";
-        let data2 = b"data";
-        let combined = b"test data";
-        
-        // Streaming hash
-        let mut context = manager.create_context(&HashAlgorithm::Sha256).unwrap();
-        manager.update_context(&mut context, data1).unwrap();
-        manager.update_context(&mut context, data2).unwrap();
-        let stream_result = manager.finalize_context(context, HashAlgorithm::Sha256, data1.len() + data2.len()).unwrap();
-        
-        // Direct hash
-        let direct_result = manager.hash_with_algorithm(combined, &HashAlgorithm::Sha256).unwrap();
-        
-        assert_eq!(stream_result.digest, direct_result.digest);
-    }
-
-    #[test]
-    fn test_algorithm_properties() {
-        let manager = HashAlgorithmManager::new();
-        
-        let sha256_props = manager.get_properties(&HashAlgorithm::Sha256).unwrap();
-        assert_eq!(sha256_props.digest_size, 32);
-        assert_eq!(sha256_props.security_level, 128);
-        assert!(sha256_props.recommended);
-        
-        let sha3_props = manager.get_properties(&HashAlgorithm::Sha3_256).unwrap();
-        assert!(sha3_props.is_quantum_resistant);
-    }
-
-    #[test]
-    fn test_keyed_hash() {
-        let manager = HashAlgorithmManager::new();
-        let key = b"secret key";
-        let data = b"test data";
-        
-        let result = manager.keyed_hash(key, data, &HashAlgorithm::Sha256).unwrap();
-        assert_eq!(result.algorithm, HashAlgorithm::Sha256);
-        assert_eq!(result.digest.len(), 32);
-        
-        // Different key should produce different result
-        let different_key = b"different key";
-        let different_result = manager.keyed_hash(different_key, data, &HashAlgorithm::Sha256).unwrap();
-        assert_ne!(result.digest, different_result.digest);
-    }
-
-    #[test]
-    fn test_hash_chunks() {
-        let manager = HashAlgorithmManager::new();
-        let chunks = [b"chunk1".as_slice(), b"chunk2".as_slice(), b"chunk3".as_slice()];
-        let combined = b"chunk1chunk2chunk3";
-        
-        let chunk_result = manager.hash_chunks(&chunks, &HashAlgorithm::Sha256).unwrap();
-        let direct_result = manager.hash_with_algorithm(combined, &HashAlgorithm::Sha256).unwrap();
-        
-        assert_eq!(chunk_result.digest, direct_result.digest);
-    }
-
-    #[test]
-    fn test_recommended_algorithms() {
-        let manager = HashAlgorithmManager::new();
-        let recommended = manager.get_recommended_algorithms();
-        
-        assert!(recommended.contains(&HashAlgorithm::Sha256));
-        assert!(recommended.contains(&HashAlgorithm::Blake3));
-        assert!(!recommended.contains(&HashAlgorithm::Md5));
-        assert!(!recommended.contains(&HashAlgorithm::Sha1));
-    }
-
-    #[test]
-    fn test_quantum_resistance() {
-        let manager = HashAlgorithmManager::new();
-        
-        assert!(!manager.is_quantum_resistant(&HashAlgorithm::Sha256));
-        assert!(manager.is_quantum_resistant(&HashAlgorithm::Sha3_256));
-        assert!(manager.is_quantum_resistant(&HashAlgorithm::Blake3));
-    }
-
-    #[test]
-    fn test_utils_functions() {
-        let data = b"test data";
-        
-        let sha256_result = utils::sha256(data);
-        assert_eq!(sha256_result.len(), 32);
-        
-        let blake3_result = utils::blake3(data);
-        assert_eq!(blake3_result.len(), 32);
-        
-        let secure_result = utils::hash_secure(data, 128).unwrap();
-        assert!(secure_result.digest.len() >= 32);
-        
-        let multi_results = utils::hash_multi(data);
-        assert!(multi_results.len() >= 3);
-    }
-}

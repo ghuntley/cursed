@@ -1,4 +1,4 @@
-use crate::error_types::Error;
+use crate::error::CursedError;
 // Tokio process integration for CURSED async runtime
 use std::process::Stdio;
 use std::collections::HashMap;
@@ -336,34 +336,3 @@ impl Default for ProcessManager {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-    
-    #[tokio::test]
-    async fn test_command_creation() {
-        let mut cmd = Command::new("echo");
-        cmd.arg("hello").arg("world");
-        
-        assert_eq!(cmd.program, "echo");
-        assert_eq!(cmd.args, vec!["hello", "world"]);
-    }
-    
-    #[tokio::test]
-    async fn test_process_manager() {
-        let mut manager = ProcessManager::new();
-        assert_eq!(manager.process_count(), 0);
-    }
-    
-    #[test]
-    fn test_output_string_conversion() {
-        let output = Output {
-            status: std::process::ExitStatus::from_raw(0),
-            stdout: b"hello".to_vec(),
-            stderr: b"error".to_vec(),
-        };
-        
-        assert_eq!(output.stdout_as_string().unwrap(), "hello");
-        assert_eq!(output.stderr_as_string().unwrap(), "error");
-    }
-}

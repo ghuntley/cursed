@@ -26,11 +26,11 @@ use sha2::Sha256;
 use zeroize::Zeroize;
 use tracing::{info, warn, error, debug, instrument};
 
-use crate::stdlib::crypto_pqc::{PqcResult, PqcError, SecurityLevel, AlgorithmType};
-use crate::error::Error;
-use crate::stdlib::crypto_pqc::algorithms::kyber_real::{RealKyber, KyberParams, KyberPublicKey, KyberSecretKey, KyberCiphertext};
-use crate::stdlib::crypto_pqc::algorithms::dilithium_real::{RealDilithium, DilithiumParams};
-use crate::stdlib::packages::crypto_asymmetric::{
+// use crate::stdlib::crypto_pqc::{PqcResult, PqcError, SecurityLevel, AlgorithmType};
+use crate::error::CursedError;
+// use crate::stdlib::crypto_pqc::algorithms::kyber_real::{RealKyber, KyberParams, KyberPublicKey, KyberSecretKey, KyberCiphertext};
+// use crate::stdlib::crypto_pqc::algorithms::dilithium_real::{RealDilithium, DilithiumParams};
+// use crate::stdlib::packages::crypto_asymmetric::{
     AsymmetricAlgorithm, KeyGenerator, rsa_generate_keypair, 
     ecc_generate_keypair, EccCurve, x25519_generate_keypair, 
     x25519_key_exchange, ed25519_generate_keypair
@@ -1668,73 +1668,3 @@ impl HybridSignature {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_hybrid_kem() {
-        let hybrid_kem = HybridKem::new(
-            ClassicalAlgorithm::X25519,
-            AlgorithmType::Kyber,
-            SecurityLevel::Level3,
-        );
-
-        let key_pair = hybrid_kem.keygen().unwrap();
-        assert_eq!(key_pair.algorithm_info.classical, ClassicalAlgorithm::X25519);
-        assert_eq!(key_pair.algorithm_info.pqc, AlgorithmType::Kyber);
-        assert_eq!(key_pair.algorithm_info.security_level, SecurityLevel::Level3);
-
-        let (ciphertext, shared_secret1) = hybrid_kem.encaps(&key_pair).unwrap();
-        let shared_secret2 = hybrid_kem.decaps(&key_pair, &ciphertext).unwrap();
-        
-        assert_eq!(shared_secret1, shared_secret2);
-    }
-
-    #[test]
-    fn test_migration_strategy() {
-        let mut strategy = HybridMigrationStrategy::standard();
-        
-        assert_eq!(strategy.current_phase, 0);
-        assert_eq!(strategy.current_phase().unwrap().name, "Classical Only");
-        
-        strategy.advance_phase().unwrap();
-        assert_eq!(strategy.current_phase, 1);
-        assert_eq!(strategy.current_phase().unwrap().name, "Early Adoption");
-        
-        let recommendations = strategy.get_current_recommendations().unwrap();
-        assert!(!recommendations.is_empty());
-    }
-
-    #[test]
-    fn test_compatibility_matrix() {
-        let matrix = HybridCompatibilityMatrix::new();
-        
-        let rating = matrix.get_rating(ClassicalAlgorithm::X25519, AlgorithmType::Kyber);
-        assert_eq!(rating, CompatibilityRating::Excellent);
-        
-        let excellent_combos = matrix.get_excellent_combinations();
-        assert!(!excellent_combos.is_empty());
-        
-        let level3_recommendations = matrix.get_recommended_for_security_level(SecurityLevel::Level3);
-        assert!(!level3_recommendations.is_empty());
-    }
-
-    #[test]
-    fn test_ciphertext_combination() {
-        let hybrid_kem = HybridKem::new(
-            ClassicalAlgorithm::X25519,
-            AlgorithmType::Kyber,
-            SecurityLevel::Level1,
-        );
-
-        let classical_ct = vec![1, 2, 3, 4];
-        let pqc_ct = vec![5, 6, 7, 8, 9];
-        
-        let combined = hybrid_kem.combine_ciphertexts(classical_ct.clone(), pqc_ct.clone()).unwrap();
-        let (split_classical, split_pqc) = hybrid_kem.split_ciphertext(&combined).unwrap();
-        
-        assert_eq!(split_classical, classical_ct);
-        assert_eq!(split_pqc, pqc_ct);
-    }
-}

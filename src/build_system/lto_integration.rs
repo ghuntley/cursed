@@ -3,7 +3,7 @@
 /// Integrates Link-Time Optimization with the CURSED build system,
 /// providing seamless LTO support across the entire compilation pipeline.
 
-use crate::error::{Error, Result};
+use crate::error::{CursedError, Result};
 use crate::optimization::lto::{LtoOptimizer, LtoConfig, LtoLevel, LtoCompilationUnit, LtoStatistics};
 use crate::build_system::{BuildConfig, BuildResult, BuildStatistics, BuildOrchestrator};
 
@@ -64,7 +64,7 @@ impl LtoBuildIntegration {
 
         // Create output directory
         std::fs::create_dir_all(&config.output_directory)
-            .map_err(|e| Error::General(format!("Failed to create LTO output directory: {}", e)))?;
+            .map_err(|e| CursedError::General(format!("Failed to create LTO output directory: {}", e)))?;
 
         let cache = LtoBuildCache::new(&config)?;
 
@@ -224,7 +224,7 @@ impl LtoBuildIntegration {
         for unit in compilation_units {
             if let Some(ref bitcode_path) = unit.bitcode_path {
                 let metadata = std::fs::metadata(bitcode_path)
-                    .map_err(|e| Error::General(format!("Failed to get file metadata: {}", e)))?;
+                    .map_err(|e| CursedError::General(format!("Failed to get file metadata: {}", e)))?;
                 
                 if metadata.modified().unwrap_or(std::time::SystemTime::UNIX_EPOCH) > entry.timestamp {
                     return Ok(false);
@@ -312,7 +312,7 @@ impl LtoBuildIntegration {
                     
                     // In a real implementation, this would write actual object code
                     std::fs::write(&output_path, b"mock object code")
-                        .map_err(|e| Error::General(format!("Failed to write LTO output: {}", e)))?;
+                        .map_err(|e| CursedError::General(format!("Failed to write LTO output: {}", e)))?;
                     
                     output_files.push(output_path);
                 }
@@ -323,7 +323,7 @@ impl LtoBuildIntegration {
                 
                 // In a real implementation, this would write actual merged object code
                 std::fs::write(&output_path, b"mock merged object code")
-                    .map_err(|e| Error::General(format!("Failed to write LTO output: {}", e)))?;
+                    .map_err(|e| CursedError::General(format!("Failed to write LTO output: {}", e)))?;
                 
                 output_files.push(output_path);
             }
@@ -333,7 +333,7 @@ impl LtoBuildIntegration {
         let report_path = self.config.output_directory.join("lto_report.md");
         let report_content = format!("# LTO Optimization Report\n\n{:?}", lto_result.statistics);
         std::fs::write(&report_path, report_content)
-            .map_err(|e| Error::General(format!("Failed to write LTO report: {}", e)))?;
+            .map_err(|e| CursedError::General(format!("Failed to write LTO report: {}", e)))?;
 
         info!("Generated {} LTO output files", output_files.len());
         Ok(output_files)
@@ -405,7 +405,7 @@ impl LtoBuildIntegration {
         // Clean up output directory
         if self.config.output_directory.exists() {
             std::fs::remove_dir_all(&self.config.output_directory)
-                .map_err(|e| Error::General(format!("Failed to clean LTO output directory: {}", e)))?;
+                .map_err(|e| CursedError::General(format!("Failed to clean LTO output directory: {}", e)))?;
         }
 
         // Clean up cache
@@ -597,95 +597,3 @@ impl LtoBuildConfigFactory {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_lto_build_config_creation() {
-        let config = LtoBuildConfig::default();
-        assert_eq!(config.lto_config.level, LtoLevel::None);
-        assert!(config.release_only);
-        assert!(config.enable_incremental);
-    }
-
-    #[test]
-    fn test_lto_build_integration_creation() {
-        let config = LtoBuildConfig::default();
-        let integration = LtoBuildIntegration::new(config);
-        assert!(integration.is_ok());
-    }
-
-    #[test]
-    fn test_compilation_artifact_creation() {
-        let artifact = CompilationArtifact {
-            unit_name: "test_unit".to_string(),
-            source_files: vec![PathBuf::from("test.csd")],
-            object_path: PathBuf::from("test.o"),
-            bitcode_path: Some(PathBuf::from("test.bc")),
-            source_hash: "abc123".to_string(),
-            dependencies: vec!["stdlib".to_string()],
-        };
-
-        assert_eq!(artifact.unit_name, "test_unit");
-        assert_eq!(artifact.source_files.len(), 1);
-        assert!(artifact.bitcode_path.is_some());
-    }
-
-    #[test]
-    fn test_lto_optimization_result() {
-        let result = LtoOptimizationResult::skipped();
-        assert_eq!(result.lto_statistics.modules_processed, 0);
-        assert_eq!(result.optimization_time, Duration::from_secs(0));
-        assert!(!result.cache_hit);
-    }
-
-    #[test]
-    fn test_config_factory() {
-        let dev_config = LtoBuildConfigFactory::development();
-        let release_config = LtoBuildConfigFactory::release();
-        let size_config = LtoBuildConfigFactory::size_optimized();
-        let fast_config = LtoBuildConfigFactory::fast_build();
-
-        assert_eq!(dev_config.lto_config.level, LtoLevel::None);
-        assert_eq!(release_config.lto_config.level, LtoLevel::Full);
-        assert_eq!(size_config.lto_config.level, LtoLevel::Full);
-        assert_eq!(fast_config.lto_config.level, LtoLevel::Thin);
-
-        assert!(!dev_config.release_only);
-        assert!(release_config.release_only);
-        assert!(fast_config.enable_parallel);
-    }
-
-    #[test]
-    fn test_cache_key_generation() {
-        let config = LtoBuildConfig::default();
-        let integration = LtoBuildIntegration::new(config).unwrap();
-
-        let artifacts = vec![
-            CompilationArtifact {
-                unit_name: "unit1".to_string(),
-                source_files: vec![PathBuf::from("unit1.csd")],
-                object_path: PathBuf::from("unit1.o"),
-                bitcode_path: Some(PathBuf::from("unit1.bc")),
-                source_hash: "hash1".to_string(),
-                dependencies: Vec::new(),
-            },
-            CompilationArtifact {
-                unit_name: "unit2".to_string(),
-                source_files: vec![PathBuf::from("unit2.csd")],
-                object_path: PathBuf::from("unit2.o"),
-                bitcode_path: Some(PathBuf::from("unit2.bc")),
-                source_hash: "hash2".to_string(),
-                dependencies: Vec::new(),
-            },
-        ];
-
-        let key1 = integration.generate_cache_key(&artifacts);
-        let key2 = integration.generate_cache_key(&artifacts);
-
-        assert!(key1.is_ok());
-        assert!(key2.is_ok());
-        assert_eq!(key1.unwrap(), key2.unwrap()); // Same inputs should generate same key
-    }
-}

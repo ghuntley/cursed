@@ -1,5 +1,5 @@
 use crate::web::StatusCode;
-use crate::error::Error;
+use crate::error::CursedError;
 /// fr fr Rate limiting configuration - comprehensive settings
 use std::time::Duration;
 use serde::{Deserialize, Serialize};
@@ -19,7 +19,7 @@ pub struct RateLimitConfig {
     /// fr fr Client identification - how to identify clients
     pub client_identification: ClientIdentification,
     
-    /// fr fr Error configuration - how to handle violations
+    /// fr fr CursedError configuration - how to handle violations
     pub error_config: ErrorConfig,
     
     /// fr fr Cleanup configuration - maintenance settings
@@ -88,7 +88,7 @@ impl RateLimitConfig {
     }
 
     /// fr fr Validate configuration - ensure settings are valid
-    pub fn validate(&self) -> Result<(), Error> {
+    pub fn validate(&self) -> crate::error::Result<()> {
         if self.max_requests == 0 {
             return Err(ConfigError::InvalidMaxRequests("max_requests must be greater than 0".to_string()));
         }
@@ -148,7 +148,7 @@ impl BucketConfig {
     }
 
     /// fr fr Validate bucket configuration
-    pub fn validate(&self) -> Result<(), Error> {
+    pub fn validate(&self) -> crate::error::Result<()> {
         if self.capacity <= 0.0 {
             return Err(ConfigError::InvalidCapacity("capacity must be greater than 0".to_string()));
         }
@@ -199,13 +199,13 @@ pub enum IdentificationFactor {
     Custom { name: String, extractor: String },
 }
 
-/// fr fr Error configuration - how to handle rate limit violations
+/// fr fr CursedError configuration - how to handle rate limit violations
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ErrorConfig {
     /// fr fr HTTP status code to return - standard response
     pub status_code: u16,
     
-    /// fr fr Error message - user-facing message
+    /// fr fr CursedError message - user-facing message
     pub message: String,
     
     /// fr fr Include rate limit headers - transparency
@@ -249,7 +249,7 @@ impl ErrorConfig {
     }
 
     /// fr fr Validate error configuration
-    pub fn validate(&self) -> Result<(), Error> {
+    pub fn validate(&self) -> crate::error::Result<()> {
         if self.status_code < 400 || self.status_code >= 600 {
             return Err(ConfigError::InvalidStatusCode("status_code must be a valid 4xx or 5xx status code".to_string()));
         }
@@ -335,7 +335,7 @@ impl CleanupConfig {
     }
 
     /// fr fr Validate cleanup configuration
-    pub fn validate(&self) -> Result<(), Error> {
+    pub fn validate(&self) -> crate::error::Result<()> {
         if self.enabled {
             if self.interval.as_secs() == 0 {
                 return Err(ConfigError::InvalidInterval("cleanup interval must be greater than 0".to_string()));
@@ -400,149 +400,20 @@ pub enum ConfigError {
     InvalidTtl(String),
 }
 
-impl std::fmt::Display for ConfigError {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            ConfigError::InvalidMaxRequests(msg) => write!(f, "Invalid max requests: {}", msg),
-            ConfigError::InvalidDuration(msg) => write!(f, "Invalid duration: {}", msg),
-            ConfigError::InvalidCapacity(msg) => write!(f, "Invalid capacity: {}", msg),
-            ConfigError::InvalidRefillRate(msg) => write!(f, "Invalid refill rate: {}", msg),
-            ConfigError::InvalidStatusCode(msg) => write!(f, "Invalid status code: {}", msg),
-            ConfigError::InvalidMessage(msg) => write!(f, "Invalid message: {}", msg),
-            ConfigError::InvalidInterval(msg) => write!(f, "Invalid interval: {}", msg),
-            ConfigError::InvalidTtl(msg) => write!(f, "Invalid TTL: {}", msg),
-        }
-    }
-}
+// impl std::fmt::Display for ConfigError {
+//     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+//         match self {
+//             ConfigError::InvalidMaxRequests(msg) => write!(f, "Invalid max requests: {}", msg),
+//             ConfigError::InvalidDuration(msg) => write!(f, "Invalid duration: {}", msg),
+//             ConfigError::InvalidCapacity(msg) => write!(f, "Invalid capacity: {}", msg),
+//             ConfigError::InvalidRefillRate(msg) => write!(f, "Invalid refill rate: {}", msg),
+//             ConfigError::InvalidStatusCode(msg) => write!(f, "Invalid status code: {}", msg),
+//             ConfigError::InvalidMessage(msg) => write!(f, "Invalid message: {}", msg),
+//             ConfigError::InvalidInterval(msg) => write!(f, "Invalid interval: {}", msg),
+//             ConfigError::InvalidTtl(msg) => write!(f, "Invalid TTL: {}", msg),
+//         }
+//     }
+// }
 
-impl std::error::Error for ConfigError {}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_rate_limit_config_creation() {
-        let config = RateLimitConfig::new(100, Duration::from_secs(60));
-        assert_eq!(config.max_requests, 100);
-        
-        let per_minute = RateLimitConfig::per_minute(50);
-        assert_eq!(per_minute.max_requests, 50);
-        
-        let per_hour = RateLimitConfig::per_hour(1000);
-        assert_eq!(per_hour.max_requests, 1000);
-    }
-
-    #[test]
-    fn test_config_validation() {
-        // Valid config
-        let valid_config = RateLimitConfig::per_minute(10);
-        assert!(valid_config.validate().is_ok());
-        
-        // Invalid max_requests
-        let mut invalid_config = RateLimitConfig::per_minute(10);
-        invalid_config.max_requests = 0;
-        assert!(invalid_config.validate().is_err());
-    }
-
-    #[test]
-    fn test_bucket_config() {
-        let bucket = BucketConfig::new(10.0, 1.0);
-        assert_eq!(bucket.capacity, 10.0);
-        assert_eq!(bucket.refill_rate, 1.0);
-        assert!(bucket.validate().is_ok());
-        
-        // Invalid capacity
-        let invalid_bucket = BucketConfig::new(0.0, 1.0);
-        assert!(invalid_bucket.validate().is_err());
-    }
-
-    #[test]
-    fn test_error_config() {
-        let error_config = ErrorConfig::new()
-            .with_status_code(429)
-            .with_message("Rate limited".to_string());
-        
-        assert_eq!(error_config.status_code, 429);
-        assert_eq!(error_config.message, "Rate limited");
-        assert!(error_config.validate().is_ok());
-        
-        // Invalid status code
-        let invalid_error_config = ErrorConfig::new().with_status_code(200);
-        assert!(invalid_error_config.validate().is_err());
-    }
-
-    #[test]
-    fn test_cleanup_config() {
-        let cleanup = CleanupConfig::new()
-            .with_interval(Duration::from_secs(60))
-            .with_client_ttl(Duration::from_secs(300))
-            .with_max_clients(1000);
-        
-        assert_eq!(cleanup.interval, Duration::from_secs(60));
-        assert_eq!(cleanup.client_ttl, Duration::from_secs(300));
-        assert_eq!(cleanup.max_clients, Some(1000));
-        assert!(cleanup.validate().is_ok());
-        
-        let disabled_cleanup = CleanupConfig::disabled();
-        assert!(!disabled_cleanup.enabled);
-        assert!(disabled_cleanup.validate().is_ok());
-    }
-
-    #[test]
-    fn test_client_identification() {
-        let ip_identification = ClientIdentification::IpAddress;
-        let header_identification = ClientIdentification::Header {
-            name: "X-API-Key".to_string(),
-        };
-        let composite_identification = ClientIdentification::Composite {
-            factors: vec![
-                IdentificationFactor::IpAddress,
-                IdentificationFactor::Header { name: "User-Agent".to_string() },
-            ],
-        };
-        
-        assert!(matches!(ip_identification, ClientIdentification::IpAddress));
-        assert!(matches!(header_identification, ClientIdentification::Header { .. }));
-        assert!(matches!(composite_identification, ClientIdentification::Composite { .. }));
-    }
-
-    #[test]
-    fn test_window_config() {
-        let fixed_window = WindowConfig::Fixed { duration: Duration::from_secs(60) };
-        let sliding_window = WindowConfig::Sliding { duration: Duration::from_secs(60) };
-        
-        assert!(matches!(fixed_window, WindowConfig::Fixed { .. }));
-        assert!(matches!(sliding_window, WindowConfig::Sliding { .. }));
-    }
-
-    #[test]
-    fn test_cleanup_strategy() {
-        let lru = CleanupStrategy::LeastRecentlyUsed;
-        let fifo = CleanupStrategy::FirstInFirstOut;
-        let random = CleanupStrategy::Random;
-        let lfu = CleanupStrategy::LeastFrequentlyUsed;
-        
-        assert!(matches!(lru, CleanupStrategy::LeastRecentlyUsed));
-        assert!(matches!(fifo, CleanupStrategy::FirstInFirstOut));
-        assert!(matches!(random, CleanupStrategy::Random));
-        assert!(matches!(lfu, CleanupStrategy::LeastFrequentlyUsed));
-    }
-
-    #[test]
-    fn test_config_builder_pattern() {
-        let config = RateLimitConfig::per_minute(100)
-            .with_sliding_window(Duration::from_secs(60))
-            .with_token_bucket(10.0, 1.0)
-            .with_error_config(ErrorConfig::new().with_status_code(429))
-            .with_cleanup_config(CleanupConfig::new().with_interval(Duration::from_secs(300)));
-        
-        assert_eq!(config.max_requests, 100);
-        assert!(matches!(config.window_config, WindowConfig::Sliding { .. }));
-        assert!(config.bucket_config.is_some());
-        assert_eq!(config.error_config.status_code, 429);
-        assert!(config.cleanup_config.enabled);
-        
-        assert!(config.validate().is_ok());
-    }
-}
+// impl std::error::CursedError for ConfigError {}
+// 

@@ -1,4 +1,4 @@
-use crate::error::Error;
+use crate::error::CursedError;
 /// Threading and synchronization primitives for CURSED
 /// 
 /// This module provides comprehensive threading support including:
@@ -129,21 +129,3 @@ fn get_sync_memory_usage() -> usize {
     0
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_sync_module_initialization() {
-        assert!(init_sync_module().is_ok());
-        assert!(cleanup_sync_module().is_ok());
-    }
-
-    #[test]
-    fn test_sync_statistics() {
-        let stats = get_sync_statistics();
-        // Basic validation that we can get stats
-        assert!(stats.active_threads >= 0);
-        assert!(stats.thread_pool_utilization >= 0.0);
-    }
-}

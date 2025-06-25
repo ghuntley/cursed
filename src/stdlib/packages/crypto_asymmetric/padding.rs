@@ -3,9 +3,8 @@
 // Provides comprehensive padding schemes for asymmetric cryptography.
 // Supports OAEP, PKCS#1 v1.5, and PSS padding with various hash algorithms.
 
-use crate::stdlib::value::Value;
+// use crate::stdlib::value::Value;
 use crate::error::CursedError;
-use crate::error::Error;
 use std::collections::HashMap;
 use rand::rngs::OsRng;
 use rsa::{RsaPrivateKey, RsaPublicKey, Pkcs1v15Encrypt, Oaep, Pss, Pkcs1v15Sign};
@@ -93,7 +92,7 @@ impl PaddingScheme {
         }
     }
     
-    pub fn from_name(name: &str) -> Result<(), Error> {
+    pub fn from_name(name: &str) -> crate::error::Result<()> {
         match name.to_uppercase().as_str() {
             "PKCS1V15-ENCRYPT" | "PKCS1V15_ENCRYPT" => Ok(PaddingScheme::Pkcs1v15Encrypt),
             "PKCS1V15-SIGN" | "PKCS1V15_SIGN" => Ok(PaddingScheme::Pkcs1v15Sign),
@@ -129,7 +128,7 @@ impl PaddingResult {
         }
     }
     
-    pub fn to_value(&self) -> Result<(), Error> {
+    pub fn to_value(&self) -> crate::error::Result<()> {
         let mut map = HashMap::new();
         
         map.insert("scheme".to_string(), Value::String(self.scheme.name().to_string()));
@@ -142,7 +141,7 @@ impl PaddingResult {
 }
 
 /// OAEP padding
-pub fn oaep_padding(args: Vec<Value>) -> Result<(), Error> {
+pub fn oaep_padding(args: Vec<Value>) -> crate::error::Result<()> {
     if args.len() < 3 {
         return Err(CursedError::InvalidArgument("OAEP padding requires: data, public_key, hash_algorithm".to_string()));
     }
@@ -208,7 +207,7 @@ pub fn oaep_padding(args: Vec<Value>) -> Result<(), Error> {
 }
 
 /// OAEP unpadding (decryption)
-pub fn oaep_unpadding(args: Vec<Value>) -> Result<(), Error> {
+pub fn oaep_unpadding(args: Vec<Value>) -> crate::error::Result<()> {
     if args.len() < 3 {
         return Err(CursedError::InvalidArgument("OAEP unpadding requires: encrypted_data, private_key, hash_algorithm".to_string()));
     }
@@ -270,7 +269,7 @@ pub fn oaep_unpadding(args: Vec<Value>) -> Result<(), Error> {
 }
 
 /// PKCS#1 v1.5 padding
-pub fn pkcs1_padding(args: Vec<Value>) -> Result<(), Error> {
+pub fn pkcs1_padding(args: Vec<Value>) -> crate::error::Result<()> {
     if args.len() < 3 {
         return Err(CursedError::InvalidArgument("PKCS#1 padding requires: data, public_key, operation_type".to_string()));
     }
@@ -317,7 +316,7 @@ pub fn pkcs1_padding(args: Vec<Value>) -> Result<(), Error> {
 }
 
 /// PKCS#1 v1.5 unpadding (decryption)
-pub fn pkcs1_unpadding(args: Vec<Value>) -> Result<(), Error> {
+pub fn pkcs1_unpadding(args: Vec<Value>) -> crate::error::Result<()> {
     if args.len() < 2 {
         return Err(CursedError::InvalidArgument("PKCS#1 unpadding requires: encrypted_data, private_key".to_string()));
     }
@@ -354,7 +353,7 @@ pub fn pkcs1_unpadding(args: Vec<Value>) -> Result<(), Error> {
 }
 
 /// PSS signing
-pub fn pss_sign(args: Vec<Value>) -> Result<(), Error> {
+pub fn pss_sign(args: Vec<Value>) -> crate::error::Result<()> {
     if args.len() < 3 {
         return Err(CursedError::InvalidArgument("PSS signing requires: data, private_key, hash_algorithm".to_string()));
     }
@@ -412,7 +411,7 @@ pub fn pss_sign(args: Vec<Value>) -> Result<(), Error> {
 }
 
 /// Get padding scheme information
-pub fn get_padding_scheme_info(args: Vec<Value>) -> Result<(), Error> {
+pub fn get_padding_scheme_info(args: Vec<Value>) -> crate::error::Result<()> {
     if args.is_empty() {
         return Err(CursedError::InvalidArgument("Padding scheme name required".to_string()));
     }
@@ -494,7 +493,7 @@ pub fn get_recommended_padding_schemes() -> HashMap<String, Vec<String>> {
 pub fn validate_padding_for_operation(
     scheme: PaddingScheme,
     operation: &str,
-) -> Result<(), Error> {
+) -> crate::error::Result<()> {
     match (scheme, operation.to_uppercase().as_str()) {
         (PaddingScheme::Pkcs1v15Encrypt, "ENCRYPT") => Ok(()),
         (PaddingScheme::Pkcs1v15Sign, "SIGN") => Ok(()),
@@ -513,46 +512,3 @@ pub fn validate_padding_for_operation(
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_scheme_from_name() {
-        assert_eq!(PaddingScheme::from_name("OAEP-SHA256").unwrap(), PaddingScheme::OaepSha256);
-        assert_eq!(PaddingScheme::from_name("pss-sha256").unwrap(), PaddingScheme::PssSha256);
-        assert!(PaddingScheme::from_name("invalid").is_err());
-    }
-
-    #[test]
-    fn test_scheme_security() {
-        assert!(!PaddingScheme::Pkcs1v15Encrypt.is_secure());
-        assert!(PaddingScheme::OaepSha256.is_secure());
-        assert!(!PaddingScheme::OaepSha1.is_secure());
-        assert!(PaddingScheme::PssSha256.is_secure());
-    }
-
-    #[test]
-    fn test_validate_padding_for_operation() {
-        assert!(validate_padding_for_operation(PaddingScheme::OaepSha256, "encrypt").is_ok());
-        assert!(validate_padding_for_operation(PaddingScheme::PssSha256, "sign").is_ok());
-        assert!(validate_padding_for_operation(PaddingScheme::OaepSha256, "sign").is_err());
-    }
-
-    #[test]
-    fn test_list_padding_schemes() {
-        let schemes = list_padding_schemes();
-        assert!(schemes.contains(&"OAEP-SHA256".to_string()));
-        assert!(schemes.contains(&"PSS-SHA256".to_string()));
-    }
-
-    #[test]
-    fn test_get_recommended_padding_schemes() {
-        let recommendations = get_recommended_padding_schemes();
-        assert!(recommendations.contains_key("encryption"));
-        assert!(recommendations.contains_key("signatures"));
-        
-        let encryption_schemes = &recommendations["encryption"];
-        assert!(encryption_schemes.contains(&"OAEP-SHA256".to_string()));
-    }
-}

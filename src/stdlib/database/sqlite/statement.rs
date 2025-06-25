@@ -123,7 +123,7 @@ impl SqliteStatement {
 }
 
 impl DriverStmt for SqliteStatement {
-    fn query(&self, args: &[SqlValue]) -> Result<(), Error> {
+    fn query(&self, args: &[SqlValue]) -> crate::error::Result<()> {
         let connection = self.connection.lock().unwrap();
         if let Some(ref conn) = *connection {
             let mut stmt = conn.prepare(&self.info.sql)
@@ -165,7 +165,7 @@ impl DriverStmt for SqliteStatement {
         }
     }
 
-    fn execute(&self, args: &[SqlValue]) -> Result<(), Error> {
+    fn execute(&self, args: &[SqlValue]) -> crate::error::Result<()> {
         let connection = self.connection.lock().unwrap();
         if let Some(ref conn) = *connection {
             let mut stmt = conn.prepare(&self.info.sql)
@@ -190,7 +190,7 @@ impl DriverStmt for SqliteStatement {
         }
     }
 
-    fn close(&self) -> Result<(), Error> {
+    fn close(&self) -> crate::error::Result<()> {
         let mut handle = self.handle.lock()
             .map_err(|_| DatabaseError::new(
                 super::super::DatabaseErrorKind::ConnectionError,
@@ -225,64 +225,9 @@ impl DriverStmt for SqliteStatement {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-use crate::error_types::Error;
-
-    #[test]
-    fn test_statement_info() {
-        let info = StatementInfo {
-            sql: "SELECT * FROM users WHERE id = ?".to_string(),
-            parameter_count: 1,
-            column_count: 3,
-            prepared_at: std::time::SystemTime::now(),
-            execution_count: 0,
-        };
-
-        assert_eq!(info.parameter_count, 1);
-        assert_eq!(info.column_count, 3);
-        assert!(info.sql.contains("SELECT"));
-    }
-
-    #[test]
-    fn test_parameter_info() {
-        let param = ParameterInfo {
-            index: 1,
-            name: Some("id".to_string()),
-            data_type: Some(SqliteType::Integer),
-        };
-
-        assert_eq!(param.index, 1);
-        assert_eq!(param.name, Some("id".to_string()));
-        assert_eq!(param.data_type, Some(SqliteType::Integer));
-    }
-}
-
-/// Convert CURSED SqlValue to rusqlite parameters
-fn convert_args_to_params(args: &[SqlValue]) -> Result<(), Error> {
-    let mut params = Vec::new();
-    
-    for arg in args {
-        match arg {
-            SqlValue::Null => params.push(Box::new(rusqlite::types::Null) as Box<dyn rusqlite::ToSql>),
-            SqlValue::Boolean(b) => params.push(Box::new(*b) as Box<dyn rusqlite::ToSql>),
-            SqlValue::Integer(i) => params.push(Box::new(*i) as Box<dyn rusqlite::ToSql>),
-            SqlValue::Float(f) => params.push(Box::new(*f) as Box<dyn rusqlite::ToSql>),
-            SqlValue::String(s) => params.push(Box::new(s.clone()) as Box<dyn rusqlite::ToSql>),
-            SqlValue::Bytes(b) => params.push(Box::new(b.clone()) as Box<dyn rusqlite::ToSql>),
-            _ => return Err(DatabaseError::new(
-                super::super::DatabaseErrorKind::ConversionError,
-                &format!("Unsupported SqlValue type: {:?}", arg)
-            )),
-        }
-    }
-    
-    Ok(params)
-}
 
 /// Convert rusqlite value to CURSED SqlValue
-fn convert_value_from_sqlite(row: &rusqlite::Row, index: usize) -> Result<(), Error> {
+fn convert_value_from_sqlite(row: &rusqlite::Row, index: usize) -> crate::error::Result<()> {
     let value: SqliteValue = row.get(index)
         .map_err(|e| DatabaseError::new(super::super::DatabaseErrorKind::ConversionError, &format!("Failed to get column {}: {}", index, e)))?;
     

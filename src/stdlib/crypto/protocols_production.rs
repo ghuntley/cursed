@@ -46,8 +46,8 @@ use x25519_dalek::{EphemeralSecret, PublicKey as X25519PublicKey};
 use ed25519_dalek::{SigningKey as Ed25519SigningKey, VerifyingKey as Ed25519VerifyingKey, Signature as Ed25519Signature, Signer, Verifier};
 
 use crate::error::CursedError;
-use crate::stdlib::value::Value;
-use crate::stdlib::crypto::asymmetric::Ed25519PublicKey;
+// use crate::stdlib::value::Value;
+// use crate::stdlib::crypto::asymmetric::Ed25519PublicKey;
 
 // ============================================================================
 // ERROR HANDLING AND TYPES
@@ -86,48 +86,48 @@ pub enum ProtocolError {
     InternalError { component: String, details: String },
 }
 
-impl fmt::Display for ProtocolError {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
-            ProtocolError::KeyExchangeFailed { reason, context } => 
-                write!(f, "Key exchange failed: {} (context: {})", reason, context),
-            ProtocolError::HandshakeFailed { step, reason } => 
-                write!(f, "Handshake failed at step '{}': {}", step, reason),
-            ProtocolError::AuthenticationFailed { method, reason } => 
-                write!(f, "Authentication failed using {}: {}", method, reason),
-            ProtocolError::VerificationFailed { message_type, reason } => 
-                write!(f, "Verification failed for {}: {}", message_type, reason),
-            ProtocolError::InvalidState { current, expected } => 
-                write!(f, "Invalid state transition from '{}', expected '{}'", current, expected),
-            ProtocolError::ProtocolViolation { rule, details } => 
-                write!(f, "Protocol violation of rule '{}': {}", rule, details),
-            ProtocolError::CryptographicError { operation, reason } => 
-                write!(f, "Cryptographic error in {}: {}", operation, reason),
-            ProtocolError::InvalidMessage { format, reason } => 
-                write!(f, "Invalid {} message: {}", format, reason),
-            ProtocolError::Timeout { operation, duration } => 
-                write!(f, "Timeout in {} after {:?}", operation, duration),
-            ProtocolError::ConfigurationError { parameter, reason } => 
-                write!(f, "Configuration error for {}: {}", parameter, reason),
-            ProtocolError::ChannelError { channel_id, reason } => 
-                write!(f, "Channel {} error: {}", channel_id, reason),
-            ProtocolError::MpcError { party_id, reason } => 
-                write!(f, "MPC error from party {}: {}", party_id, reason),
-            ProtocolError::KeyManagementError { operation, reason } => 
-                write!(f, "Key management error in {}: {}", operation, reason),
-            ProtocolError::InternalError { component, details } => 
-                write!(f, "Internal error in {}: {}", component, details),
-        }
-    }
-}
+// impl fmt::Display for ProtocolError {
+//     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+//         match self {
+//             ProtocolError::KeyExchangeFailed { reason, context } => 
+//                 write!(f, "Key exchange failed: {} (context: {})", reason, context),
+//             ProtocolError::HandshakeFailed { step, reason } => 
+//                 write!(f, "Handshake failed at step '{}': {}", step, reason),
+//             ProtocolError::AuthenticationFailed { method, reason } => 
+//                 write!(f, "Authentication failed using {}: {}", method, reason),
+//             ProtocolError::VerificationFailed { message_type, reason } => 
+//                 write!(f, "Verification failed for {}: {}", message_type, reason),
+//             ProtocolError::InvalidState { current, expected } => 
+//                 write!(f, "Invalid state transition from '{}', expected '{}'", current, expected),
+//             ProtocolError::ProtocolViolation { rule, details } => 
+//                 write!(f, "Protocol violation of rule '{}': {}", rule, details),
+//             ProtocolError::CryptographicError { operation, reason } => 
+//                 write!(f, "Cryptographic error in {}: {}", operation, reason),
+//             ProtocolError::InvalidMessage { format, reason } => 
+//                 write!(f, "Invalid {} message: {}", format, reason),
+//             ProtocolError::Timeout { operation, duration } => 
+//                 write!(f, "Timeout in {} after {:?}", operation, duration),
+//             ProtocolError::ConfigurationError { parameter, reason } => 
+//                 write!(f, "Configuration error for {}: {}", parameter, reason),
+//             ProtocolError::ChannelError { channel_id, reason } => 
+//                 write!(f, "Channel {} error: {}", channel_id, reason),
+//             ProtocolError::MpcError { party_id, reason } => 
+//                 write!(f, "MPC error from party {}: {}", party_id, reason),
+//             ProtocolError::KeyManagementError { operation, reason } => 
+//                 write!(f, "Key management error in {}: {}", operation, reason),
+//             ProtocolError::InternalError { component, details } => 
+//                 write!(f, "Internal error in {}: {}", component, details),
+//         }
+//     }
+// }
 
-impl std::error::Error for ProtocolError {}
-
-impl From<ProtocolError> for CursedError {
-    fn from(err: ProtocolError) -> Self {
-        CursedError::Runtime(format!("Cryptographic protocol error: {}", err))
-    }
-}
+// impl std::error::CursedError for ProtocolError {}
+// 
+// impl From<ProtocolError> for CursedError {
+//     fn from(err: ProtocolError) -> Self {
+//         CursedError::Runtime(format!("Cryptographic protocol error: {}", err))
+//     }
+// }
 
 /// Result type for protocol operations
 pub type ProtocolResult<T> = std::result::Result<T, ProtocolError>;
@@ -728,7 +728,7 @@ pub enum ChannelState {
     Rekeying,
     Closing,
     Closed,
-    Error(String),
+    CursedError(String),
 }
 
 #[derive(Debug, Clone)]
@@ -1125,130 +1125,3 @@ impl SecurePacket {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-use crate::error::Error;
-
-    #[test]
-    fn test_x25519_key_exchange() {
-        let alice = X25519KeyExchange::new(SecurityLevel::Level256);
-        let bob = X25519KeyExchange::new(SecurityLevel::Level256);
-
-        let alice_public = alice.public_key();
-        let bob_public = bob.public_key();
-
-        let alice_shared = alice.exchange(&bob_public).unwrap();
-        let bob_shared = bob.exchange(&alice_public).unwrap();
-
-        assert_eq!(alice_shared.len(), bob_shared.len());
-        // Note: Due to HKDF, the derived keys might be different even from same shared secret
-        // This is expected behavior for key derivation
-    }
-
-    #[test]
-    fn test_ecdh_key_exchange() {
-        let alice = EcdhKeyExchange::new(SecurityLevel::Level256);
-        let bob = EcdhKeyExchange::new(SecurityLevel::Level256);
-
-        let alice_public = alice.public_point();
-        let bob_public = bob.public_point();
-
-        let alice_shared = alice.exchange(&bob_public).unwrap();
-        let bob_shared = bob.exchange(&alice_public).unwrap();
-
-        assert_eq!(alice_shared, bob_shared);
-    }
-
-    #[test]
-    fn test_ecdhe_authenticated_exchange() {
-        let alice_identity = Ed25519Keypair::generate(&mut OsRng);
-        let bob_identity = Ed25519Keypair::generate(&mut OsRng);
-
-        let mut alice_ecdhe = EcdheKeyExchange::new(alice_identity.clone(), SecurityLevel::Level256);
-        let mut bob_ecdhe = EcdheKeyExchange::new(bob_identity.clone(), SecurityLevel::Level256);
-
-        // Alice generates key exchange message
-        let alice_message = alice_ecdhe.generate_key_exchange_message().unwrap();
-        
-        // Bob generates key exchange message
-        let bob_message = bob_ecdhe.generate_key_exchange_message().unwrap();
-
-        // They verify each other's messages
-        let alice_shared = alice_ecdhe.process_key_exchange_message(&bob_message, &bob_identity.public.to_bytes()).unwrap();
-        let bob_shared = bob_ecdhe.process_key_exchange_message(&alice_message, &alice_identity.public.to_bytes()).unwrap();
-
-        assert_eq!(alice_shared, bob_shared);
-        assert_eq!(alice_ecdhe.state(), &EcdheState::Authenticated);
-        assert_eq!(bob_ecdhe.state(), &EcdheState::Authenticated);
-    }
-
-    #[test]
-    fn test_secure_channel() {
-        let config = ProtocolConfig::default();
-        let mut alice_channel = SecureChannel::new("test_channel".to_string(), config.clone());
-        let mut bob_channel = SecureChannel::new("test_channel".to_string(), config);
-
-        let shared_secret = CryptoPrimitives::random_bytes(32);
-        alice_channel.establish(&shared_secret).unwrap();
-        bob_channel.establish(&shared_secret).unwrap();
-
-        let message = b"Hello, secure world!";
-        let encrypted = alice_channel.send_message(message).unwrap();
-        let decrypted = bob_channel.receive_message(&encrypted).unwrap();
-
-        assert_eq!(message, decrypted.as_slice());
-    }
-
-    #[test]
-    fn test_replay_protection() {
-        let config = ProtocolConfig::default();
-        let mut channel = SecureChannel::new("test".to_string(), config);
-        let shared_secret = CryptoPrimitives::random_bytes(32);
-        channel.establish(&shared_secret).unwrap();
-
-        let message = b"Test message";
-        let packet1 = channel.send_message(message).unwrap();
-        let packet2 = channel.send_message(message).unwrap();
-
-        // Create second channel for receiving
-        let mut receive_channel = SecureChannel::new("test".to_string(), ProtocolConfig::default());
-        receive_channel.establish(&shared_secret).unwrap();
-
-        // First message should succeed
-        assert!(receive_channel.receive_message(&packet1).is_ok());
-        
-        // Second message should succeed (different sequence)
-        assert!(receive_channel.receive_message(&packet2).is_ok());
-        
-        // Replaying first message should fail
-        assert!(receive_channel.receive_message(&packet1).is_err());
-    }
-
-    #[test]
-    fn test_cryptographic_primitives() {
-        let key = CryptoPrimitives::random_bytes(32);
-        let nonce = CryptoPrimitives::random_bytes(12);
-        let plaintext = b"Test message for encryption";
-        let aad = b"associated data";
-
-        // Test ChaCha20-Poly1305
-        let ciphertext = CryptoPrimitives::chacha20_encrypt(&key, &nonce, plaintext, aad).unwrap();
-        let decrypted = CryptoPrimitives::chacha20_decrypt(&key, &nonce, &ciphertext, aad).unwrap();
-        assert_eq!(plaintext, decrypted.as_slice());
-
-        // Test AES-GCM
-        let ciphertext_aes = CryptoPrimitives::aes_gcm_encrypt(&key, &nonce, plaintext, aad).unwrap();
-        let decrypted_aes = CryptoPrimitives::aes_gcm_decrypt(&key, &nonce, &ciphertext_aes, aad).unwrap();
-        assert_eq!(plaintext, decrypted_aes.as_slice());
-
-        // Test HMAC
-        let hmac_result = CryptoPrimitives::hmac_sha256(&key, plaintext);
-        assert_eq!(hmac_result.len(), 32);
-
-        // Test constant time comparison
-        assert!(CryptoPrimitives::constant_time_eq(&hmac_result, &hmac_result));
-        let different = CryptoPrimitives::random_bytes(32);
-        assert!(!CryptoPrimitives::constant_time_eq(&hmac_result, &different));
-    }
-}

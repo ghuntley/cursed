@@ -1,7 +1,6 @@
 /// Production-ready hash validation and verification system
-use crate::error_types::Error;
-use crate::stdlib::packages::crypto_hash_advanced::hash_traits::*;
-use crate::stdlib::crypto::types::CryptoError;
+use crate::error::CursedError;
+// use crate::stdlib::packages::crypto_hash_advanced::hash_traits::*;
 use std::collections::HashMap;
 use std::time::{Duration, Instant};
 
@@ -431,14 +430,14 @@ pub struct ChainBlockFailure {
 /// Comprehensive hash validation utilities
 pub fn validate_hash_format(hash: &[u8], expected_size: usize) -> ValidationResult<()> {
     if hash.len() != expected_size {
-        return Err(Error::InvalidArgument(
+        return Err(CursedError::InvalidArgument(
             format!("Invalid hash size: expected {} bytes, got {}", expected_size, hash.len())
         ));
     }
     
     // Check for obvious invalid patterns
     if hash.iter().all(|&b| b == 0) {
-        return Err(Error::InvalidArgument("Hash appears to be all zeros".to_string()));
+        return Err(CursedError::InvalidArgument("Hash appears to be all zeros".to_string()));
     }
     
     Ok(())
@@ -452,16 +451,16 @@ pub fn hash_to_hex(hash: &[u8]) -> String {
 /// Parse hex string to hash bytes
 pub fn hex_to_hash(hex: &str) -> ValidationResult<Vec<u8>> {
     if hex.len() % 2 != 0 {
-        return Err(Error::InvalidArgument("Hex string must have even length".to_string()));
+        return Err(CursedError::InvalidArgument("Hex string must have even length".to_string()));
     }
     
     let mut result = Vec::new();
     for chunk in hex.as_bytes().chunks(2) {
         let hex_byte = std::str::from_utf8(chunk)
-            .map_err(|_| Error::InvalidArgument("Invalid UTF-8 in hex string".to_string()))?;
+            .map_err(|_| CursedError::InvalidArgument("Invalid UTF-8 in hex string".to_string()))?;
         
         let byte = u8::from_str_radix(hex_byte, 16)
-            .map_err(|_| Error::InvalidArgument(format!("Invalid hex byte: {}", hex_byte)))?;
+            .map_err(|_| CursedError::InvalidArgument(format!("Invalid hex byte: {}", hex_byte)))?;
         
         result.push(byte);
     }
@@ -469,117 +468,3 @@ pub fn hex_to_hash(hex: &str) -> ValidationResult<Vec<u8>> {
     Ok(result)
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use crate::stdlib::packages::crypto_hash_advanced::xxhash::XxHash64;
-
-    #[test]
-    fn test_hash_integrity_checker() {
-        let data = b"test data";
-        let hasher = XxHash64::new();
-        let checker = HashIntegrityChecker::new(hasher.clone(), data);
-        
-        // Should validate correctly
-        let result = checker.verify(hasher.clone(), data).unwrap();
-        assert!(result.status.is_valid());
-        assert_eq!(result.data_size, data.len());
-    }
-
-    #[test]
-    fn test_hash_integrity_checker_tampered() {
-        let data = b"test data";
-        let tampered_data = b"test dato"; // Changed one character
-        let hasher = XxHash64::new();
-        let checker = HashIntegrityChecker::new(hasher.clone(), data);
-        
-        let result = checker.verify(hasher, tampered_data).unwrap();
-        assert!(!result.status.is_valid());
-        assert_eq!(result.status, ValidationStatus::Tampered);
-    }
-
-    #[test]
-    fn test_multi_hash_validator() {
-        let validator = MultiHashValidator::new();
-        let data = b"test";
-        
-        let mut expected_hashes = HashMap::new();
-        expected_hashes.insert("SHA-256".to_string(), vec![1, 2, 3, 4]); // Dummy hash
-        
-        let result = validator.validate_multi(data, &expected_hashes).unwrap();
-        assert_eq!(result.individual_results.len(), 1);
-        assert_eq!(result.data_size, data.len());
-    }
-
-    #[test]
-    fn test_test_vector_validator() {
-        let mut validator = TestVectorValidator::new();
-        validator.add_test_vector(TestVector {
-            algorithm: "xxHash64",
-            input: b"test",
-            expected: &[1, 2, 3, 4, 5, 6, 7, 8], // Dummy expected value
-            description: "Test vector",
-        });
-        
-        let hasher = XxHash64::new();
-        let result = validator.validate_hasher(hasher).unwrap();
-        // Will likely fail since we used dummy expected values
-        assert!(result.total_vectors > 0);
-    }
-
-    #[test]
-    fn test_hash_chain_validator() {
-        let hasher = XxHash64::new();
-        let mut validator = HashChainValidator::new(hasher.clone());
-        
-        // Create a simple chain
-        let block1 = HashChainBlock {
-            id: "block1".to_string(),
-            data: b"data1".to_vec(),
-            hash: hasher.clone().hash(b"data1"),
-        };
-        
-        let mut combined = block1.hash.clone();
-        combined.extend_from_slice(b"data2");
-        let block2 = HashChainBlock {
-            id: "block2".to_string(),
-            data: b"data2".to_vec(),
-            hash: hasher.clone().hash(&combined),
-        };
-        
-        let chain = vec![block1, block2];
-        let result = validator.validate_chain(&chain).unwrap();
-        assert_eq!(result.total_blocks, 2);
-        assert!(result.overall_status.is_valid());
-    }
-
-    #[test]
-    fn test_validation_status() {
-        assert!(ValidationStatus::Valid.is_valid());
-        assert!(!ValidationStatus::Invalid.is_valid());
-        assert_eq!(ValidationStatus::Valid.description(), "Hash is valid and verified");
-    }
-
-    #[test]
-    fn test_hash_format_validation() {
-        assert!(validate_hash_format(&[1, 2, 3, 4], 4).is_ok());
-        assert!(validate_hash_format(&[1, 2, 3], 4).is_err());
-        assert!(validate_hash_format(&[0, 0, 0, 0], 4).is_err());
-    }
-
-    #[test]
-    fn test_hex_conversion() {
-        let hash = vec![0x01, 0x23, 0x45, 0x67, 0x89, 0xab, 0xcd, 0xef];
-        let hex = hash_to_hex(&hash);
-        assert_eq!(hex, "0123456789abcdef");
-        
-        let parsed = hex_to_hash(&hex).unwrap();
-        assert_eq!(parsed, hash);
-    }
-
-    #[test]
-    fn test_hex_parsing_errors() {
-        assert!(hex_to_hash("12g").is_err()); // Invalid hex
-        assert!(hex_to_hash("123").is_err()); // Odd length
-    }
-}

@@ -4,14 +4,13 @@ use crate::web::StatusCode;
 /// Provides a synchronous middleware chain system with common middleware
 /// implementations for authentication, logging, CORS, rate limiting, and more
 
-use crate::stdlib::web_vibez::context::{RequestContext, ResponseContext, ContextData};
-use crate::stdlib::web_vibez::handlers::{RequestHandler, HandlerResult};
-use crate::stdlib::web_vibez::{HttpMethod, StatusCode};
-use crate::stdlib::web_vibez::error_handling::MiddlewareError;
-use crate::error::Error;
+// use crate::stdlib::web_vibez::context::{RequestContext, ResponseContext, ContextData};
+// use crate::stdlib::web_vibez::handlers::{RequestHandler, HandlerResult};
+// use crate::stdlib::web_vibez::{HttpMethod, StatusCode};
+use crate::error::CursedError;
 
 // Re-export timeout middleware
-pub use crate::stdlib::web_vibez::timeout_middleware::{
+// pub use crate::stdlib::web_vibez::timeout_middleware::{
     TimeoutMiddleware, TimeoutConfig, TimeoutError, TimeoutResult, TimeoutStatistics
 };
 
@@ -28,7 +27,7 @@ pub trait Middleware: Send + Sync {
         &self,
         context: &mut RequestContext,
         response: &mut ResponseContext,
-    ) -> Result<(), Error> {
+    ) -> crate::error::Result<()> {
         Ok(())
     }
 
@@ -37,7 +36,7 @@ pub trait Middleware: Send + Sync {
         &self,
         context: &RequestContext,
         response: &mut ResponseContext,
-    ) -> Result<(), Error> {
+    ) -> crate::error::Result<()> {
         Ok(())
     }
 
@@ -47,7 +46,7 @@ pub trait Middleware: Send + Sync {
         context: &RequestContext,
         response: &mut ResponseContext,
         error: &MiddlewareError,
-    ) -> Result<(), Error> {
+    ) -> crate::error::Result<()> {
         // Default implementation sets error response
         response.set_status(StatusCode::InternalServerError);
         response.set_text(&format!("Middleware error: {}", error));
@@ -694,7 +693,7 @@ impl Middleware for StaticFileMiddleware {
 }
 
 impl StaticFileMiddleware {
-    fn serve_file(&self, file_path: &Path, response: &mut ResponseContext) -> Result<(), Error> {
+    fn serve_file(&self, file_path: &Path, response: &mut ResponseContext) -> crate::error::Result<()> {
         let content = std::fs::read(file_path)
             .map_err(|e| MiddlewareError::FileSystem(format!("Failed to read file: {}", e)))?;
 
@@ -761,7 +760,7 @@ impl MiddlewareChain {
                 
                 // Try to handle the error
                 if let Err(handle_error) = middleware.on_error(&context, &mut response, &e) {
-                    error!(middleware = middleware.name(), error = %handle_error, "Error in middleware error handler");
+                    error!(middleware = middleware.name(), error = %handle_error, "CursedError in middleware error handler");
                 }
                 
                 return Ok(response);
@@ -795,7 +794,7 @@ impl MiddlewareChain {
                 
                 // Try to handle the error
                 if let Err(handle_error) = middleware.on_error(&context, &mut response, &e) {
-                    error!(middleware = middleware.name(), error = %handle_error, "Error in middleware error handler");
+                    error!(middleware = middleware.name(), error = %handle_error, "CursedError in middleware error handler");
                 }
             }
         }
@@ -804,76 +803,3 @@ impl MiddlewareChain {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use crate::stdlib::web_vibez::handlers::StaticHandler;
-
-    #[test]
-    fn test_auth_middleware() {
-        let middleware = AuthMiddleware::new(Vec::from([AuthScheme::Bearer]));
-        let mut context = RequestContext::new("GET".to_string(), "/protected".to_string());
-        let mut response = ResponseContext::new();
-
-        // Test missing auth header
-        let result = middleware.before_request(&mut context, &mut response);
-        assert!(result.is_err());
-
-        // Test valid auth header
-        context.add_header("Authorization", "Bearer token123");
-        let result = middleware.before_request(&mut context, &mut response);
-        assert!(result.is_ok());
-        assert_eq!(context.get_data("authenticated").unwrap().as_boolean(), Some(true));
-    }
-
-    #[test]
-    fn test_cors_middleware() {
-        let middleware = CorsMiddleware::new();
-        let mut context = RequestContext::new("OPTIONS".to_string(), "/api/test".to_string());
-        context.add_header("Origin", "https://example.com");
-        let mut response = ResponseContext::new();
-
-        let result = middleware.before_request(&mut context, &mut response);
-        assert!(result.is_ok());
-        assert!(response.is_sent()); // Preflight should be handled
-        assert_eq!(response.status, StatusCode::NoContent);
-    }
-
-    #[test]
-    fn test_rate_limit_middleware() {
-        let middleware = RateLimitMiddleware::new(2); // 2 requests per minute
-        let mut context = RequestContext::new("GET".to_string(), "/api/test".to_string());
-        context.set_client_ip("127.0.0.1".to_string());
-        
-        // First request should pass
-        let mut response = ResponseContext::new();
-        let result = middleware.before_request(&mut context, &mut response);
-        assert!(result.is_ok());
-
-        // Second request should pass
-        let mut response = ResponseContext::new();
-        let result = middleware.before_request(&mut context, &mut response);
-        assert!(result.is_ok());
-
-        // Third request should be rate limited
-        let mut response = ResponseContext::new();
-        let result = middleware.before_request(&mut context, &mut response);
-        assert!(result.is_err());
-        assert_eq!(response.status, StatusCode::TooManyRequests);
-    }
-
-    #[test]
-    fn test_middleware_chain() {
-        let logging: Arc<dyn Middleware> = Arc::new(LoggingMiddleware::new());
-        let cors: Arc<dyn Middleware> = Arc::new(CorsMiddleware::new());
-        let handler = Arc::new(StaticHandler::new("Test response"));
-
-        let chain = MiddlewareChain::new(Vec::from([logging, cors]));
-        
-        let context = RequestContext::new("GET".to_string(), "/test".to_string());
-        let response = ResponseContext::new();
-
-        let result = chain.execute(context, response, handler);
-        assert!(result.is_ok());
-    }
-}

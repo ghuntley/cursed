@@ -6,7 +6,7 @@
 use std::collections::HashMap;
 use std::time::{Duration, Instant};
 use super::{DatabaseError, DatabaseErrorKind, SqlValue, VibeContext};
-use crate::error::Error;
+use crate::error::CursedError;
 
 /// fr fr Context for query execution with metadata
 #[derive(Debug, Clone)]
@@ -96,7 +96,7 @@ pub trait QueryExecutor: Send + Sync {
         query: &str,
         args: &[SqlValue],
         context: QueryContext,
-    ) -> Result<(), Error>;
+    ) -> crate::error::Result<()>;
 
     /// slay Execute a query that doesn't return rows
     fn execute_statement(
@@ -104,16 +104,16 @@ pub trait QueryExecutor: Send + Sync {
         query: &str,
         args: &[SqlValue],
         context: QueryContext,
-    ) -> Result<(), Error>;
+    ) -> crate::error::Result<()>;
 
     /// slay Prepare a statement for later execution
-    fn prepare_statement(&self, query: &str) -> Result<(), Error>;
+    fn prepare_statement(&self, query: &str) -> crate::error::Result<()>;
 }
 
 /// fr fr Prepared statement interface
 pub trait PreparedStatement: Send + Sync {
     /// slay Execute this prepared statement with arguments
-    fn execute(&self, args: &[SqlValue], context: QueryContext) -> Result<(), Error>;
+    fn execute(&self, args: &[SqlValue], context: QueryContext) -> crate::error::Result<()>;
 
     /// slay Get the original query string
     fn query(&self) -> &str;
@@ -122,5 +122,5 @@ pub trait PreparedStatement: Send + Sync {
     fn parameter_count(&self) -> usize;
 
     /// slay Close this prepared statement
-    fn close(&self) -> Result<(), Error>;
+    fn close(&self) -> crate::error::Result<()>;
 }

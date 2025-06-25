@@ -1,7 +1,7 @@
-use crate::error::Error;
+use crate::error::CursedError;
 /// Low-level process management operations
 use std::ffi::CString;
-use crate::stdlib::sys_core::error::{SysCoreError, SysCoreResult, system_call_error, not_supported};
+// use crate::stdlib::sys_core::error::{SysCoreError, SysCoreResult, system_call_error, not_supported};
 
 /// Process identifier
 pub type ProcessId = u32;

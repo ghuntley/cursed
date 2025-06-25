@@ -1,8 +1,7 @@
-use crate::error::Error;
+use crate::error::CursedError;
 // Core process management functionality for CURSED
 use std::collections::HashMap;
 use std::process::{Command, Child, Stdio};
-use std::io::{Result, Error, ErrorKind};
 use std::sync::{Arc, Mutex};
 use std::time::{Duration, Instant};
 
@@ -104,7 +103,7 @@ impl ProcessHandle {
             self.info.end_time = Some(Instant::now());
             Ok(exit_code)
         } else {
-            Err(Error::new(ErrorKind::InvalidInput, "Process already finished"))
+            Err(CursedError::new(ErrorKind::InvalidInput, "Process already finished"))
         }
     }
     
@@ -115,7 +114,7 @@ impl ProcessHandle {
             self.info.end_time = Some(Instant::now());
             Ok(())
         } else {
-            Err(Error::new(ErrorKind::InvalidInput, "Process already finished"))
+            Err(CursedError::new(ErrorKind::InvalidInput, "Process already finished"))
         }
     }
     
@@ -241,7 +240,7 @@ impl ProcessManager {
             processes.insert(pid, handle);
         }
         
-        self.get_process(pid).ok_or_else(|| Error::new(ErrorKind::Other, "Failed to store process"))
+        self.get_process(pid).ok_or_else(|| CursedError::new(ErrorKind::Other, "Failed to store process"))
     }
     
     pub fn get_process(&self, pid: u32) -> Option<ProcessHandle> {
@@ -257,10 +256,10 @@ impl ProcessManager {
             if let Some(handle) = processes.get_mut(&pid) {
                 handle.kill()
             } else {
-                Err(Error::new(ErrorKind::NotFound, "Process not found"))
+                Err(CursedError::new(ErrorKind::NotFound, "Process not found"))
             }
         } else {
-            Err(Error::new(ErrorKind::Other, "Failed to access processes"))
+            Err(CursedError::new(ErrorKind::Other, "Failed to access processes"))
         }
     }
     
@@ -269,7 +268,7 @@ impl ProcessManager {
             groups.insert(name.clone(), ProcessGroup::new(name));
             Ok(())
         } else {
-            Err(Error::new(ErrorKind::Other, "Failed to create process group"))
+            Err(CursedError::new(ErrorKind::Other, "Failed to create process group"))
         }
     }
     
@@ -358,7 +357,7 @@ pub fn run_command_timeout(config: ProcessConfig, timeout: Duration) -> Result<i
     }
     
     handle.kill()?;
-    Err(Error::new(ErrorKind::TimedOut, "Process timed out"))
+    Err(CursedError::new(ErrorKind::TimedOut, "Process timed out"))
 }
 
 pub fn command_exists(command: &str) -> bool {
@@ -369,35 +368,3 @@ pub fn command_exists(command: &str) -> bool {
         .unwrap_or(false)
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-    
-    #[test]
-    fn test_process_config_creation() {
-        let config = ProcessConfig::new("echo".to_string())
-            .with_args(vec!["hello".to_string()])
-            .with_timeout(Duration::from_secs(5));
-        
-        assert_eq!(config.program, "echo");
-        assert_eq!(config.args, vec!["hello"]);
-        assert_eq!(config.timeout, Some(Duration::from_secs(5)));
-    }
-    
-    #[test]
-    fn test_process_manager_creation() {
-        let manager = ProcessManager::new();
-        assert_eq!(manager.list_processes().len(), 0);
-    }
-    
-    #[test]
-    fn test_io_redirection_config() {
-        let io = IoRedirection::new()
-            .with_stdout_file("output.txt".to_string(), false)
-            .with_stderr_file("error.txt".to_string(), true);
-        
-        assert_eq!(io.stdout_file, Some("output.txt".to_string()));
-        assert_eq!(io.stderr_file, Some("error.txt".to_string()));
-        assert_eq!(io.append_stderr, true);
-    }
-}

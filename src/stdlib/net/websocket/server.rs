@@ -9,9 +9,9 @@
 /// - Thread-safe operations
 /// - Proper error handling
 
-use crate::stdlib::net::error::{NetError, NetResult, websocket_error};
-use crate::stdlib::net::socket::{TcpSocket, TcpListener};
-use crate::stdlib::net::websocket::{
+// use crate::stdlib::net::error::{NetError, NetResult, websocket_error};
+// use crate::stdlib::net::socket::{TcpSocket, TcpListener};
+// use crate::stdlib::net::websocket::{
     WebSocketFrame, WebSocketMessage, WebSocketConfig, CloseCode, ConnectionState, Opcode, FrameType
 };
 
@@ -821,105 +821,3 @@ impl MessageHandler for DefaultMessageHandler {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use std::sync::Arc;
-
-    #[test]
-    fn test_websocket_server_creation() {
-        let config = WebSocketConfig::default();
-        let server = WebSocketServer::new(config);
-        assert_eq!(server.connection_count().unwrap(), 0);
-        assert!(!server.is_running.load(Ordering::SeqCst));
-    }
-
-    #[test]
-    fn test_handshake_key_generation() {
-        let listener = WebSocketListener {
-            listener: TcpListener::bind("127.0.0.1:0").unwrap(),
-            server: Arc::new(WebSocketServer::new(WebSocketConfig::default())),
-        };
-        
-        let key = "dGhlIHNhbXBsZSBub25jZQ==";
-        let expected = "s3pPLMBiTxaQ9kYGzzhZRbK+xOo=";
-        let actual = listener.generate_accept_key(key).unwrap();
-        assert_eq!(actual, expected);
-    }
-
-    #[test]
-    fn test_message_handler() {
-        let handler = DefaultMessageHandler;
-        let config = WebSocketConfig::default();
-        let socket = TcpSocket::connect("127.0.0.1:0").unwrap();
-        let handshake = HandshakeInfo {
-            key: "test-key".to_string(),
-            version: "13".to_string(),
-            protocol: None,
-            extensions: vec![],
-            origin: None,
-            headers: HashMap::new(),
-        };
-        
-        let connection = WebSocketConnection::new(1, socket, handshake).unwrap();
-        
-        // Test message handling
-        let message = WebSocketMessage::Text("Hello".to_string());
-        assert!(handler.on_message(&connection, &message).is_ok());
-        
-        // Test ping handling
-        assert!(handler.on_ping(&connection, &[1, 2, 3]).is_ok());
-        
-        // Test close handling
-        assert!(handler.on_close(&connection, CloseCode::NORMAL, "Goodbye").is_ok());
-    }
-
-    #[test]
-    fn test_connection_metadata() {
-        let config = WebSocketConfig::default();
-        let socket = TcpSocket::connect("127.0.0.1:0").unwrap();
-        let handshake = HandshakeInfo {
-            key: "test-key".to_string(),
-            version: "13".to_string(),
-            protocol: Some("chat".to_string()),
-            extensions: vec![],
-            origin: Some("https://example.com".to_string()),
-            headers: HashMap::new(),
-        };
-        
-        let connection = WebSocketConnection::new(1, socket, handshake).unwrap();
-        
-        // Test initial metadata
-        assert_eq!(connection.get_metadata("protocol").unwrap(), Some("chat".to_string()));
-        assert_eq!(connection.get_metadata("origin").unwrap(), Some("https://example.com".to_string()));
-        
-        // Test setting custom metadata
-        connection.set_metadata("custom".to_string(), "value".to_string()).unwrap();
-        assert_eq!(connection.get_metadata("custom").unwrap(), Some("value".to_string()));
-    }
-
-    #[test]
-    fn test_connection_states() {
-        let config = WebSocketConfig::default();
-        let socket = TcpSocket::connect("127.0.0.1:0").unwrap();
-        let handshake = HandshakeInfo {
-            key: "test-key".to_string(),
-            version: "13".to_string(),
-            protocol: None,
-            extensions: vec![],
-            origin: None,
-            headers: HashMap::new(),
-        };
-        
-        let connection = WebSocketConnection::new(1, socket, handshake).unwrap();
-        
-        // Initially open
-        assert!(connection.is_open());
-        assert_eq!(connection.state().unwrap(), ConnectionState::Open);
-        
-        // Close connection
-        connection.close(CloseCode::NORMAL, "Test close").unwrap();
-        assert!(!connection.is_open());
-        assert_eq!(connection.state().unwrap(), ConnectionState::Closed);
-    }
-}

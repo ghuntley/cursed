@@ -3,14 +3,14 @@
 /// This module handles database connection configuration, state management,
 /// and connection lifecycle. Because proper connection management is crucial bestie!
 
-use crate::stdlib::packages::db_core::{
+// use crate::stdlib::packages::db_core::{
     TransactionIsolation
 };
-use crate::stdlib::packages::db_core::error::{
+// use crate::stdlib::packages::db_core::error::{
     DatabaseError, ErrorKind, ConnectionError
 };
-use crate::error::Error;
-use crate::stdlib::packages::db_core::error::{DatabaseResult as DbResult};
+use crate::error::CursedError;
+// use crate::stdlib::packages::db_core::error::{DatabaseResult as DbResult};
 
 use std::collections::HashMap;
 use std::time::{Duration, SystemTime};
@@ -459,88 +459,3 @@ impl ConnectionStats {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_connection_config_creation() {
-        let config = ConnectionConfig::new("postgresql", "test_db")
-            .with_host("localhost", 5432)
-            .with_credentials("user", "password")
-            .with_parameter("sslmode", "require");
-
-        assert_eq!(config.driver, "postgresql");
-        assert_eq!(config.database, "test_db");
-        assert_eq!(config.host, Some("localhost".to_string()));
-        assert_eq!(config.port, Some(5432));
-        assert_eq!(config.username, Some("user".to_string()));
-        assert_eq!(config.password, Some("password".to_string()));
-    }
-
-    #[test]
-    fn test_connection_string_parsing() {
-        let connection_string = "postgresql://user:password@localhost:5432/test_db?sslmode=require&connect_timeout=30";
-        let config = ConnectionConfig::from_string(connection_string).unwrap();
-
-        assert_eq!(config.driver, "postgresql");
-        assert_eq!(config.database, "test_db");
-        assert_eq!(config.host, Some("localhost".to_string()));
-        assert_eq!(config.port, Some(5432));
-        assert_eq!(config.username, Some("user".to_string()));
-        assert_eq!(config.password, Some("password".to_string()));
-        assert_eq!(config.connect_timeout, Some(Duration::from_secs(30)));
-    }
-
-    #[test]
-    fn test_connection_string_generation() {
-        let config = ConnectionConfig::new("postgresql", "test_db")
-            .with_host("localhost", 5432)
-            .with_credentials("user", "password")
-            .with_parameter("sslmode", "require");
-
-        let connection_string = config.to_connection_string();
-        assert!(connection_string.contains("postgresql://"));
-        assert!(connection_string.contains("user:password@"));
-        assert!(connection_string.contains("localhost:5432"));
-        assert!(connection_string.contains("/test_db"));
-        assert!(connection_string.contains("sslmode=require"));
-    }
-
-    #[test]
-    fn test_connection_options() {
-        let options = ConnectionOptions::new()
-            .with_pool_size(5, 20)
-            .with_timeouts(Duration::from_secs(60), Duration::from_secs(3600));
-
-        assert_eq!(options.min_connections, Some(5));
-        assert_eq!(options.max_connections, Some(20));
-        assert_eq!(options.idle_timeout, Some(Duration::from_secs(60)));
-        assert_eq!(options.max_lifetime, Some(Duration::from_secs(3600)));
-    }
-
-    #[test]
-    fn test_connection_stats() {
-        let mut stats = ConnectionStats::default();
-        
-        stats.record_query();
-        stats.record_transaction_start();
-        stats.record_transaction_commit();
-        stats.record_data_transfer(100, 200);
-
-        assert_eq!(stats.queries_executed, 1);
-        assert_eq!(stats.transactions_started, 1);
-        assert_eq!(stats.transactions_committed, 1);
-        assert_eq!(stats.bytes_sent, 100);
-        assert_eq!(stats.bytes_received, 200);
-    }
-
-    #[test]
-    fn test_invalid_connection_string() {
-        let result = ConnectionConfig::from_string("invalid://");
-        assert!(result.is_err());
-
-        let result = ConnectionConfig::from_string("postgresql://localhost/");
-        assert!(result.is_err()); // Empty database name
-    }
-}

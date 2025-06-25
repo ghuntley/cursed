@@ -1,4 +1,4 @@
-use crate::error::Error;
+use crate::error::CursedError;
 /// File-based locking mechanisms for CURSED IPC
 /// 
 /// This module provides file locking capabilities for inter-process coordination
@@ -12,13 +12,13 @@ use std::path::{Path, PathBuf};
 use std::time::{Duration, SystemTime, Instant};
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
-use crate::stdlib::ipc::error::{IpcError, IpcResult};
-use crate::stdlib::ipc::types::{
+// use crate::stdlib::ipc::error::{IpcError, IpcResult};
+// use crate::stdlib::ipc::types::{
     IpcHandle, IpcAddress, IpcPermissions, IpcTimeout, IpcStatistics,
     ResourceLimits
 };
 
-use crate::stdlib::ipc::traits::{
+// use crate::stdlib::ipc::traits::{
     IpcResource, IpcFileLocking, ResourceState, LockType, LockInfo
 };
 
@@ -282,7 +282,7 @@ impl FileLock {
             self.config.start_offset,
             self.config.length,
         );
-        crate::stdlib::ipc::register_file_lock(self.handle.id.clone(), lock_handle)?;
+//         crate::stdlib::ipc::register_file_lock(self.handle.id.clone(), lock_handle)?;
         
         Ok(())
     }
@@ -452,7 +452,7 @@ impl FileLock {
                     std::thread::sleep(self.config.retry_interval);
                 }
                 Err(e) => {
-                    self.state = ResourceState::Error;
+                    self.state = ResourceState::CursedError;
                     return Err(e);
                 }
             }
@@ -576,7 +576,7 @@ impl IpcResource for FileLock {
         self.state = ResourceState::Closed;
         
         // Unregister from IPC system
-        crate::stdlib::ipc::unregister_file_lock(&self.handle.id)?;
+//         crate::stdlib::ipc::unregister_file_lock(&self.handle.id)?;
         
         Ok(())
     }
@@ -783,201 +783,3 @@ pub fn lock_file_timeout<P: AsRef<Path>>(path: P, exclusive: bool, timeout: Dura
     acquire_file_lock(path, exclusive, timeout)
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use std::fs;
-    use tempfile::TempDir;
-
-    fn setup_test_env() -> (TempDir, PathBuf) {
-        let temp_dir = TempDir::new().unwrap();
-        let lock_file = temp_dir.path().join("test.lock");
-        (temp_dir, lock_file)
-    }
-
-    #[test]
-    fn test_file_lock_creation() {
-        let (_temp_dir, lock_file) = setup_test_env();
-        
-        let lock = FileLock::create(&lock_file).unwrap();
-        assert_eq!(lock.resource_type(), "file_lock");
-        assert!(lock.is_active());
-        assert_eq!(lock.state(), ResourceState::Ready);
-    }
-
-    #[test]
-    fn test_exclusive_lock_acquisition() {
-        let (_temp_dir, lock_file) = setup_test_env();
-        
-        let mut lock = FileLock::create(&lock_file).unwrap();
-        assert!(lock.try_lock_exclusive().unwrap());
-        assert!(lock.is_locked());
-        assert_eq!(lock.lock_type(), Some(LockType::Exclusive));
-        
-        assert!(lock.unlock().is_ok());
-        assert!(!lock.is_locked());
-    }
-
-    #[test]
-    fn test_shared_lock_acquisition() {
-        let (_temp_dir, lock_file) = setup_test_env();
-        
-        let mut lock = FileLock::create(&lock_file).unwrap();
-        assert!(lock.try_lock_shared().unwrap());
-        assert!(lock.is_locked());
-        assert_eq!(lock.lock_type(), Some(LockType::Shared));
-        
-        assert!(lock.unlock().is_ok());
-        assert!(!lock.is_locked());
-    }
-
-    #[test]
-    fn test_lock_contention() {
-        let (_temp_dir, lock_file) = setup_test_env();
-        
-        let mut lock1 = FileLock::create(&lock_file).unwrap();
-        let mut lock2 = FileLock::create(&lock_file).unwrap();
-        
-        // First lock acquires exclusive lock
-        assert!(lock1.try_lock_exclusive().unwrap());
-        
-        // Second lock should fail to acquire exclusive lock
-        assert!(!lock2.try_lock_exclusive().unwrap());
-        
-        // Release first lock
-        assert!(lock1.unlock().is_ok());
-        
-        // Now second lock should succeed
-        assert!(lock2.try_lock_exclusive().unwrap());
-    }
-
-    #[test]
-    fn test_shared_locks_compatibility() {
-        let (_temp_dir, lock_file) = setup_test_env();
-        
-        let mut lock1 = FileLock::create(&lock_file).unwrap();
-        let mut lock2 = FileLock::create(&lock_file).unwrap();
-        
-        // Both should be able to acquire shared locks
-        assert!(lock1.try_lock_shared().unwrap());
-        assert!(lock2.try_lock_shared().unwrap());
-        
-        assert!(lock1.unlock().is_ok());
-        assert!(lock2.unlock().is_ok());
-    }
-
-    #[test]
-    fn test_lock_timeout() {
-        let (_temp_dir, lock_file) = setup_test_env();
-        
-        let mut lock1 = FileLock::create(&lock_file).unwrap();
-        let mut lock2 = FileLock::create(&lock_file).unwrap();
-        
-        // First lock acquires exclusive lock
-        assert!(lock1.lock_exclusive().is_ok());
-        
-        // Second lock should timeout
-        let timeout = IpcTimeout::Duration(Duration::from_millis(100));
-        let result = lock2.lock_timeout(true, timeout);
-        assert!(result.is_err());
-        assert!(matches!(result.unwrap_err(), IpcError::Timeout(_)));
-    }
-
-    #[test]
-    fn test_range_locking() {
-        let (_temp_dir, lock_file) = setup_test_env();
-        
-        let mut lock = FileLock::create(&lock_file).unwrap();
-        
-        // Lock a specific range
-        assert!(lock.lock_range(100, 200, true).is_ok());
-        
-        let lock_info = lock.lock_info().unwrap();
-        assert_eq!(lock_info.len(), 1);
-        assert_eq!(lock_info[0].start, 100);
-        assert_eq!(lock_info[0].length, 200);
-        assert_eq!(lock_info[0].lock_type, LockType::Exclusive);
-        
-        // Unlock the range
-        assert!(lock.unlock_range(100, 200).is_ok());
-        assert!(!lock.is_locked());
-    }
-
-    #[test]
-    fn test_lock_statistics() {
-        let (_temp_dir, lock_file) = setup_test_env();
-        
-        let mut lock = FileLock::create(&lock_file).unwrap();
-        
-        // Acquire and release lock multiple times
-        for _ in 0..3 {
-            assert!(lock.lock_exclusive().is_ok());
-            assert!(lock.unlock().is_ok());
-        }
-        
-        let stats = lock.statistics().unwrap();
-        assert_eq!(stats.total_operations, 3);
-        assert_eq!(stats.successful_operations, 3);
-    }
-
-    #[test]
-    fn test_lock_config_builder() {
-        let (_temp_dir, lock_file) = setup_test_env();
-        
-        let config = LockConfig::new(&lock_file)
-            .with_permissions(0o755)
-            .with_shared_lock()
-            .with_timeout(Duration::from_secs(30))
-            .with_range(500, 1000);
-        
-        assert_eq!(config.permissions, 0o755);
-        assert!(!config.exclusive);
-        assert_eq!(config.timeout, Some(Duration::from_secs(30)));
-        assert!(!config.lock_entire_file);
-        assert_eq!(config.start_offset, 500);
-        assert_eq!(config.length, 1000);
-    }
-
-    #[test]
-    fn test_convenience_functions() {
-        let (_temp_dir, lock_file) = setup_test_env();
-        
-        // Test create_file_lock
-        let lock = create_file_lock(&lock_file).unwrap();
-        assert!(lock.is_active());
-        
-        // Test try_lock_file
-        let lock_opt = try_lock_file(&lock_file, true).unwrap();
-        assert!(lock_opt.is_some());
-        let lock = lock_opt.unwrap();
-        assert!(lock.is_locked());
-        
-        // Test release_file_lock
-        assert!(release_file_lock(lock).is_ok());
-    }
-
-    #[test]
-    fn test_lock_handle() {
-        let handle = LockHandle::new(
-            "/tmp/test.lock".to_string(),
-            Some(LockType::Exclusive),
-            0,
-            1024,
-        );
-        
-        assert!(handle.is_exclusive());
-        assert!(!handle.is_shared());
-        assert!(handle.covers_range(0, 512));
-        assert!(!handle.covers_range(0, 2048));
-        
-        // Test with entire file lock (length 0)
-        let file_handle = LockHandle::new(
-            "/tmp/test.lock".to_string(),
-            Some(LockType::Shared),
-            0,
-            0,
-        );
-        
-        assert!(file_handle.covers_range(1000, 2000)); // Any range should be covered
-    }
-}

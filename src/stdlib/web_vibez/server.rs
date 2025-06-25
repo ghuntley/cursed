@@ -9,14 +9,13 @@ use crate::web::StatusCode;
 /// - Graceful startup and shutdown
 /// - TLS/SSL support
 
-use crate::stdlib::web_vibez::{HttpMethod, StatusCode};
-use crate::stdlib::web_vibez::router::Router;
-use crate::stdlib::web_vibez::context::{RequestContext, ResponseContext, ContextData};
-use crate::stdlib::web_vibez::config::{WebVibezConfig, ServerConfig};
-use crate::stdlib::web_vibez::error_handling::RouterError;
-use crate::stdlib::web_vibez::middleware::MiddlewareChain;
-use crate::stdlib::web_vibez::health::{HealthChecker, HealthStatus};
-use crate::error::Error;
+// use crate::stdlib::web_vibez::{HttpMethod, StatusCode};
+// use crate::stdlib::web_vibez::router::Router;
+// use crate::stdlib::web_vibez::context::{RequestContext, ResponseContext, ContextData};
+// use crate::stdlib::web_vibez::config::{WebVibezConfig, ServerConfig};
+use crate::error::CursedError;
+// use crate::stdlib::web_vibez::middleware::MiddlewareChain;
+// use crate::stdlib::web_vibez::health::{HealthChecker, HealthStatus};
 
 use std::collections::HashMap;
 use std::net::{SocketAddr, TcpListener};
@@ -164,7 +163,7 @@ impl HttpServer {
         config: WebVibezConfig,
         router: Router,
         middleware: MiddlewareChain,
-    ) -> Result<(), Error> {
+    ) -> crate::error::Result<()> {
         let config = Arc::new(config);
         let router = Arc::new(router);
         let middleware = Arc::new(middleware);
@@ -198,7 +197,7 @@ impl HttpServer {
     
     /// Start the HTTP server
     #[instrument(skip(self))]
-    pub fn start(&self) -> Result<(), Error> {
+    pub fn start(&self) -> crate::error::Result<()> {
         if self.state.running.load(Ordering::Acquire) {
             return Err(ServerError::AlreadyRunning);
         }
@@ -225,7 +224,7 @@ impl HttpServer {
     
     /// Stop the HTTP server gracefully
     #[instrument(skip(self))]
-    pub fn stop(&self) -> Result<(), Error> {
+    pub fn stop(&self) -> crate::error::Result<()> {
         if !self.state.running.load(Ordering::Acquire) {
             return Ok(());
         }
@@ -268,7 +267,7 @@ impl HttpServer {
     
     /// Main accept loop for handling incoming connections
     #[instrument(skip(self, listener))]
-    fn run_accept_loop(&self, listener: TcpListener) -> Result<(), Error> {
+    fn run_accept_loop(&self, listener: TcpListener) -> crate::error::Result<()> {
         let mut thread_handles = Vec::new();
         
         while self.state.running.load(Ordering::Acquire) && 
@@ -342,7 +341,7 @@ impl HttpServer {
     }
     
     /// Install signal handlers for graceful shutdown
-    fn install_signal_handlers(&self) -> Result<(), Error> {
+    fn install_signal_handlers(&self) -> crate::error::Result<()> {
         // Note: In a real implementation, this would use proper signal handling
         // For now, we'll use a simplified approach
         info!("Signal handlers installed for graceful shutdown");
@@ -384,7 +383,7 @@ impl ConnectionHandler {
     
     /// Handle the HTTP connection
     #[instrument(skip(self))]
-    pub fn handle(mut self) -> Result<(), Error> {
+    pub fn handle(mut self) -> crate::error::Result<()> {
         // Set timeouts
         self.stream.set_read_timeout(Some(self.config.server.request_timeout))
             .map_err(|e| ServerError::ConnectionError(e.to_string()))?;
@@ -421,7 +420,7 @@ impl ConnectionHandler {
                     let error_response = HttpResponse {
                         status: StatusCode::InternalServerError,
                         headers: HashMap::new(),
-                        body: b"Internal Server Error".to_vec(),
+                        body: b"Internal Server CursedError".to_vec(),
                         version: HttpVersion::Http1_1,
                         keep_alive: false,
                     };
@@ -441,7 +440,7 @@ impl ConnectionHandler {
     
     /// Process a single HTTP request
     #[instrument(skip(self))]
-    fn process_request(&mut self) -> Result<(), Error> {
+    fn process_request(&mut self) -> crate::error::Result<()> {
         // Parse HTTP request
         let http_request = self.parse_http_request()?;
         
@@ -459,7 +458,7 @@ impl ConnectionHandler {
     
     /// Parse raw HTTP request from stream
     #[instrument(skip(self))]
-    fn parse_http_request(&mut self) -> Result<(), Error> {
+    fn parse_http_request(&mut self) -> crate::error::Result<()> {
         let mut reader = BufReader::new(&mut self.stream);
         let mut request_line = String::new();
         
@@ -533,7 +532,7 @@ impl ConnectionHandler {
     }
     
     /// Parse HTTP version
-    fn parse_http_version(&self, version_str: &str) -> Result<(), Error> {
+    fn parse_http_version(&self, version_str: &str) -> crate::error::Result<()> {
         match version_str {
             "HTTP/1.0" => Ok(HttpVersion::Http1_0),
             "HTTP/1.1" => Ok(HttpVersion::Http1_1),
@@ -543,7 +542,7 @@ impl ConnectionHandler {
     }
     
     /// Parse HTTP headers
-    fn parse_headers(&self, reader: &mut BufReader<&mut std::net::TcpStream>) -> Result<(), Error> {
+    fn parse_headers(&self, reader: &mut BufReader<&mut std::net::TcpStream>) -> crate::error::Result<()> {
         let mut headers = HashMap::new();
         let mut header_line = String::new();
         
@@ -572,7 +571,7 @@ impl ConnectionHandler {
         &self, 
         reader: &mut BufReader<&mut std::net::TcpStream>, 
         headers: &HashMap<String, String>
-    ) -> Result<(), Error> {
+    ) -> crate::error::Result<()> {
         let mut body = Vec::new();
         
         if let Some(content_length_str) = headers.get("content-length") {
@@ -592,7 +591,7 @@ impl ConnectionHandler {
     }
     
     /// Build RequestContext from HttpRequest
-    fn build_request_context(&self, http_request: HttpRequest) -> Result<(), Error> {
+    fn build_request_context(&self, http_request: HttpRequest) -> crate::error::Result<()> {
         let mut context = RequestContext::new(
             http_request.method,
             &http_request.path,
@@ -622,7 +621,7 @@ impl ConnectionHandler {
     }
     
     /// Process request through middleware and router pipeline
-    fn process_through_pipeline(&self, request_context: &mut RequestContext) -> Result<(), Error> {
+    fn process_through_pipeline(&self, request_context: &mut RequestContext) -> crate::error::Result<()> {
         // Process through middleware chain
         let middleware_result = self.middleware.process(request_context)
             .map_err(|e| ServerError::MiddlewareError(format!("{:?}", e)))?;
@@ -649,7 +648,7 @@ impl ConnectionHandler {
     }
     
     /// Build HTTP response from ResponseContext
-    fn build_http_response(&self, response_context: ResponseContext) -> Result<(), Error> {
+    fn build_http_response(&self, response_context: ResponseContext) -> crate::error::Result<()> {
         let status = response_context.status();
         let headers = response_context.headers().clone();
         let body = response_context.body().unwrap_or_default();
@@ -670,7 +669,7 @@ impl ConnectionHandler {
     
     /// Send HTTP response to client
     #[instrument(skip(self, response))]
-    fn send_response(&mut self, response: HttpResponse) -> Result<(), Error> {
+    fn send_response(&mut self, response: HttpResponse) -> crate::error::Result<()> {
         let mut writer = BufWriter::new(&mut self.stream);
         
         // Write status line
@@ -734,7 +733,7 @@ impl ConnectionHandler {
             405 => "Method Not Allowed",
             409 => "Conflict",
             429 => "Too Many Requests",
-            500 => "Internal Server Error",
+            500 => "Internal Server CursedError",
             501 => "Not Implemented",
             502 => "Bad Gateway",
             503 => "Service Unavailable",
@@ -825,23 +824,24 @@ pub enum ServerError {
     SignalError(String),
 }
 
-impl std::fmt::Display for ServerError {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            ServerError::AlreadyRunning => write!(f, "Server is already running"),
-            ServerError::BindError(msg) => write!(f, "Failed to bind server: {}", msg),
-            ServerError::ConfigError(msg) => write!(f, "Configuration error: {}", msg),
-            ServerError::AcceptError(msg) => write!(f, "Accept error: {}", msg),
-            ServerError::ConnectionError(msg) => write!(f, "Connection error: {}", msg),
-            ServerError::ParseError(msg) => write!(f, "Parse error: {}", msg),
-            ServerError::MiddlewareError(msg) => write!(f, "Middleware error: {}", msg),
-            ServerError::RouterError(msg) => write!(f, "Router error: {}", msg),
-            ServerError::WriteError(msg) => write!(f, "Write error: {}", msg),
-            ServerError::ConnectionClosed => write!(f, "Connection closed"),
-            ServerError::TlsError(msg) => write!(f, "TLS error: {}", msg),
-            ServerError::SignalError(msg) => write!(f, "Signal error: {}", msg),
-        }
-    }
-}
+// impl std::fmt::Display for ServerError {
+//     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+//         match self {
+//             ServerError::AlreadyRunning => write!(f, "Server is already running"),
+//             ServerError::BindError(msg) => write!(f, "Failed to bind server: {}", msg),
+//             ServerError::ConfigError(msg) => write!(f, "Configuration error: {}", msg),
+//             ServerError::AcceptError(msg) => write!(f, "Accept error: {}", msg),
+//             ServerError::ConnectionError(msg) => write!(f, "Connection error: {}", msg),
+//             ServerError::ParseError(msg) => write!(f, "Parse error: {}", msg),
+//             ServerError::MiddlewareError(msg) => write!(f, "Middleware error: {}", msg),
+//             ServerError::RouterError(msg) => write!(f, "Router error: {}", msg),
+//             ServerError::WriteError(msg) => write!(f, "Write error: {}", msg),
+//             ServerError::ConnectionClosed => write!(f, "Connection closed"),
+//             ServerError::TlsError(msg) => write!(f, "TLS error: {}", msg),
+//             ServerError::SignalError(msg) => write!(f, "Signal error: {}", msg),
+//         }
+//     }
+// }
 
-impl std::error::Error for ServerError {}
+// impl std::error::CursedError for ServerError {}
+// 

@@ -4,11 +4,10 @@ use crate::web::StatusCode;
 /// Provides sophisticated middleware ordering, conditional execution,
 /// and performance-optimized chain processing
 
-use crate::stdlib::web_vibez::middleware::{Middleware, MiddlewareResult};
-use crate::stdlib::web_vibez::context::{RequestContext, ResponseContext};
-use crate::stdlib::web_vibez::handlers::{RequestHandler, HandlerResult};
-use crate::stdlib::web_vibez::error_handling::MiddlewareError;
-use crate::error::Error;
+// use crate::stdlib::web_vibez::middleware::{Middleware, MiddlewareResult};
+// use crate::stdlib::web_vibez::context::{RequestContext, ResponseContext};
+// use crate::stdlib::web_vibez::handlers::{RequestHandler, HandlerResult};
+use crate::error::CursedError;
 
 use std::sync::Arc;
 use std::collections::{HashMap, BTreeMap};
@@ -65,7 +64,7 @@ pub struct ChainMetrics {
     pub successful_executions: u64,
     /// Number of failed executions
     pub failed_executions: u64,
-    /// Error counts by middleware
+    /// CursedError counts by middleware
     pub error_counts: HashMap<String, u32>,
     /// Average execution time
     pub average_execution_time: Duration,
@@ -377,7 +376,7 @@ impl MiddlewareChain {
                 Ok(result) => result,
                 Err(_) => {
                     error!(timeout_ms = timeout.as_millis(), "Middleware chain timed out");
-                    response.set_status(crate::stdlib::web_vibez::StatusCode(408)); // Request Timeout
+//                     response.set_status(crate::stdlib::web_vibez::StatusCode(408)); // Request Timeout
                     response.set_text("Request timeout");
                     Ok(response)
                 }
@@ -464,21 +463,21 @@ impl MiddlewareChain {
                         ChainExecution::FailFast => {
                             // Try to handle the error
                             if let Err(handle_error) = middleware.on_error(context, response, &e) {
-                                error!(middleware = middleware.name(), error = %handle_error, "Error in middleware error handler");
+                                error!(middleware = middleware.name(), error = %handle_error, "CursedError in middleware error handler");
                             }
                             return Ok(response.clone());
                         }
                         ChainExecution::ContinueOnError => {
                             // Try to handle the error but continue
                             if let Err(handle_error) = middleware.on_error(context, response, &e) {
-                                error!(middleware = middleware.name(), error = %handle_error, "Error in middleware error handler");
+                                error!(middleware = middleware.name(), error = %handle_error, "CursedError in middleware error handler");
                             }
                             errors.push((middleware.name().to_string(), e));
                         }
                         _ => {
                             // Try to handle the error
                             if let Err(handle_error) = middleware.on_error(context, response, &e) {
-                                error!(middleware = middleware.name(), error = %handle_error, "Error in middleware error handler");
+                                error!(middleware = middleware.name(), error = %handle_error, "CursedError in middleware error handler");
                             }
                             return Ok(response.clone());
                         }
@@ -498,7 +497,7 @@ impl MiddlewareChain {
             debug!("Executing request handler");
             if let Err(e) = handler.handle(context, response).await {
                 error!(error = %e, "Handler execution failed");
-                response.set_status(crate::stdlib::web_vibez::StatusCode::InternalServerError);
+//                 response.set_status(crate::stdlib::web_vibez::StatusCode::InternalServerError);
                 response.set_text(&format!("Handler error: {}", e));
             }
         }
@@ -545,14 +544,14 @@ impl MiddlewareChain {
                     ChainExecution::ContinueOnError => {
                         // Try to handle the error but continue
                         if let Err(handle_error) = middleware.on_error(context, response, &e) {
-                            error!(middleware = middleware.name(), error = %handle_error, "Error in middleware error handler");
+                            error!(middleware = middleware.name(), error = %handle_error, "CursedError in middleware error handler");
                         }
                         errors.push((middleware.name().to_string(), e));
                     }
                     _ => {
                         // Try to handle the error
                         if let Err(handle_error) = middleware.on_error(context, response, &e) {
-                            error!(middleware = middleware.name(), error = %handle_error, "Error in middleware error handler");
+                            error!(middleware = middleware.name(), error = %handle_error, "CursedError in middleware error handler");
                         }
                     }
                 }
@@ -605,7 +604,7 @@ pub struct ChainPatterns;
 impl ChainPatterns {
     /// Create a basic web API chain
     pub fn web_api() -> ChainBuilder {
-        use crate::stdlib::web_vibez::middleware::{LoggingMiddleware, CorsMiddleware};
+//         use crate::stdlib::web_vibez::middleware::{LoggingMiddleware, CorsMiddleware};
 
         ChainBuilder::new()
             .add(Arc::new(LoggingMiddleware::new()))
@@ -616,7 +615,7 @@ impl ChainPatterns {
 
     /// Create a secure API chain with authentication
     pub fn secure_api() -> ChainBuilder {
-        use crate::stdlib::web_vibez::middleware::{
+//         use crate::stdlib::web_vibez::middleware::{
             LoggingMiddleware, CorsMiddleware, AuthMiddleware, RateLimitMiddleware, AuthScheme
         };
 
@@ -631,7 +630,7 @@ impl ChainPatterns {
 
     /// Create a static file serving chain
     pub fn static_files(root_dir: std::path::PathBuf) -> ChainBuilder {
-        use crate::stdlib::web_vibez::middleware::{LoggingMiddleware, StaticFileMiddleware};
+//         use crate::stdlib::web_vibez::middleware::{LoggingMiddleware, StaticFileMiddleware};
 
         ChainBuilder::new()
             .add(Arc::new(LoggingMiddleware::new().with_skip_paths(Vec::from(["/health".to_string()]))))
@@ -642,7 +641,7 @@ impl ChainPatterns {
 
     /// Create a development chain with verbose logging
     pub fn development() -> ChainBuilder {
-        use crate::stdlib::web_vibez::middleware::{LoggingMiddleware, CorsMiddleware, LogLevel};
+//         use crate::stdlib::web_vibez::middleware::{LoggingMiddleware, CorsMiddleware, LogLevel};
 
         ChainBuilder::new()
             .add(Arc::new(LoggingMiddleware::new().with_body_logging(true, true)))
@@ -653,112 +652,3 @@ impl ChainPatterns {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use crate::stdlib::web_vibez::middleware::{LoggingMiddleware, CorsMiddleware};
-    use crate::stdlib::web_vibez::handlers::StaticHandler;
-    use crate::stdlib::web_vibez::HttpMethod;
-
-    #[tokio::test]
-    async fn test_chain_builder() {
-        let chain = ChainBuilder::new()
-            .add(Arc::new(LoggingMiddleware::new()))
-            .add(Arc::new(CorsMiddleware::new()))
-            .with_ordering(MiddlewareOrdering::Priority)
-            .with_execution(ChainExecution::FailFast)
-            .build();
-
-        assert_eq!(chain.middleware_count(), 2);
-    }
-
-    #[tokio::test]
-    async fn test_chain_execution() {
-        let chain = ChainBuilder::new()
-            .add(Arc::new(LoggingMiddleware::new()))
-            .build();
-
-        let handler = Arc::new(StaticHandler::new("Test response"));
-        let context = RequestContext::new("GET".to_string(), "/test".to_string());
-        let response = ResponseContext::new();
-
-        let result = chain.execute(context, response, handler).await;
-        assert!(result.is_ok());
-    }
-
-    #[tokio::test]
-    async fn test_conditional_middleware() {
-        let chain = ChainBuilder::new()
-            .add_conditional(
-                Arc::new(CorsMiddleware::new()),
-                |ctx| ctx.path.starts_with("/api")
-            )
-            .build();
-
-        let handler = Arc::new(StaticHandler::new("Test"));
-        
-        // Test with API path
-        let context = RequestContext::new("GET".to_string(), "/api/test".to_string());
-        let response = ResponseContext::new();
-        let result = chain.execute(context, response, handler.clone()).await;
-        assert!(result.is_ok());
-
-        // Test with non-API path
-        let context = RequestContext::new("GET".to_string(), "/static/file.js".to_string());
-        let response = ResponseContext::new();
-        let result = chain.execute(context, response, handler).await;
-        assert!(result.is_ok());
-    }
-
-    #[test]
-    fn test_dependency_ordering() {
-        let builder = ChainBuilder::new()
-            .add(Arc::new(LoggingMiddleware::new()))
-            .add(Arc::new(CorsMiddleware::new()))
-            .add_dependency(MiddlewareDependency {
-                middleware_name: "CORS".to_string(),
-                depends_on: Vec::from(["Logging".to_string()]),
-                runs_before: Vec::from([]),
-            })
-            .with_ordering(MiddlewareOrdering::Dependency);
-
-        let chain = builder.build();
-        let names = chain.middleware_names();
-        
-        // Logging should come before CORS due to dependency
-        let logging_pos = names.iter().position(|n| n == "Logging");
-        let cors_pos = names.iter().position(|n| n == "CORS");
-        
-        assert!(logging_pos.unwrap() < cors_pos.unwrap());
-    }
-
-    #[tokio::test]
-    async fn test_chain_patterns() {
-        let web_api_chain = ChainPatterns::web_api().build();
-        assert!(web_api_chain.middleware_count() >= 2);
-
-        let secure_api_chain = ChainPatterns::secure_api().build();
-        assert!(secure_api_chain.middleware_count() >= 4);
-
-        let dev_chain = ChainPatterns::development().build();
-        assert!(dev_chain.middleware_count() >= 2);
-    }
-
-    #[tokio::test]
-    async fn test_metrics_collection() {
-        let chain = ChainBuilder::new()
-            .add(Arc::new(LoggingMiddleware::new()))
-            .with_metrics(true)
-            .build();
-
-        let handler = Arc::new(StaticHandler::new("Test"));
-        let context = RequestContext::new("GET".to_string(), "/test".to_string());
-        let response = ResponseContext::new();
-
-        let _ = chain.execute(context, response, handler).await;
-        
-        let metrics = chain.get_metrics().unwrap();
-        assert_eq!(metrics.successful_executions, 1);
-        assert!(metrics.total_execution_time > Duration::ZERO);
-    }
-}

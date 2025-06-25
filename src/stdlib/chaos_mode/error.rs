@@ -1,5 +1,5 @@
-use crate::error::Error;
-/// Error handling for ChaosMode runtime system
+use crate::error::CursedError;
+/// CursedError handling for ChaosMode runtime system
 use std::fmt;
 
 #[derive(Debug, Clone)]
@@ -28,26 +28,26 @@ pub enum ChaosError {
     Timeout(String),
 }
 
-impl fmt::Display for ChaosError {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
-            ChaosError::RuntimeError(msg) => write!(f, "Runtime error: {}", msg),
-            ChaosError::GoroutineError(msg) => write!(f, "Goroutine error: {}", msg),
-            ChaosError::MemoryError(msg) => write!(f, "Memory error: {}", msg),
-            ChaosError::ProfilingError(msg) => write!(f, "Profiling error: {}", msg),
-            ChaosError::ConfigError(msg) => write!(f, "Configuration error: {}", msg),
-            ChaosError::SystemError(msg) => write!(f, "System error: {}", msg),
-            ChaosError::InvalidParameter(msg) => write!(f, "Invalid parameter: {}", msg),
-            ChaosError::NotSupported(msg) => write!(f, "Not supported: {}", msg),
-            ChaosError::PermissionDenied(msg) => write!(f, "Permission denied: {}", msg),
-            ChaosError::ResourceUnavailable(msg) => write!(f, "Resource unavailable: {}", msg),
-            ChaosError::Timeout(msg) => write!(f, "Timeout: {}", msg),
-        }
-    }
-}
+// impl fmt::Display for ChaosError {
+//     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+//         match self {
+//             ChaosError::RuntimeError(msg) => write!(f, "Runtime error: {}", msg),
+//             ChaosError::GoroutineError(msg) => write!(f, "Goroutine error: {}", msg),
+//             ChaosError::MemoryError(msg) => write!(f, "Memory error: {}", msg),
+//             ChaosError::ProfilingError(msg) => write!(f, "Profiling error: {}", msg),
+//             ChaosError::ConfigError(msg) => write!(f, "Configuration error: {}", msg),
+//             ChaosError::SystemError(msg) => write!(f, "System error: {}", msg),
+//             ChaosError::InvalidParameter(msg) => write!(f, "Invalid parameter: {}", msg),
+//             ChaosError::NotSupported(msg) => write!(f, "Not supported: {}", msg),
+//             ChaosError::PermissionDenied(msg) => write!(f, "Permission denied: {}", msg),
+//             ChaosError::ResourceUnavailable(msg) => write!(f, "Resource unavailable: {}", msg),
+//             ChaosError::Timeout(msg) => write!(f, "Timeout: {}", msg),
+//         }
+//     }
+// }
 
-impl std::error::Error for ChaosError {}
-
+// impl std::error::CursedError for ChaosError {}
+// 
 pub type ChaosResult<T> = std::result::Result<T, ChaosError>;
 
 // Helper functions for creating errors
@@ -96,11 +96,11 @@ pub fn timeout_error(msg: &str) -> ChaosError {
 }
 
 // Conversion functions from other error types
-impl From<std::io::Error> for ChaosError {
-    fn from(err: std::io::Error) -> Self {
-        ChaosError::SystemError(err.to_string())
-    }
-}
+// impl From<std::io::Error> for ChaosError {
+//     fn from(err: std::io::Error) -> Self {
+//         ChaosError::SystemError(err.to_string())
+//     }
+// }
 
 impl From<crate::error::types::RuntimeError> for ChaosError {
     fn from(err: crate::error::types::RuntimeError) -> Self {
@@ -108,8 +108,8 @@ impl From<crate::error::types::RuntimeError> for ChaosError {
     }
 }
 
-impl From<serde_json::Error> for ChaosError {
-    fn from(err: serde_json::Error) -> Self {
-        ChaosError::RuntimeError(format!("JSON error: {}", err))
-    }
-}
+// impl From<serde_json::Error> for ChaosError {
+//     fn from(err: serde_json::Error) -> Self {
+//         ChaosError::RuntimeError(format!("JSON error: {}", err))
+//     }
+// }

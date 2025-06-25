@@ -6,7 +6,7 @@
 // - PGO-guided optimization execution
 // - Performance analysis and reporting
 
-use crate::error::{Error, Result};
+use crate::error::{CursedError, Result};
 use crate::optimization::pgo::*;
 use crate::optimization::pgo::optimization_integration::{
     OptimizationResult, IssueSeverity
@@ -806,7 +806,7 @@ fn execute_validate_command(args: ValidateArgs, cmd: &PgoCommand) -> Result<()> 
             let severity_symbol = match issue.severity {
                 ValidationSeverity::Info => "ℹ",
                 ValidationSeverity::Warning => "⚠",
-                ValidationSeverity::Error => "✗",
+                ValidationSeverity::CursedError => "✗",
                 ValidationSeverity::Critical => "🚨",
             };
             println!("    {} {}", severity_symbol, issue.description);
@@ -837,7 +837,7 @@ fn execute_merge_command(args: MergeArgs, cmd: &PgoCommand) -> Result<()> {
     info!("Merging {} profiles", args.profiles.len());
     
     if args.profiles.len() < 2 {
-        return Err(Error::General("Need at least 2 profiles to merge".to_string()));
+        return Err(CursedError::General("Need at least 2 profiles to merge".to_string()));
     }
     
     // Load profile storage
@@ -951,7 +951,7 @@ fn optimize_llvm_module(args: &OptimizeArgs, pgo_system: &mut PgoSystem) -> Resu
     
     // Read source file
     let source_code = fs::read_to_string(&args.source_file)
-        .map_err(|e| Error::Io(std::sync::Arc::new(e)))?;
+        .map_err(|e| CursedError::Io(std::sync::Arc::new(e)))?;
     
     // Create LLVM code generator and compile source to module
     let mut codegen = LlvmCodeGenerator::new()?;
@@ -983,7 +983,7 @@ fn optimize_llvm_module(args: &OptimizeArgs, pgo_system: &mut PgoSystem) -> Resu
     // Get the compiled LLVM module
     let module_ref = codegen.get_module();
     let module_guard = module_ref.lock()
-        .map_err(|_| Error::General("Failed to lock LLVM module".to_string()))?;
+        .map_err(|_| CursedError::General("Failed to lock LLVM module".to_string()))?;
     
     // Use the existing PGO system's optimize_with_profile method
     let optimization_result = pgo_system.optimize_with_profile(&*module_guard)?;
@@ -993,7 +993,7 @@ fn optimize_llvm_module(args: &OptimizeArgs, pgo_system: &mut PgoSystem) -> Resu
         // Generate optimized LLVM IR
         let optimized_ir = module_guard.print_to_string().to_string();
         fs::write(output_path, optimized_ir)
-            .map_err(|e| Error::Io(std::sync::Arc::new(e)))?;
+            .map_err(|e| CursedError::Io(std::sync::Arc::new(e)))?;
         
         info!("Optimized module saved to: {}", output_path.display());
     }
@@ -1013,7 +1013,7 @@ fn optimize_llvm_module(args: &OptimizeArgs, pgo_system: &mut PgoSystem) -> Resu
             let level = match issue.severity {
                 IssueSeverity::Info => "INFO",
                 IssueSeverity::Warning => "WARN", 
-                IssueSeverity::Error => "ERROR",
+                IssueSeverity::CursedError => "ERROR",
                 IssueSeverity::Critical => "CRITICAL",
             };
             warn!("  [{}] {}", level, issue.description);
@@ -1098,7 +1098,7 @@ fn save_analysis_report(analysis: &ProfileAnalysisResult, output_file: &std::pat
     match format {
         "json" => {
             let json_data = serde_json::to_string_pretty(analysis)
-                .map_err(|e| Error::General(format!("JSON serialization failed: {}", e)))?;
+                .map_err(|e| CursedError::General(format!("JSON serialization failed: {}", e)))?;
             std::fs::write(output_file, json_data)?;
         }
         "html" => {

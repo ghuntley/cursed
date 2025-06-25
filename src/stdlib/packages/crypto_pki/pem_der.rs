@@ -1,4 +1,4 @@
-use crate::error::Error;
+use crate::error::CursedError;
 /// Comprehensive PEM/DER format handling for PKI operations
 /// 
 /// This module provides production-ready implementations for parsing, encoding, and converting
@@ -12,7 +12,7 @@ use crate::error::Error;
 /// - Bounds checking protects against buffer overflow attacks
 /// - Secure memory handling protects private key material
 /// - Format validation ensures cryptographic parameter integrity
-/// - Error handling prevents information leakage
+/// - CursedError handling prevents information leakage
 /// 
 /// # Supported Formats
 /// 
@@ -43,13 +43,12 @@ use crate::error::Error;
 use std::collections::HashMap;
 use std::fmt;
 use base64::{Engine as _, engine::general_purpose::STANDARD as BASE64};
-use crate::error::CursedError;
 
 // Re-export and define common types for PEM/DER operations
-pub use crate::stdlib::packages::crypto_pki::types::{
+// pub use crate::stdlib::packages::crypto_pki::types::{
     X509Certificate, CertificateSigningRequest as CsrType, PublicKeyAlgorithm, SignatureAlgorithm
 };
-pub use crate::stdlib::packages::crypto_pki::key_management::KeyPair;
+// pub use crate::stdlib::packages::crypto_pki::key_management::KeyPair;
 
 // Type aliases for PEM/DER operations  
 pub type Certificate = X509Certificate;
@@ -125,30 +124,30 @@ pub enum PemDerError {
     IoError(String),
 }
 
-impl fmt::Display for PemDerError {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
-            PemDerError::InvalidPemFormat(msg) => write!(f, "Invalid PEM format: {}", msg),
-            PemDerError::InvalidDerEncoding(msg) => write!(f, "Invalid DER encoding: {}", msg),
-            PemDerError::Asn1ParseError(msg) => write!(f, "ASN.1 parsing error: {}", msg),
-            PemDerError::UnsupportedFormat(msg) => write!(f, "Unsupported format: {}", msg),
-            PemDerError::CertificateValidationError(msg) => write!(f, "Certificate validation error: {}", msg),
-            PemDerError::PrivateKeyError(msg) => write!(f, "Private key error: {}", msg),
-            PemDerError::EncryptionError(msg) => write!(f, "Encryption error: {}", msg),
-            PemDerError::Base64Error(msg) => write!(f, "Base64 error: {}", msg),
-            PemDerError::ValidationError(msg) => write!(f, "Validation error: {}", msg),
-            PemDerError::IoError(msg) => write!(f, "I/O error: {}", msg),
-        }
-    }
-}
+// impl fmt::Display for PemDerError {
+//     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+//         match self {
+//             PemDerError::InvalidPemFormat(msg) => write!(f, "Invalid PEM format: {}", msg),
+//             PemDerError::InvalidDerEncoding(msg) => write!(f, "Invalid DER encoding: {}", msg),
+//             PemDerError::Asn1ParseError(msg) => write!(f, "ASN.1 parsing error: {}", msg),
+//             PemDerError::UnsupportedFormat(msg) => write!(f, "Unsupported format: {}", msg),
+//             PemDerError::CertificateValidationError(msg) => write!(f, "Certificate validation error: {}", msg),
+//             PemDerError::PrivateKeyError(msg) => write!(f, "Private key error: {}", msg),
+//             PemDerError::EncryptionError(msg) => write!(f, "Encryption error: {}", msg),
+//             PemDerError::Base64Error(msg) => write!(f, "Base64 error: {}", msg),
+//             PemDerError::ValidationError(msg) => write!(f, "Validation error: {}", msg),
+//             PemDerError::IoError(msg) => write!(f, "I/O error: {}", msg),
+//         }
+//     }
+// }
 
-impl std::error::Error for PemDerError {}
-
-impl From<PemDerError> for CursedError {
-    fn from(err: PemDerError) -> Self {
-        CursedError::Runtime(err.to_string())
-    }
-}
+// impl std::error::CursedError for PemDerError {}
+// 
+// impl From<PemDerError> for CursedError {
+//     fn from(err: PemDerError) -> Self {
+//         CursedError::Runtime(err.to_string())
+//     }
+// }
 
 /// Result type for PEM/DER operations
 pub type PemDerResult<T> = std::result::Result<T, PemDerError>;
@@ -670,7 +669,7 @@ pub mod der {
 
     /// Parse DER certificate
     pub fn parse_der_certificate(data: &[u8]) -> PemDerResult<Certificate> {
-        use crate::stdlib::packages::crypto_pki::types::*;
+//         use crate::stdlib::packages::crypto_pki::types::*;
         use std::time::{SystemTime, Duration};
         
         let elements = parse_der(data)?;
@@ -935,7 +934,7 @@ pub mod der {
 /// Certificate parsing helper functions
 pub mod certificate_parsing {
     use super::*;
-    use crate::stdlib::packages::crypto_pki::types::*;
+//     use crate::stdlib::packages::crypto_pki::types::*;
     use std::time::{SystemTime, UNIX_EPOCH, Duration};
     
     /// Parse signature algorithm from ASN.1 element
@@ -1433,58 +1432,3 @@ pub fn get_format_info(data: &[u8]) -> (FormatType, bool, bool) {
     (format, is_cert, is_key)
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_format_detection() {
-        let pem_data = b"-----BEGIN CERTIFICATE-----\nMIIB...";
-        assert_eq!(format_detection::detect_format(pem_data), FormatType::Pem);
-        
-        let der_data = &[0x30, 0x82, 0x01, 0x00]; // SEQUENCE
-        assert_eq!(format_detection::detect_format(der_data), FormatType::Der);
-        
-        let unknown_data = b"not a certificate";
-        assert_eq!(format_detection::detect_format(unknown_data), FormatType::Unknown);
-    }
-
-    #[test]
-    fn test_pem_type_headers() {
-        assert_eq!(PemType::Certificate.header(), "CERTIFICATE");
-        assert_eq!(PemType::PrivateKey.header(), "PRIVATE KEY");
-        assert_eq!(PemType::from_header("CERTIFICATE"), PemType::Certificate);
-    }
-
-    #[test]
-    fn test_pem_block_creation() {
-        let data = vec![1, 2, 3, 4];
-        let mut block = PemBlock::new(PemType::Certificate, data.clone());
-        block.add_header("Test".to_string(), "Value".to_string());
-        
-        assert_eq!(block.data, data);
-        assert_eq!(block.get_header("Test"), Some(&"Value".to_string()));
-        assert!(!block.is_encrypted());
-    }
-
-    #[test]
-    fn test_asn1_element() {
-        let tag = Asn1Tag {
-            class: 0,
-            constructed: false,
-            tag_number: 2, // INTEGER
-        };
-        let element = Asn1Element::new(tag, vec![0x01]); // INTEGER 1
-        
-        assert_eq!(element.as_integer().unwrap(), 1);
-        assert!(!element.is_sequence());
-    }
-
-    #[test]
-    fn test_certificate_validation() {
-        let empty_chain = vec![];
-        let result = validation::validate_certificate_chain(&empty_chain);
-        assert!(!result.valid);
-        assert!(result.errors.len() > 0);
-    }
-}

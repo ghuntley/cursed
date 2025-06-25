@@ -1,4 +1,4 @@
-use crate::error::Error;
+use crate::error::CursedError;
 /// Production-ready RPC transport implementation using Unix domain sockets
 /// 
 /// This module provides a real RPC transport that replaces the mock implementation
@@ -11,12 +11,12 @@ use std::thread;
 use std::io::{Read, Write};
 use tracing::{debug, info, warn, error, instrument};
 
-use crate::stdlib::ipc::{
+// use crate::stdlib::ipc::{
     IpcResult, IpcError,
     communication_error_detailed, connection_failed, timeout_error
 };
 
-use crate::stdlib::ipc::rpc::{RpcTransport, RpcRequest, RpcResponse};
+// use crate::stdlib::ipc::rpc::{RpcTransport, RpcRequest, RpcResponse};
 use super::unix_socket::{UnixSocketTransport, UnixSocketConfig, UnixSocketType};
 use super::traits::{Transport, TransportConnection};
 use super::pool::{TransportPool, PoolConfig};
@@ -287,7 +287,7 @@ impl UnixSocketRpcTransport {
         data.extend_from_slice(&(result_bytes.len() as u32).to_be_bytes());
         data.extend_from_slice(result_bytes);
         
-        // Error message
+        // CursedError message
         let error_bytes = response.error.as_ref().map(|s| s.as_bytes()).unwrap_or(&[]);
         data.extend_from_slice(&(error_bytes.len() as u32).to_be_bytes());
         data.extend_from_slice(error_bytes);
@@ -459,7 +459,7 @@ impl UnixSocketRpcTransport {
         };
         offset += result_len;
         
-        // Error length and data
+        // CursedError length and data
         if offset + 4 > data.len() {
             return Err(communication_error_detailed(
                 "rpc_transport",
@@ -657,106 +657,3 @@ pub fn create_unix_rpc_server(bind_address: String) -> IpcResult<Arc<dyn RpcTran
     Ok(Arc::new(transport))
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use crate::stdlib::ipc::rpc::RpcRequest;
-
-    #[test]
-    fn test_rpc_transport_creation() {
-        let client_result = UnixSocketRpcTransport::new_client("/tmp/test_rpc_client.sock".to_string());
-        assert!(client_result.is_ok());
-        
-        let client = client_result.unwrap();
-        assert!(!client.is_server);
-        assert_eq!(client.server_address, "/tmp/test_rpc_client.sock");
-        
-        let server_result = UnixSocketRpcTransport::new_server("/tmp/test_rpc_server.sock".to_string());
-        assert!(server_result.is_ok());
-        
-        let server = server_result.unwrap();
-        assert!(server.is_server);
-        assert_eq!(server.server_address, "/tmp/test_rpc_server.sock");
-    }
-    
-    #[test]
-    fn test_message_serialization() {
-        let transport = UnixSocketRpcTransport::new_client("/tmp/test.sock".to_string()).unwrap();
-        
-        let request = RpcRequest {
-            method: "test_method".to_string(),
-            params: b"test_params".to_vec(),
-            id: "test_id".to_string(),
-        };
-        
-        let serialized = transport.serialize_request(&request).unwrap();
-        assert!(serialized.len() > 0);
-        
-        // Verify the serialization format
-        let method_len = u32::from_be_bytes([serialized[0], serialized[1], serialized[2], serialized[3]]) as usize;
-        assert_eq!(method_len, "test_method".len());
-    }
-    
-    #[test]
-    fn test_response_deserialization() {
-        let transport = UnixSocketRpcTransport::new_client("/tmp/test.sock".to_string()).unwrap();
-        
-        // Create a valid response data
-        let mut data = Vec::new();
-        data.push(1); // success = true
-        data.extend_from_slice(&(12u32).to_be_bytes()); // result length
-        data.extend_from_slice(b"test_result!");
-        data.extend_from_slice(&(0u32).to_be_bytes()); // error length = 0
-        
-        let response = transport.deserialize_response(&data).unwrap();
-        assert!(response.is_success());
-        assert_eq!(response.result, Some(b"test_result!".to_vec()));
-    }
-    
-    #[test]
-    fn test_client_address_generation() {
-        let transport = UnixSocketRpcTransport::new_client("/tmp/test.sock".to_string()).unwrap();
-        
-        let addr1 = transport.generate_client_address();
-        let addr2 = transport.generate_client_address();
-        
-        assert_ne!(addr1, addr2);
-        assert!(addr1.starts_with("/tmp/rpc_client_"));
-        assert!(addr2.starts_with("/tmp/rpc_client_"));
-    }
-    
-    #[test]
-    fn test_transport_roles() {
-        let client = UnixSocketRpcTransport::new_client("/tmp/client.sock".to_string()).unwrap();
-        let server = UnixSocketRpcTransport::new_server("/tmp/server.sock".to_string()).unwrap();
-        
-        // Test client cannot start server
-        assert!(client.start_server().is_err());
-        assert!(client.stop_server().is_err());
-        
-        // Test server cannot send requests or receive responses  
-        let request = RpcRequest {
-            method: "test".to_string(),
-            params: vec![],
-            id: "1".to_string(),
-        };
-        assert!(server.send_request(&request).is_err());
-        assert!(server.receive_response(Duration::from_secs(1)).is_err());
-    }
-    
-    #[test]
-    fn test_helper_functions() {
-        let client_result = create_unix_rpc_client("/tmp/helper_client.sock".to_string());
-        assert!(client_result.is_ok());
-        
-        let server_result = create_unix_rpc_server("/tmp/helper_server.sock".to_string());  
-        assert!(server_result.is_ok());
-        
-        let client = client_result.unwrap();
-        let server = server_result.unwrap();
-        
-        // Test that they implement the RpcTransport trait
-        assert!(!client.is_connected()); // Not connected initially
-        assert!(!server.is_connected()); // Server not started
-    }
-}

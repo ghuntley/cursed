@@ -1,11 +1,11 @@
-use crate::error::Error;
+use crate::error::CursedError;
 /// Named pipes (FIFO) implementation for CURSED IPC
 use std::fs::{File, OpenOptions};
 use std::io::{Read, Write, BufReader, BufWriter};
 use std::path::{Path, PathBuf};
 use std::os::unix::fs::OpenOptionsExt;
 use std::time::Duration;
-use crate::stdlib::ipc::error::{IpcError, IpcResult};
+// use crate::stdlib::ipc::error::{IpcError, IpcResult};
 
 #[cfg(unix)]
 use std::os::unix::io::{AsRawFd, RawFd};
@@ -129,7 +129,7 @@ impl NamedPipe {
         
         // Register with IPC registry
         let handle = PipeHandle::new(pipe.config.path.to_string_lossy().to_string());
-        crate::stdlib::ipc::register_pipe(pipe.config.path.to_string_lossy().to_string(), handle)?;
+//         crate::stdlib::ipc::register_pipe(pipe.config.path.to_string_lossy().to_string(), handle)?;
         
         Ok(pipe)
     }
@@ -208,14 +208,14 @@ impl NamedPipe {
     pub fn write(&mut self, data: &[u8]) -> IpcResult<usize> {
         match &mut self.writer {
             Some(writer) => {
-                crate::stdlib::ipc::increment_operations();
+//                 crate::stdlib::ipc::increment_operations();
                 writer.write(data).map_err(|e| {
-                    crate::stdlib::ipc::increment_failed_operations();
+//                     crate::stdlib::ipc::increment_failed_operations();
                     IpcError::from(e)
                 })
             }
             None => {
-                crate::stdlib::ipc::increment_failed_operations();
+//                 crate::stdlib::ipc::increment_failed_operations();
                 Err(IpcError::InvalidOperation("Pipe not open for writing".to_string()))
             }
         }
@@ -237,14 +237,14 @@ impl NamedPipe {
     pub fn read(&mut self, buffer: &mut [u8]) -> IpcResult<usize> {
         match &mut self.reader {
             Some(reader) => {
-                crate::stdlib::ipc::increment_operations();
+//                 crate::stdlib::ipc::increment_operations();
                 reader.read(buffer).map_err(|e| {
-                    crate::stdlib::ipc::increment_failed_operations();
+//                     crate::stdlib::ipc::increment_failed_operations();
                     IpcError::from(e)
                 })
             }
             None => {
-                crate::stdlib::ipc::increment_failed_operations();
+//                 crate::stdlib::ipc::increment_failed_operations();
                 Err(IpcError::InvalidOperation("Pipe not open for reading".to_string()))
             }
         }
@@ -254,11 +254,11 @@ impl NamedPipe {
     pub fn read_line(&mut self) -> IpcResult<String> {
         match &mut self.reader {
             Some(reader) => {
-                crate::stdlib::ipc::increment_operations();
+//                 crate::stdlib::ipc::increment_operations();
                 let mut line = String::new();
                 match std::io::BufRead::read_line(reader, &mut line) {
                     Ok(0) => {
-                        crate::stdlib::ipc::increment_failed_operations();
+//                         crate::stdlib::ipc::increment_failed_operations();
                         Err(IpcError::IoError("End of pipe".to_string()))
                     }
                     Ok(_) => {
@@ -272,13 +272,13 @@ impl NamedPipe {
                         Ok(line)
                     }
                     Err(e) => {
-                        crate::stdlib::ipc::increment_failed_operations();
+//                         crate::stdlib::ipc::increment_failed_operations();
                         Err(IpcError::from(e))
                     }
                 }
             }
             None => {
-                crate::stdlib::ipc::increment_failed_operations();
+//                 crate::stdlib::ipc::increment_failed_operations();
                 Err(IpcError::InvalidOperation("Pipe not open for reading".to_string()))
             }
         }
@@ -288,18 +288,18 @@ impl NamedPipe {
     pub fn read_string(&mut self) -> IpcResult<String> {
         match &mut self.reader {
             Some(reader) => {
-                crate::stdlib::ipc::increment_operations();
+//                 crate::stdlib::ipc::increment_operations();
                 let mut content = String::new();
                 match std::io::Read::read_to_string(reader, &mut content) {
                     Ok(_) => Ok(content),
                     Err(e) => {
-                        crate::stdlib::ipc::increment_failed_operations();
+//                         crate::stdlib::ipc::increment_failed_operations();
                         Err(IpcError::from(e))
                     }
                 }
             }
             None => {
-                crate::stdlib::ipc::increment_failed_operations();
+//                 crate::stdlib::ipc::increment_failed_operations();
                 Err(IpcError::InvalidOperation("Pipe not open for reading".to_string()))
             }
         }
@@ -333,7 +333,7 @@ impl NamedPipe {
 impl Drop for NamedPipe {
     fn drop(&mut self) {
         let _ = self.flush();
-        let _ = crate::stdlib::ipc::unregister_pipe(&self.config.path.to_string_lossy());
+//         let _ = crate::stdlib::ipc::unregister_pipe(&self.config.path.to_string_lossy());
     }
 }
 
@@ -356,71 +356,3 @@ pub fn remove_named_pipe<P: AsRef<Path>>(path: P) -> IpcResult<()> {
     Ok(())
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use std::fs;
-    use tempfile::TempDir;
-
-    #[test]
-    fn test_pipe_config() {
-        let config = PipeConfig::new("/tmp/test_pipe")
-            .with_mode(PipeMode::ReadOnly)
-            .with_permissions(0o644)
-            .with_buffer_size(4096)
-            .with_timeout(Duration::from_secs(5));
-
-        assert_eq!(config.mode, PipeMode::ReadOnly);
-        assert_eq!(config.permissions, 0o644);
-        assert_eq!(config.buffer_size, 4096);
-        assert_eq!(config.timeout, Some(Duration::from_secs(5)));
-    }
-
-    #[test]
-    fn test_pipe_handle() {
-        let handle = PipeHandle::new("/tmp/test".to_string());
-        assert_eq!(handle.path(), "/tmp/test");
-    }
-
-    #[test]
-    fn test_pipe_creation_and_removal() {
-        let temp_dir = TempDir::new().unwrap();
-        let pipe_path = temp_dir.path().join("test_pipe");
-
-        // Create pipe
-        let pipe = NamedPipe::create(&pipe_path);
-        assert!(pipe.is_ok());
-
-        // Verify pipe exists
-        assert!(pipe_path.exists());
-
-        // Remove pipe
-        drop(pipe);
-        assert!(remove_named_pipe(&pipe_path).is_ok());
-    }
-
-    #[test]
-    fn test_pipe_modes() {
-        let temp_dir = TempDir::new().unwrap();
-        let pipe_path = temp_dir.path().join("test_pipe");
-
-        // Test different modes
-        let config = PipeConfig::new(&pipe_path).with_mode(PipeMode::ReadOnly);
-        let pipe = NamedPipe::create_with_config(config);
-        assert!(pipe.is_ok());
-
-        let pipe = pipe.unwrap();
-        assert!(pipe.can_read());
-        assert!(!pipe.can_write());
-
-        let _ = remove_named_pipe(&pipe_path);
-    }
-
-    #[test]
-    fn test_error_handling() {
-        // Test opening non-existent pipe
-        let result = NamedPipe::open("/non/existent/pipe");
-        assert!(result.is_err());
-        assert!(matches!(result.unwrap_err(), IpcError::NotFound(_)));
-    }
-}

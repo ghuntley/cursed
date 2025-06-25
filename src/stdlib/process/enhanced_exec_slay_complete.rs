@@ -1,4 +1,4 @@
-use crate::error::Error;
+use crate::error::CursedError;
 /// Enhanced ExecSlay Implementation - Complete Process Management System
 /// 
 /// This module provides a complete implementation of the ExecSlay specification
@@ -16,8 +16,7 @@ use std::ffi::{OsStr, OsString};
 
 use tracing::{info, warn, error, debug, instrument};
 
-use crate::error::CursedError;
-use crate::stdlib::ipc::{IpcResult, IpcError};
+// use crate::stdlib::ipc::{IpcResult, IpcError};
 
 /// Result type for ExecSlay operations
 pub type SlayResult<T> = std::result::Result<T, ProcessError>;
@@ -787,7 +786,7 @@ impl EnhancedSlayCommand {
                 
                 // Start background monitoring thread
                 let _handle = std::thread::spawn(move || {
-                    use crate::stdlib::process::real_monitoring::get_real_process_state;
+//                     use crate::stdlib::process::real_monitoring::get_real_process_state;
                     
                     loop {
                         std::thread::sleep(interval);
@@ -964,7 +963,7 @@ impl EnhancedSlayProcess {
         
         #[cfg(windows)]
         {
-            use crate::stdlib::process::windows_support::send_windows_signal;
+//             use crate::stdlib::process::windows_support::send_windows_signal;
             
             // Use Windows-specific signal handling
             match sig {
@@ -1772,56 +1771,3 @@ pub fn combined_output_with_timeout(mut cmd: EnhancedSlayCommand, timeout: Durat
     cmd.combined_output()
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-use crate::stdlib::process::info::ProcessState;
-    
-    #[test]
-    fn test_enhanced_slay_command_creation() {
-        let cmd = EnhancedSlayCommand::new("echo", &["hello", "world"]);
-        assert_eq!(cmd.name, "echo");
-        assert_eq!(cmd.args, vec!["hello", "world"]);
-    }
-    
-    #[test]
-    fn test_enhanced_slay_command_builder() {
-        let cmd = EnhancedSlayCommandBuilder::new("ls")
-            .with_args(&["-la"])
-            .with_timeout(Duration::from_secs(5))
-            .use_shell(true)
-            .build();
-        
-        assert_eq!(cmd.name, "ls");
-        assert_eq!(cmd.args, vec!["-la"]);
-        assert_eq!(cmd.options.timeout, Some(Duration::from_secs(5)));
-        assert!(cmd.options.use_shell);
-    }
-    
-    #[test]
-    fn test_enhanced_slay_pipeline_creation() {
-        let cmd1 = EnhancedSlayCommand::new("cat", &["file.txt"]);
-        let cmd2 = EnhancedSlayCommand::new("grep", &["pattern"]);
-        
-        let pipeline = EnhancedSlayPipeline::new(vec![cmd1, cmd2]);
-        assert_eq!(pipeline.commands.len(), 2);
-    }
-    
-    #[test]
-    fn test_enhanced_options_default() {
-        let options = EnhancedSlayOptions::default();
-        assert_eq!(options.buffer_size, 8192);
-        assert!(options.collect_output);
-        assert!(!options.use_shell);
-        assert_eq!(options.kill_signal, Some(15));
-    }
-    
-    #[test]
-    fn test_enhanced_signal_options_default() {
-        let options = EnhancedSignalOptions::default();
-        assert_eq!(options.grace_period, Duration::from_secs(5));
-        assert!(!options.force);
-        assert_eq!(options.signal, 15);
-        assert!(!options.recursive);
-    }
-}

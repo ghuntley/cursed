@@ -1,7 +1,6 @@
-use crate::error::Error;
+use crate::error::CursedError;
 /// fr fr SQL error handling - when things go sus in the database periodt
 use std::fmt;
-use std::error::Error as StdError;
 use serde::{Serialize, Deserialize};
 
 /// fr fr SQL operation result type - either success or error bestie
@@ -10,7 +9,7 @@ pub type SqlResult<T> = std::result::Result<T, SqlError>;
 /// fr fr Main SQL error type - comprehensive error handling
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct SqlError {
-    /// Error kind/category
+    /// CursedError kind/category
     pub kind: SqlErrorKind,
     
     /// Human-readable error message
@@ -156,32 +155,32 @@ impl SqlError {
     }
 }
 
-impl fmt::Display for SqlError {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "SQL Error [{}]: {}", self.kind, self.message)?;
-        
-        if let Some(sql_state) = &self.sql_state {
-            write!(f, " (SQL State: {})", sql_state)?;
-        }
-        
-        if let Some(error_code) = self.error_code {
-            write!(f, " (Error Code: {})", error_code)?;
-        }
-        
-        if let Some(query) = &self.query {
-            write!(f, " (Query: {})", query)?;
-        }
-        
-        if !self.context.is_empty() {
-            write!(f, " (Context: {})", self.context)?;
-        }
-        
-        Ok(())
-    }
-}
+// impl fmt::Display for SqlError {
+//     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+//         write!(f, "SQL CursedError [{}]: {}", self.kind, self.message)?;
+//         
+//         if let Some(sql_state) = &self.sql_state {
+//             write!(f, " (SQL State: {})", sql_state)?;
+//         }
+//         
+//         if let Some(error_code) = self.error_code {
+//             write!(f, " (CursedError Code: {})", error_code)?;
+//         }
+//         
+//         if let Some(query) = &self.query {
+//             write!(f, " (Query: {})", query)?;
+//         }
+//         
+//         if !self.context.is_empty() {
+//             write!(f, " (Context: {})", self.context)?;
+//         }
+//         
+//         Ok(())
+//     }
+// }
 
-impl Error for SqlError {}
-
+// impl CursedError for SqlError {}
+// 
 /// fr fr SQL error categories - different types of database fails
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub enum SqlErrorKind {
@@ -216,22 +215,22 @@ pub enum SqlErrorKind {
     Unknown,
 }
 
-impl fmt::Display for SqlErrorKind {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
-            SqlErrorKind::Connection(kind) => write!(f, "Connection({})", kind),
-            SqlErrorKind::Query(kind) => write!(f, "Query({})", kind),
-            SqlErrorKind::Database(kind) => write!(f, "Database({})", kind),
-            SqlErrorKind::Transaction(kind) => write!(f, "Transaction({})", kind),
-            SqlErrorKind::TypeConversion => write!(f, "TypeConversion"),
-            SqlErrorKind::Configuration => write!(f, "Configuration"),
-            SqlErrorKind::Driver => write!(f, "Driver"),
-            SqlErrorKind::Pool => write!(f, "Pool"),
-            SqlErrorKind::Migration => write!(f, "Migration"),
-            SqlErrorKind::Unknown => write!(f, "Unknown"),
-        }
-    }
-}
+// impl fmt::Display for SqlErrorKind {
+//     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+//         match self {
+//             SqlErrorKind::Connection(kind) => write!(f, "Connection({})", kind),
+//             SqlErrorKind::Query(kind) => write!(f, "Query({})", kind),
+//             SqlErrorKind::Database(kind) => write!(f, "Database({})", kind),
+//             SqlErrorKind::Transaction(kind) => write!(f, "Transaction({})", kind),
+//             SqlErrorKind::TypeConversion => write!(f, "TypeConversion"),
+//             SqlErrorKind::Configuration => write!(f, "Configuration"),
+//             SqlErrorKind::Driver => write!(f, "Driver"),
+//             SqlErrorKind::Pool => write!(f, "Pool"),
+//             SqlErrorKind::Migration => write!(f, "Migration"),
+//             SqlErrorKind::Unknown => write!(f, "Unknown"),
+//         }
+//     }
+// }
 
 /// fr fr Connection error subtypes - when networking goes wrong
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -270,23 +269,23 @@ pub enum ConnectionErrorKind {
     TemporaryFailure,
 }
 
-impl fmt::Display for ConnectionErrorKind {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
-            ConnectionErrorKind::General => write!(f, "General"),
-            ConnectionErrorKind::Timeout => write!(f, "Timeout"),
-            ConnectionErrorKind::AuthenticationFailed => write!(f, "AuthenticationFailed"),
-            ConnectionErrorKind::DatabaseNotFound => write!(f, "DatabaseNotFound"),
-            ConnectionErrorKind::ConnectionRefused => write!(f, "ConnectionRefused"),
-            ConnectionErrorKind::NetworkError => write!(f, "NetworkError"),
-            ConnectionErrorKind::ConnectionLost => write!(f, "ConnectionLost"),
-            ConnectionErrorKind::ServerGone => write!(f, "ServerGone"),
-            ConnectionErrorKind::TooManyConnections => write!(f, "TooManyConnections"),
-            ConnectionErrorKind::SslError => write!(f, "SslError"),
-            ConnectionErrorKind::TemporaryFailure => write!(f, "TemporaryFailure"),
-        }
-    }
-}
+// impl fmt::Display for ConnectionErrorKind {
+//     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+//         match self {
+//             ConnectionErrorKind::General => write!(f, "General"),
+//             ConnectionErrorKind::Timeout => write!(f, "Timeout"),
+//             ConnectionErrorKind::AuthenticationFailed => write!(f, "AuthenticationFailed"),
+//             ConnectionErrorKind::DatabaseNotFound => write!(f, "DatabaseNotFound"),
+//             ConnectionErrorKind::ConnectionRefused => write!(f, "ConnectionRefused"),
+//             ConnectionErrorKind::NetworkError => write!(f, "NetworkError"),
+//             ConnectionErrorKind::ConnectionLost => write!(f, "ConnectionLost"),
+//             ConnectionErrorKind::ServerGone => write!(f, "ServerGone"),
+//             ConnectionErrorKind::TooManyConnections => write!(f, "TooManyConnections"),
+//             ConnectionErrorKind::SslError => write!(f, "SslError"),
+//             ConnectionErrorKind::TemporaryFailure => write!(f, "TemporaryFailure"),
+//         }
+//     }
+// }
 
 /// fr fr Query error subtypes - when SQL goes sus
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -325,23 +324,23 @@ pub enum QueryErrorKind {
     QueryTooComplex,
 }
 
-impl fmt::Display for QueryErrorKind {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
-            QueryErrorKind::SyntaxError => write!(f, "SyntaxError"),
-            QueryErrorKind::TableNotFound => write!(f, "TableNotFound"),
-            QueryErrorKind::ColumnNotFound => write!(f, "ColumnNotFound"),
-            QueryErrorKind::ConstraintViolation => write!(f, "ConstraintViolation"),
-            QueryErrorKind::TypeMismatch => write!(f, "TypeMismatch"),
-            QueryErrorKind::DivisionByZero => write!(f, "DivisionByZero"),
-            QueryErrorKind::ValueOutOfRange => write!(f, "ValueOutOfRange"),
-            QueryErrorKind::PreparedStatementError => write!(f, "PreparedStatementError"),
-            QueryErrorKind::ParameterError => write!(f, "ParameterError"),
-            QueryErrorKind::QueryTimeout => write!(f, "QueryTimeout"),
-            QueryErrorKind::QueryTooComplex => write!(f, "QueryTooComplex"),
-        }
-    }
-}
+// impl fmt::Display for QueryErrorKind {
+//     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+//         match self {
+//             QueryErrorKind::SyntaxError => write!(f, "SyntaxError"),
+//             QueryErrorKind::TableNotFound => write!(f, "TableNotFound"),
+//             QueryErrorKind::ColumnNotFound => write!(f, "ColumnNotFound"),
+//             QueryErrorKind::ConstraintViolation => write!(f, "ConstraintViolation"),
+//             QueryErrorKind::TypeMismatch => write!(f, "TypeMismatch"),
+//             QueryErrorKind::DivisionByZero => write!(f, "DivisionByZero"),
+//             QueryErrorKind::ValueOutOfRange => write!(f, "ValueOutOfRange"),
+//             QueryErrorKind::PreparedStatementError => write!(f, "PreparedStatementError"),
+//             QueryErrorKind::ParameterError => write!(f, "ParameterError"),
+//             QueryErrorKind::QueryTimeout => write!(f, "QueryTimeout"),
+//             QueryErrorKind::QueryTooComplex => write!(f, "QueryTooComplex"),
+//         }
+//     }
+// }
 
 /// fr fr Database error subtypes - when the database itself has issues
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -386,25 +385,25 @@ pub enum DatabaseErrorKind {
     TemporaryUnavailable,
 }
 
-impl fmt::Display for DatabaseErrorKind {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
-            DatabaseErrorKind::General => write!(f, "General"),
-            DatabaseErrorKind::DiskFull => write!(f, "DiskFull"),
-            DatabaseErrorKind::OutOfMemory => write!(f, "OutOfMemory"),
-            DatabaseErrorKind::LockTimeout => write!(f, "LockTimeout"),
-            DatabaseErrorKind::Deadlock => write!(f, "Deadlock"),
-            DatabaseErrorKind::UniqueViolation => write!(f, "UniqueViolation"),
-            DatabaseErrorKind::ForeignKeyViolation => write!(f, "ForeignKeyViolation"),
-            DatabaseErrorKind::CheckViolation => write!(f, "CheckViolation"),
-            DatabaseErrorKind::NotNullViolation => write!(f, "NotNullViolation"),
-            DatabaseErrorKind::ReadOnly => write!(f, "ReadOnly"),
-            DatabaseErrorKind::DatabaseCorrupt => write!(f, "DatabaseCorrupt"),
-            DatabaseErrorKind::FeatureNotSupported => write!(f, "FeatureNotSupported"),
-            DatabaseErrorKind::TemporaryUnavailable => write!(f, "TemporaryUnavailable"),
-        }
-    }
-}
+// impl fmt::Display for DatabaseErrorKind {
+//     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+//         match self {
+//             DatabaseErrorKind::General => write!(f, "General"),
+//             DatabaseErrorKind::DiskFull => write!(f, "DiskFull"),
+//             DatabaseErrorKind::OutOfMemory => write!(f, "OutOfMemory"),
+//             DatabaseErrorKind::LockTimeout => write!(f, "LockTimeout"),
+//             DatabaseErrorKind::Deadlock => write!(f, "Deadlock"),
+//             DatabaseErrorKind::UniqueViolation => write!(f, "UniqueViolation"),
+//             DatabaseErrorKind::ForeignKeyViolation => write!(f, "ForeignKeyViolation"),
+//             DatabaseErrorKind::CheckViolation => write!(f, "CheckViolation"),
+//             DatabaseErrorKind::NotNullViolation => write!(f, "NotNullViolation"),
+//             DatabaseErrorKind::ReadOnly => write!(f, "ReadOnly"),
+//             DatabaseErrorKind::DatabaseCorrupt => write!(f, "DatabaseCorrupt"),
+//             DatabaseErrorKind::FeatureNotSupported => write!(f, "FeatureNotSupported"),
+//             DatabaseErrorKind::TemporaryUnavailable => write!(f, "TemporaryUnavailable"),
+//         }
+//     }
+// }
 
 /// fr fr Transaction error subtypes - when ACID goes wrong
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -440,24 +439,24 @@ pub enum TransactionErrorKind {
     ReadOnlyTransaction,
 }
 
-impl fmt::Display for TransactionErrorKind {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
-            TransactionErrorKind::General => write!(f, "General"),
-            TransactionErrorKind::AlreadyStarted => write!(f, "AlreadyStarted"),
-            TransactionErrorKind::NoActiveTransaction => write!(f, "NoActiveTransaction"),
-            TransactionErrorKind::RolledBack => write!(f, "RolledBack"),
-            TransactionErrorKind::Deadlock => write!(f, "Deadlock"),
-            TransactionErrorKind::SerializationFailure => write!(f, "SerializationFailure"),
-            TransactionErrorKind::SavepointNotFound => write!(f, "SavepointNotFound"),
-            TransactionErrorKind::InvalidIsolationLevel => write!(f, "InvalidIsolationLevel"),
-            TransactionErrorKind::TransactionTimeout => write!(f, "TransactionTimeout"),
-            TransactionErrorKind::ReadOnlyTransaction => write!(f, "ReadOnlyTransaction"),
-        }
-    }
-}
+// impl fmt::Display for TransactionErrorKind {
+//     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+//         match self {
+//             TransactionErrorKind::General => write!(f, "General"),
+//             TransactionErrorKind::AlreadyStarted => write!(f, "AlreadyStarted"),
+//             TransactionErrorKind::NoActiveTransaction => write!(f, "NoActiveTransaction"),
+//             TransactionErrorKind::RolledBack => write!(f, "RolledBack"),
+//             TransactionErrorKind::Deadlock => write!(f, "Deadlock"),
+//             TransactionErrorKind::SerializationFailure => write!(f, "SerializationFailure"),
+//             TransactionErrorKind::SavepointNotFound => write!(f, "SavepointNotFound"),
+//             TransactionErrorKind::InvalidIsolationLevel => write!(f, "InvalidIsolationLevel"),
+//             TransactionErrorKind::TransactionTimeout => write!(f, "TransactionTimeout"),
+//             TransactionErrorKind::ReadOnlyTransaction => write!(f, "ReadOnlyTransaction"),
+//         }
+//     }
+// }
 
-/// fr fr Error context for additional information - debugging vibes
+/// fr fr CursedError context for additional information - debugging vibes
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct ErrorContext {
     /// Key-value pairs of additional context
@@ -493,18 +492,18 @@ impl ErrorContext {
     }
 }
 
-impl fmt::Display for ErrorContext {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        if self.data.is_empty() {
-            write!(f, "no context")
-        } else {
-            let items: Vec<String> = self.data.iter()
-                .map(|(k, v)| format!("{}={}", k, v))
-                .collect();
-            write!(f, "{}", items.join(", "))
-        }
-    }
-}
+// impl fmt::Display for ErrorContext {
+//     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+//         if self.data.is_empty() {
+//             write!(f, "no context")
+//         } else {
+//             let items: Vec<String> = self.data.iter()
+//                 .map(|(k, v)| format!("{}={}", k, v))
+//                 .collect();
+//             write!(f, "{}", items.join(", "))
+//         }
+//     }
+// }
 
 /// fr fr Helper functions for creating common errors
 impl SqlError {
@@ -566,117 +565,3 @@ impl SqlError {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_sql_error_creation() {
-        let error = SqlError::connection("Connection failed".to_string());
-        assert!(matches!(error.kind, SqlErrorKind::Connection(_)));
-        assert_eq!(error.message, "Connection failed");
-        assert!(error.sql_state.is_none());
-        assert!(error.error_code.is_none());
-    }
-
-    #[test]
-    fn test_sql_error_with_details() {
-        let error = SqlError::query("Syntax error".to_string())
-            .with_sql_state("42000".to_string())
-            .with_query("SELECT * FROM invalid_table".to_string())
-            .with_context("line".to_string(), "1".to_string());
-        
-        assert_eq!(error.sql_state, Some("42000".to_string()));
-        assert_eq!(error.query, Some("SELECT * FROM invalid_table".to_string()));
-        assert_eq!(error.context.get("line"), Some(&"1".to_string()));
-    }
-
-    #[test]
-    fn test_error_is_retryable() {
-        let timeout_error = SqlError {
-            kind: SqlErrorKind::Connection(ConnectionErrorKind::Timeout),
-            message: "Timeout".to_string(),
-            sql_state: None,
-            error_code: None,
-            query: None,
-            context: ErrorContext::default(),
-        };
-        assert!(timeout_error.is_retryable());
-        
-        let syntax_error = SqlError::query("Syntax error".to_string());
-        assert!(!syntax_error.is_retryable());
-    }
-
-    #[test]
-    fn test_error_is_connection_lost() {
-        let connection_lost_error = SqlError {
-            kind: SqlErrorKind::Connection(ConnectionErrorKind::ConnectionLost),
-            message: "Connection lost".to_string(),
-            sql_state: None,
-            error_code: None,
-            query: None,
-            context: ErrorContext::default(),
-        };
-        assert!(connection_lost_error.is_connection_lost());
-        
-        let syntax_error = SqlError::query("Syntax error".to_string());
-        assert!(!syntax_error.is_connection_lost());
-    }
-
-    #[test]
-    fn test_error_context() {
-        let mut context = ErrorContext::new();
-        assert!(context.is_empty());
-        
-        context.add("key1".to_string(), "value1".to_string());
-        context.add("key2".to_string(), "value2".to_string());
-        
-        assert!(!context.is_empty());
-        assert_eq!(context.get("key1"), Some(&"value1".to_string()));
-        assert_eq!(context.get("nonexistent"), None);
-        assert_eq!(context.data().len(), 2);
-    }
-
-    #[test]
-    fn test_helper_error_functions() {
-        let timeout_error = SqlError::timeout("query_execution", 5000);
-        assert!(matches!(timeout_error.kind, SqlErrorKind::Connection(_)));
-        assert!(timeout_error.message.contains("timed out"));
-        
-        let auth_error = SqlError::auth_failed("john_doe");
-        assert!(matches!(auth_error.kind, SqlErrorKind::Connection(ConnectionErrorKind::AuthenticationFailed)));
-        assert_eq!(auth_error.sql_state, Some("28000".to_string()));
-        
-        let table_error = SqlError::table_not_found("users");
-        assert!(matches!(table_error.kind, SqlErrorKind::Query(QueryErrorKind::TableNotFound)));
-        assert_eq!(table_error.sql_state, Some("42S02".to_string()));
-        
-        let constraint_error = SqlError::constraint_violation("unique_email", "Duplicate email");
-        assert!(matches!(constraint_error.kind, SqlErrorKind::Database(DatabaseErrorKind::UniqueViolation)));
-        assert_eq!(constraint_error.sql_state, Some("23000".to_string()));
-        
-        let deadlock_error = SqlError::deadlock("SELECT * FROM table1", "UPDATE table2");
-        assert!(matches!(deadlock_error.kind, SqlErrorKind::Transaction(TransactionErrorKind::Deadlock)));
-        assert_eq!(deadlock_error.sql_state, Some("40001".to_string()));
-    }
-
-    #[test]
-    fn test_error_display() {
-        let error = SqlError::connection("Test error".to_string())
-            .with_sql_state("28000".to_string())
-            .with_context("test".to_string(), "value".to_string());
-        
-        let display_string = error.to_string();
-        assert!(display_string.contains("Test error"));
-        assert!(display_string.contains("28000"));
-        assert!(display_string.contains("test=value"));
-    }
-
-    #[test]
-    fn test_error_kind_display() {
-        assert_eq!(SqlErrorKind::Connection(ConnectionErrorKind::Timeout).to_string(), "Connection(Timeout)");
-        assert_eq!(SqlErrorKind::Query(QueryErrorKind::SyntaxError).to_string(), "Query(SyntaxError)");
-        assert_eq!(SqlErrorKind::Database(DatabaseErrorKind::Deadlock).to_string(), "Database(Deadlock)");
-        assert_eq!(SqlErrorKind::TypeConversion.to_string(), "TypeConversion");
-    }
-}

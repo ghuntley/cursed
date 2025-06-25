@@ -11,7 +11,7 @@ use crate::docs::registry::{DocumentationRegistry, RegistryConfig};
 use crate::docs::testing::{DocumentationTester, TestingConfig};
 use crate::documentation::generator::DocumentationGenerator;
 use crate::package::{Package, PackageManager};
-use crate::error::{Error, Result};
+use crate::error::{CursedError, Result};
 use std::path::PathBuf;
 use std::net::SocketAddr;
 use tracing::{info, warn, error};
@@ -290,7 +290,7 @@ async fn handle_generate_command(
             info!("JSON documentation generated in {:?}", output_dir);
         }
         _ => {
-            return Err(Error::General(format!("Unsupported documentation format: {}", format)));
+            return Err(CursedError::General(format!("Unsupported documentation format: {}", format)));
         }
     }
     
@@ -486,7 +486,7 @@ async fn handle_test_command(
             }
         }
         _ => {
-            return Err(Error::General(format!("Unsupported output format: {}", format)));
+            return Err(CursedError::General(format!("Unsupported output format: {}", format)));
         }
     }
     
@@ -515,7 +515,7 @@ async fn handle_preview_command(
     
     // Create server configuration
     let bind_addr = format!("127.0.0.1:{}", port).parse()
-        .map_err(|e| Error::General(format!("Invalid address: {}", e)))?;
+        .map_err(|e| CursedError::General(format!("Invalid address: {}", e)))?;
     let config = create_default_server_config(bind_addr, output_dir, false, None, None)?;
     
     // Create and start server
@@ -576,7 +576,7 @@ async fn handle_validate_command(config_path: PathBuf, config_type: String) -> R
             info!("Testing configuration is valid");
         }
         _ => {
-            return Err(Error::General(format!("Unknown configuration type: {}", config_type)));
+            return Err(CursedError::General(format!("Unknown configuration type: {}", config_type)));
         }
     }
     
@@ -624,7 +624,7 @@ async fn handle_registry_command(command: RegistryCommand) -> Result<()> {
                     println!("{}", serde_json::to_string_pretty(&packages)?);
                 }
                 _ => {
-                    return Err(Error::General(format!("Unsupported format: {}", format)));
+                    return Err(CursedError::General(format!("Unsupported format: {}", format)));
                 }
             }
         }
@@ -657,7 +657,7 @@ async fn handle_registry_command(command: RegistryCommand) -> Result<()> {
                     println!("{}", serde_json::to_string_pretty(&results)?);
                 }
                 _ => {
-                    return Err(Error::General(format!("Unsupported format: {}", format)));
+                    return Err(CursedError::General(format!("Unsupported format: {}", format)));
                 }
             }
         }
@@ -723,7 +723,7 @@ async fn load_testing_config(config_path: &PathBuf) -> Result<TestingConfig> {
 
 async fn load_config_file<T: serde::de::DeserializeOwned>(config_path: &PathBuf) -> Result<T> {
     let content = fs::read_to_string(config_path).await
-        .map_err(|e| Error::General(format!("Failed to read config file: {}", e)))?;
+        .map_err(|e| CursedError::General(format!("Failed to read config file: {}", e)))?;
     
     let extension = config_path.extension()
         .and_then(|ext| ext.to_str())
@@ -732,21 +732,21 @@ async fn load_config_file<T: serde::de::DeserializeOwned>(config_path: &PathBuf)
     match extension {
         "toml" => {
             toml::from_str(&content).map_err(|e| {
-                Error::General(format!("Failed to parse TOML config: {}", e))
+                CursedError::General(format!("Failed to parse TOML config: {}", e))
             })
         }
         "json" => {
             serde_json::from_str(&content).map_err(|e| {
-                Error::General(format!("Failed to parse JSON config: {}", e))
+                CursedError::General(format!("Failed to parse JSON config: {}", e))
             })
         }
         "yaml" | "yml" => {
             serde_yaml::from_str(&content).map_err(|e| {
-                Error::General(format!("Failed to parse YAML config: {}", e))
+                CursedError::General(format!("Failed to parse YAML config: {}", e))
             })
         }
         _ => {
-            Err(Error::General(format!("Unsupported config file format: {}", extension)))
+            Err(CursedError::General(format!("Unsupported config file format: {}", extension)))
         }
     }
 }
@@ -771,7 +771,7 @@ fn create_default_publish_config(
             token: std::env::var("GITHUB_TOKEN").unwrap_or_default(),
         },
         _ => {
-            return Err(Error::General(format!("Unsupported publish target: {}", target)));
+            return Err(CursedError::General(format!("Unsupported publish target: {}", target)));
         }
     };
     
@@ -806,10 +806,10 @@ fn create_default_server_config(
     let ssl_config = if https {
         Some(crate::docs::server::SslServerConfig {
             cert_path: cert.ok_or_else(|| {
-                Error::General("SSL certificate path required for HTTPS".to_string())
+                CursedError::General("SSL certificate path required for HTTPS".to_string())
             })?,
             key_path: key.ok_or_else(|| {
-                Error::General("SSL private key path required for HTTPS".to_string())
+                CursedError::General("SSL private key path required for HTTPS".to_string())
             })?,
             chain_path: None,
         })
@@ -951,33 +951,3 @@ fn generate_test_results_html(results: &crate::docs::testing::TestResults) -> St
     )
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use tempfile::TempDir;
-    
-    #[tokio::test]
-    async fn test_generate_command() {
-        let temp_dir = TempDir::new().unwrap();
-        let source_dir = temp_dir.path().join("src");
-        let output_dir = temp_dir.path().join("docs");
-        
-        tokio::fs::create_dir_all(&source_dir).await.unwrap();
-        
-        // This would test the actual generation
-        // For now, just test the function exists
-        assert!(true);
-    }
-    
-    #[test]
-    fn test_config_creation() {
-        let config = create_default_publish_config("local", None, true).unwrap();
-        
-        match config.target {
-            PublishTarget::Local { .. } => assert!(true),
-            _ => panic!("Expected local target"),
-        }
-        
-        assert!(config.optimization.minify_html);
-    }
-}

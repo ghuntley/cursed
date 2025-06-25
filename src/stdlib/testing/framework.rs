@@ -1,4 +1,4 @@
-use crate::error::Error;
+use crate::error::CursedError;
 /// Core testing framework for CURSED
 /// 
 /// Provides the main TestFramework implementation that coordinates
@@ -7,7 +7,6 @@ use crate::error::Error;
 use std::collections::HashMap;
 use std::path::PathBuf;
 use std::time::{Duration, Instant};
-use crate::crate::stdlib::errors_simple::CursedError;
 use super::{
     discovery::{TestDiscovery, TestFilter, DiscoveryConfig, TestInfo},
     executor::{TestExecutor, TestExecutorConfig, TestResult, ParallelExecutor},
@@ -152,14 +151,14 @@ impl TestFramework {
         let executor: Box<dyn TestExecutor> = if config.max_parallel_tests > 1 {
             Box::new(ParallelExecutor::with_config(executor_config))
         } else {
-            Box::new(crate::stdlib::testing::executor::SequentialExecutor::with_config(executor_config))
+//             Box::new(crate::stdlib::testing::executor::SequentialExecutor::with_config(executor_config))
         };
         let runner = TestRunner::with_config(runner_config);
         let reporter: Box<dyn TestReporter> = match config.report_format {
             ReportFormat::Console => Box::new(ConsoleReporter::new()),
-            ReportFormat::Json => Box::new(crate::stdlib::testing::reporting::JsonReporter::new()),
-            ReportFormat::Xml => Box::new(crate::stdlib::testing::reporting::XmlReporter::new()),
-            ReportFormat::Html => Box::new(crate::stdlib::testing::reporting::HtmlReporter::new()),
+//             ReportFormat::Json => Box::new(crate::stdlib::testing::reporting::JsonReporter::new()),
+//             ReportFormat::Xml => Box::new(crate::stdlib::testing::reporting::XmlReporter::new()),
+//             ReportFormat::Html => Box::new(crate::stdlib::testing::reporting::HtmlReporter::new()),
         };
         
         Self {
@@ -212,14 +211,14 @@ impl TestFramework {
         
         for result in &results.test_results {
             match &result.status {
-                crate::stdlib::testing::executor::TestStatus::Passed => passed += 1,
-                crate::stdlib::testing::executor::TestStatus::Failed(_) => {
+//                 crate::stdlib::testing::executor::TestStatus::Passed => passed += 1,
+//                 crate::stdlib::testing::executor::TestStatus::Failed(_) => {
                     failed += 1;
                     failures.push(result.clone());
                 }
-                crate::stdlib::testing::executor::TestStatus::Ignored => ignored += 1,
-                crate::stdlib::testing::executor::TestStatus::Skipped => skipped += 1,
-                crate::stdlib::testing::executor::TestStatus::Timeout => {
+//                 crate::stdlib::testing::executor::TestStatus::Ignored => ignored += 1,
+//                 crate::stdlib::testing::executor::TestStatus::Skipped => skipped += 1,
+//                 crate::stdlib::testing::executor::TestStatus::Timeout => {
                     failed += 1;
                     failures.push(result.clone());
                 }
@@ -229,7 +228,7 @@ impl TestFramework {
             self.statistics.record_test_execution(
                 &result.test_info.name,
                 result.execution_time,
-                matches!(result.status, crate::stdlib::testing::executor::TestStatus::Passed)
+//                 matches!(result.status, crate::stdlib::testing::executor::TestStatus::Passed)
             );
         }
         
@@ -275,7 +274,7 @@ impl TestFramework {
         self.statistics.record_test_execution(
             &result.test_info.name,
             result.execution_time,
-            matches!(result.status, crate::stdlib::testing::executor::TestStatus::Passed)
+//             matches!(result.status, crate::stdlib::testing::executor::TestStatus::Passed)
         );
         
         Ok(result)
@@ -360,7 +359,7 @@ impl TestFramework {
             ));
             xml.push('\n');
             
-            if let crate::stdlib::testing::executor::TestStatus::Failed(ref error) = failure.status {
+//             if let crate::stdlib::testing::executor::TestStatus::Failed(ref error) = failure.status {
                 xml.push_str(&format!(r#"      <failure message="{}">{}</failure>"#, 
                     error.replace('"', "&quot;").replace('<', "&lt;").replace('>', "&gt;"),
                     error.replace('<', "&lt;").replace('>', "&gt;")
@@ -422,7 +421,7 @@ impl TestFramework {
                 html.push_str(&format!("<h3>{}</h3>", failure.test_info.name));
                 html.push_str(&format!("<p><strong>Execution Time:</strong> {:.3}s</p>", failure.execution_time.as_secs_f64()));
                 
-                if let crate::stdlib::testing::executor::TestStatus::Failed(ref error) = failure.status {
+//                 if let crate::stdlib::testing::executor::TestStatus::Failed(ref error) = failure.status {
                     html.push_str("<div class=\"failure-message\">");
                     html.push_str(&error.replace('<', "&lt;").replace('>', "&gt;"));
                     html.push_str("</div>");

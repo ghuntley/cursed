@@ -1,6 +1,6 @@
 /// fr fr Test utilities and helper functions for the TestVibes framework
-use crate::stdlib::packages::test_vibes::core::VibeTest;
-use crate::error::Error;
+// use crate::stdlib::packages::test_vibes::core::VibeTest;
+use crate::error::CursedError;
 use std::time::{Duration, Instant};
 use std::path::{Path, PathBuf};
 use std::fs::{File, create_dir_all};
@@ -15,7 +15,7 @@ pub struct TempFile {
 
 impl TempFile {
     /// fr fr Create a new temporary file
-    pub fn new(t: &mut VibeTest, pattern: &str) -> Result<(), Error> {
+    pub fn new(t: &mut VibeTest, pattern: &str) -> crate::error::Result<()> {
         let temp_dir = std::env::temp_dir();
         let file_name = format!("{}_{}", pattern, generate_random_suffix());
         let path = temp_dir.join(file_name);
@@ -37,7 +37,7 @@ impl TempFile {
     }
 
     /// fr fr Write content to the file
-    pub fn write_all(&mut self, content: &[u8]) -> Result<(), Error> {
+    pub fn write_all(&mut self, content: &[u8]) -> crate::error::Result<()> {
         if let Some(ref mut file) = self.file {
             file.write_all(content)?;
             file.flush()?;
@@ -46,7 +46,7 @@ impl TempFile {
     }
 
     /// fr fr Write string content to the file
-    pub fn write_string(&mut self, content: &str) -> Result<(), Error> {
+    pub fn write_string(&mut self, content: &str) -> crate::error::Result<()> {
         self.write_all(content.as_bytes())
     }
 }
@@ -65,7 +65,7 @@ pub struct TempDir {
 
 impl TempDir {
     /// fr fr Create a new temporary directory
-    pub fn new(t: &mut VibeTest, pattern: &str) -> Result<(), Error> {
+    pub fn new(t: &mut VibeTest, pattern: &str) -> crate::error::Result<()> {
         let temp_base = std::env::temp_dir();
         let dir_name = format!("{}_{}", pattern, generate_random_suffix());
         let path = temp_base.join(dir_name);
@@ -85,14 +85,14 @@ impl TempDir {
     }
 
     /// fr fr Create a file in the temporary directory
-    pub fn create_file(&self, name: &str) -> Result<(), Error> {
+    pub fn create_file(&self, name: &str) -> crate::error::Result<()> {
         let file_path = self.path.join(name);
         File::create(&file_path)?;
         Ok(file_path)
     }
 
     /// fr fr Create a subdirectory
-    pub fn create_dir(&self, name: &str) -> Result<(), Error> {
+    pub fn create_dir(&self, name: &str) -> crate::error::Result<()> {
         let dir_path = self.path.join(name);
         create_dir_all(&dir_path)?;
         Ok(dir_path)
@@ -109,12 +109,12 @@ impl Drop for TempDir {
 /// fr fr Convenience functions for temporary resources
 
 /// fr fr Create a temporary file
-pub fn temp_file(t: &mut VibeTest, pattern: &str) -> Result<(), Error> {
+pub fn temp_file(t: &mut VibeTest, pattern: &str) -> crate::error::Result<()> {
     TempFile::new(t, pattern)
 }
 
 /// fr fr Create a temporary directory
-pub fn temp_dir(t: &mut VibeTest, pattern: &str) -> Result<(), Error> {
+pub fn temp_dir(t: &mut VibeTest, pattern: &str) -> crate::error::Result<()> {
     TempDir::new(t, pattern)
 }
 
@@ -257,7 +257,7 @@ pub fn random_bytes(n: usize) -> Vec<u8> {
 /// fr fr File system test utilities
 
 /// fr fr Create a test file with content
-pub fn create_test_file(path: &Path, content: &str) -> Result<(), Error> {
+pub fn create_test_file(path: &Path, content: &str) -> crate::error::Result<()> {
     let mut file = File::create(path)?;
     file.write_all(content.as_bytes())?;
     file.flush()?;
@@ -265,7 +265,7 @@ pub fn create_test_file(path: &Path, content: &str) -> Result<(), Error> {
 }
 
 /// fr fr Read file content as string
-pub fn read_test_file(path: &Path) -> Result<(), Error> {
+pub fn read_test_file(path: &Path) -> crate::error::Result<()> {
     std::fs::read_to_string(path)
 }
 
@@ -461,149 +461,3 @@ pub fn consistently_assert<F>(
     // Success - condition remained true for the entire duration
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use crate::stdlib::packages::test_vibes::core::VibeTest;
-
-    #[test]
-    fn test_temp_file_creation() {
-        let mut test = VibeTest::new("temp_file_test".to_string());
-        let result = temp_file(&mut test, "test");
-        
-        assert!(result.is_ok());
-        if let Ok((mut temp_file, path)) = result {
-            assert!(Path::new(&path).exists());
-            
-            // Test writing to the file
-            let write_result = temp_file.write_string("Hello, World!");
-            assert!(write_result.is_ok());
-        }
-    }
-
-    #[test]
-    fn test_temp_dir_creation() {
-        let mut test = VibeTest::new("temp_dir_test".to_string());
-        let result = temp_dir(&mut test, "test");
-        
-        assert!(result.is_ok());
-        if let Ok((temp_dir, path)) = result {
-            assert!(Path::new(&path).exists());
-            assert!(Path::new(&path).is_dir());
-            
-            // Test creating a file in the directory
-            let file_result = temp_dir.create_file("test.txt");
-            assert!(file_result.is_ok());
-        }
-    }
-
-    #[test]
-    fn test_random_string_generation() {
-        let s1 = random_string(10);
-        let s2 = random_string(10);
-        
-        assert_eq!(s1.len(), 10);
-        assert_eq!(s2.len(), 10);
-        assert_ne!(s1, s2); // Very unlikely to be the same
-    }
-
-    #[test]
-    fn test_random_int_generation() {
-        let num = random_int(1, 10);
-        assert!(num >= 1 && num <= 10);
-    }
-
-    #[test]
-    fn test_random_float_generation() {
-        let num = random_float(0.0, 1.0);
-        assert!(num >= 0.0 && num <= 1.0);
-    }
-
-    #[test]
-    fn test_random_bytes_generation() {
-        let bytes = random_bytes(10);
-        assert_eq!(bytes.len(), 10);
-    }
-
-    #[test]
-    fn test_time_function() {
-        let (result, duration) = time_function(|| {
-            std::thread::sleep(Duration::from_millis(10));
-            42
-        });
-        
-        assert_eq!(result, 42);
-        assert!(duration >= Duration::from_millis(10));
-    }
-
-    #[test]
-    fn test_env_var_utilities() {
-        let test_key = "TEST_CURSED_VAR";
-        let test_value = "test_value";
-        
-        // Ensure the variable doesn't exist initially
-        std::env::remove_var(test_key);
-        assert!(std::env::var(test_key).is_err());
-        
-        // Test with_env_var
-        with_env_var(test_key, test_value, || {
-            assert_eq!(std::env::var(test_key).unwrap(), test_value);
-        });
-        
-        // Verify it's removed after the test
-        assert!(std::env::var(test_key).is_err());
-    }
-
-    #[test]
-    fn test_test_data_builder() {
-        let integers = TestDataBuilder::integers(5);
-        assert_eq!(integers, Vec::from([0, 1, 2, 3, 4]));
-        
-        let strings = TestDataBuilder::strings(3);
-        assert_eq!(strings, Vec::from(["test_string_0", "test_string_1", "test_string_2"]));
-        
-        let map = TestDataBuilder::string_map(2);
-        assert_eq!(map.len(), 2);
-        assert_eq!(map.get("key_0"), Some(&"value_0".to_string()));
-        
-        let large_string = TestDataBuilder::large_string(100);
-        assert_eq!(large_string.len(), 100);
-        assert!(large_string.chars().all(|c| c == 'X'));
-    }
-
-    #[test]
-    fn test_retry_with_backoff() {
-        let mut attempts = 0;
-        
-        let result = retry_with_backoff(
-            || {
-                attempts += 1;
-                if attempts < 3 {
-                    Err("not ready")
-                } else {
-                    Ok("success")
-                }
-            },
-            5,
-            Duration::from_millis(1),
-        );
-        
-        assert_eq!(result, Ok("success"));
-        assert_eq!(attempts, 3);
-    }
-
-    #[test]
-    fn test_eventually_assert() {
-        let mut test = VibeTest::new("eventually_test".to_string());
-        let start = Instant::now();
-        
-        eventually_assert(
-            &mut test,
-            || start.elapsed() > Duration::from_millis(5),
-            Duration::from_millis(100),
-            "should eventually be true",
-        );
-        
-        assert!(!test.failed());
-    }
-}

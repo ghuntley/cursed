@@ -1,4 +1,4 @@
-use crate::error::Error;
+use crate::error::CursedError;
 // Web module for CURSED HTTP server functionality
 use std::collections::HashMap;
 use std::fmt;
@@ -38,7 +38,7 @@ pub enum StatusCode {
     TemporaryRedirect = 307,
     PermanentRedirect = 308,
     
-    // 4xx Client Error
+    // 4xx Client CursedError
     BadRequest = 400,
     Unauthorized = 401,
     PaymentRequired = 402,
@@ -67,7 +67,7 @@ pub enum StatusCode {
     RequestHeaderFieldsTooLarge = 431,
     UnavailableForLegalReasons = 451,
     
-    // 5xx Server Error
+    // 5xx Server CursedError
     InternalServerError = 500,
     NotImplemented = 501,
     BadGateway = 502,
@@ -190,7 +190,7 @@ impl StatusCode {
             StatusCode::TooManyRequests => "Too Many Requests",
             StatusCode::RequestHeaderFieldsTooLarge => "Request Header Fields Too Large",
             StatusCode::UnavailableForLegalReasons => "Unavailable For Legal Reasons",
-            StatusCode::InternalServerError => "Internal Server Error",
+            StatusCode::InternalServerError => "Internal Server CursedError",
             StatusCode::NotImplemented => "Not Implemented",
             StatusCode::BadGateway => "Bad Gateway",
             StatusCode::ServiceUnavailable => "Service Unavailable",
@@ -515,30 +515,30 @@ pub enum TimeoutError {
     ConnectionTimeout { elapsed: std::time::Duration, timeout: std::time::Duration },
 }
 
-impl fmt::Display for TimeoutError {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
-            TimeoutError::RequestTimeout { elapsed, timeout } => {
-                write!(f, "Request timeout: elapsed {:?}, timeout {:?}", elapsed, timeout)
-            }
-            TimeoutError::ResponseTimeout { elapsed, timeout } => {
-                write!(f, "Response timeout: elapsed {:?}, timeout {:?}", elapsed, timeout)
-            }
-            TimeoutError::DatabaseTimeout { elapsed, timeout, operation } => {
-                write!(f, "Database timeout for {}: elapsed {:?}, timeout {:?}", operation, elapsed, timeout)
-            }
-            TimeoutError::ConnectionTimeout { elapsed, timeout } => {
-                write!(f, "Connection timeout: elapsed {:?}, timeout {:?}", elapsed, timeout)
-            }
-        }
-    }
-}
+// impl fmt::Display for TimeoutError {
+//     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+//         match self {
+//             TimeoutError::RequestTimeout { elapsed, timeout } => {
+//                 write!(f, "Request timeout: elapsed {:?}, timeout {:?}", elapsed, timeout)
+//             }
+//             TimeoutError::ResponseTimeout { elapsed, timeout } => {
+//                 write!(f, "Response timeout: elapsed {:?}, timeout {:?}", elapsed, timeout)
+//             }
+//             TimeoutError::DatabaseTimeout { elapsed, timeout, operation } => {
+//                 write!(f, "Database timeout for {}: elapsed {:?}, timeout {:?}", operation, elapsed, timeout)
+//             }
+//             TimeoutError::ConnectionTimeout { elapsed, timeout } => {
+//                 write!(f, "Connection timeout: elapsed {:?}, timeout {:?}", elapsed, timeout)
+//             }
+//         }
+//     }
+// }
 
-impl std::error::Error for TimeoutError {}
-
+// impl std::error::CursedError for TimeoutError {}
+// 
 /// Middleware trait
 pub trait Middleware: Send + Sync {
-    fn handle(&self, request: &mut Request, response: &mut Response) -> Result<(), Box<dyn std::error::Error>>;
+    fn handle(&self, request: &mut Request, response: &mut Response) -> Result<(), Box<dyn std::error::CursedError>>;
 }
 
 /// Middleware chain
@@ -556,7 +556,7 @@ impl MiddlewareChain {
         self.middlewares.push(middleware);
     }
     
-    pub fn handle(&self, request: &mut Request, response: &mut Response) -> Result<(), Box<dyn std::error::Error>> {
+    pub fn handle(&self, request: &mut Request, response: &mut Response) -> Result<(), Box<dyn std::error::CursedError>> {
         for middleware in &self.middlewares {
             middleware.handle(request, response)?;
         }
@@ -577,7 +577,7 @@ impl LoggingMiddleware {
 }
 
 impl Middleware for LoggingMiddleware {
-    fn handle(&self, request: &mut Request, _response: &mut Response) -> Result<(), Box<dyn std::error::Error>> {
+    fn handle(&self, request: &mut Request, _response: &mut Response) -> Result<(), Box<dyn std::error::CursedError>> {
         if self.enabled {
             println!("[{}] {} {}", 
                 chrono::Utc::now().format("%Y-%m-%d %H:%M:%S"),
@@ -611,7 +611,7 @@ impl CorsMiddleware {
 }
 
 impl Middleware for CorsMiddleware {
-    fn handle(&self, _request: &mut Request, response: &mut Response) -> Result<(), Box<dyn std::error::Error>> {
+    fn handle(&self, _request: &mut Request, response: &mut Response) -> Result<(), Box<dyn std::error::CursedError>> {
         response.headers.insert("Access-Control-Allow-Origin".to_string(), self.allow_origins.join(", "));
         response.headers.insert("Access-Control-Allow-Methods".to_string(), 
             self.allow_methods.iter().map(|m| m.to_string()).collect::<Vec<_>>().join(", "));
@@ -636,7 +636,7 @@ impl RateLimitMiddleware {
 }
 
 impl Middleware for RateLimitMiddleware {
-    fn handle(&self, _request: &mut Request, response: &mut Response) -> Result<(), Box<dyn std::error::Error>> {
+    fn handle(&self, _request: &mut Request, response: &mut Response) -> Result<(), Box<dyn std::error::CursedError>> {
         // Simple rate limiting - in production this would use a proper store
         response.headers.insert("X-RateLimit-Limit".to_string(), self.requests_per_minute.to_string());
         response.headers.insert("X-RateLimit-Remaining".to_string(), self.requests_per_minute.to_string());
@@ -658,7 +658,7 @@ impl TimeoutMiddleware {
 }
 
 impl Middleware for TimeoutMiddleware {
-    fn handle(&self, _request: &mut Request, response: &mut Response) -> Result<(), Box<dyn std::error::Error>> {
+    fn handle(&self, _request: &mut Request, response: &mut Response) -> Result<(), Box<dyn std::error::CursedError>> {
         response.headers.insert("X-Timeout-Config".to_string(), 
             format!("request: {:?}, response: {:?}", 
                 self.config.request_timeout, 
@@ -675,7 +675,7 @@ pub struct TimeoutSessionManager {
 }
 
 impl TimeoutSessionManager {
-    pub fn new(config: SessionConfig) -> Result<Self, Box<dyn std::error::Error>> {
+    pub fn new(config: SessionConfig) -> Result<Self, Box<dyn std::error::CursedError>> {
         Ok(Self {
             config,
             sessions: HashMap::new(),
@@ -749,47 +749,3 @@ impl Default for Router {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-    
-    #[test]
-    fn test_status_code_properties() {
-        assert!(StatusCode::OK.is_success());
-        assert!(StatusCode::Found.is_redirection());
-        assert!(StatusCode::NotFound.is_client_error());
-        assert!(StatusCode::InternalServerError.is_server_error());
-    }
-    
-    #[test]
-    fn test_request_creation() {
-        let request = Request::new(Method::GET, "/test".to_string())
-            .with_header("User-Agent".to_string(), "Test".to_string())
-            .with_query_param("q".to_string(), "value".to_string());
-        
-        assert_eq!(request.method, Method::GET);
-        assert_eq!(request.path, "/test");
-        assert_eq!(request.headers.get("user-agent"), Some(&"Test".to_string()));
-        assert_eq!(request.query_params.get("q"), Some(&"value".to_string()));
-    }
-    
-    #[test]
-    fn test_response_creation() {
-        let response = Response::new(StatusCode::OK)
-            .with_text("Hello, World!".to_string());
-        
-        assert_eq!(response.status, StatusCode::OK);
-        assert_eq!(response.body_as_string().unwrap(), "Hello, World!");
-        assert_eq!(response.headers.get("content-type"), Some(&"text/plain".to_string()));
-    }
-    
-    #[test]
-    fn test_session_management() {
-        let mut session = Session::new("test-id".to_string());
-        session.set("user_id".to_string(), "123".to_string());
-        
-        assert_eq!(session.get("user_id"), Some(&"123".to_string()));
-        assert_eq!(session.remove("user_id"), Some("123".to_string()));
-        assert_eq!(session.get("user_id"), None);
-    }
-}

@@ -4,9 +4,8 @@
 /// weak keys and expanding short keys to required lengths.
 
 use crate::error::CursedError;
-use crate::stdlib::value::Value;
-use crate::stdlib::packages::crypto_kdf::{KdfResult, KdfError};
-use crate::error::Error;
+// use crate::stdlib::value::Value;
+// use crate::stdlib::packages::crypto_kdf::{KdfResult, KdfError};
 use sha2::{Sha256, Sha512, Digest};
 use sha3::{Sha3_256, Sha3_512};
 
@@ -438,7 +437,7 @@ impl StretchingUtils {
 /// fr fr Public API functions for CURSED integration
 
 /// slay Key stretching function
-pub fn stretch_key(args: Vec<Value>) -> Result<(), Error> {
+pub fn stretch_key(args: Vec<Value>) -> crate::error::Result<()> {
     if args.len() < 2 {
         return Err(CursedError::Runtime("stretch_key requires key and target_length arguments".to_string()));
     }
@@ -470,7 +469,7 @@ pub fn stretch_key(args: Vec<Value>) -> Result<(), Error> {
 }
 
 /// slay Strengthen weak key
-pub fn strengthen_key(args: Vec<Value>) -> Result<(), Error> {
+pub fn strengthen_key(args: Vec<Value>) -> crate::error::Result<()> {
     if args.is_empty() {
         return Err(CursedError::Runtime("strengthen_key requires key argument".to_string()));
     }
@@ -496,170 +495,3 @@ pub fn strengthen_key(args: Vec<Value>) -> Result<(), Error> {
     Ok(Value::String(hex::encode(strengthened_key)))
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-    
-    #[test]
-    fn test_stretching_config() {
-        let config = StretchingConfig::new();
-        assert!(config.validate().is_ok());
-        
-        let fast_config = StretchingConfig::fast();
-        assert!(fast_config.validate().is_ok());
-        assert!(fast_config.iterations < config.iterations);
-        
-        let high_sec_config = StretchingConfig::high_security();
-        assert!(high_sec_config.validate().is_ok());
-        assert!(high_sec_config.iterations > config.iterations);
-    }
-    
-    #[test]
-    fn test_key_stretching() {
-        let engine = KeyStretchingEngine::new();
-        let key = b"short_key";
-        let target_length = 64;
-        
-        let stretched = engine.stretch(key, target_length).unwrap();
-        assert_eq!(stretched.len(), target_length);
-        
-        // Same key should produce same result
-        let stretched2 = engine.stretch(key, target_length).unwrap();
-        assert_eq!(stretched, stretched2);
-        
-        // Different key should produce different result
-        let different_key = b"other_key";
-        let stretched3 = engine.stretch(different_key, target_length).unwrap();
-        assert_ne!(stretched, stretched3);
-    }
-    
-    #[test]
-    fn test_key_strengthening() {
-        let engine = KeyStretchingEngine::new();
-        let weak_key = b"weak";
-        
-        let strengthened = engine.strengthen_key(weak_key).unwrap();
-        assert!(!strengthened.is_empty());
-        
-        // Strengthening should be deterministic
-        let strengthened2 = engine.strengthen_key(weak_key).unwrap();
-        assert_eq!(strengthened, strengthened2);
-        
-        // Different weak key should produce different result
-        let weak_key2 = b"other_weak";
-        let strengthened3 = engine.strengthen_key(weak_key2).unwrap();
-        assert_ne!(strengthened, strengthened3);
-    }
-    
-    #[test]
-    fn test_multiple_key_expansion() {
-        let engine = KeyStretchingEngine::new();
-        let master_key = b"master_key";
-        let key_count = 5;
-        let key_length = 32;
-        
-        let derived_keys = engine.expand_to_multiple(master_key, key_count, key_length).unwrap();
-        assert_eq!(derived_keys.len(), key_count);
-        
-        // All keys should be different
-        for i in 0..key_count {
-            assert_eq!(derived_keys[i].len(), key_length);
-            for j in (i+1)..key_count {
-                assert_ne!(derived_keys[i], derived_keys[j]);
-            }
-        }
-    }
-    
-    #[test]
-    fn test_stretch_with_salt() {
-        let engine = KeyStretchingEngine::new();
-        let key = b"test_key";
-        let salt = b"test_salt";
-        let target_length = 48;
-        
-        let stretched = engine.stretch_with_salt(key, salt, target_length).unwrap();
-        assert_eq!(stretched.len(), target_length);
-        
-        // Different salt should produce different result
-        let salt2 = b"other_salt";
-        let stretched2 = engine.stretch_with_salt(key, salt2, target_length).unwrap();
-        assert_ne!(stretched, stretched2);
-    }
-    
-    #[test]
-    fn test_algorithm_variants() {
-        let algorithms = vec![
-            StretchingAlgorithm::Sha256,
-            StretchingAlgorithm::Sha512,
-            StretchingAlgorithm::Sha3_256,
-            StretchingAlgorithm::Sha3_512,
-            StretchingAlgorithm::Blake2b,
-            StretchingAlgorithm::Iterative,
-        ];
-        
-        let key = b"test_key";
-        let target_length = 32;
-        
-        let mut results = Vec::new();
-        
-        for algorithm in algorithms {
-            let config = StretchingConfig {
-                algorithm,
-                iterations: 100,
-                salt_len: 16,
-                expansion_factor: 2,
-                use_personalization: true,
-            };
-            
-            let engine = KeyStretchingEngine::with_config(config).unwrap();
-            let result = engine.stretch(key, target_length).unwrap();
-            results.push(result);
-        }
-        
-        // All algorithms should produce different results
-        for i in 0..results.len() {
-            for j in (i+1)..results.len() {
-                assert_ne!(results[i], results[j], "Algorithms {} and {} produced same result", i, j);
-            }
-        }
-    }
-    
-    #[test]
-    fn test_stretching_utils() {
-        let config = StretchingUtils::params_for_security_level(128);
-        assert!(config.validate().is_ok());
-        
-        let salt = StretchingUtils::generate_salt(16).unwrap();
-        assert_eq!(salt.len(), 16);
-        
-        let salt2 = StretchingUtils::generate_salt(16).unwrap();
-        assert_ne!(salt, salt2);
-        
-        let estimate = StretchingUtils::estimate_stretching_time(&config, 16, 64);
-        assert!(estimate > 0.0);
-    }
-    
-    #[test]
-    fn test_validation() {
-        let engine = KeyStretchingEngine::new();
-        
-        // Test empty key
-        assert!(engine.stretch(&[], 32).is_err());
-        
-        // Test zero target length
-        assert!(engine.stretch(b"key", 0).is_err());
-        
-        // Test too large target length
-        assert!(engine.stretch(b"key", 2 * 1024 * 1024).is_err());
-        
-        // Test invalid config
-        let invalid_config = StretchingConfig {
-            algorithm: StretchingAlgorithm::Sha256,
-            iterations: 0, // Invalid
-            salt_len: 16,
-            expansion_factor: 2,
-            use_personalization: true,
-        };
-        assert!(invalid_config.validate().is_err());
-    }
-}

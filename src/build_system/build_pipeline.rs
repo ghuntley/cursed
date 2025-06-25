@@ -16,6 +16,7 @@ use std::sync::{Arc, Mutex};
 use std::time::{Duration, Instant};
 use tokio::task::JoinHandle;
 use tracing::{debug, error, info, warn, instrument};
+use crate::error::CursedError;
 
 /// Build pipeline coordinator
 #[derive(Debug)]
@@ -97,7 +98,7 @@ pub struct ResourceUsage {
 
 impl BuildPipeline {
     /// Create new build pipeline
-    pub fn new(config: BuildConfig, work_dir: PathBuf) -> Result<(), Error> {
+    pub fn new(config: BuildConfig, work_dir: PathBuf) -> crate::error::Result<()> {
         let cache = Arc::new(Mutex::new(IncrementalCache::new(work_dir.join(".cursed-cache"))?));
         let parallel_limit = num_cpus::get();
         
@@ -111,7 +112,7 @@ impl BuildPipeline {
     
     /// Execute complete build pipeline
     #[instrument(skip(self))]
-    pub async fn execute(&mut self, context: PipelineContext) -> Result<(), Error> {
+    pub async fn execute(&mut self, context: PipelineContext) -> crate::error::Result<()> {
         let start_time = Instant::now();
         info!("Starting build pipeline with profile: {}", context.profile);
         
@@ -171,7 +172,7 @@ impl BuildPipeline {
     }
     
     /// Create pipeline stages based on configuration and context
-    fn create_pipeline_stages(&self, context: &PipelineContext) -> Result<(), Error> {
+    fn create_pipeline_stages(&self, context: &PipelineContext) -> crate::error::Result<()> {
         let mut stages = Vec::new();
         
         // 1. Dependency Resolution Stage
@@ -279,7 +280,7 @@ impl BuildPipeline {
     }
     
     /// Resolve stage dependencies into execution batches
-    fn resolve_stage_dependencies(&self, stages: &[PipelineStage]) -> Result<(), Error> {
+    fn resolve_stage_dependencies(&self, stages: &[PipelineStage]) -> crate::error::Result<()> {
         let mut batches = Vec::new();
         let mut completed = std::collections::HashSet::new();
         let stage_map: HashMap<String, &PipelineStage> = stages.iter()
@@ -324,8 +325,8 @@ impl BuildPipeline {
         &self,
         stages: &[PipelineStage],
         context: &PipelineContext,
-    ) -> Result<(), Error> {
-        let mut handles: Vec<JoinHandle<Result<(), Error>>> = Vec::new();
+    ) -> crate::error::Result<()> {
+        let mut handles: Vec<JoinHandle<crate::error::Result<()>>> = Vec::new();
         
         for stage in stages {
             let stage_clone = stage.clone();
@@ -357,7 +358,7 @@ impl BuildPipeline {
     
     /// Execute individual pipeline stage
     #[instrument(skip(self))]
-    pub async fn execute_stage(&self, stage: &PipelineStage, context: &PipelineContext) -> Result<(), Error> {
+    pub async fn execute_stage(&self, stage: &PipelineStage, context: &PipelineContext) -> crate::error::Result<()> {
         let start_time = Instant::now();
         info!("Executing stage: {}", stage.name);
         
@@ -416,7 +417,7 @@ impl BuildPipeline {
     }
     
     /// Execute dependency resolution stage
-    async fn execute_dependency_resolution(&self, context: &PipelineContext) -> Result<(), Error> {
+    async fn execute_dependency_resolution(&self, context: &PipelineContext) -> crate::error::Result<()> {
         let mut output = Vec::new();
         let mut warnings = Vec::new();
         let mut errors = Vec::new();
@@ -468,7 +469,7 @@ impl BuildPipeline {
     }
     
     /// Execute code formatting stage
-    async fn execute_formatting(&self, context: &PipelineContext) -> Result<(), Error> {
+    async fn execute_formatting(&self, context: &PipelineContext) -> crate::error::Result<()> {
         let mut output = Vec::new();
         let mut warnings = Vec::new();
         let mut errors = Vec::new();
@@ -514,7 +515,7 @@ impl BuildPipeline {
     }
     
     /// Execute code linting stage
-    async fn execute_linting(&self, context: &PipelineContext) -> Result<(), Error> {
+    async fn execute_linting(&self, context: &PipelineContext) -> crate::error::Result<()> {
         let mut output = Vec::new();
         let mut warnings = Vec::new();
         let mut errors = Vec::new();
@@ -564,7 +565,7 @@ impl BuildPipeline {
     }
     
     /// Execute compilation stage
-    async fn execute_compilation(&self, context: &PipelineContext) -> Result<(), Error> {
+    async fn execute_compilation(&self, context: &PipelineContext) -> crate::error::Result<()> {
         let mut output = Vec::new();
         let mut warnings = Vec::new();
         let mut errors = Vec::new();
@@ -645,7 +646,7 @@ impl BuildPipeline {
     }
     
     /// Execute testing stage
-    async fn execute_testing(&self, context: &PipelineContext) -> Result<(), Error> {
+    async fn execute_testing(&self, context: &PipelineContext) -> crate::error::Result<()> {
         let mut output = Vec::new();
         let mut warnings = Vec::new();
         let mut errors = Vec::new();
@@ -694,7 +695,7 @@ impl BuildPipeline {
     }
     
     /// Execute documentation generation stage
-    async fn execute_documentation(&self, context: &PipelineContext) -> Result<(), Error> {
+    async fn execute_documentation(&self, context: &PipelineContext) -> crate::error::Result<()> {
         let mut output = Vec::new();
         let mut warnings = Vec::new();
         let mut errors = Vec::new();
@@ -746,7 +747,7 @@ impl BuildPipeline {
     }
     
     /// Execute packaging stage
-    async fn execute_packaging(&self, context: &PipelineContext) -> Result<(), Error> {
+    async fn execute_packaging(&self, context: &PipelineContext) -> crate::error::Result<()> {
         let mut output = Vec::new();
         let mut warnings = Vec::new();
         let mut errors = Vec::new();

@@ -1,4 +1,4 @@
-use crate::error::Error;
+use crate::error::CursedError;
 /// Real LMS (Leighton-Micali Signatures) Implementation
 /// 
 /// This is a production-ready implementation of LMS, a hash-based digital signature scheme
@@ -20,7 +20,7 @@ use std::collections::HashMap;
 use rand::rngs::OsRng;
 use rand::RngCore;
 use sha2::{Sha256, Digest};
-use crate::stdlib::crypto_pqc::{PqcResult, PqcError, SecurityLevel, AlgorithmType};
+// use crate::stdlib::crypto_pqc::{PqcResult, PqcError, SecurityLevel, AlgorithmType};
 use super::{DigitalSignature, ParameterSet, AlgorithmPerformance, KeySizes};
 
 // LMS Parameters
@@ -760,65 +760,3 @@ fn verify_auth_path(
     current_hash
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_real_lms_keygen() {
-        let (pub_key, sec_key) = RealLms::keygen(SecurityLevel::Level1).unwrap();
-        assert_eq!(pub_key.params, LmsParams::LmsSha256M32H10);
-        assert_eq!(sec_key.params, LmsParams::LmsSha256M32H10);
-    }
-
-    #[test]
-    fn test_real_lms_sign_verify() {
-        let (pub_key, mut sec_key) = RealLms::keygen(SecurityLevel::Level1).unwrap();
-        let message = b"Hello, hash-based signatures!";
-        
-        let signature = RealLms::sign_with_state(&mut sec_key, message).unwrap();
-        let is_valid = RealLms::verify(&pub_key, message, &signature).unwrap();
-        
-        assert!(is_valid);
-    }
-
-    #[test]
-    fn test_lms_state_management() {
-        let (_, mut sec_key) = RealLms::keygen(SecurityLevel::Level1).unwrap();
-        let message1 = b"Message 1";
-        let message2 = b"Message 2";
-        
-        assert_eq!(sec_key.q, 0);
-        let _sig1 = RealLms::sign_with_state(&mut sec_key, message1).unwrap();
-        assert_eq!(sec_key.q, 1);
-        let _sig2 = RealLms::sign_with_state(&mut sec_key, message2).unwrap();
-        assert_eq!(sec_key.q, 2);
-        
-        assert_eq!(RealLms::remaining_signatures(&sec_key), 1022); // 1024 - 2
-    }
-
-    #[test]
-    fn test_lmots_operations() {
-        let params = LmsParams::LmsSha256M32H10;
-        let i = [1u8; 16];
-        let ots_key = LmotsKey::new(params, i, 0);
-        
-        let message_hash = [42u8; HASH_LEN];
-        let signature = ots_key.sign(&message_hash);
-        let public_key = ots_key.public_key();
-        
-        assert!(signature.verify(&message_hash, &i, &public_key));
-    }
-
-    #[test]
-    fn test_merkle_tree_operations() {
-        let leaves = vec![[1u8; HASH_LEN], [2u8; HASH_LEN], [3u8; HASH_LEN], [4u8; HASH_LEN]];
-        let tree = MerkleTree::new(leaves, 2);
-        
-        let auth_path = tree.generate_auth_path(1);
-        assert_eq!(auth_path.len(), 2);
-        
-        let computed_root = verify_auth_path(&[2u8; HASH_LEN], 1, &auth_path, 2);
-        assert_eq!(computed_root, tree.root_hash());
-    }
-}

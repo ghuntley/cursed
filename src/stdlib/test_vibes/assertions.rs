@@ -3,8 +3,8 @@
 /// Provides comprehensive assertion functionality with expressive error messages
 /// and support for various data types and conditions.
 
-use crate::stdlib::value::Value;
-use crate::error::Error;
+// use crate::stdlib::value::Value;
+use crate::error::CursedError;
 use super::{VibeTest, TestVibesResult, assertion_failed};
 use std::collections::HashMap;
 

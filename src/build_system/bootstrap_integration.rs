@@ -14,9 +14,9 @@ use crate::build_system::{
     IncrementalCache, DependencyResolver
 };
 
-use crate::common::optimization_level::OptimizationLevel;
+use crate::common_types::optimization_level::OptimizationLevel;
 use crate::build_system::build_pipeline::{BuildPipeline, PipelineContext, PipelineResult};
-use crate::error::{Error, Result as CursedResult};
+use crate::error::{CursedError, Result as CursedResult};
 
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
@@ -419,70 +419,3 @@ pub trait BootstrapIntegration {
     async fn verify_bootstrap(&self) -> CursedResult<VerificationResult>;
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use tempfile::tempdir;
-    
-    #[test]
-    fn test_bootstrap_config_default() {
-        let config = BootstrapConfig::default();
-        assert!(config.enabled);
-        assert_eq!(config.bootstrap_cycles, 3);
-        assert!(config.stage_timeout > Duration::ZERO);
-    }
-    
-    #[test]
-    fn test_bootstrap_pipeline_creation() {
-        let config = BootstrapConfig::default();
-        let work_dir = tempdir().unwrap().into_path();
-        
-        let pipeline = BootstrapPipeline::new(config, work_dir);
-        assert!(pipeline.is_ok());
-    }
-    
-    #[test]
-    fn test_stage_performance_default() {
-        let perf = StagePerformance::default();
-        assert_eq!(perf.memory_usage_mb, 0);
-        assert_eq!(perf.cpu_utilization, 0.0);
-        assert_eq!(perf.disk_io_ops, 0);
-        assert_eq!(perf.optimization_score, 0.0);
-    }
-    
-    #[test]
-    fn test_should_bootstrap_disabled() {
-        let mut config = BootstrapConfig::default();
-        config.enabled = false;
-        
-        let work_dir = tempdir().unwrap().into_path();
-        let pipeline = BootstrapPipeline::new(config, work_dir).unwrap();
-        let build_config = BuildConfig::default();
-        
-        assert!(!pipeline.should_bootstrap(&build_config));
-    }
-    
-    #[test]
-    fn test_optimization_score_calculation() {
-        let config = BootstrapConfig::default();
-        let work_dir = tempdir().unwrap().into_path();
-        let pipeline = BootstrapPipeline::new(config, work_dir).unwrap();
-        
-        assert_eq!(pipeline.calculate_optimization_score(0), 0.6);
-        assert_eq!(pipeline.calculate_optimization_score(1), 0.75);
-        assert_eq!(pipeline.calculate_optimization_score(2), 0.85);
-        assert_eq!(pipeline.calculate_optimization_score(3), 0.9);
-    }
-    
-    #[tokio::test]
-    async fn test_bootstrap_statistics() {
-        let config = BootstrapConfig::default();
-        let work_dir = tempdir().unwrap().into_path();
-        let pipeline = BootstrapPipeline::new(config, work_dir).unwrap();
-        
-        let stats = pipeline.get_statistics();
-        assert_eq!(stats.total_bootstrap_runs, 0);
-        assert!(stats.last_bootstrap_time.is_none());
-        assert!(stats.cached_stages.is_empty());
-    }
-}

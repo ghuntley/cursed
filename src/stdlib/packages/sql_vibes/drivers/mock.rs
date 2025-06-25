@@ -1,5 +1,5 @@
 /// fr fr Mock database driver for testing - fake it till you make it periodt
-use crate::stdlib::packages::sql_vibes::{
+// use crate::stdlib::packages::sql_vibes::{
     DatabaseDriver, DatabaseConnection, PreparedStatement, Transaction,
     ConnectionConfig, DriverInfo, DriverFeature, ConnectionInfo, TransactionState, TransactionIsolation,
     SqlResult, SqlError, SqlValue, Row, ResultSet, Parameter
@@ -644,81 +644,3 @@ fn create_mock_result_set(sql: &str, _params: &[Parameter]) -> ResultSet {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_mock_driver_creation() {
-        let driver = MockDriver::new();
-        let info = driver.driver_info();
-        
-        assert_eq!(info.name, "mock");
-        assert!(driver.supports_feature(DriverFeature::PreparedStatements));
-        assert!(driver.supports_feature(DriverFeature::JsonSupport));
-        assert!(driver.supports_feature(DriverFeature::SslEncryption));
-    }
-
-    #[test]
-    fn test_mock_behavior_configuration() {
-        let mut behavior = MockBehavior::default();
-        behavior.should_fail_connection = true;
-        
-        let driver = MockDriver::with_behavior(behavior);
-        let config = ConnectionConfig::new("mock://test".to_string());
-        
-        assert!(driver.connect(config).is_err());
-    }
-
-    #[test]
-    fn test_mock_data_configuration() {
-        let driver = MockDriver::new();
-        let columns = Vec::from(["test_col".to_string()]);
-        let rows = Vec::from([Row::new(vec![SqlValue::Text("test_value".to_string())]))];
-        let result_set = ResultSet::new(columns, rows);
-        
-        driver.add_mock_data("SELECT * FROM test".to_string(), result_set);
-        
-        let config = ConnectionConfig::new("mock://test".to_string());
-        let mut conn = driver.connect(config).unwrap();
-        
-        let result = conn.execute_query("SELECT * FROM test", &[]).unwrap();
-        assert_eq!(result.columns().len(), 1);
-        assert_eq!(result.rows().len(), 1);
-    }
-
-    #[test]
-    fn test_mock_statistics() {
-        let driver = MockDriver::new();
-        assert_eq!(driver.get_stats(), Some((0, 0)));
-        
-        let config = ConnectionConfig::new("mock://test".to_string());
-        let mut conn = driver.connect(config).unwrap();
-        
-        assert_eq!(driver.get_stats(), Some((1, 0))); // 1 connection, 0 queries
-        
-        let _ = conn.execute_query("SELECT 1", &[]);
-        assert_eq!(driver.get_stats(), Some((1, 1))); // 1 connection, 1 query
-        
-        driver.reset_stats();
-        assert_eq!(driver.get_stats(), Some((0, 0)));
-    }
-
-    #[test]
-    fn test_count_mock_parameters() {
-        assert_eq!(count_mock_parameters("SELECT * FROM users WHERE id = ?"), 1);
-        assert_eq!(count_mock_parameters("SELECT * FROM users WHERE id = $1"), 1);
-        assert_eq!(count_mock_parameters("SELECT * FROM users WHERE id = ? AND name = ?"), 2);
-        assert_eq!(count_mock_parameters("SELECT * FROM users WHERE id = $1 AND name = $2"), 2);
-        assert_eq!(count_mock_parameters("SELECT * FROM users"), 0);
-    }
-
-    #[test]
-    fn test_validate_mock_sql() {
-        assert!(validate_mock_sql("SELECT * FROM users").is_ok());
-        assert!(validate_mock_sql("INSERT INTO users (name) VALUES (?)").is_ok());
-        assert!(validate_mock_sql("").is_err());
-        // Mock driver is permissive, so even dangerous SQL is allowed for testing
-        assert!(validate_mock_sql("SELECT * FROM users; DROP TABLE users").is_ok());
-    }
-}

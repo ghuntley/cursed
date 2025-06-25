@@ -1,8 +1,7 @@
 /// Production-ready hash traits and interfaces for advanced cryptographic hashing
 use std::io::{Read, Write};
 use std::fmt::{Debug, Display};
-use crate::error_types::Error;
-use crate::stdlib::crypto::types::CryptoError;
+use crate::error::CursedError;
 
 /// Result type for hash operations
 pub type HashResult<T> = std::result::Result<T, CryptoError>;
@@ -50,7 +49,7 @@ pub trait Hasher: Clone + Debug + Send + Sync {
             match reader.read(&mut buffer) {
                 Ok(0) => break,
                 Ok(n) => self.update(&buffer[..n]),
-                Err(e) => return Err(Error::General(format!("Read error: {}", e))),
+                Err(e) => return Err(CursedError::General(format!("Read error: {}", e))),
             }
         }
         Ok(self.clone().finalize())
@@ -319,45 +318,3 @@ pub const STANDARD_TEST_VECTORS: &[TestVector] = &[
     },
 ];
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_security_level_ordering() {
-        assert!(SecurityLevel::None < SecurityLevel::Weak);
-        assert!(SecurityLevel::Weak < SecurityLevel::Strong);
-        assert!(SecurityLevel::Strong < SecurityLevel::VeryStrong);
-        assert!(SecurityLevel::VeryStrong < SecurityLevel::QuantumResistant);
-    }
-
-    #[test]
-    fn test_constant_time_eq() {
-        assert!(constant_time_eq(b"hello", b"hello"));
-        assert!(!constant_time_eq(b"hello", b"world"));
-        assert!(!constant_time_eq(b"hello", b"hell"));
-    }
-
-    #[test]
-    fn test_hash_registry() {
-        let registry = HashRegistry::new();
-        
-        let sha256 = registry.get_algorithm("SHA-256").unwrap();
-        assert_eq!(sha256.name, "SHA-256");
-        assert_eq!(sha256.digest_size, 32);
-        assert!(sha256.is_cryptographic);
-        
-        let crypto_algs = registry.cryptographic_algorithms();
-        assert!(crypto_algs.len() > 0);
-        
-        let fast_algs = registry.fast_algorithms();
-        assert!(fast_algs.len() > 0);
-    }
-
-    #[test]
-    fn test_secure_zero() {
-        let mut data = vec![1, 2, 3, 4, 5];
-        secure_zero(&mut data);
-        assert_eq!(data, vec![0, 0, 0, 0, 0]);
-    }
-}

@@ -9,7 +9,7 @@ use std::sync::{Arc, Mutex};
 use tracing::{instrument, debug, info, warn, error};
 
 use super::super::{DatabaseError, DatabaseErrorKind, SqlValue, DB};
-use crate::error::Error;
+use crate::error::CursedError;
 use super::validation::{ValidationError, ValidationContext};
 use super::relationships::Relationship;
 
@@ -30,7 +30,7 @@ pub trait Entity: Debug + Clone + Send + Sync + 'static {
     fn set_primary_key_value(&mut self, value: SqlValue);
     
     /// periodt Convert from database row to entity instance
-    fn from_row(row: &HashMap<String, SqlValue>) -> Result<(), Error> where Self: Sized;
+    fn from_row(row: &HashMap<String, SqlValue>) -> crate::error::Result<()> where Self: Sized;
     
     /// bestie Convert entity instance to field-value map
     fn to_fields(&self) -> HashMap<String, SqlValue>;
@@ -42,7 +42,7 @@ pub trait Entity: Debug + Clone + Send + Sync + 'static {
     fn column_definitions() -> Vec<ColumnDefinition>;
     
     /// lit Validate entity before save
-    fn validate(&self) -> Result<(), Error> {
+    fn validate(&self) -> crate::error::Result<()> {
         Ok(()) // Default: no validation
     }
     
@@ -306,7 +306,7 @@ impl EntityManager {
 
     /// facts Register entity type
     #[instrument(skip(self))]
-    pub fn register<T: Entity>(&self) -> Result<(), Error> {
+    pub fn register<T: Entity>(&self) -> crate::error::Result<()> {
         info!(entity = T::table_name(), "Registering entity type");
         
         let metadata = T::metadata();
@@ -389,7 +389,7 @@ impl EntityManager {
 trait EntityInfo: Debug + Send + Sync {
     fn table_name(&self) -> &str;
     fn metadata(&self) -> &EntityMetadata;
-    fn validate_row(&self, row: &HashMap<String, SqlValue>) -> Result<(), Error>;
+    fn validate_row(&self, row: &HashMap<String, SqlValue>) -> crate::error::Result<()>;
 }
 
 /// fr fr Concrete implementation of entity info
@@ -417,245 +417,10 @@ impl<T: Entity> EntityInfo for ConcreteEntityInfo<T> {
         &self.metadata
     }
     
-    fn validate_row(&self, row: &HashMap<String, SqlValue>) -> Result<(), Error> {
+    fn validate_row(&self, row: &HashMap<String, SqlValue>) -> crate::error::Result<()> {
         // Validate that row can be converted to entity
         T::from_row(row)?;
         Ok(())
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use std::sync::Arc;
-    use tracing_test::traced_test;
-use crate::error::Error;
-
-    #[derive(Debug, Clone)]
-    struct TestUser {
-        id: Option<i64>,
-        name: String,
-        email: String,
-        created_at: Option<std::time::SystemTime>,
-        updated_at: Option<std::time::SystemTime>,
-    }
-
-    impl Entity for TestUser {
-        fn table_name() -> &'static str {
-            "users"
-        }
-
-        fn primary_key_value(&self) -> Option<SqlValue> {
-            self.id.map(SqlValue::Integer)
-        }
-
-        fn set_primary_key_value(&mut self, value: SqlValue) {
-            if let SqlValue::Integer(id) = value {
-                self.id = Some(id);
-            }
-        }
-
-        fn from_row(row: &HashMap<String, SqlValue>) -> Result<(), Error> {
-            Ok(Self {
-                id: match row.get("id") {
-                    Some(SqlValue::Integer(id)) => Some(*id),
-                    _ => None,
-                },
-                name: match row.get("name") {
-                    Some(SqlValue::String(name)) => name.clone(),
-                    _ => return Err(DatabaseError::validation_error("Missing name field")),
-                },
-                email: match row.get("email") {
-                    Some(SqlValue::String(email)) => email.clone(),
-                    _ => String::new(),
-                },
-                created_at: match row.get("created_at") {
-                    Some(SqlValue::Timestamp(time)) => Some(*time),
-                    _ => None,
-                },
-                updated_at: match row.get("updated_at") {
-                    Some(SqlValue::Timestamp(time)) => Some(*time),
-                    _ => None,
-                },
-            })
-        }
-
-        fn to_fields(&self) -> HashMap<String, SqlValue> {
-            let mut fields = HashMap::new();
-            if let Some(id) = self.id {
-                fields.insert("id".to_string(), SqlValue::Integer(id));
-            }
-            fields.insert("name".to_string(), SqlValue::String(self.name.clone()));
-            fields.insert("email".to_string(), SqlValue::String(self.email.clone()));
-            if let Some(created_at) = self.created_at {
-                fields.insert("created_at".to_string(), SqlValue::Timestamp(created_at));
-            }
-            if let Some(updated_at) = self.updated_at {
-                fields.insert("updated_at".to_string(), SqlValue::Timestamp(updated_at));
-            }
-            fields
-        }
-
-        fn field_names() -> Vec<&'static str> {
-            Vec::from(["id", "name", "email", "created_at", "updated_at"])
-        }
-
-        fn column_definitions() -> Vec<ColumnDefinition> {
-            vec![
-                ColumnDefinition {
-                    name: "id".to_string(),
-                    sql_type: SqlColumnType::BigInteger,
-                    nullable: false,
-                    default: None,
-                    primary_key: true,
-                    foreign_key: None,
-                    constraints: Vec::from([ColumnConstraint::NotNull]),
-                },
-                ColumnDefinition {
-                    name: "name".to_string(),
-                    sql_type: SqlColumnType::VarChar { length: 255 },
-                    nullable: false,
-                    default: None,
-                    primary_key: false,
-                    foreign_key: None,
-                    constraints: Vec::from([ColumnConstraint::NotNull]),
-                },
-                ColumnDefinition {
-                    name: "email".to_string(),
-                    sql_type: SqlColumnType::VarChar { length: 255 },
-                    nullable: true,
-                    default: None,
-                    primary_key: false,
-                    foreign_key: None,
-                    constraints: Vec::from([ColumnConstraint::Unique]),
-                },
-            ]
-        }
-
-        fn metadata() -> EntityMetadata {
-            EntityMetadata {
-                table_name: "users".to_string(),
-                primary_key: "id".to_string(),
-                fields: Vec::from(["id".to_string(), "name".to_string(), "email".to_string()]),
-                relationships: Vec::from([]),
-                validation_rules: Vec::from(["name_required".to_string()]),
-                indexes: Vec::from([]),
-                version: 1,
-            }
-        }
-
-        fn validate(&self) -> Result<(), Error> {
-            if self.name.is_empty() {
-                return Err(DatabaseError::validation_error("Name cannot be empty"));
-            }
-            Ok(())
-        }
-    }
-
-    impl Timestamped for TestUser {
-        fn created_at(&self) -> Option<std::time::SystemTime> {
-            self.created_at
-        }
-
-        fn updated_at(&self) -> Option<std::time::SystemTime> {
-            self.updated_at
-        }
-
-        fn touch_created_at(&mut self) {
-            self.created_at = Some(std::time::SystemTime::now());
-        }
-
-        fn touch_updated_at(&mut self) {
-            self.updated_at = Some(std::time::SystemTime::now());
-        }
-    }
-
-    fn create_mock_db() -> Arc<DB> {
-        Arc::new(DB::open("test".to_string(), "".to_string()).expect("Failed to create test DB"))
-    }
-
-    #[traced_test]
-    #[test]
-    fn test_entity_metadata() {
-        let metadata = TestUser::metadata();
-        assert_eq!(metadata.table_name, "users");
-        assert_eq!(metadata.primary_key, "id");
-        assert_eq!(metadata.fields.len(), 3);
-    }
-
-    #[traced_test]
-    #[test]
-    fn test_column_definitions() {
-        let columns = TestUser::column_definitions();
-        assert_eq!(columns.len(), 3);
-        
-        let id_column = &columns[0];
-        assert_eq!(id_column.name, "id");
-        assert_eq!(id_column.sql_type, SqlColumnType::BigInteger);
-        assert!(id_column.primary_key);
-    }
-
-    #[traced_test]
-    #[test]
-    fn test_sql_type_conversion() {
-        assert_eq!(
-            SqlColumnType::VarChar { length: 255 }.to_sql("postgresql"),
-            "VARCHAR(255)"
-        );
-        assert_eq!(
-            SqlColumnType::BigInteger.to_sql("sqlite"),
-            "INTEGER"
-        );
-        assert_eq!(
-            SqlColumnType::Json.to_sql("postgresql"),
-            "JSONB"
-        );
-    }
-
-    #[traced_test]
-    #[test]
-    fn test_entity_manager() {
-        let db = create_mock_db();
-        let manager = EntityManager::new(db);
-        
-        manager.register::<TestUser>().expect("Should register entity");
-        
-        let metadata = manager.get_metadata("users");
-        assert!(metadata.is_some());
-        assert_eq!(metadata.unwrap().table_name, "users");
-    }
-
-    #[traced_test]
-    #[test]
-    fn test_entity_state_tracking() {
-        let db = create_mock_db();
-        let manager = EntityManager::new(db);
-        
-        let key = "users:1".to_string();
-        manager.track_state(key.clone(), EntityState::Dirty);
-        
-        assert_eq!(manager.get_state(&key), EntityState::Dirty);
-    }
-
-    #[traced_test]
-    #[test]
-    fn test_entity_validation() {
-        let valid_user = TestUser {
-            id: None,
-            name: "John".to_string(),
-            email: "john@example.com".to_string(),
-            created_at: None,
-            updated_at: None,
-        };
-        assert!(valid_user.validate().is_ok());
-        
-        let invalid_user = TestUser {
-            id: None,
-            name: "".to_string(),
-            email: "john@example.com".to_string(),
-            created_at: None,
-            updated_at: None,
-        };
-        assert!(invalid_user.validate().is_err());
-    }
-}

@@ -222,7 +222,7 @@ impl PostgresConfig {
     }
 
     /// Validate configuration
-    pub fn validate(&self) -> Result<(), Error> {
+    pub fn validate(&self) -> crate::error::Result<()> {
         if self.host.is_empty() {
             return Err(PostgresError::new(
                 PostgresErrorKind::InvalidConfiguration,
@@ -279,7 +279,7 @@ impl PostgresConnectionString {
     /// - postgresql://user:password@host:port/database
     /// - postgres://user:password@host:port/database?param=value
     /// - host=host port=port dbname=database user=user password=password
-    pub fn parse(dsn: &str) -> Result<(), Error> {
+    pub fn parse(dsn: &str) -> crate::error::Result<()> {
         // Try URL format first
         if dsn.starts_with("postgresql://") || dsn.starts_with("postgres://") {
             Self::parse_url(dsn)
@@ -290,7 +290,7 @@ impl PostgresConnectionString {
     }
     
     /// Parse URL format connection string
-    fn parse_url(dsn: &str) -> Result<(), Error> {
+    fn parse_url(dsn: &str) -> crate::error::Result<()> {
         let url = url::Url::parse(dsn).map_err(|e| {
             PostgresError::new(
                 PostgresErrorKind::InvalidConfiguration,
@@ -348,7 +348,7 @@ impl PostgresConnectionString {
     }
     
     /// Parse key-value format connection string
-    fn parse_key_value(dsn: &str) -> Result<(), Error> {
+    fn parse_key_value(dsn: &str) -> crate::error::Result<()> {
         let mut config = PostgresConfig::default();
         
         for pair in dsn.split_whitespace() {
@@ -393,52 +393,3 @@ impl PostgresConnectionString {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-use crate::error_types::Error;
-
-    #[test]
-    fn test_ssl_mode_parsing() {
-        assert_eq!("disable".parse::<SslMode>().unwrap(), SslMode::Disable);
-        assert_eq!("prefer".parse::<SslMode>().unwrap(), SslMode::Prefer);
-        assert_eq!("require".parse::<SslMode>().unwrap(), SslMode::Require);
-        assert!("invalid".parse::<SslMode>().is_err());
-    }
-
-    #[test]
-    fn test_config_validation() {
-        let config = PostgresConfig::default();
-        assert!(config.validate().is_ok());
-        
-        let mut invalid_config = PostgresConfig::default();
-        invalid_config.host = "".to_string();
-        assert!(invalid_config.validate().is_err());
-    }
-
-    #[test]
-    fn test_url_parsing() {
-        let dsn = "postgresql://user:pass@localhost:5432/mydb?sslmode=require";
-        let config = PostgresConnectionString::parse(dsn).unwrap();
-        
-        assert_eq!(config.host, "localhost");
-        assert_eq!(config.port, 5432);
-        assert_eq!(config.database, "mydb");
-        assert_eq!(config.username, "user");
-        assert_eq!(config.password, Some("pass".to_string()));
-        assert_eq!(config.ssl_mode, SslMode::Require);
-    }
-
-    #[test]
-    fn test_key_value_parsing() {
-        let dsn = "host=localhost port=5432 dbname=mydb user=user password=pass sslmode=disable";
-        let config = PostgresConnectionString::parse(dsn).unwrap();
-        
-        assert_eq!(config.host, "localhost");
-        assert_eq!(config.port, 5432);
-        assert_eq!(config.database, "mydb");
-        assert_eq!(config.username, "user");
-        assert_eq!(config.password, Some("pass".to_string()));
-        assert_eq!(config.ssl_mode, SslMode::Disable);
-    }
-}

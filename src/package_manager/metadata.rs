@@ -1,7 +1,38 @@
-use crate::error::Error;
+use crate::error::CursedError;
 use std::collections::HashMap;
 use serde::{Deserialize, Serialize};
 use sha2::{Sha256, Digest};
+
+/// Dependency information for a package
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct DependencyInfo {
+    pub name: String,
+    pub version_spec: VersionSpec,
+    pub optional: bool,
+    pub features: Vec<String>,
+    pub source: DependencySource,
+}
+
+/// Source of a dependency
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub enum DependencySource {
+    Registry,
+    Git { url: String, branch: Option<String>, tag: Option<String> },
+    Path(std::path::PathBuf),
+    Local,
+}
+
+impl Default for DependencyInfo {
+    fn default() -> Self {
+        Self {
+            name: String::new(),
+            version_spec: VersionSpec::Simple("*".to_string()),
+            optional: false,
+            features: Vec::new(),
+            source: DependencySource::Registry,
+        }
+    }
+}
 
 /// Package metadata from CursedPackage.toml
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -92,7 +123,7 @@ impl PackageMetadata {
     }
     
     /// Save metadata to file
-    pub fn save_to_file(&self, path: &std::path::Path) -> Result<(), Error> {
+    pub fn save_to_file(&self, path: &std::path::Path) -> crate::error::Result<()> {
         let toml_string = toml::to_string(self)
             .map_err(|e| std::io::Error::new(std::io::ErrorKind::InvalidData, e))?;
         std::fs::write(path, toml_string)?;
@@ -100,7 +131,7 @@ impl PackageMetadata {
     }
     
     /// Load metadata from file
-    pub fn from_file(path: &std::path::Path) -> Result<(), Error> {
+    pub fn from_file(path: &std::path::Path) -> crate::error::Result<PackageMetadata> {
         let content = std::fs::read_to_string(path)?;
         let metadata: PackageMetadata = toml::from_str(&content)
             .map_err(|e| std::io::Error::new(std::io::ErrorKind::InvalidData, e))?;

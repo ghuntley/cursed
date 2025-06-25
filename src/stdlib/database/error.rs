@@ -8,12 +8,11 @@
 /// - Database operations involve external systems that can fail in many ways
 /// - Network failures, constraint violations, and resource exhaustion must be handled
 /// - SQL errors need to be mapped to meaningful application errors
-/// - Error context helps developers debug database issues quickly
+/// - CursedError context helps developers debug database issues quickly
 /// - Proper error categorization enables appropriate retry and recovery strategies
 
 use std::fmt::{self, Display};
 use crate::error::CursedError;
-use crate::error::Error;
 
 /// fr fr Categories of database errors for proper handling
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -76,40 +75,40 @@ pub enum DatabaseErrorKind {
     SqlError,
 }
 
-impl Display for DatabaseErrorKind {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
-            DatabaseErrorKind::ConnectionError => write!(f, "ConnectionError"),
-            DatabaseErrorKind::QueryError => write!(f, "QueryError"),
-            DatabaseErrorKind::TransactionError => write!(f, "TransactionError"),
-            DatabaseErrorKind::ConstraintError => write!(f, "ConstraintError"),
-            DatabaseErrorKind::ScanError => write!(f, "ScanError"),
-            DatabaseErrorKind::SerializationError => write!(f, "SerializationError"),
-            DatabaseErrorKind::PoolError => write!(f, "PoolError"),
-            DatabaseErrorKind::DriverError => write!(f, "DriverError"),
-            DatabaseErrorKind::TimeoutError => write!(f, "TimeoutError"),
-            DatabaseErrorKind::NoRows => write!(f, "NoRows"),
-            DatabaseErrorKind::NoLastInsertId => write!(f, "NoLastInsertId"),
-            DatabaseErrorKind::ResourceExhaustion => write!(f, "ResourceExhaustion"),
-            DatabaseErrorKind::ConfigurationError => write!(f, "ConfigurationError"),
-            DatabaseErrorKind::MigrationError => write!(f, "MigrationError"),
-            DatabaseErrorKind::Unknown => write!(f, "Unknown"),
-            DatabaseErrorKind::NotImplemented => write!(f, "NotImplemented"),
-            DatabaseErrorKind::Timeout => write!(f, "Timeout"),
-            DatabaseErrorKind::ConstraintViolation => write!(f, "ConstraintViolation"),
-            DatabaseErrorKind::AuthenticationError => write!(f, "AuthenticationError"),
-            DatabaseErrorKind::ResourceError => write!(f, "ResourceError"),
-            DatabaseErrorKind::InternalError => write!(f, "InternalError"),
-            DatabaseErrorKind::SyntaxError => write!(f, "SyntaxError"),
-            DatabaseErrorKind::DataIntegrityError => write!(f, "DataIntegrityError"),
-            DatabaseErrorKind::ResourceExhausted => write!(f, "ResourceExhausted"),
-            DatabaseErrorKind::TypeMismatch => write!(f, "TypeMismatch"),
-            DatabaseErrorKind::SchemaError => write!(f, "SchemaError"),
-            DatabaseErrorKind::SqlError => write!(f, "SqlError"),
-            DatabaseErrorKind::ConversionError => write!(f, "ConversionError"),
-        }
-    }
-}
+// impl Display for DatabaseErrorKind {
+//     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+//         match self {
+//             DatabaseErrorKind::ConnectionError => write!(f, "ConnectionError"),
+//             DatabaseErrorKind::QueryError => write!(f, "QueryError"),
+//             DatabaseErrorKind::TransactionError => write!(f, "TransactionError"),
+//             DatabaseErrorKind::ConstraintError => write!(f, "ConstraintError"),
+//             DatabaseErrorKind::ScanError => write!(f, "ScanError"),
+//             DatabaseErrorKind::SerializationError => write!(f, "SerializationError"),
+//             DatabaseErrorKind::PoolError => write!(f, "PoolError"),
+//             DatabaseErrorKind::DriverError => write!(f, "DriverError"),
+//             DatabaseErrorKind::TimeoutError => write!(f, "TimeoutError"),
+//             DatabaseErrorKind::NoRows => write!(f, "NoRows"),
+//             DatabaseErrorKind::NoLastInsertId => write!(f, "NoLastInsertId"),
+//             DatabaseErrorKind::ResourceExhaustion => write!(f, "ResourceExhaustion"),
+//             DatabaseErrorKind::ConfigurationError => write!(f, "ConfigurationError"),
+//             DatabaseErrorKind::MigrationError => write!(f, "MigrationError"),
+//             DatabaseErrorKind::Unknown => write!(f, "Unknown"),
+//             DatabaseErrorKind::NotImplemented => write!(f, "NotImplemented"),
+//             DatabaseErrorKind::Timeout => write!(f, "Timeout"),
+//             DatabaseErrorKind::ConstraintViolation => write!(f, "ConstraintViolation"),
+//             DatabaseErrorKind::AuthenticationError => write!(f, "AuthenticationError"),
+//             DatabaseErrorKind::ResourceError => write!(f, "ResourceError"),
+//             DatabaseErrorKind::InternalError => write!(f, "InternalError"),
+//             DatabaseErrorKind::SyntaxError => write!(f, "SyntaxError"),
+//             DatabaseErrorKind::DataIntegrityError => write!(f, "DataIntegrityError"),
+//             DatabaseErrorKind::ResourceExhausted => write!(f, "ResourceExhausted"),
+//             DatabaseErrorKind::TypeMismatch => write!(f, "TypeMismatch"),
+//             DatabaseErrorKind::SchemaError => write!(f, "SchemaError"),
+//             DatabaseErrorKind::SqlError => write!(f, "SqlError"),
+//             DatabaseErrorKind::ConversionError => write!(f, "ConversionError"),
+//         }
+//     }
+// }
 
 /// fr fr SQL state codes for standard error classification
 /// These follow the SQL standard SQLSTATE codes for interoperability
@@ -226,7 +225,6 @@ pub struct DatabaseError {
     /// fr fr Additional context information
     pub context: std::collections::HashMap<String, String>,
     /// fr fr Underlying cause error
-    pub cause: Option<Box<dyn std::error::Error + Send + Sync>>,
 }
 
 impl Clone for DatabaseError {
@@ -326,7 +324,6 @@ impl DatabaseError {
     }
 
     /// slay Add underlying cause
-    pub fn with_cause(mut self, cause: Box<dyn std::error::Error + Send + Sync>) -> Self {
         self.cause = Some(cause);
         self
     }
@@ -373,9 +370,9 @@ impl DatabaseError {
         match self.kind {
             DatabaseErrorKind::NoRows | DatabaseErrorKind::NoLastInsertId => ErrorSeverity::Info,
             DatabaseErrorKind::TimeoutError | DatabaseErrorKind::ConnectionError => ErrorSeverity::Warning,
-            DatabaseErrorKind::ConstraintError | DatabaseErrorKind::QueryError => ErrorSeverity::Error,
+            DatabaseErrorKind::ConstraintError | DatabaseErrorKind::QueryError => ErrorSeverity::CursedError,
             DatabaseErrorKind::ResourceExhaustion | DatabaseErrorKind::DriverError => ErrorSeverity::Critical,
-            _ => ErrorSeverity::Error,
+            _ => ErrorSeverity::CursedError,
         }
     }
 
@@ -405,39 +402,38 @@ impl DatabaseError {
     }
 }
 
-impl Display for DatabaseError {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "DatabaseError({}): {}", self.kind, self.message)?;
-        
-        if let Some(ref sql_state) = self.sql_state {
-            write!(f, " [SQL State: {}]", sql_state)?;
-        }
-        
-        if let Some(vendor_code) = self.vendor_code {
-            write!(f, " [Vendor Code: {}]", vendor_code)?;
-        }
-        
-        if let Some(ref location) = self.source_location {
-            write!(f, " [Location: {}]", location)?;
-        }
-        
-        if let Some(ref query) = self.query {
-            write!(f, " [Query: {}]", query)?;
-        }
-        
-        if !self.context.is_empty() {
-            write!(f, " [Context: {:?}]", self.context)?;
-        }
-        
-        Ok(())
-    }
-}
+// impl Display for DatabaseError {
+//     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+//         write!(f, "DatabaseError({}): {}", self.kind, self.message)?;
+//         
+//         if let Some(ref sql_state) = self.sql_state {
+//             write!(f, " [SQL State: {}]", sql_state)?;
+//         }
+//         
+//         if let Some(vendor_code) = self.vendor_code {
+//             write!(f, " [Vendor Code: {}]", vendor_code)?;
+//         }
+//         
+//         if let Some(ref location) = self.source_location {
+//             write!(f, " [Location: {}]", location)?;
+//         }
+//         
+//         if let Some(ref query) = self.query {
+//             write!(f, " [Query: {}]", query)?;
+//         }
+//         
+//         if !self.context.is_empty() {
+//             write!(f, " [Context: {:?}]", self.context)?;
+//         }
+//         
+//         Ok(())
+//     }
+// }
 
-impl std::error::Error for DatabaseError {
-    fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
-        self.cause.as_ref().map(|e| e.as_ref() as &(dyn std::error::Error + 'static))
-    }
-}
+// impl std::error::CursedError for DatabaseError {
+//     fn source(&self) -> Option<&(dyn std::error::CursedError + 'static)> {
+//     }
+// }
 
 /// fr fr Convert DatabaseError to CursedError for integration with the language error system
 // COMMENTED OUT: Conflicts with implementation in error/mod.rs
@@ -478,29 +474,29 @@ impl std::error::Error for DatabaseError {
 //     }
 // }
 
-/// fr fr Error severity levels for proper logging and handling
+/// fr fr CursedError severity levels for proper logging and handling
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 pub enum ErrorSeverity {
     /// Informational - operation completed but with notable result
     Info,
     /// Warning - operation completed but with issues
     Warning,
-    /// Error - operation failed but system can continue
-    Error,
+    /// CursedError - operation failed but system can continue
+    CursedError,
     /// Critical - operation failed and system integrity may be compromised
     Critical,
 }
 
-impl Display for ErrorSeverity {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
-            ErrorSeverity::Info => write!(f, "INFO"),
-            ErrorSeverity::Warning => write!(f, "WARNING"),
-            ErrorSeverity::Error => write!(f, "ERROR"),
-            ErrorSeverity::Critical => write!(f, "CRITICAL"),
-        }
-    }
-}
+// impl Display for ErrorSeverity {
+//     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+//         match self {
+//             ErrorSeverity::Info => write!(f, "INFO"),
+//             ErrorSeverity::Warning => write!(f, "WARNING"),
+//             ErrorSeverity::CursedError => write!(f, "ERROR"),
+//             ErrorSeverity::Critical => write!(f, "CRITICAL"),
+//         }
+//     }
+// }
 
 /// fr fr Helper functions for creating common database errors
 impl DatabaseError {

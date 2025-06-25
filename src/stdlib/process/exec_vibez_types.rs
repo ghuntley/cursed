@@ -1,4 +1,4 @@
-use crate::error::Error;
+use crate::error::CursedError;
 /// Enhanced exec_vibez types that are missing from the main module
 /// 
 /// This module provides the missing types that are being imported but not defined.
@@ -8,7 +8,6 @@ use std::sync::{Arc, Mutex};
 use std::time::Duration;
 use std::path::PathBuf;
 
-use crate::error::CursedError;
 
 /// Result type for exec_vibez operations
 pub type VibezResult<T> = std::result::Result<T, ProcessError>;

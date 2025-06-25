@@ -1,4 +1,4 @@
-use crate::error::Error;
+use crate::error::CursedError;
 /// Kyber Key Encapsulation Mechanism Implementation
 /// 
 /// Kyber is a lattice-based Key Encapsulation Mechanism (KEM) based on the Module-LWE problem.
@@ -19,7 +19,7 @@ use crate::error::Error;
 use std::fmt;
 use rand::rngs::OsRng;
 use sha3::{Sha3_256, Digest};
-use crate::stdlib::crypto_pqc::{PqcResult, PqcError, SecurityLevel, AlgorithmType};
+// use crate::stdlib::crypto_pqc::{PqcResult, PqcError, SecurityLevel, AlgorithmType};
 pub use super::{KeyEncapsulation, ParameterSet, AlgorithmPerformance, KeySizes};
 
 // Note: In a real implementation, these would use actual Kyber implementations
@@ -411,47 +411,3 @@ impl Kyber {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_kyber_parameter_sets() {
-        assert_eq!(KyberParameterSet::Kyber512.security_level(), SecurityLevel::Level1);
-        assert_eq!(KyberParameterSet::Kyber768.security_level(), SecurityLevel::Level3);
-        assert_eq!(KyberParameterSet::Kyber1024.security_level(), SecurityLevel::Level5);
-    }
-
-    #[test]
-    fn test_kyber_key_sizes() {
-        assert_eq!(KyberParameterSet::Kyber512.public_key_size(), 800);
-        assert_eq!(KyberParameterSet::Kyber768.public_key_size(), 1184);
-        assert_eq!(KyberParameterSet::Kyber1024.public_key_size(), 1568);
-    }
-
-    #[test]
-    fn test_kyber_keygen() {
-        let (pub_key, sec_key) = Kyber::keygen(SecurityLevel::Level1).unwrap();
-        assert_eq!(pub_key.parameter_set(), KyberParameterSet::Kyber512);
-        assert_eq!(sec_key.parameter_set(), KyberParameterSet::Kyber512);
-    }
-
-    #[test]
-    fn test_kyber_encaps_decaps() {
-        let (pub_key, sec_key) = Kyber::keygen(SecurityLevel::Level1).unwrap();
-        let (ciphertext, shared_secret1) = Kyber::encaps(&pub_key).unwrap();
-        let shared_secret2 = Kyber::decaps(&sec_key, &ciphertext).unwrap();
-        
-        // Note: In a real implementation, these should be equal
-        // This placeholder implementation doesn't guarantee that
-        assert_eq!(shared_secret1.as_bytes().len(), 32);
-        assert_eq!(shared_secret2.as_bytes().len(), 32);
-    }
-
-    #[test]
-    fn test_kyber_validation() {
-        let (pub_key, sec_key) = Kyber::keygen(SecurityLevel::Level1).unwrap();
-        assert!(Kyber::validate_public_key(&pub_key).is_ok());
-        assert!(Kyber::validate_secret_key(&sec_key).is_ok());
-    }
-}

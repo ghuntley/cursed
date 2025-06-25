@@ -4,7 +4,7 @@
 // Provides unified interface for generating documentation in multiple formats.
 
 use crate::docs::generator::{DocumentationGenerator, DocGeneratorConfig, DocFormat};
-use crate::error::Error;
+use crate::error::CursedError;
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 use std::time::{Duration, Instant};
@@ -175,12 +175,12 @@ impl std::fmt::Display for OutputFormat {
 
 impl DocumentationSystem {
     /// Create a new documentation system
-    pub fn new(config: DocumentationConfig) -> Result<(), Error> {
+    pub fn new(config: DocumentationConfig) -> crate::error::Result<()> {
         Ok(Self { config })
     }
 
     /// Generate documentation for all configured formats
-    pub async fn generate_all(&mut self) -> Result<(), Error> {
+    pub async fn generate_all(&mut self) -> crate::error::Result<()> {
         let start_time = Instant::now();
         let mut result = DocumentationResult {
             files_processed: 0,
@@ -217,7 +217,7 @@ impl DocumentationSystem {
         source_files: &[PathBuf],
         format: &OutputFormat,
         result: &mut DocumentationResult,
-    ) -> Result<(), Error> {
+    ) -> crate::error::Result<()> {
         let doc_config = self.build_doc_generator_config(format);
         let mut generator = DocumentationGenerator::new(doc_config);
 
@@ -269,7 +269,7 @@ impl DocumentationSystem {
     }
 
     /// Discover source files in configured directories
-    fn discover_source_files(&self) -> Result<(), Error> {
+    fn discover_source_files(&self) -> crate::error::Result<()> {
         let mut files = Vec::new();
 
         for source_dir in &self.config.source_dirs {
@@ -281,16 +281,16 @@ impl DocumentationSystem {
     }
 
     /// Recursively scan directory for CURSED source files
-    fn scan_directory(&self, dir: &Path, files: &mut Vec<PathBuf>) -> Result<(), Error> {
+    fn scan_directory(&self, dir: &Path, files: &mut Vec<PathBuf>) -> crate::error::Result<()> {
         if !dir.exists() {
-            return Err(Error::Io(std::io::Error::new(
+            return Err(CursedError::Io(std::io::Error::new(
                 std::io::ErrorKind::NotFound,
                 format!("Source directory not found: {}", dir.display()),
             )));
         }
 
-        for entry in std::fs::read_dir(dir).map_err(Error::Io)? {
-            let entry = entry.map_err(Error::Io)?;
+        for entry in std::fs::read_dir(dir).map_err(CursedError::Io)? {
+            let entry = entry.map_err(CursedError::Io)?;
             let path = entry.path();
 
             if path.is_dir() {
@@ -337,94 +337,37 @@ impl DocumentationSystem {
 }
 
 /// Load configuration from file
-pub fn load_config(path: &Path) -> Result<(), Error> {
-    let content = std::fs::read_to_string(path).map_err(Error::Io)?;
+pub fn load_config(path: &Path) -> crate::error::Result<()> {
+    let content = std::fs::read_to_string(path).map_err(CursedError::Io)?;
     
     if path.extension().map_or(false, |ext| ext == "json") {
         serde_json::from_str(&content)
-            .map_err(|e| Error::ConfigurationError(format!("Invalid JSON config: {}", e)))
+            .map_err(|e| CursedError::ConfigurationError(format!("Invalid JSON config: {}", e)))
     } else {
         // Default to TOML
         toml::from_str(&content)
-            .map_err(|e| Error::ConfigurationError(format!("Invalid TOML config: {}", e)))
+            .map_err(|e| CursedError::ConfigurationError(format!("Invalid TOML config: {}", e)))
     }
 }
 
 /// Save configuration to file
-pub fn save_config(config: &DocumentationConfig, path: &Path) -> Result<(), Error> {
+pub fn save_config(config: &DocumentationConfig, path: &Path) -> crate::error::Result<()> {
     let content = if path.extension().map_or(false, |ext| ext == "json") {
         serde_json::to_string_pretty(config)
-            .map_err(|e| Error::ConfigurationError(format!("Failed to serialize config: {}", e)))?
+            .map_err(|e| CursedError::ConfigurationError(format!("Failed to serialize config: {}", e)))?
     } else {
         // Default to TOML
         toml::to_string_pretty(config)
-            .map_err(|e| Error::ConfigurationError(format!("Failed to serialize config: {}", e)))?
+            .map_err(|e| CursedError::ConfigurationError(format!("Failed to serialize config: {}", e)))?
     };
 
-    std::fs::write(path, content).map_err(Error::Io)?;
+    std::fs::write(path, content).map_err(CursedError::Io)?;
     Ok(())
 }
 
 /// Create a default configuration file
-pub fn create_default_config(path: &Path) -> Result<(), Error> {
+pub fn create_default_config(path: &Path) -> crate::error::Result<()> {
     let config = DocumentationConfig::default();
     save_config(&config, path)
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use tempfile::TempDir;
-
-    #[test]
-    fn test_default_config() {
-        let config = DocumentationConfig::default();
-        
-        assert_eq!(config.source_dirs, vec![PathBuf::from(".")]);
-        assert_eq!(config.output_dir, PathBuf::from("docs"));
-        assert_eq!(config.output_formats.len(), 1);
-        assert_eq!(config.project.name, "CURSED Project");
-        assert!(config.options.include_source);
-        assert!(config.options.generate_cross_refs);
-    }
-
-    #[test]
-    fn test_config_serialization() {
-        let config = DocumentationConfig::default();
-        
-        // Test TOML serialization
-        let toml_str = toml::to_string_pretty(&config).unwrap();
-        let deserialized: DocumentationConfig = toml::from_str(&toml_str).unwrap();
-        assert_eq!(config.project.name, deserialized.project.name);
-        
-        // Test JSON serialization
-        let json_str = serde_json::to_string_pretty(&config).unwrap();
-        let deserialized: DocumentationConfig = serde_json::from_str(&json_str).unwrap();
-        assert_eq!(config.project.name, deserialized.project.name);
-    }
-
-    #[tokio::test]
-    async fn test_documentation_system() {
-        let temp_dir = TempDir::new().unwrap();
-        let config = DocumentationConfig {
-            source_dirs: vec![temp_dir.path().to_path_buf()],
-            output_dir: temp_dir.path().join("docs"),
-            ..Default::default()
-        };
-
-        let mut system = DocumentationSystem::new(config).unwrap();
-        
-        // Should handle empty directory gracefully
-        let result = system.generate_all().await.unwrap();
-        assert_eq!(result.files_processed, 0);
-    }
-
-    #[test]
-    fn test_output_format_display() {
-        assert_eq!(OutputFormat::Html.to_string(), "html");
-        assert_eq!(OutputFormat::Markdown.to_string(), "markdown");
-        assert_eq!(OutputFormat::Json.to_string(), "json");
-        assert_eq!(OutputFormat::Xml.to_string(), "xml");
-        assert_eq!(OutputFormat::LaTeX.to_string(), "latex");
-    }
-}

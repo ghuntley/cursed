@@ -3,7 +3,7 @@
 /// Provides advanced output format capabilities including PDF generation,
 /// responsive HTML templates, API documentation, and hosting platform integration.
 
-use crate::error::{Error, SourceLocation};
+use crate::error::{CursedError, SourceLocation};
 use crate::docs::generator::{ExtractedDocumentation, DocumentationItem, CrossReference};
 
 use serde::{Deserialize, Serialize};
@@ -323,7 +323,7 @@ impl EnhancedOutputGenerator {
         &mut self,
         documentation: &ExtractedDocumentation,
         output_dir: &Path,
-    ) -> Result<(), Error> {
+    ) -> crate::error::Result<()> {
         let mut results = GenerationResults::default();
 
         // Create output directory structure
@@ -353,23 +353,23 @@ impl EnhancedOutputGenerator {
     }
 
     /// Create the output directory structure
-    fn create_output_structure(&self, base_dir: &Path) -> Result<(), Error> {
+    fn create_output_structure(&self, base_dir: &Path) -> crate::error::Result<()> {
         match &self.config.output_structure {
             OutputStructure::Organized => {
                 let dirs = ["html", "pdf", "api", "assets", "static"];
                 for dir in &dirs {
                     fs::create_dir_all(base_dir.join(dir))
-                        .map_err(|e| Error::SystemError(format!("Failed to create directory {}: {}", dir, e)))?;
+                        .map_err(|e| CursedError::SystemError(format!("Failed to create directory {}: {}", dir, e)))?;
                 }
             }
             OutputStructure::Flat => {
                 fs::create_dir_all(base_dir)
-                    .map_err(|e| Error::SystemError(format!("Failed to create output directory: {}", e)))?;
+                    .map_err(|e| CursedError::SystemError(format!("Failed to create output directory: {}", e)))?;
             }
             OutputStructure::Custom(structure) => {
                 for (_, path) in structure {
                     fs::create_dir_all(base_dir.join(path))
-                        .map_err(|e| Error::SystemError(format!("Failed to create custom directory: {}", e)))?;
+                        .map_err(|e| CursedError::SystemError(format!("Failed to create custom directory: {}", e)))?;
                 }
             }
         }
@@ -381,7 +381,7 @@ impl EnhancedOutputGenerator {
         &self,
         documentation: &ExtractedDocumentation,
         output_dir: &Path,
-    ) -> Result<(), Error> {
+    ) -> crate::error::Result<()> {
         let html_dir = match &self.config.output_structure {
             OutputStructure::Organized => output_dir.join("html"),
             _ => output_dir.to_path_buf(),
@@ -390,7 +390,7 @@ impl EnhancedOutputGenerator {
         // Generate main index page
         let index_html = self.generate_responsive_index(documentation)?;
         fs::write(html_dir.join("index.html"), index_html)
-            .map_err(|e| Error::SystemError(format!("Failed to write index.html: {}", e)))?;
+            .map_err(|e| CursedError::SystemError(format!("Failed to write index.html: {}", e)))?;
 
         // Generate individual documentation pages
         let mut generated_files = vec![html_dir.join("index.html")];
@@ -399,7 +399,7 @@ impl EnhancedOutputGenerator {
             let filename = format!("{}.html", self.sanitize_filename(&item.name));
             let file_path = html_dir.join(filename);
             fs::write(&file_path, page_html)
-                .map_err(|e| Error::SystemError(format!("Failed to write HTML file: {}", e)))?;
+                .map_err(|e| CursedError::SystemError(format!("Failed to write HTML file: {}", e)))?;
             generated_files.push(file_path);
         }
 
@@ -421,9 +421,9 @@ impl EnhancedOutputGenerator {
     }
 
     /// Generate responsive index page
-    fn generate_responsive_index(&self, documentation: &ExtractedDocumentation) -> Result<(), Error> {
+    fn generate_responsive_index(&self, documentation: &ExtractedDocumentation) -> crate::error::Result<()> {
         let template = self.template_manager.html_templates.get("responsive_index")
-            .ok_or_else(|| Error::SystemError("Responsive index template not found".to_string()))?;
+            .ok_or_else(|| CursedError::SystemError("Responsive index template not found".to_string()))?;
 
         let navigation = self.generate_navigation(documentation);
         let content = self.generate_index_content(documentation);
@@ -571,9 +571,9 @@ slay main() {{
     }
 
     /// Generate individual item page
-    fn generate_item_page(&self, item: &DocumentationItem, documentation: &ExtractedDocumentation) -> Result<(), Error> {
+    fn generate_item_page(&self, item: &DocumentationItem, documentation: &ExtractedDocumentation) -> crate::error::Result<()> {
         let template = self.template_manager.html_templates.get("item_page")
-            .ok_or_else(|| Error::SystemError("Item page template not found".to_string()))?;
+            .ok_or_else(|| CursedError::SystemError("Item page template not found".to_string()))?;
 
         let navigation = self.generate_navigation(documentation);
         let breadcrumbs = self.generate_breadcrumbs(item);
@@ -723,26 +723,26 @@ slay main() {{
     }
 
     /// Generate static assets (CSS, JS, images)
-    fn generate_assets(&self, html_dir: &Path) -> Result<(), Error> {
+    fn generate_assets(&self, html_dir: &Path) -> crate::error::Result<()> {
         let assets_dir = html_dir.join("assets");
         fs::create_dir_all(&assets_dir)
-            .map_err(|e| Error::SystemError(format!("Failed to create assets directory: {}", e)))?;
+            .map_err(|e| CursedError::SystemError(format!("Failed to create assets directory: {}", e)))?;
 
         // Write CSS files
         let css_content = self.get_css_for_theme();
         fs::write(assets_dir.join("styles.css"), css_content)
-            .map_err(|e| Error::SystemError(format!("Failed to write CSS: {}", e)))?;
+            .map_err(|e| CursedError::SystemError(format!("Failed to write CSS: {}", e)))?;
 
         // Write JavaScript files
         let js_content = self.get_javascript();
         fs::write(assets_dir.join("script.js"), js_content)
-            .map_err(|e| Error::SystemError(format!("Failed to write JavaScript: {}", e)))?;
+            .map_err(|e| CursedError::SystemError(format!("Failed to write JavaScript: {}", e)))?;
 
         Ok(())
     }
 
     /// Generate search index for client-side search
-    fn generate_search_index(&self, documentation: &ExtractedDocumentation, output_dir: &Path) -> Result<(), Error> {
+    fn generate_search_index(&self, documentation: &ExtractedDocumentation, output_dir: &Path) -> crate::error::Result<()> {
         let mut search_entries = Vec::new();
         
         for item in &documentation.items {
@@ -761,10 +761,10 @@ slay main() {{
         });
 
         let search_index_str = serde_json::to_string_pretty(&search_index)
-            .map_err(|e| Error::SystemError(format!("Failed to serialize search index: {}", e)))?;
+            .map_err(|e| CursedError::SystemError(format!("Failed to serialize search index: {}", e)))?;
 
         fs::write(output_dir.join("search_index.json"), search_index_str)
-            .map_err(|e| Error::SystemError(format!("Failed to write search index: {}", e)))?;
+            .map_err(|e| CursedError::SystemError(format!("Failed to write search index: {}", e)))?;
 
         Ok(())
     }
@@ -774,7 +774,7 @@ slay main() {{
         &self,
         documentation: &ExtractedDocumentation,
         output_dir: &Path,
-    ) -> Result<(), Error> {
+    ) -> crate::error::Result<()> {
         let start_time = std::time::Instant::now();
         
         let pdf_dir = match &self.config.output_structure {
@@ -786,7 +786,7 @@ slay main() {{
         let pdf_html = self.generate_pdf_html(documentation)?;
         let temp_html_path = pdf_dir.join("temp_for_pdf.html");
         fs::write(&temp_html_path, pdf_html)
-            .map_err(|e| Error::SystemError(format!("Failed to write temp HTML for PDF: {}", e)))?;
+            .map_err(|e| CursedError::SystemError(format!("Failed to write temp HTML for PDF: {}", e)))?;
 
         let output_path = pdf_dir.join("documentation.pdf");
         
@@ -829,7 +829,7 @@ slay main() {{
     }
 
     /// Generate HTML optimized for PDF conversion
-    fn generate_pdf_html(&self, documentation: &ExtractedDocumentation) -> Result<(), Error> {
+    fn generate_pdf_html(&self, documentation: &ExtractedDocumentation) -> crate::error::Result<()> {
         let mut html = String::new();
         
         // Add PDF-specific styling
@@ -913,7 +913,7 @@ slay main() {{
     }
 
     /// Generate PDF using Puppeteer
-    fn generate_pdf_with_puppeteer(&self, html_path: &Path, output_path: &Path) -> Result<(), Error> {
+    fn generate_pdf_with_puppeteer(&self, html_path: &Path, output_path: &Path) -> crate::error::Result<()> {
         let output = Command::new("npx")
             .args(&[
                 "puppeteer",
@@ -928,10 +928,10 @@ slay main() {{
                 "--print-background",
             ])
             .output()
-            .map_err(|e| Error::SystemError(format!("Failed to execute Puppeteer: {}", e)))?;
+            .map_err(|e| CursedError::SystemError(format!("Failed to execute Puppeteer: {}", e)))?;
 
         if !output.status.success() {
-            return Err(Error::SystemError(format!(
+            return Err(CursedError::SystemError(format!(
                 "Puppeteer PDF generation failed: {}",
                 String::from_utf8_lossy(&output.stderr)
             )));
@@ -941,7 +941,7 @@ slay main() {{
     }
 
     /// Generate PDF using wkhtmltopdf
-    fn generate_pdf_with_wkhtmltopdf(&self, html_path: &Path, output_path: &Path) -> Result<(), Error> {
+    fn generate_pdf_with_wkhtmltopdf(&self, html_path: &Path, output_path: &Path) -> crate::error::Result<()> {
         let output = Command::new("wkhtmltopdf")
             .args(&[
                 "--page-size", "A4",
@@ -954,10 +954,10 @@ slay main() {{
                 &output_path.to_string_lossy(),
             ])
             .output()
-            .map_err(|e| Error::SystemError(format!("Failed to execute wkhtmltopdf: {}", e)))?;
+            .map_err(|e| CursedError::SystemError(format!("Failed to execute wkhtmltopdf: {}", e)))?;
 
         if !output.status.success() {
-            return Err(Error::SystemError(format!(
+            return Err(CursedError::SystemError(format!(
                 "wkhtmltopdf failed: {}",
                 String::from_utf8_lossy(&output.stderr)
             )));
@@ -967,7 +967,7 @@ slay main() {{
     }
 
     /// Generate PDF using Pandoc
-    fn generate_pdf_with_pandoc(&self, html_path: &Path, output_path: &Path) -> Result<(), Error> {
+    fn generate_pdf_with_pandoc(&self, html_path: &Path, output_path: &Path) -> crate::error::Result<()> {
         let output = Command::new("pandoc")
             .args(&[
                 &html_path.to_string_lossy(),
@@ -976,10 +976,10 @@ slay main() {{
                 "-V", "geometry:margin=20mm",
             ])
             .output()
-            .map_err(|e| Error::SystemError(format!("Failed to execute Pandoc: {}", e)))?;
+            .map_err(|e| CursedError::SystemError(format!("Failed to execute Pandoc: {}", e)))?;
 
         if !output.status.success() {
-            return Err(Error::SystemError(format!(
+            return Err(CursedError::SystemError(format!(
                 "Pandoc PDF generation failed: {}",
                 String::from_utf8_lossy(&output.stderr)
             )));
@@ -989,7 +989,7 @@ slay main() {{
     }
 
     /// Generate PDF using Prince XML
-    fn generate_pdf_with_prince(&self, html_path: &Path, output_path: &Path) -> Result<(), Error> {
+    fn generate_pdf_with_prince(&self, html_path: &Path, output_path: &Path) -> crate::error::Result<()> {
         let output = Command::new("prince")
             .args(&[
                 &html_path.to_string_lossy(),
@@ -997,10 +997,10 @@ slay main() {{
                 "--media=print",
             ])
             .output()
-            .map_err(|e| Error::SystemError(format!("Failed to execute Prince: {}", e)))?;
+            .map_err(|e| CursedError::SystemError(format!("Failed to execute Prince: {}", e)))?;
 
         if !output.status.success() {
-            return Err(Error::SystemError(format!(
+            return Err(CursedError::SystemError(format!(
                 "Prince PDF generation failed: {}",
                 String::from_utf8_lossy(&output.stderr)
             )));
@@ -1014,7 +1014,7 @@ slay main() {{
         &self,
         documentation: &ExtractedDocumentation,
         output_dir: &Path,
-    ) -> Result<(), Error> {
+    ) -> crate::error::Result<()> {
         let api_dir = match &self.config.output_structure {
             OutputStructure::Organized => output_dir.join("api"),
             _ => output_dir.to_path_buf(),
@@ -1030,20 +1030,20 @@ slay main() {{
     }
 
     /// Generate OpenAPI 3.0 specification
-    fn generate_openapi_spec(&self, documentation: &ExtractedDocumentation, output_dir: &Path) -> Result<(), Error> {
+    fn generate_openapi_spec(&self, documentation: &ExtractedDocumentation, output_dir: &Path) -> crate::error::Result<()> {
         let spec = self.build_openapi_spec(documentation)?;
         let spec_json = serde_json::to_string_pretty(&spec)
-            .map_err(|e| Error::SystemError(format!("Failed to serialize OpenAPI spec: {}", e)))?;
+            .map_err(|e| CursedError::SystemError(format!("Failed to serialize OpenAPI spec: {}", e)))?;
 
         let spec_file = output_dir.join("openapi.json");
         fs::write(&spec_file, spec_json)
-            .map_err(|e| Error::SystemError(format!("Failed to write OpenAPI spec: {}", e)))?;
+            .map_err(|e| CursedError::SystemError(format!("Failed to write OpenAPI spec: {}", e)))?;
 
         // Generate Swagger UI HTML
         let swagger_ui_html = self.generate_swagger_ui_html();
         let ui_file = output_dir.join("index.html");
         fs::write(&ui_file, swagger_ui_html)
-            .map_err(|e| Error::SystemError(format!("Failed to write Swagger UI: {}", e)))?;
+            .map_err(|e| CursedError::SystemError(format!("Failed to write Swagger UI: {}", e)))?;
 
         Ok(ApiDocumentationResult {
             success: true,
@@ -1055,7 +1055,7 @@ slay main() {{
     }
 
     /// Build OpenAPI specification from documentation
-    fn build_openapi_spec(&self, documentation: &ExtractedDocumentation) -> Result<(), Error> {
+    fn build_openapi_spec(&self, documentation: &ExtractedDocumentation) -> crate::error::Result<()> {
         let mut paths = serde_json::Map::new();
         let mut components = serde_json::Map::new();
         let mut schemas = serde_json::Map::new();
@@ -1092,7 +1092,7 @@ slay main() {{
     }
 
     /// Convert function to OpenAPI path specification
-    fn function_to_openapi_path(&self, item: &DocumentationItem) -> Result<(), Error> {
+    fn function_to_openapi_path(&self, item: &DocumentationItem) -> crate::error::Result<()> {
         let mut parameters = Vec::new();
         
         for param in &item.parameters {
@@ -1129,7 +1129,7 @@ slay main() {{
     }
 
     /// Convert struct to OpenAPI schema
-    fn struct_to_openapi_schema(&self, item: &DocumentationItem) -> Result<(), Error> {
+    fn struct_to_openapi_schema(&self, item: &DocumentationItem) -> crate::error::Result<()> {
         let mut properties = serde_json::Map::new();
         
         // Extract properties from parameters (representing struct fields)
@@ -1188,7 +1188,7 @@ slay main() {{
     }
 
     /// Generate API Blueprint documentation
-    fn generate_api_blueprint(&self, documentation: &ExtractedDocumentation, output_dir: &Path) -> Result<(), Error> {
+    fn generate_api_blueprint(&self, documentation: &ExtractedDocumentation, output_dir: &Path) -> crate::error::Result<()> {
         // Placeholder implementation for API Blueprint
         let blueprint_content = format!(
             r#"FORMAT: 1A
@@ -1210,7 +1210,7 @@ This is the API documentation for the CURSED programming language, generated fro
 
         let blueprint_file = output_dir.join("api.apib");
         fs::write(&blueprint_file, blueprint_content)
-            .map_err(|e| Error::SystemError(format!("Failed to write API Blueprint: {}", e)))?;
+            .map_err(|e| CursedError::SystemError(format!("Failed to write API Blueprint: {}", e)))?;
 
         Ok(ApiDocumentationResult {
             success: true,
@@ -1271,7 +1271,7 @@ This is the API documentation for the CURSED programming language, generated fro
     }
 
     /// Generate Swagger 2.0 specification
-    fn generate_swagger_spec(&self, documentation: &ExtractedDocumentation, output_dir: &Path) -> Result<(), Error> {
+    fn generate_swagger_spec(&self, documentation: &ExtractedDocumentation, output_dir: &Path) -> crate::error::Result<()> {
         // Similar to OpenAPI but using Swagger 2.0 format
         let spec = serde_json::json!({
             "swagger": "2.0",
@@ -1288,11 +1288,11 @@ This is the API documentation for the CURSED programming language, generated fro
         });
 
         let spec_json = serde_json::to_string_pretty(&spec)
-            .map_err(|e| Error::SystemError(format!("Failed to serialize Swagger spec: {}", e)))?;
+            .map_err(|e| CursedError::SystemError(format!("Failed to serialize Swagger spec: {}", e)))?;
 
         let spec_file = output_dir.join("swagger.json");
         fs::write(&spec_file, spec_json)
-            .map_err(|e| Error::SystemError(format!("Failed to write Swagger spec: {}", e)))?;
+            .map_err(|e| CursedError::SystemError(format!("Failed to write Swagger spec: {}", e)))?;
 
         Ok(ApiDocumentationResult {
             success: true,
@@ -1304,7 +1304,7 @@ This is the API documentation for the CURSED programming language, generated fro
     }
 
     /// Generate RAML specification
-    fn generate_raml_spec(&self, documentation: &ExtractedDocumentation, output_dir: &Path) -> Result<(), Error> {
+    fn generate_raml_spec(&self, documentation: &ExtractedDocumentation, output_dir: &Path) -> crate::error::Result<()> {
         let raml_content = format!(
             r#"#%RAML 1.0
 title: CURSED API Documentation
@@ -1323,7 +1323,7 @@ types:
 
         let raml_file = output_dir.join("api.raml");
         fs::write(&raml_file, raml_content)
-            .map_err(|e| Error::SystemError(format!("Failed to write RAML spec: {}", e)))?;
+            .map_err(|e| CursedError::SystemError(format!("Failed to write RAML spec: {}", e)))?;
 
         Ok(ApiDocumentationResult {
             success: true,
@@ -1376,7 +1376,7 @@ types:
     }
 
     /// Generate custom API format
-    fn generate_custom_api_format(&self, documentation: &ExtractedDocumentation, output_dir: &Path, format: &str) -> Result<(), Error> {
+    fn generate_custom_api_format(&self, documentation: &ExtractedDocumentation, output_dir: &Path, format: &str) -> crate::error::Result<()> {
         // Placeholder for custom format implementation
         let custom_content = format!(
             "# Custom API Documentation Format: {}\n\nGenerated from CURSED source code\n\nTotal items: {}",
@@ -1386,7 +1386,7 @@ types:
 
         let custom_file = output_dir.join("custom_api.txt");
         fs::write(&custom_file, custom_content)
-            .map_err(|e| Error::SystemError(format!("Failed to write custom API format: {}", e)))?;
+            .map_err(|e| CursedError::SystemError(format!("Failed to write custom API format: {}", e)))?;
 
         Ok(ApiDocumentationResult {
             success: true,
@@ -1398,7 +1398,7 @@ types:
     }
 
     /// Deploy to hosting platforms
-    fn deploy_to_hosting_platforms(&mut self, output_dir: &Path) -> Result<(), Error> {
+    fn deploy_to_hosting_platforms(&mut self, output_dir: &Path) -> crate::error::Result<()> {
         let mut results = HashMap::new();
 
         for platform in &self.config.hosting_platforms.clone() {
@@ -1433,7 +1433,7 @@ types:
     }
 
     /// Deploy to GitHub Pages
-    fn deploy_to_github_pages(&self, output_dir: &Path) -> Result<(), Error> {
+    fn deploy_to_github_pages(&self, output_dir: &Path) -> crate::error::Result<()> {
         let start_time = std::time::Instant::now();
         
         // This would typically involve:
@@ -1462,7 +1462,7 @@ jobs:
 "#;
 
         fs::write(output_dir.join(".github-pages.yml"), pages_config)
-            .map_err(|e| Error::SystemError(format!("Failed to write GitHub Pages config: {}", e)))?;
+            .map_err(|e| CursedError::SystemError(format!("Failed to write GitHub Pages config: {}", e)))?;
 
         Ok(DeploymentResult {
             success: true,
@@ -1474,7 +1474,7 @@ jobs:
     }
 
     /// Deploy to GitLab Pages
-    fn deploy_to_gitlab_pages(&self, output_dir: &Path) -> Result<(), Error> {
+    fn deploy_to_gitlab_pages(&self, output_dir: &Path) -> crate::error::Result<()> {
         let start_time = std::time::Instant::now();
         
         let gitlab_ci = r#"pages:
@@ -1490,7 +1490,7 @@ jobs:
 "#;
 
         fs::write(output_dir.join(".gitlab-ci.yml"), gitlab_ci)
-            .map_err(|e| Error::SystemError(format!("Failed to write GitLab CI config: {}", e)))?;
+            .map_err(|e| CursedError::SystemError(format!("Failed to write GitLab CI config: {}", e)))?;
 
         Ok(DeploymentResult {
             success: true,
@@ -1502,7 +1502,7 @@ jobs:
     }
 
     /// Deploy to Netlify
-    fn deploy_to_netlify(&self, output_dir: &Path) -> Result<(), Error> {
+    fn deploy_to_netlify(&self, output_dir: &Path) -> crate::error::Result<()> {
         let start_time = std::time::Instant::now();
         
         // Create Netlify configuration
@@ -1519,7 +1519,7 @@ jobs:
 "#;
 
         fs::write(output_dir.join("netlify.toml"), netlify_toml)
-            .map_err(|e| Error::SystemError(format!("Failed to write Netlify config: {}", e)))?;
+            .map_err(|e| CursedError::SystemError(format!("Failed to write Netlify config: {}", e)))?;
 
         Ok(DeploymentResult {
             success: true,
@@ -1531,7 +1531,7 @@ jobs:
     }
 
     /// Deploy to Vercel
-    fn deploy_to_vercel(&self, output_dir: &Path) -> Result<(), Error> {
+    fn deploy_to_vercel(&self, output_dir: &Path) -> crate::error::Result<()> {
         let start_time = std::time::Instant::now();
         
         let vercel_json = serde_json::json!({
@@ -1551,10 +1551,10 @@ jobs:
         });
 
         let vercel_json_str = serde_json::to_string_pretty(&vercel_json)
-            .map_err(|e| Error::SystemError(format!("Failed to serialize Vercel config: {}", e)))?;
+            .map_err(|e| CursedError::SystemError(format!("Failed to serialize Vercel config: {}", e)))?;
 
         fs::write(output_dir.join("vercel.json"), vercel_json_str)
-            .map_err(|e| Error::SystemError(format!("Failed to write Vercel config: {}", e)))?;
+            .map_err(|e| CursedError::SystemError(format!("Failed to write Vercel config: {}", e)))?;
 
         Ok(DeploymentResult {
             success: true,
@@ -1566,7 +1566,7 @@ jobs:
     }
 
     /// Deploy to AWS S3
-    fn deploy_to_aws_s3(&self, output_dir: &Path) -> Result<(), Error> {
+    fn deploy_to_aws_s3(&self, output_dir: &Path) -> crate::error::Result<()> {
         let start_time = std::time::Instant::now();
         
         // Create AWS deployment script
@@ -1577,7 +1577,7 @@ aws cloudfront create-invalidation --distribution-id YOUR_DISTRIBUTION_ID --path
 "#;
 
         fs::write(output_dir.join("deploy-aws.sh"), aws_script)
-            .map_err(|e| Error::SystemError(format!("Failed to write AWS deployment script: {}", e)))?;
+            .map_err(|e| CursedError::SystemError(format!("Failed to write AWS deployment script: {}", e)))?;
 
         Ok(DeploymentResult {
             success: true,
@@ -1589,7 +1589,7 @@ aws cloudfront create-invalidation --distribution-id YOUR_DISTRIBUTION_ID --path
     }
 
     /// Deploy to custom platform
-    fn deploy_to_custom_platform(&self, output_dir: &Path, config: &HostingConfig) -> Result<(), Error> {
+    fn deploy_to_custom_platform(&self, output_dir: &Path, config: &HostingConfig) -> crate::error::Result<()> {
         let start_time = std::time::Instant::now();
         
         // Execute custom deployment command
@@ -1598,7 +1598,7 @@ aws cloudfront create-invalidation --distribution-id YOUR_DISTRIBUTION_ID --path
                 .arg(script_path)
                 .arg(output_dir)
                 .output()
-                .map_err(|e| Error::SystemError(format!("Failed to execute deployment script: {}", e)))?;
+                .map_err(|e| CursedError::SystemError(format!("Failed to execute deployment script: {}", e)))?;
 
             if !output.status.success() {
                 return Ok(DeploymentResult {

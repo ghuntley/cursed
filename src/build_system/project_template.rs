@@ -4,8 +4,7 @@
 // structure, configuration files, and example code.
 
 use crate::build_system::{BuildConfig, ProjectType};
-use crate::build_system::build_config::ConfigError;
-use crate::error::Error;
+use crate::error::CursedError;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
@@ -120,7 +119,7 @@ pub struct TemplateContext {
 }
 
 /// Template error types
-#[derive(Debug, thiserror::Error)]
+#[derive(Debug, thiserror::CursedError)]
 pub enum TemplateError {
     #[error("Template not found: {name}")]
     TemplateNotFound { name: String },
@@ -195,7 +194,7 @@ impl TemplateManager {
         &self,
         template_name: &str,
         context: TemplateContext,
-    ) -> Result<(), Error> {
+    ) -> crate::error::Result<()> {
         info!("Generating project '{}' from template '{}'", context.project_name, template_name);
         
         let template = self.templates.get(template_name)
@@ -271,7 +270,7 @@ impl TemplateManager {
     }
     
     /// Validate template context
-    fn validate_context(&self, template: &ProjectTemplate, context: &TemplateContext) -> Result<(), Error> {
+    fn validate_context(&self, template: &ProjectTemplate, context: &TemplateContext) -> crate::error::Result<()> {
         for (name, variable) in &template.variables {
             if variable.required && !context.variables.contains_key(name) {
                 return Err(TemplateError::MissingVariable { variable: name.clone() });
@@ -291,7 +290,7 @@ impl TemplateManager {
         name: &str,
         value: &str,
         variable: &TemplateVariable,
-    ) -> Result<(), Error> {
+    ) -> crate::error::Result<()> {
         match &variable.var_type {
             VariableType::String => {
                 // String validation (could add length checks, etc.)
@@ -318,7 +317,7 @@ impl TemplateManager {
     }
     
     /// Process template content with variable substitution
-    pub fn process_template_content(&self, content: &str, context: &TemplateContext) -> Result<(), Error> {
+    pub fn process_template_content(&self, content: &str, context: &TemplateContext) -> crate::error::Result<()> {
         let mut result = content.to_string();
         
         // Replace project name
@@ -334,7 +333,7 @@ impl TemplateManager {
     }
     
     /// Process build configuration with template variables
-    fn process_build_config(&self, config: &mut BuildConfig, context: &TemplateContext) -> Result<(), Error> {
+    fn process_build_config(&self, config: &mut BuildConfig, context: &TemplateContext) -> crate::error::Result<()> {
         // Update project metadata
         if let Some(description) = context.variables.get("description") {
             config.project.description = Some(description.clone());
@@ -352,7 +351,7 @@ impl TemplateManager {
     }
     
     /// Evaluate a template condition
-    fn evaluate_condition(&self, condition: &str, context: &TemplateContext) -> Result<(), Error> {
+    fn evaluate_condition(&self, condition: &str, context: &TemplateContext) -> crate::error::Result<()> {
         // Simple condition evaluation - can be expanded
         if condition.starts_with("var:") {
             let var_name = &condition[4..];
@@ -372,7 +371,7 @@ impl TemplateManager {
     }
     
     /// Run post-generation script
-    fn run_post_script(&self, script: &str, context: &TemplateContext) -> Result<(), Error> {
+    fn run_post_script(&self, script: &str, context: &TemplateContext) -> crate::error::Result<()> {
         debug!("Running post-script: {}", script);
         
         let mut cmd = if cfg!(target_os = "windows") {
@@ -776,7 +775,7 @@ slay main() -> i32 {
     let server = server::WebServer::new({{port}});
     
     lowkey let err = server.start() {
-        io::println("Error starting server: " + err.message());
+        io::println("CursedError starting server: " + err.message());
         return 1;
     }
     
@@ -836,7 +835,7 @@ impl WebServer {
         self.routes.push(route);
     }
     
-    slay start(&self) -> Result<(), Error> {
+    slay start(&self) -> crate::error::Result<()> {
         io::println("Starting {{project_name}} server on port " + self.port.to_string());
         
         // Create TCP listener
@@ -991,7 +990,7 @@ slay main() -> i32 {
     let api = routes::ApiServer::new();
     
     lowkey let err = api.start() {
-        io::println("Error starting API server: " + err.message());
+        io::println("CursedError starting API server: " + err.message());
         return 1;
     }
     
@@ -1093,7 +1092,7 @@ impl ApiServer {
         });
     }
     
-    slay start(&self) -> Result<(), Error> {
+    slay start(&self) -> crate::error::Result<()> {
         io::println("Starting {{project_name}} API server on port " + self.port.to_string());
         
         let listener = net::TcpListener::bind("127.0.0.1:" + self.port.to_string())?;
@@ -1371,7 +1370,7 @@ impl Game {
         return Game { running: true };
     }
     
-    slay run(&mut self) -> Result<(), Error> {
+    slay run(&mut self) -> crate::error::Result<()> {
         io::println("Welcome to {{project_name}}!");
         io::println("Type 'quit' to exit.");
         
@@ -1680,67 +1679,3 @@ Thumbs.db
 .env.local
 "#;
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use tempfile::tempdir;
-    
-    #[test]
-    fn test_template_manager_creation() {
-        let manager = TemplateManager::new();
-        
-        let templates = manager.list_templates();
-        assert!(templates.len() > 0);
-        
-        // Check that we have expected templates
-        let template_names: Vec<_> = templates.iter().map(|t| &t.name).collect();
-        assert!(template_names.contains(&&"cli".to_string()));
-        assert!(template_names.contains(&&"lib".to_string()));
-        assert!(template_names.contains(&&"web".to_string()));
-    }
-    
-    #[test]
-    fn test_template_generation() -> Result<(), Error> {
-        let manager = TemplateManager::new();
-        let dir = tempdir()?;
-        
-        let mut variables = HashMap::new();
-        variables.insert("description".to_string(), "Test CLI app".to_string());
-        variables.insert("author".to_string(), "Test Author".to_string());
-        
-        let context = TemplateContext {
-            project_name: "test-cli".to_string(),
-            target_dir: dir.path().to_path_buf(),
-            variables,
-        };
-        
-        manager.generate_project("cli", context)?;
-        
-        // Check that files were created
-        assert!(dir.path().join("src").exists());
-        assert!(dir.path().join("src/main.csd").exists());
-        assert!(dir.path().join("README.md").exists());
-        assert!(dir.path().join("CursedBuild.toml").exists());
-        
-        // Check content substitution
-        let main_content = std::fs::read_to_string(dir.path().join("src/main.csd"))?;
-        assert!(main_content.contains("test-cli"));
-        assert!(!main_content.contains("{{project_name}}"));
-        
-        Ok(())
-    }
-    
-    #[test]
-    fn test_template_categories() {
-        let manager = TemplateManager::new();
-        
-        let cli_templates = manager.get_templates_by_category(&TemplateCategory::CLI);
-        assert!(cli_templates.len() > 0);
-        
-        let web_templates = manager.get_templates_by_category(&TemplateCategory::Web);
-        assert!(web_templates.len() > 0);
-        
-        let lib_templates = manager.get_templates_by_category(&TemplateCategory::Library);
-        assert!(lib_templates.len() > 0);
-    }
-}

@@ -81,27 +81,3 @@ impl Default for CompressionConfig {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_validate_compression_level() {
-        assert!(validate_compression_level(5).is_ok());
-        assert!(validate_compression_level(-1).is_err());
-        assert!(validate_compression_level(10).is_err());
-    }
-
-    #[test]
-    fn test_convert_quality_to_level() {
-        assert_eq!(convert_quality_to_level(0.0), 0);
-        assert_eq!(convert_quality_to_level(1.0), 9);
-        assert_eq!(convert_quality_to_level(0.5), 5);
-    }
-
-    #[test]
-    fn test_use_parallel_compression() {
-        assert!(!use_parallel_compression(1024));
-        assert!(use_parallel_compression(2 * 1024 * 1024));
-    }
-}

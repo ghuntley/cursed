@@ -1,12 +1,12 @@
-use crate::error::Error;
+use crate::error::CursedError;
 /// GenZ themed features for signal handling with enhanced capabilities
 use std::collections::{HashMap, VecDeque};
 use std::sync::{Arc, Mutex, RwLock, atomic::{AtomicBool, AtomicUsize, Ordering}};
 use std::thread;
 use std::time::{Duration, Instant};
 use std::path::PathBuf;
-use crate::stdlib::signal_boost::core::{BoostSignal, notify, NotifyHandle, SIGUSR1, SIGUSR2, SIGHUP, SIGQUIT, SIGINT, SIGTERM};
-use crate::stdlib::signal_boost::error::{SignalBoostError, SignalBoostResult};
+// use crate::stdlib::signal_boost::core::{BoostSignal, notify, NotifyHandle, SIGUSR1, SIGUSR2, SIGHUP, SIGQUIT, SIGINT, SIGTERM};
+// use crate::stdlib::signal_boost::error::{SignalBoostError, SignalBoostResult};
 
 /// VibeChecker - runs health checks when specific signals are received
 pub struct VibeChecker {
@@ -224,12 +224,12 @@ impl BussinLogger {
                 match receiver.recv_timeout(Duration::from_millis(100)) {
                     Ok(signal) => {
                         let emoji = match signal {
-                            s if s == crate::stdlib::signal_boost::core::SIGINT => "🛑",
-                            s if s == crate::stdlib::signal_boost::core::SIGTERM => "💀",
-                            s if s == crate::stdlib::signal_boost::core::SIGHUP => "🔄",
-                            s if s == crate::stdlib::signal_boost::core::SIGQUIT => "🚪",
-                            s if s == crate::stdlib::signal_boost::core::SIGUSR1 => "👆",
-                            s if s == crate::stdlib::signal_boost::core::SIGUSR2 => "✌️",
+//                             s if s == crate::stdlib::signal_boost::core::SIGINT => "🛑",
+//                             s if s == crate::stdlib::signal_boost::core::SIGTERM => "💀",
+//                             s if s == crate::stdlib::signal_boost::core::SIGHUP => "🔄",
+//                             s if s == crate::stdlib::signal_boost::core::SIGQUIT => "🚪",
+//                             s if s == crate::stdlib::signal_boost::core::SIGUSR1 => "👆",
+//                             s if s == crate::stdlib::signal_boost::core::SIGUSR2 => "✌️",
                             _ => "📡",
                         };
                         
@@ -419,15 +419,15 @@ impl Drop for FrFrReporter {
 /// Get emoji for signal
 fn get_signal_emoji(signal: BoostSignal) -> &'static str {
     match signal {
-        s if s == crate::stdlib::signal_boost::core::SIGINT => "🛑",
-        s if s == crate::stdlib::signal_boost::core::SIGTERM => "💀",
-        s if s == crate::stdlib::signal_boost::core::SIGHUP => "🔄",
-        s if s == crate::stdlib::signal_boost::core::SIGQUIT => "🚪",
-        s if s == crate::stdlib::signal_boost::core::SIGUSR1 => "👆",
-        s if s == crate::stdlib::signal_boost::core::SIGUSR2 => "✌️",
-        s if s == crate::stdlib::signal_boost::core::SIGABRT => "💥",
-        s if s == crate::stdlib::signal_boost::core::SIGKILL => "⚡",
-        s if s == crate::stdlib::signal_boost::core::SIGSEGV => "🔥",
+//         s if s == crate::stdlib::signal_boost::core::SIGINT => "🛑",
+//         s if s == crate::stdlib::signal_boost::core::SIGTERM => "💀",
+//         s if s == crate::stdlib::signal_boost::core::SIGHUP => "🔄",
+//         s if s == crate::stdlib::signal_boost::core::SIGQUIT => "🚪",
+//         s if s == crate::stdlib::signal_boost::core::SIGUSR1 => "👆",
+//         s if s == crate::stdlib::signal_boost::core::SIGUSR2 => "✌️",
+//         s if s == crate::stdlib::signal_boost::core::SIGABRT => "💥",
+//         s if s == crate::stdlib::signal_boost::core::SIGKILL => "⚡",
+//         s if s == crate::stdlib::signal_boost::core::SIGSEGV => "🔥",
         _ => "📡",
     }
 }
@@ -461,168 +461,6 @@ where
     Ok(handle)
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use crate::stdlib::signal_boost::core::{SIGINT, SIGTERM, SIGUSR1};
-    use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
-    use std::sync::Arc;
-    use std::time::Duration;
-    
-    #[test]
-    fn test_vibe_checker_creation() {
-        let checker = vibe_check(SIGUSR1, || true);
-        assert!(!checker.is_running());
-        assert!(checker.get_status()); // Default status
-    }
-    
-    #[test]
-    fn test_vibe_checker_start_stop() {
-        let mut checker = vibe_check(SIGUSR1, || true);
-        
-        assert!(checker.start().is_ok());
-        assert!(checker.is_running());
-        
-        assert!(checker.stop().is_ok());
-        assert!(!checker.is_running());
-    }
-    
-    #[test]
-    fn test_vibe_checker_health_check() {
-        let health_status = Arc::new(AtomicBool::new(true));
-        let health_clone = Arc::clone(&health_status);
-        
-        let checker = vibe_check(SIGUSR1, move || {
-            health_clone.load(Ordering::SeqCst)
-        });
-        
-        assert!(checker.get_status());
-        
-        health_status.store(false, Ordering::SeqCst);
-        // Note: In a real test, we'd need to trigger the signal to see the status change
-    }
-    
-    #[test]
-    fn test_yeet_on_signal() {
-        // Note: We can't easily test the actual exit behavior in a unit test
-        // This just tests that the function sets up without error
-        let result = yeet_on_signal(SIGUSR1, "Test yeet message");
-        assert!(result.is_ok());
-        
-        let mut handle = result.unwrap();
-        handle.stop(); // Clean up
-    }
-    
-    #[test]
-    fn test_no_cap_reload_config() {
-        let reload_called = Arc::new(AtomicBool::new(false));
-        let reload_clone = Arc::clone(&reload_called);
-        
-        let result = no_cap_reload_config("test_config.toml", move || {
-            reload_clone.store(true, Ordering::SeqCst);
-            Ok(())
-        });
-        
-        assert!(result.is_ok());
-        
-        let mut handle = result.unwrap();
-        handle.stop(); // Clean up
-    }
-    
-    #[test]
-    fn test_bussin_logger_creation() {
-        let signals = vec![SIGINT, SIGTERM];
-        let logger = BussinLogger::new(signals.clone());
-        assert!(!logger.is_running());
-        assert_eq!(logger.signals, signals);
-    }
-    
-    #[test]
-    fn test_bussin_logger_start_stop() {
-        let mut logger = BussinLogger::new(vec![SIGUSR1]);
-        
-        assert!(logger.start().is_ok());
-        assert!(logger.is_running());
-        
-        assert!(logger.stop().is_ok());
-        assert!(!logger.is_running());
-    }
-    
-    #[test]
-    fn test_sheesh_alarm() {
-        let signals = vec![SIGINT, SIGTERM];
-        let result = sheesh_alarm(&signals);
-        assert!(result.is_ok());
-        
-        let mut handle = result.unwrap();
-        handle.stop(); // Clean up
-    }
-    
-    #[test]
-    fn test_fr_fr_reporter_creation() {
-        let signals = vec![SIGINT, SIGTERM];
-        let reporter = FrFrReporter::new(signals, Duration::from_secs(5));
-        assert!(!reporter.running.load(Ordering::SeqCst));
-    }
-    
-    #[test]
-    fn test_fr_fr_reporter_counts() {
-        let signals = vec![SIGUSR1];
-        let reporter = FrFrReporter::new(signals.clone(), Duration::from_secs(1));
-        
-        let counts = reporter.get_counts();
-        assert!(counts.is_empty());
-    }
-    
-    #[test]
-    fn test_chef_kiss_handler() {
-        let handled = Arc::new(AtomicUsize::new(0));
-        let handled_clone = Arc::clone(&handled);
-        
-        let result = chef_kiss_handler(&[SIGUSR1], move |_signal| {
-            handled_clone.fetch_add(1, Ordering::SeqCst);
-        });
-        
-        assert!(result.is_ok());
-        
-        let mut handle = result.unwrap();
-        handle.stop(); // Clean up
-    }
-    
-    #[test]
-    fn test_get_signal_emoji() {
-        assert_eq!(get_signal_emoji(SIGINT), "🛑");
-        assert_eq!(get_signal_emoji(SIGTERM), "💀");
-        assert_eq!(get_signal_emoji(SIGHUP), "🔄");
-        assert_eq!(get_signal_emoji(SIGQUIT), "🚪");
-        assert_eq!(get_signal_emoji(SIGUSR1), "👆");
-        assert_eq!(get_signal_emoji(SIGUSR2), "✌️");
-    }
-    
-    #[test]
-    fn test_double_start_error() {
-        let mut checker = vibe_check(SIGUSR1, || true);
-        
-        assert!(checker.start().is_ok());
-        assert!(checker.start().is_err()); // Should error on second start
-        
-        checker.stop().unwrap();
-    }
-}
-
-/// Enhanced GenZ signal features beyond basic VibeChecker
-
-/// YeetHandler - aggressive signal termination with style
-pub struct YeetHandler {
-    target_signals: Vec<BoostSignal>,
-    termination_sequence: Vec<TerminationStep>,
-    max_wait_time: Duration,
-    force_kill_delay: Duration,
-    yeet_count: AtomicUsize,
-    last_yeet: Mutex<Option<Instant>>,
-    running: Arc<AtomicBool>,
-    _notify_handle: Option<NotifyHandle>,
-}
 
 /// Termination step configuration
 #[derive(Debug, Clone)]

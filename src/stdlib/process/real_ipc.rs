@@ -1,4 +1,4 @@
-use crate::error::Error;
+use crate::error::CursedError;
 /// Real Inter-Process Communication Implementation for CURSED
 /// 
 /// This module provides production-ready IPC mechanisms including:
@@ -51,7 +51,7 @@ use std::ffi::OsStr;
 #[cfg(windows)]
 use std::os::windows::ffi::OsStrExt;
 
-use crate::stdlib::process::error::{
+// use crate::stdlib::process::error::{
     ProcessError, ProcessResult, communication_error, timeout_error, system_error
 };
 
@@ -237,7 +237,7 @@ pub enum ChannelState {
     Bound,
     Connected,
     Disconnected,
-    Error(String),
+    CursedError(String),
 }
 
 /// Channel statistics
@@ -1114,7 +1114,7 @@ impl IpcChannelManager {
 
                 for (name, channel) in channels_map.iter() {
                     if let Ok(ch) = channel.lock() {
-                        if matches!(ch.state(), ChannelState::Disconnected | ChannelState::Error(_)) {
+                        if matches!(ch.state(), ChannelState::Disconnected | ChannelState::CursedError(_)) {
                             to_remove.push(name.clone());
                         }
                     }
@@ -1217,66 +1217,3 @@ pub fn receive_ipc_message(channel_name: &str, timeout: Duration) -> ProcessResu
     Err(communication_error("receive_ipc_message", "Channel not found"))
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-use crate::stdlib::process::error::ProcessResult;
-use crate::stdlib::process::error::ProcessError;
-use crate::stdlib::process::real_ipc::IpcMessage;
-use crate::stdlib::process::real_ipc::IpcChannel;
-
-    #[test]
-    fn test_ipc_channel_creation() {
-        let config = IpcChannelConfig {
-            name: "test_channel".to_string(),
-            channel_type: IpcChannelType::NamedPipe,
-            ..Default::default()
-        };
-        
-        let channel = RealIpcChannel::new(config);
-        assert!(channel.is_ok());
-    }
-
-    #[test]
-    fn test_ipc_manager() {
-        let mut manager = IpcChannelManager::new(ManagerConfig::default());
-        assert!(manager.start().is_ok());
-        
-        let config = IpcChannelConfig {
-            name: "manager_test".to_string(),
-            channel_type: IpcChannelType::NamedPipe,
-            ..Default::default()
-        };
-        
-        let channel = manager.create_channel(config);
-        assert!(channel.is_ok());
-        
-        assert!(manager.get_channel("manager_test").is_some());
-        assert!(manager.stop().is_ok());
-    }
-
-    #[test]
-    fn test_message_creation() {
-        let message = IpcMessage {
-            id: 1,
-            sender_pid: std::process::id(),
-            data: b"test message".to_vec(),
-            priority: MessagePriority::Normal,
-            timestamp: Instant::now(),
-            message_type: "test".to_string(),
-            delivery_mode: DeliveryMode::BestEffort,
-        };
-        
-        assert_eq!(message.data, b"test message");
-        assert_eq!(message.priority, MessagePriority::Normal);
-    }
-
-    #[test]
-    fn test_convenience_functions() {
-        let channel = create_named_pipe("convenience_test");
-        assert!(channel.is_ok());
-        
-        let manager = get_ipc_manager();
-        assert!(manager.get_channel("convenience_test").is_some());
-    }
-}

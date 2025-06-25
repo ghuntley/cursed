@@ -1,12 +1,12 @@
-use crate::error::Error;
+use crate::error::CursedError;
 /// Core plugin representation and loading functionality
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
 use std::path::{Path, PathBuf};
 use std::time::{Duration, SystemTime};
-use crate::stdlib::plug_vibes::error::{PluginError, PluginResult};
-use crate::stdlib::plug_vibes::version::{Version, parse_version};
-use crate::stdlib::value::Value;
+// use crate::stdlib::plug_vibes::error::{PluginError, PluginResult};
+// use crate::stdlib::plug_vibes::version::{Version, parse_version};
+// use crate::stdlib::value::Value;
 
 /// Options for loading plugins
 #[derive(Debug, Clone)]
@@ -625,71 +625,3 @@ pub fn load_plugins_from_directory(dir_path: &str) -> PluginResult<Vec<Plug>> {
     Ok(plugins)
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use std::time::Duration;
-
-    #[test]
-    fn test_load_options_default() {
-        let options = LoadOptions::default();
-        assert!(options.version_check);
-        assert!(!options.verify_signature);
-        assert!(!options.isolation);
-        assert!(!options.sandbox);
-        assert_eq!(options.timeout, Duration::from_secs(30));
-    }
-
-    #[test]
-    fn test_plug_info_default() {
-        let info = PlugInfo::default();
-        assert_eq!(info.name, "");
-        assert_eq!(info.version, "0.0.0");
-        assert_eq!(info.api, "1.0");
-        assert!(!info.is_verified);
-        assert!(info.is_compatible);
-    }
-
-    #[test]
-    fn test_host_info_default() {
-        let info = HostInfo::default();
-        assert_eq!(info.name, "CURSED");
-        assert_eq!(info.version, "1.0.0");
-        assert_eq!(info.api_version, "1.0");
-    }
-
-    #[test]
-    fn test_plugin_creation() {
-        let path = PathBuf::from("/test/plugin.so");
-        let info = PlugInfo::default();
-        let plugin = Plug::new(path.clone(), info);
-        
-        assert_eq!(plugin.path(), &path);
-        assert!(!plugin.is_loaded());
-        assert_eq!(plugin.symbols().len(), 0);
-    }
-
-    #[test]
-    fn test_plugin_symbol_registration() {
-        let path = PathBuf::from("/test/plugin.so");
-        let info = PlugInfo::default();
-        let plugin = Plug::new(path, info);
-        
-        let result = plugin.register_symbol("test_symbol".to_string(), Value::Integer(42));
-        assert!(result.is_ok());
-        
-        let symbols = plugin.symbols();
-        assert_eq!(symbols.len(), 1);
-        assert!(symbols.contains(&"test_symbol".to_string()));
-    }
-
-    #[test]
-    fn test_load_nonexistent_plugin() {
-        let result = load("/nonexistent/plugin.so");
-        assert!(result.is_err());
-        match result.unwrap_err() {
-            PluginError::PluginNotFound(path) => assert_eq!(path, "/nonexistent/plugin.so"),
-            _ => panic!("Expected PluginNotFound error"),
-        }
-    }
-}

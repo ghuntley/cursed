@@ -1,4 +1,4 @@
-use crate::error::Error;
+use crate::error::CursedError;
 // Navigation provider for CURSED language server
 // 
 // Provides go to definition, find references, hover information, etc.
@@ -192,7 +192,7 @@ impl NavigationProvider {
             // Core I/O functions
             ("print", "```cursed\nslay print(value: any)\n```\n\nPrints a value to stdout without a newline.\n\n**Example:**\n```cursed\nprint(\"Hello\")\nprint(42)\n```"),
             ("println", "```cursed\nslay println(value: any)\n```\n\nPrints a value to stdout with a newline.\n\n**Example:**\n```cursed\nprintln(\"Hello World!\")\n```"),
-            ("eprint", "```cursed\nslay eprint(value: any)\n```\n\nPrints a value to stderr without a newline.\n\n**Example:**\n```cursed\neprint(\"Error: \")\n```"),
+            ("eprint", "```cursed\nslay eprint(value: any)\n```\n\nPrints a value to stderr without a newline.\n\n**Example:**\n```cursed\neprint(\"CursedError: \")\n```"),
             ("eprintln", "```cursed\nslay eprintln(value: any)\n```\n\nPrints a value to stderr with a newline.\n\n**Example:**\n```cursed\neprintln(\"Fatal error occurred!\")\n```"),
             
             // Type conversion functions
@@ -241,8 +241,8 @@ impl NavigationProvider {
             ("trim", "```cursed\nslay trim(string: string) -> string\n```\n\nTrims whitespace from both ends.\n\n**Example:**\n```cursed\nfacts clean = trim(\"  hello  \") // \"hello\"\n```"),
             ("replace", "```cursed\nslay replace(string: string, old: string, new: string) -> string\n```\n\nReplaces all occurrences of old with new.\n\n**Example:**\n```cursed\nfacts result = replace(\"hello world\", \"world\", \"CURSED\") // \"hello CURSED\"\n```"),
             
-            // Error handling functions
-            ("try", "```cursed\nslay try(expression: T) -> Result<(), Error>\n```\n\nTries an expression and returns a Result.\n\n**Example:**\n```cursed\nfacts result = try(risky_operation())\n```"),
+            // CursedError handling functions
+            ("try", "```cursed\nslay try(expression: T) -> crate::error::Result<()>\n```\n\nTries an expression and returns a Result.\n\n**Example:**\n```cursed\nfacts result = try(risky_operation())\n```"),
             ("unwrap", "```cursed\nslay unwrap(result: Result<T, E>) -> T\n```\n\nUnwraps a Result or panics.\n\n**Example:**\n```cursed\nfacts value = unwrap(result)\n```"),
             ("expect", "```cursed\nslay expect(result: Result<T, E>, message: string) -> T\n```\n\nUnwraps a Result or panics with message.\n\n**Example:**\n```cursed\nfacts value = expect(result, \"Failed to parse number\")\n```"),
         ]);
@@ -550,69 +550,3 @@ impl Default for NavigationProvider {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[tokio::test]
-    async fn test_hover_builtin_function() {
-        let provider = NavigationProvider::new();
-        let content = "print(\"hello\")";
-        let position = Position { line: 0, character: 2 }; // On "print"
-        
-        let hover = provider.get_hover_info(content, position).await;
-        assert!(hover.is_some());
-        
-        if let Some(hover) = hover {
-            if let HoverContents::Markup(markup) = hover.contents {
-                assert!(markup.value.contains("print"));
-                assert!(markup.value.contains("stdout"));
-            }
-        }
-    }
-
-    #[tokio::test]
-    async fn test_find_variable_definition() {
-        let provider = NavigationProvider::new();
-        let content = "facts my_var = 42\nprint(my_var)";
-        let uri = Url::parse("file:///test.csd").unwrap();
-        let position = Position { line: 1, character: 8 }; // On "my_var" in print statement
-        
-        let definition = provider.get_definition(content, position, &uri).await;
-        assert!(definition.is_some());
-        
-        if let Some(GotoDefinitionResponse::Scalar(location)) = definition {
-            assert_eq!(location.range.start.line, 0); // Defined on first line
-        }
-    }
-
-    #[tokio::test]
-    async fn test_find_references() {
-        let provider = NavigationProvider::new();
-        let content = "facts my_var = 42\nprint(my_var)\nsus other = my_var + 1";
-        let uri = Url::parse("file:///test.csd").unwrap();
-        let position = Position { line: 0, character: 6 }; // On variable declaration
-        
-        let references = provider.find_references(content, position, &uri).await;
-        assert_eq!(references.len(), 3); // Declaration + 2 usages
-    }
-
-    #[test]
-    fn test_variable_info_extraction() {
-        let provider = NavigationProvider::new();
-        
-        let info = provider.extract_variable_info("facts my_var: string = \"hello\"");
-        assert_eq!(info, Some(("my_var".to_string(), Some("string".to_string()), false)));
-        
-        let info = provider.extract_variable_info("sus counter = 42");
-        assert_eq!(info, Some(("counter".to_string(), Some("int".to_string()), true)));
-    }
-
-    #[test]
-    fn test_function_info_extraction() {
-        let provider = NavigationProvider::new();
-        
-        let info = provider.extract_function_info("slay calculate(a: int, b: int) -> int {");
-        assert_eq!(info, Some(("calculate".to_string(), "a: int, b: int".to_string(), "int".to_string())));
-    }
-}

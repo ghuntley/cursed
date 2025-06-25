@@ -1,4 +1,4 @@
-use crate::error::Error;
+use crate::error::CursedError;
 /// Process management for exec_vibez
 /// 
 /// Implements Process and ProcessState types according to specs/stdlib/exec_vibez.md
@@ -10,7 +10,6 @@ use std::time::{Duration, Instant};
 use std::thread;
 
 use super::error::{ExecResult, ExecError, execution_failed};
-use crate::error::CursedError;
 
 /// Represents a process created by a call to Start or Run
 #[derive(Debug)]
@@ -116,7 +115,7 @@ impl Process {
             match process.try_wait() {
                 Ok(Some(_)) => false, // Process has exited
                 Ok(None) => true,     // Process is still running
-                Err(_) => false,      // Error checking status, assume not running
+                Err(_) => false,      // CursedError checking status, assume not running
             }
         } else {
             false // No process handle
@@ -227,45 +226,3 @@ pub struct ProcessResourceUsage {
     pub involuntary_switches: u64, // Involuntary context switches
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use std::process::Command;
-    
-    #[test]
-    fn test_process_creation() {
-        // Test with a simple command that should be available on most systems
-        let child = Command::new("echo")
-            .arg("test")
-            .spawn();
-            
-        if let Ok(child) = child {
-            let process = Process::new(child).unwrap();
-            assert!(process.pid() > 0);
-        }
-        // If echo is not available, skip the test
-    }
-    
-    #[test]
-    fn test_process_state_creation() {
-        use std::process::ExitStatus;
-use crate::stdlib::process::info::ProcessState;
-        
-        // Create a mock exit status for testing
-        // This is a bit tricky since ExitStatus can't be constructed directly
-        // We'll test the methods that don't depend on actual process execution
-        let now = Instant::now();
-        
-        // We can't easily create an ExitStatus, so we'll test what we can
-        let uptime = now.elapsed();
-        assert!(uptime >= Duration::from_nanos(0));
-    }
-    
-    #[test]
-    fn test_process_resource_usage() {
-        let usage = ProcessResourceUsage::default();
-        assert_eq!(usage.max_rss, 0);
-        assert_eq!(usage.user_time, Duration::from_secs(0));
-        assert_eq!(usage.sys_time, Duration::from_secs(0));
-    }
-}

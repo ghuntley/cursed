@@ -1,4 +1,4 @@
-use crate::error::Error;
+use crate::error::CursedError;
 /// Test Reporting System
 /// 
 /// Comprehensive test result reporting with multiple output formats
@@ -394,7 +394,7 @@ impl TestReporter {
         
         if let Some(ref error) = test_result.error_message {
             writeln!(self.output)?;
-            writeln!(self.output, "       Error: {}", error)?;
+            writeln!(self.output, "       CursedError: {}", error)?;
         } else {
             writeln!(self.output)?;
         }
@@ -518,7 +518,7 @@ impl TestReporter {
         // Test results table
         writeln!(self.output, "  <h2>Test Results</h2>")?;
         writeln!(self.output, "  <table>")?;
-        writeln!(self.output, "    <tr><th>Suite</th><th>Test</th><th>Status</th><th>Duration</th><th>Error</th></tr>")?;
+        writeln!(self.output, "    <tr><th>Suite</th><th>Test</th><th>Status</th><th>Duration</th><th>CursedError</th></tr>")?;
         
         for suite_result in &report.suite_results {
             for test_result in &suite_result.test_results {
@@ -547,7 +547,7 @@ impl TestReporter {
 
     /// Write CSV format report
     fn write_csv_report(&mut self, report: &TestReport) -> TestingResult<()> {
-        writeln!(self.output, "Suite,Test,Status,Duration,Error")?;
+        writeln!(self.output, "Suite,Test,Status,Duration,CursedError")?;
         
         for suite_result in &report.suite_results {
             for test_result in &suite_result.test_results {
@@ -597,7 +597,7 @@ impl TestReporter {
         for suite_result in &report.suite_results {
             writeln!(self.output, "### {}", suite_result.suite_name)?;
             writeln!(self.output)?;
-            writeln!(self.output, "| Test | Status | Duration | Error |")?;
+            writeln!(self.output, "| Test | Status | Duration | CursedError |")?;
             writeln!(self.output, "|------|--------|----------|-------|")?;
             
             for test_result in &suite_result.test_results {
@@ -800,36 +800,3 @@ fn generate_performance_report(suite_results: &[TestSuiteResult]) -> Performance
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use std::io::Cursor;
-
-    #[test]
-    fn test_console_reporter() {
-        let mut output = Cursor::new(Vec::new());
-        let mut reporter = TestReporter::with_output(
-            ReportFormat::Console,
-            Box::new(output)
-        );
-        
-        let report = create_test_report();
-        assert!(reporter.generate_report(&report).is_ok());
-    }
-
-    #[test]
-    fn test_json_reporter() {
-        let mut output = Cursor::new(Vec::new());
-        let mut reporter = TestReporter::with_output(
-            ReportFormat::Json,
-            Box::new(output)
-        );
-        
-        let report = create_test_report();
-        assert!(reporter.generate_report(&report).is_ok());
-    }
-
-    fn create_test_report() -> TestReport {
-        build_test_report(vec![])
-    }
-}

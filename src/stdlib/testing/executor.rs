@@ -1,4 +1,4 @@
-use crate::error::Error;
+use crate::error::CursedError;
 /// Test execution engine for CURSED testing framework
 /// 
 /// Handles the actual execution of discovered tests with support for
@@ -9,7 +9,6 @@ use std::process::{Command, Stdio};
 use std::sync::{Arc, Mutex};
 use std::thread;
 use std::time::{Duration, Instant};
-use crate::crate::stdlib::errors_simple::CursedError;
 use super::{
     discovery::TestInfo,
     TestError, TestFrameworkResult
@@ -54,7 +53,7 @@ impl TestStatus {
 /// Test execution failure details
 #[derive(Debug, Clone)]
 pub struct TestFailure {
-    /// Error message
+    /// CursedError message
     pub message: String,
     /// Stack trace (if available)
     pub stack_trace: Option<String>,
@@ -105,7 +104,7 @@ pub struct TestResult {
     pub execution_time: Duration,
     /// Test output (if captured)
     pub output: Option<String>,
-    /// Error output (if captured)
+    /// CursedError output (if captured)
     pub error_output: Option<String>,
     /// Memory usage (if measured)
     pub memory_usage: Option<u64>,

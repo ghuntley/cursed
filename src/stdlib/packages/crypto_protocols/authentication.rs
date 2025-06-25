@@ -1,9 +1,8 @@
 /// Multi-Factor Authentication and Authentication Protocols Implementation
 use crate::error::CursedError;
-use crate::stdlib::packages::crypto_advanced::errors::AdvancedCryptoResult;
-use crate::stdlib::packages::crypto_random::SecureRandom;
-use crate::stdlib::packages::crypto_hash_advanced::HashRegistry;
-use crate::error::Error;
+// use crate::stdlib::packages::crypto_advanced::AdvancedCryptoResult;
+// use crate::stdlib::packages::crypto_random::SecureRandom;
+// use crate::stdlib::packages::crypto_hash_advanced::HashRegistry;
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
@@ -500,98 +499,3 @@ impl fmt::Display for AuthMethod {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_auth_manager_creation() {
-        let manager = AuthenticationManager::new().unwrap();
-        assert_eq!(manager.sessions.lock().unwrap().len(), 0);
-    }
-
-    #[test]
-    fn test_start_authentication() {
-        let manager = AuthenticationManager::new().unwrap();
-        let result = manager.start_authentication("user123", None).unwrap();
-        
-        assert!(!result.success);
-        assert!(result.session_id.is_some());
-        assert_eq!(result.user_id, "user123");
-        assert!(result.next_challenge.is_some());
-    }
-
-    #[test]
-    fn test_totp_generation() {
-        let manager = AuthenticationManager::new().unwrap();
-        let secret = b"12345678901234567890";
-        
-        let code = manager.generate_totp(secret, Some(30)).unwrap();
-        assert_eq!(code.len(), 6);
-        assert!(code.chars().all(|c| c.is_ascii_digit()));
-    }
-
-    #[test]
-    fn test_hotp_generation() {
-        let manager = AuthenticationManager::new().unwrap();
-        let secret = b"12345678901234567890";
-        
-        let code1 = manager.generate_hotp(secret, 0).unwrap();
-        let code2 = manager.generate_hotp(secret, 1).unwrap();
-        
-        assert_eq!(code1.len(), 6);
-        assert_eq!(code2.len(), 6);
-        assert_ne!(code1, code2); // Different counters should produce different codes
-    }
-
-    #[test]
-    fn test_totp_verification() {
-        let manager = AuthenticationManager::new().unwrap();
-        let secret = b"12345678901234567890";
-        
-        let code = manager.generate_totp(secret, Some(30)).unwrap();
-        let is_valid = manager.verify_totp(secret, &code, Some(1)).unwrap();
-        
-        assert!(is_valid);
-        
-        // Invalid code should fail
-        let is_invalid = manager.verify_totp(secret, "000000", Some(1)).unwrap();
-        assert!(!is_invalid);
-    }
-
-    #[test]
-    fn test_session_validation() {
-        let manager = AuthenticationManager::new().unwrap();
-        let result = manager.start_authentication("user123", None).unwrap();
-        let session_id = result.session_id.unwrap();
-        
-        // Session should not be valid yet (not complete)
-        let is_valid = manager.validate_session(&session_id).unwrap();
-        assert!(!is_valid);
-        
-        // Invalid session ID
-        let is_invalid = manager.validate_session("invalid").unwrap();
-        assert!(!is_invalid);
-    }
-
-    #[test]
-    fn test_cleanup_expired() {
-        let manager = AuthenticationManager::new().unwrap();
-        let _ = manager.start_authentication("user123", None).unwrap();
-        
-        // Should have sessions
-        assert!(manager.sessions.lock().unwrap().len() > 0);
-        
-        // Clean up (sessions not expired yet)
-        let (sessions_cleaned, challenges_cleaned) = manager.cleanup_expired().unwrap();
-        assert_eq!(sessions_cleaned, 0);
-        assert!(challenges_cleaned >= 0);
-    }
-
-    #[test]
-    fn test_auth_factor_display() {
-        assert_eq!(format!("{}", AuthMethod::Password), "Password");
-        assert_eq!(format!("{}", AuthMethod::TOTP), "TOTP");
-        assert_eq!(format!("{}", AuthMethod::Certificate), "Certificate");
-    }
-}

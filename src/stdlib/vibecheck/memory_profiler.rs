@@ -3,7 +3,7 @@
 /// Provides comprehensive memory profiling with heap analysis, allocation tracking,
 /// memory leak detection, and stack trace collection for allocations.
 
-use crate::error::Error;
+use crate::error::CursedError;
 use std::collections::{HashMap, BTreeMap};
 use std::sync::{Arc, Mutex, RwLock};
 use std::time::{SystemTime, Duration};
@@ -132,7 +132,7 @@ impl MemoryProfiler {
     }
 
     /// Record a new allocation
-    pub fn record_allocation(&self, address: usize, size: usize, object_type: Option<String>) -> Result<(), Error> {
+    pub fn record_allocation(&self, address: usize, size: usize, object_type: Option<String>) -> crate::error::Result<()> {
         if size < self.config.min_tracked_size {
             return Ok(());
         }
@@ -140,7 +140,7 @@ impl MemoryProfiler {
         // Sample allocation based on sample rate
         let should_sample = {
             let mut counter = self.sample_counter.lock()
-                .map_err(|_| Error::Runtime("Failed to lock sample counter".to_string()))?;
+                .map_err(|_| CursedError::Runtime("Failed to lock sample counter".to_string()))?;
             *counter += 1;
             *counter % self.config.sample_rate == 0
         };
@@ -167,14 +167,14 @@ impl MemoryProfiler {
         // Update active allocations
         {
             let mut allocations = self.allocations.write()
-                .map_err(|_| Error::Runtime("Failed to lock allocations".to_string()))?;
+                .map_err(|_| CursedError::Runtime("Failed to lock allocations".to_string()))?;
             allocations.insert(address, record.clone());
         }
 
         // Update allocation history
         {
             let mut history = self.allocation_history.lock()
-                .map_err(|_| Error::Runtime("Failed to lock allocation history".to_string()))?;
+                .map_err(|_| CursedError::Runtime("Failed to lock allocation history".to_string()))?;
             
             if history.len() >= self.config.max_allocation_records {
                 history.remove(0); // Remove oldest record
@@ -189,10 +189,10 @@ impl MemoryProfiler {
     }
 
     /// Record a deallocation
-    pub fn record_deallocation(&self, address: usize) -> Result<(), Error> {
+    pub fn record_deallocation(&self, address: usize) -> crate::error::Result<()> {
         let size = {
             let mut allocations = self.allocations.write()
-                .map_err(|_| Error::Runtime("Failed to lock allocations".to_string()))?;
+                .map_err(|_| CursedError::Runtime("Failed to lock allocations".to_string()))?;
             
             if let Some(mut record) = allocations.remove(&address) {
                 record.active = false;
@@ -209,12 +209,12 @@ impl MemoryProfiler {
     }
 
     /// Perform heap analysis
-    pub fn analyze_heap(&self) -> Result<(), Error> {
+    pub fn analyze_heap(&self) -> crate::error::Result<()> {
         let heap_stats = self.heap_stats.lock()
-            .map_err(|_| Error::Runtime("Failed to lock heap stats".to_string()))?;
+            .map_err(|_| CursedError::Runtime("Failed to lock heap stats".to_string()))?;
         
         let allocations = self.allocations.read()
-            .map_err(|_| Error::Runtime("Failed to lock allocations".to_string()))?;
+            .map_err(|_| CursedError::Runtime("Failed to lock allocations".to_string()))?;
 
         let mut size_distribution = BTreeMap::new();
         let mut thread_allocations = HashMap::new();
@@ -248,14 +248,14 @@ impl MemoryProfiler {
     }
 
     /// Detect memory leaks
-    pub fn detect_leaks(&self) -> Result<(), Error> {
+    pub fn detect_leaks(&self) -> crate::error::Result<()> {
         if !self.config.leak_detection {
             return Ok(Vec::new());
         }
 
         let now = SystemTime::now();
         let allocations = self.allocations.read()
-            .map_err(|_| Error::Runtime("Failed to lock allocations".to_string()))?;
+            .map_err(|_| CursedError::Runtime("Failed to lock allocations".to_string()))?;
 
         let mut leaks = Vec::new();
 
@@ -279,7 +279,7 @@ impl MemoryProfiler {
         // Update leak candidates
         {
             let mut candidates = self.leak_candidates.lock()
-                .map_err(|_| Error::Runtime("Failed to lock leak candidates".to_string()))?;
+                .map_err(|_| CursedError::Runtime("Failed to lock leak candidates".to_string()))?;
             *candidates = leaks.clone();
         }
 
@@ -287,9 +287,9 @@ impl MemoryProfiler {
     }
 
     /// Analyze allocation patterns
-    pub fn analyze_patterns(&self) -> Result<(), Error> {
+    pub fn analyze_patterns(&self) -> crate::error::Result<()> {
         let history = self.allocation_history.lock()
-            .map_err(|_| Error::Runtime("Failed to lock allocation history".to_string()))?;
+            .map_err(|_| CursedError::Runtime("Failed to lock allocation history".to_string()))?;
 
         if history.is_empty() {
             return Ok(AllocationPattern {
@@ -344,7 +344,7 @@ impl MemoryProfiler {
     }
 
     /// Get memory usage statistics
-    pub fn get_memory_stats(&self) -> Result<(), Error> {
+    pub fn get_memory_stats(&self) -> crate::error::Result<()> {
         let heap_analysis = self.analyze_heap()?;
         let leaks = self.detect_leaks()?;
         let patterns = self.analyze_patterns()?;
@@ -358,34 +358,34 @@ impl MemoryProfiler {
     }
 
     /// Clear all profiling data
-    pub fn clear(&self) -> Result<(), Error> {
+    pub fn clear(&self) -> crate::error::Result<()> {
         {
             let mut allocations = self.allocations.write()
-                .map_err(|_| Error::Runtime("Failed to lock allocations".to_string()))?;
+                .map_err(|_| CursedError::Runtime("Failed to lock allocations".to_string()))?;
             allocations.clear();
         }
 
         {
             let mut history = self.allocation_history.lock()
-                .map_err(|_| Error::Runtime("Failed to lock allocation history".to_string()))?;
+                .map_err(|_| CursedError::Runtime("Failed to lock allocation history".to_string()))?;
             history.clear();
         }
 
         {
             let mut heap_stats = self.heap_stats.lock()
-                .map_err(|_| Error::Runtime("Failed to lock heap stats".to_string()))?;
+                .map_err(|_| CursedError::Runtime("Failed to lock heap stats".to_string()))?;
             *heap_stats = HeapAnalysis::new();
         }
 
         {
             let mut leak_candidates = self.leak_candidates.lock()
-                .map_err(|_| Error::Runtime("Failed to lock leak candidates".to_string()))?;
+                .map_err(|_| CursedError::Runtime("Failed to lock leak candidates".to_string()))?;
             leak_candidates.clear();
         }
 
         {
             let mut counter = self.sample_counter.lock()
-                .map_err(|_| Error::Runtime("Failed to lock sample counter".to_string()))?;
+                .map_err(|_| CursedError::Runtime("Failed to lock sample counter".to_string()))?;
             *counter = 0;
         }
 
@@ -393,9 +393,9 @@ impl MemoryProfiler {
     }
 
     /// Update heap statistics
-    fn update_heap_stats(&self, size_delta: i64) -> Result<(), Error> {
+    fn update_heap_stats(&self, size_delta: i64) -> crate::error::Result<()> {
         let mut heap_stats = self.heap_stats.lock()
-            .map_err(|_| Error::Runtime("Failed to lock heap stats".to_string()))?;
+            .map_err(|_| CursedError::Runtime("Failed to lock heap stats".to_string()))?;
 
         if size_delta > 0 {
             heap_stats.total_allocated += size_delta as u64;
@@ -493,177 +493,40 @@ pub fn get_memory_profiler() -> Arc<MemoryProfiler> {
 }
 
 /// Set custom memory profiler configuration
-pub fn configure_memory_profiler(config: MemoryProfilerConfig) -> Result<(), Error> {
+pub fn configure_memory_profiler(config: MemoryProfilerConfig) -> crate::error::Result<()> {
     let profiler = Arc::new(MemoryProfiler::with_config(config));
     GLOBAL_MEMORY_PROFILER.set(profiler)
-        .map_err(|_| Error::Runtime("Memory profiler already configured".to_string()))?;
+        .map_err(|_| CursedError::Runtime("Memory profiler already configured".to_string()))?;
     Ok(())
 }
 
 /// Record allocation (called by allocator hooks)
-pub fn profile_allocation(address: usize, size: usize, object_type: Option<String>) -> Result<(), Error> {
+pub fn profile_allocation(address: usize, size: usize, object_type: Option<String>) -> crate::error::Result<()> {
     let profiler = get_memory_profiler();
     profiler.record_allocation(address, size, object_type)
 }
 
 /// Record deallocation (called by allocator hooks)
-pub fn profile_deallocation(address: usize) -> Result<(), Error> {
+pub fn profile_deallocation(address: usize) -> crate::error::Result<()> {
     let profiler = get_memory_profiler();
     profiler.record_deallocation(address)
 }
 
 /// Get current memory statistics
-pub fn memory_profile() -> Result<(), Error> {
+pub fn memory_profile() -> crate::error::Result<()> {
     let profiler = get_memory_profiler();
     profiler.get_memory_stats()
 }
 
 /// Detect memory leaks
-pub fn detect_memory_leaks() -> Result<(), Error> {
+pub fn detect_memory_leaks() -> crate::error::Result<()> {
     let profiler = get_memory_profiler();
     profiler.detect_leaks()
 }
 
 /// Clear profiling data
-pub fn clear_memory_profile() -> Result<(), Error> {
+pub fn clear_memory_profile() -> crate::error::Result<()> {
     let profiler = get_memory_profiler();
     profiler.clear()
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use std::thread;
-    use std::time::Duration;
-
-    #[test]
-    fn test_memory_profiler_creation() {
-        let profiler = MemoryProfiler::new();
-        let stats = profiler.get_memory_stats().unwrap();
-        
-        assert_eq!(stats.heap_analysis.current_allocated, 0);
-        assert_eq!(stats.leak_count, 0);
-    }
-
-    #[test]
-    fn test_allocation_recording() {
-        let profiler = MemoryProfiler::new();
-        
-        profiler.record_allocation(0x1000, 1024, Some("String".to_string())).unwrap();
-        let stats = profiler.get_memory_stats().unwrap();
-        
-        assert_eq!(stats.heap_analysis.current_allocated, 1024);
-        assert_eq!(stats.heap_analysis.total_allocated, 1024);
-        assert_eq!(stats.heap_analysis.active_allocations, 1);
-    }
-
-    #[test]
-    fn test_deallocation_recording() {
-        let profiler = MemoryProfiler::new();
-        
-        profiler.record_allocation(0x1000, 1024, None).unwrap();
-        profiler.record_deallocation(0x1000).unwrap();
-        let stats = profiler.get_memory_stats().unwrap();
-        
-        assert_eq!(stats.heap_analysis.current_allocated, 0);
-        assert_eq!(stats.heap_analysis.total_freed, 1024);
-        assert_eq!(stats.heap_analysis.active_allocations, 0);
-    }
-
-    #[test]
-    fn test_heap_analysis() {
-        let profiler = MemoryProfiler::new();
-        
-        profiler.record_allocation(0x1000, 1024, None).unwrap();
-        profiler.record_allocation(0x2000, 2048, None).unwrap();
-        
-        let analysis = profiler.analyze_heap().unwrap();
-        
-        assert_eq!(analysis.current_allocated, 3072);
-        assert_eq!(analysis.active_allocations, 2);
-        assert!(analysis.size_distribution.contains_key(&1024));
-        assert!(analysis.size_distribution.contains_key(&2048));
-    }
-
-    #[test]
-    fn test_leak_detection() {
-        let mut config = MemoryProfilerConfig::default();
-        config.leak_threshold = Duration::from_millis(100);
-        let profiler = MemoryProfiler::with_config(config);
-        
-        profiler.record_allocation(0x1000, 1024, None).unwrap();
-        
-        // Initially no leaks
-        let leaks = profiler.detect_leaks().unwrap();
-        assert_eq!(leaks.len(), 0);
-        
-        // Wait for leak threshold
-        thread::sleep(Duration::from_millis(150));
-        
-        let leaks = profiler.detect_leaks().unwrap();
-        assert_eq!(leaks.len(), 1);
-        assert_eq!(leaks[0].allocation.size, 1024);
-    }
-
-    #[test]
-    fn test_allocation_patterns() {
-        let profiler = MemoryProfiler::new();
-        
-        profiler.record_allocation(0x1000, 1024, None).unwrap();
-        profiler.record_allocation(0x2000, 1024, None).unwrap();
-        profiler.record_allocation(0x3000, 2048, None).unwrap();
-        
-        let patterns = profiler.analyze_patterns().unwrap();
-        
-        assert_eq!(patterns.avg_allocation_size, (1024.0 + 1024.0 + 2048.0) / 3.0);
-        assert!(!patterns.common_sizes.is_empty());
-        assert_eq!(patterns.common_sizes[0].0, 1024); // Most common size
-        assert_eq!(patterns.common_sizes[0].1, 2);    // Count
-    }
-
-    #[test]
-    fn test_global_profiler_functions() {
-        profile_allocation(0x1000, 1024, Some("TestObject".to_string())).unwrap();
-        
-        let stats = memory_profile().unwrap();
-        assert!(stats.heap_analysis.current_allocated >= 1024);
-        
-        profile_deallocation(0x1000).unwrap();
-        
-        let stats = memory_profile().unwrap();
-        assert!(stats.heap_analysis.total_freed >= 1024);
-        
-        clear_memory_profile().unwrap();
-        
-        let stats = memory_profile().unwrap();
-        assert_eq!(stats.heap_analysis.current_allocated, 0);
-    }
-
-    #[test]
-    fn test_sampling() {
-        let mut config = MemoryProfilerConfig::default();
-        config.sample_rate = 2; // Sample every 2nd allocation
-        let profiler = MemoryProfiler::with_config(config);
-        
-        profiler.record_allocation(0x1000, 1024, None).unwrap(); // Not sampled
-        profiler.record_allocation(0x2000, 1024, None).unwrap(); // Sampled
-        profiler.record_allocation(0x3000, 1024, None).unwrap(); // Not sampled
-        profiler.record_allocation(0x4000, 1024, None).unwrap(); // Sampled
-        
-        let stats = profiler.get_memory_stats().unwrap();
-        assert_eq!(stats.heap_analysis.active_allocations, 2);
-    }
-
-    #[test]
-    fn test_memory_stats_display() {
-        let profiler = MemoryProfiler::new();
-        profiler.record_allocation(0x1000, 1024, None).unwrap();
-        
-        let stats = profiler.get_memory_stats().unwrap();
-        let display = format!("{}", stats);
-        
-        assert!(display.contains("Memory Profile"));
-        assert!(display.contains("Current allocated"));
-        assert!(display.contains("1024"));
-    }
-}

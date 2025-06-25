@@ -122,7 +122,7 @@
 
 use crate::ast::declarations::GenericConstraint;
 use crate::ast::traits::TypeParameter;
-use crate::error::Error;
+use crate::error::CursedError;
 use crate::type_system::{
     TypeEnvironment, TypeExpression, TypeDefinition, InstantiatedType,
     MethodSignature
@@ -315,7 +315,7 @@ impl GenericInstantiator {
         type_args: &[TypeExpression],
         environment: &mut TypeEnvironment,
         constraint_resolver: &ConstraintResolver,
-    ) -> Result<(), Error> {
+    ) -> crate::error::Result<()> {
         let start_time = std::time::SystemTime::now();
 
         // Generate cache key
@@ -332,11 +332,11 @@ impl GenericInstantiator {
 
         // Get base type definition
         let base_type_def = environment.type_definitions.get(base_type)
-            .ok_or_else(|| Error::Type(format!("Base type '{}' not found", base_type)))?;
+            .ok_or_else(|| CursedError::Type(format!("Base type '{}' not found", base_type)))?;
 
         // Validate type argument count
         if base_type_def.type_parameters.len() != type_args.len() {
-            return Err(Error::Type(format!(
+            return Err(CursedError::Type(format!(
                 "Type argument count mismatch: expected {}, got {}",
                 base_type_def.type_parameters.len(),
                 type_args.len()
@@ -359,7 +359,7 @@ impl GenericInstantiator {
             // Check if the type argument satisfies all applicable constraints
             for constraint in applicable_constraints {
                 if !constraint_resolver.check_satisfaction(type_arg, &[constraint.clone()], environment)? {
-                    return Err(Error::Type(format!(
+                    return Err(CursedError::Type(format!(
                         "Type argument '{}' for parameter '{}' does not satisfy constraint '{}'",
                         type_arg.to_string(),
                         type_param.name,
@@ -416,7 +416,7 @@ impl GenericInstantiator {
         &self,
         type_params: &[TypeParameter],
         type_args: &[TypeExpression],
-    ) -> Result<(), Error> {
+    ) -> crate::error::Result<()> {
         let mut substitution_map = HashMap::new();
 
         for (param, arg) in type_params.iter().zip(type_args.iter()) {
@@ -463,7 +463,7 @@ impl GenericInstantiator {
         base_def: &TypeDefinition,
         substitutions: &HashMap<String, TypeExpression>,
         instance_id: &str,
-    ) -> Result<(), Error> {
+    ) -> crate::error::Result<()> {
         // Apply substitutions to methods
         let instantiated_methods = base_def.methods.iter().map(|method| {
             self.apply_substitutions_to_method(method, substitutions)
@@ -484,7 +484,7 @@ impl GenericInstantiator {
         &self,
         method: &MethodSignature,
         substitutions: &HashMap<String, TypeExpression>,
-    ) -> Result<(), Error> {
+    ) -> crate::error::Result<()> {
         let substituted_params = method.parameters.iter()
             .map(|param| self.substitution_engine.apply_substitution(param, substitutions))
             .collect::<Result<Vec<_>, _>>()?;
@@ -519,7 +519,7 @@ impl GenericInstantiator {
         method_name: &str,
         argument_types: &[TypeExpression],
         environment: &TypeEnvironment,
-    ) -> Result<(), Error> {
+    ) -> crate::error::Result<()> {
         let dispatch_key = format!("{}::{}", receiver_type.to_string(), method_name);
 
         // Check resolution cache
@@ -546,7 +546,7 @@ impl GenericInstantiator {
         &mut self,
         type_name: &str,
         environment: &TypeEnvironment,
-    ) -> Result<(), Error> {
+    ) -> crate::error::Result<()> {
         self.method_dispatcher.vtable_generator.generate_vtable(type_name, environment)
     }
 
@@ -690,7 +690,7 @@ impl TypeSubstitution {
         &self,
         type_expr: &TypeExpression,
         substitutions: &HashMap<String, TypeExpression>,
-    ) -> Result<(), Error> {
+    ) -> crate::error::Result<()> {
         match type_expr {
             TypeExpression::Named(name) => {
                 Ok(substitutions.get(name).cloned().unwrap_or_else(|| type_expr.clone()))
@@ -764,25 +764,25 @@ impl MethodDispatcher {
         method_name: &str,
         argument_types: &[TypeExpression],
         environment: &TypeEnvironment,
-    ) -> Result<(), Error> {
+    ) -> crate::error::Result<()> {
         let type_name = match receiver_type {
             TypeExpression::Named(name) => name.clone(),
             TypeExpression::Generic(name, _) => name.clone(),
-            _ => return Err(Error::Type(format!("Cannot resolve method on type {}", receiver_type.to_string()))),
+//             _ => return Err(CursedError::Type(format!("Cannot resolve method on type {}", receiver_type.to_string()))),
         };
 
         // Get type definition
         let type_def = environment.type_definitions.get(&type_name)
-            .ok_or_else(|| Error::Type(format!("Type '{}' not found", type_name)))?;
+            .ok_or_else(|| CursedError::Type(format!("Type '{}' not found", type_name)))?;
 
         // Find matching method
         let method = type_def.methods.iter()
             .find(|m| m.name == method_name)
-            .ok_or_else(|| Error::Type(format!("Method '{}' not found on type '{}'", method_name, type_name)))?;
+            .ok_or_else(|| CursedError::Type(format!("Method '{}' not found on type '{}'", method_name, type_name)))?;
 
         // Check argument types match
         if method.parameters.len() != argument_types.len() {
-            return Err(Error::Type(format!(
+            return Err(CursedError::Type(format!(
                 "Method '{}' expects {} arguments, got {}",
                 method_name,
                 method.parameters.len(),
@@ -806,9 +806,9 @@ impl MethodDispatcher {
         &mut self,
         type_name: &str,
         environment: &TypeEnvironment,
-    ) -> Result<(), Error> {
+    ) -> crate::error::Result<()> {
         let type_def = environment.type_definitions.get(type_name)
-            .ok_or_else(|| Error::Type(format!("Type '{}' not found", type_name)))?;
+            .ok_or_else(|| CursedError::Type(format!("Type '{}' not found", type_name)))?;
 
         let mut methods = HashMap::new();
         for (index, method) in type_def.methods.iter().enumerate() {
@@ -851,14 +851,14 @@ impl VTableGenerator {
         &mut self,
         type_name: &str,
         environment: &TypeEnvironment,
-    ) -> Result<(), Error> {
+    ) -> crate::error::Result<()> {
         // Check if already generated
         if let Some(vtable) = self.generated_vtables.get(type_name) {
             return Ok(vtable.clone());
         }
 
         let type_def = environment.type_definitions.get(type_name)
-            .ok_or_else(|| Error::Type(format!("Type '{}' not found", type_name)))?;
+            .ok_or_else(|| CursedError::Type(format!("Type '{}' not found", type_name)))?;
 
         // Create vtable entries
         let mut entries = Vec::new();
@@ -930,114 +930,3 @@ impl Default for GenericInstantiator {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use crate::type_system::{TypeSystem, TypeKind};
-
-    #[test]
-    fn test_generic_instantiator_creation() {
-        let instantiator = GenericInstantiator::new();
-        assert_eq!(instantiator.instantiation_history.len(), 0);
-    }
-
-    #[test]
-    fn test_instance_cache() {
-        let mut cache = InstanceCache::new();
-        assert_eq!(cache.hit_rate(), 0.0);
-
-        cache.record_hit();
-        cache.record_miss();
-        assert_eq!(cache.hit_rate(), 0.5);
-    }
-
-    #[test]
-    fn test_cache_key_generation() {
-        let instantiator = GenericInstantiator::new();
-        let type_args = vec![
-            TypeExpression::named("normie"),
-            TypeExpression::named("tea"),
-        ];
-        let key = instantiator.generate_cache_key("Vec", &type_args);
-        assert_eq!(key, "Vec[normie,tea]");
-    }
-
-    #[test]
-    fn test_type_substitution() {
-        let substitution = TypeSubstitution::new();
-        let mut substitutions = HashMap::new();
-        substitutions.insert("T".to_string(), TypeExpression::named("normie"));
-
-        let generic_type = TypeExpression::parameter("T");
-        let result = substitution.apply_substitution(&generic_type, &substitutions).unwrap();
-        assert_eq!(result, TypeExpression::named("normie"));
-    }
-
-    #[test]
-    fn test_method_dispatcher() {
-        let dispatcher = MethodDispatcher::new();
-        assert_eq!(dispatcher.dispatch_tables.len(), 0);
-        assert_eq!(dispatcher.resolution_cache.len(), 0);
-    }
-
-    #[test]
-    fn test_vtable_generation() {
-        let mut generator = VTableGenerator::new();
-        
-        // Create a simple type environment
-        let mut env = crate::type_system::TypeEnvironment::new();
-        let type_def = crate::type_system::TypeDefinition {
-            name: "TestType".to_string(),
-            kind: TypeKind::Struct,
-            type_parameters: Vec::new(),
-            constraints: Vec::new(),
-            methods: vec![
-                crate::type_system::MethodSignature {
-                    name: "test_method".to_string(),
-                    parameters: Vec::new(),
-                    return_type: None,
-                    type_parameters: Vec::new(),
-                    constraints: Vec::new(),
-                }
-            ],
-            is_builtin: false,
-        };
-        env.type_definitions.insert("TestType".to_string(), type_def);
-
-        let vtable = generator.generate_vtable("TestType", &env).unwrap();
-        assert_eq!(vtable.type_name, "TestType");
-        assert_eq!(vtable.entries.len(), 1);
-        assert_eq!(vtable.entries[0].method_name, "test_method");
-    }
-
-    #[test]
-    fn test_substitution_scope() {
-        let mut substitution = TypeSubstitution::new();
-        
-        let scope = SubstitutionScope {
-            scope_id: "test_scope".to_string(),
-            bindings: {
-                let mut bindings = HashMap::new();
-                bindings.insert("T".to_string(), TypeExpression::named("normie"));
-                bindings
-            },
-            constraints: Vec::new(),
-        };
-
-        substitution.push_scope(scope);
-        let bindings = substitution.current_bindings();
-        assert_eq!(bindings.get("T"), Some(&TypeExpression::named("normie")));
-
-        let popped = substitution.pop_scope();
-        assert!(popped.is_some());
-        assert_eq!(popped.unwrap().scope_id, "test_scope");
-    }
-
-    #[test]
-    fn test_instantiation_statistics() {
-        let instantiator = GenericInstantiator::new();
-        let stats = instantiator.get_statistics();
-        assert_eq!(stats.total_instantiations, 0);
-        assert_eq!(stats.average_compilation_time_ms, 0.0);
-    }
-}

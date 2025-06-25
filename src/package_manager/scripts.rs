@@ -1,4 +1,4 @@
-use crate::error::Error;
+use crate::error::CursedError;
 /// Safe Script Execution System
 /// 
 /// Provides sandboxed execution of package installation scripts:
@@ -15,7 +15,6 @@ use std::time::{Duration, Instant};
 use std::io::{BufRead, BufReader, Write};
 use tempfile::TempDir;
 use serde::{Deserialize, Serialize};
-use thiserror::Error;
 use tracing::{info, warn, error, debug, instrument};
 
 /// Script executor with sandboxing
@@ -80,7 +79,7 @@ pub struct ScriptResult {
 }
 
 /// Script execution errors
-#[derive(Error, Debug)]
+#[derive(CursedError, Debug)]
 pub enum ScriptError {
     #[error("Script timeout: {script} exceeded {timeout_seconds} seconds")]
     Timeout { script: String, timeout_seconds: u64 },
@@ -148,7 +147,7 @@ impl ScriptExecutor {
         &self,
         script: &InstallScript,
         context: &ScriptContext,
-    ) -> Result<(), Error> {
+    ) -> crate::error::Result<()> {
         if !self.enabled {
             info!("Script execution disabled, skipping");
             return Ok(ScriptResult {
@@ -195,7 +194,7 @@ impl ScriptExecutor {
     }
     
     /// Validate script content for security
-    fn validate_script_content(&self, script: &InstallScript) -> Result<(), Error> {
+    fn validate_script_content(&self, script: &InstallScript) -> crate::error::Result<()> {
         // Check for potentially dangerous commands
         let dangerous_patterns = vec![
             "rm -rf /",
@@ -234,7 +233,7 @@ impl ScriptExecutor {
     }
     
     /// Create temporary script file
-    fn create_script_file(&self, script: &InstallScript) -> Result<(), Error> {
+    fn create_script_file(&self, script: &InstallScript) -> crate::error::Result<()> {
         let extension = match script.interpreter {
             ScriptInterpreter::Shell | ScriptInterpreter::Bash => "sh",
             ScriptInterpreter::Python => "py",
@@ -263,7 +262,7 @@ impl ScriptExecutor {
         script: &InstallScript,
         script_file: &Path,
         context: &ScriptContext,
-    ) -> Result<(), Error> {
+    ) -> crate::error::Result<()> {
         let mut command = match &script.interpreter {
             ScriptInterpreter::Shell => {
                 #[cfg(unix)]
@@ -350,7 +349,7 @@ impl ScriptExecutor {
         &self,
         command: &mut Command,
         script: &InstallScript,
-    ) -> Result<(), Error> {
+    ) -> crate::error::Result<()> {
         let timeout = script.timeout_seconds
             .map(Duration::from_secs)
             .unwrap_or(self.config.timeout);
@@ -435,7 +434,7 @@ impl ScriptExecutor {
     pub fn parse_scripts_from_metadata(
         &self,
         metadata: &str,
-    ) -> Result<(), Error> {
+    ) -> crate::error::Result<()> {
         // Parse scripts from package.toml or similar metadata
         // This is a simplified implementation
         let mut scripts = Vec::new();

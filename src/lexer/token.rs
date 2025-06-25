@@ -1,4 +1,4 @@
-use crate::error::Error;
+use crate::error::CursedError;
 /// Token types for the lexer
 #[derive(Debug, Clone, PartialEq)]
 pub struct Token {
@@ -33,5 +33,5 @@ pub enum TokenType {
     Comma,
     // Special
     EOF,
-    Error,
+    CursedError,
 }

@@ -3,11 +3,11 @@
 /// Implementation of multi-signature schemes that require multiple signatures to authorize
 /// a transaction or message. Supports threshold signatures (m-of-n) with aggregation.
 
-use crate::stdlib::packages::crypto_signatures::errors::{SignatureError, SignatureResult};
-use crate::stdlib::packages::crypto_signatures::key_management::{KeyPair, PublicKey, KeyType};
-use crate::stdlib::packages::crypto_signatures::ed25519::{Ed25519Signer, Ed25519Verifier};
-use crate::stdlib::packages::crypto_signatures::ecdsa::{EcdsaSigner, EcdsaVerifier, EcdsaCurve};
-use crate::error::Error;
+// use crate::stdlib::packages::crypto_signatures::errors::{SignatureError, SignatureResult};
+// use crate::stdlib::packages::crypto_signatures::key_management::{KeyPair, PublicKey, KeyType};
+// use crate::stdlib::packages::crypto_signatures::ed25519::{Ed25519Signer, Ed25519Verifier};
+// use crate::stdlib::packages::crypto_signatures::ecdsa::{EcdsaSigner, EcdsaVerifier, EcdsaCurve};
+use crate::error::CursedError;
 use std::collections::{HashMap, HashSet};
 use std::sync::{Arc, Mutex};
 
@@ -616,7 +616,7 @@ impl MultiSigSigner {
 /// Utility functions for multi-signatures
 pub mod utils {
     use super::*;
-    use crate::stdlib::packages::crypto_signatures::key_management::KeyGenerator;
+//     use crate::stdlib::packages::crypto_signatures::key_management::KeyGenerator;
     
     /// Create a simple threshold multi-signature setup
     pub fn create_threshold_setup(

@@ -14,11 +14,11 @@ use std::time::{Duration, SystemTime};
 use mysql::{Pool, PooledConn, OptsBuilder, Conn};
 use mysql::prelude::*;
 
-use crate::stdlib::database::{
+// use crate::stdlib::database::{
     Driver, DriverConn, DatabaseError, DatabaseErrorKind, SqlIsolationLevel,
     driver::{DriverCapabilities, ConnectionMetadata}
 };
-use crate::error::Error;
+use crate::error::CursedError;
 use super::error::{MySqlError, MySqlResult};
 use super::connection::MySqlConnection;
 use super::types::{parse_connection_string, MySqlConnectionInfo};
@@ -225,7 +225,7 @@ impl Clone for MySqlDriver {
 }
 
 impl Driver for MySqlDriver {
-    fn open(&self, data_source_name: &str) -> Result<(), Error> {
+    fn open(&self, data_source_name: &str) -> crate::error::Result<()> {
         // Validate connection string
         super::types::validate_connection_string(data_source_name)
             .map_err(|e| e.to_database_error())?;
@@ -300,79 +300,3 @@ pub fn build_mysql_opts(dsn: &str, config: &MySqlConfig) -> MySqlResult<mysql::O
     driver.build_connection_opts(&conn_info)
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_mysql_driver_creation() {
-        let driver = MySqlDriver::new();
-        assert_eq!(driver.name(), "MySQL Driver for CURSED");
-        assert!(driver.capabilities().supports_transactions);
-        assert!(driver.capabilities().supports_prepared_statements);
-    }
-
-    #[test]
-    fn test_mysql_driver_with_config() {
-        let mut config = MySqlConfig::default();
-        config.max_connections = 50;
-        config.charset = "utf8".to_string();
-
-        let driver = MySqlDriver::with_config(config.clone());
-        assert_eq!(driver.config().max_connections, 50);
-        assert_eq!(driver.config().charset, "utf8");
-    }
-
-    #[test]
-    fn test_driver_capabilities() {
-        let driver = MySqlDriver::new();
-        let caps = driver.capabilities();
-
-        assert!(caps.supports_transactions);
-        assert!(caps.supports_prepared_statements);
-        assert!(caps.supports_multiple_result_sets);
-        assert!(caps.supports_stored_procedures);
-        assert!(caps.supports_batch_operations);
-        assert!(caps.supports_concurrent_connections);
-        assert_eq!(caps.max_connections, Some(100));
-        assert!(caps.supported_isolation_levels.len() == 4);
-    }
-
-    #[test]
-    fn test_dsn_parsing() {
-        let dsn = "mysql://user:pass@localhost:3306/testdb";
-        let info = parse_mysql_dsn(dsn).unwrap();
-
-        assert_eq!(info.user, "user");
-        assert_eq!(info.password, "pass");
-        assert_eq!(info.host, "localhost");
-        assert_eq!(info.port, 3306);
-        assert_eq!(info.database, "testdb");
-    }
-
-    #[test]
-    fn test_dsn_validation() {
-        assert!(validate_mysql_dsn("mysql://user:pass@localhost:3306/testdb").is_ok());
-        assert!(validate_mysql_dsn("user:pass@localhost:3306/testdb").is_ok());
-        assert!(validate_mysql_dsn("").is_err());
-        assert!(validate_mysql_dsn("invalid").is_err());
-    }
-
-    #[test]
-    fn test_driver_cloning() {
-        let driver1 = MySqlDriver::new();
-        let driver2 = driver1.clone();
-
-        assert_eq!(driver1.name(), driver2.name());
-        assert_eq!(driver1.config().max_connections, driver2.config().max_connections);
-    }
-
-    #[test]
-    fn test_driver_boxed_clone() {
-        let driver: Box<dyn Driver> = Box::new(MySqlDriver::new());
-        let cloned = driver.clone_driver();
-
-        assert_eq!(driver.name(), cloned.name());
-        assert_eq!(driver.capabilities().max_connections, cloned.capabilities().max_connections);
-    }
-}

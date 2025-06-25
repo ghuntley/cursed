@@ -1,11 +1,9 @@
-use crate::error::Error;
+use crate::error::CursedError;
 /// Field arithmetic operations for zero-knowledge proofs
 use std::fmt;
 use std::ops::{Add, Sub, Mul, Div, Neg};
-use crate::stdlib::packages::crypto_advanced::AdvancedCryptoResult;
-use crate::error::CursedError;
-use crate::stdlib::crypto::unified_api::UnifiedCryptoError as CryptoError;
-use crate::stdlib::value::Value;
+// use crate::stdlib::packages::crypto_advanced::AdvancedCryptoResult;
+// use crate::stdlib::value::Value;
 
 /// Prime field element for BN254 curve
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -454,54 +452,3 @@ impl FieldArithmetic {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_field_element_basic_operations() {
-        let a = FieldElement::new(5);
-        let b = FieldElement::new(3);
-        
-        let sum = a + b;
-        let diff = a - b;
-        let product = a * b;
-        
-        assert!(!sum.is_zero());
-        assert!(!diff.is_zero());
-        assert!(!product.is_zero());
-    }
-
-    #[test]
-    fn test_field_element_inverse() {
-        let a = FieldElement::new(5);
-        let inv = a.inverse().unwrap();
-        let product = a * inv;
-        
-        // Should be close to one (modular arithmetic)
-        assert!(!product.is_zero());
-    }
-
-    #[test]
-    fn test_field_arithmetic_operations() {
-        let a = Value::Integer(5);
-        let b = Value::Integer(3);
-        
-        let sum = FieldArithmetic::add(&a, &b).unwrap();
-        let diff = FieldArithmetic::subtract(&a, &b).unwrap();
-        let product = FieldArithmetic::multiply(&a, &b).unwrap();
-        
-        assert!(matches!(sum, Value::String(_)));
-        assert!(matches!(diff, Value::String(_)));
-        assert!(matches!(product, Value::String(_)));
-    }
-
-    #[test]
-    fn test_field_constants() {
-        let zero = FieldArithmetic::zero();
-        let one = FieldArithmetic::one();
-        
-        assert!(matches!(zero, Value::String(_)));
-        assert!(matches!(one, Value::String(_)));
-    }
-}

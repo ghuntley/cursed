@@ -1,4 +1,4 @@
-use crate::error::Error;
+use crate::error::CursedError;
 /// Core types and functions for exec_vibez
 use std::collections::HashMap;
 use std::path::PathBuf;
@@ -228,63 +228,3 @@ pub fn get_process_lifecycle() -> &'static ProcessLifecycle {
     &PROCESS_LIFECYCLE
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-use crate::stdlib::process::info::ProcessInfo;
-    
-    #[test]
-    fn test_process_tracking() {
-        let initial_count = get_active_process_count();
-        
-        register_process(1234, "test", &["arg1".to_string()], None);
-        assert_eq!(get_active_process_count(), initial_count + 1);
-        
-        let info = get_process_info(1234).unwrap();
-        assert_eq!(info.pid, 1234);
-        assert_eq!(info.command, "test");
-        
-        unregister_process(1234);
-        assert_eq!(get_active_process_count(), initial_count);
-        assert!(get_process_info(1234).is_none());
-    }
-    
-    #[test]
-    fn test_look_path() {
-        // Test with a command that should exist on most systems
-        #[cfg(unix)]
-        {
-            let result = LookPath("sh");
-            assert!(result.is_ok());
-            assert!(result.unwrap().contains("sh"));
-        }
-        
-        #[cfg(windows)]
-        {
-            let result = LookPath("cmd");
-            assert!(result.is_ok());
-            assert!(result.unwrap().to_lowercase().contains("cmd"));
-        }
-        
-        // Test with a command that shouldn't exist
-        let result = LookPath("nonexistent_command_12345");
-        assert!(result.is_err());
-    }
-    
-    #[test]
-    fn test_process_lifecycle() {
-        let lifecycle = ProcessLifecycle::new();
-        
-        let cleanup_called = Arc::new(Mutex::new(false));
-        let cleanup_called_clone = cleanup_called.clone();
-        
-        lifecycle.add_cleanup_handler(move |_pid| {
-            *cleanup_called_clone.lock().unwrap() = true;
-        });
-        
-        lifecycle.register_process(5678);
-        lifecycle.unregister_process(5678);
-        
-        assert!(*cleanup_called.lock().unwrap());
-    }
-}

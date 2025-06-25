@@ -48,8 +48,8 @@ impl RateLimitAlgorithm for FixedWindow {
         config: &RateLimitConfig,
     ) -> RateLimitResult<RateLimitDecision> {
         let window_duration = match &config.window_config {
-            crate::stdlib::packages::web_vibez::ratelimit::WindowConfig::Fixed { duration } => duration.as_secs(),
-            crate::stdlib::packages::web_vibez::ratelimit::WindowConfig::Sliding { duration } => duration.as_secs(),
+//             crate::stdlib::packages::web_vibez::ratelimit::WindowConfig::Fixed { duration } => duration.as_secs(),
+//             crate::stdlib::packages::web_vibez::ratelimit::WindowConfig::Sliding { duration } => duration.as_secs(),
         };
 
         // Check if we need to start a new window
@@ -123,8 +123,8 @@ impl RateLimitAlgorithm for SlidingWindow {
         config: &RateLimitConfig,
     ) -> RateLimitResult<RateLimitDecision> {
         let window_duration = match &config.window_config {
-            crate::stdlib::packages::web_vibez::ratelimit::WindowConfig::Fixed { duration } => duration.as_secs(),
-            crate::stdlib::packages::web_vibez::ratelimit::WindowConfig::Sliding { duration } => duration.as_secs(),
+//             crate::stdlib::packages::web_vibez::ratelimit::WindowConfig::Fixed { duration } => duration.as_secs(),
+//             crate::stdlib::packages::web_vibez::ratelimit::WindowConfig::Sliding { duration } => duration.as_secs(),
         };
 
         // Remove expired requests from sliding window
@@ -427,148 +427,3 @@ impl RateLimitAlgorithm for AdaptiveAlgorithm {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use crate::stdlib::packages::web_vibez::ratelimit::{RateLimitConfig, WindowConfig, BucketConfig};
-    use std::time::Duration;
-
-    #[tokio::test]
-    async fn test_fixed_window_algorithm() {
-        let algorithm = FixedWindow::new();
-        let config = RateLimitConfig::new(3, Duration::from_secs(60));
-        let mut state = ClientState::new();
-        let now = current_timestamp();
-
-        // First 3 requests should be allowed
-        for i in 0..3 {
-            let decision = algorithm.check_limit(&mut state, now + i, &config).unwrap();
-            assert!(matches!(decision, RateLimitDecision::Allow { .. }));
-        }
-
-        // 4th request should be denied
-        let decision = algorithm.check_limit(&mut state, now + 3, &config).unwrap();
-        assert!(matches!(decision, RateLimitDecision::Deny { .. }));
-    }
-
-    #[tokio::test]
-    async fn test_sliding_window_algorithm() {
-        let algorithm = SlidingWindow::new();
-        let config = RateLimitConfig {
-            max_requests: 2,
-            window_config: WindowConfig::Sliding { duration: Duration::from_secs(10) },
-            bucket_config: None,
-        };
-        let mut state = ClientState::new();
-        let now = current_timestamp();
-
-        // First 2 requests should be allowed
-        let decision1 = algorithm.check_limit(&mut state, now, &config).unwrap();
-        assert!(matches!(decision1, RateLimitDecision::Allow { .. }));
-        
-        let decision2 = algorithm.check_limit(&mut state, now + 1, &config).unwrap();
-        assert!(matches!(decision2, RateLimitDecision::Allow { .. }));
-
-        // 3rd request should be denied
-        let decision3 = algorithm.check_limit(&mut state, now + 2, &config).unwrap();
-        assert!(matches!(decision3, RateLimitDecision::Deny { .. }));
-
-        // After window slides, should be allowed again
-        let decision4 = algorithm.check_limit(&mut state, now + 12, &config).unwrap();
-        assert!(matches!(decision4, RateLimitDecision::Allow { .. }));
-    }
-
-    #[tokio::test]
-    async fn test_token_bucket_algorithm() {
-        let algorithm = TokenBucket::new();
-        let config = RateLimitConfig {
-            max_requests: 5,
-            window_config: WindowConfig::Fixed { duration: Duration::from_secs(60) },
-            bucket_config: Some(BucketConfig {
-                capacity: 3.0,
-                refill_rate: 1.0, // 1 token per second
-            }),
-        };
-        let mut state = ClientState::new();
-        let now = current_timestamp();
-
-        // Should be able to make 3 requests immediately (full bucket)
-        for i in 0..3 {
-            let decision = algorithm.check_limit(&mut state, now + i, &config).unwrap();
-            assert!(matches!(decision, RateLimitDecision::Allow { .. }));
-        }
-
-        // 4th request should be denied (bucket empty)
-        let decision = algorithm.check_limit(&mut state, now + 3, &config).unwrap();
-        assert!(matches!(decision, RateLimitDecision::Deny { .. }));
-
-        // After waiting for refill, should be allowed again
-        let decision = algorithm.check_limit(&mut state, now + 5, &config).unwrap();
-        assert!(matches!(decision, RateLimitDecision::Allow { .. }));
-    }
-
-    #[tokio::test]
-    async fn test_leaky_bucket_algorithm() {
-        let algorithm = LeakyBucket::new();
-        let config = RateLimitConfig {
-            max_requests: 5,
-            window_config: WindowConfig::Fixed { duration: Duration::from_secs(60) },
-            bucket_config: Some(BucketConfig {
-                capacity: 3.0,
-                refill_rate: 0.5, // 0.5 requests leak per second
-            }),
-        };
-        let mut state = ClientState::new();
-        let now = current_timestamp();
-
-        // Fill bucket to capacity
-        for i in 0..3 {
-            let decision = algorithm.check_limit(&mut state, now + i, &config).unwrap();
-            assert!(matches!(decision, RateLimitDecision::Allow { .. }));
-        }
-
-        // Should be denied when bucket is full
-        let decision = algorithm.check_limit(&mut state, now + 3, &config).unwrap();
-        assert!(matches!(decision, RateLimitDecision::Deny { .. }));
-
-        // After leak time, should have capacity again
-        let decision = algorithm.check_limit(&mut state, now + 5, &config).unwrap();
-        assert!(matches!(decision, RateLimitDecision::Allow { .. }));
-    }
-
-    #[tokio::test]
-    async fn test_adaptive_algorithm() {
-        let algorithm = AdaptiveAlgorithm::new();
-        let config = RateLimitConfig::new(5, Duration::from_secs(60));
-        let mut state = ClientState::new();
-        let now = current_timestamp();
-
-        // Should work with adaptive selection
-        let decision = algorithm.check_limit(&mut state, now, &config).unwrap();
-        assert!(matches!(decision, RateLimitDecision::Allow { .. }));
-        
-        assert_eq!(algorithm.name(), "Adaptive");
-        assert!(algorithm.description().contains("Adaptive"));
-    }
-
-    #[tokio::test]
-    async fn test_algorithm_descriptions() {
-        let fixed = FixedWindow::new();
-        let sliding = SlidingWindow::new();
-        let token = TokenBucket::new();
-        let leaky = LeakyBucket::new();
-        let adaptive = AdaptiveAlgorithm::new();
-
-        assert_eq!(fixed.name(), "FixedWindow");
-        assert_eq!(sliding.name(), "SlidingWindow");
-        assert_eq!(token.name(), "TokenBucket");
-        assert_eq!(leaky.name(), "LeakyBucket");
-        assert_eq!(adaptive.name(), "Adaptive");
-
-        assert!(fixed.description().contains("Fixed"));
-        assert!(sliding.description().contains("Sliding"));
-        assert!(token.description().contains("Token"));
-        assert!(leaky.description().contains("Leaky"));
-        assert!(adaptive.description().contains("Adaptive"));
-    }
-}

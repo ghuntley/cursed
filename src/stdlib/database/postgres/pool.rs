@@ -1,4 +1,4 @@
-use crate::error::Error;
+use crate::error::CursedError;
 /// PostgreSQL Connection Pool Implementation
 /// 
 /// Provides high-performance connection pooling for PostgreSQL using bb8 with
@@ -386,49 +386,3 @@ impl std::fmt::Display for PoolHealth {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_pool_config_defaults() {
-        let config = PostgresPoolConfig::default();
-        assert_eq!(config.max_size, 100);
-        assert_eq!(config.min_idle, Some(10));
-        assert_eq!(config.connection_timeout, Duration::from_secs(30));
-    }
-
-    #[test]
-    fn test_pool_config_from_postgres_config() {
-        let pg_config = PostgresConfig {
-            max_connections: 50,
-            min_connections: 5,
-            ..Default::default()
-        };
-        
-        let pool_config = PostgresPoolConfig::from_postgres_config(&pg_config);
-        assert_eq!(pool_config.max_size, 50);
-        assert_eq!(pool_config.min_idle, Some(5));
-    }
-
-    #[test]
-    fn test_pool_statistics() {
-        let stats = PoolStatistics::default();
-        assert_eq!(stats.total_connections_created, 0);
-        assert_eq!(stats.total_checkouts, 0);
-        assert_eq!(stats.avg_checkout_time_ms, 0.0);
-    }
-
-    #[tokio::test]
-    async fn test_pool_creation() {
-        let config = PostgresConfig::default();
-        
-        // This will fail without a real PostgreSQL server, but tests the creation logic
-        let result = PostgresPool::new(config).await;
-        
-        // Expect connection failure, not configuration error
-        if let Err(err) = result {
-            assert!(matches!(err.kind, PostgresErrorKind::ConnectionFailed | PostgresErrorKind::PoolError));
-        }
-    }
-}

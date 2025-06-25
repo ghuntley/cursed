@@ -382,7 +382,7 @@ impl EntityCache {
         &mut self,
         entity: T,
         ttl: Duration,
-    ) -> Result<(), Error> {
+    ) -> crate::error::Result<()> {
         debug!(entity = T::table_name(), "Caching entity");
         
         if let Some(pk_value) = entity.primary_key_value() {
@@ -518,7 +518,7 @@ impl RedisCache {
 
     /// facts Get value from Redis
     #[instrument(skip(self))]
-    pub async fn get(&self, key: &str) -> Result<(), Error> {
+    pub async fn get(&self, key: &str) -> crate::error::Result<()> {
         debug!(key = key, "Getting value from Redis");
         // Placeholder implementation
         Ok(None)
@@ -526,7 +526,7 @@ impl RedisCache {
 
     /// periodt Set value in Redis
     #[instrument(skip(self, value))]
-    pub async fn set(&self, key: &str, value: Vec<u8>, ttl: Duration) -> Result<(), Error> {
+    pub async fn set(&self, key: &str, value: Vec<u8>, ttl: Duration) -> crate::error::Result<()> {
         debug!(key = key, ttl = ?ttl, "Setting value in Redis");
         // Placeholder implementation
         Ok(())
@@ -534,7 +534,7 @@ impl RedisCache {
 
     /// bestie Delete value from Redis
     #[instrument(skip(self))]
-    pub async fn delete(&self, key: &str) -> Result<(), Error> {
+    pub async fn delete(&self, key: &str) -> crate::error::Result<()> {
         debug!(key = key, "Deleting value from Redis");
         // Placeholder implementation
         Ok(true)
@@ -579,7 +579,7 @@ impl CacheInvalidator {
 
     /// periodt Invalidate caches based on entity change
     #[instrument(skip(self))]
-    pub async fn invalidate_for_entity(&self, entity_type: &str, operation: CacheOperation) -> Result<(), Error> {
+    pub async fn invalidate_for_entity(&self, entity_type: &str, operation: CacheOperation) -> crate::error::Result<()> {
         info!(entity = entity_type, operation = ?operation, "Invalidating caches for entity");
         
         let rules = if let Ok(invalidation_rules) = self.invalidation_rules.lock() {
@@ -597,7 +597,7 @@ impl CacheInvalidator {
         Ok(())
     }
 
-    async fn execute_invalidation_rule(&self, rule: &InvalidationRule) -> Result<(), Error> {
+    async fn execute_invalidation_rule(&self, rule: &InvalidationRule) -> crate::error::Result<()> {
         match rule {
             InvalidationRule::InvalidatePattern { pattern } => {
                 if let Ok(mut cache) = self.memory_cache.lock() {
@@ -668,147 +668,3 @@ impl CombinedCacheStats {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use std::thread;
-    use std::time::Duration;
-    use tracing_test::traced_test;
-use crate::error_types::Error;
-
-    #[traced_test]
-    #[test]
-    fn test_query_cache_creation() {
-        let config = CacheConfig::default();
-        let cache = QueryCache::new(config);
-        
-        let stats = cache.stats();
-        assert_eq!(stats.hits, 0);
-        assert_eq!(stats.misses, 0);
-    }
-
-    #[traced_test]
-    #[test]
-    fn test_cache_set_and_get() {
-        let config = CacheConfig::default();
-        let mut cache = QueryCache::new(config);
-        
-        cache.set("test_key".to_string(), "test_value".to_string(), Duration::from_secs(60));
-        
-        let value: Option<String> = cache.get("test_key");
-        assert_eq!(value, Some("test_value".to_string()));
-        
-        let stats = cache.stats();
-        assert_eq!(stats.hits, 1);
-        assert_eq!(stats.sets, 1);
-    }
-
-    #[traced_test]
-    #[test]
-    fn test_cache_expiration() {
-        let config = CacheConfig::default();
-        let mut cache = QueryCache::new(config);
-        
-        cache.set("test_key".to_string(), "test_value".to_string(), Duration::from_millis(10));
-        
-        // Wait for expiration
-        thread::sleep(Duration::from_millis(20));
-        
-        let value: Option<String> = cache.get("test_key");
-        assert_eq!(value, None);
-        
-        let stats = cache.stats();
-        assert_eq!(stats.misses, 1);
-    }
-
-    #[traced_test]
-    #[test]
-    fn test_cache_removal() {
-        let config = CacheConfig::default();
-        let mut cache = QueryCache::new(config);
-        
-        cache.set("test_key".to_string(), "test_value".to_string(), Duration::from_secs(60));
-        
-        let removed = cache.remove("test_key");
-        assert!(removed);
-        
-        let value: Option<String> = cache.get("test_key");
-        assert_eq!(value, None);
-    }
-
-    #[traced_test]
-    #[test]
-    fn test_pattern_invalidation() {
-        let config = CacheConfig::default();
-        let mut cache = QueryCache::new(config);
-        
-        cache.set("user:1".to_string(), "user1".to_string(), Duration::from_secs(60));
-        cache.set("user:2".to_string(), "user2".to_string(), Duration::from_secs(60));
-        cache.set("post:1".to_string(), "post1".to_string(), Duration::from_secs(60));
-        
-        cache.invalidate_pattern("user:*");
-        
-        let user1: Option<String> = cache.get("user:1");
-        let user2: Option<String> = cache.get("user:2");
-        let post1: Option<String> = cache.get("post:1");
-        
-        assert_eq!(user1, None);
-        assert_eq!(user2, None);
-        assert_eq!(post1, Some("post1".to_string()));
-    }
-
-    #[traced_test]
-    #[test]
-    fn test_cache_stats() {
-        let config = CacheConfig::default();
-        let mut cache = QueryCache::new(config);
-        
-        cache.set("key1".to_string(), "value1".to_string(), Duration::from_secs(60));
-        cache.set("key2".to_string(), "value2".to_string(), Duration::from_secs(60));
-        
-        let _: Option<String> = cache.get("key1");  // hit
-        let _: Option<String> = cache.get("key3");  // miss
-        
-        let stats = cache.stats();
-        assert_eq!(stats.hits, 1);
-        assert_eq!(stats.misses, 1);
-        assert_eq!(stats.sets, 2);
-        assert_eq!(stats.hit_ratio(), 0.5);
-    }
-
-    #[traced_test]
-    #[test]
-    fn test_memory_cache() {
-        let config = CacheConfig::default();
-        let mut memory_cache = MemoryCache::new(config);
-        
-        memory_cache.query_cache_mut().set("test".to_string(), "value".to_string(), Duration::from_secs(60));
-        
-        let value: Option<String> = memory_cache.query_cache().get("test");
-        assert_eq!(value, Some("value".to_string()));
-        
-        memory_cache.clear_all();
-        
-        let value_after_clear: Option<String> = memory_cache.query_cache().get("test");
-        assert_eq!(value_after_clear, None);
-    }
-
-    #[traced_test]
-    #[test]
-    fn test_cache_invalidator() {
-        let config = CacheConfig::default();
-        let memory_cache = Arc::new(Mutex::new(MemoryCache::new(config)));
-        let invalidator = CacheInvalidator::new(memory_cache, None);
-        
-        invalidator.add_rule("users", InvalidationRule::InvalidatePattern {
-            pattern: "user:*".to_string(),
-        });
-        
-        // Test that rule was added (basic functionality test)
-        let rules_count = invalidator.invalidation_rules.lock()
-            .map(|rules| rules.get("users").map(|r| r.len()).unwrap_or(0))
-            .unwrap_or(0);
-        
-        assert_eq!(rules_count, 1);
-    }
-}

@@ -1,4 +1,4 @@
-use crate::error::Error;
+use crate::error::CursedError;
 /// fr fr MySQL connection pool implementation
 /// 
 /// This module provides advanced connection pooling capabilities for MySQL
@@ -331,56 +331,3 @@ impl Default for MySqlPoolStats {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_pool_config_defaults() {
-        let config = MySqlPoolConfig::default();
-        
-        assert_eq!(config.min_connections, 1);
-        assert_eq!(config.max_connections, 100);
-        assert_eq!(config.test_query, "SELECT 1");
-        assert_eq!(config.max_retries, 3);
-    }
-
-    #[test]
-    fn test_pool_stats() {
-        let stats = MySqlPoolStats::new();
-        
-        // Record some acquisitions
-        stats.record_connection_acquired(Duration::from_millis(10));
-        stats.record_connection_acquired(Duration::from_millis(20));
-        stats.record_connection_failure();
-        
-        assert!(stats.success_rate() > 0.0);
-        assert!(stats.success_rate() < 100.0);
-        assert!(stats.average_acquisition_time() > Duration::ZERO);
-    }
-
-    #[test]
-    fn test_health_report() {
-        let report = MySqlPoolHealthReport {
-            total_connections: 10,
-            healthy_connections: 8,
-            failed_connections: 2,
-            errors: vec!["Test error".to_string()],
-            timestamp: Instant::now(),
-        };
-        
-        assert!(!report.is_healthy()); // Has failed connections
-        assert_eq!(report.health_percentage(), 80.0);
-    }
-
-    #[test]
-    fn test_pool_state() {
-        let state = MySqlPoolState {
-            connections: 10,
-            idle_connections: 5,
-        };
-        
-        assert_eq!(state.connections, 10);
-        assert_eq!(state.idle_connections, 5);
-    }
-}

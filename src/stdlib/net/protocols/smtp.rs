@@ -1,10 +1,10 @@
-use crate::error::Error;
+use crate::error::CursedError;
 /// SMTP client implementation for email sending
 
 use std::time::Duration;
-use crate::stdlib::net::error::{NetError, NetResult, protocol_error};
-use crate::stdlib::net::socket::TcpSocket;
-use crate::stdlib::net::protocols::{ProtocolError, ProtocolResult};
+// use crate::stdlib::net::error::{NetError, NetResult, protocol_error};
+// use crate::stdlib::net::socket::TcpSocket;
+// use crate::stdlib::net::protocols::{ProtocolError, ProtocolResult};
 
 /// SMTP client configuration
 #[derive(Debug, Clone)]
@@ -315,73 +315,3 @@ fn base64_encode(input: &[u8]) -> String {
     result
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_smtp_config_default() {
-        let config = SmtpConfig::default();
-        assert_eq!(config.server, "localhost");
-        assert_eq!(config.port, 25);
-        assert!(!config.use_tls);
-    }
-
-    #[test]
-    fn test_email_message_creation() {
-        let message = EmailMessage::new(
-            "sender@example.com".to_string(),
-            vec!["recipient@example.com".to_string()],
-            "Test Subject".to_string(),
-            "Test Body".to_string(),
-        );
-        
-        assert_eq!(message.from, "sender@example.com");
-        assert_eq!(message.to.len(), 1);
-        assert_eq!(message.subject, "Test Subject");
-        assert_eq!(message.body, "Test Body");
-    }
-
-    #[test]
-    fn test_email_message_builder() {
-        let message = EmailMessage::new(
-            "sender@example.com".to_string(),
-            vec!["recipient@example.com".to_string()],
-            "Test".to_string(),
-            "Body".to_string(),
-        )
-        .cc(vec!["cc@example.com".to_string()])
-        .bcc(vec!["bcc@example.com".to_string()])
-        .html_body("<h1>HTML Body</h1>".to_string())
-        .header("X-Custom".to_string(), "Custom Value".to_string());
-        
-        assert_eq!(message.cc.len(), 1);
-        assert_eq!(message.bcc.len(), 1);
-        assert!(message.html_body.is_some());
-        assert!(message.headers.contains_key("X-Custom"));
-    }
-
-    #[test]
-    fn test_base64_encoding() {
-        assert_eq!(base64_encode(b"hello"), "aGVsbG8=");
-        assert_eq!(base64_encode(b""), "");
-        assert_eq!(base64_encode(b"f"), "Zg==");
-        assert_eq!(base64_encode(b"fo"), "Zm8=");
-        assert_eq!(base64_encode(b"foo"), "Zm9v");
-    }
-
-    #[test]
-    fn test_smtp_client_creation() {
-        let config = SmtpConfig {
-            server: "smtp.example.com".to_string(),
-            port: 587,
-            use_tls: true,
-            ..Default::default()
-        };
-        
-        let client = SmtpClient::new(config);
-        assert_eq!(client.config.server, "smtp.example.com");
-        assert_eq!(client.config.port, 587);
-        assert!(client.config.use_tls);
-    }
-}

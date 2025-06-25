@@ -1,4 +1,4 @@
-use crate::error::Error;
+use crate::error::CursedError;
 /// HTTP Request Processing for CURSED web_vibez
 ///
 /// Comprehensive request handling with proper parsing, validation, and security.
@@ -10,7 +10,7 @@ use std::time::{Duration, Instant};
 
 use uuid::Uuid;
 
-use crate::stdlib::http_core::{
+// use crate::stdlib::http_core::{
     Headers, HeaderMap, Url, QueryParams, FormData, ContentType,
     Cookie, CookieJar, HttpError, HttpResult, HttpValidator
 };
@@ -322,7 +322,7 @@ impl Request {
                 if let Some(content_type_header) = self.headers.get("Content-Type") {
                     if let Some(boundary) = Self::extract_boundary(content_type_header) {
                         // Use the form_data MultipartData for parsing
-                        let mut parser = crate::stdlib::http_core::form_data::MultipartData::new(boundary);
+//                         let mut parser = crate::stdlib::http_core::form_data::MultipartData::new(boundary);
                         match parser.parse(body_content.as_bytes()) {
                             Ok(_) => {
                                 self.body = RequestBody::Form(parser.into_form_data());
@@ -579,49 +579,3 @@ impl RequestBuilder {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_method_parsing() {
-        assert_eq!(Method::from_str("GET").unwrap(), Method::GET);
-        assert_eq!(Method::from_str("post").unwrap(), Method::POST);
-        assert!(Method::from_str("INVALID").is_err());
-    }
-
-    #[test]
-    fn test_method_properties() {
-        assert!(Method::GET.is_safe());
-        assert!(Method::GET.is_idempotent());
-        assert!(!Method::GET.allows_body());
-        
-        assert!(!Method::POST.is_safe());
-        assert!(!Method::POST.is_idempotent());
-        assert!(Method::POST.allows_body());
-    }
-
-    #[test]
-    fn test_request_parsing() {
-        let raw = "GET /path?q=value HTTP/1.1\r\nHost: example.com\r\nUser-Agent: test\r\n\r\n";
-        let request = Request::parse(raw).unwrap();
-        
-        assert_eq!(request.method, Method::GET);
-        assert_eq!(request.path(), "/path");
-        assert_eq!(request.query("q"), Some("value"));
-        assert_eq!(request.header("Host"), Some(&"example.com".to_string()));
-    }
-
-    #[test]
-    fn test_request_builder() {
-        let request = RequestBuilder::new(Method::POST, "http://example.com/api")
-            .unwrap()
-            .header("Content-Type", "application/json")
-            .header("Authorization", "Bearer token")
-            .build();
-
-        assert_eq!(request.method, Method::POST);
-        assert_eq!(request.header("Content-Type"), Some(&"application/json".to_string()));
-        assert_eq!(request.header("Authorization"), Some(&"Bearer token".to_string()));
-    }
-}

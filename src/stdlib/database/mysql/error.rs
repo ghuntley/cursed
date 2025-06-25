@@ -4,8 +4,8 @@
 /// mapping MySQL errors to CURSED database errors with proper context.
 
 use std::fmt;
-use crate::stdlib::database::{DatabaseError, DatabaseErrorKind, SqlStateCode};
-use crate::error::Error;
+// use crate::stdlib::database::{DatabaseError, DatabaseErrorKind, SqlStateCode};
+use crate::error::CursedError;
 
 /// fr fr MySQL-specific error type
 #[derive(Debug, Clone)]
@@ -38,42 +38,42 @@ pub enum MySqlError {
     Unknown(String),
 }
 
-impl fmt::Display for MySqlError {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
-            MySqlError::Connection(msg) => write!(f, "MySQL Connection Error: {}", msg),
-            MySqlError::Query(msg, query) => {
-                if let Some(q) = query {
-                    write!(f, "MySQL Query Error: {} (Query: {})", msg, q)
-                } else {
-                    write!(f, "MySQL Query Error: {}", msg)
-                }
-            }
-            MySqlError::Transaction(msg) => write!(f, "MySQL Transaction Error: {}", msg),
-            MySqlError::Authentication(msg) => write!(f, "MySQL Authentication Error: {}", msg),
-            MySqlError::ConstraintViolation(msg, constraint) => {
-                if let Some(c) = constraint {
-                    write!(f, "MySQL Constraint Violation: {} (Constraint: {})", msg, c)
-                } else {
-                    write!(f, "MySQL Constraint Violation: {}", msg)
-                }
-            }
-            MySqlError::TypeConversion(from, to) => {
-                write!(f, "MySQL Type Conversion Error: Cannot convert {} to {}", from, to)
-            }
-            MySqlError::Pool(msg) => write!(f, "MySQL Pool Error: {}", msg),
-            MySqlError::Configuration(msg) => write!(f, "MySQL Configuration Error: {}", msg),
-            MySqlError::Timeout(msg) => write!(f, "MySQL Timeout Error: {}", msg),
-            MySqlError::DataIntegrity(msg) => write!(f, "MySQL Data Integrity Error: {}", msg),
-            MySqlError::Server(code, msg) => write!(f, "MySQL Server Error {}: {}", code, msg),
-            MySqlError::Client(msg) => write!(f, "MySQL Client Error: {}", msg),
-            MySqlError::Unknown(msg) => write!(f, "MySQL Unknown Error: {}", msg),
-        }
-    }
-}
+// impl fmt::Display for MySqlError {
+//     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+//         match self {
+//             MySqlError::Connection(msg) => write!(f, "MySQL Connection CursedError: {}", msg),
+//             MySqlError::Query(msg, query) => {
+//                 if let Some(q) = query {
+//                     write!(f, "MySQL Query CursedError: {} (Query: {})", msg, q)
+//                 } else {
+//                     write!(f, "MySQL Query CursedError: {}", msg)
+//                 }
+//             }
+//             MySqlError::Transaction(msg) => write!(f, "MySQL Transaction CursedError: {}", msg),
+//             MySqlError::Authentication(msg) => write!(f, "MySQL Authentication CursedError: {}", msg),
+//             MySqlError::ConstraintViolation(msg, constraint) => {
+//                 if let Some(c) = constraint {
+//                     write!(f, "MySQL Constraint Violation: {} (Constraint: {})", msg, c)
+//                 } else {
+//                     write!(f, "MySQL Constraint Violation: {}", msg)
+//                 }
+//             }
+//             MySqlError::TypeConversion(from, to) => {
+//                 write!(f, "MySQL Type Conversion CursedError: Cannot convert {} to {}", from, to)
+//             }
+//             MySqlError::Pool(msg) => write!(f, "MySQL Pool CursedError: {}", msg),
+//             MySqlError::Configuration(msg) => write!(f, "MySQL Configuration CursedError: {}", msg),
+//             MySqlError::Timeout(msg) => write!(f, "MySQL Timeout CursedError: {}", msg),
+//             MySqlError::DataIntegrity(msg) => write!(f, "MySQL Data Integrity CursedError: {}", msg),
+//             MySqlError::Server(code, msg) => write!(f, "MySQL Server CursedError {}: {}", code, msg),
+//             MySqlError::Client(msg) => write!(f, "MySQL Client CursedError: {}", msg),
+//             MySqlError::Unknown(msg) => write!(f, "MySQL Unknown CursedError: {}", msg),
+//         }
+//     }
+// }
 
-impl std::error::Error for MySqlError {}
-
+// impl std::error::CursedError for MySqlError {}
+// 
 impl MySqlError {
     /// Convert MySQL error to DatabaseError with proper categorization
     pub fn to_database_error(&self) -> DatabaseError {
@@ -198,7 +198,7 @@ impl MySqlError {
     }
     
     pub fn validation(msg: String) -> Self {
-        MySqlError::Client(format!("Validation Error: {}", msg))
+        MySqlError::Client(format!("Validation CursedError: {}", msg))
     }
 }
 
@@ -206,43 +206,43 @@ impl MySqlError {
 pub type MySqlResult<T> = std::result::Result<T, MySqlError>;
 
 /// Convert mysql crate errors to MySqlError
-impl From<mysql::Error> for MySqlError {
-    fn from(err: mysql::Error) -> Self {
-        match err {
-            mysql::Error::Io(io_err) => {
-                MySqlError::Connection(format!("IO Error: {}", io_err))
-            }
-            mysql::Error::Driver(driver_err) => {
-                MySqlError::Client(format!("Driver Error: {:?}", driver_err))
-            }
-            mysql::Error::Server(server_err) => {
-                MySqlError::Server(
-                    server_err.code,
-                    format!("Server Error: {} (State: {})", server_err.message, server_err.state)
-                )
-            }
-            mysql::Error::Url(url_err) => {
-                MySqlError::Configuration(format!("URL Error: {}", url_err))
-            }
-            mysql::Error::FromValue { value, err } => {
-                MySqlError::TypeConversion(
-                    format!("{:?}", value),
-                    format!("target type: {}", err)
-                )
-            }
-            mysql::Error::FromRow { row } => {
-                MySqlError::TypeConversion(
-                    "row".to_string(),
-                    format!("target struct: {:?}", row)
-                )
-            }
-            mysql::Error::General(other) => {
-                MySqlError::Unknown(format!("Other Error: {}", other))
-            }
-            _ => MySqlError::Unknown(format!("Unknown MySQL Error: {:?}", err)),
-        }
-    }
-}
+// impl From<mysql::CursedError> for MySqlError {
+//     fn from(err: mysql::CursedError) -> Self {
+//         match err {
+//             mysql::CursedError::Io(io_err) => {
+//                 MySqlError::Connection(format!("IO CursedError: {}", io_err))
+//             }
+//             mysql::CursedError::Driver(driver_err) => {
+//                 MySqlError::Client(format!("Driver CursedError: {:?}", driver_err))
+//             }
+//             mysql::CursedError::Server(server_err) => {
+//                 MySqlError::Server(
+//                     server_err.code,
+//                     format!("Server CursedError: {} (State: {})", server_err.message, server_err.state)
+//                 )
+//             }
+//             mysql::CursedError::Url(url_err) => {
+//                 MySqlError::Configuration(format!("URL CursedError: {}", url_err))
+//             }
+//             mysql::CursedError::FromValue { value, err } => {
+//                 MySqlError::TypeConversion(
+//                     format!("{:?}", value),
+//                     format!("target type: {}", err)
+//                 )
+//             }
+//             mysql::CursedError::FromRow { row } => {
+//                 MySqlError::TypeConversion(
+//                     "row".to_string(),
+//                     format!("target struct: {:?}", row)
+//                 )
+//             }
+//             mysql::CursedError::General(other) => {
+//                 MySqlError::Unknown(format!("Other CursedError: {}", other))
+//             }
+//             _ => MySqlError::Unknown(format!("Unknown MySQL CursedError: {:?}", err)),
+//         }
+//     }
+// }
 
 /// Convert MySqlError to DatabaseError
 impl From<MySqlError> for DatabaseError {

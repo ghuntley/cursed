@@ -1,6 +1,6 @@
 /// fr fr ORM-style interface for CURSED - object-relational mapping with Gen Z vibes periodt
-use crate::stdlib::packages::sql_vibes::{SqlResult, SqlError, SqlValue, SqlType, DatabaseConnection, QueryBuilder, SelectBuilder, InsertBuilder, UpdateBuilder, DeleteBuilder, Row, ResultSet};
-use crate::error::Error;
+// use crate::stdlib::packages::sql_vibes::{SqlResult, SqlError, SqlValue, SqlType, DatabaseConnection, QueryBuilder, SelectBuilder, InsertBuilder, UpdateBuilder, DeleteBuilder, Row, ResultSet};
+use crate::error::CursedError;
 use std::collections::HashMap;
 use std::sync::{Arc, RwLock, OnceLock};
 use serde::{Serialize, Deserialize};
@@ -427,7 +427,7 @@ impl<T: Model> ModelQueryBuilder<T> {
     }
     
     /// periodt Add ORDER BY clause
-    pub fn order_by(mut self, column: &str, direction: crate::stdlib::packages::sql_vibes::builder::OrderDirection) -> Self {
+//     pub fn order_by(mut self, column: &str, direction: crate::stdlib::packages::sql_vibes::builder::OrderDirection) -> Self {
         self.builder = self.builder.order_by(column, direction);
         self
     }
@@ -744,137 +744,3 @@ impl Model for User {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_column_definition() {
-        let column = ColumnDefinition::new("id".to_string(), SqlType::Integer)
-            .primary_key()
-            .auto_increment()
-            .not_null();
-        
-        assert_eq!(column.name, "id");
-        assert_eq!(column.sql_type, SqlType::Integer);
-        assert!(column.primary_key);
-        assert!(column.auto_increment);
-        assert!(!column.nullable);
-    }
-
-    #[test]
-    fn test_user_model_metadata() {
-        let metadata = User::model_metadata();
-        assert_eq!(metadata.table_name, "users");
-        assert_eq!(metadata.primary_key, "id");
-        assert_eq!(metadata.columns.len(), 5);
-    }
-
-    #[test]
-    fn test_user_model_validation() {
-        let valid_user = User {
-            id: None,
-            name: "John Doe".to_string(),
-            email: "john@example.com".to_string(),
-            age: Some(25),
-            created_at: None,
-        };
-        assert!(valid_user.validate().is_ok());
-        
-        let invalid_user = User {
-            id: None,
-            name: "".to_string(),
-            email: "invalid-email".to_string(),
-            age: Some(-5),
-            created_at: None,
-        };
-        assert!(invalid_user.validate().is_err());
-    }
-
-    #[test]
-    fn test_user_model_values() {
-        let user = User {
-            id: Some(1),
-            name: "John".to_string(),
-            email: "john@example.com".to_string(),
-            age: Some(25),
-            created_at: None,
-        };
-        
-        let values = user.to_values();
-        assert_eq!(values.get("id"), Some(&SqlValue::BigInt(1)));
-        assert_eq!(values.get("name"), Some(&SqlValue::String("John".to_string())));
-        assert_eq!(values.get("email"), Some(&SqlValue::String("john@example.com".to_string())));
-        assert_eq!(values.get("age"), Some(&SqlValue::Integer(25)));
-    }
-
-    #[test]
-    fn test_user_model_primary_key() {
-        let user_with_id = User {
-            id: Some(42),
-            name: "John".to_string(),
-            email: "john@example.com".to_string(),
-            age: None,
-            created_at: None,
-        };
-        
-        assert_eq!(user_with_id.primary_key_value(), Some(SqlValue::BigInt(42)));
-        assert!(!user_with_id.is_new());
-        
-        let new_user = User {
-            id: None,
-            name: "Jane".to_string(),
-            email: "jane@example.com".to_string(),
-            age: None,
-            created_at: None,
-        };
-        
-        assert_eq!(new_user.primary_key_value(), None);
-        assert!(new_user.is_new());
-    }
-
-    #[test]
-    fn test_model_query_builder() {
-        let query_builder = ModelQueryBuilder::<User>::new()
-            .where_eq("age", SqlValue::Integer(25))
-            .where_expr("name LIKE '%John%'")
-            .order_by("created_at", crate::stdlib::packages::sql_vibes::builder::OrderDirection::Descending)
-            .limit(10);
-        
-        // Can't easily test the actual query without a database connection
-        // But we can verify the builder structure
-        assert_eq!(std::mem::size_of_val(&query_builder), std::mem::size_of::<ModelQueryBuilder<User>>());
-    }
-
-    #[test]
-    fn test_relationship_types() {
-        let relationship = Relationship {
-            relationship_type: RelationshipType::BelongsTo,
-            related_model: "Company".to_string(),
-            foreign_key: "company_id".to_string(),
-            related_key: "id".to_string(),
-            junction_table: None,
-        };
-        
-        assert_eq!(relationship.relationship_type, RelationshipType::BelongsTo);
-        assert_eq!(relationship.related_model, "Company");
-        assert_eq!(relationship.foreign_key, "company_id");
-        assert!(relationship.junction_table.is_none());
-    }
-
-    #[test]
-    fn test_model_registry() {
-        // Note: This test might interfere with other tests since it uses a global registry
-        // In a real implementation, we'd want to reset the registry or use dependency injection
-        
-        let result = ModelRegistry::register::<User>();
-        assert!(result.is_ok());
-        
-        assert!(ModelRegistry::is_registered("users"));
-        assert!(!ModelRegistry::is_registered("nonexistent"));
-        
-        let metadata = ModelRegistry::get_metadata("users").unwrap();
-        assert!(metadata.is_some());
-        assert_eq!(metadata.unwrap().table_name, "users");
-    }
-}

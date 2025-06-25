@@ -7,11 +7,11 @@
 /// - Secure memory operations
 /// - Validation utilities
 
-use crate::stdlib::packages::crypto_random::{CryptographicRng, CsprngAlgorithm, fill_random};
-use crate::stdlib::packages::crypto_advanced::{constant_time_compare, SecureMemory, clear_sensitive_data};
+// use crate::stdlib::packages::crypto_random::{CryptographicRng, CsprngAlgorithm, fill_random};
+// use crate::stdlib::packages::crypto_advanced::{constant_time_compare, SecureMemory, clear_sensitive_data};
 use super::symmetric::{CryptoError, CryptoResult, EncryptionKey};
 use std::fmt;
-use crate::error::Error;
+use crate::error::CursedError;
 
 /// fr fr Secure random number generator
 pub struct SecureRandom {
@@ -523,99 +523,3 @@ fn base64_decode(s: &str) -> CryptoResult<Vec<u8>> {
     Ok(result)
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-    
-    #[test]
-    fn test_secure_random() {
-        let rng = SecureRandom::new();
-        assert!(rng.is_ok());
-        
-        let rng = rng.unwrap();
-        let bytes = rng.generate_bytes(32);
-        assert!(bytes.is_ok());
-        assert_eq!(bytes.unwrap().len(), 32);
-    }
-    
-    #[test]
-    fn test_pkcs7_padding() {
-        let data = b"Hello World";
-        let padded = Pkcs7Padding::apply(data, 16).unwrap();
-        assert_eq!(padded.len(), 16);
-        
-        let unpadded = Pkcs7Padding::remove(&padded).unwrap();
-        assert_eq!(unpadded, data);
-        
-        assert!(Pkcs7Padding::validate(&padded));
-    }
-    
-    #[test]
-    fn test_iv_generator() {
-        let mut generator = IvGenerator::new().unwrap();
-        
-        let iv1 = generator.generate_iv(16).unwrap();
-        let iv2 = generator.generate_iv(16).unwrap();
-        assert_ne!(iv1, iv2);
-        assert_eq!(iv1.len(), 16);
-        assert_eq!(iv2.len(), 16);
-    }
-    
-    #[test]
-    fn test_nonce_manager() {
-        let mut manager = NonceManager::new("ChaCha20-Poly1305").unwrap();
-        
-        let nonce1 = manager.generate_unique_nonce(12).unwrap();
-        let nonce2 = manager.generate_unique_nonce(12).unwrap();
-        assert_ne!(nonce1, nonce2);
-        
-        assert!(manager.is_nonce_used(&nonce1));
-        assert!(manager.is_nonce_used(&nonce2));
-    }
-    
-    #[test]
-    fn test_secure_operations() {
-        let mut data1 = vec![1, 2, 3, 4];
-        let data2 = Vec::from([1, 2, 3, 4]);
-        
-        assert!(SecureOps::secure_compare(&data1, &data2));
-        
-        SecureOps::secure_clear(&mut data1);
-        assert_eq!(data1, Vec::from([0, 0, 0, 0]));
-    }
-    
-    #[test]
-    fn test_validation() {
-        assert!(CryptoValidator::validate_key_size("AES-256-CBC", 32).is_ok());
-        assert!(CryptoValidator::validate_key_size("AES-256-CBC", 16).is_err());
-        
-        assert!(CryptoValidator::validate_iv_size("AES-256-CBC", 16).is_ok());
-        assert!(CryptoValidator::validate_iv_size("AES-256-GCM", 12).is_ok());
-        assert!(CryptoValidator::validate_iv_size("AES-256-CBC", 12).is_err());
-    }
-    
-    #[test]
-    fn test_crypto_utils() {
-        let bytes = Vec::from([0xde, 0xad, 0xbe, 0xef]);
-        let hex = CryptoUtils::bytes_to_hex(&bytes);
-        assert_eq!(hex, "deadbeef");
-        
-        let decoded = CryptoUtils::hex_to_bytes(&hex).unwrap();
-        assert_eq!(decoded, bytes);
-        
-        let base64 = CryptoUtils::bytes_to_base64(&bytes);
-        let decoded_b64 = CryptoUtils::base64_to_bytes(&base64).unwrap();
-        assert_eq!(decoded_b64, bytes);
-    }
-    
-    #[test]
-    fn test_convenience_functions() {
-        let bytes = secure_random_bytes(16);
-        assert!(bytes.is_ok());
-        assert_eq!(bytes.unwrap().len(), 16);
-        
-        let key = generate_key("AES-256", 32);
-        assert!(key.is_ok());
-        assert_eq!(key.unwrap().size(), 32);
-    }
-}

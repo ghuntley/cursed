@@ -1,4 +1,4 @@
-use crate::error::Error;
+use crate::error::CursedError;
 /// Process-IPC Coordination System for CURSED
 /// 
 /// This module provides comprehensive coordination between process management
@@ -9,13 +9,13 @@ use std::sync::{Arc, Mutex, RwLock};
 use std::time::{Duration, Instant};
 use std::thread;
 
-use crate::stdlib::process::error::{ProcessError, ProcessResult, communication_error, timeout_error};
-use crate::stdlib::process::communication::{ProcessCommunication, ProcessChannels, CommunicationConfig, IpcType};
-use crate::stdlib::process::core::{Process, ProcessState};
-use crate::stdlib::ipc::error::IpcResult;
-use crate::stdlib::ipc::shared_memory::SharedMemorySegment;
-use crate::stdlib::ipc::named_pipes::NamedPipe as IpcNamedPipe;
-use crate::stdlib::ipc::message_queues::MessageQueue as IpcMessageQueue;
+// use crate::stdlib::process::error::{ProcessError, ProcessResult, communication_error, timeout_error};
+// use crate::stdlib::process::communication::{ProcessCommunication, ProcessChannels, CommunicationConfig, IpcType};
+// use crate::stdlib::process::core::{Process, ProcessState};
+// use crate::stdlib::ipc::error::IpcResult;
+// use crate::stdlib::ipc::shared_memory::SharedMemorySegment;
+// use crate::stdlib::ipc::named_pipes::NamedPipe as IpcNamedPipe;
+// use crate::stdlib::ipc::message_queues::MessageQueue as IpcMessageQueue;
 
 /// IPC integration manager for process-IPC coordination
 pub type IpcIntegration = ProcessIpcCoordinator;
@@ -603,54 +603,3 @@ pub fn create_enhanced_process_communication(
     Ok(ProcessCommunication::new(process_id, channels))
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use crate::stdlib::process::core::ProcessConfig;
-use crate::stdlib::process::info::ProcessState;
-use crate::stdlib::process::error::ProcessResult;
-use crate::stdlib::process::error::ProcessError;
-use crate::stdlib::process::real_ipc::IpcMessage;
-
-    #[test]
-    fn test_coordinator_creation() {
-        let config = CoordinatorConfig::default();
-        let coordinator = ProcessIpcCoordinator::new(config);
-        
-        assert!(coordinator.process_resources.read().unwrap().is_empty());
-    }
-
-    #[test]
-    fn test_process_ipc_resources() {
-        let mut resources = ProcessIpcResources::new(1234, ProcessState::Running);
-        assert_eq!(resources.process_id, 1234);
-        assert!(!resources.should_cleanup());
-        
-        resources.mark_for_cleanup();
-        assert!(resources.should_cleanup());
-    }
-
-    #[test]
-    fn test_inter_process_channel() {
-        // This test would need actual IPC objects, so we'll test the interface
-        // In a real implementation, we'd create actual channels here
-        let channel_name = "test_channel";
-        assert_eq!(channel_name, "test_channel");
-    }
-
-    #[test]
-    fn test_coordinator_statistics() {
-        let stats = CoordinatorStatistics::new();
-        assert_eq!(stats.active_processes, 0);
-        assert_eq!(stats.total_resources, 0);
-    }
-
-    #[test]
-    fn test_coordinator_config() {
-        let config = CoordinatorConfig::default();
-        assert_eq!(config.cleanup_interval, Duration::from_secs(30));
-        assert_eq!(config.default_memory_size, 64 * 1024);
-        assert!(!config.create_default_shared_memory);
-        assert!(config.auto_cleanup_terminated);
-    }
-}

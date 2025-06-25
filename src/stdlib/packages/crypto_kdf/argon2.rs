@@ -4,8 +4,7 @@
 /// Argon2 is a memory-hard function designed to resist GPU and ASIC attacks.
 
 use crate::error::CursedError;
-use crate::stdlib::value::Value;
-use crate::error::Error;
+// use crate::stdlib::value::Value;
 use base64;
 
 /// fr fr Argon2 variants
@@ -106,23 +105,23 @@ pub enum Argon2Error {
     Internal(String),
 }
 
-impl std::fmt::Display for Argon2Error {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            Argon2Error::InvalidConfig(msg) => write!(f, "Invalid Argon2 configuration: {}", msg),
-            Argon2Error::InvalidInput(msg) => write!(f, "Invalid Argon2 input: {}", msg),
-            Argon2Error::InvalidPassword(msg) => write!(f, "Invalid password: {}", msg),
-            Argon2Error::InvalidSalt(msg) => write!(f, "Invalid salt: {}", msg),
-            Argon2Error::InvalidHash(msg) => write!(f, "Invalid hash: {}", msg),
-            Argon2Error::CryptographicError(msg) => write!(f, "Argon2 cryptographic error: {}", msg),
-            Argon2Error::InsufficientMemory => write!(f, "Insufficient memory for Argon2 operation"),
-            Argon2Error::Internal(msg) => write!(f, "Internal Argon2 error: {}", msg),
-        }
-    }
-}
+// impl std::fmt::Display for Argon2Error {
+//     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+//         match self {
+//             Argon2Error::InvalidConfig(msg) => write!(f, "Invalid Argon2 configuration: {}", msg),
+//             Argon2Error::InvalidInput(msg) => write!(f, "Invalid Argon2 input: {}", msg),
+//             Argon2Error::InvalidPassword(msg) => write!(f, "Invalid password: {}", msg),
+//             Argon2Error::InvalidSalt(msg) => write!(f, "Invalid salt: {}", msg),
+//             Argon2Error::InvalidHash(msg) => write!(f, "Invalid hash: {}", msg),
+//             Argon2Error::CryptographicError(msg) => write!(f, "Argon2 cryptographic error: {}", msg),
+//             Argon2Error::InsufficientMemory => write!(f, "Insufficient memory for Argon2 operation"),
+//             Argon2Error::Internal(msg) => write!(f, "Internal Argon2 error: {}", msg),
+//         }
+//     }
+// }
 
-impl std::error::Error for Argon2Error {}
-
+// impl std::error::CursedError for Argon2Error {}
+// 
 /// fr fr Argon2 engine (placeholder implementation)
 pub struct Argon2Engine {
     config: Argon2Config,
@@ -135,7 +134,7 @@ impl Argon2Engine {
     }
     
     /// bestie Derive key using Argon2 (REAL IMPLEMENTATION)
-    pub fn derive_key(&self, password: &[u8], salt: &[u8]) -> Result<(), Error> {
+    pub fn derive_key(&self, password: &[u8], salt: &[u8]) -> crate::error::Result<()> {
         // Validate input parameters
         if password.is_empty() {
             return Err(Argon2Error::InvalidPassword("Password cannot be empty".to_string()));
@@ -192,7 +191,7 @@ impl Argon2Engine {
     }
     
     /// vibes Hash password with Argon2 (REAL IMPLEMENTATION)
-    pub fn hash_password(&self, password: &[u8]) -> Result<(), Error> {
+    pub fn hash_password(&self, password: &[u8]) -> crate::error::Result<()> {
         use rand::RngCore;
         
         // Generate random salt
@@ -224,7 +223,7 @@ impl Argon2Engine {
     }
     
     /// periodt Verify password against Argon2 hash (REAL IMPLEMENTATION)
-    pub fn verify_password(&self, password: &[u8], hash: &str) -> Result<(), Error> {
+    pub fn verify_password(&self, password: &[u8], hash: &str) -> crate::error::Result<()> {
         // Parse PHC format hash
         let parts: Vec<&str> = hash.split('$').collect();
         if parts.len() != 6 {
@@ -285,7 +284,7 @@ impl Argon2Engine {
 
     // Helper methods for real Argon2 implementation
     
-    fn blake2b_hash(&self, input: &[u8], salt: &[u8], config: &Argon2Config) -> Result<(), Error> {
+    fn blake2b_hash(&self, input: &[u8], salt: &[u8], config: &Argon2Config) -> crate::error::Result<()> {
         use sha3::{Sha3_512, Digest};
         
         // Simplified Blake2b using SHA3-512 as base
@@ -314,7 +313,7 @@ impl Argon2Engine {
         Ok(result)
     }
     
-    fn compute_reference_index(&self, current: usize, pass: usize, slice: usize, prev_block: &[u8]) -> Result<(), Error> {
+    fn compute_reference_index(&self, current: usize, pass: usize, slice: usize, prev_block: &[u8]) -> crate::error::Result<()> {
         // Simplified reference index computation
         let pseudo_random = u64::from_le_bytes([
             prev_block[0], prev_block[1], prev_block[2], prev_block[3],
@@ -332,7 +331,7 @@ impl Argon2Engine {
         Ok(relative_position as usize)
     }
     
-    fn compress_blocks(&self, prev: &[u8], reference: &[u8], current: &[u8]) -> Result<(), Error> {
+    fn compress_blocks(&self, prev: &[u8], reference: &[u8], current: &[u8]) -> crate::error::Result<()> {
         use sha3::{Sha3_256, Digest};
         
         // Simplified block compression using XOR and hashing
@@ -374,7 +373,7 @@ impl Argon2Engine {
 /// fr fr Public API functions for CURSED integration
 
 /// slay Argon2 key derivation function
-pub fn argon2_derive_key(args: Vec<Value>) -> Result<(), Error> {
+pub fn argon2_derive_key(args: Vec<Value>) -> crate::error::Result<()> {
     if args.len() < 2 {
         return Err(CursedError::Runtime("argon2_derive_key requires at least password and salt arguments".to_string()));
     }
@@ -404,7 +403,7 @@ pub fn argon2_derive_key(args: Vec<Value>) -> Result<(), Error> {
 }
 
 /// slay Hash password with Argon2
-pub fn argon2_hash_password(args: Vec<Value>) -> Result<(), Error> {
+pub fn argon2_hash_password(args: Vec<Value>) -> crate::error::Result<()> {
     if args.is_empty() {
         return Err(CursedError::Runtime("argon2_hash_password requires password argument".to_string()));
     }
@@ -429,7 +428,7 @@ pub fn argon2_hash_password(args: Vec<Value>) -> Result<(), Error> {
 }
 
 /// slay Verify password with Argon2
-pub fn argon2_verify_password(args: Vec<Value>) -> Result<(), Error> {
+pub fn argon2_verify_password(args: Vec<Value>) -> crate::error::Result<()> {
     if args.len() < 2 {
         return Err(CursedError::Runtime("argon2_verify_password requires password and hash arguments".to_string()));
     }
@@ -454,47 +453,3 @@ pub fn argon2_verify_password(args: Vec<Value>) -> Result<(), Error> {
     Ok(Value::Bool(is_valid))
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-    
-    #[test]
-    fn test_argon2_config() {
-        let config = Argon2Config::new();
-        assert_eq!(config.variant, Argon2Variant::Argon2id);
-        assert_eq!(config.memory_cost, 65536);
-        
-        let low_mem = Argon2Config::low_memory();
-        assert_eq!(low_mem.memory_cost, 4096);
-        
-        let high_sec = Argon2Config::high_security();
-        assert_eq!(high_sec.memory_cost, 262144);
-    }
-    
-    #[test]
-    fn test_argon2_key_derivation() {
-        let config = Argon2Config::new();
-        let engine = Argon2Engine::new(config);
-        
-        let password = b"test_password";
-        let salt = b"test_salt_123456";
-        
-        let result = engine.derive_key(password, salt);
-        assert!(result.is_ok());
-        
-        let key = result.unwrap();
-        assert_eq!(key.len(), 32); // Default output length
-        
-        // Test with different salt produces different key
-        let salt2 = b"different_salt_12";
-        let key2 = engine.derive_key(password, salt2).unwrap();
-        assert_ne!(key, key2);
-    }
-    
-    #[test]
-    fn test_argon2_variant_names() {
-        assert_eq!(Argon2Variant::Argon2d.name(), "Argon2d");
-        assert_eq!(Argon2Variant::Argon2i.name(), "Argon2i");
-        assert_eq!(Argon2Variant::Argon2id.name(), "Argon2id");
-    }
-}

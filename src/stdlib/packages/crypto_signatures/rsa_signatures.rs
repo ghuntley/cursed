@@ -3,9 +3,9 @@
 /// Implementation of RSA digital signatures with support for both RSA-PSS and PKCS#1 v1.5 padding.
 /// Supports multiple key sizes (2048, 3072, 4096 bits) for different security levels.
 
-use crate::stdlib::packages::crypto_signatures::errors::{SignatureError, SignatureResult};
-use crate::stdlib::packages::crypto_signatures::key_management::{KeyPair, PublicKey, KeyType};
-use crate::error::Error;
+// use crate::stdlib::packages::crypto_signatures::errors::{SignatureError, SignatureResult};
+// use crate::stdlib::packages::crypto_signatures::key_management::{KeyPair, PublicKey, KeyType};
+use crate::error::CursedError;
 use std::sync::{Arc, Mutex};
 
 /// RSA signature schemes
@@ -869,7 +869,7 @@ impl RsaVerifier {
 /// Utility functions for RSA signatures
 pub mod utils {
     use super::*;
-    use crate::stdlib::packages::crypto_signatures::key_management::KeyGenerator;
+//     use crate::stdlib::packages::crypto_signatures::key_management::KeyGenerator;
     
     /// Generate a new RSA key pair
     pub fn generate_keypair(

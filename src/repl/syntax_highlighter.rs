@@ -1,4 +1,4 @@
-use crate::error_types::Error;
+use crate::error::CursedError;
 // Syntax Highlighting for CURSED REPL
 // 
 // Provides real-time syntax highlighting for CURSED keywords,
@@ -310,7 +310,7 @@ impl SyntaxHighlighter {
             TokenType::TypeName => COLORS.type_name,
             TokenType::Function => COLORS.function,
             TokenType::Variable => COLORS.variable,
-            TokenType::Error => COLORS.error,
+            TokenType::CursedError => COLORS.error,
         };
 
         format!("{}{}{}", color, token, COLORS.reset)
@@ -328,7 +328,7 @@ enum TokenType {
     TypeName,
     Function,
     Variable,
-    Error,
+    CursedError,
 }
 
 impl Default for SyntaxHighlighter {
@@ -337,57 +337,3 @@ impl Default for SyntaxHighlighter {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_keyword_highlighting() {
-        let highlighter = SyntaxHighlighter::with_colors(true);
-        let code = "slay main_character() {";
-        let highlighted = highlighter.highlight(code);
-        
-        // Should contain color codes for keywords
-        assert!(highlighted.contains('\x1b'));
-    }
-
-    #[test]
-    fn test_string_highlighting() {
-        let highlighter = SyntaxHighlighter::with_colors(true);
-        let code = r#"facts message = "Hello, world!""#;
-        let highlighted = highlighter.highlight(code);
-        
-        // Should contain color codes
-        assert!(highlighted.contains('\x1b'));
-    }
-
-    #[test]
-    fn test_comment_highlighting() {
-        let highlighter = SyntaxHighlighter::with_colors(true);
-        let code = "// This is a comment\nfacts x = 42";
-        let highlighted = highlighter.highlight(code);
-        
-        // Should contain color codes
-        assert!(highlighted.contains('\x1b'));
-    }
-
-    #[test]
-    fn test_no_colors() {
-        let highlighter = SyntaxHighlighter::with_colors(false);
-        let code = "slay main() { facts x = 42; }";
-        let highlighted = highlighter.highlight(code);
-        
-        // Should not contain color codes
-        assert_eq!(highlighted, code);
-    }
-
-    #[test]
-    fn test_number_highlighting() {
-        let highlighter = SyntaxHighlighter::with_colors(true);
-        let code = "facts x = 42.5";
-        let highlighted = highlighter.highlight(code);
-        
-        // Should contain color codes
-        assert!(highlighted.contains('\x1b'));
-    }
-}

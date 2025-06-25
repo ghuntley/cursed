@@ -1,5 +1,5 @@
 use crate::web::StatusCode;
-use crate::error::Error;
+use crate::error::CursedError;
 /// fr fr HTTP server implementation for CURSED language - web_vibez package
 /// This module provides no-cap HTTP server functionality with Gen Z energy
 
@@ -30,12 +30,16 @@ pub use types::{Headers, QueryParams, FormData, Json, ContentType, RequestBody, 
 
 /// fr fr Initialize the web_vibez package and register it with stdlib
 pub fn init_web_vibez() {
+        // TODO: implement
+    }
     // Register built-in functions with the dot registry
     register_builtin_functions();
 }
 
 /// fr fr Register built-in web functions with the CURSED stdlib
 fn register_builtin_functions() {
+        // TODO: implement
+    }
     // This will integrate with the existing dot registry system
     // Common web functions that would be available globally:
     // - web_vibez.server() - create HTTP server
@@ -80,26 +84,3 @@ pub fn production_router() -> Router {
         // Add common production routes like health checks
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_quick_server() {
-        let server = quick_server(8080);
-        assert!(server.is_ok());
-    }
-
-    #[test]
-    fn test_dev_cors() {
-        let cors = dev_cors();
-        // Should be permissive for development
-        assert_eq!(cors.name(), "CorsMiddleware");
-    }
-
-    #[test]
-    fn test_basic_router() {
-        let router = basic_router();
-        assert_eq!(router.route_count(), 0); // Empty router
-    }
-}

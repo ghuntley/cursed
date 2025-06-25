@@ -1,4 +1,4 @@
-use crate::error::Error;
+use crate::error::CursedError;
 // Main LSP server implementation
 
 use std::sync::Arc;
@@ -64,7 +64,7 @@ impl LspServer {
 
     /// Start the LSP server
     #[instrument(skip(self))]
-    pub async fn start(self) -> Result<(), Error> {
+    pub async fn start(self) -> crate::error::Result<()> {
         info!("Starting CURSED Language Server");
         info!("Server mode: {:?}", self.config.mode);
         

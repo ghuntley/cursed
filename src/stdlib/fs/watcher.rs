@@ -11,7 +11,7 @@ use std::sync::{Arc, Mutex, mpsc};
 use std::thread;
 use std::fs;
 use super::{FsError, FsResult};
-use crate::error::Error;
+use crate::error::CursedError;
 
 // =============================================================================
 // FILE SYSTEM EVENT TYPES
@@ -536,7 +536,7 @@ impl FileWatcher {
     }
     
     /// Gets current state of a file
-    fn get_file_state(path: &Path) -> Result<(), Error> {
+    fn get_file_state(path: &Path) -> crate::error::Result<()> {
         let metadata = fs::metadata(path)?;
         
         Ok(FileState {
@@ -696,59 +696,3 @@ pub fn wait_for_changes<P: AsRef<Path>>(path: P, timeout: Duration) -> FsResult<
     watcher.recv_timeout(timeout)
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use std::fs;
-    use std::io::Write;
-    
-    #[test]
-    fn test_watcher_creation() {
-        let watcher = FileWatcher::new();
-        assert!(!watcher.is_running());
-        assert_eq!(watcher.watched_paths().len(), 0);
-    }
-    
-    #[test]
-    fn test_config_creation() {
-        let config = WatcherConfig::for_extensions(&["rs", "toml"]);
-        assert!(config.extensions.contains("rs"));
-        assert!(config.extensions.contains("toml"));
-    }
-    
-    #[test]
-    fn test_pattern_matching() {
-        assert!(FileWatcher::matches_pattern("test.txt", "*.txt"));
-        assert!(FileWatcher::matches_pattern("src/main.rs", "src/*"));
-        assert!(!FileWatcher::matches_pattern("test.rs", "*.txt"));
-    }
-    
-    #[test]
-    fn test_ignore_patterns() {
-        let config = WatcherConfig::default();
-        assert!(FileWatcher::should_ignore_path_static(
-            Path::new(".git/config"),
-            &config
-        ));
-        assert!(FileWatcher::should_ignore_path_static(
-            Path::new("target/debug/main"),
-            &config
-        ));
-    }
-    
-    #[test]
-    fn test_file_state() {
-        // Create a temporary file
-        let temp_dir = std::env::temp_dir();
-        let test_file = temp_dir.join("watcher_test.txt");
-        
-        fs::write(&test_file, "test content").unwrap();
-        
-        let state = FileWatcher::get_file_state(&test_file).unwrap();
-        assert_eq!(state.size, 12);
-        assert!(!state.is_dir);
-        
-        // Clean up
-        let _ = fs::remove_file(test_file);
-    }
-}

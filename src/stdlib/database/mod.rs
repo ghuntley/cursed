@@ -1,4 +1,4 @@
-use crate::error::Error;
+use crate::error::CursedError;
 /// SQLSlay - CURSED Database Connectivity System
 /// 
 /// A high-performance SQL database connectivity system with connection pooling,

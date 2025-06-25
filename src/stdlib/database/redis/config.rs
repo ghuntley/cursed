@@ -7,8 +7,7 @@ use std::time::Duration;
 use serde::{Deserialize, Serialize};
 use tracing::{debug, info, instrument};
 
-use super::DatabaseError;
-use crate::error::Error;
+use crate::error::CursedError;
 
 /// Comprehensive Redis configuration
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -163,7 +162,7 @@ impl Default for MonitoringConfig {
 impl RedisConfiguration {
     /// Create configuration from URL
     #[instrument]
-    pub fn from_url(url: &str) -> Result<(), Error> {
+    pub fn from_url(url: &str) -> crate::error::Result<()> {
         info!(url = url, "Creating Redis configuration from URL");
         
         // Parse URL (simplified implementation)
@@ -188,7 +187,7 @@ impl RedisConfiguration {
     
     /// Validate configuration
     #[instrument(skip(self))]
-    pub fn validate(&self) -> Result<(), Error> {
+    pub fn validate(&self) -> crate::error::Result<()> {
         debug!("Validating Redis configuration");
         
         // Validate connection settings
@@ -247,7 +246,7 @@ impl RedisConfiguration {
     
     /// Load configuration from file
     #[instrument]
-    pub fn load_from_file(path: &str) -> Result<(), Error> {
+    pub fn load_from_file(path: &str) -> crate::error::Result<()> {
         info!(path = path, "Loading Redis configuration from file");
         
         let content = std::fs::read_to_string(path)
@@ -274,7 +273,7 @@ impl RedisConfiguration {
     
     /// Save configuration to file
     #[instrument(skip(self))]
-    pub fn save_to_file(&self, path: &str) -> Result<(), Error> {
+    pub fn save_to_file(&self, path: &str) -> crate::error::Result<()> {
         info!(path = path, "Saving Redis configuration to file");
         
         let content = if path.ends_with(".toml") {

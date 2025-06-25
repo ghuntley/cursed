@@ -13,7 +13,7 @@
 /// comprehensive testing to ensure reliability, performance, and security.
 
 use crate::runtime::value::Value;
-use crate::stdlib::packages::{
+// use crate::stdlib::packages::{
     db_core::{
         ConnectionConfig, DatabaseConnection, DriverFeature, SqlDialect,
         Parameter, ResultSet, PreparedStatement, DatabaseTransaction,
@@ -21,16 +21,15 @@ use crate::stdlib::packages::{
     },
     db_sql::{SqlDriver, SqlDialectTrait, SqlValue, SqlResultSet, SqlExecuteResult}
 };
-use crate::error::Error;
-use crate::stdlib::packages::db_sql::drivers::{
+use crate::error::CursedError;
+// use crate::stdlib::packages::db_sql::drivers::{
     SqlConnection, ConfigurationOption, DriverPerformanceInfo, DriverLimitations,
     SqlTransactionIsolation, SqlConnectionInfo, SqlBatch, SqlTransaction
 };
 
-use crate::stdlib::packages::db_core::error::{DatabaseResult as DbResult, DatabaseError};
+// use crate::stdlib::packages::db_core::error::{DatabaseResult as DbResult, DatabaseError};
 
 use async_trait::async_trait;
-pub use tokio_postgres::{Client, NoTls, Error as PgError, Row as PgRow, Statement, Transaction as PgTransaction};
 use bb8::Pool;
 use bb8_postgres::PostgresConnectionManager;
 use std::collections::HashMap;
@@ -145,7 +144,7 @@ impl PostgreSqlDriver {
 }
 
 #[async_trait]
-impl crate::stdlib::packages::db_core::DatabaseDriver for PostgreSqlDriver {
+// impl crate::stdlib::packages::db_core::DatabaseDriver for PostgreSqlDriver {
     #[instrument(skip(self, config))]
     async fn connect(&self, config: ConnectionConfig) -> DbResult<Box<dyn DatabaseConnection>> {
         let connection_string = self.build_connection_string(&config)?;
@@ -172,8 +171,8 @@ impl crate::stdlib::packages::db_core::DatabaseDriver for PostgreSqlDriver {
         }))
     }
 
-    fn driver_info(&self) -> crate::stdlib::packages::db_core::DriverInfo {
-        crate::stdlib::packages::db_core::DriverInfo::new(
+//     fn driver_info(&self) -> crate::stdlib::packages::db_core::DriverInfo {
+//         crate::stdlib::packages::db_core::DriverInfo::new(
             &self.name,
             &self.version,
             "Production PostgreSQL database driver with connection pooling and advanced features",
@@ -239,45 +238,45 @@ impl SqlDriver for PostgreSqlDriver {
     }
 
     fn sql_dialect(&self) -> Box<dyn SqlDialectTrait> {
-        Box::new(crate::stdlib::packages::db_sql::PostgreSqlDialect::new())
+//         Box::new(crate::stdlib::packages::db_sql::PostgreSqlDialect::new())
     }
 
-    fn supported_types(&self) -> Vec<crate::stdlib::packages::db_sql::SqlType> {
+//     fn supported_types(&self) -> Vec<crate::stdlib::packages::db_sql::SqlType> {
         vec![
-            crate::stdlib::packages::db_sql::SqlType::Integer,
-            crate::stdlib::packages::db_sql::SqlType::BigInt,
-            crate::stdlib::packages::db_sql::SqlType::SmallInt,
-            crate::stdlib::packages::db_sql::SqlType::Real,
-            crate::stdlib::packages::db_sql::SqlType::Double,
-            crate::stdlib::packages::db_sql::SqlType::Numeric,
-            crate::stdlib::packages::db_sql::SqlType::Text,
-            crate::stdlib::packages::db_sql::SqlType::Varchar,
-            crate::stdlib::packages::db_sql::SqlType::Char,
-            crate::stdlib::packages::db_sql::SqlType::Boolean,
-            crate::stdlib::packages::db_sql::SqlType::Date,
-            crate::stdlib::packages::db_sql::SqlType::Time,
-            crate::stdlib::packages::db_sql::SqlType::Timestamp,
-            crate::stdlib::packages::db_sql::SqlType::Uuid,
-            crate::stdlib::packages::db_sql::SqlType::Json,
-            crate::stdlib::packages::db_sql::SqlType::Jsonb,
-            crate::stdlib::packages::db_sql::SqlType::Array,
-            crate::stdlib::packages::db_sql::SqlType::Bytea,
+//             crate::stdlib::packages::db_sql::SqlType::Integer,
+//             crate::stdlib::packages::db_sql::SqlType::BigInt,
+//             crate::stdlib::packages::db_sql::SqlType::SmallInt,
+//             crate::stdlib::packages::db_sql::SqlType::Real,
+//             crate::stdlib::packages::db_sql::SqlType::Double,
+//             crate::stdlib::packages::db_sql::SqlType::Numeric,
+//             crate::stdlib::packages::db_sql::SqlType::Text,
+//             crate::stdlib::packages::db_sql::SqlType::Varchar,
+//             crate::stdlib::packages::db_sql::SqlType::Char,
+//             crate::stdlib::packages::db_sql::SqlType::Boolean,
+//             crate::stdlib::packages::db_sql::SqlType::Date,
+//             crate::stdlib::packages::db_sql::SqlType::Time,
+//             crate::stdlib::packages::db_sql::SqlType::Timestamp,
+//             crate::stdlib::packages::db_sql::SqlType::Uuid,
+//             crate::stdlib::packages::db_sql::SqlType::Json,
+//             crate::stdlib::packages::db_sql::SqlType::Jsonb,
+//             crate::stdlib::packages::db_sql::SqlType::Array,
+//             crate::stdlib::packages::db_sql::SqlType::Bytea,
         ]
     }
 
     #[instrument]
-    fn supports_sql_feature(&self, feature: crate::stdlib::packages::db_sql::SqlFeature) -> bool {
+//     fn supports_sql_feature(&self, feature: crate::stdlib::packages::db_sql::SqlFeature) -> bool {
         match feature {
-            crate::stdlib::packages::db_sql::SqlFeature::CommonTableExpressions => true,
-            crate::stdlib::packages::db_sql::SqlFeature::WindowFunctions => true,
-            crate::stdlib::packages::db_sql::SqlFeature::JsonOperators => true,
-            crate::stdlib::packages::db_sql::SqlFeature::ArrayOperators => true,
-            crate::stdlib::packages::db_sql::SqlFeature::FullTextSearch => true,
-            crate::stdlib::packages::db_sql::SqlFeature::Triggers => true,
-            crate::stdlib::packages::db_sql::SqlFeature::StoredProcedures => true,
-            crate::stdlib::packages::db_sql::SqlFeature::Views => true,
-            crate::stdlib::packages::db_sql::SqlFeature::Indexes => true,
-            crate::stdlib::packages::db_sql::SqlFeature::Constraints => true,
+//             crate::stdlib::packages::db_sql::SqlFeature::CommonTableExpressions => true,
+//             crate::stdlib::packages::db_sql::SqlFeature::WindowFunctions => true,
+//             crate::stdlib::packages::db_sql::SqlFeature::JsonOperators => true,
+//             crate::stdlib::packages::db_sql::SqlFeature::ArrayOperators => true,
+//             crate::stdlib::packages::db_sql::SqlFeature::FullTextSearch => true,
+//             crate::stdlib::packages::db_sql::SqlFeature::Triggers => true,
+//             crate::stdlib::packages::db_sql::SqlFeature::StoredProcedures => true,
+//             crate::stdlib::packages::db_sql::SqlFeature::Views => true,
+//             crate::stdlib::packages::db_sql::SqlFeature::Indexes => true,
+//             crate::stdlib::packages::db_sql::SqlFeature::Constraints => true,
         }
     }
 
@@ -432,7 +431,7 @@ impl DatabaseConnection for PostgreSqlConnection {
     }
 
     #[instrument(skip(self, options))]
-    async fn begin_transaction(&mut self, options: Option<crate::stdlib::packages::db_core::TransactionOptions>) -> DbResult<Box<dyn DatabaseTransaction>> {
+//     async fn begin_transaction(&mut self, options: Option<crate::stdlib::packages::db_core::TransactionOptions>) -> DbResult<Box<dyn DatabaseTransaction>> {
         let mut client = self.client.lock().await;
         
         // Set isolation level if specified
@@ -486,14 +485,14 @@ impl DatabaseConnection for PostgreSqlConnection {
         Ok(())
     }
 
-    fn connection_info(&self) -> crate::stdlib::packages::db_core::traits::ConnectionInfo {
-        crate::stdlib::packages::db_core::traits::ConnectionInfo {
+//     fn connection_info(&self) -> crate::stdlib::packages::db_core::traits::ConnectionInfo {
+//         crate::stdlib::packages::db_core::traits::ConnectionInfo {
             database_name: "postgres_db".to_string(),
             server_version: "15.0".to_string(),
             protocol_version: "3.0".to_string(),
             connection_id: self.connection_id.clone(),
             is_read_only: false,
-            transaction_isolation: crate::stdlib::packages::db_core::traits::TransactionIsolation::ReadCommitted,
+//             transaction_isolation: crate::stdlib::packages::db_core::traits::TransactionIsolation::ReadCommitted,
         }
     }
 }
@@ -782,21 +781,21 @@ fn convert_pg_error(error: PgError) -> DatabaseError {
     }
 }
 
-impl std::fmt::Display for PostgreSqlError {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "PostgreSQL Error: {}", self.message)?;
-        if let Some(code) = &self.code {
-            write!(f, " [Code: {}]", code)?;
-        }
-        if let Some(detail) = &self.detail {
-            write!(f, " Detail: {}", detail)?;
-        }
-        Ok(())
-    }
-}
+// impl std::fmt::Display for PostgreSqlError {
+//     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+//         write!(f, "PostgreSQL CursedError: {}", self.message)?;
+//         if let Some(code) = &self.code {
+//             write!(f, " [Code: {}]", code)?;
+//         }
+//         if let Some(detail) = &self.detail {
+//             write!(f, " Detail: {}", detail)?;
+//         }
+//         Ok(())
+//     }
+// }
 
-impl std::error::Error for PostgreSqlError {}
-
+// impl std::error::CursedError for PostgreSqlError {}
+// 
 // Implement remaining traits for prepared statements and transactions
 #[async_trait]
 impl PreparedStatement for PostgreSqlPreparedStatement {
@@ -848,16 +847,16 @@ impl PreparedStatement for PostgreSqlPreparedStatement {
     }
 
     /// slay Get parameter metadata
-    fn parameter_metadata(&self) -> &[crate::stdlib::packages::db_core::ParameterMetadata] {
+//     fn parameter_metadata(&self) -> &[crate::stdlib::packages::db_core::ParameterMetadata] {
         // Placeholder implementation - would need to extract from PostgreSQL statement
         &[]
     }
     
     /// slay Get result set metadata
-    fn result_metadata(&self) -> &crate::stdlib::packages::db_core::ResultMetadata {
+//     fn result_metadata(&self) -> &crate::stdlib::packages::db_core::ResultMetadata {
         // Placeholder implementation - would need to extract from PostgreSQL statement
-        static EMPTY_METADATA: std::sync::LazyLock<crate::stdlib::packages::db_core::ResultMetadata> = 
-            std::sync::LazyLock::new(|| crate::stdlib::packages::db_core::ResultMetadata {
+//         static EMPTY_METADATA: std::sync::LazyLock<crate::stdlib::packages::db_core::ResultMetadata> = 
+//             std::sync::LazyLock::new(|| crate::stdlib::packages::db_core::ResultMetadata {
                 columns: vec![],
                 total_rows: None,
                 has_more_rows: false,
@@ -865,7 +864,7 @@ impl PreparedStatement for PostgreSqlPreparedStatement {
                 schema_name: None,
                 table_name: None,
                 is_updatable: false,
-                result_type: crate::stdlib::packages::db_core::result::ResultType::ForwardOnly,
+//                 result_type: crate::stdlib::packages::db_core::result::ResultType::ForwardOnly,
             });
         &EMPTY_METADATA
     }
@@ -902,39 +901,39 @@ impl DatabaseTransaction for PostgreSqlTransaction {
     }
 
     /// slay Create a savepoint
-    async fn savepoint(&mut self, name: &str) -> DbResult<crate::stdlib::packages::db_core::SavePoint> {
+//     async fn savepoint(&mut self, name: &str) -> DbResult<crate::stdlib::packages::db_core::SavePoint> {
         // Placeholder implementation - would need real savepoint support
         debug!("Creating savepoint: {}", name);
-        Ok(crate::stdlib::packages::db_core::SavePoint {
+//         Ok(crate::stdlib::packages::db_core::SavePoint {
             name: name.to_string(),
             id: format!("sp_{}", name),
         })
     }
     
     /// slay Rollback to a savepoint
-    async fn rollback_to_savepoint(&mut self, savepoint: &crate::stdlib::packages::db_core::SavePoint) -> DbResult<()> {
+//     async fn rollback_to_savepoint(&mut self, savepoint: &crate::stdlib::packages::db_core::SavePoint) -> DbResult<()> {
         debug!("Rolling back to savepoint: {}", savepoint.name);
         // Placeholder implementation - would need real savepoint rollback
         Ok(())
     }
     
     /// slay Execute query within transaction
-    async fn query(&mut self, sql: &str, parameters: &[crate::stdlib::packages::db_core::Parameter]) -> DbResult<Box<dyn ResultSet>> {
+//     async fn query(&mut self, sql: &str, parameters: &[crate::stdlib::packages::db_core::Parameter]) -> DbResult<Box<dyn ResultSet>> {
         debug!("Executing query in transaction: {}", sql);
         // Placeholder implementation - would need access to transaction client
         Err(DatabaseError::General("Query in transaction not implemented".to_string()))
     }
     
     /// slay Execute statement within transaction
-    async fn execute(&mut self, sql: &str, parameters: &[crate::stdlib::packages::db_core::Parameter]) -> DbResult<ExecuteResult> {
+//     async fn execute(&mut self, sql: &str, parameters: &[crate::stdlib::packages::db_core::Parameter]) -> DbResult<ExecuteResult> {
         debug!("Executing statement in transaction: {}", sql);
         // Placeholder implementation - would need access to transaction client
         Err(DatabaseError::General("Execute in transaction not implemented".to_string()))
     }
     
     /// slay Get transaction state
-    fn state(&self) -> crate::stdlib::packages::db_core::traits::TransactionState {
-        use crate::stdlib::packages::db_core::traits::TransactionState;
+//     fn state(&self) -> crate::stdlib::packages::db_core::traits::TransactionState {
+//         use crate::stdlib::packages::db_core::traits::TransactionState;
         // Simple implementation - would need more sophisticated state tracking
         TransactionState::Active
     }
@@ -985,7 +984,7 @@ impl ResultSet for PostgreSqlResultSet {
             schema_name: None,
             table_name: None,
             is_updatable: false,
-            result_type: crate::stdlib::packages::db_core::result::ResultType::ForwardOnly,
+//             result_type: crate::stdlib::packages::db_core::result::ResultType::ForwardOnly,
         })
     }
 

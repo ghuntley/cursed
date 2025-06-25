@@ -1,4 +1,4 @@
-use crate::error::Error;
+use crate::error::CursedError;
 /// Time and date handling library for CURSED
 /// 
 /// This module provides comprehensive time, date, and duration functionality

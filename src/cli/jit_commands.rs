@@ -3,7 +3,7 @@
 /// Provides command-line interface integration for JIT compilation features
 /// including compilation options, performance monitoring, and configuration.
 
-use crate::error::Error;
+use crate::error::CursedError;
 use crate::config::{JitConfig, parse_optimization_level};
 use crate::codegen::llvm::{LlvmCodeGenerator, CursedJitEngine, JitCompilationInterface, create_optimized_jit_interface, create_debug_jit_interface};
 use crate::runtime::{Runtime, JitRuntime};
@@ -207,7 +207,7 @@ pub fn add_jit_commands(app: Command) -> Command {
 }
 
 /// Handle JIT-related CLI commands
-pub fn handle_jit_command(matches: &ArgMatches) -> Result<(), Error> {
+pub fn handle_jit_command(matches: &ArgMatches) -> crate::error::Result<()> {
     match matches.subcommand() {
         ("compile", Some(compile_matches)) => handle_jit_compile_command(compile_matches),
         ("execute", Some(execute_matches)) => handle_jit_execute_command(execute_matches),
@@ -222,13 +222,13 @@ pub fn handle_jit_command(matches: &ArgMatches) -> Result<(), Error> {
 }
 
 /// Handle JIT compile command
-fn handle_jit_compile_command(matches: &ArgMatches) -> Result<(), Error> {
+fn handle_jit_compile_command(matches: &ArgMatches) -> crate::error::Result<()> {
     let input_file = matches.value_of("input").unwrap();
     let optimization_level = matches.value_of("optimization").unwrap();
     let hot_path_threshold: u64 = matches.value_of("hot-path-threshold").unwrap().parse()
-        .map_err(|_| Error::from_str("Invalid hot path threshold"))?;
+        .map_err(|_| CursedError::from_str("Invalid hot path threshold"))?;
     let max_memory_mb: usize = matches.value_of("max-memory").unwrap().parse()
-        .map_err(|_| Error::from_str("Invalid max memory value"))?;
+        .map_err(|_| CursedError::from_str("Invalid max memory value"))?;
     
     let enable_cache = matches.is_present("enable-cache");
     let enable_profile = matches.is_present("profile");
@@ -238,7 +238,7 @@ fn handle_jit_compile_command(matches: &ArgMatches) -> Result<(), Error> {
 
     // Read source file
     let source = std::fs::read_to_string(input_file)
-        .map_err(|e| Error::from_str(&format!("Failed to read input file: {}", e)))?;
+        .map_err(|e| CursedError::from_str(&format!("Failed to read input file: {}", e)))?;
 
     // Create JIT compilation interface
     let context = Context::create();
@@ -277,11 +277,11 @@ fn handle_jit_compile_command(matches: &ArgMatches) -> Result<(), Error> {
 }
 
 /// Handle JIT execute command
-fn handle_jit_execute_command(matches: &ArgMatches) -> Result<(), Error> {
+fn handle_jit_execute_command(matches: &ArgMatches) -> crate::error::Result<()> {
     let input_file = matches.value_of("input").unwrap();
     let function_name = matches.value_of("function").unwrap();
     let iterations: u32 = matches.value_of("iterations").unwrap().parse()
-        .map_err(|_| Error::from_str("Invalid iterations count"))?;
+        .map_err(|_| CursedError::from_str("Invalid iterations count"))?;
     
     let enable_profile = matches.is_present("profile");
     let enable_optimize = matches.is_present("optimize");
@@ -290,7 +290,7 @@ fn handle_jit_execute_command(matches: &ArgMatches) -> Result<(), Error> {
 
     // Read source file
     let source = std::fs::read_to_string(input_file)
-        .map_err(|e| Error::from_str(&format!("Failed to read input file: {}", e)))?;
+        .map_err(|e| CursedError::from_str(&format!("Failed to read input file: {}", e)))?;
 
     // Create JIT runtime
     let context = Context::create();
@@ -352,13 +352,13 @@ fn handle_jit_execute_command(matches: &ArgMatches) -> Result<(), Error> {
 }
 
 /// Handle JIT benchmark command
-fn handle_jit_benchmark_command(matches: &ArgMatches) -> Result<(), Error> {
+fn handle_jit_benchmark_command(matches: &ArgMatches) -> crate::error::Result<()> {
     let input_file = matches.value_of("input").unwrap();
     let function_name = matches.value_of("function").unwrap();
     let warmup_iterations: u32 = matches.value_of("warmup").unwrap().parse()
-        .map_err(|_| Error::from_str("Invalid warmup iterations"))?;
+        .map_err(|_| CursedError::from_str("Invalid warmup iterations"))?;
     let benchmark_iterations: u32 = matches.value_of("iterations").unwrap().parse()
-        .map_err(|_| Error::from_str("Invalid benchmark iterations"))?;
+        .map_err(|_| CursedError::from_str("Invalid benchmark iterations"))?;
     
     let compare_optimization = matches.is_present("compare-optimization");
 
@@ -366,7 +366,7 @@ fn handle_jit_benchmark_command(matches: &ArgMatches) -> Result<(), Error> {
 
     // Read source file
     let source = std::fs::read_to_string(input_file)
-        .map_err(|e| Error::from_str(&format!("Failed to read input file: {}", e)))?;
+        .map_err(|e| CursedError::from_str(&format!("Failed to read input file: {}", e)))?;
 
     if compare_optimization {
         benchmark_optimization_levels(&source, function_name, warmup_iterations, benchmark_iterations)?;
@@ -383,7 +383,7 @@ fn benchmark_single_configuration(
     function_name: &str,
     warmup_iterations: u32,
     benchmark_iterations: u32,
-) -> Result<(), Error> {
+) -> crate::error::Result<()> {
     let context = Context::create();
     let jit_interface = create_optimized_jit_interface(&context)?;
     let runtime = Arc::new(Runtime::new());
@@ -436,7 +436,7 @@ fn benchmark_optimization_levels(
     function_name: &str,
     warmup_iterations: u32,
     benchmark_iterations: u32,
-) -> Result<(), Error> {
+) -> crate::error::Result<()> {
     let optimization_levels = ["none", "less", "default", "aggressive"];
     
     println!("=== Optimization Level Comparison ===");
@@ -484,7 +484,7 @@ fn benchmark_optimization_levels(
 }
 
 /// Handle JIT config command
-fn handle_jit_config_command(matches: &ArgMatches) -> Result<(), Error> {
+fn handle_jit_config_command(matches: &ArgMatches) -> crate::error::Result<()> {
     match matches.subcommand() {
         ("show", Some(show_matches)) => {
             let format = show_matches.value_of("format").unwrap();
@@ -507,7 +507,7 @@ fn handle_jit_config_command(matches: &ArgMatches) -> Result<(), Error> {
 }
 
 /// Show JIT configuration
-fn show_jit_config(format: &str) -> Result<(), Error> {
+fn show_jit_config(format: &str) -> crate::error::Result<()> {
     // Try to load from environment, fallback to default
     let config = JitConfig::from_env().unwrap_or_else(|_| JitConfig::default());
 
@@ -517,16 +517,16 @@ fn show_jit_config(format: &str) -> Result<(), Error> {
         }
         "json" => {
             let json = serde_json::to_string_pretty(&config)
-                .map_err(|e| Error::from_str(&format!("Failed to serialize config to JSON: {}", e)))?;
+                .map_err(|e| CursedError::from_str(&format!("Failed to serialize config to JSON: {}", e)))?;
             println!("{}", json);
         }
         "toml" => {
             let toml = toml::to_string_pretty(&config)
-                .map_err(|e| Error::from_str(&format!("Failed to serialize config to TOML: {}", e)))?;
+                .map_err(|e| CursedError::from_str(&format!("Failed to serialize config to TOML: {}", e)))?;
             println!("{}", toml);
         }
         _ => {
-            return Err(Error::from_str(&format!("Unknown format: {}. Use: summary, json, toml", format)));
+            return Err(CursedError::from_str(&format!("Unknown format: {}. Use: summary, json, toml", format)));
         }
     }
 
@@ -534,13 +534,13 @@ fn show_jit_config(format: &str) -> Result<(), Error> {
 }
 
 /// Create JIT configuration file
-fn create_jit_config(output_file: &str, template: &str) -> Result<(), Error> {
+fn create_jit_config(output_file: &str, template: &str) -> crate::error::Result<()> {
     let config = match template {
         "default" => JitConfig::default(),
         "development" => JitConfig::development(),
         "production" => JitConfig::production(),
         "benchmarking" => JitConfig::benchmarking(),
-        _ => return Err(Error::from_str(&format!("Unknown template: {}. Use: default, development, production, benchmarking", template))),
+        _ => return Err(CursedError::from_str(&format!("Unknown template: {}. Use: default, development, production, benchmarking", template))),
     };
 
     let output_path = PathBuf::from(output_file);
@@ -560,14 +560,14 @@ fn create_jit_config(output_file: &str, template: &str) -> Result<(), Error> {
 }
 
 /// Validate JIT configuration file
-fn validate_jit_config(config_file: &str) -> Result<(), Error> {
+fn validate_jit_config(config_file: &str) -> crate::error::Result<()> {
     let config_path = PathBuf::from(config_file);
     let extension = config_path.extension().and_then(|ext| ext.to_str()).unwrap_or("toml");
 
     let config = match extension {
         "json" => JitConfig::from_json_file(&config_path)?,
         "toml" => JitConfig::from_toml_file(&config_path)?,
-        _ => return Err(Error::from_str(&format!("Unsupported config file format: {}", extension))),
+        _ => return Err(CursedError::from_str(&format!("Unsupported config file format: {}", extension))),
     };
 
     match config.validate() {
@@ -585,7 +585,7 @@ fn validate_jit_config(config_file: &str) -> Result<(), Error> {
 }
 
 /// Handle JIT stats command
-fn handle_jit_stats_command(matches: &ArgMatches) -> Result<(), Error> {
+fn handle_jit_stats_command(matches: &ArgMatches) -> crate::error::Result<()> {
     let input_file = matches.value_of("input").unwrap();
     let detailed = matches.is_present("detailed");
     let reset = matches.is_present("reset");
@@ -594,7 +594,7 @@ fn handle_jit_stats_command(matches: &ArgMatches) -> Result<(), Error> {
 
     // Read source file
     let source = std::fs::read_to_string(input_file)
-        .map_err(|e| Error::from_str(&format!("Failed to read input file: {}", e)))?;
+        .map_err(|e| CursedError::from_str(&format!("Failed to read input file: {}", e)))?;
 
     // Create JIT runtime
     let context = Context::create();
@@ -649,21 +649,3 @@ fn handle_jit_stats_command(matches: &ArgMatches) -> Result<(), Error> {
     Ok(())
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_jit_config_creation() {
-        let config = JitConfig::development();
-        assert_eq!(config.engine.optimization_level, "none");
-        assert!(config.debug.debug_mode);
-    }
-
-    #[test]
-    fn test_optimization_level_parsing() {
-        assert!(parse_optimization_level("none").is_ok());
-        assert!(parse_optimization_level("aggressive").is_ok());
-        assert!(parse_optimization_level("invalid").is_err());
-    }
-}

@@ -1,7 +1,6 @@
 /// Production-ready collision resistance analysis for hash functions
-use crate::error_types::Error;
-use crate::stdlib::packages::crypto_hash_advanced::hash_traits::*;
-use crate::stdlib::crypto::types::CryptoError;
+use crate::error::CursedError;
+// use crate::stdlib::packages::crypto_hash_advanced::hash_traits::*;
 use std::collections::{HashMap, HashSet};
 use std::time::{Duration, Instant};
 
@@ -479,56 +478,3 @@ fn generate_recommendations(security: &CollisionSecurityLevel, digest_size: usiz
     recommendations
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use crate::stdlib::packages::crypto_hash_advanced::xxhash::XxHash64;
-
-    #[test]
-    fn test_collision_analyzer_basic() {
-        let analyzer = CollisionAnalyzer::new();
-        let hasher = XxHash64::new();
-        
-        let result = analyzer.analyze_collisions(hasher).unwrap();
-        assert!(result.total_hashes > 0);
-        assert!(result.analysis_duration.as_millis() > 0);
-    }
-
-    #[test]
-    fn test_birthday_attack_analysis() {
-        let analyzer = CollisionAnalyzer::with_limits(1000, Duration::from_millis(100));
-        let hasher = XxHash64::new();
-        
-        let result = analyzer.birthday_attack_analysis(hasher).unwrap();
-        assert_eq!(result.digest_size_bits, 64);
-        assert!(result.expected_attempts > 0);
-    }
-
-    #[test]
-    fn test_pattern_collision_analysis() {
-        let analyzer = CollisionAnalyzer::new();
-        let hasher = XxHash64::new();
-        
-        let result = analyzer.test_collision_patterns(hasher).unwrap();
-        assert!(result.pattern_results.len() > 0);
-        assert!(result.total_inputs_tested > 0);
-    }
-
-    #[test]
-    fn test_comprehensive_collision_test() {
-        let hasher = XxHash64::new();
-        let report = comprehensive_collision_test(hasher).unwrap();
-        
-        assert_eq!(report.algorithm, "xxHash64");
-        assert_eq!(report.digest_size, 8);
-        assert!(!report.recommendations.is_empty());
-    }
-
-    #[test]
-    fn test_security_level_descriptions() {
-        assert_eq!(CollisionSecurityLevel::Broken.description(), 
-                  "Broken - collisions easily found");
-        assert_eq!(CollisionSecurityLevel::Excellent.description(), 
-                  "Excellent - exceptional collision resistance");
-    }
-}

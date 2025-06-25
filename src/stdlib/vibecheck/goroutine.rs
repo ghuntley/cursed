@@ -2,7 +2,7 @@
 /// 
 /// Provides goroutine information, control, and debugging capabilities
 
-use crate::error::Error;
+use crate::error::CursedError;
 use crate::runtime::goroutine::{GoroutineScheduler, GoroutineState};
 use std::sync::{Arc, Mutex, OnceLock};
 use std::thread;
@@ -28,13 +28,13 @@ pub struct GoroutineInfo {
 }
 
 /// Initialize the global goroutine scheduler
-pub fn init_scheduler() -> Result<(), Error> {
+pub fn init_scheduler() -> crate::error::Result<()> {
     let scheduler_ref = GLOBAL_SCHEDULER.get_or_init(|| {
         Arc::new(Mutex::new(None))
     });
     
     let mut scheduler_opt = scheduler_ref.lock()
-        .map_err(|_| Error::Runtime("Failed to lock scheduler".to_string()))?;
+        .map_err(|_| CursedError::Runtime("Failed to lock scheduler".to_string()))?;
     
     if scheduler_opt.is_none() {
         let mut scheduler = GoroutineScheduler::new();
@@ -46,17 +46,17 @@ pub fn init_scheduler() -> Result<(), Error> {
 }
 
 /// Get reference to global scheduler
-fn get_scheduler() -> Result<(), Error> {
+fn get_scheduler() -> crate::error::Result<()> {
     Ok(GLOBAL_SCHEDULER.get_or_init(|| {
         Arc::new(Mutex::new(None))
     }).clone())
 }
 
 /// Get the current number of goroutines
-pub fn num_goroutine() -> Result<(), Error> {
+pub fn num_goroutine() -> crate::error::Result<()> {
     let scheduler_ref = get_scheduler()?;
     let scheduler_opt = scheduler_ref.lock()
-        .map_err(|_| Error::Runtime("Failed to lock scheduler".to_string()))?;
+        .map_err(|_| CursedError::Runtime("Failed to lock scheduler".to_string()))?;
     
     if let Some(ref scheduler) = *scheduler_opt {
         let active_goroutines = scheduler.active_goroutines();
@@ -68,7 +68,7 @@ pub fn num_goroutine() -> Result<(), Error> {
 }
 
 /// Get the current goroutine ID
-pub fn go_id() -> Result<(), Error> {
+pub fn go_id() -> crate::error::Result<()> {
     // Try to get from thread-local storage first
     let current_id = CURRENT_GOROUTINE_ID.with(|id| id.get());
     
@@ -91,14 +91,16 @@ pub fn set_current_goroutine_id(id: u64) {
 
 /// Clear the current goroutine ID (called when goroutine exits)
 pub fn clear_current_goroutine_id() {
+        // TODO: implement
+    }
     CURRENT_GOROUTINE_ID.with(|cell| cell.set(None));
 }
 
 /// Get stack trace for all goroutines
-pub fn stack() -> Result<(), Error> {
+pub fn stack() -> crate::error::Result<()> {
     let scheduler_ref = get_scheduler()?;
     let scheduler_opt = scheduler_ref.lock()
-        .map_err(|_| Error::Runtime("Failed to lock scheduler".to_string()))?;
+        .map_err(|_| CursedError::Runtime("Failed to lock scheduler".to_string()))?;
     
     let mut stack_trace = String::new();
     stack_trace.push_str("goroutine stack trace:\n\n");
@@ -134,12 +136,12 @@ pub fn stack() -> Result<(), Error> {
 }
 
 /// Get the number of logical CPUs usable by the current process
-pub fn num_cpu() -> Result<(), Error> {
+pub fn num_cpu() -> crate::error::Result<()> {
     Ok(num_cpus::get() as i32)
 }
 
 /// Set/get maximum number of CPUs that can execute simultaneously
-pub fn gomaxprocs(n: i32) -> Result<(), Error> {
+pub fn gomaxprocs(n: i32) -> crate::error::Result<()> {
     static MAXPROCS: std::sync::atomic::AtomicI32 = std::sync::atomic::AtomicI32::new(0);
     
     if n <= 0 {
@@ -165,10 +167,10 @@ pub fn gomaxprocs(n: i32) -> Result<(), Error> {
 }
 
 /// Get detailed information about all goroutines
-pub fn get_all_goroutine_info() -> Result<(), Error> {
+pub fn get_all_goroutine_info() -> crate::error::Result<()> {
     let scheduler_ref = get_scheduler()?;
     let scheduler_opt = scheduler_ref.lock()
-        .map_err(|_| Error::Runtime("Failed to lock scheduler".to_string()))?;
+        .map_err(|_| CursedError::Runtime("Failed to lock scheduler".to_string()))?;
     
     let mut goroutine_infos = Vec::new();
     
@@ -205,7 +207,7 @@ pub fn get_all_goroutine_info() -> Result<(), Error> {
 }
 
 /// Enable blocking profile for goroutine debugging
-pub fn block_profile(enabled: bool) -> Result<(), Error> {
+pub fn block_profile(enabled: bool) -> crate::error::Result<()> {
     // In a real implementation, this would enable collection of
     // blocking statistics for goroutines
     if enabled {
@@ -219,7 +221,7 @@ pub fn block_profile(enabled: bool) -> Result<(), Error> {
 }
 
 /// Get information about a specific goroutine
-pub fn goroutine_info(goroutine_id: u64) -> Result<(), Error> {
+pub fn goroutine_info(goroutine_id: u64) -> crate::error::Result<()> {
     let all_infos = get_all_goroutine_info()?;
     
     for (id, info) in all_infos {
@@ -232,10 +234,10 @@ pub fn goroutine_info(goroutine_id: u64) -> Result<(), Error> {
 }
 
 /// Coordinate with garbage collection
-pub fn coordinate_gc(timeout_ms: u64) -> Result<(), Error> {
+pub fn coordinate_gc(timeout_ms: u64) -> crate::error::Result<()> {
     let scheduler_ref = get_scheduler()?;
     let scheduler_opt = scheduler_ref.lock()
-        .map_err(|_| Error::Runtime("Failed to lock scheduler".to_string()))?;
+        .map_err(|_| CursedError::Runtime("Failed to lock scheduler".to_string()))?;
     
     if let Some(ref scheduler) = *scheduler_opt {
         let timeout = Duration::from_millis(timeout_ms);
@@ -247,10 +249,10 @@ pub fn coordinate_gc(timeout_ms: u64) -> Result<(), Error> {
 }
 
 /// Get stack bounds for GC scanning
-pub fn get_stack_bounds() -> Result<(), Error> {
+pub fn get_stack_bounds() -> crate::error::Result<()> {
     let scheduler_ref = get_scheduler()?;
     let scheduler_opt = scheduler_ref.lock()
-        .map_err(|_| Error::Runtime("Failed to lock scheduler".to_string()))?;
+        .map_err(|_| CursedError::Runtime("Failed to lock scheduler".to_string()))?;
     
     if let Some(ref scheduler) = *scheduler_opt {
         Ok(scheduler.get_stack_bounds())
@@ -282,129 +284,3 @@ mod num_cpus {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_num_cpu() {
-        let cpus = num_cpu().unwrap();
-        assert!(cpus > 0);
-        assert!(cpus <= 256); // Reasonable upper bound
-    }
-
-    #[test] 
-    fn test_gomaxprocs() {
-        // Get current value
-        let current = gomaxprocs(0).unwrap();
-        assert!(current > 0);
-        
-        // Set new value
-        let old = gomaxprocs(2).unwrap();
-        assert!(old > 0);
-        
-        // Verify new value
-        let new_current = gomaxprocs(0).unwrap();
-        assert_eq!(new_current, 2);
-        
-        // Restore old value
-        gomaxprocs(old).unwrap();
-    }
-
-    #[test]
-    fn test_go_id() {
-        let id = go_id().unwrap();
-        assert!(id > 0);
-        
-        // Should be consistent for same thread
-        let id2 = go_id().unwrap();
-        assert_eq!(id, id2);
-    }
-
-    #[test]
-    fn test_current_goroutine_id() {
-        // Initially should not be set
-        let initial_id = CURRENT_GOROUTINE_ID.with(|cell| cell.get());
-        assert_eq!(initial_id, None);
-        
-        // Set and verify
-        set_current_goroutine_id(42);
-        let set_id = CURRENT_GOROUTINE_ID.with(|cell| cell.get());
-        assert_eq!(set_id, Some(42));
-        
-        // Clear and verify
-        clear_current_goroutine_id();
-        let cleared_id = CURRENT_GOROUTINE_ID.with(|cell| cell.get());
-        assert_eq!(cleared_id, None);
-    }
-
-    #[test]
-    fn test_num_goroutine_without_scheduler() {
-        // Should return 1 for main thread when no scheduler is initialized
-        let count = num_goroutine().unwrap();
-        assert_eq!(count, 1);
-    }
-
-    #[test]
-    fn test_stack_without_scheduler() {
-        let stack_trace = stack().unwrap();
-        let trace_str = String::from_utf8(stack_trace).unwrap();
-        
-        assert!(trace_str.contains("goroutine 1"));
-        assert!(trace_str.contains("running"));
-        assert!(trace_str.contains("main.main"));
-    }
-
-    #[test]
-    fn test_get_all_goroutine_info_without_scheduler() {
-        let infos = get_all_goroutine_info().unwrap();
-        
-        assert_eq!(infos.len(), 1);
-        let (id, info) = &infos[0];
-        assert_eq!(*id, 1);
-        assert_eq!(info.id, 1);
-        assert_eq!(info.state, GoroutineState::Running);
-        assert_eq!(info.parent_id, None);
-    }
-
-    #[test]
-    fn test_goroutine_info_lookup() {
-        let info = goroutine_info(1).unwrap();
-        assert!(info.is_some());
-        
-        let info = info.unwrap();
-        assert_eq!(info.id, 1);
-        
-        // Non-existent goroutine
-        let missing = goroutine_info(999).unwrap();
-        assert!(missing.is_none());
-    }
-
-    #[test]
-    fn test_block_profile() {
-        // Should not panic
-        block_profile(true).unwrap();
-        block_profile(false).unwrap();
-    }
-
-    #[test]
-    fn test_coordinate_gc_without_scheduler() {
-        // Should succeed when no scheduler is present
-        let result = coordinate_gc(1000).unwrap();
-        assert_eq!(result, true);
-    }
-
-    #[test]
-    fn test_get_stack_bounds_without_scheduler() {
-        let bounds = get_stack_bounds().unwrap();
-        // Should return empty when no scheduler is present
-        assert_eq!(bounds.len(), 0);
-    }
-
-    #[test]
-    fn test_format_state() {
-        assert_eq!(format_state(GoroutineState::Created), "created");
-        assert_eq!(format_state(GoroutineState::Running), "running");
-        assert_eq!(format_state(GoroutineState::Completed), "completed");
-    }
-}

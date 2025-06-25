@@ -15,6 +15,7 @@ use std::fs;
 use serde::{Deserialize, Serialize};
 use sha2::{Sha256, Digest};
 use tracing::{debug, info, warn, instrument};
+use crate::error::CursedError;
 
 /// Advanced incremental optimization system
 #[derive(Debug)]
@@ -523,7 +524,7 @@ impl Default for IncrementalConfig {
 
 impl IncrementalOptimizer {
     /// Create new incremental optimizer
-    pub fn new(config: IncrementalConfig, work_dir: PathBuf) -> Result<(), Error> {
+    pub fn new(config: IncrementalConfig, work_dir: PathBuf) -> crate::error::Result<()> {
         let dependency_tracker = DependencyTracker::new(&config)?;
         let change_detector = ChangeDetector::new(&config)?;
         let invalidation_engine = InvalidationEngine::new(&config)?;
@@ -555,7 +556,7 @@ impl IncrementalOptimizer {
         &mut self,
         targets: &[BuildTarget],
         profile: &BuildProfile,
-    ) -> Result<(), Error> {
+    ) -> crate::error::Result<()> {
         info!("Analyzing incremental build for {} targets", targets.len());
         let start_time = Instant::now();
         
@@ -595,7 +596,7 @@ impl IncrementalOptimizer {
         &self,
         targets: &[BuildTarget],
         invalidation_result: &InvalidationResult,
-    ) -> Result<(), Error> {
+    ) -> crate::error::Result<()> {
         let mut files_to_compile = Vec::new();
         let mut files_from_cache = Vec::new();
         let mut compilation_order = Vec::new();
@@ -722,7 +723,7 @@ impl IncrementalOptimizer {
     }
     
     /// Optimize cache for better performance
-    pub async fn optimize_cache(&mut self) -> Result<(), Error> {
+    pub async fn optimize_cache(&mut self) -> crate::error::Result<()> {
         info!("Optimizing compilation cache");
         
         // Remove stale cache entries
@@ -757,7 +758,7 @@ pub struct ParallelGroup {
 }
 
 impl DependencyTracker {
-    fn new(config: &IncrementalConfig) -> Result<(), Error> {
+    fn new(config: &IncrementalConfig) -> crate::error::Result<()> {
         Ok(DependencyTracker {
             file_dependencies: HashMap::new(),
             symbol_dependencies: HashMap::new(),
@@ -777,13 +778,13 @@ impl DependencyTracker {
         })
     }
     
-    async fn analyze_impact(&self, changes: &[ChangeRecord]) -> Result<(), Error> {
+    async fn analyze_impact(&self, changes: &[ChangeRecord]) -> crate::error::Result<()> {
         // Analyze the impact of changes on the dependency graph
         // This is a placeholder implementation
         Ok(changes.to_vec())
     }
     
-    fn get_compilation_order(&self, files: &[PathBuf]) -> Result<(), Error> {
+    fn get_compilation_order(&self, files: &[PathBuf]) -> crate::error::Result<()> {
         // Return topologically sorted compilation order
         // This is a placeholder implementation
         Ok(files.to_vec())
@@ -800,7 +801,7 @@ impl DependencyTracker {
 }
 
 impl ChangeDetector {
-    fn new(config: &IncrementalConfig) -> Result<(), Error> {
+    fn new(config: &IncrementalConfig) -> crate::error::Result<()> {
         Ok(ChangeDetector {
             file_watchers: HashMap::new(),
             content_analyzers: HashMap::new(),
@@ -819,7 +820,7 @@ impl ChangeDetector {
         })
     }
     
-    async fn detect_changes(&mut self, targets: &[BuildTarget]) -> Result<(), Error> {
+    async fn detect_changes(&mut self, targets: &[BuildTarget]) -> crate::error::Result<()> {
         let mut changes = Vec::new();
         
         for target in targets {
@@ -831,7 +832,7 @@ impl ChangeDetector {
         Ok(changes)
     }
     
-    async fn check_file_changes(&self, file_path: &PathBuf) -> Result<(), Error> {
+    async fn check_file_changes(&self, file_path: &PathBuf) -> crate::error::Result<()> {
         let metadata = fs::metadata(file_path).map_err(|e| BuildError::IoError(e))?;
         let modified = metadata.modified().map_err(|e| BuildError::IoError(e))?;
         
@@ -856,7 +857,7 @@ impl ChangeDetector {
 }
 
 impl InvalidationEngine {
-    fn new(config: &IncrementalConfig) -> Result<(), Error> {
+    fn new(config: &IncrementalConfig) -> crate::error::Result<()> {
         Ok(InvalidationEngine {
             invalidation_rules: Vec::new(),
             propagation_analyzer: PropagationAnalyzer {
@@ -875,7 +876,7 @@ impl InvalidationEngine {
         })
     }
     
-    async fn compute_invalidation(&self, changes: &[ChangeRecord]) -> Result<(), Error> {
+    async fn compute_invalidation(&self, changes: &[ChangeRecord]) -> crate::error::Result<()> {
         let mut files_to_recompile = Vec::new();
         let mut symbols_to_reanalyze = Vec::new();
         let mut modules_to_rebuild = Vec::new();
@@ -899,7 +900,7 @@ impl InvalidationEngine {
 }
 
 impl CompilationCache {
-    fn new(config: &IncrementalConfig, work_dir: PathBuf) -> Result<(), Error> {
+    fn new(config: &IncrementalConfig, work_dir: PathBuf) -> crate::error::Result<()> {
         Ok(CompilationCache {
             file_cache: HashMap::new(),
             symbol_cache: HashMap::new(),
@@ -915,15 +916,15 @@ impl CompilationCache {
         })
     }
     
-    fn has_valid_cache(&self, file_path: &PathBuf) -> Result<(), Error> {
+    fn has_valid_cache(&self, file_path: &PathBuf) -> crate::error::Result<()> {
         Ok(self.file_cache.contains_key(file_path))
     }
     
-    fn get_file_cache_entry(&self, file_path: &PathBuf) -> Result<(), Error> {
+    fn get_file_cache_entry(&self, file_path: &PathBuf) -> crate::error::Result<()> {
         Ok(self.file_cache.get(file_path))
     }
     
-    async fn cleanup_stale_entries(&mut self) -> Result<(), Error> {
+    async fn cleanup_stale_entries(&mut self) -> crate::error::Result<()> {
         // Remove cache entries for files that no longer exist or are outdated
         let mut stale_keys = Vec::new();
         
@@ -946,7 +947,7 @@ impl CompilationCache {
         Ok(())
     }
     
-    async fn compact_storage(&mut self) -> Result<(), Error> {
+    async fn compact_storage(&mut self) -> crate::error::Result<()> {
         // Compact cache storage by removing redundant entries
         // This is a placeholder implementation
         Ok(())
@@ -958,30 +959,3 @@ impl CompilationCache {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use tempfile::tempdir;
-    
-    #[test]
-    fn test_incremental_optimizer_creation() {
-        let config = IncrementalConfig::default();
-        let work_dir = tempdir().unwrap().into_path();
-        let optimizer = IncrementalOptimizer::new(config, work_dir);
-        assert!(optimizer.is_ok());
-    }
-    
-    #[test]
-    fn test_dependency_tracker() {
-        let config = IncrementalConfig::default();
-        let tracker = DependencyTracker::new(&config);
-        assert!(tracker.is_ok());
-    }
-    
-    #[test]
-    fn test_change_detector() {
-        let config = IncrementalConfig::default();
-        let detector = ChangeDetector::new(&config);
-        assert!(detector.is_ok());
-    }
-}

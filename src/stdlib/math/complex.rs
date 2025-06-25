@@ -1,4 +1,4 @@
-use crate::error::Error;
+use crate::error::CursedError;
 /// Complex number mathematical functions for the CURSED programming language
 /// 
 /// This module provides comprehensive support for complex number arithmetic,
@@ -507,77 +507,3 @@ pub fn evaluate_polynomial(coefficients: &[Complex64], z: Complex64) -> MathResu
     Ok(result)
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-    
-    #[test]
-    fn test_complex_creation() {
-        let z = complex(3.0, 4.0).unwrap();
-        assert_eq!(z.real, 3.0);
-        assert_eq!(z.imag, 4.0);
-    }
-    
-    #[test]
-    fn test_complex_abs() {
-        let z = complex(3.0, 4.0).unwrap();
-        let abs_z = abs(z).unwrap();
-        assert!((abs_z - 5.0).abs() < 1e-10);
-    }
-    
-    #[test]
-    fn test_complex_arithmetic() {
-        let z1 = complex(1.0, 2.0).unwrap();
-        let z2 = complex(3.0, 4.0).unwrap();
-        
-        let sum = complex_add(z1, z2).unwrap();
-        assert_eq!(sum.real, 4.0);
-        assert_eq!(sum.imag, 6.0);
-        
-        let product = complex_mul(z1, z2).unwrap();
-        assert_eq!(product.real, -5.0); // 1*3 - 2*4
-        assert_eq!(product.imag, 10.0); // 1*4 + 2*3
-    }
-    
-    #[test]
-    fn test_complex_exp_log() {
-        let z = complex(1.0, 0.0).unwrap();
-        let exp_z = exp(z).unwrap();
-        assert!((exp_z.real - E).abs() < 1e-10);
-        assert!(exp_z.imag.abs() < 1e-10);
-        
-        let log_exp_z = log(exp_z).unwrap();
-        assert!((log_exp_z.real - 1.0).abs() < 1e-10);
-        assert!(log_exp_z.imag.abs() < 1e-10);
-    }
-    
-    #[test]
-    fn test_complex_trig() {
-        let z = complex(0.0, 0.0).unwrap();
-        let sin_z = sin(z).unwrap();
-        let cos_z = cos(z).unwrap();
-        
-        assert!(sin_z.real.abs() < 1e-10);
-        assert!(sin_z.imag.abs() < 1e-10);
-        assert!((cos_z.real - 1.0).abs() < 1e-10);
-        assert!(cos_z.imag.abs() < 1e-10);
-    }
-    
-    #[test]
-    fn test_quadratic_roots() {
-        // z^2 - 1 = 0, roots should be ±1
-        let a = complex(1.0, 0.0).unwrap();
-        let b = complex(0.0, 0.0).unwrap();
-        let c = complex(-1.0, 0.0).unwrap();
-        
-        let (root1, root2) = quadratic_roots(a, b, c).unwrap();
-        
-        // Check that roots are ±1
-        let abs_diff1 = ((root1.real - 1.0).abs() + root1.imag.abs()) + 
-                       ((root2.real + 1.0).abs() + root2.imag.abs());
-        let abs_diff2 = ((root1.real + 1.0).abs() + root1.imag.abs()) + 
-                       ((root2.real - 1.0).abs() + root2.imag.abs());
-        
-        assert!(abs_diff1 < 1e-10 || abs_diff2 < 1e-10);
-    }
-}

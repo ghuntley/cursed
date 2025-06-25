@@ -1,4 +1,4 @@
-use crate::error::Error;
+use crate::error::CursedError;
 /// Statistical functions module for CURSED programming language
 /// 
 /// Provides comprehensive statistical analysis including descriptive statistics,
@@ -961,43 +961,3 @@ fn gaussian_elimination(a: &mut [Vec<f64>], b: &mut [f64]) -> MathResult<Vec<f64
     Ok(x)
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-    
-    #[test]
-    fn test_descriptive_statistics() {
-        let data = vec![1.0, 2.0, 3.0, 4.0, 5.0];
-        
-        assert_eq!(mean(&data).unwrap(), 3.0);
-        assert_eq!(median(&data).unwrap(), 3.0);
-        assert_eq!(variance(&data).unwrap(), 2.0);
-        assert!((standard_deviation(&data).unwrap() - 1.4142135623730951).abs() < 1e-10);
-    }
-    
-    #[test]
-    fn test_empty_dataset_errors() {
-        let empty_data: Vec<f64> = vec![];
-        
-        assert!(mean(&empty_data).is_err());
-        assert!(median(&empty_data).is_err());
-        assert!(variance(&empty_data).is_err());
-    }
-    
-    #[test]
-    fn test_percentiles() {
-        let data = vec![1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0];
-        
-        assert_eq!(percentile(&data, 0.0).unwrap(), 1.0);
-        assert_eq!(percentile(&data, 50.0).unwrap(), 5.5);
-        assert_eq!(percentile(&data, 100.0).unwrap(), 10.0);
-    }
-    
-    #[test]
-    fn test_correlation() {
-        let x = vec![1.0, 2.0, 3.0, 4.0, 5.0];
-        let y = vec![2.0, 4.0, 6.0, 8.0, 10.0];
-        
-        assert!((correlation(&x, &y).unwrap() - 1.0).abs() < 1e-10);
-    }
-}

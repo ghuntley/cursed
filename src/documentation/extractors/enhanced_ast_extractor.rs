@@ -15,7 +15,7 @@
 
 use crate::ast::*;
 use crate::documentation::extractors::{AstExtractor, ExtractionConfig, EnhancedDocumentationItem};
-use crate::error::{Error as CursedError, SourceLocation};
+use crate::error::{CursedError, SourceLocation};
 
 use serde::{Deserialize, Serialize};
 use std::collections::{HashMap, HashSet, BTreeMap};
@@ -68,7 +68,7 @@ pub enum RelationshipType {
     /// Generic type constraint
     Constrains,
     
-    /// Error type relationship
+    /// CursedError type relationship
     ThrowsError,
     
     /// Return type relationship
@@ -405,7 +405,7 @@ impl Default for AnalysisContext {
 impl EnhancedAstExtractor {
     /// Create a new enhanced AST extractor
     #[instrument(skip(config))]
-    pub fn new(config: ExtractionConfig) -> Result<(), Error> {
+    pub fn new(config: ExtractionConfig) -> crate::error::Result<()> {
         info!("Creating enhanced AST extractor");
         
         // Initialize Gen Z slang mappings
@@ -463,7 +463,7 @@ impl EnhancedAstExtractor {
         ast: &AstNode,
         file_path: &Path,
         source_code: &str,
-    ) -> Result<(), Error> {
+    ) -> crate::error::Result<()> {
         info!("Starting comprehensive documentation extraction for: {:?}", file_path);
         
         // Reset state for new file
@@ -503,7 +503,7 @@ impl EnhancedAstExtractor {
     
     /// Build registries by traversing AST
     #[instrument(skip(self, ast, source_code))]
-    async fn build_registries(&mut self, ast: &AstNode, source_code: &str) -> Result<(), Error> {
+    async fn build_registries(&mut self, ast: &AstNode, source_code: &str) -> crate::error::Result<()> {
         debug!("Building type and function registries");
         
         self.traverse_for_registry(ast, source_code).await?;
@@ -519,7 +519,7 @@ impl EnhancedAstExtractor {
     
     /// Traverse AST to build registries
     #[instrument(skip(self, node, source_code))]
-    async fn traverse_for_registry(&mut self, node: &AstNode, source_code: &str) -> Result<(), Error> {
+    async fn traverse_for_registry(&mut self, node: &AstNode, source_code: &str) -> crate::error::Result<()> {
         match &node.node_type {
             AstNodeType::Program(program) => {
                 // Register module information
@@ -576,7 +576,7 @@ impl EnhancedAstExtractor {
     }
     
     /// Register function information
-    fn register_function(&mut self, func_decl: &FunctionDeclaration) -> Result<(), Error> {
+    fn register_function(&mut self, func_decl: &FunctionDeclaration) -> crate::error::Result<()> {
         let parameters = func_decl.parameters.iter().map(|param| ParameterInfo {
             name: param.to_string().clone(),
             param_type: param.param_type.as_ref().map(|t| self.format_type_name(t)),
@@ -602,7 +602,7 @@ impl EnhancedAstExtractor {
     }
     
     /// Register struct information
-    fn register_struct(&mut self, struct_decl: &StructDeclaration) -> Result<(), Error> {
+    fn register_struct(&mut self, struct_decl: &StructDeclaration) -> crate::error::Result<()> {
         let fields = struct_decl.fields.iter().map(|field| FieldInfo {
             name: field.to_string().clone(),
             field_type: field.field_type.as_ref()
@@ -632,7 +632,7 @@ impl EnhancedAstExtractor {
     }
     
     /// Register interface information
-    fn register_interface(&mut self, interface_decl: &InterfaceDeclaration) -> Result<(), Error> {
+    fn register_interface(&mut self, interface_decl: &InterfaceDeclaration) -> crate::error::Result<()> {
         let methods = interface_decl.methods.iter().map(|method| method.to_string().clone()).collect();
         
         let type_info = TypeInfo {
@@ -659,7 +659,7 @@ impl EnhancedAstExtractor {
     }
     
     /// Register enum information
-    fn register_enum(&mut self, enum_decl: &EnumDeclaration) -> Result<(), Error> {
+    fn register_enum(&mut self, enum_decl: &EnumDeclaration) -> crate::error::Result<()> {
         let type_info = TypeInfo {
             name: enum_decl.to_string().clone(),
             type_kind: "enum".to_string(),
@@ -679,7 +679,7 @@ impl EnhancedAstExtractor {
     }
     
     /// Register import information
-    fn register_import(&mut self, import_stmt: &Import) -> Result<(), Error> {
+    fn register_import(&mut self, import_stmt: &Import) -> crate::error::Result<()> {
         if let Some(ref module_name) = self.current_context.current_module {
             if let Some(module_info) = self.module_registry.get_mut(module_name) {
                 module_info.imports.push(import_stmt.path.clone());
@@ -697,7 +697,7 @@ impl EnhancedAstExtractor {
         ast: &AstNode,
         source_code: &str,
         documentation_items: &mut Vec<EnhancedDocumentationItem>,
-    ) -> Result<(), Error> {
+    ) -> crate::error::Result<()> {
         debug!("Extracting documentation items");
         
         // Use the existing AST extractor as base
@@ -718,7 +718,7 @@ impl EnhancedAstExtractor {
         &self,
         base_item: EnhancedDocumentationItem,
         source_code: &str,
-    ) -> Result<(), Error> {
+    ) -> crate::error::Result<()> {
         let mut enhanced = base_item;
         
         // Add cross-references
@@ -780,7 +780,7 @@ impl EnhancedAstExtractor {
     
     /// Perform comprehensive semantic analysis
     #[instrument(skip(self))]
-    async fn perform_semantic_analysis(&self) -> Result<(), Error> {
+    async fn perform_semantic_analysis(&self) -> crate::error::Result<()> {
         info!("Performing semantic analysis");
         
         // Build type relationships
@@ -931,7 +931,7 @@ impl EnhancedAstExtractor {
         &self,
         root_type: &str,
         processed_types: &mut HashSet<String>,
-    ) -> Result<(), Error> {
+    ) -> crate::error::Result<()> {
         let mut hierarchy = BTreeMap::new();
         let mut max_depth = 0;
         
@@ -955,7 +955,7 @@ impl EnhancedAstExtractor {
         hierarchy: &mut BTreeMap<String, HierarchyNode>,
         max_depth: &mut usize,
         processed_types: &mut HashSet<String>,
-    ) -> Result<(), Error> {
+    ) -> crate::error::Result<()> {
         if processed_types.contains(type_name) {
             return Ok(()); // Avoid cycles
         }

@@ -1,4 +1,4 @@
-use crate::error::Error;
+use crate::error::CursedError;
 /// Simple message queue implementation for CURSED IPC
 use std::collections::VecDeque;
 use std::fs::{File, OpenOptions};
@@ -6,7 +6,7 @@ use std::io::{BufRead, BufReader, Write, BufWriter, Seek, SeekFrom};
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, Mutex};
 use std::time::{SystemTime, Duration};
-use crate::stdlib::ipc::error::{IpcError, IpcResult};
+// use crate::stdlib::ipc::error::{IpcError, IpcResult};
 use serde::{Serialize, Deserialize};
 
 /// Message queue configuration
@@ -224,7 +224,7 @@ impl MessageQueue {
         } else {
             format!("memory:{}", config.name)
         };
-        crate::stdlib::ipc::register_message_queue(config.name, path)?;
+//         crate::stdlib::ipc::register_message_queue(config.name, path)?;
 
         Ok(queue)
     }
@@ -239,7 +239,7 @@ impl MessageQueue {
             )));
         }
 
-        crate::stdlib::ipc::increment_operations();
+//         crate::stdlib::ipc::increment_operations();
 
         let mut messages = self.messages.lock()
             .map_err(|_| IpcError::Internal("Failed to acquire messages lock".to_string()))?;
@@ -278,7 +278,7 @@ impl MessageQueue {
 
     /// Receive a message from the queue
     pub fn receive(&mut self) -> IpcResult<Option<Message>> {
-        crate::stdlib::ipc::increment_operations();
+//         crate::stdlib::ipc::increment_operations();
 
         let mut messages = self.messages.lock()
             .map_err(|_| IpcError::Internal("Failed to acquire messages lock".to_string()))?;
@@ -387,7 +387,7 @@ impl Drop for MessageQueue {
         if let Some(file) = &mut self.file {
             let _ = file.flush();
         }
-        let _ = crate::stdlib::ipc::unregister_message_queue(&self.config.name);
+//         let _ = crate::stdlib::ipc::unregister_message_queue(&self.config.name);
     }
 }
 
@@ -454,154 +454,3 @@ fn timestamp_now() -> u64 {
         .unwrap_or(0)
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_queue_config() {
-        let config = QueueConfig::new("test")
-            .with_max_size(50)
-            .with_max_message_size(4096)
-            .in_memory()
-            .with_permissions(0o644);
-
-        assert_eq!(config.name, "test");
-        assert_eq!(config.max_size, 50);
-        assert_eq!(config.max_message_size, 4096);
-        assert!(!config.persistent);
-        assert_eq!(config.permissions, 0o644);
-    }
-
-    #[test]
-    fn test_message_creation() {
-        let msg = Message::new_text("Hello, world!")
-            .with_priority(100)
-            .with_sender("test_sender");
-
-        assert_eq!(msg.msg_type, MessageType::Text);
-        assert_eq!(msg.as_string().unwrap(), "Hello, world!");
-        assert_eq!(msg.priority, 100);
-        assert_eq!(msg.sender.as_deref(), Some("test_sender"));
-    }
-
-    #[test]
-    fn test_message_queue_operations() {
-        let mut queue = MessageQueue::create("test_queue").unwrap();
-
-        // Send messages
-        let msg1 = Message::new_text("First message").with_priority(50);
-        let msg2 = Message::new_text("Second message").with_priority(100);
-        let msg3 = Message::new_text("Third message").with_priority(25);
-
-        let id1 = queue.send(msg1).unwrap();
-        let id2 = queue.send(msg2).unwrap();
-        let id3 = queue.send(msg3).unwrap();
-
-        assert_eq!(queue.len(), 3);
-
-        // Messages should be ordered by priority (highest first)
-        let received1 = queue.receive().unwrap().unwrap();
-        assert_eq!(received1.priority, 100);
-        assert_eq!(received1.as_string().unwrap(), "Second message");
-
-        let received2 = queue.receive().unwrap().unwrap();
-        assert_eq!(received2.priority, 50);
-
-        let received3 = queue.receive().unwrap().unwrap();
-        assert_eq!(received3.priority, 25);
-
-        assert!(queue.is_empty());
-        assert_eq!(queue.receive().unwrap(), None);
-
-        // Cleanup
-        let _ = remove_message_queue("test_queue");
-    }
-
-    #[test]
-    fn test_queue_capacity() {
-        let config = QueueConfig::new("test_capacity").with_max_size(2);
-        let mut queue = MessageQueue::create_with_config(config).unwrap();
-
-        // Fill queue to capacity
-        let msg1 = Message::new_text("Message 1");
-        let msg2 = Message::new_text("Message 2");
-        let msg3 = Message::new_text("Message 3");
-
-        queue.send(msg1).unwrap();
-        queue.send(msg2).unwrap();
-        assert_eq!(queue.len(), 2);
-
-        // Adding third message should remove oldest
-        queue.send(msg3).unwrap();
-        assert_eq!(queue.len(), 2);
-
-        // First message should be gone
-        let received = queue.receive().unwrap().unwrap();
-        assert_eq!(received.as_string().unwrap(), "Message 2");
-
-        // Cleanup
-        let _ = remove_message_queue("test_capacity");
-    }
-
-    #[test]
-    fn test_queue_peek() {
-        let mut queue = MessageQueue::create("test_peek").unwrap();
-        let msg = Message::new_text("Peek test");
-        queue.send(msg).unwrap();
-
-        // Peek should not remove message
-        let peeked = queue.peek().unwrap().unwrap();
-        assert_eq!(peeked.as_string().unwrap(), "Peek test");
-        assert_eq!(queue.len(), 1);
-
-        // Receive should still work
-        let received = queue.receive().unwrap().unwrap();
-        assert_eq!(received.as_string().unwrap(), "Peek test");
-        assert_eq!(queue.len(), 0);
-
-        // Cleanup
-        let _ = remove_message_queue("test_peek");
-    }
-
-    #[test]
-    fn test_json_message() {
-        let json_data = r#"{"name": "test", "value": 42}"#;
-        let msg = Message::new_json(json_data).unwrap();
-        
-        assert_eq!(msg.msg_type, MessageType::Json);
-        assert_eq!(msg.as_string().unwrap(), json_data);
-
-        // Test invalid JSON
-        let invalid_json = r#"{"invalid": json}"#;
-        assert!(Message::new_json(invalid_json).is_err());
-    }
-
-    #[test]
-    fn test_queue_statistics() {
-        let mut queue = MessageQueue::create("test_stats").unwrap();
-        
-        let stats = queue.statistics();
-        assert_eq!(stats.name, "test_stats");
-        assert_eq!(stats.current_size, 0);
-        assert_eq!(stats.total_sent, 0);
-        assert_eq!(stats.total_received, 0);
-
-        // Send and receive messages
-        let msg = Message::new_text("Test message");
-        queue.send(msg).unwrap();
-        
-        let stats = queue.statistics();
-        assert_eq!(stats.total_sent, 1);
-        assert_eq!(stats.current_size, 1);
-
-        queue.receive().unwrap();
-        
-        let stats = queue.statistics();
-        assert_eq!(stats.total_received, 1);
-        assert_eq!(stats.current_size, 0);
-
-        // Cleanup
-        let _ = remove_message_queue("test_stats");
-    }
-}

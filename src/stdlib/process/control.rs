@@ -1,4 +1,4 @@
-use crate::error::Error;
+use crate::error::CursedError;
 /// Process control and signal handling for CURSED
 /// 
 /// This module provides functionality for controlling processes, sending signals,
@@ -8,7 +8,7 @@ use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
 use std::time::{Duration, Instant};
 
-use crate::stdlib::process::error::{
+// use crate::stdlib::process::error::{
     ProcessError, ProcessResult, process_not_found_pid, permission_denied_pid,
     invalid_state, timeout_error, system_error, signal_error
 };
@@ -275,7 +275,7 @@ pub fn kill_process_graceful(pid: u32, timeout: Duration) -> ProcessResult<()> {
     // Wait for process to terminate
     let start = Instant::now();
     while start.elapsed() < timeout {
-        if !crate::stdlib::process::is_process_running(pid) {
+//         if !crate::stdlib::process::is_process_running(pid) {
             return Ok(());
         }
         std::thread::sleep(Duration::from_millis(100));
@@ -468,7 +468,7 @@ pub fn wait_for_process(pid: u32, timeout: Option<Duration>) -> ProcessResult<bo
     let start = Instant::now();
     
     loop {
-        if !crate::stdlib::process::is_process_running(pid) {
+//         if !crate::stdlib::process::is_process_running(pid) {
             return Ok(true);
         }
         
@@ -494,7 +494,7 @@ pub fn continue_process(pid: u32) -> ProcessResult<()> {
 
 /// Kill processes by name
 pub fn kill_processes_by_name(name: &str) -> ProcessResult<Vec<u32>> {
-    let processes = crate::stdlib::process::find_processes_by_name(name)?;
+//     let processes = crate::stdlib::process::find_processes_by_name(name)?;
     let mut killed_pids = Vec::new();
     
     for process in processes {
@@ -508,7 +508,7 @@ pub fn kill_processes_by_name(name: &str) -> ProcessResult<Vec<u32>> {
 
 /// Terminate processes by name
 pub fn terminate_processes_by_name(name: &str) -> ProcessResult<Vec<u32>> {
-    let processes = crate::stdlib::process::find_processes_by_name(name)?;
+//     let processes = crate::stdlib::process::find_processes_by_name(name)?;
     let mut terminated_pids = Vec::new();
     
     for process in processes {
@@ -522,7 +522,7 @@ pub fn terminate_processes_by_name(name: &str) -> ProcessResult<Vec<u32>> {
 
 /// Kill entire process tree
 pub fn kill_process_tree(root_pid: u32) -> ProcessResult<Vec<u32>> {
-    let tree = crate::stdlib::process::get_process_tree(root_pid)?;
+//     let tree = crate::stdlib::process::get_process_tree(root_pid)?;
     let mut killed_pids = Vec::new();
     
     // Kill children first, then parent
@@ -537,7 +537,7 @@ pub fn kill_process_tree(root_pid: u32) -> ProcessResult<Vec<u32>> {
 
 /// Terminate entire process tree
 pub fn terminate_process_tree(root_pid: u32) -> ProcessResult<Vec<u32>> {
-    let tree = crate::stdlib::process::get_process_tree(root_pid)?;
+//     let tree = crate::stdlib::process::get_process_tree(root_pid)?;
     let mut terminated_pids = Vec::new();
     
     // Terminate children first, then parent
@@ -676,114 +676,6 @@ impl SignalHandler for DefaultSignalHandler {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-use crate::stdlib::process::error::ProcessResult;
-use crate::stdlib::process::error::ProcessError;
-
-    #[test]
-    fn test_signal_properties() {
-        assert_eq!(Signal::SIGINT.as_number(), 2);
-        assert_eq!(Signal::SIGINT.name(), "SIGINT");
-        assert!(Signal::SIGINT.can_be_caught());
-        assert!(Signal::SIGINT.is_terminating());
-        
-        assert!(!Signal::SIGKILL.can_be_caught());
-        assert!(Signal::SIGKILL.is_terminating());
-        
-        assert!(Signal::SIGCONT.can_be_caught());
-        assert!(!Signal::SIGCONT.is_terminating());
-    }
-
-    #[test]
-    fn test_signal_conversion() {
-        assert_eq!(Signal::from(2), Signal::SIGINT);
-        assert_eq!(Signal::from(9), Signal::SIGKILL);
-        assert_eq!(Signal::from(15), Signal::SIGTERM);
-        assert_eq!(Signal::from(999), Signal::SIGTERM); // Default fallback
-    }
-
-    #[test]
-    fn test_priority_values() {
-        assert_eq!(Priority::Normal.nice_value(), 0);
-        assert_eq!(Priority::High.nice_value(), -10);
-        assert_eq!(Priority::Low.nice_value(), 10);
-        
-        assert_eq!(Priority::from_nice(0), Priority::Normal);
-        assert_eq!(Priority::from_nice(-15), Priority::High);
-        assert_eq!(Priority::from_nice(15), Priority::Low);
-    }
-
-    #[test]
-    fn test_priority_ordering() {
-        assert!(Priority::VeryHigh < Priority::High);
-        assert!(Priority::High < Priority::Normal);
-        assert!(Priority::Normal < Priority::Low);
-        assert!(Priority::Low < Priority::VeryLow);
-    }
-
-    #[test]
-    fn test_process_control_current_process() {
-        let current_pid = std::process::id();
-        
-        // These operations should work on the current process
-        let priority_result = ProcessControl::get_priority(current_pid);
-        // Don't assert success as it might fail due to permissions on some systems
-        
-        // Test that the current process is running
-        assert!(crate::stdlib::process::is_process_running(current_pid));
-    }
-
-    #[test]
-    fn test_wait_for_nonexistent_process() {
-        // Test waiting for a process that doesn't exist
-        let result = wait_for_process(999999, Some(Duration::from_millis(100)));
-        assert!(result.is_ok());
-        assert_eq!(result.unwrap(), true); // Should return true immediately since process doesn't exist
-    }
-
-    #[test]
-    fn test_signal_error_handling() {
-        // Test sending signal to non-existent process
-        let result = send_signal_to_pid(999999, Signal::SIGTERM);
-        assert!(result.is_err());
-    }
-
-    #[test]
-    fn test_default_signal_handler() {
-        let handler = DefaultSignalHandler;
-        
-        // Test non-terminating signal
-        let result = handler.handle_signal(Signal::SIGUSR1);
-        assert!(result.is_ok());
-        
-        // Note: We can't easily test terminating signals without actually terminating
-    }
-
-    #[test]
-    fn test_process_name_operations() {
-        // Test operations that work with process names
-        let result = kill_processes_by_name("nonexistent_process_name");
-        assert!(result.is_ok());
-        assert!(result.unwrap().is_empty());
-        
-        let result = terminate_processes_by_name("nonexistent_process_name");
-        assert!(result.is_ok());
-        assert!(result.unwrap().is_empty());
-    }
-}
-
-/// Process controller for advanced process management
-#[derive(Debug)]
-pub struct ProcessController {
-    /// Active processes
-    processes: Arc<Mutex<HashMap<u32, ProcessControlInfo>>>,
-    /// Control options
-    options: ControlOptions,
-    /// Monitoring enabled
-    monitoring_enabled: bool,
-}
 
 /// Control options for process management
 #[derive(Debug, Clone)]

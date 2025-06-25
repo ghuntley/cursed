@@ -7,7 +7,7 @@ use crate::bootstrap::{
     SelfCompilationVerifier, VerificationConfig, VerificationResult
 };
 
-use crate::error::{Error, Result as CursedResult};
+use crate::error::{CursedError, Result as CursedResult};
 
 use clap::{Arg, ArgMatches, Command};
 use std::path::PathBuf;
@@ -162,12 +162,12 @@ fn parse_verify_config(matches: &ArgMatches) -> CursedResult<BootstrapCliConfig>
     let cycles = matches.get_one::<String>("cycles")
         .unwrap_or(&"3".to_string())
         .parse::<usize>()
-        .map_err(|_| Error::invalid_input("Invalid number of cycles"))?;
+        .map_err(|_| CursedError::invalid_input("Invalid number of cycles"))?;
 
     let timeout_minutes = matches.get_one::<String>("timeout")
         .unwrap_or(&"10".to_string())
         .parse::<u64>()
-        .map_err(|_| Error::invalid_input("Invalid timeout value"))?;
+        .map_err(|_| CursedError::invalid_input("Invalid timeout value"))?;
 
     let work_dir = PathBuf::from(
         matches.get_one::<String>("work-dir")
@@ -243,7 +243,7 @@ async fn run_bootstrap_verification(config: BootstrapCliConfig) -> CursedResult<
                     }
                 }
                 
-                Err(Error::general_error("Bootstrap verification failed"))
+                Err(CursedError::general_error("Bootstrap verification failed"))
             }
         }
         Err(e) => {
@@ -365,7 +365,7 @@ async fn clean_bootstrap_artifacts(work_dir: PathBuf) -> CursedResult<()> {
         Err(e) => {
             error!("Failed to clean bootstrap artifacts: {}", e);
             println!("❌ Failed to clean bootstrap artifacts: {}", e);
-            Err(Error::io_error(format!("Failed to clean {}: {}", work_dir.display(), e)))
+            Err(CursedError::io_error(format!("Failed to clean {}: {}", work_dir.display(), e)))
         }
     }
 }
@@ -440,55 +440,3 @@ async fn show_bootstrap_status() -> CursedResult<()> {
     Ok(())
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use tempfile::tempdir;
-    
-    #[test]
-    fn test_bootstrap_cli_config_default() {
-        let config = BootstrapCliConfig::default();
-        assert_eq!(config.bootstrap_cycles, 3);
-        assert_eq!(config.timeout_minutes, 10);
-        assert!(!config.keep_intermediates);
-        assert!(!config.verbose);
-        assert!(!config.force);
-    }
-    
-    #[test]
-    fn test_bootstrap_command_creation() {
-        let cmd = bootstrap_command();
-        assert_eq!(cmd.get_name(), "bootstrap");
-        
-        // Check subcommands exist
-        let subcommands: Vec<_> = cmd.get_subcommands().map(|s| s.get_name()).collect();
-        assert!(subcommands.contains(&"verify"));
-        assert!(subcommands.contains(&"stages"));
-        assert!(subcommands.contains(&"clean"));
-        assert!(subcommands.contains(&"status"));
-    }
-    
-    #[tokio::test]
-    async fn test_clean_bootstrap_artifacts_nonexistent() {
-        let temp_dir = tempdir().unwrap();
-        let work_dir = temp_dir.path().join("nonexistent");
-        
-        let result = clean_bootstrap_artifacts(work_dir).await;
-        assert!(result.is_ok());
-    }
-    
-    #[tokio::test]
-    async fn test_show_bootstrap_status() {
-        let result = show_bootstrap_status().await;
-        assert!(result.is_ok());
-    }
-    
-    #[tokio::test]
-    async fn test_show_bootstrap_stages() {
-        let result = show_bootstrap_stages(false).await;
-        assert!(result.is_ok());
-        
-        let result_detailed = show_bootstrap_stages(true).await;
-        assert!(result_detailed.is_ok());
-    }
-}

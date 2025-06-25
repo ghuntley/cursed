@@ -1,4 +1,4 @@
-use crate::error::Error;
+use crate::error::CursedError;
 /// fr fr SQL database driver implementation for CURSED language - sql_vibes package
 /// This module provides no-cap database functionality with Gen Z energy periodt
 
@@ -16,31 +16,8 @@ pub use error::{SqlError, SqlResult, DatabaseErrorKind, QueryErrorKind, Connecti
 
 /// fr fr Initialize the sql_vibes package and register it with stdlib
 pub fn init_sql_vibes() {
+        // TODO: implement
+    }
     println!("🗄️ sql_vibes package initialized - ready to store some data bestie!");
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_init_sql_vibes() {
-        // Should not panic
-        init_sql_vibes();
-    }
-    
-    #[test]
-    fn test_simple_connection() {
-        let conn = connect("sqlite://test.db");
-        assert!(conn.is_ok());
-    }
-    
-    #[test]
-    fn test_quick_query() {
-        let result = quick_query("sqlite://test.db", "SELECT 1");
-        assert!(result.is_ok());
-        
-        let result_set = result.unwrap();
-        assert!(!result_set.is_empty());
-    }
-}

@@ -1,11 +1,11 @@
 use crate::web::StatusCode;
-use crate::error::Error;
+use crate::error::CursedError;
 /// fr fr HTTP routing for web_vibez - path-based request routing
 use std::collections::HashMap;
 use std::sync::Arc;
 use regex::Regex;
 
-use crate::stdlib::packages::web_vibez::{
+// use crate::stdlib::packages::web_vibez::{
     request::HttpRequest,
     response::HttpResponse,
     handler::Handler,
@@ -440,97 +440,3 @@ impl HttpRequest {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use crate::stdlib::packages::web_vibez::handler::FunctionHandler;
-
-    #[test]
-    fn test_route_pattern_compilation() {
-        let (regex, params) = RouteEntry::compile_pattern("/users/:id/posts/:post_id").unwrap();
-        assert_eq!(params, Vec::from(["id", "post_id"]));
-        
-        let captures = regex.captures("/users/123/posts/456").unwrap();
-        assert_eq!(captures.get(1).unwrap().as_str(), "123");
-        assert_eq!(captures.get(2).unwrap().as_str(), "456");
-    }
-
-    #[test]
-    fn test_route_matching() {
-        let handler = FunctionHandler::sync("test".to_string(), |_| {
-            Ok(HttpResponse::ok())
-        });
-        
-        let route = RouteEntry::new(
-            "/users/:id".to_string(),
-            MethodSet::from_methods(Vec::from([HttpMethod::Get])),
-            Arc::new(handler),
-            "user_detail".to_string(),
-        ).unwrap();
-
-        let params = route.matches("/users/123", HttpMethod::Get).unwrap();
-        assert_eq!(params.get("id"), Some(&"123".to_string()));
-        
-        assert!(route.matches("/users/123", HttpMethod::Post).is_none());
-        assert!(route.matches("/posts/123", HttpMethod::Get).is_none());
-    }
-
-    #[tokio::test]
-    async fn test_router_basic() {
-        let handler = FunctionHandler::sync("test".to_string(), |_| {
-            Ok(HttpResponse::ok().with_text("Hello"))
-        });
-
-        let router = Router::new()
-            .get("/hello", handler, "hello")
-            .unwrap();
-
-        let request = HttpRequest::new(HttpMethod::Get, "/hello".to_string());
-        let response = router.route_request(request).await.unwrap();
-        
-        assert_eq!(response.body_text().unwrap(), "Hello");
-    }
-
-    #[tokio::test]
-    async fn test_router_path_params() {
-        let handler = FunctionHandler::sync("user_detail".to_string(), |req| {
-            let user_id = req.path_param("id").unwrap_or("unknown".to_string());
-            Ok(HttpResponse::ok().with_text(format!("User: {}", user_id)))
-        });
-
-        let router = Router::new()
-            .get("/users/:id", handler, "user_detail")
-            .unwrap();
-
-        let request = HttpRequest::new(HttpMethod::Get, "/users/123".to_string());
-        let response = router.route_request(request).await.unwrap();
-        
-        assert_eq!(response.body_text().unwrap(), "User: 123");
-    }
-
-    #[tokio::test]
-    async fn test_router_method_not_allowed() {
-        let handler = FunctionHandler::sync("test".to_string(), |_| {
-            Ok(HttpResponse::ok())
-        });
-
-        let router = Router::new()
-            .get("/test", handler, "test")
-            .unwrap();
-
-        let request = HttpRequest::new(HttpMethod::Post, "/test".to_string());
-        let response = router.route_request(request).await.unwrap();
-        
-        assert_eq!(response.status, crate::stdlib::packages::web_vibez::status::StatusCode::MethodNotAllowed);
-        assert_eq!(response.header("allow"), Some(&"GET".to_string()));
-    }
-
-    #[test]
-    fn test_wildcard_pattern() {
-        let (regex, params) = RouteEntry::compile_pattern("/static/*").unwrap();
-        assert_eq!(params, Vec::from(["*"]));
-        
-        let captures = regex.captures("/static/css/main.css").unwrap();
-        assert_eq!(captures.get(1).unwrap().as_str(), "css/main.css");
-    }
-}

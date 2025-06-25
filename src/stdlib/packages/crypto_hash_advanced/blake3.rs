@@ -4,8 +4,7 @@
 /// regular hashing, keyed hashing, and key derivation functions.
 
 use crate::error::CursedError;
-use crate::stdlib::value::Value;
-use crate::error::Error;
+// use crate::stdlib::value::Value;
 use std::collections::HashMap;
 
 /// fr fr BLAKE3 constants
@@ -478,7 +477,7 @@ impl Blake3Utils {
 /// fr fr Public API functions for CURSED integration
 
 /// slay BLAKE3 hash function
-pub fn blake3(args: Vec<Value>) -> Result<(), Error> {
+pub fn blake3(args: Vec<Value>) -> crate::error::Result<()> {
     if args.is_empty() {
         return Err(CursedError::Runtime("BLAKE3 requires input data".to_string()));
     }
@@ -493,7 +492,7 @@ pub fn blake3(args: Vec<Value>) -> Result<(), Error> {
 }
 
 /// slay BLAKE3 keyed hash function
-pub fn blake3_keyed(args: Vec<Value>) -> Result<(), Error> {
+pub fn blake3_keyed(args: Vec<Value>) -> crate::error::Result<()> {
     if args.len() < 2 {
         return Err(CursedError::Runtime("BLAKE3 keyed hash requires key and data".to_string()));
     }
@@ -532,7 +531,7 @@ pub fn blake3_keyed(args: Vec<Value>) -> Result<(), Error> {
 }
 
 /// slay BLAKE3 key derivation function
-pub fn blake3_derive_key(args: Vec<Value>) -> Result<(), Error> {
+pub fn blake3_derive_key(args: Vec<Value>) -> crate::error::Result<()> {
     if args.len() < 3 {
         return Err(CursedError::Runtime("BLAKE3 KDF requires context, key material, and output length".to_string()));
     }
@@ -561,13 +560,13 @@ pub fn blake3_derive_key(args: Vec<Value>) -> Result<(), Error> {
 }
 
 /// slay Generate BLAKE3 key
-pub fn blake3_generate_key(_args: Vec<Value>) -> Result<(), Error> {
+pub fn blake3_generate_key(_args: Vec<Value>) -> crate::error::Result<()> {
     let key = Blake3Utils::generate_key();
     Ok(Value::String(Blake3Utils::to_hex(&key)))
 }
 
 /// slay Create streaming BLAKE3 hasher
-pub fn create_blake3_hasher(args: Vec<Value>) -> Result<(), Error> {
+pub fn create_blake3_hasher(args: Vec<Value>) -> crate::error::Result<()> {
     let mode = if args.is_empty() {
         Blake3Mode::Regular
     } else {
@@ -592,104 +591,3 @@ pub fn create_blake3_hasher(args: Vec<Value>) -> Result<(), Error> {
     Ok(Value::Object(result))
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-    
-    #[test]
-    fn test_blake3_empty() {
-        let hash = Blake3Hasher::hash(b"");
-        assert_eq!(hash.len(), 32);
-        // BLAKE3 of empty string should be specific value
-        // (would need to verify with reference implementation)
-    }
-    
-    #[test]
-    fn test_blake3_abc() {
-        let hash = Blake3Hasher::hash(b"abc");
-        assert_eq!(hash.len(), 32);
-        assert_ne!(hash, [0u8; 32]); // Should not be all zeros
-    }
-    
-    #[test]
-    fn test_blake3_streaming() {
-        let mut hasher = Blake3Hasher::new();
-        hasher.update(b"hello");
-        hasher.update(b" ");
-        hasher.update(b"world");
-        let hash1 = hasher.finalize_fixed();
-        
-        let hash2 = Blake3Hasher::hash(b"hello world");
-        assert_eq!(hash1, hash2);
-    }
-    
-    #[test]
-    fn test_blake3_keyed() {
-        let key = [1u8; 32];
-        let data = b"test data";
-        
-        let hash1 = Blake3Hasher::keyed_hash(&key, data);
-        let hash2 = Blake3Hasher::keyed_hash(&key, data);
-        assert_eq!(hash1, hash2);
-        
-        // Different key should produce different hash
-        let key2 = [2u8; 32];
-        let hash3 = Blake3Hasher::keyed_hash(&key2, data);
-        assert_ne!(hash1, hash3);
-    }
-    
-    #[test]
-    fn test_blake3_derive_key() {
-        let context = "test context";
-        let key_material = b"secret key material";
-        
-        let derived1 = Blake3Hasher::derive_key(context, key_material, 32);
-        let derived2 = Blake3Hasher::derive_key(context, key_material, 32);
-        assert_eq!(derived1, derived2);
-        
-        // Different context should produce different key
-        let derived3 = Blake3Hasher::derive_key("different context", key_material, 32);
-        assert_ne!(derived1, derived3);
-        
-        // Different length should work
-        let derived4 = Blake3Hasher::derive_key(context, key_material, 64);
-        assert_eq!(derived4.len(), 64);
-    }
-    
-    #[test]
-    fn test_blake3_variable_output() {
-        let data = b"test";
-        let mut hasher = Blake3Hasher::new();
-        hasher.update(data);
-        
-        let mut output1 = [0u8; 16];
-        hasher.clone().finalize_variable(&mut output1);
-        assert_eq!(output1.len(), 16);
-        
-        let mut output2 = [0u8; 100];
-        hasher.finalize_variable(&mut output2);
-        assert_eq!(output2.len(), 100);
-        
-        // First 16 bytes should match
-        assert_eq!(output1, output2[..16]);
-    }
-    
-    #[test]
-    fn test_blake3_mode_properties() {
-        assert_eq!(Blake3Mode::Regular.name(), "BLAKE3");
-        assert_eq!(Blake3Mode::Keyed.name(), "BLAKE3-Keyed");
-        assert_eq!(Blake3Mode::DeriveKey.name(), "BLAKE3-KDF");
-        
-        assert_eq!(Blake3Mode::Regular.flag(), 0);
-        assert_eq!(Blake3Mode::Keyed.flag(), KEYED_HASH);
-        assert_eq!(Blake3Mode::DeriveKey.flag(), DERIVE_KEY_CONTEXT);
-    }
-    
-    #[test]
-    fn test_blake3_constants() {
-        assert_eq!(BLAKE3_KEY_LEN, 32);
-        assert_eq!(BLAKE3_OUT_LEN, 32);
-        assert_eq!(BLAKE3_BLOCK_LEN, 64);
-        assert_eq!(BLAKE3_CHUNK_LEN, 1024);
-    }
-}

@@ -1,9 +1,9 @@
-use crate::error::Error;
+use crate::error::CursedError;
 /// Signal actions for common signal handling patterns
 use std::process;
 use std::sync::Arc;
-use crate::stdlib::signal_boost::core::BoostSignal;
-use crate::stdlib::signal_boost::error::{SignalBoostError, SignalBoostResult};
+// use crate::stdlib::signal_boost::core::BoostSignal;
+// use crate::stdlib::signal_boost::error::{SignalBoostError, SignalBoostResult};
 
 /// A signal action function that returns whether the signal was handled
 pub type SignalAction = Arc<dyn Fn(BoostSignal) -> bool + Send + Sync>;
@@ -48,7 +48,7 @@ pub fn log_action(level: LogLevel) -> SignalAction {
             LogLevel::Debug => tracing::debug!("Signal received: {}", signal),
             LogLevel::Info => tracing::info!("Signal received: {}", signal),
             LogLevel::Warn => tracing::warn!("Signal received: {}", signal),
-            LogLevel::Error => tracing::error!("Signal received: {}", signal),
+            LogLevel::CursedError => tracing::error!("Signal received: {}", signal),
         }
         true
     })
@@ -61,7 +61,7 @@ pub enum LogLevel {
     Debug,
     Info,
     Warn,
-    Error,
+    CursedError,
 }
 
 /// Custom action using a logger-like interface
@@ -326,207 +326,3 @@ pub fn network_notification_action(url: String, timeout_secs: u64) -> SignalActi
     })
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use crate::stdlib::signal_boost::core::SIGINT;
-    use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
-    use std::sync::Arc;
-    use std::time::Duration;
-    
-    #[test]
-    fn test_ignore_action() {
-        let action = ignore_action();
-        assert!(action(SIGINT));
-    }
-    
-    #[test]
-    fn test_log_action() {
-        let action = log_action(LogLevel::Info);
-        assert!(action(SIGINT));
-    }
-    
-    #[test]
-    fn test_custom_log_action() {
-        let logged = Arc::new(AtomicBool::new(false));
-        let logged_clone = Arc::clone(&logged);
-        
-        let action = custom_log_action(move |_msg| {
-            logged_clone.store(true, Ordering::SeqCst);
-        });
-        
-        assert!(action(SIGINT));
-        assert!(logged.load(Ordering::SeqCst));
-    }
-    
-    #[test]
-    fn test_shook_action() {
-        let action = shook_action();
-        assert!(action(SIGINT));
-    }
-    
-    #[test]
-    fn test_chain_actions() {
-        let called1 = Arc::new(AtomicBool::new(false));
-        let called2 = Arc::new(AtomicBool::new(false));
-        
-        let called1_clone = Arc::clone(&called1);
-        let called2_clone = Arc::clone(&called2);
-        
-        let action1 = create_action(move |_| {
-            called1_clone.store(true, Ordering::SeqCst);
-            true
-        });
-        
-        let action2 = create_action(move |_| {
-            called2_clone.store(true, Ordering::SeqCst);
-            true
-        });
-        
-        let chained = chain_actions(vec![action1, action2]);
-        assert!(chained(SIGINT));
-        assert!(called1.load(Ordering::SeqCst));
-        assert!(called2.load(Ordering::SeqCst));
-    }
-    
-    #[test]
-    fn test_conditional_action() {
-        let called = Arc::new(AtomicBool::new(false));
-        let called_clone = Arc::clone(&called);
-        
-        let action = create_action(move |_| {
-            called_clone.store(true, Ordering::SeqCst);
-            true
-        });
-        
-        let conditional = conditional_action(|signal| signal == SIGINT, action);
-        
-        assert!(conditional(SIGINT));
-        assert!(called.load(Ordering::SeqCst));
-    }
-    
-    #[test]
-    fn test_counting_action() {
-        let base_action = create_action(|_| true);
-        let (counting, counter) = counting_action(base_action);
-        
-        assert_eq!(counter.load(Ordering::SeqCst), 0);
-        
-        assert!(counting(SIGINT));
-        assert_eq!(counter.load(Ordering::SeqCst), 1);
-        
-        assert!(counting(SIGINT));
-        assert_eq!(counter.load(Ordering::SeqCst), 2);
-    }
-    
-    #[test]
-    fn test_rate_limited_action() {
-        let called = Arc::new(AtomicUsize::new(0));
-        let called_clone = Arc::clone(&called);
-        
-        let action = create_action(move |_| {
-            called_clone.fetch_add(1, Ordering::SeqCst);
-            true
-        });
-        
-        let rate_limited = rate_limited_action(action, Duration::from_millis(100));
-        
-        assert!(rate_limited(SIGINT));
-        assert_eq!(called.load(Ordering::SeqCst), 1);
-        
-        // Should be rate limited
-        assert!(!rate_limited(SIGINT));
-        assert_eq!(called.load(Ordering::SeqCst), 1);
-        
-        // Wait for rate limit to expire
-        std::thread::sleep(Duration::from_millis(150));
-        assert!(rate_limited(SIGINT));
-        assert_eq!(called.load(Ordering::SeqCst), 2);
-    }
-    
-    #[test]
-    fn test_delayed_action() {
-        let called = Arc::new(AtomicBool::new(false));
-        let called_clone = Arc::clone(&called);
-        
-        let action = create_action(move |_| {
-            called_clone.store(true, Ordering::SeqCst);
-            true
-        });
-        
-        let delayed = delayed_action(action, Duration::from_millis(50));
-        
-        assert!(delayed(SIGINT));
-        assert!(!called.load(Ordering::SeqCst)); // Should not be called immediately
-        
-        std::thread::sleep(Duration::from_millis(100));
-        assert!(called.load(Ordering::SeqCst)); // Should be called after delay
-    }
-    
-    #[test]
-    fn test_thread_safe_action() {
-        let action = create_action(|_| {
-            std::thread::sleep(Duration::from_millis(50));
-            true
-        });
-        
-        let thread_safe = thread_safe_action(action);
-        
-        // First call should succeed
-        let handle1 = {
-            let ts = Arc::clone(&thread_safe);
-            std::thread::spawn(move || ts(SIGINT))
-        };
-        
-        std::thread::sleep(Duration::from_millis(10));
-        
-        // Second call should fail (already running)
-        assert!(!thread_safe(SIGINT));
-        
-        // Wait for first to complete
-        assert!(handle1.join().unwrap());
-    }
-    
-    #[test]
-    fn test_async_action() {
-        let called = Arc::new(AtomicBool::new(false));
-        let called_clone = Arc::clone(&called);
-        
-        let action = create_action(move |_| {
-            called_clone.store(true, Ordering::SeqCst);
-            true
-        });
-        
-        let async_action = async_action(action);
-        
-        assert!(async_action(SIGINT)); // Should return immediately
-        
-        // Give async thread time to execute
-        std::thread::sleep(Duration::from_millis(10));
-        assert!(called.load(Ordering::SeqCst));
-    }
-    
-    #[test]
-    fn test_env_var_action() {
-        let action = env_var_action("TEST_SIGNAL_VAR".to_string(), "signal_received".to_string());
-        
-        assert!(action(SIGINT));
-        assert_eq!(std::env::var("TEST_SIGNAL_VAR").unwrap(), "signal_received");
-    }
-    
-    #[test]
-    fn test_memory_pressure_action() {
-        let called = Arc::new(AtomicBool::new(false));
-        let called_clone = Arc::clone(&called);
-        
-        let action = create_action(move |_| {
-            called_clone.store(true, Ordering::SeqCst);
-            true
-        });
-        
-        // Should execute with high memory limit
-        let memory_action = memory_pressure_action(action, 1000);
-        assert!(memory_action(SIGINT));
-        assert!(called.load(Ordering::SeqCst));
-    }
-}

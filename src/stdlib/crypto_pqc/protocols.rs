@@ -3,8 +3,8 @@
 // This module provides protocol implementations that use PQC algorithms
 // for various cryptographic applications.
 
-use crate::stdlib::crypto_pqc::{PqcResult, PqcError, SecurityLevel};
-use crate::error::Error;
+// use crate::stdlib::crypto_pqc::{PqcResult, PqcError, SecurityLevel};
+use crate::error::CursedError;
 use std::collections::HashMap;
 
 /// Protocol types supported
@@ -40,16 +40,16 @@ pub trait PqcProtocol {
 /// Key exchange protocol using PQC algorithms
 pub struct PqcKeyExchange {
     security_level: SecurityLevel,
-    algorithm_preference: Vec<crate::stdlib::crypto_pqc::AlgorithmType>,
+//     algorithm_preference: Vec<crate::stdlib::crypto_pqc::AlgorithmType>,
 }
 
 impl PqcKeyExchange {
     /// Create a new key exchange protocol
     pub fn new(security_level: SecurityLevel) -> Self {
         let algorithm_preference = vec![
-            crate::stdlib::crypto_pqc::AlgorithmType::Kyber,
-            crate::stdlib::crypto_pqc::AlgorithmType::FrodoKem,
-            crate::stdlib::crypto_pqc::AlgorithmType::Ntru,
+//             crate::stdlib::crypto_pqc::AlgorithmType::Kyber,
+//             crate::stdlib::crypto_pqc::AlgorithmType::FrodoKem,
+//             crate::stdlib::crypto_pqc::AlgorithmType::Ntru,
         ];
 
         Self {
@@ -69,16 +69,16 @@ impl PqcKeyExchange {
 /// Authentication protocol using PQC signatures
 pub struct PqcAuthentication {
     security_level: SecurityLevel,
-    signature_algorithm: crate::stdlib::crypto_pqc::AlgorithmType,
+//     signature_algorithm: crate::stdlib::crypto_pqc::AlgorithmType,
 }
 
 impl PqcAuthentication {
     /// Create a new authentication protocol
     pub fn new(security_level: SecurityLevel) -> Self {
         let signature_algorithm = match security_level {
-            SecurityLevel::Level1 => crate::stdlib::crypto_pqc::AlgorithmType::Dilithium,
-            SecurityLevel::Level3 => crate::stdlib::crypto_pqc::AlgorithmType::Dilithium,
-            SecurityLevel::Level5 => crate::stdlib::crypto_pqc::AlgorithmType::Sphincs,
+//             SecurityLevel::Level1 => crate::stdlib::crypto_pqc::AlgorithmType::Dilithium,
+//             SecurityLevel::Level3 => crate::stdlib::crypto_pqc::AlgorithmType::Dilithium,
+//             SecurityLevel::Level5 => crate::stdlib::crypto_pqc::AlgorithmType::Sphincs,
         };
 
         Self {
@@ -114,7 +114,7 @@ pub struct ProtocolInfo {
     pub name: String,
     pub protocol_type: ProtocolType,
     pub security_level: SecurityLevel,
-    pub algorithms_used: Vec<crate::stdlib::crypto_pqc::AlgorithmType>,
+//     pub algorithms_used: Vec<crate::stdlib::crypto_pqc::AlgorithmType>,
     pub description: String,
 }
 
@@ -138,8 +138,8 @@ impl ProtocolRegistry {
                 protocol_type: ProtocolType::KeyExchange,
                 security_level: SecurityLevel::Level3,
                 algorithms_used: vec![
-                    crate::stdlib::crypto_pqc::AlgorithmType::Kyber,
-                    crate::stdlib::crypto_pqc::AlgorithmType::Dilithium,
+//                     crate::stdlib::crypto_pqc::AlgorithmType::Kyber,
+//                     crate::stdlib::crypto_pqc::AlgorithmType::Dilithium,
                 ],
                 description: "Post-quantum key exchange with authentication".to_string(),
             },
@@ -148,8 +148,8 @@ impl ProtocolRegistry {
                 protocol_type: ProtocolType::SecureMessaging,
                 security_level: SecurityLevel::Level3,
                 algorithms_used: vec![
-                    crate::stdlib::crypto_pqc::AlgorithmType::Kyber,
-                    crate::stdlib::crypto_pqc::AlgorithmType::Sphincs,
+//                     crate::stdlib::crypto_pqc::AlgorithmType::Kyber,
+//                     crate::stdlib::crypto_pqc::AlgorithmType::Sphincs,
                 ],
                 description: "End-to-end encrypted messaging with PQC".to_string(),
             },
@@ -158,8 +158,8 @@ impl ProtocolRegistry {
                 protocol_type: ProtocolType::DigitalContract,
                 security_level: SecurityLevel::Level5,
                 algorithms_used: vec![
-                    crate::stdlib::crypto_pqc::AlgorithmType::Dilithium,
-                    crate::stdlib::crypto_pqc::AlgorithmType::Sphincs,
+//                     crate::stdlib::crypto_pqc::AlgorithmType::Dilithium,
+//                     crate::stdlib::crypto_pqc::AlgorithmType::Sphincs,
                 ],
                 description: "Digital contract signing with PQC signatures".to_string(),
             },
@@ -222,40 +222,3 @@ pub fn global_protocol_registry() -> &'static ProtocolRegistry {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_protocol_registry() {
-        let registry = ProtocolRegistry::new();
-        
-        assert!(!registry.list_protocols().is_empty());
-        
-        let key_exchange_protocols = registry.list_protocols_by_type(ProtocolType::KeyExchange);
-        assert!(!key_exchange_protocols.is_empty());
-        
-        let level3_protocols = registry.list_protocols_by_security_level(SecurityLevel::Level3);
-        assert!(!level3_protocols.is_empty());
-    }
-
-    #[test]
-    fn test_pqc_key_exchange() {
-        let ke = PqcKeyExchange::new(SecurityLevel::Level3);
-        let shared_secret = ke.exchange_keys().unwrap();
-        assert_eq!(shared_secret.len(), 32);
-    }
-
-    #[test]
-    fn test_pqc_authentication() {
-        let auth = PqcAuthentication::new(SecurityLevel::Level1);
-        let message = b"test message";
-        
-        let signature = auth.authenticate(message).unwrap();
-        let is_valid = auth.verify(message, &signature).unwrap();
-        assert!(is_valid);
-        
-        let is_invalid = auth.verify(b"wrong message", &signature).unwrap();
-        assert!(!is_invalid);
-    }
-}

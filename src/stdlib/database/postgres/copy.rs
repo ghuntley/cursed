@@ -198,7 +198,7 @@ impl CopyManager {
         table: &str,
         reader: R,
         options: CopyOptions,
-    ) -> Result<(), Error> {
+    ) -> crate::error::Result<()> {
         let copy_sql = self.build_copy_in_sql(table, &options);
         
         let conn = self.conn.lock().map_err(|_| {
@@ -240,7 +240,7 @@ impl CopyManager {
         table: &str,
         writer: W,
         options: CopyOptions,
-    ) -> Result<(), Error> {
+    ) -> crate::error::Result<()> {
         let copy_sql = self.build_copy_out_sql(table, &options);
         
         let conn = self.conn.lock().map_err(|_| {
@@ -267,8 +267,8 @@ impl CopyManager {
                     // End of data
                     break;
                 } else if result == -2 {
-                    // Error
-                    return Err(PostgreSQLError::query_error("Error reading COPY data"));
+                    // CursedError
+                    return Err(PostgreSQLError::query_error("CursedError reading COPY data"));
                 } else if result > 0 {
                     // Got data
                     let data_slice = std::slice::from_raw_parts(buffer as *const u8, result as usize);
@@ -294,7 +294,7 @@ impl CopyManager {
         query: &str,
         writer: W,
         options: CopyOptions,
-    ) -> Result<(), Error> {
+    ) -> crate::error::Result<()> {
         let copy_sql = format!("COPY ({}) TO STDOUT {}", query, options.to_pg_options());
         
         let conn = self.conn.lock().map_err(|_| {
@@ -319,7 +319,7 @@ impl CopyManager {
                 if result == -1 {
                     break;
                 } else if result == -2 {
-                    return Err(PostgreSQLError::query_error("Error reading COPY data"));
+                    return Err(PostgreSQLError::query_error("CursedError reading COPY data"));
                 } else if result > 0 {
                     let data_slice = std::slice::from_raw_parts(buffer as *const u8, result as usize);
                     buf_writer.write_all(data_slice)
@@ -343,7 +343,7 @@ impl CopyManager {
         table: &str,
         data: Vec<Vec<SqlValue>>,
         options: CopyOptions,
-    ) -> Result<(), Error> {
+    ) -> crate::error::Result<()> {
         // Convert structured data to format suitable for COPY
         let formatted_data = self.format_data_for_copy(data, &options)?;
         let cursor = std::io::Cursor::new(formatted_data);
@@ -379,7 +379,7 @@ impl CopyManager {
         conn: &SafePGconn,
         reader: &mut R,
         bytes_copied: &mut u64,
-    ) -> Result<(), Error> {
+    ) -> crate::error::Result<()> {
         let mut line = String::new();
         
         loop {
@@ -417,7 +417,7 @@ impl CopyManager {
         conn: &SafePGconn,
         reader: &mut R,
         bytes_copied: &mut u64,
-    ) -> Result<(), Error> {
+    ) -> crate::error::Result<()> {
         let mut buffer = [0u8; 8192]; // 8KB buffer
         
         loop {
@@ -431,7 +431,7 @@ impl CopyManager {
             // Send data to PostgreSQL
             unsafe {
                 use super::ffi::PQputCopyData;
-use crate::error::Error;
+use crate::error::CursedError;
                 
                 let result = PQputCopyData(
                     conn.as_ptr(),
@@ -455,7 +455,7 @@ use crate::error::Error;
         &self,
         data: Vec<Vec<SqlValue>>,
         options: &CopyOptions,
-    ) -> Result<(), Error> {
+    ) -> crate::error::Result<()> {
         let mut result = Vec::new();
         
         match options.format {
@@ -498,7 +498,7 @@ use crate::error::Error;
     }
     
     /// slay Format SqlValue for text COPY format
-    fn format_value_for_text(&self, value: &SqlValue, null_str: &str) -> Result<(), Error> {
+    fn format_value_for_text(&self, value: &SqlValue, null_str: &str) -> crate::error::Result<()> {
         match value {
             SqlValue::Null => Ok(null_str.to_string()),
             SqlValue::Boolean(b) => Ok(if *b { "t".to_string() } else { "f".to_string() }),
@@ -527,7 +527,7 @@ use crate::error::Error;
     }
     
     /// slay Format SqlValue for CSV COPY format
-    fn format_value_for_csv(&self, value: &SqlValue, null_str: &str, quote_char: char) -> Result<(), Error> {
+    fn format_value_for_csv(&self, value: &SqlValue, null_str: &str, quote_char: char) -> crate::error::Result<()> {
         match value {
             SqlValue::Null => Ok(null_str.to_string()),
             SqlValue::Boolean(b) => Ok(if *b { "true".to_string() } else { "false".to_string() }),
@@ -584,7 +584,7 @@ impl BulkOperations {
         reader: R,
         has_header: bool,
         delimiter: Option<String>,
-    ) -> Result<(), Error> {
+    ) -> crate::error::Result<()> {
         let options = CopyOptions::csv()
             .delimiter(delimiter.unwrap_or_else(|| ",".to_string()));
         
@@ -604,7 +604,7 @@ impl BulkOperations {
         writer: W,
         include_header: bool,
         delimiter: Option<String>,
-    ) -> Result<(), Error> {
+    ) -> crate::error::Result<()> {
         let options = CopyOptions::csv()
             .delimiter(delimiter.unwrap_or_else(|| ",".to_string()));
         
@@ -623,7 +623,7 @@ impl BulkOperations {
         table: &str,
         data: Vec<Vec<SqlValue>>,
         columns: Option<Vec<String>>,
-    ) -> Result<(), Error> {
+    ) -> crate::error::Result<()> {
         let options = if let Some(cols) = columns {
             CopyOptions::text().columns(cols)
         } else {
@@ -639,7 +639,7 @@ impl BulkOperations {
         query: &str,
         writer: W,
         format: CopyFormat,
-    ) -> Result<(), Error> {
+    ) -> crate::error::Result<()> {
         let options = match format {
             CopyFormat::Text => CopyOptions::text(),
             CopyFormat::Csv => CopyOptions::csv().with_header(),

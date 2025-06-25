@@ -79,7 +79,7 @@ pub enum NodeStatus {
     Busy,
     Offline,
     Maintenance,
-    Error(String),
+    CursedError(String),
 }
 
 /// Configuration for distributed compilation
@@ -1114,12 +1114,12 @@ impl DistributedCompilationSystem {
                     }
                 }
                 Ok(false) => {
-                    node.status = NodeStatus::Error("Health check failed".to_string());
+                    node.status = NodeStatus::CursedError("Health check failed".to_string());
                     failed_nodes.push(node_id.clone());
                 }
                 Err(e) => {
                     debug!(error = ?e, node_id, "Health check error");
-                    node.status = NodeStatus::Error(format!("Health check error: {}", e));
+                    node.status = NodeStatus::CursedError(format!("Health check error: {}", e));
                     failed_nodes.push(node_id.clone());
                 }
             }

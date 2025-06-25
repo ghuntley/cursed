@@ -1,4 +1,4 @@
-use crate::error::Error;
+use crate::error::CursedError;
 /// Configuration management for web server settings
 use std::collections::HashMap;
 use std::path::PathBuf;
@@ -131,7 +131,7 @@ pub enum SessionStoreType {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum LogLevel {
-    Error,
+    CursedError,
     Warn,
     Info,
     Debug,
@@ -300,36 +300,36 @@ pub enum ConfigError {
     MissingRequiredField(String),
 }
 
-impl std::fmt::Display for ConfigError {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            ConfigError::IoError(e) => write!(f, "IO error: {}", e),
-            ConfigError::ParseError(e) => write!(f, "Parse error: {}", e),
-            ConfigError::ValidationError(msg) => write!(f, "Validation error: {}", msg),
-            ConfigError::EnvironmentError(msg) => write!(f, "Environment error: {}", msg),
-            ConfigError::InvalidValue { field, value, reason } => {
-                write!(f, "Invalid value '{}' for field '{}': {}", value, field, reason)
-            }
-            ConfigError::MissingRequiredField(field) => {
-                write!(f, "Missing required field: {}", field)
-            }
-        }
-    }
-}
+// impl std::fmt::Display for ConfigError {
+//     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+//         match self {
+//             ConfigError::IoError(e) => write!(f, "IO error: {}", e),
+//             ConfigError::ParseError(e) => write!(f, "Parse error: {}", e),
+//             ConfigError::ValidationError(msg) => write!(f, "Validation error: {}", msg),
+//             ConfigError::EnvironmentError(msg) => write!(f, "Environment error: {}", msg),
+//             ConfigError::InvalidValue { field, value, reason } => {
+//                 write!(f, "Invalid value '{}' for field '{}': {}", value, field, reason)
+//             }
+//             ConfigError::MissingRequiredField(field) => {
+//                 write!(f, "Missing required field: {}", field)
+//             }
+//         }
+//     }
+// }
 
-impl std::error::Error for ConfigError {}
+// impl std::error::CursedError for ConfigError {}
+// 
+// impl From<std::io::Error> for ConfigError {
+//     fn from(err: std::io::Error) -> Self {
+//         ConfigError::IoError(err)
+//     }
+// }
 
-impl From<std::io::Error> for ConfigError {
-    fn from(err: std::io::Error) -> Self {
-        ConfigError::IoError(err)
-    }
-}
-
-impl From<toml::de::Error> for ConfigError {
-    fn from(err: toml::de::Error) -> Self {
-        ConfigError::ParseError(err)
-    }
-}
+// impl From<toml::de::Error> for ConfigError {
+//     fn from(err: toml::de::Error) -> Self {
+//         ConfigError::ParseError(err)
+//     }
+// }
 
 /// Configuration watcher for hot reloading
 pub struct ConfigWatcher {
@@ -340,7 +340,7 @@ pub struct ConfigWatcher {
 }
 
 impl ConfigWatcher {
-    pub fn new(config: WebVibezConfig, file_path: PathBuf) -> Result<(), Error> {
+    pub fn new(config: WebVibezConfig, file_path: PathBuf) -> crate::error::Result<()> {
         let last_modified = std::fs::metadata(&file_path)
             .map_err(ConfigError::from)?
             .modified()
@@ -354,7 +354,7 @@ impl ConfigWatcher {
         })
     }
 
-    pub fn start_watching(&self) -> Result<(), Error> {
+    pub fn start_watching(&self) -> crate::error::Result<()> {
         if self.watching.load(Ordering::Relaxed) {
             return Ok(());
         }
@@ -401,7 +401,7 @@ impl ConfigWatcher {
 }
 
 /// Expand environment variables in TOML content
-fn expand_environment_variables(content: &str) -> Result<(), Error> {
+fn expand_environment_variables(content: &str) -> crate::error::Result<()> {
     let mut expanded = content.to_string();
     
     // Simple regex-like replacement for environment variables
@@ -444,20 +444,20 @@ fn expand_environment_variables(content: &str) -> Result<(), Error> {
 
 impl WebVibezConfig {
     /// Load configuration from file with enhanced error handling
-    pub fn from_file(path: &str) -> Result<(), Error> {
+    pub fn from_file(path: &str) -> crate::error::Result<()> {
         let content = std::fs::read_to_string(path)?;
         Self::from_toml(&content)
     }
 
     /// Load configuration with environment variable support
-    pub fn from_file_with_env(path: &str) -> Result<(), Error> {
+    pub fn from_file_with_env(path: &str) -> crate::error::Result<()> {
         let content = std::fs::read_to_string(path)?;
         let expanded_content = expand_environment_variables(&content)?;
         Self::from_toml_enhanced(&expanded_content)
     }
 
     /// Parse configuration from TOML string (legacy method)
-    pub fn from_toml(toml_str: &str) -> Result<(), Error> {
+    pub fn from_toml(toml_str: &str) -> crate::error::Result<()> {
         // Parse the TOML string into a toml::Value first for custom handling
         let toml_value: toml::Value = toml::from_str(toml_str)?;
         
@@ -510,7 +510,7 @@ impl WebVibezConfig {
     }
 
     /// Parse configuration from TOML string with comprehensive validation
-    pub fn from_toml_enhanced(toml_str: &str) -> Result<(), Error> {
+    pub fn from_toml_enhanced(toml_str: &str) -> crate::error::Result<()> {
         // Parse the TOML string into a toml::Value first for custom handling
         let toml_value: toml::Value = toml::from_str(toml_str)?;
         
@@ -566,7 +566,7 @@ impl WebVibezConfig {
     }
 
     /// Create a configuration watcher for hot reloading
-    pub fn create_watcher(path: &str) -> Result<(), Error> {
+    pub fn create_watcher(path: &str) -> crate::error::Result<()> {
         let config = Self::from_file_with_env(path)?;
         ConfigWatcher::new(config, PathBuf::from(path))
     }
@@ -700,7 +700,7 @@ impl WebVibezConfig {
     }
 
     /// Enhanced validation with comprehensive checks
-    pub fn validate_enhanced(&self) -> Result<(), Error> {
+    pub fn validate_enhanced(&self) -> crate::error::Result<()> {
         // Server validation
         if self.server.port == 0 {
             return Err(ConfigError::InvalidValue {
@@ -841,7 +841,7 @@ impl WebVibezConfig {
 }
 
 // Helper functions for parsing TOML sections
-fn parse_server_config(table: &toml::map::Map<String, toml::Value>) -> Result<(), Error> {
+fn parse_server_config(table: &toml::map::Map<String, toml::Value>) -> crate::error::Result<()> {
     let mut config = ServerConfig::default();
     
     if let Some(host) = table.get("host").and_then(|v| v.as_str()) {
@@ -875,7 +875,7 @@ fn parse_server_config(table: &toml::map::Map<String, toml::Value>) -> Result<()
     Ok(config)
 }
 
-fn parse_security_config(table: &toml::map::Map<String, toml::Value>) -> Result<(), Error> {
+fn parse_security_config(table: &toml::map::Map<String, toml::Value>) -> crate::error::Result<()> {
     let mut config = SecurityConfig::default();
     
     if let Some(secret) = table.get("csrf_secret").and_then(|v| v.as_str()) {
@@ -909,7 +909,7 @@ fn parse_security_config(table: &toml::map::Map<String, toml::Value>) -> Result<
     Ok(config)
 }
 
-fn parse_performance_config(table: &toml::map::Map<String, toml::Value>) -> Result<(), Error> {
+fn parse_performance_config(table: &toml::map::Map<String, toml::Value>) -> crate::error::Result<()> {
     let mut config = PerformanceConfig::default();
     
     if let Some(enable) = table.get("enable_compression").and_then(|v| v.as_bool()) {
@@ -940,7 +940,7 @@ fn parse_performance_config(table: &toml::map::Map<String, toml::Value>) -> Resu
     Ok(config)
 }
 
-fn parse_session_config(table: &toml::map::Map<String, toml::Value>) -> Result<(), Error> {
+fn parse_session_config(table: &toml::map::Map<String, toml::Value>) -> crate::error::Result<()> {
     let mut config = SessionConfig::default();
     
     if let Some(name) = table.get("cookie_name").and_then(|v| v.as_str()) {
@@ -994,7 +994,7 @@ fn parse_session_config(table: &toml::map::Map<String, toml::Value>) -> Result<(
     Ok(config)
 }
 
-fn parse_template_config(table: &toml::map::Map<String, toml::Value>) -> Result<(), Error> {
+fn parse_template_config(table: &toml::map::Map<String, toml::Value>) -> crate::error::Result<()> {
     let mut config = TemplateConfig::default();
     
     if let Some(dir) = table.get("template_dir").and_then(|v| v.as_str()) {
@@ -1020,7 +1020,7 @@ fn parse_template_config(table: &toml::map::Map<String, toml::Value>) -> Result<
     Ok(config)
 }
 
-fn parse_static_file_config(table: &toml::map::Map<String, toml::Value>) -> Result<(), Error> {
+fn parse_static_file_config(table: &toml::map::Map<String, toml::Value>) -> crate::error::Result<()> {
     let mut config = StaticFileConfig::default();
     
     if let Some(dir) = table.get("static_dir").and_then(|v| v.as_str()) {
@@ -1051,7 +1051,7 @@ fn parse_static_file_config(table: &toml::map::Map<String, toml::Value>) -> Resu
     Ok(config)
 }
 
-fn parse_logging_config(table: &toml::map::Map<String, toml::Value>) -> Result<(), Error> {
+fn parse_logging_config(table: &toml::map::Map<String, toml::Value>) -> crate::error::Result<()> {
     let mut config = LoggingConfig::default();
     
     if let Some(enable) = table.get("enable_request_logging").and_then(|v| v.as_bool()) {
@@ -1065,7 +1065,7 @@ fn parse_logging_config(table: &toml::map::Map<String, toml::Value>) -> Result<(
     }
     if let Some(level) = table.get("log_level").and_then(|v| v.as_str()) {
         config.log_level = match level {
-            "Error" => LogLevel::Error,
+            "CursedError" => LogLevel::CursedError,
             "Warn" => LogLevel::Warn,
             "Info" => LogLevel::Info,
             "Debug" => LogLevel::Debug,
@@ -1095,7 +1095,7 @@ fn parse_logging_config(table: &toml::map::Map<String, toml::Value>) -> Result<(
     Ok(config)
 }
 
-fn parse_development_config(table: &toml::map::Map<String, toml::Value>) -> Result<(), Error> {
+fn parse_development_config(table: &toml::map::Map<String, toml::Value>) -> crate::error::Result<()> {
     let mut config = DevelopmentConfig::default();
     
     if let Some(enable) = table.get("enable_hot_reload").and_then(|v| v.as_bool()) {
@@ -1122,7 +1122,7 @@ fn parse_development_config(table: &toml::map::Map<String, toml::Value>) -> Resu
 
 // Enhanced parsing functions with comprehensive validation
 
-fn parse_server_config_enhanced(table: &toml::map::Map<String, toml::Value>) -> Result<(), Error> {
+fn parse_server_config_enhanced(table: &toml::map::Map<String, toml::Value>) -> crate::error::Result<()> {
     let mut config = ServerConfig::default();
     
     if let Some(host) = table.get("host").and_then(|v| v.as_str()) {
@@ -1216,7 +1216,7 @@ fn parse_server_config_enhanced(table: &toml::map::Map<String, toml::Value>) -> 
     Ok(config)
 }
 
-fn parse_security_config_enhanced(table: &toml::map::Map<String, toml::Value>) -> Result<(), Error> {
+fn parse_security_config_enhanced(table: &toml::map::Map<String, toml::Value>) -> crate::error::Result<()> {
     let mut config = SecurityConfig::default();
     
     if let Some(secret) = table.get("csrf_secret").and_then(|v| v.as_str()) {
@@ -1276,7 +1276,7 @@ fn parse_security_config_enhanced(table: &toml::map::Map<String, toml::Value>) -
     Ok(config)
 }
 
-fn parse_performance_config_enhanced(table: &toml::map::Map<String, toml::Value>) -> Result<(), Error> {
+fn parse_performance_config_enhanced(table: &toml::map::Map<String, toml::Value>) -> crate::error::Result<()> {
     let mut config = PerformanceConfig::default();
     
     if let Some(enable) = table.get("enable_compression").and_then(|v| v.as_bool()) {
@@ -1347,7 +1347,7 @@ fn parse_performance_config_enhanced(table: &toml::map::Map<String, toml::Value>
     Ok(config)
 }
 
-fn parse_session_config_enhanced(table: &toml::map::Map<String, toml::Value>) -> Result<(), Error> {
+fn parse_session_config_enhanced(table: &toml::map::Map<String, toml::Value>) -> crate::error::Result<()> {
     let mut config = SessionConfig::default();
     
     if let Some(name) = table.get("cookie_name").and_then(|v| v.as_str()) {
@@ -1424,7 +1424,7 @@ fn parse_session_config_enhanced(table: &toml::map::Map<String, toml::Value>) ->
     Ok(config)
 }
 
-fn parse_template_config_enhanced(table: &toml::map::Map<String, toml::Value>) -> Result<(), Error> {
+fn parse_template_config_enhanced(table: &toml::map::Map<String, toml::Value>) -> crate::error::Result<()> {
     let mut config = TemplateConfig::default();
     
     if let Some(dir) = table.get("template_dir").and_then(|v| v.as_str()) {
@@ -1457,7 +1457,7 @@ fn parse_template_config_enhanced(table: &toml::map::Map<String, toml::Value>) -
     Ok(config)
 }
 
-fn parse_static_file_config_enhanced(table: &toml::map::Map<String, toml::Value>) -> Result<(), Error> {
+fn parse_static_file_config_enhanced(table: &toml::map::Map<String, toml::Value>) -> crate::error::Result<()> {
     let mut config = StaticFileConfig::default();
     
     if let Some(dir) = table.get("static_dir").and_then(|v| v.as_str()) {
@@ -1495,7 +1495,7 @@ fn parse_static_file_config_enhanced(table: &toml::map::Map<String, toml::Value>
     Ok(config)
 }
 
-fn parse_logging_config_enhanced(table: &toml::map::Map<String, toml::Value>) -> Result<(), Error> {
+fn parse_logging_config_enhanced(table: &toml::map::Map<String, toml::Value>) -> crate::error::Result<()> {
     let mut config = LoggingConfig::default();
     
     if let Some(enable) = table.get("enable_request_logging").and_then(|v| v.as_bool()) {
@@ -1509,7 +1509,7 @@ fn parse_logging_config_enhanced(table: &toml::map::Map<String, toml::Value>) ->
     }
     if let Some(level) = table.get("log_level").and_then(|v| v.as_str()) {
         config.log_level = match level {
-            "Error" => LogLevel::Error,
+            "CursedError" => LogLevel::CursedError,
             "Warn" => LogLevel::Warn,
             "Info" => LogLevel::Info,
             "Debug" => LogLevel::Debug,
@@ -1517,7 +1517,7 @@ fn parse_logging_config_enhanced(table: &toml::map::Map<String, toml::Value>) ->
             _ => return Err(ConfigError::InvalidValue {
                 field: "logging.log_level".to_string(),
                 value: level.to_string(),
-                reason: "Log level must be 'Error', 'Warn', 'Info', 'Debug', or 'Trace'".to_string(),
+                reason: "Log level must be 'CursedError', 'Warn', 'Info', 'Debug', or 'Trace'".to_string(),
             }),
         };
     }
@@ -1547,7 +1547,7 @@ fn parse_logging_config_enhanced(table: &toml::map::Map<String, toml::Value>) ->
     Ok(config)
 }
 
-fn parse_development_config_enhanced(table: &toml::map::Map<String, toml::Value>) -> Result<(), Error> {
+fn parse_development_config_enhanced(table: &toml::map::Map<String, toml::Value>) -> crate::error::Result<()> {
     let mut config = DevelopmentConfig::default();
     
     if let Some(enable) = table.get("enable_hot_reload").and_then(|v| v.as_bool()) {

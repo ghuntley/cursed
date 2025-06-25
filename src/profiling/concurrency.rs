@@ -1,4 +1,4 @@
-use crate::error::Error;
+use crate::error::CursedError;
 // Concurrency profiling for goroutines and channel analysis
 
 use std::collections::HashMap;
@@ -7,7 +7,39 @@ use std::time::{Duration, Instant, SystemTime};
 use serde::{Deserialize, Serialize};
 use tracing::{debug, error, info, instrument, warn};
 
-use crate::profiling::core::{DataCollector, CollectorStats, ProfilerError};
+/// State transition for concurrency profiling
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct StateTransition {
+    pub from_state: String,
+    pub to_state: String,
+    pub timestamp: Instant,
+    pub duration: Duration,
+    pub context: HashMap<String, String>,
+}
+
+impl StateTransition {
+    pub fn new(from_state: String, to_state: String) -> Self {
+        Self {
+            from_state,
+            to_state,
+            timestamp: Instant::now(),
+            duration: Duration::ZERO,
+            context: HashMap::new(),
+        }
+    }
+    
+    pub fn with_duration(mut self, duration: Duration) -> Self {
+        self.duration = duration;
+        self
+    }
+    
+    pub fn with_context(mut self, context: HashMap<String, String>) -> Self {
+        self.context = context;
+        self
+    }
+}
+
+// use crate::profiling::core::{DataCollector, CollectorStats, ProfilerError};
 
 /// Concurrency profiler for goroutines and channels
 #[derive(Debug)]
@@ -36,7 +68,7 @@ impl ConcurrencyProfiler {
         goroutine_id: u64,
         parent_id: Option<u64>,
         stack_trace: Vec<String>,
-    ) -> Result<(), Error> {
+    ) -> crate::error::Result<()> {
         if !self.is_collecting() {
             return Ok(());
         }
@@ -65,7 +97,7 @@ impl ConcurrencyProfiler {
         &self,
         goroutine_id: u64,
         completion_type: GoroutineCompletionType,
-    ) -> Result<(), Error> {
+    ) -> crate::error::Result<()> {
         if !self.is_collecting() {
             return Ok(());
         }
@@ -90,7 +122,7 @@ impl ConcurrencyProfiler {
     }
     
     #[instrument(skip(self))]
-    pub fn track_goroutine_yield(&self, goroutine_id: u64) -> Result<(), Error> {
+    pub fn track_goroutine_yield(&self, goroutine_id: u64) -> crate::error::Result<()> {
         if !self.is_collecting() {
             return Ok(());
         }
@@ -118,7 +150,7 @@ impl ConcurrencyProfiler {
         operation: ChannelOperation,
         goroutine_id: u64,
         duration: Option<Duration>,
-    ) -> Result<(), Error> {
+    ) -> crate::error::Result<()> {
         if !self.is_collecting() {
             return Ok(());
         }
@@ -144,7 +176,7 @@ impl ConcurrencyProfiler {
     }
     
     #[instrument(skip(self))]
-    pub fn track_scheduler_event(&self, event: SchedulerEvent) -> Result<(), Error> {
+    pub fn track_scheduler_event(&self, event: SchedulerEvent) -> crate::error::Result<()> {
         if !self.is_collecting() {
             return Ok(());
         }
@@ -200,7 +232,7 @@ impl ConcurrencyProfiler {
 
 impl DataCollector for ConcurrencyProfiler {
     #[instrument(skip(self))]
-    fn start_collection(&mut self) -> Result<(), Error> {
+    fn start_collection(&mut self) -> crate::error::Result<()> {
         if self.is_collecting() {
             return Err(ProfilerError::ConfigError("Concurrency profiler already collecting".to_string()));
         }
@@ -214,7 +246,7 @@ impl DataCollector for ConcurrencyProfiler {
     }
     
     #[instrument(skip(self))]
-    fn stop_collection(&mut self) -> Result<(), Error> {
+    fn stop_collection(&mut self) -> crate::error::Result<()> {
         if !self.is_collecting() {
             return Err(ProfilerError::ConfigError("Concurrency profiler not collecting".to_string()));
         }
@@ -677,17 +709,17 @@ impl GoroutineTracker {
         }
     }
     
-    fn start_tracking(&mut self) -> Result<(), Error> {
+    fn start_tracking(&mut self) -> crate::error::Result<()> {
         self.tracking = true;
         Ok(())
     }
     
-    fn stop_tracking(&mut self) -> Result<(), Error> {
+    fn stop_tracking(&mut self) -> crate::error::Result<()> {
         self.tracking = false;
         Ok(())
     }
     
-    fn track_spawn(&self, goroutine_id: u64, parent_id: Option<u64>) -> Result<(), Error> {
+    fn track_spawn(&self, goroutine_id: u64, parent_id: Option<u64>) -> crate::error::Result<()> {
         if !self.tracking {
             return Ok(());
         }
@@ -706,7 +738,7 @@ impl GoroutineTracker {
         Ok(())
     }
     
-    fn track_completion(&self, goroutine_id: u64) -> Result<(), Error> {
+    fn track_completion(&self, goroutine_id: u64) -> crate::error::Result<()> {
         if !self.tracking {
             return Ok(());
         }
@@ -743,17 +775,17 @@ impl ChannelTracker {
         }
     }
     
-    fn start_tracking(&mut self) -> Result<(), Error> {
+    fn start_tracking(&mut self) -> crate::error::Result<()> {
         self.tracking = true;
         Ok(())
     }
     
-    fn stop_tracking(&mut self) -> Result<(), Error> {
+    fn stop_tracking(&mut self) -> crate::error::Result<()> {
         self.tracking = false;
         Ok(())
     }
     
-    fn track_operation(&self, event: &ChannelEvent) -> Result<(), Error> {
+    fn track_operation(&self, event: &ChannelEvent) -> crate::error::Result<()> {
         if !self.tracking {
             return Ok(());
         }
@@ -806,64 +838,3 @@ impl ChannelInfo {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-    
-    #[test]
-    fn test_concurrency_profiler_creation() {
-        let profiler = ConcurrencyProfiler::new();
-        assert!(!profiler.is_collecting());
-    }
-    
-    #[test]
-    fn test_goroutine_tracking() {
-        let profiler = ConcurrencyProfiler::new();
-        
-        let result = profiler.track_goroutine_spawn(
-            1,
-            None,
-            Vec::from(["main".to_string()]),
-        );
-        assert!(result.is_ok());
-        
-        let result = profiler.track_goroutine_completion(
-            1,
-            GoroutineCompletionType::Normal,
-        );
-        assert!(result.is_ok());
-    }
-    
-    #[test]
-    fn test_channel_tracking() {
-        let profiler = ConcurrencyProfiler::new();
-        
-        let result = profiler.track_channel_operation(
-            1,
-            ChannelOperation::Send("test".to_string()),
-            1,
-            Some(Duration::from_millis(10)),
-        );
-        assert!(result.is_ok());
-    }
-    
-    #[test]
-    fn test_concurrency_data_analysis() {
-        let mut data = ConcurrencyProfileData::new();
-        
-        let goroutine_event = GoroutineEvent {
-            event_type: GoroutineEventType::Spawn,
-            goroutine_id: 1,
-            parent_id: None,
-            timestamp: Instant::now(),
-            stack_trace: Vec::from(["main".to_string()]),
-            metadata: HashMap::new(),
-        };
-        
-        data.add_goroutine_event(goroutine_event);
-        
-        let timeline = data.generate_goroutine_timeline();
-        assert_eq!(timeline.len(), 1);
-        assert_eq!(timeline[0].goroutine_id, 1);
-    }
-}

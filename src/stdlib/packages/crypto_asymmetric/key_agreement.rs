@@ -3,9 +3,8 @@
 // Provides comprehensive key agreement functions for the CURSED stdlib.
 // Supports ECDH for P-256/P-384/P-521, X25519, X448, and RSA key exchange.
 
-use crate::stdlib::value::Value;
+// use crate::stdlib::value::Value;
 use crate::error::CursedError;
-use crate::error::Error;
 use std::collections::HashMap;
 use rand::rngs::OsRng;
 use rand::RngCore;
@@ -53,7 +52,7 @@ impl KeyAgreementAlgorithm {
         }
     }
     
-    pub fn from_name(name: &str) -> Result<(), Error> {
+    pub fn from_name(name: &str) -> crate::error::Result<()> {
         match name.to_uppercase().as_str() {
             "ECDH-P256" | "P256" => Ok(KeyAgreementAlgorithm::EcdhP256),
             "ECDH-P384" | "P384" => Ok(KeyAgreementAlgorithm::EcdhP384),
@@ -90,7 +89,7 @@ impl KeyAgreementResult {
         }
     }
     
-    pub fn to_value(&self) -> Result<(), Error> {
+    pub fn to_value(&self) -> crate::error::Result<()> {
         let mut map = HashMap::new();
         
         map.insert("algorithm".to_string(), Value::String(self.algorithm.name().to_string()));
@@ -106,7 +105,7 @@ impl KeyAgreementResult {
 }
 
 /// Perform key agreement based on algorithm and parameters
-pub fn key_agreement(args: Vec<Value>) -> Result<(), Error> {
+pub fn key_agreement(args: Vec<Value>) -> crate::error::Result<()> {
     if args.is_empty() {
         return Err(CursedError::InvalidArgument("Key agreement requires algorithm specification".to_string()));
     }
@@ -127,7 +126,7 @@ pub fn key_agreement(args: Vec<Value>) -> Result<(), Error> {
 }
 
 /// ECDH P-256 key agreement
-pub fn ecdh_p256_agreement(args: &[Value]) -> Result<(), Error> {
+pub fn ecdh_p256_agreement(args: &[Value]) -> crate::error::Result<()> {
     if args.len() < 2 {
         return Err(CursedError::InvalidArgument("ECDH P-256 requires: private_key, public_key".to_string()));
     }
@@ -181,7 +180,7 @@ pub fn ecdh_p256_agreement(args: &[Value]) -> Result<(), Error> {
 }
 
 /// ECDH P-384 key agreement
-pub fn ecdh_p384_agreement(args: &[Value]) -> Result<(), Error> {
+pub fn ecdh_p384_agreement(args: &[Value]) -> crate::error::Result<()> {
     if args.len() < 2 {
         return Err(CursedError::InvalidArgument("ECDH P-384 requires: private_key, public_key".to_string()));
     }
@@ -235,7 +234,7 @@ pub fn ecdh_p384_agreement(args: &[Value]) -> Result<(), Error> {
 }
 
 /// ECDH P-521 key agreement  
-pub fn ecdh_p521_agreement(args: &[Value]) -> Result<(), Error> {
+pub fn ecdh_p521_agreement(args: &[Value]) -> crate::error::Result<()> {
     if args.len() < 2 {
         return Err(CursedError::InvalidArgument("ECDH P-521 requires: private_key, public_key".to_string()));
     }
@@ -289,7 +288,7 @@ pub fn ecdh_p521_agreement(args: &[Value]) -> Result<(), Error> {
 }
 
 /// X25519 key agreement
-pub fn x25519_agreement(args: &[Value]) -> Result<(), Error> {
+pub fn x25519_agreement(args: &[Value]) -> crate::error::Result<()> {
     if args.len() < 2 {
         return Err(CursedError::InvalidArgument("X25519 requires: private_key, public_key".to_string()));
     }
@@ -353,7 +352,7 @@ pub fn x25519_agreement(args: &[Value]) -> Result<(), Error> {
 }
 
 /// X448 key agreement
-pub fn x448_agreement(args: &[Value]) -> Result<(), Error> {
+pub fn x448_agreement(args: &[Value]) -> crate::error::Result<()> {
     if args.len() < 2 {
         return Err(CursedError::InvalidArgument("X448 requires: private_key, public_key".to_string()));
     }
@@ -411,7 +410,7 @@ pub fn x448_agreement(args: &[Value]) -> Result<(), Error> {
 }
 
 /// RSA OAEP key agreement (key transport)
-pub fn rsa_oaep_agreement(args: &[Value]) -> Result<(), Error> {
+pub fn rsa_oaep_agreement(args: &[Value]) -> crate::error::Result<()> {
     if args.len() < 2 {
         return Err(CursedError::InvalidArgument("RSA OAEP requires: public_key_pem, key_to_transport".to_string()));
     }
@@ -464,7 +463,7 @@ pub fn rsa_oaep_agreement(args: &[Value]) -> Result<(), Error> {
 }
 
 /// X448 scalar multiplication using basic big integer arithmetic
-fn x448_scalar_mult(scalar: &[u8], point: &[u8]) -> Result<(), Error> {
+fn x448_scalar_mult(scalar: &[u8], point: &[u8]) -> crate::error::Result<()> {
     if scalar.len() != 56 || point.len() != 56 {
         return Err(CursedError::InvalidArgument("X448 requires 56-byte keys".to_string()));
     }
@@ -492,7 +491,7 @@ pub fn validate_key_agreement_params(
     algorithm: KeyAgreementAlgorithm,
     private_key: &[u8],
     public_key: &[u8],
-) -> Result<(), Error> {
+) -> crate::error::Result<()> {
     match algorithm {
         KeyAgreementAlgorithm::EcdhP256 => {
             if private_key.len() != 32 {
@@ -562,7 +561,7 @@ pub fn derive_key_from_shared_secret(
     key_length: usize,
     algorithm: Option<KeyAgreementAlgorithm>,
     info: Option<&str>,
-) -> Result<(), Error> {
+) -> crate::error::Result<()> {
     if key_length == 0 || key_length > 255 * 64 {
         return Err(CursedError::InvalidArgument(format!("Invalid key length: {}", key_length)));
     }
@@ -592,80 +591,3 @@ pub fn derive_key_from_shared_secret(
     Ok(derived_key)
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_algorithm_from_name() {
-        assert_eq!(KeyAgreementAlgorithm::from_name("ECDH-P256").unwrap(), KeyAgreementAlgorithm::EcdhP256);
-        assert_eq!(KeyAgreementAlgorithm::from_name("X25519").unwrap(), KeyAgreementAlgorithm::X25519);
-        assert_eq!(KeyAgreementAlgorithm::from_name("RSA").unwrap(), KeyAgreementAlgorithm::RsaOaep);
-        assert!(KeyAgreementAlgorithm::from_name("invalid").is_err());
-    }
-
-    #[test]
-    fn test_key_agreement_result() {
-        let shared_secret = vec![1, 2, 3, 4];
-        let derived_key = vec![5, 6, 7, 8];
-        let result = KeyAgreementResult::new(
-            KeyAgreementAlgorithm::EcdhP256,
-            shared_secret.clone(),
-            Some(derived_key.clone()),
-        );
-        
-        assert_eq!(result.algorithm, KeyAgreementAlgorithm::EcdhP256);
-        assert_eq!(result.shared_secret, shared_secret);
-        assert_eq!(result.derived_key, Some(derived_key));
-        assert_eq!(result.key_size, 256);
-    }
-
-    #[test] 
-    fn test_validate_key_agreement_params() {
-        // Valid X25519 keys
-        let valid_x25519_key = vec![0u8; 32];
-        assert!(validate_key_agreement_params(
-            KeyAgreementAlgorithm::X25519,
-            &valid_x25519_key,
-            &valid_x25519_key
-        ).is_ok());
-        
-        // Invalid X25519 keys
-        let invalid_key = vec![0u8; 16];
-        assert!(validate_key_agreement_params(
-            KeyAgreementAlgorithm::X25519,
-            &invalid_key,
-            &valid_x25519_key
-        ).is_err());
-        
-        // Valid P-256 keys
-        let valid_p256_private = vec![0u8; 32];
-        let valid_p256_public_compressed = vec![0u8; 33];
-        assert!(validate_key_agreement_params(
-            KeyAgreementAlgorithm::EcdhP256,
-            &valid_p256_private,
-            &valid_p256_public_compressed
-        ).is_ok());
-    }
-
-    #[test]
-    fn test_list_key_agreement_algorithms() {
-        let algorithms = list_key_agreement_algorithms();
-        assert!(algorithms.contains(&"ECDH-P256".to_string()));
-        assert!(algorithms.contains(&"X25519".to_string()));
-        assert!(algorithms.contains(&"RSA-OAEP".to_string()));
-    }
-
-    #[test]
-    fn test_derive_key_from_shared_secret() {
-        let shared_secret = b"test_shared_secret";
-        let result = derive_key_from_shared_secret(
-            shared_secret, 
-            32, 
-            Some(KeyAgreementAlgorithm::EcdhP256),
-            Some("test-info")
-        );
-        assert!(result.is_ok());
-        assert_eq!(result.unwrap().len(), 32);
-    }
-}

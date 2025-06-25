@@ -1,10 +1,10 @@
-use crate::error::Error;
+use crate::error::CursedError;
 /// Connection pool for HTTP client
 
 use std::collections::HashMap;
 use std::time::{Duration, Instant};
-use crate::stdlib::net::socket::TcpSocket;
-use crate::stdlib::net::error::{NetError, NetResult};
+// use crate::stdlib::net::socket::TcpSocket;
+// use crate::stdlib::net::error::{NetError, NetResult};
 
 /// Connection pool for reusing TCP connections
 #[derive(Debug)]

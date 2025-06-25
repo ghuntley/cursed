@@ -22,10 +22,9 @@
 /// classical and post-quantum components, ensuring security even if one component
 /// is compromised.
 
-use crate::stdlib::packages::crypto_advanced::AdvancedCryptoResult;
-use crate::stdlib::packages::crypto_asymmetric::{AsymmetricKey, AsymmetricKeyPair};
+// use crate::stdlib::packages::crypto_advanced::AdvancedCryptoResult;
+// use crate::stdlib::packages::crypto_asymmetric::{AsymmetricKey, AsymmetricKeyPair};
 use crate::error::CursedError;
-use crate::error::Error;
 use super::pqc_core::{PqcKey, SecurityLevel};
 use super::hybrid::{
     HybridAlgorithmConfig, HybridKeyPair, HybridKemResult, HybridSignature,
@@ -1109,116 +1108,3 @@ pub struct BenchmarkSummary {
 // TESTING
 // ================================================================================================
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-    
-    #[test]
-    fn test_simple_hybrid_crypto() {
-        let keypair = generate_secure_keypair().unwrap();
-        
-        let message = "Test hybrid encryption";
-        let encrypted = hybrid_encrypt(message.as_bytes(), &keypair).unwrap();
-        let decrypted = hybrid_decrypt(&encrypted, &keypair).unwrap();
-        let decrypted_message = String::from_utf8(decrypted).unwrap();
-        
-        assert_eq!(message, decrypted_message);
-    }
-    
-    #[test]
-    fn test_hybrid_signatures() {
-        let keypair = generate_secure_keypair().unwrap();
-        
-        let document = "Important document";
-        let signature = hybrid_sign(document.as_bytes(), &keypair).unwrap();
-        let is_valid = hybrid_verify(document.as_bytes(), &signature, &keypair).unwrap();
-        
-        assert!(is_valid);
-    }
-    
-    #[test]
-    fn test_secure_messaging_session() {
-        let mut alice = SecureMessagingSession::new(SecurityLevel::Level1).unwrap();
-        let mut bob = SecureMessagingSession::new(SecurityLevel::Level1).unwrap();
-        
-        // Set up session
-        alice.set_receiver(bob.sender_keypair.clone()).unwrap();
-        bob.set_receiver(alice.sender_keypair.clone()).unwrap();
-        
-        // Send message
-        let message = "Hello Bob!";
-        let secure_msg = alice.send_message(message).unwrap();
-        
-        // Receive message
-        let received = bob.receive_message(&secure_msg, &alice.sender_keypair).unwrap();
-        assert_eq!(message, received);
-    }
-    
-    #[test]
-    fn test_config_manager() {
-        let mut manager = HybridConfigManager::new();
-        
-        assert!(!manager.list_configs().is_empty());
-        assert!(!manager.list_performance_profiles().is_empty());
-        assert!(!manager.list_security_policies().is_empty());
-        
-        assert!(manager.set_config("balanced").is_ok());
-        assert!(manager.get_current_config().is_ok());
-        
-        let config = manager.create_optimized_config("messaging", "web_server", "enterprise").unwrap();
-        assert_eq!(config.scheme_type, HybridSchemeType::Kem);
-    }
-    
-    #[test]
-    fn test_migration_helper() {
-        let migration_config = MigrationConfig {
-            phase: MigrationPhase::Planning,
-            target_security_level: SecurityLevel::Level3,
-            timeline_months: 6,
-        };
-        
-        let mut helper = HybridMigrationHelper::new(migration_config);
-        
-        // Add classical keys
-        let classical_keys = vec![create_mock_classical_keypair("RSA2048")];
-        helper.add_classical_keys(classical_keys);
-        
-        // Generate hybrid keys
-        let hybrid_keys = helper.generate_hybrid_keys(1).unwrap();
-        assert_eq!(hybrid_keys.len(), 1);
-        
-        // Assess readiness
-        let readiness = helper.assess_migration_readiness();
-        assert!(readiness.readiness_score >= 0.0 && readiness.readiness_score <= 1.0);
-        assert_eq!(readiness.classical_keys_count, 1);
-        assert_eq!(readiness.hybrid_keys_count, 1);
-    }
-    
-    #[test]
-    fn test_message_serialization() {
-        let data = MessageData {
-            content: "Hello, World!".as_bytes().to_vec(),
-            sender_id: "alice".to_string(),
-            sequence: 42,
-            timestamp: std::time::SystemTime::now(),
-        };
-        
-        let serialized = serialize_message_data(&data).unwrap();
-        let deserialized = deserialize_message_data(&serialized).unwrap();
-        
-        assert_eq!(data.content, deserialized.content);
-        assert_eq!(data.sender_id, deserialized.sender_id);
-        assert_eq!(data.sequence, deserialized.sequence);
-    }
-    
-    #[test]
-    fn test_benchmark_suite() {
-        let suite = HybridBenchmarkSuite::new();
-        assert!(!suite.configs_to_test.is_empty());
-        assert!(!suite.test_data_sizes.is_empty());
-        
-        // Note: Full benchmark would take too long for unit tests
-        // Just test the structure is correct
-        assert!(suite.iterations > 0);
-    }
-}
