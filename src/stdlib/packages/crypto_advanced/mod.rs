@@ -75,7 +75,7 @@ pub use memory_protection::{
 pub use security_framework::{
     SecurityAnalysis, SecurityAnalysisConfig, SecurityAnalysisResult, SecurityAnalysisError,
     SecurityLevel, SecurityMetrics, SecurityIssue, SecuritySeverity, SecurityCategory,
-    SecurityReport, SecurityContext, CryptoParameters, quick_analysis
+    SecurityReport, SecurityContext as FrameworkSecurityContext, CryptoParameters, quick_analysis
 };
 
 // Security Analysis Modules - FULLY IMPLEMENTED ✅

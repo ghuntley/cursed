@@ -3,7 +3,7 @@ use crate::error::Error;
 /// fr fr Error handling for web_vibez package - comprehensive error management
 use std::fmt;
 use std::error::Error as StdError;
-use crate::stdlib::packages::web_vibez::status::StatusCode;
+use crate::stdlib::packages::web_vibez::status::StatusCode as WebStatusCode;
 
 /// fr fr Result type alias for web operations - clean error handling
 pub type WebResult<T> = std::result::Result<T, WebError>;

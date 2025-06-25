@@ -26,6 +26,7 @@ struct PromiseInner<T> {
     state: PromiseState,
     result: Option<Result<(), Error>>,
     wakers: Vec<Waker>,
+    _phantom: std::marker::PhantomData<T>,
 }
 
 impl<T> Promise<T> {
@@ -35,6 +36,7 @@ impl<T> Promise<T> {
             state: PromiseState::Pending,
             result: None,
             wakers: Vec::new(),
+            _phantom: std::marker::PhantomData,
         }));
 
         let promise = Promise {

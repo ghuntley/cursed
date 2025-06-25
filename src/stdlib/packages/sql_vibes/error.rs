@@ -1,7 +1,7 @@
 use crate::error::Error;
 /// fr fr SQL error handling - when things go sus in the database periodt
 use std::fmt;
-use std::error::Error;
+use std::error::Error as StdError;
 use serde::{Serialize, Deserialize};
 
 /// fr fr SQL operation result type - either success or error bestie

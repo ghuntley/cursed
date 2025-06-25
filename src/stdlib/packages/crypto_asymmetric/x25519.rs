@@ -111,7 +111,7 @@ impl std::fmt::Display for X25519Error {
 
 impl std::error::Error for X25519Error {}
 
-type X25519Result<(), Error>;
+type X25519Result<T> = Result<T, Error>;
 
 /// fr fr X25519 engine for cryptographic operations
 pub struct X25519Engine {

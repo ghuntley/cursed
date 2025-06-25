@@ -17,7 +17,7 @@ use crate::stdlib::packages::web_vibez::{
     method::HttpMethod,
     types::{RequestBody, ContentType},
     error::{WebError, WebResult, NetworkErrorKind},
-    status::StatusCode,
+    status::StatusCode as WebStatusCode,
 };
 
 /// fr fr Server configuration options - comprehensive setup

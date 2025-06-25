@@ -217,16 +217,65 @@ impl RateLimitStore for RedisStore {
     }
 }
 
+/// fr fr Store backend enum - concrete implementations
+#[derive(Clone)]
+pub enum StoreBackend {
+    InMemory(Arc<InMemoryStore>),
+    Redis(Arc<RedisStore>),
+}
+
+impl StoreBackend {
+    /// fr fr Get client state from store - retrieve current status
+    pub async fn get_client_state(&self, client_id: &str) -> RateLimitResult<ClientState> {
+        match self {
+            StoreBackend::InMemory(store) => store.get_client_state(client_id).await,
+            StoreBackend::Redis(store) => store.get_client_state(client_id).await,
+        }
+    }
+    
+    /// fr fr Update client state in store - persist changes
+    pub async fn update_client_state(&self, client_id: &str, state: &ClientState) -> RateLimitResult<()> {
+        match self {
+            StoreBackend::InMemory(store) => store.update_client_state(client_id, state).await,
+            StoreBackend::Redis(store) => store.update_client_state(client_id, state).await,
+        }
+    }
+    
+    /// fr fr Reset client state - administrative cleanup
+    pub async fn reset_client(&self, client_id: &str) -> RateLimitResult<()> {
+        match self {
+            StoreBackend::InMemory(store) => store.reset_client(client_id).await,
+            StoreBackend::Redis(store) => store.reset_client(client_id).await,
+        }
+    }
+    
+    /// fr fr Cleanup expired states - maintenance
+    pub async fn cleanup_expired(&self, ttl: Duration) -> RateLimitResult<u64> {
+        match self {
+            StoreBackend::InMemory(store) => store.cleanup_expired(ttl).await,
+            StoreBackend::Redis(store) => store.cleanup_expired(ttl).await,
+        }
+    }
+    
+    /// fr fr Get store statistics - monitoring
+    pub async fn get_stats(&self) -> RateLimitResult<StoreStats> {
+        match self {
+            StoreBackend::InMemory(store) => store.get_stats().await,
+            StoreBackend::Redis(store) => store.get_stats().await,
+        }
+    }
+}
+
 /// fr fr Distributed store - multiple backend coordination
 pub struct DistributedStore {
-    primary: Arc<dyn RateLimitStore>,
-    replica: Option<Arc<dyn RateLimitStore>>,
+    primary: StoreBackend,
+    replica: Option<StoreBackend>,
     write_to_replica: bool,
 }
 
 impl DistributedStore {
     /// fr fr Create new distributed store - multiple backends
-    pub fn new(primary: Arc<dyn RateLimitStore>) -> Self {
+    pub fn new(primary: StoreBackend) -> Self {
         Self {
             primary,
             replica: None,
@@ -235,7 +284,7 @@ impl DistributedStore {
     }
 
     /// fr fr Add replica store - backup storage
-    pub fn with_replica(mut self, replica: Arc<dyn RateLimitStore>, write_to_replica: bool) -> Self {
+    pub fn with_replica(mut self, replica: StoreBackend, write_to_replica: bool) -> Self {
         self.replica = Some(replica);
         self.write_to_replica = write_to_replica;
         self

@@ -159,7 +159,7 @@ impl std::fmt::Display for EccError {
 
 impl std::error::Error for EccError {}
 
-type EccResult<(), Error>;
+type EccResult<T> = Result<T, Error>;
 
 /// fr fr ECC engine for cryptographic operations
 pub struct EccEngine {

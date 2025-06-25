@@ -9,6 +9,21 @@ use crate::ast::*;
 use std::collections::{HashMap, HashSet};
 use std::time::{Duration, Instant};
 
+/// Else branch representation for if statements
+#[derive(Debug, Clone, PartialEq)]
+pub enum ElseBranch {
+    Block(Vec<Statement>),
+    If(Box<IfStatement>),
+}
+
+/// If statement representation
+#[derive(Debug, Clone, PartialEq)]
+pub struct IfStatement {
+    pub condition: Expression,
+    pub then_branch: Vec<Statement>,
+    pub else_branch: Option<ElseBranch>,
+}
+
 pub mod cse;
 
 /// Custom optimization pass manager for CURSED

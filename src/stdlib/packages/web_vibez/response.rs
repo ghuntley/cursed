@@ -5,7 +5,7 @@ use std::collections::HashMap;
 use std::fmt;
 
 use crate::stdlib::packages::web_vibez::{
-    status::StatusCode,
+    status::StatusCode as WebStatusCode,
     types::{Headers, ContentType, Cookie},
     error::{WebError, WebResult},
 };

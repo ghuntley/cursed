@@ -13,6 +13,21 @@ use std::hash::{Hash, Hasher};
 use std::time::{Duration, Instant};
 use std::fmt;
 
+/// Else branch representation for if statements
+#[derive(Debug, Clone, PartialEq)]
+pub enum ElseBranch {
+    Block(Vec<Statement>),
+    If(Box<IfStatement>),
+}
+
+/// If statement representation
+#[derive(Debug, Clone, PartialEq)]
+pub struct IfStatement {
+    pub condition: Expression,
+    pub then_branch: Vec<Statement>,
+    pub else_branch: Option<ElseBranch>,
+}
+
 /// Value number assigned to expressions for CSE analysis
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct ValueNumber(usize);

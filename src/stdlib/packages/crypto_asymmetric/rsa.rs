@@ -120,7 +120,7 @@ impl From<rsa::pkcs8::Error> for RsaError {
     }
 }
 
-type RsaResult<(), Error>;
+type RsaResult<T> = Result<T, Error>;
 
 /// fr fr RSA implementation with real cryptographic operations
 pub struct RsaEngine {

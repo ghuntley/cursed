@@ -6,7 +6,7 @@ pub mod config;
 pub mod metrics;
 pub mod error;
 
-pub use store::{RateLimitStore, InMemoryStore, RedisStore};
+pub use store::{RateLimitStore, InMemoryStore, RedisStore, StoreBackend};
 pub use algorithm::{RateLimitAlgorithm, FixedWindow, SlidingWindow, TokenBucket};
 pub use config::{RateLimitConfig, WindowConfig, BucketConfig, ClientIdentification, ErrorConfig};
 pub use metrics::{RateLimitMetrics, ClientMetrics};
@@ -47,7 +47,7 @@ pub struct RateLimitContext {
 
 /// fr fr Rate limiter - main coordination interface
 pub struct RateLimiter {
-    store: Arc<dyn RateLimitStore>,
+    store: StoreBackend,
     algorithm: Arc<dyn RateLimitAlgorithm>,
     config: RateLimitConfig,
     metrics: Arc<Mutex<RateLimitMetrics>>,
@@ -56,7 +56,7 @@ pub struct RateLimiter {
 impl RateLimiter {
     /// fr fr Create new rate limiter - comprehensive setup
     pub fn new(
-        store: Arc<dyn RateLimitStore>,
+        store: StoreBackend,
         algorithm: Arc<dyn RateLimitAlgorithm>,
         config: RateLimitConfig,
     ) -> Self {

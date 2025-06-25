@@ -23,7 +23,7 @@ pub use response::{HttpResponse, ResponseBuilder};
 pub use handler::{Handler, HandlerFunc, HandlerChain, FunctionHandler, StaticFileHandler, JsonApiHandler, RedirectHandler, HealthCheckHandler};
 pub use router::{Router, RouteEntry, PathParams};
 pub use middleware::{Middleware, MiddlewareChain, CorsMiddleware, LoggingMiddleware, SecurityHeadersMiddleware, RateLimitMiddleware, MiddlewareHandler};
-pub use status::{StatusCode, StatusClass};
+pub use status::{StatusCode as WebStatusCode, StatusClass};
 pub use method::{HttpMethod, MethodSet, InvalidMethodError};
 pub use error::{WebError, WebResult, NetworkErrorKind, AuthErrorKind, ErrorContext};
 pub use types::{Headers, QueryParams, FormData, Json, ContentType, RequestBody, Cookie, SameSite};
