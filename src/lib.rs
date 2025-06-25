@@ -7,7 +7,7 @@
 /// - Essential error handling
 // Core modules only - absolutely minimal
 pub mod error;
-pub mod minimal_lexer;
+pub mod lexer;
 pub mod minimal_parser;
 pub mod minimal_ast;
 
@@ -78,7 +78,7 @@ pub mod optimization {
 
 // Re-export essential types
 pub use error::Error;
-pub use minimal_lexer::{Lexer, Token, TokenType};
+pub use lexer::{Lexer, Token, TokenType};
 pub use minimal_parser::Parser;
 pub use minimal_ast::*;
 
@@ -90,7 +90,7 @@ pub mod ast {
 /// Prelude module for minimal imports
 pub mod prelude {
     pub use crate::error::Error;
-    pub use crate::minimal_lexer::{Lexer, Token, TokenType};
+    pub use crate::lexer::{Lexer, Token, TokenType};
     pub use crate::minimal_parser::Parser;
     pub use crate::minimal_ast::*;
 }

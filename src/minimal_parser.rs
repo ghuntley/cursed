@@ -1,7 +1,7 @@
 //! Minimal parser for CURSED - just enough to parse basic programs
 use crate::error::Error;
 use crate::minimal_ast::*;
-use crate::minimal_lexer::{Lexer, Token, TokenType};
+use crate::lexer::{Lexer, Token, TokenType};
 
 pub struct Parser {
     lexer: Lexer,
@@ -80,6 +80,11 @@ impl Parser {
         
         let name = self.current_token.literal.clone();
         
+        // Check if this is a function declaration (facts main() {})
+        if self.peek_token.token_type == TokenType::LeftParen {
+            return self.parse_function_declaration(name);
+        }
+        
         if !self.expect_peek(TokenType::Assign) {
             return None;
         }
@@ -92,6 +97,38 @@ impl Parser {
         }
         
         Some(Statement::Facts(name, value))
+    }
+    
+    fn parse_function_declaration(&mut self, name: String) -> Option<Statement> {
+        // We're at the identifier, next should be (
+        if !self.expect_peek(TokenType::LeftParen) {
+            return None;
+        }
+        
+        let mut parameters = Vec::new();
+        
+        if self.peek_token.token_type != TokenType::RightParen {
+            self.next_token();
+            parameters.push(self.current_token.literal.clone());
+            
+            while self.peek_token.token_type == TokenType::Comma {
+                self.next_token();
+                self.next_token();
+                parameters.push(self.current_token.literal.clone());
+            }
+        }
+        
+        if !self.expect_peek(TokenType::RightParen) {
+            return None;
+        }
+        
+        if !self.expect_peek(TokenType::LeftBrace) {
+            return None;
+        }
+        
+        let body = self.parse_block_statement();
+        
+        Some(Statement::Slay(name, parameters, body))
     }
     
     fn parse_slay_statement(&mut self) -> Option<Statement> {
