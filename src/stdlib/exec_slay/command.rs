@@ -15,23 +15,13 @@ use super::process::SlayProcess;
 #[derive(Debug)]
 pub struct SlayCommand {
     /// Command name/path
-    pub name: String,
     /// Command arguments
-    pub args: Vec<String>,
     /// Execution options
-    pub options: SlayOptions,
     /// Shared process state
-    pub(crate) state: Arc<Mutex<SharedProcessState>>,
-}
-
 impl SlayCommand {
     /// Create a new SlayCommand with the given name and arguments
     pub fn new(name: &str, args: &[&str]) -> Self {
         Self {
-            name: name.to_string(),
-            args: args.iter().map(|s| s.to_string()).collect(),
-            options: SlayOptions::default(),
-            state: Arc::new(Mutex::new(SharedProcessState::new())),
         }
     }
 
@@ -39,8 +29,6 @@ impl SlayCommand {
     pub fn run(&mut self) -> SlayResult<()> {
         self.start()?;
         self.wait()
-    }
-
     /// Start the command without waiting for completion
     pub fn start(&mut self) -> SlayResult<()> {
         let mut cmd = self.build_command()?;
@@ -59,11 +47,7 @@ impl SlayCommand {
             state.child = Some(child);
             state.is_running = true;
             state.start_time = Instant::now();
-        }
-
         Ok(())
-    }
-
     /// Wait for the command to complete
     pub fn wait(&mut self) -> SlayResult<()> {
         let timeout = self.options.timeout;
@@ -81,8 +65,6 @@ impl SlayCommand {
         
         let state = self.state.lock().unwrap();
         Ok(state.stdout_data.clone())
-    }
-
     /// Get combined stdout and stderr output
     pub fn combined_output(&mut self) -> SlayResult<Vec<u8>> {
         self.run()?;
@@ -91,50 +73,34 @@ impl SlayCommand {
         let mut combined = state.stdout_data.clone();
         combined.extend_from_slice(&state.stderr_data);
         Ok(combined)
-    }
-
     /// Configure the command with options
     pub fn with_options(mut self, options: SlayOptions) -> Self {
         self.options = options;
         self
-    }
-
     /// Set the working directory
     pub fn set_dir(&mut self, dir: &str) -> &mut Self {
         self.options.dir = Some(dir.to_string());
         self
-    }
-
     /// Set environment variables
     pub fn set_env(&mut self, env: Vec<String>) -> &mut Self {
         self.options.env = env;
         self
-    }
-
     /// Add an environment variable
     pub fn add_env(&mut self, key: &str, value: &str) -> &mut Self {
         self.options.env.push(format!("{}={}", key, value));
         self
-    }
-
     /// Set timeout for execution
     pub fn set_timeout(&mut self, timeout: Duration) -> &mut Self {
         self.options.timeout = Some(timeout);
         self
-    }
-
     /// Enable shell execution
     pub fn use_shell(&mut self, use_shell: bool) -> &mut Self {
         self.options.use_shell = use_shell;
         self
-    }
-
     /// Set shell path
     pub fn set_shell_path(&mut self, path: &str) -> &mut Self {
         self.options.shell_path = Some(path.to_string());
         self
-    }
-
     /// Get the process handle
     pub fn process(&self) -> Option<SlayProcess> {
         let state = self.state.lock().unwrap();
@@ -149,14 +115,10 @@ impl SlayCommand {
     pub fn is_running(&self) -> bool {
         let state = self.state.lock().unwrap();
         state.is_running
-    }
-
     /// Get the exit code if the process has completed
     pub fn exit_code(&self) -> Option<i32> {
         let state = self.state.lock().unwrap();
         state.exit_status.as_ref().and_then(|status| status.code())
-    }
-
     /// Get string representation of the command
     pub fn to_string(&self) -> String {
         let mut cmd_str = self.name.clone();
@@ -169,8 +131,6 @@ impl SlayCommand {
             }
         }
         cmd_str
-    }
-
     /// Build the underlying Command object
     fn build_command(&self) -> SlayResult<Command> {
         let mut cmd = if self.options.use_shell {
@@ -179,8 +139,6 @@ impl SlayCommand {
             
             if shell_args.len() > 1 {
                 shell_cmd.args(&shell_args[1..]);
-            }
-            
             // Build the full command string
             let full_cmd = format!("{} {}", self.name, self.args.join(" "));
             shell_cmd.arg(full_cmd);
@@ -189,13 +147,10 @@ impl SlayCommand {
             let mut direct_cmd = Command::new(&self.name);
             direct_cmd.args(&self.args);
             direct_cmd
-        };
 
         // Set working directory
         if let Some(ref dir) = self.options.dir {
             cmd.current_dir(dir);
-        }
-
         // Set environment variables
         for env_var in &self.options.env {
             if let Some(eq_pos) = env_var.find('=') {
@@ -206,8 +161,6 @@ impl SlayCommand {
         }
 
         Ok(cmd)
-    }
-
     /// Wait for completion with timeout
     fn wait_with_timeout(&mut self, timeout: Duration) -> SlayResult<()> {
         let start_time = Instant::now();
@@ -225,8 +178,6 @@ impl SlayCommand {
                             // Collect output if configured
                             if self.options.collect_output {
                                 self.collect_output(&mut state, child)?;
-                            }
-                            
                             return Ok(());
                         }
                         Ok(None) => {
@@ -269,8 +220,6 @@ impl SlayCommand {
         }
         
         Ok(())
-    }
-
     /// Collect output from the process
     fn collect_output(&self, state: &mut SharedProcessState, child: &mut Child) -> SlayResult<()> {
         // Read stdout
@@ -278,15 +227,11 @@ impl SlayCommand {
             let mut stdout_data = Vec::new();
             stdout.read_to_end(&mut stdout_data).map_err(io_error_to_cursed)?;
             state.stdout_data = stdout_data;
-        }
-
         // Read stderr
         if let Some(ref mut stderr) = child.stderr {
             let mut stderr_data = Vec::new();
             stderr.read_to_end(&mut stderr_data).map_err(io_error_to_cursed)?;
             state.stderr_data = stderr_data;
-        }
-
         Ok(())
     }
 }
@@ -294,11 +239,5 @@ impl SlayCommand {
 impl Clone for SlayCommand {
     fn clone(&self) -> Self {
         Self {
-            name: self.name.clone(),
-            args: self.args.clone(),
-            options: self.options.clone(),
-            state: Arc::new(Mutex::new(SharedProcessState::new())),
         }
     }
-}
-

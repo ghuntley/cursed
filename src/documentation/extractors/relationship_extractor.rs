@@ -15,30 +15,17 @@ use tracing::{debug, instrument};
 /// Relationship extractor for code element analysis
 pub struct RelationshipExtractor {
     /// Cache of discovered relationships
-    relationship_cache: HashMap<String, Vec<RelationshipInfo>>,
     /// Known type names in the codebase
-    known_types: HashSet<String>,
     /// Function call relationships
-    call_graph: HashMap<String, Vec<String>>,
-}
-
 impl RelationshipExtractor {
     /// Create a new relationship extractor
     #[instrument]
     pub fn new() -> crate::error::Result<()> {
         Ok(Self {
-            relationship_cache: HashMap::new(),
-            known_types: HashSet::new(),
-            call_graph: HashMap::new(),
         })
-    }
-
     /// Extract relationships for a module declaration
     #[instrument(skip(self, module_decl, source_code))]
     pub fn extract_module_relationships(
-        &self,
-        module_decl: &ModuleDeclaration,
-        source_code: &str,
     ) -> crate::error::Result<()> {
         debug!("Extracting module relationships for: {}", module_decl.to_string());
         
@@ -53,17 +40,10 @@ impl RelationshipExtractor {
         // Extract nested module relationships
         if let Some(ref body) = module_decl.body {
             relationships.extend(self.extract_nested_relationships(body, source_code)?);
-        }
-
         Ok(relationships)
-    }
-
     /// Extract relationships for a function declaration
     #[instrument(skip(self, func_decl, source_code))]
     pub fn extract_function_relationships(
-        &self,
-        func_decl: &FunctionDeclaration,
-        source_code: &str,
     ) -> crate::error::Result<()> {
         debug!("Extracting function relationships for: {}", func_decl.to_string());
         
@@ -73,9 +53,6 @@ impl RelationshipExtractor {
         for param in &func_decl.parameters {
             if let Some(ref param_type) = param.param_type {
                 relationships.extend(self.extract_type_usage_relationships(
-                    &func_decl.to_string(),
-                    param_type,
-                    RelationshipType::Uses,
                 )?);
             }
         }
@@ -83,35 +60,19 @@ impl RelationshipExtractor {
         // Extract return type relationships
         if let Some(ref return_type) = func_decl.return_type {
             relationships.extend(self.extract_type_usage_relationships(
-                &func_decl.to_string(),
-                return_type,
-                RelationshipType::Uses,
             )?);
-        }
-
         // Extract function call relationships from body
         relationships.extend(self.extract_function_call_relationships(
-            &func_decl.to_string(),
-            &func_decl.body,
         )?);
 
         // Extract generic constraint relationships
         if let Some(ref constraints) = func_decl.constraints {
             relationships.extend(self.extract_constraint_relationships(
-                &func_decl.to_string(),
-                constraints,
             )?);
-        }
-
         Ok(relationships)
-    }
-
     /// Extract relationships for a struct declaration
     #[instrument(skip(self, struct_decl, source_code))]
     pub fn extract_struct_relationships(
-        &self,
-        struct_decl: &StructDeclaration,
-        source_code: &str,
     ) -> crate::error::Result<()> {
         debug!("Extracting struct relationships for: {}", struct_decl.to_string());
         
@@ -121,42 +82,26 @@ impl RelationshipExtractor {
         for field in &struct_decl.fields {
             if let Some(ref field_type) = field.field_type {
                 relationships.extend(self.extract_type_usage_relationships(
-                    &struct_decl.to_string(),
-                    field_type,
-                    RelationshipType::Contains,
                 )?);
             }
         }
 
         // Extract implementation relationships
         relationships.extend(self.extract_struct_implementations(
-            &struct_decl.to_string(),
-            source_code,
         )?);
 
         // Extract inheritance relationships
         relationships.extend(self.extract_inheritance_relationships(
-            &struct_decl.to_string(),
-            source_code,
         )?);
 
         // Extract generic constraint relationships
         if let Some(ref constraints) = struct_decl.constraints {
             relationships.extend(self.extract_constraint_relationships(
-                &struct_decl.to_string(),
-                constraints,
             )?);
-        }
-
         Ok(relationships)
-    }
-
     /// Extract relationships for an interface declaration
     #[instrument(skip(self, interface_decl, source_code))]
     pub fn extract_interface_relationships(
-        &self,
-        interface_decl: &InterfaceDeclaration,
-        source_code: &str,
     ) -> crate::error::Result<()> {
         debug!("Extracting interface relationships for: {}", interface_decl.to_string());
         
@@ -168,9 +113,6 @@ impl RelationshipExtractor {
             for param in &method.parameters {
                 if let Some(ref param_type) = param.param_type {
                     relationships.extend(self.extract_type_usage_relationships(
-                        &interface_decl.to_string(),
-                        param_type,
-                        RelationshipType::References,
                     )?);
                 }
             }
@@ -178,35 +120,22 @@ impl RelationshipExtractor {
             // Return type relationships
             if let Some(ref return_type) = method.return_type {
                 relationships.extend(self.extract_type_usage_relationships(
-                    &interface_decl.to_string(),
-                    return_type,
-                    RelationshipType::References,
                 )?);
             }
         }
 
         // Extract interface inheritance relationships
         relationships.extend(self.extract_interface_inheritance(
-            &interface_decl.to_string(),
-            source_code,
         )?);
 
         // Extract implementation relationships (who implements this interface)
         relationships.extend(self.extract_interface_implementors(
-            &interface_decl.to_string(),
-            source_code,
         )?);
 
         Ok(relationships)
-    }
-
     /// Extract type usage relationships from an expression
     #[instrument(skip(self, source_name, type_expr))]
     fn extract_type_usage_relationships(
-        &self,
-        source_name: &str,
-        type_expr: &dyn Expression,
-        relationship_type: RelationshipType,
     ) -> crate::error::Result<()> {
         let mut relationships = Vec::new();
 
@@ -214,44 +143,28 @@ impl RelationshipExtractor {
             ExpressionType::Identifier(id) => {
                 if self.is_known_type(&id.to_string()) {
                     relationships.push(RelationshipInfo {
-                        relationship_type: relationship_type.clone(),
-                        target: id.to_string().clone(),
-                        strength: RelationshipStrength::Strong,
-                        context: Some(format!("Type usage in {}", source_name)),
                     });
                 }
             }
             ExpressionType::FunctionCall(call) => {
                 // Generic type instantiation
                 relationships.extend(self.extract_type_usage_relationships(
-                    source_name,
-                    &call.function,
-                    relationship_type.clone(),
                 )?);
 
                 // Type arguments
                 for arg in &call.arguments {
                     relationships.extend(self.extract_type_usage_relationships(
-                        source_name,
-                        arg,
-                        relationship_type.clone(),
                     )?);
                 }
             }
             ExpressionType::ArrayAccess(arr) => {
                 // Array element type
                 relationships.extend(self.extract_type_usage_relationships(
-                    source_name,
-                    &arr.array,
-                    relationship_type,
                 )?);
             }
             ExpressionType::MemberAccess(member) => {
                 // Object type
                 relationships.extend(self.extract_type_usage_relationships(
-                    source_name,
-                    &member.object,
-                    relationship_type,
                 )?);
             }
             _ => {
@@ -260,14 +173,9 @@ impl RelationshipExtractor {
         }
 
         Ok(relationships)
-    }
-
     /// Extract function call relationships from a block statement
     #[instrument(skip(self, caller_name, body))]
     fn extract_function_call_relationships(
-        &self,
-        caller_name: &str,
-        body: &AstNode,
     ) -> crate::error::Result<()> {
         let mut relationships = Vec::new();
 
@@ -275,14 +183,8 @@ impl RelationshipExtractor {
         self.search_function_calls(body, caller_name, &mut relationships)?;
 
         Ok(relationships)
-    }
-
     /// Recursively search for function calls in AST nodes
     fn search_function_calls(
-        &self,
-        node: &AstNode,
-        caller_name: &str,
-        relationships: &mut Vec<RelationshipInfo>,
     ) -> crate::error::Result<()> {
         match &node.node_type {
             AstNodeType::ExpressionStatement(expr_stmt) => {
@@ -332,26 +234,14 @@ impl RelationshipExtractor {
         }
 
         Ok(())
-    }
-
     /// Extract function calls from an expression
     fn extract_calls_from_expression(
-        &self,
-        expr: &dyn Expression,
-        caller_name: &str,
-        relationships: &mut Vec<RelationshipInfo>,
     ) -> crate::error::Result<()> {
         match &expr.expr_type {
             ExpressionType::FunctionCall(call) => {
                 if let ExpressionType::Identifier(id) = &call.function.expr_type {
                     relationships.push(RelationshipInfo {
-                        relationship_type: RelationshipType::Calls,
-                        target: id.to_string().clone(),
-                        strength: RelationshipStrength::Strong,
-                        context: Some(format!("Function call from {}", caller_name)),
                     });
-                }
-
                 // Recursively check arguments
                 for arg in &call.arguments {
                     self.extract_calls_from_expression(arg, caller_name, relationships)?;
@@ -362,10 +252,6 @@ impl RelationshipExtractor {
                 self.extract_calls_from_expression(&member.object, caller_name, relationships)?;
                 
                 relationships.push(RelationshipInfo {
-                    relationship_type: RelationshipType::Calls,
-                    target: member.member.clone(),
-                    strength: RelationshipStrength::Weak,
-                    context: Some(format!("Method call from {}", caller_name)),
                 });
             }
             ExpressionType::BinaryExpression(bin) => {
@@ -394,33 +280,17 @@ impl RelationshipExtractor {
         }
 
         Ok(())
-    }
-
     /// Extract constraint relationships
     fn extract_constraint_relationships(
-        &self,
-        source_name: &str,
-        constraints: &[GenericConstraint],
     ) -> crate::error::Result<()> {
         let mut relationships = Vec::new();
 
         for constraint in constraints {
             relationships.push(RelationshipInfo {
-                relationship_type: RelationshipType::DependsOn,
-                target: constraint.constraint_type.clone(),
-                strength: RelationshipStrength::Strong,
-                context: Some(format!("Generic constraint in {}", source_name)),
             });
-        }
-
         Ok(relationships)
-    }
-
     /// Extract module import relationships
     fn extract_module_imports(
-        &self,
-        module_decl: &ModuleDeclaration,
-        source_code: &str,
     ) -> crate::error::Result<()> {
         let mut relationships = Vec::new();
 
@@ -430,23 +300,12 @@ impl RelationshipExtractor {
             if line.starts_with("import ") {
                 if let Some(module_name) = self.extract_import_module_name(line) {
                     relationships.push(RelationshipInfo {
-                        relationship_type: RelationshipType::DependsOn,
-                        target: module_name,
-                        strength: RelationshipStrength::Strong,
-                        context: Some(format!("Import in module {}", module_decl.to_string())),
                     });
                 }
             }
-        }
-
         Ok(relationships)
-    }
-
     /// Extract module export relationships
     fn extract_module_exports(
-        &self,
-        module_decl: &ModuleDeclaration,
-        source_code: &str,
     ) -> crate::error::Result<()> {
         let mut relationships = Vec::new();
 
@@ -460,26 +319,16 @@ impl RelationshipExtractor {
         }
 
         Ok(relationships)
-    }
-
     /// Extract nested relationships from module body
     fn extract_nested_relationships(
-        &self,
-        body: &AstNode,
-        source_code: &str,
     ) -> crate::error::Result<()> {
         let mut relationships = Vec::new();
 
         // This would recursively analyze the module body
         // For now, return empty vector
         Ok(relationships)
-    }
-
     /// Extract struct implementation relationships
     fn extract_struct_implementations(
-        &self,
-        struct_name: &str,
-        source_code: &str,
     ) -> crate::error::Result<()> {
         let mut relationships = Vec::new();
 
@@ -489,23 +338,12 @@ impl RelationshipExtractor {
             if line.starts_with("impl ") && line.contains(struct_name) {
                 if let Some(interface_name) = self.extract_impl_interface_name(line) {
                     relationships.push(RelationshipInfo {
-                        relationship_type: RelationshipType::Implements,
-                        target: interface_name,
-                        strength: RelationshipStrength::Strong,
-                        context: Some(format!("Implementation by {}", struct_name)),
                     });
                 }
             }
-        }
-
         Ok(relationships)
-    }
-
     /// Extract inheritance relationships
     fn extract_inheritance_relationships(
-        &self,
-        struct_name: &str,
-        source_code: &str,
     ) -> crate::error::Result<()> {
         let mut relationships = Vec::new();
 
@@ -516,23 +354,12 @@ impl RelationshipExtractor {
             if line.contains("extends") && line.contains(struct_name) {
                 if let Some(parent_name) = self.extract_parent_class_name(line) {
                     relationships.push(RelationshipInfo {
-                        relationship_type: RelationshipType::Extends,
-                        target: parent_name,
-                        strength: RelationshipStrength::Strong,
-                        context: Some(format!("Inheritance by {}", struct_name)),
                     });
                 }
             }
-        }
-
         Ok(relationships)
-    }
-
     /// Extract interface inheritance relationships
     fn extract_interface_inheritance(
-        &self,
-        interface_name: &str,
-        source_code: &str,
     ) -> crate::error::Result<()> {
         let mut relationships = Vec::new();
 
@@ -542,23 +369,12 @@ impl RelationshipExtractor {
             if line.contains("extends") && line.contains(interface_name) {
                 if let Some(parent_interface) = self.extract_parent_interface_name(line) {
                     relationships.push(RelationshipInfo {
-                        relationship_type: RelationshipType::Extends,
-                        target: parent_interface,
-                        strength: RelationshipStrength::Strong,
-                        context: Some(format!("Interface inheritance by {}", interface_name)),
                     });
                 }
             }
-        }
-
         Ok(relationships)
-    }
-
     /// Extract interface implementors
     fn extract_interface_implementors(
-        &self,
-        interface_name: &str,
-        source_code: &str,
     ) -> crate::error::Result<()> {
         let mut relationships = Vec::new();
 
@@ -568,25 +384,15 @@ impl RelationshipExtractor {
             if line.contains("impl ") && line.contains(interface_name) {
                 if let Some(implementor_name) = self.extract_implementor_name(line) {
                     relationships.push(RelationshipInfo {
-                        relationship_type: RelationshipType::Implements,
-                        target: implementor_name,
-                        strength: RelationshipStrength::Strong,
-                        context: Some(format!("Implemented by types using {}", interface_name)),
                     });
                 }
             }
-        }
-
         Ok(relationships)
-    }
-
     /// Check if a type name is known
     fn is_known_type(&self, type_name: &str) -> bool {
         // Check against known types or use heuristics
         self.known_types.contains(type_name) || 
         type_name.chars().next().map_or(false, |c| c.is_uppercase()) // Assume uppercase names are types
-    }
-
     /// Extract module name from import statement
     fn extract_import_module_name(&self, import_line: &str) -> Option<String> {
         // Parse: import "module_name" or import module_name
@@ -630,8 +436,6 @@ impl RelationshipExtractor {
     /// Extract parent interface name
     fn extract_parent_interface_name(&self, extends_line: &str) -> Option<String> {
         self.extract_parent_class_name(extends_line) // Same logic
-    }
-
     /// Extract implementor name from impl statement
     fn extract_implementor_name(&self, impl_line: &str) -> Option<String> {
         // Parse: impl InterfaceName for StructName
@@ -646,13 +450,9 @@ impl RelationshipExtractor {
     /// Add known type to the extractor
     pub fn add_known_type(&mut self, type_name: String) {
         self.known_types.insert(type_name);
-    }
-
     /// Get relationship cache
     pub fn relationship_cache(&self) -> &HashMap<String, Vec<RelationshipInfo>> {
         &self.relationship_cache
-    }
-
     /// Get call graph
     pub fn call_graph(&self) -> &HashMap<String, Vec<String>> {
         &self.call_graph

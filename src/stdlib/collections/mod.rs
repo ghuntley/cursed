@@ -24,9 +24,8 @@ pub use queues::*;
 pub use stacks::*;
 // Use explicit imports from heap_slay to avoid conflicts
 pub use heap_slay::{
-    HeapSorter, BinaryHeap, MinHeap, MaxHeap, HeapIterator,
     PriorityQueue as HeapPriorityQueue, HeapError
-};
+// };
 // Re-export iterator systems
 pub use iterators::*;
 pub use iterators_simple::*;
@@ -40,17 +39,6 @@ pub type CollectionsResult<T> = std::result::Result<T, CollectionsError>;
 /// Errors that can occur during collection operations
 #[derive(Debug, Clone, PartialEq)]
 pub enum CollectionsError {
-    IndexOutOfBounds { index: usize, size: usize },
-    ElementNotFound { element: String },
-    InvalidCapacity { capacity: usize },
-    InvalidRange { start: usize, end: usize },
-    TypeMismatch { expected: String, found: String },
-    OperationNotSupported { operation: String, collection_type: String },
-    InsufficientMemory { requested: usize },
-    InvalidBitIndex { index: usize, max_bits: usize },
-    InvalidOperation { operation: String, reason: String },
-}
-
 // impl std::fmt::Display for CollectionsError {
 //     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
 //         match self {

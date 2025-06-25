@@ -10,245 +10,119 @@ use std::sync::{Arc, Mutex};
 use tracing::{debug, trace, info, instrument};
 
 use inkwell::{
-    values::{FunctionValue, BasicValue, BasicValueEnum, CallSiteValue, InstructionValue},
-    types::{BasicType, FunctionType},
-    basic_block::BasicBlock,
-    module::Module,
-    context::Context,
-};
+// };
 
 use crate::optimization::enhanced_llvm_passes_manager::EnhancedOptimizationStatistics;
 
 /// Interprocedural analyzer for cross-function optimization analysis
 pub struct InterproceduralAnalyzer<'ctx> {
-    context_lifetime: std::marker::PhantomData<&'ctx ()>,
-    statistics: Arc<Mutex<EnhancedOptimizationStatistics>>,
     
     // Analysis data structures
-    call_graph: CallGraph,
-    function_analysis: FunctionAnalysis,
-    interprocedural_info: InterproceduralInfo,
-}
-
 /// Call graph representation
 #[derive(Debug, Default)]
 struct CallGraph {
     /// Function name -> list of functions it calls
-    callers: HashMap<String, HashSet<String>>,
     /// Function name -> list of functions that call it
-    callees: HashMap<String, HashSet<String>>,
     /// Call site information
-    call_sites: HashMap<String, Vec<CallSiteAnalysis>>,
     /// Recursive call detection
-    recursive_functions: HashSet<String>,
-}
-
 /// Analysis of individual functions
 #[derive(Debug, Default)]
 struct FunctionAnalysis {
     /// Function name -> function properties
-    function_properties: HashMap<String, FunctionProperties>,
     /// Function name -> optimization opportunities
-    optimization_opportunities: HashMap<String, Vec<InterproceduralOptimization>>,
     /// Function name -> side effect analysis
-    side_effects: HashMap<String, SideEffectInfo>,
-}
-
 /// Interprocedural information
 #[derive(Debug, Default)]
 struct InterproceduralInfo {
     /// Constants that can be propagated across function boundaries
-    interprocedural_constants: HashMap<String, Vec<ConstantPropagation>>,
     /// Functions that can be inlined
-    inlining_candidates: HashMap<String, InliningCandidate>,
     /// Dead code elimination opportunities
-    dead_code_opportunities: Vec<DeadCodeOpportunity>,
-}
-
 /// Properties of a function
 #[derive(Debug, Clone)]
 struct FunctionProperties {
     /// Size in instructions
-    instruction_count: usize,
     /// Number of basic blocks
-    basic_block_count: usize,
     /// Call frequency (estimated)
-    call_frequency: usize,
     /// Whether function is leaf (calls no other functions)
-    is_leaf: bool,
     /// Whether function is recursive
-    is_recursive: bool,
     /// Whether function has side effects
-    has_side_effects: bool,
     /// Parameter usage patterns
-    parameter_usage: Vec<ParameterUsage>,
-}
-
 /// Call site analysis information
 #[derive(Debug, Clone)]
 struct CallSiteAnalysis {
     /// Function being called
-    callee_name: String,
     /// Call site location
-    location: String,
     /// Arguments passed (with constant analysis)
-    arguments: Vec<ArgumentInfo>,
     /// Estimated call frequency
-    frequency: usize,
     /// Context-sensitive information
-    context: CallContext,
-}
-
 /// Interprocedural optimization opportunities
 #[derive(Debug, Clone)]
 enum InterproceduralOptimization {
     Inlining { 
-        target_function: String,
-        estimated_benefit: f64,
-        size_cost: usize,
-    },
     ConstantPropagation {
-        parameter_index: usize,
-        constant_value: String,
-        propagation_sites: usize,
-    },
     DeadCodeElimination {
-        unused_functions: Vec<String>,
-        estimated_savings: usize,
-    },
     TailCallOptimization {
-        target_function: String,
-        call_sites: usize,
-    },
-}
-
 /// Side effect information
 #[derive(Debug, Clone, Default)]
 struct SideEffectInfo {
     /// Whether function modifies global state
-    modifies_global_state: bool,
     /// Whether function performs I/O
-    performs_io: bool,
     /// Whether function allocates memory
-    allocates_memory: bool,
     /// Whether function calls external functions
-    calls_external: bool,
     /// Memory locations that may be modified
-    modified_memory: HashSet<String>,
-}
-
 /// Constant propagation opportunity
 #[derive(Debug, Clone)]
 struct ConstantPropagation {
     /// Function parameter index
-    parameter_index: usize,
     /// Constant value
-    constant_value: ConstantValue,
     /// Number of call sites that can benefit
-    affected_call_sites: usize,
-}
-
 /// Inlining candidate information
 #[derive(Debug, Clone)]
 struct InliningCandidate {
     /// Function to inline
-    function_name: String,
     /// Estimated benefit score
-    benefit_score: f64,
     /// Size cost of inlining
-    size_cost: usize,
     /// Number of call sites
-    call_site_count: usize,
     /// Whether inlining is profitable
-    is_profitable: bool,
-}
-
 /// Dead code elimination opportunity
 #[derive(Debug, Clone)]
 struct DeadCodeOpportunity {
     /// Type of dead code
-    dead_code_type: DeadCodeType,
     /// Functions or code segments affected
-    affected_items: Vec<String>,
     /// Estimated size savings
-    estimated_savings: usize,
-}
-
 /// Parameter usage analysis
 #[derive(Debug, Clone)]
 struct ParameterUsage {
     /// Parameter index
-    index: usize,
     /// How the parameter is used
-    usage_pattern: ParameterUsagePattern,
     /// Whether parameter is modified
-    is_modified: bool,
     /// Whether parameter escapes the function
-    escapes: bool,
-}
-
 /// Argument information at call sites
 #[derive(Debug, Clone)]
 struct ArgumentInfo {
     /// Argument index
-    index: usize,
     /// Whether argument is constant
-    is_constant: bool,
     /// Constant value if applicable
-    constant_value: Option<ConstantValue>,
     /// Type information
-    type_info: String,
-}
-
 /// Call context for context-sensitive analysis
 #[derive(Debug, Clone)]
 struct CallContext {
     /// Calling function
-    caller: String,
     /// Call path depth
-    depth: usize,
     /// Context-sensitive constants
-    context_constants: HashMap<usize, ConstantValue>,
-}
-
 /// Types of constant values
 #[derive(Debug, Clone)]
 enum ConstantValue {
-    Integer(i64),
-    Float(f64),
-    Boolean(bool),
-    String(String),
-    Null,
-}
-
 /// Types of dead code
 #[derive(Debug, Clone)]
 enum DeadCodeType {
-    UnusedFunction,
-    UnreachableCode,
-    UnusedGlobal,
-    UnusedParameter,
-}
-
 /// Parameter usage patterns
 #[derive(Debug, Clone)]
 enum ParameterUsagePattern {
-    ReadOnly,
-    WriteOnly,
-    ReadWrite,
-    Unused,
-    AddressTaken,
-}
-
 impl<'ctx> InterproceduralAnalyzer<'ctx> {
     /// Create new interprocedural analyzer
     pub fn new(statistics: Arc<Mutex<EnhancedOptimizationStatistics>>) -> Self {
         Self {
-            context_lifetime: std::marker::PhantomData,
-            statistics,
-            call_graph: CallGraph::default(),
-            function_analysis: FunctionAnalysis::default(),
-            interprocedural_info: InterproceduralInfo::default(),
         }
     }
     
@@ -271,8 +145,6 @@ impl<'ctx> InterproceduralAnalyzer<'ctx> {
         
         info!("Interprocedural analysis completed");
         Ok(())
-    }
-    
     /// Build call graph from module
     fn build_call_graph(&mut self, module: &Module<'ctx>) -> Result<()> {
         debug!("Building call graph");
@@ -295,8 +167,6 @@ impl<'ctx> InterproceduralAnalyzer<'ctx> {
         
         debug!("Call graph built with {} functions", self.call_graph.callers.len());
         Ok(())
-    }
-    
     /// Analyze calls within a function
     fn analyze_function_calls(&mut self, function: FunctionValue<'ctx>, block: BasicBlock<'ctx>, function_name: &str) -> Result<()> {
         let mut current_block = Some(block);
@@ -310,15 +180,9 @@ impl<'ctx> InterproceduralAnalyzer<'ctx> {
                     call_sites.push(call_site);
                 }
                 instruction = instr.get_next_instruction();
-            }
-            
             current_block = bb.get_next_basic_block();
-        }
-        
         self.call_graph.call_sites.insert(function_name.to_string(), call_sites);
         Ok(())
-    }
-    
     /// Analyze a call instruction
     fn analyze_call_instruction(&mut self, instruction: InstructionValue<'ctx>, caller_name: &str) -> Result<Option<CallSiteAnalysis>> {
         if let Some(opcode) = instruction.get_opcode().get_instruction_opcode() {
@@ -338,23 +202,10 @@ impl<'ctx> InterproceduralAnalyzer<'ctx> {
                         let mut arguments = Vec::new();
                         for (i, arg) in call_site.get_enum_arguments().iter().enumerate() {
                             arguments.push(ArgumentInfo {
-                                index: i,
-                                is_constant: self.is_constant_argument(arg),
-                                constant_value: self.extract_constant_value(arg),
-                                type_info: self.get_type_info(arg),
                             });
-                        }
-                        
                         return Ok(Some(CallSiteAnalysis {
-                            callee_name,
-                            location: format!("{}:{}", caller_name, i),
-                            arguments,
                             frequency: 1, // Would be determined by profiling
                             context: CallContext {
-                                caller: caller_name.to_string(),
-                                depth: 1,
-                                context_constants: HashMap::new(),
-                            },
                         }));
                     }
                 }
@@ -362,27 +213,19 @@ impl<'ctx> InterproceduralAnalyzer<'ctx> {
         }
         
         Ok(None)
-    }
-    
     /// Check if an argument is constant
     fn is_constant_argument(&self, arg: &BasicValueEnum<'ctx>) -> bool {
         // In a real implementation, this would check if the value is a constant
         // For now, we'll use a simple heuristic
         false // Conservative assumption
-    }
-    
     /// Extract constant value from argument
     fn extract_constant_value(&self, arg: &BasicValueEnum<'ctx>) -> Option<ConstantValue> {
         // In a real implementation, this would extract actual constant values
         None
-    }
-    
     /// Get type information for argument
     fn get_type_info(&self, arg: &BasicValueEnum<'ctx>) -> String {
         // Extract basic type information
         format!("{:?}", arg.get_type())
-    }
-    
     /// Detect recursive functions in the call graph
     fn detect_recursive_functions(&mut self) {
         debug!("Detecting recursive functions");
@@ -394,14 +237,10 @@ impl<'ctx> InterproceduralAnalyzer<'ctx> {
         }
         
         debug!("Found {} recursive functions", self.call_graph.recursive_functions.len());
-    }
-    
     /// Check if a function is recursive using DFS
     fn is_recursive_function(&self, function_name: &str, visited: &mut HashSet<String>) -> bool {
         if visited.contains(function_name) {
             return true; // Cycle detected
-        }
-        
         visited.insert(function_name.to_string());
         
         if let Some(callees) = self.call_graph.callers.get(function_name) {
@@ -410,12 +249,8 @@ impl<'ctx> InterproceduralAnalyzer<'ctx> {
                     return true;
                 }
             }
-        }
-        
         visited.remove(function_name);
         false
-    }
-    
     /// Analyze individual functions
     fn analyze_functions(&mut self, module: &Module<'ctx>) -> Result<()> {
         debug!("Analyzing individual functions");
@@ -428,12 +263,8 @@ impl<'ctx> InterproceduralAnalyzer<'ctx> {
             
             self.function_analysis.function_properties.insert(function_name.clone(), properties);
             self.function_analysis.side_effects.insert(function_name, side_effects);
-        }
-        
         debug!("Analyzed {} functions", self.function_analysis.function_properties.len());
         Ok(())
-    }
-    
     /// Analyze properties of a single function
     fn analyze_function_properties(&self, function: FunctionValue<'ctx>) -> Result<FunctionProperties> {
         let mut instruction_count = 0;
@@ -449,21 +280,13 @@ impl<'ctx> InterproceduralAnalyzer<'ctx> {
             while let Some(_) = instruction {
                 instruction_count += 1;
                 instruction = instruction.unwrap().get_next_instruction();
-            }
-            
             current_block = block.get_next_basic_block();
-        }
-        
         // Analyze parameters
         for (i, param) in function.get_param_iter().enumerate() {
             parameter_usage.push(ParameterUsage {
-                index: i,
-                usage_pattern: self.analyze_parameter_usage(&param),
                 is_modified: false, // Would be determined by analysis
                 escapes: false,    // Would be determined by escape analysis
             });
-        }
-        
         let function_name = function.get_name().to_str().unwrap_or("unknown");
         let is_leaf = !self.call_graph.callers.get(function_name)
             .map(|callees| !callees.is_empty())
@@ -471,22 +294,13 @@ impl<'ctx> InterproceduralAnalyzer<'ctx> {
         let is_recursive = self.call_graph.recursive_functions.contains(function_name);
         
         Ok(FunctionProperties {
-            instruction_count,
-            basic_block_count,
             call_frequency: 1, // Would be determined by profiling
-            is_leaf,
-            is_recursive,
             has_side_effects: true, // Conservative assumption
-            parameter_usage,
         })
-    }
-    
     /// Analyze parameter usage pattern
     fn analyze_parameter_usage(&self, _parameter: &BasicValueEnum<'ctx>) -> ParameterUsagePattern {
         // In a real implementation, this would analyze how the parameter is used
         ParameterUsagePattern::ReadOnly // Conservative assumption
-    }
-    
     /// Analyze side effects of a function
     fn analyze_side_effects(&self, function: FunctionValue<'ctx>) -> Result<SideEffectInfo> {
         let mut side_effects = SideEffectInfo::default();
@@ -501,28 +315,19 @@ impl<'ctx> InterproceduralAnalyzer<'ctx> {
                     match opcode {
                         inkwell::values::InstructionOpcode::Store => {
                             side_effects.modifies_global_state = true;
-                        },
                         inkwell::values::InstructionOpcode::Call => {
                             side_effects.calls_external = true;
                             // Could be I/O or memory allocation
                             side_effects.performs_io = true;
                             side_effects.allocates_memory = true;
-                        },
                         inkwell::values::InstructionOpcode::Alloca => {
                             side_effects.allocates_memory = true;
-                        },
                         _ => {}
                     }
                 }
                 instruction = instr.get_next_instruction();
-            }
-            
             current_block = block.get_next_basic_block();
-        }
-        
         Ok(side_effects)
-    }
-    
     /// Perform interprocedural analysis
     fn perform_interprocedural_analysis(&mut self) -> Result<()> {
         debug!("Performing interprocedural analysis");
@@ -537,8 +342,6 @@ impl<'ctx> InterproceduralAnalyzer<'ctx> {
         self.analyze_dead_code_opportunities()?;
         
         Ok(())
-    }
-    
     /// Analyze interprocedural constant propagation
     fn analyze_interprocedural_constants(&mut self) -> Result<()> {
         debug!("Analyzing interprocedural constant propagation");
@@ -550,22 +353,15 @@ impl<'ctx> InterproceduralAnalyzer<'ctx> {
                 for (i, arg) in call_site.arguments.iter().enumerate() {
                     if arg.is_constant {
                         constants.push(ConstantPropagation {
-                            parameter_index: i,
-                            constant_value: arg.constant_value.clone().unwrap_or(ConstantValue::Null),
-                            affected_call_sites: 1,
                         });
                     }
                 }
-            }
-            
             if !constants.is_empty() {
                 self.interprocedural_info.interprocedural_constants.insert(function_name.clone(), constants);
             }
         }
         
         Ok(())
-    }
-    
     /// Analyze inlining candidates
     fn analyze_inlining_candidates(&mut self) -> Result<()> {
         debug!("Analyzing inlining candidates");
@@ -582,22 +378,12 @@ impl<'ctx> InterproceduralAnalyzer<'ctx> {
                 
                 if is_profitable {
                     let candidate = InliningCandidate {
-                        function_name: function_name.clone(),
-                        benefit_score,
-                        size_cost,
-                        call_site_count,
-                        is_profitable,
-                    };
                     
                     self.interprocedural_info.inlining_candidates.insert(function_name.clone(), candidate);
                 }
             }
-        }
-        
         debug!("Found {} inlining candidates", self.interprocedural_info.inlining_candidates.len());
         Ok(())
-    }
-    
     /// Calculate inlining benefit score
     fn calculate_inlining_benefit(&self, function_name: &str, properties: &FunctionProperties) -> f64 {
         let mut score = 0.0;
@@ -605,26 +391,16 @@ impl<'ctx> InterproceduralAnalyzer<'ctx> {
         // Small functions benefit more from inlining
         if properties.instruction_count < 20 {
             score += 0.4;
-        }
-        
         // Leaf functions are good candidates
         if properties.is_leaf {
             score += 0.3;
-        }
-        
         // Functions without side effects are easier to inline
         if !properties.has_side_effects {
             score += 0.2;
-        }
-        
         // Frequently called functions benefit more
         if properties.call_frequency > 10 {
             score += 0.1;
-        }
-        
         score
-    }
-    
     /// Analyze dead code elimination opportunities
     fn analyze_dead_code_opportunities(&mut self) -> Result<()> {
         debug!("Analyzing dead code elimination opportunities");
@@ -647,15 +423,8 @@ impl<'ctx> InterproceduralAnalyzer<'ctx> {
                 .sum();
             
             self.interprocedural_info.dead_code_opportunities.push(DeadCodeOpportunity {
-                dead_code_type: DeadCodeType::UnusedFunction,
-                affected_items: unused_functions,
-                estimated_savings,
             });
-        }
-        
         Ok(())
-    }
-    
     /// Identify optimization opportunities
     fn identify_optimization_opportunities(&mut self) -> Result<()> {
         debug!("Identifying interprocedural optimization opportunities");
@@ -666,26 +435,16 @@ impl<'ctx> InterproceduralAnalyzer<'ctx> {
             // Inlining opportunities
             if let Some(candidate) = self.interprocedural_info.inlining_candidates.get(function_name) {
                 opportunities.push(InterproceduralOptimization::Inlining {
-                    target_function: function_name.clone(),
-                    estimated_benefit: candidate.benefit_score,
-                    size_cost: candidate.size_cost,
                 });
-            }
-            
             // Constant propagation opportunities
             if let Some(constants) = self.interprocedural_info.interprocedural_constants.get(function_name) {
                 for constant in constants {
                     opportunities.push(InterproceduralOptimization::ConstantPropagation {
-                        parameter_index: constant.parameter_index,
-                        constant_value: format!("{:?}", constant.constant_value),
-                        propagation_sites: constant.affected_call_sites,
                     });
                 }
             }
             
             self.function_analysis.optimization_opportunities.insert(function_name.clone(), opportunities);
-        }
-        
         // Update statistics
         let mut stats = self.statistics.lock().unwrap();
         stats.interprocedural_optimizations = self.function_analysis.optimization_opportunities
@@ -694,17 +453,13 @@ impl<'ctx> InterproceduralAnalyzer<'ctx> {
             .sum();
         
         Ok(())
-    }
-    
     /// Get call graph statistics
     pub fn get_call_graph_statistics(&self) -> HashMap<String, usize> {
         let mut stats = HashMap::new();
         
         stats.insert("total_functions".to_string(), self.call_graph.callers.len());
-        stats.insert("total_call_sites".to_string(), 
                     self.call_graph.call_sites.values().map(|sites| sites.len()).sum());
         stats.insert("recursive_functions".to_string(), self.call_graph.recursive_functions.len());
-        stats.insert("leaf_functions".to_string(),
                     self.function_analysis.function_properties.values()
                         .filter(|props| props.is_leaf)
                         .count());

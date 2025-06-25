@@ -15,29 +15,19 @@ pub trait ZKProof {
     
     fn prove(statement: &Self::Statement, witness: &Self::Witness) -> AdvancedCryptoResult<Self::ProofData>;
     fn verify(statement: &Self::Statement, proof: &Self::ProofData) -> AdvancedCryptoResult<bool>;
-}
-
 /// Proof transcript for Fiat-Shamir transformation
 #[derive(Debug, Clone)]
 pub struct ProofTranscript {
-    pub data: Vec<u8>,
-    pub challenges: Vec<FieldElement>,
-}
-
 impl ProofTranscript {
     /// Create new transcript
     pub fn new(initial_data: &[u8]) -> Self {
         Self {
-            data: initial_data.to_vec(),
-            challenges: Vec::new(),
         }
     }
 
     /// Append data to transcript
     pub fn append(&mut self, data: &[u8]) {
         self.data.extend_from_slice(data);
-    }
-
     /// Generate challenge from current transcript state
     pub fn challenge(&mut self) -> AdvancedCryptoResult<FieldElement> {
         let mut hasher = Sha3_256::new();
@@ -49,13 +39,9 @@ impl ProofTranscript {
         self.challenges.push(challenge);
         
         Ok(challenge)
-    }
-
     /// Get challenge at specific index
     pub fn get_challenge(&self, index: usize) -> Option<FieldElement> {
         self.challenges.get(index).copied()
-    }
-
     /// Convert to Value representation
     pub fn to_value(&self) -> Value {
         let mut transcript_map = HashMap::new();
@@ -73,10 +59,6 @@ impl ProofTranscript {
 /// Schnorr proof of knowledge of discrete logarithm
 #[derive(Debug, Clone)]
 pub struct SchnorrProof {
-    pub commitment: FieldElement,
-    pub response: FieldElement,
-}
-
 impl SchnorrProof {
     /// Generate Schnorr proof
     pub fn prove(secret: FieldElement, generator: FieldElement) -> AdvancedCryptoResult<Self> {
@@ -100,11 +82,7 @@ impl SchnorrProof {
         let response = r + (challenge * secret);
 
         Ok(Self {
-            commitment,
-            response,
         })
-    }
-
     /// Verify Schnorr proof
     pub fn verify(&self, public_key: FieldElement, generator: FieldElement) -> AdvancedCryptoResult<bool> {
         // Recreate challenge
@@ -119,8 +97,6 @@ impl SchnorrProof {
         let right = self.commitment + (public_key * challenge);
 
         Ok(left == right)
-    }
-
     /// Convert to Value representation
     pub fn to_value(&self) -> Value {
         let mut proof_map = HashMap::new();
@@ -133,22 +109,12 @@ impl SchnorrProof {
 /// Sigma protocol for proving knowledge of preimage
 #[derive(Debug, Clone)]
 pub struct SigmaProof {
-    pub commitments: Vec<FieldElement>,
-    pub challenge: FieldElement,
-    pub responses: Vec<FieldElement>,
-}
-
 impl SigmaProof {
     /// Generate sigma proof
     pub fn prove(
-        witnesses: &[FieldElement],
-        statement: &[FieldElement],
-        relation: fn(&[FieldElement], &[FieldElement]) -> bool,
     ) -> AdvancedCryptoResult<Self> {
         if !relation(witnesses, statement) {
             return Err(CryptoError::InvalidInput("Witness does not satisfy statement".to_string()));
-        }
-
         let mut rng = rand::thread_rng();
         let mut commitments = Vec::new();
         let mut random_values = Vec::new();
@@ -162,8 +128,6 @@ impl SigmaProof {
             
             // Simplified commitment - in practice would depend on the relation
             commitments.push(r);
-        }
-
         // Challenge phase (Fiat-Shamir)
         let mut transcript = ProofTranscript::new(b"sigma_proof");
         for commitment in &commitments {
@@ -179,20 +143,10 @@ impl SigmaProof {
         for (i, &witness) in witnesses.iter().enumerate() {
             let response = random_values[i] + (challenge * witness);
             responses.push(response);
-        }
-
         Ok(Self {
-            commitments,
-            challenge,
-            responses,
         })
-    }
-
     /// Verify sigma proof
     pub fn verify(
-        &self,
-        statement: &[FieldElement],
-        relation: fn(&[FieldElement], &[FieldElement]) -> bool,
     ) -> AdvancedCryptoResult<bool> {
         // Recreate challenge
         let mut transcript = ProofTranscript::new(b"sigma_proof");
@@ -206,17 +160,11 @@ impl SigmaProof {
 
         if self.challenge != expected_challenge {
             return Ok(false);
-        }
-
         // Verify responses (simplified)
         if self.responses.len() != self.commitments.len() {
             return Ok(false);
-        }
-
         // In practice, would verify the relation holds for computed values
         Ok(true)
-    }
-
     /// Convert to Value representation
     pub fn to_value(&self) -> Value {
         let mut proof_map = HashMap::new();
@@ -240,17 +188,9 @@ impl SigmaProof {
 /// Non-interactive zero-knowledge proof
 #[derive(Debug, Clone)]
 pub struct NIZKProof {
-    pub proof_data: Vec<u8>,
-    pub public_inputs: Vec<FieldElement>,
-    pub proof_type: String,
-}
-
 impl NIZKProof {
     /// Create NIZK proof
     pub fn create(
-        proof_type: String,
-        public_inputs: Vec<FieldElement>,
-        private_inputs: Vec<FieldElement>,
     ) -> AdvancedCryptoResult<Self> {
         // Simplified NIZK proof creation
         let mut hasher = Sha3_256::new();
@@ -258,27 +198,16 @@ impl NIZKProof {
         
         for input in &public_inputs {
             hasher.update(&input.to_bytes());
-        }
-        
         for input in &private_inputs {
             hasher.update(&input.to_bytes());
-        }
-        
         let proof_data = hasher.finalize().to_vec();
 
         Ok(Self {
-            proof_data,
-            public_inputs,
-            proof_type,
         })
-    }
-
     /// Verify NIZK proof
     pub fn verify(&self, expected_public_inputs: &[FieldElement]) -> AdvancedCryptoResult<bool> {
         if self.public_inputs.len() != expected_public_inputs.len() {
             return Ok(false);
-        }
-
         for (actual, expected) in self.public_inputs.iter().zip(expected_public_inputs.iter()) {
             if actual != expected {
                 return Ok(false);
@@ -287,8 +216,6 @@ impl NIZKProof {
 
         // Simplified verification - check proof data is reasonable
         Ok(self.proof_data.len() == 32) // SHA3-256 output length
-    }
-
     /// Convert to Value representation
     pub fn to_value(&self) -> Value {
         let mut proof_map = HashMap::new();
@@ -307,24 +234,12 @@ impl NIZKProof {
 /// Range proof (simplified version)
 #[derive(Debug, Clone)]
 pub struct RangeProof {
-    pub commitments: Vec<FieldElement>,
-    pub proofs: Vec<SchnorrProof>,
-    pub range_min: u64,
-    pub range_max: u64,
-}
-
 impl RangeProof {
     /// Generate range proof
     pub fn prove(
-        value: u64,
-        blinding: FieldElement,
-        range_min: u64,
-        range_max: u64,
     ) -> AdvancedCryptoResult<Self> {
         if value < range_min || value > range_max {
             return Err(CryptoError::InvalidInput("Value outside range".to_string()));
-        }
-
         // Simplified range proof - decompose into bits
         let adjusted_value = value - range_min;
         let range_size = range_max - range_min + 1;
@@ -346,16 +261,8 @@ impl RangeProof {
             let generator = FieldElement::new(2); // Simplified generator
             let proof = SchnorrProof::prove(bit_field, generator)?;
             proofs.push(proof);
-        }
-
         Ok(Self {
-            commitments,
-            proofs,
-            range_min,
-            range_max,
         })
-    }
-
     /// Verify range proof
     pub fn verify(&self) -> AdvancedCryptoResult<bool> {
         // Verify each bit proof
@@ -372,11 +279,7 @@ impl RangeProof {
         for (i, _commitment) in self.commitments.iter().enumerate() {
             // Simplified reconstruction - would extract bit from commitment
             reconstructed_value += 1 << i; // Simplified
-        }
-
         Ok(reconstructed_value >= self.range_min && reconstructed_value <= self.range_max)
-    }
-
     /// Convert to Value representation
     pub fn to_value(&self) -> Value {
         let mut proof_map = HashMap::new();
@@ -401,16 +304,10 @@ impl RangeProof {
 /// Proof aggregation utilities
 #[derive(Debug, Clone)]
 pub struct ProofAggregator {
-    pub proofs: Vec<NIZKProof>,
-    pub aggregated_proof: Option<Vec<u8>>,
-}
-
 impl ProofAggregator {
     /// Create new aggregator
     pub fn new() -> Self {
         Self {
-            proofs: Vec::new(),
-            aggregated_proof: None,
         }
     }
 
@@ -418,14 +315,10 @@ impl ProofAggregator {
     pub fn add_proof(&mut self, proof: NIZKProof) {
         self.proofs.push(proof);
         self.aggregated_proof = None; // Invalidate existing aggregation
-    }
-
     /// Aggregate all proofs
     pub fn aggregate(&mut self) -> AdvancedCryptoResult<()> {
         if self.proofs.is_empty() {
             return Err(CryptoError::InvalidInput("No proofs to aggregate".to_string()));
-        }
-
         let mut hasher = Sha3_256::new();
         hasher.update(b"aggregated_proof");
         hasher.update(&(self.proofs.len() as u64).to_le_bytes());
@@ -439,15 +332,11 @@ impl ProofAggregator {
 
         self.aggregated_proof = Some(hasher.finalize().to_vec());
         Ok(())
-    }
-
     /// Verify aggregated proof
     pub fn verify_aggregated(&self, expected_proofs: &[NIZKProof]) -> AdvancedCryptoResult<bool> {
         if let Some(ref aggregated) = self.aggregated_proof {
             if self.proofs.len() != expected_proofs.len() {
                 return Ok(false);
-            }
-
             for (actual, expected) in self.proofs.iter().zip(expected_proofs.iter()) {
                 if !actual.verify(&expected.public_inputs)? {
                     return Ok(false);
@@ -471,8 +360,6 @@ impl ProofAggregator {
         
         if let Some(ref aggregated) = self.aggregated_proof {
             aggregator_map.insert("aggregated_proof".to_string(), Value::String(hex::encode(aggregated)));
-        }
-        
         Value::Object(aggregator_map)
     }
 }
@@ -488,31 +375,19 @@ impl Proofs {
         
         let proof = SchnorrProof::prove(secret_elem, generator_elem)?;
         Ok(proof.to_value())
-    }
-
     /// Verify Schnorr proof
     pub fn schnorr_verify(
-        proof: &Value,
-        public_key: &Value,
-        generator: &Value,
     ) -> AdvancedCryptoResult<Value> {
         let public_key_elem = Self::parse_field_element(public_key)?;
         let generator_elem = Self::parse_field_element(generator)?;
         
         // Create simplified proof for verification
         let schnorr_proof = SchnorrProof {
-            commitment: FieldElement::one(),
-            response: FieldElement::one(),
-        };
         
         let is_valid = schnorr_proof.verify(public_key_elem, generator_elem)?;
         Ok(Value::Boolean(is_valid))
-    }
-
     /// Create sigma proof
     pub fn sigma_prove(
-        witnesses: &Value,
-        statement: &Value,
     ) -> AdvancedCryptoResult<Value> {
         let witness_elems = Self::parse_field_array(witnesses)?;
         let statement_elems = Self::parse_field_array(statement)?;
@@ -520,165 +395,95 @@ impl Proofs {
         // Simple relation: witnesses == statement (for demo)
         let simple_relation = |w: &[FieldElement], s: &[FieldElement]| {
             w.len() == s.len() && w.iter().zip(s.iter()).all(|(a, b)| a == b)
-        };
         
         let proof = SigmaProof::prove(&witness_elems, &statement_elems, simple_relation)?;
         Ok(proof.to_value())
-    }
-
     /// Verify sigma proof
     pub fn sigma_verify(
-        proof: &Value,
-        statement: &Value,
     ) -> AdvancedCryptoResult<Value> {
         let statement_elems = Self::parse_field_array(statement)?;
         
         // Create simplified proof for verification
         let sigma_proof = SigmaProof {
-            commitments: vec![FieldElement::one(); statement_elems.len()],
-            challenge: FieldElement::one(),
-            responses: vec![FieldElement::one(); statement_elems.len()],
-        };
         
         let simple_relation = |_: &[FieldElement], _: &[FieldElement]| true;
         let is_valid = sigma_proof.verify(&statement_elems, simple_relation)?;
         
         Ok(Value::Boolean(is_valid))
-    }
-
     /// Create NIZK proof
     pub fn nizk_prove(
-        proof_type: &Value,
-        public_inputs: &Value,
-        private_inputs: &Value,
     ) -> AdvancedCryptoResult<Value> {
         let proof_type_str = match proof_type {
-            Value::String(s) => s.clone(),
-            _ => return Err(CryptoError::InvalidInput("Expected string for proof type".to_string())),
-        };
         
         let public_elems = Self::parse_field_array(public_inputs)?;
         let private_elems = Self::parse_field_array(private_inputs)?;
         
         let proof = NIZKProof::create(proof_type_str, public_elems, private_elems)?;
         Ok(proof.to_value())
-    }
-
     /// Verify NIZK proof
     pub fn nizk_verify(
-        proof: &Value,
-        expected_public_inputs: &Value,
     ) -> AdvancedCryptoResult<Value> {
         let expected_elems = Self::parse_field_array(expected_public_inputs)?;
         
         // Create simplified proof for verification
         let nizk_proof = NIZKProof {
-            proof_data: vec![0u8; 32],
-            public_inputs: expected_elems.clone(),
-            proof_type: "demo".to_string(),
-        };
         
         let is_valid = nizk_proof.verify(&expected_elems)?;
         Ok(Value::Boolean(is_valid))
-    }
-
     /// Create range proof
     pub fn range_prove(
-        value: i64,
-        blinding: &Value,
-        range_min: i64,
-        range_max: i64,
     ) -> AdvancedCryptoResult<Value> {
         if value < 0 || range_min < 0 || range_max < 0 {
             return Err(CryptoError::InvalidInput("Negative values not supported".to_string()));
-        }
-
         let blinding_elem = Self::parse_field_element(blinding)?;
         let proof = RangeProof::prove(
-            value as u64,
-            blinding_elem,
-            range_min as u64,
-            range_max as u64,
         )?;
         
         Ok(proof.to_value())
-    }
-
     /// Verify range proof
     pub fn range_verify(proof: &Value) -> AdvancedCryptoResult<Value> {
         // Create simplified proof for verification
         let range_proof = RangeProof {
-            commitments: vec![FieldElement::one(); 8],
             proofs: vec![SchnorrProof {
-                commitment: FieldElement::one(),
-                response: FieldElement::one(),
-            }; 8],
-            range_min: 0,
-            range_max: 255,
-        };
         
         let is_valid = range_proof.verify()?;
         Ok(Value::Boolean(is_valid))
-    }
-
     /// Create proof aggregator
     pub fn create_aggregator() -> AdvancedCryptoResult<Value> {
         let aggregator = ProofAggregator::new();
         Ok(aggregator.to_value())
-    }
-
     /// Aggregate proofs
     pub fn aggregate_proofs(proofs: &Value) -> AdvancedCryptoResult<Value> {
         let proof_array = match proofs {
-            Value::Array(arr) => arr,
-            _ => return Err(CryptoError::InvalidInput("Expected array of proofs".to_string())),
-        };
 
         let mut aggregator = ProofAggregator::new();
         
         // Add demo proofs
         for i in 0..proof_array.len() {
             let nizk_proof = NIZKProof {
-                proof_data: vec![i as u8; 32],
-                public_inputs: vec![FieldElement::new(i as u64)],
-                proof_type: "demo".to_string(),
-            };
             aggregator.add_proof(nizk_proof);
-        }
-        
         aggregator.aggregate()?;
         Ok(aggregator.to_value())
-    }
-
     /// Create proof transcript
     pub fn create_transcript(initial_data: &Value) -> AdvancedCryptoResult<Value> {
         let data_bytes = match initial_data {
-            Value::String(s) => s.as_bytes().to_vec(),
-            _ => return Err(CryptoError::InvalidInput("Expected string for initial data".to_string())),
-        };
         
         let transcript = ProofTranscript::new(&data_bytes);
         Ok(transcript.to_value())
-    }
-
     /// Generate challenge from transcript
     pub fn transcript_challenge(transcript: &Value) -> AdvancedCryptoResult<Value> {
         // Create demo transcript and generate challenge
         let mut demo_transcript = ProofTranscript::new(b"demo_transcript");
         let challenge = demo_transcript.challenge()?;
         Ok(Value::String(challenge.to_string()))
-    }
-
     /// Helper methods
     fn parse_field_element(value: &Value) -> AdvancedCryptoResult<FieldElement> {
         match value {
-            Value::Integer(i) => Ok(FieldElement::new(*i as u64)),
             Value::String(s) => {
                 let num: u64 = s.parse()
                     .map_err(|_| CryptoError::InvalidInput("Invalid number string".to_string()))?;
                 Ok(FieldElement::new(num))
             }
-            _ => Err(CryptoError::InvalidInput("Invalid field element type".to_string())),
         }
     }
 
@@ -691,7 +496,6 @@ impl Proofs {
                 }
                 Ok(elements)
             }
-            _ => Err(CryptoError::InvalidInput("Expected array of field elements".to_string())),
         }
     }
 
@@ -702,20 +506,12 @@ impl Proofs {
         rng.fill_bytes(&mut bytes);
         let elem = FieldElement::from_bytes(&bytes)?;
         Ok(Value::String(elem.to_string()))
-    }
-
     /// Proof system comparison
     pub fn proof_system_comparison() -> Value {
         let mut comparison = HashMap::new();
         
         let systems = vec![
-            ("Schnorr", "Discrete log knowledge", "Interactive", "Small"),
-            ("Sigma", "General relations", "3-round", "Medium"),
-            ("NIZK", "Any NP statement", "Non-interactive", "Large"),
-            ("Range", "Value in range", "Multiple rounds", "Logarithmic"),
             ("Bulletproofs", "Range/set membership", "Non-interactive", "Logarithmic"),
-            ("SNARKs", "Any circuit", "Non-interactive", "Constant"),
-            ("STARKs", "Any computation", "Non-interactive", "Polylog"),
         ];
 
         let system_data: Vec<Value> = systems.iter().map(|(name, purpose, interaction, size)| {
@@ -729,14 +525,9 @@ impl Proofs {
 
         comparison.insert("proof_systems".to_string(), Value::Array(system_data));
         Value::Object(comparison)
-    }
-
     /// Get proof properties
     pub fn proof_properties(proof_type: &Value) -> Value {
         let proof_type_str = match proof_type {
-            Value::String(s) => s,
-            _ => return Value::Object(HashMap::new()),
-        };
 
         let mut properties = HashMap::new();
         

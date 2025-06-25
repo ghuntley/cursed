@@ -8,27 +8,18 @@ use super::{MemoryOrder, AtomicResult, atomic_error};
 /// Fields are not directly accessible to ensure atomic operations
 #[derive(Debug)]
 pub struct Value<T> {
-    inner: Arc<Mutex<Option<T>>>,
-    _phantom: PhantomData<T>,
-}
-
 impl<T> Value<T> 
 where 
-    T: Clone + Send + Sync + 'static,
 {
     /// Create a new atomic Value with initial value
     pub fn new(value: T) -> Self {
         Self {
-            inner: Arc::new(Mutex::new(Some(value))),
-            _phantom: PhantomData,
         }
     }
 
     /// Create a new empty atomic Value
     pub fn new_empty() -> Self {
         Self {
-            inner: Arc::new(Mutex::new(None)),
-            _phantom: PhantomData,
         }
     }
 
@@ -36,7 +27,6 @@ where
     /// Returns None if the value is not set or the lock is poisoned
     pub fn load(&self) -> Option<T> {
         match self.inner.lock() {
-            Ok(guard) => guard.clone(),
             Err(_) => None, // Return None on poison
         }
     }
@@ -45,8 +35,6 @@ where
     /// This is the same as load() for now, but could be extended for wait semantics
     pub fn load_blocking(&self) -> Option<T> {
         self.load()
-    }
-
     /// Store a new value
     /// Returns false if the lock is poisoned
     pub fn store(&self, val: T) -> bool {
@@ -55,7 +43,6 @@ where
                 *guard = Some(val);
                 true
             }
-            Err(_) => false,
         }
     }
 
@@ -68,7 +55,6 @@ where
                 *guard = Some(new);
                 old
             }
-            Err(_) => None,
         }
     }
 
@@ -76,7 +62,6 @@ where
     /// Returns true if the swap occurred
     pub fn compare_and_swap(&self, old: T, new: T) -> bool 
     where 
-        T: PartialEq,
     {
         match self.inner.lock() {
             Ok(mut guard) => {
@@ -91,7 +76,6 @@ where
                     false
                 }
             }
-            Err(_) => false,
         }
     }
 
@@ -99,7 +83,6 @@ where
     /// If the predicate returns true for the current value, replace with new
     pub fn compare_and_swap_with<F>(&self, predicate: F, new: T) -> bool 
     where 
-        F: FnOnce(&T) -> bool,
     {
         match self.inner.lock() {
             Ok(mut guard) => {
@@ -114,7 +97,6 @@ where
                     false
                 }
             }
-            Err(_) => false,
         }
     }
 
@@ -123,7 +105,6 @@ where
     /// Returns the old value if successful, None if failed
     pub fn update<F>(&self, updater: F) -> Option<T> 
     where 
-        F: FnOnce(T) -> T,
     {
         match self.inner.lock() {
             Ok(mut guard) => {
@@ -136,7 +117,6 @@ where
                     None
                 }
             }
-            Err(_) => None,
         }
     }
 
@@ -145,7 +125,6 @@ where
     /// The function receives a reference to the current value
     pub fn with<F, R>(&self, f: F) -> Option<R> 
     where 
-        F: FnOnce(&T) -> R,
     {
         match self.inner.lock() {
             Ok(guard) => {
@@ -155,23 +134,18 @@ where
                     None
                 }
             }
-            Err(_) => None,
         }
     }
 
     /// Check if the value is set (not None)
     pub fn is_set(&self) -> bool {
         match self.inner.lock() {
-            Ok(guard) => guard.is_some(),
-            Err(_) => false,
         }
     }
 
     /// Clear the value (set to None)
     pub fn clear(&self) -> Option<T> {
         match self.inner.lock() {
-            Ok(mut guard) => guard.take(),
-            Err(_) => None,
         }
     }
 
@@ -187,7 +161,6 @@ where
                     false
                 }
             }
-            Err(_) => false,
         }
     }
 
@@ -200,19 +173,13 @@ where
 
 impl<T> Clone for Value<T> 
 where 
-    T: Clone + Send + Sync + 'static,
 {
     fn clone(&self) -> Self {
         Self {
-            inner: Arc::clone(&self.inner),
-            _phantom: PhantomData,
         }
     }
-}
-
 impl<T> Default for Value<T> 
 where 
-    T: Clone + Send + Sync + 'static,
 {
     fn default() -> Self {
         Self::new_empty()
@@ -239,18 +206,12 @@ impl AtomicString {
     /// Create a new atomic string with initial value
     pub fn from_str(s: &str) -> Self {
         Value::new(s.to_string())
-    }
-
     /// Get the length of the string atomically
     pub fn len(&self) -> Option<usize> {
         self.with(|s| s.len())
-    }
-
     /// Check if the string is empty atomically
     pub fn is_empty(&self) -> bool {
         self.with(|s| s.is_empty()).unwrap_or(true)
-    }
-
     /// Append to the string atomically
     pub fn push_str(&self, s: &str) -> bool {
         match self.inner.lock() {
@@ -262,30 +223,20 @@ impl AtomicString {
                     false
                 }
             }
-            Err(_) => false,
         }
     }
-}
-
 impl<T> AtomicVec<T> 
 where 
-    T: Clone + Send + Sync + 'static,
 {
     /// Create a new atomic vector
     pub fn new_vec() -> Self {
         Value::new(Vec::new())
-    }
-
     /// Get the length of the vector atomically
     pub fn len(&self) -> Option<usize> {
         self.with(|v| v.len())
-    }
-
     /// Check if the vector is empty atomically
     pub fn is_empty(&self) -> bool {
         self.with(|v| v.is_empty()).unwrap_or(true)
-    }
-
     /// Push an element to the vector atomically
     pub fn push(&self, item: T) -> bool {
         match self.inner.lock() {
@@ -297,7 +248,6 @@ where
                     false
                 }
             }
-            Err(_) => false,
         }
     }
 
@@ -311,8 +261,5 @@ where
                     None
                 }
             }
-            Err(_) => None,
         }
     }
-}
-

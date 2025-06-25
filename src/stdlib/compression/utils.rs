@@ -24,8 +24,6 @@ pub fn convert_quality_to_level(quality: f32) -> i32 {
 pub fn use_parallel_compression(data_size: usize) -> bool {
     // Use parallel compression for data larger than 1MB
     data_size > 1024 * 1024
-}
-
 /// Get optimal chunk size for compression
 pub fn get_optimal_chunk_size(data_size: usize) -> usize {
     if data_size < 1024 {
@@ -40,11 +38,6 @@ pub fn get_optimal_chunk_size(data_size: usize) -> usize {
 /// Compression configuration
 #[derive(Debug, Clone)]
 pub struct CompressionConfig {
-    pub level: i32,
-    pub use_parallel: bool,
-    pub chunk_size: usize,
-}
-
 impl CompressionConfig {
     pub fn new(level: i32, data_size: usize) -> Result<Self, String> {
         let level = validate_compression_level(level)?;
@@ -52,32 +45,17 @@ impl CompressionConfig {
         let chunk_size = get_optimal_chunk_size(data_size);
 
         Ok(Self {
-            level,
-            use_parallel,
-            chunk_size,
         })
-    }
-
     pub fn from_quality(quality: f32, data_size: usize) -> Self {
         let level = convert_quality_to_level(quality);
         let use_parallel = use_parallel_compression(data_size);
         let chunk_size = get_optimal_chunk_size(data_size);
 
         Self {
-            level,
-            use_parallel,
-            chunk_size,
         }
     }
-}
-
 impl Default for CompressionConfig {
     fn default() -> Self {
         Self {
-            level: 6,
-            use_parallel: false,
-            chunk_size: 64 * 1024,
         }
     }
-}
-

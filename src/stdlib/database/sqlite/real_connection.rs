@@ -15,13 +15,6 @@ use crate::error::CursedError;
 /// Real SQLite connection implementation
 #[derive(Debug)]
 pub struct RealSqliteConnection {
-    handle: Arc<Mutex<Option<Connection>>>,
-    config: SqliteConfig,
-    connection_id: String,
-    connected_at: SystemTime,
-    stats: Arc<Mutex<SqliteStats>>,
-}
-
 impl RealSqliteConnection {
     /// Create new SQLite connection
     pub fn new(config: SqliteConfig) -> SqliteResult<Self> {
@@ -34,19 +27,11 @@ impl RealSqliteConnection {
             .map_err(|e| SqliteError::connection(&format!("Failed to open SQLite database: {}", e)))?;
         
         let connection = Self {
-            handle: Arc::new(Mutex::new(Some(handle))),
-            config,
-            connection_id: uuid::Uuid::new_v4().to_string(),
-            connected_at: SystemTime::now(),
-            stats: Arc::new(Mutex::new(SqliteStats::default())),
-        };
 
         // Initialize connection with PRAGMA statements
         connection.initialize_connection()?;
 
         Ok(connection)
-    }
-
     /// Initialize connection with configuration
     fn initialize_connection(&self) -> SqliteResult<()> {
         let statements = self.config.initialization_sql();
@@ -56,21 +41,15 @@ impl RealSqliteConnection {
             for statement in statements {
                 if statement.trim().is_empty() {
                     continue;
-                }
-                
                 conn.execute(&statement, [])
                     .map_err(|e| SqliteError::execution(&format!("Failed to execute initialization SQL '{}': {}", statement, e)))?;
             }
         }
 
         Ok(())
-    }
-
     /// Get connection ID
     pub fn connection_id(&self) -> &str {
         &self.connection_id
-    }
-
     /// Get connection configuration
     pub fn config(&self) -> &SqliteConfig {
         &self.config
@@ -82,8 +61,6 @@ impl DriverConn for RealSqliteConnection {
         let stmt = RealSqliteStatement::new(self.handle.clone(), query)
             .map_err(|e| DatabaseError::new(super::super::DatabaseErrorKind::QueryError, &e.to_string()))?;
         Ok(Box::new(stmt))
-    }
-
     fn query(&self, query: &str, args: &[SqlValue]) -> crate::error::Result<()> {
         let handle = self.handle.lock().unwrap();
         if let Some(ref conn) = *handle {
@@ -110,17 +87,11 @@ impl DriverConn for RealSqliteConnection {
                     values.push(value);
                 }
                 result_rows.push(values);
-            }
-            
             Ok(QueryResult {
-                column_names: columns,
                 column_types: vec![], // Would need to extract actual types
-                rows: result_rows,
-                error: None,
             })
         } else {
             Err(DatabaseError::new(
-                super::super::DatabaseErrorKind::ConnectionError,
                 "Connection is not available"
             ))
         }
@@ -140,12 +111,9 @@ impl DriverConn for RealSqliteConnection {
             let last_insert_id = conn.last_insert_rowid();
             
             Ok(ExecuteResult {
-                rows_affected: changes as i64,
-                last_insert_id: Some(last_insert_id as i64),
             })
         } else {
             Err(DatabaseError::new(
-                super::super::DatabaseErrorKind::ConnectionError,
                 "Connection is not available"
             ))
         }
@@ -159,7 +127,6 @@ impl DriverConn for RealSqliteConnection {
             Ok(Box::new(tx))
         } else {
             Err(DatabaseError::new(
-                super::super::DatabaseErrorKind::ConnectionError,
                 "Connection is not available"
             ))
         }
@@ -173,7 +140,6 @@ impl DriverConn for RealSqliteConnection {
             Ok(())
         } else {
             Err(DatabaseError::new(
-                super::super::DatabaseErrorKind::ConnectionError,
                 "Connection is not available"
             ))
         }
@@ -185,12 +151,8 @@ impl DriverConn for RealSqliteConnection {
             drop(conn); // Close the connection
         }
         Ok(())
-    }
-
     fn is_alive(&self) -> bool {
         self.ping().is_ok()
-    }
-
     fn metadata(&self) -> ConnectionMetadata {
         let mut additional_info = HashMap::new();
         additional_info.insert("driver_name".to_string(), "SQLite".to_string());
@@ -199,13 +161,6 @@ impl DriverConn for RealSqliteConnection {
         additional_info.insert("is_read_only".to_string(), "false".to_string());
         
         ConnectionMetadata {
-            database_name: self.config.database_path.clone(),
-            server_version: "3.0".to_string(),
-            server_host: "localhost".to_string(),
-            server_port: 0,
-            username: "".to_string(),
-            connected_at: self.connected_at,
-            additional_info,
         }
     }
 
@@ -220,15 +175,9 @@ impl DriverConn for RealSqliteConnection {
 /// Real SQLite statement implementation
 #[derive(Debug)]
 pub struct RealSqliteStatement {
-    query: String,
-    connection: Arc<Mutex<Option<Connection>>>,
-}
-
 impl RealSqliteStatement {
     pub fn new(connection: Arc<Mutex<Option<Connection>>>, query: &str) -> crate::error::Result<()> {
         Ok(Self {
-            query: query.to_string(),
-            connection,
         })
     }
 }
@@ -248,12 +197,9 @@ impl DriverStmt for RealSqliteStatement {
             let last_insert_id = conn.last_insert_rowid();
             
             Ok(ExecuteResult {
-                rows_affected: changes as i64,
-                last_insert_id: Some(last_insert_id as i64),
             })
         } else {
             Err(DatabaseError::new(
-                super::super::DatabaseErrorKind::ConnectionError,
                 "Connection is not available"
             ))
         }
@@ -285,17 +231,11 @@ impl DriverStmt for RealSqliteStatement {
                     values.push(value);
                 }
                 result_rows.push(values);
-            }
-            
             Ok(QueryResult {
-                column_names: columns,
                 column_types: vec![], // Would need to extract actual types
-                rows: result_rows,
-                error: None,
             })
         } else {
             Err(DatabaseError::new(
-                super::super::DatabaseErrorKind::ConnectionError,
                 "Connection is not available"
             ))
         }
@@ -303,20 +243,13 @@ impl DriverStmt for RealSqliteStatement {
 
     fn close(&self) -> crate::error::Result<()> {
         Ok(())
-    }
-
     fn query_string(&self) -> &str {
         &self.query
-    }
-
     fn parameter_count(&self) -> usize {
         // For now, return 0 - would need proper parameter parsing
         0
-    }
-
     fn clone(&self) -> Box<dyn DriverStmt> {
         Box::new(RealSqliteStatement {
-            query: self.query.clone(),
         })
     }
 }
@@ -324,10 +257,6 @@ impl DriverStmt for RealSqliteStatement {
 /// Real SQLite transaction implementation
 #[derive(Debug)]
 pub struct RealSqliteTransaction {
-    connection: Arc<Mutex<Option<Connection>>>,
-    _opts: TxOptions,
-}
-
 impl RealSqliteTransaction {
     pub fn new(connection: Arc<Mutex<Option<Connection>>>, opts: TxOptions) -> crate::error::Result<()> {
         {
@@ -340,8 +269,6 @@ impl RealSqliteTransaction {
         }
         
         Ok(Self {
-            connection,
-            _opts: opts,
         })
     }
 }
@@ -354,8 +281,6 @@ impl DriverTx for RealSqliteTransaction {
                 .map_err(|e| DatabaseError::new(super::super::DatabaseErrorKind::TransactionError, &format!("Failed to commit transaction: {}", e)))?;
         }
         Ok(())
-    }
-
     fn rollback(&self) -> crate::error::Result<()> {
         let handle = self.connection.lock().unwrap();
         if let Some(ref conn) = *handle {
@@ -363,14 +288,10 @@ impl DriverTx for RealSqliteTransaction {
                 .map_err(|e| DatabaseError::new(super::super::DatabaseErrorKind::TransactionError, &format!("Failed to rollback transaction: {}", e)))?;
         }
         Ok(())
-    }
-
     fn prepare(&self, query: &str) -> crate::error::Result<()> {
         let stmt = RealSqliteStatement::new(self.connection.clone(), query)
             .map_err(|e| DatabaseError::new(super::super::DatabaseErrorKind::QueryError, &e.to_string()))?;
         Ok(Box::new(stmt))
-    }
-
     fn query(&self, query: &str, args: &[SqlValue]) -> crate::error::Result<()> {
         let handle = self.connection.lock().unwrap();
         if let Some(ref conn) = *handle {
@@ -397,17 +318,11 @@ impl DriverTx for RealSqliteTransaction {
                     values.push(value);
                 }
                 result_rows.push(values);
-            }
-            
             Ok(QueryResult {
-                column_names: columns,
                 column_types: vec![], // Would need to extract actual types
-                rows: result_rows,
-                error: None,
             })
         } else {
             Err(DatabaseError::new(
-                super::super::DatabaseErrorKind::ConnectionError,
                 "Connection is not available"
             ))
         }
@@ -427,12 +342,9 @@ impl DriverTx for RealSqliteTransaction {
             let last_insert_id = conn.last_insert_rowid();
             
             Ok(ExecuteResult {
-                rows_affected: changes as i64,
-                last_insert_id: Some(last_insert_id as i64),
             })
         } else {
             Err(DatabaseError::new(
-                super::super::DatabaseErrorKind::ConnectionError,
                 "Connection is not available"
             ))
         }
@@ -440,17 +352,11 @@ impl DriverTx for RealSqliteTransaction {
 
     fn options(&self) -> &TxOptions {
         &self._opts
-    }
-
     fn is_active(&self) -> bool {
         // For now, assume always active - would need proper state tracking
         true
-    }
-
     fn clone(&self) -> Box<dyn DriverTx> {
         Box::new(RealSqliteTransaction {
-            connection: self.connection.clone(),
-            _opts: self._opts.clone(),
         })
     }
 }
@@ -461,32 +367,17 @@ fn convert_args_to_params(args: &[SqlValue]) -> crate::error::Result<()> {
     
     for arg in args {
         match arg {
-            SqlValue::Null => params.push(Box::new(rusqlite::types::Null) as Box<dyn rusqlite::ToSql>),
-            SqlValue::Boolean(b) => params.push(Box::new(*b) as Box<dyn rusqlite::ToSql>),
-            SqlValue::Integer(i) => params.push(Box::new(*i) as Box<dyn rusqlite::ToSql>),
-            SqlValue::Float(f) => params.push(Box::new(*f) as Box<dyn rusqlite::ToSql>),
-            SqlValue::String(s) => params.push(Box::new(s.clone()) as Box<dyn rusqlite::ToSql>),
-            SqlValue::Bytes(b) => params.push(Box::new(b.clone()) as Box<dyn rusqlite::ToSql>),
             _ => return Err(DatabaseError::new(
-                super::super::DatabaseErrorKind::ConversionError,
                 &format!("Unsupported SqlValue type: {:?}", arg)
-            )),
         }
     }
     
     Ok(params)
-}
-
 /// Convert rusqlite value to CURSED SqlValue
 fn convert_value_from_sqlite(row: &rusqlite::Row, index: usize) -> crate::error::Result<()> {
     let value: SqliteValue = row.get(index)
         .map_err(|e| DatabaseError::new(super::super::DatabaseErrorKind::ConversionError, &format!("Failed to get column {}: {}", index, e)))?;
     
     match value {
-        SqliteValue::Null => Ok(SqlValue::Null),
-        SqliteValue::Integer(i) => Ok(SqlValue::Integer(i)),
-        SqliteValue::Real(f) => Ok(SqlValue::Float(f)),
-        SqliteValue::Text(s) => Ok(SqlValue::String(s)),
-        SqliteValue::Blob(b) => Ok(SqlValue::Bytes(b)),
     }
 }

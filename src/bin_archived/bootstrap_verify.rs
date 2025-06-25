@@ -101,7 +101,6 @@ fn main() {
                 eprintln!("CursedError: Invalid cycles value");
                 process::exit(1);
             })
-    };
 
     let optimization_levels = matches
         .value_of("optimization-level")
@@ -115,13 +114,6 @@ fn main() {
 
     // Create verification configuration
     let config = VerificationConfig {
-        work_dir: work_dir.clone(),
-        compilation_timeout: Duration::from_secs(timeout),
-        execution_timeout: Duration::from_secs(60),
-        keep_intermediates,
-        optimization_levels,
-        bootstrap_cycles: cycles,
-    };
 
     if verbose {
         println!("🔧 Bootstrap Verification Configuration:");
@@ -131,8 +123,6 @@ fn main() {
         println!("   Keep Intermediates: {}", config.keep_intermediates);
         println!("   Optimization Levels: {:?}", config.optimization_levels);
         println!();
-    }
-
     // Create verifier and run verification
     let verifier = SelfCompilationVerifier::new(config);
     
@@ -150,8 +140,6 @@ fn main() {
 
             if let Some(cycle) = result.convergence_analysis.convergence_cycle {
                 println!("Convergence Achieved: Cycle {}", cycle);
-            }
-
             if !result.issues.is_empty() {
                 println!();
                 println!("⚠️  Issues Found:");
@@ -178,8 +166,6 @@ fn main() {
                         eprintln!("Warning: Failed to generate report: {}", e);
                     }
                 }
-            }
-
             // Performance summary
             if verbose && !result.performance_metrics.compilation_times.is_empty() {
                 println!();
@@ -194,8 +180,6 @@ fn main() {
                     let avg_binary_size = result.performance_metrics.binary_sizes.iter()
                         .sum::<u64>() / result.performance_metrics.binary_sizes.len() as u64;
                     println!("Average Binary Size: {} bytes", avg_binary_size);
-                }
-
                 if !result.performance_metrics.execution_times.is_empty() {
                     let avg_exec_time = result.performance_metrics.execution_times.iter()
                         .sum::<Duration>().as_secs_f64() / result.performance_metrics.execution_times.len() as f64;
@@ -209,10 +193,6 @@ fn main() {
                 println!("📋 Stage Details");
                 println!("================");
                 for stage_result in &result.stage_results {
-                    println!("Stage {}: {} (compile: {:.2}s, exec: {:.2}s)", 
-                        stage_result.stage,
-                        if stage_result.success { "✅" } else { "❌" },
-                        stage_result.compilation_time.as_secs_f64(),
                         stage_result.execution_time.as_secs_f64()
                     );
                     
@@ -231,8 +211,6 @@ fn main() {
             } else {
                 println!();
                 println!("🗂️  Intermediate files preserved in: {}", work_dir.display());
-            }
-
             // Exit with appropriate code
             process::exit(if result.success { 0 } else { 1 });
         }
@@ -251,5 +229,3 @@ fn main() {
             process::exit(2);
         }
     }
-}
-

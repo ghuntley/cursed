@@ -10,271 +10,132 @@ use std::sync::{Arc, Mutex};
 use tracing::{debug, trace, info, instrument};
 
 use inkwell::{
-    values::{FunctionValue, BasicValue, BasicValueEnum, InstructionValue, IntValue, FloatValue, VectorValue},
-    types::{BasicType, BasicTypeEnum, VectorType, IntType, FloatType},
-    basic_block::BasicBlock,
-    builder::Builder,
-    context::Context,
-    module::Module,
-    IntPredicate, FloatPredicate,
-};
+// };
 
 use crate::optimization::enhanced_llvm_passes_manager::EnhancedOptimizationStatistics;
 
 /// Vectorization optimizer for SIMD instruction generation
 pub struct VectorizationOptimizer<'ctx> {
-    context_lifetime: std::marker::PhantomData<&'ctx ()>,
-    statistics: Arc<Mutex<EnhancedOptimizationStatistics>>,
     
     // Analysis data
-    vectorization_analysis: VectorizationAnalysis,
-    loop_analysis: LoopAnalysis,
-    dependency_analysis: DependencyAnalysis,
-    target_info: TargetVectorInfo,
-}
-
 /// Analysis of vectorization opportunities
 #[derive(Debug, Default)]
 struct VectorizationAnalysis {
     /// Function -> vectorizable operations
-    vectorizable_operations: HashMap<String, Vec<VectorizableOperation>>,
     /// Function -> vector widths that can be used
-    optimal_vector_widths: HashMap<String, HashMap<String, usize>>,
     /// Profitability analysis results
-    profitability_analysis: HashMap<String, ProfitabilityInfo>,
-}
-
 /// Loop analysis for auto-vectorization
 #[derive(Debug, Default)]
 struct LoopAnalysis {
     /// Function -> loop information
-    loops: HashMap<String, Vec<LoopInfo>>,
     /// Loop -> vectorization potential
-    loop_vectorization_potential: HashMap<String, VectorizationPotential>,
     /// Trip count analysis
-    trip_counts: HashMap<String, TripCountInfo>,
-}
-
 /// Dependency analysis for vectorization safety
 #[derive(Debug, Default)]
 struct DependencyAnalysis {
     /// Memory dependencies that prevent vectorization
-    memory_dependencies: HashMap<String, Vec<MemoryDependency>>,
     /// Data dependencies between iterations
-    data_dependencies: HashMap<String, Vec<DataDependency>>,
     /// Aliasing information
-    aliasing_info: HashMap<String, AliasingInfo>,
-}
-
 /// Target-specific vector information
 #[derive(Debug)]
 struct TargetVectorInfo {
     /// Supported vector widths for different types
-    supported_widths: HashMap<String, Vec<usize>>,
     /// Cost model for different operations
-    operation_costs: HashMap<VectorOperation, OperationCost>,
     /// Available SIMD instruction sets
-    available_instructions: HashSet<SIMDInstructionSet>,
-}
-
 /// Vectorizable operation identification
 #[derive(Debug, Clone)]
 struct VectorizableOperation {
     /// Type of operation
-    operation_type: VectorOperation,
     /// Data type being operated on
-    data_type: String,
     /// Number of elements that can be vectorized
-    vector_width: usize,
     /// Location in the function
-    location: String,
     /// Estimated speedup from vectorization
-    estimated_speedup: f64,
-}
-
 /// Profitability information for vectorization
 #[derive(Debug, Clone)]
 struct ProfitabilityInfo {
     /// Estimated cost of scalar version
-    scalar_cost: f64,
     /// Estimated cost of vector version
-    vector_cost: f64,
     /// Estimated speedup
-    speedup_ratio: f64,
     /// Whether vectorization is profitable
-    is_profitable: bool,
-}
-
 /// Loop information for vectorization
 #[derive(Debug, Clone)]
 struct LoopInfo {
     /// Loop identifier
-    loop_id: String,
     /// Loop bounds information
-    bounds: LoopBounds,
     /// Memory access patterns
-    memory_patterns: Vec<MemoryAccessPattern>,
     /// Arithmetic operations in the loop
-    arithmetic_operations: Vec<ArithmeticOperation>,
-}
-
 /// Vectorization potential of a loop
 #[derive(Debug, Clone)]
 struct VectorizationPotential {
     /// Can the loop be vectorized?
-    can_vectorize: bool,
     /// Reasons preventing vectorization
-    blocking_factors: Vec<VectorizationBlocker>,
     /// Optimal vector width
-    optimal_width: usize,
     /// Estimated performance improvement
-    estimated_improvement: f64,
-}
-
 /// Trip count information
 #[derive(Debug, Clone)]
 struct TripCountInfo {
     /// Minimum trip count
-    min_count: Option<usize>,
     /// Maximum trip count  
-    max_count: Option<usize>,
     /// Whether trip count is known at compile time
-    is_constant: bool,
     /// Estimated average trip count
-    average_count: f64,
-}
-
 /// Memory dependency information
 #[derive(Debug, Clone)]
 struct MemoryDependency {
     /// Type of dependency
-    dependency_type: DependencyType,
     /// Memory locations involved
-    memory_locations: Vec<String>,
     /// Distance of the dependency
-    distance: i32,
     /// Whether it prevents vectorization
-    prevents_vectorization: bool,
-}
-
 /// Data dependency between loop iterations
 #[derive(Debug, Clone)]
 struct DataDependency {
     /// Source instruction
-    source: String,
     /// Sink instruction  
-    sink: String,
     /// Dependency distance
-    distance: i32,
     /// Type of dependency
-    dependency_type: DataDependencyType,
-}
-
 /// Aliasing information for memory operations
 #[derive(Debug, Clone)]
 struct AliasingInfo {
     /// Memory locations that may alias
-    potential_aliases: Vec<(String, String)>,
     /// Confirmed non-aliasing pairs
-    no_alias_pairs: Vec<(String, String)>,
     /// Uncertain aliasing cases
-    uncertain_aliases: Vec<String>,
-}
-
 /// Loop bounds information
 #[derive(Debug, Clone)]
 struct LoopBounds {
     /// Lower bound
-    lower_bound: BoundInfo,
     /// Upper bound
-    upper_bound: BoundInfo,
     /// Step size
-    step: i32,
-}
-
 /// Memory access pattern in loops
 #[derive(Debug, Clone)]
 struct MemoryAccessPattern {
     /// Type of access (load/store)
-    access_type: MemoryAccessType,
     /// Base address
-    base_address: String,
     /// Access stride
-    stride: i32,
     /// Whether access is vectorizable
-    is_vectorizable: bool,
-}
-
 /// Arithmetic operation in loops
 #[derive(Debug, Clone)]
 struct ArithmeticOperation {
     /// Type of operation
-    operation: ArithmeticOpType,
     /// Input operands
-    operands: Vec<String>,
     /// Output
-    result: String,
     /// Whether operation is vectorizable
-    is_vectorizable: bool,
-}
-
 /// Bound information
 #[derive(Debug, Clone)]
 enum BoundInfo {
-    Constant(i32),
-    Variable(String),
-    Unknown,
-}
-
 /// Types of vector operations
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 enum VectorOperation {
-    Add,
-    Subtract,
-    Multiply,
-    Divide,
-    FusedMultiplyAdd,
-    Compare,
-    Load,
-    Store,
-    Shuffle,
-    Reduction,
-}
-
 /// Operation cost information
 #[derive(Debug, Clone)]
 struct OperationCost {
     /// Latency in cycles
-    latency: usize,
     /// Throughput (operations per cycle)
-    throughput: f64,
     /// Energy cost relative to scalar
-    energy_cost: f64,
-}
-
 /// SIMD instruction sets
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 enum SIMDInstructionSet {
-    SSE,
-    SSE2,
-    SSE3,
-    SSE4,
-    AVX,
-    AVX2,
-    AVX512,
-    NEON,
-    AltiVec,
-}
-
 /// Types of dependencies
 #[derive(Debug, Clone)]
 enum DependencyType {
-    ReadAfterWrite,
-    WriteAfterRead,
-    WriteAfterWrite,
-    Control,
-}
-
 /// Types of data dependencies
 #[derive(Debug, Clone)]
 enum DataDependencyType {
@@ -282,61 +143,21 @@ enum DataDependencyType {
     Anti,      // WAR  
     Output,    // WAW
     Input,     // RAR
-}
-
 /// Memory access types
 #[derive(Debug, Clone)]
 enum MemoryAccessType {
-    Load,
-    Store,
-    LoadStore,
-}
-
 /// Arithmetic operation types
 #[derive(Debug, Clone)]
 enum ArithmeticOpType {
-    IntegerAdd,
-    IntegerSubtract,
-    IntegerMultiply,
-    IntegerDivide,
-    FloatAdd,
-    FloatSubtract,
-    FloatMultiply,
-    FloatDivide,
-    Comparison,
-}
-
 /// Factors that block vectorization
 #[derive(Debug, Clone)]
 enum VectorizationBlocker {
-    UnknownTripCount,
-    MemoryDependency,
-    NonContiguousAccess,
-    ConditionalExecution,
-    FunctionCall,
-    UnsupportedOperation,
-    CostModelDecision,
-}
-
 /// Loop vectorization analysis result
 #[derive(Debug, Clone)]
 struct LoopVectorizationAnalysis {
-    is_vectorizable: bool,
-    blocking_factors: Vec<VectorizationBlocker>,
-    estimated_speedup: f64,
-    memory_bandwidth_utilization: f64,
-    computational_intensity: f64,
-}
-
 /// Result of vectorization creation
 #[derive(Debug, Clone)]
 struct VectorizationCreationResult {
-    success: bool,
-    vectorized_instruction_count: usize,
-    overhead_instructions: usize,
-    estimated_speedup: f64,
-}
-
 impl Default for TargetVectorInfo {
     fn default() -> Self {
         let mut supported_widths = HashMap::new();
@@ -346,14 +167,8 @@ impl Default for TargetVectorInfo {
         
         let mut operation_costs = HashMap::new();
         operation_costs.insert(VectorOperation::Add, OperationCost {
-            latency: 1,
-            throughput: 2.0,
-            energy_cost: 1.2,
         });
         operation_costs.insert(VectorOperation::Multiply, OperationCost {
-            latency: 3,
-            throughput: 1.0,
-            energy_cost: 1.5,
         });
         
         let mut available_instructions = HashSet::new();
@@ -361,23 +176,12 @@ impl Default for TargetVectorInfo {
         available_instructions.insert(SIMDInstructionSet::AVX);
         
         Self {
-            supported_widths,
-            operation_costs,
-            available_instructions,
         }
     }
-}
-
 impl<'ctx> VectorizationOptimizer<'ctx> {
     /// Create new vectorization optimizer
     pub fn new(statistics: Arc<Mutex<EnhancedOptimizationStatistics>>) -> Self {
         Self {
-            context_lifetime: std::marker::PhantomData,
-            statistics,
-            vectorization_analysis: VectorizationAnalysis::default(),
-            loop_analysis: LoopAnalysis::default(),
-            dependency_analysis: DependencyAnalysis::default(),
-            target_info: TargetVectorInfo::default(),
         }
     }
     
@@ -409,13 +213,8 @@ impl<'ctx> VectorizationOptimizer<'ctx> {
             let mut stats = self.statistics.lock().unwrap();
             stats.vectorized_operations += vectorizations_applied;
             
-            debug!("Applied {} vectorization optimizations to function {}", 
                    vectorizations_applied, function_name);
-        }
-        
         Ok(vectorizations_applied)
-    }
-    
     /// Analyze vectorization opportunities
     fn analyze_vectorization_opportunities(&mut self, function: FunctionValue<'ctx>) -> Result<()> {
         let function_name = function.get_name().to_str().unwrap_or("unknown").to_string();
@@ -429,18 +228,12 @@ impl<'ctx> VectorizationOptimizer<'ctx> {
         while let Some(block) = current_block {
             self.analyze_block_vectorization(block, &mut vectorizable_ops, &mut optimal_widths)?;
             current_block = block.get_next_basic_block();
-        }
-        
         // Store analysis results
         self.vectorization_analysis.vectorizable_operations.insert(function_name.clone(), vectorizable_ops);
         self.vectorization_analysis.optimal_vector_widths.insert(function_name, optimal_widths);
         
         Ok(())
-    }
-    
     /// Analyze vectorization opportunities in a basic block
-    fn analyze_block_vectorization(&self, block: BasicBlock<'ctx>, 
-                                  vectorizable_ops: &mut Vec<VectorizableOperation>,
                                   optimal_widths: &mut HashMap<String, usize>) -> Result<()> {
         let mut instruction = block.get_first_instruction();
         
@@ -449,11 +242,7 @@ impl<'ctx> VectorizationOptimizer<'ctx> {
                 vectorizable_ops.push(vectorizable_op);
             }
             instruction = instr.get_next_instruction();
-        }
-        
         Ok(())
-    }
-    
     /// Analyze if an instruction can be vectorized
     fn analyze_instruction_vectorization(&self, instruction: InstructionValue<'ctx>) -> Result<Option<VectorizableOperation>> {
         if let Some(opcode) = instruction.get_opcode().get_instruction_opcode() {
@@ -466,7 +255,6 @@ impl<'ctx> VectorizationOptimizer<'ctx> {
                     } else {
                         return Ok(None);
                     }
-                },
                 inkwell::values::InstructionOpcode::Mul => {
                     if instruction.get_type().is_int_type() {
                         (VectorOperation::Multiply, "i32".to_string())
@@ -475,15 +263,10 @@ impl<'ctx> VectorizationOptimizer<'ctx> {
                     } else {
                         return Ok(None);
                     }
-                },
                 inkwell::values::InstructionOpcode::Load => {
                     (VectorOperation::Load, "unknown".to_string())
-                },
                 inkwell::values::InstructionOpcode::Store => {
                     (VectorOperation::Store, "unknown".to_string())
-                },
-                _ => return Ok(None),
-            };
             
             // Determine optimal vector width
             let vector_width = self.get_optimal_vector_width(&data_type);
@@ -492,35 +275,19 @@ impl<'ctx> VectorizationOptimizer<'ctx> {
             let estimated_speedup = self.estimate_vectorization_speedup(&operation_type, vector_width);
             
             return Ok(Some(VectorizableOperation {
-                operation_type,
-                data_type,
-                vector_width,
-                location: format!("instruction_{:?}", instruction.get_opcode()),
-                estimated_speedup,
             }));
-        }
-        
         Ok(None)
-    }
-    
     /// Get optimal vector width for a data type
     fn get_optimal_vector_width(&self, data_type: &str) -> usize {
         self.target_info.supported_widths.get(data_type)
             .and_then(|widths| widths.iter().max())
             .copied()
             .unwrap_or(4)
-    }
-    
     /// Estimate speedup from vectorization
     fn estimate_vectorization_speedup(&self, operation: &VectorOperation, vector_width: usize) -> f64 {
         let base_speedup = vector_width as f64 * 0.8; // 80% efficiency
         
         match operation {
-            VectorOperation::Add | VectorOperation::Subtract => base_speedup,
-            VectorOperation::Multiply => base_speedup * 0.9,
-            VectorOperation::Divide => base_speedup * 0.6,
-            VectorOperation::Load | VectorOperation::Store => base_speedup * 0.7,
-            _ => base_speedup * 0.5,
         }
     }
     
@@ -538,8 +305,6 @@ impl<'ctx> VectorizationOptimizer<'ctx> {
         }
         
         Ok(vectorizations)
-    }
-    
     /// Identify loops in the function
     fn identify_loops(&self, function: FunctionValue<'ctx>) -> Result<Vec<LoopInfo>> {
         let mut loops = Vec::new();
@@ -552,24 +317,11 @@ impl<'ctx> VectorizationOptimizer<'ctx> {
             // Look for loop-like patterns
             if self.looks_like_loop_header(block) {
                 loops.push(LoopInfo {
-                    loop_id: format!("loop_{}", block_index),
                     bounds: LoopBounds {
-                        lower_bound: BoundInfo::Constant(0),
-                        upper_bound: BoundInfo::Unknown,
-                        step: 1,
-                    },
-                    memory_patterns: vec![],
-                    arithmetic_operations: vec![],
                 });
-            }
-            
             current_block = block.get_next_basic_block();
             block_index += 1;
-        }
-        
         Ok(loops)
-    }
-    
     /// Check if a basic block looks like a loop header
     fn looks_like_loop_header(&self, block: BasicBlock<'ctx>) -> bool {
         // Simple heuristic: look for PHI nodes and compare instructions
@@ -582,18 +334,12 @@ impl<'ctx> VectorizationOptimizer<'ctx> {
                 }
             }
             instruction = instr.get_next_instruction();
-        }
-        
         false
-    }
-    
     /// Check if a loop can be vectorized
     fn can_vectorize_loop(&self, loop_info: &LoopInfo) -> Result<bool> {
         // Check for vectorization blockers
         // For now, we'll assume simple loops can be vectorized
         Ok(!loop_info.arithmetic_operations.is_empty())
-    }
-    
     /// Apply loop vectorization
     fn apply_loop_vectorization(&self, function: FunctionValue<'ctx>, loop_info: &LoopInfo) -> Result<usize> {
         debug!("Applying loop vectorization for loop: {}", loop_info.loop_id);
@@ -611,8 +357,6 @@ impl<'ctx> VectorizationOptimizer<'ctx> {
         if !loop_analysis.is_vectorizable {
             debug!("Loop {} is not suitable for vectorization", loop_info.loop_id);
             return Ok(0);
-        }
-        
         // Create vectorized version of the loop
         let vectorization_result = self.create_vectorized_loop(function, loop_info, vector_width, &context, &builder)?;
         
@@ -657,8 +401,6 @@ impl<'ctx> VectorizationOptimizer<'ctx> {
         // Ensure we don't exceed target capabilities
         let target_max = self.get_optimal_vector_width("f32");
         max_width.min(target_max)
-    }
-    
     /// Analyze loop structure for vectorization potential
     fn analyze_loop_for_vectorization(&self, loop_info: &LoopInfo) -> Result<LoopVectorizationAnalysis> {
         let mut is_vectorizable = true;
@@ -668,8 +410,6 @@ impl<'ctx> VectorizationOptimizer<'ctx> {
         if !loop_info.bounds.step == 1 {
             is_vectorizable = false;
             blocking_factors.push(VectorizationBlocker::UnknownTripCount);
-        }
-        
         // Check memory access patterns
         for pattern in &loop_info.memory_patterns {
             match pattern.access_type {
@@ -701,14 +441,7 @@ impl<'ctx> VectorizationOptimizer<'ctx> {
         }
         
         Ok(LoopVectorizationAnalysis {
-            is_vectorizable,
-            blocking_factors,
-            estimated_speedup: if is_vectorizable { 2.5 } else { 1.0 },
-            memory_bandwidth_utilization: 0.8,
-            computational_intensity: 1.5,
         })
-    }
-    
     /// Create vectorized version of a loop
     fn create_vectorized_loop(&self, function: FunctionValue<'ctx>, loop_info: &LoopInfo, vector_width: usize, context: &inkwell::context::Context, builder: &Builder<'ctx>) -> Result<VectorizationCreationResult> {
         debug!("Creating vectorized loop with width {}", vector_width);
@@ -724,13 +457,9 @@ impl<'ctx> VectorizationOptimizer<'ctx> {
         let vectorized_instructions = self.generate_vectorized_instructions(loop_info, vector_width, context)?;
         
         Ok(VectorizationCreationResult {
-            success: true,
-            vectorized_instruction_count: vectorized_instructions,
             overhead_instructions: 3, // Typical overhead for setup/cleanup
             estimated_speedup: (vector_width as f64) * 0.8, // 80% efficiency
         })
-    }
-    
     /// Generate vectorized instructions for loop body
     fn generate_vectorized_instructions(&self, loop_info: &LoopInfo, vector_width: usize, context: &inkwell::context::Context) -> Result<usize> {
         let mut instruction_count = 0;
@@ -750,8 +479,6 @@ impl<'ctx> VectorizationOptimizer<'ctx> {
         }
         
         Ok(instruction_count)
-    }
-    
     /// Generate vector memory instruction
     fn generate_vector_memory_instruction(&self, pattern: &MemoryAccessPattern, vector_width: usize, context: &inkwell::context::Context) -> Result<usize> {
         let vector_type = match pattern.access_type {
@@ -770,11 +497,8 @@ impl<'ctx> VectorizationOptimizer<'ctx> {
                 debug!("Generated vector load/store with width {}, stride {}", vector_width, pattern.stride);
                 2
             }
-        };
         
         Ok(vector_type)
-    }
-    
     /// Generate vector arithmetic instruction
     fn generate_vector_arithmetic_instruction(&self, op: &ArithmeticOperation, vector_width: usize, context: &inkwell::context::Context) -> Result<usize> {
         let instruction_count = match op.operation {
@@ -798,11 +522,8 @@ impl<'ctx> VectorizationOptimizer<'ctx> {
                 debug!("Generated vector comparison instruction with width {}", vector_width);
                 1
             }
-        };
         
         Ok(instruction_count)
-    }
-    
     /// Vectorize individual operations
     fn vectorize_individual_operations(&mut self, function: FunctionValue<'ctx>) -> Result<usize> {
         debug!("Vectorizing individual operations");
@@ -816,11 +537,7 @@ impl<'ctx> VectorizationOptimizer<'ctx> {
                     vectorizations += self.apply_operation_vectorization(function, op)?;
                 }
             }
-        }
-        
         Ok(vectorizations)
-    }
-    
     /// Check if vectorization is profitable for an operation
     fn is_profitable_vectorization(&self, operation: &VectorizableOperation) -> bool {
         // Use cost model to determine profitability
@@ -845,11 +562,7 @@ impl<'ctx> VectorizationOptimizer<'ctx> {
         while let Some(block) = current_block {
             transformations += self.vectorize_block_operations(block, operation, &context)?;
             current_block = block.get_next_basic_block();
-        }
-        
         Ok(transformations)
-    }
-    
     /// Vectorize operations within a basic block
     fn vectorize_block_operations(&self, block: BasicBlock<'ctx>, operation: &VectorizableOperation, context: &inkwell::context::Context) -> Result<usize> {
         let mut transformations = 0;
@@ -865,8 +578,6 @@ impl<'ctx> VectorizationOptimizer<'ctx> {
         }
         
         Ok(transformations)
-    }
-    
     /// Find sequences of vectorizable instructions
     fn find_vectorizable_sequences(&self, block: BasicBlock<'ctx>, operation_type: &VectorOperation) -> Result<Vec<Vec<InstructionValue<'ctx>>>> {
         let mut sequences = Vec::new();
@@ -883,32 +594,19 @@ impl<'ctx> VectorizationOptimizer<'ctx> {
                 current_sequence.clear();
             }
             instruction = instr.get_next_instruction();
-        }
-        
         // Add the last sequence if it's long enough
         if current_sequence.len() >= 2 {
             sequences.push(current_sequence);
-        }
-        
         Ok(sequences)
-    }
-    
     /// Check if an instruction can be vectorized for the given operation type
     fn is_instruction_vectorizable(&self, instruction: InstructionValue<'ctx>, operation_type: &VectorOperation) -> bool {
         if let Some(opcode) = instruction.get_opcode().get_instruction_opcode() {
             match (operation_type, opcode) {
                 (VectorOperation::Add, inkwell::values::InstructionOpcode::Add) |
-                (VectorOperation::Add, inkwell::values::InstructionOpcode::FAdd) => true,
                 (VectorOperation::Subtract, inkwell::values::InstructionOpcode::Sub) |
-                (VectorOperation::Subtract, inkwell::values::InstructionOpcode::FSub) => true,
                 (VectorOperation::Multiply, inkwell::values::InstructionOpcode::Mul) |
-                (VectorOperation::Multiply, inkwell::values::InstructionOpcode::FMul) => true,
                 (VectorOperation::Divide, inkwell::values::InstructionOpcode::UDiv) |
                 (VectorOperation::Divide, inkwell::values::InstructionOpcode::SDiv) |
-                (VectorOperation::Divide, inkwell::values::InstructionOpcode::FDiv) => true,
-                (VectorOperation::Load, inkwell::values::InstructionOpcode::Load) => true,
-                (VectorOperation::Store, inkwell::values::InstructionOpcode::Store) => true,
-                _ => false,
             }
         } else {
             false
@@ -919,8 +617,6 @@ impl<'ctx> VectorizationOptimizer<'ctx> {
     fn replace_with_vector_operations(&self, sequence: Vec<InstructionValue<'ctx>>, operation: &VectorizableOperation, context: &inkwell::context::Context) -> Result<usize> {
         if sequence.is_empty() {
             return Ok(0);
-        }
-        
         let vector_width = operation.vector_width;
         let chunks: Vec<_> = sequence.chunks(vector_width).collect();
         let mut replacements = 0;
@@ -932,19 +628,13 @@ impl<'ctx> VectorizationOptimizer<'ctx> {
         }
         
         Ok(replacements)
-    }
-    
     /// Create vector instruction to replace scalar instructions
     fn create_vector_instruction_replacement(&self, instructions: &[InstructionValue<'ctx>], operation: &VectorizableOperation, context: &inkwell::context::Context) -> Result<usize> {
         let vector_width = operation.vector_width as u32;
         
         // Determine the vector type based on the operation data type
         let vector_type = match operation.data_type.as_str() {
-            "i32" => context.i32_type().vec_type(vector_width),
-            "f32" => context.f32_type().vec_type(vector_width),
-            "f64" => context.f64_type().vec_type(vector_width),
             _ => context.i32_type().vec_type(vector_width), // Default fallback
-        };
         
         // In a real implementation, this would:
         // 1. Create a new vector instruction using LLVM builder
@@ -954,12 +644,9 @@ impl<'ctx> VectorizationOptimizer<'ctx> {
         // 5. Extract results back to scalars if needed
         // 6. Replace uses of old instructions
         
-        debug!("Created vector instruction replacement for {} instructions of type {:?}", 
                instructions.len(), operation.operation_type);
         
         Ok(1)
-    }
-    
     /// Vectorize reduction operations
     fn vectorize_reductions(&mut self, function: FunctionValue<'ctx>) -> Result<usize> {
         debug!("Vectorizing reduction operations");
@@ -971,11 +658,7 @@ impl<'ctx> VectorizationOptimizer<'ctx> {
         while let Some(block) = current_block {
             reductions_found += self.find_and_vectorize_reductions_in_block(block)?;
             current_block = block.get_next_basic_block();
-        }
-        
         Ok(reductions_found)
-    }
-    
     /// Find and vectorize reductions in a basic block
     fn find_and_vectorize_reductions_in_block(&self, block: BasicBlock<'ctx>) -> Result<usize> {
         let mut reductions = 0;
@@ -988,11 +671,7 @@ impl<'ctx> VectorizationOptimizer<'ctx> {
                 debug!("Found reduction pattern, applying vectorization");
             }
             instruction = instr.get_next_instruction();
-        }
-        
         Ok(reductions)
-    }
-    
     /// Check if instruction is part of a reduction pattern
     fn is_reduction_pattern(&self, instruction: InstructionValue<'ctx>) -> bool {
         // Look for accumulation patterns like: acc = acc + value
@@ -1015,11 +694,7 @@ impl<'ctx> VectorizationOptimizer<'ctx> {
         while let Some(block) = current_block {
             optimizations += self.optimize_block_memory_vectorization(block)?;
             current_block = block.get_next_basic_block();
-        }
-        
         Ok(optimizations)
-    }
-    
     /// Optimize memory access vectorization in a block
     fn optimize_block_memory_vectorization(&self, block: BasicBlock<'ctx>) -> Result<usize> {
         let mut optimizations = 0;
@@ -1032,35 +707,25 @@ impl<'ctx> VectorizationOptimizer<'ctx> {
                         if self.can_vectorize_load(instr) {
                             optimizations += 1;
                         }
-                    },
                     inkwell::values::InstructionOpcode::Store => {
                         if self.can_vectorize_store(instr) {
                             optimizations += 1;
                         }
-                    },
                     _ => {}
                 }
             }
             instruction = instr.get_next_instruction();
-        }
-        
         Ok(optimizations)
-    }
-    
     /// Check if a load instruction can be vectorized
     fn can_vectorize_load(&self, instruction: InstructionValue<'ctx>) -> bool {
         // Check alignment, stride, and data type
         // For now, assume some loads can be vectorized
         true
-    }
-    
     /// Check if a store instruction can be vectorized
     fn can_vectorize_store(&self, instruction: InstructionValue<'ctx>) -> bool {
         // Check alignment, stride, and data type
         // For now, assume some stores can be vectorized
         true
-    }
-    
     /// Get vectorization statistics
     pub fn get_vectorization_statistics(&self) -> HashMap<String, usize> {
         let mut stats = HashMap::new();

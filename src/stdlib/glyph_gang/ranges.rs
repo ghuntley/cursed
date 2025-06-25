@@ -6,47 +6,25 @@ use once_cell::sync::Lazy;
 /// Unicode range table for 16-bit code points
 #[derive(Debug, Clone, PartialEq)]
 pub struct Range16 {
-    pub lo: u16,
-    pub hi: u16,
-    pub stride: u16,
-}
-
 /// Unicode range table for 32-bit code points
 #[derive(Debug, Clone, PartialEq)]
 pub struct Range32 {
-    pub lo: u32,
-    pub hi: u32,
-    pub stride: u32,
-}
-
 /// Unicode range table containing ranges for character classification
 #[derive(Debug, Clone)]
 pub struct RangeTable {
-    pub r16: Vec<Range16>,
-    pub r32: Vec<Range32>,
-    pub latin_offset: usize,
-}
-
 impl RangeTable {
     /// Create a new empty range table
     pub fn new() -> Self {
         RangeTable {
-            r16: Vec::new(),
-            r32: Vec::new(),
-            latin_offset: 0,
         }
     }
     
     /// Add a 16-bit range to the table
     pub fn add_range16(&mut self, lo: u16, hi: u16, stride: u16) {
         self.r16.push(Range16 { lo, hi, stride });
-    }
-    
     /// Add a 32-bit range to the table
     pub fn add_range32(&mut self, lo: u32, hi: u32, stride: u32) {
         self.r32.push(Range32 { lo, hi, stride });
-    }
-    
     /// Check if a character is in this range table
     pub fn contains(&self, ch: char) -> bool {
         let code_point = ch as u32;
@@ -62,8 +40,6 @@ impl RangeTable {
                     return (cp16 - range.lo) % range.stride == 0;
                 }
             }
-        }
-        
         // Check 32-bit ranges
         for range in &self.r32 {
             if code_point >= range.lo && code_point <= range.hi {
@@ -941,8 +917,6 @@ static RANGE_TABLE_REGISTRY: Lazy<HashMap<&'static str, &'static RangeTable>> = 
 /// Get a range table by name
 pub fn get_range_table(name: &str) -> Option<&'static RangeTable> {
     RANGE_TABLE_REGISTRY.get(name).copied()
-}
-
 /// Initialize Unicode range tables
 pub fn initialize_tables() -> GlyphGangResult<()> {
     // Force initialization of lazy statics
@@ -951,38 +925,22 @@ pub fn initialize_tables() -> GlyphGangResult<()> {
     // Validate that tables loaded correctly
     if RANGE_TABLE_REGISTRY.is_empty() {
         return Err(range_error("Failed to initialize Unicode range tables"));
-    }
-    
     Ok(())
-}
-
 /// Get list of all available range table names
 pub fn get_available_tables() -> Vec<&'static str> {
     RANGE_TABLE_REGISTRY.keys().copied().collect()
-}
-
 /// Validate that a range table contains expected characters for basic testing
 pub fn validate_basic_tables() -> GlyphGangResult<()> {
     // Test basic ASCII letter classification
     if !LETTER.contains('A') || !LETTER.contains('a') {
         return Err(range_error("Letter table validation failed for basic ASCII"));
-    }
-    
     if !UPPERCASE_LETTER.contains('A') || UPPERCASE_LETTER.contains('a') {
         return Err(range_error("Uppercase letter table validation failed"));
-    }
-    
     if !LOWERCASE_LETTER.contains('a') || LOWERCASE_LETTER.contains('A') {
         return Err(range_error("Lowercase letter table validation failed"));
-    }
-    
     if !NUMBER.contains('5') || NUMBER.contains('A') {
         return Err(range_error("Number table validation failed"));
-    }
-    
     if !SPACE.contains(' ') || SPACE.contains('A') {
         return Err(range_error("Space table validation failed"));
-    }
-    
     Ok(())
 }

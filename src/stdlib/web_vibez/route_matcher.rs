@@ -15,41 +15,23 @@ use tracing::{debug, trace, instrument};
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum PathSegment {
     /// Static segment: exact string match
-    Static(String),
     /// Named parameter: captures value as :name
-    Parameter(String),
     /// Wildcard: captures remaining path as *
-    Wildcard(String),
     /// Optional segment: may or may not be present
-    Optional(Box<PathSegment>),
-}
-
 /// Types of wildcard matching
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum WildcardType {
     /// Single segment wildcard (*)
-    Single,
     /// Multi-segment wildcard (**)
-    Multi,
     /// Named wildcard (*name)
-    Named(String),
-}
-
 /// A compiled route pattern for efficient matching
 #[derive(Debug, Clone)]
 pub struct RoutePattern {
     /// Original pattern string
-    pub pattern: String,
     /// Compiled segments
-    pub segments: Vec<PathSegment>,
     /// Parameter names in order
-    pub param_names: Vec<String>,
     /// Whether pattern has wildcards
-    pub has_wildcards: bool,
     /// Pattern priority for conflict resolution
-    pub priority: u32,
-}
-
 impl RoutePattern {
     /// Compile a route pattern string into optimized segments
     #[instrument]
@@ -94,26 +76,15 @@ impl RoutePattern {
                     PathSegment::Parameter(name)
                 } else {
                     PathSegment::Static(base_part.to_string())
-                };
                 priority += 1;
                 PathSegment::Optional(Box::new(base_segment))
             } else {
                 // Static segment
                 PathSegment::Static(part.to_string())
-            };
             
             segments.push(segment);
-        }
-
         Ok(RoutePattern {
-            pattern: pattern.to_string(),
-            segments,
-            param_names,
-            has_wildcards,
-            priority,
         })
-    }
-
     /// Check if this pattern matches the given path
     #[instrument(skip(self))]
     pub fn matches(&self, path: &str) -> Option<RouteMatch> {
@@ -170,8 +141,6 @@ impl RoutePattern {
                 }
             }
             segment_idx += 1;
-        }
-
         // Handle remaining segments
         if segment_idx < self.segments.len() {
             // Check if remaining segments are all optional
@@ -180,17 +149,10 @@ impl RoutePattern {
                     return None;
                 }
             }
-        }
-
         // Check if path fully consumed (unless we have wildcards)
         if path_idx < path_segments.len() && !self.has_wildcards {
             return None;
-        }
-
         Some(RouteMatch {
-            pattern: self.clone(),
-            params,
-            matched_path: path.to_string(),
         })
     }
 }
@@ -199,19 +161,12 @@ impl RoutePattern {
 #[derive(Debug, Clone)]
 pub struct RouteMatch {
     /// The pattern that matched
-    pub pattern: RoutePattern,
     /// Extracted parameters
-    pub params: HashMap<String, String>,
     /// The path that was matched
-    pub matched_path: String,
-}
-
 impl RouteMatch {
     /// Get a parameter value by name
     pub fn param(&self, name: &str) -> Option<&str> {
         self.params.get(name).map(|s| s.as_str())
-    }
-
     /// Get all parameters
     pub fn params(&self) -> &HashMap<String, String> {
         &self.params
@@ -222,60 +177,29 @@ impl RouteMatch {
 #[derive(Debug)]
 pub struct RouteNode {
     /// Segment this node represents
-    pub segment: Option<PathSegment>,
     /// Child nodes
-    pub children: HashMap<String, RouteNode>,
     /// Parameter child (for :param segments)
-    pub param_child: Option<Box<RouteNode>>,
     /// Wildcard child (for * segments)
-    pub wildcard_child: Option<Box<RouteNode>>,
     /// Route patterns that end at this node
-    pub endpoints: Vec<RoutePattern>,
-}
-
 impl RouteNode {
     pub fn new() -> Self {
         Self {
-            segment: None,
-            children: HashMap::new(),
-            param_child: None,
-            wildcard_child: None,
-            endpoints: Vec::new(),
         }
     }
-}
-
 /// High-performance route matcher using radix tree
 #[derive(Debug)]
 pub struct RouteMatcher {
     /// Root of the radix tree
-    root: RouteNode,
     /// Cache for frequently matched patterns
-    cache: HashMap<String, Option<RouteMatch>>,
     /// Maximum cache size
-    max_cache_size: usize,
     /// Statistics for performance monitoring
-    pub stats: MatcherStats,
-}
-
 /// Performance statistics for route matching
 #[derive(Debug, Default)]
 pub struct MatcherStats {
-    pub total_lookups: u64,
-    pub cache_hits: u64,
-    pub cache_misses: u64,
-    pub patterns_compiled: u64,
-    pub average_lookup_time_ns: u64,
-}
-
 impl RouteMatcher {
     /// Create a new route matcher
     pub fn new(max_cache_size: usize) -> Self {
         Self {
-            root: RouteNode::new(),
-            cache: HashMap::new(),
-            max_cache_size,
-            stats: MatcherStats::default(),
         }
     }
 
@@ -293,8 +217,6 @@ impl RouteMatcher {
         
         debug!(pattern = %pattern, priority = route_pattern.priority, "Added route pattern");
         Ok(())
-    }
-
     /// Insert a pattern into the radix tree
     fn insert_pattern(&mut self, pattern: &RoutePattern) {
         let mut current = &mut self.root;
@@ -320,13 +242,9 @@ impl RouteMatcher {
                     // Optional segments are handled during matching
                 }
             }
-        }
-        
         current.endpoints.push(pattern.clone());
         // Sort endpoints by priority (lower number = higher priority)
         current.endpoints.sort_by_key(|p| p.priority);
-    }
-
     /// Find matching route for a path
     #[instrument(skip(self))]
     pub fn find_match(&mut self, path: &str) -> Option<RouteMatch> {
@@ -338,8 +256,6 @@ impl RouteMatcher {
             self.stats.cache_hits += 1;
             trace!(path = %path, cached = true, "Route lookup from cache");
             return cached_result.clone();
-        }
-        
         self.stats.cache_misses += 1;
         
         // Perform tree traversal to find matches
@@ -348,8 +264,6 @@ impl RouteMatcher {
         // Update cache if under size limit
         if self.cache.len() < self.max_cache_size {
             self.cache.insert(path.to_string(), result.clone());
-        }
-        
         // Update timing statistics
         let elapsed = start_time.elapsed();
         let elapsed_ns = elapsed.as_nanos() as u64;
@@ -358,15 +272,10 @@ impl RouteMatcher {
             / self.stats.total_lookups;
         
         trace!(
-            path = %path, 
-            found = result.is_some(), 
-            elapsed_ns = elapsed_ns,
             "Route lookup completed"
         );
         
         result
-    }
-
     /// Find all possible matches in the radix tree
     fn find_matches_in_tree(&self, path: &str) -> Option<RouteMatch> {
         let segments: Vec<&str> = path.split('/').filter(|s| !s.is_empty()).collect();
@@ -378,30 +287,18 @@ impl RouteMatcher {
         candidates.into_iter()
             .filter_map(|pattern| pattern.matches(path))
             .min_by_key(|m| m.pattern.priority)
-    }
-
     /// Recursively collect matching patterns from the tree
     fn collect_matches(
-        &self,
-        node: &RouteNode,
-        segments: &[&str],
-        segment_idx: usize,
-        params: &mut HashMap<String, String>,
-        candidates: &mut Vec<RoutePattern>,
     ) {
         // If we've consumed all segments, check for endpoints
         if segment_idx >= segments.len() {
             candidates.extend(node.endpoints.iter().cloned());
             return;
-        }
-        
         let current_segment = segments[segment_idx];
         
         // Try static children
         if let Some(static_child) = node.children.get(current_segment) {
             self.collect_matches(static_child, segments, segment_idx + 1, params, candidates);
-        }
-        
         // Try parameter child
         if let Some(param_child) = &node.param_child {
             let old_len = params.len();
@@ -423,13 +320,9 @@ impl RouteMatcher {
     /// Get performance statistics
     pub fn get_stats(&self) -> &MatcherStats {
         &self.stats
-    }
-
     /// Clear the route cache
     pub fn clear_cache(&mut self) {
         self.cache.clear();
-    }
-
     /// Get number of cached routes
     pub fn cache_size(&self) -> usize {
         self.cache.len()
@@ -439,14 +332,8 @@ impl RouteMatcher {
 impl fmt::Display for PathSegment {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            PathSegment::Static(s) => write!(f, "{}", s),
-            PathSegment::Parameter(name) => write!(f, ":{}", name),
-            PathSegment::Wildcard(name) => write!(f, "*{}", name),
-            PathSegment::Optional(inner) => write!(f, "{}?", inner),
         }
     }
-}
-
 impl fmt::Display for RoutePattern {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "/{}", self.segments.iter().map(|s| s.to_string()).collect::<Vec<_>>().join("/"))

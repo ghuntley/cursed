@@ -11,93 +11,33 @@ pub type ProcessResult<T> = std::result::Result<T, ProcessError>;
 pub enum ProcessError {
     /// Process spawning failed
     SpawnError {
-        command: String,
-        error: String,
-    },
     /// Process waiting/monitoring failed
     WaitError {
-        pid: u32,
-        error: String,
-    },
     /// Signal sending/handling failed
     SignalError {
-        signal: String,
-        target: Option<u32>,
-        error: String,
-    },
     /// Permission denied
     PermissionError {
-        operation: String,
-        error: String,
-    },
     /// Process not found
     ProcessNotFound {
-        pid: u32,
-    },
     /// Invalid arguments
     InvalidArguments {
-        operation: String,
-        details: String,
-    },
     /// System operation failed
     SystemError {
-        operation: String,
-        error: String,
-    },
     /// I/O operation failed
     IoError {
-        operation: String,
-        error: String,
-    },
     /// Timeout occurred
     TimeoutError {
-        operation: String,
-        timeout_ms: u64,
-    },
     /// Process terminated abnormally
     ProcessTerminated {
-        pid: u32,
-        exit_code: Option<i32>,
-        signal: Option<String>,
-    },
     /// General error with message
-    General(String),
-}
-
 /// Specific error kinds for different types of process errors
 #[derive(Debug, Clone, PartialEq)]
 pub enum ProcessErrorKind {
-    SpawnFailure,
-    WaitFailure, 
-    SignalFailure,
-    PermissionDenied,
-    ProcessNotFound,
-    InvalidArguments,
-    SystemFailure,
-    IoFailure,
-    Timeout,
-    ProcessTerminated,
-    General,
-}
-
 impl ProcessError {
     pub fn kind(&self) -> ProcessErrorKind {
         match self {
-            ProcessError::SpawnError { .. } => ProcessErrorKind::SpawnFailure,
-            ProcessError::WaitError { .. } => ProcessErrorKind::WaitFailure,
-            ProcessError::SignalError { .. } => ProcessErrorKind::SignalFailure,
-            ProcessError::PermissionError { .. } => ProcessErrorKind::PermissionDenied,
-            ProcessError::ProcessNotFound { .. } => ProcessErrorKind::ProcessNotFound,
-            ProcessError::InvalidArguments { .. } => ProcessErrorKind::InvalidArguments,
-            ProcessError::SystemError { .. } => ProcessErrorKind::SystemFailure,
-            ProcessError::IoError { .. } => ProcessErrorKind::IoFailure,
-            ProcessError::TimeoutError { .. } => ProcessErrorKind::Timeout,
-            ProcessError::ProcessTerminated { .. } => ProcessErrorKind::ProcessTerminated,
-            ProcessError::General(_) => ProcessErrorKind::General,
         }
     }
-}
-
 // impl fmt::Display for ProcessError {
 //     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
 //         match self {
@@ -159,30 +99,21 @@ impl ProcessError {
 // Helper functions for creating specific error types
 pub fn spawn_error(command: &str, error: &str) -> ProcessError {
     ProcessError::SpawnError {
-        command: command.to_string(),
-        error: error.to_string(),
     }
 }
 
 pub fn wait_error(pid: u32, error: &str) -> ProcessError {
     ProcessError::WaitError {
-        pid,
-        error: error.to_string(),
     }
 }
 
 pub fn signal_error(signal: &str, target: Option<u32>, error: &str) -> ProcessError {
     ProcessError::SignalError {
-        signal: signal.to_string(),
-        target,
-        error: error.to_string(),
     }
 }
 
 pub fn permission_error(operation: &str, error: &str) -> ProcessError {
     ProcessError::PermissionError {
-        operation: operation.to_string(),
-        error: error.to_string(),
     }
 }
 
@@ -192,37 +123,26 @@ pub fn process_not_found(pid: u32) -> ProcessError {
 
 pub fn invalid_arguments(operation: &str, details: &str) -> ProcessError {
     ProcessError::InvalidArguments {
-        operation: operation.to_string(),
-        details: details.to_string(),
     }
 }
 
 pub fn system_error(operation: &str, error: &str) -> ProcessError {
     ProcessError::SystemError {
-        operation: operation.to_string(),
-        error: error.to_string(),
     }
 }
 
 pub fn io_error(operation: &str, error: &str) -> ProcessError {
     ProcessError::IoError {
-        operation: operation.to_string(),
-        error: error.to_string(),
     }
 }
 
 pub fn timeout_error(operation: &str, timeout_ms: u64) -> ProcessError {
     ProcessError::TimeoutError {
-        operation: operation.to_string(),
-        timeout_ms,
     }
 }
 
 pub fn process_terminated(pid: u32, exit_code: Option<i32>, signal: Option<&str>) -> ProcessError {
     ProcessError::ProcessTerminated {
-        pid,
-        exit_code,
-        signal: signal.map(|s| s.to_string()),
     }
 }
 

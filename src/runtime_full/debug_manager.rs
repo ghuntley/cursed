@@ -16,31 +16,17 @@ use std::time::{SystemTime, Duration};
 #[derive(Debug, Clone)]
 pub struct SourceFile {
     /// File path
-    pub path: PathBuf,
     /// File content (cached)
-    pub content: Option<String>,
     /// Line offsets for quick line lookup
-    pub line_offsets: Vec<usize>,
     /// Last modification time
-    pub modified: Option<SystemTime>,
     /// File size in bytes
-    pub size: Option<u64>,
     /// Whether file is cached
-    pub is_cached: bool,
-}
-
 impl SourceFile {
     pub fn new<P: AsRef<Path>>(path: P) -> Self {
         let path = path.as_ref().to_path_buf();
         let metadata = fs::metadata(&path).ok();
         
         SourceFile {
-            path,
-            content: None,
-            line_offsets: Vec::new(),
-            modified: metadata.as_ref().and_then(|m| m.modified().ok()),
-            size: metadata.as_ref().map(|m| m.len()),
-            is_cached: false,
         }
     }
 
@@ -62,8 +48,6 @@ impl SourceFile {
         self.is_cached = true;
 
         Ok(())
-    }
-
     /// Get a specific line (1-based indexing)
     pub fn get_line(&self, line_number: u32) -> Option<String> {
         let content = self.content.as_ref()?;
@@ -71,18 +55,13 @@ impl SourceFile {
         
         if line_idx >= self.line_offsets.len() {
             return None;
-        }
-
         let start = self.line_offsets[line_idx];
         let end = if line_idx + 1 < self.line_offsets.len() {
             self.line_offsets[line_idx + 1].saturating_sub(1)
         } else {
             content.len()
-        };
 
         content.get(start..end).map(|s| s.to_string())
-    }
-
     /// Get a range of lines with context
     pub fn get_lines_with_context(&self, line_number: u32, context: u32) -> Option<Vec<(u32, String)>> {
         let content = self.content.as_ref()?;
@@ -103,16 +82,12 @@ impl SourceFile {
     pub fn needs_reload(&self) -> bool {
         if !self.is_cached {
             return true;
-        }
-
         if let Some(last_modified) = self.modified {
             if let Ok(metadata) = fs::metadata(&self.path) {
                 if let Ok(current_modified) = metadata.modified() {
                     return current_modified > last_modified;
                 }
             }
-        }
-
         false
     }
 }
@@ -121,65 +96,35 @@ impl SourceFile {
 #[derive(Debug, Clone)]
 pub struct FunctionDebugInfo {
     /// Function name
-    pub name: String,
     /// Source file
-    pub file_path: PathBuf,
     /// Start line number
-    pub start_line: u32,
     /// End line number (if known)
-    pub end_line: Option<u32>,
     /// Parameter information
-    pub parameters: Vec<VariableInfo>,
     /// Local variables
-    pub local_variables: Vec<VariableInfo>,
     /// Instruction pointer ranges
-    pub ip_ranges: Vec<(usize, usize)>,
     /// Whether function is inlined
-    pub is_inlined: bool,
     /// Module or namespace
-    pub module_name: Option<String>,
-}
-
 impl FunctionDebugInfo {
     pub fn new(name: String, file_path: PathBuf, start_line: u32) -> Self {
         FunctionDebugInfo {
-            name,
-            file_path,
-            start_line,
-            end_line: None,
-            parameters: Vec::new(),
-            local_variables: Vec::new(),
-            ip_ranges: Vec::new(),
-            is_inlined: false,
-            module_name: None,
         }
     }
 
     pub fn with_end_line(mut self, end_line: u32) -> Self {
         self.end_line = Some(end_line);
         self
-    }
-
     pub fn with_parameter(mut self, param: VariableInfo) -> Self {
         self.parameters.push(param);
         self
-    }
-
     pub fn with_local_variable(mut self, var: VariableInfo) -> Self {
         self.local_variables.push(var);
         self
-    }
-
     pub fn with_ip_range(mut self, start: usize, end: usize) -> Self {
         self.ip_ranges.push((start, end));
         self
-    }
-
     pub fn with_module(mut self, module_name: String) -> Self {
         self.module_name = Some(module_name);
         self
-    }
-
     /// Check if an instruction pointer is within this function
     pub fn contains_ip(&self, ip: usize) -> bool {
         self.ip_ranges.iter().any(|(start, end)| ip >= *start && ip < *end)
@@ -190,69 +135,36 @@ impl FunctionDebugInfo {
 #[derive(Debug, Clone)]
 pub struct DebugManagerConfig {
     /// Whether to cache source files
-    pub cache_source_files: bool,
     /// Maximum number of files to cache
-    pub max_cached_files: usize,
     /// Whether to auto-reload modified files
-    pub auto_reload_files: bool,
     /// Cache expiration time
-    pub cache_expiration: Duration,
     /// Whether to resolve symbols automatically
-    pub auto_resolve_symbols: bool,
     /// Maximum symbol resolution depth
-    pub max_symbol_depth: usize,
-}
-
 impl Default for DebugManagerConfig {
     fn default() -> Self {
         DebugManagerConfig {
-            cache_source_files: true,
-            max_cached_files: 100,
-            auto_reload_files: true,
             cache_expiration: Duration::from_secs(300), // 5 minutes
-            auto_resolve_symbols: true,
-            max_symbol_depth: 50,
         }
     }
-}
-
 /// Statistics for debug manager
 #[derive(Debug, Default, Clone)]
 pub struct DebugManagerStats {
     /// Number of source files tracked
-    pub files_tracked: usize,
     /// Number of cached files
-    pub files_cached: usize,
     /// Number of functions tracked
-    pub functions_tracked: usize,
     /// Number of symbol resolutions
-    pub symbol_resolutions: u64,
     /// Number of cache hits
-    pub cache_hits: u64,
     /// Number of cache misses
-    pub cache_misses: u64,
     /// Number of file reloads
-    pub file_reloads: u64,
-}
-
 /// Main debug information manager
 pub struct DebugManager {
     /// Configuration
-    config: DebugManagerConfig,
     /// Source file cache
-    source_files: Arc<RwLock<HashMap<PathBuf, SourceFile>>>,
     /// Function debug information
-    functions: Arc<RwLock<HashMap<String, FunctionDebugInfo>>>,
     /// Instruction pointer to function mapping
-    ip_to_function: Arc<RwLock<HashMap<usize, String>>>,
     /// Symbol resolver
-    symbol_resolver: Arc<Mutex<Option<Box<dyn SymbolResolver + Send + Sync>>>>,
     /// Debug statistics
-    stats: Arc<Mutex<DebugManagerStats>>,
     /// Source location cache
-    location_cache: Arc<RwLock<HashMap<usize, DebugInfo>>>,
-}
-
 impl std::fmt::Debug for DebugManager {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("DebugManager")
@@ -271,33 +183,18 @@ impl DebugManager {
     /// Create a new debug manager
     pub fn new() -> Self {
         DebugManager {
-            config: DebugManagerConfig::default(),
-            source_files: Arc::new(RwLock::new(HashMap::new())),
-            functions: Arc::new(RwLock::new(HashMap::new())),
-            ip_to_function: Arc::new(RwLock::new(HashMap::new())),
-            symbol_resolver: Arc::new(Mutex::new(None)),
-            stats: Arc::new(Mutex::new(DebugManagerStats::default())),
-            location_cache: Arc::new(RwLock::new(HashMap::new())),
         }
     }
 
     /// Create debug manager with custom configuration
     pub fn with_config(config: DebugManagerConfig) -> Self {
         DebugManager {
-            config,
-            source_files: Arc::new(RwLock::new(HashMap::new())),
-            functions: Arc::new(RwLock::new(HashMap::new())),
-            ip_to_function: Arc::new(RwLock::new(HashMap::new())),
-            symbol_resolver: Arc::new(Mutex::new(None)),
-            stats: Arc::new(Mutex::new(DebugManagerStats::default())),
-            location_cache: Arc::new(RwLock::new(HashMap::new())),
         }
     }
 
     /// Set symbol resolver
     pub fn set_symbol_resolver<R>(&self, resolver: R) -> crate::error::Result<()>
     where
-        R: SymbolResolver + Send + Sync + 'static,
     {
         if let Ok(mut resolver_lock) = self.symbol_resolver.lock() {
             *resolver_lock = Some(Box::new(resolver));
@@ -314,8 +211,6 @@ impl DebugManager {
 
         if self.config.cache_source_files {
             source_file.load_content()?;
-        }
-
         if let Ok(mut files) = self.source_files.write() {
             files.insert(path, source_file);
             
@@ -344,16 +239,12 @@ impl DebugManager {
                     ip_map.insert(ip, function_name.clone());
                 }
             }
-        }
-
         if let Ok(mut functions) = self.functions.write() {
             functions.insert(function_name, function_info);
             
             // Update stats
             if let Ok(mut stats) = self.stats.lock() {
                 stats.functions_tracked = functions.len();
-            }
-            
             Ok(())
         } else {
             Err(CursedError::Runtime("Failed to register function".to_string()))
@@ -376,8 +267,6 @@ impl DebugManager {
                 
                 if let Ok(mut stats) = self.stats.lock() {
                     stats.cache_hits += 1;
-                }
-                
                 Ok(Some(file.clone()))
             } else {
                 if let Ok(mut stats) = self.stats.lock() {
@@ -429,28 +318,16 @@ impl DebugManager {
                     return Ok(Some(function_info.clone()));
                 }
             }
-        }
-
         Ok(None)
-    }
-
     /// Resolve symbol information for an instruction pointer
     pub fn resolve_symbol(&self, ip: usize) -> crate::error::Result<()> {
         // Check cache first
         if let Ok(cache) = self.location_cache.read() {
             if let Some(debug_info) = cache.get(&ip) {
                 let symbol_info = SymbolInfo {
-                    name: debug_info.function_name.clone(),
-                    file: Some(debug_info.file_path.clone()),
-                    line: Some(debug_info.line),
-                    column: Some(debug_info.column),
-                    offset: debug_info.instruction_pointer.map(|base| ip.saturating_sub(base)),
-                };
                 
                 if let Ok(mut stats) = self.stats.lock() {
                     stats.cache_hits += 1;
-                }
-                
                 return Ok(Some(symbol_info));
             }
         }
@@ -462,8 +339,6 @@ impl DebugManager {
                 
                 if let Ok(mut stats) = self.stats.lock() {
                     stats.symbol_resolutions += 1;
-                }
-                
                 return Ok(symbol);
             }
         }
@@ -471,29 +346,13 @@ impl DebugManager {
         // Try function lookup
         if let Some(function_info) = self.get_function_by_ip(ip)? {
             let symbol_info = SymbolInfo {
-                name: function_info.name,
-                file: Some(function_info.file_path),
-                line: Some(function_info.start_line),
-                column: Some(1),
-                offset: None,
-            };
             
             return Ok(Some(symbol_info));
-        }
-
         if let Ok(mut stats) = self.stats.lock() {
             stats.cache_misses += 1;
-        }
-
         Ok(None)
-    }
-
     /// Get source code snippet around a location
     pub fn get_source_snippet(
-        &self,
-        file_path: &Path,
-        line: u32,
-        context_lines: u32,
     ) -> crate::error::Result<()> {
         if let Some(source_file) = self.get_source_file(file_path)? {
             if let Some(lines) = source_file.get_lines_with_context(line, context_lines) {
@@ -502,8 +361,6 @@ impl DebugManager {
                 for (line_num, line_content) in lines {
                     let marker = if line_num == line { ">" } else { " " };
                     snippet.push_str(&format!("{} {:4} | {}\n", marker, line_num, line_content));
-                }
-                
                 Ok(snippet)
             } else {
                 Err(CursedError::Runtime(format!("Line {} not found in file {}", line, file_path.display())))
@@ -517,10 +374,6 @@ impl DebugManager {
     pub fn create_enhanced_frame(&self, ip: usize, frame_index: usize) -> crate::error::Result<()> {
         if let Some(symbol_info) = self.resolve_symbol(ip)? {
             let debug_info = DebugInfo::new(
-                symbol_info.file.as_ref().unwrap_or(&PathBuf::from("unknown")),
-                symbol_info.line.unwrap_or(0),
-                symbol_info.column.unwrap_or(0),
-                symbol_info.name.clone(),
             ).with_instruction_pointer(ip);
 
             let mut frame = EnhancedStackFrame::new(debug_info, frame_index);
@@ -561,8 +414,6 @@ impl DebugManager {
     pub fn clear_caches(&self) -> crate::error::Result<()> {
         if let Ok(mut cache) = self.location_cache.write() {
             cache.clear();
-        }
-
         if let Ok(mut files) = self.source_files.write() {
             for file in files.values_mut() {
                 file.content = None;
@@ -574,8 +425,6 @@ impl DebugManager {
             stats.cache_hits = 0;
             stats.cache_misses = 0;
             stats.files_cached = 0;
-        }
-
         Ok(())
     }
 }

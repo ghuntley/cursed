@@ -8,21 +8,15 @@ use std::io::Read;
 /// Validate if a string is a valid regex pattern
 pub fn is_valid_pattern(pattern: &str) -> bool {
     regex::Regex::new(pattern).is_ok()
-}
-
 /// Get detailed information about why a pattern is invalid
 pub fn validate_pattern(pattern: &str) -> RegexVibesResult<()> {
     regex::Regex::new(pattern)
         .map(|_| ())
         .map_err(RegexVibesError::from)
-}
-
 /// Count the number of capturing groups in a pattern
 pub fn count_capture_groups(pattern: &str) -> RegexVibesResult<i32> {
     let regex = regex::Regex::new(pattern)?;
     Ok(regex.captures_len() as i32)
-}
-
 /// Extract all literal strings from a pattern (simplified)
 pub fn extract_literals(pattern: &str) -> Vec<String> {
     let mut literals = Vec::new();
@@ -37,10 +31,7 @@ pub fn extract_literals(pattern: &str) -> Vec<String> {
             current_literal.push(ch);
             in_escape = false;
             continue;
-        }
-
         match ch {
-            '\\' => in_escape = true,
             '[' => {
                 if !current_literal.is_empty() {
                     literals.push(current_literal.clone());
@@ -48,7 +39,6 @@ pub fn extract_literals(pattern: &str) -> Vec<String> {
                 }
                 in_brackets = true;
             }
-            ']' if in_brackets => in_brackets = false,
             '(' => {
                 if !current_literal.is_empty() {
                     literals.push(current_literal.clone());
@@ -56,31 +46,21 @@ pub fn extract_literals(pattern: &str) -> Vec<String> {
                 }
                 in_group = true;
             }
-            ')' if in_group => in_group = false,
             '.' | '*' | '+' | '?' | '^' | '$' | '|' if !in_brackets => {
                 if !current_literal.is_empty() {
                     literals.push(current_literal.clone());
                     current_literal.clear();
                 }
             }
-            _ if !in_brackets => current_literal.push(ch),
             _ => {}
         }
-    }
-
     if !current_literal.is_empty() {
         literals.push(current_literal);
-    }
-
     literals.into_iter().filter(|s| s.len() > 1).collect()
-}
-
 /// Find common prefix in a list of strings that could be optimized in regex
 pub fn find_common_prefix(strings: &[String]) -> String {
     if strings.is_empty() {
         return String::new();
-    }
-
     let mut prefix = strings[0].clone();
     for string in strings.iter().skip(1) {
         let mut common_len = 0;
@@ -92,59 +72,39 @@ pub fn find_common_prefix(strings: &[String]) -> String {
             }
         }
         prefix.truncate(common_len);
-    }
-
     prefix
-}
-
 /// Find common suffix in a list of strings
 pub fn find_common_suffix(strings: &[String]) -> String {
     if strings.is_empty() {
         return String::new();
-    }
-
     let reversed: Vec<String> = strings.iter()
         .map(|s| s.chars().rev().collect())
         .collect();
     
     let common_prefix = find_common_prefix(&reversed);
     common_prefix.chars().rev().collect()
-}
-
 /// Generate a regex pattern that matches any of the given strings
 pub fn strings_to_alternation(strings: &[String]) -> String {
     if strings.is_empty() {
         return String::new();
-    }
-
     if strings.len() == 1 {
         return regex::escape(&strings[0]);
-    }
-
     let escaped: Vec<String> = strings.iter()
         .map(|s| regex::escape(s))
         .collect();
 
     format!("(?:{})", escaped.join("|"))
-}
-
 /// Optimize a list of literal strings into a more efficient regex
 pub fn optimize_string_list(strings: &[String]) -> String {
     if strings.is_empty() {
         return String::new();
-    }
-
     if strings.len() == 1 {
         return regex::escape(&strings[0]);
-    }
-
     let prefix = find_common_prefix(strings);
     let suffix = find_common_suffix(strings);
 
     if prefix.is_empty() && suffix.is_empty() {
         return strings_to_alternation(strings);
-    }
-
     let mut middle_parts = Vec::new();
     for string in strings {
         let mut middle = string.clone();
@@ -155,29 +115,21 @@ pub fn optimize_string_list(strings: &[String]) -> String {
             middle = middle.strip_suffix(&suffix).unwrap_or(&middle).to_string();
         }
         middle_parts.push(middle);
-    }
-
     let prefix_escaped = if prefix.is_empty() { String::new() } else { regex::escape(&prefix) };
     let suffix_escaped = if suffix.is_empty() { String::new() } else { regex::escape(&suffix) };
     let middle_pattern = strings_to_alternation(&middle_parts);
 
     format!("{}{}{}", prefix_escaped, middle_pattern, suffix_escaped)
-}
-
 /// Test multiple patterns against a string and return which ones match
 pub fn test_patterns(text: &str, patterns: &[&str]) -> RegexVibesResult<Vec<(String, bool)>> {
     let mut results = Vec::new();
     
     for pattern in patterns {
         match VibePattern::compile(pattern) {
-            Ok(p) => results.push((pattern.to_string(), p.match_string(text))),
-            Err(_) => results.push((pattern.to_string(), false)),
         }
     }
     
     Ok(results)
-}
-
 /// Benchmark pattern matching performance
 pub fn benchmark_pattern(pattern: &str, texts: &[&str], iterations: usize) -> RegexVibesResult<BenchmarkResult> {
     let compiled_pattern = VibePattern::compile(pattern)?;
@@ -191,36 +143,19 @@ pub fn benchmark_pattern(pattern: &str, texts: &[&str], iterations: usize) -> Re
                 total_matches += 1;
             }
         }
-    }
-    
     let duration = start.elapsed();
     let total_operations = iterations * texts.len();
     
     Ok(BenchmarkResult {
-        pattern: pattern.to_string(),
-        total_operations,
-        total_matches,
-        duration_micros: duration.as_micros() as u64,
         operations_per_second: (total_operations as f64 / duration.as_secs_f64()) as u64,
     })
-}
-
 /// Result of pattern benchmarking
 #[derive(Debug, Clone)]
 pub struct BenchmarkResult {
-    pub pattern: String,
-    pub total_operations: usize,
-    pub total_matches: usize,
-    pub duration_micros: u64,
-    pub operations_per_second: u64,
-}
-
 impl BenchmarkResult {
     /// Get the average microseconds per operation
     pub fn avg_micros_per_operation(&self) -> f64 {
         self.duration_micros as f64 / self.total_operations as f64
-    }
-
     /// Get the match rate as a percentage
     pub fn match_rate(&self) -> f64 {
         (self.total_matches as f64 / self.total_operations as f64) * 100.0
@@ -230,8 +165,6 @@ impl BenchmarkResult {
 /// Escape special characters for use in replacement strings
 pub fn escape_replacement(s: &str) -> String {
     s.replace('$', "$$")
-}
-
 /// Parse replacement string and extract group references
 pub fn parse_replacement_references(replacement: &str) -> Vec<String> {
     let mut references = Vec::new();
@@ -265,11 +198,7 @@ pub fn parse_replacement_references(replacement: &str) -> Vec<String> {
                 }
             }
         }
-    }
-    
     references
-}
-
 /// Convert a glob pattern to a regex pattern
 pub fn glob_to_regex(glob: &str) -> String {
     let mut regex = String::new();
@@ -310,21 +239,16 @@ pub fn glob_to_regex(glob: &str) -> String {
                 regex.push('\\');
                 regex.push(ch);
             }
-            ch => regex.push(ch),
         }
     }
     
     regex.push('$');
     regex
-}
-
 /// Check if a string matches a glob pattern
 pub fn glob_match(pattern: &str, text: &str) -> RegexVibesResult<bool> {
     let regex_pattern = glob_to_regex(pattern);
     let compiled = VibePattern::compile(&regex_pattern)?;
     Ok(compiled.match_string(text))
-}
-
 /// Find all regex patterns in a string (patterns enclosed in forward slashes)
 pub fn find_regex_patterns(text: &str) -> Vec<String> {
     let pattern = VibePattern::compile(r"/([^/\\]+(?:\\.[^/\\]*)*)/").unwrap();
@@ -332,22 +256,16 @@ pub fn find_regex_patterns(text: &str) -> Vec<String> {
         .into_iter()
         .filter_map(|matches| matches.get(1).cloned())
         .collect()
-}
-
 /// Create a pattern that matches any line containing the given patterns
 pub fn create_line_filter(patterns: &[&str]) -> RegexVibesResult<VibePattern> {
     if patterns.is_empty() {
         return Err(invalid_input_error("No patterns provided"));
-    }
-
     let escaped_patterns: Vec<String> = patterns.iter()
         .map(|p| regex::escape(p))
         .collect();
 
     let combined = format!("^.*(?:{}).*$", escaped_patterns.join("|"));
     VibePattern::compile(&combined)
-}
-
 /// Split text by regex and keep the delimiters
 pub fn split_keep_delimiter(text: &str, pattern: &str) -> RegexVibesResult<Vec<String>> {
     let regex_pattern = VibePattern::compile(pattern)?;
@@ -364,8 +282,6 @@ pub fn split_keep_delimiter(text: &str, pattern: &str) -> RegexVibesResult<Vec<S
             // Add text before delimiter
             if start > last_end {
                 result.push(text[last_end..start].to_string());
-            }
-            
             // Add delimiter
             result.push(text[start..end].to_string());
             
@@ -376,8 +292,4 @@ pub fn split_keep_delimiter(text: &str, pattern: &str) -> RegexVibesResult<Vec<S
     // Add remaining text
     if last_end < text.len() {
         result.push(text[last_end..].to_string());
-    }
-    
     Ok(result)
-}
-

@@ -7,13 +7,7 @@
 use crate::parser::Parser;
 use crate::lexer::{TokenType, Token};
 use crate::ast::{
-    declarations::async_function::{AsyncFunctionStatement, AsyncFunctionDeclaration},
-    expressions::await_expression::{AwaitExpression, AwaitAssignment, AsyncBlockExpression, SourceLocation},
-    identifiers::Identifier,
-    expressions::Parameter,
-    block::BlockStatement,
-    traits::{Statement, Expression},
-};
+// };
 
 use crate::error::{CursedError, types::ParseError};
 
@@ -43,20 +37,12 @@ impl Parser {
             Some(self.parse_expression()?)
         } else {
             None
-        };
 
         // Parse function body
         let body = self.parse_block_statement()?;
 
         Ok(Box::new(AsyncFunctionStatement::new(
-            function_token,
-            name,
-            parameters,
-            return_type,
-            body,
         )))
-    }
-
     /// Parse an await expression
     /// Expected syntax: await expression
     pub fn parse_await_expression(&mut self) -> crate::error::Result<()> {
@@ -64,10 +50,6 @@ impl Parser {
         
         // Get source location for better error reporting
         let location = SourceLocation {
-            line: await_token.location.line,
-            column: await_token.location.column,
-            file: await_token.location.file.clone(),
-        };
 
         // Parse the expression being awaited
         let expression = self.parse_expression()?;
@@ -76,12 +58,7 @@ impl Parser {
         self.validate_await_expression(&expression)?;
 
         Ok(Box::new(AwaitExpression::with_location(
-            await_token.literal,
-            expression,
-            location,
         )))
-    }
-
     /// Parse an await assignment statement
     /// Expected syntax: facts variable = await expression
     pub fn parse_await_assignment(&mut self) -> crate::error::Result<()> {
@@ -96,7 +73,6 @@ impl Parser {
             Some(type_token)
         } else {
             None
-        };
 
         // Expect assignment
         self.expect_token(TokenType::Assign)?;
@@ -107,27 +83,14 @@ impl Parser {
             let expression = self.parse_expression()?;
             
             let location = SourceLocation {
-                line: await_token.location.line,
-                column: await_token.location.column,
-                file: await_token.location.file.clone(),
-            };
 
             AwaitExpression::with_location(await_token.literal, expression, location)
         } else {
             return Err(CursedError::ParseError(ParseError {
-                message: "Expected 'await' expression in async assignment".to_string(),
-                location: self.current_token().location.clone(),
             }));
-        };
 
         Ok(Box::new(AwaitAssignment::new(
-            var_token.literal,
-            var_name,
-            await_expr,
-            var_type,
         )))
-    }
-
     /// Parse an async block with multiple await expressions
     pub fn parse_async_block(&mut self) -> crate::error::Result<()> {
         let async_token = self.expect_token(TokenType::Async)?;
@@ -147,8 +110,6 @@ impl Parser {
                 // Parse regular statement/expression
                 let stmt = self.parse_expression()?;
                 async_block.add_statement(stmt);
-            }
-
             // Optional semicolon
             if self.current_token_is(TokenType::Semicolon) {
                 self.advance();
@@ -157,8 +118,6 @@ impl Parser {
 
         self.expect_token(TokenType::RightBrace)?;
         Ok(Box::new(async_block))
-    }
-
     /// Validate that an expression is valid for awaiting
     fn validate_await_expression(&self, expression: &Box<dyn Expression>) -> crate::error::Result<()> {
         let expr_str = expression.string();
@@ -166,31 +125,21 @@ impl Parser {
         // Basic validation - ensure it's not an obviously invalid expression
         if expr_str.is_empty() {
             return Err(CursedError::ParseError(ParseError {
-                message: "Cannot await empty expression".to_string(),
-                location: self.current_token().location.clone(),
             }));
-        }
-
         // Could add more sophisticated validation here based on type system
         // For now, we allow any non-empty expression
         Ok(())
-    }
-
     /// Check if the current context allows async/await syntax
     pub fn is_in_async_context(&self) -> bool {
         // This would be implemented with proper context tracking
         // For now, we allow async/await everywhere for simplicity
         true
-    }
-
     /// Parse function parameters for async functions
     fn parse_function_parameters(&mut self) -> crate::error::Result<()> {
         let mut parameters = Vec::new();
 
         if self.current_token_is(TokenType::RightParen) {
             return Ok(parameters);
-        }
-
         loop {
             // Parse parameter name
             let name_token = self.expect_token(TokenType::Identifier)?;
@@ -198,17 +147,11 @@ impl Parser {
             // Parse optional parameter type
             let param_type = if self.current_token_is(TokenType::Identifier) {
                 Some(Box::new(Identifier::new(
-                    self.advance().literal.clone(),
-                    self.previous_token().literal.clone(),
                 )) as Box<dyn Expression>)
             } else {
                 None
-            };
 
             parameters.push(Parameter::new(
-                name_token.literal.clone(),
-                name_token.literal,
-                param_type,
             ));
 
             if self.current_token_is(TokenType::Comma) {
@@ -219,23 +162,17 @@ impl Parser {
         }
 
         Ok(parameters)
-    }
-
     /// Helper method to get the previous token
     fn previous_token(&self) -> &Token {
         // This assumes we have access to the previous token
         // Implementation depends on Parser structure
         &self.current_token
-    }
-
     /// Helper method to expect a specific token type
     fn expect_token(&mut self, expected: TokenType) -> crate::error::Result<()> {
         if self.current_token_is(expected.clone()) {
             Ok(self.advance())
         } else {
             Err(CursedError::ParseError(ParseError {
-                message: format!("Expected {:?}, got {:?}", expected, self.current_token().token_type),
-                location: self.current_token().location.clone(),
             }))
         }
     }
@@ -243,13 +180,9 @@ impl Parser {
     /// Helper method to check if current token matches expected type
     fn current_token_is(&self, token_type: TokenType) -> bool {
         self.current_token().token_type == token_type
-    }
-
     /// Helper method to get current token
     fn current_token(&self) -> &Token {
         &self.current_token
-    }
-
     /// Helper method to advance to next token
     fn advance(&mut self) -> Token {
         let current = self.current_token.clone();
@@ -268,13 +201,9 @@ impl AsyncParser {
         tokens[0].token_type == TokenType::Slay &&
         tokens[1].token_type == TokenType::Async &&
         tokens[2].token_type == TokenType::Identifier
-    }
-
     /// Check if a token represents the start of an await expression
     pub fn is_await_expression(token: &Token) -> bool {
         token.token_type == TokenType::Await
-    }
-
     /// Extract async function name from token sequence
     pub fn extract_async_function_name(tokens: &[Token]) -> Option<String> {
         if Self::is_async_function_declaration(tokens) {
@@ -286,24 +215,15 @@ impl AsyncParser {
 
     /// Validate async function signature
     pub fn validate_async_function_signature(
-        name: &str,
-        parameters: &[Parameter],
-        return_type: &Option<Box<dyn Expression>>,
     ) -> crate::error::Result<()> {
         // Validate function name
         if name.is_empty() {
             return Err(CursedError::ParseError(ParseError {
-                message: "Async function name cannot be empty".to_string(),
-                location: crate::error::SourceLocation::default(),
             }));
-        }
-
         // Validate parameters (basic check)
         for param in parameters {
             if param.to_string().is_empty() {
                 return Err(CursedError::ParseError(ParseError {
-                    message: "Parameter name cannot be empty".to_string(),
-                    location: crate::error::SourceLocation::default(),
                 }));
             }
         }

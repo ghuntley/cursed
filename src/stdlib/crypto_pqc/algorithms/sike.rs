@@ -15,8 +15,6 @@ pub struct SikeSecretKey { pub data: Vec<u8> }
 #[derive(Debug, Clone)]
 pub struct SikeCiphertext { pub data: Vec<u8> }
 #[derive(Debug, Clone)]
-pub struct SikeSharedSecret { pub data: Vec<u8> }
-
 pub struct Sike;
 
 impl KeyEncapsulation for Sike {
@@ -30,22 +28,16 @@ impl KeyEncapsulation for Sike {
         Err(PqcError::AlgorithmNotAvailable(
             "SIKE/SIDH is cryptographically broken and should not be used".to_string()
         ))
-    }
-
     fn encaps(_public_key: &Self::PublicKey) -> PqcResult<(Self::Ciphertext, Self::SharedSecret)> {
         // SIKE is broken - return error
         Err(PqcError::AlgorithmNotAvailable(
             "SIKE/SIDH is cryptographically broken and should not be used".to_string()
         ))
-    }
-
     fn decaps(_secret_key: &Self::SecretKey, _ciphertext: &Self::Ciphertext) -> PqcResult<Self::SharedSecret> {
         // SIKE is broken - return error
         Err(PqcError::AlgorithmNotAvailable(
             "SIKE/SIDH is cryptographically broken and should not be used".to_string()
         ))
-    }
-
     fn algorithm_type() -> AlgorithmType {
         AlgorithmType::Sike
     }

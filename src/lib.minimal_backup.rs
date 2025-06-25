@@ -42,9 +42,6 @@ pub mod stdlib {
     pub mod value {
         #[derive(Debug, Clone)]
         pub enum Value {
-            Object(std::collections::HashMap<String, String>),
-            String(String),
-            Int(i64),
         }
     }
     pub mod packages {
@@ -64,9 +61,6 @@ pub mod optimization {
         pub struct ParallelCompiler;
         pub struct CompilationJob;
         pub enum JobPriority {
-            High,
-            Normal,
-            Low,
         }
     }
     pub mod llvm_advanced {
@@ -87,15 +81,11 @@ pub use minimal_ast::*;
 // AST module alias for compatibility
 pub mod ast {
     pub use crate::minimal_ast::identifiers;
-}
-
 /// Prelude module for minimal imports
 pub mod prelude {
     pub use crate::lexer::{Lexer, Token, TokenType};
     pub use crate::minimal_parser::Parser;
     pub use crate::minimal_ast::*;
-}
-
 /// Library version information
 pub const VERSION: &str = env!("CARGO_PKG_VERSION");
 pub const NAME: &str = env!("CARGO_PKG_NAME");
@@ -106,14 +96,10 @@ pub fn init() {
     }
     // Just basic logging setup
     env_logger::init();
-}
-
 /// Basic tokenize function - tokenize CURSED source
 pub fn tokenize(source: &str) -> crate::error::Result<Vec<Token>> {
     let lexer = Lexer::new(source.to_string());
     Ok(lexer.collect())
-}
-
 /// Basic parse function - parse CURSED source into AST
 pub fn parse(source: &str) -> crate::error::Result<Program> {
     let lexer = Lexer::new(source.to_string());
@@ -124,26 +110,18 @@ pub fn parse(source: &str) -> crate::error::Result<Program> {
     let errors = parser.errors();
     if !errors.is_empty() {
         return Err(CursedError::Parse(format!("Parse errors: {}", errors.join(", "))));
-    }
-    
     Ok(program)
-}
-
 /// Check CURSED source for syntax errors only (minimal version)
 pub fn check(source: &str) -> crate::error::crate::error::Result<()> {
     let _ = parse(source)?;
     println!("✅ Syntax check passed!");
     Ok(())
-}
-
 /// Format CURSED source code (minimal version - just return original for now)
 pub fn format(source: &str) -> Result<String> {
     // Validate syntax first
     let _ = parse(source)?;
     // For now, just return original source
     Ok(source.to_string())
-}
-
 /// Minimal execution - just parse and report what we found
 pub fn run(source: &str) -> crate::error::Result<()> {
     let program = parse(source)?;
@@ -152,50 +130,34 @@ pub fn run(source: &str) -> crate::error::Result<()> {
         println!("  {}. {:?}", i + 1, stmt);
     }
     Ok(())
-}
-
 /// Minimal file execution - read file and run
 pub fn run_file(path: &str) -> crate::error::crate::error::Result<()> {
     let source = std::fs::read_to_string(path)?;
     run(&source)
-}
-
 /// Compile CURSED source directly to LLVM IR
 pub fn compile_to_ir(source: &str) -> Result<String> {
     let program = parse(source)?;
     codegen::compile_cursed_to_llvm(&program, "cursed_program")
-}
-
 /// Compile CURSED source to LLVM IR with optimization
 pub fn compile_to_ir_with_optimization(source: &str, _opt_level: Option<&str>) -> crate::error::Result<String> {
     // For now, optimization levels are ignored - we use default LLVM optimization
     let program = parse(source)?;
     codegen::compile_cursed_to_llvm(&program, "cursed_program")
-}
-
 /// Parse a CURSED source file and return the AST
 pub fn parse_file(filename: &str) -> crate::error::Result<minimal_ast::Program> {
     let source = std::fs::read_to_string(filename)
         .map_err(|e| CursedError::Io(format!("Failed to read file {}: {}", filename, e)))?;
     parse(&source)
-}
-
 /// Compile a CURSED program to LLVM IR
 pub fn compile_to_llvm_ir(program: &minimal_ast::Program, module_name: &str, output_file: &str) -> crate::error::Result<()> {
     let llvm_ir = codegen::compile_cursed_to_llvm(program, module_name)?;
     std::fs::write(output_file, llvm_ir)
         .map_err(|e| CursedError::Io(format!("Failed to write LLVM IR to {}: {}", output_file, e)))
-}
-
 /// Compile a CURSED program to an object file
 pub fn compile_to_object(program: &minimal_ast::Program, module_name: &str, output_file: &str) -> crate::error::Result<()> {
     codegen::compile_cursed_to_object(program, module_name, output_file)
-}
-
 /// Compile a CURSED program to an executable
 pub fn compile_to_executable(program: &minimal_ast::Program, module_name: &str, output_file: &str) -> crate::error::Result<()> {
     codegen::compile_cursed_to_executable(program, module_name, output_file)
-}
-
 
 // Include the test module

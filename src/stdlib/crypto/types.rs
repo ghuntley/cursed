@@ -10,28 +10,14 @@ use std::collections::HashMap;
 #[derive(Debug, Clone)]
 pub struct CryptoPlatform {
     /// Platform identifier
-    pub platform_id: String,
     /// Supported algorithms
-    pub supported_algorithms: Vec<String>,
     /// Hardware acceleration support
-    pub hardware_acceleration: bool,
-}
-
 impl CryptoPlatform {
     /// Create a new crypto platform
     pub fn new() -> crate::error::Result<()> {
         Ok(Self {
-            platform_id: "default".to_string(),
             supported_algorithms: vec![
-                "AES-256-GCM".to_string(),
-                "ChaCha20-Poly1305".to_string(),
-                "Ed25519".to_string(),
-                "X25519".to_string(),
-            ],
-            hardware_acceleration: false,
         })
-    }
-
     /// Constant-time equality comparison
     pub fn constant_time_eq(a: &[u8], b: &[u8]) -> bool {
         if a.len() != b.len() {
@@ -48,9 +34,6 @@ impl CryptoPlatform {
 impl Default for CryptoPlatform {
     fn default() -> Self {
         Self::new().unwrap_or_else(|_| Self {
-            platform_id: "fallback".to_string(),
-            supported_algorithms: vec![],
-            hardware_acceleration: false,
         })
     }
 }
@@ -59,9 +42,6 @@ impl Default for CryptoPlatform {
 #[derive(Debug, Clone, PartialEq)]
 pub struct Ed25519PublicKey {
     /// The 32-byte public key
-    pub bytes: [u8; 32],
-}
-
 impl Ed25519PublicKey {
     /// Create a new Ed25519 public key from bytes
     pub fn from_bytes(bytes: [u8; 32]) -> Self {
@@ -71,8 +51,6 @@ impl Ed25519PublicKey {
     /// Get the key as bytes
     pub fn to_bytes(&self) -> [u8; 32] {
         self.bytes
-    }
-
     /// Create from byte slice
     pub fn from_slice(bytes: &[u8]) -> crate::error::Result<()> {
         if bytes.len() != 32 {
@@ -81,8 +59,6 @@ impl Ed25519PublicKey {
         let mut key_bytes = [0u8; 32];
         key_bytes.copy_from_slice(bytes);
         Ok(Self::from_bytes(key_bytes))
-    }
-
     /// Verify a signature with this public key
     pub fn verify(&self, message: &[u8], signature: &Ed25519Signature) -> crate::error::Result<()> {
         // Mock implementation - in real usage would use actual Ed25519 verification
@@ -94,9 +70,6 @@ impl Ed25519PublicKey {
 #[derive(Debug, Clone)]
 pub struct Ed25519PrivateKey {
     /// The 32-byte private key (kept private)
-    bytes: [u8; 32],
-}
-
 impl Ed25519PrivateKey {
     /// Create a new Ed25519 private key from bytes
     pub fn from_bytes(bytes: [u8; 32]) -> Self {
@@ -111,8 +84,6 @@ impl Ed25519PrivateKey {
             bytes[i] = (i * 7 + 42) as u8; // Mock random data
         }
         Ok(Self::from_bytes(bytes))
-    }
-
     /// Get the corresponding public key
     pub fn public_key(&self) -> Ed25519PublicKey {
         // Mock implementation - in real usage would derive actual public key
@@ -121,8 +92,6 @@ impl Ed25519PrivateKey {
             pub_bytes[i] = self.bytes[i] ^ 0x55; // Mock derivation
         }
         Ed25519PublicKey::from_bytes(pub_bytes)
-    }
-
     /// Sign a message with this private key
     pub fn sign(&self, message: &[u8]) -> crate::error::Result<()> {
         // Mock implementation - in real usage would use actual Ed25519 signing
@@ -141,9 +110,6 @@ impl Ed25519PrivateKey {
 #[derive(Debug, Clone, PartialEq)]
 pub struct Ed25519Signature {
     /// The 64-byte signature
-    pub bytes: [u8; 64],
-}
-
 impl Ed25519Signature {
     /// Create a new Ed25519 signature from bytes
     pub fn from_bytes(bytes: [u8; 64]) -> Self {
@@ -153,8 +119,6 @@ impl Ed25519Signature {
     /// Get the signature as bytes
     pub fn to_bytes(&self) -> [u8; 64] {
         self.bytes
-    }
-
     /// Create from byte slice
     pub fn from_slice(bytes: &[u8]) -> crate::error::Result<()> {
         if bytes.len() != 64 {
@@ -170,27 +134,15 @@ impl Ed25519Signature {
 #[derive(Debug, Clone)]
 pub enum CryptoError {
     /// Invalid key size
-    InvalidKeySize,
     /// Invalid signature size
-    InvalidSignatureSize,
     /// Invalid input data
-    InvalidInput,
     /// Verification failed
-    VerificationFailed,
     /// Encryption failed
-    EncryptionFailed,
     /// Decryption failed
-    DecryptionFailed,
     /// Key generation failed
-    KeyGenerationFailed,
     /// Algorithm not supported
-    UnsupportedAlgorithm,
     /// Random number generation failed
-    RandomGenerationFailed,
     /// Generic cryptographic error
-    Generic(String),
-}
-
 // impl std::fmt::Display for CryptoError {
 //     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
 //         match self {
@@ -213,20 +165,10 @@ pub enum CryptoError {
 /// Hash function type
 #[derive(Debug, Clone)]
 pub enum HashFunction {
-    Sha256,
-    Sha512,
-    Blake3,
-    Keccak256,
-}
-
 impl HashFunction {
     /// Get the output size in bytes for this hash function
     pub fn output_size(&self) -> usize {
         match self {
-            HashFunction::Sha256 => 32,
-            HashFunction::Sha512 => 64,
-            HashFunction::Blake3 => 32,
-            HashFunction::Keccak256 => 32,
         }
     }
 
@@ -238,8 +180,6 @@ impl HashFunction {
         
         for (i, &byte) in data.iter().enumerate() {
             result[i % output_size] ^= byte;
-        }
-        
         // Simple checksum for mock purposes
         let checksum = data.iter().fold(0u8, |acc, &b| acc.wrapping_add(b));
         result[0] = checksum;
@@ -251,27 +191,16 @@ impl HashFunction {
 /// Symmetric encryption algorithm
 #[derive(Debug, Clone)]
 pub enum SymmetricAlgorithm {
-    Aes256Gcm,
-    ChaCha20Poly1305,
-    XChaCha20Poly1305,
-}
-
 impl SymmetricAlgorithm {
     /// Get the key size in bytes for this algorithm
     pub fn key_size(&self) -> usize {
         match self {
-            SymmetricAlgorithm::Aes256Gcm => 32,
-            SymmetricAlgorithm::ChaCha20Poly1305 => 32,
-            SymmetricAlgorithm::XChaCha20Poly1305 => 32,
         }
     }
 
     /// Get the nonce size in bytes for this algorithm
     pub fn nonce_size(&self) -> usize {
         match self {
-            SymmetricAlgorithm::Aes256Gcm => 12,
-            SymmetricAlgorithm::ChaCha20Poly1305 => 12,
-            SymmetricAlgorithm::XChaCha20Poly1305 => 24,
         }
     }
 
@@ -284,92 +213,47 @@ impl SymmetricAlgorithm {
 /// Asymmetric encryption algorithm
 #[derive(Debug, Clone)]
 pub enum AsymmetricAlgorithm {
-    Rsa2048,
-    Rsa4096,
-    EccP256,
-    EccP384,
-    EccP521,
-    Ed25519,
-    X25519,
-}
-
 impl AsymmetricAlgorithm {
     /// Get the public key size in bytes for this algorithm
     pub fn public_key_size(&self) -> usize {
         match self {
-            AsymmetricAlgorithm::Rsa2048 => 256,
-            AsymmetricAlgorithm::Rsa4096 => 512,
-            AsymmetricAlgorithm::EccP256 => 64,
-            AsymmetricAlgorithm::EccP384 => 96,
-            AsymmetricAlgorithm::EccP521 => 132,
-            AsymmetricAlgorithm::Ed25519 => 32,
-            AsymmetricAlgorithm::X25519 => 32,
         }
     }
 
     /// Get the private key size in bytes for this algorithm
     pub fn private_key_size(&self) -> usize {
         match self {
-            AsymmetricAlgorithm::Rsa2048 => 256,
-            AsymmetricAlgorithm::Rsa4096 => 512,
-            AsymmetricAlgorithm::EccP256 => 32,
-            AsymmetricAlgorithm::EccP384 => 48,
-            AsymmetricAlgorithm::EccP521 => 66,
-            AsymmetricAlgorithm::Ed25519 => 32,
-            AsymmetricAlgorithm::X25519 => 32,
         }
     }
 
     /// Get the signature size in bytes for this algorithm
     pub fn signature_size(&self) -> usize {
         match self {
-            AsymmetricAlgorithm::Rsa2048 => 256,
-            AsymmetricAlgorithm::Rsa4096 => 512,
-            AsymmetricAlgorithm::EccP256 => 64,
-            AsymmetricAlgorithm::EccP384 => 96,
-            AsymmetricAlgorithm::EccP521 => 132,
-            AsymmetricAlgorithm::Ed25519 => 64,
             AsymmetricAlgorithm::X25519 => 0, // X25519 is for key exchange, not signing
         }
     }
-}
-
 /// Cryptographic key material
 #[derive(Debug, Clone)]
 pub struct KeyMaterial {
     /// The key bytes
-    pub bytes: Vec<u8>,
     /// Algorithm this key is for
-    pub algorithm: String,
     /// Key type (public, private, symmetric)
-    pub key_type: KeyType,
-}
-
 impl KeyMaterial {
     /// Create new key material
     pub fn new(bytes: Vec<u8>, algorithm: String, key_type: KeyType) -> Self {
         Self {
-            bytes,
-            algorithm,
-            key_type,
         }
     }
 
     /// Get the key size in bytes
     pub fn size(&self) -> usize {
         self.bytes.len()
-    }
-
     /// Check if this is a symmetric key
     pub fn is_symmetric(&self) -> bool {
         matches!(self.key_type, KeyType::Symmetric)
-    }
-
     /// Check if this is a public key
     pub fn is_public(&self) -> bool {
         matches!(self.key_type, KeyType::Public)
-    }
-
     /// Check if this is a private key
     pub fn is_private(&self) -> bool {
         matches!(self.key_type, KeyType::Private)
@@ -379,46 +263,24 @@ impl KeyMaterial {
 /// Type of cryptographic key
 #[derive(Debug, Clone, PartialEq)]
 pub enum KeyType {
-    Symmetric,
-    Public,
-    Private,
-}
-
 /// Cryptographic context for operations
 #[derive(Debug, Clone)]
 pub struct CryptoContext {
     /// Preferred hash function
-    pub hash_function: HashFunction,
     /// Preferred symmetric algorithm
-    pub symmetric_algorithm: SymmetricAlgorithm,
     /// Preferred asymmetric algorithm
-    pub asymmetric_algorithm: AsymmetricAlgorithm,
     /// Security level
-    pub security_level: SecurityLevel,
     /// Additional parameters
-    pub parameters: HashMap<String, String>,
-}
-
 impl CryptoContext {
     /// Create a new crypto context with default settings
     pub fn new() -> Self {
         Self {
-            hash_function: HashFunction::Sha256,
-            symmetric_algorithm: SymmetricAlgorithm::Aes256Gcm,
-            asymmetric_algorithm: AsymmetricAlgorithm::Ed25519,
-            security_level: SecurityLevel::Standard,
-            parameters: HashMap::new(),
         }
     }
 
     /// Create a high-security crypto context
     pub fn high_security() -> Self {
         Self {
-            hash_function: HashFunction::Sha512,
-            symmetric_algorithm: SymmetricAlgorithm::XChaCha20Poly1305,
-            asymmetric_algorithm: AsymmetricAlgorithm::EccP521,
-            security_level: SecurityLevel::High,
-            parameters: HashMap::new(),
         }
     }
 
@@ -438,73 +300,33 @@ impl Default for CryptoContext {
 /// Security level for cryptographic operations
 #[derive(Debug, Clone, PartialEq)]
 pub enum SecurityLevel {
-    Low,
-    Standard,
-    High,
-    Maximum,
-}
-
 /// Cryptographic parameters for configuration
 #[derive(Debug, Clone)]
 pub struct CryptoParameters {
     /// Key size for symmetric encryption in bits
-    pub symmetric_key_size: usize,
     /// Key size for asymmetric encryption in bits
-    pub asymmetric_key_size: usize,
     /// Hash algorithm to use
-    pub hash_algorithm: String,
     /// Encryption algorithm to use
-    pub encryption_algorithm: String,
     /// Security level
-    pub security_level: SecurityLevel,
     /// Key derivation parameters
-    pub kdf_iterations: usize,
     /// Salt size for key derivation
-    pub salt_size: usize,
     /// Additional algorithm-specific parameters
-    pub algorithm_parameters: HashMap<String, String>,
-}
-
 impl CryptoParameters {
     /// Create default cryptographic parameters
     pub fn new() -> Self {
         Self {
-            symmetric_key_size: 256,
-            asymmetric_key_size: 2048,
-            hash_algorithm: "SHA-256".to_string(),
-            encryption_algorithm: "AES-256-GCM".to_string(),
-            security_level: SecurityLevel::Standard,
-            kdf_iterations: 100_000,
-            salt_size: 32,
-            algorithm_parameters: HashMap::new(),
         }
     }
 
     /// Create high-security parameters
     pub fn high_security() -> Self {
         Self {
-            symmetric_key_size: 256,
-            asymmetric_key_size: 4096,
-            hash_algorithm: "SHA-512".to_string(),
-            encryption_algorithm: "ChaCha20-Poly1305".to_string(),
-            security_level: SecurityLevel::High,
-            kdf_iterations: 500_000,
-            salt_size: 64,
-            algorithm_parameters: HashMap::new(),
         }
     }
 
     /// Create maximum security parameters
     pub fn maximum_security() -> Self {
         Self {
-            symmetric_key_size: 256,
-            asymmetric_key_size: 4096,
-            hash_algorithm: "SHA-512".to_string(),
-            encryption_algorithm: "XChaCha20-Poly1305".to_string(),
-            security_level: SecurityLevel::Maximum,
-            kdf_iterations: 1_000_000,
-            salt_size: 64,
-            algorithm_parameters: HashMap::new(),
         }
     }
 
@@ -512,19 +334,11 @@ impl CryptoParameters {
     pub fn with_parameter(mut self, key: String, value: String) -> Self {
         self.algorithm_parameters.insert(key, value);
         self
-    }
-
     /// Get the effective security level in bits
     pub fn effective_security_bits(&self) -> usize {
         match self.security_level {
-            SecurityLevel::Low => 80,
-            SecurityLevel::Standard => 128,
-            SecurityLevel::High => 192,
-            SecurityLevel::Maximum => 256,
         }
     }
-}
-
 impl Default for CryptoParameters {
     fn default() -> Self {
         Self::new()
@@ -535,52 +349,23 @@ impl Default for CryptoParameters {
 #[derive(Debug, Clone)]
 pub struct SecurityContext {
     /// User identity for access control
-    pub user_id: String,
     /// Roles assigned to the user
-    pub roles: Vec<String>,
     /// Permissions granted
-    pub permissions: Vec<String>,
     /// Security level required
-    pub security_level: SecurityLevel,
     /// Cryptographic parameters
-    pub crypto_parameters: CryptoParameters,
     /// Session-specific data
-    pub session_data: HashMap<String, String>,
     /// Audit trail enabled
-    pub audit_enabled: bool,
     /// Time-based restrictions
-    pub valid_from: Option<u64>,
-    pub valid_until: Option<u64>,
-}
-
 impl SecurityContext {
     /// Create a new security context
     pub fn new(user_id: String) -> Self {
         Self {
-            user_id,
-            roles: Vec::new(),
-            permissions: Vec::new(),
-            security_level: SecurityLevel::Standard,
-            crypto_parameters: CryptoParameters::new(),
-            session_data: HashMap::new(),
-            audit_enabled: true,
-            valid_from: None,
-            valid_until: None,
         }
     }
 
     /// Create a high-security context
     pub fn high_security(user_id: String) -> Self {
         Self {
-            user_id,
-            roles: Vec::new(),
-            permissions: Vec::new(),
-            security_level: SecurityLevel::High,
-            crypto_parameters: CryptoParameters::high_security(),
-            session_data: HashMap::new(),
-            audit_enabled: true,
-            valid_from: None,
-            valid_until: None,
         }
     }
 
@@ -588,37 +373,25 @@ impl SecurityContext {
     pub fn with_role(mut self, role: String) -> Self {
         self.roles.push(role);
         self
-    }
-
     /// Add a permission to the context
     pub fn with_permission(mut self, permission: String) -> Self {
         self.permissions.push(permission);
         self
-    }
-
     /// Add session data
     pub fn with_session_data(mut self, key: String, value: String) -> Self {
         self.session_data.insert(key, value);
         self
-    }
-
     /// Set validity period
     pub fn with_validity(mut self, from: u64, until: u64) -> Self {
         self.valid_from = Some(from);
         self.valid_until = Some(until);
         self
-    }
-
     /// Check if context has a specific role
     pub fn has_role(&self, role: &str) -> bool {
         self.roles.iter().any(|r| r == role)
-    }
-
     /// Check if context has a specific permission
     pub fn has_permission(&self, permission: &str) -> bool {
         self.permissions.iter().any(|p| p == permission)
-    }
-
     /// Check if context is currently valid
     pub fn is_valid(&self, current_time: u64) -> bool {
         if let Some(from) = self.valid_from {
@@ -632,8 +405,6 @@ impl SecurityContext {
             }
         }
         true
-    }
-
     /// Get the minimum security level required
     pub fn minimum_security_level(&self) -> &SecurityLevel {
         &self.security_level
@@ -651,37 +422,14 @@ impl SecurityLevel {
     pub fn recommended_key_sizes(&self) -> KeySizeRecommendations {
         match self {
             SecurityLevel::Low => KeySizeRecommendations {
-                symmetric: 128,
-                rsa: 1024,
-                ecc: 256,
-            },
             SecurityLevel::Standard => KeySizeRecommendations {
-                symmetric: 256,
-                rsa: 2048,
-                ecc: 256,
-            },
             SecurityLevel::High => KeySizeRecommendations {
-                symmetric: 256,
-                rsa: 4096,
-                ecc: 384,
-            },
             SecurityLevel::Maximum => KeySizeRecommendations {
-                symmetric: 256,
-                rsa: 4096,
-                ecc: 521,
-            },
         }
     }
-}
-
 /// Key size recommendations for different algorithms
 #[derive(Debug, Clone)]
 pub struct KeySizeRecommendations {
     /// Symmetric key size in bits
-    pub symmetric: usize,
     /// RSA key size in bits
-    pub rsa: usize,
     /// ECC key size in bits
-    pub ecc: usize,
-}
-

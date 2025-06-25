@@ -19,156 +19,101 @@ use std::ffi::{CStr, CString};
 #[derive(Debug)]
 pub struct ErrorPropagationRuntime {
     /// Stack of error handlers for nested contexts
-    error_handlers: Vec<Box<dyn ErrorHandler + Send + Sync>>,
     
     /// Current propagation context stack
-    propagation_stack: Vec<PropagationFrame>,
     
     /// Statistics for performance monitoring
-    statistics: Arc<Mutex<PropagationStatistics>>,
     
     /// Configuration for error propagation behavior
-    config: PropagationConfig,
     
     /// Integration with panic system
     panic_runtime: Option<String>, // Simplified for now
     
     /// Thread-local propagation state
-    thread_local_state: Arc<RwLock<HashMap<thread::ThreadId, ThreadLocalState>>>,
-}
-
 /// Frame representing a single propagation site
 #[derive(Debug, Clone)]
 pub struct PropagationFrame {
     /// Source location of the propagation
-    pub location: ErrorSourceLocation,
     
     /// Function context
-    pub function_name: Option<String>,
     
     /// Timestamp when propagation occurred
-    pub timestamp: Instant,
     
     /// CursedError type being propagated
-    pub error_type: String,
     
     /// Whether this is a tail position propagation
-    pub is_tail_position: bool,
     
     /// Stack trace at propagation point
-    pub stack_trace: Vec<StackFrame>,
     
     /// Debug information
-    pub debug_info: Option<DebugInfo>,
-}
-
 /// Represents a single frame in the stack trace
 #[derive(Debug, Clone)]
 pub struct StackFrame {
     /// Function name (demangled if possible)
-    pub function_name: Option<String>,
     
     /// Raw symbol name
-    pub symbol_name: Option<String>,
     
     /// Source file path
-    pub file_path: Option<PathBuf>,
     
     /// Line number in source file
-    pub line_number: Option<u32>,
     
     /// Column number in source file
-    pub column_number: Option<u32>,
     
     /// Module path
-    pub module_path: Option<String>,
     
     /// Instruction pointer
-    pub instruction_pointer: Option<usize>,
-}
-
 /// Debug information associated with a stack frame
 #[derive(Debug, Clone)]
 pub struct DebugInfo {
     /// Compilation unit
-    pub compilation_unit: Option<String>,
     
     /// Debug symbols available
-    pub symbols_available: bool,
     
     /// Source language
-    pub source_language: Option<String>,
     
     /// Optimization level
-    pub optimization_level: Option<String>,
-}
-
 /// Thread-local state for error propagation
 #[derive(Debug, Clone)]
 pub struct ThreadLocalState {
     /// Current propagation depth
-    pub propagation_depth: usize,
     
     /// Thread-specific error handlers
-    pub local_handlers: Vec<String>,
     
     /// Whether error propagation is currently active
-    pub propagation_active: bool,
     
     /// Last error propagated in this thread
-    pub last_error: Option<CursedError>,
-}
-
 /// Statistics for error propagation performance
 #[derive(Debug, Default, Clone)]
 pub struct PropagationStatistics {
     /// Total number of propagations
-    pub total_propagations: u64,
     
     /// Number of successful propagations
-    pub successful_propagations: u64,
     
     /// Number of failed propagations
-    pub failed_propagations: u64,
     
     /// Average propagation time in microseconds
-    pub average_propagation_time_us: f64,
     
     /// Maximum propagation depth observed
-    pub max_propagation_depth: usize,
     
     /// Number of panic integrations triggered
-    pub panic_integrations: u64,
     
     /// CursedError type frequency map
-    pub error_type_counts: HashMap<String, u64>,
     
     /// Function-specific propagation counts
-    pub function_propagation_counts: HashMap<String, u64>,
-}
-
 /// Configuration for error propagation behavior
 #[derive(Debug, Clone)]
 pub struct PropagationConfig {
     /// Maximum propagation depth allowed
-    pub max_propagation_depth: usize,
     
     /// Whether to generate detailed stack traces
-    pub generate_stack_traces: bool,
     
     /// Whether to integrate with panic system
-    pub panic_integration_enabled: bool,
     
     /// Timeout for error propagation operations
-    pub propagation_timeout: Duration,
     
     /// Whether to collect performance statistics
-    pub collect_statistics: bool,
     
     /// Whether to preserve error context
-    pub preserve_error_context: bool,
-}
-
 /// Trait for error handlers in the propagation system
 pub trait ErrorHandler: std::fmt::Debug {
     /// Handle an error during propagation
@@ -182,25 +127,16 @@ pub trait ErrorHandler: std::fmt::Debug {
     
     /// Get priority for handler ordering
     fn priority(&self) -> u32;
-}
-
 impl ErrorPropagationRuntime {
     /// Create a new error propagation runtime
     pub fn new() -> Self {
         Self {
-            error_handlers: Vec::new(),
-            propagation_stack: Vec::new(),
-            statistics: Arc::new(Mutex::new(PropagationStatistics::default())),
-            config: PropagationConfig::default(),
-            panic_runtime: None,
-            thread_local_state: Arc::new(RwLock::new(HashMap::new())),
         }
     }
     
     /// Create with custom configuration
     pub fn with_config(config: PropagationConfig) -> Self {
         Self {
-            config,
             ..Self::new()
         }
     }
@@ -209,8 +145,6 @@ impl ErrorPropagationRuntime {
     pub fn with_panic_integration(mut self, _panic_runtime: String) -> Self {
         self.panic_runtime = Some("panic_enabled".to_string());
         self
-    }
-    
     /// Register an error handler
     pub fn register_handler(&mut self, handler: Box<dyn ErrorHandler + Send + Sync>) {
         // Insert handler in priority order
@@ -221,14 +155,8 @@ impl ErrorPropagationRuntime {
             .unwrap_or(self.error_handlers.len());
         
         self.error_handlers.insert(insert_pos, handler);
-    }
-    
     /// Propagate an error through the runtime system
     pub fn propagate_error(
-        &mut self,
-        error: CursedError,
-        location: ErrorSourceLocation,
-        function_context: Option<String>,
     ) -> crate::error::Result<()> {
         let start_time = Instant::now();
         
@@ -240,14 +168,6 @@ impl ErrorPropagationRuntime {
         let debug_info = self.extract_debug_info(&stack_trace);
         
         let frame = PropagationFrame {
-            location: location.clone(),
-            function_name: function_context.clone(),
-            timestamp: Instant::now(),
-            error_type: self.get_error_type_name(&error),
-            is_tail_position: self.is_tail_position(&location, &stack_trace),
-            stack_trace,
-            debug_info,
-        };
         
         // Update thread-local state
         self.update_thread_local_state()?;
@@ -260,32 +180,22 @@ impl ErrorPropagationRuntime {
             Ok(()) => {
                 self.record_successful_propagation(start_time);
                 Ok(())
-            },
             Err(handler_error) => {
                 // If handlers fail, integrate with panic system if available
                 if self.config.panic_integration_enabled {
                     let panic_runtime = self.panic_runtime.clone();
                     self.integrate_with_panic_system(&error, &frame, &panic_runtime)?;
-                }
-                
                 self.record_failed_propagation(start_time);
                 
                 Err(ErrorPropagationError::with_context(
-                    handler_error,
-                    location.into(),
-                    function_context,
-                    None,
                 ))
             }
         }
-    }
-    
     /// Try to handle error with registered handlers
     fn try_handle_error(&self, error: &CursedError, frame: &PropagationFrame) -> crate::error::Result<()> {
         for handler in &self.error_handlers {
             if handler.can_handle(error) {
                 match handler.handle_error(error, frame) {
-                    Ok(()) => return Ok(()),
                     Err(e) => {
                         // Log handler failure but continue to next handler
                         eprintln!("CursedError handler '{}' failed: {}", handler.name(), e);
@@ -297,63 +207,33 @@ impl ErrorPropagationRuntime {
         
         // No handler could handle the error
         Err(CursedError::ErrorPropagation {
-            message: format!("No handler available for error type: {}", 
-                           self.get_error_type_name(error)),
-            line: Some(frame.location.line),
-            column: Some(frame.location.column),
         })
-    }
-    
     /// Check if propagation depth is within limits
     fn check_propagation_depth(&self, location: &ErrorSourceLocation) -> crate::error::Result<()> {
         if self.propagation_stack.len() >= self.config.max_propagation_depth {
             return Err(ErrorPropagationError::new(
                 CursedError::ErrorPropagation {
-                    message: format!("Propagation depth limit exceeded: {} (max: {})",
-                                   self.propagation_stack.len() + 1,
-                                   self.config.max_propagation_depth),
-                    line: Some(location.line as usize),
-                    column: Some(location.column as usize),
-                },
-                location.clone().into(),
             ));
-        }
-        
         Ok(())
-    }
-    
     /// Update thread-local propagation state
     fn update_thread_local_state(&mut self) -> crate::error::Result<()> {
         let thread_id = thread::current().id();
         let mut state_map = self.thread_local_state.write()
             .map_err(|_| ErrorPropagationError::new(
-                CursedError::Runtime("Failed to acquire thread state lock".to_string()),
-                ErrorSourceLocation::new(0, 0).into(),
             ))?;
         
         let state = state_map.entry(thread_id).or_insert_with(|| ThreadLocalState {
-            propagation_depth: 0,
-            local_handlers: Vec::new(),
-            propagation_active: false,
-            last_error: None,
         });
         
         state.propagation_depth += 1;
         state.propagation_active = true;
         
         Ok(())
-    }
-    
     /// Integrate with panic system for unhandled errors
     fn integrate_with_panic_system(
-        &mut self,
-        error: &CursedError,
-        frame: &PropagationFrame,
-        _panic_runtime: &Option<String>,
     ) -> crate::error::Result<()> {
         // Create panic from error propagation failure
         let panic_message = format!(
-            "Unhandled error propagation: {} at {}:{}",
             error, frame.location.line, frame.location.column
         );
         
@@ -363,11 +243,7 @@ impl ErrorPropagationRuntime {
         // Update statistics
         if let Ok(mut stats) = self.statistics.lock() {
             stats.panic_integrations += 1;
-        }
-        
         Ok(())
-    }
-    
     /// Record successful propagation statistics
     fn record_successful_propagation(&self, start_time: Instant) {
         if let Ok(mut stats) = self.statistics.lock() {
@@ -401,21 +277,6 @@ impl ErrorPropagationRuntime {
     /// Get error type name for statistics
     fn get_error_type_name(&self, error: &CursedError) -> String {
         match error {
-            CursedError::Io(_) => "IO".to_string(),
-            CursedError::Parse(_) => "Parse".to_string(),
-            CursedError::Compile(_) => "Compile".to_string(),
-            CursedError::Runtime(_) => "Runtime".to_string(),
-            CursedError::Package(_) => "Package".to_string(),
-            CursedError::Repl(_) => "Repl".to_string(),
-            CursedError::TemplateError { .. } => "Template".to_string(),
-            CursedError::TypeCompilation(_) => "TypeCompilation".to_string(),
-            CursedError::Type(_) => "Type".to_string(),
-            CursedError::Panic { .. } => "Panic".to_string(),
-            CursedError::Recovery { .. } => "Recovery".to_string(),
-            CursedError::ErrorPropagation { .. } => "ErrorPropagation".to_string(),
-            CursedError::ParseError { .. } => "ParseError".to_string(),
-            CursedError::CodeGeneration { .. } => "CodeGeneration".to_string(),
-            CursedError::ProcessError(_) => "ProcessError".to_string(),
         }
     }
     
@@ -425,8 +286,6 @@ impl ErrorPropagationRuntime {
         
         if !self.config.generate_stack_traces {
             return frames;
-        }
-        
         let backtrace = Backtrace::new();
         
         backtrace.frames().iter().for_each(|frame| {
@@ -437,8 +296,6 @@ impl ErrorPropagationRuntime {
         });
         
         frames
-    }
-    
     /// Convert a backtrace symbol to our StackFrame format
     fn symbol_to_stack_frame(&self, symbol: &Symbol, frame: &BacktraceFrame) -> StackFrame {
         let symbol_name = symbol.name().map(|s| s.to_string());
@@ -465,13 +322,6 @@ impl ErrorPropagationRuntime {
         });
         
         StackFrame {
-            function_name,
-            symbol_name,
-            file_path,
-            line_number,
-            column_number,
-            module_path,
-            instruction_pointer: Some(frame.ip() as usize),
         }
     }
     
@@ -479,8 +329,6 @@ impl ErrorPropagationRuntime {
     fn extract_debug_info(&self, stack_trace: &[StackFrame]) -> Option<DebugInfo> {
         if stack_trace.is_empty() {
             return None;
-        }
-        
         let symbols_available = stack_trace.iter().any(|frame| {
             frame.function_name.is_some() || frame.file_path.is_some()
         });
@@ -498,13 +346,8 @@ impl ErrorPropagationRuntime {
             });
         
         Some(DebugInfo {
-            compilation_unit,
-            symbols_available,
-            source_language: Some("CURSED".to_string()),
             optimization_level: None, // Would need compiler info
         })
-    }
-    
     /// Check if location is in tail position based on stack analysis
     fn is_tail_position(&self, _location: &ErrorSourceLocation, stack_trace: &[StackFrame]) -> bool {
         // Analyze stack trace to determine if this is a tail position
@@ -512,8 +355,6 @@ impl ErrorPropagationRuntime {
         
         if stack_trace.len() < 2 {
             return false;
-        }
-        
         // Check if the current frame is the last meaningful frame before main/runtime
         let current_frame = &stack_trace[0];
         let next_frame = &stack_trace[1];
@@ -549,8 +390,6 @@ impl ErrorPropagationRuntime {
         }
         
         None
-    }
-    
     /// Create a minimal stack trace for FFI
     fn create_minimal_stack_trace(&self) -> Box<MinimalStackTrace> {
         let frames = self.capture_stack_trace();
@@ -558,31 +397,18 @@ impl ErrorPropagationRuntime {
         
         for frame in frames.into_iter().take(10) { // Limit to 10 frames
             minimal_frames.push(MinimalStackFrame {
-                function_name: frame.function_name.unwrap_or_else(|| "<unknown>".to_string()),
                 file_name: frame.file_path
                     .and_then(|p| p.file_name())
                     .and_then(|s| s.to_str())
                     .unwrap_or("<unknown>")
-                    .to_string(),
-                line_number: frame.line_number.unwrap_or(0),
-                column_number: frame.column_number.unwrap_or(0),
             });
-        }
-        
         Box::new(MinimalStackTrace {
-            frames: minimal_frames,
-            total_frames: minimal_frames.len(),
-            timestamp: Instant::now(),
         })
-    }
-    
     /// Get current propagation statistics
     pub fn get_statistics(&self) -> crate::error::Result<()> {
         self.statistics.lock()
             .map(|stats| stats.clone())
             .map_err(|_| CursedError::Runtime("Failed to acquire statistics lock".to_string()))
-    }
-    
     /// Reset propagation statistics
     pub fn reset_statistics(&mut self) -> crate::error::Result<()> {
         let mut stats = self.statistics.lock()
@@ -590,13 +416,9 @@ impl ErrorPropagationRuntime {
         
         *stats = PropagationStatistics::default();
         Ok(())
-    }
-    
     /// Get current propagation stack depth
     pub fn get_propagation_depth(&self) -> usize {
         self.propagation_stack.len()
-    }
-    
     /// Clear propagation stack (for error recovery)
     pub fn clear_propagation_stack(&mut self) {
         self.propagation_stack.clear();
@@ -615,75 +437,37 @@ impl ErrorPropagationRuntime {
 impl Default for PropagationConfig {
     fn default() -> Self {
         Self {
-            max_propagation_depth: 100,
-            generate_stack_traces: true,
-            panic_integration_enabled: true,
-            propagation_timeout: Duration::from_secs(5),
-            collect_statistics: true,
-            preserve_error_context: true,
         }
     }
-}
-
 impl Default for ThreadLocalState {
     fn default() -> Self {
         Self {
-            propagation_depth: 0,
-            local_handlers: Vec::new(),
-            propagation_active: false,
-            last_error: None,
         }
     }
-}
-
 /// Minimal stack trace for FFI and external use
 #[derive(Debug, Clone)]
 pub struct MinimalStackTrace {
-    pub frames: Vec<MinimalStackFrame>,
-    pub total_frames: usize,
-    pub timestamp: Instant,
-}
-
 /// Minimal stack frame for FFI
 #[derive(Debug, Clone)]
 pub struct MinimalStackFrame {
-    pub function_name: String,
-    pub file_name: String,
-    pub line_number: u32,
-    pub column_number: u32,
-}
-
 /// Default error handler for basic error types
 #[derive(Debug)]
 pub struct DefaultErrorHandler {
-    name: String,
-    priority: u32,
-}
-
 impl DefaultErrorHandler {
     pub fn new() -> Self {
         Self {
-            name: "DefaultErrorHandler".to_string(),
             priority: 1000, // Low priority
         }
     }
-}
-
 impl ErrorHandler for DefaultErrorHandler {
     fn handle_error(&self, error: &CursedError, _context: &PropagationFrame) -> crate::error::Result<()> {
         // Basic error handling - just log the error
         eprintln!("CursedError propagated: {}", error);
         Ok(())
-    }
-    
     fn name(&self) -> &str {
         &self.name
-    }
-    
     fn can_handle(&self, _error: &CursedError) -> bool {
         true // Can handle any error as fallback
-    }
-    
     fn priority(&self) -> u32 {
         self.priority
     }
@@ -708,8 +492,6 @@ fn ensure_global_runtime() -> &'static Mutex<ErrorPropagationRuntime> {
 pub extern "C" fn cursed_error_propagation_init() {
     ensure_global_runtime();
     eprintln!("CursedError propagation runtime initialized");
-}
-
 #[no_mangle]
 pub extern "C" fn cursed_error_propagation_cleanup() {
     // Reset global runtime
@@ -717,18 +499,11 @@ pub extern "C" fn cursed_error_propagation_cleanup() {
         GLOBAL_RUNTIME = None;
     }
     eprintln!("CursedError propagation runtime cleaned up");
-}
-
 #[no_mangle]
 pub extern "C" fn cursed_error_propagation(
-    error_value: *const u8,
-    line: u32,
-    column: u32,
 ) {
     if error_value.is_null() {
         return;
-    }
-    
     let runtime = ensure_global_runtime();
     if let Ok(mut runtime) = runtime.lock() {
         let location = ErrorSourceLocation::new(line as u32, column as u32);
@@ -747,9 +522,6 @@ pub extern "C" fn cursed_error_propagation(
 
 #[no_mangle]
 pub extern "C" fn cursed_record_error_context(
-    line: u32,
-    column: u32,
-    function_name: *const u8,
 ) {
     let function_str = if function_name.is_null() {
         "<unknown>".to_string()
@@ -758,20 +530,13 @@ pub extern "C" fn cursed_record_error_context(
             let c_str = std::ffi::CStr::from_ptr(function_name as *const i8);
             c_str.to_str().unwrap_or("<invalid>").to_string()
         }
-    };
     
     eprintln!("Recording error context at {}:{} in function '{}'", line, column, function_str);
-}
-
 #[no_mangle]
 pub extern "C" fn cursed_capture_stack_trace(
-    stack_trace_ptr: *mut u8,
-    max_depth: u64,
 ) {
     if stack_trace_ptr.is_null() {
         return;
-    }
-    
     let runtime = ensure_global_runtime();
     if let Ok(runtime) = runtime.lock() {
         let frames = runtime.capture_stack_trace();
@@ -809,85 +574,48 @@ pub extern "C" fn cursed_get_current_function_name() -> *const u8 {
     // Return placeholder if unable to get function name
     let function_name = b"<unknown_function>\0";
     function_name.as_ptr()
-}
-
 #[no_mangle]
 pub extern "C" fn cursed_store_stack_frame(
-    frame_ptr: *mut u8,
-    function_name: *const u8,
-    line: u32,
-    column: u32,
 ) {
     if frame_ptr.is_null() || function_name.is_null() {
         return;
-    }
-    
     let function_str = unsafe {
         let c_str = std::ffi::CStr::from_ptr(function_name as *const i8);
         c_str.to_str().unwrap_or("<invalid>")
-    };
     
     eprintln!("Storing stack frame: {} at {}:{} in {:p}", function_str, line, column, frame_ptr);
-}
-
 #[no_mangle]
 pub extern "C" fn cursed_add_debug_stack_info(stack_trace_ptr: *mut u8) {
     if stack_trace_ptr.is_null() {
         return;
-    }
-    
     eprintln!("Adding debug information to stack trace at {:p}", stack_trace_ptr);
-}
-
 #[no_mangle]
 pub extern "C" fn cursed_record_stack_context(
-    stack_trace_ptr: *const u8,
-    max_depth: u64,
 ) {
     if stack_trace_ptr.is_null() {
         return;
-    }
-    
     eprintln!("Recording stack context: {} frames at {:p}", max_depth, stack_trace_ptr);
-}
-
 #[no_mangle]
 pub extern "C" fn cursed_get_debug_info() -> *const u8 {
     // Return a placeholder debug info pointer
     let debug_info = b"<debug_info>\0";
     debug_info.as_ptr()
-}
-
 #[no_mangle]
 pub extern "C" fn cursed_attach_debug_to_stack_trace(
-    stack_trace_ptr: *mut u8,
-    debug_info_ptr: *const u8,
 ) {
     if stack_trace_ptr.is_null() || debug_info_ptr.is_null() {
         return;
-    }
-    
     eprintln!("Attaching debug info {:p} to stack trace {:p}", debug_info_ptr, stack_trace_ptr);
-}
-
 #[no_mangle]
 pub extern "C" fn cursed_capture_source_locations(stack_trace_ptr: *mut u8) {
     if stack_trace_ptr.is_null() {
         return;
-    }
-    
     eprintln!("Capturing source locations for stack trace at {:p}", stack_trace_ptr);
-}
-
 #[no_mangle]
 pub extern "C" fn cursed_resolve_stack_symbols(stack_trace_ptr: *mut u8) {
     if stack_trace_ptr.is_null() {
         return;
-    }
-    
     eprintln!("Resolving stack symbols for stack trace at {:p}", stack_trace_ptr);
-}
-
 #[no_mangle]
 pub extern "C" fn cursed_create_minimal_stack_trace() -> *mut u8 {
     let runtime = ensure_global_runtime();
@@ -910,14 +638,10 @@ pub extern "C" fn cursed_free_minimal_stack_trace(stack_trace_ptr: *mut u8) {
             // trace will be automatically dropped and freed
         }
     }
-}
-
 #[no_mangle]
 pub extern "C" fn cursed_error_propagation_panic(message: *const u8) {
     if message.is_null() {
         return;
-    }
-    
     // Convert C string to Rust string and panic
     let c_str = unsafe { std::ffi::CStr::from_ptr(message as *const i8) };
     if let Ok(rust_str) = c_str.to_str() {

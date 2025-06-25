@@ -15,34 +15,14 @@ use std::time::{Duration, Instant};
 use tracing::{debug, info, warn, instrument, span, Level};
 
 use inkwell::{
-    context::Context,
-    module::Module,
-    values::{FunctionValue, BasicValue, BasicValueEnum, InstructionValue, IntValue, FloatValue, PointerValue, CallSiteValue},
-    basic_block::BasicBlock,
-    builder::Builder,
-    types::{BasicType, BasicTypeEnum, FunctionType},
-    IntPredicate, FloatPredicate,
-    passes::{PassManager},
-};
+// };
 
 /// Advanced function inlining optimizer with real cost-benefit analysis
 pub struct AdvancedFunctionInliner<'ctx> {
-    context: &'ctx Context,
-    optimization_level: OptimizationLevel,
-    statistics: Arc<Mutex<InliningStatistics>>,
     
     // Inlining parameters - tuned based on optimization level
-    max_inline_size: usize,
-    max_caller_growth: f64,
-    call_frequency_threshold: f64,
-    recursion_depth_limit: usize,
     
     // Performance tracking
-    profitability_cache: HashMap<String, f64>,
-    call_site_cache: HashMap<String, CallSiteAnalysis>,
-    function_metrics: HashMap<String, FunctionMetrics>,
-}
-
 impl<'ctx> AdvancedFunctionInliner<'ctx> {
     /// Create new advanced function inliner
     #[instrument(skip(context))]
@@ -50,25 +30,8 @@ impl<'ctx> AdvancedFunctionInliner<'ctx> {
         info!("Initializing advanced function inliner with level {}", optimization_level.as_str());
         
         let (max_inline_size, max_caller_growth, call_frequency_threshold) = match optimization_level {
-            OptimizationLevel::O0 => (0, 0.0, 0.0),
-            OptimizationLevel::O1 => (25, 1.2, 0.1),
-            OptimizationLevel::O2 => (75, 1.5, 0.2),
-            OptimizationLevel::O3 => (150, 2.0, 0.3),
-            OptimizationLevel::Os => (15, 1.1, 0.05),
-            OptimizationLevel::OsAggressive => (10, 1.05, 0.02),
-        };
         
         Self {
-            context,
-            optimization_level,
-            statistics: Arc::new(Mutex::new(InliningStatistics::default())),
-            max_inline_size,
-            max_caller_growth,
-            call_frequency_threshold,
-            recursion_depth_limit: 3,
-            profitability_cache: HashMap::new(),
-            call_site_cache: HashMap::new(),
-            function_metrics: HashMap::new(),
         }
     }
     
@@ -94,17 +57,11 @@ impl<'ctx> AdvancedFunctionInliner<'ctx> {
             let mut stats = self.statistics.lock().unwrap();
             stats.total_inlining_time = optimization_time;
             stats.optimization_passes += 1;
-        }
-        
         if inlined_any {
             info!("Function inlining completed with changes in {:?}", optimization_time);
         } else {
             debug!("Function inlining completed with no changes in {:?}", optimization_time);
-        }
-        
         Ok(inlined_any)
-    }
-    
     /// Analyze all functions in module and build comprehensive metrics
     fn analyze_module_functions(&mut self, module: &Module<'ctx>) -> Result<()> {
         debug!("Analyzing module functions for inlining metrics");
@@ -119,8 +76,6 @@ impl<'ctx> AdvancedFunctionInliner<'ctx> {
         }
         
         Ok(())
-    }
-    
     /// Analyze comprehensive metrics for a single function
     fn analyze_function_metrics(&self, function: FunctionValue<'ctx>) -> Result<FunctionMetrics> {
         let mut metrics = FunctionMetrics::default();
@@ -145,8 +100,6 @@ impl<'ctx> AdvancedFunctionInliner<'ctx> {
         metrics.has_side_effects = self.analyze_side_effects(function);
         
         Ok(metrics)
-    }
-    
     /// Build comprehensive call graph with frequency estimation
     fn build_call_graph(&mut self, module: &Module<'ctx>) -> Result<CallGraph> {
         debug!("Building call graph with frequency estimation");
@@ -179,12 +132,8 @@ impl<'ctx> AdvancedFunctionInliner<'ctx> {
         }
         
         Ok(call_graph)
-    }
-    
     /// Analyze inlining opportunities with advanced profitability analysis
     fn analyze_inlining_opportunities(
-        &mut self, 
-        module: &Module<'ctx>, 
         call_graph: &CallGraph
     ) -> Result<Vec<InlineDecision>> {
         debug!("Analyzing inlining opportunities with profitability analysis");
@@ -206,13 +155,6 @@ impl<'ctx> AdvancedFunctionInliner<'ctx> {
                             
                             if profitability > self.call_frequency_threshold {
                                 let decision = InlineDecision {
-                                    caller: caller_name.clone(),
-                                    callee: callee_name.clone(),
-                                    profitability,
-                                    estimated_size_increase: self.estimate_size_increase(function, called_function),
-                                    call_frequency: *frequency,
-                                    inline_type: self.determine_inline_type(function, called_function),
-                                };
                                 decisions.push(decision);
                             }
                         }
@@ -229,14 +171,8 @@ impl<'ctx> AdvancedFunctionInliner<'ctx> {
         
         info!("Identified {} profitable inlining opportunities", decisions.len());
         Ok(decisions)
-    }
-    
     /// Calculate comprehensive profitability score using multiple factors
     fn calculate_comprehensive_profitability(
-        &mut self,
-        caller: FunctionValue<'ctx>,
-        callee: FunctionValue<'ctx>,
-        call_frequency: f64,
     ) -> Result<f64> {
         let caller_name = caller.get_name().to_string_lossy().into_owned();
         let callee_name = callee.get_name().to_string_lossy().into_owned();
@@ -245,8 +181,6 @@ impl<'ctx> AdvancedFunctionInliner<'ctx> {
         // Check cache first
         if let Some(&cached_score) = self.profitability_cache.get(&cache_key) {
             return Ok(cached_score);
-        }
-        
         // Get function metrics
         let caller_metrics = self.function_metrics.get(&caller_name).cloned().unwrap_or_default();
         let callee_metrics = self.function_metrics.get(&callee_name).cloned().unwrap_or_default();
@@ -286,8 +220,6 @@ impl<'ctx> AdvancedFunctionInliner<'ctx> {
         self.profitability_cache.insert(cache_key, constrained_profitability);
         
         Ok(constrained_profitability)
-    }
-    
     /// Calculate size factor for profitability analysis
     fn calculate_size_factor(&self, callee_metrics: &FunctionMetrics) -> f64 {
         // Smaller functions get higher scores
@@ -295,7 +227,6 @@ impl<'ctx> AdvancedFunctionInliner<'ctx> {
             0.0
         } else {
             1.0 / (1.0 + callee_metrics.instruction_count as f64 / self.max_inline_size as f64)
-        };
         
         // Bonus for very small functions
         if callee_metrics.instruction_count <= 5 {
@@ -320,16 +251,10 @@ impl<'ctx> AdvancedFunctionInliner<'ctx> {
         // Penalize many basic blocks
         if callee_metrics.basic_block_count > 3 {
             complexity_score -= (callee_metrics.basic_block_count as f64 - 3.0) * 0.05;
-        }
-        
         // Bonus for single-block functions
         if callee_metrics.basic_block_count == 1 {
             complexity_score += 0.3;
-        }
-        
         complexity_score.max(0.0)
-    }
-    
     /// Estimate performance impact of inlining
     fn estimate_performance_impact(&self, caller_metrics: &FunctionMetrics, callee_metrics: &FunctionMetrics) -> f64 {
         let mut performance_score = 0.5; // Base score
@@ -341,21 +266,13 @@ impl<'ctx> AdvancedFunctionInliner<'ctx> {
         let combined_complexity = caller_metrics.instruction_count + callee_metrics.instruction_count;
         if combined_complexity > 100 {
             performance_score -= 0.1; // Potential register pressure
-        }
-        
         // Optimization opportunities
         if callee_metrics.arithmetic_operations > 5 {
             performance_score += 0.15; // More optimization opportunities
-        }
-        
         // Memory operation benefits
         if callee_metrics.memory_operations < 3 {
             performance_score += 0.1; // Less memory pressure
-        }
-        
         performance_score.clamp(0.0, 1.0)
-    }
-    
     /// Analyze context-sensitive inlining benefits
     fn analyze_inlining_context(&self, caller: FunctionValue<'ctx>, callee: FunctionValue<'ctx>) -> Result<f64> {
         let mut context_score = 0.5; // Base score
@@ -363,21 +280,13 @@ impl<'ctx> AdvancedFunctionInliner<'ctx> {
         // Check for constant propagation opportunities
         if self.has_constant_propagation_opportunity(caller, callee)? {
             context_score += 0.3;
-        }
-        
         // Check for dead code elimination opportunities
         if self.has_dead_code_elimination_opportunity(caller, callee)? {
             context_score += 0.2;
-        }
-        
         // Check for loop optimization opportunities
         if self.has_loop_optimization_opportunity(caller, callee)? {
             context_score += 0.25;
-        }
-        
         Ok(context_score.clamp(0.0, 1.0))
-    }
-    
     /// Estimate additional optimization opportunities from inlining
     fn estimate_optimization_opportunities(&self, caller: FunctionValue<'ctx>, callee: FunctionValue<'ctx>) -> Result<f64> {
         let mut opportunity_score = 0.0;
@@ -392,8 +301,6 @@ impl<'ctx> AdvancedFunctionInliner<'ctx> {
         opportunity_score += self.estimate_vectorization_opportunities(caller, callee)?;
         
         Ok(opportunity_score.clamp(0.0, 1.0))
-    }
-    
     /// Execute the inlining plan with real IR transformations
     fn execute_inlining_plan(&mut self, module: &Module<'ctx>, decisions: &[InlineDecision]) -> Result<bool> {
         debug!("Executing inlining plan with {} decisions", decisions.len());
@@ -403,7 +310,6 @@ impl<'ctx> AdvancedFunctionInliner<'ctx> {
         
         for decision in decisions {
             if let (Some(caller), Some(callee)) = (
-                module.get_function(&decision.caller),
                 module.get_function(&decision.callee)
             ) {
                 match decision.inline_type {
@@ -416,7 +322,6 @@ impl<'ctx> AdvancedFunctionInliner<'ctx> {
                                 stats.total_inlined_instructions += self.count_instructions(callee);
                             }
                         }
-                    },
                     InlineType::Partial => {
                         if self.perform_partial_function_inlining(&builder, caller, callee)? {
                             inlined_any = true;
@@ -425,7 +330,6 @@ impl<'ctx> AdvancedFunctionInliner<'ctx> {
                                 stats.functions_partially_inlined += 1;
                             }
                         }
-                    },
                     InlineType::Conditional => {
                         if self.perform_conditional_inlining(&builder, caller, callee)? {
                             inlined_any = true;
@@ -434,23 +338,13 @@ impl<'ctx> AdvancedFunctionInliner<'ctx> {
                                 stats.functions_conditionally_inlined += 1;
                             }
                         }
-                    },
                 }
             }
-        }
-        
         Ok(inlined_any)
-    }
-    
     /// Perform full function inlining with complete IR transformation
     fn perform_full_function_inlining(
-        &self,
-        builder: &Builder<'ctx>,
-        caller: FunctionValue<'ctx>,
         callee: FunctionValue<'ctx>
     ) -> Result<bool> {
-        debug!("Performing full function inlining: {} -> {}", 
-               callee.get_name().to_string_lossy(), 
                caller.get_name().to_string_lossy());
         
         let mut inlined_any = false;
@@ -465,13 +359,8 @@ impl<'ctx> AdvancedFunctionInliner<'ctx> {
         }
         
         Ok(inlined_any)
-    }
-    
     /// Inline a single call site with complete IR transformation
     fn inline_single_call_site(
-        &self,
-        builder: &Builder<'ctx>,
-        call_site: &InstructionValue<'ctx>,
         callee: FunctionValue<'ctx>
     ) -> Result<bool> {
         // Get call site information
@@ -499,15 +388,12 @@ impl<'ctx> AdvancedFunctionInliner<'ctx> {
         let mut callee_block = callee.get_first_basic_block();
         while let Some(block) = callee_block {
             let new_block = self.context.append_basic_block(
-                call_block.get_parent().unwrap(),
                 &format!("inlined_{}", block.get_name().to_string_lossy())
             );
             block_map.insert(block, new_block);
             new_blocks.push(new_block);
             
             callee_block = block.get_next_basic_block();
-        }
-        
         // Clone instructions from callee to caller
         callee_block = callee.get_first_basic_block();
         while let Some(block) = callee_block {
@@ -521,21 +407,14 @@ impl<'ctx> AdvancedFunctionInliner<'ctx> {
                     self.clone_instruction(builder, &instr, &mut value_map, &block_map)?;
                 }
                 instruction = instr.get_next_instruction();
-            }
-            
             callee_block = block.get_next_basic_block();
-        }
-        
         // Handle the first block specially - branch to it from call site
         if let Some(entry_block) = callee.get_first_basic_block() {
             let inlined_entry = block_map[&entry_block];
             builder.position_before(call_site);
             builder.build_unconditional_branch(inlined_entry)?;
-        }
-        
         // Handle return instructions by replacing with branches to continuation
         let continuation_block = self.context.append_basic_block(
-            call_block.get_parent().unwrap(),
             "inline_continuation"
         );
         
@@ -544,20 +423,12 @@ impl<'ctx> AdvancedFunctionInliner<'ctx> {
         // Remove the original call instruction
         unsafe {
             call_site.erase_from_basic_block();
-        }
-        
         // Position builder at continuation block for subsequent instructions
         builder.position_at_end(continuation_block);
         
         Ok(true)
-    }
-    
     /// Clone an instruction with value and block mapping
     fn clone_instruction(
-        &self,
-        builder: &Builder<'ctx>,
-        instruction: &InstructionValue<'ctx>,
-        value_map: &mut HashMap<BasicValueEnum<'ctx>, BasicValueEnum<'ctx>>,
         block_map: &HashMap<BasicBlock<'ctx>, BasicBlock<'ctx>>
     ) -> Result<()> {
         let opcode = instruction.get_opcode();
@@ -575,7 +446,6 @@ impl<'ctx> AdvancedFunctionInliner<'ctx> {
                         }
                     }
                 }
-            },
             inkwell::values::InstructionOpcode::Sub => {
                 if let (Some(lhs), Some(rhs)) = (instruction.get_operand(0), instruction.get_operand(1)) {
                     if let (Some(lhs_val), Some(rhs_val)) = (lhs.left(), rhs.left()) {
@@ -588,7 +458,6 @@ impl<'ctx> AdvancedFunctionInliner<'ctx> {
                         }
                     }
                 }
-            },
             inkwell::values::InstructionOpcode::Mul => {
                 if let (Some(lhs), Some(rhs)) = (instruction.get_operand(0), instruction.get_operand(1)) {
                     if let (Some(lhs_val), Some(rhs_val)) = (lhs.left(), rhs.left()) {
@@ -601,7 +470,6 @@ impl<'ctx> AdvancedFunctionInliner<'ctx> {
                         }
                     }
                 }
-            },
             inkwell::values::InstructionOpcode::Load => {
                 if let Some(ptr_operand) = instruction.get_operand(0) {
                     if let Some(ptr_val) = ptr_operand.left() {
@@ -613,7 +481,6 @@ impl<'ctx> AdvancedFunctionInliner<'ctx> {
                         }
                     }
                 }
-            },
             inkwell::values::InstructionOpcode::Store => {
                 if let (Some(val_operand), Some(ptr_operand)) = (instruction.get_operand(0), instruction.get_operand(1)) {
                     if let (Some(val), Some(ptr_val)) = (val_operand.left(), ptr_operand.left()) {
@@ -624,7 +491,6 @@ impl<'ctx> AdvancedFunctionInliner<'ctx> {
                         }
                     }
                 }
-            },
             inkwell::values::InstructionOpcode::Br => {
                 // Handle branch instructions with block mapping
                 if instruction.get_num_operands() == 1 {
@@ -658,7 +524,6 @@ impl<'ctx> AdvancedFunctionInliner<'ctx> {
                         }
                     }
                 }
-            },
             _ => {
                 // For other instructions, implement as needed
                 debug!("Skipping instruction cloning for opcode: {:?}", opcode);
@@ -666,23 +531,13 @@ impl<'ctx> AdvancedFunctionInliner<'ctx> {
         }
         
         Ok(())
-    }
-    
     /// Map a value using the value mapping, returning original if not found
     fn map_value(
-        &self,
-        value: BasicValueEnum<'ctx>,
         value_map: &HashMap<BasicValueEnum<'ctx>, BasicValueEnum<'ctx>>
     ) -> BasicValueEnum<'ctx> {
         value_map.get(&value).copied().unwrap_or(value)
-    }
-    
     /// Handle return instructions in inlined function
     fn handle_return_instructions(
-        &self,
-        inlined_blocks: &[BasicBlock<'ctx>],
-        continuation_block: BasicBlock<'ctx>,
-        original_call: &InstructionValue<'ctx>,
         value_map: &HashMap<BasicValueEnum<'ctx>, BasicValueEnum<'ctx>>
     ) -> Result<()> {
         let builder = self.context.create_builder();
@@ -704,8 +559,6 @@ impl<'ctx> AdvancedFunctionInliner<'ctx> {
         }
         
         Ok(())
-    }
-    
     // Helper methods for analysis
     fn count_instructions(&self, function: FunctionValue<'ctx>) -> usize {
         let mut count = 0;
@@ -718,11 +571,7 @@ impl<'ctx> AdvancedFunctionInliner<'ctx> {
                 instruction = instruction.unwrap().get_next_instruction();
             }
             block = bb.get_next_basic_block();
-        }
-        
         count
-    }
-    
     fn count_basic_blocks(&self, function: FunctionValue<'ctx>) -> usize {
         let mut count = 0;
         let mut block = function.get_first_basic_block();
@@ -731,8 +580,6 @@ impl<'ctx> AdvancedFunctionInliner<'ctx> {
             block = block.unwrap().get_next_basic_block();
         }
         count
-    }
-    
     fn calculate_control_flow_complexity(&self, function: FunctionValue<'ctx>) -> f64 {
         let mut complexity = 1.0; // Base complexity
         let mut block = function.get_first_basic_block();
@@ -744,19 +591,13 @@ impl<'ctx> AdvancedFunctionInliner<'ctx> {
                         if terminator.get_num_operands() > 1 {
                             complexity += 1.0; // Conditional branch
                         }
-                    },
                     inkwell::values::InstructionOpcode::Switch => {
                         complexity += terminator.get_num_operands() as f64 * 0.5; // Switch complexity
-                    },
                     _ => {}
                 }
             }
             block = bb.get_next_basic_block();
-        }
-        
         complexity
-    }
-    
     fn calculate_max_loop_depth(&self, function: FunctionValue<'ctx>) -> usize {
         // Simplified loop depth calculation based on back edges
         let mut max_depth = 0;
@@ -775,11 +616,7 @@ impl<'ctx> AdvancedFunctionInliner<'ctx> {
                 instruction = instr.get_next_instruction();
             }
             block = bb.get_next_basic_block();
-        }
-        
         max_depth
-    }
-    
     fn has_direct_recursion(&self, function: FunctionValue<'ctx>) -> bool {
         let function_name = function.get_name().to_string_lossy();
         
@@ -798,11 +635,7 @@ impl<'ctx> AdvancedFunctionInliner<'ctx> {
                 instruction = instr.get_next_instruction();
             }
             block = bb.get_next_basic_block();
-        }
-        
         false
-    }
-    
     fn count_memory_operations(&self, function: FunctionValue<'ctx>) -> usize {
         let mut count = 0;
         let mut block = function.get_first_basic_block();
@@ -814,17 +647,12 @@ impl<'ctx> AdvancedFunctionInliner<'ctx> {
                     inkwell::values::InstructionOpcode::Load |
                     inkwell::values::InstructionOpcode::Store => {
                         count += 1;
-                    },
                     _ => {}
                 }
                 instruction = instr.get_next_instruction();
             }
             block = bb.get_next_basic_block();
-        }
-        
         count
-    }
-    
     fn count_arithmetic_operations(&self, function: FunctionValue<'ctx>) -> usize {
         let mut count = 0;
         let mut block = function.get_first_basic_block();
@@ -845,17 +673,12 @@ impl<'ctx> AdvancedFunctionInliner<'ctx> {
                     inkwell::values::InstructionOpcode::FMul |
                     inkwell::values::InstructionOpcode::FDiv => {
                         count += 1;
-                    },
                     _ => {}
                 }
                 instruction = instr.get_next_instruction();
             }
             block = bb.get_next_basic_block();
-        }
-        
         count
-    }
-    
     fn count_function_calls(&self, function: FunctionValue<'ctx>) -> usize {
         let mut count = 0;
         let mut block = function.get_first_basic_block();
@@ -869,22 +692,12 @@ impl<'ctx> AdvancedFunctionInliner<'ctx> {
                 instruction = instr.get_next_instruction();
             }
             block = bb.get_next_basic_block();
-        }
-        
         count
-    }
-    
     fn analyze_return_type_complexity(&self, function: FunctionValue<'ctx>) -> f64 {
         match function.get_type().get_return_type() {
             Some(return_type) => {
                 match return_type {
-                    BasicTypeEnum::IntType(_) | BasicTypeEnum::FloatType(_) => 1.0,
-                    BasicTypeEnum::PointerType(_) => 1.2,
-                    BasicTypeEnum::ArrayType(_) => 1.5,
-                    BasicTypeEnum::StructType(_) => 2.0,
-                    BasicTypeEnum::VectorType(_) => 1.8,
                 }
-            },
             None => 0.8, // Void return type
         }
     }
@@ -899,17 +712,12 @@ impl<'ctx> AdvancedFunctionInliner<'ctx> {
                     inkwell::values::InstructionOpcode::Store |
                     inkwell::values::InstructionOpcode::Call => {
                         return true; // Has side effects
-                    },
                     _ => {}
                 }
                 instruction = instr.get_next_instruction();
             }
             block = bb.get_next_basic_block();
-        }
-        
         false
-    }
-    
     fn find_all_call_sites(&self, function: FunctionValue<'ctx>) -> Vec<InstructionValue<'ctx>> {
         let mut call_sites = Vec::new();
         let mut block = function.get_first_basic_block();
@@ -923,16 +731,10 @@ impl<'ctx> AdvancedFunctionInliner<'ctx> {
                 instruction = instr.get_next_instruction();
             }
             block = bb.get_next_basic_block();
-        }
-        
         call_sites
-    }
-    
     fn get_called_function(&self, call_instruction: &InstructionValue<'ctx>) -> Option<FunctionValue<'ctx>> {
         if call_instruction.get_opcode() != inkwell::values::InstructionOpcode::Call {
             return None;
-        }
-        
         let num_operands = call_instruction.get_num_operands();
         if num_operands > 0 {
             if let Some(operand) = call_instruction.get_operand(num_operands - 1) {
@@ -940,18 +742,12 @@ impl<'ctx> AdvancedFunctionInliner<'ctx> {
                     return function.try_into().ok();
                 }
             }
-        }
-        
         None
-    }
-    
     fn estimate_call_site_frequency(&self, function: FunctionValue<'ctx>, call_site: &InstructionValue<'ctx>) -> f64 {
         // Estimate based on loop context and function structure
         if let Some(parent_block) = call_site.get_parent() {
             if self.is_in_loop_context(parent_block) {
                 return 0.8; // High frequency for loop calls
-            }
-            
             // Check if in conditional block
             if self.is_in_conditional_context(parent_block, function) {
                 return 0.3; // Medium frequency for conditional calls
@@ -959,8 +755,6 @@ impl<'ctx> AdvancedFunctionInliner<'ctx> {
         }
         
         0.5 // Default frequency
-    }
-    
     fn is_in_loop_context(&self, block: BasicBlock<'ctx>) -> bool {
         // Look for PHI nodes which often indicate loop headers
         let mut instruction = block.get_first_instruction();
@@ -971,25 +765,13 @@ impl<'ctx> AdvancedFunctionInliner<'ctx> {
             instruction = instr.get_next_instruction();
         }
         false
-    }
-    
     fn is_in_conditional_context(&self, block: BasicBlock<'ctx>, function: FunctionValue<'ctx>) -> bool {
         // Check if block has multiple predecessors (indicating conditional execution)
         let block_count = self.count_basic_blocks(function);
         block_count > 2 // Heuristic: multiple blocks suggest conditional logic
-    }
-    
     fn analyze_call_site(&self, caller: FunctionValue<'ctx>, call_site: &InstructionValue<'ctx>, callee: FunctionValue<'ctx>) -> Result<CallSiteAnalysis> {
         Ok(CallSiteAnalysis {
-            caller_name: caller.get_name().to_string_lossy().into_owned(),
-            callee_name: callee.get_name().to_string_lossy().into_owned(),
-            call_frequency: self.estimate_call_site_frequency(caller, call_site),
-            argument_count: self.extract_call_arguments(call_site).len(),
-            is_in_loop: self.is_in_loop_context(call_site.get_parent().unwrap()),
-            constant_arguments: self.count_constant_arguments(call_site),
         })
-    }
-    
     fn extract_call_arguments(&self, call_site: &InstructionValue<'ctx>) -> Vec<BasicValueEnum<'ctx>> {
         let mut args = Vec::new();
         let num_operands = call_site.get_num_operands();
@@ -1001,11 +783,7 @@ impl<'ctx> AdvancedFunctionInliner<'ctx> {
                     args.push(value);
                 }
             }
-        }
-        
         args
-    }
-    
     fn count_constant_arguments(&self, call_site: &InstructionValue<'ctx>) -> usize {
         let mut constant_count = 0;
         let args = self.extract_call_arguments(call_site);
@@ -1017,12 +795,8 @@ impl<'ctx> AdvancedFunctionInliner<'ctx> {
         }
         
         constant_count
-    }
-    
     fn is_constant_value(&self, value: BasicValueEnum<'ctx>) -> bool {
         value.is_const()
-    }
-    
     fn estimate_size_increase(&self, caller: FunctionValue<'ctx>, callee: FunctionValue<'ctx>) -> f64 {
         let caller_size = self.count_instructions(caller) as f64;
         let callee_size = self.count_instructions(callee) as f64;
@@ -1055,27 +829,12 @@ impl<'ctx> AdvancedFunctionInliner<'ctx> {
         
         // Limit total number of inlinings per optimization pass
         let max_inlinings = match self.optimization_level {
-            OptimizationLevel::O0 => 0,
-            OptimizationLevel::O1 => 10,
-            OptimizationLevel::O2 => 25,
-            OptimizationLevel::O3 => 50,
-            OptimizationLevel::Os => 5,
-            OptimizationLevel::OsAggressive => 3,
-        };
         
         decisions.truncate(max_inlinings);
         
         Ok(decisions)
-    }
-    
     fn get_factor_weights(&self) -> (f64, f64, f64, f64, f64, f64) {
         match self.optimization_level {
-            OptimizationLevel::O0 => (0.0, 0.0, 0.0, 0.0, 0.0, 0.0),
-            OptimizationLevel::O1 => (0.3, 0.2, 0.2, 0.1, 0.1, 0.1),
-            OptimizationLevel::O2 => (0.2, 0.25, 0.15, 0.15, 0.15, 0.1),
-            OptimizationLevel::O3 => (0.15, 0.3, 0.1, 0.2, 0.15, 0.1),
-            OptimizationLevel::Os => (0.4, 0.1, 0.3, 0.05, 0.1, 0.05),
-            OptimizationLevel::OsAggressive => (0.5, 0.05, 0.3, 0.05, 0.05, 0.05),
         }
     }
     
@@ -1085,21 +844,13 @@ impl<'ctx> AdvancedFunctionInliner<'ctx> {
         // Size constraint
         if callee_metrics.instruction_count > self.max_inline_size {
             constrained_score *= 0.1; // Heavy penalty
-        }
-        
         // Recursion constraint
         if callee_metrics.has_recursion {
             constrained_score *= 0.2; // Penalty for recursion
-        }
-        
         // Complexity constraint
         if callee_metrics.control_flow_complexity > 5.0 {
             constrained_score *= 0.5; // Penalty for complex control flow
-        }
-        
         constrained_score
-    }
-    
     // Advanced analysis methods
     fn has_constant_propagation_opportunity(&self, caller: FunctionValue<'ctx>, callee: FunctionValue<'ctx>) -> Result<bool> {
         // Check if caller has constant arguments that could be propagated
@@ -1113,8 +864,6 @@ impl<'ctx> AdvancedFunctionInliner<'ctx> {
         }
         
         Ok(false)
-    }
-    
     fn has_dead_code_elimination_opportunity(&self, _caller: FunctionValue<'ctx>, callee: FunctionValue<'ctx>) -> Result<bool> {
         // Check if callee has code that might become dead after inlining
         let instruction_count = self.count_instructions(callee);
@@ -1122,8 +871,6 @@ impl<'ctx> AdvancedFunctionInliner<'ctx> {
         
         // If callee has many arithmetic operations, inlining might expose dead code
         Ok(arithmetic_ops > instruction_count / 3)
-    }
-    
     fn has_loop_optimization_opportunity(&self, caller: FunctionValue<'ctx>, callee: FunctionValue<'ctx>) -> Result<bool> {
         // Check if inlining would enable loop optimizations
         let call_sites = self.find_call_sites_to_function(caller, callee);
@@ -1134,11 +881,7 @@ impl<'ctx> AdvancedFunctionInliner<'ctx> {
                     return Ok(true);
                 }
             }
-        }
-        
         Ok(false)
-    }
-    
     fn estimate_constant_folding_opportunities(&self, caller: FunctionValue<'ctx>, callee: FunctionValue<'ctx>) -> Result<f64> {
         let call_sites = self.find_call_sites_to_function(caller, callee);
         let mut total_opportunity = 0.0;
@@ -1153,8 +896,6 @@ impl<'ctx> AdvancedFunctionInliner<'ctx> {
         }
         
         Ok(total_opportunity / call_sites.len().max(1) as f64)
-    }
-    
     fn estimate_specialization_opportunities(&self, _caller: FunctionValue<'ctx>, callee: FunctionValue<'ctx>) -> Result<f64> {
         // Estimate based on function characteristics
         let arithmetic_ops = self.count_arithmetic_operations(callee);
@@ -1191,28 +932,18 @@ impl<'ctx> AdvancedFunctionInliner<'ctx> {
                     matching_call_sites.push(call_site);
                 }
             }
-        }
-        
         matching_call_sites
-    }
-    
     fn perform_partial_function_inlining(&self, builder: &Builder<'ctx>, caller: FunctionValue<'ctx>, callee: FunctionValue<'ctx>) -> Result<bool> {
         // For now, fall back to full inlining
         // In a complete implementation, this would inline only parts of the function
         self.perform_full_function_inlining(builder, caller, callee)
-    }
-    
     fn perform_conditional_inlining(&self, builder: &Builder<'ctx>, caller: FunctionValue<'ctx>, callee: FunctionValue<'ctx>) -> Result<bool> {
         // For now, fall back to full inlining
         // In a complete implementation, this would inline based on runtime conditions
         self.perform_full_function_inlining(builder, caller, callee)
-    }
-    
     /// Get comprehensive inlining statistics
     pub fn get_statistics(&self) -> InliningStatistics {
         self.statistics.lock().unwrap().clone()
-    }
-    
     /// Reset statistics and caches
     pub fn reset(&mut self) {
         *self.statistics.lock().unwrap() = InliningStatistics::default();
@@ -1225,65 +956,23 @@ impl<'ctx> AdvancedFunctionInliner<'ctx> {
 /// Comprehensive inlining statistics
 #[derive(Debug, Clone, Default)]
 pub struct InliningStatistics {
-    pub total_inlining_time: Duration,
-    pub optimization_passes: usize,
-    pub functions_fully_inlined: usize,
-    pub functions_partially_inlined: usize,
-    pub functions_conditionally_inlined: usize,
-    pub total_inlined_instructions: usize,
-    pub total_size_increase: f64,
-    pub average_profitability_score: f64,
-    pub cache_hits: usize,
-    pub cache_misses: usize,
-}
-
 /// Function metrics for profitability analysis
 #[derive(Debug, Clone, Default)]
 pub struct FunctionMetrics {
-    pub instruction_count: usize,
-    pub basic_block_count: usize,
-    pub parameter_count: usize,
-    pub control_flow_complexity: f64,
-    pub loop_depth: usize,
-    pub has_recursion: bool,
-    pub memory_operations: usize,
-    pub arithmetic_operations: usize,
-    pub call_count: usize,
-    pub return_type_complexity: f64,
-    pub has_side_effects: bool,
-}
-
 /// Call site analysis for context-sensitive inlining
 #[derive(Debug, Clone)]
 pub struct CallSiteAnalysis {
-    pub caller_name: String,
-    pub callee_name: String,
-    pub call_frequency: f64,
-    pub argument_count: usize,
-    pub is_in_loop: bool,
-    pub constant_arguments: usize,
-}
-
 /// Call graph for analyzing function relationships
 #[derive(Debug, Default)]
 pub struct CallGraph {
-    functions: HashSet<String>,
     call_edges: HashMap<String, HashMap<String, f64>>, // caller -> (callee -> frequency)
-}
-
 impl CallGraph {
     pub fn new() -> Self {
         Self::default()
-    }
-    
     pub fn add_function(&mut self, name: String) {
         self.functions.insert(name);
-    }
-    
     pub fn add_call_edge(&mut self, caller: String, callee: String, frequency: f64) {
         self.call_edges.entry(caller).or_insert_with(HashMap::new).insert(callee, frequency);
-    }
-    
     pub fn get_callees(&self, caller: &str) -> Option<&HashMap<String, f64>> {
         self.call_edges.get(caller)
     }
@@ -1292,14 +981,6 @@ impl CallGraph {
 /// Inlining decision with comprehensive analysis
 #[derive(Debug, Clone)]
 pub struct InlineDecision {
-    pub caller: String,
-    pub callee: String,
-    pub profitability: f64,
-    pub estimated_size_increase: f64,
-    pub call_frequency: f64,
-    pub inline_type: InlineType,
-}
-
 /// Types of inlining strategies
 #[derive(Debug, Clone, Copy)]
 pub enum InlineType {

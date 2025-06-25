@@ -10,65 +10,27 @@ use std::sync::atomic::{AtomicU64, Ordering};
 #[derive(Debug, Clone, Copy)]
 pub struct MemStats {
     /// Bytes allocated and not yet freed
-    pub alloc: u64,
     /// Total bytes allocated (even if freed)
-    pub total_alloc: u64,
     /// Total memory obtained from system
-    pub sys: u64,
     /// Total number of allocations
-    pub mallocs: u64,
     /// Total number of frees
-    pub frees: u64,
     /// Bytes allocated and not yet freed (same as Alloc)
-    pub heap_alloc: u64,
     /// Bytes obtained from system for heap
-    pub heap_sys: u64,
     /// Bytes in idle heap spans
-    pub heap_idle: u64,
     /// Bytes in non-idle heap spans  
-    pub heap_inuse: u64,
     /// Bytes used by stack allocator
-    pub stack_inuse: u64,
     /// Bytes obtained from system for stack allocator
-    pub stack_sys: u64,
     /// Bytes used for GC metadata
-    pub gc_sys: u64,
     /// Target heap size for next GC
-    pub next_gc: u64,
     /// Time of last GC in nanoseconds since epoch
-    pub last_gc: u64,
     /// Total GC pause time in nanoseconds
-    pub pause_total_ns: u64,
     /// Number of completed GC cycles
-    pub num_gc: u32,
     /// Fraction of CPU time used by GC
-    pub gc_cpu_fraction: f64,
-}
-
 impl Default for MemStats {
     fn default() -> Self {
         Self {
-            alloc: 0,
-            total_alloc: 0,
-            sys: 0,
-            mallocs: 0,
-            frees: 0,
-            heap_alloc: 0,
-            heap_sys: 0,
-            heap_idle: 0,
-            heap_inuse: 0,
-            stack_inuse: 0,
-            stack_sys: 0,
-            gc_sys: 0,
-            next_gc: 0,
-            last_gc: 0,
-            pause_total_ns: 0,
-            num_gc: 0,
-            gc_cpu_fraction: 0.0,
         }
     }
-}
-
 impl MemStats {
     /// Create a new MemStats with all fields initialized to zero
     pub fn new() -> Self {
@@ -109,7 +71,6 @@ pub fn read_mem_stats(stats: &mut MemStats) -> crate::error::Result<()> {
         current_alloc + (current_alloc * gc_state.target_percent as u64) / 100
     } else {
         current_alloc * 2 // Default to 2x current allocation
-    };
     
     // Populate the stats structure
     stats.alloc = current_alloc;
@@ -131,8 +92,6 @@ pub fn read_mem_stats(stats: &mut MemStats) -> crate::error::Result<()> {
     stats.gc_cpu_fraction = gc_state.cpu_fraction;
     
     Ok(())
-}
-
 /// Update allocation statistics (called by memory allocator)
 pub fn update_allocation_stats(size: usize, is_alloc: bool) {
     if is_alloc {
@@ -161,8 +120,6 @@ fn get_system_memory_info() -> crate::error::Result<()> {
     let gc_sys = heap_sys / 20;
     
     Ok((heap_sys, stack_sys, gc_sys))
-}
-
 /// Estimate stack memory usage
 fn get_stack_usage() -> crate::error::Result<()> {
     // Try to get goroutine stack information if available
@@ -180,29 +137,17 @@ fn estimate_stack_system_memory() -> crate::error::Result<()> {
     // Stack system memory is typically larger than in-use due to guard pages
     let stack_inuse = get_stack_usage()?;
     Ok(stack_inuse + (stack_inuse / 4)) // Add 25% overhead for guard pages
-}
-
 /// Memory profiling functionality
 #[derive(Debug)]
 pub struct MemoryProfile {
     /// Total heap allocations by size class
-    pub heap_allocations: Vec<(usize, u64)>,
     /// Stack usage by goroutine
-    pub stack_usage: Vec<(u64, usize)>,
     /// GC overhead breakdown
-    pub gc_overhead: GcOverhead,
-}
-
 #[derive(Debug)]
 pub struct GcOverhead {
     /// Time spent in GC
-    pub total_gc_time: u64,
     /// Memory used for GC metadata  
-    pub metadata_bytes: u64,
     /// Write barrier overhead
-    pub write_barrier_cost: f64,
-}
-
 /// Create a memory profile snapshot
 pub fn memory_profile() -> crate::error::Result<()> {
     let mut stats = MemStats::new();
@@ -215,7 +160,6 @@ pub fn memory_profile() -> crate::error::Result<()> {
             .collect()
     } else {
         vec![(1, 1024 * 1024)] // Main thread estimate
-    };
     
     // Create simplified heap allocation breakdown
     let heap_allocations = vec![
@@ -226,18 +170,9 @@ pub fn memory_profile() -> crate::error::Result<()> {
     ];
     
     let gc_overhead = GcOverhead {
-        total_gc_time: stats.pause_total_ns,
-        metadata_bytes: stats.gc_sys,
-        write_barrier_cost: stats.gc_cpu_fraction,
-    };
     
     Ok(MemoryProfile {
-        heap_allocations,
-        stack_usage,
-        gc_overhead,
     })
-}
-
 /// Write memory profile to a string format
 pub fn write_profile(profile: &MemoryProfile) -> String {
     let mut output = String::new();
@@ -247,21 +182,15 @@ pub fn write_profile(profile: &MemoryProfile) -> String {
     output.push_str("Heap Allocations by Size:\n");
     for (size, count) in &profile.heap_allocations {
         output.push_str(&format!("  {:<8} bytes: {} allocations\n", size, count));
-    }
-    
     output.push_str("\nStack Usage by Goroutine:\n");
     for (id, size) in &profile.stack_usage {
         output.push_str(&format!("  Goroutine {}: {} bytes\n", id, size));
-    }
-    
     output.push_str("\nGC Overhead:\n");
     output.push_str(&format!("  Total GC time: {} ns\n", profile.gc_overhead.total_gc_time));
     output.push_str(&format!("  Metadata bytes: {}\n", profile.gc_overhead.metadata_bytes));
     output.push_str(&format!("  Write barrier cost: {:.4}\n", profile.gc_overhead.write_barrier_cost));
     
     output
-}
-
 /// Force memory to be returned to the operating system
 pub fn free_os_memory() -> crate::error::Result<()> {
     // In a real implementation, this would call into the allocator
@@ -279,5 +208,3 @@ pub fn free_os_memory() -> crate::error::Result<()> {
     }
     
     Ok(())
-}
-

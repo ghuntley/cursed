@@ -2,20 +2,15 @@
 /// 
 /// Handles HTTP communication with OCSP responders and response validation
 
-// use crate::stdlib::packages::crypto_pki::types::{
-    PkiResult, PkiError, X509Certificate, OcspConfig, CertId, OcspRequestInfo,
+// Placeholder imports disabled
     BasicOcspResponse, CertificateStatusInfo, RevocationStatus, OcspResponseStatus
-};
+// };
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 use std::collections::HashMap;
 use tokio::time::timeout;
 
 /// OCSP HTTP Client
 pub struct OcspClient {
-    config: OcspConfig,
-    http_client: reqwest::Client,
-}
-
 impl OcspClient {
     /// Create a new OCSP client with configuration
     pub fn new(config: OcspConfig) -> Self {
@@ -26,23 +21,14 @@ impl OcspClient {
             .unwrap_or_else(|_| reqwest::Client::new());
 
         Self {
-            config,
-            http_client,
         }
     }
 
     /// Check certificate status via OCSP
     pub async fn check_certificate_status(
-        &self,
-        cert: &X509Certificate,
-        issuer: &X509Certificate,
-        responder_url: Option<&str>,
     ) -> PkiResult<CertificateStatusInfo> {
         // Get OCSP responder URL
         let url = match responder_url {
-            Some(url) => url.to_string(),
-            None => self.extract_ocsp_url(cert)?,
-        };
 
         // Create OCSP request
         let request_data = self.create_ocsp_request(cert, issuer)?;
@@ -56,12 +42,8 @@ impl OcspClient {
         // Verify response signature if configured
         if self.config.verify_signature {
             self.verify_response_signature(&basic_response, issuer)?;
-        }
-
         // Extract status for the requested certificate
         self.extract_certificate_status(&basic_response, cert, issuer)
-    }
-
     /// Create OCSP request for a certificate
     fn create_ocsp_request(&self, cert: &X509Certificate, issuer: &X509Certificate) -> PkiResult<Vec<u8>> {
         let cert_id = CertId::new(cert, issuer)?;
@@ -73,25 +55,17 @@ impl OcspClient {
         if self.config.nonce_extension {
             let nonce = self.generate_nonce();
             single_request_extensions.insert("nonce".to_string(), nonce);
-        }
-
         let request_info = OcspRequestInfo {
-            cert_id,
             single_request_extensions: if single_request_extensions.is_empty() {
                 None
             } else {
                 Some(single_request_extensions)
-            },
-        };
 
         // Encode to ASN.1 DER
         self.encode_ocsp_request(&request_info)
-    }
-
     /// Send OCSP request via HTTP POST
     async fn send_ocsp_request(&self, url: &str, request_data: &[u8]) -> PkiResult<Vec<u8>> {
         let response = timeout(
-            self.config.timeout,
             self.http_client
                 .post(url)
                 .header("Content-Type", "application/ocsp-request")
@@ -105,12 +79,8 @@ impl OcspClient {
 
         if !response.status().is_success() {
             return Err(PkiError::NetworkError(format!(
-                "HTTP error: {} {}",
-                response.status().as_u16(),
                 response.status().canonical_reason().unwrap_or("Unknown")
             )));
-        }
-
         let content_type = response
             .headers()
             .get("content-type")
@@ -122,8 +92,6 @@ impl OcspClient {
                 "Invalid content type: expected application/ocsp-response, got {}",
                 content_type
             )));
-        }
-
         let body = response
             .bytes()
             .await
@@ -131,15 +99,9 @@ impl OcspClient {
 
         if body.len() > self.config.max_response_size {
             return Err(PkiError::NetworkError(format!(
-                "Response too large: {} bytes (max: {})",
-                body.len(),
                 self.config.max_response_size
             )));
-        }
-
         Ok(body.to_vec())
-    }
-
     /// Parse OCSP response from DER-encoded data
     fn parse_ocsp_response(&self, response_data: &[u8]) -> PkiResult<BasicOcspResponse> {
         // Parse outer OCSP response
@@ -151,9 +113,7 @@ impl OcspClient {
                 self.parse_basic_ocsp_response(response_data)
             }
             status => Err(PkiError::OcspError(format!(
-                "OCSP responder returned error status: {:?}",
                 status
-            ))),
         }
     }
 
@@ -161,36 +121,18 @@ impl OcspClient {
     fn verify_response_signature(&self, response: &BasicOcspResponse, issuer: &X509Certificate) -> PkiResult<()> {
         // Get signing certificate (either from response or use issuer)
         let signing_cert = match &response.certs {
-            Some(certs) if !certs.is_empty() => &certs[0],
-            _ => issuer,
-        };
 
         // Verify signature over tbsResponseData
         self.verify_signature(
-            &response.tbs_response_data,
-            &response.signature,
-            &response.signature_algorithm,
-            &signing_cert.public_key,
         )
-    }
-
     /// Extract certificate status from OCSP response
     fn extract_certificate_status(
-        &self,
-        response: &BasicOcspResponse,
-        cert: &X509Certificate,
-        issuer: &X509Certificate,
     ) -> PkiResult<CertificateStatusInfo> {
         let target_cert_id = CertId::new(cert, issuer)?;
 
         for single_response in &response.responses {
             if self.cert_ids_match(&single_response.cert_id, &target_cert_id) {
                 return Ok(CertificateStatusInfo {
-                    status: single_response.cert_status.clone(),
-                    this_update: single_response.this_update,
-                    next_update: single_response.next_update,
-                    produced_at: response.produced_at,
-                    responder_id: response.responder_id.clone(),
                 });
             }
         }
@@ -198,8 +140,6 @@ impl OcspClient {
         Err(PkiError::OcspError(
             "Certificate not found in OCSP response".to_string()
         ))
-    }
-
     /// Extract OCSP responder URL from certificate AIA extension
     fn extract_ocsp_url(&self, cert: &X509Certificate) -> PkiResult<String> {
         // Look for Authority Information Access (AIA) extension
@@ -213,21 +153,15 @@ impl OcspClient {
                     return Ok(aia_string[start..].to_string());
                 }
             }
-        }
-
         Err(PkiError::OcspError(
             "No OCSP responder URL found in certificate".to_string()
         ))
-    }
-
     /// Generate random nonce for OCSP request
     fn generate_nonce(&self) -> Vec<u8> {
         use rand::RngCore;
         let mut nonce = vec![0u8; 16];
         rand::thread_rng().fill_bytes(&mut nonce);
         nonce
-    }
-
     /// Encode OCSP request to ASN.1 DER format
     fn encode_ocsp_request(&self, request: &OcspRequestInfo) -> PkiResult<Vec<u8>> {
         // Simplified ASN.1 encoding - in production, use proper ASN.1 library
@@ -259,88 +193,48 @@ impl OcspClient {
         } else {
             encoded.push(0x82); // Long form length for 2 bytes
             encoded.extend_from_slice(&(body.len() as u16).to_be_bytes());
-        }
-        
         encoded.extend_from_slice(&body);
         
         Ok(encoded)
-    }
-
     /// Parse response status from OCSP response
     fn parse_response_status(&self, data: &[u8]) -> PkiResult<OcspResponseStatus> {
         if data.is_empty() {
             return Err(PkiError::Asn1Error("Empty OCSP response".to_string()));
-        }
-
         // First byte should indicate response status (simplified parsing)
         let status_byte = data[0];
         Ok(OcspResponseStatus::from(status_byte))
-    }
-
     /// Parse basic OCSP response structure
     fn parse_basic_ocsp_response(&self, data: &[u8]) -> PkiResult<BasicOcspResponse> {
         // Simplified parsing - in production, use proper ASN.1 parser
         if data.len() < 10 {
             return Err(PkiError::Asn1Error("Invalid OCSP response structure".to_string()));
-        }
-
         // Mock response for demonstration
         let now = SystemTime::now();
         let cert_id = CertId {
-            hash_algorithm: "SHA-1".to_string(),
-            issuer_name_hash: vec![0; 20],
-            issuer_key_hash: vec![0; 20],
-            serial_number: vec![1, 2, 3, 4],
-        };
 
 //         let single_response = crate::stdlib::packages::crypto_pki::types::SingleResponse {
-            cert_id,
-            cert_status: RevocationStatus::Good,
-            this_update: now,
             next_update: Some(now + Duration::from_secs(86400)), // 24 hours
-            single_extensions: None,
-        };
 
         Ok(BasicOcspResponse {
-            tbs_response_data: data[..data.len().min(100)].to_vec(),
-            signature_algorithm: "SHA256withRSA".to_string(),
             signature: vec![0; 256], // Mock signature
-            certs: None,
-            responses: vec![single_response],
-            responder_id: "MockResponder".to_string(),
-            produced_at: now,
-            response_extensions: None,
         })
-    }
-
     /// Verify digital signature
     fn verify_signature(
-        &self,
-        data: &[u8],
-        signature: &[u8],
-        algorithm: &str,
-        public_key: &[u8],
     ) -> PkiResult<()> {
         // Simplified signature verification - in production, use proper crypto library
         if data.is_empty() || signature.is_empty() || public_key.is_empty() {
             return Err(PkiError::SignatureError("Invalid signature parameters".to_string()));
-        }
-
         // For demonstration, we'll just check that the signature is non-empty
         // In production, this would perform actual cryptographic verification
         if signature.len() < 64 {
             return Err(PkiError::SignatureError("Signature too short".to_string()));
-        }
-
         match algorithm {
             "SHA256withRSA" | "SHA1withRSA" => {
                 // Mock RSA signature verification
                 Ok(())
             }
             _ => Err(PkiError::SignatureError(format!(
-                "Unsupported signature algorithm: {}",
                 algorithm
-            ))),
         }
     }
 

@@ -7,29 +7,16 @@ use crate::error::{CursedError, SourceLocation};
 #[derive(Debug, Clone, PartialEq)]
 pub enum IoError {
     /// End of file or stream reached unexpectedly
-    UnexpectedEof,
     /// Invalid UTF-8 sequence encountered
-    InvalidUtf8,
     /// Operation was interrupted
-    Interrupted,
     /// Permission denied for the operation
-    PermissionDenied,
     /// Resource temporarily unavailable
-    WouldBlock,
     /// Invalid input provided
-    InvalidInput(String),
     /// Buffer overflow or capacity exceeded
-    BufferOverflow,
     /// Stream or handle is closed
-    StreamClosed,
     /// Timeout occurred during operation
-    Timeout,
     /// General I/O error with message
-    General(String),
     /// System-level error
-    System(i32, String),
-}
-
 // impl fmt::Display for IoError {
 //     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
 //         match self {
@@ -89,13 +76,9 @@ pub type IoResult<T> = std::result::Result<T, IoError>;
 /// Helper function to create IoError from system error
 pub fn system_error(code: i32, message: impl Into<String>) -> IoError {
     IoError::System(code, message.into())
-}
-
 /// Helper function to create general I/O error
 pub fn io_error(message: impl Into<String>) -> IoError {
     IoError::General(message.into())
-}
-
 /// Helper function to create invalid input error
 pub fn invalid_input(message: impl Into<String>) -> IoError {
     IoError::InvalidInput(message.into())

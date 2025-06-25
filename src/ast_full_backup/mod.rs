@@ -111,50 +111,28 @@ pub use select::*;
 pub use documentation::*;
 pub use collections::*;
 pub use core_types::{
-    AST, VariableDeclaration, ConstantDeclaration, ImportDeclaration, 
-    PackageDeclaration, InterfaceMethod, StructField, FieldVisibility,
     ModuleDeclaration
-};
+// };
 // Specific imports to avoid conflicts
 pub use parser_support::{
-    VariableStatement,
-    ExpressionStatement as ParserExpressionStatement,
-    ArrayLiteral as ParserArrayLiteral, 
-    HashLiteral as ParserHashLiteral,
-    NilLiteral as ParserNilLiteral,
-    IndexExpression as ParserIndexExpression,
-    DotExpression as ParserDotExpression,
-};
+// };
 
 /// Root AST node representing a complete CURSED program
 #[derive(Debug, Clone)]
 pub struct Program {
-    pub statements: Vec<Box<dyn Statement>>,
-    pub package_name: Option<String>,
-    pub imports: Vec<ImportStatement>,
-}
-
 impl Program {
     pub fn new() -> Self {
         Self {
-            statements: Vec::new(),
-            package_name: None,
-            imports: Vec::new(),
         }
     }
     
     pub fn with_package(package_name: String) -> Self {
         Self {
-            statements: Vec::new(),
-            package_name: Some(package_name),
-            imports: Vec::new(),
         }
     }
     
     pub fn add_statement(&mut self, statement: Box<dyn Statement>) {
         self.statements.push(statement);
-    }
-    
     pub fn add_import(&mut self, import: ImportStatement) {
         self.imports.push(import);
     }
@@ -166,23 +144,13 @@ impl Node for Program {
         
         if let Some(package) = &self.package_name {
             result.push_str(&format!("vibe {}\n\n", package));
-        }
-        
         for import in &self.imports {
             result.push_str(&format!("{}\n", import.string()));
-        }
-        
         if !self.imports.is_empty() {
             result.push('\n');
-        }
-        
         for statement in &self.statements {
             result.push_str(&format!("{}\n", statement.string()));
-        }
-        
         result
-    }
-
     fn token_literal(&self) -> String {
         if let Some(first_stmt) = self.statements.first() {
             first_stmt.token_literal()
@@ -190,8 +158,6 @@ impl Node for Program {
             String::new()
         }
     }
-}
-
 impl Default for Program {
     fn default() -> Self {
         Self::new()
@@ -204,113 +170,54 @@ impl Default for Program {
 #[derive(Debug, Clone)]
 pub enum AstNodeType {
     /// Program root node
-    Program(Program),
     /// Block statement
-    BlockStatement(BlockStatement),
     /// Expression statement
-    ExpressionStatement(Box<dyn Expression>),
     /// Function declaration
-    FunctionDeclaration(FunctionDeclaration),
     /// Struct declaration  
-    StructDeclaration(SquadStatement),
     /// Interface declaration
-    InterfaceDeclaration(CollabStatement),
     /// Enum declaration
-    EnumDeclaration(EnumStatement),
     /// Variable declaration
-    VariableDeclaration(VariableStatement),
     /// Constant declaration
-    ConstantDeclaration(ConstantStatement),
     /// Type alias declaration
-    TypeAliasDeclaration(TypeAliasStatement),
     /// Import statement
-    ImportStatement(ImportStatement),
     /// Import declaration
-    Import(ImportStatement),
     /// Module declaration
-    ModuleDeclaration(ModuleStatement),
     /// If statement
-    IfStatement(ConditionalIfStatement),
     /// While statement
-    WhileStatement(ConditionalWhileStatement),
     /// For statement
-    ForStatement(ConditionalForStatement),
     /// For-in statement
-    ForInStatement(ForInStatement),
     /// Do-while statement
-    DoWhileStatement(DoWhileStatement),
     /// Switch statement
-    SwitchStatement(ConditionalSwitchStatement),
     /// Try statement
-    TryStatement(TryStatement),
     /// Return statement
-    ReturnStatement(ReturnStatement),
-}
-
 /// Unified AST node wrapper
 #[derive(Debug, Clone)]
 pub struct AstNode {
     /// The specific node type and its data
-    pub node_type: AstNodeType,
     /// Source location information
-    pub location: Option<SourceLocation>,
     /// Additional metadata
-    pub metadata: HashMap<String, String>,
-}
-
 impl AstNode {
     /// Create a new AST node
     pub fn new(node_type: AstNodeType) -> Self {
         Self {
-            node_type,
-            location: None,
-            metadata: HashMap::new(),
         }
     }
     
     /// Create a new AST node with location
     pub fn with_location(node_type: AstNodeType, location: SourceLocation) -> Self {
         Self {
-            node_type,
-            location: Some(location),
-            metadata: HashMap::new(),
         }
     }
 
     /// Create a new statement node from a boxed statement
     pub fn new_statement(statement: Box<dyn Statement>) -> Self {
         Self::new(AstNodeType::ExpressionStatement(statement))
-    }
-
     /// Create a new program node
     pub fn new_program(program: Program) -> Self {
         Self::new(AstNodeType::Program(program))
-    }
-    
     /// Get the string representation of this node
     pub fn string(&self) -> String {
         match &self.node_type {
-            AstNodeType::Program(program) => program.string(),
-            AstNodeType::BlockStatement(block) => block.string(),
-            AstNodeType::ExpressionStatement(expr) => expr.string(),
-            AstNodeType::FunctionDeclaration(func) => func.string(),
-            AstNodeType::StructDeclaration(struct_decl) => struct_decl.string(),
-            AstNodeType::InterfaceDeclaration(interface) => interface.string(),
-            AstNodeType::EnumDeclaration(enum_decl) => enum_decl.string(),
-            AstNodeType::VariableDeclaration(var) => var.string(),
-            AstNodeType::ConstantDeclaration(const_decl) => const_decl.string(),
-            AstNodeType::TypeAliasDeclaration(type_alias) => type_alias.string(),
-            AstNodeType::ImportStatement(import) => import.string(),
-            AstNodeType::Import(import) => import.string(),
-            AstNodeType::ModuleDeclaration(module) => module.string(),
-            AstNodeType::IfStatement(if_stmt) => if_stmt.string(),
-            AstNodeType::WhileStatement(while_stmt) => while_stmt.string(),
-            AstNodeType::ForStatement(for_stmt) => for_stmt.string(),
-            AstNodeType::ForInStatement(for_in) => for_in.string(),
-            AstNodeType::DoWhileStatement(do_while) => do_while.string(),
-            AstNodeType::SwitchStatement(switch) => switch.string(),
-            AstNodeType::TryStatement(try_stmt) => try_stmt.string(),
-            AstNodeType::ReturnStatement(ret) => ret.string(),
         }
     }
 }

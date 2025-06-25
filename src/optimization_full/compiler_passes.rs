@@ -11,122 +11,48 @@ use crate::error::Result;
 /// Manages the execution of compiler optimization passes
 #[derive(Debug, Clone)]
 pub struct CompilerPassManager {
-    passes: Vec<CompilerPass>,
     pass_graph: HashMap<String, Vec<String>>, // Dependencies
-    execution_order: Vec<String>,
-    statistics: PassExecutionStatistics,
-}
-
 /// Individual compiler pass definition
 #[derive(Debug, Clone)]
 pub struct CompilerPass {
-    pub name: String,
-    pub description: String,
-    pub pass_type: PassType,
-    pub optimization_level: OptimizationLevel,
-    pub dependencies: Vec<String>,
-    pub estimated_duration: Duration,
     pub effectiveness: f64, // 0.0 to 1.0
-}
-
 /// Type of optimization pass
 #[derive(Debug, Clone, PartialEq)]
 pub enum PassType {
-    Analysis,
-    Transformation,
-    Verification,
-    Cleanup,
-}
-
 // Import canonical OptimizationLevel from optimization_config
 pub use crate::common_types::optimization_level::OptimizationLevel;
 
 /// Statistics for pass execution
 #[derive(Debug, Clone)]
 pub struct PassExecutionStatistics {
-    pub total_passes: usize,
-    pub successful_passes: usize,
-    pub failed_passes: usize,
-    pub total_execution_time: Duration,
-    pub pass_timings: HashMap<String, Duration>,
-    pub effectiveness_scores: HashMap<String, f64>,
-}
-
 /// Result of executing a compiler pass
 #[derive(Debug, Clone)]
 pub struct PassExecutionResult {
-    pub pass_name: String,
-    pub success: bool,
-    pub execution_time: Duration,
-    pub effectiveness_score: f64,
-    pub transformations_applied: usize,
-    pub error_message: Option<String>,
-}
-
 /// Configuration for pass execution
 #[derive(Debug, Clone)]
 pub struct PassExecutionConfig {
-    pub enable_parallel_execution: bool,
-    pub max_parallel_passes: usize,
-    pub timeout_per_pass: Duration,
-    pub continue_on_failure: bool,
-    pub collect_detailed_stats: bool,
-}
-
 /// Dead code eliminator pass
 #[derive(Debug, Clone)]
 pub struct DeadCodeEliminator {
-    pub aggressive_mode: bool,
-    pub preserve_debug_info: bool,
-}
-
 /// Constant propagator pass
 #[derive(Debug, Clone)]
 pub struct ConstantPropagator {
-    pub fold_arithmetic: bool,
-    pub propagate_globals: bool,
-}
-
 /// Loop optimizer pass
 #[derive(Debug, Clone)]
 pub struct LoopOptimizer {
-    pub unroll_small_loops: bool,
-    pub vectorize_loops: bool,
-    pub max_unroll_count: usize,
-}
-
 /// Inlining decision information
 #[derive(Debug, Clone)]
 pub struct InliningDecision {
-    pub function_name: String,
-    pub should_inline: bool,
-    pub cost_benefit_ratio: f64,
-    pub size_increase: usize,
-}
-
 /// Register allocator pass
 #[derive(Debug, Clone)]
 pub struct RegisterAllocator {
-    pub algorithm: RegisterAllocationAlgorithm,
-    pub spill_optimization: bool,
-}
-
 /// Register allocation algorithm variants
 #[derive(Debug, Clone)]
 pub enum RegisterAllocationAlgorithm {
-    LinearScan,
-    GraphColoring,
-    Greedy,
-}
-
 impl CompilerPassManager {
     /// Creates a new compiler pass manager
     pub fn new() -> Self {
         Self {
-            passes: Vec::new(),
-            pass_graph: HashMap::new(),
-            execution_order: Vec::new(),
-            statistics: PassExecutionStatistics::new(),
         }
     }
 
@@ -134,20 +60,14 @@ impl CompilerPassManager {
     pub fn add_pass(&mut self, pass: CompilerPass) {
         self.pass_graph.insert(pass.name.clone(), pass.dependencies.clone());
         self.passes.push(pass);
-    }
-
     /// Computes the execution order based on dependencies
     pub fn compute_execution_order(&mut self) -> Result<()> {
         self.execution_order = self.topological_sort()?;
         Ok(())
-    }
-
     /// Executes all passes in the computed order
     pub fn execute_all_passes(&mut self, config: &PassExecutionConfig) -> Result<Vec<PassExecutionResult>> {
         if self.execution_order.is_empty() {
             self.compute_execution_order()?;
-        }
-
         let mut results = Vec::new();
         let start_time = Instant::now();
 
@@ -157,11 +77,8 @@ impl CompilerPassManager {
                 
                 if !result.success && !config.continue_on_failure {
                     return Err(crate::error::CursedError::General(
-                        format!("Pass '{}' failed: {}", pass_name, 
                                result.error_message.unwrap_or_else(|| "Unknown error".to_string()))
                     ));
-                }
-
                 self.update_statistics(&result);
                 results.push(result);
             }
@@ -169,8 +86,6 @@ impl CompilerPassManager {
 
         self.statistics.total_execution_time = start_time.elapsed();
         Ok(results)
-    }
-
     /// Executes a specific pass
     pub fn execute_pass(&mut self, pass: &CompilerPass, config: &PassExecutionConfig) -> Result<PassExecutionResult> {
         let start_time = Instant::now();
@@ -183,41 +98,21 @@ impl CompilerPassManager {
             pass.effectiveness * (transformations_applied as f64 / 10.0).min(1.0)
         } else {
             0.0
-        };
 
         Ok(PassExecutionResult {
-            pass_name: pass.name.clone(),
-            success,
-            execution_time,
-            effectiveness_score,
-            transformations_applied,
-            error_message,
         })
-    }
-
     fn simulate_pass_execution(&self, pass: &CompilerPass) -> (bool, usize, Option<String>) {
         // Simulate different pass behaviors based on type and name
         match pass.pass_type {
             PassType::Analysis => (true, 0, None), // Analysis passes don't transform
             PassType::Transformation => {
                 let transformations = match pass.name.as_str() {
-                    name if name.contains("inline") => 15,
-                    name if name.contains("dead_code") => 25,
-                    name if name.contains("constant") => 10,
-                    name if name.contains("loop") => 8,
-                    _ => 5,
-                };
                 (true, transformations, None)
-            },
-            PassType::Verification => (true, 0, None),
-            PassType::Cleanup => (true, 3, None),
         }
     }
 
     fn find_pass(&self, name: &str) -> Option<CompilerPass> {
         self.passes.iter().find(|p| p.name == name).cloned()
-    }
-
     fn topological_sort(&self) -> Result<Vec<String>> {
         let mut in_degree: HashMap<String, usize> = HashMap::new();
         let mut result = Vec::new();
@@ -226,8 +121,6 @@ impl CompilerPassManager {
         // Initialize in-degree for all passes
         for pass in &self.passes {
             in_degree.insert(pass.name.clone(), 0);
-        }
-
         // Calculate in-degrees
         for (pass, deps) in &self.pass_graph {
             for dep in deps {
@@ -256,15 +149,9 @@ impl CompilerPassManager {
                     }
                 }
             }
-        }
-
         if result.len() != self.passes.len() {
             return Err(crate::error::CursedError::General("Circular dependency detected in compiler passes".to_string()));
-        }
-
         Ok(result)
-    }
-
     fn update_statistics(&mut self, result: &PassExecutionResult) {
         self.statistics.total_passes += 1;
         
@@ -272,27 +159,17 @@ impl CompilerPassManager {
             self.statistics.successful_passes += 1;
         } else {
             self.statistics.failed_passes += 1;
-        }
-
         self.statistics.pass_timings.insert(result.pass_name.clone(), result.execution_time);
         self.statistics.effectiveness_scores.insert(result.pass_name.clone(), result.effectiveness_score);
-    }
-
     /// Gets execution statistics
     pub fn get_statistics(&self) -> &PassExecutionStatistics {
         &self.statistics
-    }
-
     /// Resets statistics
     pub fn reset_statistics(&mut self) {
         self.statistics = PassExecutionStatistics::new();
-    }
-
     /// Gets the computed execution order
     pub fn get_execution_order(&self) -> &[String] {
         &self.execution_order
-    }
-
     /// Gets all registered passes
     pub fn get_passes(&self) -> &[CompilerPass] {
         &self.passes
@@ -302,12 +179,6 @@ impl CompilerPassManager {
 impl PassExecutionStatistics {
     fn new() -> Self {
         Self {
-            total_passes: 0,
-            successful_passes: 0,
-            failed_passes: 0,
-            total_execution_time: Duration::new(0, 0),
-            pass_timings: HashMap::new(),
-            effectiveness_scores: HashMap::new(),
         }
     }
 
@@ -339,80 +210,16 @@ impl Default for PassExecutionConfig {
     fn default() -> Self {
         Self {
             enable_parallel_execution: false, // Sequential by default for deterministic results
-            max_parallel_passes: 4,
-            timeout_per_pass: Duration::from_secs(60),
-            continue_on_failure: false,
-            collect_detailed_stats: true,
         }
     }
-}
-
 /// Creates a standard set of compiler passes
 pub fn create_standard_passes() -> Vec<CompilerPass> {
     vec![
         CompilerPass {
-            name: "dead_code_elimination".to_string(),
-            description: "Removes dead code and unused variables".to_string(),
-            pass_type: PassType::Transformation,
-            optimization_level: OptimizationLevel::Aggressive,
-            dependencies: vec!["control_flow_analysis".to_string()],
-            estimated_duration: Duration::from_millis(200),
-            effectiveness: 0.8,
-        },
         CompilerPass {
-            name: "constant_propagation".to_string(),
-            description: "Propagates constant values".to_string(),
-            pass_type: PassType::Transformation,
-            optimization_level: OptimizationLevel::Aggressive,
-            dependencies: vec![],
-            estimated_duration: Duration::from_millis(150),
-            effectiveness: 0.7,
-        },
         CompilerPass {
-            name: "function_inlining".to_string(),
-            description: "Inlines small functions".to_string(),
-            pass_type: PassType::Transformation,
-            optimization_level: OptimizationLevel::Default,
-            dependencies: vec!["call_graph_analysis".to_string()],
-            estimated_duration: Duration::from_millis(300),
-            effectiveness: 0.6,
-        },
         CompilerPass {
-            name: "loop_optimization".to_string(),
-            description: "Optimizes loop structures".to_string(),
-            pass_type: PassType::Transformation,
-            optimization_level: OptimizationLevel::Default,
-            dependencies: vec!["loop_analysis".to_string()],
-            estimated_duration: Duration::from_millis(400),
-            effectiveness: 0.75,
-        },
         CompilerPass {
-            name: "control_flow_analysis".to_string(),
-            description: "Analyzes control flow patterns".to_string(),
-            pass_type: PassType::Analysis,
-            optimization_level: OptimizationLevel::None,
-            dependencies: vec![],
-            estimated_duration: Duration::from_millis(100),
-            effectiveness: 1.0,
-        },
         CompilerPass {
-            name: "call_graph_analysis".to_string(),
-            description: "Builds call graph for function analysis".to_string(),
-            pass_type: PassType::Analysis,
-            optimization_level: OptimizationLevel::None,
-            dependencies: vec![],
-            estimated_duration: Duration::from_millis(120),
-            effectiveness: 1.0,
-        },
         CompilerPass {
-            name: "loop_analysis".to_string(),
-            description: "Analyzes loop structures and nesting".to_string(),
-            pass_type: PassType::Analysis,
-            optimization_level: OptimizationLevel::None,
-            dependencies: vec!["control_flow_analysis".to_string()],
-            estimated_duration: Duration::from_millis(80),
-            effectiveness: 1.0,
-        },
     ]
-}
-

@@ -28,75 +28,39 @@ use crate::error::CursedError;
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum RootType {
     /// Global/static variables that exist for program lifetime
-    Global,
     /// Stack variables for the current thread
-    Stack,
     /// Pinned objects that should never be collected
-    Pinned,
     /// JIT-compiled code references
-    JitCode,
     /// Goroutine local roots (for concurrent execution)
-    Goroutine(u64),
     /// External references from C code or other languages
-    External,
-}
-
 impl std::fmt::Display for RootType {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            RootType::Global => write!(f, "Global"),
-            RootType::Stack => write!(f, "Stack"),
-            RootType::Pinned => write!(f, "Pinned"),
-            RootType::JitCode => write!(f, "JitCode"),
-            RootType::Goroutine(id) => write!(f, "Goroutine({})", id),
-            RootType::External => write!(f, "External"),
         }
     }
-}
-
 /// Information about a root object
 #[derive(Debug, Clone)]
 pub struct RootInfo {
     /// The object ID being rooted
-    pub object_id: ObjectId,
     /// Type of root
-    pub root_type: RootType,
     /// Optional description for debugging
-    pub description: Option<String>,
     /// Thread that created this root
-    pub thread_id: ThreadId,
     /// Timestamp when root was created
-    pub created_at: std::time::SystemTime,
-}
-
 impl RootInfo {
     /// Create new root info
     pub fn new(object_id: ObjectId, root_type: RootType, description: Option<String>) -> Self {
         Self {
-            object_id,
-            root_type,
-            description,
-            thread_id: thread::current().id(),
-            created_at: std::time::SystemTime::now(),
         }
     }
-}
-
 /// Thread-local root set for stack variables
 /// 
 /// Each thread maintains its own set of stack roots that are automatically
 /// managed during function calls and returns.
 pub struct ThreadRootSet {
     /// Thread ID this root set belongs to
-    thread_id: ThreadId,
     /// Stack roots for this thread
-    stack_roots: HashSet<ObjectId>,
     /// Pinned roots for this thread
-    pinned_roots: HashSet<ObjectId>,
     /// Root information for debugging
-    root_info: HashMap<ObjectId, RootInfo>,
-}
-
 impl ThreadRootSet {
     /// Create a new thread root set
     pub fn new() -> Self {
@@ -104,10 +68,6 @@ impl ThreadRootSet {
         debug!("Creating thread root set for {:?}", thread_id);
         
         Self {
-            thread_id,
-            stack_roots: HashSet::new(),
-            pinned_roots: HashSet::new(),
-            root_info: HashMap::new(),
         }
     }
     
@@ -161,23 +121,15 @@ impl ThreadRootSet {
         roots.extend(&self.stack_roots);
         roots.extend(&self.pinned_roots);
         roots
-    }
-    
     /// Get root info for an object
     pub fn get_root_info(&self, object_id: ObjectId) -> Option<&RootInfo> {
         self.root_info.get(&object_id)
-    }
-    
     /// Check if an object is rooted in this thread
     pub fn is_root(&self, object_id: ObjectId) -> bool {
         self.stack_roots.contains(&object_id) || self.pinned_roots.contains(&object_id)
-    }
-    
     /// Get thread ID
     pub fn thread_id(&self) -> ThreadId {
         self.thread_id
-    }
-    
     /// Clear all stack roots (called when thread exits)
     pub fn clear_stack_roots(&mut self) {
         let count = self.stack_roots.len();
@@ -201,19 +153,11 @@ impl Default for ThreadRootSet {
 /// This is the main interface for root set management in the GC system.
 pub struct RootSetManager {
     /// Global roots (exist for program lifetime)
-    global_roots: RwLock<HashSet<ObjectId>>,
     /// JIT code roots
-    jit_roots: RwLock<HashSet<ObjectId>>,
     /// External roots (from C code, etc.)
-    external_roots: RwLock<HashSet<ObjectId>>,
     /// Goroutine roots (indexed by goroutine ID)
-    goroutine_roots: RwLock<HashMap<u64, HashSet<ObjectId>>>,
     /// Thread-local root sets
-    thread_roots: RwLock<HashMap<ThreadId, ThreadRootSet>>,
     /// Root information for debugging
-    global_root_info: RwLock<HashMap<ObjectId, RootInfo>>,
-}
-
 impl RootSetManager {
     /// Create a new root set manager
     #[instrument]
@@ -221,12 +165,6 @@ impl RootSetManager {
         info!("Creating root set manager");
         
         Self {
-            global_roots: RwLock::new(HashSet::new()),
-            jit_roots: RwLock::new(HashSet::new()),
-            external_roots: RwLock::new(HashSet::new()),
-            goroutine_roots: RwLock::new(HashMap::new()),
-            thread_roots: RwLock::new(HashMap::new()),
-            global_root_info: RwLock::new(HashMap::new()),
         }
     }
     
@@ -242,11 +180,7 @@ impl RootSetManager {
             let root_info = RootInfo::new(object_id, RootType::Global, description);
             info.insert(object_id, root_info);
             debug!("Added global root {}", object_id);
-        }
-        
         Ok(())
-    }
-    
     /// Remove a global root
     #[instrument(skip(self))]
     pub fn remove_global_root(&self, object_id: ObjectId) -> Result<bool, String> {
@@ -259,11 +193,7 @@ impl RootSetManager {
         if removed {
             info.remove(&object_id);
             debug!("Removed global root {}", object_id);
-        }
-        
         Ok(removed)
-    }
-    
     /// Add a stack root for the current thread
     #[instrument(skip(self))]
     pub fn add_stack_root(&self, object_id: ObjectId, description: Option<String>) -> Result<(), String> {
@@ -275,8 +205,6 @@ impl RootSetManager {
         thread_roots.add_stack_root(object_id, description);
         
         Ok(())
-    }
-    
     /// Remove a stack root for the current thread
     #[instrument(skip(self))]
     pub fn remove_stack_root(&self, object_id: ObjectId) -> Result<bool, String> {
@@ -302,8 +230,6 @@ impl RootSetManager {
         thread_roots.add_pinned_root(object_id, description);
         
         Ok(())
-    }
-    
     /// Remove a pinned root
     #[instrument(skip(self))]
     pub fn remove_pinned_root(&self, object_id: ObjectId) -> Result<bool, String> {
@@ -330,11 +256,7 @@ impl RootSetManager {
             let root_info = RootInfo::new(object_id, RootType::JitCode, description);
             info.insert(object_id, root_info);
             debug!("Added JIT root {}", object_id);
-        }
-        
         Ok(())
-    }
-    
     /// Remove a JIT code root
     #[instrument(skip(self))]
     pub fn remove_jit_root(&self, object_id: ObjectId) -> Result<bool, String> {
@@ -347,11 +269,7 @@ impl RootSetManager {
         if removed {
             info.remove(&object_id);
             debug!("Removed JIT root {}", object_id);
-        }
-        
         Ok(removed)
-    }
-    
     /// Add an external root
     #[instrument(skip(self))]
     pub fn add_external_root(&self, object_id: ObjectId, description: Option<String>) -> Result<(), String> {
@@ -364,11 +282,7 @@ impl RootSetManager {
             let root_info = RootInfo::new(object_id, RootType::External, description);
             info.insert(object_id, root_info);
             debug!("Added external root {}", object_id);
-        }
-        
         Ok(())
-    }
-    
     /// Remove an external root
     #[instrument(skip(self))]
     pub fn remove_external_root(&self, object_id: ObjectId) -> Result<bool, String> {
@@ -381,11 +295,7 @@ impl RootSetManager {
         if removed {
             info.remove(&object_id);
             debug!("Removed external root {}", object_id);
-        }
-        
         Ok(removed)
-    }
-    
     /// Add a goroutine root
     #[instrument(skip(self))]
     pub fn add_goroutine_root(&self, goroutine_id: u64, object_id: ObjectId, description: Option<String>) -> Result<(), String> {
@@ -399,11 +309,7 @@ impl RootSetManager {
             let root_info = RootInfo::new(object_id, RootType::Goroutine(goroutine_id), description);
             info.insert(object_id, root_info);
             debug!("Added goroutine root {} for goroutine {}", object_id, goroutine_id);
-        }
-        
         Ok(())
-    }
-    
     /// Remove a goroutine root
     #[instrument(skip(self))]
     pub fn remove_goroutine_root(&self, goroutine_id: u64, object_id: ObjectId) -> Result<bool, String> {
@@ -425,11 +331,7 @@ impl RootSetManager {
                     debug!("Removed empty goroutine root set for goroutine {}", goroutine_id);
                 }
             }
-        }
-        
         Ok(removed)
-    }
-    
     /// Clear all roots for a goroutine (called when goroutine exits)
     #[instrument(skip(self))]
     pub fn clear_goroutine_roots(&self, goroutine_id: u64) -> Result<usize, String> {
@@ -476,22 +378,16 @@ impl RootSetManager {
             let globals = self.global_roots.read()
                 .map_err(|_| "Failed to acquire read lock on global roots")?;
             all_roots.extend(globals.iter());
-        }
-        
         // JIT roots
         {
             let jit_roots = self.jit_roots.read()
                 .map_err(|_| "Failed to acquire read lock on JIT roots")?;
             all_roots.extend(jit_roots.iter());
-        }
-        
         // External roots
         {
             let external_roots = self.external_roots.read()
                 .map_err(|_| "Failed to acquire read lock on external roots")?;
             all_roots.extend(external_roots.iter());
-        }
-        
         // Goroutine roots
         {
             let goroutine_roots = self.goroutine_roots.read()
@@ -512,8 +408,6 @@ impl RootSetManager {
         
         debug!("Found {} total root objects", all_roots.len());
         Ok(all_roots)
-    }
-    
     /// Get root statistics
     pub fn get_stats(&self) -> Result<RootSetStats, String> {
         let globals = self.global_roots.read()
@@ -536,17 +430,7 @@ impl RootSetManager {
         let active_threads = threads.len();
         
         Ok(RootSetStats {
-            global_roots: global_count,
-            jit_roots: jit_count,
-            external_roots: external_count,
-            goroutine_roots: goroutine_count,
-            thread_roots: thread_count,
-            active_goroutines,
-            active_threads,
-            total_roots: global_count + jit_count + external_count + goroutine_count + thread_count,
         })
-    }
-    
     /// Check if an object is rooted anywhere
     pub fn is_root(&self, object_id: ObjectId) -> bool {
         // Check global roots
@@ -577,8 +461,6 @@ impl RootSetManager {
                     return true;
                 }
             }
-        }
-        
         // Check thread roots
         if let Ok(threads) = self.thread_roots.read() {
             for thread_root_set in threads.values() {
@@ -586,8 +468,6 @@ impl RootSetManager {
                     return true;
                 }
             }
-        }
-        
         false
     }
 }
@@ -601,33 +481,14 @@ impl Default for RootSetManager {
 /// Root set statistics for monitoring and debugging
 #[derive(Debug, Clone)]
 pub struct RootSetStats {
-    pub global_roots: usize,
-    pub jit_roots: usize,
-    pub external_roots: usize,
-    pub goroutine_roots: usize,
-    pub thread_roots: usize,
-    pub active_goroutines: usize,
-    pub active_threads: usize,
-    pub total_roots: usize,
-}
-
 impl std::fmt::Display for RootSetStats {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f,
             "Root Set Stats:\n\
              - Global Roots: {}\n\
              - JIT Roots: {}\n\
              - External Roots: {}\n\
              - Goroutine Roots: {} (across {} goroutines)\n\
              - Thread Roots: {} (across {} threads)\n\
-             - Total Roots: {}",
-            self.global_roots,
-            self.jit_roots,
-            self.external_roots,
-            self.goroutine_roots,
-            self.active_goroutines,
-            self.thread_roots,
-            self.active_threads,
             self.total_roots
         )
     }

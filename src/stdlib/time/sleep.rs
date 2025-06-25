@@ -10,35 +10,23 @@ use crate::error::CursedError;
 pub fn sleep(duration: Duration) -> TimeResult<()> {
     if duration.is_negative() {
         return Err(time_error("Cannot sleep for negative duration"));
-    }
-    
     let std_duration = std::time::Duration::new(
-        duration.total_seconds() as u64,
-        duration.nanoseconds() as u32,
     );
     
     thread::sleep(std_duration);
     Ok(())
-}
-
 /// Sleep for the specified number of milliseconds
 pub fn sleep_millis(milliseconds: u64) -> TimeResult<()> {
     let duration = Duration::from_milliseconds(milliseconds as i64);
     sleep(duration)
-}
-
 /// Sleep for the specified number of microseconds
 pub fn sleep_micros(microseconds: u64) -> TimeResult<()> {
     let duration = Duration::from_microseconds(microseconds as i64);
     sleep(duration)
-}
-
 /// Sleep for the specified number of nanoseconds
 pub fn sleep_nanos(nanoseconds: u64) -> TimeResult<()> {
     let duration = Duration::from_nanoseconds(nanoseconds as i64);
     sleep(duration)
-}
-
 /// Sleep until the specified datetime
 pub fn sleep_until(target: DateTime) -> TimeResult<()> {
 //     let now = crate::stdlib::time::datetime::now()?;
@@ -46,23 +34,15 @@ pub fn sleep_until(target: DateTime) -> TimeResult<()> {
     
     if duration.is_negative() {
         return Err(time_error("Target time is in the past"));
-    }
-    
     sleep(duration)
-}
-
 /// Execute a function with a timeout
 pub fn timeout<F, T>(duration: Duration, f: F) -> TimeResult<Option<T>>
 where
-    F: FnOnce() -> T + Send + 'static,
-    T: Send + 'static,
 {
     use std::sync::mpsc;
     
     if duration.is_negative() {
         return Err(time_error("Timeout duration cannot be negative"));
-    }
-    
     let (sender, receiver) = mpsc::channel();
     
     // Spawn a thread to execute the function
@@ -73,72 +53,46 @@ where
     
     // Wait for result with timeout
     let std_duration = std::time::Duration::new(
-        duration.total_seconds() as u64,
-        duration.nanoseconds() as u32,
     );
     
     match receiver.recv_timeout(std_duration) {
-        Ok(result) => Ok(Some(result)),
-        Err(mpsc::RecvTimeoutError::Timeout) => Ok(None),
-        Err(mpsc::RecvTimeoutError::Disconnected) => Err(time_error("Function thread disconnected unexpectedly")),
     }
 }
 
 /// Delay execution (alias for sleep)
 pub fn delay(duration: Duration) -> TimeResult<()> {
     sleep(duration)
-}
-
 /// Timer for measuring elapsed time and triggering events
 #[derive(Debug)]
 pub struct Timer {
-    start_time: Instant,
-    duration: Option<Duration>,
-    name: Option<String>,
-}
-
 impl Timer {
     /// Create a new timer
     pub fn new() -> Self {
         Timer {
-            start_time: Instant::now(),
-            duration: None,
-            name: None,
         }
     }
     
     /// Create a timer with a specific duration
     pub fn with_duration(duration: Duration) -> Self {
         Timer {
-            start_time: Instant::now(),
-            duration: Some(duration),
-            name: None,
         }
     }
     
     /// Create a named timer
     pub fn with_name(name: String) -> Self {
         Timer {
-            start_time: Instant::now(),
-            duration: None,
-            name: Some(name),
         }
     }
     
     /// Create a named timer with duration
     pub fn with_name_and_duration(name: String, duration: Duration) -> Self {
         Timer {
-            start_time: Instant::now(),
-            duration: Some(duration),
-            name: Some(name),
         }
     }
     
     /// Get elapsed time since timer creation
     pub fn elapsed(&self) -> Duration {
         self.start_time.elapsed()
-    }
-    
     /// Check if the timer has expired (if duration was set)
     pub fn is_expired(&self) -> bool {
         if let Some(duration) = self.duration {
@@ -165,8 +119,6 @@ impl Timer {
     /// Reset the timer
     pub fn reset(&mut self) {
         self.start_time = Instant::now();
-    }
-    
     /// Wait until the timer expires
     pub fn wait(&self) -> TimeResult<()> {
         if let Some(remaining) = self.remaining() {
@@ -175,13 +127,9 @@ impl Timer {
             }
         }
         Ok(())
-    }
-    
     /// Get timer name
     pub fn name(&self) -> Option<&str> {
         self.name.as_deref()
-    }
-    
     /// Set timer name
     pub fn set_name(&mut self, name: String) {
         self.name = Some(name);
@@ -197,33 +145,16 @@ impl Default for Timer {
 /// Stopwatch for precise time measurements
 #[derive(Debug)]
 pub struct Stopwatch {
-    start_time: Option<Instant>,
-    accumulated_time: Duration,
-    is_running: bool,
-    laps: Vec<Duration>,
-    name: Option<String>,
-}
-
 impl Stopwatch {
     /// Create a new stopwatch
     pub fn new() -> Self {
         Stopwatch {
-            start_time: None,
-            accumulated_time: Duration::from_seconds(0),
-            is_running: false,
-            laps: Vec::new(),
-            name: None,
         }
     }
     
     /// Create a named stopwatch
     pub fn with_name(name: String) -> Self {
         Stopwatch {
-            start_time: None,
-            accumulated_time: Duration::from_seconds(0),
-            is_running: false,
-            laps: Vec::new(),
-            name: Some(name),
         }
     }
     
@@ -252,14 +183,10 @@ impl Stopwatch {
         self.accumulated_time = Duration::from_seconds(0);
         self.is_running = false;
         self.laps.clear();
-    }
-    
     /// Restart the stopwatch (reset and start)
     pub fn restart(&mut self) {
         self.reset();
         self.start();
-    }
-    
     /// Get elapsed time
     pub fn elapsed(&self) -> Duration {
         let current_time = if self.is_running {
@@ -270,43 +197,28 @@ impl Stopwatch {
             }
         } else {
             Duration::from_seconds(0)
-        };
         
         self.accumulated_time.add(&current_time).unwrap_or(self.accumulated_time)
-    }
-    
     /// Record a lap time
     pub fn lap(&mut self) -> Duration {
         let lap_time = self.elapsed();
         self.laps.push(lap_time);
         lap_time
-    }
-    
     /// Get all lap times
     pub fn laps(&self) -> &[Duration] {
         &self.laps
-    }
-    
     /// Get the number of laps
     pub fn lap_count(&self) -> usize {
         self.laps.len()
-    }
-    
     /// Check if stopwatch is running
     pub fn is_running(&self) -> bool {
         self.is_running
-    }
-    
     /// Get stopwatch name
     pub fn name(&self) -> Option<&str> {
         self.name.as_deref()
-    }
-    
     /// Set stopwatch name
     pub fn set_name(&mut self, name: String) {
         self.name = Some(name);
-    }
-    
     /// Get average lap time
     pub fn average_lap_time(&self) -> Option<Duration> {
         if self.laps.is_empty() {
@@ -322,8 +234,6 @@ impl Stopwatch {
     /// Get fastest lap time
     pub fn fastest_lap(&self) -> Option<Duration> {
         self.laps.iter().min().copied()
-    }
-    
     /// Get slowest lap time
     pub fn slowest_lap(&self) -> Option<Duration> {
         self.laps.iter().max().copied()
@@ -342,12 +252,9 @@ pub fn system_time_nanos() -> TimeResult<u64> {
         .duration_since(UNIX_EPOCH)
         .map(|d| d.as_nanos() as u64)
         .map_err(|e| system_time_error(&format!("Failed to get system time: {}", e)))
-}
-
 /// Wait for a condition to become true with timeout
 pub fn wait_for<F>(mut condition: F, timeout_duration: Duration, check_interval: Duration) -> TimeResult<bool>
 where
-    F: FnMut() -> bool,
 {
     let start = Instant::now();
     
@@ -356,26 +263,18 @@ where
             return Ok(true);
         }
         sleep(check_interval)?;
-    }
-    
     Ok(false)
-}
-
 /// Execute a function and return the result with execution time
 pub fn time_function<F, T>(f: F) -> TimeResult<(T, Duration)>
 where
-    F: FnOnce() -> T,
 {
     let start = Instant::now();
     let result = f();
     let elapsed = start.elapsed();
     Ok((result, elapsed))
-}
-
 /// Measure execution time of a function multiple times
 pub fn benchmark_function<F, T>(f: F, iterations: usize) -> TimeResult<(Vec<T>, Vec<Duration>, Duration)>
 where
-    F: Fn() -> T,
 {
     let mut results = Vec::with_capacity(iterations);
     let mut times = Vec::with_capacity(iterations);
@@ -385,20 +284,12 @@ where
         let (result, time) = time_function(&f)?;
         results.push(result);
         times.push(time);
-    }
-    
     let total_time = start_total.elapsed();
     Ok((results, times, total_time))
-}
-
 /// Retry a function with delays between attempts
 pub fn retry_with_delay<F, T, E>(
-    mut f: F,
-    max_attempts: usize,
-    delay_between_attempts: Duration,
 ) -> Result<T, E>
 where
-    F: FnMut() -> Result<T, E>,
 {
     let mut attempts = 0;
     
@@ -406,12 +297,9 @@ where
         attempts += 1;
         
         match f() {
-            Ok(result) => return Ok(result),
             Err(e) => {
                 if attempts >= max_attempts {
                     return Err(e);
-                }
-                
                 // Sleep before next attempt (ignore sleep errors)
                 let _ = sleep(delay_between_attempts);
             }

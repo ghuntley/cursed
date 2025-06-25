@@ -7,10 +7,6 @@ use super::{ClientState, RateLimitDecision, RateLimitConfig, RateLimitResult, cu
 pub trait RateLimitAlgorithm: Send + Sync {
     /// fr fr Check if request should be allowed - algorithm-specific logic
     fn check_limit(
-        &self,
-        state: &mut ClientState,
-        now: u64,
-        config: &RateLimitConfig,
     ) -> RateLimitResult<RateLimitDecision>;
     
     /// fr fr Get algorithm name - identification
@@ -18,22 +14,14 @@ pub trait RateLimitAlgorithm: Send + Sync {
     
     /// fr fr Get algorithm description - documentation
     fn description(&self) -> &'static str;
-}
-
 /// fr fr Fixed window algorithm - traditional rate limiting
 pub struct FixedWindow {
-    name: &'static str,
-}
-
 impl FixedWindow {
     /// fr fr Create new fixed window algorithm
     pub fn new() -> Self {
         Self {
-            name: "FixedWindow",
         }
     }
-}
-
 impl Default for FixedWindow {
     fn default() -> Self {
         Self::new()
@@ -42,23 +30,16 @@ impl Default for FixedWindow {
 
 impl RateLimitAlgorithm for FixedWindow {
     fn check_limit(
-        &self,
-        state: &mut ClientState,
-        now: u64,
-        config: &RateLimitConfig,
     ) -> RateLimitResult<RateLimitDecision> {
         let window_duration = match &config.window_config {
 //             crate::stdlib::packages::web_vibez::ratelimit::WindowConfig::Fixed { duration } => duration.as_secs(),
 //             crate::stdlib::packages::web_vibez::ratelimit::WindowConfig::Sliding { duration } => duration.as_secs(),
-        };
 
         // Check if we need to start a new window
         let window_elapsed = now.saturating_sub(state.window_start);
         if window_elapsed >= window_duration {
             // Start new window
             state.reset_window(now);
-        }
-
         // Update last request time
         state.last_request = now;
 
@@ -70,9 +51,6 @@ impl RateLimitAlgorithm for FixedWindow {
             let reset_time = state.window_start + window_duration;
             
             Ok(RateLimitDecision::Allow {
-                remaining,
-                reset_time,
-                retry_after: None,
             })
         } else {
             // Deny the request
@@ -80,16 +58,12 @@ impl RateLimitAlgorithm for FixedWindow {
             let retry_after = reset_time.saturating_sub(now);
             
             Ok(RateLimitDecision::Deny {
-                retry_after,
-                reset_time,
             })
         }
     }
 
     fn name(&self) -> &'static str {
         self.name
-    }
-
     fn description(&self) -> &'static str {
         "Fixed time window rate limiting with hard resets"
     }
@@ -97,18 +71,12 @@ impl RateLimitAlgorithm for FixedWindow {
 
 /// fr fr Sliding window algorithm - smooth rate limiting
 pub struct SlidingWindow {
-    name: &'static str,
-}
-
 impl SlidingWindow {
     /// fr fr Create new sliding window algorithm
     pub fn new() -> Self {
         Self {
-            name: "SlidingWindow",
         }
     }
-}
-
 impl Default for SlidingWindow {
     fn default() -> Self {
         Self::new()
@@ -117,15 +85,10 @@ impl Default for SlidingWindow {
 
 impl RateLimitAlgorithm for SlidingWindow {
     fn check_limit(
-        &self,
-        state: &mut ClientState,
-        now: u64,
-        config: &RateLimitConfig,
     ) -> RateLimitResult<RateLimitDecision> {
         let window_duration = match &config.window_config {
 //             crate::stdlib::packages::web_vibez::ratelimit::WindowConfig::Fixed { duration } => duration.as_secs(),
 //             crate::stdlib::packages::web_vibez::ratelimit::WindowConfig::Sliding { duration } => duration.as_secs(),
-        };
 
         // Remove expired requests from sliding window
         let cutoff_time = now.saturating_sub(window_duration);
@@ -144,9 +107,6 @@ impl RateLimitAlgorithm for SlidingWindow {
             let reset_time = now + window_duration;
             
             Ok(RateLimitDecision::Allow {
-                remaining,
-                reset_time,
-                retry_after: None,
             })
         } else {
             // Deny the request
@@ -155,16 +115,12 @@ impl RateLimitAlgorithm for SlidingWindow {
             let retry_after = (oldest_request + window_duration).saturating_sub(now);
             
             Ok(RateLimitDecision::Deny {
-                retry_after,
-                reset_time: oldest_request + window_duration,
             })
         }
     }
 
     fn name(&self) -> &'static str {
         self.name
-    }
-
     fn description(&self) -> &'static str {
         "Sliding time window rate limiting with smooth request distribution"
     }
@@ -172,23 +128,17 @@ impl RateLimitAlgorithm for SlidingWindow {
 
 /// fr fr Token bucket algorithm - burst-friendly rate limiting
 pub struct TokenBucket {
-    name: &'static str,
-}
-
 impl TokenBucket {
     /// fr fr Create new token bucket algorithm
     pub fn new() -> Self {
         Self {
-            name: "TokenBucket",
         }
     }
 
     /// fr fr Refill tokens based on elapsed time
     fn refill_tokens(state: &mut ClientState, now: u64, config: &RateLimitConfig) {
         let bucket_config = match &config.bucket_config {
-            Some(bucket) => bucket,
             None => return, // No bucket config, can't refill
-        };
 
         let elapsed = now.saturating_sub(state.last_request);
         let tokens_to_add = (elapsed as f64) * bucket_config.refill_rate;
@@ -206,26 +156,18 @@ impl Default for TokenBucket {
 
 impl RateLimitAlgorithm for TokenBucket {
     fn check_limit(
-        &self,
-        state: &mut ClientState,
-        now: u64,
-        config: &RateLimitConfig,
     ) -> RateLimitResult<RateLimitDecision> {
         let bucket_config = match &config.bucket_config {
-            Some(bucket) => bucket,
             None => {
                 // Fallback to fixed window if no bucket config
                 let fixed_window = FixedWindow::new();
                 return fixed_window.check_limit(state, now, config);
             }
-        };
 
         // Initialize tokens if this is the first request
         if state.tokens == 0.0 && state.last_request == 0 {
             state.tokens = bucket_config.capacity;
             state.last_request = now;
-        }
-
         // Refill tokens based on elapsed time
         Self::refill_tokens(state, now, config);
 
@@ -239,9 +181,6 @@ impl RateLimitAlgorithm for TokenBucket {
             let reset_time = now + (bucket_config.capacity / bucket_config.refill_rate) as u64;
             
             Ok(RateLimitDecision::Allow {
-                remaining,
-                reset_time,
-                retry_after: None,
             })
         } else {
             // Not enough tokens, deny the request
@@ -250,16 +189,12 @@ impl RateLimitAlgorithm for TokenBucket {
             let reset_time = now + retry_after;
             
             Ok(RateLimitDecision::Deny {
-                retry_after,
-                reset_time,
             })
         }
     }
 
     fn name(&self) -> &'static str {
         self.name
-    }
-
     fn description(&self) -> &'static str {
         "Token bucket rate limiting allowing controlled bursts"
     }
@@ -267,23 +202,16 @@ impl RateLimitAlgorithm for TokenBucket {
 
 /// fr fr Leaky bucket algorithm - steady rate limiting
 pub struct LeakyBucket {
-    name: &'static str,
-}
-
 impl LeakyBucket {
     /// fr fr Create new leaky bucket algorithm
     pub fn new() -> Self {
         Self {
-            name: "LeakyBucket",
         }
     }
 
     /// fr fr Process leaks based on elapsed time
     fn process_leaks(state: &mut ClientState, now: u64, config: &RateLimitConfig) {
         let bucket_config = match &config.bucket_config {
-            Some(bucket) => bucket,
-            None => return,
-        };
 
         let elapsed = now.saturating_sub(state.last_request);
         let requests_leaked = (elapsed as f64) * bucket_config.refill_rate;
@@ -301,19 +229,13 @@ impl Default for LeakyBucket {
 
 impl RateLimitAlgorithm for LeakyBucket {
     fn check_limit(
-        &self,
-        state: &mut ClientState,
-        now: u64,
-        config: &RateLimitConfig,
     ) -> RateLimitResult<RateLimitDecision> {
         let bucket_config = match &config.bucket_config {
-            Some(bucket) => bucket,
             None => {
                 // Fallback to fixed window if no bucket config
                 let fixed_window = FixedWindow::new();
                 return fixed_window.check_limit(state, now, config);
             }
-        };
 
         // Process leaks to reduce count
         Self::process_leaks(state, now, config);
@@ -328,9 +250,6 @@ impl RateLimitAlgorithm for LeakyBucket {
             let reset_time = now + ((state.count as f64) / bucket_config.refill_rate) as u64;
             
             Ok(RateLimitDecision::Allow {
-                remaining,
-                reset_time,
-                retry_after: None,
             })
         } else {
             // Bucket is full, deny the request
@@ -338,16 +257,12 @@ impl RateLimitAlgorithm for LeakyBucket {
             let reset_time = now + retry_after;
             
             Ok(RateLimitDecision::Deny {
-                retry_after,
-                reset_time,
             })
         }
     }
 
     fn name(&self) -> &'static str {
         self.name
-    }
-
     fn description(&self) -> &'static str {
         "Leaky bucket rate limiting with steady request processing"
     }
@@ -355,20 +270,10 @@ impl RateLimitAlgorithm for LeakyBucket {
 
 /// fr fr Adaptive algorithm - dynamic rate limiting
 pub struct AdaptiveAlgorithm {
-    name: &'static str,
-    fixed_window: FixedWindow,
-    sliding_window: SlidingWindow,
-    token_bucket: TokenBucket,
-}
-
 impl AdaptiveAlgorithm {
     /// fr fr Create new adaptive algorithm
     pub fn new() -> Self {
         Self {
-            name: "Adaptive",
-            fixed_window: FixedWindow::new(),
-            sliding_window: SlidingWindow::new(),
-            token_bucket: TokenBucket::new(),
         }
     }
 
@@ -384,7 +289,6 @@ impl AdaptiveAlgorithm {
             }
         } else {
             0.0
-        };
 
         // High frequency bursts -> Token bucket
         if request_frequency > 0.1 && config.bucket_config.is_some() {
@@ -399,8 +303,6 @@ impl AdaptiveAlgorithm {
             &self.fixed_window
         }
     }
-}
-
 impl Default for AdaptiveAlgorithm {
     fn default() -> Self {
         Self::new()
@@ -409,19 +311,11 @@ impl Default for AdaptiveAlgorithm {
 
 impl RateLimitAlgorithm for AdaptiveAlgorithm {
     fn check_limit(
-        &self,
-        state: &mut ClientState,
-        now: u64,
-        config: &RateLimitConfig,
     ) -> RateLimitResult<RateLimitDecision> {
         let algorithm = self.choose_algorithm(state, config);
         algorithm.check_limit(state, now, config)
-    }
-
     fn name(&self) -> &'static str {
         self.name
-    }
-
     fn description(&self) -> &'static str {
         "Adaptive rate limiting that chooses the best algorithm based on traffic patterns"
     }

@@ -28,11 +28,6 @@ pub use config::{HttpConfig, TimeoutConfig, RetryConfig, CompressionConfig};
 /// HTTP version enumeration
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum HttpVersion {
-    Http10,
-    Http11,
-    Http2,
-}
-
 impl std::fmt::Display for HttpVersion {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
@@ -41,57 +36,21 @@ impl std::fmt::Display for HttpVersion {
             HttpVersion::Http2 => write!(f, "HTTP/2"),
         }
     }
-}
-
 /// HTTP methods
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum Method {
-    GET,
-    POST,
-    PUT,
-    DELETE,
-    PATCH,
-    HEAD,
-    OPTIONS,
-    TRACE,
-    CONNECT,
-}
-
 impl std::fmt::Display for Method {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            Method::GET => write!(f, "GET"),
-            Method::POST => write!(f, "POST"),
-            Method::PUT => write!(f, "PUT"),
-            Method::DELETE => write!(f, "DELETE"),
-            Method::PATCH => write!(f, "PATCH"),
-            Method::HEAD => write!(f, "HEAD"),
-            Method::OPTIONS => write!(f, "OPTIONS"),
-            Method::TRACE => write!(f, "TRACE"),
-            Method::CONNECT => write!(f, "CONNECT"),
         }
     }
-}
-
 impl std::str::FromStr for Method {
     type Err = String;
     
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         match s.to_uppercase().as_str() {
-            "GET" => Ok(Method::GET),
-            "POST" => Ok(Method::POST),
-            "PUT" => Ok(Method::PUT),
-            "DELETE" => Ok(Method::DELETE),
-            "PATCH" => Ok(Method::PATCH),
-            "HEAD" => Ok(Method::HEAD),
-            "OPTIONS" => Ok(Method::OPTIONS),
-            "TRACE" => Ok(Method::TRACE),
-            "CONNECT" => Ok(Method::CONNECT),
-            _ => Err(format!("Unknown HTTP method: {}", s)),
         }
     }
-}
-
 /// HTTP status codes
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 pub struct Status(pub u16);
@@ -155,86 +114,26 @@ impl Status {
     /// Get status code as number
     pub fn as_u16(&self) -> u16 {
         self.0
-    }
-    
     /// Check if status indicates success (2xx)
     pub fn is_success(&self) -> bool {
         self.0 >= 200 && self.0 < 300
-    }
-    
     /// Check if status indicates redirection (3xx)
     pub fn is_redirection(&self) -> bool {
         self.0 >= 300 && self.0 < 400
-    }
-    
     /// Check if status indicates client error (4xx)
     pub fn is_client_error(&self) -> bool {
         self.0 >= 400 && self.0 < 500
-    }
-    
     /// Check if status indicates server error (5xx)
     pub fn is_server_error(&self) -> bool {
         self.0 >= 500 && self.0 < 600
-    }
-    
     /// Check if status indicates error (4xx or 5xx)
     pub fn is_error(&self) -> bool {
         self.is_client_error() || self.is_server_error()
-    }
-    
     /// Get canonical reason phrase for status code
     pub fn canonical_reason(&self) -> &'static str {
         match self.0 {
-            100 => "Continue",
-            101 => "Switching Protocols",
-            102 => "Processing",
-            200 => "OK",
-            201 => "Created",
-            202 => "Accepted",
-            203 => "Non-Authoritative Information",
-            204 => "No Content",
-            205 => "Reset Content",
-            206 => "Partial Content",
-            300 => "Multiple Choices",
-            301 => "Moved Permanently",
-            302 => "Found",
-            303 => "See Other",
-            304 => "Not Modified",
-            305 => "Use Proxy",
-            307 => "Temporary Redirect",
-            308 => "Permanent Redirect",
-            400 => "Bad Request",
-            401 => "Unauthorized",
-            402 => "Payment Required",
-            403 => "Forbidden",
-            404 => "Not Found",
-            405 => "Method Not Allowed",
-            406 => "Not Acceptable",
-            407 => "Proxy Authentication Required",
-            408 => "Request Timeout",
-            409 => "Conflict",
-            410 => "Gone",
-            411 => "Length Required",
-            412 => "Precondition Failed",
-            413 => "Payload Too Large",
-            414 => "URI Too Long",
-            415 => "Unsupported Media Type",
-            416 => "Range Not Satisfiable",
-            417 => "Expectation Failed",
-            418 => "I'm a teapot",
-            422 => "Unprocessable Entity",
-            429 => "Too Many Requests",
-            500 => "Internal Server CursedError",
-            501 => "Not Implemented",
-            502 => "Bad Gateway",
-            503 => "Service Unavailable",
-            504 => "Gateway Timeout",
-            505 => "HTTP Version Not Supported",
-            _ => "Unknown",
         }
     }
-}
-
 impl std::fmt::Display for Status {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "{} {}", self.0, self.canonical_reason())
@@ -256,40 +155,18 @@ impl From<Status> for u16 {
 /// Content encoding types
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum ContentEncoding {
-    Identity,
-    Gzip,
-    Deflate,
-    Brotli,
-    Compress,
-}
-
 impl std::fmt::Display for ContentEncoding {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            ContentEncoding::Identity => write!(f, "identity"),
-            ContentEncoding::Gzip => write!(f, "gzip"),
-            ContentEncoding::Deflate => write!(f, "deflate"),
-            ContentEncoding::Brotli => write!(f, "br"),
-            ContentEncoding::Compress => write!(f, "compress"),
         }
     }
-}
-
 impl std::str::FromStr for ContentEncoding {
     type Err = String;
     
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         match s.to_lowercase().as_str() {
-            "identity" => Ok(ContentEncoding::Identity),
-            "gzip" => Ok(ContentEncoding::Gzip),
-            "deflate" => Ok(ContentEncoding::Deflate),
-            "br" | "brotli" => Ok(ContentEncoding::Brotli),
-            "compress" => Ok(ContentEncoding::Compress),
-            _ => Err(format!("Unknown content encoding: {}", s)),
         }
     }
-}
-
 /// MIME types for common content types
 pub mod mime {
     pub const TEXT_PLAIN: &str = "text/plain";
@@ -325,26 +202,5 @@ pub mod mime {
     /// Get MIME type from file extension
     pub fn from_extension(ext: &str) -> &'static str {
         match ext.to_lowercase().as_str() {
-            "txt" => TEXT_PLAIN,
-            "html" | "htm" => TEXT_HTML,
-            "css" => TEXT_CSS,
-            "js" => TEXT_JAVASCRIPT,
-            "xml" => TEXT_XML,
-            "json" => APPLICATION_JSON,
-            "pdf" => APPLICATION_PDF,
-            "zip" => APPLICATION_ZIP,
-            "jpg" | "jpeg" => IMAGE_JPEG,
-            "png" => IMAGE_PNG,
-            "gif" => IMAGE_GIF,
-            "svg" => IMAGE_SVG,
-            "webp" => IMAGE_WEBP,
-            "mp3" => AUDIO_MPEG,
-            "wav" => AUDIO_WAV,
-            "ogg" => AUDIO_OGG,
-            "mp4" => VIDEO_MP4,
-            "webm" => VIDEO_WEBM,
-            _ => APPLICATION_OCTET_STREAM,
         }
     }
-}
-

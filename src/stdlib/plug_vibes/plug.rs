@@ -12,98 +12,34 @@ use std::time::{Duration, SystemTime};
 #[derive(Debug, Clone)]
 pub struct LoadOptions {
     /// Verify plugin is compatible with host version
-    pub version_check: bool,
     /// Verify plugin signature for security
-    pub verify_signature: bool,
     /// Load plugin in isolated context
-    pub isolation: bool,
     /// Run plugin in sandboxed environment
-    pub sandbox: bool,
     /// Timeout for plugin initialization
-    pub timeout: Duration,
     /// Additional plugin dependencies
-    pub dependencies: Vec<String>,
     /// Whitelist of packages the plugin can import
-    pub allowed_imports: Vec<String>,
     /// Enable debug logging for plugin operations
-    pub debug_logging: bool,
-}
-
 impl Default for LoadOptions {
     fn default() -> Self {
         Self {
-            version_check: true,
-            verify_signature: false,
-            isolation: false,
-            sandbox: false,
-            timeout: Duration::from_secs(30),
-            dependencies: Vec::new(),
-            allowed_imports: Vec::new(),
-            debug_logging: false,
         }
     }
-}
-
 /// Information about a loaded plugin
 #[derive(Debug, Clone)]
 pub struct PlugInfo {
-    pub name: String,
-    pub version: String,
-    pub api: String,
-    pub author: String,
-    pub description: String,
-    pub build_time: SystemTime,
-    pub dependencies: Vec<String>,
-    pub capabilities: Vec<String>,
-    pub imports: Vec<String>,
-    pub exports: Vec<String>,
-    pub signature: String,
-    pub is_verified: bool,
-    pub is_compatible: bool,
-}
-
 impl Default for PlugInfo {
     fn default() -> Self {
         Self {
-            name: String::new(),
-            version: "0.0.0".to_string(),
-            api: "1.0".to_string(),
-            author: String::new(),
-            description: String::new(),
-            build_time: SystemTime::now(),
-            dependencies: Vec::new(),
-            capabilities: Vec::new(),
-            imports: Vec::new(),
-            exports: Vec::new(),
-            signature: String::new(),
-            is_verified: false,
-            is_compatible: true,
         }
     }
-}
-
 /// Host application information provided to plugins
 #[derive(Debug, Clone)]
 pub struct HostInfo {
-    pub name: String,
-    pub version: String,
-    pub api_version: String,
-    pub platform: String,
-    pub architecture: String,
-}
-
 impl Default for HostInfo {
     fn default() -> Self {
         Self {
-            name: "CURSED".to_string(),
-            version: "1.0.0".to_string(),
-            api_version: "1.0".to_string(),
-            platform: std::env::consts::OS.to_string(),
-            architecture: std::env::consts::ARCH.to_string(),
         }
     }
-}
-
 /// Plugin function signature type
 pub type PluginFunction = Box<dyn Fn(&[Value]) -> PluginResult<Vec<Value>> + Send + Sync>;
 
@@ -111,106 +47,55 @@ pub type PluginFunction = Box<dyn Fn(&[Value]) -> PluginResult<Vec<Value>> + Sen
 pub trait PluginValueConverter {
     fn to_plugin_value(&self) -> Value;
     fn from_plugin_value(value: &Value) -> Option<Self> where Self: Sized;
-}
-
 impl PluginValueConverter for i32 {
     fn to_plugin_value(&self) -> Value {
         Value::Integer(*self as i64)
-    }
-    
     fn from_plugin_value(value: &Value) -> Option<Self> {
         match value {
-            Value::Integer(i) => Some(*i as i32),
-            _ => None,
         }
     }
-}
-
 impl PluginValueConverter for f64 {
     fn to_plugin_value(&self) -> Value {
         Value::Float(*self)
-    }
-    
     fn from_plugin_value(value: &Value) -> Option<Self> {
         match value {
-            Value::Float(f) => Some(*f),
-            Value::Integer(i) => Some(*i as f64),
-            _ => None,
         }
     }
-}
-
 impl PluginValueConverter for String {
     fn to_plugin_value(&self) -> Value {
         Value::String(self.clone())
-    }
-    
     fn from_plugin_value(value: &Value) -> Option<Self> {
         match value {
-            Value::String(s) => Some(s.clone()),
-            _ => None,
         }
     }
-}
-
 impl PluginValueConverter for bool {
     fn to_plugin_value(&self) -> Value {
         Value::Boolean(*self)
-    }
-    
     fn from_plugin_value(value: &Value) -> Option<Self> {
         match value {
-            Value::Boolean(b) => Some(*b),
-            _ => None,
         }
     }
-}
-
 /// Represents a loaded plugin
 pub struct Plug {
-    info: PlugInfo,
-    path: PathBuf,
-    handle: Option<libloading::Library>,
-    symbols: Arc<Mutex<HashMap<String, Value>>>,
-    functions: Arc<Mutex<HashMap<String, PluginFunction>>>,
-    is_loaded: bool,
-    load_time: SystemTime,
-}
-
 impl Plug {
     /// Create a new plugin instance
     pub fn new(path: PathBuf, info: PlugInfo) -> Self {
         Self {
-            info,
-            path,
-            handle: None,
-            symbols: Arc::new(Mutex::new(HashMap::new())),
-            functions: Arc::new(Mutex::new(HashMap::new())),
-            is_loaded: false,
-            load_time: SystemTime::now(),
         }
     }
 
     /// Get plugin information
     pub fn info(&self) -> &PlugInfo {
         &self.info
-    }
-
     /// Get plugin path
     pub fn path(&self) -> &Path {
         &self.path
-    }
-
     /// Check if plugin is loaded
     pub fn is_loaded(&self) -> bool {
         self.is_loaded
-    }
-
     /// Get load time
     pub fn load_time(&self) -> SystemTime {
         self.load_time
-    }
-
     /// Look up a symbol by name
     pub fn lookup(&self, symbol_name: &str) -> PluginResult<Value> {
         let symbols = self.symbols.lock().map_err(|_| {
@@ -220,8 +105,6 @@ impl Plug {
         symbols.get(symbol_name)
             .cloned()
             .ok_or_else(|| PluginError::symbol_not_found(symbol_name))
-    }
-
     /// Look up a function by name and return a callable wrapper
     pub fn lookup_func(&self, func_name: &str) -> PluginResult<Box<dyn Fn(&[Value]) -> PluginResult<Vec<Value>> + Send + Sync>> {
         let functions = self.functions.lock().map_err(|_| {
@@ -243,7 +126,6 @@ impl Plug {
                             // For now, return a placeholder function
                             // In a full implementation, this would call the actual C function
                             Err(PluginError::function_not_found(func_name))
-                        },
                         Err(_) => Err(PluginError::function_not_found(func_name))
                     }
                 }
@@ -251,12 +133,9 @@ impl Plug {
                 Err(PluginError::function_not_found(func_name))
             }
         }
-    }
-
     /// Look up and bind a symbol to a specific type
     pub fn lookup_symbol<T>(&self, symbol_name: &str) -> PluginResult<T> 
     where
-        T: Clone + 'static,
     {
         // Try to look up the symbol directly from the loaded library
         if let Some(ref handle) = self.handle {
@@ -266,14 +145,12 @@ impl Plug {
                     Ok(symbol_func) => {
                         let result = symbol_func();
                         Ok(result)
-                    },
                     Err(_) => {
                         // Try as a static symbol
                         match handle.get::<*const T>(symbol_name_c.as_bytes()) {
                             Ok(symbol_ptr) => {
                                 let result = (*symbol_ptr).clone();
                                 Ok(result)
-                            },
                             Err(_) => Err(PluginError::symbol_not_found(symbol_name))
                         }
                     }
@@ -292,8 +169,6 @@ impl Plug {
 
         symbols.insert(name, value);
         Ok(())
-    }
-
     /// Register a function in the plugin
     pub fn register_function(&self, name: String, func: PluginFunction) -> PluginResult<()> {
         let mut functions = self.functions.lock().map_err(|_| {
@@ -302,27 +177,19 @@ impl Plug {
 
         functions.insert(name, func);
         Ok(())
-    }
-
     /// Get all symbol names
     pub fn symbols(&self) -> Vec<String> {
         self.symbols.lock()
             .map(|symbols| symbols.keys().cloned().collect())
             .unwrap_or_else(|_| Vec::new())
-    }
-
     /// Get all function names
     pub fn function_names(&self) -> Vec<String> {
         self.functions.lock()
             .map(|functions| functions.keys().cloned().collect())
             .unwrap_or_else(|_| Vec::new())
-    }
-
     /// Call a function by name with typed arguments and return typed result
     pub fn call_function<T, R>(&self, func_name: &str, args: &[T]) -> PluginResult<R> 
     where
-        T: PluginValueConverter,
-        R: PluginValueConverter,
     {
         // Convert arguments to Value types
         let value_args: Vec<Value> = args.iter().map(|arg| arg.to_plugin_value()).collect();
@@ -365,20 +232,14 @@ impl Plug {
         stats.insert("version".to_string(), Value::String(self.info.version.clone()));
         
         Ok(stats)
-    }
-
     /// Verify plugin integrity (basic checks)
     pub fn verify_integrity(&self) -> PluginResult<bool> {
         // Check if the plugin file still exists
         if !self.path.exists() {
             return Ok(false);
-        }
-        
         // Check if the plugin is loaded
         if !self.is_loaded {
             return Ok(false);
-        }
-        
         // Check if we can access basic symbols
         if self.handle.is_some() {
             Ok(true)
@@ -391,8 +252,6 @@ impl Plug {
     pub fn close(&mut self) -> PluginResult<()> {
         if !self.is_loaded {
             return Ok(());
-        }
-
         // Call cleanup function if it exists
         if let Some(ref handle) = self.handle {
             if let Ok(cleanup_func) = unsafe {
@@ -403,21 +262,15 @@ impl Plug {
                     return Err(PluginError::cleanup_failed(&format!("Cleanup returned: {}", result)));
                 }
             }
-        }
-
         // Clear symbols and functions
         if let Ok(mut symbols) = self.symbols.lock() {
             symbols.clear();
         }
         if let Ok(mut functions) = self.functions.lock() {
             functions.clear();
-        }
-
         // Close the dynamic library handle
         if let Some(handle) = self.handle.take() {
             drop(handle);
-        }
-
         self.is_loaded = false;
         Ok(())
     }
@@ -432,8 +285,6 @@ impl Drop for Plug {
 /// Load a plugin from a file path
 pub fn load(path: &str) -> PluginResult<Plug> {
     load_with_options(path, LoadOptions::default())
-}
-
 /// Load a plugin with specific options
 pub fn load_with_options(path: &str, options: LoadOptions) -> PluginResult<Plug> {
     let path_buf = PathBuf::from(path);
@@ -441,8 +292,6 @@ pub fn load_with_options(path: &str, options: LoadOptions) -> PluginResult<Plug>
     // Check if file exists
     if !path_buf.exists() {
         return Err(PluginError::plugin_not_found(path));
-    }
-
     // Validate file extension (optional)
     let extension = path_buf.extension()
         .and_then(|ext| ext.to_str())
@@ -454,23 +303,18 @@ pub fn load_with_options(path: &str, options: LoadOptions) -> PluginResult<Plug>
         vec!["dylib"]
     } else {
         vec!["so"]
-    };
     
     if !expected_extensions.contains(&extension) && options.debug_logging {
         eprintln!("Warning: Plugin file '{}' does not have expected extension for this platform", path);
-    }
-
     // Load the dynamic library
     let library = unsafe {
         libloading::Library::new(&path_buf).map_err(|e| {
             PluginError::load_error(&format!("Failed to load library '{}': {}", path, e))
         })?
-    };
 
     // Try to get plugin manifest - this is optional
     let info = unsafe {
         match library.get::<libloading::Symbol<unsafe extern "C" fn() -> PlugInfo>>(b"PlugManifest") {
-            Ok(manifest_func) => manifest_func(),
             Err(_) => {
                 // Create default info if PlugManifest not found
                 let mut default_info = PlugInfo::default();
@@ -481,7 +325,6 @@ pub fn load_with_options(path: &str, options: LoadOptions) -> PluginResult<Plug>
                 default_info
             }
         }
-    };
 
     // Verify version compatibility if requested
     if options.version_check && !info.version.is_empty() && info.version != "0.0.0" {
@@ -492,7 +335,6 @@ pub fn load_with_options(path: &str, options: LoadOptions) -> PluginResult<Plug>
         let host_version = Version::new(1, 0, 0); // Current host version
         if !plugin_version.compatible(&host_version) {
             return Err(PluginError::version_incompatible(&format!(
-                "Plugin version {} incompatible with host version {}",
                 plugin_version, host_version
             )));
         }
@@ -517,7 +359,6 @@ pub fn load_with_options(path: &str, options: LoadOptions) -> PluginResult<Plug>
     // Populate symbol list by trying common function names
     if let Some(ref handle) = plugin.handle {
         let common_symbols = vec![
-            "Init", "Cleanup", "PlugManifest", "Calculate", "Process", "Execute",
             "GetVersion", "GetCapabilities", "HandleRequest", "Transform"
         ];
         
@@ -531,11 +372,7 @@ pub fn load_with_options(path: &str, options: LoadOptions) -> PluginResult<Plug>
                 }
             }
         }
-    }
-
     Ok(plugin)
-}
-
 /// Helper functions for plugin development and host integration
 
 /// Check if the current process is running as a plugin
@@ -543,18 +380,12 @@ pub fn is_running_as_plugin() -> bool {
     // Simple heuristic: check if we're in a dynamic library context
     // This is a simplified implementation
     std::env::var("CURSED_PLUGIN_MODE").is_ok()
-}
-
 /// Get information about the host application
 pub fn get_host_info() -> HostInfo {
     HostInfo::default()
-}
-
 /// Get the current plugin API version
 pub fn get_plugin_api() -> String {
     "1.0".to_string()
-}
-
 /// Register an export from within a plugin (for use by plugin code)
 pub fn register_export(name: &str, value: Value) -> PluginResult<()> {
     // This would typically store the export in a global registry
@@ -582,11 +413,8 @@ pub fn register_hook(name: &str, callback: PluginFunction) -> PluginResult<()> {
 /// Utility function to create a plugin function from a Rust closure
 pub fn create_plugin_function<F>(func: F) -> PluginFunction 
 where
-    F: Fn(&[Value]) -> PluginResult<Vec<Value>> + Send + Sync + 'static,
 {
     Box::new(func)
-}
-
 /// Utility function to load multiple plugins from a directory
 pub fn load_plugins_from_directory(dir_path: &str) -> PluginResult<Vec<Plug>> {
     let dir = std::fs::read_dir(dir_path).map_err(|e| {
@@ -600,7 +428,6 @@ pub fn load_plugins_from_directory(dir_path: &str) -> PluginResult<Vec<Plug>> {
         vec!["dylib"]
     } else {
         vec!["so"]
-    };
 
     for entry in dir {
         let entry = entry.map_err(|e| {
@@ -612,7 +439,6 @@ pub fn load_plugins_from_directory(dir_path: &str) -> PluginResult<Vec<Plug>> {
             if let Some(ext) = path.extension().and_then(|e| e.to_str()) {
                 if expected_extensions.contains(&ext) {
                     match load(&path.to_string_lossy()) {
-                        Ok(plugin) => plugins.push(plugin),
                         Err(e) => {
                             eprintln!("Warning: Failed to load plugin '{}': {}", path.display(), e);
                         }
@@ -623,5 +449,3 @@ pub fn load_plugins_from_directory(dir_path: &str) -> PluginResult<Vec<Plug>> {
     }
 
     Ok(plugins)
-}
-

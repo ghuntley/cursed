@@ -13,13 +13,6 @@ use tracing::{info, instrument, warn, debug};
 
 /// Runtime optimization coordinator
 pub struct RuntimeOptimizer {
-    config: OptimizationConfig,
-    jit_optimizer: Arc<JitOptimizer>,
-    profile_guided_optimizer: Arc<ProfileGuidedOptimizer>,
-    adaptive_optimizer: Arc<AdaptiveOptimizer>,
-    statistics: Arc<Mutex<RuntimeOptimizationStats>>,
-}
-
 impl RuntimeOptimizer {
     /// Create new runtime optimizer
     #[instrument(skip(config))]
@@ -31,14 +24,7 @@ impl RuntimeOptimizer {
         let adaptive_optimizer = Arc::new(AdaptiveOptimizer::new(config)?);
         
         Ok(Self {
-            config: config.clone(),
-            jit_optimizer,
-            profile_guided_optimizer,
-            adaptive_optimizer,
-            statistics: Arc::new(Mutex::new(RuntimeOptimizationStats::default())),
         })
-    }
-    
     /// Optimize compilation unit for runtime performance
     #[instrument(skip(self, unit))]
     pub fn optimize_compilation_unit(&self, unit: &mut crate::optimization::CompilationUnit) -> Result<()> {
@@ -52,14 +38,10 @@ impl RuntimeOptimizer {
         if self.config.enable_profiling {
             self.jit_optimizer.optimize_for_jit(unit)?;
             stats.jit_optimizations_applied += 1;
-        }
-        
         // Apply profile-guided optimization if enabled
         if self.config.profile_guided {
             self.profile_guided_optimizer.apply_profile_optimizations(unit)?;
             stats.pgo_optimizations_applied += 1;
-        }
-        
         // Apply adaptive optimization
         self.adaptive_optimizer.apply_adaptive_optimizations(unit)?;
         stats.adaptive_optimizations_applied += 1;
@@ -69,8 +51,6 @@ impl RuntimeOptimizer {
         
         info!("Runtime optimization completed in {:?}", duration);
         Ok(())
-    }
-    
     /// Update configuration
     pub fn update_config(&self, config: &OptimizationConfig) -> Result<()> {
         self.jit_optimizer.update_config(config)?;
@@ -78,8 +58,6 @@ impl RuntimeOptimizer {
         self.adaptive_optimizer.update_config(config)?;
         info!("Runtime optimizer configuration updated");
         Ok(())
-    }
-    
     /// Generate optimization report
     pub fn generate_report(&self) -> Result<String> {
         let stats = self.statistics.lock().unwrap();
@@ -117,8 +95,6 @@ impl RuntimeOptimizer {
         report.push_str(&format!("- Memory usage reduction: {:.2}%\n", adaptive_stats.memory_reduction_percent));
         
         Ok(report)
-    }
-    
     /// Get optimization statistics
     pub fn get_statistics(&self) -> RuntimeOptimizationStats {
         self.statistics.lock().unwrap().clone()
@@ -127,30 +103,18 @@ impl RuntimeOptimizer {
 
 /// Just-In-Time optimization manager
 pub struct JitOptimizer {
-    enabled: bool,
-    hot_threshold: usize,
-    cold_threshold: usize,
-    statistics: Arc<Mutex<JitOptimizationStats>>,
-}
-
 impl JitOptimizer {
     /// Create new JIT optimizer
     pub fn new(config: &OptimizationConfig) -> Result<Self> {
         Ok(Self {
-            enabled: config.enable_profiling,
             hot_threshold: 1000, // Function calls before considering hot
             cold_threshold: 10,  // Function calls before considering cold
-            statistics: Arc::new(Mutex::new(JitOptimizationStats::default())),
         })
-    }
-    
     /// Optimize compilation unit for JIT compilation
     #[instrument(skip(self, unit))]
     pub fn optimize_for_jit(&self, unit: &mut crate::optimization::CompilationUnit) -> Result<()> {
         if !self.enabled {
             return Ok(());
-        }
-        
         let start_time = Instant::now();
         debug!("Applying JIT optimizations to unit: {}", unit.name);
         
@@ -164,11 +128,8 @@ impl JitOptimizer {
             debug!("Optimizing hot function: {}", function);
             // Apply aggressive optimizations to hot functions
             unit.optimization_metadata.insert(
-                format!("jit_hot_{}", function),
                 "aggressive_inline,loop_unroll,vectorize".to_string()
             );
-        }
-        
         // Identify and handle cold functions
         let cold_functions = self.identify_cold_functions(unit)?;
         stats.cold_functions_deoptimized += cold_functions.len();
@@ -177,18 +138,13 @@ impl JitOptimizer {
             debug!("Deoptimizing cold function: {}", function);
             // Apply size optimizations to cold functions
             unit.optimization_metadata.insert(
-                format!("jit_cold_{}", function),
                 "optimize_size,minimal_inline".to_string()
             );
-        }
-        
         let duration = start_time.elapsed();
         stats.compilation_time_saved += Duration::from_millis(50); // Mock time savings
         
         debug!("JIT optimization completed in {:?}", duration);
         Ok(())
-    }
-    
     /// Identify hot functions based on profile data
     fn identify_hot_functions(&self, unit: &crate::optimization::CompilationUnit) -> Result<Vec<String>> {
         // Mock implementation - in real system this would analyze profile data
@@ -202,8 +158,6 @@ impl JitOptimizer {
         }
         
         Ok(hot_functions)
-    }
-    
     /// Identify cold functions based on profile data
     fn identify_cold_functions(&self, unit: &crate::optimization::CompilationUnit) -> Result<Vec<String>> {
         // Mock implementation
@@ -216,15 +170,11 @@ impl JitOptimizer {
         }
         
         Ok(cold_functions)
-    }
-    
     /// Update configuration
     pub fn update_config(&self, config: &OptimizationConfig) -> Result<()> {
         // Configuration updates would be applied here
         debug!("JIT optimizer configuration updated");
         Ok(())
-    }
-    
     /// Get JIT optimization statistics
     pub fn get_statistics(&self) -> JitOptimizationStats {
         self.statistics.lock().unwrap().clone()
@@ -233,28 +183,16 @@ impl JitOptimizer {
 
 /// Profile-guided optimization manager
 pub struct ProfileGuidedOptimizer {
-    enabled: bool,
-    profile_data: Arc<Mutex<HashMap<String, ProfileData>>>,
-    statistics: Arc<Mutex<ProfileGuidedStats>>,
-}
-
 impl ProfileGuidedOptimizer {
     /// Create new profile-guided optimizer
     pub fn new(config: &OptimizationConfig) -> Result<Self> {
         Ok(Self {
-            enabled: config.profile_guided,
-            profile_data: Arc::new(Mutex::new(HashMap::new())),
-            statistics: Arc::new(Mutex::new(ProfileGuidedStats::default())),
         })
-    }
-    
     /// Apply profile-guided optimizations
     #[instrument(skip(self, unit))]
     pub fn apply_profile_optimizations(&self, unit: &mut crate::optimization::CompilationUnit) -> Result<()> {
         if !self.enabled {
             return Ok(());
-        }
-        
         let start_time = Instant::now();
         debug!("Applying profile-guided optimizations to unit: {}", unit.name);
         
@@ -272,14 +210,12 @@ impl ProfileGuidedOptimizer {
                 if *call_count > 5000 {
                     // Hot path optimization
                     unit.optimization_metadata.insert(
-                        format!("pgo_hot_{}", function),
                         "inline_aggressive,unroll_loops".to_string()
                     );
                     stats.hot_paths_optimized += 1;
                 } else if *call_count < 10 {
                     // Cold path optimization
                     unit.optimization_metadata.insert(
-                        format!("pgo_cold_{}", function),
                         "optimize_size,no_inline".to_string()
                     );
                 }
@@ -289,19 +225,14 @@ impl ProfileGuidedOptimizer {
             for (branch, taken_ratio) in &data.branch_taken_ratios {
                 if *taken_ratio > 0.9 || *taken_ratio < 0.1 {
                     unit.optimization_metadata.insert(
-                        format!("pgo_branch_{}", branch),
                         format!("likely_{}", *taken_ratio > 0.5)
                     );
                     stats.branch_predictions_improved += 1;
                 }
             }
-        }
-        
         let duration = start_time.elapsed();
         debug!("Profile-guided optimization completed in {:?}", duration);
         Ok(())
-    }
-    
     /// Load profile data for compilation unit
     fn load_profile_data(&self, unit_name: &str) -> Result<()> {
         let mut profile_data = self.profile_data.lock().unwrap();
@@ -323,17 +254,11 @@ impl ProfileGuidedOptimizer {
             data.branch_taken_ratios.insert("input_validation".to_string(), 0.85);
             
             profile_data.insert(unit_name.to_string(), data);
-        }
-        
         Ok(())
-    }
-    
     /// Update configuration
     pub fn update_config(&self, config: &OptimizationConfig) -> Result<()> {
         debug!("Profile-guided optimizer configuration updated");
         Ok(())
-    }
-    
     /// Get profile-guided optimization statistics
     pub fn get_statistics(&self) -> ProfileGuidedStats {
         self.statistics.lock().unwrap().clone()
@@ -342,30 +267,17 @@ impl ProfileGuidedOptimizer {
 
 /// Adaptive optimization manager
 pub struct AdaptiveOptimizer {
-    enabled: bool,
-    adaptation_threshold: f64,
-    performance_history: Arc<Mutex<Vec<PerformanceMetrics>>>,
-    statistics: Arc<Mutex<AdaptiveOptimizationStats>>,
-}
-
 impl AdaptiveOptimizer {
     /// Create new adaptive optimizer
     pub fn new(config: &OptimizationConfig) -> Result<Self> {
         Ok(Self {
-            enabled: config.enable_profiling,
             adaptation_threshold: 0.05, // 5% performance change threshold
-            performance_history: Arc::new(Mutex::new(Vec::new())),
-            statistics: Arc::new(Mutex::new(AdaptiveOptimizationStats::default())),
         })
-    }
-    
     /// Apply adaptive optimizations
     #[instrument(skip(self, unit))]
     pub fn apply_adaptive_optimizations(&self, unit: &mut crate::optimization::CompilationUnit) -> Result<()> {
         if !self.enabled {
             return Ok(());
-        }
-        
         let start_time = Instant::now();
         debug!("Applying adaptive optimizations to unit: {}", unit.name);
         
@@ -379,14 +291,12 @@ impl AdaptiveOptimizer {
             PerformanceTrend::Improving => {
                 // Continue current optimization strategy
                 unit.optimization_metadata.insert(
-                    "adaptive_strategy".to_string(),
                     "continue_current".to_string()
                 );
             }
             PerformanceTrend::Declining => {
                 // Switch to more aggressive optimization
                 unit.optimization_metadata.insert(
-                    "adaptive_strategy".to_string(),
                     "increase_optimization".to_string()
                 );
                 stats.performance_improvement_percent += 2.5; // Mock improvement
@@ -394,7 +304,6 @@ impl AdaptiveOptimizer {
             PerformanceTrend::Stable => {
                 // Try alternative optimization strategies
                 unit.optimization_metadata.insert(
-                    "adaptive_strategy".to_string(),
                     "try_alternatives".to_string()
                 );
                 stats.memory_reduction_percent += 1.2; // Mock reduction
@@ -403,27 +312,21 @@ impl AdaptiveOptimizer {
         
         // Record current performance metrics (mock)
         let current_metrics = PerformanceMetrics {
-            compilation_time: start_time.elapsed(),
             memory_usage: 1024 * 1024, // 1MB mock
             code_size: 50000, // 50KB mock
             execution_time: Duration::from_millis(100), // Mock execution time
-        };
         
         self.performance_history.lock().unwrap().push(current_metrics);
         
         let duration = start_time.elapsed();
         debug!("Adaptive optimization completed in {:?}", duration);
         Ok(())
-    }
-    
     /// Analyze performance trend from history
     fn analyze_performance_trend(&self) -> Result<PerformanceTrend> {
         let history = self.performance_history.lock().unwrap();
         
         if history.len() < 2 {
             return Ok(PerformanceTrend::Stable);
-        }
-        
         let recent = &history[history.len() - 1];
         let previous = &history[history.len() - 2];
         
@@ -444,8 +347,6 @@ impl AdaptiveOptimizer {
     pub fn update_config(&self, config: &OptimizationConfig) -> Result<()> {
         debug!("Adaptive optimizer configuration updated");
         Ok(())
-    }
-    
     /// Get adaptive optimization statistics
     pub fn get_statistics(&self) -> AdaptiveOptimizationStats {
         self.statistics.lock().unwrap().clone()
@@ -455,61 +356,21 @@ impl AdaptiveOptimizer {
 /// Performance trend analysis
 #[derive(Debug, Clone, PartialEq)]
 enum PerformanceTrend {
-    Improving,
-    Declining,
-    Stable,
-}
-
 /// Profile data structure
 #[derive(Debug, Clone, Default)]
 struct ProfileData {
-    function_call_counts: HashMap<String, usize>,
-    branch_taken_ratios: HashMap<String, f64>,
-}
-
 /// Performance metrics
 #[derive(Debug, Clone)]
 struct PerformanceMetrics {
-    compilation_time: Duration,
-    memory_usage: usize,
-    code_size: usize,
-    execution_time: Duration,
-}
-
 /// Runtime optimization statistics
 #[derive(Debug, Clone, Default)]
 pub struct RuntimeOptimizationStats {
-    pub units_optimized: usize,
-    pub total_optimization_time: Duration,
-    pub jit_optimizations_applied: usize,
-    pub pgo_optimizations_applied: usize,
-    pub adaptive_optimizations_applied: usize,
-}
-
 /// JIT optimization statistics
 #[derive(Debug, Clone, Default)]
 pub struct JitOptimizationStats {
-    pub hot_functions_compiled: usize,
-    pub cold_functions_deoptimized: usize,
-    pub compilation_time_saved: Duration,
-    pub memory_usage_optimized: usize,
-}
-
 /// Profile-guided optimization statistics
 #[derive(Debug, Clone, Default)]
 pub struct ProfileGuidedStats {
-    pub profile_entries_processed: usize,
-    pub hot_paths_optimized: usize,
-    pub branch_predictions_improved: usize,
-    pub performance_gains_percent: f64,
-}
-
 /// Adaptive optimization statistics
 #[derive(Debug, Clone, Default)]
 pub struct AdaptiveOptimizationStats {
-    pub adaptation_cycles: usize,
-    pub performance_improvement_percent: f64,
-    pub memory_reduction_percent: f64,
-    pub strategy_changes: usize,
-}
-

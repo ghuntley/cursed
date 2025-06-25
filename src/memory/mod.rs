@@ -66,8 +66,6 @@ pub trait Visitor {
     /// garbage collection. The visitor will mark the object as reachable
     /// and continue traversing its references.
     fn visit(&mut self, obj: &dyn Traceable);
-}
-
 /// Object type tags for runtime type information
 /// 
 /// These tags help the garbage collector understand object layout
@@ -75,44 +73,20 @@ pub trait Visitor {
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum Tag {
     /// Regular object instance
-    Object,
     /// Array or vector of objects
-    Array,
     /// Function or closure object
-    Function,
     /// String object
-    String,
     /// Number (integer or float)
-    Number,
     /// Boolean value
-    Boolean,
     /// Nil/null value
-    Nil,
     /// Interface object
-    Interface,
     /// Channel for goroutine communication
-    Channel,
     /// Custom user-defined type
-    Custom(u32),
-}
-
 impl std::fmt::Display for Tag {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            Tag::Object => write!(f, "Object"),
-            Tag::Array => write!(f, "Array"),
-            Tag::Function => write!(f, "Function"),
-            Tag::String => write!(f, "String"),
-            Tag::Number => write!(f, "Number"),
-            Tag::Boolean => write!(f, "Boolean"),
-            Tag::Nil => write!(f, "Nil"),
-            Tag::Interface => write!(f, "Interface"),
-            Tag::Channel => write!(f, "Channel"),
-            Tag::Custom(id) => write!(f, "Custom({})", id),
         }
     }
-}
-
 // Primitive types that don't contain references
 impl Traceable for i8 {
     fn trace(&self, _visitor: &mut dyn Visitor) {}
@@ -173,25 +147,17 @@ impl<T: Traceable> Traceable for Vec<T> {
             item.trace(visitor);
         }
     }
-}
-
 impl<T: Traceable> Traceable for Option<T> {
     fn trace(&self, visitor: &mut dyn Visitor) {
         if let Some(ref item) = self {
             item.trace(visitor);
         }
     }
-}
-
 impl<T: Traceable, E: Traceable> Traceable for Result<T, E> {
     fn trace(&self, visitor: &mut dyn Visitor) {
         match self {
-            Ok(ref item) => item.trace(visitor),
-            Err(ref error) => error.trace(visitor),
         }
     }
-}
-
 /// Memory utilities and helper functions
 pub mod utils {
     use super::*;
@@ -199,23 +165,15 @@ pub mod utils {
     /// Get the size of a type in bytes
     pub fn size_of<T>() -> usize {
         std::mem::size_of::<T>()
-    }
-    
     /// Get the alignment requirement of a type
     pub fn align_of<T>() -> usize {
         std::mem::align_of::<T>()
-    }
-    
     /// Check if a pointer is properly aligned for type T
     pub fn is_aligned<T>(ptr: *const T) -> bool {
         (ptr as usize) % std::mem::align_of::<T>() == 0
-    }
-    
     /// Round up size to next alignment boundary
     pub fn align_size(size: usize, align: usize) -> usize {
         (size + align - 1) & !(align - 1)
-    }
-    
     /// Calculate fragmentation ratio
     pub fn fragmentation_ratio(total_free: usize, largest_free: usize) -> f64 {
         if total_free == 0 {
@@ -224,5 +182,3 @@ pub mod utils {
             1.0 - (largest_free as f64 / total_free as f64)
         }
     }
-}
-

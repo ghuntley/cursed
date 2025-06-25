@@ -8,11 +8,7 @@ use super::{OptimizationPass, PassConfiguration, PassResult, PassStatistics};
 use crate::common_types::optimization_level::OptimizationLevel;
 use crate::error::{CursedError, Result};
 use inkwell::{
-    context::Context,
-    module::Module,
-    values::{FunctionValue, InstructionValue, BasicValueEnum},
-    basic_block::BasicBlock,
-};
+// };
 
 use std::collections::{HashSet, HashMap, VecDeque};
 use std::time::Instant;
@@ -20,20 +16,12 @@ use tracing::{debug, info, instrument, warn};
 
 /// Dead code elimination optimization pass
 pub struct DeadCodeEliminationPass {
-    statistics: PassStatistics,
-    config: PassConfiguration,
-    aggressive_mode: bool,
-}
-
 impl DeadCodeEliminationPass {
     /// Create a new dead code elimination pass
     pub fn new(config: PassConfiguration) -> Self {
         let aggressive_mode = config.optimization_level >= OptimizationLevel::O3;
         
         Self {
-            statistics: PassStatistics::default(),
-            config,
-            aggressive_mode,
         }
     }
     
@@ -93,11 +81,7 @@ impl DeadCodeEliminationPass {
         
         if removed_count > 0 {
             info!("Eliminated {} dead functions", removed_count);
-        }
-        
         Ok(removed_count)
-    }
-    
     /// Eliminate unreachable basic blocks within functions
     #[instrument(skip(self, function))]
     fn eliminate_unreachable_blocks(&mut self, function: &FunctionValue) -> Result<usize> {
@@ -108,8 +92,6 @@ impl DeadCodeEliminationPass {
         if let Some(entry_block) = function.get_first_basic_block() {
             reachable_blocks.insert(entry_block.get_address());
             worklist.push_back(entry_block);
-        }
-        
         // Mark all reachable blocks
         while let Some(current_block) = worklist.pop_front() {
             // Find successor blocks
@@ -141,14 +123,8 @@ impl DeadCodeEliminationPass {
         }
         
         if removed_count > 0 {
-            debug!("Eliminated {} unreachable blocks in function {}", 
-                   removed_count, 
                    function.get_name().to_str().unwrap_or("<unnamed>"));
-        }
-        
         Ok(removed_count)
-    }
-    
     /// Eliminate dead instructions within basic blocks
     #[instrument(skip(self, function))]
     fn eliminate_dead_instructions(&mut self, function: &FunctionValue) -> Result<usize> {
@@ -174,25 +150,15 @@ impl DeadCodeEliminationPass {
         }
         
         if removed_count > 0 {
-            debug!("Eliminated {} dead instructions in function {}", 
-                   removed_count,
                    function.get_name().to_str().unwrap_or("<unnamed>"));
-        }
-        
         Ok(removed_count)
-    }
-    
     /// Check if an instruction is dead (has no uses and no side effects)
     fn is_dead_instruction(&self, instruction: &InstructionValue) -> bool {
         // Don't remove instructions with side effects
         if self.has_side_effects(instruction) {
             return false;
-        }
-        
         // Check if the instruction has any uses
         instruction.get_uses().is_empty()
-    }
-    
     /// Check if an instruction has side effects
     fn has_side_effects(&self, instruction: &InstructionValue) -> bool {
         use inkwell::values::InstructionOpcode;
@@ -202,11 +168,9 @@ impl DeadCodeEliminationPass {
             InstructionOpcode::Store |
             InstructionOpcode::AtomicRMW |
             InstructionOpcode::AtomicCmpXchg |
-            InstructionOpcode::Fence => true,
             
             // Function calls (may have side effects)
             InstructionOpcode::Call |
-            InstructionOpcode::Invoke => true,
             
             // Control flow
             InstructionOpcode::Return |
@@ -214,21 +178,16 @@ impl DeadCodeEliminationPass {
             InstructionOpcode::Switch |
             InstructionOpcode::IndirectBr |
             InstructionOpcode::Resume |
-            InstructionOpcode::Unreachable => true,
             
             // Exception handling
             InstructionOpcode::LandingPad |
             InstructionOpcode::CleanupRet |
-            InstructionOpcode::CatchRet => true,
             
             // Volatile loads
             InstructionOpcode::Load => {
                 // In a real implementation, we'd check if the load is volatile
                 false
-            }
-            
             // Most arithmetic and logical operations don't have side effects
-            _ => false,
         }
     }
     
@@ -244,11 +203,7 @@ impl DeadCodeEliminationPass {
                     // For now, we'll return None to be safe
                 }
             }
-        }
-        
         None
-    }
-    
     /// Get successor basic blocks from a terminator instruction
     fn get_successor_blocks(&self, terminator: &InstructionValue) -> Vec<BasicBlock> {
         use inkwell::values::InstructionOpcode;
@@ -280,15 +235,11 @@ impl DeadCodeEliminationPass {
         }
         
         successors
-    }
-    
     /// Perform aggressive dead code elimination optimizations
     #[instrument(skip(self, module))]
     fn aggressive_optimization(&mut self, module: &Module) -> Result<usize> {
         if !self.aggressive_mode {
             return Ok(0);
-        }
-        
         debug!("Running aggressive dead code elimination");
         
         let mut total_eliminated = 0;
@@ -306,8 +257,6 @@ impl DeadCodeEliminationPass {
             for function in module.get_functions() {
                 pass_eliminated += self.eliminate_unreachable_blocks(&function)?;
                 pass_eliminated += self.eliminate_dead_instructions(&function)?;
-            }
-            
             total_eliminated += pass_eliminated;
             
             // If no progress was made, we're done
@@ -319,8 +268,6 @@ impl DeadCodeEliminationPass {
         
         if total_eliminated > 0 {
             info!("Aggressive DCE eliminated {} additional items", total_eliminated);
-        }
-        
         Ok(total_eliminated)
     }
 }
@@ -328,21 +275,13 @@ impl DeadCodeEliminationPass {
 impl<'ctx> OptimizationPass<'ctx> for DeadCodeEliminationPass {
     fn name(&self) -> &str {
         "dead_code_elimination"
-    }
-    
     fn description(&self) -> &str {
         "Removes unused functions, unreachable basic blocks, and dead instructions"
-    }
-    
     fn should_run(&self, config: &PassConfiguration) -> bool {
         config.enable_dead_code_elimination && 
         config.optimization_level >= OptimizationLevel::O1
-    }
-    
     fn required_optimization_level(&self) -> OptimizationLevel {
         OptimizationLevel::O1
-    }
-    
     #[instrument(skip(self, module, context))]
     fn run_on_module(&mut self, module: &Module<'ctx>, _context: &'ctx Context) -> Result<PassResult> {
         let start_time = Instant::now();
@@ -362,20 +301,14 @@ impl<'ctx> OptimizationPass<'ctx> for DeadCodeEliminationPass {
             let dead_instructions = self.eliminate_dead_instructions(&function)?;
             
             total_eliminated += dead_blocks + dead_instructions;
-        }
-        
         // Run aggressive optimizations if enabled
         if self.aggressive_mode {
             let aggressive_eliminated = self.aggressive_optimization(module)?;
             total_eliminated += aggressive_eliminated;
-        }
-        
         // Update result
         if total_eliminated > 0 {
             result.changed = true;
             result.instructions_eliminated = total_eliminated;
-        }
-        
         result.execution_time = start_time.elapsed();
         result.metrics.insert("dead_functions_eliminated".to_string(), dead_functions as f64);
         result.metrics.insert("total_eliminated".to_string(), total_eliminated as f64);
@@ -383,16 +316,11 @@ impl<'ctx> OptimizationPass<'ctx> for DeadCodeEliminationPass {
         // Update statistics
         self.statistics.update(&result);
         
-        info!("Dead code elimination completed: eliminated {} items in {:?}", 
               total_eliminated, result.execution_time);
         
         Ok(result)
-    }
-    
     fn get_statistics(&self) -> PassStatistics {
         self.statistics.clone()
-    }
-    
     fn reset(&mut self) {
         self.statistics = PassStatistics::default();
     }
@@ -400,16 +328,10 @@ impl<'ctx> OptimizationPass<'ctx> for DeadCodeEliminationPass {
 
 /// Analyzer for identifying dead code patterns
 pub struct DeadCodeAnalyzer {
-    function_call_graph: HashMap<String, HashSet<String>>,
-    instruction_use_counts: HashMap<String, usize>,
-}
-
 impl DeadCodeAnalyzer {
     /// Create a new dead code analyzer
     pub fn new() -> Self {
         Self {
-            function_call_graph: HashMap::new(),
-            instruction_use_counts: HashMap::new(),
         }
     }
     
@@ -428,21 +350,15 @@ impl DeadCodeAnalyzer {
                         called_functions.insert(called_function);
                     }
                 }
-            }
-            
             self.function_call_graph.insert(function_name.clone(), called_functions);
             
             // Analyze function for dead code
             let function_analysis = self.analyze_function(&function);
             result.function_analyses.insert(function_name, function_analysis);
-        }
-        
         // Identify dead functions
         result.dead_functions = self.find_dead_functions();
         
         result
-    }
-    
     /// Analyze a single function for dead code
     fn analyze_function(&mut self, function: &FunctionValue) -> FunctionDeadCodeAnalysis {
         let mut analysis = FunctionDeadCodeAnalysis::default();
@@ -455,16 +371,12 @@ impl DeadCodeAnalyzer {
                 
                 if instruction.get_uses().is_empty() && !self.has_side_effects_analyzer(&instruction) {
                     analysis.dead_instructions.push(instruction_id.clone());
-                }
-                
                 self.instruction_use_counts.insert(instruction_id, instruction.get_uses().count());
             }
         }
         
         analysis.dead_instruction_count = analysis.dead_instructions.len();
         analysis
-    }
-    
     /// Find dead functions using call graph analysis
     fn find_dead_functions(&self) -> Vec<String> {
         let mut dead_functions = Vec::new();
@@ -494,8 +406,6 @@ impl DeadCodeAnalyzer {
             }
             
             live_functions = new_live_functions;
-        }
-        
         // Find dead functions
         for function_name in self.function_call_graph.keys() {
             if !live_functions.contains(function_name) {
@@ -504,20 +414,15 @@ impl DeadCodeAnalyzer {
         }
         
         dead_functions
-    }
-    
     /// Extract called function name from a call instruction
     fn extract_called_function(&self, _instruction: &InstructionValue) -> Option<String> {
         // In a real implementation, this would extract the function name
         // from call instructions. For now, we'll return None.
         None
-    }
-    
     /// Check if instruction has side effects (analyzer version)
     fn has_side_effects_analyzer(&self, instruction: &InstructionValue) -> bool {
         use inkwell::values::InstructionOpcode;
         
-        matches!(instruction.get_opcode(),
             InstructionOpcode::Store |
             InstructionOpcode::Call |
             InstructionOpcode::Invoke |
@@ -533,19 +438,6 @@ impl DeadCodeAnalyzer {
 /// Result of dead code analysis
 #[derive(Debug, Default)]
 pub struct DeadCodeAnalysisResult {
-    pub dead_functions: Vec<String>,
-    pub function_analyses: HashMap<String, FunctionDeadCodeAnalysis>,
-    pub total_dead_instructions: usize,
-    pub estimated_size_reduction: usize,
-}
-
 /// Dead code analysis for a single function
 #[derive(Debug, Default)]
 pub struct FunctionDeadCodeAnalysis {
-    pub total_instructions: usize,
-    pub dead_instructions: Vec<String>,
-    pub dead_instruction_count: usize,
-    pub unreachable_blocks: Vec<String>,
-    pub estimated_elimination_benefit: f64,
-}
-

@@ -1,19 +1,11 @@
 use crate::error::CursedError;
-// use crate::stdlib::crypto::{
-    JwtHandler, HmacAuth, TotpGenerator, SecureRandom, UuidV4Generator,
-    SaltGenerator, NonceGenerator, Base64Encoder, HexEncoder, Base32Encoder,
+// Placeholder imports disabled
     // CryptoPlatform - removed unused import
-};
+// };
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
 use inkwell::{
-    builder::Builder,
-    context::Context,
-    module::Module,
-    types::{IntType, PointerType, VoidType, StructType},
-    values::{FunctionValue, PointerValue},
-    AddressSpace,
-};
+// };
 
 use tracing::{debug, info, warn, error, instrument};
 
@@ -69,36 +61,13 @@ pub trait CryptoLLVMIntegration {
     
     /// Constant-time equality comparison
     fn constant_time_eq(&self, a: &[u8], b: &[u8]) -> bool;
-}
-
 /// Implementation of crypto LLVM integration
 pub struct CryptoLLVMIntegrationImpl {
-    platform: Arc<Mutex<CryptoPlatform>>,
-    function_registry: HashMap<String, FunctionValue<'static>>,
-    runtime_state: CryptoRuntimeState,
-}
-
 #[derive(Debug)]
 struct CryptoRuntimeState {
-    jwt_handlers: HashMap<Vec<u8>, JwtHandler>,
-    hmac_auths: HashMap<Vec<u8>, HmacAuth>,
-    totp_generators: HashMap<Vec<u8>, TotpGenerator>,
-    random_generator: Option<SecureRandom>,
-    uuid_generator: Option<UuidV4Generator>,
-    salt_generator: Option<SaltGenerator>,
-    nonce_generator: Option<NonceGenerator>,
-}
-
 impl CryptoRuntimeState {
     fn new() -> Self {
         Self {
-            jwt_handlers: HashMap::new(),
-            hmac_auths: HashMap::new(),
-            totp_generators: HashMap::new(),
-            random_generator: None,
-            uuid_generator: None,
-            salt_generator: None,
-            nonce_generator: None,
         }
     }
 
@@ -125,30 +94,19 @@ impl CryptoLLVMIntegrationImpl {
     pub fn new() -> crate::error::Result<()> {
         info!("Creating crypto LLVM integration");
         Ok(Self {
-            platform: Arc::new(Mutex::new(CryptoPlatform::new()?)),
-            function_registry: HashMap::new(),
-            runtime_state: CryptoRuntimeState::new(),
         })
-    }
-
     /// Get or create JWT handler for secret
     fn get_jwt_handler(&mut self, secret: &[u8], expiry: u64) -> &JwtHandler {
         self.runtime_state.jwt_handlers.entry(secret.to_vec())
             .or_insert_with(|| JwtHandler::new(secret.to_vec(), expiry))
-    }
-
     /// Get or create HMAC authenticator for key
     fn get_hmac_auth(&mut self, key: &[u8]) -> &HmacAuth {
         self.runtime_state.hmac_auths.entry(key.to_vec())
             .or_insert_with(|| HmacAuth::new(key.to_vec()))
-    }
-
     /// Get or create TOTP generator for secret
     fn get_totp_generator(&mut self, secret: &[u8], digits: usize, time_step: u64) -> &TotpGenerator {
         self.runtime_state.totp_generators.entry(secret.to_vec())
             .or_insert_with(|| TotpGenerator::new(secret.to_vec(), digits, time_step))
-    }
-
     /// Create LLVM function type for crypto operations
     fn create_crypto_function_type(&self, context: &Context, return_type: &str, param_types: &[&str]) -> crate::error::Result<()> {
         let i8_type = context.i8_type();
@@ -158,27 +116,12 @@ impl CryptoLLVMIntegrationImpl {
         let ptr_type = i8_type.ptr_type(AddressSpace::default());
 
         let return_llvm_type = match return_type {
-            "void" => void_type.into(),
-            "i32" => i32_type.into(),
-            "i64" => i64_type.into(),
-            "ptr" => ptr_type.into(),
-            _ => return Err(CursedError::new("llvm_error", &format!("Unknown return type: {}", return_type))),
-        };
 
         let mut param_llvm_types = Vec::new();
         for param_type in param_types {
             let llvm_type = match *param_type {
-                "i32" => i32_type.into(),
-                "i64" => i64_type.into(),
-                "ptr" => ptr_type.into(),
-                _ => return Err(CursedError::new("llvm_error", &format!("Unknown parameter type: {}", param_type))),
-            };
             param_llvm_types.push(llvm_type);
-        }
-
         Ok(return_llvm_type.fn_type(&param_llvm_types, false))
-    }
-
     /// Register a crypto function with LLVM
     fn register_function(&mut self, module: &Module, name: &str, fn_type: inkwell::types::FunctionType) -> crate::error::Result<()> {
         let function = module.add_function(name, fn_type, None);
@@ -249,8 +192,6 @@ impl CryptoLLVMIntegration for CryptoLLVMIntegrationImpl {
 
         info!(functions_registered = 15, "Successfully registered all crypto functions");
         Ok(())
-    }
-
     #[instrument(skip(self, secret, claims_json))]
     fn generate_jwt_token(&mut self, secret: &[u8], claims_json: &str, expiry: u64) -> crate::error::Result<()> {
         let handler = self.get_jwt_handler(secret, expiry);
@@ -260,8 +201,6 @@ impl CryptoLLVMIntegration for CryptoLLVMIntegrationImpl {
         let token = handler.create_token(claims)?;
         debug!(token_length = token.len(), "Generated JWT token");
         Ok(token)
-    }
-
     #[instrument(skip(self, secret, token))]
     fn validate_jwt_token(&mut self, secret: &[u8], token: &str) -> crate::error::Result<()> {
         let handler = self.get_jwt_handler(secret, 3600); // Default expiry for validation
@@ -270,112 +209,83 @@ impl CryptoLLVMIntegration for CryptoLLVMIntegrationImpl {
             .map_err(|e| CursedError::new("jwt_error", &format!("Failed to serialize claims: {}", e)))?;
         debug!(claims_count = claims.len(), "Validated JWT token");
         Ok(claims_json)
-    }
-
     #[instrument(skip(self, key, data))]
     fn create_hmac_signature(&mut self, key: &[u8], data: &[u8]) -> crate::error::Result<()> {
         let auth = self.get_hmac_auth(key);
         let signature = auth.sign(data)?;
         debug!(data_length = data.len(), signature_length = signature.len(), "Created HMAC signature");
         Ok(signature)
-    }
-
     #[instrument(skip(self, key, data, signature))]
     fn verify_hmac_signature(&mut self, key: &[u8], data: &[u8], signature: &[u8]) -> crate::error::Result<()> {
         let auth = self.get_hmac_auth(key);
         let is_valid = auth.verify(data, signature)?;
         debug!(is_valid, "Verified HMAC signature");
         Ok(is_valid)
-    }
-
     #[instrument(skip(self, secret))]
     fn generate_totp(&mut self, secret: &[u8], digits: usize, time_step: u64) -> crate::error::Result<()> {
         let generator = self.get_totp_generator(secret, digits, time_step);
         let token = generator.generate_current()?;
         debug!(digits, time_step, token = %token, "Generated TOTP");
         Ok(token)
-    }
-
     #[instrument(skip(self, secret, token))]
     fn verify_totp(&mut self, secret: &[u8], token: &str, digits: usize, time_step: u64, window: u32) -> crate::error::Result<()> {
         let generator = self.get_totp_generator(secret, digits, time_step);
         let is_valid = generator.verify(token, window)?;
         debug!(is_valid, window, "Verified TOTP token");
         Ok(is_valid)
-    }
-
     #[instrument(skip(self))]
     fn generate_random_bytes(&mut self, count: usize) -> crate::error::Result<()> {
         self.runtime_state.ensure_generators()?;
         let bytes = self.runtime_state.random_generator.as_mut().unwrap().generate_bytes(count)?;
         debug!(bytes_generated = count, "Generated random bytes");
         Ok(bytes)
-    }
-
     #[instrument(skip(self))]
     fn generate_uuid(&mut self) -> crate::error::Result<()> {
         self.runtime_state.ensure_generators()?;
         let uuid = self.runtime_state.uuid_generator.as_mut().unwrap().generate()?;
         debug!(uuid = %uuid, "Generated UUID");
         Ok(uuid)
-    }
-
     #[instrument(skip(self))]
     fn generate_salt(&mut self, length: usize) -> crate::error::Result<()> {
         self.runtime_state.ensure_generators()?;
         let salt = self.runtime_state.salt_generator.as_mut().unwrap().generate_salt(length)?;
         debug!(salt_length = length, "Generated salt");
         Ok(salt)
-    }
-
     #[instrument(skip(self))]
     fn generate_nonce(&mut self, length: usize) -> crate::error::Result<()> {
         self.runtime_state.ensure_generators()?;
         let nonce = self.runtime_state.nonce_generator.as_mut().unwrap().generate_nonce(length)?;
         debug!(nonce_length = length, "Generated nonce");
         Ok(nonce)
-    }
-
     #[instrument(skip(self, data))]
     fn encode_base64(&self, data: &[u8], url_safe: bool) -> String {
         let encoded = if url_safe {
             Base64Encoder::encode_url_safe(data)
         } else {
             Base64Encoder::encode_standard(data)
-        };
         debug!(input_length = data.len(), output_length = encoded.len(), url_safe, "Encoded base64");
         encoded
-    }
-
     #[instrument(skip(self, encoded))]
     fn decode_base64(&self, encoded: &str, url_safe: bool) -> crate::error::Result<()> {
         let decoded = if url_safe {
             Base64Encoder::decode_url_safe(encoded)?
         } else {
             Base64Encoder::decode_standard(encoded)?
-        };
         debug!(input_length = encoded.len(), output_length = decoded.len(), url_safe, "Decoded base64");
         Ok(decoded)
-    }
-
     #[instrument(skip(self, data))]
     fn encode_hex(&self, data: &[u8], uppercase: bool) -> String {
         let encoded = if uppercase {
             HexEncoder::encode_upper(data)
         } else {
             HexEncoder::encode_lower(data)
-        };
         debug!(input_length = data.len(), output_length = encoded.len(), uppercase, "Encoded hex");
         encoded
-    }
-
     #[instrument(skip(self, hex))]
     fn decode_hex(&self, hex: &str) -> crate::error::Result<()> {
         let decoded = HexEncoder::decode(hex)?;
         debug!(input_length = hex.len(), output_length = decoded.len(), "Decoded hex");
         Ok(decoded)
-    }
-
     #[instrument(skip(self, data))]
     fn hash_sha256(&self, data: &[u8]) -> Vec<u8> {
         use sha2::{Sha256, Digest};
@@ -384,8 +294,6 @@ impl CryptoLLVMIntegration for CryptoLLVMIntegrationImpl {
         let hash = hasher.finalize().to_vec();
         debug!(input_length = data.len(), output_length = hash.len(), "Computed SHA-256 hash");
         hash
-    }
-
     #[instrument(skip(self, a, b))]
     fn constant_time_eq(&self, a: &[u8], b: &[u8]) -> bool {
         let result = CryptoPlatform::constant_time_eq(a, b);
@@ -403,8 +311,6 @@ pub fn register_crypto_functions(context: &Context, module: &Module, builder: &B
     unsafe {
         if CRYPTO_LLVM_INTEGRATION.is_none() {
             CRYPTO_LLVM_INTEGRATION = Some(CryptoLLVMIntegrationImpl::new()?);
-        }
-        
         if let Some(ref mut integration) = CRYPTO_LLVM_INTEGRATION {
             integration.register_crypto_functions(context, module, builder)?;
         }
@@ -412,15 +318,11 @@ pub fn register_crypto_functions(context: &Context, module: &Module, builder: &B
     
     info!("Crypto functions registered with LLVM");
     Ok(())
-}
-
 /// Get global crypto LLVM integration instance
 pub fn get_crypto_integration() -> crate::error::Result<()> {
     unsafe {
         if CRYPTO_LLVM_INTEGRATION.is_none() {
             CRYPTO_LLVM_INTEGRATION = Some(CryptoLLVMIntegrationImpl::new()?);
-        }
-        
         CRYPTO_LLVM_INTEGRATION.as_mut()
             .ok_or_else(|| CursedError::new("crypto_error", "Failed to get crypto integration"))
     }
@@ -432,21 +334,14 @@ pub fn get_crypto_integration() -> crate::error::Result<()> {
 /// Create JWT token (C-compatible)
 #[no_mangle]
 pub extern "C" fn cursed_jwt_create(
-    secret_ptr: *const u8, secret_len: i32,
-    claims_ptr: *const u8, claims_len: i32,
     expiry: i64
 ) -> *mut std::os::raw::c_char {
     if secret_ptr.is_null() || claims_ptr.is_null() || secret_len <= 0 || claims_len <= 0 {
         return std::ptr::null_mut();
-    }
-
     unsafe {
         let secret = std::slice::from_raw_parts(secret_ptr, secret_len as usize);
         let claims_bytes = std::slice::from_raw_parts(claims_ptr, claims_len as usize);
         let claims_str = match std::str::from_utf8(claims_bytes) {
-            Ok(s) => s,
-            Err(_) => return std::ptr::null_mut(),
-        };
 
         match get_crypto_integration() {
             Ok(integration) => {
@@ -455,14 +350,10 @@ pub extern "C" fn cursed_jwt_create(
                         let c_string = std::ffi::CString::new(token).unwrap();
                         c_string.into_raw()
                     }
-                    Err(_) => std::ptr::null_mut(),
                 }
             }
-            Err(_) => std::ptr::null_mut(),
         }
     }
-}
-
 /// Additional C-compatible wrapper functions would follow the same pattern...
 /// (Implementation of all other extern "C" functions omitted for brevity)
 

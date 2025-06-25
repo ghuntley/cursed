@@ -8,103 +8,65 @@ use serde::{Deserialize, Serialize};
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct RateLimitConfig {
     /// fr fr Maximum requests allowed - core limit
-    pub max_requests: u64,
     
     /// fr fr Window configuration - time-based settings
-    pub window_config: WindowConfig,
     
     /// fr fr Bucket configuration - token/leaky bucket settings
-    pub bucket_config: Option<BucketConfig>,
     
     /// fr fr Client identification - how to identify clients
-    pub client_identification: ClientIdentification,
     
     /// fr fr CursedError configuration - how to handle violations
-    pub error_config: ErrorConfig,
     
     /// fr fr Cleanup configuration - maintenance settings
-    pub cleanup_config: CleanupConfig,
-}
-
 impl RateLimitConfig {
     /// fr fr Create new rate limit config - basic setup
     pub fn new(max_requests: u64, duration: Duration) -> Self {
         Self {
-            max_requests,
-            window_config: WindowConfig::Fixed { duration },
-            bucket_config: None,
-            client_identification: ClientIdentification::default(),
-            error_config: ErrorConfig::default(),
-            cleanup_config: CleanupConfig::default(),
         }
     }
 
     /// fr fr Create per-minute configuration - common setup
     pub fn per_minute(max_requests: u64) -> Self {
         Self::new(max_requests, Duration::from_secs(60))
-    }
-
     /// fr fr Create per-hour configuration - lenient setup
     pub fn per_hour(max_requests: u64) -> Self {
         Self::new(max_requests, Duration::from_secs(3600))
-    }
-
     /// fr fr Create per-second configuration - strict setup
     pub fn per_second(max_requests: u64) -> Self {
         Self::new(max_requests, Duration::from_secs(1))
-    }
-
     /// fr fr Set sliding window - smooth limiting
     pub fn with_sliding_window(mut self, duration: Duration) -> Self {
         self.window_config = WindowConfig::Sliding { duration };
         self
-    }
-
     /// fr fr Set token bucket - burst-friendly limiting
     pub fn with_token_bucket(mut self, capacity: f64, refill_rate: f64) -> Self {
         self.bucket_config = Some(BucketConfig {
-            capacity,
-            refill_rate,
         });
         self
-    }
-
     /// fr fr Set client identification strategy
     pub fn with_client_identification(mut self, identification: ClientIdentification) -> Self {
         self.client_identification = identification;
         self
-    }
-
     /// fr fr Set error configuration
     pub fn with_error_config(mut self, error_config: ErrorConfig) -> Self {
         self.error_config = error_config;
         self
-    }
-
     /// fr fr Set cleanup configuration
     pub fn with_cleanup_config(mut self, cleanup_config: CleanupConfig) -> Self {
         self.cleanup_config = cleanup_config;
         self
-    }
-
     /// fr fr Validate configuration - ensure settings are valid
     pub fn validate(&self) -> crate::error::Result<()> {
         if self.max_requests == 0 {
             return Err(ConfigError::InvalidMaxRequests("max_requests must be greater than 0".to_string()));
-        }
-
         match &self.window_config {
             WindowConfig::Fixed { duration } | WindowConfig::Sliding { duration } => {
                 if duration.as_secs() == 0 {
                     return Err(ConfigError::InvalidDuration("duration must be greater than 0".to_string()));
                 }
             }
-        }
-
         if let Some(bucket_config) = &self.bucket_config {
             bucket_config.validate()?;
-        }
-
         self.error_config.validate()?;
         self.cleanup_config.validate()?;
 
@@ -122,28 +84,18 @@ impl Default for RateLimitConfig {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum WindowConfig {
     /// fr fr Fixed time window - traditional approach
-    Fixed { duration: Duration },
     
     /// fr fr Sliding time window - smooth limiting
-    Sliding { duration: Duration },
-}
-
 /// fr fr Token/Leaky bucket configuration - burst control
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct BucketConfig {
     /// fr fr Bucket capacity - maximum tokens/requests
-    pub capacity: f64,
     
     /// fr fr Refill/leak rate - tokens per second
-    pub refill_rate: f64,
-}
-
 impl BucketConfig {
     /// fr fr Create new bucket configuration
     pub fn new(capacity: f64, refill_rate: f64) -> Self {
         Self {
-            capacity,
-            refill_rate,
         }
     }
 
@@ -151,12 +103,8 @@ impl BucketConfig {
     pub fn validate(&self) -> crate::error::Result<()> {
         if self.capacity <= 0.0 {
             return Err(ConfigError::InvalidCapacity("capacity must be greater than 0".to_string()));
-        }
-
         if self.refill_rate <= 0.0 {
             return Err(ConfigError::InvalidRefillRate("refill_rate must be greater than 0".to_string()));
-        }
-
         Ok(())
     }
 }
@@ -165,18 +113,12 @@ impl BucketConfig {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum ClientIdentification {
     /// fr fr Identify by IP address - basic approach
-    IpAddress,
     
     /// fr fr Identify by custom header - API key or user ID
-    Header { name: String },
     
     /// fr fr Identify by multiple factors - composite approach
-    Composite { factors: Vec<IdentificationFactor> },
     
     /// fr fr Custom identification function - advanced approach
-    Custom { identifier: String },
-}
-
 impl Default for ClientIdentification {
     fn default() -> Self {
         Self::IpAddress
@@ -187,46 +129,28 @@ impl Default for ClientIdentification {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum IdentificationFactor {
     /// fr fr IP address factor
-    IpAddress,
     
     /// fr fr HTTP header factor
-    Header { name: String },
     
     /// fr fr User agent factor
-    UserAgent,
     
     /// fr fr Custom factor
-    Custom { name: String, extractor: String },
-}
-
 /// fr fr CursedError configuration - how to handle rate limit violations
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ErrorConfig {
     /// fr fr HTTP status code to return - standard response
-    pub status_code: u16,
     
     /// fr fr CursedError message - user-facing message
-    pub message: String,
     
     /// fr fr Include rate limit headers - transparency
-    pub include_headers: bool,
     
     /// fr fr Include retry-after header - guidance
-    pub include_retry_after: bool,
     
     /// fr fr Custom error response - advanced customization
-    pub custom_response: Option<String>,
-}
-
 impl ErrorConfig {
     /// fr fr Create new error configuration
     pub fn new() -> Self {
         Self {
-            status_code: 429,
-            message: "Too Many Requests".to_string(),
-            include_headers: true,
-            include_retry_after: true,
-            custom_response: None,
         }
     }
 
@@ -234,30 +158,20 @@ impl ErrorConfig {
     pub fn with_status_code(mut self, status_code: u16) -> Self {
         self.status_code = status_code;
         self
-    }
-
     /// fr fr Set custom message
     pub fn with_message(mut self, message: String) -> Self {
         self.message = message;
         self
-    }
-
     /// fr fr Set custom response body
     pub fn with_custom_response(mut self, response: String) -> Self {
         self.custom_response = Some(response);
         self
-    }
-
     /// fr fr Validate error configuration
     pub fn validate(&self) -> crate::error::Result<()> {
         if self.status_code < 400 || self.status_code >= 600 {
             return Err(ConfigError::InvalidStatusCode("status_code must be a valid 4xx or 5xx status code".to_string()));
-        }
-
         if self.message.is_empty() {
             return Err(ConfigError::InvalidMessage("message cannot be empty".to_string()));
-        }
-
         Ok(())
     }
 }
@@ -272,41 +186,26 @@ impl Default for ErrorConfig {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct CleanupConfig {
     /// fr fr Enable automatic cleanup - maintenance
-    pub enabled: bool,
     
     /// fr fr Cleanup interval - how often to run
-    pub interval: Duration,
     
     /// fr fr TTL for client states - when to expire
-    pub client_ttl: Duration,
     
     /// fr fr Maximum clients to keep - memory management
-    pub max_clients: Option<usize>,
     
     /// fr fr Cleanup strategy - how to clean up
-    pub strategy: CleanupStrategy,
-}
-
 impl CleanupConfig {
     /// fr fr Create new cleanup configuration
     pub fn new() -> Self {
         Self {
-            enabled: true,
             interval: Duration::from_secs(300), // 5 minutes
             client_ttl: Duration::from_secs(3600), // 1 hour
-            max_clients: Some(10000),
-            strategy: CleanupStrategy::LeastRecentlyUsed,
         }
     }
 
     /// fr fr Disable cleanup - manual management
     pub fn disabled() -> Self {
         Self {
-            enabled: false,
-            interval: Duration::from_secs(300),
-            client_ttl: Duration::from_secs(3600),
-            max_clients: None,
-            strategy: CleanupStrategy::LeastRecentlyUsed,
         }
     }
 
@@ -314,33 +213,23 @@ impl CleanupConfig {
     pub fn with_interval(mut self, interval: Duration) -> Self {
         self.interval = interval;
         self
-    }
-
     /// fr fr Set client TTL
     pub fn with_client_ttl(mut self, ttl: Duration) -> Self {
         self.client_ttl = ttl;
         self
-    }
-
     /// fr fr Set maximum clients
     pub fn with_max_clients(mut self, max_clients: usize) -> Self {
         self.max_clients = Some(max_clients);
         self
-    }
-
     /// fr fr Set cleanup strategy
     pub fn with_strategy(mut self, strategy: CleanupStrategy) -> Self {
         self.strategy = strategy;
         self
-    }
-
     /// fr fr Validate cleanup configuration
     pub fn validate(&self) -> crate::error::Result<()> {
         if self.enabled {
             if self.interval.as_secs() == 0 {
                 return Err(ConfigError::InvalidInterval("cleanup interval must be greater than 0".to_string()));
-            }
-
             if self.client_ttl.as_secs() == 0 {
                 return Err(ConfigError::InvalidTtl("client TTL must be greater than 0".to_string()));
             }
@@ -360,46 +249,30 @@ impl Default for CleanupConfig {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum CleanupStrategy {
     /// fr fr Least recently used - evict oldest accessed
-    LeastRecentlyUsed,
     
     /// fr fr First in, first out - evict oldest created
-    FirstInFirstOut,
     
     /// fr fr Random eviction - unpredictable but fair
-    Random,
     
     /// fr fr Least frequently used - evict least active
-    LeastFrequentlyUsed,
-}
-
 /// fr fr Configuration error - validation failures
 #[derive(Debug, Clone)]
 pub enum ConfigError {
     /// fr fr Invalid maximum requests
-    InvalidMaxRequests(String),
     
     /// fr fr Invalid duration
-    InvalidDuration(String),
     
     /// fr fr Invalid capacity
-    InvalidCapacity(String),
     
     /// fr fr Invalid refill rate
-    InvalidRefillRate(String),
     
     /// fr fr Invalid status code
-    InvalidStatusCode(String),
     
     /// fr fr Invalid message
-    InvalidMessage(String),
     
     /// fr fr Invalid interval
-    InvalidInterval(String),
     
     /// fr fr Invalid TTL
-    InvalidTtl(String),
-}
-
 // impl std::fmt::Display for ConfigError {
 //     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
 //         match self {

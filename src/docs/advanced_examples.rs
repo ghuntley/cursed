@@ -20,34 +20,19 @@ use std::time::{Duration, Instant};
 #[derive(Debug)]
 pub struct AdvancedExampleGenerator {
     /// Configuration for example generation
-    config: ExampleConfig,
     /// Extracted examples database
-    examples_db: ExamplesDatabase,
     /// Validation results
-    validation_results: HashMap<String, ValidationResult>,
-}
-
 /// Configuration for example generation
 #[derive(Debug, Clone)]
 pub struct ExampleConfig {
     /// Extract examples from test files
-    pub extract_from_tests: bool,
     /// Validate examples by running them
-    pub validate_examples: bool,
     /// Generate interactive snippets
-    pub generate_interactive: bool,
     /// Maximum execution time for validation
-    pub max_execution_time: Duration,
     /// Test file patterns to scan
-    pub test_file_patterns: Vec<String>,
     /// Example categories to generate
-    pub categories: HashSet<ExampleCategory>,
     /// Difficulty levels to include
-    pub difficulty_levels: HashSet<DifficultyLevel>,
     /// Output formats for examples
-    pub output_formats: HashSet<ExampleFormat>,
-}
-
 impl Default for ExampleConfig {
     fn default() -> Self {
         let mut categories = HashSet::new();
@@ -66,178 +51,81 @@ impl Default for ExampleConfig {
         output_formats.insert(ExampleFormat::Interactive);
 
         Self {
-            extract_from_tests: true,
-            validate_examples: true,
-            generate_interactive: true,
-            max_execution_time: Duration::from_secs(30),
             test_file_patterns: vec![
                 "tests/**/*.rs".to_string(),
                 "examples/**/*.csd".to_string(),
                 "**/*_test.rs".to_string(),
                 "**/*_example.csd".to_string(),
-            ],
-            categories,
-            difficulty_levels,
-            output_formats,
         }
     }
-}
-
 /// Example categories
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub enum ExampleCategory {
-    Basic,
-    Advanced,
-    Tutorial,
-    Reference,
-    BestPractices,
-    Performance,
-    Testing,
-    Integration,
-    RealWorld,
-    Cookbook,
-}
-
 /// Difficulty levels
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub enum DifficultyLevel {
-    Beginner,
-    Intermediate,
-    Advanced,
-    Expert,
-}
-
 /// Example output formats
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum ExampleFormat {
-    Markdown,
-    Html,
-    Interactive,
-    Playground,
-    Jupyter,
-}
-
 /// Examples database
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ExamplesDatabase {
     /// All extracted examples
-    pub examples: HashMap<String, ExtractedExample>,
     /// Examples by category
-    pub by_category: HashMap<ExampleCategory, Vec<String>>,
     /// Examples by difficulty
-    pub by_difficulty: HashMap<DifficultyLevel, Vec<String>>,
     /// Examples by topic
-    pub by_topic: HashMap<String, Vec<String>>,
     /// Validation status
-    pub validation_status: HashMap<String, bool>,
     /// Example relationships
-    pub relationships: HashMap<String, Vec<String>>,
-}
-
 impl Default for ExamplesDatabase {
     fn default() -> Self {
         Self {
-            examples: HashMap::new(),
-            by_category: HashMap::new(),
-            by_difficulty: HashMap::new(),
-            by_topic: HashMap::new(),
-            validation_status: HashMap::new(),
-            relationships: HashMap::new(),
         }
     }
-}
-
 /// Extracted example information
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ExtractedExample {
     /// Unique identifier
-    pub id: String,
     /// Example title
-    pub title: String,
     /// Description
-    pub description: String,
     /// Source code
-    pub code: String,
     /// Expected output
-    pub expected_output: Option<String>,
     /// Category
-    pub category: ExampleCategory,
     /// Difficulty level
-    pub difficulty: DifficultyLevel,
     /// Topics covered
-    pub topics: Vec<String>,
     /// Source location
-    pub source_location: SourceLocation,
     /// Dependencies required
-    pub dependencies: Vec<String>,
     /// Setup instructions
-    pub setup: Option<String>,
     /// Cleanup instructions
-    pub cleanup: Option<String>,
     /// Execution time estimate
-    pub execution_time: Option<Duration>,
     /// Interactive features
-    pub interactive_features: Vec<InteractiveFeature>,
     /// Related examples
-    pub related_examples: Vec<String>,
     /// Tags for searching
-    pub tags: HashSet<String>,
     /// Validation status
-    pub is_validated: bool,
     /// CursedError information if validation failed
-    pub validation_error: Option<String>,
-}
-
 /// Interactive features available for an example
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum InteractiveFeature {
-    EditableCode,
-    LiveOutput,
-    StepByStep,
-    Visualization,
-    ParameterTuning,
-    Performance,
-}
-
 /// Example validation result
 #[derive(Debug, Clone)]
 pub struct ValidationResult {
     /// Whether validation passed
-    pub success: bool,
     /// Output produced by the example
-    pub output: String,
     /// CursedError message if validation failed
-    pub error_message: Option<String>,
     /// Execution time
-    pub execution_time: Duration,
     /// Memory usage
-    pub memory_usage: Option<usize>,
     /// Exit code
-    pub exit_code: Option<i32>,
-}
-
 /// Example extraction result
 #[derive(Debug, Clone)]
 pub struct ExtractionResult {
     /// Total examples extracted
-    pub total_extracted: usize,
     /// Successfully validated examples
-    pub validated_examples: usize,
     /// Failed validations
-    pub failed_validations: usize,
     /// Extraction errors
-    pub extraction_errors: Vec<String>,
     /// Processing time
-    pub processing_time: Duration,
-}
-
 impl AdvancedExampleGenerator {
     /// Create a new advanced example generator
     pub fn new(config: ExampleConfig) -> Self {
         Self {
-            config,
-            examples_db: ExamplesDatabase::default(),
-            validation_results: HashMap::new(),
         }
     }
 
@@ -254,8 +142,6 @@ impl AdvancedExampleGenerator {
         // Extract from source files
         for path in source_paths {
             match self.extract_from_file(path) {
-                Ok(count) => total_extracted += count,
-                Err(e) => extraction_errors.push(format!("CursedError extracting from {}: {}", path.display(), e)),
             }
         }
 
@@ -263,18 +149,13 @@ impl AdvancedExampleGenerator {
         if self.config.extract_from_tests {
             for pattern in &self.config.test_file_patterns {
                 match self.extract_from_test_pattern(pattern) {
-                    Ok(count) => total_extracted += count,
-                    Err(e) => extraction_errors.push(format!("CursedError extracting from pattern {}: {}", pattern, e)),
                 }
             }
-        }
-
         // Validate examples if enabled
         let validated_examples = if self.config.validate_examples {
             self.validate_all_examples()
         } else {
             0
-        };
 
         let failed_validations = total_extracted - validated_examples;
 
@@ -283,14 +164,7 @@ impl AdvancedExampleGenerator {
         self.categorize_examples();
 
         Ok(ExtractionResult {
-            total_extracted,
-            validated_examples,
-            failed_validations,
-            extraction_errors,
-            processing_time: start_time.elapsed(),
         })
-    }
-
     /// Extract examples from a single file
     fn extract_from_file(&mut self, file_path: &Path) -> crate::error::Result<()> {
         let content = fs::read_to_string(file_path)
@@ -307,11 +181,7 @@ impl AdvancedExampleGenerator {
         // Extract standalone examples
         if file_path.extension().and_then(|s| s.to_str()) == Some("csd") {
             extracted_count += self.extract_standalone_example(&content, file_path)?;
-        }
-
         Ok(extracted_count)
-    }
-
     /// Extract examples from documentation comments
     fn extract_doc_examples(&mut self, content: &str, file_path: &Path) -> crate::error::Result<()> {
         let mut count = 0;
@@ -353,23 +223,11 @@ impl AdvancedExampleGenerator {
                 if !current_example.trim().is_empty() {
                     let example_id = format!("doc_{}_{}", file_path.file_stem().unwrap_or_default().to_string_lossy(), count);
                     let example = self.create_example(
-                        example_id.clone(),
-                        if example_title.is_empty() { format!("Example {}", count + 1) } else { example_title.clone() },
-                        example_description.clone(),
-                        current_example.trim().to_string(),
-                        ExampleCategory::Basic,
-                        DifficultyLevel::Beginner,
                         SourceLocation {
-                            line: line_number,
-                            column: 1,
-                            file: Some(file_path.to_path_buf()),
-                        },
                     );
                     
                     self.examples_db.examples.insert(example_id, example);
                     count += 1;
-                }
-                
                 current_example.clear();
                 example_title.clear();
                 example_description.clear();
@@ -382,8 +240,6 @@ impl AdvancedExampleGenerator {
         }
 
         Ok(count)
-    }
-
     /// Extract context (title and description) from documentation
     fn extract_doc_context(&self, lines: &[&str], current_line: usize, title: &mut String, description: &mut String) {
         let mut context_lines = Vec::new();
@@ -407,8 +263,6 @@ impl AdvancedExampleGenerator {
                 *description = context_lines[1..].join(" ");
             }
         }
-    }
-
     /// Extract examples from comment blocks
     fn extract_comment_examples(&mut self, content: &str, file_path: &Path) -> crate::error::Result<()> {
         let mut count = 0;
@@ -426,28 +280,14 @@ impl AdvancedExampleGenerator {
                 if let Some(example_code) = self.extract_code_after_comment(content, start) {
                     let example_id = format!("comment_{}_{}", file_path.file_stem().unwrap_or_default().to_string_lossy(), count);
                     let example = self.create_example(
-                        example_id.clone(),
-                        format!("Comment Example {}", count + 1),
-                        "Example extracted from comments".to_string(),
-                        example_code,
-                        ExampleCategory::Reference,
-                        DifficultyLevel::Beginner,
                         SourceLocation {
-                            line: content[..start].lines().count() + 1,
-                            column: 1,
-                            file: Some(file_path.to_path_buf()),
-                        },
                     );
                     
                     self.examples_db.examples.insert(example_id, example);
                     count += 1;
                 }
             }
-        }
-
         Ok(count)
-    }
-
     /// Extract code following a comment
     fn extract_code_after_comment(&self, content: &str, start_pos: usize) -> Option<String> {
         let remaining = &content[start_pos..];
@@ -461,12 +301,8 @@ impl AdvancedExampleGenerator {
             
             if trimmed.is_empty() && !found_code {
                 continue; // Skip empty lines before code
-            }
-            
             if trimmed.starts_with("//") || trimmed.starts_with("/*") || trimmed.starts_with("*") {
                 continue; // Skip more comments
-            }
-            
             if !trimmed.is_empty() {
                 found_code = true;
                 code_lines.push(*line);
@@ -491,23 +327,11 @@ impl AdvancedExampleGenerator {
         let (title, description, category, difficulty) = self.extract_file_metadata(content);
         
         let example = self.create_example(
-            example_id.clone(),
-            title,
-            description,
-            content.to_string(),
-            category,
-            difficulty,
             SourceLocation {
-                line: 1,
-                column: 1,
-                file: Some(file_path.to_path_buf()),
-            },
         );
         
         self.examples_db.examples.insert(example_id, example);
         Ok(1)
-    }
-
     /// Extract metadata from file header
     fn extract_file_metadata(&self, content: &str) -> (String, String, ExampleCategory, DifficultyLevel) {
         let lines: Vec<&str> = content.split("\n").take(20).collect(); // Check first 20 lines
@@ -526,36 +350,16 @@ impl AdvancedExampleGenerator {
             } else if trimmed.starts_with("// Category:") {
                 let cat_str = trimmed.trim_start_matches("// Category:").trim();
                 category = match cat_str.to_lowercase().as_str() {
-                    "advanced" => ExampleCategory::Advanced,
-                    "tutorial" => ExampleCategory::Tutorial,
-                    "reference" => ExampleCategory::Reference,
-                    "best_practices" => ExampleCategory::BestPractices,
-                    "performance" => ExampleCategory::Performance,
-                    "testing" => ExampleCategory::Testing,
-                    "integration" => ExampleCategory::Integration,
-                    "real_world" => ExampleCategory::RealWorld,
-                    "cookbook" => ExampleCategory::Cookbook,
-                    _ => ExampleCategory::Basic,
-                };
             } else if trimmed.starts_with("// Difficulty:") {
                 let diff_str = trimmed.trim_start_matches("// Difficulty:").trim();
                 difficulty = match diff_str.to_lowercase().as_str() {
-                    "intermediate" => DifficultyLevel::Intermediate,
-                    "advanced" => DifficultyLevel::Advanced,
-                    "expert" => DifficultyLevel::Expert,
-                    _ => DifficultyLevel::Beginner,
-                };
             }
         }
 
         // Use filename as title if not specified
         if title.is_empty() {
             title = "Example".to_string();
-        }
-
         (title, description, category, difficulty)
-    }
-
     /// Extract examples from test files
     fn extract_from_test_pattern(&mut self, pattern: &str) -> crate::error::Result<()> {
         // Simple glob pattern matching implementation
@@ -577,8 +381,6 @@ impl AdvancedExampleGenerator {
         }
 
         Ok(count)
-    }
-
     /// Extract examples from a test directory
     fn extract_from_test_directory(&mut self, dir: &Path) -> crate::error::Result<()> {
         let mut count = 0;
@@ -600,8 +402,6 @@ impl AdvancedExampleGenerator {
         }
 
         Ok(count)
-    }
-
     /// Extract examples from test files
     fn extract_test_examples(&mut self, file_path: &Path) -> crate::error::Result<()> {
         let content = fs::read_to_string(file_path)
@@ -645,17 +445,7 @@ impl AdvancedExampleGenerator {
                     // End of test function
                     let example_id = format!("test_{}_{}", file_path.file_stem().unwrap_or_default().to_string_lossy(), test_name);
                     let example = self.create_example(
-                        example_id.clone(),
-                        format!("Test: {}", test_name),
-                        format!("Example extracted from test function {}", test_name),
-                        test_code.join("\n"),
-                        ExampleCategory::Testing,
-                        DifficultyLevel::Intermediate,
                         SourceLocation {
-                            line: i + 1,
-                            column: 1,
-                            file: Some(file_path.to_path_buf()),
-                        },
                     );
                     
                     self.examples_db.examples.insert(example_id, example);
@@ -663,45 +453,15 @@ impl AdvancedExampleGenerator {
                     in_test_function = false;
                 }
             }
-        }
-
         Ok(count)
-    }
-
     /// Create an example structure
     fn create_example(
-        &self,
-        id: String,
-        title: String,
-        description: String,
-        code: String,
-        category: ExampleCategory,
-        difficulty: DifficultyLevel,
-        location: SourceLocation,
     ) -> ExtractedExample {
         let topics = self.extract_topics_from_code(&code);
         let tags = self.extract_tags_from_code(&code);
         let dependencies = self.extract_dependencies_from_code(&code);
 
         ExtractedExample {
-            id,
-            title,
-            description,
-            code,
-            expected_output: None,
-            category,
-            difficulty,
-            topics,
-            source_location: location,
-            dependencies,
-            setup: None,
-            cleanup: None,
-            execution_time: None,
-            interactive_features: vec![InteractiveFeature::EditableCode, InteractiveFeature::LiveOutput],
-            related_examples: Vec::new(),
-            tags,
-            is_validated: false,
-            validation_error: None,
         }
     }
 
@@ -712,21 +472,7 @@ impl AdvancedExampleGenerator {
 
         // Simple keyword-based topic extraction
         let topic_keywords = [
-            ("async", "Asynchronous Programming"),
-            ("await", "Asynchronous Programming"),
-            ("struct", "Data Structures"),
-            ("interface", "Interfaces"),
-            ("function", "Functions"),
-            ("loop", "Control Flow"),
-            ("if", "Conditionals"),
-            ("match", "Pattern Matching"),
-            ("error", "CursedError Handling"),
-            ("test", "Testing"),
-            ("http", "Web Development"),
-            ("json", "JSON Processing"),
             ("file", "File I/O"),
-            ("database", "Database Operations"),
-            ("crypto", "Cryptography"),
         ];
 
         for (keyword, topic) in &topic_keywords {
@@ -738,15 +484,12 @@ impl AdvancedExampleGenerator {
         topics.sort();
         topics.dedup();
         topics
-    }
-
     /// Extract tags from code content
     fn extract_tags_from_code(&self, code: &str) -> HashSet<String> {
         let mut tags = HashSet::new();
         
         // Extract CURSED-specific keywords as tags
         let cursed_keywords = [
-            "slay", "yolo", "periodt", "sus", "facts", "lowkey", "highkey",
             "bestie", "flex", "stan", "vibe_check", "mood", "basic"
         ];
 
@@ -765,11 +508,7 @@ impl AdvancedExampleGenerator {
         }
         if code.contains("interface") {
             tags.insert("interfaces".to_string());
-        }
-
         tags
-    }
-
     /// Extract dependencies from code
     fn extract_dependencies_from_code(&self, code: &str) -> Vec<String> {
         let mut dependencies = Vec::new();
@@ -790,8 +529,6 @@ impl AdvancedExampleGenerator {
         dependencies.sort();
         dependencies.dedup();
         dependencies
-    }
-
     /// Validate all extracted examples
     fn validate_all_examples(&mut self) -> usize {
         let mut validated_count = 0;
@@ -818,21 +555,11 @@ impl AdvancedExampleGenerator {
         }
 
         validated_count
-    }
-
     /// Validate a single example by attempting to compile and run it
     fn validate_example(&self, example: &ExtractedExample) -> crate::error::Result<()> {
         if !self.config.validate_examples {
             return Ok(ValidationResult {
-                success: true,
-                output: String::new(),
-                error_message: None,
-                execution_time: Duration::from_secs(0),
-                memory_usage: None,
-                exit_code: Some(0),
             });
-        }
-
         let start_time = Instant::now();
 
         // Create a temporary file for the example
@@ -863,30 +590,16 @@ impl AdvancedExampleGenerator {
                     Some(stderr)
                 } else {
                     None
-                };
 
                 Ok(ValidationResult {
-                    success,
-                    output: output_text,
-                    error_message,
-                    execution_time,
                     memory_usage: None, // Would need additional tooling to measure
-                    exit_code: output.status.code(),
                 })
             }
             Err(e) => {
                 Ok(ValidationResult {
-                    success: false,
-                    output: String::new(),
-                    error_message: Some(format!("Failed to execute validation: {}", e)),
-                    execution_time,
-                    memory_usage: None,
-                    exit_code: None,
                 })
             }
         }
-    }
-
     /// Build relationships between examples
     fn build_example_relationships(&mut self) {
         let example_ids: Vec<String> = self.examples_db.examples.keys().cloned().collect();
@@ -899,8 +612,6 @@ impl AdvancedExampleGenerator {
                 for other_id in &example_ids {
                     if other_id == example_id {
                         continue;
-                    }
-                    
                     if let Some(other_example) = self.examples_db.examples.get(other_id) {
                         let common_topics = example.topics.iter()
                             .filter(|topic| other_example.topics.contains(topic))
@@ -910,13 +621,9 @@ impl AdvancedExampleGenerator {
                             related.push(other_id.clone());
                         }
                     }
-                }
-                
                 self.examples_db.relationships.insert(example_id.clone(), related);
             }
         }
-    }
-
     /// Categorize examples into database collections
     fn categorize_examples(&mut self) {
         for (example_id, example) in &self.examples_db.examples {
@@ -938,8 +645,6 @@ impl AdvancedExampleGenerator {
                     .entry(topic.clone())
                     .or_insert_with(Vec::new)
                     .push(example_id.clone());
-            }
-
             // Update validation status
             self.examples_db.validation_status.insert(example_id.clone(), example.is_validated);
         }
@@ -949,24 +654,15 @@ impl AdvancedExampleGenerator {
     pub fn generate_interactive_examples(&self, output_dir: &Path) -> crate::error::Result<()> {
         if !self.config.generate_interactive {
             return Ok(());
-        }
-
         fs::create_dir_all(output_dir)
             .map_err(|e| CursedError::SystemError(format!("Failed to create output directory: {}", e)))?;
 
         for format in &self.config.output_formats {
             match format {
-                ExampleFormat::Html => self.generate_html_examples(output_dir)?,
-                ExampleFormat::Markdown => self.generate_markdown_examples(output_dir)?,
-                ExampleFormat::Interactive => self.generate_playground_examples(output_dir)?,
-                ExampleFormat::Playground => self.generate_advanced_playground(output_dir)?,
-                ExampleFormat::Jupyter => self.generate_jupyter_examples(output_dir)?,
             }
         }
 
         Ok(())
-    }
-
     /// Generate HTML examples with interactive features
     fn generate_html_examples(&self, output_dir: &Path) -> crate::error::Result<()> {
         let html_dir = output_dir.join("html");
@@ -984,11 +680,7 @@ impl AdvancedExampleGenerator {
             let filename = format!("{}.html", example_id);
             fs::write(html_dir.join(filename), example_html)
                 .map_err(|e| CursedError::SystemError(format!("Failed to write example HTML: {}", e)))?;
-        }
-
         Ok(())
-    }
-
     /// Generate examples index HTML
     fn generate_examples_index_html(&self) -> String {
         let mut categories_html = String::new();
@@ -997,7 +689,6 @@ impl AdvancedExampleGenerator {
             categories_html.push_str(&format!(
                 r#"<div class="category">
                     <h2>{:?}</h2>
-                    <div class="examples-grid">"#,
                 category
             ));
             
@@ -1012,20 +703,12 @@ impl AdvancedExampleGenerator {
                                 <span class="validation {}">{}</span>
                             </div>
                         </div>"#,
-                        example_id,
-                        example.title,
-                        example.description,
-                        example.difficulty,
-                        example.difficulty,
-                        if example.is_validated { "validated" } else { "not-validated" },
                         if example.is_validated { "✓ Validated" } else { "⚠ Not validated" }
                     ));
                 }
             }
             
             categories_html.push_str("</div></div>");
-        }
-
         format!(
             r#"<!DOCTYPE html>
 <html lang="en">
@@ -1063,13 +746,8 @@ impl AdvancedExampleGenerator {
     {}
 </body>
 </html>"#,
-            self.examples_db.examples.len(),
-            self.examples_db.validation_status.values().filter(|&&v| v).count(),
-            self.examples_db.by_category.len(),
             categories_html
         )
-    }
-
     /// Generate HTML for a single example
     fn generate_example_html(&self, example: &ExtractedExample) -> String {
         let related_links = example.related_examples.iter()
@@ -1139,22 +817,11 @@ impl AdvancedExampleGenerator {
     {}
 </body>
 </html>"#,
-            example.title,
-            example.title,
-            example.description,
-            example.category,
-            example.difficulty,
-            example.topics.join(", "),
-            if example.is_validated { "validated" } else { "not-validated" },
             if example.is_validated {
                 "✓ This example has been validated and runs successfully."
             } else {
                 match &example.validation_error {
-                    Some(error) => &format!("⚠ This example could not be validated: {}", error),
-                    None => "⚠ This example has not been validated.",
                 }
-            },
-            html_escape::encode_text(&example.code),
             example.topics.iter().map(|topic| format!(r#"<span class="topic">{}</span>"#, topic)).collect::<Vec<_>>().join(""),
             if related_links.is_empty() {
                 String::new()
@@ -1162,8 +829,6 @@ impl AdvancedExampleGenerator {
                 format!(r#"<div class="related"><strong>Related Examples:</strong><br>{}</div>"#, related_links)
             }
         )
-    }
-
     /// Generate markdown examples
     fn generate_markdown_examples(&self, output_dir: &Path) -> crate::error::Result<()> {
         let md_dir = output_dir.join("markdown");
@@ -1181,11 +846,7 @@ impl AdvancedExampleGenerator {
             let filename = format!("{:?}.md", category).to_lowercase();
             fs::write(md_dir.join(filename), category_content)
                 .map_err(|e| CursedError::SystemError(format!("Failed to write category markdown: {}", e)))?;
-        }
-
         Ok(())
-    }
-
     /// Generate examples README
     fn generate_examples_readme(&self) -> String {
         format!(
@@ -1202,11 +863,7 @@ This directory contains a comprehensive collection of examples demonstrating the
 
 ## Categories
 
-{}
-
 ## By Difficulty
-
-{}
 
 ## How to Use
 
@@ -1223,16 +880,8 @@ Examples marked with ✓ have been automatically validated by compiling and runn
 
 ---
 
-*Generated by CURSED Advanced Example System*"#,
-            self.examples_db.examples.len(),
-            self.examples_db.validation_status.values().filter(|&&v| v).count(),
-            self.examples_db.by_category.len(),
-            self.examples_db.by_difficulty.len(),
-            self.generate_categories_list(),
             self.generate_difficulty_summary()
         )
-    }
-
     /// Generate categories list for README
     fn generate_categories_list(&self) -> String {
         self.examples_db.by_category
@@ -1242,8 +891,6 @@ Examples marked with ✓ have been automatically validated by compiling and runn
             })
             .collect::<Vec<_>>()
             .join("\n")
-    }
-
     /// Generate difficulty summary for README
     fn generate_difficulty_summary(&self) -> String {
         self.examples_db.by_difficulty
@@ -1253,8 +900,6 @@ Examples marked with ✓ have been automatically validated by compiling and runn
             })
             .collect::<Vec<_>>()
             .join("\n")
-    }
-
     /// Generate markdown for a category
     fn generate_category_markdown(&self, category: &ExampleCategory, example_ids: &[String]) -> String {
         let mut content = format!("# {:?} Examples\n\n", category);
@@ -1262,29 +907,14 @@ Examples marked with ✓ have been automatically validated by compiling and runn
         for example_id in example_ids {
             if let Some(example) = self.examples_db.examples.get(example_id) {
                 content.push_str(&format!(
-                    r#"## {}
-
-{}
-
 **Difficulty**: {:?}  
 **Topics**: {}  
-**Validation**: {}
-
 ```cursed
 {}
 ```
 
-{}
-
 ---
 
-"#,
-                    example.title,
-                    example.description,
-                    example.difficulty,
-                    example.topics.join(", "),
-                    if example.is_validated { "✓ Validated" } else { "⚠ Not validated" },
-                    example.code,
                     if !example.related_examples.is_empty() {
                         format!("**Related Examples**: {}", example.related_examples.join(", "))
                     } else {
@@ -1295,8 +925,6 @@ Examples marked with ✓ have been automatically validated by compiling and runn
         }
 
         content
-    }
-
     /// Generate playground-style interactive examples
     fn generate_playground_examples(&self, output_dir: &Path) -> crate::error::Result<()> {
         let playground_dir = output_dir.join("playground");
@@ -1315,8 +943,6 @@ Examples marked with ✓ have been automatically validated by compiling and runn
             .map_err(|e| CursedError::SystemError(format!("Failed to write examples JSON: {}", e)))?;
 
         Ok(())
-    }
-
     /// Generate playground HTML
     fn generate_playground_html(&self) -> String {
         format!(
@@ -1437,8 +1063,6 @@ Examples marked with ✓ have been automatically validated by compiling and runn
             if (!code.trim()) {{
                 output.innerHTML = 'No code to run.';
                 return;
-            }}
-
             output.innerHTML = 'Running code...<br>' + 
                               '<em>Note: This is a demo playground. In a real implementation, code would be sent to a CURSED compiler backend.</em>';
             
@@ -1451,13 +1075,9 @@ Examples marked with ✓ have been automatically validated by compiling and runn
 # This playground demonstrates the CURSED examples system</pre>
                 `;
             }}, 1000);
-        }}
-
         function formatCode() {{
             const output = document.getElementById('output');
             output.innerHTML = 'Code formatted! (Demo - actual formatting would be implemented with CURSED formatter)';
-        }}
-
         function shareExample() {{
             if (currentExample) {{
                 const url = `${{window.location.origin}}${{window.location.pathname}}?example=${{currentExample.id}}`;
@@ -1469,8 +1089,6 @@ Examples marked with ✓ have been automatically validated by compiling and runn
 </body>
 </html>"#
         )
-    }
-
     /// Generate advanced playground with more features
     fn generate_advanced_playground(&self, output_dir: &Path) -> crate::error::Result<()> {
         // This would implement a more sophisticated playground with features like:
@@ -1513,8 +1131,6 @@ This represents the next evolution of the CURSED examples system."#;
             .map_err(|e| CursedError::SystemError(format!("Failed to write advanced playground README: {}", e)))?;
 
         Ok(())
-    }
-
     /// Generate Jupyter notebook examples
     fn generate_jupyter_examples(&self, output_dir: &Path) -> crate::error::Result<()> {
         let jupyter_dir = output_dir.join("jupyter");
@@ -1527,11 +1143,7 @@ This represents the next evolution of the CURSED examples system."#;
             let filename = format!("{:?}_examples.ipynb", category).to_lowercase();
             fs::write(jupyter_dir.join(filename), notebook_content)
                 .map_err(|e| CursedError::SystemError(format!("Failed to write Jupyter notebook: {}", e)))?;
-        }
-
         Ok(())
-    }
-
     /// Generate a Jupyter notebook for a category
     fn generate_jupyter_notebook(&self, category: &ExampleCategory, example_ids: &[String]) -> String {
         let mut cells = Vec::new();
@@ -1539,14 +1151,9 @@ This represents the next evolution of the CURSED examples system."#;
         // Title cell
         cells.push(format!(
             "{{
-   \"cell_type\": \"markdown\",
-   \"metadata\": {{}},
    \"source\": [
-    \"# CURSED {:?} Examples\\n\",
-    \"\\n\",
     \"This notebook contains examples demonstrating {:?} features of the CURSED programming language.\\n\"
    ]
-}}",
             category, category
         ));
 
@@ -1556,20 +1163,9 @@ This represents the next evolution of the CURSED examples system."#;
                 // Description cell
                 cells.push(format!(
                     "{{
-   \"cell_type\": \"markdown\",
-   \"metadata\": {{}},
    \"source\": [
-    \"## {}\\n\",
-    \"\\n\",
-    \"{}\\n\",
-    \"\\n\",
-    \"**Difficulty**: {:?}  \\n\",
     \"**Topics**: {}  \\n\"
    ]
-}}",
-                    example.title,
-                    example.description,
-                    example.difficulty,
                     example.topics.join(", ")
                 ));
 
@@ -1577,14 +1173,9 @@ This represents the next evolution of the CURSED examples system."#;
                 let escaped_code = example.code.replace("\\", "\\\\").replace("\"", "\\\"").replace("\n", "\\n\",\n    \"");
                 cells.push(format!(
                     "{{
-   \"cell_type\": \"code\",
-   \"execution_count\": null,
-   \"metadata\": {{}},
-   \"outputs\": [],
    \"source\": [
     \"{}\"
    ]
-}}",
                     escaped_code
                 ));
             }
@@ -1594,35 +1185,21 @@ This represents the next evolution of the CURSED examples system."#;
             r#"{{
  "cells": [
   {}
- ],
  "metadata": {{
   "kernelspec": {{
-   "display_name": "CURSED",
-   "language": "cursed",
    "name": "cursed"
-  }},
   "language_info": {{
-   "name": "cursed",
    "version": "1.0.0"
   }}
- }},
- "nbformat": 4,
  "nbformat_minor": 4
-}}"#,
             cells.join(",\n  ")
         )
-    }
-
     /// Get examples database
     pub fn get_examples_database(&self) -> &ExamplesDatabase {
         &self.examples_db
-    }
-
     /// Get validation results
     pub fn get_validation_results(&self) -> &HashMap<String, ValidationResult> {
         &self.validation_results
-    }
-
     /// Search examples by criteria
     pub fn search_examples(&self, query: &str, category: Option<ExampleCategory>, difficulty: Option<DifficultyLevel>) -> Vec<String> {
         let mut results = Vec::new();

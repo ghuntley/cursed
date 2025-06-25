@@ -7,30 +7,20 @@ pub fn pad_left(s: &str, width: usize, pad_char: char) -> String {
     let char_count = s.chars().count();
     if char_count >= width {
         return s.to_string();
-    }
-    
     let padding = pad_char.to_string().repeat(width - char_count);
     format!("{}{}", padding, s)
-}
-
 /// Pad string on the right with specified character to reach target width
 pub fn pad_right(s: &str, width: usize, pad_char: char) -> String {
     let char_count = s.chars().count();
     if char_count >= width {
         return s.to_string();
-    }
-    
     let padding = pad_char.to_string().repeat(width - char_count);
     format!("{}{}", s, padding)
-}
-
 /// Center string with specified padding character to reach target width
 pub fn center(s: &str, width: usize, pad_char: char) -> String {
     let char_count = s.chars().count();
     if char_count >= width {
         return s.to_string();
-    }
-    
     let total_padding = width - char_count;
     let left_padding = total_padding / 2;
     let right_padding = total_padding - left_padding;
@@ -39,8 +29,6 @@ pub fn center(s: &str, width: usize, pad_char: char) -> String {
     let right_pad = pad_char.to_string().repeat(right_padding);
     
     format!("{}{}{}", left_pad, s, right_pad)
-}
-
 /// Truncate string to specified length, optionally adding ellipsis
 pub fn truncate(s: &str, max_length: usize, add_ellipsis: bool) -> String {
     let chars: Vec<char> = s.chars().collect();
@@ -48,8 +36,6 @@ pub fn truncate(s: &str, max_length: usize, add_ellipsis: bool) -> String {
     
     if char_count <= max_length {
         return s.to_string();
-    }
-    
     if add_ellipsis && max_length >= 3 {
         let truncated: String = chars[..max_length - 3].iter().collect();
         format!("{}...", truncated)
@@ -62,11 +48,7 @@ pub fn truncate(s: &str, max_length: usize, add_ellipsis: bool) -> String {
 pub fn wrap_text(s: &str, width: usize) -> StringResult<Vec<String>> {
     if width == 0 {
         return Err(StringError::InvalidParameter {
-            param: "width".to_string(),
-            value: "cannot be zero".to_string(),
         });
-    }
-    
     let mut lines = Vec::new();
     let mut current_line = String::new();
     let mut current_length = 0;
@@ -91,11 +73,7 @@ pub fn wrap_text(s: &str, width: usize) -> StringResult<Vec<String>> {
     
     if !current_line.is_empty() {
         lines.push(current_line);
-    }
-    
     Ok(lines)
-}
-
 /// Format string with fixed width columns
 pub fn format_columns(rows: &[Vec<&str>], column_widths: &[usize], separator: &str) -> StringResult<Vec<String>> {
     let mut result = Vec::new();
@@ -103,28 +81,18 @@ pub fn format_columns(rows: &[Vec<&str>], column_widths: &[usize], separator: &s
     for row in rows {
         if row.len() != column_widths.len() {
             return Err(StringError::InvalidParameter {
-                param: "row".to_string(),
-                value: format!("Expected {} columns, got {}", column_widths.len(), row.len()),
             });
-        }
-        
         let formatted_cells: Vec<String> = row.iter()
             .enumerate()
             .map(|(i, &cell)| pad_right(cell, column_widths[i], ' '))
             .collect();
         
         result.push(formatted_cells.join(separator));
-    }
-    
     Ok(result)
-}
-
 /// Auto-detect column widths for table formatting
 pub fn auto_detect_column_widths(rows: &[Vec<&str>]) -> Vec<usize> {
     if rows.is_empty() {
         return Vec::new();
-    }
-    
     let num_cols = rows[0].len();
     let mut widths = vec![0; num_cols];
     
@@ -135,21 +103,13 @@ pub fn auto_detect_column_widths(rows: &[Vec<&str>]) -> Vec<usize> {
                 widths[i] = widths[i].max(cell_width);
             }
         }
-    }
-    
     widths
-}
-
 /// Format table with auto-detected column widths
 pub fn format_table(rows: &[Vec<&str>], separator: &str) -> StringResult<Vec<String>> {
     if rows.is_empty() {
         return Ok(Vec::new());
-    }
-    
     let widths = auto_detect_column_widths(rows);
     format_columns(rows, &widths, separator)
-}
-
 /// Add line numbers to text
 pub fn add_line_numbers(s: &str, start_number: usize, separator: &str) -> String {
     let lines: Vec<&str> = s.split("\n").collect();
@@ -163,8 +123,6 @@ pub fn add_line_numbers(s: &str, start_number: usize, separator: &str) -> String
         })
         .collect::<Vec<String>>()
         .join("\n")
-}
-
 /// Indent all lines by specified amount
 pub fn indent_lines(s: &str, indent: usize, indent_char: char) -> String {
     let indent_str = indent_char.to_string().repeat(indent);
@@ -172,15 +130,11 @@ pub fn indent_lines(s: &str, indent: usize, indent_char: char) -> String {
         .map(|line| format!("{}{}", indent_str, line))
         .collect::<Vec<String>>()
         .join("\n")
-}
-
 /// Remove common indentation from all lines
 pub fn dedent(s: &str) -> String {
     let lines: Vec<&str> = s.split("\n").collect();
     if lines.is_empty() {
         return String::new();
-    }
-    
     // Find minimum indentation (ignoring empty lines)
     let min_indent = lines.iter()
         .filter(|line| !line.trim().is_empty())
@@ -198,8 +152,6 @@ pub fn dedent(s: &str) -> String {
         })
         .collect::<Vec<String>>()
         .join("\n")
-}
-
 /// Escape special characters for various formats
 pub fn escape_html(s: &str) -> String {
     s.replace('&', "&amp;")
@@ -207,8 +159,6 @@ pub fn escape_html(s: &str) -> String {
         .replace('>', "&gt;")
         .replace('"', "&quot;")
         .replace('\'', "&#x27;")
-}
-
 /// Escape characters for JSON strings
 pub fn escape_json(s: &str) -> String {
     s.replace('\\', "\\\\")
@@ -216,8 +166,6 @@ pub fn escape_json(s: &str) -> String {
         .replace('\n', "\\n")
         .replace('\r', "\\r")
         .replace('\t', "\\t")
-}
-
 /// Escape characters for CSV fields
 pub fn escape_csv(s: &str) -> String {
     if s.contains(',') || s.contains('"') || s.contains('\n') {

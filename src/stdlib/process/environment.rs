@@ -15,25 +15,17 @@ use std::path::PathBuf;
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct EnvVar {
     /// Variable name
-    pub name: String,
     /// Variable value
-    pub value: Option<String>,
-}
-
 impl EnvVar {
     /// Create a new environment variable
     pub fn new<N: Into<String>, V: Into<String>>(name: N, value: V) -> Self {
         Self {
-            name: name.into(),
-            value: Some(value.into()),
         }
     }
     
     /// Create an environment variable to be removed (unset)
     pub fn unset<N: Into<String>>(name: N) -> Self {
         Self {
-            name: name.into(),
-            value: None,
         }
     }
     
@@ -47,26 +39,14 @@ impl EnvVar {
 #[derive(Debug, Clone)]
 pub struct EnvironmentManager {
     /// Base environment variables (inherited or custom)
-    base_env: HashMap<OsString, OsString>,
     /// Additional environment variables to set
-    additional_env: HashMap<OsString, OsString>,
     /// Environment variables to remove
-    removed_env: Vec<OsString>,
     /// Whether to clear all inherited environment variables
-    clear_inherited: bool,
     /// Case sensitivity setting (Windows vs Unix)
-    case_sensitive: bool,
-}
-
 impl EnvironmentManager {
     /// Create a new environment manager
     pub fn new() -> Self {
         Self {
-            base_env: HashMap::new(),
-            additional_env: HashMap::new(),
-            removed_env: Vec::new(),
-            clear_inherited: false,
-            case_sensitive: cfg!(not(windows)),
         }
     }
 
@@ -77,20 +57,14 @@ impl EnvironmentManager {
             manager.base_env.insert(key, value);
         }
         Ok(manager)
-    }
-
     /// Clear all inherited environment variables
     pub fn clear_inherited(&mut self) -> &mut Self {
         self.clear_inherited = true;
         self.base_env.clear();
         self
-    }
-
     /// Set an environment variable
     pub fn set<K, V>(&mut self, key: K, value: V) -> &mut Self
     where
-        K: AsRef<OsStr>,
-        V: AsRef<OsStr>,
     {
         let key = key.as_ref().to_os_string();
         let value = value.as_ref().to_os_string();
@@ -101,12 +75,9 @@ impl EnvironmentManager {
         // Add to additional environment
         self.additional_env.insert(key, value);
         self
-    }
-
     /// Remove an environment variable
     pub fn remove<K>(&mut self, key: K) -> &mut Self
     where
-        K: AsRef<OsStr>,
     {
         let key = key.as_ref().to_os_string();
         
@@ -116,52 +87,34 @@ impl EnvironmentManager {
         // Add to removed list
         if !self.removed_env.contains(&key) {
             self.removed_env.push(key);
-        }
-        
         self
-    }
-
     /// Set multiple environment variables from a map
     pub fn set_multiple<K, V>(&mut self, vars: &HashMap<K, V>) -> &mut Self
     where
-        K: AsRef<OsStr>,
-        V: AsRef<OsStr>,
     {
         for (key, value) in vars {
             self.set(key, value);
         }
         self
-    }
-
     /// Get the value of an environment variable
     pub fn get<K>(&self, key: K) -> Option<&OsStr>
     where
-        K: AsRef<OsStr>,
     {
         let key = key.as_ref();
         
         // Check if it's in the removed list
         if self.removed_env.iter().any(|k| k == key) {
             return None;
-        }
-        
         // Check additional environment first
         if let Some(value) = self.additional_env.get(key) {
             return Some(value);
-        }
-        
         // Check base environment
         self.base_env.get(key).map(|v| v.as_ref())
-    }
-
     /// Check if an environment variable exists
     pub fn contains_key<K>(&self, key: K) -> bool
     where
-        K: AsRef<OsStr>,
     {
         self.get(key).is_some()
-    }
-
     /// Get all environment variables as a HashMap
     pub fn get_all(&self) -> HashMap<OsString, OsString> {
         let mut result = HashMap::new();
@@ -169,47 +122,32 @@ impl EnvironmentManager {
         // Start with base environment (unless cleared)
         if !self.clear_inherited {
             result.extend(self.base_env.clone());
-        }
-        
         // Add additional variables
         result.extend(self.additional_env.clone());
         
         // Remove variables in the removed list
         for key in &self.removed_env {
             result.remove(key);
-        }
-        
         result
-    }
-
     /// Get environment variables as Vec of (key, value) tuples for process spawning
     pub fn to_command_env(&self) -> Vec<(OsString, OsString)> {
         self.get_all().into_iter().collect()
-    }
-
     /// Validate environment variable name
     pub fn validate_key<K>(key: K) -> ProcessResult<()>
     where
-        K: AsRef<OsStr>,
     {
         let key_str = key.as_ref();
         
         // Check for empty key
         if key_str.is_empty() {
             return Err(invalid_arguments("Environment variable name cannot be empty"));
-        }
-        
         // Convert to string for validation (if possible)
         if let Some(key_string) = key_str.to_str() {
             // Check for invalid characters
             if key_string.contains('=') {
                 return Err(invalid_arguments("Environment variable name cannot contain '=' character"));
-            }
-            
             if key_string.contains('\0') {
                 return Err(invalid_arguments("Environment variable name cannot contain null character"));
-            }
-            
             // Check for Windows reserved names
             #[cfg(windows)]
             {
@@ -220,15 +158,10 @@ impl EnvironmentManager {
                     return Err(invalid_arguments(&format!("'{}' is a reserved name on Windows", key_string)));
                 }
             }
-        }
-        
         Ok(())
-    }
-
     /// Set the PATH environment variable
     pub fn set_path<P>(&mut self, paths: &[P]) -> ProcessResult<&mut Self>
     where
-        P: AsRef<std::path::Path>,
     {
         let path_separator = if cfg!(windows) { ";" } else { ":" };
         let path_value = paths
@@ -239,12 +172,9 @@ impl EnvironmentManager {
         
         self.set("PATH", path_value);
         Ok(self)
-    }
-
     /// Add a directory to the PATH environment variable
     pub fn add_to_path<P>(&mut self, path: P) -> ProcessResult<&mut Self>
     where
-        P: AsRef<std::path::Path>,
     {
         let path_str = path.as_ref().to_string_lossy();
         let path_separator = if cfg!(windows) { ";" } else { ":" };
@@ -258,59 +188,39 @@ impl EnvironmentManager {
             path_str.to_string()
         } else {
             format!("{}{}{}", path_str, path_separator, current_path)
-        };
         
         self.set("PATH", new_path);
         Ok(self)
-    }
-
     /// Set the working directory environment variable
     pub fn set_working_dir<P>(&mut self, dir: P) -> ProcessResult<&mut Self>
     where
-        P: AsRef<std::path::Path>,
     {
         let dir_str = dir.as_ref().to_string_lossy();
         self.set("PWD", dir_str.as_ref());
         Ok(self)
-    }
-
     /// Set common development environment variables
     pub fn set_development_env(&mut self) -> &mut Self {
         self.set("RUST_BACKTRACE", "1")
             .set("RUST_LOG", "debug")
-    }
-
     /// Set production environment variables
     pub fn set_production_env(&mut self) -> &mut Self {
         self.remove("RUST_BACKTRACE")
             .set("RUST_LOG", "warn")
-    }
-
     /// Clone environment for child process modification
     pub fn clone_for_child(&self) -> Self {
         Self {
-            base_env: self.get_all(),
-            additional_env: HashMap::new(),
-            removed_env: Vec::new(),
-            clear_inherited: false,
-            case_sensitive: self.case_sensitive,
         }
     }
 
     /// Get environment variable count
     pub fn len(&self) -> usize {
         self.get_all().len()
-    }
-
     /// Check if environment is empty
     pub fn is_empty(&self) -> bool {
         self.len() == 0
-    }
-
     /// Get environment variables matching a prefix
     pub fn get_with_prefix<K>(&self, prefix: K) -> HashMap<OsString, OsString>
     where
-        K: AsRef<OsStr>,
     {
         let prefix_str = prefix.as_ref().to_string_lossy();
         self.get_all()
@@ -319,15 +229,11 @@ impl EnvironmentManager {
                 key.to_string_lossy().starts_with(prefix_str.as_ref())
             })
             .collect()
-    }
-
     /// Merge with another environment manager
     pub fn merge(&mut self, other: &EnvironmentManager) -> &mut Self {
         // Add all variables from other
         for (key, value) in &other.additional_env {
             self.additional_env.insert(key.clone(), value.clone());
-        }
-        
         // Add removed variables from other
         for key in &other.removed_env {
             if !self.removed_env.contains(key) {
@@ -362,8 +268,6 @@ impl EnvironmentUtils {
             .map(|p| PathBuf::from(p.trim()))
             .filter(|p| !p.as_os_str().is_empty())
             .collect()
-    }
-
     /// Find executable in PATH
     pub fn find_in_path(executable: &str) -> Option<PathBuf> {
         if let Ok(path_value) = env::var("PATH") {
@@ -372,7 +276,6 @@ impl EnvironmentUtils {
                 format!("{}.exe", executable)
             } else {
                 executable.to_string()
-            };
             
             for path in paths {
                 let full_path = path.join(&executable_name);
@@ -382,8 +285,6 @@ impl EnvironmentUtils {
             }
         }
         None
-    }
-
     /// Expand environment variables in a string
     pub fn expand_variables(input: &str) -> ProcessResult<String> {
         let mut result = input.to_string();
@@ -401,8 +302,6 @@ impl EnvironmentUtils {
                     break;
                 }
             }
-        }
-        
         // Unix $VAR and ${VAR} format
         let mut chars: Vec<char> = result.chars().collect();
         let mut i = 0;
@@ -433,7 +332,6 @@ impl EnvironmentUtils {
                     }
                     let var_name: String = chars[var_start..i].iter().collect();
                     (var_name, i)
-                };
                 
                 // Replace variable
                 let replacement = env::var(&var_name).unwrap_or_default();
@@ -448,12 +346,9 @@ impl EnvironmentUtils {
         }
         
         Ok(chars.iter().collect())
-    }
-
     /// Validate environment variable value
     pub fn validate_value<V>(value: V) -> ProcessResult<()>
     where
-        V: AsRef<OsStr>,
     {
         let value_str = value.as_ref();
         
@@ -465,24 +360,17 @@ impl EnvironmentUtils {
         }
         
         Ok(())
-    }
-
     /// Get environment variable as specific type
     pub fn get_typed<T>(key: &str) -> ProcessResult<Option<T>>
     where
-        T: std::str::FromStr,
-        T::Err: std::fmt::Display,
     {
         match env::var(key) {
             Ok(value) => {
                 match value.parse::<T>() {
-                    Ok(parsed) => Ok(Some(parsed)),
                     Err(e) => Err(environment_error(&format!(
                         "Failed to parse environment variable '{}': {}", key, e
-                    ))),
                 }
             }
-            Err(env::VarError::NotPresent) => Ok(None),
             Err(env::VarError::NotUnicode(_)) => {
                 Err(environment_error(&format!(
                     "Environment variable '{}' contains invalid Unicode", key

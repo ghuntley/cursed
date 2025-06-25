@@ -6,12 +6,6 @@ use std::time::{SystemTime, UNIX_EPOCH};
 /// CSRF token structure
 #[derive(Debug, Clone)]
 pub struct CsrfToken {
-    pub token: String,
-    pub created_at: u64,
-    pub expires_at: u64,
-    pub session_id: Option<String>,
-}
-
 impl CsrfToken {
     /// Create new CSRF token
     pub fn new(secret: &str, session_id: Option<String>) -> Self {
@@ -21,19 +15,12 @@ impl CsrfToken {
             .as_secs();
 
         let expires_at = now + 3600; // 1 hour expiry
-        let token_data = format!("{}:{}:{}", 
-            session_id.as_deref().unwrap_or(""), 
-            now, 
             secret
         );
         
         let token = Self::hash_token(&token_data);
 
         Self {
-            token,
-            created_at: now,
-            expires_at,
-            session_id,
         }
     }
 
@@ -44,13 +31,9 @@ impl CsrfToken {
             .unwrap_or_default()
             .as_secs();
         now > self.expires_at
-    }
-
     /// Get token as string
     pub fn as_string(&self) -> &str {
         &self.token
-    }
-
     /// Create token from string (for validation)
     pub fn from_string(token: &str, secret: &str, session_id: Option<String>) -> Option<Self> {
         // Extract timestamp from token if possible
@@ -61,13 +44,7 @@ impl CsrfToken {
             .as_secs();
 
         Some(Self {
-            token: token.to_string(),
-            created_at: now,
-            expires_at: now + 3600,
-            session_id,
         })
-    }
-
     /// Simple hash function for token generation
     fn hash_token(input: &str) -> String {
         // Simple hash implementation (in production, use proper crypto)
@@ -76,8 +53,6 @@ impl CsrfToken {
             hash = ((hash << 5).wrapping_add(hash)).wrapping_add(byte as u64);
         }
         format!("{:016x}", hash)
-    }
-
     /// Generate secure random-like token
     pub fn generate_secure_token() -> String {
         let now = SystemTime::now()
@@ -93,19 +68,10 @@ impl CsrfToken {
 
 /// CSRF validator for managing and validating tokens
 pub struct CsrfValidator {
-    secret: String,
-    tokens: HashMap<String, CsrfToken>,
-    max_tokens: usize,
-    token_lifetime: u64,
-}
-
 impl CsrfValidator {
     /// Create new CSRF validator
     pub fn new(secret: String) -> Self {
         Self {
-            secret,
-            tokens: HashMap::new(),
-            max_tokens: 1000,
             token_lifetime: 3600, // 1 hour
         }
     }
@@ -114,14 +80,10 @@ impl CsrfValidator {
     pub fn with_max_tokens(mut self, max: usize) -> Self {
         self.max_tokens = max;
         self
-    }
-
     /// Set token lifetime in seconds
     pub fn with_lifetime(mut self, lifetime: u64) -> Self {
         self.token_lifetime = lifetime;
         self
-    }
-
     /// Generate new CSRF token
     pub fn generate_token(&mut self, session_id: Option<String>) -> CsrfToken {
         self.cleanup_expired_tokens();
@@ -135,11 +97,7 @@ impl CsrfValidator {
         // Cleanup if we have too many tokens
         if self.tokens.len() > self.max_tokens {
             self.cleanup_oldest_tokens();
-        }
-
         token
-    }
-
     /// Validate CSRF token
     pub fn validate_token(&mut self, token: &str, session_id: Option<String>) -> bool {
         self.cleanup_expired_tokens();
@@ -150,8 +108,6 @@ impl CsrfValidator {
             if stored_token.is_expired() {
                 self.tokens.remove(&key);
                 return false;
-            }
-
             // Validate token matches
             if stored_token.token == token {
                 // One-time use: remove after validation
@@ -161,8 +117,6 @@ impl CsrfValidator {
         }
 
         false
-    }
-
     /// Check if token exists (without consuming it)
     pub fn check_token(&self, token: &str, session_id: Option<String>) -> bool {
         let key = self.create_token_key(token, &session_id);
@@ -178,14 +132,10 @@ impl CsrfValidator {
     pub fn html_token_input(&mut self, session_id: Option<String>) -> String {
         let token = self.generate_token(session_id);
         format!(r#"<input type="hidden" name="_csrf_token" value="{}" />"#, token.as_string())
-    }
-
     /// Generate token for AJAX requests
     pub fn meta_token_tag(&mut self, session_id: Option<String>) -> String {
         let token = self.generate_token(session_id);
         format!(r#"<meta name="csrf-token" content="{}" />"#, token.as_string())
-    }
-
     /// Extract token from request headers
     pub fn extract_token_from_headers(&self, headers: &HashMap<String, String>) -> Option<String> {
         // Check various header names
@@ -202,21 +152,13 @@ impl CsrfValidator {
             }
         }
         None
-    }
-
     /// Extract token from form data
     pub fn extract_token_from_form(&self, form_data: &HashMap<String, String>) -> Option<String> {
         form_data.get("_csrf_token").cloned()
             .or_else(|| form_data.get("csrf_token").cloned())
             .or_else(|| form_data.get("_token").cloned())
-    }
-
     /// Validate request with CSRF protection
     pub fn validate_request(
-        &mut self,
-        headers: &HashMap<String, String>,
-        form_data: &HashMap<String, String>,
-        session_id: Option<String>,
     ) -> bool {
         // Extract token from headers or form data
         let token = self.extract_token_from_headers(headers)
@@ -232,16 +174,11 @@ impl CsrfValidator {
     /// Check if request method requires CSRF protection
     pub fn requires_csrf_protection(method: &str) -> bool {
         matches!(method.to_uppercase().as_str(), "POST" | "PUT" | "DELETE" | "PATCH")
-    }
-
     /// Get CSRF error response
     pub fn csrf_error_response() -> CsrfErrorResponse {
         CsrfErrorResponse {
-            status: 403,
-            message: "CSRF token validation failed".to_string(),
             headers: vec![
                 ("Content-Type".to_string(), "application/json".to_string()),
-            ],
         }
     }
 
@@ -253,8 +190,6 @@ impl CsrfValidator {
             .as_secs();
 
         self.tokens.retain(|_, token| now <= token.expires_at);
-    }
-
     /// Cleanup oldest tokens when at capacity
     fn cleanup_oldest_tokens(&mut self) {
         let target_size = self.max_tokens * 3 / 4; // Remove 25% of tokens
@@ -271,8 +206,6 @@ impl CsrfValidator {
     /// Create unique key for token storage
     fn create_token_key(&self, token: &str, session_id: &Option<String>) -> String {
         match session_id {
-            Some(id) => format!("{}:{}", id, token),
-            None => token.to_string(),
         }
     }
 
@@ -292,31 +225,16 @@ impl CsrfValidator {
         });
 
         CsrfStats {
-            total_tokens: total,
-            expired_tokens: expired,
-            active_tokens: total - expired,
-            max_tokens: self.max_tokens,
-            token_lifetime: self.token_lifetime,
         }
     }
-}
-
 /// CSRF error response
 pub struct CsrfErrorResponse {
-    pub status: u16,
-    pub message: String,
-    pub headers: Vec<(String, String)>,
-}
-
 impl CsrfErrorResponse {
     /// Convert to JSON response body
     pub fn to_json(&self) -> String {
         format!(
-            r#"{{"error":"{}","status":{},"code":"CSRF_VALIDATION_FAILED"}}"#,
             self.message, self.status
         )
-    }
-
     /// Convert to HTML response body
     pub fn to_html(&self) -> String {
         format!(
@@ -339,55 +257,24 @@ impl CsrfErrorResponse {
 /// CSRF statistics
 #[derive(Debug)]
 pub struct CsrfStats {
-    pub total_tokens: usize,
-    pub expired_tokens: usize,
-    pub active_tokens: usize,
-    pub max_tokens: usize,
-    pub token_lifetime: u64,
-}
-
 /// CSRF middleware configuration
 #[derive(Debug, Clone)]
 pub struct CsrfConfig {
-    pub enabled: bool,
-    pub secret: String,
-    pub token_lifetime: u64,
-    pub max_tokens: usize,
-    pub require_session: bool,
-    pub safe_methods: Vec<String>,
-    pub excluded_paths: Vec<String>,
-}
-
 impl Default for CsrfConfig {
     fn default() -> Self {
         Self {
-            enabled: true,
-            secret: "changeme".to_string(),
-            token_lifetime: 3600,
-            max_tokens: 1000,
-            require_session: true,
             safe_methods: vec![
-                "GET".to_string(),
-                "HEAD".to_string(),
-                "OPTIONS".to_string(),
-                "TRACE".to_string(),
-            ],
             excluded_paths: vec![
                 "/api/health".to_string(),
                 "/metrics".to_string(),
-            ],
         }
     }
-}
-
 impl CsrfConfig {
     /// Check if path is excluded from CSRF protection
     pub fn is_path_excluded(&self, path: &str) -> bool {
         self.excluded_paths.iter().any(|excluded| {
             path.starts_with(excluded) || path == excluded
         })
-    }
-
     /// Check if method is safe (doesn't require CSRF protection)
     pub fn is_method_safe(&self, method: &str) -> bool {
         self.safe_methods.iter().any(|safe_method| {
@@ -401,8 +288,6 @@ impl CsrfMiddleware {
     /// Create new CSRF middleware with configuration
     pub fn new(config: CsrfConfig) -> Self {
         Self {
-            validator: CsrfValidator::new(),
-            config,
         }
     }
 
@@ -429,15 +314,9 @@ impl CsrfMiddleware {
 #[derive(Debug, Clone)]
 pub enum CsrfError {
     /// CSRF token is missing from request
-    MissingToken(String),
     /// CSRF token is invalid
-    InvalidToken(String),
     /// CSRF token has expired
-    ExpiredToken(String),
     /// General CSRF error
-    General(String),
-}
-
 // impl std::fmt::Display for CsrfError {
 //     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
 //         match self {

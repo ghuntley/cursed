@@ -36,8 +36,6 @@ mod redis {
     
     pub fn cmd(_cmd: &str) -> Cmd {
         Cmd
-    }
-    
     pub struct Cmd;
     impl Cmd {
         pub fn arg<T: std::fmt::Display>(&mut self, _arg: T) -> &mut Self { self }
@@ -48,15 +46,10 @@ mod redis {
     
     #[derive(Debug)]
     pub struct RedisError {
-        message: String,
-    }
-    
     impl RedisError {
         fn new(message: &str) -> Self {
             Self { message: message.to_string() }
         }
-    }
-    
 //     impl std::fmt::Display for RedisError {
 //         fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
 //             write!(f, "{}", self.message)
@@ -69,31 +62,12 @@ mod redis {
 /// Session data structure
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub struct Session {
-    pub id: String,
-    pub data: HashMap<String, SessionValue>,
-    pub created_at: u64,
-    pub last_accessed: u64,
-    pub expires_at: Option<u64>,
-    pub is_new: bool,
-    pub is_dirty: bool,
-}
-
 /// Session value types
 #[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
 pub enum SessionValue {
-    String(String),
-    Number(f64),
-    Bool(bool),
-    Array(Vec<SessionValue>),
-    Object(HashMap<String, SessionValue>),
-}
-
 impl fmt::Display for SessionValue {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
-            SessionValue::String(s) => write!(f, "{}", s),
-            SessionValue::Number(n) => write!(f, "{}", n),
-            SessionValue::Bool(b) => write!(f, "{}", b),
             SessionValue::Array(arr) => {
                 let items: Vec<String> = arr.iter().map(|v| v.to_string()).collect();
                 write!(f, "[{}]", items.join(", "))
@@ -112,44 +86,32 @@ impl SessionValue {
     /// Convert to string if possible
     pub fn as_string(&self) -> Option<&str> {
         match self {
-            SessionValue::String(s) => Some(s),
-            _ => None,
         }
     }
 
     /// Convert to number if possible
     pub fn as_number(&self) -> Option<f64> {
         match self {
-            SessionValue::Number(n) => Some(*n),
-            _ => None,
         }
     }
 
     /// Convert to boolean if possible
     pub fn as_bool(&self) -> Option<bool> {
         match self {
-            SessionValue::Bool(b) => Some(*b),
-            _ => None,
         }
     }
 
     /// Convert to array if possible
     pub fn as_array(&self) -> Option<&Vec<SessionValue>> {
         match self {
-            SessionValue::Array(arr) => Some(arr),
-            _ => None,
         }
     }
 
     /// Convert to object if possible
     pub fn as_object(&self) -> Option<&HashMap<String, SessionValue>> {
         match self {
-            SessionValue::Object(obj) => Some(obj),
-            _ => None,
         }
     }
-}
-
 impl Session {
     /// Create new session
     pub fn new() -> Self {
@@ -159,13 +121,6 @@ impl Session {
             .as_secs();
 
         Self {
-            id: Self::generate_session_id(),
-            data: HashMap::new(),
-            created_at: now,
-            last_accessed: now,
-            expires_at: None,
-            is_new: true,
-            is_dirty: false,
         }
     }
 
@@ -177,13 +132,6 @@ impl Session {
             .as_secs();
 
         Self {
-            id,
-            data: HashMap::new(),
-            created_at: now,
-            last_accessed: now,
-            expires_at: None,
-            is_new: false,
-            is_dirty: false,
         }
     }
 
@@ -192,51 +140,35 @@ impl Session {
         self.data.insert(key, value);
         self.is_dirty = true;
         self.touch();
-    }
-
     /// Get session value
     pub fn get(&mut self, key: &str) -> Option<&SessionValue> {
         self.touch();
         self.data.get(key)
-    }
-
     /// Remove session value
     pub fn remove(&mut self, key: &str) -> Option<SessionValue> {
         self.is_dirty = true;
         self.touch();
         self.data.remove(key)
-    }
-
     /// Clear all session data
     pub fn clear(&mut self) {
         self.data.clear();
         self.is_dirty = true;
         self.touch();
-    }
-
     /// Check if session contains key
     pub fn contains_key(&self, key: &str) -> bool {
         self.data.contains_key(key)
-    }
-
     /// Get all keys
     pub fn keys(&self) -> Vec<&String> {
         self.data.keys().collect()
-    }
-
     /// Check if session is empty
     pub fn is_empty(&self) -> bool {
         self.data.is_empty()
-    }
-
     /// Update last accessed time
     pub fn touch(&mut self) {
         self.last_accessed = SystemTime::now()
             .duration_since(UNIX_EPOCH)
             .unwrap_or_default()
             .as_secs();
-    }
-
     /// Check if session is expired
     pub fn is_expired(&self) -> bool {
         if let Some(expires_at) = self.expires_at {
@@ -258,14 +190,10 @@ impl Session {
             .as_secs();
         self.expires_at = Some(now + seconds_from_now);
         self.is_dirty = true;
-    }
-
     /// Remove expiration
     pub fn clear_expiry(&mut self) {
         self.expires_at = None;
         self.is_dirty = true;
-    }
-
     /// Generate secure session ID
     fn generate_session_id() -> String {
         let now = SystemTime::now()
@@ -276,8 +204,6 @@ impl Session {
         // Create pseudo-random session ID
         let random_data = format!("{}:{}", now, now.wrapping_mul(9973));
         Self::hash_string(&random_data)
-    }
-
     /// Simple hash function for session ID generation
     fn hash_string(input: &str) -> String {
         let mut hash: u64 = 5381;
@@ -285,8 +211,6 @@ impl Session {
             hash = ((hash << 5).wrapping_add(hash)).wrapping_add(byte as u64);
         }
         format!("{:016x}", hash)
-    }
-
     /// Serialize session to string (simple format)
     pub fn serialize(&self) -> String {
         let mut parts = Vec::new();
@@ -296,15 +220,9 @@ impl Session {
         
         if let Some(expires) = self.expires_at {
             parts.push(format!("expires:{}", expires));
-        }
-
         for (key, value) in &self.data {
             parts.push(format!("data:{}:{}", key, self.serialize_value(value)));
-        }
-
         parts.join("|")
-    }
-
     /// Deserialize session from string
     pub fn deserialize(data: &str) -> crate::error::Result<()> {
         let mut session = Session::new();
@@ -314,10 +232,7 @@ impl Session {
             let components: Vec<&str> = part.splitn(2, ':').collect();
             if components.len() != 2 {
                 continue;
-            }
-
             match components[0] {
-                "id" => session.id = components[1].to_string(),
                 "created" => {
                     session.created_at = components[1].parse()
                         .map_err(|_| SessionError::InvalidData("created_at".to_string()))?;
@@ -343,14 +258,9 @@ impl Session {
         }
 
         Ok(session)
-    }
-
     /// Serialize session value to string
     fn serialize_value(&self, value: &SessionValue) -> String {
         match value {
-            SessionValue::String(s) => format!("s:{}", s),
-            SessionValue::Number(n) => format!("n:{}", n),
-            SessionValue::Bool(b) => format!("b:{}", b),
             SessionValue::Array(_) => "a:[]".to_string(), // Simplified
             SessionValue::Object(_) => "o:{}".to_string(), // Simplified
         }
@@ -361,10 +271,7 @@ impl Session {
         let parts: Vec<&str> = data.splitn(2, ':').collect();
         if parts.len() != 2 {
             return Err(SessionError::InvalidData("value".to_string()));
-        }
-
         match parts[0] {
-            "s" => Ok(SessionValue::String(parts[1].to_string())),
             "n" => {
                 let n = parts[1].parse()
                     .map_err(|_| SessionError::InvalidData("number".to_string()))?;
@@ -377,11 +284,8 @@ impl Session {
             }
             "a" => Ok(SessionValue::Array(Vec::from([]))), // Simplified
             "o" => Ok(SessionValue::Object(HashMap::new())), // Simplified
-            _ => Err(SessionError::InvalidData("type".to_string())),
         }
     }
-}
-
 impl Default for Session {
     fn default() -> Self {
         Self::new()
@@ -396,21 +300,13 @@ pub trait SessionStore {
     fn cleanup_expired(&mut self) -> crate::error::Result<()>;
     fn exists(&self, session_id: &str) -> bool;
     fn count(&self) -> usize;
-}
-
 /// Memory-based session store
 pub struct MemorySessionStore {
-    sessions: HashMap<String, Session>,
-}
-
 impl MemorySessionStore {
     pub fn new() -> Self {
         Self {
-            sessions: HashMap::new(),
         }
     }
-}
-
 impl Default for MemorySessionStore {
     fn default() -> Self {
         Self::new()
@@ -420,28 +316,18 @@ impl Default for MemorySessionStore {
 impl SessionStore for MemorySessionStore {
     fn load(&self, session_id: &str) -> crate::error::Result<()> {
         Ok(self.sessions.get(session_id).cloned())
-    }
-
     fn save(&mut self, session: &Session) -> crate::error::Result<()> {
         self.sessions.insert(session.id.clone(), session.clone());
         Ok(())
-    }
-
     fn delete(&mut self, session_id: &str) -> crate::error::Result<()> {
         self.sessions.remove(session_id);
         Ok(())
-    }
-
     fn cleanup_expired(&mut self) -> crate::error::Result<()> {
         let initial_count = self.sessions.len();
         self.sessions.retain(|_, session| !session.is_expired());
         Ok(initial_count - self.sessions.len())
-    }
-
     fn exists(&self, session_id: &str) -> bool {
         self.sessions.contains_key(session_id)
-    }
-
     fn count(&self) -> usize {
         self.sessions.len()
     }
@@ -449,9 +335,6 @@ impl SessionStore for MemorySessionStore {
 
 /// File-based session store
 pub struct FileSessionStore {
-    directory: PathBuf,
-}
-
 impl FileSessionStore {
     pub fn new(directory: PathBuf) -> Self {
         Self { directory }
@@ -477,7 +360,6 @@ impl SessionStore for FileSessionStore {
                     Ok(Some(session))
                 }
             }
-            Err(_) => Ok(None),
         }
     }
 
@@ -488,21 +370,15 @@ impl SessionStore for FileSessionStore {
         if let Some(parent) = file_path.parent() {
             std::fs::create_dir_all(parent)
                 .map_err(|e| SessionError::StoreError(e.to_string()))?;
-        }
-
         let content = session.serialize();
         std::fs::write(&file_path, content)
             .map_err(|e| SessionError::StoreError(e.to_string()))?;
 
         Ok(())
-    }
-
     fn delete(&mut self, session_id: &str) -> crate::error::Result<()> {
         let file_path = self.session_file_path(session_id);
         let _ = std::fs::remove_file(&file_path); // Ignore errors
         Ok(())
-    }
-
     fn cleanup_expired(&mut self) -> crate::error::Result<()> {
         let mut cleaned = 0;
         
@@ -523,12 +399,8 @@ impl SessionStore for FileSessionStore {
         }
 
         Ok(cleaned)
-    }
-
     fn exists(&self, session_id: &str) -> bool {
         self.session_file_path(session_id).exists()
-    }
-
     fn count(&self) -> usize {
         std::fs::read_dir(&self.directory)
             .map(|entries| {
@@ -547,40 +419,23 @@ impl SessionStore for FileSessionStore {
 
 /// Redis-based session store
 pub struct RedisSessionStore {
-    connection_string: String,
-    key_prefix: String,
-    client: std::sync::Arc<std::sync::Mutex<Option<redis::Client>>>,
-    pool_size: usize,
-}
-
 impl RedisSessionStore {
     pub fn new(connection_string: String) -> Self {
         Self {
-            connection_string,
-            key_prefix: "cursed:session:".to_string(),
-            client: std::sync::Arc::new(std::sync::Mutex::new(None)),
             pool_size: 10, // Default pool size
         }
     }
 
     pub fn with_prefix(connection_string: String, key_prefix: String) -> Self {
         Self {
-            connection_string,
-            key_prefix,
-            client: std::sync::Arc::new(std::sync::Mutex::new(None)),
-            pool_size: 10,
         }
     }
 
     pub fn with_pool_size(mut self, pool_size: usize) -> Self {
         self.pool_size = pool_size;
         self
-    }
-
     fn session_key(&self, session_id: &str) -> String {
         format!("{}{}", self.key_prefix, session_id)
-    }
-
     /// Get or create Redis client with connection pooling
     fn get_client(&self) -> crate::error::Result<()> {
         let mut client_guard = self.client.lock()
@@ -600,31 +455,22 @@ impl RedisSessionStore {
                 .map_err(|e| SessionError::StoreError(format!("Redis PING failed: {}", e)))?;
             
             *client_guard = Some(client);
-        }
-        
         Ok(client_guard.as_ref().unwrap().clone())
-    }
-
     /// Get Redis connection with fallback handling
     fn get_connection(&self) -> crate::error::Result<()> {
         let client = self.get_client()?;
         client.get_connection()
             .map_err(|e| SessionError::StoreError(format!("Failed to get Redis connection: {}", e)))
-    }
-
     /// Execute Redis GET command with error handling
     fn redis_get(&self, key: &str) -> crate::error::Result<()> {
         let mut conn = self.get_connection()?;
         
         match redis::cmd("GET").arg(key).query::<Option<String>>(&mut conn) {
-            Ok(value) => Ok(value),
             Err(e) => {
                 eprintln!("Redis GET error for key '{}': {}", key, e);
                 Err(SessionError::StoreError(format!("Redis GET failed: {}", e)))
             }
         }
-    }
-
     /// Execute Redis SET command with TTL support
     fn redis_set(&self, key: &str, value: &str, ttl_seconds: Option<u64>) -> crate::error::Result<()> {
         let mut conn = self.get_connection()?;
@@ -635,36 +481,28 @@ impl RedisSessionStore {
         } else {
             // SET without expiration
             redis::cmd("SET").arg(key).arg(value).query::<String>(&mut conn)
-        };
         
         match result {
-            Ok(_) => Ok(()),
             Err(e) => {
                 eprintln!("Redis SET error for key '{}': {}", key, e);
                 Err(SessionError::StoreError(format!("Redis SET failed: {}", e)))
             }
         }
-    }
-
     /// Execute Redis DEL command
     fn redis_del(&self, key: &str) -> crate::error::Result<()> {
         let mut conn = self.get_connection()?;
         
         match redis::cmd("DEL").arg(key).query::<i32>(&mut conn) {
-            Ok(_) => Ok(()),
             Err(e) => {
                 eprintln!("Redis DEL error for key '{}': {}", key, e);
                 Err(SessionError::StoreError(format!("Redis DEL failed: {}", e)))
             }
         }
-    }
-
     /// Execute Redis EXISTS command
     fn redis_exists(&self, key: &str) -> bool {
         match self.get_connection() {
             Ok(mut conn) => {
                 match redis::cmd("EXISTS").arg(key).query::<i32>(&mut conn) {
-                    Ok(exists) => exists > 0,
                     Err(e) => {
                         eprintln!("Redis EXISTS error for key '{}': {}", key, e);
                         false // Assume doesn't exist on error
@@ -676,16 +514,12 @@ impl RedisSessionStore {
                 false // Assume doesn't exist on connection error
             }
         }
-    }
-
     /// Execute Redis TTL command to get remaining time to live
     fn redis_ttl(&self, key: &str) -> crate::error::Result<()> {
         let mut conn = self.get_connection()?;
         
         redis::cmd("TTL").arg(key).query::<i64>(&mut conn)
             .map_err(|e| SessionError::StoreError(format!("Redis TTL failed: {}", e)))
-    }
-
     /// Get all session keys using SCAN for better performance
     fn get_session_keys(&self) -> crate::error::Result<()> {
         let mut conn = self.get_connection()?;
@@ -713,22 +547,16 @@ impl RedisSessionStore {
         }
         
         Ok(keys)
-    }
-
     /// Count sessions using more efficient approach
     fn count_sessions(&self) -> crate::error::Result<()> {
         let keys = self.get_session_keys()?;
         Ok(keys.len())
-    }
-
     /// Health check for Redis connection
     pub fn health_check(&self) -> crate::error::Result<()> {
         let mut conn = self.get_connection()?;
         let _: String = redis::cmd("PING").query(&mut conn)
             .map_err(|e| SessionError::StoreError(format!("Redis health check failed: {}", e)))?;
         Ok(())
-    }
-
     /// Get Redis info for monitoring
     pub fn get_redis_info(&self) -> crate::error::Result<()> {
         let mut conn = self.get_connection()?;
@@ -778,20 +606,15 @@ impl SessionStore for RedisSessionStore {
         } else {
             // No expiration set, use a default maximum TTL (24 hours)
             Some(86400)
-        };
         
         self.redis_set(&key, &data, ttl)?;
         println!("Session {} saved to Redis with TTL: {:?}", session.id, ttl);
         Ok(())
-    }
-
     fn delete(&mut self, session_id: &str) -> crate::error::Result<()> {
         let key = self.session_key(session_id);
         self.redis_del(&key)?;
         println!("Session {} deleted from Redis", session_id);
         Ok(())
-    }
-
     fn cleanup_expired(&mut self) -> crate::error::Result<()> {
         // In Redis, expired keys are automatically cleaned up by Redis itself
         // However, we can still scan for sessions that are expired according to our logic
@@ -812,20 +635,12 @@ impl SessionStore for RedisSessionStore {
                     }
                 }
             }
-        }
-        
         if cleaned > 0 {
             println!("Cleaned up {} expired sessions from Redis", cleaned);
-        }
-        
         Ok(cleaned)
-    }
-
     fn exists(&self, session_id: &str) -> bool {
         let key = self.session_key(session_id);
         self.redis_exists(&key)
-    }
-
     fn count(&self) -> usize {
         match self.count_sessions() {
             Ok(count) => {
@@ -843,62 +658,25 @@ impl SessionStore for RedisSessionStore {
 /// Configuration for database session store
 #[derive(Debug, Clone)]
 pub struct DatabaseStoreConfig {
-    pub pool_size: usize,
-    pub max_retries: usize,
-    pub retry_delay_ms: u64,
-    pub cleanup_interval_seconds: u64,
-    pub connection_timeout_seconds: u64,
-    pub enable_wal_mode: bool,
-    pub enable_foreign_keys: bool,
-    pub enable_auto_vacuum: bool,
-    pub cache_size_mb: usize,
-}
-
 impl Default for DatabaseStoreConfig {
     fn default() -> Self {
         Self {
-            pool_size: 10,
-            max_retries: 3,
-            retry_delay_ms: 100,
             cleanup_interval_seconds: 300, // 5 minutes
-            connection_timeout_seconds: 30,
-            enable_wal_mode: true,
-            enable_foreign_keys: true,
-            enable_auto_vacuum: true,
-            cache_size_mb: 64,
         }
     }
-}
-
 /// Database connection pool for session management
 pub struct DatabaseConnectionPool {
 //     connections: std::sync::Arc<std::sync::Mutex<Vec<crate::stdlib::database::DB>>>,
-    connection_string: String,
-    driver_name: String,
-    config: DatabaseStoreConfig,
-    active_connections: std::sync::Arc<std::sync::atomic::AtomicUsize>,
-    is_shutdown: std::sync::Arc<std::sync::atomic::AtomicBool>,
-}
-
 impl DatabaseConnectionPool {
     pub fn new(connection_string: String, config: DatabaseStoreConfig) -> crate::error::Result<()> {
         let driver_name = Self::detect_driver(&connection_string);
         
         let pool = Self {
-            connections: std::sync::Arc::new(std::sync::Mutex::new(Vec::new())),
-            connection_string: connection_string.clone(),
-            driver_name,
-            config: config.clone(),
-            active_connections: std::sync::Arc::new(std::sync::atomic::AtomicUsize::new(0)),
-            is_shutdown: std::sync::Arc::new(std::sync::atomic::AtomicBool::new(false)),
-        };
         
         // Pre-populate the pool with initial connections
         pool.initialize_pool()?;
         
         Ok(pool)
-    }
-    
     fn detect_driver(connection_string: &str) -> String {
         if connection_string.starts_with("sqlite://") 
             || connection_string.starts_with("sqlite3://") 
@@ -923,14 +701,9 @@ impl DatabaseConnectionPool {
         for _ in 0..self.config.pool_size {
             let db = self.create_connection()?;
             connections.push(db);
-        }
-        
         Ok(())
-    }
-    
     fn create_connection(&self) -> crate::error::Result<()> {
 //         let mut db = crate::stdlib::database::DB::open(
-            self.driver_name.clone(), 
             self.connection_string.clone()
         ).map_err(|e| SessionError::StoreError(format!("Database connection failed: {}", e)))?;
         
@@ -938,26 +711,18 @@ impl DatabaseConnectionPool {
         self.configure_connection(&mut db)?;
         
         Ok(db)
-    }
-    
 //     fn configure_connection(&self, db: &mut crate::stdlib::database::DB) -> crate::error::Result<()> {
         if self.driver_name == "sqlite" {
             // SQLite-specific optimizations
             if self.config.enable_wal_mode {
                 db.exec("PRAGMA journal_mode=WAL".to_string(), vec![])
                     .map_err(|e| SessionError::StoreError(format!("Failed to enable WAL mode: {}", e)))?;
-            }
-            
             if self.config.enable_foreign_keys {
                 db.exec("PRAGMA foreign_keys=ON".to_string(), vec![])
                     .map_err(|e| SessionError::StoreError(format!("Failed to enable foreign keys: {}", e)))?;
-            }
-            
             if self.config.enable_auto_vacuum {
                 db.exec("PRAGMA auto_vacuum=INCREMENTAL".to_string(), vec![])
                     .map_err(|e| SessionError::StoreError(format!("Failed to enable auto vacuum: {}", e)))?;
-            }
-            
             // Performance optimizations
             db.exec("PRAGMA synchronous=NORMAL".to_string(), vec![])
                 .map_err(|e| SessionError::StoreError(format!("Failed to set synchronous mode: {}", e)))?;
@@ -971,16 +736,10 @@ impl DatabaseConnectionPool {
                 
             db.exec("PRAGMA optimize".to_string(), vec![])
                 .map_err(|e| SessionError::StoreError(format!("Failed to optimize database: {}", e)))?;
-        }
-        
         Ok(())
-    }
-    
     pub fn get_connection(&self) -> crate::error::Result<()> {
         if self.is_shutdown.load(std::sync::atomic::Ordering::SeqCst) {
             return Err(SessionError::StoreError("Connection pool is shutdown".to_string()));
-        }
-        
         let mut retries = 0;
         
         while retries < self.config.max_retries {
@@ -989,9 +748,6 @@ impl DatabaseConnectionPool {
                 if let Some(db) = connections.pop() {
                     self.active_connections.fetch_add(1, std::sync::atomic::Ordering::SeqCst);
                     return Ok(PooledConnection {
-                        db: Some(db),
-                        pool: std::sync::Arc::clone(&self.connections),
-                        active_connections: std::sync::Arc::clone(&self.active_connections),
                     });
                 }
             }
@@ -1002,9 +758,6 @@ impl DatabaseConnectionPool {
                     Ok(db) => {
                         self.active_connections.fetch_add(1, std::sync::atomic::Ordering::SeqCst);
                         return Ok(PooledConnection {
-                            db: Some(db),
-                            pool: std::sync::Arc::clone(&self.connections),
-                            active_connections: std::sync::Arc::clone(&self.active_connections),
                         });
                     }
                     Err(e) => {
@@ -1027,8 +780,6 @@ impl DatabaseConnectionPool {
         }
         
         Err(SessionError::StoreError("Failed to acquire database connection after retries".to_string()))
-    }
-    
     pub fn shutdown(&self) {
         self.is_shutdown.store(true, std::sync::atomic::Ordering::SeqCst);
         
@@ -1046,22 +797,12 @@ impl DatabaseConnectionPool {
         let active = self.active_connections.load(std::sync::atomic::Ordering::SeqCst);
         
         PoolStats {
-            total_connections: self.config.pool_size,
-            active_connections: active,
-            available_connections: available,
-            max_pool_size: self.config.pool_size,
-            is_shutdown: self.is_shutdown.load(std::sync::atomic::Ordering::SeqCst),
         }
     }
-}
-
 /// A connection borrowed from the pool with transaction support
 pub struct PooledConnection {
 //     db: Option<crate::stdlib::database::DB>,
 //     pool: std::sync::Arc<std::sync::Mutex<Vec<crate::stdlib::database::DB>>>,
-    active_connections: std::sync::Arc<std::sync::atomic::AtomicUsize>,
-}
-
 impl PooledConnection {
     pub fn execute_transaction<F, R>(&mut self, transaction_fn: F) -> crate::error::Result<()>
     where
@@ -1100,7 +841,6 @@ impl PooledConnection {
             
             while retries < MAX_RETRIES {
                 match operation(db) {
-                    Ok(result) => return Ok(result),
                     Err(e) => {
                         retries += 1;
                         if retries >= MAX_RETRIES {
@@ -1110,8 +850,6 @@ impl PooledConnection {
                         std::thread::sleep(std::time::Duration::from_millis(50));
                     }
                 }
-            }
-            
             Err(SessionError::StoreError("Operation failed after retries".to_string()))
         } else {
             Err(SessionError::StoreError("Connection is not available".to_string()))
@@ -1133,44 +871,18 @@ impl Drop for PooledConnection {
             self.active_connections.fetch_sub(1, std::sync::atomic::Ordering::SeqCst);
         }
     }
-}
-
 /// Pool statistics for monitoring
 #[derive(Debug)]
 pub struct PoolStats {
-    pub total_connections: usize,
-    pub active_connections: usize,
-    pub available_connections: usize,
-    pub max_pool_size: usize,
-    pub is_shutdown: bool,
-}
-
 /// Enhanced database-based session store with connection pooling and transaction safety
 pub struct DatabaseSessionStore {
-    connection_string: String,
-    table_name: String,
-    pool: std::sync::Arc<DatabaseConnectionPool>,
-    config: DatabaseStoreConfig,
-    cleanup_handle: std::sync::Arc<std::sync::Mutex<Option<std::thread::JoinHandle<()>>>>,
-    schema_version: u32,
-}
-
 impl DatabaseSessionStore {
     pub fn new(connection_string: String) -> crate::error::Result<()> {
         Self::new_with_config(connection_string, DatabaseStoreConfig::default())
-    }
-    
     pub fn new_with_config(connection_string: String, config: DatabaseStoreConfig) -> crate::error::Result<()> {
         let pool = std::sync::Arc::new(DatabaseConnectionPool::new(connection_string.clone(), config.clone())?);
         
         let store = Self {
-            connection_string,
-            table_name: "cursed_sessions".to_string(),
-            pool: pool.clone(),
-            config: config.clone(),
-            cleanup_handle: std::sync::Arc::new(std::sync::Mutex::new(None)),
-            schema_version: 1,
-        };
         
         // Initialize database schema
         store.init_schema()?;
@@ -1179,8 +891,6 @@ impl DatabaseSessionStore {
         store.start_cleanup_task();
         
         Ok(store)
-    }
-    
     /// Initialize database schema with proper indexing and constraints
     fn init_schema(&self) -> crate::error::Result<()> {
         let mut connection = self.pool.get_connection()?;
@@ -1189,12 +899,6 @@ impl DatabaseSessionStore {
             // Create main sessions table with optimized schema
             let create_table_sql = format!(r#"
                 CREATE TABLE IF NOT EXISTS {} (
-                    id TEXT PRIMARY KEY NOT NULL,
-                    session_data TEXT NOT NULL,
-                    created_at INTEGER NOT NULL,
-                    last_accessed INTEGER NOT NULL,
-                    expires_at INTEGER,
-                    data_checksum TEXT,
                     schema_version INTEGER DEFAULT 1
                 )
             "#, self.table_name);
@@ -1204,26 +908,14 @@ impl DatabaseSessionStore {
             
             // Create indexes for optimal query performance
             let indexes = vec![
-                format!("CREATE INDEX IF NOT EXISTS idx_{}_expires ON {} (expires_at) WHERE expires_at IS NOT NULL", 
-                    self.table_name, self.table_name),
-                format!("CREATE INDEX IF NOT EXISTS idx_{}_last_accessed ON {} (last_accessed)", 
-                    self.table_name, self.table_name),
-                format!("CREATE INDEX IF NOT EXISTS idx_{}_created_at ON {} (created_at)", 
-                    self.table_name, self.table_name),
-                format!("CREATE INDEX IF NOT EXISTS idx_{}_schema_version ON {} (schema_version)", 
-                    self.table_name, self.table_name),
             ];
             
             for index_sql in indexes {
                 db.exec(index_sql, vec![])
                     .map_err(|e| SessionError::StoreError(format!("Failed to create index: {}", e)))?;
-            }
-            
             // Create metadata table for schema versioning
             let metadata_sql = format!(r#"
                 CREATE TABLE IF NOT EXISTS {}_metadata (
-                    key TEXT PRIMARY KEY,
-                    value TEXT NOT NULL,
                     updated_at INTEGER NOT NULL
                 )
             "#, self.table_name);
@@ -1235,8 +927,6 @@ impl DatabaseSessionStore {
         })?;
         
         Ok(())
-    }
-    
     /// Start automatic cleanup task for expired sessions
     fn start_cleanup_task(&self) {
         let pool = std::sync::Arc::clone(&self.pool);
@@ -1256,7 +946,6 @@ impl DatabaseSessionStore {
                             .as_secs() as i64;
                         
                         let cleanup_sql = format!(
-                            "DELETE FROM {} WHERE expires_at IS NOT NULL AND expires_at < ?", 
                             table_name
                         );
                         
@@ -1280,8 +969,6 @@ impl DatabaseSessionStore {
     /// Get pool statistics for monitoring
     pub fn get_pool_stats(&self) -> PoolStats {
         self.pool.get_pool_stats()
-    }
-    
     /// Shutdown the session store and cleanup resources
     pub fn shutdown(&self) {
         self.pool.shutdown();
@@ -1292,8 +979,6 @@ impl DatabaseSessionStore {
                 // In a real implementation, we'd use a shutdown signal
             }
         }
-    }
-    
     /// Calculate data checksum for integrity verification
     fn calculate_checksum(&self, data: &str) -> String {
         let mut hash: u64 = 5381;
@@ -1301,19 +986,14 @@ impl DatabaseSessionStore {
             hash = ((hash << 5).wrapping_add(hash)).wrapping_add(byte as u64);
         }
         format!("{:016x}", hash)
-    }
-
     /// Initialize database connection and create session table
     fn ensure_connection(&self) -> crate::error::Result<()> {
         self.pool.get_connection()
-    }
-
     /// Load session data from database
     fn db_select(&self, session_id: &str) -> crate::error::Result<()> {
         let mut connection = self.ensure_connection()?;
         
         let sql = format!(
-            "SELECT session_data FROM {} WHERE id = ?", 
             self.table_name
         );
         
@@ -1326,8 +1006,6 @@ impl DatabaseSessionStore {
                 Ok(None)
             }
         })
-    }
-
     /// Insert or update session in database
     fn db_insert_or_update(&self, session: &Session) -> crate::error::Result<()> {
         let mut connection = self.ensure_connection()?;
@@ -1347,14 +1025,11 @@ impl DatabaseSessionStore {
 //                 crate::stdlib::database::SqlValue::String(session.serialize()),
 //                 crate::stdlib::database::SqlValue::Integer(session.created_at as i64),
 //                 crate::stdlib::database::SqlValue::Integer(session.last_accessed as i64),
-                expires_at,
             ]).map_err(|e| SessionError::StoreError(format!("Failed to save session: {}", e)))?;
             Ok(())
         })?;
         
         Ok(())
-    }
-
     /// Delete session from database
     fn db_delete(&self, session_id: &str) -> crate::error::Result<()> {
         let mut connection = self.ensure_connection()?;
@@ -1368,8 +1043,6 @@ impl DatabaseSessionStore {
         })?;
         
         Ok(())
-    }
-
     /// Count total sessions in database
     fn db_count(&self) -> crate::error::Result<()> {
         let mut connection = self.ensure_connection()?;
@@ -1385,8 +1058,6 @@ impl DatabaseSessionStore {
                 Ok(0)
             }
         })
-    }
-
     /// Clean up expired sessions from database
     fn db_cleanup_expired(&self) -> crate::error::Result<()> {
         let mut connection = self.ensure_connection()?;
@@ -1397,7 +1068,6 @@ impl DatabaseSessionStore {
             .as_secs() as i64;
         
         let sql = format!(
-            "DELETE FROM {} WHERE expires_at IS NOT NULL AND expires_at < ?", 
             self.table_name
         );
         
@@ -1407,8 +1077,6 @@ impl DatabaseSessionStore {
         })?;
         
         Ok(result.rows_affected as usize)
-    }
-
     /// Check if session exists in database
     fn db_exists(&self, session_id: &str) -> crate::error::Result<()> {
         let mut connection = self.ensure_connection()?;
@@ -1429,7 +1097,6 @@ impl SessionStore for DatabaseSessionStore {
         
         connection.execute_with_retry(|db| {
             let sql = format!(
-                "SELECT session_data, data_checksum FROM {} WHERE id = ? LIMIT 1", 
                 self.table_name
             );
             
@@ -1457,8 +1124,6 @@ impl SessionStore for DatabaseSessionStore {
                 Ok(None)
             }
         })
-    }
-
     fn save(&mut self, session: &Session) -> crate::error::Result<()> {
         let mut connection = self.pool.get_connection()?;
         
@@ -1480,15 +1145,12 @@ impl SessionStore for DatabaseSessionStore {
 //                 crate::stdlib::database::SqlValue::String(session_data),
 //                 crate::stdlib::database::SqlValue::Integer(session.created_at as i64),
 //                 crate::stdlib::database::SqlValue::Integer(session.last_accessed as i64),
-                expires_at,
 //                 crate::stdlib::database::SqlValue::String(checksum),
 //                 crate::stdlib::database::SqlValue::Integer(self.schema_version as i64),
             ]).map_err(|e| SessionError::StoreError(format!("Failed to save session: {}", e)))?;
             
             Ok(())
         })
-    }
-
     fn delete(&mut self, session_id: &str) -> crate::error::Result<()> {
         let mut connection = self.pool.get_connection()?;
         
@@ -1500,8 +1162,6 @@ impl SessionStore for DatabaseSessionStore {
             
             Ok(())
         })
-    }
-
     fn cleanup_expired(&mut self) -> crate::error::Result<()> {
         let mut connection = self.pool.get_connection()?;
         
@@ -1512,7 +1172,6 @@ impl SessionStore for DatabaseSessionStore {
                 .as_secs() as i64;
             
             let sql = format!(
-                "DELETE FROM {} WHERE expires_at IS NOT NULL AND expires_at < ?", 
                 self.table_name
             );
             
@@ -1524,8 +1183,6 @@ impl SessionStore for DatabaseSessionStore {
             
             Ok(result.rows_affected as usize)
         })
-    }
-
     fn exists(&self, session_id: &str) -> bool {
         self.pool.get_connection()
             .and_then(|mut connection| {
@@ -1537,8 +1194,6 @@ impl SessionStore for DatabaseSessionStore {
                 })
             })
             .unwrap_or(false)
-    }
-
     fn count(&self) -> usize {
         self.pool.get_connection()
             .and_then(|mut connection| {
@@ -1566,80 +1221,52 @@ impl Drop for DatabaseSessionStore {
 
 /// Session manager
 pub struct SessionManager {
-    store: Box<dyn SessionStore>,
-    config: SessionConfig,
-}
-
 impl SessionManager {
     /// Create new session manager
     pub fn new(config: SessionConfig) -> crate::error::Result<()> {
         let store: Box<dyn SessionStore> = match &config.store_type {
-            SessionStoreType::Memory => Box::new(MemorySessionStore::new()),
-            SessionStoreType::File(path) => Box::new(FileSessionStore::new(path.clone())),
             SessionStoreType::Redis(connection_string) => {
                 Box::new(RedisSessionStore::new(connection_string.clone()))
             }
             SessionStoreType::Database(connection_string) => {
                 Box::new(DatabaseSessionStore::new(connection_string.clone())?)
             }
-        };
 
         Ok(Self { store, config })
-    }
-
     /// Create new session
     pub fn create_session(&mut self) -> crate::error::Result<()> {
         let mut session = Session::new();
         session.set_expiry(self.config.max_age.as_secs());
         self.store.save(&session)?;
         Ok(session)
-    }
-
     /// Load existing session
     pub fn load_session(&self, session_id: &str) -> crate::error::Result<()> {
         self.store.load(session_id)
-    }
-
     /// Save session
     pub fn save_session(&mut self, session: &Session) -> crate::error::Result<()> {
         if session.is_dirty {
             self.store.save(session)?;
         }
         Ok(())
-    }
-
     /// Delete session
     pub fn delete_session(&mut self, session_id: &str) -> crate::error::Result<()> {
         self.store.delete(session_id)
-    }
-
     /// Generate session cookie
     pub fn create_session_cookie(&self, session: &Session) -> String {
         let mut cookie_parts = vec![
-            format!("{}={}", self.config.cookie_name, session.id),
         ];
 
         if self.config.http_only {
             cookie_parts.push("HttpOnly".to_string());
-        }
-
         if self.config.secure {
             cookie_parts.push("Secure".to_string());
-        }
-
         let same_site = match self.config.same_site {
-            SameSitePolicy::Strict => "SameSite=Strict",
-            SameSitePolicy::Lax => "SameSite=Lax",
-            SameSitePolicy::None => "SameSite=None",
-        };
         cookie_parts.push(same_site.to_string());
 
         let max_age = self.config.max_age.as_secs();
         cookie_parts.push(format!("Max-Age={}", max_age));
 
         cookie_parts.join("; ")
-    }
-
     /// Parse session ID from cookie header
     pub fn parse_session_id_from_cookie(&self, cookie_header: &str) -> Option<String> {
         for cookie in cookie_header.split(';') {
@@ -1649,36 +1276,17 @@ impl SessionManager {
             }
         }
         None
-    }
-
     /// Cleanup expired sessions
     pub fn cleanup_expired_sessions(&mut self) -> crate::error::Result<()> {
         self.store.cleanup_expired()
-    }
-
     /// Get session statistics
     pub fn get_session_stats(&self) -> SessionStats {
         SessionStats {
-            total_sessions: self.store.count(),
-            store_type: format!("{:?}", self.config.store_type),
-            max_age_seconds: self.config.max_age.as_secs(),
-            cleanup_interval_seconds: self.config.cleanup_interval.as_secs(),
         }
     }
-}
-
 /// Session error types
 #[derive(Debug)]
 pub enum SessionError {
-    InvalidData(String),
-    StoreError(String),
-    SerializationError(String),
-    NotFound(String),
-    CorruptedData(String),
-    ConnectionPoolExhausted,
-    TransactionFailed(String),
-}
-
 // impl fmt::Display for SessionError {
 //     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
 //         match self {
@@ -1698,9 +1306,3 @@ pub enum SessionError {
 /// Session statistics
 #[derive(Debug)]
 pub struct SessionStats {
-    pub total_sessions: usize,
-    pub store_type: String,
-    pub max_age_seconds: u64,
-    pub cleanup_interval_seconds: u64,
-}
-

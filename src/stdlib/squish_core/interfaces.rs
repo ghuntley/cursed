@@ -14,8 +14,6 @@ pub trait Reader: io::Read {
     /// Get compression statistics if available
 //     fn stats(&self) -> Option<crate::stdlib::squish_core::statistics::CompressionStats> {
         None
-    }
-    
     /// Reset the reader to its initial state
     fn reset(&mut self) -> SquishResult<()> {
 //         Err(crate::stdlib::squish_core::error::not_supported_error("Reset not supported"))
@@ -37,14 +35,10 @@ pub trait Writer: io::Write {
     /// Get compression statistics if available
 //     fn stats(&self) -> Option<crate::stdlib::squish_core::statistics::CompressionStats> {
         None
-    }
-    
     /// Reset the writer to use a new destination
     fn reset(&mut self, dst: Box<dyn io::Write>) -> SquishResult<()> {
         let _ = dst; // Suppress unused parameter warning
 //         Err(crate::stdlib::squish_core::error::not_supported_error("Reset not supported"))
-    }
-    
     /// Set compression level (if supported)
     fn set_level(&mut self, level: i32) -> SquishResult<()> {
         let _ = level; // Suppress unused parameter warning
@@ -69,8 +63,6 @@ pub trait Compressor {
     /// Get compressor statistics
 //     fn stats(&self) -> Option<crate::stdlib::squish_core::statistics::CompressionStats> {
         None
-    }
-    
     /// Reset compressor state
     fn reset(&mut self) -> SquishResult<()> {
         Ok(())
@@ -87,13 +79,9 @@ pub trait Decompressor {
     fn decompressed_size(&self, compressed_data: &[u8]) -> Option<usize> {
         let _ = compressed_data; // Suppress unused parameter warning
         None
-    }
-    
     /// Get decompressor statistics
 //     fn stats(&self) -> Option<crate::stdlib::squish_core::statistics::CompressionStats> {
         None
-    }
-    
     /// Reset decompressor state
     fn reset(&mut self) -> SquishResult<()> {
         Ok(())
@@ -115,14 +103,10 @@ pub trait ExtendedReader: Reader {
             total_skipped += skipped;
         }
         Ok(total_skipped)
-    }
-    
     /// Peek at upcoming data without consuming it
     fn peek(&mut self, buf: &mut [u8]) -> SquishResult<usize> {
         let _ = buf; // Suppress unused parameter warning
 //         Err(crate::stdlib::squish_core::error::not_supported_error("Peek not supported"))
-    }
-    
     /// Check if the reader has reached end of stream
     fn is_eof(&self) -> bool {
         false
@@ -142,13 +126,9 @@ pub trait ExtendedWriter: Writer {
             written += n;
         }
         Ok(())
-    }
-    
     /// Sync all data to the underlying storage
     fn sync(&mut self) -> SquishResult<()> {
         self.flush()
-    }
-    
     /// Get the current position in the stream if supported
     fn position(&self) -> Option<u64> {
         None
@@ -161,8 +141,6 @@ pub trait SeekableReader: Reader + io::Seek {
     fn seek_uncompressed(&mut self, pos: u64) -> SquishResult<u64> {
         let _ = pos; // Suppress unused parameter warning
 //         Err(crate::stdlib::squish_core::error::not_supported_error("Seek in uncompressed data not supported"))
-    }
-    
     /// Get the total uncompressed size if known
     fn uncompressed_size(&self) -> Option<u64> {
         None
@@ -179,8 +157,6 @@ pub trait Configurable {
     
     /// Get current configuration
     fn get_config(&self) -> Self::Config;
-}
-
 /// Trait for components that support dictionary-based compression
 pub trait DictionarySupport {
     /// Set compression dictionary

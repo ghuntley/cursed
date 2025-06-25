@@ -9,52 +9,24 @@ use std::time::{Duration, Instant};
 /// Connection pool for reusing TCP connections
 #[derive(Debug)]
 pub struct ConnectionPool {
-    connections: HashMap<String, PooledConnection>,
-    config: PoolConfig,
-}
-
 #[derive(Debug)]
 struct PooledConnection {
-    socket: TcpSocket,
-    last_used: Instant,
-    in_use: bool,
-}
-
 /// Connection pool configuration
 #[derive(Debug, Clone)]
 pub struct PoolConfig {
-    pub max_connections: usize,
-    pub max_idle_time: Duration,
-    pub connection_timeout: Duration,
-}
-
 impl Default for PoolConfig {
     fn default() -> Self {
         Self {
-            max_connections: 10,
-            max_idle_time: Duration::from_secs(30),
-            connection_timeout: Duration::from_secs(30),
         }
     }
-}
-
 /// Pool statistics
 #[derive(Debug)]
 pub struct PoolStats {
-    pub total_connections: usize,
-    pub active_connections: usize,
-    pub idle_connections: usize,
-}
-
 impl ConnectionPool {
     pub fn new() -> Self {
         Self::with_config(PoolConfig::default())
-    }
-    
     pub fn with_config(config: PoolConfig) -> Self {
         Self {
-            connections: HashMap::new(),
-            config,
         }
     }
     
@@ -76,13 +48,9 @@ impl ConnectionPool {
         
         self.connections.insert(key, PooledConnection {
             socket: TcpSocket::new(), // Placeholder
-            last_used: Instant::now(),
-            in_use: true,
         });
         
         Ok(socket)
-    }
-    
     pub fn return_connection(&mut self, host: &str, port: u16) {
         let key = format!("{}:{}", host, port);
         if let Some(pooled) = self.connections.get_mut(&key) {
@@ -95,17 +63,12 @@ impl ConnectionPool {
         self.connections.retain(|_, pooled| {
             !self.is_expired(pooled) || pooled.in_use
         });
-    }
-    
     pub fn stats(&self) -> PoolStats {
         let total = self.connections.len();
         let active = self.connections.values().filter(|c| c.in_use).count();
         let idle = total - active;
         
         PoolStats {
-            total_connections: total,
-            active_connections: active,
-            idle_connections: idle,
         }
     }
     

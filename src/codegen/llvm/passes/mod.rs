@@ -41,10 +41,7 @@ pub use jump_threading::JumpThreadingPass;
 use crate::error::{CursedError, Result};
 
 use inkwell::{
-    context::Context,
-    module::Module,
-    values::FunctionValue,
-};
+// };
 
 use std::collections::HashMap;
 use std::time::{Duration, Instant};
@@ -61,8 +58,6 @@ pub trait OptimizationPass<'ctx> {
     /// Get the pass dependencies
     fn dependencies(&self) -> Vec<String> {
         Vec::new()
-    }
-    
     /// Check if this pass should run given the current configuration
     fn should_run(&self, config: &PassConfiguration) -> bool;
     
@@ -73,21 +68,13 @@ pub trait OptimizationPass<'ctx> {
     fn run_on_function(&mut self, function: &FunctionValue<'ctx>, context: &'ctx Context) -> Result<PassResult> {
         // Default implementation - not all passes work on functions
         Ok(PassResult::unchanged())
-    }
-    
     /// Get optimization level requirements
     fn required_optimization_level(&self) -> OptimizationLevel {
         OptimizationLevel::O1
-    }
-    
     /// Get estimated execution time
     fn estimated_execution_time(&self) -> Duration {
         Duration::from_millis(100)
-    }
-    
     /// Reset pass state for reuse
-    fn reset(&mut self) {}
-    
     /// Get pass statistics
     fn get_statistics(&self) -> PassStatistics {
         PassStatistics::default()
@@ -97,83 +84,24 @@ pub trait OptimizationPass<'ctx> {
 /// Configuration for optimization passes
 #[derive(Debug, Clone)]
 pub struct PassConfiguration {
-    pub optimization_level: OptimizationLevel,
-    pub target_cpu: Option<String>,
-    pub target_features: Vec<String>,
-    pub enable_aggressive_optimizations: bool,
-    pub enable_size_optimizations: bool,
-    pub enable_debug_info_preservation: bool,
-    pub max_inline_size: usize,
-    pub max_unroll_count: usize,
-    pub enable_vectorization: bool,
-    pub enable_loop_unrolling: bool,
-    pub enable_dead_code_elimination: bool,
-    pub enable_constant_propagation: bool,
-    pub enable_memory_optimizations: bool,
-    pub time_budget: Duration,
-}
-
 impl Default for PassConfiguration {
     fn default() -> Self {
         Self {
-            optimization_level: OptimizationLevel::O2,
-            target_cpu: None,
-            target_features: Vec::new(),
-            enable_aggressive_optimizations: false,
-            enable_size_optimizations: false,
-            enable_debug_info_preservation: true,
-            max_inline_size: 1000,
-            max_unroll_count: 8,
-            enable_vectorization: true,
-            enable_loop_unrolling: true,
-            enable_dead_code_elimination: true,
-            enable_constant_propagation: true,
-            enable_memory_optimizations: true,
-            time_budget: Duration::from_secs(30),
         }
     }
-}
-
 /// Result of running an optimization pass
 #[derive(Debug, Clone)]
 pub struct PassResult {
-    pub changed: bool,
-    pub instructions_eliminated: usize,
-    pub functions_inlined: usize,
-    pub loops_unrolled: usize,
-    pub constants_folded: usize,
-    pub memory_allocations_eliminated: usize,
-    pub branches_eliminated: usize,
-    pub execution_time: Duration,
-    pub memory_usage: usize,
-    pub errors: Vec<String>,
-    pub warnings: Vec<String>,
-    pub metrics: HashMap<String, f64>,
-}
-
 impl PassResult {
     /// Create a new pass result indicating no changes
     pub fn unchanged() -> Self {
         Self {
-            changed: false,
-            instructions_eliminated: 0,
-            functions_inlined: 0,
-            loops_unrolled: 0,
-            constants_folded: 0,
-            memory_allocations_eliminated: 0,
-            branches_eliminated: 0,
-            execution_time: Duration::from_secs(0),
-            memory_usage: 0,
-            errors: Vec::new(),
-            warnings: Vec::new(),
-            metrics: HashMap::new(),
         }
     }
     
     /// Create a new pass result indicating changes were made
     pub fn changed() -> Self {
         Self {
-            changed: true,
             ..Self::unchanged()
         }
     }
@@ -195,17 +123,11 @@ impl PassResult {
         for (key, value) in other.metrics {
             let current = self.metrics.entry(key).or_insert(0.0);
             *current += value;
-        }
-        
         self
-    }
-    
     /// Calculate optimization effectiveness score
     pub fn effectiveness_score(&self) -> f64 {
         if self.execution_time.as_millis() == 0 {
             return 0.0;
-        }
-        
         let optimizations = (self.instructions_eliminated + 
                            self.functions_inlined + 
                            self.loops_unrolled +
@@ -220,24 +142,12 @@ impl PassResult {
 /// Statistics for a pass execution
 #[derive(Debug, Clone, Default)]
 pub struct PassStatistics {
-    pub total_executions: u64,
-    pub successful_executions: u64,
-    pub total_execution_time: Duration,
-    pub average_execution_time: Duration,
-    pub total_instructions_eliminated: u64,
-    pub total_functions_inlined: u64,
-    pub total_optimizations_applied: u64,
-    pub peak_memory_usage: usize,
-}
-
 impl PassStatistics {
     /// Update statistics with a new execution result
     pub fn update(&mut self, result: &PassResult) {
         self.total_executions += 1;
         if result.errors.is_empty() {
             self.successful_executions += 1;
-        }
-        
         self.total_execution_time += result.execution_time;
         self.average_execution_time = 
             self.total_execution_time / self.total_executions as u32;
@@ -249,8 +159,6 @@ impl PassStatistics {
                                            result.loops_unrolled +
                                            result.constants_folded) as u64;
         self.peak_memory_usage = self.peak_memory_usage.max(result.memory_usage);
-    }
-    
     /// Get success rate
     pub fn success_rate(&self) -> f64 {
         if self.total_executions == 0 {
@@ -259,8 +167,6 @@ impl PassStatistics {
             self.successful_executions as f64 / self.total_executions as f64
         }
     }
-}
-
 // Import canonical OptimizationLevel from optimization_config
 pub use crate::common_types::optimization_level::OptimizationLevel;
 
@@ -284,12 +190,8 @@ pub mod utils {
         }
         
         ModuleComplexity {
-            function_count,
-            instruction_count: total_instructions,
-            basic_block_count: total_basic_blocks,
             estimated_optimization_time: Duration::from_millis(
                 (total_instructions as u64 * 10) + (function_count as u64 * 50)
-            ),
         }
     }
     
@@ -302,25 +204,15 @@ pub mod utils {
             false
         }
     }
-}
-
 /// Module complexity metrics
 #[derive(Debug, Clone)]
 pub struct ModuleComplexity {
-    pub function_count: usize,
-    pub instruction_count: usize,
-    pub basic_block_count: usize,
-    pub estimated_optimization_time: Duration,
-}
-
 impl ModuleComplexity {
     /// Calculate complexity score
     pub fn complexity_score(&self) -> f64 {
         (self.function_count as f64 * 10.0) + 
         (self.instruction_count as f64) + 
         (self.basic_block_count as f64 * 5.0)
-    }
-    
     /// Check if module is considered large
     pub fn is_large_module(&self) -> bool {
         self.function_count > 100 || self.instruction_count > 10000

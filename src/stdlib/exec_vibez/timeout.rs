@@ -16,31 +16,18 @@ use super::error::{ExecResult, ExecError, execution_failed};
 #[derive(Debug, Clone)]
 pub struct TimeoutConfig {
     /// Execution timeout
-    pub timeout: Duration,
     /// Grace period before force killing
-    pub grace_period: Duration,
     /// Whether to use SIGTERM before SIGKILL (Unix only)
-    pub graceful_shutdown: bool,
     /// Whether to kill the entire process group
-    pub kill_group: bool,
-}
-
 impl Default for TimeoutConfig {
     fn default() -> Self {
         Self {
-            timeout: Duration::from_secs(30),
-            grace_period: Duration::from_secs(5),
-            graceful_shutdown: true,
-            kill_group: false,
         }
     }
-}
-
 impl TimeoutConfig {
     /// Create a new timeout configuration
     pub fn new(timeout: Duration) -> Self {
         Self {
-            timeout,
             ..Default::default()
         }
     }
@@ -49,14 +36,10 @@ impl TimeoutConfig {
     pub fn with_grace_period(mut self, grace_period: Duration) -> Self {
         self.grace_period = grace_period;
         self
-    }
-    
     /// Set graceful shutdown behavior
     pub fn with_graceful_shutdown(mut self, graceful: bool) -> Self {
         self.graceful_shutdown = graceful;
         self
-    }
-    
     /// Set whether to kill the process group
     pub fn with_kill_group(mut self, kill_group: bool) -> Self {
         self.kill_group = kill_group;
@@ -68,8 +51,6 @@ impl TimeoutConfig {
 pub fn run_with_timeout(name: &str, args: &[&str], timeout: Duration) -> ExecResult<Vec<u8>> {
     let config = TimeoutConfig::new(timeout);
     run_with_timeout_config(name, args, config)
-}
-
 /// Run a command with timeout configuration
 pub fn run_with_timeout_config(name: &str, args: &[&str], config: TimeoutConfig) -> ExecResult<Vec<u8>> {
     let mut cmd = Cmd::new(name, args);
@@ -97,43 +78,24 @@ pub fn run_with_timeout_config(name: &str, args: &[&str], config: TimeoutConfig)
             Err(execution_failed("Command was killed"))
         }
     }
-}
-
 /// Output command with timeout
 pub fn output_with_timeout(name: &str, args: &[&str], timeout: Duration) -> ExecResult<Vec<u8>> {
     run_with_timeout(name, args, timeout)
-}
-
 /// Combined output command with timeout
 pub fn combined_output_with_timeout(name: &str, args: &[&str], timeout: Duration) -> ExecResult<Vec<u8>> {
     let mut cmd = Cmd::new(name, args);
     cmd.set_timeout(timeout);
     cmd.combined_output()
-}
-
 /// Timeout handler for process management
 #[derive(Debug)]
 struct TimeoutHandler {
-    process: Process,
-    config: TimeoutConfig,
-    cancelled: Arc<AtomicBool>,
-}
-
 /// Result of a timeout operation
 #[derive(Debug, Clone)]
 enum TimeoutResult {
-    Completed(ProcessState),
-    TimedOut,
-    Killed,
-}
-
 impl TimeoutHandler {
     /// Create a new timeout handler
     fn new(process: Process, config: TimeoutConfig) -> Self {
         Self {
-            process,
-            config,
-            cancelled: Arc::new(AtomicBool::new(false)),
         }
     }
     
@@ -156,8 +118,6 @@ impl TimeoutHandler {
                     Self::graceful_kill(&timeout_process, &timeout_config);
                 } else {
                     let _ = timeout_process.kill();
-                }
-                
                 TimeoutResult::TimedOut
             } else {
                 // Process completed before timeout
@@ -178,19 +138,14 @@ impl TimeoutHandler {
                 // Process has completed
                 break Some(self.process.wait());
             }
-        };
         
         // Cancel the timeout thread
         self.cancelled.store(true, Ordering::Relaxed);
         
         match process_result {
-            Some(Ok(state)) => Ok(TimeoutResult::Completed(state)),
-            Some(Err(e)) => Err(e),
             None => {
                 // Wait for timeout thread to finish cleanup
                 match timeout_thread.join() {
-                    Ok(result) => Ok(result),
-                    Err(_) => Ok(TimeoutResult::TimedOut),
                 }
             }
         }
@@ -220,8 +175,6 @@ impl TimeoutHandler {
                     tracing::warn!("Failed to send SIGKILL to process {}: {}", process.pid(), e);
                 }
             }
-        }
-        
         #[cfg(windows)]
         {
             // Windows doesn't have graceful signals, just terminate
@@ -236,21 +189,12 @@ impl TimeoutHandler {
 #[derive(Debug)]
 pub struct TimeoutManager {
     /// Active timeouts
-    timeouts: Arc<Mutex<Vec<ActiveTimeout>>>,
-}
-
 #[derive(Debug)]
 struct ActiveTimeout {
-    process_id: u32,
-    deadline: Instant,
-    config: TimeoutConfig,
-}
-
 impl TimeoutManager {
     /// Create a new timeout manager
     pub fn new() -> Self {
         Self {
-            timeouts: Arc::new(Mutex::new(Vec::new())),
         }
     }
     
@@ -258,20 +202,12 @@ impl TimeoutManager {
     pub fn add_timeout(&self, process_id: u32, config: TimeoutConfig) {
         let deadline = Instant::now() + config.timeout;
         let timeout = ActiveTimeout {
-            process_id,
-            deadline,
-            config,
-        };
         
         self.timeouts.lock().unwrap().push(timeout);
-    }
-    
     /// Remove a process from timeout management
     pub fn remove_timeout(&self, process_id: u32) {
         let mut timeouts = self.timeouts.lock().unwrap();
         timeouts.retain(|t| t.process_id != process_id);
-    }
-    
     /// Check for expired timeouts
     pub fn check_timeouts(&self) -> Vec<u32> {
         let now = Instant::now();
@@ -281,8 +217,6 @@ impl TimeoutManager {
             .filter(|t| now >= t.deadline)
             .map(|t| t.process_id)
             .collect()
-    }
-    
     /// Get the number of active timeouts
     pub fn active_count(&self) -> usize {
         self.timeouts.lock().unwrap().len()

@@ -16,46 +16,28 @@ use std::fmt;
 #[derive(Debug, Clone, PartialEq)]
 pub enum CompatibilityMode {
     /// Only classical algorithms (legacy mode)
-    ClassicalOnly,
     /// Classical algorithms with PQC validation
-    ClassicalWithPqcValidation,
     /// Hybrid mode (both classical and PQC)
-    Hybrid,
     /// PQC with classical fallback
-    PqcWithClassicalFallback,
     /// Only PQC algorithms (future mode)
-    PqcOnly,
-}
-
 impl CompatibilityMode {
     pub fn name(&self) -> &'static str {
         match self {
-            CompatibilityMode::ClassicalOnly => "Classical Only",
-            CompatibilityMode::ClassicalWithPqcValidation => "Classical with PQC Validation",
-            CompatibilityMode::Hybrid => "Hybrid Mode",
-            CompatibilityMode::PqcWithClassicalFallback => "PQC with Classical Fallback",
-            CompatibilityMode::PqcOnly => "PQC Only",
         }
     }
     
     pub fn supports_classical(&self) -> bool {
-        matches!(self, 
             CompatibilityMode::ClassicalOnly | 
             CompatibilityMode::ClassicalWithPqcValidation |
             CompatibilityMode::Hybrid |
             CompatibilityMode::PqcWithClassicalFallback
         )
-    }
-    
     pub fn supports_pqc(&self) -> bool {
-        matches!(self, 
             CompatibilityMode::ClassicalWithPqcValidation |
             CompatibilityMode::Hybrid |
             CompatibilityMode::PqcWithClassicalFallback |
             CompatibilityMode::PqcOnly
         )
-    }
-    
     pub fn requires_both(&self) -> bool {
         matches!(self, CompatibilityMode::Hybrid)
     }
@@ -64,114 +46,32 @@ impl CompatibilityMode {
 /// fr fr Cryptographic algorithm mapping
 #[derive(Debug, Clone)]
 pub struct AlgorithmMapping {
-    pub classical_algorithm: String,
-    pub pqc_equivalent: String,
-    pub hybrid_scheme: Option<String>,
-    pub security_level: SecurityLevel,
-    pub compatibility_notes: Vec<String>,
-}
-
 impl AlgorithmMapping {
     /// Create mapping for key exchange algorithms
     pub fn key_exchange_mapping() -> Vec<Self> {
         vec![
             AlgorithmMapping {
-                classical_algorithm: "RSA-2048".to_string(),
-                pqc_equivalent: "Kyber512".to_string(),
-                hybrid_scheme: Some("RSA2048+Kyber512".to_string()),
-                security_level: SecurityLevel::Level1,
                 compatibility_notes: vec![
-                    "RSA-2048 provides ~112-bit security".to_string(),
-                    "Kyber512 provides 128-bit quantum security".to_string(),
-                    "Hybrid mode recommended for transition".to_string(),
-                ],
-            },
             AlgorithmMapping {
-                classical_algorithm: "RSA-3072".to_string(),
-                pqc_equivalent: "Kyber768".to_string(),
-                hybrid_scheme: Some("RSA3072+Kyber768".to_string()),
-                security_level: SecurityLevel::Level3,
                 compatibility_notes: vec![
-                    "RSA-3072 provides ~128-bit security".to_string(),
-                    "Kyber768 provides 192-bit quantum security".to_string(),
-                ],
-            },
             AlgorithmMapping {
-                classical_algorithm: "RSA-4096".to_string(),
-                pqc_equivalent: "Kyber1024".to_string(),
-                hybrid_scheme: Some("RSA4096+Kyber1024".to_string()),
-                security_level: SecurityLevel::Level5,
                 compatibility_notes: vec![
-                    "RSA-4096 provides ~152-bit security".to_string(),
-                    "Kyber1024 provides 256-bit quantum security".to_string(),
-                ],
-            },
             AlgorithmMapping {
-                classical_algorithm: "ECDH-P256".to_string(),
-                pqc_equivalent: "Kyber512".to_string(),
-                hybrid_scheme: Some("P256+Kyber512".to_string()),
-                security_level: SecurityLevel::Level1,
                 compatibility_notes: vec![
-                    "ECDH-P256 provides ~128-bit security".to_string(),
-                    "Direct replacement with Kyber512".to_string(),
-                ],
-            },
             AlgorithmMapping {
-                classical_algorithm: "X25519".to_string(),
-                pqc_equivalent: "Kyber768".to_string(),
-                hybrid_scheme: Some("X25519+Kyber768".to_string()),
-                security_level: SecurityLevel::Level3,
                 compatibility_notes: vec![
-                    "X25519 provides ~128-bit security".to_string(),
-                    "Hybrid with Kyber768 recommended".to_string(),
-                ],
-            },
         ]
-    }
-    
     /// Create mapping for signature algorithms
     pub fn signature_mapping() -> Vec<Self> {
         vec![
             AlgorithmMapping {
-                classical_algorithm: "RSA-2048".to_string(),
-                pqc_equivalent: "Dilithium2".to_string(),
-                hybrid_scheme: Some("RSA2048+Dilithium2".to_string()),
-                security_level: SecurityLevel::Level1,
                 compatibility_notes: vec![
-                    "RSA-2048 signatures are large".to_string(),
-                    "Dilithium2 provides smaller signatures".to_string(),
-                ],
-            },
             AlgorithmMapping {
-                classical_algorithm: "ECDSA-P256".to_string(),
-                pqc_equivalent: "Dilithium2".to_string(),
-                hybrid_scheme: Some("P256+Dilithium2".to_string()),
-                security_level: SecurityLevel::Level1,
                 compatibility_notes: vec![
-                    "ECDSA-P256 provides compact signatures".to_string(),
-                    "Dilithium2 signatures are larger but quantum-safe".to_string(),
-                ],
-            },
             AlgorithmMapping {
-                classical_algorithm: "Ed25519".to_string(),
-                pqc_equivalent: "Dilithium3".to_string(),
-                hybrid_scheme: Some("Ed25519+Dilithium3".to_string()),
-                security_level: SecurityLevel::Level3,
                 compatibility_notes: vec![
-                    "Ed25519 has excellent performance".to_string(),
-                    "Hybrid preserves performance while adding PQC".to_string(),
-                ],
-            },
             AlgorithmMapping {
-                classical_algorithm: "RSA-PSS-3072".to_string(),
-                pqc_equivalent: "SPHINCS+192s".to_string(),
-                hybrid_scheme: Some("RSA3072+SPHINCS192s".to_string()),
-                security_level: SecurityLevel::Level3,
                 compatibility_notes: vec![
-                    "RSA-PSS provides security proofs".to_string(),
-                    "SPHINCS+ provides hash-based quantum security".to_string(),
-                ],
-            },
         ]
     }
 }
@@ -179,55 +79,21 @@ impl AlgorithmMapping {
 /// fr fr Compatibility assessment result
 #[derive(Debug, Clone)]
 pub struct CompatibilityAssessment {
-    pub current_algorithms: Vec<String>,
-    pub compatibility_mode: CompatibilityMode,
-    pub migration_recommendations: Vec<MigrationRecommendation>,
-    pub security_analysis: SecurityAnalysis,
-    pub performance_impact: PerformanceImpact,
-    pub timeline_estimate: TimelineEstimate,
-}
-
 /// fr fr Migration recommendation
 #[derive(Debug, Clone)]
 pub struct MigrationRecommendation {
-    pub priority: MigrationPriority,
-    pub current_algorithm: String,
-    pub recommended_replacement: String,
-    pub migration_steps: Vec<String>,
-    pub risks: Vec<String>,
-    pub estimated_effort: String,
-}
-
 /// fr fr Migration priority levels
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
 pub enum MigrationPriority {
-    Low,
-    Medium,
-    High,
-    Critical,
-}
-
 impl MigrationPriority {
     pub fn name(&self) -> &'static str {
         match self {
-            MigrationPriority::Low => "Low",
-            MigrationPriority::Medium => "Medium",
-            MigrationPriority::High => "High",
-            MigrationPriority::Critical => "Critical",
         }
     }
-}
-
 /// fr fr Security analysis for migration
 #[derive(Debug, Clone)]
 pub struct SecurityAnalysis {
-    pub quantum_vulnerable_algorithms: Vec<String>,
-    pub quantum_safe_algorithms: Vec<String>,
     pub overall_quantum_readiness: f64, // Percentage (0.0 to 100.0)
-    pub critical_vulnerabilities: Vec<String>,
-    pub security_recommendations: Vec<String>,
-}
-
 /// fr fr Performance impact assessment
 #[derive(Debug, Clone)]
 pub struct PerformanceImpact {
@@ -236,46 +102,25 @@ pub struct PerformanceImpact {
     pub verification_time_factor: f64, // Multiplicative factor vs classical
     pub bandwidth_impact: String,      // Description of bandwidth changes
     pub storage_impact: String,        // Description of storage changes
-}
-
 /// fr fr Timeline estimate for migration
 #[derive(Debug, Clone)]
 pub struct TimelineEstimate {
-    pub planning_phase_weeks: u32,
-    pub development_phase_weeks: u32,
-    pub testing_phase_weeks: u32,
-    pub deployment_phase_weeks: u32,
-    pub total_weeks: u32,
-    pub critical_milestones: Vec<String>,
-}
-
 /// fr fr Compatibility engine for PQC transition
 #[derive(Debug)]
 pub struct CompatibilityEngine {
-    algorithm_mappings: HashMap<String, AlgorithmMapping>,
-    compatibility_rules: Vec<CompatibilityRule>,
-}
-
 impl CompatibilityEngine {
     /// Create new compatibility engine
     pub fn new() -> Self {
         let mut engine = Self {
-            algorithm_mappings: HashMap::new(),
-            compatibility_rules: Vec::new(),
-        };
         
         engine.initialize_default_mappings();
         engine.initialize_default_rules();
         engine
-    }
-    
     /// Initialize default algorithm mappings
     fn initialize_default_mappings(&mut self) {
         // Add key exchange mappings
         for mapping in AlgorithmMapping::key_exchange_mapping() {
             self.algorithm_mappings.insert(mapping.classical_algorithm.clone(), mapping);
-        }
-        
         // Add signature mappings
         for mapping in AlgorithmMapping::signature_mapping() {
             self.algorithm_mappings.insert(mapping.classical_algorithm.clone(), mapping);
@@ -286,36 +131,10 @@ impl CompatibilityEngine {
     fn initialize_default_rules(&mut self) {
         self.compatibility_rules = vec![
             CompatibilityRule {
-                name: "Quantum Vulnerability".to_string(),
-                description: "Classical algorithms vulnerable to quantum attacks".to_string(),
-                applies_to: vec!["RSA".to_string(), "ECDSA".to_string(), "ECDH".to_string(), "DH".to_string()],
-                severity: RuleSeverity::High,
-                recommendation: "Migrate to quantum-safe alternatives immediately".to_string(),
-            },
             CompatibilityRule {
-                name: "Performance Impact".to_string(),
-                description: "PQC algorithms may have different performance characteristics".to_string(),
-                applies_to: vec!["Dilithium".to_string(), "SPHINCS+".to_string(), "Kyber".to_string()],
-                severity: RuleSeverity::Medium,
-                recommendation: "Evaluate performance impact in production environment".to_string(),
-            },
             CompatibilityRule {
-                name: "Signature Size".to_string(),
-                description: "PQC signatures may be larger than classical signatures".to_string(),
-                applies_to: vec!["Dilithium".to_string(), "SPHINCS+".to_string(), "Rainbow".to_string()],
-                severity: RuleSeverity::Medium,
-                recommendation: "Consider bandwidth and storage implications".to_string(),
-            },
             CompatibilityRule {
-                name: "Key Size".to_string(),
-                description: "PQC keys may be larger than classical keys".to_string(),
-                applies_to: vec!["Kyber".to_string(), "NTRU".to_string(), "Rainbow".to_string()],
-                severity: RuleSeverity::Low,
-                recommendation: "Evaluate key storage and transmission requirements".to_string(),
-            },
         ];
-    }
-    
     /// Assess compatibility for given algorithms
     pub fn assess_compatibility(&self, current_algorithms: &[String]) -> AdvancedCryptoResult<CompatibilityAssessment> {
         let mut quantum_vulnerable = Vec::new();
@@ -328,13 +147,6 @@ impl CompatibilityEngine {
                 
                 if let Some(mapping) = self.algorithm_mappings.get(algorithm) {
                     let recommendation = MigrationRecommendation {
-                        priority: self.determine_priority(algorithm),
-                        current_algorithm: algorithm.clone(),
-                        recommended_replacement: mapping.pqc_equivalent.clone(),
-                        migration_steps: self.generate_migration_steps(algorithm, &mapping.pqc_equivalent),
-                        risks: self.assess_migration_risks(algorithm),
-                        estimated_effort: self.estimate_effort(algorithm),
-                    };
                     migration_recommendations.push(recommendation);
                 }
             } else {
@@ -346,15 +158,8 @@ impl CompatibilityEngine {
             0.0
         } else {
             (quantum_safe.len() as f64 / current_algorithms.len() as f64) * 100.0
-        };
         
         let security_analysis = SecurityAnalysis {
-            quantum_vulnerable_algorithms: quantum_vulnerable,
-            quantum_safe_algorithms: quantum_safe,
-            overall_quantum_readiness: quantum_readiness,
-            critical_vulnerabilities: self.identify_critical_vulnerabilities(current_algorithms),
-            security_recommendations: self.generate_security_recommendations(current_algorithms),
-        };
         
         let performance_impact = self.assess_performance_impact(current_algorithms);
         let timeline_estimate = self.estimate_timeline(&migration_recommendations);
@@ -369,24 +174,13 @@ impl CompatibilityEngine {
             CompatibilityMode::ClassicalWithPqcValidation
         } else {
             CompatibilityMode::ClassicalOnly
-        };
         
         Ok(CompatibilityAssessment {
-            current_algorithms: current_algorithms.to_vec(),
-            compatibility_mode,
-            migration_recommendations,
-            security_analysis,
-            performance_impact,
-            timeline_estimate,
         })
-    }
-    
     /// Check if algorithm is vulnerable to quantum attacks
     fn is_quantum_vulnerable(&self, algorithm: &str) -> bool {
         let vulnerable_patterns = ["RSA", "ECDSA", "ECDH", "DH", "DSA"];
         vulnerable_patterns.iter().any(|&pattern| algorithm.contains(pattern))
-    }
-    
     /// Determine migration priority for algorithm
     fn determine_priority(&self, algorithm: &str) -> MigrationPriority {
         if algorithm.contains("RSA-1024") || algorithm.contains("MD5") || algorithm.contains("SHA-1") {
@@ -403,34 +197,17 @@ impl CompatibilityEngine {
     /// Generate migration steps for algorithm transition
     fn generate_migration_steps(&self, current: &str, target: &str) -> Vec<String> {
         vec![
-            format!("1. Evaluate {} implementation options", target),
-            format!("2. Set up test environment with {}", target),
-            format!("3. Implement hybrid mode ({} + {})", current, target),
-            format!("4. Conduct performance testing"),
-            format!("5. Gradually migrate traffic to {}", target),
-            format!("6. Phase out {} when fully migrated", current),
         ]
-    }
-    
     /// Assess risks for migration
     fn assess_migration_risks(&self, algorithm: &str) -> Vec<String> {
         let mut risks = vec![
-            "Performance degradation during transition".to_string(),
-            "Compatibility issues with legacy systems".to_string(),
-            "Increased bandwidth and storage requirements".to_string(),
         ];
         
         if algorithm.contains("RSA") {
             risks.push("Large signature size increase with PQC alternatives".to_string());
-        }
-        
         if algorithm.contains("ECDSA") || algorithm.contains("ECDH") {
             risks.push("Key size increase may affect protocols".to_string());
-        }
-        
         risks
-    }
-    
     /// Estimate effort for migration
     fn estimate_effort(&self, algorithm: &str) -> String {
         if algorithm.contains("RSA-1024") || algorithm.contains("MD5") {
@@ -464,8 +241,6 @@ impl CompatibilityEngine {
         }
         
         vulnerabilities
-    }
-    
     /// Generate security recommendations
     fn generate_security_recommendations(&self, algorithms: &[String]) -> Vec<String> {
         let mut recommendations = Vec::new();
@@ -473,19 +248,13 @@ impl CompatibilityEngine {
         if algorithms.iter().any(|alg| self.is_quantum_vulnerable(alg)) {
             recommendations.push("Implement post-quantum cryptography to prepare for quantum threats".to_string());
             recommendations.push("Use hybrid modes during transition period".to_string());
-        }
-        
         if algorithms.iter().any(|alg| alg.contains("RSA-2048")) {
             recommendations.push("Consider migrating RSA-2048 to RSA-3072 or PQC alternatives".to_string());
-        }
-        
         recommendations.push("Implement crypto-agility to enable future algorithm transitions".to_string());
         recommendations.push("Regular security audits of cryptographic implementations".to_string());
         recommendations.push("Monitor NIST post-quantum standardization progress".to_string());
         
         recommendations
-    }
-    
     /// Assess performance impact of migration
     fn assess_performance_impact(&self, algorithms: &[String]) -> PerformanceImpact {
         let has_signatures = algorithms.iter().any(|alg| 
@@ -501,11 +270,6 @@ impl CompatibilityEngine {
         let verify_factor = if has_signatures { 1.2 } else { 1.0 };
         
         PerformanceImpact {
-            key_generation_factor: key_gen_factor,
-            signature_size_factor: sig_size_factor,
-            verification_time_factor: verify_factor,
-            bandwidth_impact: "Increased due to larger signatures and keys".to_string(),
-            storage_impact: "Increased key and certificate storage requirements".to_string(),
         }
     }
     
@@ -522,23 +286,11 @@ impl CompatibilityEngine {
         let total_weeks = planning_weeks + development_weeks + testing_weeks + deployment_weeks;
         
         let mut milestones = vec![
-            "Complete compatibility assessment".to_string(),
-            "Implement test environment".to_string(),
-            "Deploy hybrid systems".to_string(),
-            "Complete PQC migration".to_string(),
         ];
         
         if critical_count > 0 {
             milestones.insert(1, "Address critical vulnerabilities".to_string());
-        }
-        
         TimelineEstimate {
-            planning_phase_weeks: planning_weeks,
-            development_phase_weeks: development_weeks,
-            testing_phase_weeks: testing_weeks,
-            deployment_phase_weeks: deployment_weeks,
-            total_weeks,
-            critical_milestones: milestones,
         }
     }
     
@@ -549,10 +301,6 @@ impl CompatibilityEngine {
             let pqc_key_data = self.generate_equivalent_pqc_key(&classical_key.key_data, &mapping.pqc_equivalent)?;
             
             Ok(PqcKey::new(
-                mapping.pqc_equivalent.clone(),
-                PqcKeyFormat::Raw,
-                pqc_key_data,
-                classical_key.is_private,
             ))
         } else {
             Err(CursedError::InvalidInput(format!("No PQC mapping for algorithm: {}", classical_key.algorithm)))
@@ -565,10 +313,6 @@ impl CompatibilityEngine {
             // Create PQC component
             let pqc_key_data = self.generate_equivalent_pqc_key(&classical_keypair.public_key.key_data, &mapping.pqc_equivalent)?;
             let pqc_key = PqcKey::new(
-                mapping.pqc_equivalent.clone(),
-                PqcKeyFormat::Raw,
-                pqc_key_data,
-                false,
             );
             
             // Create hybrid configuration
@@ -576,16 +320,8 @@ impl CompatibilityEngine {
                 HybridSchemeType::Signature
             } else {
                 HybridSchemeType::Kem
-            };
             
             let config = HybridAlgorithmConfig {
-                scheme_type,
-                classical_algorithm: mapping.classical_algorithm.clone(),
-                pqc_algorithm: mapping.pqc_equivalent.clone(),
-                security_level: mapping.security_level,
-                fallback_enabled: true,
-                performance_priority: true,
-            };
             
             Ok(HybridKeyPair::new(classical_keypair.clone(), pqc_key, config))
         } else {
@@ -599,17 +335,6 @@ impl CompatibilityEngine {
         // In practice, this would involve proper key generation using the classical key as entropy
         
         let key_size = match pqc_algorithm {
-            "Kyber512" => 800,
-            "Kyber768" => 1184,
-            "Kyber1024" => 1568,
-            "Dilithium2" => 1312,
-            "Dilithium3" => 1952,
-            "Dilithium5" => 2592,
-            "SPHINCS+128s" => 32,
-            "SPHINCS+192s" => 48,
-            "SPHINCS+256s" => 64,
-            _ => 1024,
-        };
         
         // Simple deterministic generation based on classical key
         let mut pqc_key = Vec::with_capacity(key_size);
@@ -618,16 +343,10 @@ impl CompatibilityEngine {
         for _ in 0..key_size {
             seed = seed.wrapping_mul(1103515245).wrapping_add(12345);
             pqc_key.push((seed >> 24) as u8);
-        }
-        
         Ok(pqc_key)
-    }
-    
     /// Get algorithm mapping
     pub fn get_mapping(&self, algorithm: &str) -> Option<&AlgorithmMapping> {
         self.algorithm_mappings.get(algorithm)
-    }
-    
     /// Get all mappings
     pub fn get_all_mappings(&self) -> &HashMap<String, AlgorithmMapping> {
         &self.algorithm_mappings
@@ -643,42 +362,17 @@ impl Default for CompatibilityEngine {
 /// fr fr Compatibility rule for validation
 #[derive(Debug, Clone)]
 pub struct CompatibilityRule {
-    pub name: String,
-    pub description: String,
-    pub applies_to: Vec<String>,
-    pub severity: RuleSeverity,
-    pub recommendation: String,
-}
-
 /// fr fr Rule severity levels
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum RuleSeverity {
-    Low,
-    Medium,
-    High,
-    Critical,
-}
-
 impl RuleSeverity {
     pub fn name(&self) -> &'static str {
         match self {
-            RuleSeverity::Low => "Low",
-            RuleSeverity::Medium => "Medium",
-            RuleSeverity::High => "High",
-            RuleSeverity::Critical => "Critical",
         }
     }
-}
-
 /// fr fr Compatibility errors
 #[derive(Debug, Clone)]
 pub enum CompatibilityError {
-    UnsupportedAlgorithm(String),
-    ConversionError(String),
-    MappingError(String),
-    ConfigurationError(String),
-}
-
 // impl fmt::Display for CompatibilityError {
 //     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
 //         match self {
@@ -710,5 +404,3 @@ pub fn init_compatibility() -> AdvancedCryptoResult<()> {
     println!("   📈 Migration assessment tools ready");
     
     Ok(())
-}
-

@@ -7,14 +7,10 @@ use std::sync::{Arc, Mutex};
 /// Handle to standard input stream
 #[derive(Debug, Clone)]
 pub struct Stdin {
-    inner: Arc<Mutex<BufReader<io::Stdin>>>,
-}
-
 impl Stdin {
     /// Create new stdin handle
     pub fn new() -> Self {
         Self {
-            inner: Arc::new(Mutex::new(BufReader::new(io::stdin()))),
         }
     }
 
@@ -35,8 +31,6 @@ impl Stdin {
         }
         
         Ok(line)
-    }
-
     /// Read all input until EOF
     pub fn read_all(&self) -> IoResult<String> {
         use std::io::Read;
@@ -46,8 +40,6 @@ impl Stdin {
         let mut buffer = String::new();
         guard.read_to_string(&mut buffer)?;
         Ok(buffer)
-    }
-
     /// Read until a specific delimiter
     pub fn read_until(&self, delimiter: u8) -> IoResult<String> {
         let mut guard = self.inner.lock()
@@ -59,8 +51,6 @@ impl Stdin {
         // Remove delimiter if present
         if buffer.last() == Some(&delimiter) {
             buffer.pop();
-        }
-        
         String::from_utf8(buffer).map_err(|_| IoError::InvalidUtf8)
     }
 }
@@ -74,14 +64,10 @@ impl Default for Stdin {
 /// Handle to standard output stream
 #[derive(Debug, Clone)]
 pub struct Stdout {
-    inner: Arc<Mutex<BufWriter<io::Stdout>>>,
-}
-
 impl Stdout {
     /// Create new stdout handle
     pub fn new() -> Self {
         Self {
-            inner: Arc::new(Mutex::new(BufWriter::new(io::stdout()))),
         }
     }
 
@@ -92,8 +78,6 @@ impl Stdout {
         
         guard.write_all(s.as_bytes())?;
         Ok(())
-    }
-
     /// Write string to stdout with newline
     pub fn println(&self, s: &str) -> IoResult<()> {
         let mut guard = self.inner.lock()
@@ -102,8 +86,6 @@ impl Stdout {
         guard.write_all(s.as_bytes())?;
         guard.write_all(b"\n")?;
         Ok(())
-    }
-
     /// Flush the output buffer
     pub fn flush(&self) -> IoResult<()> {
         let mut guard = self.inner.lock()
@@ -123,14 +105,10 @@ impl Default for Stdout {
 /// Handle to standard error stream
 #[derive(Debug, Clone)]
 pub struct Stderr {
-    inner: Arc<Mutex<BufWriter<io::Stderr>>>,
-}
-
 impl Stderr {
     /// Create new stderr handle
     pub fn new() -> Self {
         Self {
-            inner: Arc::new(Mutex::new(BufWriter::new(io::stderr()))),
         }
     }
 
@@ -141,8 +119,6 @@ impl Stderr {
         
         guard.write_all(s.as_bytes())?;
         Ok(())
-    }
-
     /// Write string to stderr with newline
     pub fn eprintln(&self, s: &str) -> IoResult<()> {
         let mut guard = self.inner.lock()
@@ -151,8 +127,6 @@ impl Stderr {
         guard.write_all(s.as_bytes())?;
         guard.write_all(b"\n")?;
         Ok(())
-    }
-
     /// Flush the error buffer
     pub fn flush(&self) -> IoResult<()> {
         let mut guard = self.inner.lock()

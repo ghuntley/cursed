@@ -11,16 +11,6 @@ use std::fmt;
 /// Sprintf error types
 #[derive(Debug, Clone, PartialEq)]
 pub enum SprintfError {
-    InvalidFormatString(String),
-    MissingArgument(usize),
-    TooManyArguments,
-    TypeMismatch(String),
-    ConversionError(String),
-    BufferOverflow,
-    InvalidSpecifier(char),
-    InvalidFlags(String),
-}
-
 // impl fmt::Display for SprintfError {
 //     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
 //         match self {
@@ -59,16 +49,6 @@ pub type SprintfResult<T> = std::result::Result<T, SprintfError>;
 /// Format specifier information
 #[derive(Debug, Clone)]
 pub struct FormatSpecifier {
-    pub flags: String,
-    pub width: Option<usize>,
-    pub precision: Option<usize>,
-    pub length_modifier: Option<char>,
-    pub conversion: char,
-    pub original: String,
-    pub start: usize,
-    pub end: usize,
-}
-
 /// Printf-style string formatting
 /// Example: sprintf("Hello %s, you are %d years old", &[name, age])
 pub fn sprintf(format_str: &str, args: &[Value]) -> SprintfResult<String> {
@@ -84,27 +64,19 @@ pub fn sprintf(format_str: &str, args: &[Value]) -> SprintfResult<String> {
         // Check if we have enough arguments
         if arg_index >= args.len() {
             return Err(SprintfError::MissingArgument(arg_index));
-        }
-
         // Format the argument according to the specifier
         let formatted = format_with_specifier(&args[arg_index], &specifier)?;
         result.push_str(&formatted);
 
         arg_index += 1;
         last_end = specifier.end;
-    }
-
     // Add remaining text
     result.push_str(&format_str[last_end..]);
 
     // Check for unused arguments
     if arg_index < args.len() {
         return Err(SprintfError::TooManyArguments);
-    }
-
     Ok(result)
-}
-
 /// Safe sprintf with buffer size limit
 /// Example: snprintf(100, "Hello %s", &[name])
 pub fn snprintf(max_len: usize, format_str: &str, args: &[Value]) -> SprintfResult<String> {
@@ -112,38 +84,26 @@ pub fn snprintf(max_len: usize, format_str: &str, args: &[Value]) -> SprintfResu
     
     if result.len() > max_len {
         return Err(SprintfError::BufferOverflow);
-    }
-    
     Ok(result)
-}
-
 /// Printf-style formatting to a writer
 /// Example: sprintf_to_writer(&mut buffer, "Value: %d", &[value])
 pub fn sprintf_to_writer<W: Write>(
-    writer: &mut W, 
-    format_str: &str, 
     args: &[Value]
 ) -> SprintfResult<()> {
     let formatted = sprintf(format_str, args)?;
     writer.write_all(formatted.as_bytes())
         .map_err(|e| SprintfError::ConversionError(e.to_string()))?;
     Ok(())
-}
-
 /// Validate a format string
 /// Example: validate_format_string("Hello %s %d")
 pub fn validate_format_string(format_str: &str) -> SprintfResult<()> {
     parse_format_specifiers(format_str)?;
     Ok(())
-}
-
 /// Count format specifiers in a format string
 /// Example: count_format_specifiers("Hello %s, age %d") -> 2
 pub fn count_format_specifiers(format_str: &str) -> SprintfResult<usize> {
     let specifiers = parse_format_specifiers(format_str)?;
     Ok(specifiers.len())
-}
-
 /// Parse format specifiers from a format string
 fn parse_format_specifiers(format_str: &str) -> SprintfResult<Vec<FormatSpecifier>> {
     let mut specifiers = Vec::new();
@@ -155,8 +115,6 @@ fn parse_format_specifiers(format_str: &str) -> SprintfResult<Vec<FormatSpecifie
             if chars.peek().map(|(_, c)| *c) == Some('%') {
                 chars.next(); // Skip escaped %
                 continue;
-            }
-
             let start = i;
             let mut flags = String::new();
             let mut width: Option<usize> = None;
@@ -173,7 +131,6 @@ fn parse_format_specifiers(format_str: &str) -> SprintfResult<Vec<FormatSpecifie
                         chars.next();
                         end_pos = j + 1;
                     }
-                    _ => break,
                 }
             }
 
@@ -195,15 +152,11 @@ fn parse_format_specifiers(format_str: &str) -> SprintfResult<Vec<FormatSpecifie
             }
             if !width_str.is_empty() {
                 width = width_str.parse().ok();
-            }
-
             // Parse precision
             if chars.peek().map(|(_, c)| *c) == Some('.') {
                 chars.next(); // consume '.'
                 if let Some((j, _)) = chars.peek() {
                     end_pos = j + 1;
-                }
-
                 let mut precision_str = String::new();
                 while let Some((j, ch)) = chars.peek() {
                     if ch.is_ascii_digit() {
@@ -255,47 +208,19 @@ fn parse_format_specifiers(format_str: &str) -> SprintfResult<Vec<FormatSpecifie
                 return Err(SprintfError::InvalidFormatString(
                     "Incomplete format specifier".to_string()
                 ));
-            }
-
             if let Some(conv) = conversion {
                 let original = format_str[start..end_pos].to_string();
                 specifiers.push(FormatSpecifier {
-                    flags,
-                    width,
-                    precision,
-                    length_modifier,
-                    conversion: conv,
-                    original,
-                    start,
-                    end: end_pos,
                 });
             }
         }
-    }
-
     Ok(specifiers)
-}
-
 /// Format a value according to a format specifier
 fn format_with_specifier(value: &Value, spec: &FormatSpecifier) -> SprintfResult<String> {
     let base_formatted = match spec.conversion {
-        'd' | 'i' => format_integer(value, 10, false)?,
-        'o' => format_integer(value, 8, false)?,
-        'x' => format_integer(value, 16, false)?,
-        'X' => format_integer(value, 16, true)?,
-        'u' => format_unsigned_integer(value)?,
-        'c' => format_character(value)?,
-        'f' | 'F' => format_float(value, spec.precision.unwrap_or(6), false)?,
-        'e' => format_float_exponential(value, spec.precision.unwrap_or(6), false)?,
-        'E' => format_float_exponential(value, spec.precision.unwrap_or(6), true)?,
-        'g' => format_float_general(value, spec.precision.unwrap_or(6), false)?,
-        'G' => format_float_general(value, spec.precision.unwrap_or(6), true)?,
-        's' => format_string(value)?,
-        'p' => format_pointer(value)?,
         _ => {
             return Err(SprintfError::InvalidSpecifier(spec.conversion));
         }
-    };
 
     // Apply width and alignment
     let mut result = base_formatted;
@@ -308,7 +233,6 @@ fn format_with_specifier(value: &Value, spec: &FormatSpecifier) -> SprintfResult
                 '0'
             } else {
                 ' '
-            };
 
             if spec.flags.contains('-') {
                 // Left-align
@@ -318,11 +242,7 @@ fn format_with_specifier(value: &Value, spec: &FormatSpecifier) -> SprintfResult
                 result = format!("{}{}", fill_char.to_string().repeat(padding), result);
             }
         }
-    }
-
     Ok(result)
-}
-
 /// Format integer value
 fn format_integer(value: &Value, base: u32, uppercase: bool) -> SprintfResult<String> {
     match value {
@@ -331,13 +251,11 @@ fn format_integer(value: &Value, base: u32, uppercase: bool) -> SprintfResult<St
                 i.to_string()
             } else {
                 format!("{:x}", i.abs())
-            };
             
             let formatted = if uppercase {
                 result.to_uppercase()
             } else {
                 result
-            };
             
             Ok(if *i < 0 && base != 10 {
                 format!("-{}", formatted)
@@ -357,8 +275,6 @@ fn format_integer(value: &Value, base: u32, uppercase: bool) -> SprintfResult<St
 /// Format unsigned integer value
 fn format_unsigned_integer(value: &Value) -> SprintfResult<String> {
     match value {
-        Value::Int(i) => Ok((*i as u64).to_string()),
-        Value::Float(f) => Ok((*f as u64).to_string()),
         _ => Err(SprintfError::TypeMismatch(
             format!("Expected number for unsigned format, got {:?}", value)
         ))
@@ -395,8 +311,6 @@ fn format_character(value: &Value) -> SprintfResult<String> {
 /// Format floating point value
 fn format_float(value: &Value, precision: usize, _uppercase: bool) -> SprintfResult<String> {
     match value {
-        Value::Float(f) => Ok(format!("{:.prec$}", f, prec = precision)),
-        Value::Int(i) => Ok(format!("{:.prec$}", *i as f64, prec = precision)),
         _ => Err(SprintfError::TypeMismatch(
             format!("Expected number for float format, got {:?}", value)
         ))
@@ -440,8 +354,6 @@ fn format_float_general(value: &Value, precision: usize, uppercase: bool) -> Spr
 /// Format string value
 fn format_string(value: &Value) -> SprintfResult<String> {
     match value {
-        Value::String(s) => Ok(s.clone()),
-        Value::Nil => Ok("(null)".to_string()),
         _ => Ok(format!("{:?}", value)) // Debug format for non-strings
     }
 }
@@ -449,7 +361,6 @@ fn format_string(value: &Value) -> SprintfResult<String> {
 /// Format pointer value
 fn format_pointer(value: &Value) -> SprintfResult<String> {
     match value {
-        Value::Nil => Ok("(nil)".to_string()),
         _ => Ok(format!("0x{:x}", value as *const Value as usize))
     }
 }

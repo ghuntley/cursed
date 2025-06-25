@@ -34,18 +34,12 @@ pub mod production_driver;
 // Helper functions
 pub use driver::{create_mysql_driver, parse_mysql_dsn};
 pub use comprehensive_driver::{
-    ComprehensiveMySqlDriver, MySqlConfig as ComprehensiveMySqlConfig,
-    create_mysql_driver as create_comprehensive_mysql_driver,
-    create_mysql_driver_with_config as create_comprehensive_mysql_driver_with_config,
-    parse_mysql_dsn as parse_comprehensive_mysql_dsn,
-};
+// };
 
 // Production driver exports
 pub use production_driver::{
-    ProductionMySqlDriver, ProductionMySqlConfig, SslMode,
-    create_production_mysql_driver, create_production_mysql_driver_with_config,
     SqlSanitizer, DriverHealthReport
-};
+// };
 
 /// fr fr Initialize MySQL support and register driver globally
 pub fn init_mysql() -> crate::error::Result<()> {
@@ -54,13 +48,9 @@ use crate::error::CursedError;
     
     let driver = Box::new(MySqlDriver::new());
     register_driver("mysql".to_string(), driver)
-}
-
 /// fr fr Create a new MySQL driver with default configuration
 pub fn new_mysql_driver() -> MySqlDriver {
     MySqlDriver::new()
-}
-
 /// fr fr Create a MySQL driver with custom configuration
 pub fn new_mysql_driver_with_config(config: MySqlConfig) -> MySqlDriver {
     MySqlDriver::with_config(config)

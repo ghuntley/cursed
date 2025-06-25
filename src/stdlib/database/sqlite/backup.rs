@@ -11,42 +11,19 @@ use super::{SqliteError, SqliteResult, SqliteConfig};
 #[derive(Debug, Clone)]
 pub struct BackupProgress {
     /// fr fr Total pages in source database
-    pub total_pages: i32,
     /// fr fr Pages copied so far
-    pub pages_copied: i32,
     /// fr fr Pages remaining
-    pub pages_remaining: i32,
     /// fr fr Percentage complete (0.0 to 100.0)
-    pub percentage_complete: f64,
     /// fr fr Elapsed time
-    pub elapsed_time: Duration,
     /// fr fr Estimated time remaining
-    pub estimated_time_remaining: Option<Duration>,
     /// fr fr Current operation phase
-    pub phase: BackupPhase,
-}
-
 /// fr fr Backup operation phases
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum BackupPhase {
-    Initializing,
-    Copying,
-    Finalizing,
-    Completed,
-    CursedError,
-}
-
 impl BackupProgress {
     /// slay Create new backup progress
     pub fn new(total_pages: i32) -> Self {
         Self {
-            total_pages,
-            pages_copied: 0,
-            pages_remaining: total_pages,
-            percentage_complete: 0.0,
-            elapsed_time: Duration::ZERO,
-            estimated_time_remaining: None,
-            phase: BackupPhase::Initializing,
         }
     }
 
@@ -58,7 +35,6 @@ impl BackupProgress {
             (pages_copied as f64 / self.total_pages as f64) * 100.0
         } else {
             100.0
-        };
         self.elapsed_time = elapsed;
 
         // Estimate time remaining based on current rate
@@ -81,84 +57,41 @@ impl BackupProgress {
     /// slay Check if backup is complete
     pub fn is_complete(&self) -> bool {
         self.phase == BackupPhase::Completed
-    }
-
     /// slay Get human-readable status
     pub fn status_message(&self) -> String {
         match self.phase {
-            BackupPhase::Initializing => "Initializing backup...".to_string(),
             BackupPhase::Copying => format!(
-                "Copying pages: {} of {} ({:.1}%)",
                 self.pages_copied, self.total_pages, self.percentage_complete
-            ),
-            BackupPhase::Finalizing => "Finalizing backup...".to_string(),
-            BackupPhase::Completed => "Backup completed successfully".to_string(),
-            BackupPhase::CursedError => "Backup failed with errors".to_string(),
         }
     }
-}
-
 /// fr fr Backup configuration options
 #[derive(Debug, Clone)]
 pub struct BackupOptions {
     /// fr fr Number of pages to copy per step
-    pub pages_per_step: i32,
     /// fr fr Sleep duration between steps (milliseconds)
-    pub step_sleep_ms: u64,
     /// fr fr Maximum time to wait for source database locks
-    pub lock_timeout: Duration,
     /// fr fr Whether to vacuum the destination after backup
-    pub vacuum_destination: bool,
     /// fr fr Whether to verify backup integrity
-    pub verify_integrity: bool,
     /// fr fr Progress callback interval (pages)
-    pub progress_interval: i32,
     /// fr fr Whether to overwrite existing destination
-    pub overwrite_destination: bool,
     /// fr fr Compression level (if supported)
-    pub compression_level: Option<i32>,
-}
-
 impl BackupOptions {
     /// slay Create default backup options
     pub fn new() -> Self {
         Self {
-            pages_per_step: 100,
-            step_sleep_ms: 10,
-            lock_timeout: Duration::from_secs(30),
-            vacuum_destination: true,
-            verify_integrity: true,
-            progress_interval: 50,
-            overwrite_destination: false,
-            compression_level: None,
         }
     }
 
     /// slay Create fast backup options (less safety)
     pub fn fast() -> Self {
         Self {
-            pages_per_step: 1000,
-            step_sleep_ms: 0,
-            lock_timeout: Duration::from_secs(5),
-            vacuum_destination: false,
-            verify_integrity: false,
-            progress_interval: 100,
-            overwrite_destination: true,
-            compression_level: None,
         }
     }
 
     /// slay Create safe backup options (maximum safety)
     pub fn safe() -> Self {
         Self {
-            pages_per_step: 10,
-            step_sleep_ms: 50,
             lock_timeout: Duration::from_secs(300), // 5 minutes
-            vacuum_destination: true,
-            verify_integrity: true,
-            progress_interval: 10,
-            overwrite_destination: false,
-            compression_level: None,
         }
     }
 
@@ -166,12 +99,8 @@ impl BackupOptions {
     pub fn validate(&self) -> SqliteResult<()> {
         if self.pages_per_step <= 0 {
             return Err(SqliteError::invalid_parameter("pages_per_step must be positive"));
-        }
-
         if self.progress_interval <= 0 {
             return Err(SqliteError::invalid_parameter("progress_interval must be positive"));
-        }
-
         if let Some(level) = self.compression_level {
             if !(0..=9).contains(&level) {
                 return Err(SqliteError::invalid_parameter("compression_level must be 0-9"));
@@ -192,45 +121,24 @@ impl Default for BackupOptions {
 #[derive(Debug)]
 pub struct SqliteBackup {
     /// fr fr Source database configuration
-    source_config: SqliteConfig,
     /// fr fr Destination path
-    destination_path: String,
     /// fr fr Backup options
-    options: BackupOptions,
     /// fr fr Current progress
-    progress: BackupProgress,
     /// fr fr Start time
-    started_at: Option<SystemTime>,
     /// fr fr Completion time
-    completed_at: Option<SystemTime>,
-}
-
 impl SqliteBackup {
     /// slay Create new backup operation
     pub fn new(
-        source_config: SqliteConfig,
-        destination_path: String,
-        options: BackupOptions,
     ) -> SqliteResult<Self> {
         options.validate()?;
 
         // Validate destination path
         if destination_path.is_empty() {
             return Err(SqliteError::invalid_parameter("Destination path cannot be empty"));
-        }
-
         let progress = BackupProgress::new(0); // Will be updated when we get page count
 
         Ok(Self {
-            source_config,
-            destination_path,
-            options,
-            progress,
-            started_at: None,
-            completed_at: None,
         })
-    }
-
     /// slay Start backup operation
     pub fn start(&mut self) -> SqliteResult<()> {
         self.started_at = Some(SystemTime::now());
@@ -241,15 +149,11 @@ impl SqliteBackup {
             return Err(SqliteError::invalid_parameter(
                 "Destination file exists and overwrite_destination is false"
             ));
-        }
-
         // This would open source and destination databases
         // and initialize the backup operation via SQLite's backup API
         
         // For now, simulate the operation
         self.simulate_backup()
-    }
-
     /// slay Simulate backup for testing (remove in real implementation)
     fn simulate_backup(&mut self) -> SqliteResult<()> {
         use std::thread;
@@ -281,28 +185,18 @@ impl SqliteBackup {
         // Simulate finalization
         if self.options.vacuum_destination {
             thread::sleep(StdDuration::from_millis(200));
-        }
-        
         if self.options.verify_integrity {
             thread::sleep(StdDuration::from_millis(100));
-        }
-
         self.progress.phase = BackupPhase::Completed;
         self.completed_at = Some(SystemTime::now());
 
         Ok(())
-    }
-
     /// slay Get current progress
     pub fn progress(&self) -> &BackupProgress {
         &self.progress
-    }
-
     /// slay Check if backup is complete
     pub fn is_complete(&self) -> bool {
         self.progress.is_complete()
-    }
-
     /// slay Get backup duration
     pub fn duration(&self) -> Option<Duration> {
         if let (Some(start), Some(end)) = (self.started_at, self.completed_at) {
@@ -318,37 +212,24 @@ impl SqliteBackup {
     pub fn cancel(&mut self) -> SqliteResult<()> {
         if self.progress.phase == BackupPhase::Completed {
             return Err(SqliteError::invalid_parameter("Backup is already completed"));
-        }
-
         self.progress.phase = BackupPhase::CursedError;
         
         // This would cancel the ongoing backup operation
         // and clean up any partial files
         
         Ok(())
-    }
-
     /// slay Verify backup integrity
     pub fn verify(&self) -> SqliteResult<bool> {
         if !self.is_complete() {
             return Err(SqliteError::invalid_parameter("Backup is not complete"));
-        }
-
         // This would open the backup file and run integrity checks
         // For now, always return true
         Ok(true)
-    }
-
     /// slay Get backup statistics
     pub fn statistics(&self) -> BackupStatistics {
         BackupStatistics {
-            total_pages: self.progress.total_pages,
-            pages_copied: self.progress.pages_copied,
-            duration: self.duration(),
-            average_pages_per_second: self.calculate_average_rate(),
             source_size: 0, // Would be calculated from source database
             destination_size: 0, // Would be calculated from destination file
-            compression_ratio: None,
         }
     }
 
@@ -367,43 +248,23 @@ impl SqliteBackup {
 /// fr fr Backup statistics
 #[derive(Debug, Clone)]
 pub struct BackupStatistics {
-    pub total_pages: i32,
-    pub pages_copied: i32,
-    pub duration: Option<Duration>,
-    pub average_pages_per_second: f64,
-    pub source_size: u64,
-    pub destination_size: u64,
-    pub compression_ratio: Option<f64>,
-}
-
 impl BackupStatistics {
     /// slay Get human-readable summary
     pub fn summary(&self) -> String {
         let mut summary = format!(
-            "Backup Statistics:\n  Pages: {} of {}\n",
             self.pages_copied, self.total_pages
         );
 
         if let Some(duration) = self.duration {
             summary.push_str(&format!("  Duration: {:.2} seconds\n", duration.as_secs_f64()));
-        }
-
         if self.average_pages_per_second > 0.0 {
             summary.push_str(&format!("  Rate: {:.1} pages/second\n", self.average_pages_per_second));
-        }
-
         if self.source_size > 0 {
             summary.push_str(&format!("  Source size: {} bytes\n", self.source_size));
-        }
-
         if self.destination_size > 0 {
             summary.push_str(&format!("  Destination size: {} bytes\n", self.destination_size));
-        }
-
         if let Some(ratio) = self.compression_ratio {
             summary.push_str(&format!("  Compression ratio: {:.1}%\n", ratio * 100.0));
-        }
-
         summary
     }
 }
@@ -412,9 +273,6 @@ impl BackupStatistics {
 impl SqliteBackup {
     /// slay Create and start backup operation
     pub fn backup_database(
-        source_path: &str,
-        destination_path: &str,
-        options: Option<BackupOptions>,
     ) -> SqliteResult<BackupStatistics> {
         let source_config = SqliteConfig::new(source_path);
         let options = options.unwrap_or_default();
@@ -423,13 +281,9 @@ impl SqliteBackup {
         backup.start()?;
         
         Ok(backup.statistics())
-    }
-
     /// slay Quick backup with default options
     pub fn quick_backup(source_path: &str, destination_path: &str) -> SqliteResult<BackupStatistics> {
         Self::backup_database(source_path, destination_path, Some(BackupOptions::fast()))
-    }
-
     /// slay Safe backup with maximum verification
     pub fn safe_backup(source_path: &str, destination_path: &str) -> SqliteResult<BackupStatistics> {
         Self::backup_database(source_path, destination_path, Some(BackupOptions::safe()))

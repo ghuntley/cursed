@@ -12,22 +12,14 @@ pub mod tls;
 // Re-export main types
 pub use smtp::{SmtpClient, EmailMessage, SmtpConfig};
 pub use ftp::{
-    FtpClient, FtpTransferMode, FtpConfig, FtpDataMode, FtpResponse, 
     FtpEntry, FtpState, TransferProgress, AsyncFtpClient
-};
+// };
 pub use ssh::{SshClient, SshCommand, SshKey, SshConfig};
 pub use tls::{TlsConfig, TlsVersion, CipherSuite};
 
 /// Common protocol error types
 #[derive(Debug, Clone)]
 pub enum ProtocolError {
-    Authentication(String),
-    Connection(String),
-    Protocol(String),
-    Timeout(String),
-    InvalidData(String),
-}
-
 // impl std::fmt::Display for ProtocolError {
 //     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
 //         match self {

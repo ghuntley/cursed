@@ -10,11 +10,6 @@ use crate::error::CursedError;
 /// Enhanced question mark expression with optional error recovery
 #[derive(Debug, Clone)]
 pub struct EnhancedQuestionMarkExpression {
-    pub expression: Box<dyn Expression>,
-    pub error_recovery: Option<Box<dyn Expression>>,
-    pub source_location: Option<String>,
-}
-
 impl fmt::Display for EnhancedQuestionMarkExpression {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "{}?", self.expression)?;
@@ -28,8 +23,6 @@ impl fmt::Display for EnhancedQuestionMarkExpression {
 impl crate::ast::traits::Node for EnhancedQuestionMarkExpression {
     fn string(&self) -> String {
         format!("{}", self)
-    }
-    
     fn token_literal(&self) -> String {
         "?".to_string()
     }
@@ -38,8 +31,6 @@ impl crate::ast::traits::Node for EnhancedQuestionMarkExpression {
 impl Expression for EnhancedQuestionMarkExpression {
     fn as_any(&self) -> &dyn std::any::Any {
         self
-    }
-    
     fn clone_box(&self) -> Box<dyn Expression> {
         Box::new(self.clone())
     }
@@ -48,11 +39,6 @@ impl Expression for EnhancedQuestionMarkExpression {
 /// Typed error propagation with specific error type expectations
 #[derive(Debug, Clone)]
 pub struct TypedErrorPropagation {
-    pub expression: Box<dyn Expression>,
-    pub expected_error_type: String,
-    pub conversion_logic: Option<Box<dyn Expression>>,
-}
-
 // impl fmt::Display for TypedErrorPropagation {
 //     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
 //         write!(f, "{}?<{}>", self.expression, self.expected_error_type)
@@ -62,8 +48,6 @@ pub struct TypedErrorPropagation {
 impl crate::ast::traits::Node for TypedErrorPropagation {
     fn string(&self) -> String {
         format!("{}", self)
-    }
-    
     fn token_literal(&self) -> String {
         "?".to_string()
     }
@@ -72,8 +56,6 @@ impl crate::ast::traits::Node for TypedErrorPropagation {
 impl Expression for TypedErrorPropagation {
     fn as_any(&self) -> &dyn std::any::Any {
         self
-    }
-    
     fn clone_box(&self) -> Box<dyn Expression> {
         Box::new(self.clone())
     }
@@ -82,11 +64,6 @@ impl Expression for TypedErrorPropagation {
 /// Unwrap-or expression for providing default values
 #[derive(Debug, Clone)]
 pub struct UnwrapOrExpression {
-    pub base: Box<dyn Expression>,
-    pub default_value: Box<dyn Expression>,
-    pub method_name: String,
-}
-
 impl fmt::Display for UnwrapOrExpression {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "{}.{}({})", self.base, self.method_name, self.default_value)
@@ -96,8 +73,6 @@ impl fmt::Display for UnwrapOrExpression {
 impl crate::ast::traits::Node for UnwrapOrExpression {
     fn string(&self) -> String {
         format!("{}.unwrap_or({})", self.expression.string(), self.fallback.string())
-    }
-    
     fn token_literal(&self) -> String {
         "unwrap_or".to_string()
     }
@@ -106,8 +81,6 @@ impl crate::ast::traits::Node for UnwrapOrExpression {
 impl Expression for UnwrapOrExpression {
     fn as_any(&self) -> &dyn std::any::Any {
         self
-    }
-    
     fn clone_box(&self) -> Box<dyn Expression> {
         Box::new(self.clone())
     }
@@ -116,11 +89,6 @@ impl Expression for UnwrapOrExpression {
 /// Try-catch expression with optional finally block
 #[derive(Debug, Clone)]
 pub struct TryExpression {
-    pub try_block: Box<dyn Expression>,
-    pub catch_block: Option<Box<dyn Expression>>,
-    pub finally_block: Option<Box<dyn Expression>>,
-}
-
 impl fmt::Display for TryExpression {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "try {}", self.try_block)?;
@@ -144,8 +112,6 @@ impl crate::ast::traits::Node for TryExpression {
             result.push_str(&format!(" finally {}", finally.string()));
         }
         result
-    }
-    
     fn token_literal(&self) -> String {
         "try".to_string()
     }
@@ -154,8 +120,6 @@ impl crate::ast::traits::Node for TryExpression {
 impl Expression for TryExpression {
     fn as_any(&self) -> &dyn std::any::Any {
         self
-    }
-    
     fn clone_box(&self) -> Box<dyn Expression> {
         Box::new(self.clone())
     }
@@ -164,11 +128,6 @@ impl Expression for TryExpression {
 /// Field access expression with optional safe access
 #[derive(Debug, Clone)]
 pub struct FieldAccessExpression {
-    pub base: Box<dyn Expression>,
-    pub field_name: String,
-    pub safe_access: bool,
-}
-
 impl fmt::Display for FieldAccessExpression {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         if self.safe_access {
@@ -177,14 +136,10 @@ impl fmt::Display for FieldAccessExpression {
             write!(f, "{}.{}", self.base, self.field_name)
         }
     }
-}
-
 impl crate::ast::traits::Node for FieldAccessExpression {
     fn string(&self) -> String {
         let operator = if self.safe_access { "?." } else { "." };
         format!("{}{}{}", self.object.string(), operator, self.field_name)
-    }
-    
     fn token_literal(&self) -> String {
         if self.safe_access { "?." } else { "." }.to_string()
     }
@@ -193,8 +148,6 @@ impl crate::ast::traits::Node for FieldAccessExpression {
 impl Expression for FieldAccessExpression {
     fn as_any(&self) -> &dyn std::any::Any {
         self
-    }
-    
     fn clone_box(&self) -> Box<dyn Expression> {
         Box::new(self.clone())
     }
@@ -203,20 +156,12 @@ impl Expression for FieldAccessExpression {
 /// Method call expression with type arguments
 #[derive(Debug, Clone)]
 pub struct MethodCallExpression {
-    pub receiver: Box<dyn Expression>,
-    pub method_name: String,
-    pub arguments: Vec<Box<dyn Expression>>,
-    pub type_arguments: Vec<String>,
-}
-
 impl fmt::Display for MethodCallExpression {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "{}.{}", self.receiver, self.method_name)?;
         
         if !self.type_arguments.is_empty() {
             write!(f, "<{}>", self.type_arguments.join(", "))?;
-        }
-        
         write!(f, "(")?;
         for (i, arg) in self.arguments.iter().enumerate() {
             if i > 0 {
@@ -246,8 +191,6 @@ impl crate::ast::traits::Node for MethodCallExpression {
         }
         result.push_str(")");
         result
-    }
-    
     fn token_literal(&self) -> String {
         self.method_name.clone()
     }
@@ -256,8 +199,6 @@ impl crate::ast::traits::Node for MethodCallExpression {
 impl Expression for MethodCallExpression {
     fn as_any(&self) -> &dyn std::any::Any {
         self
-    }
-    
     fn clone_box(&self) -> Box<dyn Expression> {
         Box::new(self.clone())
     }
@@ -269,82 +210,42 @@ pub struct ErrorPropagationParser;
 impl ErrorPropagationParser {
     /// Parse enhanced question mark expression
     pub fn parse_enhanced_question_mark(
-        expression: Box<dyn Expression>,
-        error_recovery: Option<Box<dyn Expression>>,
-        source_location: Option<String>,
     ) -> EnhancedQuestionMarkExpression {
         EnhancedQuestionMarkExpression {
-            expression,
-            error_recovery,
-            source_location,
         }
     }
 
     /// Parse typed error propagation
     pub fn parse_typed_error_propagation(
-        expression: Box<dyn Expression>,
-        expected_error_type: String,
-        conversion_logic: Option<Box<dyn Expression>>,
     ) -> TypedErrorPropagation {
         TypedErrorPropagation {
-            expression,
-            expected_error_type,
-            conversion_logic,
         }
     }
 
     /// Parse unwrap-or expression
     pub fn parse_unwrap_or(
-        base: Box<dyn Expression>,
-        default_value: Box<dyn Expression>,
-        method_name: String,
     ) -> UnwrapOrExpression {
         UnwrapOrExpression {
-            base,
-            default_value,
-            method_name,
         }
     }
 
     /// Parse try expression
     pub fn parse_try(
-        try_block: Box<dyn Expression>,
-        catch_block: Option<Box<dyn Expression>>,
-        finally_block: Option<Box<dyn Expression>>,
     ) -> TryExpression {
         TryExpression {
-            try_block,
-            catch_block,
-            finally_block,
         }
     }
 
     /// Parse field access expression
     pub fn parse_field_access(
-        base: Box<dyn Expression>,
-        field_name: String,
-        safe_access: bool,
     ) -> FieldAccessExpression {
         FieldAccessExpression {
-            base,
-            field_name,
-            safe_access,
         }
     }
 
     /// Parse method call expression
     pub fn parse_method_call(
-        receiver: Box<dyn Expression>,
-        method_name: String,
-        arguments: Vec<Box<dyn Expression>>,
-        type_arguments: Vec<String>,
     ) -> MethodCallExpression {
         MethodCallExpression {
-            receiver,
-            method_name,
-            arguments,
-            type_arguments,
         }
     }
-}
-

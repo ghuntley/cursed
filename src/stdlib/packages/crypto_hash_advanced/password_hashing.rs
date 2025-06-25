@@ -14,16 +14,9 @@ pub enum PasswordAlgorithm {
     Argon2d,    // Fast, but vulnerable to side-channel attacks
     Scrypt,     // Memory-hard
     Pbkdf2,     // Widely supported, but weaker
-}
-
 impl PasswordAlgorithm {
     pub fn name(&self) -> &'static str {
         match self {
-            PasswordAlgorithm::Argon2id => "argon2id",
-            PasswordAlgorithm::Argon2i => "argon2i", 
-            PasswordAlgorithm::Argon2d => "argon2d",
-            PasswordAlgorithm::Scrypt => "scrypt",
-            PasswordAlgorithm::Pbkdf2 => "pbkdf2",
         }
     }
     
@@ -35,19 +28,15 @@ impl PasswordAlgorithm {
 /// Password hashing configuration
 #[derive(Debug, Clone)]
 pub struct PasswordConfig {
-    pub algorithm: PasswordAlgorithm,
     pub memory_cost: u32,     // Memory usage in KiB (Argon2) or block size (scrypt)
     pub time_cost: u32,       // Time cost / iterations
     pub parallelism: u32,     // Parallelism factor
     pub hash_length: u32,     // Output hash length
     pub salt_length: u32,     // Salt length
-}
-
 impl PasswordConfig {
     /// Secure default configuration (OWASP recommended)
     pub fn secure_default() -> Self {
         Self {
-            algorithm: PasswordAlgorithm::Argon2id,
             memory_cost: 65536,   // 64 MiB
             time_cost: 3,         // 3 iterations
             parallelism: 4,       // 4 threads
@@ -59,73 +48,41 @@ impl PasswordConfig {
     /// Fast configuration for testing/development
     pub fn fast() -> Self {
         Self {
-            algorithm: PasswordAlgorithm::Argon2id,
             memory_cost: 4096,    // 4 MiB
             time_cost: 1,         // 1 iteration
             parallelism: 1,       // 1 thread
-            hash_length: 32,
-            salt_length: 16,
         }
     }
     
     /// Interactive configuration (web apps)
     pub fn interactive() -> Self {
         Self {
-            algorithm: PasswordAlgorithm::Argon2id,
             memory_cost: 12288,   // 12 MiB
-            time_cost: 3,
-            parallelism: 1,
-            hash_length: 32,
-            salt_length: 16,
         }
     }
     
     /// Server configuration (background processing)
     pub fn server() -> Self {
         Self {
-            algorithm: PasswordAlgorithm::Argon2id,
             memory_cost: 65536,   // 64 MiB
-            time_cost: 4,
-            parallelism: 4,
-            hash_length: 32,
-            salt_length: 16,
         }
     }
-}
-
 /// Password hash result
 #[derive(Debug, Clone)]
 pub struct PasswordHash {
-    pub algorithm: PasswordAlgorithm,
-    pub hash: Vec<u8>,
-    pub salt: Vec<u8>,
-    pub config: PasswordConfig,
     pub format_string: String, // PHC string format
-}
-
 impl PasswordHash {
     /// Convert to PHC string format
     pub fn to_string(&self) -> String {
         self.format_string.clone()
-    }
-    
     /// Parse from PHC string format
     pub fn from_string(phc_string: &str) -> PasswordResult<Self> {
         let parts: Vec<&str> = phc_string.split('$').collect();
         
         if parts.len() < 4 {
             return Err(CursedError::InvalidArgument("Invalid PHC string format".to_string()));
-        }
-        
         // Parse algorithm
         let algorithm = match parts[1] {
-            "argon2id" => PasswordAlgorithm::Argon2id,
-            "argon2i" => PasswordAlgorithm::Argon2i,
-            "argon2d" => PasswordAlgorithm::Argon2d,
-            "scrypt" => PasswordAlgorithm::Scrypt,
-            "pbkdf2" => PasswordAlgorithm::Pbkdf2,
-            _ => return Err(CursedError::InvalidArgument("Unknown algorithm".to_string())),
-        };
         
         // Parse parameters
         let params = Self::parse_parameters(parts[2])?;
@@ -134,26 +91,11 @@ impl PasswordHash {
             Self::decode_base64(parts[4])?
         } else {
             Vec::new()
-        };
         
         let config = PasswordConfig {
-            algorithm,
-            memory_cost: params.get("m").copied().unwrap_or(0),
-            time_cost: params.get("t").copied().unwrap_or(0),
-            parallelism: params.get("p").copied().unwrap_or(0),
-            hash_length: hash.len() as u32,
-            salt_length: salt.len() as u32,
-        };
         
         Ok(PasswordHash {
-            algorithm,
-            hash,
-            salt,
-            config,
-            format_string: phc_string.to_string(),
         })
-    }
-    
     fn parse_parameters(params_str: &str) -> PasswordResult<std::collections::HashMap<&str, u32>> {
         let mut params = std::collections::HashMap::new();
         
@@ -167,8 +109,6 @@ impl PasswordHash {
         }
         
         Ok(params)
-    }
-    
     fn decode_base64(input: &str) -> PasswordResult<Vec<u8>> {
         // Simple base64 decoder (in production, use a proper base64 library)
         let cleaned = input.trim_end_matches('=');
@@ -179,15 +119,7 @@ impl PasswordHash {
             let mut buffer = [0u8; 4];
             for (i, &byte) in chunk.iter().enumerate() {
                 buffer[i] = match byte {
-                    b'A'..=b'Z' => byte - b'A',
-                    b'a'..=b'z' => byte - b'a' + 26,
-                    b'0'..=b'9' => byte - b'0' + 52,
-                    b'+' => 62,
                     b'/' => 63,
-                    _ => return Err(CursedError::InvalidArgument("Invalid base64 character".to_string())),
-                };
-            }
-            
             if chunk.len() >= 2 {
                 result.push((buffer[0] << 2) | (buffer[1] >> 4));
             }
@@ -200,8 +132,6 @@ impl PasswordHash {
         }
         
         Ok(result)
-    }
-    
     fn encode_base64(input: &[u8]) -> String {
         const CHARS: &[u8] = b"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
         let mut result = String::new();
@@ -210,8 +140,6 @@ impl PasswordHash {
             let mut buffer = [0u8; 3];
             for (i, &byte) in chunk.iter().enumerate() {
                 buffer[i] = byte;
-            }
-            
             let b = (buffer[0] as u32) << 16 | (buffer[1] as u32) << 8 | buffer[2] as u32;
             
             result.push(CHARS[((b >> 18) & 63) as usize] as char);
@@ -221,8 +149,6 @@ impl PasswordHash {
                 result.push(CHARS[((b >> 6) & 63) as usize] as char);
             } else {
                 result.push('=');
-            }
-            
             if chunk.len() > 2 {
                 result.push(CHARS[(b & 63) as usize] as char);
             } else {
@@ -236,9 +162,6 @@ impl PasswordHash {
 
 /// Password hasher implementation
 pub struct PasswordHasher {
-    config: PasswordConfig,
-}
-
 impl PasswordHasher {
     pub fn new(config: PasswordConfig) -> Self {
         Self { config }
@@ -246,52 +169,27 @@ impl PasswordHasher {
     
     pub fn with_defaults() -> Self {
         Self::new(PasswordConfig::secure_default())
-    }
-    
     /// Hash a password with automatic salt generation
     pub fn hash_password(&self, password: &str) -> PasswordResult<PasswordHash> {
         let salt = self.generate_salt()?;
         self.hash_password_with_salt(password, &salt)
-    }
-    
     /// Hash a password with provided salt
     pub fn hash_password_with_salt(&self, password: &str, salt: &[u8]) -> PasswordResult<PasswordHash> {
         let start_time = Instant::now();
         
         let hash = match self.config.algorithm {
-            PasswordAlgorithm::Argon2id => self.argon2_hash(password.as_bytes(), salt, 2)?,
-            PasswordAlgorithm::Argon2i => self.argon2_hash(password.as_bytes(), salt, 1)?,
-            PasswordAlgorithm::Argon2d => self.argon2_hash(password.as_bytes(), salt, 0)?,
-            PasswordAlgorithm::Scrypt => self.scrypt_hash(password.as_bytes(), salt)?,
-            PasswordAlgorithm::Pbkdf2 => self.pbkdf2_hash(password.as_bytes(), salt)?,
-        };
         
         let format_string = self.create_phc_string(&hash, salt)?;
         
         println!("Password hashing took: {:?}", start_time.elapsed());
         
         Ok(PasswordHash {
-            algorithm: self.config.algorithm,
-            hash,
-            salt: salt.to_vec(),
-            config: self.config.clone(),
-            format_string,
         })
-    }
-    
     /// Verify password against hash
     pub fn verify_password(&self, password: &str, hash: &PasswordHash) -> PasswordResult<bool> {
         let computed_hash = match hash.algorithm {
-            PasswordAlgorithm::Argon2id => self.argon2_hash(password.as_bytes(), &hash.salt, 2)?,
-            PasswordAlgorithm::Argon2i => self.argon2_hash(password.as_bytes(), &hash.salt, 1)?,
-            PasswordAlgorithm::Argon2d => self.argon2_hash(password.as_bytes(), &hash.salt, 0)?,
-            PasswordAlgorithm::Scrypt => self.scrypt_hash(password.as_bytes(), &hash.salt)?,
-            PasswordAlgorithm::Pbkdf2 => self.pbkdf2_hash(password.as_bytes(), &hash.salt)?,
-        };
         
         Ok(constant_time_eq(&computed_hash, &hash.hash))
-    }
-    
     /// Simplified Argon2 implementation (production would use proper library)
     fn argon2_hash(&self, password: &[u8], salt: &[u8], variant: u8) -> PasswordResult<Vec<u8>> {
         // This is a simplified implementation for demonstration
@@ -320,13 +218,9 @@ impl PasswordHasher {
             round_hasher.update(password);
             round_hasher.update(salt);
             state = round_hasher.finalize();
-        }
-        
         // Truncate to desired length
         state.truncate(self.config.hash_length as usize);
         Ok(state)
-    }
-    
     /// Simplified scrypt implementation
     fn scrypt_hash(&self, password: &[u8], salt: &[u8]) -> PasswordResult<Vec<u8>> {
         // Simplified scrypt - production should use proper implementation
@@ -347,8 +241,6 @@ impl PasswordHasher {
             let block = block_hasher.finalize();
             memory_blocks.push(block.clone());
             state = block;
-        }
-        
         // Mix memory blocks
         for _ in 0..self.config.time_cost {
             for block in &memory_blocks {
@@ -361,8 +253,6 @@ impl PasswordHasher {
         
         state.truncate(self.config.hash_length as usize);
         Ok(state)
-    }
-    
     /// PBKDF2 implementation
     fn pbkdf2_hash(&self, password: &[u8], salt: &[u8]) -> PasswordResult<Vec<u8>> {
         let mut result = Vec::new();
@@ -396,12 +286,8 @@ impl PasswordHasher {
             }
             
             result.extend_from_slice(&f);
-        }
-        
         result.truncate(self.config.hash_length as usize);
         Ok(result)
-    }
-    
     fn generate_salt(&self) -> PasswordResult<Vec<u8>> {
         use std::collections::hash_map::RandomState;
         use std::hash::{BuildHasher, Hasher};
@@ -417,11 +303,7 @@ impl PasswordHasher {
             let remaining = (self.config.salt_length as usize).saturating_sub(salt.len());
             let to_take = std::cmp::min(8, remaining);
             salt.extend_from_slice(&bytes[..to_take]);
-        }
-        
         Ok(salt)
-    }
-    
     fn create_phc_string(&self, hash: &[u8], salt: &[u8]) -> PasswordResult<String> {
         let hash_b64 = PasswordHash::encode_base64(hash);
         let salt_b64 = PasswordHash::encode_base64(salt);
@@ -429,19 +311,11 @@ impl PasswordHasher {
         let params = match self.config.algorithm {
             PasswordAlgorithm::Argon2id | PasswordAlgorithm::Argon2i | PasswordAlgorithm::Argon2d => {
                 format!("m={},t={},p={}", self.config.memory_cost, self.config.time_cost, self.config.parallelism)
-            },
             PasswordAlgorithm::Scrypt => {
                 format!("n={},r={},p={}", self.config.memory_cost, 8, self.config.parallelism)
-            },
             PasswordAlgorithm::Pbkdf2 => {
                 format!("i={}", self.config.time_cost)
-            },
-        };
         
-        Ok(format!("${}${}${}${}", 
-                  self.config.algorithm.name(), 
-                  params, 
-                  salt_b64, 
                   hash_b64))
     }
 }
@@ -463,8 +337,6 @@ impl PasswordStrengthAnalyzer {
             feedback.push("Consider using a longer password (12+ characters)".to_string());
         } else {
             feedback.push("Password is too short (minimum 8 characters)".to_string());
-        }
-        
         // Character diversity
         let has_lower = password.chars().any(|c| c.is_ascii_lowercase());
         let has_upper = password.chars().any(|c| c.is_ascii_uppercase());
@@ -485,34 +357,18 @@ impl PasswordStrengthAnalyzer {
         if password.to_lowercase().contains("password") {
             score -= 20;
             feedback.push("Avoid using 'password' in your password".to_string());
-        }
-        
         if password.chars().collect::<Vec<_>>().windows(3)
             .any(|w| w[0] as u8 + 1 == w[1] as u8 && w[1] as u8 + 1 == w[2] as u8) {
             score -= 10;
             feedback.push("Avoid sequential characters".to_string());
-        }
-        
         // Repetition
         let unique_chars = password.chars().collect::<std::collections::HashSet<_>>().len();
         if unique_chars < password.len() / 2 {
             score -= 15;
             feedback.push("Avoid excessive character repetition".to_string());
-        }
-        
         let strength_level = match score {
-            0..=30 => PasswordStrengthLevel::VeryWeak,
-            31..=50 => PasswordStrengthLevel::Weak,
-            51..=70 => PasswordStrengthLevel::Moderate,
-            71..=85 => PasswordStrengthLevel::Strong,
-            _ => PasswordStrengthLevel::VeryStrong,
-        };
         
         PasswordStrength {
-            score: std::cmp::max(0, score) as u8,
-            level: strength_level,
-            feedback,
-            estimated_crack_time: Self::estimate_crack_time(password),
         }
     }
     
@@ -526,8 +382,6 @@ impl PasswordStrengthAnalyzer {
         let seconds = average_guesses / guesses_per_second;
         
         Duration::from_secs(seconds as u64)
-    }
-    
     fn estimate_charset_size(password: &str) -> usize {
         let mut size = 0;
         
@@ -542,30 +396,10 @@ impl PasswordStrengthAnalyzer {
 
 #[derive(Debug, Clone)]
 pub struct PasswordStrength {
-    pub score: u8,
-    pub level: PasswordStrengthLevel,
-    pub feedback: Vec<String>,
-    pub estimated_crack_time: Duration,
-}
-
 #[derive(Debug, Clone, PartialEq)]
 pub enum PasswordStrengthLevel {
-    VeryWeak,
-    Weak,
-    Moderate,
-    Strong,
-    VeryStrong,
-}
-
 impl PasswordStrengthLevel {
     pub fn description(&self) -> &'static str {
         match self {
-            PasswordStrengthLevel::VeryWeak => "Very Weak",
-            PasswordStrengthLevel::Weak => "Weak",
-            PasswordStrengthLevel::Moderate => "Moderate",
-            PasswordStrengthLevel::Strong => "Strong",
-            PasswordStrengthLevel::VeryStrong => "Very Strong",
         }
     }
-}
-

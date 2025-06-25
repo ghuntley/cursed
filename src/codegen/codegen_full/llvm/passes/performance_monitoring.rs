@@ -13,51 +13,23 @@ use tracing::{debug, info, instrument, warn};
 
 /// Performance monitor for tracking optimization effectiveness
 pub struct PerformanceMonitor {
-    metrics: HashMap<String, OptimizationMetrics>,
-    execution_history: VecDeque<PassExecutionStats>,
-    baseline_metrics: Option<BaselineMetrics>,
-    monitoring_config: MonitoringConfig,
-    analysis_engine: AnalysisEngine,
-}
-
 impl PerformanceMonitor {
     /// Create a new performance monitor
     pub fn new(config: MonitoringConfig) -> Self {
         Self {
-            metrics: HashMap::new(),
-            execution_history: VecDeque::with_capacity(config.history_size),
-            baseline_metrics: None,
-            monitoring_config: config,
-            analysis_engine: AnalysisEngine::new(),
         }
     }
     
     /// Record pass execution metrics
     #[instrument(skip(self, pass_result))]
     pub fn record_pass_execution(
-        &mut self,
-        pass_name: &str,
-        pass_result: &PassResult,
-        before_metrics: &CodeMetrics,
-        after_metrics: &CodeMetrics,
     ) -> Result<()> {
         debug!("Recording performance metrics for pass: {}", pass_name);
         
         let execution_stats = PassExecutionStats {
-            pass_name: pass_name.to_string(),
-            timestamp: SystemTime::now(),
-            execution_time: pass_result.execution_time,
-            memory_usage: pass_result.memory_usage,
             optimizations_applied: pass_result.instructions_eliminated +
                                   pass_result.functions_inlined +
                                   pass_result.loops_unrolled +
-                                  pass_result.constants_folded,
-            before_metrics: before_metrics.clone(),
-            after_metrics: after_metrics.clone(),
-            effectiveness_score: pass_result.effectiveness_score(),
-            changed: pass_result.changed,
-            errors: pass_result.errors.len(),
-        };
         
         // Update per-pass metrics
         let metrics = self.metrics.entry(pass_name.to_string()).or_insert_with(OptimizationMetrics::new);
@@ -67,35 +39,22 @@ impl PerformanceMonitor {
         self.execution_history.push_back(execution_stats);
         if self.execution_history.len() > self.monitoring_config.history_size {
             self.execution_history.pop_front();
-        }
-        
         // Analyze performance trends
         if self.monitoring_config.enable_trend_analysis {
             self.analysis_engine.analyze_trends(pass_name, &self.execution_history);
-        }
-        
-        debug!("Recorded metrics for pass {}: {:.2} effectiveness, {:?} execution time",
                pass_name, execution_stats.effectiveness_score, execution_stats.execution_time);
         
         Ok(())
-    }
-    
     /// Set baseline metrics for comparison
     pub fn set_baseline(&mut self, metrics: BaselineMetrics) {
         info!("Setting baseline metrics for performance comparison");
         self.baseline_metrics = Some(metrics);
-    }
-    
     /// Get optimization metrics for a specific pass
     pub fn get_pass_metrics(&self, pass_name: &str) -> Option<&OptimizationMetrics> {
         self.metrics.get(pass_name)
-    }
-    
     /// Get all tracked optimization metrics
     pub fn get_all_metrics(&self) -> &HashMap<String, OptimizationMetrics> {
         &self.metrics
-    }
-    
     /// Generate performance report
     #[instrument(skip(self))]
     pub fn generate_report(&self) -> Result<PerformanceReport> {
@@ -115,38 +74,26 @@ impl PerformanceMonitor {
             total_execution_time += stats.execution_time;
             total_optimizations += stats.optimizations_applied;
             total_effectiveness += stats.effectiveness_score;
-        }
-        
         if !self.execution_history.is_empty() {
             report.average_execution_time = total_execution_time / self.execution_history.len() as u32;
             report.average_effectiveness = total_effectiveness / self.execution_history.len() as f64;
-        }
-        
         report.total_optimizations_applied = total_optimizations;
         
         // Analyze pass performance
         for (pass_name, metrics) in &self.metrics {
             let pass_analysis = self.analyze_pass_performance(pass_name, metrics);
             report.pass_analyses.insert(pass_name.clone(), pass_analysis);
-        }
-        
         // Generate recommendations
         report.recommendations = self.generate_recommendations();
         
         // Compare with baseline if available
         if let Some(ref baseline) = self.baseline_metrics {
             report.baseline_comparison = Some(self.compare_with_baseline(baseline));
-        }
-        
         // Trend analysis
         if self.monitoring_config.enable_trend_analysis {
             report.trends = self.analysis_engine.get_trend_summary();
-        }
-        
         info!("Generated performance report with {} pass analyses", report.pass_analyses.len());
         Ok(report)
-    }
-    
     /// Analyze performance of a specific pass
     fn analyze_pass_performance(&self, pass_name: &str, metrics: &OptimizationMetrics) -> PassPerformanceAnalysis {
         let mut analysis = PassPerformanceAnalysis::default();
@@ -161,8 +108,6 @@ impl PerformanceMonitor {
         if metrics.average_execution_time.as_millis() > 0 {
             analysis.optimizations_per_ms = metrics.total_optimizations_applied as f64 
                 / (metrics.average_execution_time.as_millis() as f64 * metrics.execution_count as f64);
-        }
-        
         // Categorize performance
         analysis.performance_category = self.categorize_pass_performance(metrics);
         
@@ -170,8 +115,6 @@ impl PerformanceMonitor {
         analysis.recommendations = self.generate_pass_recommendations(pass_name, metrics);
         
         analysis
-    }
-    
     /// Categorize pass performance
     fn categorize_pass_performance(&self, metrics: &OptimizationMetrics) -> PerformanceCategory {
         // Use heuristics to categorize performance
@@ -232,34 +175,20 @@ impl PerformanceMonitor {
             recommendations.push("Overall optimization effectiveness is low. Consider increasing optimization level or enabling more aggressive passes.".to_string());
         } else if overall_effectiveness > 10.0 {
             recommendations.push("Excellent optimization effectiveness. Current configuration is performing well.".to_string());
-        }
-        
         recommendations
-    }
-    
     /// Generate recommendations for a specific pass
     fn generate_pass_recommendations(&self, pass_name: &str, metrics: &OptimizationMetrics) -> Vec<String> {
         let mut recommendations = Vec::new();
         
         if metrics.average_effectiveness < 1.0 {
             recommendations.push("Low effectiveness - consider disabling or reconfiguring".to_string());
-        }
-        
         if metrics.average_execution_time > Duration::from_secs(1) {
             recommendations.push("High execution time - consider conditional execution".to_string());
-        }
-        
         if metrics.success_rate < 0.9 {
             recommendations.push("Low success rate - investigate error conditions".to_string());
-        }
-        
         if metrics.code_size_reduction_percentage > 10.0 {
             recommendations.push("Excellent code size reduction - maintain current configuration".to_string());
-        }
-        
         recommendations
-    }
-    
     /// Compare current performance with baseline
     fn compare_with_baseline(&self, baseline: &BaselineMetrics) -> BaselineComparison {
         let mut comparison = BaselineComparison::default();
@@ -282,8 +211,6 @@ impl PerformanceMonitor {
         } else {
             comparison.execution_time_change = current_total_time.as_millis() as i64 - baseline.total_execution_time.as_millis() as i64;
             comparison.execution_time_improvement = false;
-        }
-        
         // Compare optimizations applied
         comparison.optimization_change = current_optimizations as i64 - baseline.total_optimizations as i64;
         comparison.optimization_improvement = comparison.optimization_change > 0;
@@ -292,11 +219,7 @@ impl PerformanceMonitor {
         if baseline.total_execution_time.as_millis() > 0 {
             comparison.improvement_percentage = 
                 (comparison.execution_time_change as f64 / baseline.total_execution_time.as_millis() as f64) * 100.0;
-        }
-        
         comparison
-    }
-    
     /// Reset monitoring data
     pub fn reset(&mut self) {
         info!("Resetting performance monitoring data");
@@ -304,8 +227,6 @@ impl PerformanceMonitor {
         self.execution_history.clear();
         self.baseline_metrics = None;
         self.analysis_engine.reset();
-    }
-    
     /// Get recent execution statistics
     pub fn get_recent_executions(&self, count: usize) -> Vec<&PassExecutionStats> {
         self.execution_history
@@ -313,8 +234,6 @@ impl PerformanceMonitor {
             .rev()
             .take(count)
             .collect()
-    }
-    
     /// Check if a pass is performing below threshold
     pub fn is_underperforming(&self, pass_name: &str) -> bool {
         if let Some(metrics) = self.metrics.get(pass_name) {
@@ -324,59 +243,22 @@ impl PerformanceMonitor {
             false
         }
     }
-}
-
 /// Configuration for performance monitoring
 #[derive(Debug, Clone)]
 pub struct MonitoringConfig {
-    pub history_size: usize,
-    pub enable_trend_analysis: bool,
-    pub effectiveness_threshold: f64,
-    pub min_executions_for_analysis: usize,
-    pub enable_baseline_comparison: bool,
-    pub report_generation_interval: Duration,
-}
-
 impl Default for MonitoringConfig {
     fn default() -> Self {
         Self {
-            history_size: 1000,
-            enable_trend_analysis: true,
-            effectiveness_threshold: 1.0,
-            min_executions_for_analysis: 5,
-            enable_baseline_comparison: true,
             report_generation_interval: Duration::from_secs(300), // 5 minutes
         }
     }
-}
-
 /// Optimization metrics for a specific pass
 #[derive(Debug, Clone)]
 pub struct OptimizationMetrics {
-    pub execution_count: usize,
-    pub total_execution_time: Duration,
-    pub average_execution_time: Duration,
-    pub total_optimizations_applied: usize,
-    pub average_effectiveness: f64,
-    pub success_rate: f64,
-    pub code_size_reduction_percentage: f64,
-    pub memory_usage_reduction_percentage: f64,
-    pub last_execution: Option<SystemTime>,
-}
-
 impl OptimizationMetrics {
     /// Create new optimization metrics
     pub fn new() -> Self {
         Self {
-            execution_count: 0,
-            total_execution_time: Duration::from_secs(0),
-            average_execution_time: Duration::from_secs(0),
-            total_optimizations_applied: 0,
-            average_effectiveness: 0.0,
-            success_rate: 0.0,
-            code_size_reduction_percentage: 0.0,
-            memory_usage_reduction_percentage: 0.0,
-            last_execution: None,
         }
     }
     
@@ -405,8 +287,6 @@ impl OptimizationMetrics {
             self.code_size_reduction_percentage = 
                 (self.code_size_reduction_percentage * (self.execution_count - 1) as f64 + percentage) 
                 / self.execution_count as f64;
-        }
-        
         self.last_execution = Some(stats.timestamp);
     }
 }
@@ -414,62 +294,24 @@ impl OptimizationMetrics {
 /// Code metrics for before/after comparison
 #[derive(Debug, Clone)]
 pub struct CodeMetrics {
-    pub code_size: usize,
-    pub instruction_count: usize,
-    pub function_count: usize,
-    pub basic_block_count: usize,
-    pub memory_allocations: usize,
-    pub complexity_score: f64,
-}
-
 impl Default for CodeMetrics {
     fn default() -> Self {
         Self {
-            code_size: 0,
-            instruction_count: 0,
-            function_count: 0,
-            basic_block_count: 0,
-            memory_allocations: 0,
-            complexity_score: 0.0,
         }
     }
-}
-
 /// Statistics for a single pass execution
 #[derive(Debug, Clone)]
 pub struct PassExecutionStats {
-    pub pass_name: String,
-    pub timestamp: SystemTime,
-    pub execution_time: Duration,
-    pub memory_usage: usize,
-    pub optimizations_applied: usize,
-    pub before_metrics: CodeMetrics,
-    pub after_metrics: CodeMetrics,
-    pub effectiveness_score: f64,
-    pub changed: bool,
-    pub errors: usize,
-}
-
 /// Baseline metrics for comparison
 #[derive(Debug, Clone)]
 pub struct BaselineMetrics {
-    pub total_execution_time: Duration,
-    pub total_optimizations: usize,
-    pub code_size: usize,
-    pub compilation_timestamp: SystemTime,
-}
-
 /// Performance analysis engine
 #[derive(Debug)]
 pub struct AnalysisEngine {
-    trends: HashMap<String, TrendData>,
-}
-
 impl AnalysisEngine {
     /// Create new analysis engine
     pub fn new() -> Self {
         Self {
-            trends: HashMap::new(),
         }
     }
     
@@ -482,8 +324,6 @@ impl AnalysisEngine {
             
         if pass_history.len() < 3 {
             return; // Need at least 3 data points for trend analysis
-        }
-        
         let mut trend_data = TrendData::default();
         
         // Analyze effectiveness trend
@@ -501,14 +341,10 @@ impl AnalysisEngine {
         trend_data.execution_time_trend = self.calculate_trend(&time_values);
         
         self.trends.insert(pass_name.to_string(), trend_data);
-    }
-    
     /// Calculate trend direction and magnitude
     fn calculate_trend(&self, values: &[f64]) -> TrendDirection {
         if values.len() < 2 {
             return TrendDirection::Stable;
-        }
-        
         let first_half = &values[..values.len() / 2];
         let second_half = &values[values.len() / 2..];
         
@@ -529,8 +365,6 @@ impl AnalysisEngine {
     /// Get trend summary
     pub fn get_trend_summary(&self) -> HashMap<String, TrendData> {
         self.trends.clone()
-    }
-    
     /// Reset trend data
     pub fn reset(&mut self) {
         self.trends.clear();
@@ -540,18 +374,9 @@ impl AnalysisEngine {
 /// Trend data for a pass
 #[derive(Debug, Clone, Default)]
 pub struct TrendData {
-    pub effectiveness_trend: TrendDirection,
-    pub execution_time_trend: TrendDirection,
-}
-
 /// Trend direction
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum TrendDirection {
-    Improving,
-    Stable,
-    Degrading,
-}
-
 impl Default for TrendDirection {
     fn default() -> Self {
         TrendDirection::Stable
@@ -561,40 +386,12 @@ impl Default for TrendDirection {
 /// Performance category classification
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum PerformanceCategory {
-    Excellent,
-    Good,
-    Fair,
-    Poor,
-}
-
 /// Comprehensive performance report
 #[derive(Debug, Default)]
 pub struct PerformanceReport {
-    pub timestamp: SystemTime,
-    pub total_passes_monitored: usize,
-    pub total_executions: usize,
-    pub average_execution_time: Duration,
-    pub average_effectiveness: f64,
-    pub total_optimizations_applied: usize,
-    pub pass_analyses: HashMap<String, PassPerformanceAnalysis>,
-    pub recommendations: Vec<String>,
-    pub baseline_comparison: Option<BaselineComparison>,
-    pub trends: HashMap<String, TrendData>,
-}
-
 /// Performance analysis for a single pass
 #[derive(Debug, Default)]
 pub struct PassPerformanceAnalysis {
-    pub total_executions: usize,
-    pub average_execution_time: Duration,
-    pub total_optimizations: usize,
-    pub average_effectiveness: f64,
-    pub success_rate: f64,
-    pub optimizations_per_ms: f64,
-    pub performance_category: PerformanceCategory,
-    pub recommendations: Vec<String>,
-}
-
 impl Default for PerformanceCategory {
     fn default() -> Self {
         PerformanceCategory::Fair
@@ -605,9 +402,3 @@ impl Default for PerformanceCategory {
 #[derive(Debug, Default)]
 pub struct BaselineComparison {
     pub execution_time_change: i64, // milliseconds
-    pub execution_time_improvement: bool,
-    pub optimization_change: i64,
-    pub optimization_improvement: bool,
-    pub improvement_percentage: f64,
-}
-

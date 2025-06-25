@@ -12,51 +12,18 @@ use crate::repl::ReplResult;
 /// Session variable information
 #[derive(Debug, Clone)]
 pub struct SessionVariable {
-    pub name: String,
-    pub type_info: String,
-    pub value: String,
-    pub created_at: SystemTime,
-    pub last_accessed: SystemTime,
-}
-
 /// Session function information
 #[derive(Debug, Clone)]
 pub struct SessionFunction {
-    pub name: String,
-    pub signature: String,
-    pub body: String,
-    pub created_at: SystemTime,
-}
-
 /// Command history entry
 #[derive(Debug, Clone)]
 pub struct HistoryEntry {
-    pub command: String,
-    pub timestamp: SystemTime,
-    pub success: bool,
-    pub execution_time: std::time::Duration,
-}
-
 /// REPL session manager
 pub struct SessionManager {
-    variables: HashMap<String, SessionVariable>,
-    functions: HashMap<String, SessionFunction>,
-    history: Vec<HistoryEntry>,
-    session_code: Vec<String>,
-    session_id: String,
-    max_history_size: usize,
-}
-
 impl SessionManager {
     /// Create a new session manager
     pub fn new() -> Self {
         Self {
-            variables: HashMap::new(),
-            functions: HashMap::new(),
-            history: Vec::new(),
-            session_code: Vec::new(),
-            session_id: Self::generate_session_id(),
-            max_history_size: 1000,
         }
     }
 
@@ -72,8 +39,6 @@ impl SessionManager {
         self.session_code.push("".to_string());
 
         Ok(())
-    }
-
     /// Clear the session state
     pub fn clear(&mut self) -> ReplResult<()> {
         self.variables.clear();
@@ -82,14 +47,9 @@ impl SessionManager {
         
         // Keep history but mark the clear point
         self.add_to_history(
-            ":clear".to_string(),
-            true,
-            std::time::Duration::from_millis(1),
         );
 
         Ok(())
-    }
-
     /// Execute CURSED code in the session context
     pub fn execute_code(&mut self, code: &str) -> ReplResult<String> {
         let start_time = std::time::Instant::now();
@@ -110,44 +70,32 @@ impl SessionManager {
         self.add_to_history(code.to_string(), true, execution_time);
         
         Ok(result)
-    }
-
     /// Get the current session code as a single string
     pub fn get_session_code(&self) -> String {
         self.session_code.join("\n")
-    }
-
     /// Format the session code
     pub fn format_session_code(&self) -> ReplResult<String> {
         let code = self.get_session_code();
         // This would use the CURSED formatter
         crate::format(&code).map_err(|e| CursedError::repl_error(e.to_string()))
-    }
-
     /// Lint the session code
     pub fn lint_session_code(&self) -> ReplResult<Vec<String>> {
         let code = self.get_session_code();
         // This would use the CURSED linter
         // For now, return placeholder
         Ok(Vec::from(["No linting issues found".to_string()]))
-    }
-
     /// List all variables in the session
     pub fn list_variables(&self) -> Vec<(String, String, String)> {
         self.variables
             .values()
             .map(|var| (var.name.clone(), var.type_info.clone(), var.value.clone()))
             .collect()
-    }
-
     /// List all functions in the session
     pub fn list_functions(&self) -> Vec<(String, String)> {
         self.functions
             .values()
             .map(|func| (func.name.clone(), func.signature.clone()))
             .collect()
-    }
-
     /// Get the type of an expression
     pub fn get_expression_type(&self, expression: &str) -> ReplResult<String> {
         // This would analyze the expression in the current session context
@@ -156,13 +104,9 @@ impl SessionManager {
         // Check if it's a known variable
         if let Some(var) = self.variables.values().find(|v| v.name == expression) {
             return Ok(var.type_info.clone());
-        }
-        
         // Check if it's a known function
         if let Some(func) = self.functions.values().find(|f| f.name == expression) {
             return Ok(format!("func {}", func.signature));
-        }
-        
         // Try to infer type from literal
         if expression.chars().all(|c| c.is_ascii_digit()) {
             Ok("int".to_string())
@@ -185,16 +129,9 @@ impl SessionManager {
             .take(count)
             .map(|entry| entry.command.clone())
             .collect()
-    }
-
     /// Add entry to command history
     pub fn add_to_history(&mut self, command: String, success: bool, execution_time: std::time::Duration) {
         let entry = HistoryEntry {
-            command,
-            timestamp: SystemTime::now(),
-            success,
-            execution_time,
-        };
 
         self.history.push(entry);
 
@@ -211,8 +148,6 @@ impl SessionManager {
         self.variables.clear();
         self.functions.clear();
         Ok(())
-    }
-
     /// Analyze code to extract variables and functions
     fn analyze_code(&mut self, code: &str) -> ReplResult<()> {
         // Simple analysis - in a real implementation, this would use the parser
@@ -234,11 +169,7 @@ impl SessionManager {
                     self.functions.insert(func_info.name.clone(), func_info);
                 }
             }
-        }
-        
         Ok(())
-    }
-
     /// Parse a variable declaration
     fn parse_variable_declaration(&self, line: &str) -> Option<SessionVariable> {
         // Simple parsing - would be more sophisticated in real implementation
@@ -249,11 +180,6 @@ impl SessionManager {
             let type_info = self.infer_type(&value);
             
             Some(SessionVariable {
-                name,
-                type_info,
-                value,
-                created_at: SystemTime::now(),
-                last_accessed: SystemTime::now(),
             })
         } else {
             None
@@ -269,10 +195,6 @@ impl SessionManager {
                 let signature = line[paren_pos..].to_string();
                 
                 Some(SessionFunction {
-                    name,
-                    signature,
-                    body: "".to_string(),
-                    created_at: SystemTime::now(),
                 })
             } else {
                 None
@@ -304,21 +226,13 @@ impl SessionManager {
         
         if code.trim().is_empty() {
             return Ok("".to_string());
-        }
-
         // Simple evaluation for basic expressions
         if code.trim().chars().all(|c| c.is_ascii_digit()) {
             return Ok(code.trim().to_string());
-        }
-
         if code.contains("=") && !code.contains("==") {
             return Ok("".to_string()); // Variable assignment
-        }
-
         // Default response
         Ok("(evaluation result)".to_string())
-    }
-
     /// Generate a unique session ID
     fn generate_session_id() -> String {
         use std::time::{SystemTime, UNIX_EPOCH};

@@ -13,33 +13,13 @@ use tracing::{debug, info, instrument};
 use serde::{Deserialize, Serialize};
 
 use inkwell::{
-    context::Context,
-    module::Module,
-    values::{FunctionValue, InstructionValue, PointerValue, BasicValueEnum},
-    basic_block::BasicBlock,
-};
+// };
 
 /// Advanced alias analyzer with support for interprocedural analysis
 pub struct AdvancedAliasAnalyzer<'ctx> {
-    context: &'ctx Context,
-    optimization_level: OptimizationLevel,
-    alias_sets: HashMap<String, AliasSet>,
-    pointer_analysis: PointerAnalysis,
-    escape_analysis: EscapeAnalysis,
-    statistics: Arc<Mutex<AliasAnalysisStatistics>>,
-}
-
 /// Alias set representing potentially aliasing pointers
 #[derive(Debug, Clone)]
 pub struct AliasSet {
-    pub id: usize,
-    pub pointers: HashSet<String>,
-    pub alias_type: AliasType,
-    pub confidence: f64,
-    pub may_escape: bool,
-    pub memory_effects: MemoryEffects,
-}
-
 /// Type of alias relationship
 #[derive(Debug, Clone, PartialEq)]
 pub enum AliasType {
@@ -47,81 +27,31 @@ pub enum AliasType {
     MayAlias,       // Pointers may alias
     MustAlias,      // Pointers definitely alias
     PartialAlias,   // Pointers partially overlap
-}
-
 /// Memory effects analysis
 #[derive(Debug, Clone, Default)]
 pub struct MemoryEffects {
-    pub reads_memory: bool,
-    pub writes_memory: bool,
-    pub accesses_globals: bool,
-    pub calls_external: bool,
-    pub allocates_memory: bool,
-    pub deallocates_memory: bool,
-}
-
 /// Pointer analysis for tracking pointer origins and relationships
 #[derive(Debug, Clone)]
 pub struct PointerAnalysis {
-    pointer_origins: HashMap<String, PointerOrigin>,
-    pointer_relationships: HashMap<String, Vec<PointerRelationship>>,
-    global_pointers: HashSet<String>,
     local_pointers: HashMap<String, HashSet<String>>, // function -> local pointers
-}
-
 /// Origin of a pointer value
 #[derive(Debug, Clone)]
 pub enum PointerOrigin {
-    Allocation(AllocationInfo),
-    Parameter(ParameterInfo),
-    Global(GlobalInfo),
-    Derived(DerivedInfo),
-    External(ExternalInfo),
-}
-
 /// Information about allocated memory
 #[derive(Debug, Clone)]
 pub struct AllocationInfo {
-    pub allocation_site: String,
-    pub size: Option<u64>,
-    pub alignment: Option<u32>,
-    pub is_stack: bool,
-    pub lifetime: LifetimeInfo,
-}
-
 /// Parameter pointer information
 #[derive(Debug, Clone)]
 pub struct ParameterInfo {
-    pub function_name: String,
-    pub parameter_index: usize,
-    pub is_const: bool,
-    pub escape_potential: EscapePotential,
-}
-
 /// Global pointer information
 #[derive(Debug, Clone)]
 pub struct GlobalInfo {
-    pub global_name: String,
-    pub is_constant: bool,
-    pub initialization: GlobalInitialization,
-}
-
 /// Derived pointer information (from arithmetic, GEP, etc.)
 #[derive(Debug, Clone)]
 pub struct DerivedInfo {
-    pub base_pointer: String,
-    pub offset_info: OffsetInfo,
-    pub derivation_type: DerivationType,
-}
-
 /// External pointer information (from external functions)
 #[derive(Debug, Clone)]
 pub struct ExternalInfo {
-    pub source_function: String,
-    pub return_attributes: Vec<String>,
-    pub side_effects: MemoryEffects,
-}
-
 /// Lifetime information for allocated memory
 #[derive(Debug, Clone)]
 pub enum LifetimeInfo {
@@ -129,106 +59,41 @@ pub enum LifetimeInfo {
     Automatic(String),         // Stack lifetime tied to function
     Dynamic,                   // Heap lifetime
     Scoped(String, usize),     // Scoped lifetime
-}
-
 /// Escape potential for pointers
 #[derive(Debug, Clone, PartialEq)]
 pub enum EscapePotential {
     NoEscape,        // Pointer doesn't escape function
     MayEscape,       // Pointer may escape
     DefiniteEscape,  // Pointer definitely escapes
-}
-
 /// Global initialization type
 #[derive(Debug, Clone)]
 pub enum GlobalInitialization {
-    Zero,
-    Constant(String),
-    Runtime,
-    Uninitialized,
-}
-
 /// Offset information for derived pointers
 #[derive(Debug, Clone)]
 pub struct OffsetInfo {
-    pub constant_offset: Option<i64>,
-    pub variable_offset: Option<String>,
-    pub stride: Option<u64>,
-}
-
 /// Type of pointer derivation
 #[derive(Debug, Clone)]
 pub enum DerivationType {
-    GetElementPtr,
-    PointerArithmetic,
-    Cast,
-    Load,
-    FieldAccess,
-}
-
 /// Relationship between pointers
 #[derive(Debug, Clone)]
 pub struct PointerRelationship {
-    pub target_pointer: String,
-    pub relationship_type: RelationshipType,
-    pub confidence: f64,
-}
-
 /// Type of pointer relationship
 #[derive(Debug, Clone)]
 pub enum RelationshipType {
-    SameObject,
-    DisjointObjects,
-    OverlappingObjects,
-    ContainedIn,
-    Contains,
-    Unknown,
-}
-
 /// Escape analysis for determining if pointers escape their scope
 #[derive(Debug, Clone)]
 pub struct EscapeAnalysis {
-    escaped_pointers: HashSet<String>,
-    escape_reasons: HashMap<String, Vec<EscapeReason>>,
-    function_escape_summaries: HashMap<String, FunctionEscapeSummary>,
-}
-
 /// Reason why a pointer escapes
 #[derive(Debug, Clone)]
 pub enum EscapeReason {
-    StoredToGlobal(String),
-    PassedToExternal(String),
-    ReturnedFromFunction,
-    StoredToEscapedPointer(String),
-    AssignedToParameter(String),
     ThroughChannel(String),  // CURSED-specific: escaped through channel
     ThroughGoroutine(String), // CURSED-specific: escaped to goroutine
-}
-
 /// Summary of escape behavior for a function
 #[derive(Debug, Clone)]
 pub struct FunctionEscapeSummary {
-    pub function_name: String,
-    pub parameters_that_escape: HashSet<usize>,
-    pub may_return_escaped: bool,
-    pub side_effects: MemoryEffects,
-    pub confidence: f64,
-}
-
 /// Statistics for alias analysis
 #[derive(Debug, Clone, Default)]
 pub struct AliasAnalysisStatistics {
-    pub total_pointers_analyzed: usize,
-    pub alias_sets_created: usize,
-    pub no_alias_pairs: usize,
-    pub may_alias_pairs: usize,
-    pub must_alias_pairs: usize,
-    pub escaped_pointers: usize,
-    pub optimization_opportunities: usize,
-    pub analysis_time: Duration,
-    pub functions_analyzed: usize,
-}
-
 impl<'ctx> AdvancedAliasAnalyzer<'ctx> {
     /// Create new advanced alias analyzer
     #[instrument(skip(context))]
@@ -236,12 +101,6 @@ impl<'ctx> AdvancedAliasAnalyzer<'ctx> {
         info!("Initializing advanced alias analyzer with optimization level {:?}", optimization_level);
         
         Self {
-            context,
-            optimization_level,
-            alias_sets: HashMap::new(),
-            pointer_analysis: PointerAnalysis::new(),
-            escape_analysis: EscapeAnalysis::new(),
-            statistics: Arc::new(Mutex::new(AliasAnalysisStatistics::default())),
         }
     }
     
@@ -260,7 +119,6 @@ impl<'ctx> AdvancedAliasAnalyzer<'ctx> {
             if function.get_first_basic_block().is_some() {
                 let result = self.analyze_function(function)?;
                 function_results.insert(
-                    function.get_name().to_str().unwrap_or("unnamed").to_string(),
                     result
                 );
             }
@@ -279,21 +137,11 @@ impl<'ctx> AdvancedAliasAnalyzer<'ctx> {
         self.update_statistics(analysis_time, &function_results);
         
         info!(
-            analysis_time = ?analysis_time,
-            functions_analyzed = function_results.len(),
-            alias_sets = self.alias_sets.len(),
             "Alias analysis completed"
         );
         
         Ok(AliasAnalysisResults {
-            function_results,
-            global_alias_sets: self.alias_sets.clone(),
-            escape_analysis: self.escape_analysis.clone(),
-            optimization_opportunities: optimizations,
-            statistics: self.get_statistics(),
         })
-    }
-    
     /// Analyze a single function for alias relationships
     #[instrument(skip(self, function))]
     pub fn analyze_function(&mut self, function: FunctionValue<'ctx>) -> Result<FunctionAliasAnalysis> {
@@ -318,13 +166,9 @@ impl<'ctx> AdvancedAliasAnalyzer<'ctx> {
                 instruction = instr.get_next_instruction();
             }
             block = bb.get_next_basic_block();
-        }
-        
         // Analyze pointer relationships within the function
         for instruction in &pointer_instructions {
             self.analyze_pointer_instruction(function_name, instruction, &mut local_alias_sets)?;
-        }
-        
         // Analyze memory operations for alias conflicts
         let alias_conflicts = self.detect_alias_conflicts(&memory_operations, &local_alias_sets);
         
@@ -332,26 +176,13 @@ impl<'ctx> AdvancedAliasAnalyzer<'ctx> {
         let escape_summary = self.calculate_function_escape_summary(function)?;
         
         Ok(FunctionAliasAnalysis {
-            function_name: function_name.to_string(),
-            local_alias_sets,
-            pointer_instructions: pointer_instructions.len(),
-            memory_operations: memory_operations.len(),
-            alias_conflicts,
-            escape_summary,
-            optimization_potential: self.calculate_optimization_potential(&local_alias_sets),
         })
-    }
-    
     /// Determine alias relationship between two pointers
     pub fn query_alias(&self, ptr1: &str, ptr2: &str) -> AliasQueryResult {
         // Check direct alias sets
         for alias_set in self.alias_sets.values() {
             if alias_set.pointers.contains(ptr1) && alias_set.pointers.contains(ptr2) {
                 return AliasQueryResult {
-                    alias_type: alias_set.alias_type.clone(),
-                    confidence: alias_set.confidence,
-                    reasoning: format!("Both pointers in alias set {}", alias_set.id),
-                };
             }
         }
         
@@ -360,25 +191,11 @@ impl<'ctx> AdvancedAliasAnalyzer<'ctx> {
             for rel in relationships {
                 if rel.target_pointer == ptr2 {
                     let alias_type = match rel.relationship_type {
-                        RelationshipType::SameObject => AliasType::MustAlias,
-                        RelationshipType::DisjointObjects => AliasType::NoAlias,
-                        RelationshipType::OverlappingObjects => AliasType::PartialAlias,
-                        _ => AliasType::MayAlias,
-                    };
                     return AliasQueryResult {
-                        alias_type,
-                        confidence: rel.confidence,
-                        reasoning: format!("Relationship analysis: {:?}", rel.relationship_type),
-                    };
                 }
             }
-        }
-        
         // Conservative default
         AliasQueryResult {
-            alias_type: AliasType::MayAlias,
-            confidence: 0.5,
-            reasoning: "Conservative default - insufficient analysis information".to_string(),
         }
     }
     
@@ -389,16 +206,8 @@ impl<'ctx> AdvancedAliasAnalyzer<'ctx> {
         } else {
             // Conservative default
             MemoryEffects {
-                reads_memory: true,
-                writes_memory: true,
-                accesses_globals: true,
-                calls_external: true,
-                allocates_memory: true,
-                deallocates_memory: true,
             }
         }
-    }
-    
     /// Generate comprehensive alias analysis report
     pub fn generate_alias_analysis_report(&self, results: &AliasAnalysisResults) -> String {
         let mut report = String::new();
@@ -420,14 +229,11 @@ impl<'ctx> AdvancedAliasAnalyzer<'ctx> {
         if !results.optimization_opportunities.is_empty() {
             report.push_str("## Optimization Opportunities\n");
             for (i, opt) in results.optimization_opportunities.iter().enumerate().take(10) {
-                report.push_str(&format!("{}. **{}** (confidence: {:.1}%)\n", 
                     i + 1, opt.optimization_type, opt.confidence * 100.0));
                 report.push_str(&format!("   - Potential speedup: {:.1}%\n", opt.potential_speedup));
                 report.push_str(&format!("   - Description: {}\n", opt.description));
             }
             report.push_str("\n");
-        }
-        
         // Function Analysis Results
         report.push_str("## Function Analysis Results\n");
         for (func_name, func_result) in &results.function_results {
@@ -444,8 +250,6 @@ impl<'ctx> AdvancedAliasAnalyzer<'ctx> {
                 }
             }
             report.push_str("\n");
-        }
-        
         // Escape Analysis Results
         report.push_str("## Escape Analysis\n");
         if !results.escape_analysis.escaped_pointers.is_empty() {
@@ -461,13 +265,9 @@ impl<'ctx> AdvancedAliasAnalyzer<'ctx> {
         }
         
         report
-    }
-    
     /// Get current analysis statistics
     pub fn get_statistics(&self) -> AliasAnalysisStatistics {
         self.statistics.lock().unwrap().clone()
-    }
-    
     // Helper methods
     
     fn analyze_global_variables(&mut self, module: &Module<'ctx>) -> Result<()> {
@@ -478,10 +278,6 @@ impl<'ctx> AdvancedAliasAnalyzer<'ctx> {
             
             // Analyze global pointer properties
             let global_info = GlobalInfo {
-                global_name: global_name.to_string(),
-                is_constant: global.is_constant(),
-                initialization: self.analyze_global_initialization(&global),
-            };
             
             let origin = PointerOrigin::Global(global_info);
             self.pointer_analysis.pointer_origins.insert(global_name.to_string(), origin);
@@ -491,21 +287,15 @@ impl<'ctx> AdvancedAliasAnalyzer<'ctx> {
             if !global.is_constant() {
                 self.escape_analysis.escaped_pointers.insert(global_name.to_string());
                 self.escape_analysis.escape_reasons.insert(
-                    global_name.to_string(),
-                    vec![EscapeReason::StoredToGlobal("global_variable".to_string())],
                 );
             }
         }
         
         Ok(())
-    }
-    
     fn analyze_global_initialization(&self, _global: &inkwell::values::GlobalValue<'ctx>) -> GlobalInitialization {
         // In a real implementation, would analyze the global's initializer
         // For now, return a conservative estimate
         GlobalInitialization::Runtime
-    }
-    
     fn perform_interprocedural_analysis(&mut self, module: &Module<'ctx>) -> Result<()> {
         debug!("Performing interprocedural alias analysis");
         
@@ -519,11 +309,7 @@ impl<'ctx> AdvancedAliasAnalyzer<'ctx> {
                     self.propagate_alias_information(caller, callee)?;
                 }
             }
-        }
-        
         Ok(())
-    }
-    
     fn build_call_graph(&self, module: &Module<'ctx>) -> Result<HashMap<String, Vec<String>>> {
         let mut call_graph = HashMap::new();
         
@@ -545,21 +331,15 @@ impl<'ctx> AdvancedAliasAnalyzer<'ctx> {
                         instruction = instr.get_next_instruction();
                     }
                     block = bb.get_next_basic_block();
-                }
-                
                 call_graph.insert(caller_name, callees);
             }
         }
         
         Ok(call_graph)
-    }
-    
     fn propagate_alias_information(&mut self, _caller: &str, _callee: &str) -> Result<()> {
         // In a real implementation, would propagate alias sets across function calls
         // This involves analyzing parameter passing, return values, and side effects
         Ok(())
-    }
-    
     fn perform_escape_analysis(&mut self, module: &Module<'ctx>) -> Result<()> {
         debug!("Performing escape analysis");
         
@@ -570,8 +350,6 @@ impl<'ctx> AdvancedAliasAnalyzer<'ctx> {
         }
         
         Ok(())
-    }
-    
     fn analyze_function_escapes(&mut self, function: FunctionValue<'ctx>) -> Result<()> {
         let function_name = function.get_name().to_str().unwrap_or("unnamed");
         
@@ -632,24 +410,14 @@ impl<'ctx> AdvancedAliasAnalyzer<'ctx> {
                 instruction = instr.get_next_instruction();
             }
             block = bb.get_next_basic_block();
-        }
-        
         let escape_summary = FunctionEscapeSummary {
-            function_name: function_name.to_string(),
-            parameters_that_escape: escaped_params,
-            may_return_escaped,
-            side_effects,
             confidence: 0.8, // Placeholder confidence score
-        };
         
         self.escape_analysis.function_escape_summaries.insert(
-            function_name.to_string(),
             escape_summary
         );
         
         Ok(())
-    }
-    
     fn is_pointer_related_instruction(&self, instruction: &InstructionValue<'ctx>) -> bool {
         match instruction.get_opcode() {
             inkwell::values::InstructionOpcode::Alloca |
@@ -658,35 +426,22 @@ impl<'ctx> AdvancedAliasAnalyzer<'ctx> {
             inkwell::values::InstructionOpcode::GetElementPtr |
             inkwell::values::InstructionOpcode::BitCast |
             inkwell::values::InstructionOpcode::IntToPtr |
-            inkwell::values::InstructionOpcode::PtrToInt => true,
-            _ => false,
         }
     }
     
     fn is_memory_operation(&self, instruction: &InstructionValue<'ctx>) -> bool {
         match instruction.get_opcode() {
             inkwell::values::InstructionOpcode::Load |
-            inkwell::values::InstructionOpcode::Store => true,
-            _ => false,
         }
     }
     
     fn analyze_pointer_instruction(
-        &mut self,
-        _function_name: &str,
-        instruction: &InstructionValue<'ctx>,
-        _local_alias_sets: &mut HashMap<usize, AliasSet>,
     ) -> Result<()> {
         match instruction.get_opcode() {
             inkwell::values::InstructionOpcode::Alloca => {
                 // Track stack allocation
                 let alloc_info = AllocationInfo {
-                    allocation_site: format!("{}:alloca", instruction.get_name().to_str().unwrap_or("unnamed")),
                     size: None, // Would need to calculate from type
-                    alignment: None,
-                    is_stack: true,
-                    lifetime: LifetimeInfo::Automatic(_function_name.to_string()),
-                };
                 
                 let origin = PointerOrigin::Allocation(alloc_info);
                 let ptr_name = instruction.get_name().to_str().unwrap_or("unnamed").to_string();
@@ -699,14 +454,8 @@ impl<'ctx> AdvancedAliasAnalyzer<'ctx> {
                     let base_name = base_ptr.get_name().to_str().unwrap_or("unnamed").to_string();
                     
                     let derived_info = DerivedInfo {
-                        base_pointer: base_name,
                         offset_info: OffsetInfo {
                             constant_offset: None, // Would calculate from indices
-                            variable_offset: None,
-                            stride: None,
-                        },
-                        derivation_type: DerivationType::GetElementPtr,
-                    };
                     
                     let origin = PointerOrigin::Derived(derived_info);
                     let derived_name = instruction.get_name().to_str().unwrap_or("unnamed").to_string();
@@ -717,18 +466,11 @@ impl<'ctx> AdvancedAliasAnalyzer<'ctx> {
         }
         
         Ok(())
-    }
-    
     fn detect_alias_conflicts(
-        &self,
-        _memory_operations: &[InstructionValue<'ctx>],
-        _local_alias_sets: &HashMap<usize, AliasSet>,
     ) -> Vec<AliasConflict> {
         // In a real implementation, would detect potential aliasing conflicts
         // that could prevent optimizations
         Vec::new()
-    }
-    
     fn calculate_function_escape_summary(&self, function: FunctionValue<'ctx>) -> Result<FunctionEscapeSummary> {
         let function_name = function.get_name().to_str().unwrap_or("unnamed");
         
@@ -737,11 +479,6 @@ impl<'ctx> AdvancedAliasAnalyzer<'ctx> {
         } else {
             // Default conservative summary
             Ok(FunctionEscapeSummary {
-                function_name: function_name.to_string(),
-                parameters_that_escape: HashSet::new(),
-                may_return_escaped: false,
-                side_effects: MemoryEffects::default(),
-                confidence: 0.5,
             })
         }
     }
@@ -750,8 +487,6 @@ impl<'ctx> AdvancedAliasAnalyzer<'ctx> {
         // Calculate optimization potential based on alias set characteristics
         // Higher potential when we have more precise alias information
         50.0 // Placeholder
-    }
-    
     fn identify_optimization_opportunities(&self) -> Result<Vec<AliasOptimizationOpportunity>> {
         let mut opportunities = Vec::new();
         
@@ -759,11 +494,6 @@ impl<'ctx> AdvancedAliasAnalyzer<'ctx> {
         for alias_set in self.alias_sets.values() {
             if alias_set.alias_type == AliasType::NoAlias && alias_set.pointers.len() > 1 {
                 opportunities.push(AliasOptimizationOpportunity {
-                    optimization_type: "Memory Operation Reordering".to_string(),
-                    description: format!("Can reorder memory operations on disjoint pointers in alias set {}", alias_set.id),
-                    potential_speedup: 15.0,
-                    confidence: alias_set.confidence,
-                    affected_pointers: alias_set.pointers.clone(),
                 });
             }
         }
@@ -772,11 +502,6 @@ impl<'ctx> AdvancedAliasAnalyzer<'ctx> {
         for alias_set in self.alias_sets.values() {
             if alias_set.alias_type == AliasType::MustAlias {
                 opportunities.push(AliasOptimizationOpportunity {
-                    optimization_type: "Load Forwarding".to_string(),
-                    description: format!("Can forward loads from aliasing stores in alias set {}", alias_set.id),
-                    potential_speedup: 25.0,
-                    confidence: alias_set.confidence,
-                    affected_pointers: alias_set.pointers.clone(),
                 });
             }
         }
@@ -786,19 +511,10 @@ impl<'ctx> AdvancedAliasAnalyzer<'ctx> {
             if let PointerOrigin::Allocation(alloc_info) = origin {
                 if alloc_info.is_stack && !self.escape_analysis.escaped_pointers.contains(ptr) {
                     opportunities.push(AliasOptimizationOpportunity {
-                        optimization_type: "Dead Store Elimination".to_string(),
-                        description: format!("Can eliminate dead stores to non-escaping stack pointer {}", ptr),
-                        potential_speedup: 10.0,
-                        confidence: 0.9,
-                        affected_pointers: [ptr.clone()].iter().cloned().collect(),
                     });
                 }
             }
-        }
-        
         Ok(opportunities)
-    }
-    
     fn is_escaped_pointer(&self, ptr: &BasicValueEnum<'ctx>) -> bool {
         if let Some(ptr_name) = ptr.get_name().to_str() {
             self.escape_analysis.escaped_pointers.contains(ptr_name)
@@ -815,8 +531,6 @@ impl<'ctx> AdvancedAliasAnalyzer<'ctx> {
             }
         }
         None
-    }
-    
     fn update_statistics(&self, analysis_time: Duration, function_results: &HashMap<String, FunctionAliasAnalysis>) {
         if let Ok(mut stats) = self.statistics.lock() {
             stats.analysis_time = analysis_time;
@@ -828,97 +542,40 @@ impl<'ctx> AdvancedAliasAnalyzer<'ctx> {
             for alias_set in self.alias_sets.values() {
                 let pairs = alias_set.pointers.len() * (alias_set.pointers.len() - 1) / 2;
                 match alias_set.alias_type {
-                    AliasType::NoAlias => stats.no_alias_pairs += pairs,
-                    AliasType::MayAlias => stats.may_alias_pairs += pairs,
-                    AliasType::MustAlias => stats.must_alias_pairs += pairs,
-                    AliasType::PartialAlias => stats.may_alias_pairs += pairs,
                 }
             }
             
             stats.total_pointers_analyzed = self.pointer_analysis.pointer_origins.len();
         }
     }
-}
-
 // Supporting types
 
 impl PointerAnalysis {
     fn new() -> Self {
         Self {
-            pointer_origins: HashMap::new(),
-            pointer_relationships: HashMap::new(),
-            global_pointers: HashSet::new(),
-            local_pointers: HashMap::new(),
         }
     }
-}
-
 impl EscapeAnalysis {
     fn new() -> Self {
         Self {
-            escaped_pointers: HashSet::new(),
-            escape_reasons: HashMap::new(),
-            function_escape_summaries: HashMap::new(),
         }
     }
-}
-
 /// Results of alias analysis
 #[derive(Debug, Clone)]
 pub struct AliasAnalysisResults {
-    pub function_results: HashMap<String, FunctionAliasAnalysis>,
-    pub global_alias_sets: HashMap<String, AliasSet>,
-    pub escape_analysis: EscapeAnalysis,
-    pub optimization_opportunities: Vec<AliasOptimizationOpportunity>,
-    pub statistics: AliasAnalysisStatistics,
-}
-
 /// Analysis results for a single function
 #[derive(Debug, Clone)]
 pub struct FunctionAliasAnalysis {
-    pub function_name: String,
-    pub local_alias_sets: HashMap<usize, AliasSet>,
-    pub pointer_instructions: usize,
-    pub memory_operations: usize,
-    pub alias_conflicts: Vec<AliasConflict>,
-    pub escape_summary: FunctionEscapeSummary,
-    pub optimization_potential: f64,
-}
-
 /// Alias conflict that may prevent optimization
 #[derive(Debug, Clone)]
 pub struct AliasConflict {
-    pub conflict_type: String,
-    pub description: String,
-    pub severity: ConflictSeverity,
-    pub involved_pointers: Vec<String>,
-}
-
 #[derive(Debug, Clone)]
 pub enum ConflictSeverity {
-    Low,
-    Medium,
-    High,
-    Critical,
-}
-
 /// Result of alias query between two pointers
 #[derive(Debug, Clone)]
 pub struct AliasQueryResult {
-    pub alias_type: AliasType,
-    pub confidence: f64,
-    pub reasoning: String,
-}
-
 /// Optimization opportunity identified by alias analysis
 #[derive(Debug, Clone)]
 pub struct AliasOptimizationOpportunity {
-    pub optimization_type: String,
-    pub description: String,
-    pub potential_speedup: f64,
-    pub confidence: f64,
-    pub affected_pointers: HashSet<String>,
-}
-
 // OptimizationLevel as_str() method is implemented in src/common/optimization_level.rs
 

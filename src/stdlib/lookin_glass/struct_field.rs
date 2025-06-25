@@ -6,129 +6,71 @@ use std::fmt;
 #[derive(Debug, Clone)]
 pub struct StructField {
     /// Name of the field
-    pub name: String,
     /// Package path where the field is defined (empty for exported fields)
-    pub pkg_path: String,
     /// Type of the field
-    pub field_type: Type,
     /// Struct tag associated with the field
-    pub tag: StructTag,
     /// Byte offset of field within struct
-    pub offset: usize,
     /// Index path for nested anonymous fields
-    pub index: Vec<usize>,
     /// Whether this is an anonymous (embedded) field
-    pub anonymous: bool,
-}
-
 impl StructField {
     /// Create a new StructField
     pub fn new(
-        name: String,
-        pkg_path: String,
-        field_type: Type,
-        tag: StructTag,
-        offset: usize,
-        index: Vec<usize>,
-        anonymous: bool,
     ) -> Self {
         Self {
-            name,
-            pkg_path,
-            field_type,
-            tag,
-            offset,
-            index,
-            anonymous,
         }
     }
 
     /// Create a simple field with just name and type
     pub fn simple(name: String, field_type: Type) -> Self {
         Self {
-            name,
-            pkg_path: String::new(),
-            field_type,
-            tag: StructTag::empty(),
-            offset: 0,
-            index: vec![0],
-            anonymous: false,
         }
     }
 
     /// Get the field name
     pub fn name(&self) -> &str {
         &self.name
-    }
-
     /// Get the package path
     pub fn pkg_path(&self) -> &str {
         &self.pkg_path
-    }
-
     /// Get the field type
     pub fn field_type(&self) -> &Type {
         &self.field_type
-    }
-
     /// Get the struct tag
     pub fn tag(&self) -> &StructTag {
         &self.tag
-    }
-
     /// Get the byte offset within the struct
     pub fn offset(&self) -> usize {
         self.offset
-    }
-
     /// Get the index path for accessing this field
     pub fn index(&self) -> &[usize] {
         &self.index
-    }
-
     /// Check if this is an anonymous (embedded) field
     pub fn is_anonymous(&self) -> bool {
         self.anonymous
-    }
-
     /// Check if this field is exported (accessible from other packages)
     pub fn is_exported(&self) -> bool {
         self.pkg_path.is_empty() && 
         self.name.chars().next().map_or(false, |c| c.is_uppercase())
-    }
-
     /// Check if this field can be set (is addressable and exported)
     pub fn can_set(&self) -> bool {
         self.is_exported()
-    }
-
     /// Get the depth of this field (length of index path)
     pub fn depth(&self) -> usize {
         self.index.len()
-    }
-
     /// Check if this field is at the top level (not embedded)
     pub fn is_top_level(&self) -> bool {
         self.index.len() == 1
-    }
-
     /// Get a tag value by key
     pub fn get_tag(&self, key: &str) -> String {
         self.tag.get(key)
-    }
-
     /// Check if the field has a specific tag
     pub fn has_tag(&self, key: &str) -> bool {
         self.tag.has_key(key)
-    }
-
     /// Get the JSON tag name (commonly used convention)
     pub fn json_name(&self) -> Option<String> {
         let json_tag = self.tag.get("json");
         if json_tag.is_empty() {
             return None;
-        }
-
         // Parse JSON tag (format: "name,option1,option2")
         let parts: Vec<&str> = json_tag.split(',').collect();
         if let Some(first) = parts.first() {
@@ -148,14 +90,10 @@ impl StructField {
     pub fn omit_empty(&self) -> bool {
         let json_tag = self.tag.get("json");
         json_tag.contains("omitempty")
-    }
-
     /// Check if this field is excluded from JSON serialization
     pub fn json_ignored(&self) -> bool {
         let json_tag = self.tag.get("json");
         json_tag.trim() == "-"
-    }
-
     /// Get database column name (db tag)
     pub fn db_column(&self) -> Option<String> {
         let db_tag = self.tag.get("db");
@@ -194,26 +132,10 @@ impl fmt::Display for StructField {
 
 /// Builder for creating StructField instances
 pub struct StructFieldBuilder {
-    name: String,
-    pkg_path: String,
-    field_type: Type,
-    tag: StructTag,
-    offset: usize,
-    index: Vec<usize>,
-    anonymous: bool,
-}
-
 impl StructFieldBuilder {
     /// Create a new builder
     pub fn new(name: String, field_type: Type) -> Self {
         Self {
-            name,
-            pkg_path: String::new(),
-            field_type,
-            tag: StructTag::empty(),
-            offset: 0,
-            index: vec![0],
-            anonymous: false,
         }
     }
 
@@ -221,49 +143,28 @@ impl StructFieldBuilder {
     pub fn pkg_path(mut self, pkg_path: String) -> Self {
         self.pkg_path = pkg_path;
         self
-    }
-
     /// Set the struct tag
     pub fn tag(mut self, tag: StructTag) -> Self {
         self.tag = tag;
         self
-    }
-
     /// Set the struct tag from string
     pub fn tag_string(mut self, tag: String) -> Self {
         self.tag = StructTag::new(tag);
         self
-    }
-
     /// Set the field offset
     pub fn offset(mut self, offset: usize) -> Self {
         self.offset = offset;
         self
-    }
-
     /// Set the index path
     pub fn index(mut self, index: Vec<usize>) -> Self {
         self.index = index;
         self
-    }
-
     /// Set whether this is an anonymous field
     pub fn anonymous(mut self, anonymous: bool) -> Self {
         self.anonymous = anonymous;
         self
-    }
-
     /// Build the StructField
     pub fn build(self) -> StructField {
         StructField {
-            name: self.name,
-            pkg_path: self.pkg_path,
-            field_type: self.field_type,
-            tag: self.tag,
-            offset: self.offset,
-            index: self.index,
-            anonymous: self.anonymous,
         }
     }
-}
-

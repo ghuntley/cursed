@@ -11,9 +11,7 @@ use serde::{Deserialize, Serialize};
 use tracing::{info, warn, debug, instrument};
 
 use crate::optimization::{
-    OptimizationConfig, OptimizationProfile,
-    PerformanceMonitoringConfig, PerformanceReportFormat,
-};
+// };
 
 use crate::common_types::optimization_level::OptimizationLevel;
 use crate::error::{CursedError, Result};
@@ -24,137 +22,77 @@ const DEFAULT_CONFIG_FILE: &str = "cursed-optimization.toml";
 /// Configuration manager for optimization settings
 pub struct OptimizationConfigManager {
     /// Configuration file path
-    config_path: PathBuf,
     
     /// Current configuration
-    config: ManagedOptimizationConfig,
-}
-
 /// Complete managed optimization configuration
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ManagedOptimizationConfig {
     /// Version of configuration format
-    pub version: String,
     
     /// Default optimization profile
-    pub default_profile: OptimizationProfile,
     
     /// Built-in optimization profiles
-    pub builtin_profiles: HashMap<String, OptimizationConfig>,
     
     /// User-defined custom profiles
-    pub custom_profiles: HashMap<String, OptimizationConfig>,
     
     /// Global optimization settings
-    pub global_settings: GlobalOptimizationSettings,
     
     /// Performance monitoring configuration
-    pub performance_monitoring: PerformanceMonitoringConfig,
     
     /// Target-specific configurations
-    pub target_configs: HashMap<String, TargetOptimizationConfig>,
-}
-
 /// Global optimization settings
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct GlobalOptimizationSettings {
     /// Enable advanced optimizations by default
-    pub enable_advanced_by_default: bool,
     
     /// Enable profile-guided optimization when available
-    pub enable_pgo_when_available: bool,
     
     /// Enable adaptive optimization
-    pub enable_adaptive_optimization: bool,
     
     /// Enable parallel optimization
-    pub enable_parallel_optimization: bool,
     
     /// Enable target-specific optimizations
-    pub enable_target_specific_optimization: bool,
     
     /// Maximum parallel jobs (0 = auto-detect)
-    pub max_parallel_jobs: usize,
     
     /// Optimization timeout in seconds
-    pub optimization_timeout_secs: u64,
     
     /// Enable regression detection
-    pub enable_regression_detection: bool,
     
     /// Cache directory for optimization artifacts
-    pub cache_directory: Option<PathBuf>,
     
     /// Profile data directory for PGO
-    pub profile_data_directory: Option<PathBuf>,
-}
-
 impl Default for GlobalOptimizationSettings {
     fn default() -> Self {
         Self {
-            enable_advanced_by_default: true,
-            enable_pgo_when_available: true,
-            enable_adaptive_optimization: true,
-            enable_parallel_optimization: true,
-            enable_target_specific_optimization: true,
             max_parallel_jobs: 0, // Auto-detect
             optimization_timeout_secs: 300, // 5 minutes
-            enable_regression_detection: true,
-            cache_directory: None,
-            profile_data_directory: None,
         }
     }
-}
-
 /// Target-specific optimization configuration
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct TargetOptimizationConfig {
     /// Target CPU architecture
-    pub target_cpu: Option<String>,
     
     /// Target CPU features
-    pub target_features: Vec<String>,
     
     /// Target-specific optimization level override
-    pub optimization_level_override: Option<OptimizationLevel>,
     
     /// Enable vectorization for this target
-    pub enable_vectorization: bool,
     
     /// Enable loop optimizations for this target
-    pub enable_loop_optimizations: bool,
     
     /// Enable target-specific passes
-    pub enable_target_specific_passes: bool,
-}
-
 impl Default for TargetOptimizationConfig {
     fn default() -> Self {
         Self {
-            target_cpu: None,
-            target_features: Vec::new(),
-            optimization_level_override: None,
-            enable_vectorization: true,
-            enable_loop_optimizations: true,
-            enable_target_specific_passes: true,
         }
     }
-}
-
 impl Default for ManagedOptimizationConfig {
     fn default() -> Self {
         Self {
-            version: "1.0".to_string(),
-            default_profile: OptimizationProfile::Release,
-            builtin_profiles: Self::create_builtin_profiles(),
-            custom_profiles: HashMap::new(),
-            global_settings: GlobalOptimizationSettings::default(),
-            performance_monitoring: PerformanceMonitoringConfig::default(),
-            target_configs: HashMap::new(),
         }
     }
-}
-
 impl ManagedOptimizationConfig {
     /// Create default built-in optimization profiles
     fn create_builtin_profiles() -> HashMap<String, OptimizationConfig> {
@@ -183,8 +121,6 @@ impl OptimizationConfigManager {
         let config_dir = Self::get_default_config_directory()?;
         let config_path = config_dir.join(DEFAULT_CONFIG_FILE);
         Self::with_config_path(config_path)
-    }
-    
     /// Create configuration manager with specific config file path
     pub fn with_config_path<P: AsRef<Path>>(config_path: P) -> Result<Self> {
         let config_path = config_path.as_ref().to_path_buf();
@@ -192,14 +128,9 @@ impl OptimizationConfigManager {
             Self::load_config_from_file(&config_path)?
         } else {
             ManagedOptimizationConfig::default()
-        };
         
         Ok(Self {
-            config_path,
-            config,
         })
-    }
-    
     /// Get default configuration directory
     fn get_default_config_directory() -> Result<PathBuf> {
         if let Some(config_dir) = dirs::config_dir() {
@@ -225,12 +156,8 @@ impl OptimizationConfigManager {
         let builtin_profiles = ManagedOptimizationConfig::create_builtin_profiles();
         for (name, profile) in builtin_profiles {
             config.builtin_profiles.insert(name, profile);
-        }
-        
         debug!("Loaded optimization configuration from {:?}", config_path.as_ref());
         Ok(config)
-    }
-    
     /// Save configuration to file
     #[instrument(skip(self))]
     pub fn save_config(&self) -> Result<()> {
@@ -247,53 +174,35 @@ impl OptimizationConfigManager {
         fs::write(&self.config_path, config_content)?;
         info!("Saved optimization configuration to {:?}", self.config_path);
         Ok(())
-    }
-    
     /// Get optimization configuration for a profile
     #[instrument(skip(self))]
     pub fn get_profile_config(&self, profile: &OptimizationProfile) -> Result<OptimizationConfig> {
         let profile_name = match profile {
-            OptimizationProfile::Development => "development",
-            OptimizationProfile::Release => "release",
-            OptimizationProfile::Size => "size",
-            OptimizationProfile::Debug => "debug",
-            OptimizationProfile::Custom(name) => name,
-        };
         
         // Check custom profiles first
         if let Some(config) = self.config.custom_profiles.get(profile_name) {
             debug!("Using custom profile: {}", profile_name);
             return Ok(config.clone());
-        }
-        
         // Check built-in profiles
         if let Some(config) = self.config.builtin_profiles.get(profile_name) {
             debug!("Using built-in profile: {}", profile_name);
             return Ok(config.clone());
-        }
-        
         // Fallback to release profile
         warn!("Profile '{}' not found, using release profile", profile_name);
         Ok(self.config.builtin_profiles.get("release")
             .cloned()
             .unwrap_or_else(OptimizationConfig::release))
-    }
-    
     /// Add or update a custom profile
     #[instrument(skip(self, config))]
     pub fn set_custom_profile(&mut self, name: String, config: OptimizationConfig) -> Result<()> {
         info!("Setting custom optimization profile: {}", name);
         self.config.custom_profiles.insert(name, config);
         Ok(())
-    }
-    
     /// Remove a custom profile
     #[instrument(skip(self))]
     pub fn remove_custom_profile(&mut self, name: &str) -> Result<bool> {
         info!("Removing custom optimization profile: {}", name);
         Ok(self.config.custom_profiles.remove(name).is_some())
-    }
-    
     /// List all available profiles
     pub fn list_profiles(&self) -> Vec<String> {
         let mut profiles = Vec::new();
@@ -306,47 +215,33 @@ impl OptimizationConfigManager {
         
         profiles.sort();
         profiles
-    }
-    
     /// Get global optimization settings
     pub fn get_global_settings(&self) -> &GlobalOptimizationSettings {
         &self.config.global_settings
-    }
-    
     /// Update global optimization settings
     #[instrument(skip(self, settings))]
     pub fn set_global_settings(&mut self, settings: GlobalOptimizationSettings) -> Result<()> {
         info!("Updating global optimization settings");
         self.config.global_settings = settings;
         Ok(())
-    }
-    
     /// Get performance monitoring configuration
     pub fn get_performance_monitoring(&self) -> &PerformanceMonitoringConfig {
         &self.config.performance_monitoring
-    }
-    
     /// Update performance monitoring configuration
     #[instrument(skip(self, config))]
     pub fn set_performance_monitoring(&mut self, config: PerformanceMonitoringConfig) -> Result<()> {
         info!("Updating performance monitoring configuration");
         self.config.performance_monitoring = config;
         Ok(())
-    }
-    
     /// Get target-specific configuration
     pub fn get_target_config(&self, target: &str) -> Option<&TargetOptimizationConfig> {
         self.config.target_configs.get(target)
-    }
-    
     /// Set target-specific configuration
     #[instrument(skip(self, config))]
     pub fn set_target_config(&mut self, target: String, config: TargetOptimizationConfig) -> Result<()> {
         info!("Setting target-specific configuration for: {}", target);
         self.config.target_configs.insert(target, config);
         Ok(())
-    }
-    
     /// Create a new profile based on an existing one
     #[instrument(skip(self))]
     pub fn create_profile_from_existing(&mut self, base_profile: &str, new_name: String) -> Result<()> {
@@ -358,16 +253,12 @@ impl OptimizationConfigManager {
         info!("Creating new profile '{}' based on '{}'", new_name, base_profile);
         self.config.custom_profiles.insert(new_name, base_config);
         Ok(())
-    }
-    
     /// Reset to default configuration
     #[instrument(skip(self))]
     pub fn reset_to_defaults(&mut self) -> Result<()> {
         info!("Resetting optimization configuration to defaults");
         self.config = ManagedOptimizationConfig::default();
         Ok(())
-    }
-    
     /// Export configuration to a different file
     #[instrument(skip(self, export_path))]
     pub fn export_config<P: AsRef<Path>>(&self, export_path: P) -> Result<()> {
@@ -377,21 +268,15 @@ impl OptimizationConfigManager {
         fs::write(export_path.as_ref(), config_content)?;
         info!("Exported optimization configuration to {:?}", export_path.as_ref());
         Ok(())
-    }
-    
     /// Import configuration from a different file
     #[instrument(skip(self, import_path))]
     pub fn import_config<P: AsRef<Path>>(&mut self, import_path: P) -> Result<()> {
         self.config = Self::load_config_from_file(import_path.as_ref())?;
         info!("Imported optimization configuration from {:?}", import_path.as_ref());
         Ok(())
-    }
-    
     /// Get configuration file path
     pub fn get_config_path(&self) -> &Path {
         &self.config_path
-    }
-    
     /// Validate current configuration
     #[instrument(skip(self))]
     pub fn validate_config(&self) -> Result<Vec<String>> {
@@ -400,12 +285,8 @@ impl OptimizationConfigManager {
         // Validate global settings
         if self.config.global_settings.max_parallel_jobs > 64 {
             warnings.push("max_parallel_jobs > 64 may cause excessive resource usage".to_string());
-        }
-        
         if self.config.global_settings.optimization_timeout_secs > 3600 {
             warnings.push("optimization_timeout_secs > 1 hour may cause very long builds".to_string());
-        }
-        
         // Validate custom profiles
         for (name, profile) in &self.config.custom_profiles {
             if let Err(e) = profile.validate() {
@@ -416,8 +297,6 @@ impl OptimizationConfigManager {
         // Check for conflicting settings
         if !self.config.global_settings.enable_parallel_optimization && self.config.global_settings.max_parallel_jobs > 1 {
             warnings.push("max_parallel_jobs > 1 but parallel optimization is disabled".to_string());
-        }
-        
         if warnings.is_empty() {
             info!("Configuration validation passed");
         } else {
@@ -524,8 +403,6 @@ pub mod cli {
                             .about("Validate current configuration")
                     )
             )
-    }
-    
     /// Handle configuration management commands
     pub async fn handle_config_command(matches: &clap::ArgMatches) -> Result<()> {
         let mut config_manager = OptimizationConfigManager::new()?;

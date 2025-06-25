@@ -14,37 +14,17 @@ use std::collections::HashMap;
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum LzwOrder {
     /// Most significant bit first
-    MostSignificantBit,
     /// Least significant bit first  
-    LeastSignificantBit,
-}
-
 /// LZW reader that decompresses data on read
 pub struct LzwReader<R: Read> {
-    inner: BufReader<R>,
-    bytes_read: usize,
-    timer: Instant,
-    input_size: usize,
-    order: LzwOrder,
-    lit_width: u8,
-}
-
 impl<R: Read> LzwReader<R> {
     /// Create a new LZW reader
     pub fn new(reader: R, order: LzwOrder, lit_width: u8) -> SquishResult<Self> {
         if lit_width < 2 || lit_width > 8 {
             return Err(SquishError::invalid_input("LZW literal width must be between 2 and 8"));
-        }
-        
         let buffered = BufReader::new(reader);
         
         Ok(Self {
-            inner: buffered,
-            bytes_read: 0,
-            timer: Instant::now(),
-            input_size: 0,
-            order,
-            lit_width,
         })
     }
 }
@@ -61,45 +41,22 @@ impl<R: Read> Read for LzwReader<R> {
 impl<R: Read> SquishReader for LzwReader<R> {
     fn close(&mut self) -> SquishResult<()> {
         Ok(())
-    }
-    
     fn stats(&self) -> Option<CompressionStats> {
         Some(CompressionStats::new(
-            self.input_size,
-            self.bytes_read,
-            self.timer.elapsed(),
-            "lzw".to_string(),
-            None,
         ))
     }
 }
 
 /// LZW writer that compresses data on write
 pub struct LzwWriter<W: Write> {
-    inner: Option<BufWriter<W>>,
-    bytes_written: usize,
-    uncompressed_size: usize,
-    timer: Instant,
-    order: LzwOrder,
-    lit_width: u8,
-}
-
 impl<W: Write> LzwWriter<W> {
     /// Create a new LZW writer
     pub fn new(writer: W, order: LzwOrder, lit_width: u8) -> SquishResult<Self> {
         if lit_width < 2 || lit_width > 8 {
             return Err(SquishError::invalid_input("LZW literal width must be between 2 and 8"));
-        }
-        
         let buffered = BufWriter::new(writer);
         
         Ok(Self {
-            inner: Some(buffered),
-            bytes_written: 0,
-            uncompressed_size: 0,
-            timer: Instant::now(),
-            order,
-            lit_width,
         })
     }
 }
@@ -114,7 +71,6 @@ impl<W: Write> Write for LzwWriter<W> {
             Ok(bytes)
         } else {
             Err(std::io::Error::new(
-                std::io::ErrorKind::BrokenPipe,
                 "Writer has been closed"
             ))
         }
@@ -127,32 +83,19 @@ impl<W: Write> Write for LzwWriter<W> {
             Ok(())
         }
     }
-}
-
 impl<W: Write> SquishWriter for LzwWriter<W> {
     fn close(&mut self) -> SquishResult<()> {
         if let Some(writer) = self.inner.take() {
             drop(writer);
         }
         Ok(())
-    }
-    
     fn flush(&mut self) -> SquishResult<()> {
         Write::flush(self).map_err(SquishError::from)
-    }
-    
     fn reset(&mut self, writer: Box<dyn Write>) -> SquishResult<()> {
         self.close()?;
         Err(SquishError::generic("Reset not supported for LZW writer in this implementation"))
-    }
-    
     fn stats(&self) -> Option<CompressionStats> {
         Some(CompressionStats::new(
-            self.uncompressed_size,
-            self.bytes_written,
-            self.timer.elapsed(),
-            "lzw".to_string(),
-            None,
         ))
     }
 }
@@ -160,18 +103,12 @@ impl<W: Write> SquishWriter for LzwWriter<W> {
 /// Create a new LZW reader
 pub fn NewLzwReader<R: Read>(reader: R, order: LzwOrder, lit_width: u8) -> SquishResult<LzwReader<R>> {
     LzwReader::new(reader, order, lit_width)
-}
-
 /// Create a new LZW writer
 pub fn NewLzwWriter<W: Write>(writer: W, order: LzwOrder, lit_width: u8) -> SquishResult<LzwWriter<W>> {
     LzwWriter::new(writer, order, lit_width)
-}
-
 /// Compress data using LZW
 pub fn lzw_compress(data: &[u8]) -> SquishResult<Vec<u8>> {
     lzw_compress_with_params(data, LzwOrder::MostSignificantBit, 8)
-}
-
 /// Compress data using LZW with specific parameters
 pub fn lzw_compress_with_params(data: &[u8], order: LzwOrder, lit_width: u8) -> SquishResult<Vec<u8>> {
     let mut result = Vec::new();
@@ -181,13 +118,9 @@ pub fn lzw_compress_with_params(data: &[u8], order: LzwOrder, lit_width: u8) -> 
         writer.close()?;
     }
     Ok(result)
-}
-
 /// Decompress LZW data
 pub fn lzw_decompress(data: &[u8]) -> SquishResult<Vec<u8>> {
     lzw_decompress_with_params(data, LzwOrder::MostSignificantBit, 8)
-}
-
 /// Decompress LZW data with specific parameters
 pub fn lzw_decompress_with_params(data: &[u8], order: LzwOrder, lit_width: u8) -> SquishResult<Vec<u8>> {
     let mut result = Vec::new();
@@ -195,35 +128,23 @@ pub fn lzw_decompress_with_params(data: &[u8], order: LzwOrder, lit_width: u8) -
     let mut reader = LzwReader::new(cursor, order, lit_width)?;
     reader.read_to_end(&mut result).map_err(SquishError::from)?;
     Ok(result)
-}
-
 /// Get file extension for LZW files
 pub fn file_extension() -> &'static str {
     ".lzw"
-}
-
 /// Get MIME type for LZW data
 pub fn mime_type() -> &'static str {
     "application/x-lzw"
-}
-
 /// Check if literal width is valid for LZW
 pub fn is_valid_literal_width(width: u8) -> bool {
     width >= 2 && width <= 8
-}
-
 /// Initialize LZW module
 pub fn initialize() {
         // TODO: implement
     }
     // No specific initialization needed for LZW
-}
-
 
 pub fn new_writer<W: std::io::Write>(writer: W, order: LzwOrder, literal_width: u8) -> SquishResult<LzwWriter<W>> {
     LzwWriter::new(writer, order, literal_width)
-}
-
 pub fn default_literal_width() -> u8 {
     DEFAULT_LITERAL_WIDTH
 }

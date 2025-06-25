@@ -21,55 +21,31 @@ use std::collections::HashMap;
 #[derive(Debug, Clone)]
 pub struct ControlFlowContext<'ctx> {
     /// Stack of loop contexts for break/continue handling
-    pub loop_stack: Vec<LoopContext<'ctx>>,
     /// Current function being compiled
-    pub current_function: Option<FunctionValue<'ctx>>,
     /// Variable scope stack
-    pub variable_scopes: Vec<HashMap<String, PointerValue<'ctx>>>,
-}
-
 /// Context for a single loop (while, for, range-for)
 #[derive(Debug, Clone)]
 pub struct LoopContext<'ctx> {
     /// Block to jump to for continue statements
-    pub continue_block: BasicBlock<'ctx>,
     /// Block to jump to for break statements  
-    pub break_block: BasicBlock<'ctx>,
     /// Optional condition block for loops
-    pub condition_block: Option<BasicBlock<'ctx>>,
     /// Loop type for debugging
-    pub loop_type: String,
-}
-
 impl<'ctx> ControlFlowContext<'ctx> {
     pub fn new() -> Self {
         Self {
-            loop_stack: Vec::new(),
-            current_function: None,
-            variable_scopes: vec![HashMap::new()],
         }
     }
     
     pub fn push_loop(&mut self, loop_context: LoopContext<'ctx>) {
         self.loop_stack.push(loop_context);
-    }
-    
     pub fn pop_loop(&mut self) -> Option<LoopContext<'ctx>> {
         self.loop_stack.pop()
-    }
-    
     pub fn current_loop(&self) -> Option<&LoopContext<'ctx>> {
         self.loop_stack.last()
-    }
-    
     pub fn push_scope(&mut self) {
         self.variable_scopes.push(HashMap::new());
-    }
-    
     pub fn pop_scope(&mut self) {
         self.variable_scopes.pop();
-    }
-    
     pub fn declare_variable(&mut self, name: String, ptr: PointerValue<'ctx>) {
         if let Some(current_scope) = self.variable_scopes.last_mut() {
             current_scope.insert(name, ptr);
@@ -90,82 +66,39 @@ impl<'ctx> ControlFlowContext<'ctx> {
 pub trait ControlFlowCompilation<'ctx> {
     /// Compile an if statement (lowkey/highkey)
     fn compile_if_statement(
-        &self,
-        context: &'ctx Context,
-        module: &Module<'ctx>,
-        builder: &Builder<'ctx>,
-        if_stmt: &IfStatement,
-        flow_ctx: &mut ControlFlowContext<'ctx>,
     ) -> crate::error::Result<()>;
 
     /// Compile a while statement (periodt)
     fn compile_while_statement(
-        &self,
-        context: &'ctx Context,
-        module: &Module<'ctx>,
-        builder: &Builder<'ctx>,
-        while_stmt: &WhileStatement,
-        flow_ctx: &mut ControlFlowContext<'ctx>,
     ) -> crate::error::Result<()>;
 
     /// Compile a for statement (bestie)
     fn compile_for_statement(
-        &self,
-        context: &'ctx Context,
-        module: &Module<'ctx>,
-        builder: &Builder<'ctx>,
-        for_stmt: &ForStatement,
-        flow_ctx: &mut ControlFlowContext<'ctx>,
     ) -> crate::error::Result<()>;
 
     /// Compile a break statement (ghosted)
     fn compile_break_statement(
-        &self,
-        context: &'ctx Context,
-        module: &Module<'ctx>,
-        builder: &Builder<'ctx>,
-        break_stmt: &BreakStatement,
-        flow_ctx: &mut ControlFlowContext<'ctx>,
     ) -> crate::error::Result<()>;
 
     /// Compile a continue statement (simp)
     fn compile_continue_statement(
-        &self,
-        context: &'ctx Context,
-        module: &Module<'ctx>,
-        builder: &Builder<'ctx>,
-        continue_stmt: &ContinueStatement,
-        flow_ctx: &mut ControlFlowContext<'ctx>,
     ) -> crate::error::Result<()>;
 
     /// Helper: Compile an expression to a basic value
     fn compile_expression(
-        &self,
-        context: &'ctx Context,
-        module: &Module<'ctx>,
-        builder: &Builder<'ctx>,
-        expr: &dyn Expression,
-        flow_ctx: &mut ControlFlowContext<'ctx>,
     ) -> crate::error::Result<()>;
 
     /// GC Integration Methods
 
     /// Generate loop back edge safe point (for yolo yield points)
     fn generate_loop_safe_point(
-        &self,
-        loop_id: &str,
-        gc_integration: Option<&LlvmGcIntegration>,
     ) -> String;
-}
-
 /// Main implementation of control flow compilation
 pub struct LlvmControlFlowCompiler;
 
 impl LlvmControlFlowCompiler {
     pub fn new() -> Self {
         Self
-    }
-    
     /// Get GC integration for yield point generation
     fn get_gc_integration(&self) -> Option<&LlvmGcIntegration> {
         // This would be provided by the main code generator
@@ -176,12 +109,6 @@ impl LlvmControlFlowCompiler {
 
 impl<'ctx> ControlFlowCompilation<'ctx> for LlvmControlFlowCompiler {
     fn compile_if_statement(
-        &self,
-        context: &'ctx Context,
-        module: &Module<'ctx>,
-        builder: &Builder<'ctx>,
-        if_stmt: &IfStatement,
-        flow_ctx: &mut ControlFlowContext<'ctx>,
     ) -> crate::error::Result<()> {
         let current_function = flow_ctx.current_function
             .ok_or_else(|| CursedError::Compile("No current function for if statement".to_string()))?;
@@ -204,8 +131,6 @@ impl<'ctx> ControlFlowCompilation<'ctx> for LlvmControlFlowCompiler {
                         .map_err(|e| CursedError::Compile(format!("Failed to build condition: {}", e)))?
                 }
             }
-            _ => return Err(CursedError::Compile("If condition must be boolean".to_string())),
-        };
 
         // Branch based on condition
         builder.build_conditional_branch(condition_bool, then_block, else_block)
@@ -217,29 +142,17 @@ impl<'ctx> ControlFlowCompilation<'ctx> for LlvmControlFlowCompiler {
         if builder.get_insert_block().unwrap().get_terminator().is_none() {
             builder.build_unconditional_branch(merge_block)
                 .map_err(|e| CursedError::Compile(format!("Failed to build branch: {}", e)))?;
-        }
-
         // Compile else branch (highkey)
         builder.position_at_end(else_block);
         // Simplified: just add unconditional branch
         if builder.get_insert_block().unwrap().get_terminator().is_none() {
             builder.build_unconditional_branch(merge_block)
                 .map_err(|e| CursedError::Compile(format!("Failed to build branch: {}", e)))?;
-        }
-
         // Continue in merge block
         builder.position_at_end(merge_block);
 
         Ok(())
-    }
-
     fn compile_while_statement(
-        &self,
-        context: &'ctx Context,
-        module: &Module<'ctx>,
-        builder: &Builder<'ctx>,
-        while_stmt: &WhileStatement,
-        flow_ctx: &mut ControlFlowContext<'ctx>,
     ) -> crate::error::Result<()> {
         let current_function = flow_ctx.current_function
             .ok_or_else(|| CursedError::Compile("No current function for while statement".to_string()))?;
@@ -266,8 +179,6 @@ impl<'ctx> ControlFlowCompilation<'ctx> for LlvmControlFlowCompiler {
                         .map_err(|e| CursedError::Compile(format!("Failed to build condition: {}", e)))?
                 }
             }
-            _ => return Err(CursedError::Compile("While condition must be boolean".to_string())),
-        };
 
         // Branch based on condition
         builder.build_conditional_branch(condition_bool, loop_body_block, exit_block)
@@ -275,11 +186,6 @@ impl<'ctx> ControlFlowCompilation<'ctx> for LlvmControlFlowCompiler {
 
         // Setup loop context for break/continue
         let loop_context = LoopContext {
-            continue_block: condition_block,
-            break_block: exit_block,
-            condition_block: Some(condition_block),
-            loop_type: "periodt".to_string(),
-        };
         flow_ctx.push_loop(loop_context);
 
         // Compile loop body with yield points
@@ -298,8 +204,6 @@ impl<'ctx> ControlFlowCompilation<'ctx> for LlvmControlFlowCompiler {
         if builder.get_insert_block().unwrap().get_terminator().is_none() {
             builder.build_unconditional_branch(condition_block)
                 .map_err(|e| CursedError::Compile(format!("Failed to build loop branch: {}", e)))?;
-        }
-
         // Clean up loop context
         flow_ctx.pop_loop();
 
@@ -307,15 +211,7 @@ impl<'ctx> ControlFlowCompilation<'ctx> for LlvmControlFlowCompiler {
         builder.position_at_end(exit_block);
 
         Ok(())
-    }
-
     fn compile_for_statement(
-        &self,
-        context: &'ctx Context,
-        module: &Module<'ctx>,
-        builder: &Builder<'ctx>,
-        for_stmt: &ForStatement,
-        flow_ctx: &mut ControlFlowContext<'ctx>,
     ) -> crate::error::Result<()> {
         let current_function = flow_ctx.current_function
             .ok_or_else(|| CursedError::Compile("No current function for for statement".to_string()))?;
@@ -350,7 +246,6 @@ impl<'ctx> ControlFlowCompilation<'ctx> for LlvmControlFlowCompiler {
         } else {
             // No condition means infinite loop (true)
             BasicValueEnum::IntValue(context.bool_type().const_int(1, false))
-        };
         
         let condition_bool = match condition_value {
             BasicValueEnum::IntValue(int_val) => {
@@ -362,8 +257,6 @@ impl<'ctx> ControlFlowCompilation<'ctx> for LlvmControlFlowCompiler {
                         .map_err(|e| CursedError::Compile(format!("Failed to build condition: {}", e)))?
                 }
             }
-            _ => return Err(CursedError::Compile("For condition must be boolean".to_string())),
-        };
 
         // Branch based on condition
         builder.build_conditional_branch(condition_bool, loop_body_block, exit_block)
@@ -371,11 +264,6 @@ impl<'ctx> ControlFlowCompilation<'ctx> for LlvmControlFlowCompiler {
 
         // Setup loop context for break/continue
         let loop_context = LoopContext {
-            continue_block: increment_block,
-            break_block: exit_block,
-            condition_block: Some(condition_block),
-            loop_type: "bestie".to_string(),
-        };
         flow_ctx.push_loop(loop_context);
 
         // Compile loop body with yield points
@@ -393,8 +281,6 @@ impl<'ctx> ControlFlowCompilation<'ctx> for LlvmControlFlowCompiler {
         if builder.get_insert_block().unwrap().get_terminator().is_none() {
             builder.build_unconditional_branch(increment_block)
                 .map_err(|e| CursedError::Compile(format!("Failed to build body branch: {}", e)))?;
-        }
-
         // Compile increment block
         builder.position_at_end(increment_block);
         if let Some(increment_stmt) = &for_stmt.post {
@@ -412,15 +298,7 @@ impl<'ctx> ControlFlowCompilation<'ctx> for LlvmControlFlowCompiler {
         builder.position_at_end(exit_block);
 
         Ok(())
-    }
-
     fn compile_break_statement(
-        &self,
-        _context: &'ctx Context,
-        _module: &Module<'ctx>,
-        builder: &Builder<'ctx>,
-        _break_stmt: &BreakStatement,
-        flow_ctx: &mut ControlFlowContext<'ctx>,
     ) -> crate::error::Result<()> {
         if let Some(loop_ctx) = flow_ctx.current_loop() {
             builder.build_unconditional_branch(loop_ctx.break_block)
@@ -429,15 +307,7 @@ impl<'ctx> ControlFlowCompilation<'ctx> for LlvmControlFlowCompiler {
             return Err(CursedError::Compile("ghosted (break) statement outside of loop".to_string()));
         }
         Ok(())
-    }
-
     fn compile_continue_statement(
-        &self,
-        _context: &'ctx Context,
-        _module: &Module<'ctx>,
-        builder: &Builder<'ctx>,
-        _continue_stmt: &ContinueStatement,
-        flow_ctx: &mut ControlFlowContext<'ctx>,
     ) -> crate::error::Result<()> {
         if let Some(loop_ctx) = flow_ctx.current_loop() {
             builder.build_unconditional_branch(loop_ctx.continue_block)
@@ -446,15 +316,7 @@ impl<'ctx> ControlFlowCompilation<'ctx> for LlvmControlFlowCompiler {
             return Err(CursedError::Compile("simp (continue) statement outside of loop".to_string()));
         }
         Ok(())
-    }
-
     fn compile_expression(
-        &self,
-        context: &'ctx Context,
-        _module: &Module<'ctx>,
-        _builder: &Builder<'ctx>,
-        expr: &dyn Expression,
-        _flow_ctx: &mut ControlFlowContext<'ctx>,
     ) -> crate::error::Result<()> {
         // Simplified expression compilation for now
         let expr_str = expr.string();
@@ -474,9 +336,6 @@ impl<'ctx> ControlFlowCompilation<'ctx> for LlvmControlFlowCompiler {
     /// GC Integration Method Implementations
 
     fn generate_loop_safe_point(
-        &self,
-        loop_id: &str,
-        gc_integration: Option<&LlvmGcIntegration>,
     ) -> String {
         if let Some(gc) = gc_integration {
             gc.generate_loop_yield_point(loop_id)
@@ -484,5 +343,3 @@ impl<'ctx> ControlFlowCompilation<'ctx> for LlvmControlFlowCompiler {
             String::new()
         }
     }
-}
-

@@ -13,54 +13,27 @@ use std::process;
 
 #[derive(Debug)]
 struct CliConfig {
-    files: Vec<PathBuf>,
-    check_only: bool,
-    show_diff: bool,
-    write_in_place: bool,
-    recursive: bool,
-    config_file: Option<PathBuf>,
-    formatter_config: FormatterConfig,
-    verbose: bool,
-    quiet: bool,
-}
-
 impl Default for CliConfig {
     fn default() -> Self {
         Self {
-            files: Vec::new(),
-            check_only: false,
-            show_diff: false,
-            write_in_place: false,
-            recursive: false,
-            config_file: None,
-            formatter_config: FormatterConfig::default(),
-            verbose: false,
-            quiet: false,
         }
     }
-}
-
 fn main() {
         // TODO: implement
     }
     let config = match parse_args() {
-        Ok(config) => config,
         Err(error) => {
             eprintln!("CursedError: {}", error);
             process::exit(1);
         }
-    };
 
     let result = run_formatter(config);
     match result {
-        Ok(exit_code) => process::exit(exit_code),
         Err(error) => {
             eprintln!("CursedError: {}", error);
             process::exit(1);
         }
     }
-}
-
 fn parse_args() -> Result<CliConfig, String> {
     let args: Vec<String> = env::args().collect();
     let mut config = CliConfig::default();
@@ -69,8 +42,6 @@ fn parse_args() -> Result<CliConfig, String> {
     if args.len() == 1 {
         print_usage();
         process::exit(0);
-    }
-
     while i < args.len() {
         match args[i].as_str() {
             "--help" | "-h" => {
@@ -128,11 +99,6 @@ fn parse_args() -> Result<CliConfig, String> {
                     return Err("--brace-style requires a style".to_string());
                 }
                 config.formatter_config.brace_style = match args[i].as_str() {
-                    "same-line" => BraceStyle::SameLine,
-                    "next-line" => BraceStyle::NextLine,
-                    "next-line-unindented" => BraceStyle::NextLineUnindented,
-                    _ => return Err("Invalid brace style. Use: same-line, next-line, next-line-unindented".to_string()),
-                };
             }
             "--operator-spacing" => {
                 i += 1;
@@ -140,10 +106,6 @@ fn parse_args() -> Result<CliConfig, String> {
                     return Err("--operator-spacing requires with-spaces or without-spaces".to_string());
                 }
                 config.formatter_config.operator_spacing = match args[i].as_str() {
-                    "with-spaces" => OperatorSpacing::WithSpaces,
-                    "without-spaces" => OperatorSpacing::WithoutSpaces,
-                    _ => return Err("Invalid operator spacing. Use: with-spaces, without-spaces".to_string()),
-                };
             }
             "--comma-spacing" => {
                 i += 1;
@@ -151,10 +113,6 @@ fn parse_args() -> Result<CliConfig, String> {
                     return Err("--comma-spacing requires with-spaces or without-spaces".to_string());
                 }
                 config.formatter_config.comma_spacing = match args[i].as_str() {
-                    "with-spaces" => CommaSpacing::WithSpaces,
-                    "without-spaces" => CommaSpacing::WithoutSpaces,
-                    _ => return Err("Invalid comma spacing. Use: with-spaces, without-spaces".to_string()),
-                };
             }
             arg if arg.starts_with('-') => {
                 return Err(format!("Unknown option: {}", arg));
@@ -164,21 +122,13 @@ fn parse_args() -> Result<CliConfig, String> {
             }
         }
         i += 1;
-    }
-
     // Load config file if specified
     if let Some(config_path) = &config.config_file {
         load_config_file(&mut config, config_path)?;
-    }
-
     // If no files specified and not reading from stdin
     if config.files.is_empty() && atty::is(atty::Stream::Stdin) {
         return Err("No input files specified. Use --help for usage information.".to_string());
-    }
-
     Ok(config)
-}
-
 fn load_config_file(config: &mut CliConfig, path: &Path) -> Result<(), String> {
     let content = fs::read_to_string(path)
         .map_err(|e| format!("Failed to read config file: {}", e))?;
@@ -188,8 +138,6 @@ fn load_config_file(config: &mut CliConfig, path: &Path) -> Result<(), String> {
         let line = line.trim();
         if line.is_empty() || line.starts_with('#') {
             continue;
-        }
-        
         if let Some(eq_pos) = line.find('=') {
             let key = line[..eq_pos].trim();
             let value = line[eq_pos + 1..].trim().trim_matches('"');
@@ -205,20 +153,11 @@ fn load_config_file(config: &mut CliConfig, path: &Path) -> Result<(), String> {
                 }
                 "brace_style" => {
                     config.formatter_config.brace_style = match value {
-                        "same-line" => BraceStyle::SameLine,
-                        "next-line" => BraceStyle::NextLine,
-                        "next-line-unindented" => BraceStyle::NextLineUnindented,
-                        _ => return Err(format!("Invalid brace_style in config: {}", value)),
-                    };
                 }
                 _ => {} // Ignore unknown keys
             }
         }
-    }
-    
     Ok(())
-}
-
 fn run_formatter(config: CliConfig) -> crate::error::Result<()> {
     let mut formatter = CursedFormatter::new(config.formatter_config.clone());
     let mut total_files = 0;
@@ -244,11 +183,7 @@ fn run_formatter(config: CliConfig) -> crate::error::Result<()> {
             print_diff("<stdin>", &input, &result.formatted_code);
         } else {
             print!("{}", result.formatted_code);
-        }
-        
         return Ok(0);
-    }
-
     let mut files_to_process = Vec::new();
     for file_path in &config.files {
         if file_path.is_dir() && config.recursive {
@@ -265,8 +200,6 @@ fn run_formatter(config: CliConfig) -> crate::error::Result<()> {
         
         if config.verbose {
             eprintln!("Processing: {}", file_path.display());
-        }
-
         match process_file(&mut formatter, &file_path, &config) {
             Ok(changed) => {
                 if changed {
@@ -280,8 +213,6 @@ fn run_formatter(config: CliConfig) -> crate::error::Result<()> {
                 error_files += 1;
             }
         }
-    }
-
     if !config.quiet {
         if config.check_only {
             if changed_files > 0 {
@@ -290,7 +221,6 @@ fn run_formatter(config: CliConfig) -> crate::error::Result<()> {
                 eprintln!("All files are properly formatted");
             }
         } else {
-            eprintln!("Processed {} file(s), {} changed, {} error(s)", 
                      total_files, changed_files, error_files);
         }
     }
@@ -319,8 +249,6 @@ fn collect_cursed_files(dir: &Path, files: &mut Vec<PathBuf>) -> crate::error::R
         }
     }
     Ok(())
-}
-
 fn process_file(formatter: &mut CursedFormatter, file_path: &Path, config: &CliConfig) -> crate::error::Result<()> {
     let content = fs::read_to_string(file_path)
         .map_err(|e| CursedError::General(format!("Failed to read file: {}", e)))?;
@@ -357,11 +285,7 @@ fn process_file(formatter: &mut CursedFormatter, file_path: &Path, config: &CliC
     } else {
         // Output to stdout
         print!("{}", result.formatted_code);
-    }
-
     Ok(false)
-}
-
 fn print_diff(filename: &str, original: &str, formatted: &str) {
     println!("--- {}", filename);
     println!("+++ {}", filename);

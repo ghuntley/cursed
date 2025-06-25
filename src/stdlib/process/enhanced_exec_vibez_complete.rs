@@ -25,260 +25,122 @@ pub type VibezResult<T> = std::result::Result<T, ProcessError>;
 #[derive(Debug)]
 pub struct EnhancedCmd {
     /// Command path
-    pub path: String,
     /// Command arguments
-    pub args: Vec<String>,
     /// Environment variables
-    pub env: Vec<String>,
     /// Working directory
-    pub dir: Option<PathBuf>,
     /// Standard input
-    pub stdin: Option<Box<dyn Read + Send>>,
     /// Standard output
-    pub stdout: Option<Box<dyn Write + Send>>,
     /// Standard error
-    pub stderr: Option<Box<dyn Write + Send>>,
     /// Internal state
-    state: Arc<Mutex<CmdState>>,
     /// Execution context
-    context: Option<Arc<ExecutionContext>>,
-}
-
 /// Process handle for spawned processes
 #[derive(Debug)]
 pub struct EnhancedProcess {
     /// Process ID
-    pub pid: u32,
     /// Process state
-    state: Arc<Mutex<ProcessState>>,
     /// Process handle
-    child: Arc<Mutex<Option<Child>>>,
-}
-
 /// Process state information
 #[derive(Debug)]
 pub struct EnhancedProcessState {
     /// Exit status
-    exit_status: Option<ExitStatus>,
     /// Process start time
-    start_time: SystemTime,
     /// Process end time
-    end_time: Option<SystemTime>,
     /// System resource usage
-    system_usage: Option<SystemUsage>,
     /// User time
-    user_time: CursedDuration,
     /// System time
-    system_time: CursedDuration,
-}
-
 /// System resource usage information
 #[derive(Debug, Clone)]
 pub struct SystemUsage {
     /// CPU usage percentage
-    pub cpu_percent: f64,
     /// Memory usage in bytes
-    pub memory_bytes: u64,
     /// I/O read bytes
-    pub io_read_bytes: u64,
     /// I/O write bytes
-    pub io_write_bytes: u64,
     /// Context switches
-    pub context_switches: u64,
-}
-
 /// CursedError type for command execution
 #[derive(Debug)]
 pub struct ExecError {
     /// CursedError message
-    pub message: String,
     /// Exit code if available
-    pub exit_code: Option<i32>,
     /// Underlying error
-    pub source: Option<Box<dyn std::error::CursedError + Send + Sync>>,
-}
-
 /// Process group for managing multiple processes
 #[derive(Debug)]
 pub struct ProcessGroup {
     /// Group ID
-    id: String,
     /// Processes in the group
-    processes: Arc<Mutex<Vec<EnhancedCmd>>>,
     /// Group state
-    state: Arc<Mutex<GroupState>>,
     /// Group options
-    options: ProcessGroupOptions,
-}
-
 /// Process group options
 #[derive(Debug, Clone)]
 pub struct ProcessGroupOptions {
     /// Maximum concurrent processes
-    pub max_concurrent: usize,
     /// Timeout for group operations
-    pub timeout: Option<Duration>,
     /// Kill all on first failure
-    pub fail_fast: bool,
     /// Collect combined output
-    pub collect_output: bool,
-}
-
 /// Process group state
 #[derive(Debug)]
 struct GroupState {
-    running_processes: Vec<u32>,
-    completed_processes: Vec<u32>,
-    failed_processes: Vec<u32>,
-    combined_output: Vec<u8>,
-    start_time: Option<SystemTime>,
-    end_time: Option<SystemTime>,
-}
-
 /// Environment management
 #[derive(Debug)]
 pub struct Environment {
     /// Environment variables
-    variables: HashMap<String, String>,
     /// Path manipulation
-    path_segments: Vec<String>,
     /// Inherited environment
-    inherit_env: bool,
-}
-
 /// Output streaming configuration
 #[derive(Debug)]
 pub struct OutputStreamer {
     /// Associated command
-    command: EnhancedCmd,
     /// Line callback
-    line_callback: Option<Arc<dyn Fn(&str) + Send + Sync>>,
     /// Streaming options
-    options: StreamingOptions,
     /// Streaming state
-    state: Arc<Mutex<StreamingState>>,
-}
-
 /// Streaming options
 #[derive(Debug, Clone)]
 pub struct StreamingOptions {
     /// Buffer size for streaming
-    pub buffer_size: usize,
     /// Line-based processing
-    pub line_mode: bool,
     /// Include stderr in streaming
-    pub include_stderr: bool,
     /// Timeout for streaming operations
-    pub timeout: Option<Duration>,
-}
-
 /// Streaming state
 #[derive(Debug)]
 struct StreamingState {
-    is_streaming: bool,
-    lines_processed: usize,
-    bytes_processed: usize,
-    last_activity: SystemTime,
-}
-
 /// Input generation for providing programmatic input
 #[derive(Debug)]
 pub struct InputGenerator {
     /// Associated command
-    command: EnhancedCmd,
     /// Input queue
-    input_queue: Arc<Mutex<Vec<InputItem>>>,
     /// Generator state
-    state: Arc<Mutex<GeneratorState>>,
-}
-
 /// Input item for delayed input
 #[derive(Debug)]
 struct InputItem {
-    data: Vec<u8>,
-    delay: Option<Duration>,
-    timestamp: SystemTime,
-}
-
 /// Input generator state
 #[derive(Debug)]
 struct GeneratorState {
-    is_active: bool,
-    items_sent: usize,
-    bytes_sent: usize,
-    last_send: SystemTime,
-}
-
 /// Command internal state
 #[derive(Debug)]
 struct CmdState {
-    process: Option<EnhancedProcess>,
-    start_time: Option<SystemTime>,
-    end_time: Option<SystemTime>,
-    output_data: Vec<u8>,
-    error_data: Vec<u8>,
-    exit_code: Option<i32>,
-    is_running: bool,
-}
-
 /// Process state enumeration
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 enum ProcessState {
-    Created,
-    Starting,
-    Running,
-    Completed,
-    Failed,
-    Killed,
-}
-
 /// Execution context for timeout and cancellation
 #[derive(Debug)]
 pub struct ExecutionContext {
     /// Cancellation signal
-    cancel_signal: Arc<(Mutex<bool>, Condvar)>,
     /// Timeout duration
-    timeout: Option<Duration>,
     /// Start time
-    start_time: SystemTime,
-}
-
 impl Default for ProcessGroupOptions {
     fn default() -> Self {
         Self {
-            max_concurrent: 10,
-            timeout: None,
-            fail_fast: false,
-            collect_output: true,
         }
     }
-}
-
 impl Default for StreamingOptions {
     fn default() -> Self {
         Self {
-            buffer_size: 8192,
-            line_mode: true,
-            include_stderr: false,
-            timeout: Some(Duration::from_secs(30)),
         }
     }
-}
-
 impl EnhancedCmd {
     /// Create a new command
     #[instrument]
     pub fn command(name: &str, args: &[&str]) -> Self {
         Self {
-            path: name.to_string(),
-            args: args.iter().map(|s| s.to_string()).collect(),
-            env: Vec::new(),
-            dir: None,
-            stdin: None,
-            stdout: None,
-            stderr: None,
-            state: Arc::new(Mutex::new(CmdState::new())),
-            context: None,
         }
     }
     
@@ -288,8 +150,6 @@ impl EnhancedCmd {
         let mut cmd = Self::command(name, args);
         cmd.context = Some(Arc::new(ctx));
         cmd
-    }
-    
     /// Start the command
     #[instrument(skip(self))]
     pub fn start(&mut self) -> VibezResult<()> {
@@ -299,8 +159,6 @@ impl EnhancedCmd {
         // Configure working directory
         if let Some(ref dir) = self.dir {
             system_cmd.current_dir(dir);
-        }
-        
         // Configure environment
         for env_var in &self.env {
             if let Some(eq_pos) = env_var.find('=') {
@@ -330,12 +188,8 @@ impl EnhancedCmd {
             state.process = Some(process);
             state.start_time = Some(SystemTime::now());
             state.is_running = true;
-        }
-        
         info!("Process started: PID {} - {}", pid, self.path);
         Ok(())
-    }
-    
     /// Run the command and wait for completion
     #[instrument(skip(self))]
     pub fn run(&mut self) -> VibezResult<()> {
@@ -367,11 +221,7 @@ impl EnhancedCmd {
                     return Err(CursedError::RuntimeError(format!("Process failed with exit code {}", exit_code)));
                 }
             }
-        }
-        
         Ok(())
-    }
-    
     /// Wait with execution context (timeout/cancellation)
     #[instrument(skip(self, ctx))]
     fn wait_with_context(&mut self, ctx: &ExecutionContext) -> VibezResult<()> {
@@ -418,8 +268,6 @@ impl EnhancedCmd {
                         return Ok(());
                     }
                 }
-            }
-            
             thread::sleep(Duration::from_millis(50));
         }
     }
@@ -433,8 +281,6 @@ impl EnhancedCmd {
             .map_err(|_| CursedError::RuntimeError("Failed to acquire state lock".to_string()))?;
         
         Ok(state.output_data.clone())
-    }
-    
     /// Get combined output (stdout + stderr)
     #[instrument(skip(self))]
     pub fn combined_output(&mut self) -> VibezResult<Vec<u8>> {
@@ -446,8 +292,6 @@ impl EnhancedCmd {
         let mut combined = state.output_data.clone();
         combined.extend_from_slice(&state.error_data);
         Ok(combined)
-    }
-    
     /// Get stdin pipe for writing to process
     #[instrument(skip(self))]
     pub fn stdin_pipe(&mut self) -> VibezResult<Box<dyn Write + Send>> {
@@ -459,8 +303,6 @@ impl EnhancedCmd {
         // Start the process if not already started
         if !self.is_running()? {
             self.spawn()?;
-        }
-        
         let mut state = self.state.lock()
             .map_err(|_| CursedError::RuntimeError("Failed to acquire state lock".to_string()))?;
         
@@ -489,8 +331,6 @@ impl EnhancedCmd {
         // Start the process if not already started
         if !self.is_running()? {
             self.spawn()?;
-        }
-        
         let mut state = self.state.lock()
             .map_err(|_| CursedError::RuntimeError("Failed to acquire state lock".to_string()))?;
         
@@ -519,8 +359,6 @@ impl EnhancedCmd {
         // Start the process if not already started
         if !self.is_running()? {
             self.spawn()?;
-        }
-        
         let mut state = self.state.lock()
             .map_err(|_| CursedError::RuntimeError("Failed to acquire state lock".to_string()))?;
         
@@ -546,8 +384,6 @@ impl EnhancedCmd {
         
         state.process.clone()
             .ok_or_else(|| CursedError::RuntimeError("Process not started".to_string()))
-    }
-    
     /// Get process state
     #[instrument(skip(self))]
     pub fn process_state(&self) -> VibezResult<EnhancedProcessState> {
@@ -571,8 +407,6 @@ impl EnhancedCmd {
             process.kill()?;
             state.is_running = false;
             state.end_time = Some(SystemTime::now());
-        }
-        
         Ok(())
     }
 }
@@ -582,12 +416,7 @@ impl EnhancedProcess {
     #[instrument]
     fn new(pid: u32, child: Child) -> VibezResult<Self> {
         Ok(Self {
-            pid,
-            state: Arc::new(Mutex::new(ProcessState::Running)),
-            child: Arc::new(Mutex::new(Some(child))),
         })
-    }
-    
     /// Kill the process
     #[instrument(skip(self))]
     pub fn kill(&mut self) -> VibezResult<()> {
@@ -597,15 +426,11 @@ impl EnhancedProcess {
         if let Some(ref mut child) = child.as_mut() {
             child.kill()
                 .map_err(|e| CursedError::RuntimeError(format!("Failed to kill process: {}", e)))?;
-        }
-        
         let mut state = self.state.lock()
             .map_err(|_| CursedError::RuntimeError("Failed to acquire state lock".to_string()))?;
         *state = ProcessState::Killed;
         
         Ok(())
-    }
-    
     /// Send signal to process
     #[instrument(skip(self))]
     pub fn signal(&self, sig: i32) -> VibezResult<()> {
@@ -623,11 +448,7 @@ impl EnhancedProcess {
         #[cfg(windows)]
         {
             return Err(CursedError::RuntimeError("Signal handling not implemented for Windows".to_string()));
-        }
-        
         Ok(())
-    }
-    
     /// Wait for process completion
     #[instrument(skip(self))]
     pub fn wait(&mut self) -> VibezResult<EnhancedProcessState> {
@@ -645,21 +466,10 @@ impl EnhancedProcess {
                 ProcessState::Completed
             } else {
                 ProcessState::Failed
-            };
             
             Ok(EnhancedProcessState {
-                exit_status: Some(status),
                 start_time: SystemTime::now(), // Would track properly
-                end_time: Some(SystemTime::now()),
                 system_usage: Some(SystemUsage {
-                    cpu_percent: 0.0,
-                    memory_bytes: 0,
-                    io_read_bytes: 0,
-                    io_write_bytes: 0,
-                    context_switches: 0,
-                }),
-                user_time: CursedDuration::from_seconds(0.0),
-                system_time: CursedDuration::from_seconds(0.0),
             })
         } else {
             Err(CursedError::RuntimeError("Process already waited on".to_string()))
@@ -688,24 +498,11 @@ impl EnhancedProcess {
         
         *child = None;
         Ok(())
-    }
-    
     /// Get process state
     #[instrument(skip(self))]
     pub fn get_process_state(&self) -> VibezResult<EnhancedProcessState> {
         Ok(EnhancedProcessState {
-            exit_status: None,
-            start_time: SystemTime::now(),
-            end_time: None,
             system_usage: Some(SystemUsage {
-                cpu_percent: 0.0,
-                memory_bytes: 0,
-                io_read_bytes: 0,
-                io_write_bytes: 0,
-                context_switches: 0,
-            }),
-            user_time: CursedDuration::from_seconds(0.0),
-            system_time: CursedDuration::from_seconds(0.0),
         })
     }
 }
@@ -715,48 +512,34 @@ impl EnhancedProcessState {
     #[instrument(skip(self))]
     pub fn exited(&self) -> bool {
         self.exit_status.is_some()
-    }
-    
     /// Get exit code
     #[instrument(skip(self))]
     pub fn exit_code(&self) -> i32 {
         self.exit_status
             .and_then(|status| status.code())
             .unwrap_or(-1)
-    }
-    
     /// Check if process was successful
     #[instrument(skip(self))]
     pub fn success(&self) -> bool {
         self.exit_status
             .map(|status| status.success())
             .unwrap_or(false)
-    }
-    
     /// Get system information
     #[instrument(skip(self))]
     pub fn sys(&self) -> Option<&SystemUsage> {
         self.system_usage.as_ref()
-    }
-    
     /// Get system usage information
     #[instrument(skip(self))]
     pub fn sys_usage(&self) -> Option<&SystemUsage> {
         self.system_usage.as_ref()
-    }
-    
     /// Get string representation
     #[instrument(skip(self))]
     pub fn to_string(&self) -> String {
         format!("ProcessState(exit_code: {}, success: {})", self.exit_code(), self.success())
-    }
-    
     /// Get user time
     #[instrument(skip(self))]
     pub fn user_time(&self) -> CursedDuration {
         self.user_time.clone()
-    }
-    
     /// Get system time
     #[instrument(skip(self))]
     pub fn system_time(&self) -> CursedDuration {
@@ -769,9 +552,6 @@ impl ExecError {
     #[instrument]
     pub fn new(message: &str) -> Self {
         Self {
-            message: message.to_string(),
-            exit_code: None,
-            source: None,
         }
     }
     
@@ -779,9 +559,6 @@ impl ExecError {
     #[instrument]
     pub fn with_exit_code(message: &str, exit_code: i32) -> Self {
         Self {
-            message: message.to_string(),
-            exit_code: Some(exit_code),
-            source: None,
         }
     }
     
@@ -789,14 +566,10 @@ impl ExecError {
     #[instrument(skip(self))]
     pub fn error(&self) -> String {
         self.message.clone()
-    }
-    
     /// Unwrap underlying error
     #[instrument(skip(self))]
     pub fn unwrap(&self) -> Option<&(dyn std::error::CursedError + Send + Sync)> {
         self.source.as_deref()
-    }
-    
     /// Get exit code
     #[instrument(skip(self))]
     pub fn exit_code(&self) -> i32 {
@@ -809,10 +582,6 @@ impl ProcessGroup {
     #[instrument]
     pub fn new() -> Self {
         Self {
-            id: uuid::Uuid::new_v4().to_string(),
-            processes: Arc::new(Mutex::new(Vec::new())),
-            state: Arc::new(Mutex::new(GroupState::new())),
-            options: ProcessGroupOptions::default(),
         }
     }
     
@@ -824,8 +593,6 @@ impl ProcessGroup {
         
         processes.push(cmd);
         Ok(())
-    }
-    
     /// Start all commands in the group
     #[instrument(skip(self))]
     pub fn start_all(&self) -> VibezResult<()> {
@@ -842,8 +609,6 @@ impl ProcessGroup {
         for process in processes.iter_mut() {
             if started >= self.options.max_concurrent {
                 break;
-            }
-            
             if let Err(e) = process.start() {
                 if self.options.fail_fast {
                     return Err(e);
@@ -857,8 +622,6 @@ impl ProcessGroup {
         
         info!("Started {} processes in group {}", started, self.id);
         Ok(())
-    }
-    
     /// Wait for all processes to complete
     #[instrument(skip(self))]
     pub fn wait_all(&self) -> VibezResult<()> {
@@ -878,17 +641,12 @@ impl ProcessGroup {
                     
                     if process_state.is_running {
                         all_done = false;
-                    }
-                    
                     if let Some(exit_code) = process_state.exit_code {
                         if exit_code != 0 {
                             any_failed = true;
                         }
                     }
-                }
-                
                 (all_done, any_failed)
-            };
             
             if all_done {
                 let mut state = self.state.lock()
@@ -897,11 +655,7 @@ impl ProcessGroup {
                 
                 if any_failed && self.options.fail_fast {
                     return Err(CursedError::RuntimeError("One or more processes in group failed".to_string()));
-                }
-                
                 break;
-            }
-            
             // Check timeout
             if let Some(timeout) = self.options.timeout {
                 if start_time.elapsed() >= timeout {
@@ -910,8 +664,6 @@ impl ProcessGroup {
             }
             
             thread::sleep(Duration::from_millis(100));
-        }
-        
         Ok(())
     }
 }
@@ -921,9 +673,6 @@ impl Environment {
     #[instrument]
     pub fn new() -> Self {
         Self {
-            variables: HashMap::new(),
-            path_segments: Vec::new(),
-            inherit_env: true,
         }
     }
     
@@ -932,8 +681,6 @@ impl Environment {
     pub fn set(&mut self, key: &str, value: &str) -> &mut Self {
         self.variables.insert(key.to_string(), value.to_string());
         self
-    }
-    
     /// Append to PATH-like variable
     #[instrument(skip(self))]
     pub fn append(&mut self, key: &str, value: &str) -> &mut Self {
@@ -943,8 +690,6 @@ impl Environment {
             self.variables.insert(key.to_string(), value.to_string());
         }
         self
-    }
-    
     /// Get environment variables as vector
     #[instrument(skip(self))]
     pub fn to_env_vec(&self) -> Vec<String> {
@@ -959,10 +704,6 @@ impl OutputStreamer {
     #[instrument]
     pub fn new(command: EnhancedCmd) -> Self {
         Self {
-            command,
-            line_callback: None,
-            options: StreamingOptions::default(),
-            state: Arc::new(Mutex::new(StreamingState::new())),
         }
     }
     
@@ -970,12 +711,9 @@ impl OutputStreamer {
     #[instrument(skip(self, callback))]
     pub fn on_line<F>(&mut self, callback: F) -> &mut Self
     where
-        F: Fn(&str) + Send + Sync + 'static,
     {
         self.line_callback = Some(Arc::new(callback));
         self
-    }
-    
     /// Start streaming
     #[instrument(skip(self))]
     pub fn start(&mut self) -> VibezResult<()> {
@@ -989,8 +727,6 @@ impl OutputStreamer {
         // to read from stdout/stderr and call the callback
         
         Ok(())
-    }
-    
     /// Wait for streaming to complete
     #[instrument(skip(self))]
     pub fn wait(&mut self) -> VibezResult<()> {
@@ -1009,9 +745,6 @@ impl InputGenerator {
     #[instrument]
     pub fn new(command: EnhancedCmd) -> Self {
         Self {
-            command,
-            input_queue: Arc::new(Mutex::new(Vec::new())),
-            state: Arc::new(Mutex::new(GeneratorState::new())),
         }
     }
     
@@ -1022,14 +755,9 @@ impl InputGenerator {
             .map_err(|_| CursedError::RuntimeError("Failed to acquire queue lock".to_string()))?;
         
         queue.push(InputItem {
-            data: data.to_vec(),
-            delay: None,
-            timestamp: SystemTime::now(),
         });
         
         Ok(())
-    }
-    
     /// Write input after delay
     #[instrument(skip(self, data))]
     pub fn write_after(&self, data: &[u8], delay: Duration) -> VibezResult<()> {
@@ -1037,14 +765,9 @@ impl InputGenerator {
             .map_err(|_| CursedError::RuntimeError("Failed to acquire queue lock".to_string()))?;
         
         queue.push(InputItem {
-            data: data.to_vec(),
-            delay: Some(delay),
-            timestamp: SystemTime::now(),
         });
         
         Ok(())
-    }
-    
     /// Close input
     #[instrument(skip(self))]
     pub fn close(&self) -> VibezResult<()> {
@@ -1061,9 +784,6 @@ impl ExecutionContext {
     #[instrument]
     pub fn with_timeout(timeout: Duration) -> Self {
         Self {
-            cancel_signal: Arc::new((Mutex::new(false), Condvar::new())),
-            timeout: Some(timeout),
-            start_time: SystemTime::now(),
         }
     }
     
@@ -1071,9 +791,6 @@ impl ExecutionContext {
     #[instrument]
     pub fn cancellable() -> Self {
         Self {
-            cancel_signal: Arc::new((Mutex::new(false), Condvar::new())),
-            timeout: None,
-            start_time: SystemTime::now(),
         }
     }
     
@@ -1094,52 +811,23 @@ impl ExecutionContext {
 impl CmdState {
     fn new() -> Self {
         Self {
-            process: None,
-            start_time: None,
-            end_time: None,
-            output_data: Vec::new(),
-            error_data: Vec::new(),
-            exit_code: None,
-            is_running: false,
         }
     }
-}
-
 impl GroupState {
     fn new() -> Self {
         Self {
-            running_processes: Vec::new(),
-            completed_processes: Vec::new(),
-            failed_processes: Vec::new(),
-            combined_output: Vec::new(),
-            start_time: None,
-            end_time: None,
         }
     }
-}
-
 impl StreamingState {
     fn new() -> Self {
         Self {
-            is_streaming: false,
-            lines_processed: 0,
-            bytes_processed: 0,
-            last_activity: SystemTime::now(),
         }
     }
-}
-
 impl GeneratorState {
     fn new() -> Self {
         Self {
-            is_active: true,
-            items_sent: 0,
-            bytes_sent: 0,
-            last_send: SystemTime::now(),
         }
     }
-}
-
 // impl std::error::CursedError for ExecError {
 //     fn source(&self) -> Option<&(dyn std::error::CursedError + 'static)> {
 //         None // Would be implemented properly
@@ -1158,59 +846,41 @@ impl GeneratorState {
 #[instrument]
 pub fn command(name: &str, args: &[&str]) -> EnhancedCmd {
     EnhancedCmd::command(name, args)
-}
-
 /// Create a command with context
 #[instrument]
 pub fn command_context(ctx: ExecutionContext, name: &str, args: &[&str]) -> EnhancedCmd {
     EnhancedCmd::command_context(ctx, name, args)
-}
-
 /// Look up executable path
 #[instrument]
 pub fn look_path(file: &str) -> VibezResult<String> {
     // This would implement PATH lookup
     // For now, just return the file as-is
     Ok(file.to_string())
-}
-
 /// Create new process group
 #[instrument]
 pub fn new_process_group() -> ProcessGroup {
     ProcessGroup::new()
-}
-
 /// Run with timeout
 #[instrument]
 pub fn run_with_timeout(name: &str, arg: &str, timeout: Duration) -> VibezResult<()> {
     let ctx = ExecutionContext::with_timeout(timeout);
     let mut cmd = command_context(ctx, name, &[arg]);
     cmd.run()
-}
-
 /// Create command with environment
 #[instrument]
 pub fn command_with_env(name: &str, arg: &str, env: Environment) -> EnhancedCmd {
     let mut cmd = command(name, &[arg]);
     cmd.env = env.to_env_vec();
     cmd
-}
-
 /// Create new output streamer
 #[instrument]
 pub fn new_output_streamer(command: EnhancedCmd) -> OutputStreamer {
     OutputStreamer::new(command)
-}
-
 /// Create new input generator
 #[instrument]
 pub fn new_input_generator(command: EnhancedCmd) -> InputGenerator {
     InputGenerator::new(command)
-}
-
 /// Create new environment
 #[instrument]
 pub fn new_environment() -> Environment {
     Environment::new()
-}
-

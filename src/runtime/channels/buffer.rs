@@ -18,21 +18,12 @@ pub type BufferResult<T> = std::result::Result<T, ChannelError>;
 #[derive(Debug, Clone, PartialEq)]
 pub enum ChannelBufferError {
     /// Buffer is full and cannot accept more items
-    BufferFull,
     /// Buffer is empty and cannot provide items
-    BufferEmpty,
     /// Channel has been closed
-    ChannelClosed,
     /// Operation timed out
-    Timeout,
     /// Invalid buffer capacity
-    InvalidCapacity(usize),
     /// Memory allocation failed
-    AllocationFailed,
     /// Synchronization error
-    SyncError(String),
-}
-
 // impl std::fmt::Display for ChannelBufferError {
 //     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
 //         match self {
@@ -59,40 +50,18 @@ pub enum ChannelBufferError {
 #[derive(Debug, Clone)]
 pub struct BufferConfig {
     /// Buffer capacity (0 for unbuffered)
-    pub capacity: usize,
     /// Whether to enable blocking operations
-    pub blocking: bool,
     /// Timeout for blocking operations
-    pub timeout: Option<Duration>,
     /// Whether to drop oldest items when full (for bounded channels)
-    pub drop_old_on_full: bool,
     /// Enable performance statistics
-    pub enable_stats: bool,
-}
-
 impl Default for BufferConfig {
     fn default() -> Self {
         Self {
-            capacity: 0,
-            blocking: true,
-            timeout: None,
-            drop_old_on_full: false,
-            enable_stats: false,
         }
     }
-}
-
 /// Statistics for buffer performance monitoring
 #[derive(Debug, Default)]
 pub struct BufferStats {
-    pub total_pushes: AtomicUsize,
-    pub total_pops: AtomicUsize,
-    pub total_blocks: AtomicUsize,
-    pub total_timeouts: AtomicUsize,
-    pub max_size: AtomicUsize,
-    pub current_size: AtomicUsize,
-}
-
 impl BufferStats {
     #[instrument(skip(self))]
     pub fn record_push(&self) {
@@ -100,49 +69,25 @@ impl BufferStats {
         let new_size = self.current_size.fetch_add(1, Ordering::Relaxed) + 1;
         self.max_size.fetch_max(new_size, Ordering::Relaxed);
         trace!(operation = "push", current_size = new_size);
-    }
-
     #[instrument(skip(self))]
     pub fn record_pop(&self) {
         self.total_pops.fetch_add(1, Ordering::Relaxed);
         let new_size = self.current_size.fetch_sub(1, Ordering::Relaxed).saturating_sub(1);
         trace!(operation = "pop", current_size = new_size);
-    }
-
     #[instrument(skip(self))]
     pub fn record_block(&self) {
         self.total_blocks.fetch_add(1, Ordering::Relaxed);
         trace!(operation = "block");
-    }
-
     #[instrument(skip(self))]
     pub fn record_timeout(&self) {
         self.total_timeouts.fetch_add(1, Ordering::Relaxed);
         trace!(operation = "timeout");
-    }
-
     pub fn get_summary(&self) -> BufferStatsSummary {
         BufferStatsSummary {
-            total_pushes: self.total_pushes.load(Ordering::Relaxed),
-            total_pops: self.total_pops.load(Ordering::Relaxed),
-            total_blocks: self.total_blocks.load(Ordering::Relaxed),
-            total_timeouts: self.total_timeouts.load(Ordering::Relaxed),
-            max_size: self.max_size.load(Ordering::Relaxed),
-            current_size: self.current_size.load(Ordering::Relaxed),
         }
     }
-}
-
 #[derive(Debug, Clone)]
 pub struct BufferStatsSummary {
-    pub total_pushes: usize,
-    pub total_pops: usize,
-    pub total_blocks: usize,
-    pub total_timeouts: usize,
-    pub max_size: usize,
-    pub current_size: usize,
-}
-
 /// Main interface for channel buffers
 pub trait ChannelBuffer<T>: Send + Sync {
     /// Push an item to the buffer
@@ -183,103 +128,62 @@ pub trait ChannelBuffer<T>: Send + Sync {
     
     /// Get buffer statistics
     fn stats(&self) -> Option<BufferStatsSummary>;
-}
-
 /// Efficient ring buffer implementation for buffered channels
 #[derive(Debug)]
 pub struct RingBuffer<T> {
-    buffer: Vec<Option<T>>,
-    head: usize,
-    tail: usize,
-    size: usize,
-    capacity: usize,
-}
-
 impl<T> RingBuffer<T> {
     /// Create a new ring buffer with specified capacity
     #[instrument]
     pub fn new(capacity: usize) -> BufferResult<Self> {
         if capacity == 0 {
             return Err(ChannelBufferError::InvalidCapacity(capacity));
-        }
-
         let mut buffer = Vec::with_capacity(capacity);
         for _ in 0..capacity {
             buffer.push(None);
-        }
-
         Ok(RingBuffer {
-            buffer,
-            head: 0,
-            tail: 0,
-            size: 0,
-            capacity,
         })
-    }
-
     /// Push item to the buffer
     #[instrument(skip(self, item))]
     pub fn push(&mut self, item: T) -> BufferResult<()> {
         if self.is_full() {
             return Err(ChannelBufferError::BufferFull);
-        }
-
         self.buffer[self.tail] = Some(item);
         self.tail = (self.tail + 1) % self.capacity;
         self.size += 1;
         
         trace!(
-            operation = "ring_buffer_push",
-            head = self.head,
-            tail = self.tail,
             size = self.size
         );
         
         Ok(())
-    }
-
     /// Try to push item to the buffer, returns the item back if buffer is full
     #[instrument(skip(self, item))]
     pub fn try_push(&mut self, item: T) -> Result<(), T> {
         if self.is_full() {
             return Err(item);
-        }
-
         self.buffer[self.tail] = Some(item);
         self.tail = (self.tail + 1) % self.capacity;
         self.size += 1;
         
         trace!(
-            operation = "ring_buffer_try_push",
-            head = self.head,
-            tail = self.tail,
             size = self.size
         );
         
         Ok(())
-    }
-
     /// Pop item from the buffer
     #[instrument(skip(self))]
     pub fn pop(&mut self) -> BufferResult<T> {
         if self.is_empty() {
             return Err(ChannelBufferError::BufferEmpty);
-        }
-
         let item = self.buffer[self.head].take().ok_or(ChannelBufferError::BufferEmpty)?;
         self.head = (self.head + 1) % self.capacity;
         self.size -= 1;
         
         trace!(
-            operation = "ring_buffer_pop",
-            head = self.head,
-            tail = self.tail,
             size = self.size
         );
         
         Ok(item)
-    }
-
     /// Push item, dropping oldest if full
     #[instrument(skip(self, item))]
     pub fn push_overwrite(&mut self, item: T) -> Option<T> {
@@ -295,20 +199,12 @@ impl<T> RingBuffer<T> {
 
     pub fn is_full(&self) -> bool {
         self.size == self.capacity
-    }
-
     pub fn is_empty(&self) -> bool {
         self.size == 0
-    }
-
     pub fn len(&self) -> usize {
         self.size
-    }
-
     pub fn capacity(&self) -> usize {
         self.capacity
-    }
-
     pub fn available_space(&self) -> usize {
         self.capacity - self.size
     }
@@ -318,27 +214,15 @@ impl<T> RingBuffer<T> {
 #[derive(Debug, Clone)]
 pub struct UnbufferedChannel<T> {
     /// Synchronization state
-    state: Arc<Mutex<UnbufferedState<T>>>,
     /// Condition variable for waiting
-    condvar: Arc<Condvar>,
     /// Channel statistics
-    stats: Option<Arc<BufferStats>>,
     /// Channel configuration
-    config: BufferConfig,
-}
-
 #[derive(Debug)]
 struct UnbufferedState<T> {
     /// Pending item waiting for receiver
-    pending_item: Option<T>,
     /// Whether a sender is waiting
-    sender_waiting: bool,
     /// Whether a receiver is waiting
-    receiver_waiting: bool,
     /// Whether the channel is closed
-    closed: bool,
-}
-
 impl<T> UnbufferedChannel<T> {
     #[instrument]
     pub fn new(config: BufferConfig) -> Self {
@@ -346,37 +230,22 @@ impl<T> UnbufferedChannel<T> {
             Some(Arc::new(BufferStats::default()))
         } else {
             None
-        };
 
         UnbufferedChannel {
             state: Arc::new(Mutex::new(UnbufferedState {
-                pending_item: None,
-                sender_waiting: false,
-                receiver_waiting: false,
-                closed: false,
-            })),
-            condvar: Arc::new(Condvar::new()),
-            stats,
-            config,
         }
     }
-}
-
 impl<T: Send + Sync> ChannelBuffer<T> for UnbufferedChannel<T> {
     #[instrument(skip(self, item))]
     fn push(&self, item: T) -> BufferResult<()> {
         if let Some(ref stats) = self.stats {
             stats.record_push();
-        }
-
         let mut state = self.state.lock().map_err(|e| {
             ChannelBufferError::SyncError(format!("Failed to acquire lock: {}", e))
         })?;
 
         if state.closed {
             return Err(ChannelBufferError::ChannelClosed);
-        }
-
         // Set pending item and wait for receiver
         state.pending_item = Some(item);
         state.sender_waiting = true;
@@ -388,13 +257,9 @@ impl<T: Send + Sync> ChannelBuffer<T> for UnbufferedChannel<T> {
         while state.pending_item.is_some() && !state.closed {
             if let Some(ref stats) = self.stats {
                 stats.record_block();
-            }
-            
             state = self.condvar.wait(state).map_err(|e| {
                 ChannelBufferError::SyncError(format!("Wait failed: {}", e))
             })?;
-        }
-
         state.sender_waiting = false;
 
         if state.closed {
@@ -409,16 +274,12 @@ impl<T: Send + Sync> ChannelBuffer<T> for UnbufferedChannel<T> {
     fn push_timeout(&self, item: T, timeout: Duration) -> BufferResult<()> {
         if let Some(ref stats) = self.stats {
             stats.record_push();
-        }
-
         let mut state = self.state.lock().map_err(|e| {
             ChannelBufferError::SyncError(format!("Failed to acquire lock: {}", e))
         })?;
 
         if state.closed {
             return Err(ChannelBufferError::ChannelClosed);
-        }
-
         state.pending_item = Some(item);
         state.sender_waiting = true;
         self.condvar.notify_all();
@@ -434,8 +295,6 @@ impl<T: Send + Sync> ChannelBuffer<T> for UnbufferedChannel<T> {
                     stats.record_timeout();
                 }
                 return Err(ChannelBufferError::Timeout);
-            }
-
             let remaining = timeout - elapsed;
             let (new_state, timeout_result) = self.condvar.wait_timeout(state, remaining).map_err(|e| {
                 ChannelBufferError::SyncError(format!("Wait timeout failed: {}", e))
@@ -466,29 +325,21 @@ impl<T: Send + Sync> ChannelBuffer<T> for UnbufferedChannel<T> {
     fn pop(&self) -> BufferResult<T> {
         if let Some(ref stats) = self.stats {
             stats.record_pop();
-        }
-
         let mut state = self.state.lock().map_err(|e| {
             ChannelBufferError::SyncError(format!("Failed to acquire lock: {}", e))
         })?;
 
         if state.closed && state.pending_item.is_none() {
             return Err(ChannelBufferError::ChannelClosed);
-        }
-
         state.receiver_waiting = true;
 
         // Wait for sender to provide an item
         while state.pending_item.is_none() && !state.closed {
             if let Some(ref stats) = self.stats {
                 stats.record_block();
-            }
-            
             state = self.condvar.wait(state).map_err(|e| {
                 ChannelBufferError::SyncError(format!("Wait failed: {}", e))
             })?;
-        }
-
         state.receiver_waiting = false;
 
         if let Some(item) = state.pending_item.take() {
@@ -505,16 +356,12 @@ impl<T: Send + Sync> ChannelBuffer<T> for UnbufferedChannel<T> {
     fn pop_timeout(&self, timeout: Duration) -> BufferResult<T> {
         if let Some(ref stats) = self.stats {
             stats.record_pop();
-        }
-
         let mut state = self.state.lock().map_err(|e| {
             ChannelBufferError::SyncError(format!("Failed to acquire lock: {}", e))
         })?;
 
         if state.closed && state.pending_item.is_none() {
             return Err(ChannelBufferError::ChannelClosed);
-        }
-
         state.receiver_waiting = true;
         let start_time = Instant::now();
 
@@ -526,8 +373,6 @@ impl<T: Send + Sync> ChannelBuffer<T> for UnbufferedChannel<T> {
                     stats.record_timeout();
                 }
                 return Err(ChannelBufferError::Timeout);
-            }
-
             let remaining = timeout - elapsed;
             let (new_state, timeout_result) = self.condvar.wait_timeout(state, remaining).map_err(|e| {
                 ChannelBufferError::SyncError(format!("Wait timeout failed: {}", e))
@@ -561,8 +406,6 @@ impl<T: Send + Sync> ChannelBuffer<T> for UnbufferedChannel<T> {
 
         if state.closed {
             return Err(ChannelBufferError::ChannelClosed);
-        }
-
         if state.receiver_waiting && state.pending_item.is_none() {
             state.pending_item = Some(item);
             self.condvar.notify_all();
@@ -620,8 +463,6 @@ impl<T: Send + Sync> ChannelBuffer<T> for UnbufferedChannel<T> {
 
     fn capacity(&self) -> usize {
         0 // Unbuffered channels have no capacity
-    }
-
     fn close(&self) {
         if let Ok(mut state) = self.state.lock() {
             state.closed = true;
@@ -647,50 +488,25 @@ impl<T: Send + Sync> ChannelBuffer<T> for UnbufferedChannel<T> {
 #[derive(Debug)]
 pub struct BufferedChannel<T> {
     /// Internal ring buffer
-    buffer: Arc<Mutex<RingBuffer<T>>>,
     /// Condition variable for sender waiting
-    sender_condvar: Arc<Condvar>,
     /// Condition variable for receiver waiting
-    receiver_condvar: Arc<Condvar>,
     /// Channel state
-    state: Arc<Mutex<BufferedState>>,
     /// Channel statistics
-    stats: Option<Arc<BufferStats>>,
     /// Channel configuration
-    config: BufferConfig,
-}
-
 #[derive(Debug)]
 struct BufferedState {
-    closed: bool,
-    waiting_senders: usize,
-    waiting_receivers: usize,
-}
-
 impl<T> BufferedChannel<T> {
     #[instrument]
     pub fn new(capacity: usize, config: BufferConfig) -> BufferResult<Self> {
         if capacity == 0 {
             return Err(ChannelBufferError::InvalidCapacity(capacity));
-        }
-
         let stats = if config.enable_stats {
             Some(Arc::new(BufferStats::default()))
         } else {
             None
-        };
 
         Ok(BufferedChannel {
-            buffer: Arc::new(Mutex::new(RingBuffer::new(capacity)?)),
-            sender_condvar: Arc::new(Condvar::new()),
-            receiver_condvar: Arc::new(Condvar::new()),
             state: Arc::new(Mutex::new(BufferedState {
-                closed: false,
-                waiting_senders: 0,
-                waiting_receivers: 0,
-            })),
-            stats,
-            config,
         })
     }
 }
@@ -700,8 +516,6 @@ impl<T: Send + Sync> ChannelBuffer<T> for BufferedChannel<T> {
     fn push(&self, item: T) -> BufferResult<()> {
         if let Some(ref stats) = self.stats {
             stats.record_push();
-        }
-
         let mut current_item = Some(item);
 
         loop {
@@ -716,8 +530,6 @@ impl<T: Send + Sync> ChannelBuffer<T> for BufferedChannel<T> {
 
                 if state.closed {
                     return Err(ChannelBufferError::ChannelClosed);
-                }
-
                 // Try to push to buffer
                 if let Some(item_to_push) = current_item.take() {
                     match buffer.try_push(item_to_push) {
@@ -750,7 +562,6 @@ impl<T: Send + Sync> ChannelBuffer<T> for BufferedChannel<T> {
                     // This shouldn't happen, but handle gracefully
                     return Err(ChannelBufferError::SyncError("Item lost during push".to_string()));
                 }
-            };
 
             if should_wait {
                 // Buffer was full, wait for space
@@ -760,13 +571,9 @@ impl<T: Send + Sync> ChannelBuffer<T> for BufferedChannel<T> {
 
                 if state.closed {
                     return Err(ChannelBufferError::ChannelClosed);
-                }
-
                 state.waiting_senders += 1;
                 if let Some(ref stats) = self.stats {
                     stats.record_block();
-                }
-
                 state = self.sender_condvar.wait(state).map_err(|e| {
                     ChannelBufferError::SyncError(format!("Sender wait failed: {}", e))
                 })?;
@@ -774,14 +581,10 @@ impl<T: Send + Sync> ChannelBuffer<T> for BufferedChannel<T> {
                 state.waiting_senders -= 1;
             }
         }
-    }
-
     #[instrument(skip(self, item))]
     fn push_timeout(&self, item: T, timeout: Duration) -> BufferResult<()> {
         if let Some(ref stats) = self.stats {
             stats.record_push();
-        }
-
         let start_time = Instant::now();
         let mut current_item = Some(item);
 
@@ -797,8 +600,6 @@ impl<T: Send + Sync> ChannelBuffer<T> for BufferedChannel<T> {
 
                 if state.closed {
                     return Err(ChannelBufferError::ChannelClosed);
-                }
-
                 if let Some(item_to_push) = current_item.take() {
                     match buffer.try_push(item_to_push) {
                         Ok(()) => {
@@ -824,7 +625,6 @@ impl<T: Send + Sync> ChannelBuffer<T> for BufferedChannel<T> {
                 } else {
                     return Err(ChannelBufferError::SyncError("Item lost during push_timeout".to_string()));
                 }
-            };
 
             if should_wait {
                 let elapsed = start_time.elapsed();
@@ -833,16 +633,12 @@ impl<T: Send + Sync> ChannelBuffer<T> for BufferedChannel<T> {
                         stats.record_timeout();
                     }
                     return Err(ChannelBufferError::Timeout);
-                }
-
                 let mut state = self.state.lock().map_err(|e| {
                     ChannelBufferError::SyncError(format!("Failed to acquire state lock: {}", e))
                 })?;
 
                 if state.closed {
                     return Err(ChannelBufferError::ChannelClosed);
-                }
-
                 state.waiting_senders += 1;
                 let remaining = timeout - elapsed;
 
@@ -867,8 +663,6 @@ impl<T: Send + Sync> ChannelBuffer<T> for BufferedChannel<T> {
     fn pop(&self) -> BufferResult<T> {
         if let Some(ref stats) = self.stats {
             stats.record_pop();
-        }
-
         loop {
             {
                 let mut buffer = self.buffer.lock().map_err(|e| {
@@ -894,7 +688,6 @@ impl<T: Send + Sync> ChannelBuffer<T> for BufferedChannel<T> {
                         }
                         // Buffer is empty, need to wait
                     }
-                    Err(e) => return Err(e),
                 }
             }
 
@@ -905,13 +698,9 @@ impl<T: Send + Sync> ChannelBuffer<T> for BufferedChannel<T> {
 
             if state.closed {
                 return Err(ChannelBufferError::ChannelClosed);
-            }
-
             state.waiting_receivers += 1;
             if let Some(ref stats) = self.stats {
                 stats.record_block();
-            }
-
             state = self.receiver_condvar.wait(state).map_err(|e| {
                 ChannelBufferError::SyncError(format!("Receiver wait failed: {}", e))
             })?;
@@ -924,8 +713,6 @@ impl<T: Send + Sync> ChannelBuffer<T> for BufferedChannel<T> {
     fn pop_timeout(&self, timeout: Duration) -> BufferResult<T> {
         if let Some(ref stats) = self.stats {
             stats.record_pop();
-        }
-
         let start_time = Instant::now();
 
         loop {
@@ -950,7 +737,6 @@ impl<T: Send + Sync> ChannelBuffer<T> for BufferedChannel<T> {
                             return Err(ChannelBufferError::ChannelClosed);
                         }
                     }
-                    Err(e) => return Err(e),
                 }
             }
 
@@ -960,16 +746,12 @@ impl<T: Send + Sync> ChannelBuffer<T> for BufferedChannel<T> {
                     stats.record_timeout();
                 }
                 return Err(ChannelBufferError::Timeout);
-            }
-
             let mut state = self.state.lock().map_err(|e| {
                 ChannelBufferError::SyncError(format!("Failed to acquire state lock: {}", e))
             })?;
 
             if state.closed {
                 return Err(ChannelBufferError::ChannelClosed);
-            }
-
             state.waiting_receivers += 1;
             let remaining = timeout - elapsed;
 
@@ -987,8 +769,6 @@ impl<T: Send + Sync> ChannelBuffer<T> for BufferedChannel<T> {
                 return Err(ChannelBufferError::Timeout);
             }
         }
-    }
-
     fn try_push(&self, item: T) -> BufferResult<()> {
         let mut buffer = self.buffer.lock().map_err(|e| {
             ChannelBufferError::SyncError(format!("Failed to acquire buffer lock: {}", e))
@@ -1000,8 +780,6 @@ impl<T: Send + Sync> ChannelBuffer<T> for BufferedChannel<T> {
 
         if state.closed {
             return Err(ChannelBufferError::ChannelClosed);
-        }
-
         match buffer.try_push(item) {
             Ok(()) => {
                 drop(state);
@@ -1017,8 +795,6 @@ impl<T: Send + Sync> ChannelBuffer<T> for BufferedChannel<T> {
                 Err(ChannelBufferError::BufferFull)
             }
         }
-    }
-
     fn try_pop(&self) -> BufferResult<T> {
         let mut buffer = self.buffer.lock().map_err(|e| {
             ChannelBufferError::SyncError(format!("Failed to acquire buffer lock: {}", e))
@@ -1045,7 +821,6 @@ impl<T: Send + Sync> ChannelBuffer<T> for BufferedChannel<T> {
                     Err(ChannelBufferError::BufferEmpty)
                 }
             }
-            Err(e) => Err(e),
         }
     }
 
@@ -1123,11 +898,8 @@ pub trait GcIntegration<T> {
     
     /// Update GC roots for buffer contents
     fn update_gc_roots(&self, gc: &mut GarbageCollector) -> crate::error::Result<()>;
-}
-
 impl<T> GcIntegration<T> for BufferedChannel<T> 
 where
-    T: 'static,
 {
     #[instrument(skip(self, gc))]
     fn register_with_gc(&self, gc: &mut GarbageCollector) -> crate::error::Result<()> {
@@ -1139,8 +911,6 @@ where
         // Implementation would depend on the specific GC interface
         // For now, we assume GC handles registration automatically
         Ok(())
-    }
-
     #[instrument(skip(self, gc))]
     fn update_gc_roots(&self, gc: &mut GarbageCollector) -> crate::error::Result<()> {
         // Update GC roots when buffer contents change

@@ -20,8 +20,6 @@ impl ResourceLoader {
         
         registry.insert(namespace.clone(), files);
         Ok(())
-    }
-    
     /// Load a single embedded file by path
     pub fn load_that_file(path: &tea) -> EmbedResult<ThatFile> {
         let registry = EMBEDDED_REGISTRY.lock()
@@ -36,8 +34,6 @@ impl ResourceLoader {
         }
         
         Err(EmbedError::FileNotFound { file: path.clone() })
-    }
-    
     /// Load all files from a directory pattern
     pub fn load_that_dir(path: &tea) -> EmbedResult<ThatFiles> {
         let registry = EMBEDDED_REGISTRY.lock()
@@ -48,7 +44,6 @@ impl ResourceLoader {
             format!("{}*", path)
         } else {
             format!("{}/*", path)
-        };
         
         // Search all namespaces for matching files
         for (_, files) in registry.iter() {
@@ -60,11 +55,7 @@ impl ResourceLoader {
         
         if result_files.count() == 0 {
             return Err(EmbedError::FileNotFound { file: path.clone() });
-        }
-        
         Ok(result_files)
-    }
-    
     /// Load files matching a pattern
     pub fn load_that_pattern(pattern: &tea) -> EmbedResult<ThatFiles> {
         let registry = EMBEDDED_REGISTRY.lock()
@@ -82,19 +73,13 @@ impl ResourceLoader {
         
         if result_files.count() == 0 {
             return Err(EmbedError::InvalidPattern { pattern: pattern.clone() });
-        }
-        
         Ok(result_files)
-    }
-    
     /// Get all registered namespaces
     pub fn get_namespaces() -> EmbedResult<Vec<tea>> {
         let registry = EMBEDDED_REGISTRY.lock()
             .map_err(|e| EmbedError::General { message: format!("Registry lock failed: {}", e) })?;
         
         Ok(registry.keys().cloned().collect())
-    }
-    
     /// Get files from a specific namespace
     pub fn get_namespace_files(namespace: &tea) -> EmbedResult<ThatFiles> {
         let registry = EMBEDDED_REGISTRY.lock()
@@ -103,8 +88,6 @@ impl ResourceLoader {
         registry.get(namespace)
             .cloned()
             .ok_or_else(|| EmbedError::FileNotFound { file: namespace.clone() })
-    }
-    
     /// Check if a file exists in the embedded registry
     pub fn file_exists(path: &tea) -> lit {
         if let Ok(registry) = EMBEDDED_REGISTRY.lock() {
@@ -116,8 +99,6 @@ impl ResourceLoader {
             }
         }
         false
-    }
-    
     /// Get statistics about embedded files
     pub fn get_statistics() -> EmbedResult<EmbedStatistics> {
         let registry = EMBEDDED_REGISTRY.lock()
@@ -142,13 +123,7 @@ impl ResourceLoader {
         }
         
         Ok(EmbedStatistics {
-            total_files,
-            total_size,
-            namespaces,
-            file_types,
         })
-    }
-    
     /// Clear all embedded files (primarily for testing)
     pub fn clear_registry() -> EmbedResult<()> {
         let mut registry = EMBEDDED_REGISTRY.lock()
@@ -156,8 +131,6 @@ impl ResourceLoader {
         
         registry.clear();
         Ok(())
-    }
-    
     /// Load embedded files from a directory on disk (for development/testing)
     #[cfg(feature = "filesystem_embedding")]
     pub fn load_from_filesystem(directory: &tea, namespace: &tea) -> EmbedResult<ThatFiles> {
@@ -169,8 +142,6 @@ impl ResourceLoader {
         
         if !base_path.exists() {
             return Err(EmbedError::FileNotFound { file: directory.clone() });
-        }
-        
         for entry in WalkDir::new(base_path) {
             let entry = entry.map_err(|e| EmbedError::IoError { reason: e.to_string() })?;
             
@@ -195,8 +166,6 @@ impl ResourceLoader {
         
         Self::register_embedded_files(namespace, files.clone())?;
         Ok(files)
-    }
-    
     /// Build embedded files from a manifest (compile-time embedding)
     pub fn build_from_manifest(manifest: &EmbedManifest) -> EmbedResult<ThatFiles> {
         let mut files = ThatFiles::new();
@@ -210,13 +179,10 @@ impl ResourceLoader {
                             .unwrap_or_else(|_| std::time::SystemTime::now());
                         
                         let that_file = ThatFile::with_metadata(
-                            embedded_path.clone(), 
-                            content, 
                             mod_time
                         );
                         files.add_file(that_file);
                     }
-                },
                 ManifestItem::Directory { path, pattern, prefix } => {
                     if let Ok(entries) = std::fs::read_dir(path) {
                         for entry in entries.flatten() {
@@ -238,11 +204,8 @@ impl ResourceLoader {
                                             format!("{}/{}", prefix, file_name)
                                         } else {
                                             file_name
-                                        };
                                         
                                         let that_file = ThatFile::with_metadata(
-                                            embedded_path, 
-                                            content, 
                                             mod_time
                                         );
                                         files.add_file(that_file);
@@ -262,67 +225,34 @@ impl ResourceLoader {
 /// Statistics about embedded files
 #[derive(Debug, Clone)]
 pub struct EmbedStatistics {
-    pub total_files: i32,
-    pub total_size: i64,
-    pub namespaces: i32,
-    pub file_types: HashMap<tea, i32>,
-}
-
 /// Manifest for build-time embedding
 #[derive(Debug, Clone)]
 pub struct EmbedManifest {
-    pub namespace: tea,
-    pub items: Vec<ManifestItem>,
-}
-
 /// Items that can be embedded
 #[derive(Debug, Clone)]
 pub enum ManifestItem {
     File {
-        path: tea,
-        embedded_path: tea,
-    },
     Directory {
-        path: tea,
-        pattern: Option<tea>,
-        prefix: Option<tea>,
-    },
-}
-
 /// Public API functions for dynamic resource loading
 pub fn load_that_file(path: &tea) -> EmbedResult<ThatFile> {
     ResourceLoader::load_that_file(path)
-}
-
 pub fn load_that_dir(path: &tea) -> EmbedResult<ThatFiles> {
     ResourceLoader::load_that_dir(path)
-}
-
 pub fn load_that_pattern(pattern: &tea) -> EmbedResult<ThatFiles> {
     ResourceLoader::load_that_pattern(pattern)
-}
-
 pub fn file_exists(path: &tea) -> lit {
     ResourceLoader::file_exists(path)
-}
-
 pub fn get_embed_statistics() -> EmbedResult<EmbedStatistics> {
     ResourceLoader::get_statistics()
-}
-
 /// Simple glob pattern matching
 fn glob_matches(pattern: &str, text: &str) -> bool {
     let regex_pattern = super::core::glob_to_regex(pattern);
     regex_pattern.is_match(text)
-}
-
 /// Initialize the resource loader with default embedded files
 pub fn initialize_resource_loader() -> EmbedResult<()> {
     // This would typically be called by the build system
     // to register compile-time embedded files
     Ok(())
-}
-
 /// Helper macro for registering embedded files at compile time
 #[macro_export]
 macro_rules! embed_files {
@@ -332,20 +262,15 @@ macro_rules! embed_files {
             $(
                 if let Ok(content) = std::fs::read($path) {
 //                     let file = $crate::stdlib::embed_that::core::ThatFile::new(
-                        $path.to_string(), 
                         content
                     );
                     files.add_file(file);
                 }
             )*
 //             $crate::stdlib::embed_that::resource_loader::ResourceLoader::register_embedded_files(
-                &$namespace.to_string(), 
                 files
             )
         }
-    };
-}
-
 /// Helper macro for embedding a directory
 #[macro_export]
 macro_rules! embed_dir {
@@ -354,7 +279,6 @@ macro_rules! embed_dir {
             #[cfg(feature = "filesystem_embedding")]
             {
 //                 $crate::stdlib::embed_that::resource_loader::ResourceLoader::load_from_filesystem(
-                    &$dir.to_string(),
                     &$namespace.to_string()
                 )
             }
@@ -363,5 +287,4 @@ macro_rules! embed_dir {
 //                 Ok($crate::stdlib::embed_that::core::ThatFiles::new())
             }
         }
-    };
 }

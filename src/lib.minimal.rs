@@ -22,8 +22,6 @@ pub mod memory {
     // Disable heavy GC features
     // pub mod goroutine_gc;
     // pub mod enhanced_gc;
-}
-
 // Basic runtime - no advanced features
 pub mod runtime {
     pub mod stack;
@@ -33,8 +31,6 @@ pub mod runtime {
     // pub mod debug_runtime;
     // pub mod process;
     // pub mod panic_system;
-}
-
 // Basic execution engine
 pub mod execution;
 
@@ -46,8 +42,6 @@ use crate::error::CursedError;
 
 /// Prelude module for minimal imports
 pub mod prelude {
-}
-
 /// Library version information
 pub const VERSION: &str = env!("CARGO_PKG_VERSION");
 pub const NAME: &str = env!("CARGO_PKG_NAME");
@@ -60,8 +54,6 @@ pub fn init() {
     tracing_subscriber::fmt()
         .with_env_filter("cursed=info")
         .init();
-}
-
 /// Compile and execute CURSED source code (minimal version)
 pub fn run(source: &str) -> crate::error::Result<()> {
     let mut execution_engine = execution::CursedExecutionEngine::new()?;
@@ -70,12 +62,7 @@ pub fn run(source: &str) -> crate::error::Result<()> {
     // Print the result for user feedback
     match result {
         execution::CursedValue::Nil => {}, // Don't print nil results
-        _ => println!("{}", execution_engine.get_value_manager().format_value(&result)),
-    }
-    
     Ok(())
-}
-
 /// Compile and execute CURSED source file (minimal version)
 pub fn run_file(path: &str) -> crate::error::Result<()> {
     let mut execution_engine = execution::CursedExecutionEngine::new()?;
@@ -84,12 +71,7 @@ pub fn run_file(path: &str) -> crate::error::Result<()> {
     // Print the result for user feedback
     match result {
         execution::CursedValue::Nil => {}, // Don't print nil results
-        _ => println!("{}", execution_engine.get_value_manager().format_value(&result)),
-    }
-    
     Ok(())
-}
-
 /// Compile CURSED source to LLVM IR (minimal version)
 pub fn compile_to_ir(source: &str) -> crate::error::Result<String> {
     tracing::info!("Compiling CURSED source to LLVM IR (minimal build)");
@@ -104,8 +86,6 @@ pub fn compile_to_ir(source: &str) -> crate::error::Result<String> {
     
     tracing::debug!("Generated minimal LLVM IR:\n{}", ir);
     Ok(ir)
-}
-
 /// Compile CURSED source to LLVM IR with optimization level
 pub fn compile_to_ir_with_optimization(source: &str, optimization_level: Option<&str>) -> crate::error::Result<String> {
     tracing::info!("Compiling CURSED source to LLVM IR with optimization (minimal build)");
@@ -115,22 +95,15 @@ pub fn compile_to_ir_with_optimization(source: &str, optimization_level: Option<
     // Configure basic optimization level if specified
     if let Some(level_str) = optimization_level {
         match level_str {
-            "O0" => codegen.enable_debug_optimizations()?,
-            "O1" | "O2" | "O3" => codegen.enable_release_optimizations()?,
-            _ => codegen.enable_debug_optimizations()?,
         }
         tracing::info!("Applied basic optimization level: {}", level_str);
     } else {
         codegen.enable_debug_optimizations()?;
-    }
-    
     // Compile and return IR
     let ir = codegen.compile(source)?;
     
     tracing::debug!("Generated optimized LLVM IR (minimal):\n{}", ir);
     Ok(ir)
-}
-
 /// Check CURSED source for errors without executing (minimal version)
 pub fn check(source: &str) -> crate::error::Result<()> {
     tracing::info!("Checking CURSED source for errors (minimal build)");
@@ -145,8 +118,6 @@ pub fn check(source: &str) -> crate::error::Result<()> {
     
     tracing::info!("CURSED source check completed successfully (minimal)");
     Ok(())
-}
-
 /// Format CURSED source code (minimal version)
 pub fn format(source: &str) -> crate::error::Result<String> {
     tracing::info!("Formatting CURSED source code (minimal build)");
@@ -162,8 +133,6 @@ pub fn format(source: &str) -> crate::error::Result<String> {
     let errors = parser.errors();
     if !errors.is_empty() {
         return Err(CursedError::Parse(format!("Cannot format source with parse errors: {}", errors.join(", "))));
-    }
-    
     // Basic formatting - for now just return the original source
     // TODO: Implement minimal formatter
     tracing::debug!("Basic formatting completed (minimal build)");

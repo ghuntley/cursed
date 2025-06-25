@@ -10,79 +10,36 @@ use std::time::{Duration, Instant};
 use std::thread;
 use std::io::{Read, Write};
 
-// use crate::stdlib::ipc::{
-    IpcResult, IpcError, IpcTimeout, ProcessId,
-    NamedPipe, MessageQueue, Message, MessagePriority,
+// Placeholder imports disabled
     timeout_error, communication_error, resource_exhausted
-};
+// };
 
 /// High-level IPC channel that can use different underlying mechanisms
 #[derive(Debug)]
 pub struct IpcChannel {
-    inner: ChannelInner,
-    config: ChannelConfig,
-    statistics: Arc<Mutex<ChannelStatistics>>,
-}
-
 #[derive(Debug)]
 enum ChannelInner {
-    Pipe(NamedPipe),
-    MessageQueue(MessageQueue),
-    InMemory(Arc<Mutex<InMemoryChannel>>),
-}
-
 /// Configuration for IPC channels
 #[derive(Debug, Clone)]
 pub struct ChannelConfig {
     /// Channel name/identifier
-    pub name: String,
     /// Maximum capacity (for buffered channels)
-    pub capacity: Option<usize>,
     /// Default timeout for operations
-    pub default_timeout: Duration,
     /// Whether to create the channel if it doesn't exist
-    pub create_if_missing: bool,
     /// Channel type preference
-    pub channel_type: ChannelType,
-}
-
 /// Channel type preferences
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum ChannelType {
     /// Prefer named pipes (fastest, local only)
-    Pipe,
     /// Prefer message queues (structured, persistent)
-    MessageQueue,
     /// Use in-memory channels (testing, single process)
-    InMemory,
     /// Automatically select best option
-    Auto,
-}
-
 /// In-memory channel for testing and single-process scenarios
 #[derive(Debug)]
 struct InMemoryChannel {
-    queue: VecDeque<Vec<u8>>,
-    capacity: Option<usize>,
-    readers_waiting: usize,
-    writers_waiting: usize,
-    closed: bool,
-}
-
 /// Channel statistics
 #[derive(Debug, Clone)]
 pub struct ChannelStatistics {
-    pub messages_sent: u64,
-    pub messages_received: u64,
-    pub bytes_sent: u64,
-    pub bytes_received: u64,
-    pub send_timeouts: u64,
-    pub receive_timeouts: u64,
-    pub errors: u64,
-    pub average_send_time_micros: u64,
-    pub average_receive_time_micros: u64,
-}
-
 impl IpcChannel {
     /// Create a new IPC channel
     pub fn create(config: ChannelConfig) -> IpcResult<Self> {
@@ -97,12 +54,6 @@ impl IpcChannel {
             }
             ChannelType::InMemory => {
                 let mem_channel = InMemoryChannel {
-                    queue: VecDeque::new(),
-                    capacity: config.capacity,
-                    readers_waiting: 0,
-                    writers_waiting: 0,
-                    closed: false,
-                };
                 ChannelInner::InMemory(Arc::new(Mutex::new(mem_channel)))
             }
             ChannelType::Auto => {
@@ -113,24 +64,12 @@ impl IpcChannel {
                     ChannelInner::MessageQueue(mq)
                 } else {
                     let mem_channel = InMemoryChannel {
-                        queue: VecDeque::new(),
-                        capacity: config.capacity,
-                        readers_waiting: 0,
-                        writers_waiting: 0,
-                        closed: false,
-                    };
                     ChannelInner::InMemory(Arc::new(Mutex::new(mem_channel)))
                 }
             }
-        };
 
         Ok(Self {
-            inner,
-            config,
-            statistics: Arc::new(Mutex::new(ChannelStatistics::new())),
         })
-    }
-
     /// Open an existing IPC channel
     pub fn open(config: ChannelConfig) -> IpcResult<Self> {
         let inner = match config.channel_type {
@@ -155,20 +94,12 @@ impl IpcChannel {
                     return Err(communication_error("No suitable channel found"));
                 }
             }
-        };
 
         Ok(Self {
-            inner,
-            config,
-            statistics: Arc::new(Mutex::new(ChannelStatistics::new())),
         })
-    }
-
     /// Send data through the channel
     pub fn send(&self, data: &[u8]) -> IpcResult<()> {
         self.send_with_timeout(data, self.config.default_timeout)
-    }
-
     /// Send data with a specific timeout
     pub fn send_with_timeout(&self, data: &[u8], timeout: Duration) -> IpcResult<()> {
         let start_time = Instant::now();
@@ -188,7 +119,6 @@ impl IpcChannel {
             ChannelInner::InMemory(mem_channel) => {
                 self.send_in_memory(mem_channel, data, timeout)
             }
-        };
 
         // Update statistics
         let elapsed = start_time.elapsed();
@@ -205,16 +135,10 @@ impl IpcChannel {
                     stats.send_timeouts += 1;
                 }
             }
-        }
-
         result
-    }
-
     /// Receive data from the channel
     pub fn receive(&self) -> IpcResult<Vec<u8>> {
         self.receive_with_timeout(self.config.default_timeout)
-    }
-
     /// Receive data with a specific timeout
     pub fn receive_with_timeout(&self, timeout: Duration) -> IpcResult<Vec<u8>> {
         let start_time = Instant::now();
@@ -239,7 +163,6 @@ impl IpcChannel {
             ChannelInner::InMemory(mem_channel) => {
                 self.receive_in_memory(mem_channel, timeout)
             }
-        };
 
         // Update statistics
         let elapsed = start_time.elapsed();
@@ -256,64 +179,41 @@ impl IpcChannel {
                     stats.receive_timeouts += 1;
                 }
             }
-        }
-
         result
-    }
-
     /// Try to send data without blocking
     pub fn try_send(&self, data: &[u8]) -> IpcResult<bool> {
         match self.send_with_timeout(data, Duration::from_millis(0)) {
-            Ok(()) => Ok(true),
-            Err(IpcError::TimeoutError { .. }) => Ok(false),
-            Err(e) => Err(e),
         }
     }
 
     /// Try to receive data without blocking
     pub fn try_receive(&self) -> IpcResult<Option<Vec<u8>>> {
         match self.receive_with_timeout(Duration::from_millis(0)) {
-            Ok(data) => Ok(Some(data)),
-            Err(IpcError::TimeoutError { .. }) => Ok(None),
-            Err(e) => Err(e),
         }
     }
 
     /// Close the channel
     pub fn close(&self) -> IpcResult<()> {
         match &self.inner {
-            ChannelInner::Pipe(pipe) => pipe.close(),
-            ChannelInner::MessageQueue(mq) => mq.close(),
             ChannelInner::InMemory(mem_channel) => {
                 let mut channel = mem_channel.lock().unwrap();
                 channel.closed = true;
                 Ok(())
             }
         }
-    }
-
     /// Get channel statistics
     pub fn get_statistics(&self) -> ChannelStatistics {
         self.statistics.lock().unwrap().clone()
-    }
-
     /// Check if the channel is connected/available
     pub fn is_connected(&self) -> bool {
         match &self.inner {
-            ChannelInner::Pipe(pipe) => pipe.is_connected(),
-            ChannelInner::MessageQueue(mq) => mq.is_available(),
             ChannelInner::InMemory(mem_channel) => {
                 !mem_channel.lock().unwrap().closed
             }
         }
-    }
-
     /// Get the actual channel type being used
     pub fn get_channel_type(&self) -> ChannelType {
         match &self.inner {
-            ChannelInner::Pipe(_) => ChannelType::Pipe,
-            ChannelInner::MessageQueue(_) => ChannelType::MessageQueue,
-            ChannelInner::InMemory(_) => ChannelType::InMemory,
         }
     }
 
@@ -328,8 +228,6 @@ impl IpcChannel {
                 
                 if channel.closed {
                     return Err(communication_error("Channel is closed"));
-                }
-                
                 // Check capacity
                 if let Some(capacity) = channel.capacity {
                     if channel.queue.len() >= capacity {
@@ -349,8 +247,6 @@ impl IpcChannel {
                 return Ok(());
             }
         }
-    }
-    
     fn receive_in_memory(&self, mem_channel: &Arc<Mutex<InMemoryChannel>>, timeout: Duration) -> IpcResult<Vec<u8>> {
         let start_time = Instant::now();
         
@@ -360,16 +256,10 @@ impl IpcChannel {
                 
                 if let Some(data) = channel.queue.pop_front() {
                     return Ok(data);
-                }
-                
                 if channel.closed {
                     return Err(communication_error("Channel is closed"));
-                }
-                
                 if start_time.elapsed() >= timeout {
                     return Err(timeout_error("Receive timeout"));
-                }
-                
                 channel.readers_waiting += 1;
                 // In a real implementation, you'd use a condition variable here
                 drop(channel);
@@ -383,11 +273,6 @@ impl ChannelConfig {
     /// Create a new channel configuration
     pub fn new(name: &str) -> Self {
         Self {
-            name: name.to_string(),
-            capacity: None,
-            default_timeout: Duration::from_secs(30),
-            create_if_missing: true,
-            channel_type: ChannelType::Auto,
         }
     }
 
@@ -395,20 +280,14 @@ impl ChannelConfig {
     pub fn capacity(mut self, capacity: usize) -> Self {
         self.capacity = Some(capacity);
         self
-    }
-
     /// Set the default timeout
     pub fn timeout(mut self, timeout: Duration) -> Self {
         self.default_timeout = timeout;
         self
-    }
-
     /// Set whether to create the channel if missing
     pub fn create_if_missing(mut self, create: bool) -> Self {
         self.create_if_missing = create;
         self
-    }
-
     /// Set the preferred channel type
     pub fn channel_type(mut self, channel_type: ChannelType) -> Self {
         self.channel_type = channel_type;
@@ -419,15 +298,6 @@ impl ChannelConfig {
 impl ChannelStatistics {
     fn new() -> Self {
         Self {
-            messages_sent: 0,
-            messages_received: 0,
-            bytes_sent: 0,
-            bytes_received: 0,
-            send_timeouts: 0,
-            receive_timeouts: 0,
-            errors: 0,
-            average_send_time_micros: 0,
-            average_receive_time_micros: 0,
         }
     }
 
@@ -450,44 +320,28 @@ impl ChannelStatistics {
                 (self.average_receive_time_micros + time_micros) / 2;
         }
     }
-}
-
 /// Channel pair for bidirectional communication
 #[derive(Debug)]
 pub struct ChannelPair {
-    pub sender: IpcChannel,
-    pub receiver: IpcChannel,
-}
-
 impl ChannelPair {
     /// Create a new channel pair
     pub fn create(base_name: &str, config: ChannelConfig) -> IpcResult<Self> {
         let sender_config = ChannelConfig {
-            name: format!("{}_send", base_name),
             ..config.clone()
-        };
         
         let receiver_config = ChannelConfig {
-            name: format!("{}_recv", base_name),
             ..config
-        };
 
         let sender = IpcChannel::create(sender_config)?;
         let receiver = IpcChannel::create(receiver_config)?;
 
         Ok(Self { sender, receiver })
-    }
-
     /// Send data through the sender channel
     pub fn send(&self, data: &[u8]) -> IpcResult<()> {
         self.sender.send(data)
-    }
-
     /// Receive data from the receiver channel
     pub fn receive(&self) -> IpcResult<Vec<u8>> {
         self.receiver.receive()
-    }
-
     /// Close both channels
     pub fn close(&self) -> IpcResult<()> {
         self.sender.close()?;

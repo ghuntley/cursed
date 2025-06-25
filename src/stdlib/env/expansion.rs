@@ -26,8 +26,6 @@ use super::error::{EnvError, EnvResult, expansion_error};
 /// ```
 pub fn expand_env_vars(input: &str) -> EnvResult<String> {
     expand_env_vars_with_custom_resolver(input, &get_env)
-}
-
 /// Expand environment variables with a custom default map
 /// 
 /// Uses provided defaults when variables are not found in environment.
@@ -43,14 +41,11 @@ pub fn expand_env_vars(input: &str) -> EnvResult<String> {
 /// let expanded = expand_env_vars_with_defaults("Hello $USER", &defaults)?;
 /// ```
 pub fn expand_env_vars_with_defaults(
-    input: &str, 
     defaults: &HashMap<String, String>
 ) -> EnvResult<String> {
     expand_env_vars_with_custom_resolver(input, &|key| {
         get_env(key).or_else(|| defaults.get(key).cloned())
     })
-}
-
 /// Check if a string contains environment variable references
 /// 
 /// Returns true if the string contains `$VAR` or `${VAR}` patterns.
@@ -65,8 +60,6 @@ pub fn expand_env_vars_with_defaults(
 /// ```
 pub fn has_env_vars(input: &str) -> bool {
     input.contains('$')
-}
-
 /// Validate environment variable syntax in a string
 /// 
 /// Checks for proper syntax without performing expansion.
@@ -96,12 +89,8 @@ pub fn validate_env_syntax(input: &str) -> EnvResult<()> {
                             break;
                         }
                         var_content.push(ch);
-                    }
-                    
                     if !found_closing {
                         return Err(expansion_error(input, "Unclosed ${} variable reference"));
-                    }
-                    
                     if var_content.is_empty() {
                         return Err(expansion_error(input, "Empty variable name in ${}"));
                     }
@@ -124,8 +113,6 @@ pub fn validate_env_syntax(input: &str) -> EnvResult<()> {
     }
     
     Ok(())
-}
-
 /// Extract all environment variable names from a string
 /// 
 /// Returns a vector of unique variable names found in the string.
@@ -160,8 +147,6 @@ pub fn extract_env_vars(input: &str) -> EnvResult<Vec<String>> {
                             break;
                         }
                         var_name.push(ch);
-                    }
-                    
                     if !var_name.is_empty() {
                         vars.insert(var_name);
                     }
@@ -180,11 +165,7 @@ pub fn extract_env_vars(input: &str) -> EnvResult<Vec<String>> {
                 _ => {}
             }
         }
-    }
-    
     Ok(vars.into_iter().collect())
-}
-
 /// Substitute environment variables with explicit replacements
 /// 
 /// Replaces environment variables with values from the provided map.
@@ -202,16 +183,12 @@ pub fn extract_env_vars(input: &str) -> EnvResult<Vec<String>> {
 /// // Result: "Hello bob"
 /// ```
 pub fn substitute_env_vars(
-    input: &str, 
     replacements: &HashMap<String, String>
 ) -> EnvResult<String> {
     expand_env_vars_with_custom_resolver(input, &|key| replacements.get(key).cloned())
-}
-
 /// Core expansion function with custom variable resolver
 fn expand_env_vars_with_custom_resolver<F>(input: &str, resolver: &F) -> EnvResult<String>
 where
-    F: Fn(&str) -> Option<String>,
 {
     validate_env_syntax(input)?;
     
@@ -232,7 +209,6 @@ where
                         result.push_str(&value);
                     } else {
                         return Err(expansion_error(
-                            input,
                             &format!("Environment variable '{}' not found", var_name)
                         ));
                     }
@@ -247,15 +223,11 @@ where
     }
     
     Ok(result)
-}
-
 /// Expand a braced variable like ${VAR} or ${VAR:-default}
 fn expand_braced_variable<F>(
-    chars: &mut std::iter::Peekable<std::str::Chars>,
     resolver: &F
 ) -> EnvResult<String>
 where
-    F: Fn(&str) -> Option<String>,
 {
     let mut content = String::new();
     
@@ -264,8 +236,6 @@ where
             break;
         }
         content.push(ch);
-    }
-    
     // Handle expansion modifiers
     if let Some(colon_pos) = content.find(':') {
         let var_name = &content[..colon_pos];
@@ -286,7 +256,6 @@ where
                     Ok(String::new())
                 }
             }
-            _ => Err(expansion_error(&content, "Unsupported expansion modifier")),
         }
     } else {
         // Simple ${VAR} format
@@ -296,8 +265,6 @@ where
             Err(expansion_error(&content, &format!("Environment variable '{}' not found", content)))
         }
     }
-}
-
 /// Consume a simple variable name like $VAR
 fn consume_simple_variable(chars: &mut std::iter::Peekable<std::str::Chars>) -> String {
     let mut var_name = String::new();
@@ -311,8 +278,6 @@ fn consume_simple_variable(chars: &mut std::iter::Peekable<std::str::Chars>) -> 
     }
     
     var_name
-}
-
 /// Escape special characters in environment variable values
 /// 
 /// Escapes characters that have special meaning in environment variable expansion.
@@ -327,15 +292,8 @@ fn consume_simple_variable(chars: &mut std::iter::Peekable<std::str::Chars>) -> 
 pub fn escape_env_value(value: &str) -> String {
     value.chars()
         .map(|c| match c {
-            '$' => "\\$".to_string(),
-            '{' => "\\{".to_string(),
-            '}' => "\\}".to_string(),
-            '\\' => "\\\\".to_string(),
-            _ => c.to_string(),
         })
         .collect()
-}
-
 /// Unescape special characters in environment variable values
 /// 
 /// Unescapes characters that were escaped for environment variable storage.
@@ -354,15 +312,10 @@ pub fn unescape_env_value(value: &str) -> EnvResult<String> {
     while let Some(ch) = chars.next() {
         if ch == '\\' {
             match chars.next() {
-                Some('$') => result.push('$'),
-                Some('{') => result.push('{'),
-                Some('}') => result.push('}'),
-                Some('\\') => result.push('\\'),
                 Some(other) => {
                     result.push('\\');
                     result.push(other);
                 }
-                None => result.push('\\'),
             }
         } else {
             result.push(ch);
@@ -370,5 +323,3 @@ pub fn unescape_env_value(value: &str) -> EnvResult<String> {
     }
     
     Ok(result)
-}
-

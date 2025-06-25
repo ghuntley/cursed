@@ -30,30 +30,20 @@ use std::io::{Read, Write};
 use std::ptr;
 #[cfg(windows)]
 use winapi::um::{
-    namedpipeapi::*,
-    winbase::*,
-    fileapi::*,
-    handleapi::*,
-    winnt::*,
-    errhandlingapi::GetLastError,
-    synchapi::*,
-    processthreadsapi::GetCurrentProcessId,
-};
+// };
 
 #[cfg(windows)]
 use winapi::shared::{
-    winerror::*,
-    minwindef::{BOOL, DWORD, FALSE, TRUE},
-};
+// };
 
 #[cfg(windows)]
 use std::ffi::OsStr;
 #[cfg(windows)]
 use std::os::windows::ffi::OsStrExt;
 
-// use crate::stdlib::process::error::{
+// Placeholder imports disabled
     ProcessError, ProcessResult, communication_error, timeout_error, system_error
-};
+// };
 
 /// Real IPC manager for process-IPC coordination
 pub type RealIpcManager = IpcChannelManager;
@@ -65,222 +55,103 @@ pub type IpcChannel = RealIpcChannel;
 #[derive(Debug, Clone, PartialEq)]
 pub enum IpcChannelType {
     /// Named pipe (Unix domain socket on Unix, named pipe on Windows)
-    NamedPipe,
     /// Shared memory segment
-    SharedMemory,
     /// Message queue
-    MessageQueue,
     /// Anonymous pipe
-    Pipe,
     /// TCP socket (for network IPC)
-    TcpSocket,
-}
-
 /// IPC message with metadata
 #[derive(Debug, Clone)]
 pub struct IpcMessage {
     /// Message ID
-    pub id: u64,
     /// Sender process ID
-    pub sender_pid: u32,
     /// Message data
-    pub data: Vec<u8>,
     /// Message priority
-    pub priority: MessagePriority,
     /// Timestamp
-    pub timestamp: Instant,
     /// Message type/topic
-    pub message_type: String,
     /// Delivery mode
-    pub delivery_mode: DeliveryMode,
-}
-
 /// Message priority levels
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
 pub enum MessagePriority {
-    Low,
-    Normal,
-    High,
-    Critical,
-}
-
 /// Message delivery modes
 #[derive(Debug, Clone, PartialEq)]
 pub enum DeliveryMode {
     /// Best effort delivery
-    BestEffort,
     /// Guaranteed delivery (requires acknowledgment)
-    Guaranteed,
     /// Ordered delivery (FIFO)
-    Ordered,
-}
-
 /// IPC channel configuration
 #[derive(Debug, Clone)]
 pub struct IpcChannelConfig {
     /// Channel name/identifier
-    pub name: String,
     /// Channel type
-    pub channel_type: IpcChannelType,
     /// Maximum message size
-    pub max_message_size: usize,
     /// Channel buffer size
-    pub buffer_size: usize,
     /// Enable compression for large messages
-    pub enable_compression: bool,
     /// Message timeout
-    pub message_timeout: Duration,
     /// Security settings
-    pub security: IpcSecurityConfig,
     /// Persistence settings
-    pub persistence: IpcPersistenceConfig,
-}
-
 impl Default for IpcChannelConfig {
     fn default() -> Self {
         Self {
-            name: String::new(),
-            channel_type: IpcChannelType::NamedPipe,
             max_message_size: 1024 * 1024, // 1MB
             buffer_size: 64 * 1024, // 64KB
-            enable_compression: false,
-            message_timeout: Duration::from_secs(30),
-            security: IpcSecurityConfig::default(),
-            persistence: IpcPersistenceConfig::default(),
         }
     }
-}
-
 /// IPC security configuration
 #[derive(Debug, Clone)]
 pub struct IpcSecurityConfig {
     /// Enable authentication
-    pub enable_auth: bool,
     /// Enable encryption
-    pub enable_encryption: bool,
     /// Allowed process IDs (if empty, allow all)
-    pub allowed_pids: Vec<u32>,
     /// Allowed user IDs (Unix only)
     #[cfg(unix)]
-    pub allowed_uids: Vec<u32>,
     /// Access permissions
-    pub permissions: u32,
-}
-
 impl Default for IpcSecurityConfig {
     fn default() -> Self {
         Self {
-            enable_auth: false,
-            enable_encryption: false,
-            allowed_pids: Vec::new(),
             #[cfg(unix)]
-            allowed_uids: Vec::new(),
             permissions: 0o600, // Owner read/write only
         }
     }
-}
-
 /// IPC persistence configuration
 #[derive(Debug, Clone)]
 pub struct IpcPersistenceConfig {
     /// Enable message persistence
-    pub enable_persistence: bool,
     /// Maximum persisted messages
-    pub max_persisted_messages: usize,
     /// Persistence directory
-    pub persistence_dir: Option<PathBuf>,
     /// Auto-cleanup old messages
-    pub auto_cleanup: bool,
     /// Message TTL
-    pub message_ttl: Duration,
-}
-
 impl Default for IpcPersistenceConfig {
     fn default() -> Self {
         Self {
-            enable_persistence: false,
-            max_persisted_messages: 1000,
-            persistence_dir: None,
-            auto_cleanup: true,
             message_ttl: Duration::from_secs(3600), // 1 hour
         }
     }
-}
-
 /// Real IPC channel implementation
 pub struct RealIpcChannel {
     /// Channel configuration
-    config: IpcChannelConfig,
     /// Channel state
-    state: Arc<RwLock<ChannelState>>,
     /// Message buffer
-    message_buffer: Arc<Mutex<VecDeque<IpcMessage>>>,
     /// Send notification
-    send_notify: Arc<Condvar>,
     /// Receive notification
-    recv_notify: Arc<Condvar>,
     /// Channel statistics
-    stats: Arc<Mutex<ChannelStats>>,
     /// Platform-specific handle
-    platform_handle: PlatformHandle,
     /// Background worker thread
-    worker_thread: Option<thread::JoinHandle<()>>,
     /// Shutdown flag
-    shutdown: Arc<Mutex<bool>>,
-}
-
 /// Channel state enumeration
 #[derive(Debug, Clone, PartialEq)]
 pub enum ChannelState {
-    Created,
-    Binding,
-    Bound,
-    Connected,
-    Disconnected,
-    CursedError(String),
-}
-
 /// Channel statistics
 #[derive(Debug, Default)]
 pub struct ChannelStats {
-    pub messages_sent: u64,
-    pub messages_received: u64,
-    pub bytes_sent: u64,
-    pub bytes_received: u64,
-    pub errors: u64,
-    pub connections: u64,
-    pub last_activity: Option<Instant>,
-}
-
 /// Platform-specific handle wrapper
 pub enum PlatformHandle {
     #[cfg(unix)]
     UnixSocket {
-        listener: Option<UnixListener>,
-        stream: Option<UnixStream>,
-        path: PathBuf,
-    },
     #[cfg(windows)]
     NamedPipe {
-        server_handle: Option<RawHandle>,
-        client_handle: Option<RawHandle>,
-        name: String,
-        is_server: bool,
-        overlapped: bool,
-    },
     Tcp {
-        addr: String,
-        port: u16,
-    },
     Memory {
-        segment_id: String,
-        size: usize,
-    },
     Queue {
-        queue_id: String,
-    },
-}
-
 impl fmt::Debug for PlatformHandle {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
@@ -311,25 +182,12 @@ impl RealIpcChannel {
         let platform_handle = Self::create_platform_handle(&config)?;
         
         Ok(Self {
-            config,
-            state: Arc::new(RwLock::new(ChannelState::Created)),
-            message_buffer: Arc::new(Mutex::new(VecDeque::new())),
-            send_notify: Arc::new(Condvar::new()),
-            recv_notify: Arc::new(Condvar::new()),
-            stats: Arc::new(Mutex::new(ChannelStats::default())),
-            platform_handle,
-            worker_thread: None,
-            shutdown: Arc::new(Mutex::new(false)),
         })
-    }
-
     /// Bind the channel for listening
     pub fn bind(&mut self) -> ProcessResult<()> {
         {
             let mut state = self.state.write().unwrap();
             *state = ChannelState::Binding;
-        }
-
         match &mut self.platform_handle {
             #[cfg(unix)]
             PlatformHandle::UnixSocket { listener, path, .. } => {
@@ -352,12 +210,6 @@ impl RealIpcChannel {
 
                 unsafe {
                     let handle = CreateNamedPipeW(
-                        wide_name.as_ptr(),
-                        PIPE_ACCESS_DUPLEX | FILE_FLAG_OVERLAPPED,
-                        PIPE_TYPE_MESSAGE | PIPE_READMODE_MESSAGE | PIPE_WAIT,
-                        PIPE_UNLIMITED_INSTANCES,
-                        self.config.buffer_size as DWORD,
-                        self.config.buffer_size as DWORD,
                         0, // Default timeout
                         ptr::null_mut(), // Default security attributes
                     );
@@ -365,11 +217,8 @@ impl RealIpcChannel {
                     if handle == INVALID_HANDLE_VALUE {
                         let error = GetLastError();
                         return Err(system_error(
-                            "create_named_pipe",
                             &format!("Failed to create named pipe: error {}", error)
                         ));
-                    }
-
                     *server_handle = Some(handle as RawHandle);
                     *overlapped = true;
                 }
@@ -386,14 +235,10 @@ impl RealIpcChannel {
         {
             let mut state = self.state.write().unwrap();
             *state = ChannelState::Bound;
-        }
-
         // Start worker thread for handling connections
         self.start_worker_thread()?;
 
         Ok(())
-    }
-
     /// Connect to an existing channel
     pub fn connect(&mut self) -> ProcessResult<()> {
         match &mut self.platform_handle {
@@ -418,21 +263,14 @@ impl RealIpcChannel {
                     let mut retries = 10;
                     loop {
                         let handle = CreateFileW(
-                            wide_name.as_ptr(),
-                            GENERIC_READ | GENERIC_WRITE,
                             0, // No sharing
                             ptr::null_mut(), // Default security attributes
-                            OPEN_EXISTING,
-                            FILE_ATTRIBUTE_NORMAL | FILE_FLAG_OVERLAPPED,
-                            ptr::null_mut(),
                         );
 
                         if handle != INVALID_HANDLE_VALUE {
                             *client_handle = Some(handle as RawHandle);
                             *overlapped = true;
                             break;
-                        }
-
                         let error = GetLastError();
                         if error == ERROR_PIPE_BUSY && retries > 0 {
                             // Wait for pipe to become available
@@ -443,7 +281,6 @@ impl RealIpcChannel {
                             }
                         } else {
                             return Err(communication_error(
-                                "connect_named_pipe",
                                 &format!("Failed to connect to named pipe: error {}", error)
                             ));
                         }
@@ -452,14 +289,9 @@ impl RealIpcChannel {
                     // Set message mode
                     let mut mode = PIPE_READMODE_MESSAGE;
                     if SetNamedPipeHandleState(
-                        *client_handle.as_ref().unwrap() as *mut _,
-                        &mut mode,
-                        ptr::null_mut(),
-                        ptr::null_mut(),
                     ) == 0 {
                         let error = GetLastError();
                         return Err(communication_error(
-                            "set_pipe_mode",
                             &format!("Failed to set pipe mode: error {}", error)
                         ));
                     }
@@ -473,11 +305,7 @@ impl RealIpcChannel {
         {
             let mut state = self.state.write().unwrap();
             *state = ChannelState::Connected;
-        }
-
         Ok(())
-    }
-
     /// Send a message through the channel
     pub fn send(&self, message: IpcMessage) -> ProcessResult<()> {
         // Check channel state
@@ -491,8 +319,6 @@ impl RealIpcChannel {
         // Validate message size
         if message.data.len() > self.config.max_message_size {
             return Err(communication_error("send", "Message too large"));
-        }
-
         // Try to send directly through platform-specific mechanism
         match &self.platform_handle {
             #[cfg(windows)]
@@ -501,7 +327,6 @@ impl RealIpcChannel {
                     server_handle.as_ref()
                 } else {
                     client_handle.as_ref()
-                };
 
                 if let Some(handle) = handle {
                     // Send directly through named pipe
@@ -513,8 +338,6 @@ impl RealIpcChannel {
                         stats.messages_sent += 1;
                         stats.bytes_sent += message.data.len() as u64;
                         stats.last_activity = Some(Instant::now());
-                    }
-                    
                     return Ok(());
                 }
             }
@@ -528,19 +351,13 @@ impl RealIpcChannel {
             let mut buffer = self.message_buffer.lock().unwrap();
             buffer.push_back(message);
             self.send_notify.notify_one();
-        }
-
         // Update statistics
         {
             let mut stats = self.stats.lock().unwrap();
             stats.messages_sent += 1;
             stats.bytes_sent += message.data.len() as u64;
             stats.last_activity = Some(Instant::now());
-        }
-
         Ok(())
-    }
-
     /// Receive a message from the channel
     pub fn receive(&self, timeout: Option<Duration>) -> ProcessResult<IpcMessage> {
         let start_time = Instant::now();
@@ -583,28 +400,21 @@ impl RealIpcChannel {
             } else {
                 let buffer = self.message_buffer.lock().unwrap();
                 (self.recv_notify.wait(buffer).unwrap(), std::sync::WaitTimeoutResult::TimedOut(false))
-            };
 
             if wait_result.1.timed_out() {
                 return Err(timeout_error("receive", timeout.unwrap()));
             }
         }
-    }
-
     /// Send a message and wait for response
     pub fn send_and_receive(&self, message: IpcMessage, timeout: Duration) -> ProcessResult<IpcMessage> {
         self.send(message)?;
         self.receive(Some(timeout))
-    }
-
     /// Close the channel
     pub fn close(&mut self) -> ProcessResult<()> {
         // Signal shutdown
         {
             let mut shutdown = self.shutdown.lock().unwrap();
             *shutdown = true;
-        }
-
         // Notify all waiting threads
         self.send_notify.notify_all();
         self.recv_notify.notify_all();
@@ -614,29 +424,19 @@ impl RealIpcChannel {
             handle.join().map_err(|_| 
                 communication_error("close", "Failed to join worker thread")
             )?;
-        }
-
         // Clean up platform-specific resources
         self.cleanup_platform_handle()?;
 
         {
             let mut state = self.state.write().unwrap();
             *state = ChannelState::Disconnected;
-        }
-
         Ok(())
-    }
-
     /// Get channel statistics
     pub fn stats(&self) -> ChannelStats {
         self.stats.lock().unwrap().clone()
-    }
-
     /// Get current channel state
     pub fn state(&self) -> ChannelState {
         self.state.read().unwrap().clone()
-    }
-
     /// Create platform-specific handle
     fn create_platform_handle(config: &IpcChannelConfig) -> ProcessResult<PlatformHandle> {
         match config.channel_type {
@@ -644,39 +444,25 @@ impl RealIpcChannel {
             IpcChannelType::NamedPipe => {
                 let path = PathBuf::from(&config.name);
                 Ok(PlatformHandle::UnixSocket {
-                    listener: None,
-                    stream: None,
-                    path,
                 })
             }
             #[cfg(windows)]
             IpcChannelType::NamedPipe => {
                 Ok(PlatformHandle::NamedPipe {
-                    server_handle: None,
-                    client_handle: None,
-                    name: config.name.clone(),
-                    is_server: false,
-                    overlapped: false,
                 })
             }
             IpcChannelType::SharedMemory => {
                 Ok(PlatformHandle::Memory {
-                    segment_id: config.name.clone(),
-                    size: config.buffer_size,
                 })
             }
             IpcChannelType::MessageQueue => {
                 Ok(PlatformHandle::Queue {
-                    queue_id: config.name.clone(),
                 })
             }
             IpcChannelType::TcpSocket => {
                 Ok(PlatformHandle::Tcp {
-                    addr: "127.0.0.1".to_string(),
-                    port: 0,
                 })
             }
-            _ => Err(system_error("create_handle", "Unsupported channel type")),
         }
     }
 
@@ -695,7 +481,6 @@ impl RealIpcChannel {
                     *server_handle
                 } else {
                     *client_handle
-                };
 
                 if let Some(pipe_handle) = handle {
                     let is_server_mode = *is_server;
@@ -716,14 +501,8 @@ impl RealIpcChannel {
 
         self.worker_thread = Some(handle);
         Ok(())
-    }
-
     /// Worker thread main loop
     fn worker_loop(
-        state: Arc<RwLock<ChannelState>>,
-        message_buffer: Arc<Mutex<VecDeque<IpcMessage>>>,
-        recv_notify: Arc<Condvar>,
-        shutdown: Arc<Mutex<bool>>,
     ) {
         loop {
             // Check for shutdown
@@ -740,14 +519,6 @@ impl RealIpcChannel {
             // In a real implementation, this would read from the actual IPC mechanism
             if fastrand::f32() < 0.01 { // 1% chance to simulate incoming message
                 let message = IpcMessage {
-                    id: fastrand::u64(..),
-                    sender_pid: std::process::id(),
-                    data: b"simulated message".to_vec(),
-                    priority: MessagePriority::Normal,
-                    timestamp: Instant::now(),
-                    message_type: "test".to_string(),
-                    delivery_mode: DeliveryMode::BestEffort,
-                };
 
                 if let Ok(mut buffer) = message_buffer.lock() {
                     buffer.push_back(message);
@@ -760,11 +531,6 @@ impl RealIpcChannel {
     #[cfg(windows)]
     /// Windows-specific named pipe I/O operations
     fn handle_windows_pipe_io(
-        handle: RawHandle,
-        is_server: bool,
-        message_buffer: Arc<Mutex<VecDeque<IpcMessage>>>,
-        recv_notify: Arc<Condvar>,
-        shutdown: Arc<Mutex<bool>>,
     ) {
         use std::mem;
 
@@ -784,16 +550,12 @@ impl RealIpcChannel {
                     if error != ERROR_IO_PENDING && error != ERROR_PIPE_CONNECTED {
                         CloseHandle(event);
                         return;
-                    }
-                    
                     // Wait for connection to complete
                     if error == ERROR_IO_PENDING {
                         WaitForSingleObject(event, INFINITE);
                     }
                 }
                 CloseHandle(event);
-            }
-
             // Main I/O loop
             loop {
                 // Check for shutdown
@@ -814,11 +576,6 @@ impl RealIpcChannel {
                 overlapped.hEvent = event;
 
                 let result = ReadFile(
-                    handle as *mut _,
-                    buffer.as_mut_ptr() as *mut _,
-                    buffer.len() as DWORD,
-                    &mut bytes_read,
-                    &mut overlapped,
                 );
 
                 if result == 0 {
@@ -856,14 +613,7 @@ impl RealIpcChannel {
                     
                     // Create IPC message from received data
                     let message = IpcMessage {
-                        id: fastrand::u64(..),
                         sender_pid: 0, // We don't have sender PID from pipe data
-                        data: buffer,
-                        priority: MessagePriority::Normal,
-                        timestamp: Instant::now(),
-                        message_type: "pipe_message".to_string(),
-                        delivery_mode: DeliveryMode::BestEffort,
-                    };
 
                     if let Ok(mut msg_buffer) = message_buffer.lock() {
                         msg_buffer.push_back(message);
@@ -874,8 +624,6 @@ impl RealIpcChannel {
                 thread::sleep(Duration::from_millis(10));
             }
         }
-    }
-
     #[cfg(windows)]
     /// Send data through Windows named pipe
     fn write_to_windows_pipe(handle: RawHandle, data: &[u8]) -> ProcessResult<()> {
@@ -891,11 +639,6 @@ impl RealIpcChannel {
             overlapped.hEvent = event;
 
             let result = WriteFile(
-                handle as *mut _,
-                data.as_ptr() as *const _,
-                data.len() as DWORD,
-                &mut bytes_written,
-                &mut overlapped,
             );
 
             if result == 0 {
@@ -905,8 +648,6 @@ impl RealIpcChannel {
                     if WaitForSingleObject(event, 5000) == WAIT_TIMEOUT {
                         CloseHandle(event);
                         return Err(timeout_error("write_pipe", Duration::from_secs(5)));
-                    }
-                    
                     if GetOverlappedResult(handle as *mut _, &mut overlapped, &mut bytes_written, FALSE) == 0 {
                         let error = GetLastError();
                         CloseHandle(event);
@@ -922,15 +663,9 @@ impl RealIpcChannel {
 
             if bytes_written != data.len() as DWORD {
                 return Err(system_error("write_pipe", "Partial write"));
-            }
-
             // Flush the pipe
             FlushFileBuffers(handle as *mut _);
-        }
-
         Ok(())
-    }
-
     /// Clean up platform-specific resources
     fn cleanup_platform_handle(&mut self) -> ProcessResult<()> {
         match &mut self.platform_handle {
@@ -965,44 +700,24 @@ impl Drop for RealIpcChannel {
 /// IPC channel manager for coordinating multiple channels
 pub struct IpcChannelManager {
     /// Active channels
-    channels: Arc<RwLock<HashMap<String, Arc<Mutex<RealIpcChannel>>>>>,
     /// Manager configuration
-    config: ManagerConfig,
     /// Cleanup thread
-    cleanup_thread: Option<thread::JoinHandle<()>>,
     /// Active flag
-    active: Arc<Mutex<bool>>,
-}
-
 /// Manager configuration
 #[derive(Debug, Clone)]
 pub struct ManagerConfig {
     /// Maximum number of channels
-    pub max_channels: usize,
     /// Cleanup interval
-    pub cleanup_interval: Duration,
     /// Default channel timeout
-    pub default_timeout: Duration,
-}
-
 impl Default for ManagerConfig {
     fn default() -> Self {
         Self {
-            max_channels: 100,
-            cleanup_interval: Duration::from_secs(60),
-            default_timeout: Duration::from_secs(30),
         }
     }
-}
-
 impl IpcChannelManager {
     /// Create a new channel manager
     pub fn new(config: ManagerConfig) -> Self {
         Self {
-            channels: Arc::new(RwLock::new(HashMap::new())),
-            config,
-            cleanup_thread: None,
-            active: Arc::new(Mutex::new(true)),
         }
     }
 
@@ -1018,15 +733,11 @@ impl IpcChannelManager {
 
         self.cleanup_thread = Some(handle);
         Ok(())
-    }
-
     /// Stop the manager
     pub fn stop(&mut self) -> ProcessResult<()> {
         // Signal shutdown
         if let Ok(mut active) = self.active.lock() {
             *active = false;
-        }
-
         // Close all channels
         if let Ok(mut channels) = self.channels.write() {
             for channel in channels.values() {
@@ -1035,18 +746,12 @@ impl IpcChannelManager {
                 }
             }
             channels.clear();
-        }
-
         // Wait for cleanup thread
         if let Some(handle) = self.cleanup_thread.take() {
             handle.join().map_err(|_| 
                 system_error("stop_manager", "Failed to join cleanup thread")
             )?;
-        }
-
         Ok(())
-    }
-
     /// Create a new channel
     pub fn create_channel(&self, config: IpcChannelConfig) -> ProcessResult<Arc<Mutex<RealIpcChannel>>> {
         // Check channel limit
@@ -1064,17 +769,11 @@ impl IpcChannelManager {
         {
             let mut channels = self.channels.write().unwrap();
             channels.insert(config.name.clone(), channel_arc.clone());
-        }
-
         Ok(channel_arc)
-    }
-
     /// Get an existing channel
     pub fn get_channel(&self, name: &str) -> Option<Arc<Mutex<RealIpcChannel>>> {
         let channels = self.channels.read().unwrap();
         channels.get(name).cloned()
-    }
-
     /// Remove a channel
     pub fn remove_channel(&self, name: &str) -> ProcessResult<()> {
         let mut channels = self.channels.write().unwrap();
@@ -1084,19 +783,12 @@ impl IpcChannelManager {
             }
         }
         Ok(())
-    }
-
     /// List all channel names
     pub fn list_channels(&self) -> Vec<String> {
         let channels = self.channels.read().unwrap();
         channels.keys().cloned().collect()
-    }
-
     /// Cleanup worker thread
     fn cleanup_worker(
-        channels: Arc<RwLock<HashMap<String, Arc<Mutex<RealIpcChannel>>>>>,
-        active: Arc<Mutex<bool>>,
-        cleanup_interval: Duration,
     ) {
         loop {
             thread::sleep(cleanup_interval);
@@ -1118,16 +810,12 @@ impl IpcChannelManager {
                             to_remove.push(name.clone());
                         }
                     }
-                }
-
                 for name in to_remove {
                     channels_map.remove(&name);
                 }
             }
         }
     }
-}
-
 /// Global IPC manager instance
 static mut GLOBAL_IPC_MANAGER: Option<IpcChannelManager> = None;
 static IPC_INIT: std::sync::Once = std::sync::Once::new();
@@ -1150,61 +838,35 @@ pub fn get_ipc_manager() -> &'static mut IpcChannelManager {
 /// Create a named pipe channel
 pub fn create_named_pipe(name: &str) -> ProcessResult<Arc<Mutex<RealIpcChannel>>> {
     let config = IpcChannelConfig {
-        name: name.to_string(),
-        channel_type: IpcChannelType::NamedPipe,
         ..Default::default()
-    };
     
     let manager = get_ipc_manager();
     manager.create_channel(config)
-}
-
 /// Create a shared memory channel
 pub fn create_shared_memory(name: &str, size: usize) -> ProcessResult<Arc<Mutex<RealIpcChannel>>> {
     let config = IpcChannelConfig {
-        name: name.to_string(),
-        channel_type: IpcChannelType::SharedMemory,
-        buffer_size: size,
         ..Default::default()
-    };
     
     let manager = get_ipc_manager();
     manager.create_channel(config)
-}
-
 /// Create a message queue channel
 pub fn create_message_queue(name: &str) -> ProcessResult<Arc<Mutex<RealIpcChannel>>> {
     let config = IpcChannelConfig {
-        name: name.to_string(),
-        channel_type: IpcChannelType::MessageQueue,
         ..Default::default()
-    };
     
     let manager = get_ipc_manager();
     manager.create_channel(config)
-}
-
 /// Send a simple message between processes
 pub fn send_ipc_message(channel_name: &str, data: Vec<u8>) -> ProcessResult<()> {
     let manager = get_ipc_manager();
     if let Some(channel) = manager.get_channel(channel_name) {
         let message = IpcMessage {
-            id: fastrand::u64(..),
-            sender_pid: std::process::id(),
-            data,
-            priority: MessagePriority::Normal,
-            timestamp: Instant::now(),
-            message_type: "default".to_string(),
-            delivery_mode: DeliveryMode::BestEffort,
-        };
         
         if let Ok(ch) = channel.lock() {
             ch.send(message)?;
         }
     }
     Ok(())
-}
-
 /// Receive a simple message from a channel
 pub fn receive_ipc_message(channel_name: &str, timeout: Duration) -> ProcessResult<Vec<u8>> {
     let manager = get_ipc_manager();
@@ -1215,5 +877,3 @@ pub fn receive_ipc_message(channel_name: &str, timeout: Duration) -> ProcessResu
         }
     }
     Err(communication_error("receive_ipc_message", "Channel not found"))
-}
-

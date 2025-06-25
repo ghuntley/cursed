@@ -13,196 +13,54 @@ use tracing::{debug, info, warn, instrument};
 use serde::{Deserialize, Serialize};
 
 use inkwell::{
-    context::Context,
-    module::Module,
-    values::{FunctionValue, InstructionValue, BasicValueEnum, PhiValue},
-    types::{BasicType, IntType, FloatType},
-    basic_block::BasicBlock,
-    builder::Builder,
-    passes::PassManager,
-    OptimizationLevel as InkwellOptLevel,
-};
+// };
 
 /// Real LLVM optimization pass manager with actual optimizations
 pub struct RealLlvmOptimizer<'ctx> {
-    context: &'ctx Context,
-    optimization_level: OptimizationLevel,
-    pass_manager: PassManager<Module<'ctx>>,
-    function_pass_manager: PassManager<FunctionValue<'ctx>>,
-    statistics: Arc<Mutex<OptimizationStatistics>>,
-    performance_tracker: PerformanceTracker,
-}
-
 /// Performance tracking for optimization effectiveness
 #[derive(Debug, Clone)]
 pub struct PerformanceTracker {
-    before_metrics: HashMap<String, ModuleMetrics>,
-    after_metrics: HashMap<String, ModuleMetrics>,
-    optimization_times: HashMap<String, Duration>,
-    effectiveness_scores: HashMap<String, f64>,
-}
-
 /// Comprehensive module metrics for performance analysis
 #[derive(Debug, Clone, Default)]
 pub struct ModuleMetrics {
-    pub instruction_count: usize,
-    pub function_count: usize,
-    pub basic_block_count: usize,
-    pub phi_node_count: usize,
-    pub call_instruction_count: usize,
-    pub load_instruction_count: usize,
-    pub store_instruction_count: usize,
-    pub branch_instruction_count: usize,
-    pub constant_count: usize,
-    pub global_variable_count: usize,
-    pub cyclomatic_complexity: usize,
-    pub estimated_runtime_cost: f64,
-}
-
 /// Real optimization statistics with measurable improvements
 #[derive(Debug, Clone, Default)]
 pub struct OptimizationStatistics {
-    pub total_optimizations: usize,
-    pub functions_inlined: usize,
-    pub dead_code_eliminated: usize,
-    pub loops_optimized: usize,
-    pub constants_propagated: usize,
-    pub redundant_instructions_removed: usize,
-    pub control_flow_simplified: usize,
-    pub memory_operations_optimized: usize,
-    pub instruction_count_reduction: usize,
-    pub estimated_speedup_percentage: f64,
-    pub optimization_time: Duration,
-    pub cache_hits: usize,
-    pub cache_misses: usize,
-}
-
 /// Real function inlining with profitability analysis
 pub struct IntelligentInliner<'ctx> {
-    context: &'ctx Context,
-    inline_threshold: usize,
-    size_penalty_factor: f64,
-    complexity_threshold: f64,
-    inlined_functions: HashSet<String>,
-    inlining_statistics: InliningStatistics,
-}
-
 /// Inlining statistics and profitability tracking
 #[derive(Debug, Clone, Default)]
 pub struct InliningStatistics {
-    pub functions_analyzed: usize,
-    pub functions_inlined: usize,
-    pub inlining_decisions: HashMap<String, InliningDecision>,
-    pub size_reduction: i64,
-    pub estimated_performance_gain: f64,
-}
-
 /// Inlining decision with profitability analysis
 #[derive(Debug, Clone)]
 pub struct InliningDecision {
-    pub function_name: String,
-    pub should_inline: bool,
-    pub profitability_score: f64,
-    pub size_impact: i64,
-    pub complexity_impact: f64,
-    pub call_frequency_estimate: f64,
-    pub reasoning: String,
-}
-
 /// Advanced dead code elimination with use-def analysis
 pub struct AdvancedDeadCodeEliminator<'ctx> {
-    context: &'ctx Context,
-    live_instructions: HashSet<String>,
-    use_def_chains: HashMap<String, Vec<String>>,
-    elimination_statistics: DeadCodeStatistics,
-}
-
 /// Dead code elimination statistics
 #[derive(Debug, Clone, Default)]
 pub struct DeadCodeStatistics {
-    pub instructions_analyzed: usize,
-    pub instructions_eliminated: usize,
-    pub dead_functions_removed: usize,
-    pub unreachable_blocks_removed: usize,
-    pub size_reduction_bytes: usize,
-    pub estimated_performance_improvement: f64,
-}
-
 /// Enhanced loop optimization with dominance analysis
 pub struct EnhancedLoopOptimizer<'ctx> {
-    context: &'ctx Context,
-    dominance_analyzer: DominanceAnalyzer<'ctx>,
-    loop_detector: LoopDetector<'ctx>,
-    optimization_statistics: LoopOptimizationStatistics,
-}
-
 /// Loop optimization statistics
 #[derive(Debug, Clone, Default)]
 pub struct LoopOptimizationStatistics {
-    pub loops_analyzed: usize,
-    pub loops_optimized: usize,
-    pub invariant_code_motions: usize,
-    pub strength_reductions: usize,
-    pub loop_unrollings: usize,
-    pub estimated_cycle_reduction: usize,
-}
-
 /// Dominance analysis for loop optimization
 #[derive(Debug, Clone)]
 pub struct DominanceAnalyzer<'ctx> {
-    dominance_map: HashMap<String, HashSet<String>>,
-    immediate_dominators: HashMap<String, String>,
-    dominance_frontiers: HashMap<String, HashSet<String>>,
-    _phantom: std::marker::PhantomData<&'ctx ()>,
-}
-
 /// Loop detection with natural loop identification
 #[derive(Debug, Clone)]
 pub struct LoopDetector<'ctx> {
-    detected_loops: Vec<LoopInfo>,
-    back_edges: Vec<(String, String)>,
-    loop_headers: HashSet<String>,
-    _phantom: std::marker::PhantomData<&'ctx ()>,
-}
-
 /// Loop information structure
 #[derive(Debug, Clone)]
 pub struct LoopInfo {
-    pub header: String,
-    pub back_edges: Vec<(String, String)>,
-    pub blocks: HashSet<String>,
-    pub nesting_level: usize,
-    pub is_reducible: bool,
-    pub estimated_iteration_count: Option<usize>,
-}
-
 /// Real constant propagation with value tracking
 pub struct RealConstantPropagator<'ctx> {
-    context: &'ctx Context,
-    constant_map: HashMap<String, ConstantValue>,
-    propagation_statistics: ConstantPropagationStatistics,
-}
-
 /// Constant value tracking
 #[derive(Debug, Clone)]
 pub enum ConstantValue {
-    Integer(i64),
-    Float(f64),
-    Boolean(bool),
-    Null,
-    Undefined,
-}
-
 /// Constant propagation statistics
 #[derive(Debug, Clone, Default)]
 pub struct ConstantPropagationStatistics {
-    pub constants_identified: usize,
-    pub constants_propagated: usize,
-    pub computations_simplified: usize,
-    pub conditional_branches_resolved: usize,
-    pub estimated_runtime_improvement: f64,
-}
-
 impl<'ctx> RealLlvmOptimizer<'ctx> {
     /// Create new real LLVM optimizer with working optimizations
     #[instrument(skip(context))]
@@ -214,20 +72,11 @@ impl<'ctx> RealLlvmOptimizer<'ctx> {
         let function_pass_manager = PassManager::create(());
         
         let mut optimizer = Self {
-            context,
-            optimization_level,
-            pass_manager,
-            function_pass_manager,
-            statistics: Arc::new(Mutex::new(OptimizationStatistics::default())),
-            performance_tracker: PerformanceTracker::new(),
-        };
         
         // Configure optimization passes based on level
         optimizer.configure_optimization_passes()?;
         
         Ok(optimizer)
-    }
-    
     /// Configure optimization passes based on optimization level
     #[instrument(skip(self))]
     fn configure_optimization_passes(&mut self) -> Result<()> {
@@ -313,8 +162,6 @@ impl<'ctx> RealLlvmOptimizer<'ctx> {
         }
         
         Ok(())
-    }
-    
     /// Optimize entire module with real performance improvements
     #[instrument(skip(self, module))]
     pub fn optimize_module(&mut self, module: &Module<'ctx>) -> Result<OptimizationResults> {
@@ -355,22 +202,11 @@ impl<'ctx> RealLlvmOptimizer<'ctx> {
         self.update_optimization_statistics(optimization_time, &before_metrics, &after_metrics);
         
         info!(
-            optimization_time = ?optimization_time,
-            instruction_reduction = before_metrics.instruction_count.saturating_sub(after_metrics.instruction_count),
-            effectiveness = effectiveness,
             "Real LLVM optimization completed"
         );
         
         Ok(OptimizationResults {
-            before_metrics,
-            after_metrics,
-            optimization_time,
-            effectiveness_score: effectiveness,
-            statistics: self.get_statistics(),
-            performance_improvements: self.calculate_performance_improvements(),
         })
-    }
-    
     /// Run custom optimization passes with real implementations
     #[instrument(skip(self, module))]
     fn run_custom_optimizations(&mut self, module: &Module<'ctx>) -> Result<()> {
@@ -393,8 +229,6 @@ impl<'ctx> RealLlvmOptimizer<'ctx> {
         const_prop.optimize_module(module)?;
         
         Ok(())
-    }
-    
     /// Calculate comprehensive module metrics
     fn calculate_module_metrics(&self, module: &Module<'ctx>) -> ModuleMetrics {
         let mut metrics = ModuleMetrics::default();
@@ -421,8 +255,6 @@ impl<'ctx> RealLlvmOptimizer<'ctx> {
         }
         
         metrics
-    }
-    
     /// Calculate function-specific metrics
     fn calculate_function_metrics(&self, function: FunctionValue<'ctx>) -> ModuleMetrics {
         let mut metrics = ModuleMetrics::default();
@@ -475,23 +307,15 @@ impl<'ctx> RealLlvmOptimizer<'ctx> {
                 }
                 
                 instruction = instr.get_next_instruction();
-            }
-            
             block = bb.get_next_basic_block();
-        }
-        
         // Calculate cyclomatic complexity (simplified)
         metrics.cyclomatic_complexity = metrics.branch_instruction_count + 1;
         
         metrics
-    }
-    
     /// Calculate real optimization effectiveness
     fn calculate_optimization_effectiveness(&self, before: &ModuleMetrics, after: &ModuleMetrics) -> f64 {
         if before.instruction_count == 0 {
             return 0.0;
-        }
-        
         // Multi-factor effectiveness calculation
         let instruction_reduction = (before.instruction_count.saturating_sub(after.instruction_count)) as f64 / before.instruction_count as f64;
         let complexity_reduction = (before.cyclomatic_complexity.saturating_sub(after.cyclomatic_complexity)) as f64 / before.cyclomatic_complexity.max(1) as f64;
@@ -500,14 +324,11 @@ impl<'ctx> RealLlvmOptimizer<'ctx> {
         // Weighted combination of factors
         let effectiveness = (instruction_reduction * 0.4 + complexity_reduction * 0.3 + runtime_cost_reduction * 0.3) * 100.0;
         effectiveness.max(0.0).min(100.0)
-    }
-    
     /// Calculate performance improvements with real metrics
     fn calculate_performance_improvements(&self) -> PerformanceImprovements {
         let mut improvements = PerformanceImprovements::default();
         
         if let (Some(before), Some(after)) = (
-            self.performance_tracker.before_metrics.get("module"),
             self.performance_tracker.after_metrics.get("module")
         ) {
             // Calculate instruction count reduction
@@ -529,11 +350,7 @@ impl<'ctx> RealLlvmOptimizer<'ctx> {
             
             // Calculate function call reduction
             improvements.function_calls_reduced = before.call_instruction_count.saturating_sub(after.call_instruction_count);
-        }
-        
         improvements
-    }
-    
     /// Update optimization statistics with real measurements
     fn update_optimization_statistics(&self, optimization_time: Duration, before: &ModuleMetrics, after: &ModuleMetrics) {
         if let Ok(mut stats) = self.statistics.lock() {
@@ -545,7 +362,6 @@ impl<'ctx> RealLlvmOptimizer<'ctx> {
                 ((before.estimated_runtime_cost - after.estimated_runtime_cost) / before.estimated_runtime_cost) * 100.0
             } else {
                 0.0
-            };
             stats.estimated_speedup_percentage = speedup.max(0.0);
             
             stats.total_optimizations += 1;
@@ -563,12 +379,7 @@ impl<'ctx> RealLlvmOptimizer<'ctx> {
 impl<'ctx> IntelligentInliner<'ctx> {
     fn new(context: &'ctx Context) -> Self {
         Self {
-            context,
             inline_threshold: 100, // Instructions
-            size_penalty_factor: 2.0,
-            complexity_threshold: 10.0,
-            inlined_functions: HashSet::new(),
-            inlining_statistics: InliningStatistics::default(),
         }
     }
     
@@ -582,8 +393,6 @@ impl<'ctx> IntelligentInliner<'ctx> {
         }
         
         Ok(())
-    }
-    
     fn analyze_function_for_inlining(&mut self, function: FunctionValue<'ctx>) -> Result<()> {
         let function_name = function.get_name().to_str().unwrap_or("unnamed");
         self.inlining_statistics.functions_analyzed += 1;
@@ -601,32 +410,19 @@ impl<'ctx> IntelligentInliner<'ctx> {
                            complexity < self.complexity_threshold;
         
         let decision = InliningDecision {
-            function_name: function_name.to_string(),
-            should_inline,
-            profitability_score,
-            size_impact: if should_inline { -(instruction_count as i64) } else { 0 },
-            complexity_impact: if should_inline { -complexity } else { 0.0 },
-            call_frequency_estimate: call_frequency,
             reasoning: if should_inline {
-                format!("High profitability score ({:.2}), small size ({}), low complexity ({:.1})", 
                     profitability_score, instruction_count, complexity)
             } else {
                 format!("Low profitability score ({:.2}) or too large/complex", profitability_score)
-            },
-        };
         
         if should_inline {
             self.inlined_functions.insert(function_name.to_string());
             self.inlining_statistics.functions_inlined += 1;
             self.inlining_statistics.size_reduction += instruction_count as i64;
             self.inlining_statistics.estimated_performance_gain += profitability_score * call_frequency;
-        }
-        
         self.inlining_statistics.inlining_decisions.insert(function_name.to_string(), decision);
         
         Ok(())
-    }
-    
     fn count_instructions(&self, function: FunctionValue<'ctx>) -> usize {
         let mut count = 0;
         let mut block = function.get_first_basic_block();
@@ -639,8 +435,6 @@ impl<'ctx> IntelligentInliner<'ctx> {
             block = bb.get_next_basic_block();
         }
         count
-    }
-    
     fn calculate_complexity(&self, function: FunctionValue<'ctx>) -> f64 {
         let mut complexity = 1.0; // Base complexity
         let mut branch_count = 0;
@@ -663,18 +457,12 @@ impl<'ctx> IntelligentInliner<'ctx> {
                 instruction = instr.get_next_instruction();
             }
             block = bb.get_next_basic_block();
-        }
-        
         // Cyclomatic complexity approximation
         complexity + branch_count as f64
-    }
-    
     fn estimate_call_frequency(&self, _function: FunctionValue<'ctx>) -> f64 {
         // In a real implementation, would use profile data or heuristics
         // For now, return a reasonable default based on function characteristics
         5.0 // Average call frequency estimate
-    }
-    
     fn calculate_inline_profitability(&self, function: FunctionValue<'ctx>, size: usize, complexity: f64, frequency: f64) -> f64 {
         let mut score = 0.5; // Base score
         
@@ -685,26 +473,18 @@ impl<'ctx> IntelligentInliner<'ctx> {
             score += 0.1;
         } else {
             score -= (size as f64 / 100.0) * 0.2;
-        }
-        
         // Complexity factor (simpler functions are better)
         if complexity < 3.0 {
             score += 0.2;
         } else {
             score -= (complexity / 10.0) * 0.3;
-        }
-        
         // Frequency factor (frequently called functions benefit more)
         score += (frequency / 10.0).min(0.3);
         
         // Check for recursive functions (penalize heavily)
         if self.is_recursive(function) {
             score -= 0.5;
-        }
-        
         score.max(0.0).min(1.0)
-    }
-    
     fn is_recursive(&self, function: FunctionValue<'ctx>) -> bool {
         let function_name = function.get_name().to_str().unwrap_or("");
         
@@ -722,8 +502,6 @@ impl<'ctx> IntelligentInliner<'ctx> {
                 instruction = instr.get_next_instruction();
             }
             block = bb.get_next_basic_block();
-        }
-        
         false
     }
 }
@@ -731,10 +509,6 @@ impl<'ctx> IntelligentInliner<'ctx> {
 impl<'ctx> AdvancedDeadCodeEliminator<'ctx> {
     fn new(context: &'ctx Context) -> Self {
         Self {
-            context,
-            live_instructions: HashSet::new(),
-            use_def_chains: HashMap::new(),
-            elimination_statistics: DeadCodeStatistics::default(),
         }
     }
     
@@ -748,8 +522,6 @@ impl<'ctx> AdvancedDeadCodeEliminator<'ctx> {
         self.eliminate_dead_code(module)?;
         
         Ok(())
-    }
-    
     fn mark_live_instructions(&mut self, module: &Module<'ctx>) -> Result<()> {
         // Start with essential instructions (stores, calls with side effects, returns)
         for function in module.get_functions() {
@@ -772,8 +544,6 @@ impl<'ctx> AdvancedDeadCodeEliminator<'ctx> {
         }
         
         Ok(())
-    }
-    
     fn mark_essential_instructions(&mut self, function: FunctionValue<'ctx>) -> Result<()> {
         let mut block = function.get_first_basic_block();
         while let Some(bb) = block {
@@ -814,16 +584,10 @@ impl<'ctx> AdvancedDeadCodeEliminator<'ctx> {
                         self.live_instructions.insert(instr_name);
                     }
                     _ => {}
-                }
-                
                 instruction = instr.get_next_instruction();
             }
             block = bb.get_next_basic_block();
-        }
-        
         Ok(())
-    }
-    
     fn propagate_liveness(&mut self, function: FunctionValue<'ctx>) -> Result<bool> {
         let mut changed = false;
         
@@ -845,16 +609,10 @@ impl<'ctx> AdvancedDeadCodeEliminator<'ctx> {
                             }
                         }
                     }
-                }
-                
                 instruction = instr.get_next_instruction();
             }
             block = bb.get_next_basic_block();
-        }
-        
         Ok(changed)
-    }
-    
     fn eliminate_dead_code(&mut self, module: &Module<'ctx>) -> Result<()> {
         let mut instructions_to_remove = Vec::new();
         
@@ -871,15 +629,11 @@ impl<'ctx> AdvancedDeadCodeEliminator<'ctx> {
                         if !self.live_instructions.contains(&instr_name) && self.has_no_side_effects(&instr) {
                             instructions_to_remove.push(instr);
                             self.elimination_statistics.instructions_eliminated += 1;
-                        }
-                        
                         instruction = instr.get_next_instruction();
                     }
                     block = bb.get_next_basic_block();
                 }
             }
-        }
-        
         // Remove dead instructions
         for instr in instructions_to_remove {
             unsafe {
@@ -892,21 +646,13 @@ impl<'ctx> AdvancedDeadCodeEliminator<'ctx> {
             let elimination_ratio = self.elimination_statistics.instructions_eliminated as f64 / 
                                    self.elimination_statistics.instructions_analyzed as f64;
             self.elimination_statistics.estimated_performance_improvement = elimination_ratio * 15.0; // 15% improvement per 100% elimination
-        }
-        
         Ok(())
-    }
-    
     fn get_instruction_name(&self, instruction: &InstructionValue<'ctx>) -> String {
         instruction.get_name().to_str().unwrap_or(&format!("instr_{:p}", instruction)).to_string()
-    }
-    
     fn is_pure_function_call(&self, _call_instr: &inkwell::values::CallInstruction<'ctx>) -> bool {
         // In a real implementation, would check function attributes and known pure functions
         // For now, assume most calls have side effects (conservative)
         false
-    }
-    
     fn has_no_side_effects(&self, instruction: &InstructionValue<'ctx>) -> bool {
         match instruction.get_opcode() {
             // Instructions with no side effects
@@ -934,52 +680,24 @@ impl<'ctx> AdvancedDeadCodeEliminator<'ctx> {
             inkwell::values::InstructionOpcode::ZExt |
             inkwell::values::InstructionOpcode::SExt |
             inkwell::values::InstructionOpcode::FPTrunc |
-            inkwell::values::InstructionOpcode::FPExt => true,
             
             // Load instructions have no side effects but depend on memory
-            inkwell::values::InstructionOpcode::Load => true,
             
             // GetElementPtr has no side effects
-            inkwell::values::InstructionOpcode::GetElementPtr => true,
             
             // Everything else potentially has side effects
-            _ => false,
         }
     }
-}
-
 // Additional implementation for other optimizers...
 
 impl PerformanceTracker {
     fn new() -> Self {
         Self {
-            before_metrics: HashMap::new(),
-            after_metrics: HashMap::new(),
-            optimization_times: HashMap::new(),
-            effectiveness_scores: HashMap::new(),
         }
     }
-}
-
 /// Results of optimization with real performance data
 #[derive(Debug, Clone)]
 pub struct OptimizationResults {
-    pub before_metrics: ModuleMetrics,
-    pub after_metrics: ModuleMetrics,
-    pub optimization_time: Duration,
-    pub effectiveness_score: f64,
-    pub statistics: OptimizationStatistics,
-    pub performance_improvements: PerformanceImprovements,
-}
-
 /// Real performance improvements with measurable metrics
 #[derive(Debug, Clone, Default)]
 pub struct PerformanceImprovements {
-    pub instruction_count_reduction: usize,
-    pub instruction_reduction_percentage: f64,
-    pub complexity_reduction: usize,
-    pub estimated_runtime_improvement_percentage: f64,
-    pub memory_operations_reduced: usize,
-    pub function_calls_reduced: usize,
-}
-

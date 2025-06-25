@@ -31,8 +31,6 @@ use crate::error::CursedError;
 pub fn sin(x: f64) -> MathResult<f64> {
     validate_float("sin", "x", x)?;
     Ok(x.sin())
-}
-
 /// Computes the cosine of a number (in radians).
 /// 
 /// # Formula
@@ -46,8 +44,6 @@ pub fn sin(x: f64) -> MathResult<f64> {
 pub fn cos(x: f64) -> MathResult<f64> {
     validate_float("cos", "x", x)?;
     Ok(x.cos())
-}
-
 /// Computes the tangent of a number (in radians).
 /// 
 /// # Formula
@@ -64,8 +60,6 @@ pub fn cos(x: f64) -> MathResult<f64> {
 pub fn tan(x: f64) -> MathResult<f64> {
     validate_float("tan", "x", x)?;
     Ok(x.tan())
-}
-
 /// Computes the arcsine (inverse sine) of a number.
 /// 
 /// # Formula
@@ -82,8 +76,6 @@ pub fn asin(x: f64) -> MathResult<f64> {
         return Err(domain_error("asin", x, "input must be in range [-1, 1]"));
     }
     Ok(x.asin())
-}
-
 /// Computes the arccosine (inverse cosine) of a number.
 /// 
 /// # Formula
@@ -100,8 +92,6 @@ pub fn acos(x: f64) -> MathResult<f64> {
         return Err(domain_error("acos", x, "input must be in range [-1, 1]"));
     }
     Ok(x.acos())
-}
-
 /// Computes the arctangent (inverse tangent) of a number.
 /// 
 /// # Formula
@@ -115,8 +105,6 @@ pub fn acos(x: f64) -> MathResult<f64> {
 pub fn atan(x: f64) -> MathResult<f64> {
     validate_float("atan", "x", x)?;
     Ok(x.atan())
-}
-
 /// Computes the four-quadrant arctangent of y and x.
 /// 
 /// # Formula
@@ -136,8 +124,6 @@ pub fn atan2(y: f64, x: f64) -> MathResult<f64> {
     validate_float("atan2", "y", y)?;
     validate_float("atan2", "x", x)?;
     Ok(y.atan2(x))
-}
-
 /// Computes the hyperbolic sine of a number.
 /// 
 /// # Formula
@@ -151,8 +137,6 @@ pub fn atan2(y: f64, x: f64) -> MathResult<f64> {
 pub fn sinh(x: f64) -> MathResult<f64> {
     validate_float("sinh", "x", x)?;
     Ok(x.sinh())
-}
-
 /// Computes the hyperbolic cosine of a number.
 /// 
 /// # Formula
@@ -166,8 +150,6 @@ pub fn sinh(x: f64) -> MathResult<f64> {
 pub fn cosh(x: f64) -> MathResult<f64> {
     validate_float("cosh", "x", x)?;
     Ok(x.cosh())
-}
-
 /// Computes the hyperbolic tangent of a number.
 /// 
 /// # Formula
@@ -181,8 +163,6 @@ pub fn cosh(x: f64) -> MathResult<f64> {
 pub fn tanh(x: f64) -> MathResult<f64> {
     validate_float("tanh", "x", x)?;
     Ok(x.tanh())
-}
-
 /// Computes the inverse hyperbolic sine of a number.
 /// 
 /// # Formula
@@ -196,8 +176,6 @@ pub fn tanh(x: f64) -> MathResult<f64> {
 pub fn asinh(x: f64) -> MathResult<f64> {
     validate_float("asinh", "x", x)?;
     Ok(x.asinh())
-}
-
 /// Computes the inverse hyperbolic cosine of a number.
 /// 
 /// # Formula
@@ -214,8 +192,6 @@ pub fn acosh(x: f64) -> MathResult<f64> {
         return Err(domain_error("acosh", x, "input must be >= 1"));
     }
     Ok(x.acosh())
-}
-
 /// Computes the inverse hyperbolic tangent of a number.
 /// 
 /// # Formula
@@ -232,8 +208,6 @@ pub fn atanh(x: f64) -> MathResult<f64> {
         return Err(domain_error("atanh", x, "input must be in range (-1, 1)"));
     }
     Ok(x.atanh())
-}
-
 /// Converts degrees to radians.
 /// 
 /// # Formula
@@ -247,8 +221,6 @@ pub fn atanh(x: f64) -> MathResult<f64> {
 pub fn degrees_to_radians(degrees: f64) -> MathResult<f64> {
     validate_float("degrees_to_radians", "degrees", degrees)?;
     Ok(degrees.to_radians())
-}
-
 /// Converts radians to degrees.
 /// 
 /// # Formula
@@ -262,18 +234,12 @@ pub fn degrees_to_radians(degrees: f64) -> MathResult<f64> {
 pub fn radians_to_degrees(radians: f64) -> MathResult<f64> {
     validate_float("radians_to_degrees", "radians", radians)?;
     Ok(radians.to_degrees())
-}
-
 /// Alias for degrees_to_radians for convenience.
 pub fn deg_to_rad(degrees: f64) -> MathResult<f64> {
     degrees_to_radians(degrees)
-}
-
 /// Alias for radians_to_degrees for convenience.
 pub fn rad_to_deg(radians: f64) -> MathResult<f64> {
     radians_to_degrees(radians)
-}
-
 /// Computes the sine of an angle in degrees.
 /// 
 /// # Arguments
@@ -284,8 +250,6 @@ pub fn rad_to_deg(radians: f64) -> MathResult<f64> {
 pub fn sin_deg(degrees: f64) -> MathResult<f64> {
     let radians = degrees_to_radians(degrees)?;
     sin(radians)
-}
-
 /// Computes the cosine of an angle in degrees.
 /// 
 /// # Arguments
@@ -296,8 +260,6 @@ pub fn sin_deg(degrees: f64) -> MathResult<f64> {
 pub fn cos_deg(degrees: f64) -> MathResult<f64> {
     let radians = degrees_to_radians(degrees)?;
     cos(radians)
-}
-
 /// Computes the tangent of an angle in degrees.
 /// 
 /// # Arguments
@@ -308,8 +270,6 @@ pub fn cos_deg(degrees: f64) -> MathResult<f64> {
 pub fn tan_deg(degrees: f64) -> MathResult<f64> {
     let radians = degrees_to_radians(degrees)?;
     tan(radians)
-}
-
 /// Computes the secant (reciprocal of cosine).
 /// 
 /// # Formula
@@ -327,8 +287,6 @@ pub fn sec(x: f64) -> MathResult<f64> {
         return Err(MathError::DivisionByZero { function: "sec".to_string() });
     }
     Ok(1.0 / cos_x)
-}
-
 /// Computes the cosecant (reciprocal of sine).
 /// 
 /// # Formula
@@ -346,8 +304,6 @@ pub fn csc(x: f64) -> MathResult<f64> {
         return Err(MathError::DivisionByZero { function: "csc".to_string() });
     }
     Ok(1.0 / sin_x)
-}
-
 /// Computes the cotangent (reciprocal of tangent).
 /// 
 /// # Formula
@@ -365,8 +321,6 @@ pub fn cot(x: f64) -> MathResult<f64> {
         return Err(MathError::DivisionByZero { function: "cot".to_string() });
     }
     Ok(x.cos() / sin_x)
-}
-
 /// Normalizes an angle to the range [0, 2π).
 /// 
 /// # Arguments
@@ -378,8 +332,6 @@ pub fn normalize_angle(angle: f64) -> MathResult<f64> {
     validate_float("normalize_angle", "angle", angle)?;
     let normalized = angle % TAU;
     Ok(if normalized < 0.0 { normalized + TAU } else { normalized })
-}
-
 /// Normalizes an angle to the range (-π, π].
 /// 
 /// # Arguments
@@ -396,8 +348,6 @@ pub fn normalize_angle_signed(angle: f64) -> MathResult<f64> {
         normalized += TAU;
     }
     Ok(normalized)
-}
-
 /// Computes the sinc function: sin(x) / x.
 /// 
 /// # Formula
@@ -439,8 +389,6 @@ pub fn haversine(theta: f64) -> MathResult<f64> {
     let half_theta = theta / 2.0;
     let sin_half = half_theta.sin();
     Ok(sin_half * sin_half)
-}
-
 /// Computes the third side of a triangle using the law of cosines.
 /// 
 /// # Formula
@@ -467,18 +415,12 @@ pub fn law_of_cosines(a: f64, b: f64, angle_c: f64) -> MathResult<f64> {
     }
     if b <= 0.0 {
         return Err(domain_error("law_of_cosines", b, "side b must be positive"));
-    }
-    
     let cos_c = angle_c.cos();
     let c_squared = a * a + b * b - 2.0 * a * b * cos_c;
     
     if c_squared < 0.0 {
         return Err(domain_error("law_of_cosines", angle_c, "invalid angle - would result in negative side length"));
-    }
-    
     Ok(c_squared.sqrt())
-}
-
 /// Computes the haversine distance between two points on a sphere.
 /// 
 /// # Formula
@@ -502,8 +444,6 @@ pub fn haversine_distance(lat1: f64, lon1: f64, lat2: f64, lon2: f64, radius: f6
     
     if radius <= 0.0 {
         return Err(domain_error("haversine_distance", radius, "radius must be positive"));
-    }
-    
     let delta_lat = lat2 - lat1;
     let delta_lon = lon2 - lon1;
     
@@ -511,8 +451,6 @@ pub fn haversine_distance(lat1: f64, lon1: f64, lat2: f64, lon2: f64, radius: f6
     let c = 2.0 * a.sqrt().asin();
     
     Ok(radius * c)
-}
-
 /// Computes all six trigonometric functions for a given angle.
 /// 
 /// # Arguments
@@ -535,26 +473,20 @@ pub fn all_trig_functions(angle: f64) -> MathResult<(f64, f64, f64, f64, f64, f6
         f64::INFINITY.copysign(sin_val)
     } else {
         sin_val / cos_val
-    };
     
     let sec_val = if cos_val.abs() < f64::EPSILON {
         f64::INFINITY.copysign(cos_val)
     } else {
         1.0 / cos_val
-    };
     
     let csc_val = if sin_val.abs() < f64::EPSILON {
         f64::INFINITY.copysign(sin_val)
     } else {
         1.0 / sin_val
-    };
     
     let cot_val = if sin_val.abs() < f64::EPSILON {
         f64::INFINITY.copysign(cos_val)
     } else {
         cos_val / sin_val
-    };
     
     Ok((sin_val, cos_val, tan_val, sec_val, csc_val, cot_val))
-}
-

@@ -13,14 +13,10 @@ use super::NetResult;
 /// IPVibe represents an IP address (IPv4 or IPv6)
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct IPVibe {
-    addr: IpAddr,
-}
-
 impl IPVibe {
     /// Parse an IP address from a string
     pub fn parse_ip(s: &str) -> NetResult<IPVibe> {
         match IpAddr::from_str(s) {
-            Ok(addr) => Ok(IPVibe { addr }),
             Err(e) => Err(CursedError::from(address_resolution_error(&format!("Failed to parse IP address '{}': {}", s, e))))
         }
     }
@@ -36,7 +32,6 @@ impl IPVibe {
     pub fn ipv6(segments: [u16; 8]) -> IPVibe {
         IPVibe {
             addr: IpAddr::V6(Ipv6Addr::new(
-                segments[0], segments[1], segments[2], segments[3],
                 segments[4], segments[5], segments[6], segments[7]
             ))
         }
@@ -45,36 +40,24 @@ impl IPVibe {
     /// Get the underlying IP address
     pub fn inner(&self) -> &IpAddr {
         &self.addr
-    }
-    
     /// Convert to string representation
     pub fn string(&self) -> String {
         self.addr.to_string()
-    }
-    
     /// Check if this is a loopback address
     pub fn is_loopback(&self) -> bool {
         self.addr.is_loopback()
-    }
-    
     /// Check if this is a multicast address
     pub fn is_multicast(&self) -> bool {
         self.addr.is_multicast()
-    }
-    
     /// Check if this is a global unicast address
     pub fn is_global_unicast(&self) -> bool {
         match &self.addr {
-            IpAddr::V4(addr) => !addr.is_private() && !addr.is_loopback() && !addr.is_multicast(),
-            IpAddr::V6(addr) => addr.is_unicast_global(),
         }
     }
     
     /// Check if this is a link-local unicast address
     pub fn is_link_local_unicast(&self) -> bool {
         match &self.addr {
-            IpAddr::V4(addr) => addr.octets()[0] == 169 && addr.octets()[1] == 254,
-            IpAddr::V6(addr) => addr.is_unicast_link_local(),
         }
     }
     
@@ -84,46 +67,34 @@ impl IPVibe {
             IpAddr::V4(addr) => {
                 let octets = addr.octets();
                 octets[0] == 224 && octets[1] == 0 && octets[2] == 0
-            },
             IpAddr::V6(addr) => {
                 let segments = addr.segments();
                 segments[0] & 0xff0f == 0xff02
             }
         }
-    }
-    
     /// Check if this is an interface-local multicast address (IPv6 only)
     pub fn is_interface_local_multicast(&self) -> bool {
         match &self.addr {
-            IpAddr::V4(_) => false,
             IpAddr::V6(addr) => {
                 let segments = addr.segments();
                 segments[0] & 0xff0f == 0xff01
             }
         }
-    }
-    
     /// Check if this is a private address
     pub fn is_private(&self) -> bool {
         match &self.addr {
-            IpAddr::V4(addr) => addr.is_private(),
             IpAddr::V6(addr) => {
                 // IPv6 unique local addresses (fc00::/7)
                 let segments = addr.segments();
                 (segments[0] & 0xfe00) == 0xfc00
             }
         }
-    }
-    
     /// Check if this is an unspecified address
     pub fn is_unspecified(&self) -> bool {
         self.addr.is_unspecified()
-    }
-    
     /// Convert to IPv4 address (returns None if not IPv4)
     pub fn to4(&self) -> Option<IPVibe> {
         match &self.addr {
-            IpAddr::V4(_) => Some(self.clone()),
             IpAddr::V6(addr) => {
                 if let Some(ipv4) = addr.to_ipv4() {
                     Some(IPVibe { addr: IpAddr::V4(ipv4) })
@@ -137,31 +108,21 @@ impl IPVibe {
     /// Convert to IPv6 address (maps IPv4 if necessary)
     pub fn to16(&self) -> IPVibe {
         match &self.addr {
-            IpAddr::V4(addr) => IPVibe { addr: IpAddr::V6(addr.to_ipv6_mapped()) },
-            IpAddr::V6(_) => self.clone(),
         }
     }
     
     /// Check if two IP addresses are equal
     pub fn equal(&self, other: &IPVibe) -> bool {
         self.addr == other.addr
-    }
-    
     /// Check if this is an IPv4 address
     pub fn is_ipv4(&self) -> bool {
         matches!(self.addr, IpAddr::V4(_))
-    }
-    
     /// Check if this is an IPv6 address
     pub fn is_ipv6(&self) -> bool {
         matches!(self.addr, IpAddr::V6(_))
-    }
-    
     /// Marshal to text representation
     pub fn marshal_text(&self) -> NetResult<Vec<u8>> {
         Ok(self.string().into_bytes())
-    }
-    
     /// Unmarshal from text representation
     pub fn unmarshal_text(text: &[u8]) -> NetResult<IPVibe> {
         let s = std::str::from_utf8(text)
@@ -187,14 +148,10 @@ impl FromStr for IPVibe {
 /// IPMaskVibe represents an IP subnet mask
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct IPMaskVibe {
-    mask: Vec<u8>,
-}
-
 impl IPMaskVibe {
     /// Create an IPv4 subnet mask from four octets
     pub fn ipv4_mask(a: u8, b: u8, c: u8, d: u8) -> IPMaskVibe {
         IPMaskVibe {
-            mask: vec![a, b, c, d],
         }
     }
     
@@ -202,8 +159,6 @@ impl IPMaskVibe {
     pub fn cidr_mask(ones: i32, bits: i32) -> NetResult<IPMaskVibe> {
         if ones < 0 || bits <= 0 || ones > bits {
             return Err(CursedError::from(address_resolution_error("Invalid CIDR mask parameters")));
-        }
-        
         let bytes_count = (bits + 7) / 8;
         let mut mask = vec![0u8; bytes_count as usize];
         
@@ -219,8 +174,6 @@ impl IPMaskVibe {
         }
         
         Ok(IPMaskVibe { mask })
-    }
-    
     /// Convert to string representation
     pub fn string(&self) -> String {
         if self.mask.len() == 4 {
@@ -241,11 +194,7 @@ impl IPMaskVibe {
         
         for &byte in &self.mask {
             ones += byte.count_ones() as i32;
-        }
-        
         (ones, bits)
-    }
-    
     /// Get the raw mask bytes
     pub fn bytes(&self) -> &[u8] {
         &self.mask
@@ -261,50 +210,30 @@ impl fmt::Display for IPMaskVibe {
 /// IPNetVibe represents an IP network (IP address + subnet mask)
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct IPNetVibe {
-    pub ip: IPVibe,
-    pub mask: IPMaskVibe,
-    pub prefix_len: i32,
-}
-
 impl IPNetVibe {
     /// Parse a CIDR notation string into IP and network
     pub fn parse_cidr(s: &str) -> NetResult<(IPVibe, IPNetVibe)> {
         let parts: Vec<&str> = s.split('/').collect();
         if parts.len() != 2 {
             return Err(CursedError::from(address_resolution_error("Invalid CIDR notation")));
-        }
-        
         let ip = IPVibe::parse_ip(parts[0])?;
         let prefix_len: i32 = parts[1].parse()
             .map_err(|_| CursedError::from(address_resolution_error("Invalid prefix length")))?;
         
         let bits = match ip.addr {
-            IpAddr::V4(_) => 32,
-            IpAddr::V6(_) => 128,
-        };
         
         if prefix_len < 0 || prefix_len > bits {
             return Err(CursedError::from(address_resolution_error("Prefix length out of range")));
-        }
-        
         let mask = IPMaskVibe::cidr_mask(prefix_len, bits)?;
         
         let net = IPNetVibe {
-            ip: ip.clone(),
-            mask,
-            prefix_len,
-        };
         
         Ok((ip, net))
-    }
-    
     /// Check if the network contains the given IP address
     pub fn contains(&self, ip: &IPVibe) -> bool {
         // Both addresses must be the same type (IPv4 or IPv6)
         if self.ip.is_ipv4() != ip.is_ipv4() {
             return false;
-        }
-        
         match (&self.ip.addr, &ip.addr) {
             (IpAddr::V4(net_ip), IpAddr::V4(test_ip)) => {
                 let net_octets = net_ip.octets();
@@ -313,15 +242,12 @@ impl IPNetVibe {
                 
                 if mask_bytes.len() != 4 {
                     return false;
-                }
-                
                 for i in 0..4 {
                     if (net_octets[i] & mask_bytes[i]) != (test_octets[i] & mask_bytes[i]) {
                         return false;
                     }
                 }
                 true
-            },
             (IpAddr::V6(net_ip), IpAddr::V6(test_ip)) => {
                 let net_octets = net_ip.octets();
                 let test_octets = test_ip.octets();
@@ -329,16 +255,12 @@ impl IPNetVibe {
                 
                 if mask_bytes.len() != 16 {
                     return false;
-                }
-                
                 for i in 0..16 {
                     if (net_octets[i] & mask_bytes[i]) != (test_octets[i] & mask_bytes[i]) {
                         return false;
                     }
                 }
                 true
-            },
-            _ => false,
         }
     }
     

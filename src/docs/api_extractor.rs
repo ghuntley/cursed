@@ -12,18 +12,10 @@ use serde_json;
 
 /// API documentation extractor for stdlib modules
 pub struct ApiExtractor {
-    include_internal: bool,
-    extract_examples: bool,
-    base_path: PathBuf,
-}
-
 impl ApiExtractor {
     /// Create new API extractor
     pub fn new(base_path: PathBuf) -> Self {
         Self {
-            include_internal: false,
-            extract_examples: true,
-            base_path,
         }
     }
 
@@ -32,43 +24,24 @@ impl ApiExtractor {
         self.include_internal = include_internal;
         self.extract_examples = extract_examples;
         self
-    }
-
     /// Extract all standard library documentation
     pub fn extract_stdlib_documentation(&self) -> crate::error::Result<()> {
         let stdlib_path = self.base_path.join("src/stdlib");
         if !stdlib_path.exists() {
             return Err(CursedError::General("Standard library path not found".to_string()));
-        }
-
         let mut all_docs = Vec::new();
 
         // Extract from major stdlib modules
         let stdlib_modules = vec![
-            ("math", "Mathematical functions and constants"),
             ("io", "Input/output operations"),
-            ("crypto", "Cryptographic functions"),
-            ("database", "Database connectivity and ORM"),
-            ("web", "Web framework and HTTP utilities"),
-            ("collections", "Data structures and collections"),
-            ("string", "String manipulation utilities"),
-            ("time", "Date and time operations"),
-            ("fs", "File system operations"),
-            ("process", "Process management and IPC"),
-            ("concurrency", "Concurrency primitives"),
-            ("memory", "Memory management utilities"),
         ];
 
         for (module_name, description) in stdlib_modules {
             let module_path = stdlib_path.join(module_name);
             if module_path.exists() {
                 match self.extract_module_documentation(&module_path, module_name, description) {
-                    Ok(mut docs) => all_docs.append(&mut docs),
-                    Err(e) => eprintln!("Warning: Failed to extract {} module: {}", module_name, e),
                 }
             }
-        }
-
         // Extract from root stdlib files
         if let Ok(entries) = fs::read_dir(&stdlib_path) {
             for entry in entries {
@@ -78,19 +51,13 @@ impl ApiExtractor {
                         if let Some(file_name) = path.file_stem().and_then(|s| s.to_str()) {
                             if file_name != "mod" && file_name != "lib" {
                                 match self.extract_rust_file_documentation(&path) {
-                                    Ok(doc) => all_docs.push(doc),
-                                    Err(e) => eprintln!("Warning: Failed to extract {}: {}", path.display(), e),
                                 }
                             }
                         }
                     }
                 }
             }
-        }
-
         Ok(all_docs)
-    }
-
     /// Extract documentation from a specific module directory
     fn extract_module_documentation(&self, module_path: &Path, module_name: &str, description: &str) -> crate::error::Result<()> {
         let mut docs = Vec::new();
@@ -101,8 +68,6 @@ impl ApiExtractor {
             let mut doc = self.extract_rust_file_documentation(&mod_file)?;
             doc.module_name = format!("stdlib::{}", module_name);
             docs.push(doc);
-        }
-
         // Submodule files
         if let Ok(entries) = fs::read_dir(module_path) {
             for entry in entries {
@@ -116,18 +81,13 @@ impl ApiExtractor {
                                         doc.module_name = format!("stdlib::{}::{}", module_name, file_name);
                                         docs.push(doc);
                                     }
-                                    Err(e) => eprintln!("Warning: Failed to extract {}: {}", path.display(), e),
                                 }
                             }
                         }
                     }
                 }
             }
-        }
-
         Ok(docs)
-    }
-
     /// Extract documentation from a Rust source file
     fn extract_rust_file_documentation(&self, file_path: &Path) -> crate::error::Result<()> {
         let source = fs::read_to_string(file_path).map_err(CursedError::Io)?;
@@ -143,15 +103,7 @@ impl ApiExtractor {
         let source_info = self.gather_source_info(&source, file_path)?;
         
         Ok(ExtractedDocumentation {
-            file_path: file_path.to_path_buf(),
-            module_name,
-            package_name: Some("stdlib".to_string()),
-            imports: self.extract_imports(&source),
-            items,
-            source_info,
         })
-    }
-
     /// Parse Rust source code for documentable items
     fn parse_rust_source(&self, source: &str) -> crate::error::Result<()> {
         let mut items = Vec::new();
@@ -169,8 +121,6 @@ impl ApiExtractor {
                 // Look for the item being documented
                 if let Some(item) = self.find_documented_item(&lines, doc_end, &doc_content)? {
                     items.push(item);
-                }
-                
                 i = doc_end + 1;
             } else {
                 // Look for items without doc comments
@@ -182,8 +132,6 @@ impl ApiExtractor {
         }
         
         Ok(items)
-    }
-
     /// Extract documentation comment block
     fn extract_doc_block(&self, lines: &[&str], start: usize) -> crate::error::Result<()> {
         let mut doc_lines = Vec::new();
@@ -206,20 +154,14 @@ impl ApiExtractor {
         }
         
         Ok((doc_lines.join("\n"), end))
-    }
-
     /// Find the item being documented after doc comments
     fn find_documented_item(&self, lines: &[&str], doc_end: usize, doc_content: &str) -> crate::error::Result<()> {
         // Skip empty lines after doc comments
         let mut item_start = doc_end + 1;
         while item_start < lines.len() && lines[item_start].trim().is_empty() {
             item_start += 1;
-        }
-        
         if item_start >= lines.len() {
             return Ok(None);
-        }
-        
         let item_line = lines[item_start].trim();
         
         // Parse the item with documentation
@@ -237,49 +179,29 @@ impl ApiExtractor {
     /// Parse a Rust item (function, struct, etc.)
     fn parse_rust_item(&self, line: &str, line_num: usize) -> crate::error::Result<()> {
         let location = SourceLocation {
-            line: line_num as u32,
-            column: 1,
-            file: None,
-        };
 
         // Function declarations
         if line.starts_with("pub fn ") || line.starts_with("fn ") {
             return Ok(Some(self.parse_function_item(line, &location)?));
-        }
-        
         // Struct declarations
         if line.starts_with("pub struct ") || line.starts_with("struct ") {
             return Ok(Some(self.parse_struct_item(line, &location)?));
-        }
-        
         // Enum declarations
         if line.starts_with("pub enum ") || line.starts_with("enum ") {
             return Ok(Some(self.parse_enum_item(line, &location)?));
-        }
-        
         // Trait declarations
         if line.starts_with("pub trait ") || line.starts_with("trait ") {
             return Ok(Some(self.parse_trait_item(line, &location)?));
-        }
-        
         // Type aliases
         if line.starts_with("pub type ") || line.starts_with("type ") {
             return Ok(Some(self.parse_type_item(line, &location)?));
-        }
-        
         // Constants
         if line.starts_with("pub const ") || line.starts_with("const ") {
             return Ok(Some(self.parse_const_item(line, &location)?));
-        }
-        
         // Static variables
         if line.starts_with("pub static ") || line.starts_with("static ") {
             return Ok(Some(self.parse_static_item(line, &location)?));
-        }
-        
         Ok(None)
-    }
-
     /// Parse function item
     fn parse_function_item(&self, line: &str, location: &SourceLocation) -> crate::error::Result<()> {
         let is_public = line.starts_with("pub ");
@@ -291,7 +213,6 @@ impl ApiExtractor {
             name_part.trim().to_string()
         } else {
             "unknown_function".to_string()
-        };
         
         // Extract parameters (simplified)
         let parameters = if let Some(start) = fn_part.find('(') {
@@ -303,7 +224,6 @@ impl ApiExtractor {
             }
         } else {
             Vec::new()
-        };
         
         // Extract return type
         let return_type = if let Some(arrow_pos) = fn_part.find(" -> ") {
@@ -315,25 +235,9 @@ impl ApiExtractor {
             }
         } else {
             None
-        };
         
         Ok(DocumentationItem {
-            name: name.clone(),
-            kind: ItemKind::Function,
-            visibility: if is_public { Visibility::Public } else { Visibility::Private },
-            module: "stdlib".to_string(),
-            summary: format!("Function {}", name),
-            description: String::new(),
-            signature: Some(line.to_string()),
-            parameters,
-            return_type,
-            examples: Vec::new(),
-            tags: HashMap::new(),
-            location: location.clone(),
-            source_code: if self.extract_examples { Some(line.to_string()) } else { None },
         })
-    }
-
     /// Parse struct item
     fn parse_struct_item(&self, line: &str, location: &SourceLocation) -> crate::error::Result<()> {
         let is_public = line.starts_with("pub ");
@@ -346,25 +250,9 @@ impl ApiExtractor {
             struct_part[7..brace_pos].trim().to_string()
         } else {
             struct_part[7..].trim().to_string()
-        };
         
         Ok(DocumentationItem {
-            name: name.clone(),
-            kind: ItemKind::Struct,
-            visibility: if is_public { Visibility::Public } else { Visibility::Private },
-            module: "stdlib".to_string(),
-            summary: format!("Struct {}", name),
-            description: String::new(),
-            signature: Some(line.to_string()),
-            parameters: Vec::new(),
-            return_type: None,
-            examples: Vec::new(),
-            tags: HashMap::new(),
-            location: location.clone(),
-            source_code: if self.extract_examples { Some(line.to_string()) } else { None },
         })
-    }
-
     /// Parse enum item
     fn parse_enum_item(&self, line: &str, location: &SourceLocation) -> crate::error::Result<()> {
         let is_public = line.starts_with("pub ");
@@ -377,25 +265,10 @@ impl ApiExtractor {
             enum_part[5..brace_pos].trim().to_string()
         } else {
             enum_part[5..].trim().to_string()
-        };
         
         Ok(DocumentationItem {
-            name: name.clone(),
             kind: ItemKind::Type, // Treat enums as types
-            visibility: if is_public { Visibility::Public } else { Visibility::Private },
-            module: "stdlib".to_string(),
-            summary: format!("Enum {}", name),
-            description: String::new(),
-            signature: Some(line.to_string()),
-            parameters: Vec::new(),
-            return_type: None,
-            examples: Vec::new(),
-            tags: HashMap::new(),
-            location: location.clone(),
-            source_code: if self.extract_examples { Some(line.to_string()) } else { None },
         })
-    }
-
     /// Parse trait item
     fn parse_trait_item(&self, line: &str, location: &SourceLocation) -> crate::error::Result<()> {
         let is_public = line.starts_with("pub ");
@@ -408,25 +281,10 @@ impl ApiExtractor {
             trait_part[6..brace_pos].trim().to_string()
         } else {
             trait_part[6..].trim().to_string()
-        };
         
         Ok(DocumentationItem {
-            name: name.clone(),
             kind: ItemKind::Interface, // Treat traits as interfaces
-            visibility: if is_public { Visibility::Public } else { Visibility::Private },
-            module: "stdlib".to_string(),
-            summary: format!("Trait {}", name),
-            description: String::new(),
-            signature: Some(line.to_string()),
-            parameters: Vec::new(),
-            return_type: None,
-            examples: Vec::new(),
-            tags: HashMap::new(),
-            location: location.clone(),
-            source_code: if self.extract_examples { Some(line.to_string()) } else { None },
         })
-    }
-
     /// Parse type alias item
     fn parse_type_item(&self, line: &str, location: &SourceLocation) -> crate::error::Result<()> {
         let is_public = line.starts_with("pub ");
@@ -437,25 +295,9 @@ impl ApiExtractor {
             type_part[5..eq_pos].trim().to_string() // Skip "type "
         } else {
             type_part[5..].trim().to_string()
-        };
         
         Ok(DocumentationItem {
-            name: name.clone(),
-            kind: ItemKind::Type,
-            visibility: if is_public { Visibility::Public } else { Visibility::Private },
-            module: "stdlib".to_string(),
-            summary: format!("Type alias {}", name),
-            description: String::new(),
-            signature: Some(line.to_string()),
-            parameters: Vec::new(),
-            return_type: None,
-            examples: Vec::new(),
-            tags: HashMap::new(),
-            location: location.clone(),
-            source_code: if self.extract_examples { Some(line.to_string()) } else { None },
         })
-    }
-
     /// Parse constant item
     fn parse_const_item(&self, line: &str, location: &SourceLocation) -> crate::error::Result<()> {
         let is_public = line.starts_with("pub ");
@@ -466,25 +308,9 @@ impl ApiExtractor {
             const_part[6..colon_pos].trim().to_string() // Skip "const "
         } else {
             const_part[6..].trim().to_string()
-        };
         
         Ok(DocumentationItem {
-            name: name.clone(),
-            kind: ItemKind::Constant,
-            visibility: if is_public { Visibility::Public } else { Visibility::Private },
-            module: "stdlib".to_string(),
-            summary: format!("Constant {}", name),
-            description: String::new(),
-            signature: Some(line.to_string()),
-            parameters: Vec::new(),
-            return_type: None,
-            examples: Vec::new(),
-            tags: HashMap::new(),
-            location: location.clone(),
-            source_code: if self.extract_examples { Some(line.to_string()) } else { None },
         })
-    }
-
     /// Parse static variable item
     fn parse_static_item(&self, line: &str, location: &SourceLocation) -> crate::error::Result<()> {
         let is_public = line.starts_with("pub ");
@@ -495,33 +321,15 @@ impl ApiExtractor {
             static_part[7..colon_pos].trim().to_string() // Skip "static "
         } else {
             static_part[7..].trim().to_string()
-        };
         
         Ok(DocumentationItem {
-            name: name.clone(),
-            kind: ItemKind::Variable,
-            visibility: if is_public { Visibility::Public } else { Visibility::Private },
-            module: "stdlib".to_string(),
-            summary: format!("Static variable {}", name),
-            description: String::new(),
-            signature: Some(line.to_string()),
-            parameters: Vec::new(),
-            return_type: None,
-            examples: Vec::new(),
-            tags: HashMap::new(),
-            location: location.clone(),
-            source_code: if self.extract_examples { Some(line.to_string()) } else { None },
         })
-    }
-
     /// Parse function parameters
     fn parse_function_parameters(&self, params_str: &str) -> crate::error::Result<()> {
         let mut parameters = Vec::new();
         
         if params_str.trim().is_empty() {
             return Ok(parameters);
-        }
-        
         // Simple parameter parsing (not handling complex types)
         for param in params_str.split(',') {
             let param = param.trim();
@@ -532,20 +340,12 @@ impl ApiExtractor {
                 // Skip 'self' parameters
                 if name == "self" || name == "&self" || name == "&mut self" {
                     continue;
-                }
-                
                 parameters.push(Parameter {
-                    name: name.to_string(),
-                    type_name: Some(type_str.to_string()),
-                    description: format!("Parameter {}", name),
-                    default_value: None,
                 });
             }
         }
         
         Ok(parameters)
-    }
-
     /// Parse documentation content
     fn parse_doc_content(&self, content: &str) -> crate::error::Result<()> {
         let lines: Vec<&str> = content.split("\n").collect();
@@ -564,11 +364,6 @@ impl ApiExtractor {
                 if in_example {
                     // End example
                     examples.push(Example {
-                        title: None,
-                        description: None,
-                        code: example_lines.join("\n"),
-                        language: example_lang.clone(),
-                        output: None,
                     });
                     example_lines.clear();
                     in_example = false;
@@ -592,8 +387,6 @@ impl ApiExtractor {
         let description = description_lines.join(" ");
         
         Ok((summary, description, examples))
-    }
-
     /// Extract imports from source code
     fn extract_imports(&self, source: &str) -> Vec<String> {
         let mut imports = Vec::new();
@@ -607,8 +400,6 @@ impl ApiExtractor {
         }
         
         imports
-    }
-
     /// Derive module name from file path
     fn derive_module_name(&self, file_path: &Path) -> String {
         let relative_path = file_path.strip_prefix(&self.base_path)
@@ -629,8 +420,6 @@ impl ApiExtractor {
         }
         
         name_parts.join("::")
-    }
-
     /// Gather source file information
     fn gather_source_info(&self, source: &str, file_path: &Path) -> crate::error::Result<()> {
         let file_size = source.len() as u64;
@@ -641,25 +430,13 @@ impl ApiExtractor {
             .and_then(|meta| meta.modified().ok());
 
         Ok(SourceInfo {
-            file_size,
-            line_count,
-            last_modified,
-            encoding: "UTF-8".to_string(),
         })
-    }
-
     /// Generate comprehensive stdlib API reference
     pub fn generate_api_reference(&self, output_path: &Path) -> crate::error::Result<()> {
         let docs = self.extract_stdlib_documentation()?;
         
         // Create comprehensive API reference structure
         let api_ref = serde_json::json!({
-            "api_version": "1.0.0",
-            "generated_at": chrono::Utc::now().to_rfc3339(),
-            "language": "cursed",
-            "stdlib_version": env!("CARGO_PKG_VERSION"),
-            "modules": docs.len(),
-            "total_items": docs.iter().map(|d| d.items.len()).sum::<usize>(),
             "documentation": docs
         });
         

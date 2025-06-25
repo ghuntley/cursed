@@ -11,52 +11,19 @@ static BENCHMARK_COUNT: AtomicU64 = AtomicU64::new(0);
 /// Benchmark configuration
 #[derive(Debug, Clone)]
 pub struct BenchmarkConfig {
-    pub iterations: usize,
-    pub warmup_iterations: usize,
-    pub min_duration: Duration,
-    pub max_duration: Duration,
-    pub sample_size: usize,
-    pub statistical_significance: bool,
-    pub measure_memory: bool,
-    pub measure_cpu: bool,
-}
-
 impl Default for BenchmarkConfig {
     fn default() -> Self {
         Self {
-            iterations: 1000,
-            warmup_iterations: 100,
-            min_duration: Duration::from_millis(100),
-            max_duration: Duration::from_secs(30),
-            sample_size: 100,
-            statistical_significance: true,
-            measure_memory: false,
-            measure_cpu: false,
         }
     }
-}
-
 /// Statistical analysis of benchmark results
 #[derive(Debug, Clone)]
 pub struct BenchmarkStatistics {
-    pub mean: Duration,
-    pub median: Duration,
-    pub min: Duration,
-    pub max: Duration,
-    pub std_dev: Duration,
-    pub percentile_95: Duration,
-    pub percentile_99: Duration,
-    pub coefficient_of_variation: f64,
-    pub outlier_count: usize,
-}
-
 impl BenchmarkStatistics {
     /// Calculate statistics from a set of measurements
     pub fn from_measurements(mut measurements: Vec<Duration>) -> Self {
         if measurements.is_empty() {
             return Self::default();
-        }
-
         measurements.sort();
         let len = measurements.len();
 
@@ -92,7 +59,6 @@ impl BenchmarkStatistics {
             (std_dev.as_nanos() as f64) / (mean_ns as f64)
         } else {
             0.0
-        };
 
         // Outlier detection (using IQR method)
         let q1_index = len / 4;
@@ -109,70 +75,22 @@ impl BenchmarkStatistics {
             .count();
 
         Self {
-            mean,
-            median,
-            min,
-            max,
-            std_dev,
-            percentile_95,
-            percentile_99,
-            coefficient_of_variation,
-            outlier_count,
         }
     }
-}
-
 impl Default for BenchmarkStatistics {
     fn default() -> Self {
         Self {
-            mean: Duration::new(0, 0),
-            median: Duration::new(0, 0),
-            min: Duration::new(0, 0),
-            max: Duration::new(0, 0),
-            std_dev: Duration::new(0, 0),
-            percentile_95: Duration::new(0, 0),
-            percentile_99: Duration::new(0, 0),
-            coefficient_of_variation: 0.0,
-            outlier_count: 0,
         }
     }
-}
-
 /// Memory usage during benchmark
 #[derive(Debug, Clone)]
 pub struct BenchmarkMemoryUsage {
-    pub initial_usage: u64,
-    pub peak_usage: u64,
-    pub final_usage: u64,
-    pub total_allocated: u64,
-    pub total_freed: u64,
-    pub allocation_count: u64,
-}
-
 /// CPU usage during benchmark
 #[derive(Debug, Clone)]
 pub struct BenchmarkCpuUsage {
-    pub user_time: Duration,
-    pub system_time: Duration,
-    pub total_time: Duration,
-    pub cpu_utilization: f64,
-}
-
 /// Complete benchmark result
 #[derive(Debug, Clone)]
 pub struct BenchmarkResult {
-    pub name: String,
-    pub config: BenchmarkConfig,
-    pub statistics: BenchmarkStatistics,
-    pub iterations_completed: usize,
-    pub total_time: Duration,
-    pub warmup_time: Duration,
-    pub memory_usage: Option<BenchmarkMemoryUsage>,
-    pub cpu_usage: Option<BenchmarkCpuUsage>,
-    pub metadata: HashMap<String, String>,
-    pub raw_measurements: Vec<Duration>,
-}
-
 impl BenchmarkResult {
     /// Get throughput (operations per second)
     pub fn throughput(&self) -> f64 {
@@ -186,8 +104,6 @@ impl BenchmarkResult {
     /// Check if benchmark is stable (low variance)
     pub fn is_stable(&self, max_cv: f64) -> bool {
         self.statistics.coefficient_of_variation <= max_cv
-    }
-
     /// Get performance classification
     pub fn performance_class(&self) -> BenchmarkPerformanceClass {
         if self.statistics.mean < Duration::from_micros(1) {
@@ -202,37 +118,16 @@ impl BenchmarkResult {
             BenchmarkPerformanceClass::Poor
         }
     }
-}
-
 /// Performance classification
 #[derive(Debug, Clone, PartialEq)]
 pub enum BenchmarkPerformanceClass {
-    Excellent,
-    VeryGood,
-    Good,
-    Fair,
-    Poor,
-}
-
 /// Benchmark suite containing multiple benchmarks
 #[derive(Debug)]
 pub struct BenchmarkSuite {
-    pub name: String,
-    pub benchmarks: Vec<Box<dyn Fn() -> ProfilerResult<()> + Send + Sync>>,
-    pub benchmark_names: Vec<String>,
-    pub config: BenchmarkConfig,
-    pub results: Vec<BenchmarkResult>,
-}
-
 impl BenchmarkSuite {
     /// Create a new benchmark suite
     pub fn new(name: &str, config: BenchmarkConfig) -> Self {
         Self {
-            name: name.to_string(),
-            benchmarks: Vec::new(),
-            benchmark_names: Vec::new(),
-            config,
-            results: Vec::new(),
         }
     }
 
@@ -243,8 +138,6 @@ impl BenchmarkSuite {
     {
         self.benchmark_names.push(name.to_string());
         self.benchmarks.push(Box::new(benchmark));
-    }
-
     /// Run all benchmarks in the suite
     pub fn run(&mut self) -> ProfilerResult<BenchmarkSuiteResult> {
         self.results.clear();
@@ -254,15 +147,9 @@ impl BenchmarkSuite {
             let name = &self.benchmark_names[i];
             let result = run_benchmark_with_config(name, benchmark, &self.config)?;
             self.results.push(result);
-        }
-
         let total_time = start_time.elapsed();
         
         Ok(BenchmarkSuiteResult {
-            suite_name: self.name.clone(),
-            results: self.results.clone(),
-            total_time,
-            benchmark_count: self.results.len(),
         })
     }
 }
@@ -270,29 +157,17 @@ impl BenchmarkSuite {
 /// Result of running a benchmark suite
 #[derive(Debug, Clone)]
 pub struct BenchmarkSuiteResult {
-    pub suite_name: String,
-    pub results: Vec<BenchmarkResult>,
-    pub total_time: Duration,
-    pub benchmark_count: usize,
-}
-
 impl BenchmarkSuiteResult {
     /// Get the fastest benchmark
     pub fn fastest(&self) -> Option<&BenchmarkResult> {
         self.results.iter().min_by_key(|r| r.statistics.mean)
-    }
-
     /// Get the slowest benchmark
     pub fn slowest(&self) -> Option<&BenchmarkResult> {
         self.results.iter().max_by_key(|r| r.statistics.mean)
-    }
-
     /// Get average throughput across all benchmarks
     pub fn average_throughput(&self) -> f64 {
         if self.results.is_empty() {
             return 0.0;
-        }
-
         let total_throughput: f64 = self.results.iter().map(|r| r.throughput()).sum();
         total_throughput / self.results.len() as f64
     }
@@ -300,9 +175,6 @@ impl BenchmarkSuiteResult {
 
 /// Benchmark runner for executing individual benchmarks
 pub struct BenchmarkRunner {
-    config: BenchmarkConfig,
-}
-
 impl BenchmarkRunner {
     /// Create a new benchmark runner
     pub fn new(config: BenchmarkConfig) -> Self {
@@ -323,11 +195,6 @@ pub struct Benchmark<F>
 where
     F: Fn() -> ProfilerResult<()>
 {
-    name: String,
-    function: F,
-    config: BenchmarkConfig,
-}
-
 impl<F> Benchmark<F>
 where
     F: Fn() -> ProfilerResult<()>
@@ -335,9 +202,6 @@ where
     /// Create a new benchmark
     pub fn new(name: &str, function: F, config: BenchmarkConfig) -> Self {
         Self {
-            name: name.to_string(),
-            function,
-            config,
         }
     }
 
@@ -350,41 +214,21 @@ where
 /// Comparison result between two benchmarks
 #[derive(Debug, Clone)]
 pub struct ComparisonResult {
-    pub baseline_name: String,
-    pub comparison_name: String,
-    pub speedup_factor: f64,
-    pub is_faster: bool,
-    pub is_statistically_significant: bool,
-    pub confidence_level: f64,
-}
-
 /// Benchmark report generator
 pub struct BenchmarkReport {
-    pub results: Vec<BenchmarkResult>,
-    pub comparisons: Vec<ComparisonResult>,
-    pub metadata: HashMap<String, String>,
-}
-
 impl BenchmarkReport {
     /// Create a new benchmark report
     pub fn new() -> Self {
         Self {
-            results: Vec::new(),
-            comparisons: Vec::new(),
-            metadata: HashMap::new(),
         }
     }
 
     /// Add a benchmark result
     pub fn add_result(&mut self, result: BenchmarkResult) {
         self.results.push(result);
-    }
-
     /// Add a comparison
     pub fn add_comparison(&mut self, comparison: ComparisonResult) {
         self.comparisons.push(comparison);
-    }
-
     /// Generate a summary report
     pub fn generate_summary(&self) -> String {
         let mut report = String::new();
@@ -402,14 +246,6 @@ impl BenchmarkReport {
                      - Max: {:?}\n\
                      - Std Dev: {:?}\n\
                      - Throughput: {:.2} ops/sec\n\
-                     - Iterations: {}\n\n",
-                    result.name,
-                    result.statistics.mean,
-                    result.statistics.median,
-                    result.statistics.min,
-                    result.statistics.max,
-                    result.statistics.std_dev,
-                    result.throughput(),
                     result.iterations_completed
                 ));
             }
@@ -420,10 +256,6 @@ impl BenchmarkReport {
             for comparison in &self.comparisons {
                 let status = if comparison.is_faster { "faster" } else { "slower" };
                 report.push_str(&format!(
-                    "- {} is {:.2}x {} than {}\n",
-                    comparison.comparison_name,
-                    comparison.speedup_factor,
-                    status,
                     comparison.baseline_name
                 ));
             }
@@ -439,19 +271,10 @@ where
     F: Fn() -> ProfilerResult<()>
 {
     benchmark_with_setup(name, || Ok(()), function, || Ok(()))
-}
-
 /// Run a benchmark with setup and teardown
 pub fn benchmark_with_setup<S, F, T>(
-    name: &str,
-    setup: S,
-    function: F,
-    teardown: T,
 ) -> ProfilerResult<BenchmarkResult>
 where
-    S: Fn() -> ProfilerResult<()>,
-    F: Fn() -> ProfilerResult<()>,
-    T: Fn() -> ProfilerResult<()>,
 {
     let config = BenchmarkConfig::default();
     
@@ -465,17 +288,11 @@ where
     teardown().map_err(|e| benchmark_error(&format!("Teardown failed: {}", e)))?;
     
     Ok(result)
-}
-
 /// Run a benchmark suite
 pub fn run_benchmark_suite(name: &str, mut suite: BenchmarkSuite) -> ProfilerResult<BenchmarkSuiteResult> {
     suite.run()
-}
-
 /// Compare two benchmark results
 pub fn compare_benchmarks(
-    baseline: &BenchmarkResult,
-    comparison: &BenchmarkResult,
 ) -> ComparisonResult {
     let baseline_mean_ns = baseline.statistics.mean.as_nanos() as f64;
     let comparison_mean_ns = comparison.statistics.mean.as_nanos() as f64;
@@ -484,7 +301,6 @@ pub fn compare_benchmarks(
         baseline_mean_ns / comparison_mean_ns
     } else {
         f64::INFINITY
-    };
     
     let is_faster = speedup_factor > 1.0;
     
@@ -494,12 +310,6 @@ pub fn compare_benchmarks(
     let is_statistically_significant = (speedup_factor - 1.0).abs() > (baseline_cv + comparison_cv);
     
     ComparisonResult {
-        baseline_name: baseline.name.clone(),
-        comparison_name: comparison.name.clone(),
-        speedup_factor,
-        is_faster,
-        is_statistically_significant,
-        confidence_level: if is_statistically_significant { 0.95 } else { 0.0 },
     }
 }
 
@@ -509,10 +319,7 @@ pub fn generate_benchmark_report(results: Vec<BenchmarkResult>) -> BenchmarkRepo
     
     for result in results {
         report.add_result(result);
-    }
-    
     // Add metadata
-    report.metadata.insert("generated_at".to_string(), 
         std::time::SystemTime::now()
             .duration_since(std::time::UNIX_EPOCH)
             .unwrap()
@@ -520,13 +327,8 @@ pub fn generate_benchmark_report(results: Vec<BenchmarkResult>) -> BenchmarkRepo
             .to_string());
     
     report
-}
-
 /// Internal function to run benchmark with configuration
 fn run_benchmark_with_config<F>(
-    name: &str,
-    benchmark: F,
-    config: &BenchmarkConfig,
 ) -> ProfilerResult<BenchmarkResult>
 where
     F: Fn() -> ProfilerResult<()>
@@ -548,8 +350,6 @@ where
         // Check time limits
         if start_time.elapsed() > config.max_duration {
             break;
-        }
-        
         let iteration_start = Instant::now();
         benchmark().map_err(|e| benchmark_error(&format!("Iteration {} failed: {}", i, e)))?;
         let iteration_time = iteration_start.elapsed();
@@ -565,35 +365,21 @@ where
     
     if measurements.is_empty() {
         return Err(benchmark_error("No measurements collected"));
-    }
-    
     let total_time = start_time.elapsed();
     let statistics = BenchmarkStatistics::from_measurements(measurements.clone());
     
     // Memory and CPU usage would be measured here in real implementation
     let memory_usage = if config.measure_memory {
         Some(BenchmarkMemoryUsage {
-            initial_usage: 0,
-            peak_usage: 0,
-            final_usage: 0,
-            total_allocated: 0,
-            total_freed: 0,
-            allocation_count: 0,
         })
     } else {
         None
-    };
     
     let cpu_usage = if config.measure_cpu {
         Some(BenchmarkCpuUsage {
-            user_time: Duration::new(0, 0),
-            system_time: Duration::new(0, 0),
-            total_time,
-            cpu_utilization: 0.0,
         })
     } else {
         None
-    };
     
     let mut metadata = HashMap::new();
     metadata.insert("rust_version".to_string(), option_env!("RUSTC_VERSION").unwrap_or("unknown").to_string());
@@ -602,21 +388,7 @@ where
     BENCHMARK_COUNT.fetch_add(1, Ordering::Relaxed);
     
     Ok(BenchmarkResult {
-        name: name.to_string(),
-        config: config.clone(),
-        statistics,
-        iterations_completed: completed_iterations,
-        total_time,
-        warmup_time,
-        memory_usage,
-        cpu_usage,
-        metadata,
-        raw_measurements: measurements,
     })
-}
-
 /// Get number of benchmarks run
 pub fn get_benchmark_count() -> u64 {
     BENCHMARK_COUNT.load(Ordering::Relaxed)
-}
-

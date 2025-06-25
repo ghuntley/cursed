@@ -19,126 +19,51 @@ use std::os::unix::process::ExitStatusExt;
 #[cfg(windows)]
 use std::os::windows::process::ExitStatusExt;
 
-// use crate::stdlib::process::error::{
-    ProcessError, ProcessResult, execution_failed, execution_failed_with_code,
+// Placeholder imports disabled
     timeout_error, invalid_arguments, io_error, system_error, platform_error
-};
+// };
 
 /// Safe process handle that eliminates unsafe memory operations
 #[derive(Debug)]
 pub struct SafeProcessHandle {
     /// Process ID
-    pub pid: u32,
     /// Safe reference to the child process
-    child_handle: Arc<Mutex<Option<Child>>>,
     /// Process start time
-    start_time: Instant,
     /// Process state tracking
-    state: Arc<RwLock<ProcessState>>,
     /// Resource limits
-    resource_limits: Arc<Mutex<ResourceLimits>>,
     /// Process metadata
-    metadata: ProcessMetadata,
-}
-
 /// Process state enumeration
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum ProcessState {
-    Created,
-    Running,
-    Waiting,
-    Stopped,
-    Terminated,
-}
-
 /// Process metadata for tracking and monitoring
 #[derive(Debug, Clone)]
 pub struct ProcessMetadata {
-    pub command: String,
-    pub args: Vec<String>,
-    pub working_dir: Option<PathBuf>,
-    pub env_vars: HashMap<String, String>,
-    pub parent_pid: Option<u32>,
-}
-
 /// Resource limits for process control
 #[derive(Debug, Clone)]
 pub struct ResourceLimits {
-    pub max_memory_bytes: Option<u64>,
-    pub max_cpu_percent: Option<f64>,
-    pub max_execution_time: Option<Duration>,
-    pub max_file_descriptors: Option<u32>,
-}
-
 /// Resource type enumeration for process limits
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum ResourceType {
-    Memory,
-    Cpu,
-    FileDescriptors,
-    ExecutionTime,
-}
-
 /// Security context for process isolation
 #[derive(Debug, Clone)]
 pub struct SecurityContext {
-    pub user_id: Option<u32>,
-    pub group_id: Option<u32>,
-    pub capabilities: Vec<String>,
-    pub sandbox_mode: bool,
-}
-
 /// Process isolation configuration
 #[derive(Debug, Clone)]
 pub struct ProcessIsolation {
-    pub filesystem_isolation: bool,
-    pub network_isolation: bool,
-    pub pid_isolation: bool,
-    pub user_isolation: bool,
-}
-
 /// Security check result
 #[derive(Debug, Clone)]
 pub enum SecurityCheck {
-    Passed,
-    Failed(String),
-    Warning(String),
-}
-
 /// Process guard for safe process management
 #[derive(Debug)]
 pub struct ProcessGuard {
-    pub pid: u32,
-    pub security_context: SecurityContext,
-    pub isolation: ProcessIsolation,
-}
-
 impl Default for ResourceLimits {
     fn default() -> Self {
         Self {
-            max_memory_bytes: None,
-            max_cpu_percent: None,
-            max_execution_time: None,
-            max_file_descriptors: None,
         }
     }
-}
-
 /// Process statistics for monitoring
 #[derive(Debug, Clone)]
 pub struct ProcessStatistics {
-    pub cpu_usage_percent: f64,
-    pub memory_usage_bytes: u64,
-    pub virtual_memory_bytes: u64,
-    pub resident_memory_bytes: u64,
-    pub file_descriptors_count: u32,
-    pub thread_count: u32,
-    pub uptime: Duration,
-    pub total_cpu_time: Duration,
-    pub bytes_read: u64,
-    pub bytes_written: u64,
-}
-
 impl SafeProcessHandle {
     /// Create a new safe process handle
     pub fn new(child: Child, metadata: ProcessMetadata) -> Self {
@@ -146,35 +71,21 @@ impl SafeProcessHandle {
         let start_time = Instant::now();
         
         Self {
-            pid,
-            child_handle: Arc::new(Mutex::new(Some(child))),
-            start_time,
-            state: Arc::new(RwLock::new(ProcessState::Running)),
-            resource_limits: Arc::new(Mutex::new(ResourceLimits::default())),
-            metadata,
         }
     }
 
     /// Get process ID
     pub fn pid(&self) -> u32 {
         self.pid
-    }
-
     /// Get process state
     pub fn state(&self) -> ProcessState {
         *self.state.read().unwrap()
-    }
-
     /// Set process state
     pub fn set_state(&self, new_state: ProcessState) {
         *self.state.write().unwrap() = new_state;
-    }
-
     /// Get process uptime
     pub fn uptime(&self) -> Duration {
         self.start_time.elapsed()
-    }
-
     /// Wait for process completion
     pub fn wait(&self) -> ProcessResult<ExitStatus> {
         let mut child_guard = self.child_handle.lock().unwrap();
@@ -246,14 +157,10 @@ impl SafeProcessHandle {
                 Err(system_error(errno, "kill", "Failed to send signal"))
             }
         }
-    }
-
     /// Send signal to process (Windows stub)
     #[cfg(windows)]
     pub fn send_signal(&self, _signal: i32) -> ProcessResult<()> {
         Err(platform_error("Signal sending not supported on Windows"))
-    }
-
     /// Terminate process gracefully
     pub fn terminate(&self, grace_period: Duration) -> ProcessResult<()> {
         #[cfg(unix)]
@@ -264,13 +171,9 @@ impl SafeProcessHandle {
             // Wait for grace period
             if let Ok(Some(_)) = self.wait_timeout(grace_period) {
                 return Ok(());
-            }
-            
             // Force kill if still running
             self.send_signal(9)?;
             Ok(())
-        }
-        
         #[cfg(windows)]
         {
             // On Windows, just kill the process
@@ -281,19 +184,13 @@ impl SafeProcessHandle {
     /// Get process statistics
     pub fn get_statistics(&self) -> ProcessResult<ProcessStatistics> {
         get_process_statistics(self.pid, self.start_time)
-    }
-
     /// Set resource limits
     pub fn set_resource_limits(&self, limits: ResourceLimits) -> ProcessResult<()> {
         *self.resource_limits.lock().unwrap() = limits.clone();
         apply_resource_limits(self.pid, &limits)
-    }
-
     /// Get resource limits
     pub fn get_resource_limits(&self) -> ResourceLimits {
         self.resource_limits.lock().unwrap().clone()
-    }
-
     /// Check if process is still running
     pub fn is_running(&self) -> bool {
         self.state() != ProcessState::Terminated && process_exists(self.pid)
@@ -305,8 +202,6 @@ impl Drop for SafeProcessHandle {
         // Attempt graceful termination
         if self.is_running() {
             let _ = self.terminate(Duration::from_secs(5));
-        }
-        
         tracing::debug!(pid = self.pid, "Process handle dropped and cleaned up");
     }
 }
@@ -314,16 +209,10 @@ impl Drop for SafeProcessHandle {
 /// Safe process manager for handling multiple processes
 #[derive(Debug)]
 pub struct SafeProcessManager {
-    processes: Arc<RwLock<HashMap<u32, Arc<SafeProcessHandle>>>>,
-    global_resource_limits: Arc<Mutex<ResourceLimits>>,
-}
-
 impl SafeProcessManager {
     /// Create a new process manager
     pub fn new() -> Self {
         Self {
-            processes: Arc::new(RwLock::new(HashMap::new())),
-            global_resource_limits: Arc::new(Mutex::new(ResourceLimits::default())),
         }
     }
 
@@ -331,26 +220,18 @@ impl SafeProcessManager {
     pub fn register_process(&self, handle: Arc<SafeProcessHandle>) {
         let mut processes = self.processes.write().unwrap();
         processes.insert(handle.pid(), handle);
-    }
-
     /// Unregister a process from the manager
     pub fn unregister_process(&self, pid: u32) -> Option<Arc<SafeProcessHandle>> {
         let mut processes = self.processes.write().unwrap();
         processes.remove(&pid)
-    }
-
     /// Get a process handle by PID
     pub fn get_process(&self, pid: u32) -> Option<Arc<SafeProcessHandle>> {
         let processes = self.processes.read().unwrap();
         processes.get(&pid).cloned()
-    }
-
     /// List all managed processes
     pub fn list_processes(&self) -> Vec<Arc<SafeProcessHandle>> {
         let processes = self.processes.read().unwrap();
         processes.values().cloned().collect()
-    }
-
     /// Kill all managed processes
     pub fn kill_all(&self) -> ProcessResult<()> {
         let processes = self.list_processes();
@@ -362,8 +243,6 @@ impl SafeProcessManager {
         }
         
         Ok(())
-    }
-
     /// Wait for all managed processes
     pub fn wait_all(&self, timeout: Option<Duration>) -> ProcessResult<()> {
         let processes = self.list_processes();
@@ -377,7 +256,6 @@ impl SafeProcessManager {
                 Some(total_timeout - start.elapsed())
             } else {
                 None
-            };
             
             if let Some(timeout) = remaining_timeout {
                 if process.wait_timeout(timeout)?.is_none() {
@@ -389,13 +267,9 @@ impl SafeProcessManager {
         }
         
         Ok(())
-    }
-
     /// Set global resource limits
     pub fn set_global_limits(&self, limits: ResourceLimits) {
         *self.global_resource_limits.lock().unwrap() = limits;
-    }
-
     /// Apply global limits to all processes
     pub fn apply_global_limits(&self) -> ProcessResult<()> {
         let limits = self.global_resource_limits.lock().unwrap().clone();
@@ -422,32 +296,16 @@ fn get_process_statistics(pid: u32, start_time: Instant) -> ProcessResult<Proces
     #[cfg(target_os = "linux")]
     {
         get_linux_process_statistics(pid, start_time)
-    }
-    
     #[cfg(target_os = "windows")]
     {
         get_windows_process_statistics(pid, start_time)
-    }
-    
     #[cfg(target_os = "macos")]
     {
         get_macos_process_statistics(pid, start_time)
-    }
-    
     #[cfg(not(any(target_os = "linux", target_os = "windows", target_os = "macos")))]
     {
         // Fallback for unsupported platforms
         Ok(ProcessStatistics {
-            cpu_usage_percent: 0.0,
-            memory_usage_bytes: 0,
-            virtual_memory_bytes: 0,
-            resident_memory_bytes: 0,
-            file_descriptors_count: 0,
-            thread_count: 1,
-            uptime: start_time.elapsed(),
-            total_cpu_time: Duration::from_secs(0),
-            bytes_read: 0,
-            bytes_written: 0,
         })
     }
 }
@@ -465,8 +323,6 @@ fn get_linux_process_statistics(pid: u32, start_time: Instant) -> ProcessResult<
     let stat_fields: Vec<&str> = stat_content.split_whitespace().collect();
     if stat_fields.len() < 24 {
         return Err(invalid_arguments("parse_stat", "stat_fields", "Invalid stat format"));
-    }
-    
     // Parse CPU times (in clock ticks)
     let utime: u64 = stat_fields[13].parse().unwrap_or(0);
     let stime: u64 = stat_fields[14].parse().unwrap_or(0);
@@ -501,8 +357,6 @@ fn get_linux_process_statistics(pid: u32, start_time: Instant) -> ProcessResult<
                 fd_size = value.parse().unwrap_or(0);
             }
         }
-    }
-    
     // Read /proc/[pid]/io for I/O statistics
     let mut bytes_read = 0u64;
     let mut bytes_written = 0u64;
@@ -527,55 +381,26 @@ fn get_linux_process_statistics(pid: u32, start_time: Instant) -> ProcessResult<
         (total_cpu_time.as_secs_f64() / uptime.as_secs_f64()) * 100.0
     } else {
         0.0
-    };
     
     Ok(ProcessStatistics {
-        cpu_usage_percent,
-        memory_usage_bytes: vm_rss_kb * 1024,
-        virtual_memory_bytes: vm_size_kb * 1024,
-        resident_memory_bytes: vm_rss_kb * 1024,
-        file_descriptors_count: fd_size,
-        thread_count: threads,
-        uptime,
-        total_cpu_time,
-        bytes_read,
-        bytes_written,
     })
-}
-
 /// Windows-specific process statistics
 #[cfg(target_os = "windows")]
 fn get_windows_process_statistics(pid: u32, start_time: Instant) -> ProcessResult<ProcessStatistics> {
     // Use the improved Windows support
 //     crate::stdlib::process::windows_support::get_windows_process_statistics(pid, start_time)
-}
-
 /// macOS-specific process statistics
 #[cfg(target_os = "macos")]
 fn get_macos_process_statistics(pid: u32, start_time: Instant) -> ProcessResult<ProcessStatistics> {
     // macOS-specific implementation would use libproc or sysctl
     // For now, return basic statistics
     Ok(ProcessStatistics {
-        cpu_usage_percent: 0.0,
-        memory_usage_bytes: 0,
-        virtual_memory_bytes: 0,
-        resident_memory_bytes: 0,
-        file_descriptors_count: 0,
-        thread_count: 1,
-        uptime: start_time.elapsed(),
-        total_cpu_time: Duration::from_secs(0),
-        bytes_read: 0,
-        bytes_written: 0,
     })
-}
-
 /// Cross-platform resource limits application
 fn apply_resource_limits(pid: u32, limits: &ResourceLimits) -> ProcessResult<()> {
     #[cfg(unix)]
     {
         apply_unix_resource_limits(pid, limits)
-    }
-    
     #[cfg(windows)]
     {
         apply_windows_resource_limits(pid, limits)
@@ -589,47 +414,31 @@ fn apply_unix_resource_limits(pid: u32, limits: &ResourceLimits) -> ProcessResul
     if let Some(memory_limit) = limits.max_memory_bytes {
         unsafe {
             let rlim = libc::rlimit {
-                rlim_cur: memory_limit,
-                rlim_max: memory_limit,
-            };
             
             if libc::setrlimit(libc::RLIMIT_AS, &rlim) != 0 {
                 let errno = std::io::Error::last_os_error().raw_os_error().unwrap_or(-1);
                 tracing::warn!(pid = pid, errno = errno, "Failed to set memory limit");
             }
         }
-    }
-    
     // File descriptor limit
     if let Some(fd_limit) = limits.max_file_descriptors {
         unsafe {
             let rlim = libc::rlimit {
-                rlim_cur: fd_limit as u64,
-                rlim_max: fd_limit as u64,
-            };
             
             if libc::setrlimit(libc::RLIMIT_NOFILE, &rlim) != 0 {
                 let errno = std::io::Error::last_os_error().raw_os_error().unwrap_or(-1);
                 tracing::warn!(pid = pid, errno = errno, "Failed to set file descriptor limit");
             }
         }
-    }
-    
     // CPU limiting would typically use cgroups
     if let Some(cpu_limit) = limits.max_cpu_percent {
         tracing::info!(pid = pid, limit = cpu_limit, "CPU limit set (requires cgroups implementation)");
-    }
-    
     Ok(())
-}
-
 /// Windows-specific resource limits
 #[cfg(windows)]
 fn apply_windows_resource_limits(pid: u32, limits: &ResourceLimits) -> ProcessResult<()> {
     // Use the improved Windows support
 //     crate::stdlib::process::windows_support::apply_windows_resource_limits(pid, limits)
-}
-
 /// Check if a process exists
 pub fn process_exists(pid: u32) -> bool {
     #[cfg(unix)]
@@ -648,15 +457,11 @@ pub fn process_exists(pid: u32) -> bool {
 /// Get current process ID
 pub fn current_pid() -> u32 {
     std::process::id()
-}
-
 /// Get parent process ID (cross-platform)
 pub fn parent_pid() -> ProcessResult<u32> {
     #[cfg(unix)]
     {
         Ok(unsafe { libc::getppid() as u32 })
-    }
-    
     #[cfg(windows)]
     {
 //         crate::stdlib::process::windows_support::get_windows_parent_pid()
@@ -669,136 +474,76 @@ static GLOBAL_PROCESS_MANAGER: std::sync::OnceLock<SafeProcessManager> = std::sy
 /// Get the global process manager
 pub fn global_process_manager() -> &'static SafeProcessManager {
     GLOBAL_PROCESS_MANAGER.get_or_init(SafeProcessManager::new)
-}
-
 /// Initialize the global process management system
 pub fn initialize_process_management() -> ProcessResult<()> {
     let _manager = global_process_manager();
     tracing::info!("Safe process management system initialized");
     Ok(())
-}
-
 /// Shutdown the global process management system
 pub fn shutdown_process_management() -> ProcessResult<()> {
     let manager = global_process_manager();
     manager.kill_all()?;
     tracing::info!("Safe process management system shutdown complete");
     Ok(())
-}
-
 
 /// Safety configuration for process management
 #[derive(Debug, Clone)]
 pub struct SafetyConfig {
     /// Enable memory protection
-    pub memory_protection: bool,
     /// Enable process isolation
-    pub process_isolation: bool,
     /// Enable security auditing
-    pub security_auditing: bool,
     /// Maximum process count
-    pub max_processes: Option<u32>,
     /// Default resource limits
-    pub default_limits: ResourceLimits,
     /// Security level
-    pub security_level: SecurityLevel,
-}
-
 /// Security policy for process execution
 #[derive(Debug, Clone)]
 pub struct SecurityPolicy {
     /// Policy name
-    pub name: String,
     /// Allowed capabilities
-    pub allowed_capabilities: Vec<String>,
     /// Denied capabilities
-    pub denied_capabilities: Vec<String>,
     /// Resource limits
-    pub resource_limits: ResourceLimits,
     /// Network access
-    pub network_access: bool,
     /// File system access
-    pub filesystem_access: bool,
     /// System call restrictions
-    pub syscall_restrictions: Vec<String>,
-}
-
 /// Security context data for process
 #[derive(Debug, Clone)]
 pub struct SecurityContextData {
     /// Process ID
-    pub pid: u32,
     /// User ID
-    pub uid: Option<u32>,
     /// Group ID
-    pub gid: Option<u32>,
     /// Security labels
-    pub labels: HashMap<String, String>,
     /// Applied policies
-    pub policies: Vec<String>,
     /// Creation time
-    pub created_at: std::time::Instant,
-}
-
 /// Security event for auditing
 #[derive(Debug, Clone)]
 pub struct SecurityEvent {
     /// Event timestamp
-    pub timestamp: std::time::Instant,
     /// Process ID
-    pub pid: u32,
     /// Event type
-    pub event_type: String,
     /// Event description
-    pub description: String,
     /// Security level
-    pub level: SecurityLevel,
-}
-
 /// Security levels
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum SecurityLevel {
     /// Low security
-    Low,
     /// Medium security
-    Medium,
     /// High security
-    High,
     /// Critical security
-    Critical,
-}
-
 impl Default for SafetyConfig {
     fn default() -> Self {
         Self {
-            memory_protection: true,
-            process_isolation: true,
-            security_auditing: true,
-            max_processes: Some(1000),
-            default_limits: ResourceLimits::default(),
-            security_level: SecurityLevel::Medium,
         }
     }
-}
-
 impl ProcessSecurityManager {
     /// Create a new process security manager
     pub fn new() -> Self {
         Self {
-            policies: Arc::new(RwLock::new(HashMap::new())),
-            contexts: Arc::new(RwLock::new(HashMap::new())),
-            audit_log: Arc::new(Mutex::new(Vec::new())),
-            config: SafetyConfig::default(),
         }
     }
 
     /// Create with custom configuration
     pub fn with_config(config: SafetyConfig) -> Self {
         Self {
-            policies: Arc::new(RwLock::new(HashMap::new())),
-            contexts: Arc::new(RwLock::new(HashMap::new())),
-            audit_log: Arc::new(Mutex::new(Vec::new())),
-            config,
         }
     }
 
@@ -807,27 +552,19 @@ impl ProcessSecurityManager {
         let mut policies = self.policies.write().unwrap();
         policies.insert(policy.name.clone(), policy);
         Ok(())
-    }
-
     /// Apply security context to process
     pub fn apply_context(&self, pid: u32, context: SecurityContextData) -> ProcessResult<()> {
         let mut contexts = self.contexts.write().unwrap();
         contexts.insert(pid, context);
         Ok(())
-    }
-
     /// Get security context for process
     pub fn get_context(&self, pid: u32) -> Option<SecurityContextData> {
         let contexts = self.contexts.read().unwrap();
         contexts.get(&pid).cloned()
-    }
-
     /// Log security event
     pub fn log_event(&self, event: SecurityEvent) {
         let mut audit_log = self.audit_log.lock().unwrap();
         audit_log.push(event);
-    }
-
     /// Get audit log
     pub fn get_audit_log(&self) -> Vec<SecurityEvent> {
         let audit_log = self.audit_log.lock().unwrap();

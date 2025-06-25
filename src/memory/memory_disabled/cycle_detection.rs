@@ -16,139 +16,64 @@ use crate::error::CursedError;
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum CycleDetectionAlgorithm {
     /// Bacon-Rajan cycle collection algorithm
-    BaconRajan,
     /// Trial deletion algorithm
-    TrialDeletion,
     /// Brownbridge algorithm (incremental)
-    Brownbridge,
     /// Hybrid approach combining multiple algorithms
-    Hybrid,
-}
-
 /// Color states for cycle detection algorithms
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 enum Color {
     /// Object has not been visited
-    White,
     /// Object is in the potential cycle set
-    Gray,
     /// Object is confirmed reachable
-    Black,
     /// Object is confirmed to be in a cycle
-    Purple,
     /// Object reference count is being decremented
-    Orange,
     /// Object is being freed
-    Red,
-}
-
 /// Information about a detected cycle
 #[derive(Debug, Clone)]
 pub struct CycleInfo {
     /// Objects in the cycle
-    pub objects: Vec<ObjectId>,
     /// Size of the cycle in objects
-    pub size: usize,
     /// Total memory size of the cycle
-    pub memory_size: usize,
     /// When the cycle was detected
-    pub detected_at: std::time::Instant,
     /// Which algorithm detected the cycle
-    pub detected_by: CycleDetectionAlgorithm,
-}
-
 /// Configuration for cycle detection
 #[derive(Debug, Clone)]
 pub struct CycleDetectionConfig {
     /// Primary algorithm to use
-    pub algorithm: CycleDetectionAlgorithm,
     /// Maximum cycle size to detect (prevents infinite loops)
-    pub max_cycle_size: usize,
     /// Enable incremental cycle detection
-    pub incremental: bool,
     /// Cycle detection frequency (every N allocations)
-    pub detection_frequency: usize,
     /// Enable hybrid algorithm combining multiple approaches
-    pub hybrid_mode: bool,
     /// Minimum object age before considering for cycle detection
-    pub min_object_age: std::time::Duration,
-}
-
 impl Default for CycleDetectionConfig {
     fn default() -> Self {
         Self {
-            algorithm: CycleDetectionAlgorithm::BaconRajan,
-            max_cycle_size: 1000,
-            incremental: true,
-            detection_frequency: 100,
-            hybrid_mode: false,
-            min_object_age: std::time::Duration::from_millis(100),
         }
     }
-}
-
 /// Statistics about cycle detection
 #[derive(Debug, Clone, Default)]
 pub struct CycleDetectionStats {
-    pub cycles_detected: u64,
-    pub cycles_collected: u64,
-    pub objects_in_cycles: u64,
-    pub detection_runs: u64,
-    pub false_positives: u64,
-    pub detection_time_total: std::time::Duration,
-    pub largest_cycle_size: usize,
-    pub cycles_by_algorithm: HashMap<CycleDetectionAlgorithm, u64>,
-}
-
 /// Reference information for cycle detection
 #[derive(Debug, Clone)]
 struct ObjectReference {
-    from_object: ObjectId,
-    to_object: ObjectId,
-    reference_type: ReferenceType,
-}
-
 /// Types of object references
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 enum ReferenceType {
     /// Strong reference (normal pointer)
-    Strong,
     /// Weak reference (doesn't prevent collection)
-    Weak,
     /// Root reference (from GC roots)
-    Root,
-}
-
 /// Cycle detector implementation
 pub struct CycleDetector {
-    config: RwLock<CycleDetectionConfig>,
-    object_registry: SharedObjectRegistry,
-    stats: RwLock<CycleDetectionStats>,
-    object_colors: RwLock<HashMap<ObjectId, Color>>,
-    reference_graph: RwLock<HashMap<ObjectId, Vec<ObjectReference>>>,
-    potential_cycles: Mutex<VecDeque<Vec<ObjectId>>>,
-    detection_counter: std::sync::atomic::AtomicUsize,
-}
-
 impl CycleDetector {
     /// Create a new cycle detector
     pub fn new(object_registry: SharedObjectRegistry) -> Self {
         Self::with_config(object_registry, CycleDetectionConfig::default())
-    }
-    
     /// Create a new cycle detector with custom configuration
     #[instrument(skip(object_registry, config))]
     pub fn with_config(object_registry: SharedObjectRegistry, config: CycleDetectionConfig) -> Self {
         info!("Creating cycle detector with config: {:?}", config);
         
         Self {
-            config: RwLock::new(config),
-            object_registry,
-            stats: RwLock::new(CycleDetectionStats::default()),
-            object_colors: RwLock::new(HashMap::new()),
-            reference_graph: RwLock::new(HashMap::new()),
-            potential_cycles: Mutex::new(VecDeque::new()),
-            detection_counter: std::sync::atomic::AtomicUsize::new(0),
         }
     }
     
@@ -161,10 +86,6 @@ impl CycleDetector {
             .map_err(|_| "Failed to acquire write lock on reference graph")?;
         
         let reference = ObjectReference {
-            from_object,
-            to_object,
-            reference_type,
-        };
         
         reference_graph.entry(from_object).or_insert_with(Vec::new).push(reference);
         
@@ -181,8 +102,6 @@ impl CycleDetector {
         }
         
         Ok(())
-    }
-    
     /// Remove a reference from the graph
     #[instrument(skip(self))]
     pub fn remove_reference(&self, from_object: ObjectId, to_object: ObjectId) -> Result<(), String> {
@@ -199,8 +118,6 @@ impl CycleDetector {
         }
         
         Ok(())
-    }
-    
     /// Detect cycles in the object graph
     #[instrument(skip(self))]
     pub fn detect_cycles(&self) -> Result<Vec<CycleInfo>, String> {
@@ -211,11 +128,6 @@ impl CycleDetector {
             .map_err(|_| "Failed to acquire read lock on config")?;
         
         let cycles = match config.algorithm {
-            CycleDetectionAlgorithm::BaconRajan => self.bacon_rajan_detection()?,
-            CycleDetectionAlgorithm::TrialDeletion => self.trial_deletion_detection()?,
-            CycleDetectionAlgorithm::Brownbridge => self.brownbridge_detection()?,
-            CycleDetectionAlgorithm::Hybrid => self.hybrid_detection()?,
-        };
         
         let detection_time = start_time.elapsed();
         
@@ -235,12 +147,8 @@ impl CycleDetector {
                     stats.largest_cycle_size = cycle.size;
                 }
             }
-        }
-        
         info!("Cycle detection completed: found {} cycles in {:?}", cycles.len(), detection_time);
         Ok(cycles)
-    }
-    
     /// Bacon-Rajan cycle collection algorithm
     fn bacon_rajan_detection(&self) -> Result<Vec<CycleInfo>, String> {
         debug!("Running Bacon-Rajan cycle detection");
@@ -265,8 +173,6 @@ impl CycleDetector {
         }
         
         Ok(cycles)
-    }
-    
     /// Trial deletion cycle detection algorithm
     fn trial_deletion_detection(&self) -> Result<Vec<CycleInfo>, String> {
         debug!("Running trial deletion cycle detection");
@@ -282,8 +188,6 @@ impl CycleDetector {
         for &object_id in reference_graph.keys() {
             if visited.contains(&object_id) {
                 continue;
-            }
-            
             // Try deleting this object and see if a cycle becomes unreachable
             if let Some(cycle) = self.trial_delete_object(object_id, &mut trial_graph, &mut visited)? {
                 cycles.push(cycle);
@@ -291,8 +195,6 @@ impl CycleDetector {
         }
         
         Ok(cycles)
-    }
-    
     /// Brownbridge incremental cycle detection
     fn brownbridge_detection(&self) -> Result<Vec<CycleInfo>, String> {
         debug!("Running Brownbridge incremental cycle detection");
@@ -309,8 +211,6 @@ impl CycleDetector {
         }
         
         Ok(cycles)
-    }
-    
     /// Hybrid detection using multiple algorithms
     fn hybrid_detection(&self) -> Result<Vec<CycleInfo>, String> {
         debug!("Running hybrid cycle detection");
@@ -325,8 +225,6 @@ impl CycleDetector {
                 found_cycle_objects.insert(obj);
             }
             all_cycles.push(cycle);
-        }
-        
         // Run incremental detection for recently changed objects
         let brownbridge_cycles = self.brownbridge_detection()?;
         for cycle in brownbridge_cycles {
@@ -340,8 +238,6 @@ impl CycleDetector {
         }
         
         Ok(all_cycles)
-    }
-    
     /// Check if an object could be a cycle root
     fn could_be_cycle_root(&self, object_id: ObjectId, references: &[ObjectReference]) -> Result<bool, String> {
         // An object could be a cycle root if:
@@ -351,8 +247,6 @@ impl CycleDetector {
         
         if references.is_empty() {
             return Ok(false);
-        }
-        
         // Check object age
         if let Ok(Some(metadata)) = self.object_registry.get(object_id) {
             let config = self.config.read()
@@ -369,13 +263,9 @@ impl CycleDetector {
         // If it's a root object itself, it's reachable
         if root_objects.contains(&object_id) {
             return Ok(false); // Root objects can't be in unreferenced cycles
-        }
-        
         // For now, we assume non-root objects could potentially be in cycles
         // A more sophisticated implementation would do a full reachability analysis
         Ok(true)
-    }
-    
     /// Find a cycle starting from a specific root object
     fn find_cycle_from_root(&self, root: ObjectId, reference_graph: &HashMap<ObjectId, Vec<ObjectReference>>) -> Result<Option<CycleInfo>, String> {
         let mut visited = HashSet::new();
@@ -387,11 +277,6 @@ impl CycleDetector {
             let cycle_size = path.len();
             
             Ok(Some(CycleInfo {
-                objects: path,
-                size: cycle_size,
-                memory_size,
-                detected_at: std::time::Instant::now(),
-                detected_by: CycleDetectionAlgorithm::BaconRajan,
             }))
         } else {
             Ok(None)
@@ -400,28 +285,16 @@ impl CycleDetector {
     
     /// Depth-first search to find cycles
     fn dfs_find_cycle(
-        &self,
-        current: ObjectId,
-        target: ObjectId,
-        reference_graph: &HashMap<ObjectId, Vec<ObjectReference>>,
-        visited: &mut HashSet<ObjectId>,
-        path: &mut Vec<ObjectId>,
     ) -> Result<bool, String> {
         if path.len() > 0 && current == target {
             return Ok(true); // Found cycle back to target
-        }
-        
         let config = self.config.read()
             .map_err(|_| "Failed to acquire read lock on config")?;
         
         if path.len() >= config.max_cycle_size {
             return Ok(false); // Prevent infinite loops
-        }
-        
         if visited.contains(&current) {
             return Ok(false); // Already explored this path
-        }
-        
         visited.insert(current);
         path.push(current);
         
@@ -438,14 +311,8 @@ impl CycleDetector {
         
         path.pop();
         Ok(false)
-    }
-    
     /// Trial delete an object to see if a cycle becomes unreachable
     fn trial_delete_object(
-        &self,
-        object_id: ObjectId,
-        trial_graph: &mut HashMap<ObjectId, Vec<ObjectReference>>,
-        visited: &mut HashSet<ObjectId>,
     ) -> Result<Option<CycleInfo>, String> {
         // Remove all references from this object
         let removed_refs = trial_graph.remove(&object_id).unwrap_or_default();
@@ -459,24 +326,14 @@ impl CycleDetector {
                     return Ok(Some(cycle));
                 }
             }
-        }
-        
         // Restore the references
         trial_graph.insert(object_id, removed_refs);
         Ok(None)
-    }
-    
     /// Check if removing an object creates an unreachable cycle
     fn check_unreachable_cycle(
-        &self,
-        start_object: ObjectId,
-        trial_graph: &HashMap<ObjectId, Vec<ObjectReference>>,
-        visited: &mut HashSet<ObjectId>,
     ) -> Result<Option<CycleInfo>, String> {
         if visited.contains(&start_object) {
             return Ok(None);
-        }
-        
         // Perform reachability analysis from GC roots
         let reachable_objects = self.analyze_reachability_from_roots(trial_graph)?;
         
@@ -488,8 +345,6 @@ impl CycleDetector {
         }
         
         Ok(None)
-    }
-    
     /// Mark an object for incremental cycle detection
     fn mark_for_incremental_detection(&self, object_id: ObjectId) -> Result<(), String> {
         debug!("Marking object {} for incremental detection", object_id);
@@ -499,27 +354,19 @@ impl CycleDetector {
             let mut object_colors = self.object_colors.write()
                 .map_err(|_| "Failed to acquire write lock on object colors")?;
             object_colors.insert(object_id, Color::Purple);
-        }
-        
         // Add to potential cycles queue for later processing
         let potential_cycle = self.find_potential_cycle_from_object(object_id)?;
         if !potential_cycle.is_empty() {
             let mut potential_cycles = self.potential_cycles.lock()
                 .map_err(|_| "Failed to acquire lock on potential cycles")?;
             potential_cycles.push_back(potential_cycle);
-        }
-        
         Ok(())
-    }
-    
     /// Verify a potential cycle found by incremental detection
     fn verify_potential_cycle(&self, potential_cycle: Vec<ObjectId>) -> Result<Option<CycleInfo>, String> {
         debug!("Verifying potential cycle with {} objects", potential_cycle.len());
         
         if potential_cycle.is_empty() {
             return Ok(None);
-        }
-        
         // Check if all objects in the potential cycle still exist
         let mut verified_objects = Vec::new();
         for &object_id in &potential_cycle {
@@ -530,8 +377,6 @@ impl CycleDetector {
         
         if verified_objects.len() < 2 {
             return Ok(None); // Need at least 2 objects for a cycle
-        }
-        
         // Verify the cycle structure still exists
         let reference_graph = self.reference_graph.read()
             .map_err(|_| "Failed to acquire read lock on reference graph")?;
@@ -540,11 +385,6 @@ impl CycleDetector {
             let memory_size = self.calculate_cycle_memory_size(&verified_objects)?;
             
             Ok(Some(CycleInfo {
-                objects: verified_objects.clone(),
-                size: verified_objects.len(),
-                memory_size,
-                detected_at: std::time::Instant::now(),
-                detected_by: CycleDetectionAlgorithm::Brownbridge,
             }))
         } else {
             // Update statistics for false positive
@@ -568,8 +408,6 @@ impl CycleDetector {
         }
         
         Ok(total_size)
-    }
-    
     /// Collect objects in detected cycles
     #[instrument(skip(self, cycles))]
     pub fn collect_cycles(&self, cycles: &[CycleInfo]) -> Result<usize, String> {
@@ -611,19 +449,13 @@ impl CycleDetector {
             let mut stats = self.stats.write()
                 .map_err(|_| "Failed to acquire write lock on stats")?;
             stats.cycles_collected += cycles.len() as u64;
-        }
-        
         info!("Collected {} objects from cycles", collected_objects);
         Ok(collected_objects)
-    }
-    
     /// Get cycle detection statistics
     pub fn get_stats(&self) -> Result<CycleDetectionStats, String> {
         let stats = self.stats.read()
             .map_err(|_| "Failed to acquire read lock on stats")?;
         Ok(stats.clone())
-    }
-    
     /// Update configuration
     pub fn update_config(&self, new_config: CycleDetectionConfig) -> Result<(), String> {
         let mut config = self.config.write()
@@ -631,8 +463,6 @@ impl CycleDetector {
         *config = new_config;
         info!("Updated cycle detection configuration");
         Ok(())
-    }
-    
     /// Clear the reference graph (for testing or reset)
     pub fn clear_reference_graph(&self) -> Result<(), String> {
         let mut reference_graph = self.reference_graph.write()
@@ -645,8 +475,6 @@ impl CycleDetector {
         
         info!("Cleared cycle detection reference graph");
         Ok(())
-    }
-    
     /// Analyze reachability from GC roots
     fn analyze_reachability_from_roots(&self, graph: &HashMap<ObjectId, Vec<ObjectReference>>) -> Result<HashSet<ObjectId>, String> {
         let mut reachable = HashSet::new();
@@ -657,8 +485,6 @@ impl CycleDetector {
         for root in roots {
             worklist.push_back(root);
             reachable.insert(root);
-        }
-        
         // Breadth-first traversal from roots
         while let Some(current) = worklist.pop_front() {
             if let Some(references) = graph.get(&current) {
@@ -673,17 +499,9 @@ impl CycleDetector {
                     }
                 }
             }
-        }
-        
         Ok(reachable)
-    }
-    
     /// Find an unreachable cycle starting from a given object
     fn find_unreachable_cycle(
-        &self,
-        start_object: ObjectId,
-        graph: &HashMap<ObjectId, Vec<ObjectReference>>,
-        visited: &mut HashSet<ObjectId>,
     ) -> Result<Option<CycleInfo>, String> {
         let mut cycle_path = Vec::new();
         let mut path_set = HashSet::new();
@@ -692,11 +510,6 @@ impl CycleDetector {
             let memory_size = self.calculate_cycle_memory_size(&cycle_path)?;
             
             Ok(Some(CycleInfo {
-                objects: cycle_path.clone(),
-                size: cycle_path.len(),
-                memory_size,
-                detected_at: std::time::Instant::now(),
-                detected_by: CycleDetectionAlgorithm::TrialDeletion,
             }))
         } else {
             Ok(None)
@@ -705,12 +518,6 @@ impl CycleDetector {
     
     /// DFS to find unreachable cycles
     fn dfs_find_unreachable_cycle(
-        &self,
-        current: ObjectId,
-        graph: &HashMap<ObjectId, Vec<ObjectReference>>,
-        visited: &mut HashSet<ObjectId>,
-        cycle_path: &mut Vec<ObjectId>,
-        path_set: &mut HashSet<ObjectId>,
     ) -> Result<bool, String> {
         if path_set.contains(&current) {
             // Found a cycle - extract the cycle portion
@@ -722,8 +529,6 @@ impl CycleDetector {
         
         if visited.contains(&current) {
             return Ok(false);
-        }
-        
         visited.insert(current);
         cycle_path.push(current);
         path_set.insert(current);
@@ -733,11 +538,6 @@ impl CycleDetector {
             for reference in references {
                 if reference.reference_type == ReferenceType::Strong {
                     if self.dfs_find_unreachable_cycle(
-                        reference.to_object,
-                        graph,
-                        visited,
-                        cycle_path,
-                        path_set,
                     )? {
                         return Ok(true);
                     }
@@ -748,8 +548,6 @@ impl CycleDetector {
         cycle_path.pop();
         path_set.remove(&current);
         Ok(false)
-    }
-    
     /// Find potential cycle objects starting from a given object
     fn find_potential_cycle_from_object(&self, object_id: ObjectId) -> Result<Vec<ObjectId>, String> {
         let mut potential_cycle = Vec::new();
@@ -759,27 +557,14 @@ impl CycleDetector {
             .map_err(|_| "Failed to acquire read lock on reference graph")?;
         
         self.collect_strongly_connected_component(
-            object_id,
-            &reference_graph,
-            &mut visited,
-            &mut potential_cycle,
         )?;
         
         Ok(potential_cycle)
-    }
-    
     /// Collect objects in the same strongly connected component
     fn collect_strongly_connected_component(
-        &self,
-        start: ObjectId,
-        graph: &HashMap<ObjectId, Vec<ObjectReference>>,
-        visited: &mut HashSet<ObjectId>,
-        component: &mut Vec<ObjectId>,
     ) -> Result<(), String> {
         if visited.contains(&start) {
             return Ok(());
-        }
-        
         visited.insert(start);
         component.push(start);
         
@@ -788,28 +573,15 @@ impl CycleDetector {
             for reference in references {
                 if reference.reference_type == ReferenceType::Strong {
                     self.collect_strongly_connected_component(
-                        reference.to_object,
-                        graph,
-                        visited,
-                        component,
                     )?;
                 }
             }
-        }
-        
         Ok(())
-    }
-    
     /// Verify that objects form a valid cycle structure
     fn verify_cycle_structure(
-        &self,
-        objects: &[ObjectId],
-        graph: &HashMap<ObjectId, Vec<ObjectReference>>,
     ) -> Result<bool, String> {
         if objects.len() < 2 {
             return Ok(false);
-        }
-        
         // Check that each object has a path to the next in the cycle
         for i in 0..objects.len() {
             let current = objects[i];
@@ -821,14 +593,8 @@ impl CycleDetector {
         }
         
         Ok(true)
-    }
-    
     /// Check if there's a path between two objects
     fn has_path_between(
-        &self,
-        from: ObjectId,
-        to: ObjectId,
-        graph: &HashMap<ObjectId, Vec<ObjectReference>>,
     ) -> Result<bool, String> {
         let mut visited = HashSet::new();
         let mut queue = VecDeque::new();
@@ -839,8 +605,6 @@ impl CycleDetector {
         while let Some(current) = queue.pop_front() {
             if current == to {
                 return Ok(true);
-            }
-            
             if let Some(references) = graph.get(&current) {
                 for reference in references {
                     if reference.reference_type == ReferenceType::Strong {
@@ -851,11 +615,7 @@ impl CycleDetector {
                     }
                 }
             }
-        }
-        
         Ok(false)
-    }
-    
     /// Get GC roots for reachability analysis
     fn get_gc_roots(&self) -> Result<Vec<ObjectId>, String> {
         // In a real implementation, this would get actual GC roots
@@ -870,11 +630,7 @@ impl CycleDetector {
                     roots.push(reference.to_object);
                 }
             }
-        }
-        
         Ok(roots)
-    }
-    
     /// Optimize reference counting for cycle detection
     pub fn optimize_reference_counting(&self) -> Result<(), String> {
         info!("Optimizing reference counting for cycle detection");
@@ -891,8 +647,6 @@ impl CycleDetector {
                 }
             }
             ref_counts.entry(*from_object).or_insert(0);
-        }
-        
         // Mark objects with suspicious reference counts
         let mut object_colors = self.object_colors.write()
             .map_err(|_| "Failed to acquire write lock on object colors")?;
@@ -909,13 +663,8 @@ impl CycleDetector {
         
         debug!("Reference counting optimization completed for {} objects", ref_counts.len());
         Ok(())
-    }
-    
     /// Check if an object has outgoing references
     fn has_outgoing_references(
-        &self,
-        object_id: ObjectId,
-        graph: &HashMap<ObjectId, Vec<ObjectReference>>,
     ) -> bool {
         if let Some(references) = graph.get(&object_id) {
             references.iter().any(|r| r.reference_type == ReferenceType::Strong)
@@ -939,13 +688,8 @@ impl CycleDetector {
         
         debug!("After weak reference handling: {} cycles remain", cycles.len());
         Ok(())
-    }
-    
     /// Check if a cycle can be broken by weak references
     fn can_break_cycle_with_weak_refs(
-        &self,
-        cycle: &CycleInfo,
-        graph: &HashMap<ObjectId, Vec<ObjectReference>>,
     ) -> Result<bool, String> {
         // A cycle can be broken if removing all weak references breaks the cycle
         for i in 0..cycle.objects.len() {
@@ -963,12 +707,8 @@ impl CycleDetector {
                     return Ok(false);
                 }
             }
-        }
-        
         // All connections are strong references, cycle cannot be broken
         Ok(true)
-    }
-    
     /// Performance optimization for large object graphs
     pub fn optimize_for_large_graphs(&self) -> Result<(), String> {
         info!("Applying performance optimizations for large object graphs");
@@ -985,15 +725,11 @@ impl CycleDetector {
         } else if graph_size > 1000 {
             // For medium graphs, use incremental detection
             self.enable_incremental_detection()?;
-        }
-        
         // Optimize data structures for better cache locality
         self.optimize_data_structures()?;
         
         debug!("Performance optimizations applied for graph with {} objects", graph_size);
         Ok(())
-    }
-    
     /// Enable sampling-based cycle detection for very large graphs
     fn enable_sampling_detection(&self) -> Result<(), String> {
         debug!("Enabling sampling-based cycle detection");
@@ -1006,8 +742,6 @@ impl CycleDetector {
         config.max_cycle_size = 100; // Limit cycle size for performance
         
         Ok(())
-    }
-    
     /// Enable incremental detection for medium-sized graphs
     fn enable_incremental_detection(&self) -> Result<(), String> {
         debug!("Enabling incremental cycle detection");
@@ -1019,8 +753,6 @@ impl CycleDetector {
         config.hybrid_mode = true; // Use hybrid for better coverage
         
         Ok(())
-    }
-    
     /// Optimize data structures for better performance
     fn optimize_data_structures(&self) -> Result<(), String> {
         debug!("Optimizing data structures for performance");
@@ -1040,8 +772,6 @@ impl CycleDetector {
         
         for object_id in to_remove {
             object_colors.remove(&object_id);
-        }
-        
         Ok(())
     }
 }

@@ -15,9 +15,8 @@ use std::time::{Duration, Instant, SystemTime};
 
 // use crate::stdlib::process::error::{ProcessError, ProcessResult};
 // pub use crate::stdlib::process::exec_slay::{
-    SlayCommand, SlayProcess, SlayProcessState, SlayOptions, SlayPipeline,
     SlayTask, SlayCommandBuilder, ProcessStats, SignalOptions
-};
+// };
 // use crate::stdlib::ipc::{IpcConfig, initialize_ipc};
 
 /// Enhanced slay command with additional capabilities
@@ -27,115 +26,40 @@ pub type EnhancedSlayCommand = EnhancedCommandBuilder;
 #[derive(Debug)]
 pub struct EnhancedSlayProcess {
     /// Process ID
-    pub pid: u32,
     /// Process handle
-    pub handle: Option<Child>,
     /// Start time
-    pub start_time: SystemTime,
     /// Resource limits
-    pub resource_limits: ResourceLimits,
     /// Security context
-    pub security_context: SecurityContext,
-}
-
 /// Enhanced slay options for configuration
 #[derive(Debug, Clone)]
 pub struct EnhancedSlayOptions {
     /// Resource limits
-    pub resource_limits: ResourceLimits,
     /// Security context
-    pub security_context: SecurityContext,
     /// Timeout configuration
-    pub timeout: Option<Duration>,
     /// Process priority
-    pub priority: ProcessPriority,
-}
-
 /// Enhanced command builder with comprehensive configuration
 #[derive(Debug, Clone)]
 pub struct EnhancedCommandBuilder {
-    command: String,
-    args: Vec<String>,
-    env_vars: HashMap<String, String>,
-    working_dir: Option<PathBuf>,
-    stdin_config: StdinConfig,
-    stdout_config: StdoutConfig,
-    stderr_config: StderrConfig,
-    timeout: Option<Duration>,
-    resource_limits: ResourceLimits,
-    priority: ProcessPriority,
-    security_context: SecurityContext,
-}
-
 /// Standard input configuration
 #[derive(Debug, Clone)]
 pub enum StdinConfig {
-    Inherit,
-    Null,
-    Piped,
-    FromFile(PathBuf),
-    FromBytes(Vec<u8>),
-    FromString(String),
-}
-
 /// Standard output configuration
 #[derive(Debug, Clone)]
 pub enum StdoutConfig {
-    Inherit,
-    Null,
-    Piped,
-    ToFile(PathBuf),
-    Append(PathBuf),
-    ToBuf(Arc<Mutex<Vec<u8>>>),
-}
-
 /// Standard error configuration
 #[derive(Debug, Clone)]
 pub enum StderrConfig {
-    Inherit,
-    Null,
-    Piped,
-    ToFile(PathBuf),
-    Append(PathBuf),
-    ToBuf(Arc<Mutex<Vec<u8>>>),
-    ToStdout,
-}
-
 /// Resource limits for process execution
 #[derive(Debug, Clone)]
 pub struct ResourceLimits {
-    pub max_memory: Option<u64>,
-    pub max_cpu_time: Option<Duration>,
-    pub max_wall_time: Option<Duration>,
-    pub max_open_files: Option<u64>,
-    pub max_processes: Option<u64>,
-    pub max_file_size: Option<u64>,
-}
-
 impl Default for ResourceLimits {
     fn default() -> Self {
         Self {
-            max_memory: None,
-            max_cpu_time: None,
-            max_wall_time: None,
-            max_open_files: None,
-            max_processes: None,
-            max_file_size: None,
         }
     }
-}
-
 /// Process execution priority
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum ProcessPriority {
-    Highest,
-    High,
-    Normal,
-    Low,
-    Lowest,
-    Custom(i32),
-}
-
 impl Default for ProcessPriority {
     fn default() -> Self {
         Self::Normal
@@ -145,158 +69,82 @@ impl Default for ProcessPriority {
 /// Security context for process execution
 #[derive(Debug, Clone)]
 pub struct SecurityContext {
-    pub user_id: Option<u32>,
-    pub group_id: Option<u32>,
-    pub supplementary_groups: Vec<u32>,
-    pub capabilities: Vec<String>,
-    pub seccomp_filter: Option<String>,
-    pub chroot_path: Option<PathBuf>,
-    pub namespace_isolation: NamespaceIsolation,
-}
-
 /// Namespace isolation configuration
 #[derive(Debug, Clone)]
 pub struct NamespaceIsolation {
-    pub pid: bool,
-    pub network: bool,
-    pub mount: bool,
-    pub user: bool,
-    pub ipc: bool,
-    pub uts: bool,
-}
-
 impl Default for NamespaceIsolation {
     fn default() -> Self {
         Self {
-            pid: false,
-            network: false,
-            mount: false,
-            user: false,
-            ipc: false,
-            uts: false,
         }
     }
-}
-
 impl Default for SecurityContext {
     fn default() -> Self {
         Self {
-            user_id: None,
-            group_id: None,
-            supplementary_groups: Vec::new(),
-            capabilities: Vec::new(),
-            seccomp_filter: None,
-            chroot_path: None,
-            namespace_isolation: NamespaceIsolation::default(),
         }
     }
-}
-
 impl EnhancedCommandBuilder {
     /// Create a new enhanced command builder
     pub fn new(command: &str) -> Self {
         Self {
-            command: command.to_string(),
-            args: Vec::new(),
-            env_vars: HashMap::new(),
-            working_dir: None,
-            stdin_config: StdinConfig::Inherit,
-            stdout_config: StdoutConfig::Inherit,
-            stderr_config: StderrConfig::Inherit,
-            timeout: None,
-            resource_limits: ResourceLimits::default(),
-            priority: ProcessPriority::default(),
-            security_context: SecurityContext::default(),
         }
     }
 
     /// Add command line arguments
     pub fn args<I, S>(mut self, args: I) -> Self
     where
-        I: IntoIterator<Item = S>,
-        S: AsRef<str>,
     {
         self.args.extend(args.into_iter().map(|s| s.as_ref().to_string()));
         self
-    }
-
     /// Add a single argument
     pub fn arg<S: AsRef<str>>(mut self, arg: S) -> Self {
         self.args.push(arg.as_ref().to_string());
         self
-    }
-
     /// Set environment variables
     pub fn envs<I, K, V>(mut self, vars: I) -> Self
     where
-        I: IntoIterator<Item = (K, V)>,
-        K: AsRef<str>,
-        V: AsRef<str>,
     {
         for (k, v) in vars {
             self.env_vars.insert(k.as_ref().to_string(), v.as_ref().to_string());
         }
         self
-    }
-
     /// Set a single environment variable
     pub fn env<K, V>(mut self, key: K, val: V) -> Self
     where
-        K: AsRef<str>,
-        V: AsRef<str>,
     {
         self.env_vars.insert(key.as_ref().to_string(), val.as_ref().to_string());
         self
-    }
-
     /// Set working directory
     pub fn current_dir<P: AsRef<Path>>(mut self, dir: P) -> Self {
         self.working_dir = Some(dir.as_ref().to_path_buf());
         self
-    }
-
     /// Configure stdin
     pub fn stdin(mut self, config: StdinConfig) -> Self {
         self.stdin_config = config;
         self
-    }
-
     /// Configure stdout
     pub fn stdout(mut self, config: StdoutConfig) -> Self {
         self.stdout_config = config;
         self
-    }
-
     /// Configure stderr
     pub fn stderr(mut self, config: StderrConfig) -> Self {
         self.stderr_config = config;
         self
-    }
-
     /// Set execution timeout
     pub fn timeout(mut self, timeout: Duration) -> Self {
         self.timeout = Some(timeout);
         self
-    }
-
     /// Set resource limits
     pub fn resource_limits(mut self, limits: ResourceLimits) -> Self {
         self.resource_limits = limits;
         self
-    }
-
     /// Set process priority
     pub fn priority(mut self, priority: ProcessPriority) -> Self {
         self.priority = priority;
         self
-    }
-
     /// Set security context
     pub fn security_context(mut self, context: SecurityContext) -> Self {
         self.security_context = context;
         self
-    }
-
     /// Build and execute the command
     pub fn spawn(self) -> ProcessResult<EnhancedProcess> {
         let mut cmd = Command::new(&self.command);
@@ -307,13 +155,9 @@ impl EnhancedCommandBuilder {
         // Set environment variables
         for (key, value) in &self.env_vars {
             cmd.env(key, value);
-        }
-        
         // Set working directory
         if let Some(dir) = &self.working_dir {
             cmd.current_dir(dir);
-        }
-        
         // Configure stdio
         self.configure_stdio(&mut cmd)?;
         
@@ -327,20 +171,14 @@ impl EnhancedCommandBuilder {
         
         let process = EnhancedProcess::new(child, self.timeout, self.resource_limits.clone());
         Ok(process)
-    }
-
     /// Execute and wait for completion
     pub fn output(self) -> ProcessResult<ProcessOutput> {
         let mut process = self.spawn()?;
         process.wait_with_output()
-    }
-
     /// Execute and return status
     pub fn status(self) -> ProcessResult<ExitStatus> {
         let mut process = self.spawn()?;
         process.wait()
-    }
-
     fn configure_stdio(&self, cmd: &mut Command) -> ProcessResult<()> {
         // Configure stdin
         match &self.stdin_config {
@@ -353,8 +191,6 @@ impl EnhancedCommandBuilder {
                 cmd.stdin(Stdio::from(file));
             }
             _ => { cmd.stdin(Stdio::piped()); } // Handle FromBytes and FromString after spawn
-        }
-        
         // Configure stdout
         match &self.stdout_config {
             StdoutConfig::Inherit => { cmd.stdout(Stdio::inherit()); }
@@ -371,8 +207,6 @@ impl EnhancedCommandBuilder {
                 cmd.stdout(Stdio::from(file));
             }
             _ => { cmd.stdout(Stdio::piped()); } // Handle ToBuf after spawn
-        }
-        
         // Configure stderr
         match &self.stderr_config {
             StderrConfig::Inherit => { cmd.stderr(Stdio::inherit()); }
@@ -390,11 +224,7 @@ impl EnhancedCommandBuilder {
                 cmd.stderr(Stdio::from(file));
             }
             _ => { cmd.stderr(Stdio::piped()); } // Handle ToBuf after spawn
-        }
-        
         Ok(())
-    }
-
     fn apply_resource_limits(&self, _cmd: &mut Command) -> ProcessResult<()> {
         // Resource limits would be applied using setrlimit after fork but before exec
         // This is a simplified version - full implementation would use pre_exec
@@ -409,36 +239,19 @@ impl EnhancedCommandBuilder {
                     // Apply resource limits
                     if let Some(max_memory) = limits.max_memory {
                         let rlim = libc::rlimit {
-                            rlim_cur: max_memory,
-                            rlim_max: max_memory,
-                        };
                         libc::setrlimit(libc::RLIMIT_AS, &rlim);
-                    }
-                    
                     if let Some(max_cpu_time) = limits.max_cpu_time {
                         let rlim = libc::rlimit {
-                            rlim_cur: max_cpu_time.as_secs(),
-                            rlim_max: max_cpu_time.as_secs(),
-                        };
                         libc::setrlimit(libc::RLIMIT_CPU, &rlim);
-                    }
-                    
                     if let Some(max_open_files) = limits.max_open_files {
                         let rlim = libc::rlimit {
-                            rlim_cur: max_open_files,
-                            rlim_max: max_open_files,
-                        };
                         libc::setrlimit(libc::RLIMIT_NOFILE, &rlim);
-                    }
-                    
                     Ok(())
                 });
             }
         }
         
         Ok(())
-    }
-
     fn apply_security_context(&self, _cmd: &mut Command) -> ProcessResult<()> {
         #[cfg(unix)]
         {
@@ -463,7 +276,6 @@ impl EnhancedCommandBuilder {
                     // Set supplementary groups
                     if !context.supplementary_groups.is_empty() {
                         if libc::setgroups(
-                            context.supplementary_groups.len(),
                             context.supplementary_groups.as_ptr()
                         ) != 0 {
                             return Err(std::io::Error::last_os_error());
@@ -481,64 +293,23 @@ impl EnhancedCommandBuilder {
 
 /// Enhanced process with comprehensive monitoring and control
 pub struct EnhancedProcess {
-    child: Child,
-    start_time: Instant,
-    timeout: Option<Duration>,
-    resource_limits: ResourceLimits,
-    stats: Arc<Mutex<ProcessStatistics>>,
-    monitoring_thread: Option<thread::JoinHandle<()>>,
-}
-
 /// Comprehensive process statistics
 #[derive(Debug, Clone)]
 pub struct ProcessStatistics {
-    pub pid: u32,
-    pub start_time: Instant,
-    pub cpu_time: Duration,
-    pub memory_usage: u64,
-    pub max_memory_usage: u64,
-    pub io_read_bytes: u64,
-    pub io_write_bytes: u64,
-    pub context_switches: u64,
-    pub page_faults: u64,
-    pub open_file_descriptors: u32,
-}
-
 impl Default for ProcessStatistics {
     fn default() -> Self {
         Self {
-            pid: 0,
-            start_time: Instant::now(),
-            cpu_time: Duration::from_secs(0),
-            memory_usage: 0,
-            max_memory_usage: 0,
-            io_read_bytes: 0,
-            io_write_bytes: 0,
-            context_switches: 0,
-            page_faults: 0,
-            open_file_descriptors: 0,
         }
     }
-}
-
 /// Process output with comprehensive information
 #[derive(Debug)]
 pub struct ProcessOutput {
-    pub status: ExitStatus,
-    pub stdout: Vec<u8>,
-    pub stderr: Vec<u8>,
-    pub statistics: ProcessStatistics,
-    pub execution_time: Duration,
-}
-
 impl EnhancedProcess {
     fn new(child: Child, timeout: Option<Duration>, limits: ResourceLimits) -> Self {
         let pid = child.id();
         let start_time = Instant::now();
         
         let stats = Arc::new(Mutex::new(ProcessStatistics {
-            pid,
-            start_time,
             ..Default::default()
         }));
         
@@ -552,15 +323,8 @@ impl EnhancedProcess {
             }))
         } else {
             None
-        };
         
         Self {
-            child,
-            start_time,
-            timeout,
-            resource_limits: limits,
-            stats,
-            monitoring_thread,
         }
     }
 
@@ -570,21 +334,17 @@ impl EnhancedProcess {
             self.wait_timeout(timeout)
         } else {
             self.child.wait().map_err(|e| ProcessError::WaitFailed(e.to_string()))
-        };
         
         // Update final statistics
         self.update_final_stats();
         
         result
-    }
-
     /// Wait with timeout
     pub fn wait_timeout(&mut self, timeout: Duration) -> ProcessResult<ExitStatus> {
         let start = Instant::now();
         
         loop {
             match self.child.try_wait() {
-                Ok(Some(status)) => return Ok(status),
                 Ok(None) => {
                     if start.elapsed() >= timeout {
                         // Timeout reached, terminate the process
@@ -593,11 +353,8 @@ impl EnhancedProcess {
                     }
                     thread::sleep(Duration::from_millis(10));
                 }
-                Err(e) => return Err(ProcessError::WaitFailed(e.to_string())),
             }
         }
-    }
-
     /// Wait and capture output
     pub fn wait_with_output(mut self) -> ProcessResult<ProcessOutput> {
         let start_time = self.start_time;
@@ -611,7 +368,6 @@ impl EnhancedProcess {
             output
         } else {
             Vec::new()
-        };
         
         let stderr = if let Some(mut stderr) = self.child.stderr.take() {
             let mut output = Vec::new();
@@ -620,34 +376,20 @@ impl EnhancedProcess {
             output
         } else {
             Vec::new()
-        };
         
         let statistics = self.stats.lock().unwrap().clone();
         
         Ok(ProcessOutput {
-            status,
-            stdout,
-            stderr,
-            statistics,
-            execution_time,
         })
-    }
-
     /// Kill the process
     pub fn kill(&mut self) -> ProcessResult<()> {
         self.child.kill().map_err(|e| ProcessError::KillFailed(e.to_string()))
-    }
-
     /// Get process ID
     pub fn id(&self) -> u32 {
         self.child.id()
-    }
-
     /// Get current statistics
     pub fn statistics(&self) -> ProcessStatistics {
         self.stats.lock().unwrap().clone()
-    }
-
     fn monitor_process(pid: u32, stats: Arc<Mutex<ProcessStatistics>>, limits: ResourceLimits) {
         loop {
             thread::sleep(Duration::from_millis(100));
@@ -688,8 +430,6 @@ impl EnhancedProcess {
                 }
             }
         }
-    }
-
     fn update_process_stats(pid: u32, stats: &mut ProcessStatistics) {
         // Read process statistics from /proc/{pid}/stat (Linux)
         #[cfg(target_os = "linux")]
@@ -711,8 +451,6 @@ impl EnhancedProcess {
                         stats.max_memory_usage = stats.max_memory_usage.max(stats.memory_usage);
                     }
                 }
-            }
-            
             // Read I/O statistics from /proc/{pid}/io
             if let Ok(io_content) = std::fs::read_to_string(format!("/proc/{}/io", pid)) {
                 for line in io_content.split("\n") {
@@ -730,22 +468,16 @@ impl EnhancedProcess {
                         }
                     }
                 }
-            }
-            
             // Count open file descriptors
             if let Ok(fd_entries) = std::fs::read_dir(format!("/proc/{}/fd", pid)) {
                 stats.open_file_descriptors = fd_entries.count() as u32;
             }
         }
-    }
-
     fn update_final_stats(&self) {
         if let Ok(mut stats) = self.stats.lock() {
             Self::update_process_stats(stats.pid, &mut stats);
         }
     }
-}
-
 impl Drop for EnhancedProcess {
     fn drop(&mut self) {
         // Ensure the child process is cleaned up
@@ -756,101 +488,69 @@ impl Drop for EnhancedProcess {
             let _ = handle.join();
         }
     }
-}
-
 /// Complete SlayCommand implementation following the specification
 impl SlayCommand {
     /// Create new SlayCommand constructor from specification
     pub fn new_slay_command(name: &str, args: &[&str]) -> Self {
         Self::new(name, args)
-    }
-
     /// Run command with enhanced error handling
     pub fn run_enhanced(&mut self) -> ProcessResult<SlayProcessState> {
         self.start()?;
         let process = self.process()?;
         process.wait()
-    }
-
     /// Start command with enhanced monitoring
     pub fn start_enhanced(&mut self) -> ProcessResult<SlayProcess> {
         self.start()?;
         self.process()
-    }
-
     /// Wait for command completion with enhanced state
     pub fn wait_enhanced(&mut self) -> ProcessResult<SlayProcessState> {
         self.wait()?;
         self.process_state()
-    }
-
     /// Get output with enhanced error information
     pub fn output_enhanced(&mut self) -> ProcessResult<(Vec<u8>, SlayProcessState)> {
         let output = self.output()?;
         let state = self.process_state()?;
         Ok((output, state))
-    }
-
     /// Get combined output with state information
     pub fn combined_output_enhanced(&mut self) -> ProcessResult<(Vec<u8>, SlayProcessState)> {
         let output = self.combined_output()?;
         let state = self.process_state()?;
         Ok((output, state))
-    }
-
     /// Get stdout pipe with enhanced buffering
     pub fn stdout_pipe_enhanced(&mut self) -> ProcessResult<Box<dyn BufRead + Send>> {
         let pipe = self.stdout_pipe()?;
         Ok(Box::new(BufReader::new(pipe)))
-    }
-
     /// Get stderr pipe with enhanced buffering
     pub fn stderr_pipe_enhanced(&mut self) -> ProcessResult<Box<dyn BufRead + Send>> {
         let pipe = self.stderr_pipe()?;
         Ok(Box::new(BufReader::new(pipe)))
-    }
-
     /// Get stdin pipe with enhanced buffering
     pub fn stdin_pipe_enhanced(&mut self) -> ProcessResult<Box<dyn Write + Send>> {
         let pipe = self.stdin_pipe()?;
         Ok(Box::new(BufWriter::new(pipe)))
-    }
-
     /// Enhanced configuration methods with fluent interface
     pub fn with_dir<P: AsRef<Path>>(mut self, dir: P) -> Self {
         self.set_dir(dir);
         self
-    }
-
     pub fn with_env(mut self, env: Vec<String>) -> Self {
         self.set_env(env);
         self
-    }
-
     pub fn with_env_var<K: AsRef<str>, V: AsRef<str>>(mut self, key: K, value: V) -> Self {
         self.add_env(key, value);
         self
-    }
-
     /// Set system process attributes (Unix-specific)
     #[cfg(unix)]
     pub fn set_sys_proc_attr(&mut self, process_group: Option<u32>) -> &mut Self {
         self.process_group = process_group;
         self
-    }
-
     /// Enhanced string representation
     pub fn enhanced_string(&self) -> String {
         let mut result = format!("{} {}", self.path, self.args.join(" "));
         
         if let Some(dir) = &self.dir {
             result.push_str(&format!(" (in {})", dir.display()));
-        }
-        
         if !self.env.is_empty() {
             result.push_str(&format!(" with {} env vars", self.env.len()));
-        }
-        
         result
     }
 }
@@ -864,13 +564,9 @@ impl SlayProcess {
             self.signal(sig)?;
             tracing::debug!(pid = self.pid, signal = sig, "Signal sent to process");
             Ok(())
-        }
-        
         #[cfg(not(unix))]
         {
             Err(ProcessError::PlatformError {
-                operation: "send_signal".to_string(),
-                message: "Signal sending not supported on this platform".to_string(),
             })
         }
     }
@@ -880,11 +576,6 @@ impl SlayProcess {
         #[cfg(unix)]
         {
             tracing::info!(
-                pid = self.pid,
-                signal = opts.signal,
-                grace_period_secs = opts.grace_period.as_secs(),
-                force = opts.force,
-                recursive = opts.recursive,
                 "Terminating process"
             );
             
@@ -892,11 +583,7 @@ impl SlayProcess {
                 self.kill_tree()?;
             } else {
                 self.terminate(opts)?;
-            }
-            
             Ok(())
-        }
-        
         #[cfg(not(unix))]
         {
             self.kill()
@@ -906,7 +593,6 @@ impl SlayProcess {
     /// Monitor with enhanced callbacks
     pub fn monitor_enhanced<F>(&self, interval: Duration, mut callback: F) -> ProcessResult<thread::JoinHandle<()>>
     where
-        F: FnMut(&ProcessStats, bool) + Send + 'static,
     {
         let pid = self.pid;
         let start_time = self.start_time;
@@ -923,8 +609,6 @@ impl SlayProcess {
                         callback(&stats, false);
                     }
                     break;
-                }
-                
                 // Get current stats
                 match get_process_stats_enhanced(pid, start_time) {
                     Ok(stats) => {
@@ -945,30 +629,19 @@ impl SlayProcess {
         });
         
         Ok(handle)
-    }
-
     /// Set enhanced resource limits
     pub fn set_enhanced_limits(&self, memory_limit: Option<u64>, cpu_limit: Option<f64>) -> ProcessResult<()> {
         #[cfg(unix)]
         {
             if let Some(memory) = memory_limit {
                 self.set_memory_limit(memory)?;
-            }
-            
             if let Some(cpu) = cpu_limit {
                 self.set_cpu_limit(cpu)?;
-            }
-            
             tracing::info!(
-                pid = self.pid,
-                memory_limit = memory_limit,
-                cpu_limit = cpu_limit,
                 "Resource limits set"
             );
             
             Ok(())
-        }
-        
         #[cfg(not(unix))]
         {
             tracing::warn!("Resource limits not supported on this platform");
@@ -980,22 +653,14 @@ impl SlayProcess {
     fn set_memory_limit(&self, limit_bytes: u64) -> ProcessResult<()> {
         unsafe {
             let rlim = libc::rlimit {
-                rlim_cur: limit_bytes,
-                rlim_max: limit_bytes,
-            };
             
             if libc::setrlimit(libc::RLIMIT_AS, &rlim) != 0 {
                 let errno = std::io::Error::last_os_error().raw_os_error().unwrap_or(-1);
                 return Err(ProcessError::SystemError {
-                    code: errno,
-                    operation: "setrlimit".to_string(),
-                    message: "Failed to set memory limit".to_string(),
                 });
             }
         }
         Ok(())
-    }
-
     #[cfg(unix)]
     fn set_cpu_limit(&self, limit_percent: f64) -> ProcessResult<()> {
         use std::process::Command;
@@ -1007,8 +672,6 @@ impl SlayProcess {
 //             return Err(crate::stdlib::process::error::invalid_arguments(
                 &format!("CPU limit percentage must be between 0 and 100, got {}", limit_percent)
             ));
-        }
-        
         // Try to use cgroups v2 first (modern systems)
         if let Ok(_) = fs::metadata("/sys/fs/cgroup/cgroup.controllers") {
             if let Err(_) = self.set_cpu_limit_cgroups_v2(limit_percent) {
@@ -1026,12 +689,8 @@ impl SlayProcess {
         // Fallback to external tools
         else {
             self.set_cpu_limit_cpulimit_tool(limit_percent)?;
-        }
-        
         tracing::info!(pid = self.pid, limit = limit_percent, "CPU limit applied successfully");
         Ok(())
-    }
-    
     #[cfg(unix)]
     fn set_cpu_limit_cgroups_v2(&self, limit_percent: f64) -> ProcessResult<()> {
         use std::fs::OpenOptions;
@@ -1067,8 +726,6 @@ impl SlayProcess {
 //             .map_err(|e| crate::stdlib::process::error::system_error(-1, "write_cgroup_procs", &e.to_string()))?;
         
         Ok(())
-    }
-    
     #[cfg(unix)]
     fn set_cpu_limit_cgroups_v1(&self, limit_percent: f64) -> ProcessResult<()> {
         use std::fs::OpenOptions;
@@ -1112,8 +769,6 @@ impl SlayProcess {
 //             .map_err(|e| crate::stdlib::process::error::system_error(-1, "write_tasks", &e.to_string()))?;
         
         Ok(())
-    }
-    
     #[cfg(unix)]
     fn set_cpu_limit_cpulimit_tool(&self, limit_percent: f64) -> ProcessResult<()> {
         use std::process::Command;
@@ -1139,39 +794,26 @@ impl SlayProcess {
                 "CPU limiting requires cgroups support or cpulimit tool"))
         }
     }
-}
-
 /// Enhanced SlayPipeline implementation
 impl SlayPipeline {
     /// Create new pipeline
     pub fn new(commands: Vec<SlayCommand>) -> Self {
         Self {
-            commands,
-            options: SlayOptions::default(),
         }
     }
 
     /// Create pipeline from multiple commands
     pub fn pipe(commands: Vec<SlayCommand>) -> Self {
         Self::new(commands)
-    }
-
     /// Run pipeline with enhanced error handling
     pub fn run_enhanced(&mut self) -> ProcessResult<Vec<SlayProcessState>> {
         self.start_enhanced()?;
         self.wait_enhanced()
-    }
-
     /// Start pipeline execution
     pub fn start_enhanced(&mut self) -> ProcessResult<Vec<SlayProcess>> {
         if self.commands.is_empty() {
             return Err(ProcessError::InvalidArguments {
-                operation: "start_pipeline".to_string(),
-                parameter: "commands".to_string(),
-                message: "Pipeline must have at least one command".to_string(),
             });
-        }
-
         let mut processes = Vec::new();
         let mut previous_stdout: Option<Box<dyn Read + Send>> = None;
 
@@ -1187,22 +829,14 @@ impl SlayPipeline {
             // Configure stdout for next command (except last)
             if i < self.commands.len() - 1 {
 //                 command.stdout = Some(crate::stdlib::process::exec_slay::ProcessStdout::Pipe);
-            }
-
             command.start()?;
             let process = command.process()?;
             
             // Get stdout for next command
             if i < self.commands.len() - 1 {
                 previous_stdout = Some(command.stdout_pipe()?);
-            }
-            
             processes.push(process);
-        }
-
         Ok(processes)
-    }
-
     /// Wait for pipeline completion
     pub fn wait_enhanced(&mut self) -> ProcessResult<Vec<SlayProcessState>> {
         let mut states = Vec::new();
@@ -1210,17 +844,11 @@ impl SlayPipeline {
         for command in &mut self.commands {
             let state = command.wait_enhanced()?;
             states.push(state);
-        }
-        
         Ok(states)
-    }
-
     /// Get pipeline output
     pub fn output_enhanced(&mut self) -> ProcessResult<(Vec<u8>, Vec<SlayProcessState>)> {
         if let Some(last_command) = self.commands.last_mut() {
 //             last_command.stdout = Some(crate::stdlib::process::exec_slay::ProcessStdout::Pipe);
-        }
-        
         let states = self.run_enhanced()?;
         
         if let Some(last_command) = self.commands.last_mut() {
@@ -1236,8 +864,6 @@ impl SlayPipeline {
         if let Some(last_command) = self.commands.last_mut() {
 //             last_command.stdout = Some(crate::stdlib::process::exec_slay::ProcessStdout::Pipe);
 //             last_command.stderr = Some(crate::stdlib::process::exec_slay::ProcessStderr::Pipe);
-        }
-        
         let states = self.run_enhanced()?;
         
         if let Some(last_command) = self.commands.last_mut() {
@@ -1255,23 +881,15 @@ impl SlayPipeline {
         // Apply options to all commands
         for command in &mut self.commands {
             command.with_options(self.options.clone());
-        }
-        
         self
-    }
-
     /// Add command to pipeline
     pub fn add_command_enhanced(mut self, command: SlayCommand) -> Self {
         self.commands.push(command);
         self
-    }
-
     /// Set all commands
     pub fn set_commands_enhanced(mut self, commands: Vec<SlayCommand>) -> Self {
         self.commands = commands;
         self
-    }
-
     /// Get string representation of pipeline
     pub fn string_enhanced(&self) -> String {
         self.commands
@@ -1296,17 +914,7 @@ impl SlayTask {
         });
         
         Ok(Self {
-            command,
-            start_time,
-            exit_code: None,
-            finished: false,
-            error: None,
-            output: Vec::new(),
-            combined_output: Vec::new(),
-            thread_handle: Some(thread_handle),
         })
-    }
-
     /// Wait for task completion with timeout
     pub fn wait_with_timeout(&mut self, timeout: Duration) -> ProcessResult<SlayProcessState> {
         let start = Instant::now();
@@ -1321,26 +929,15 @@ impl SlayTask {
                     break;
                 }
             }
-        }
-        
         if !self.finished {
             self.kill_enhanced()?;
             return Err(ProcessError::TimeoutError {
-                operation: "wait_task".to_string(),
-                timeout,
-                message: "Task execution timed out".to_string(),
             });
-        }
-        
         self.command.process_state()
-    }
-
     /// Kill task with enhanced cleanup
     pub fn kill_enhanced(&mut self) -> ProcessResult<()> {
         if let Ok(process) = self.command.process() {
             process.kill()?;
-        }
-        
         if let Some(handle) = self.thread_handle.take() {
             // Wait a bit for thread to cleanup
             thread::sleep(Duration::from_millis(100));
@@ -1356,14 +953,10 @@ impl SlayTask {
         self.error = Some("Task killed".to_string());
         
         Ok(())
-    }
-
     /// Check if task is running with enhanced status
     pub fn is_running_enhanced(&self) -> bool {
         if self.finished {
             return false;
-        }
-        
         if let Ok(process) = self.command.process() {
             check_process_running(process.pid())
         } else {
@@ -1374,31 +967,19 @@ impl SlayTask {
     /// Get elapsed time with precision
     pub fn elapsed_time_enhanced(&self) -> Duration {
         self.start_time.elapsed()
-    }
-
     /// Get output with error handling
     pub fn get_output_enhanced(&mut self) -> ProcessResult<Vec<u8>> {
         if !self.finished {
             self.wait()?;
-        }
-        
         if self.output.is_empty() {
             self.output = self.command.output()?;
-        }
-        
         Ok(self.output.clone())
-    }
-
     /// Get combined output with error handling
     pub fn get_combined_output_enhanced(&mut self) -> ProcessResult<Vec<u8>> {
         if !self.finished {
             self.wait()?;
-        }
-        
         if self.combined_output.is_empty() {
             self.combined_output = self.command.combined_output()?;
-        }
-        
         Ok(self.combined_output.clone())
     }
 }
@@ -1408,15 +989,6 @@ impl SlayCommandBuilder {
     /// Create new command builder
     pub fn new_enhanced(command: &str) -> Self {
         Self {
-            command: command.to_string(),
-            args: Vec::new(),
-            dir: None,
-            env: Vec::new(),
-            stdin: None,
-            stdout: None,
-            stderr: None,
-            timeout: None,
-            use_shell: false,
         }
     }
 
@@ -1424,81 +996,53 @@ impl SlayCommandBuilder {
     pub fn with_args_enhanced(mut self, args: &[&str]) -> Self {
         self.args.extend(args.iter().map(|s| s.to_string()));
         self
-    }
-
     /// Set working directory
     pub fn with_dir_enhanced<P: AsRef<Path>>(mut self, dir: P) -> Self {
         self.dir = Some(dir.as_ref().to_path_buf());
         self
-    }
-
     /// Set environment variables
     pub fn with_env_enhanced(mut self, env: Vec<String>) -> Self {
         self.env = env;
         self
-    }
-
     /// Add environment variable
     pub fn add_env_enhanced<K: AsRef<str>, V: AsRef<str>>(mut self, key: K, value: V) -> Self {
         let env_pair = format!("{}={}", key.as_ref(), value.as_ref());
         self.env.push(env_pair);
         self
-    }
-
     /// Set stdin configuration
 //     pub fn with_stdin_enhanced(mut self, config: crate::stdlib::process::exec_slay::ProcessStdin) -> Self {
         self.stdin = Some(config);
         self
-    }
-
     /// Set stdout configuration
 //     pub fn with_stdout_enhanced(mut self, config: crate::stdlib::process::exec_slay::ProcessStdout) -> Self {
         self.stdout = Some(config);
         self
-    }
-
     /// Set stderr configuration
 //     pub fn with_stderr_enhanced(mut self, config: crate::stdlib::process::exec_slay::ProcessStderr) -> Self {
         self.stderr = Some(config);
         self
-    }
-
     /// Set timeout
     pub fn with_timeout_enhanced(mut self, timeout: Duration) -> Self {
         self.timeout = Some(timeout);
         self
-    }
-
     /// Use shell for execution
     pub fn use_shell_enhanced(mut self, use_shell: bool) -> Self {
         self.use_shell = use_shell;
         self
-    }
-
     /// Build the command
     pub fn build_enhanced(self) -> SlayCommand {
         let mut command = SlayCommand::new(&self.command, &self.args.iter().map(|s| s.as_str()).collect::<Vec<_>>());
         
         if let Some(dir) = self.dir {
             command.set_dir(dir);
-        }
-        
         if !self.env.is_empty() {
             command.set_env(self.env);
-        }
-        
         if let Some(stdin) = self.stdin {
             command.set_stdin(stdin);
-        }
-        
         if let Some(stdout) = self.stdout {
             command.set_stdout(stdout);
-        }
-        
         if let Some(stderr) = self.stderr {
             command.set_stderr(stderr);
-        }
-        
         command
     }
 }
@@ -1509,8 +1053,6 @@ impl SlayCommandBuilder {
 pub fn run_with_timeout_enhanced(mut cmd: SlayCommand, timeout: Duration) -> ProcessResult<SlayProcessState> {
     cmd.run_with_timeout(timeout)?;
     cmd.process_state()
-}
-
 /// Get output with timeout
 pub fn output_with_timeout_enhanced(mut cmd: SlayCommand, timeout: Duration) -> ProcessResult<(Vec<u8>, SlayProcessState)> {
 //     cmd.stdout = Some(crate::stdlib::process::exec_slay::ProcessStdout::Pipe);
@@ -1518,8 +1060,6 @@ pub fn output_with_timeout_enhanced(mut cmd: SlayCommand, timeout: Duration) -> 
     let output = cmd.output()?;
     let state = cmd.process_state()?;
     Ok((output, state))
-}
-
 /// Get combined output with timeout
 pub fn combined_output_with_timeout_enhanced(mut cmd: SlayCommand, timeout: Duration) -> ProcessResult<(Vec<u8>, SlayProcessState)> {
 //     cmd.stdout = Some(crate::stdlib::process::exec_slay::ProcessStdout::Pipe);
@@ -1528,8 +1068,6 @@ pub fn combined_output_with_timeout_enhanced(mut cmd: SlayCommand, timeout: Dura
     let output = cmd.combined_output()?;
     let state = cmd.process_state()?;
     Ok((output, state))
-}
-
 /// Helper functions
 
 #[cfg(unix)]
@@ -1543,31 +1081,14 @@ fn check_process_running(pid: u32) -> bool {
 fn check_process_running(_pid: u32) -> bool {
     // Windows implementation would use GetExitCodeProcess
     true // Assume running for now
-}
-
 fn get_process_stats_enhanced(pid: u32, start_time: Instant) -> ProcessResult<ProcessStats> {
     #[cfg(target_os = "linux")]
     {
         get_linux_process_stats(pid, start_time)
-    }
-    
     #[cfg(not(target_os = "linux"))]
     {
         // Fallback implementation
         Ok(ProcessStats {
-            cpu: 0.0,
-            memory: 0,
-            resident_memory: 0,
-            virtual_memory: 0,
-            swap_memory: 0,
-            read_bytes: 0,
-            write_bytes: 0,
-            read_ops: 0,
-            write_ops: 0,
-            up_time: start_time.elapsed(),
-            thread_count: 1,
-            open_files: 0,
-            network_conns: 0,
         })
     }
 }
@@ -1580,9 +1101,6 @@ fn get_linux_process_stats(pid: u32, start_time: Instant) -> ProcessResult<Proce
     let stat_path = format!("/proc/{}/stat", pid);
     let stat_content = fs::read_to_string(&stat_path)
         .map_err(|e| ProcessError::IoError {
-            operation: "read_proc_stat".to_string(),
-            kind: format!("{:?}", e.kind()),
-            message: e.to_string(),
         })?;
     
     let stat_fields: Vec<&str> = stat_content.split_whitespace().collect();
@@ -1591,9 +1109,6 @@ fn get_linux_process_stats(pid: u32, start_time: Instant) -> ProcessResult<Proce
     let status_path = format!("/proc/{}/status", pid);
     let status_content = fs::read_to_string(&status_path)
         .map_err(|e| ProcessError::IoError {
-            operation: "read_proc_status".to_string(),
-            kind: format!("{:?}", e.kind()),
-            message: e.to_string(),
         })?;
     
     // Parse memory information
@@ -1615,8 +1130,6 @@ fn get_linux_process_stats(pid: u32, start_time: Instant) -> ProcessResult<Proce
                 threads = value.parse().unwrap_or(1);
             }
         }
-    }
-    
     // Read /proc/[pid]/io for I/O stats
     let io_path = format!("/proc/{}/io", pid);
     let mut read_bytes = 0u64;
@@ -1642,22 +1155,7 @@ fn get_linux_process_stats(pid: u32, start_time: Instant) -> ProcessResult<Proce
         entries.count() as i32
     } else {
         0
-    };
     
     Ok(ProcessStats {
         cpu: 0.0, // Would need previous sample to calculate
-        memory: rss_kb * 1024,
-        resident_memory: rss_kb * 1024,
-        virtual_memory: vmsize_kb * 1024,
-        swap_memory: 0,
-        read_bytes,
-        write_bytes,
-        read_ops: 0,
-        write_ops: 0,
-        up_time: start_time.elapsed(),
-        thread_count: threads,
-        open_files,
-        network_conns: 0,
     })
-}
-

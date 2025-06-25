@@ -6,38 +6,23 @@ use std::time::{Duration, Instant};
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum IdentificationFactor {
     /// Client IP address
-    IpAddress(std::net::IpAddr),
     /// User ID
-    UserId(String),
     /// API key
-    ApiKey(String),
     /// Session token
-    SessionToken(String),
     /// Custom identifier
-    Custom(String),
-}
-
 impl IdentificationFactor {
     /// Create IP address identification
     pub fn ip<I: Into<std::net::IpAddr>>(ip: I) -> Self {
         Self::IpAddress(ip.into())
-    }
-    
     /// Create user ID identification
     pub fn user_id<S: Into<String>>(id: S) -> Self {
         Self::UserId(id.into())
-    }
-    
     /// Create API key identification
     pub fn api_key<S: Into<String>>(key: S) -> Self {
         Self::ApiKey(key.into())
-    }
-    
     /// Create session token identification
     pub fn session_token<S: Into<String>>(token: S) -> Self {
         Self::SessionToken(token.into())
-    }
-    
     /// Create custom identification
     pub fn custom<S: Into<String>>(id: S) -> Self {
         Self::Custom(id.into())
@@ -47,89 +32,47 @@ impl IdentificationFactor {
 impl std::fmt::Display for IdentificationFactor {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            IdentificationFactor::IpAddress(ip) => write!(f, "ip:{}", ip),
-            IdentificationFactor::UserId(id) => write!(f, "user:{}", id),
-            IdentificationFactor::ApiKey(key) => write!(f, "api:{}", key),
-            IdentificationFactor::SessionToken(token) => write!(f, "session:{}", token),
-            IdentificationFactor::Custom(id) => write!(f, "custom:{}", id),
         }
     }
-}
-
 /// Rate limiter configuration
 #[derive(Debug, Clone)]
 pub struct RateLimiterConfig {
     /// Maximum requests per window
-    pub max_requests: u32,
     /// Time window duration
-    pub window_duration: Duration,
     /// Burst allowance
-    pub burst_size: u32,
     /// Reset behavior
-    pub reset_behavior: ResetBehavior,
-}
-
 /// Reset behavior for rate limiter
 #[derive(Debug, Clone, PartialEq)]
 pub enum ResetBehavior {
     /// Fixed window (resets at fixed intervals)
-    FixedWindow,
     /// Sliding window (continuous tracking)
-    SlidingWindow,
     /// Token bucket (refills at constant rate)
-    TokenBucket,
-}
-
 impl Default for RateLimiterConfig {
     fn default() -> Self {
         Self {
-            max_requests: 100,
-            window_duration: Duration::from_secs(60),
-            burst_size: 10,
-            reset_behavior: ResetBehavior::SlidingWindow,
         }
     }
-}
-
 /// Rate limiter state for a client
 #[derive(Debug, Clone)]
 struct RateLimitState {
-    requests: Vec<Instant>,
-    tokens: u32,
-    last_refill: Instant,
-}
-
 impl RateLimitState {
     fn new(initial_tokens: u32) -> Self {
         Self {
-            requests: Vec::new(),
-            tokens: initial_tokens,
-            last_refill: Instant::now(),
         }
     }
-}
-
 /// Rate limiter
 #[derive(Debug)]
 pub struct RateLimiter {
-    config: RateLimiterConfig,
-    states: HashMap<IdentificationFactor, RateLimitState>,
-}
-
 impl RateLimiter {
     /// Create new rate limiter
     pub fn new(config: RateLimiterConfig) -> Self {
         Self {
-            config,
-            states: HashMap::new(),
         }
     }
     
     /// Create with default configuration
     pub fn default() -> Self {
         Self::new(RateLimiterConfig::default())
-    }
-    
     /// Check if request is allowed
     pub fn is_allowed(&mut self, id: &IdentificationFactor) -> bool {
         let now = Instant::now();
@@ -138,9 +81,6 @@ impl RateLimiter {
         });
         
         match self.config.reset_behavior {
-            ResetBehavior::FixedWindow => self.check_fixed_window(state, now),
-            ResetBehavior::SlidingWindow => self.check_sliding_window(state, now),
-            ResetBehavior::TokenBucket => self.check_token_bucket(state, now),
         }
     }
     
@@ -155,11 +95,9 @@ impl RateLimiter {
             ResetBehavior::TokenBucket => {
                 self.refill_tokens(state, now);
                 state.tokens
-            },
             ResetBehavior::SlidingWindow => {
                 self.cleanup_old_requests(state, now);
                 self.config.max_requests.saturating_sub(state.requests.len() as u32)
-            },
             ResetBehavior::FixedWindow => {
                 if self.should_reset_window(state, now) {
                     self.config.max_requests
@@ -186,7 +124,6 @@ impl RateLimiter {
                     } else {
                         Some(Duration::ZERO)
                     }
-                },
                 ResetBehavior::SlidingWindow => {
                     if let Some(oldest) = state.requests.first() {
                         let window_end = *oldest + self.config.window_duration;
@@ -198,7 +135,6 @@ impl RateLimiter {
                     } else {
                         Some(Duration::ZERO)
                     }
-                },
                 ResetBehavior::TokenBucket => {
                     // Token bucket refills continuously
                     Some(Duration::from_secs(1))
@@ -212,18 +148,12 @@ impl RateLimiter {
     /// Clear all rate limit states
     pub fn clear(&mut self) {
         self.states.clear();
-    }
-    
     /// Clear state for specific identifier
     pub fn clear_identifier(&mut self, id: &IdentificationFactor) {
         self.states.remove(id);
-    }
-    
     fn check_fixed_window(&mut self, state: &mut RateLimitState, now: Instant) -> bool {
         if self.should_reset_window(state, now) {
             state.requests.clear();
-        }
-        
         if state.requests.len() < self.config.max_requests as usize {
             state.requests.push(now);
             true
@@ -265,8 +195,6 @@ impl RateLimiter {
     fn cleanup_old_requests(&self, state: &mut RateLimitState, now: Instant) {
         let cutoff = now - self.config.window_duration;
         state.requests.retain(|&timestamp| timestamp > cutoff);
-    }
-    
     fn refill_tokens(&self, state: &mut RateLimitState, now: Instant) {
         let time_passed = now.duration_since(state.last_refill);
         let refill_rate = self.config.max_requests as f64 / self.config.window_duration.as_secs_f64();
@@ -277,8 +205,6 @@ impl RateLimiter {
             state.last_refill = now;
         }
     }
-}
-
 impl Default for RateLimiter {
     fn default() -> Self {
         Self::new(RateLimiterConfig::default())
@@ -288,28 +214,14 @@ impl Default for RateLimiter {
 /// Rate limit result
 #[derive(Debug, Clone)]
 pub struct RateLimitResult {
-    pub allowed: bool,
-    pub remaining: u32,
-    pub reset_time: Option<Duration>,
-    pub retry_after: Option<Duration>,
-}
-
 impl RateLimitResult {
     pub fn allowed(remaining: u32, reset_time: Option<Duration>) -> Self {
         Self {
-            allowed: true,
-            remaining,
-            reset_time,
-            retry_after: None,
         }
     }
     
     pub fn denied(retry_after: Duration) -> Self {
         Self {
-            allowed: false,
-            remaining: 0,
-            reset_time: Some(retry_after),
-            retry_after: Some(retry_after),
         }
     }
 }

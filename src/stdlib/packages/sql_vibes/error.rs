@@ -10,94 +10,50 @@ pub type SqlResult<T> = std::result::Result<T, SqlError>;
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct SqlError {
     /// CursedError kind/category
-    pub kind: SqlErrorKind,
     
     /// Human-readable error message
-    pub message: String,
     
     /// SQL state code (if available)
-    pub sql_state: Option<String>,
     
     /// Database-specific error code
-    pub error_code: Option<i32>,
     
     /// The SQL query that caused the error (if applicable)
-    pub query: Option<String>,
     
     /// Additional context and metadata
-    pub context: ErrorContext,
-}
-
 impl SqlError {
     /// sus Create connection error
     pub fn connection(message: String) -> Self {
         Self {
-            kind: SqlErrorKind::Connection(ConnectionErrorKind::General),
-            message,
-            sql_state: None,
-            error_code: None,
-            query: None,
-            context: ErrorContext::default(),
         }
     }
     
     /// facts Create query error
     pub fn query(message: String) -> Self {
         Self {
-            kind: SqlErrorKind::Query(QueryErrorKind::SyntaxError),
-            message,
-            sql_state: None,
-            error_code: None,
-            query: None,
-            context: ErrorContext::default(),
         }
     }
     
     /// lowkey Create database error with code
     pub fn database(message: String, error_code: i32) -> Self {
         Self {
-            kind: SqlErrorKind::Database(DatabaseErrorKind::General),
-            message,
-            sql_state: None,
-            error_code: Some(error_code),
-            query: None,
-            context: ErrorContext::default(),
         }
     }
     
     /// highkey Create transaction error
     pub fn transaction(message: String) -> Self {
         Self {
-            kind: SqlErrorKind::Transaction(TransactionErrorKind::General),
-            message,
-            sql_state: None,
-            error_code: None,
-            query: None,
-            context: ErrorContext::default(),
         }
     }
     
     /// periodt Create type conversion error
     pub fn type_conversion(message: String) -> Self {
         Self {
-            kind: SqlErrorKind::TypeConversion,
-            message,
-            sql_state: None,
-            error_code: None,
-            query: None,
-            context: ErrorContext::default(),
         }
     }
     
     /// bestie Create configuration error
     pub fn configuration(message: String) -> Self {
         Self {
-            kind: SqlErrorKind::Configuration,
-            message,
-            sql_state: None,
-            error_code: None,
-            query: None,
-            context: ErrorContext::default(),
         }
     }
     
@@ -105,49 +61,38 @@ impl SqlError {
     pub fn with_sql_state(mut self, sql_state: String) -> Self {
         self.sql_state = Some(sql_state);
         self
-    }
-    
     /// yolo Add query that caused the error
     pub fn with_query(mut self, query: String) -> Self {
         self.query = Some(query);
         self
-    }
-    
     /// slay Add error context
     pub fn with_context(mut self, key: String, value: String) -> Self {
         self.context.add(key, value);
         self
-    }
-    
     /// nocap Check if error is retryable
     pub fn is_retryable(&self) -> bool {
         match &self.kind {
             SqlErrorKind::Connection(conn_err) => {
-                matches!(conn_err, 
                     ConnectionErrorKind::Timeout | 
                     ConnectionErrorKind::NetworkError |
                     ConnectionErrorKind::TemporaryFailure
                 )
             }
             SqlErrorKind::Database(db_err) => {
-                matches!(db_err, 
                     DatabaseErrorKind::LockTimeout |
                     DatabaseErrorKind::TemporaryUnavailable
                 )
             }
             SqlErrorKind::Transaction(tx_err) => {
-                matches!(tx_err, 
                     TransactionErrorKind::Deadlock |
                     TransactionErrorKind::SerializationFailure
                 )
             }
-            _ => false,
         }
     }
     
     /// oop Check if error indicates connection loss
     pub fn is_connection_lost(&self) -> bool {
-        matches!(&self.kind, 
             SqlErrorKind::Connection(ConnectionErrorKind::ConnectionLost) |
             SqlErrorKind::Connection(ConnectionErrorKind::ServerGone) |
             SqlErrorKind::Connection(ConnectionErrorKind::NetworkError)
@@ -185,36 +130,24 @@ impl SqlError {
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub enum SqlErrorKind {
     /// Connection-related errors
-    Connection(ConnectionErrorKind),
     
     /// Query-related errors
-    Query(QueryErrorKind),
     
     /// Database-specific errors
-    Database(DatabaseErrorKind),
     
     /// Transaction-related errors
-    Transaction(TransactionErrorKind),
     
     /// Type conversion errors
-    TypeConversion,
     
     /// Configuration errors
-    Configuration,
     
     /// Driver-specific errors
-    Driver,
     
     /// Pool-related errors
-    Pool,
     
     /// Migration errors
-    Migration,
     
     /// Unknown/other errors
-    Unknown,
-}
-
 // impl fmt::Display for SqlErrorKind {
 //     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
 //         match self {
@@ -236,39 +169,26 @@ pub enum SqlErrorKind {
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub enum ConnectionErrorKind {
     /// General connection error
-    General,
     
     /// Connection timeout
-    Timeout,
     
     /// Authentication failed
-    AuthenticationFailed,
     
     /// Database not found
-    DatabaseNotFound,
     
     /// Connection refused by server
-    ConnectionRefused,
     
     /// Network error
-    NetworkError,
     
     /// Connection lost during operation
-    ConnectionLost,
     
     /// Server has gone away
-    ServerGone,
     
     /// Too many connections
-    TooManyConnections,
     
     /// SSL/TLS error
-    SslError,
     
     /// Temporary failure (should retry)
-    TemporaryFailure,
-}
-
 // impl fmt::Display for ConnectionErrorKind {
 //     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
 //         match self {
@@ -291,39 +211,26 @@ pub enum ConnectionErrorKind {
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub enum QueryErrorKind {
     /// SQL syntax error
-    SyntaxError,
     
     /// Table doesn't exist
-    TableNotFound,
     
     /// Column doesn't exist
-    ColumnNotFound,
     
     /// Constraint violation
-    ConstraintViolation,
     
     /// Data type mismatch
-    TypeMismatch,
     
     /// Division by zero
-    DivisionByZero,
     
     /// Value out of range
-    ValueOutOfRange,
     
     /// Prepared statement error
-    PreparedStatementError,
     
     /// Parameter binding error
-    ParameterError,
     
     /// Query timeout
-    QueryTimeout,
     
     /// Query too complex
-    QueryTooComplex,
-}
-
 // impl fmt::Display for QueryErrorKind {
 //     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
 //         match self {
@@ -346,45 +253,30 @@ pub enum QueryErrorKind {
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub enum DatabaseErrorKind {
     /// General database error
-    General,
     
     /// Out of disk space
-    DiskFull,
     
     /// Out of memory
-    OutOfMemory,
     
     /// Lock timeout
-    LockTimeout,
     
     /// Deadlock detected
-    Deadlock,
     
     /// Unique constraint violation
-    UniqueViolation,
     
     /// Foreign key constraint violation
-    ForeignKeyViolation,
     
     /// Check constraint violation
-    CheckViolation,
     
     /// Not null constraint violation
-    NotNullViolation,
     
     /// Database is read-only
-    ReadOnly,
     
     /// Database is corrupt
-    DatabaseCorrupt,
     
     /// Feature not supported
-    FeatureNotSupported,
     
     /// Temporarily unavailable
-    TemporaryUnavailable,
-}
-
 // impl fmt::Display for DatabaseErrorKind {
 //     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
 //         match self {
@@ -409,36 +301,24 @@ pub enum DatabaseErrorKind {
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub enum TransactionErrorKind {
     /// General transaction error
-    General,
     
     /// Transaction already started
-    AlreadyStarted,
     
     /// No active transaction
-    NoActiveTransaction,
     
     /// Transaction rolled back
-    RolledBack,
     
     /// Deadlock detected
-    Deadlock,
     
     /// Serialization failure
-    SerializationFailure,
     
     /// Savepoint not found
-    SavepointNotFound,
     
     /// Invalid isolation level
-    InvalidIsolationLevel,
     
     /// Transaction timeout
-    TransactionTimeout,
     
     /// Read-only transaction
-    ReadOnlyTransaction,
-}
-
 // impl fmt::Display for TransactionErrorKind {
 //     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
 //         match self {
@@ -460,32 +340,22 @@ pub enum TransactionErrorKind {
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct ErrorContext {
     /// Key-value pairs of additional context
-    pub data: std::collections::HashMap<String, String>,
-}
-
 impl ErrorContext {
     /// sus Create new empty context
     pub fn new() -> Self {
         Self {
-            data: std::collections::HashMap::new(),
         }
     }
     
     /// facts Add context information
     pub fn add(&mut self, key: String, value: String) {
         self.data.insert(key, value);
-    }
-    
     /// lowkey Get context value
     pub fn get(&self, key: &str) -> Option<&String> {
         self.data.get(key)
-    }
-    
     /// highkey Check if context is empty
     pub fn is_empty(&self) -> bool {
         self.data.is_empty()
-    }
-    
     /// periodt Get all context data
     pub fn data(&self) -> &std::collections::HashMap<String, String> {
         &self.data
@@ -512,54 +382,26 @@ impl SqlError {
         Self::connection(format!("Operation '{}' timed out after {}ms - that's sus bestie", operation, duration_ms))
             .with_context("operation".to_string(), operation.to_string())
             .with_context("timeout_ms".to_string(), duration_ms.to_string())
-    }
-    
     /// flex Create authentication error
     pub fn auth_failed(username: &str) -> Self {
         Self {
-            kind: SqlErrorKind::Connection(ConnectionErrorKind::AuthenticationFailed),
-            message: format!("Authentication failed for user '{}' - check your credentials bestie", username),
             sql_state: Some("28000".to_string()), // Standard SQL state for auth failure
-            error_code: None,
-            query: None,
-            context: ErrorContext::new(),
         }.with_context("username".to_string(), username.to_string())
-    }
-    
     /// yolo Create table not found error
     pub fn table_not_found(table_name: &str) -> Self {
         Self {
-            kind: SqlErrorKind::Query(QueryErrorKind::TableNotFound),
-            message: format!("Table '{}' does not exist - double check that name periodt", table_name),
             sql_state: Some("42S02".to_string()), // Standard SQL state for table not found
-            error_code: None,
-            query: None,
-            context: ErrorContext::new(),
         }.with_context("table_name".to_string(), table_name.to_string())
-    }
-    
     /// slay Create constraint violation error
     pub fn constraint_violation(constraint_name: &str, details: &str) -> Self {
         Self {
-            kind: SqlErrorKind::Database(DatabaseErrorKind::UniqueViolation),
-            message: format!("Constraint '{}' violated: {} - data integrity is important bestie", constraint_name, details),
             sql_state: Some("23000".to_string()), // Standard SQL state for constraint violation
-            error_code: None,
-            query: None,
-            context: ErrorContext::new(),
         }.with_context("constraint".to_string(), constraint_name.to_string())
          .with_context("details".to_string(), details.to_string())
-    }
-    
     /// nocap Create deadlock error
     pub fn deadlock(query1: &str, query2: &str) -> Self {
         Self {
-            kind: SqlErrorKind::Transaction(TransactionErrorKind::Deadlock),
-            message: "Deadlock detected between transactions - somebody gotta give way periodt".to_string(),
             sql_state: Some("40001".to_string()), // Standard SQL state for deadlock
-            error_code: None,
-            query: None,
-            context: ErrorContext::new(),
         }.with_context("query1".to_string(), query1.to_string())
          .with_context("query2".to_string(), query2.to_string())
     }

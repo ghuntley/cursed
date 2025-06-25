@@ -10,7 +10,7 @@ use crate::error::{CursedError, Result};
 use crate::optimization::pgo::*;
 use crate::optimization::pgo::optimization_integration::{
     OptimizationResult, IssueSeverity
-};
+// };
 
 use crate::codegen::LlvmCodeGenerator;
 
@@ -26,189 +26,133 @@ use tracing::{debug, info, warn, error};
 #[command(about = "Profile-Guided Optimization tools for CURSED")]
 pub struct PgoCommand {
     #[command(subcommand)]
-    pub command: PgoSubcommand,
     
     /// Enable verbose output
     #[arg(short, long)]
-    pub verbose: bool,
     
     /// Profile directory
     #[arg(short = 'd', long, default_value = "target/pgo-profiles")]
-    pub profile_dir: PathBuf,
     
     /// Configuration file
     #[arg(short, long)]
-    pub config: Option<PathBuf>,
-}
-
 /// PGO subcommands
 #[derive(Subcommand, Debug)]
 pub enum PgoSubcommand {
     /// Collect profile data during program execution
-    Collect(CollectArgs),
     
     /// Analyze collected profile data
-    Analyze(AnalyzeArgs),
     
     /// Optimize code using profile data
-    Optimize(OptimizeArgs),
     
     /// Manage profile data
-    Manage(ManageArgs),
     
     /// Show PGO statistics and information
-    Info(InfoArgs),
     
     /// Validate profile data quality
-    Validate(ValidateArgs),
     
     /// Merge multiple profile datasets
-    Merge(MergeArgs),
     
     /// Clean up old profile data
-    Cleanup(CleanupArgs),
-}
-
 /// Arguments for profile collection
 #[derive(Args, Debug)]
 pub struct CollectArgs {
     /// Source file to compile and profile
-    pub source_file: PathBuf,
     
     /// Output profile file
     #[arg(short, long)]
-    pub output: Option<PathBuf>,
     
     /// Program arguments for execution
     #[arg(short, long)]
-    pub args: Vec<String>,
     
     /// Input data file for program
     #[arg(short, long)]
-    pub input: Option<PathBuf>,
     
     /// Expected output file for validation
     #[arg(short, long)]
-    pub expected: Option<PathBuf>,
     
     /// Execution timeout in seconds
     #[arg(short, long, default_value = "300")]
-    pub timeout: u64,
     
     /// Sampling rate (0.0 to 1.0)
     #[arg(short, long, default_value = "1.0")]
-    pub sampling_rate: f64,
     
     /// Enable function profiling
     #[arg(long, default_value = "true")]
-    pub function_profiling: bool,
     
     /// Enable branch profiling
     #[arg(long, default_value = "true")]
-    pub branch_profiling: bool,
     
     /// Enable loop profiling
     #[arg(long, default_value = "true")]
-    pub loop_profiling: bool,
     
     /// Enable memory profiling
     #[arg(long)]
-    pub memory_profiling: bool,
     
     /// Enable real-time collection
     #[arg(long)]
-    pub realtime: bool,
-}
-
 /// Arguments for profile analysis
 #[derive(Args, Debug)]
 pub struct AnalyzeArgs {
     /// Profile file to analyze
-    pub profile_file: PathBuf,
     
     /// Output analysis report
     #[arg(short, long)]
-    pub output: Option<PathBuf>,
     
     /// Analysis depth level
     #[arg(short, long, default_value = "standard")]
-    pub depth: String,
     
     /// Hot function threshold
     #[arg(long, default_value = "100")]
-    pub hot_function_threshold: u64,
     
     /// Branch misprediction threshold
     #[arg(long, default_value = "0.1")]
-    pub branch_threshold: f64,
     
     /// Enable cross-function analysis
     #[arg(long)]
-    pub cross_function: bool,
     
     /// Generate optimization recommendations
     #[arg(long, default_value = "true")]
-    pub recommendations: bool,
     
     /// Output format (text, json, html)
     #[arg(short, long, default_value = "text")]
-    pub format: String,
-}
-
 /// Arguments for PGO optimization
 #[derive(Args, Debug)]
 pub struct OptimizeArgs {
     /// Source file to optimize
-    pub source_file: PathBuf,
     
     /// Profile file to use for optimization
     #[arg(short, long)]
-    pub profile: PathBuf,
     
     /// Output optimized file
     #[arg(short, long)]
-    pub output: Option<PathBuf>,
     
     /// Optimization level
     #[arg(short, long, default_value = "moderate")]
-    pub level: String,
     
     /// Enable function inlining
     #[arg(long, default_value = "true")]
-    pub inlining: bool,
     
     /// Enable branch layout optimization
     #[arg(long, default_value = "true")]
-    pub branch_layout: bool,
     
     /// Enable loop optimization
     #[arg(long, default_value = "true")]
-    pub loop_optimization: bool,
     
     /// Enable code layout optimization
     #[arg(long, default_value = "true")]
-    pub code_layout: bool,
     
     /// Integration strategy
     #[arg(long, default_value = "augment")]
-    pub strategy: String,
     
     /// Enable performance validation
     #[arg(long, default_value = "true")]
-    pub validate: bool,
     
     /// Performance threshold for acceptance
     #[arg(long, default_value = "0.05")]
-    pub threshold: f64,
-}
-
 /// Arguments for profile management
 #[derive(Args, Debug)]
 pub struct ManageArgs {
     #[command(subcommand)]
-    pub command: ManageSubcommand,
-}
-
 /// Profile management subcommands
 #[derive(Subcommand, Debug)]
 pub enum ManageSubcommand {
@@ -216,181 +160,121 @@ pub enum ManageSubcommand {
     List {
         /// Show detailed information
         #[arg(short, long)]
-        detailed: bool,
         
         /// Filter by quality threshold
         #[arg(short, long)]
-        quality_threshold: Option<f64>,
         
         /// Filter by age (days)
         #[arg(short, long)]
-        max_age_days: Option<u64>,
-    },
     
     /// Show profile information
     Info {
         /// Profile file or ID
-        profile: String,
         
         /// Show detailed statistics
         #[arg(short, long)]
-        detailed: bool,
-    },
     
     /// Delete a profile
     Delete {
         /// Profile file or ID
-        profile: String,
         
         /// Force deletion without confirmation
         #[arg(short, long)]
-        force: bool,
-    },
     
     /// Rename a profile
     Rename {
         /// Current profile name
-        old_name: String,
         
         /// New profile name
-        new_name: String,
-    },
     
     /// Export profile data
     Export {
         /// Profile to export
-        profile: String,
         
         /// Output file
-        output: PathBuf,
         
         /// Export format
         #[arg(short, long, default_value = "json")]
-        format: String,
-    },
     
     /// Import profile data
     Import {
         /// Input file
-        input: PathBuf,
         
         /// Profile name
-        name: Option<String>,
         
         /// Input format
         #[arg(short, long, default_value = "json")]
-        format: String,
-    },
-}
-
 /// Arguments for PGO information
 #[derive(Args, Debug)]
 pub struct InfoArgs {
     /// Show system statistics
     #[arg(short, long)]
-    pub stats: bool,
     
     /// Show configuration
     #[arg(short, long)]
-    pub config: bool,
     
     /// Show supported features
     #[arg(short, long)]
-    pub features: bool,
     
     /// Show version information
     #[arg(short, long)]
-    pub version: bool,
-}
-
 /// Arguments for profile validation
 #[derive(Args, Debug)]
 pub struct ValidateArgs {
     /// Profile file to validate
-    pub profile_file: PathBuf,
     
     /// Quality threshold for validation
     #[arg(short, long, default_value = "0.7")]
-    pub threshold: f64,
     
     /// Enable comprehensive validation
     #[arg(short, long)]
-    pub comprehensive: bool,
     
     /// Output validation report
     #[arg(short, long)]
-    pub output: Option<PathBuf>,
     
     /// Fix validation issues if possible
     #[arg(short, long)]
-    pub fix: bool,
-}
-
 /// Arguments for profile merging
 #[derive(Args, Debug)]
 pub struct MergeArgs {
     /// Profile files to merge
-    pub profiles: Vec<PathBuf>,
     
     /// Output merged profile
     #[arg(short, long)]
-    pub output: PathBuf,
     
     /// Merge strategy
     #[arg(short, long, default_value = "weighted")]
-    pub strategy: String,
     
     /// Quality threshold for inclusion
     #[arg(short, long, default_value = "0.5")]
-    pub threshold: f64,
     
     /// Enable outlier removal
     #[arg(long)]
-    pub remove_outliers: bool,
-}
-
 /// Arguments for cleanup operations
 #[derive(Args, Debug)]
 pub struct CleanupArgs {
     /// Maximum age in days
     #[arg(short, long, default_value = "30")]
-    pub max_age_days: u64,
     
     /// Minimum quality threshold
     #[arg(short, long, default_value = "0.3")]
-    pub min_quality: f64,
     
     /// Maximum number of profiles to keep
     #[arg(short, long)]
-    pub max_count: Option<usize>,
     
     /// Dry run (show what would be deleted)
     #[arg(short, long)]
-    pub dry_run: bool,
     
     /// Force cleanup without confirmation
     #[arg(short, long)]
-    pub force: bool,
-}
-
 /// Execute PGO command
 pub fn execute_pgo_command(cmd: PgoCommand) -> Result<()> {
     // Initialize logging if verbose
     if cmd.verbose {
         env_logger::init();
-    }
-    
     info!("Executing PGO command: {:?}", cmd.command);
     
     match cmd.command {
-        PgoSubcommand::Collect(args) => execute_collect_command(args, &cmd),
-        PgoSubcommand::Analyze(args) => execute_analyze_command(args, &cmd),
-        PgoSubcommand::Optimize(args) => execute_optimize_command(args, &cmd),
-        PgoSubcommand::Manage(args) => execute_manage_command(args, &cmd),
-        PgoSubcommand::Info(args) => execute_info_command(args, &cmd),
-        PgoSubcommand::Validate(args) => execute_validate_command(args, &cmd),
-        PgoSubcommand::Merge(args) => execute_merge_command(args, &cmd),
-        PgoSubcommand::Cleanup(args) => execute_cleanup_command(args, &cmd),
     }
 }
 
@@ -410,7 +294,6 @@ fn execute_collect_command(args: CollectArgs, cmd: &PgoCommand) -> Result<()> {
         OptimizationAggressiveness::Moderate
     } else {
         OptimizationAggressiveness::Conservative
-    };
     
     // Create PGO system
     let mut pgo_system = PgoSystem::with_config(config)?;
@@ -420,22 +303,14 @@ fn execute_collect_command(args: CollectArgs, cmd: &PgoCommand) -> Result<()> {
     
     // Create execution context
     let execution_context = ExecutionContext {
-        args: args.args,
-        env_vars: std::env::vars().collect(),
-        working_dir: std::env::current_dir().unwrap_or_default(),
         input_data: if let Some(input_file) = args.input {
             Some(std::fs::read(&input_file)?)
         } else {
             None
-        },
         expected_output: if let Some(expected_file) = args.expected {
             Some(std::fs::read_to_string(&expected_file)?)
         } else {
             None
-        },
-        timeout: Some(Duration::from_secs(args.timeout)),
-        metadata: std::collections::HashMap::new(),
-    };
     
     // Collect profile data
     let profile_data = pgo_system.collect_profile_data(&execution_context)?;
@@ -458,11 +333,7 @@ fn execute_collect_command(args: CollectArgs, cmd: &PgoCommand) -> Result<()> {
         println!("  Total events: {}", profile_data.collection_stats.total_events);
         println!("  Events per second: {:.2}", profile_data.collection_stats.events_per_second);
         println!("  Memory usage: {} bytes", profile_data.collection_stats.memory_usage);
-    }
-    
     Ok(())
-}
-
 /// Execute profile analysis command
 fn execute_analyze_command(args: AnalyzeArgs, cmd: &PgoCommand) -> Result<()> {
     info!("Analyzing profile: {}", args.profile_file.display());
@@ -475,15 +346,10 @@ fn execute_analyze_command(args: AnalyzeArgs, cmd: &PgoCommand) -> Result<()> {
     
     // Parse analysis depth
     analysis_config.analysis_depth = match args.depth.as_str() {
-        "basic" => AnalysisDepth::Basic,
-        "standard" => AnalysisDepth::Standard,
-        "deep" => AnalysisDepth::Deep,
-        "exhaustive" => AnalysisDepth::Exhaustive,
         _ => {
             warn!("Unknown analysis depth '{}', using standard", args.depth);
             AnalysisDepth::Standard
         }
-    };
     
     // Create analyzer
     let mut analyzer = ProfileAnalyzer::new(analysis_config)?;
@@ -503,26 +369,17 @@ fn execute_analyze_command(args: AnalyzeArgs, cmd: &PgoCommand) -> Result<()> {
     if let Some(output_file) = args.output {
         save_analysis_report(&analysis_result, &output_file, &args.format)?;
         println!("Analysis report saved to: {}", output_file.display());
-    }
-    
     Ok(())
-}
-
 /// Execute optimization command
 fn execute_optimize_command(args: OptimizeArgs, cmd: &PgoCommand) -> Result<()> {
     info!("Optimizing {} with profile {}", args.source_file.display(), args.profile.display());
     
     // Parse optimization level
     let optimization_level = match args.level.as_str() {
-        "conservative" => OptimizationAggressiveness::Conservative,
-        "moderate" => OptimizationAggressiveness::Moderate,
-        "aggressive" => OptimizationAggressiveness::Aggressive,
-        "experimental" => OptimizationAggressiveness::Experimental,
         _ => {
             warn!("Unknown optimization level '{}', using moderate", args.level);
             OptimizationAggressiveness::Moderate
         }
-    };
     
     // Create PGO system configuration
     let mut config = PgoSystemConfig::default();
@@ -558,15 +415,11 @@ fn execute_optimize_command(args: OptimizeArgs, cmd: &PgoCommand) -> Result<()> 
     }
     if args.code_layout {
         println!("✓ Code layout optimization enabled");
-    }
-    
     // Get statistics
     let stats = pgo_system.get_system_statistics();
     println!("Average performance improvement: {:.1}%", stats.average_performance_improvement * 100.0);
     
     Ok(())
-}
-
 /// Execute profile management command
 fn execute_manage_command(args: ManageArgs, cmd: &PgoCommand) -> Result<()> {
     let config = PgoSystemConfig::default();
@@ -607,8 +460,6 @@ fn execute_manage_command(args: ManageArgs, cmd: &PgoCommand) -> Result<()> {
                     println!("  {} (quality: {:.2})", profile.profile_name, profile.quality_score);
                 }
             }
-        }
-        
         ManageSubcommand::Info { profile, detailed } => {
             println!("Profile information for: {}", profile);
             
@@ -721,24 +572,18 @@ fn execute_manage_command(args: ManageArgs, cmd: &PgoCommand) -> Result<()> {
     }
     
     Ok(())
-}
-
 /// Execute info command
 fn execute_info_command(args: InfoArgs, cmd: &PgoCommand) -> Result<()> {
     if args.version {
         println!("CURSED PGO System v1.0.0");
         println!("Profile-Guided Optimization for CURSED Language");
         println!();
-    }
-    
     if args.config {
         println!("PGO Configuration:");
         println!("  Profile directory: {}", cmd.profile_dir.display());
         println!("  Default quality threshold: 0.7");
         println!("  Default performance target: 15%");
         println!();
-    }
-    
     if args.features {
         println!("Supported PGO Features:");
         println!("  ✓ Function call frequency profiling");
@@ -752,8 +597,6 @@ fn execute_info_command(args: InfoArgs, cmd: &PgoCommand) -> Result<()> {
         println!("  ✓ Profile data merging");
         println!("  ✓ Performance regression detection");
         println!();
-    }
-    
     if args.stats {
         let config = PgoSystemConfig::default();
         let pgo_system = PgoSystem::with_config(config)?;
@@ -764,18 +607,12 @@ fn execute_info_command(args: InfoArgs, cmd: &PgoCommand) -> Result<()> {
         println!("  Total optimization time: {:?}", stats.total_optimization_time);
         println!("  Average performance improvement: {:.1}%", stats.average_performance_improvement * 100.0);
         println!();
-    }
-    
     // If no specific info requested, show general info
     if !args.version && !args.config && !args.features && !args.stats {
         println!("CURSED Profile-Guided Optimization (PGO) System");
         println!("Use --help for available commands and options");
         println!("Use --version, --config, --features, or --stats for specific information");
-    }
-    
     Ok(())
-}
-
 /// Execute validation command
 fn execute_validate_command(args: ValidateArgs, cmd: &PgoCommand) -> Result<()> {
     info!("Validating profile: {}", args.profile_file.display());
@@ -804,18 +641,11 @@ fn execute_validate_command(args: ValidateArgs, cmd: &PgoCommand) -> Result<()> 
         println!("  Issues found:");
         for issue in &validation_result.result.issues {
             let severity_symbol = match issue.severity {
-                ValidationSeverity::Info => "ℹ",
-                ValidationSeverity::Warning => "⚠",
-                ValidationSeverity::CursedError => "✗",
-                ValidationSeverity::Critical => "🚨",
-            };
             println!("    {} {}", severity_symbol, issue.description);
             if let Some(resolution) = &issue.resolution {
                 println!("      → {}", resolution);
             }
         }
-    }
-    
     if !validation_result.result.quality_assessment.recommendations.is_empty() {
         println!("  Recommendations:");
         for recommendation in &validation_result.result.quality_assessment.recommendations {
@@ -827,19 +657,13 @@ fn execute_validate_command(args: ValidateArgs, cmd: &PgoCommand) -> Result<()> 
     if let Some(output_file) = args.output {
         save_validation_report(&validation_result, &output_file)?;
         println!("Validation report saved to: {}", output_file.display());
-    }
-    
     Ok(())
-}
-
 /// Execute merge command
 fn execute_merge_command(args: MergeArgs, cmd: &PgoCommand) -> Result<()> {
     info!("Merging {} profiles", args.profiles.len());
     
     if args.profiles.len() < 2 {
         return Err(CursedError::General("Need at least 2 profiles to merge".to_string()));
-    }
-    
     // Load profile storage
     let config = PgoSystemConfig::default();
     let mut storage = ProfileStorage::new(ProfileStorageConfig::from_pgo_config(&config))?;
@@ -863,8 +687,6 @@ fn execute_merge_command(args: MergeArgs, cmd: &PgoCommand) -> Result<()> {
     println!("Merged profile quality: {:.2}", merged_profile.metadata.quality_score);
     
     Ok(())
-}
-
 /// Execute cleanup command
 fn execute_cleanup_command(args: CleanupArgs, cmd: &PgoCommand) -> Result<()> {
     info!("Cleaning up profiles older than {} days", args.max_age_days);
@@ -893,22 +715,15 @@ fn execute_cleanup_command(args: CleanupArgs, cmd: &PgoCommand) -> Result<()> {
     if candidates_for_deletion.is_empty() {
         println!("No profiles found for cleanup.");
         return Ok(());
-    }
-    
     println!("Found {} profiles for cleanup:", candidates_for_deletion.len());
     for profile in &candidates_for_deletion {
         let age_days = now.duration_since(profile.created_at)
             .unwrap_or_default()
             .as_secs() / (24 * 3600);
-        println!("  {} (age: {} days, quality: {:.2})", 
                 profile.profile_name, age_days, profile.quality_score);
-    }
-    
     if args.dry_run {
         println!("Dry run completed. Use --force to actually delete these profiles.");
         return Ok(());
-    }
-    
     if !args.force {
         print!("Are you sure you want to delete these {} profiles? (y/N): ", candidates_for_deletion.len());
         use std::io::{self, Write};
@@ -937,14 +752,10 @@ fn execute_cleanup_command(args: CleanupArgs, cmd: &PgoCommand) -> Result<()> {
                 deleted_count += 1;
             }
         }
-    }
-    
     println!("Cleanup completed successfully!");
     println!("Deleted {} profiles", deleted_count);
     
     Ok(())
-}
-
 /// Optimize LLVM module using PGO data
 fn optimize_llvm_module(args: &OptimizeArgs, pgo_system: &mut PgoSystem) -> Result<OptimizationResult> {
     info!("Loading and optimizing LLVM module: {}", args.source_file.display());
@@ -996,13 +807,10 @@ fn optimize_llvm_module(args: &OptimizeArgs, pgo_system: &mut PgoSystem) -> Resu
             .map_err(|e| CursedError::Io(std::sync::Arc::new(e)))?;
         
         info!("Optimized module saved to: {}", output_path.display());
-    }
-    
     // Display optimization details
     if !optimization_result.optimizations_applied.is_empty() {
         info!("Applied optimizations:");
         for opt in &optimization_result.optimizations_applied {
-            info!("  {} on {} (improvement: {:.1}%)", 
                   opt.optimization_name, opt.target, opt.estimated_improvement * 100.0);
         }
     }
@@ -1011,18 +819,11 @@ fn optimize_llvm_module(args: &OptimizeArgs, pgo_system: &mut PgoSystem) -> Resu
         warn!("Optimization issues encountered:");
         for issue in &optimization_result.issues {
             let level = match issue.severity {
-                IssueSeverity::Info => "INFO",
-                IssueSeverity::Warning => "WARN", 
-                IssueSeverity::CursedError => "ERROR",
-                IssueSeverity::Critical => "CRITICAL",
-            };
             warn!("  [{}] {}", level, issue.description);
         }
     }
     
     Ok(optimization_result)
-}
-
 // Helper functions for displaying and saving results
 
 fn display_analysis_results(analysis: &ProfileAnalysisResult, args: &AnalyzeArgs) -> Result<()> {
@@ -1032,19 +833,11 @@ fn display_analysis_results(analysis: &ProfileAnalysisResult, args: &AnalyzeArgs
     // Hot functions
     println!("\nHot Functions ({}):", analysis.hot_function_analysis.hot_functions.len());
     for (i, func) in analysis.hot_function_analysis.hot_functions.iter().take(10).enumerate() {
-        println!("  {}. {} (calls: {}, time: {:.1}%, hotness: {:.2})", 
-                i + 1, func.function_name, func.call_frequency, 
                 func.time_percentage * 100.0, func.hotness_score);
-    }
-    
     // Inlining candidates
     println!("\nInlining Candidates ({}):", analysis.hot_function_analysis.inline_candidates.len());
     for (i, candidate) in analysis.hot_function_analysis.inline_candidates.iter().take(5).enumerate() {
-        println!("  {}. {} (benefit: {:.2}, improvement: {:.1}%)", 
-                i + 1, candidate.function_name, candidate.benefit_score,
                 candidate.performance_improvement_estimate * 100.0);
-    }
-    
     // Branch analysis
     println!("\nBranch Prediction Analysis:");
     println!("  Overall accuracy: {:.1}%", analysis.branch_analysis.overall_statistics.overall_accuracy * 100.0);
@@ -1065,23 +858,13 @@ fn display_analysis_results(analysis: &ProfileAnalysisResult, args: &AnalyzeArgs
     // Optimization opportunities
     println!("\nOptimization Opportunities ({}):", analysis.optimization_opportunities.len());
     for (i, opp) in analysis.optimization_opportunities.iter().take(5).enumerate() {
-        println!("  {}. {} (priority: {:.2}, improvement: {:.1}%)", 
                 i + 1, opp.id, opp.priority, opp.expected_improvement * 100.0);
         println!("     → {}", opp.recommendation);
-    }
-    
     // Insights
     if !analysis.insights.is_empty() {
         println!("\nKey Insights:");
         for insight in &analysis.insights {
             let icon = match insight.insight_type {
-                InsightType::PerformanceBottleneck => "🚨",
-                InsightType::OptimizationOpportunity => "💡",
-                InsightType::AntiPattern => "⚠️",
-                InsightType::BestPractice => "✅",
-                InsightType::ResourceUtilization => "📊",
-                InsightType::ScalabilityIssue => "📈",
-            };
             println!("  {} {} (confidence: {:.1}%)", icon, insight.message, insight.confidence * 100.0);
         }
     }
@@ -1092,8 +875,6 @@ fn display_analysis_results(analysis: &ProfileAnalysisResult, args: &AnalyzeArgs
     println!("  Analysis time: {:?}", analysis.analysis_time);
     
     Ok(())
-}
-
 fn save_analysis_report(analysis: &ProfileAnalysisResult, output_file: &std::path::Path, format: &str) -> Result<()> {
     match format {
         "json" => {
@@ -1111,8 +892,6 @@ fn save_analysis_report(analysis: &ProfileAnalysisResult, output_file: &std::pat
         }
     }
     Ok(())
-}
-
 fn save_validation_report(validation: &ProfileValidation, output_file: &std::path::Path) -> Result<()> {
     let report = format!(
         "Profile Validation Report\n\
@@ -1128,21 +907,11 @@ fn save_validation_report(validation: &ProfileValidation, output_file: &std::pat
          - Consistency: {:.2}\n\
          \n\
          Issues Found: {}\n\
-         Recommendations: {}\n",
-        validation.result.score,
-        validation.result.passed,
-        validation.duration,
-        validation.result.quality_assessment.completeness_score,
-        validation.result.quality_assessment.accuracy_score,
-        validation.result.quality_assessment.consistency_score,
-        validation.result.issues.len(),
         validation.result.quality_assessment.recommendations.len()
     );
     
     std::fs::write(output_file, report)?;
     Ok(())
-}
-
 fn generate_html_report(analysis: &ProfileAnalysisResult) -> Result<String> {
     // Generate HTML report (simplified)
     let html = format!(
@@ -1174,10 +943,6 @@ fn generate_html_report(analysis: &ProfileAnalysisResult) -> Result<String> {
     </div>
 </body>
 </html>"#,
-        analysis.analysis_quality,
-        analysis.analysis_time,
-        analysis.hot_function_analysis.hot_functions.len(),
-        analysis.optimization_opportunities.len(),
         analysis.optimization_opportunities.iter()
             .take(10)
             .map(|opp| format!(
@@ -1192,8 +957,6 @@ fn generate_html_report(analysis: &ProfileAnalysisResult) -> Result<String> {
     );
     
     Ok(html)
-}
-
 fn generate_text_report(analysis: &ProfileAnalysisResult) -> Result<String> {
     let mut report = String::new();
     
@@ -1205,16 +968,10 @@ fn generate_text_report(analysis: &ProfileAnalysisResult) -> Result<String> {
     
     report.push_str("Hot Functions:\n");
     for func in analysis.hot_function_analysis.hot_functions.iter().take(10) {
-        report.push_str(&format!("  - {} (calls: {}, hotness: {:.2})\n", 
                                 func.function_name, func.call_frequency, func.hotness_score));
-    }
-    
     report.push_str("\nOptimization Opportunities:\n");
     for opp in analysis.optimization_opportunities.iter().take(10) {
-        report.push_str(&format!("  - {} (priority: {:.2}, improvement: {:.1}%)\n", 
                                 opp.id, opp.priority, opp.expected_improvement * 100.0));
         report.push_str(&format!("    {}\n", opp.recommendation));
-    }
-    
     Ok(report)
 }

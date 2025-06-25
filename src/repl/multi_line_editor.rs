@@ -10,35 +10,18 @@ use crate::repl::ReplResult;
 
 /// Multi-line input editor for CURSED REPL
 pub struct MultiLineEditor {
-    indent_size: usize,
-    auto_indent: bool,
-    bracket_pairs: Vec<(char, char)>,
-}
-
 impl MultiLineEditor {
     /// Create a new multi-line editor
     pub fn new() -> Self {
         Self {
-            indent_size: 4,
-            auto_indent: true,
             bracket_pairs: vec![
-                ('(', ')'),
-                ('[', ']'),
-                ('{', '}'),
-            ],
         }
     }
 
     /// Create multi-line editor with custom settings
     pub fn with_settings(indent_size: usize, auto_indent: bool) -> Self {
         Self {
-            indent_size,
-            auto_indent,
             bracket_pairs: vec![
-                ('(', ')'),
-                ('[', ']'),
-                ('{', '}'),
-            ],
         }
     }
 
@@ -49,26 +32,16 @@ impl MultiLineEditor {
         // Empty input doesn't need continuation
         if trimmed.is_empty() {
             return false;
-        }
-        
         // Check for unmatched brackets
         if self.has_unmatched_brackets(input) {
             return true;
-        }
-        
         // Check for incomplete structures
         if self.has_incomplete_structure(input) {
             return true;
-        }
-        
         // Check for line continuation indicators
         if self.has_continuation_indicator(input) {
             return true;
-        }
-        
         false
-    }
-
     /// Check if input is complete (no more lines needed)
     pub fn is_complete(&self, current_input: &str, new_line: &str) -> bool {
         let combined = format!("{}\n{}", current_input, new_line);
@@ -76,16 +49,10 @@ impl MultiLineEditor {
         // If the new line is empty and brackets are balanced, consider complete
         if new_line.trim().is_empty() && !self.has_unmatched_brackets(&combined) {
             return true;
-        }
-        
         // Check for explicit completion indicators
         if new_line.trim() == ";" || new_line.trim() == "" {
             return !self.has_unmatched_brackets(&combined);
-        }
-        
         false
-    }
-
     /// Read a line with the given prompt
     pub fn read_line(&self, prompt: &str) -> ReplResult<String> {
         print!("{}", prompt);
@@ -104,42 +71,28 @@ impl MultiLineEditor {
         }
         
         Ok(input)
-    }
-
     /// Calculate appropriate indentation for the next line
     pub fn calculate_indentation(&self, current_input: &str) -> usize {
         if !self.auto_indent {
             return 0;
-        }
-        
         let lines: Vec<&str> = current_input.split("\n").collect();
         if lines.is_empty() {
             return 0;
-        }
-        
         let last_line = lines.last().unwrap();
         let current_indent = self.get_line_indentation(last_line);
         
         // Increase indentation after opening brackets or keywords
         if self.should_increase_indentation(last_line) {
             return current_indent + self.indent_size;
-        }
-        
         // Decrease indentation for closing brackets
         if self.should_decrease_indentation(last_line) {
             return current_indent.saturating_sub(self.indent_size);
-        }
-        
         current_indent
-    }
-
     /// Generate indented prompt for continuation
     pub fn get_continuation_prompt(&self, base_prompt: &str, current_input: &str) -> String {
         let indent = self.calculate_indentation(current_input);
         let spaces = " ".repeat(indent);
         format!("{}{}", base_prompt, spaces)
-    }
-
     /// Check for unmatched brackets in the input
     fn has_unmatched_brackets(&self, input: &str) -> bool {
         let mut stack = Vec::new();
@@ -171,8 +124,6 @@ impl MultiLineEditor {
                 
                 '\n' if in_comment => {
                     in_comment = false;
-                }
-                
                 // Handle brackets (only when not in string or comment)
                 ch if !in_string && !in_comment => {
                     // Check for opening brackets
@@ -190,16 +141,10 @@ impl MultiLineEditor {
                             break;
                         }
                     }
-                }
-                
                 _ => {}
             }
-        }
-        
         // If stack is not empty, we have unmatched opening brackets
         !stack.is_empty()
-    }
-
     /// Check for incomplete language structures
     fn has_incomplete_structure(&self, input: &str) -> bool {
         let trimmed = input.trim();
@@ -207,8 +152,6 @@ impl MultiLineEditor {
         // Function declarations without body
         if trimmed.starts_with("slay ") && !trimmed.contains('{') {
             return true;
-        }
-        
         // Control structures without body
         if (trimmed.starts_with("lowkey ") || 
             trimmed.starts_with("highkey ") ||
@@ -216,17 +159,11 @@ impl MultiLineEditor {
             trimmed.starts_with("for ") ||
             trimmed.starts_with("while ")) && !trimmed.contains('{') {
             return true;
-        }
-        
         // Struct or interface declarations
         if (trimmed.starts_with("squad ") || 
             trimmed.starts_with("collab ")) && !trimmed.contains('{') {
             return true;
-        }
-        
         false
-    }
-
     /// Check for explicit continuation indicators
     fn has_continuation_indicator(&self, input: &str) -> bool {
         let trimmed = input.trim();
@@ -240,8 +177,6 @@ impl MultiLineEditor {
         trimmed.ends_with("&&") ||
         trimmed.ends_with("||") ||
         trimmed.ends_with(',')
-    }
-
     /// Get the indentation level of a line
     fn get_line_indentation(&self, line: &str) -> usize {
         let mut indent = 0;
@@ -255,8 +190,6 @@ impl MultiLineEditor {
             }
         }
         indent
-    }
-
     /// Check if indentation should be increased after this line
     fn should_increase_indentation(&self, line: &str) -> bool {
         let trimmed = line.trim();
@@ -264,8 +197,6 @@ impl MultiLineEditor {
         // After opening brackets
         if trimmed.ends_with('{') || trimmed.ends_with('(') || trimmed.ends_with('[') {
             return true;
-        }
-        
         // After control structure keywords
         if trimmed.starts_with("lowkey ") ||
            trimmed.starts_with("highkey ") ||
@@ -274,11 +205,7 @@ impl MultiLineEditor {
            trimmed.starts_with("for ") ||
            trimmed.starts_with("while ") {
             return true;
-        }
-        
         false
-    }
-
     /// Check if indentation should be decreased for this line
     fn should_decrease_indentation(&self, line: &str) -> bool {
         let trimmed = line.trim();

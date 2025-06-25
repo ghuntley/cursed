@@ -5,10 +5,6 @@ use super::flags::*;
 
 /// Format a log entry according to the specified flags
 pub fn format_log_entry(
-    prefix: &str,
-    flags: i32,
-    call_depth: usize,
-    message: &str,
 ) -> crate::error::Result<()> {
     let mut parts = Vec::new();
     
@@ -16,48 +12,34 @@ pub fn format_log_entry(
     let prefix_at_start = !has_flag(flags, Lmsgprefix);
     if prefix_at_start && !prefix.is_empty() {
         parts.push(prefix.to_string());
-    }
-    
     // Add date if requested
     if has_flag(flags, Ldate) {
         let date_str = format_date(flags)?;
         parts.push(date_str);
-    }
-    
     // Add time if requested
     if has_flag(flags, Ltime) || has_flag(flags, Lmicroseconds) {
         let time_str = format_time(flags)?;
         parts.push(time_str);
-    }
-    
     // Add file information if requested
     if has_flag(flags, Llongfile) || has_flag(flags, Lshortfile) {
         let file_str = format_file_info(flags, call_depth)?;
         parts.push(file_str);
-    }
-    
     // Handle message with prefix placement
     let final_message = if has_flag(flags, Lmsgprefix) && !prefix.is_empty() {
         format!("{}{}", prefix, message)
     } else {
         message.to_string()
-    };
     
     // Combine all parts
     let mut result = if parts.is_empty() {
         final_message
     } else {
         format!("{} {}", parts.join(" "), final_message)
-    };
     
     // Ensure the message ends with a newline
     if !result.ends_with('\n') {
         result.push('\n');
-    }
-    
     Ok(result)
-}
-
 /// Format date according to flags
 fn format_date(flags: i32) -> crate::error::Result<()> {
     let now = SystemTime::now()
@@ -109,8 +91,6 @@ fn format_time(flags: i32) -> crate::error::Result<()> {
             Ok(datetime.format("%H:%M:%S").to_string())
         }
     }
-}
-
 /// Format file information according to flags
 fn format_file_info(flags: i32, call_depth: usize) -> crate::error::Result<()> {
     // For now, we'll provide a basic implementation
@@ -135,11 +115,6 @@ fn format_file_info(flags: i32, call_depth: usize) -> crate::error::Result<()> {
 /// Caller information structure
 #[derive(Debug)]
 struct CallerInfo {
-    file: String,
-    line: u32,
-    function: String,
-}
-
 /// Get caller information from the stack
 /// This is a simplified implementation - a full implementation would use
 /// backtrace crates or other stack inspection mechanisms
@@ -151,12 +126,7 @@ fn get_caller_info(_call_depth: usize) -> crate::error::Result<()> {
     // - proper call depth calculation
     
     Ok(CallerInfo {
-        file: "main.csd".to_string(),
-        line: 1,
-        function: "main".to_string(),
     })
-}
-
 /// Utility function to get current timestamp as a formatted string
     let now = SystemTime::now()
         .duration_since(UNIX_EPOCH)
@@ -186,8 +156,6 @@ fn get_caller_info(_call_depth: usize) -> crate::error::Result<()> {
             Ok(datetime.format("%Y/%m/%d %H:%M:%S").to_string())
         }
     }
-}
-
 /// Format a message with timestamp and optional prefix
 pub fn format_message(message: &str, prefix: Option<&str>, timestamp: bool) -> String {
     let mut parts = Vec::new();
@@ -209,8 +177,4 @@ pub fn format_message(message: &str, prefix: Option<&str>, timestamp: bool) -> S
     let mut result = parts.join(" ");
     if !result.ends_with('\n') {
         result.push('\n');
-    }
-    
     result
-}
-

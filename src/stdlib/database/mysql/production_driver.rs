@@ -20,21 +20,19 @@ use std::fmt;
 use std::convert::TryFrom;
 
 use mysql::{
-    Pool, PooledConn, OptsBuilder, Conn, Opts, Params, Value as MySqlValue,
     TxOpts, IsolationLevel, Row, Column
-};
+// };
 use crate::error::CursedError;
 use mysql::prelude::*;
 use chrono::{NaiveDateTime, NaiveDate};
 
-// use crate::stdlib::database::{
-    Driver, DriverConn, DriverStmt, DriverTx, DatabaseError, DatabaseErrorKind, 
+// Placeholder imports disabled
     SqlIsolationLevel, SqlValue, TxOptions, VibeContext
-};
+// };
 
-// use crate::stdlib::database::driver::{
+// Placeholder imports disabled
     DriverCapabilities, ConnectionMetadata, QueryResult, ExecuteResult
-};
+// };
 
 use super::error::{MySqlError, MySqlResult};
 
@@ -46,23 +44,15 @@ impl SqlSanitizer {
     pub fn sanitize_identifier(identifier: &str) -> MySqlResult<String> {
         if identifier.is_empty() {
             return Err(MySqlError::validation("Identifier cannot be empty".to_string()));
-        }
-
         // Check for valid identifier characters
         if !identifier.chars().all(|c| c.is_alphanumeric() || c == '_') {
             return Err(MySqlError::validation(format!("Invalid identifier: {}", identifier)));
-        }
-
         // Escape the identifier
         Ok(format!("`{}`", identifier.replace('`', "``")))
-    }
-
     /// Validate query structure
     pub fn validate_query(query: &str) -> MySqlResult<()> {
         if query.is_empty() {
             return Err(MySqlError::validation("Query cannot be empty".to_string()));
-        }
-
         // Basic checks for suspicious patterns
         let query_upper = query.to_uppercase();
         let suspicious_patterns = [
@@ -85,141 +75,50 @@ impl SqlSanitizer {
 #[derive(Debug, Clone)]
 pub struct ProductionMySqlConfig {
     // Connection settings
-    pub host: String,
-    pub port: u16,
-    pub username: String,
-    pub password: String,
-    pub database: String,
     
     // Pool settings
-    pub min_connections: usize,
-    pub max_connections: usize,
-    pub connection_timeout: Duration,
-    pub idle_timeout: Duration,
-    pub max_lifetime: Duration,
     
     // Security settings
-    pub ssl_mode: SslMode,
-    pub ssl_ca_path: Option<String>,
-    pub ssl_cert_path: Option<String>,
-    pub ssl_key_path: Option<String>,
-    pub verify_ssl: bool,
     
     // Performance settings
-    pub statement_cache_size: usize,
-    pub query_timeout: Duration,
-    pub retry_attempts: u32,
-    pub retry_delay: Duration,
     
     // MySQL specific settings
-    pub charset: String,
-    pub collation: String,
-    pub timezone: String,
-    pub sql_mode: String,
-    pub foreign_key_checks: bool,
-    pub autocommit: bool,
-    pub transaction_isolation: SqlIsolationLevel,
     
     // Advanced settings
-    pub enable_compression: bool,
-    pub multi_statements: bool,
-    pub binary_protocol: bool,
-    pub prepare_cache_size: usize,
-}
-
 #[derive(Debug, Clone, PartialEq)]
 pub enum SslMode {
-    Disabled,
-    Preferred,
-    Required,
-    VerifyCA,
-    VerifyIdentity,
-}
-
 impl Default for ProductionMySqlConfig {
     fn default() -> Self {
         Self {
-            host: "localhost".to_string(),
-            port: 3306,
-            username: "root".to_string(),
-            password: String::new(),
-            database: "test".to_string(),
             
-            min_connections: 5,
-            max_connections: 100,
-            connection_timeout: Duration::from_secs(30),
-            idle_timeout: Duration::from_secs(600),
-            max_lifetime: Duration::from_secs(3600),
             
-            ssl_mode: SslMode::Preferred,
-            ssl_ca_path: None,
-            ssl_cert_path: None,
-            ssl_key_path: None,
-            verify_ssl: true,
             
-            statement_cache_size: 1000,
-            query_timeout: Duration::from_secs(300),
-            retry_attempts: 3,
-            retry_delay: Duration::from_millis(100),
             
-            charset: "utf8mb4".to_string(),
-            collation: "utf8mb4_unicode_ci".to_string(),
-            timezone: "UTC".to_string(),
-            sql_mode: "STRICT_TRANS_TABLES,NO_ZERO_DATE,NO_ZERO_IN_DATE,ERROR_FOR_DIVISION_BY_ZERO".to_string(),
-            foreign_key_checks: true,
-            autocommit: true,
-            transaction_isolation: SqlIsolationLevel::LevelReadCommitted,
             
-            enable_compression: false,
-            multi_statements: false,
-            binary_protocol: true,
-            prepare_cache_size: 500,
         }
     }
-}
-
 impl ProductionMySqlConfig {
     /// Validate configuration settings
     pub fn validate(&self) -> MySqlResult<()> {
         if self.host.is_empty() {
             return Err(MySqlError::configuration("Host cannot be empty".to_string()));
-        }
-        
         if self.port == 0 {
             return Err(MySqlError::configuration("Port must be greater than 0".to_string()));
-        }
-        
         if self.username.is_empty() {
             return Err(MySqlError::configuration("Username cannot be empty".to_string()));
-        }
-        
         if self.database.is_empty() {
             return Err(MySqlError::configuration("Database name cannot be empty".to_string()));
-        }
-        
         if self.max_connections == 0 {
             return Err(MySqlError::configuration("max_connections must be greater than 0".to_string()));
-        }
-        
         if self.min_connections > self.max_connections {
             return Err(MySqlError::configuration("min_connections cannot exceed max_connections".to_string()));
-        }
-        
         if self.connection_timeout.is_zero() {
             return Err(MySqlError::configuration("connection_timeout must be greater than 0".to_string()));
-        }
-        
         if self.query_timeout.is_zero() {
             return Err(MySqlError::configuration("query_timeout must be greater than 0".to_string()));
-        }
-        
         if self.charset.is_empty() {
             return Err(MySqlError::configuration("charset cannot be empty".to_string()));
-        }
-        
         Ok(())
-    }
-    
     /// Build MySQL options from configuration
     pub fn build_opts(&self) -> MySqlResult<Opts> {
         self.validate()?;
@@ -264,8 +163,6 @@ impl ProductionMySqlConfig {
         // Compression
         if self.enable_compression {
             builder = builder.compress(mysql::Compression::default());
-        }
-        
         // Additional MySQL options
         let mut mysql_opts = HashMap::new();
         mysql_opts.insert("charset".to_string(), self.charset.clone());
@@ -282,30 +179,9 @@ impl ProductionMySqlConfig {
 /// Connection pool statistics and monitoring
 #[derive(Debug, Clone, Default)]
 pub struct ProductionPoolStats {
-    pub active_connections: usize,
-    pub idle_connections: usize,
-    pub total_connections: usize,
-    pub max_connections: usize,
-    pub connections_created: u64,
-    pub connections_closed: u64,
-    pub connection_errors: u64,
-    pub successful_queries: u64,
-    pub failed_queries: u64,
-    pub transaction_count: u64,
-    pub transaction_rollbacks: u64,
-    pub statement_preparations: u64,
-    pub cache_hits: u64,
-    pub cache_misses: u64,
-    pub average_connection_time: Duration,
-    pub average_query_time: Duration,
-    pub uptime: Duration,
-    pub last_updated: SystemTime,
-}
-
 impl ProductionPoolStats {
     pub fn new() -> Self {
         Self {
-            last_updated: SystemTime::now(),
             ..Default::default()
         }
     }
@@ -318,29 +194,13 @@ impl ProductionPoolStats {
 /// Production MySQL driver with full feature support
 #[derive(Debug)]
 pub struct ProductionMySqlDriver {
-    config: Arc<RwLock<ProductionMySqlConfig>>,
-    pool: Arc<RwLock<Option<Pool>>>,
-    stats: Arc<RwLock<ProductionPoolStats>>,
-    statement_cache: Arc<Mutex<HashMap<String, Vec<u8>>>>,
-    connection_metadata: Arc<RwLock<HashMap<String, ConnectionMetadata>>>,
-    created_at: SystemTime,
-}
-
 impl ProductionMySqlDriver {
     /// Create new production MySQL driver
     pub fn new() -> Self {
         Self::with_config(ProductionMySqlConfig::default())
-    }
-    
     /// Create driver with custom configuration
     pub fn with_config(config: ProductionMySqlConfig) -> Self {
         Self {
-            config: Arc::new(RwLock::new(config)),
-            pool: Arc::new(RwLock::new(None)),
-            stats: Arc::new(RwLock::new(ProductionPoolStats::new())),
-            statement_cache: Arc::new(Mutex::new(HashMap::new())),
-            connection_metadata: Arc::new(RwLock::new(HashMap::new())),
-            created_at: SystemTime::now(),
         }
     }
     
@@ -360,14 +220,10 @@ impl ProductionMySqlDriver {
         
         // Run basic initialization commands
         let init_commands = [
-            "SET SESSION sql_mode = 'STRICT_TRANS_TABLES'",
-            "SET SESSION time_zone = 'UTC'",
         ];
         for init_cmd in &init_commands {
             conn.query_drop(init_cmd)
                 .map_err(|e| MySqlError::query(format!("Failed to execute init command '{}': {}", init_cmd, e)))?;
-        }
-        
         // Test basic functionality
         let _: Vec<Row> = conn.query("SELECT 1 as connection_test")
             .map_err(|e| MySqlError::query(format!("Connection test failed: {}", e)))?;
@@ -387,8 +243,6 @@ impl ProductionMySqlDriver {
         stats.update();
         
         Ok(())
-    }
-    
     /// Get connection from pool
     pub fn get_connection(&self) -> MySqlResult<ProductionMySqlConnection> {
         let pool_guard = self.pool.read()
@@ -409,19 +263,13 @@ impl ProductionMySqlDriver {
             stats.average_connection_time = 
                 (stats.average_connection_time + connection_time) / 2;
             stats.update();
-        }
-        
         let connection_id = uuid::Uuid::new_v4().to_string();
         ProductionMySqlConnection::new(conn, Arc::new(self.clone()), connection_id)
-    }
-    
     /// Get driver statistics
     pub fn get_stats(&self) -> MySqlResult<ProductionPoolStats> {
         let stats = self.stats.read()
             .map_err(|_| MySqlError::internal("Failed to read stats".to_string()))?;
         Ok(stats.clone())
-    }
-    
     /// Health check
     pub fn health_check(&self) -> MySqlResult<DriverHealthReport> {
         let mut report = DriverHealthReport::new();
@@ -429,8 +277,6 @@ impl ProductionMySqlDriver {
         // Check pool initialization
         if let Ok(pool_guard) = self.pool.read() {
             report.pool_initialized = pool_guard.is_some();
-        }
-        
         // Get statistics
         if let Ok(stats) = self.get_stats() {
             report.active_connections = stats.active_connections;
@@ -438,18 +284,13 @@ impl ProductionMySqlDriver {
             report.connection_errors = stats.connection_errors;
             report.query_errors = stats.failed_queries;
             report.uptime = stats.uptime;
-        }
-        
         // Test connectivity
         if report.pool_initialized {
             match self.get_connection() {
                 Ok(mut conn) => {
                     match conn.ping() {
-                        Ok(_) => report.connectivity = true,
-                        Err(_) => report.connectivity = false,
                     }
                 }
-                Err(_) => report.connectivity = false,
             }
         }
         
@@ -466,63 +307,22 @@ impl ProductionMySqlDriver {
 impl Clone for ProductionMySqlDriver {
     fn clone(&self) -> Self {
         Self {
-            config: Arc::clone(&self.config),
-            pool: Arc::clone(&self.pool),
-            stats: Arc::clone(&self.stats),
-            statement_cache: Arc::clone(&self.statement_cache),
-            connection_metadata: Arc::clone(&self.connection_metadata),
-            created_at: self.created_at,
         }
     }
-}
-
 /// Driver health report
 #[derive(Debug, Clone)]
 pub struct DriverHealthReport {
-    pub overall_health: bool,
-    pub pool_initialized: bool,
-    pub connectivity: bool,
-    pub active_connections: usize,
-    pub total_connections: usize,
-    pub connection_errors: u64,
-    pub query_errors: u64,
-    pub uptime: Duration,
-    pub last_check: SystemTime,
-}
-
 impl DriverHealthReport {
     pub fn new() -> Self {
         Self {
-            overall_health: false,
-            pool_initialized: false,
-            connectivity: false,
-            active_connections: 0,
-            total_connections: 0,
-            connection_errors: 0,
-            query_errors: 0,
-            uptime: Duration::ZERO,
-            last_check: SystemTime::now(),
         }
     }
-}
-
 /// Production MySQL connection
 #[derive(Debug)]
 pub struct ProductionMySqlConnection {
-    connection: PooledConn,
-    driver: Arc<ProductionMySqlDriver>,
-    connection_id: String,
-    connected_at: SystemTime,
-    metadata: ConnectionMetadata,
-    transaction_active: Arc<Mutex<bool>>,
-}
-
 impl ProductionMySqlConnection {
     /// Create new MySQL connection
     pub fn new(
-        connection: PooledConn,
-        driver: Arc<ProductionMySqlDriver>,
-        connection_id: String,
     ) -> MySqlResult<Self> {
         let connected_at = SystemTime::now();
         
@@ -538,17 +338,8 @@ impl ProductionMySqlConnection {
             server_host: "localhost".to_string(),    // Would get from config
             server_port: 3306,                       // Would get from config
             username: "user".to_string(),            // Would get from config
-            connected_at,
-            additional_info,
-        };
         
         Ok(Self {
-            connection,
-            driver,
-            connection_id,
-            connected_at,
-            metadata,
-            transaction_active: Arc::new(Mutex::new(false)),
         })
     }
 }
@@ -559,14 +350,9 @@ impl DriverConn for ProductionMySqlConnection {
             .map_err(|e| DatabaseError::new(DatabaseErrorKind::QueryError, &e.to_string()))?;
         
         let stmt = ProductionMySqlStatement::new(
-            &self.connection,
-            query.to_string(),
-            Arc::clone(&self.driver),
         ).map_err(|e| DatabaseError::new(DatabaseErrorKind::QueryError, &e.to_string()))?;
         
         Ok(Box::new(stmt))
-    }
-
     fn query(&self, query: &str, args: &[SqlValue]) -> crate::error::Result<()> {
         SqlSanitizer::validate_query(query)
             .map_err(|e| DatabaseError::new(DatabaseErrorKind::QueryError, &e.to_string()))?;
@@ -587,7 +373,6 @@ impl DriverConn for ProductionMySqlConnection {
             conn.query(query)
         } else {
             conn.exec(query, mysql_params)
-        };
         
         let rows = result
             .map_err(|e| DatabaseError::new(DatabaseErrorKind::QueryError, &format!("Query execution failed: {}", e)))?;
@@ -599,12 +384,8 @@ impl DriverConn for ProductionMySqlConnection {
             stats.successful_queries += 1;
             stats.average_query_time = (stats.average_query_time + query_time) / 2;
             stats.update();
-        }
-        
         // Convert results
         self.convert_rows_to_result(rows)
-    }
-
     fn execute(&self, query: &str, args: &[SqlValue]) -> crate::error::Result<()> {
         SqlSanitizer::validate_query(query)
             .map_err(|e| DatabaseError::new(DatabaseErrorKind::QueryError, &e.to_string()))?;
@@ -625,7 +406,6 @@ impl DriverConn for ProductionMySqlConnection {
             conn.query_drop(query)
         } else {
             conn.exec_drop(query, mysql_params)
-        };
         
         result
             .map_err(|e| DatabaseError::new(DatabaseErrorKind::QueryError, &format!("Statement execution failed: {}", e)))?;
@@ -641,42 +421,27 @@ impl DriverConn for ProductionMySqlConnection {
             stats.successful_queries += 1;
             stats.average_query_time = (stats.average_query_time + query_time) / 2;
             stats.update();
-        }
-        
         Ok(ExecuteResult {
-            rows_affected: affected_rows,
-            last_insert_id: if last_insert_id > 0 { Some(last_insert_id) } else { None },
         })
-    }
-
     fn begin_transaction(&self, opts: TxOptions) -> crate::error::Result<()> {
         // Check if transaction is already active
         if let Ok(tx_active) = self.transaction_active.lock() {
             if *tx_active {
                 return Err(DatabaseError::new(
-                    DatabaseErrorKind::TransactionError, 
                     "Transaction already active"
                 ));
             }
         }
         
         let tx = ProductionMySqlTransaction::new(
-            &self.connection,
-            opts,
-            Arc::clone(&self.driver),
-            Arc::clone(&self.transaction_active),
         ).map_err(|e| DatabaseError::new(DatabaseErrorKind::TransactionError, &e.to_string()))?;
         
         Ok(Box::new(tx))
-    }
-
     fn ping(&self) -> crate::error::Result<()> {
         let mut conn = &self.connection;
         conn.query_drop("SELECT 1")
             .map_err(|e| DatabaseError::new(DatabaseErrorKind::ConnectionError, &format!("Ping failed: {}", e)))?;
         Ok(())
-    }
-
     fn close(&self) -> crate::error::Result<()> {
         // Connection will be returned to pool automatically on drop
         if let Ok(mut stats) = self.driver.stats.write() {
@@ -687,21 +452,14 @@ impl DriverConn for ProductionMySqlConnection {
             stats.update();
         }
         Ok(())
-    }
-
     fn is_alive(&self) -> bool {
         self.ping().is_ok()
-    }
-
     fn metadata(&self) -> ConnectionMetadata {
         self.metadata.clone()
-    }
-
     fn clone(&self) -> Box<dyn DriverConn> {
         // For connection cloning, we'd need to get a new connection from the pool
         // This is a simplified implementation
         match self.driver.get_connection() {
-            Ok(conn) => Box::new(conn),
             Err(_) => {
                 // Return a placeholder connection that will fail operations
                 Box::new(FailedConnection::new("Failed to clone connection".to_string()))
@@ -715,12 +473,7 @@ impl ProductionMySqlConnection {
     fn convert_rows_to_result(&self, rows: Vec<Row>) -> crate::error::Result<()> {
         if rows.is_empty() {
             return Ok(QueryResult::new(
-                Vec::new(),
-                Vec::new(),
-                Vec::new(),
             ));
-        }
-        
         // Extract column information from the first row
         let column_names: Vec<String> = rows[0].columns()
             .iter()
@@ -741,40 +494,21 @@ impl ProductionMySqlConnection {
                 values.push(value);
             }
             result_rows.push(values);
-        }
-        
         Ok(QueryResult::new(column_names, column_types, result_rows))
-    }
-    
     /// Convert MySQL value at specific index
     fn convert_mysql_value_at_index(&self, row: &Row, index: usize) -> crate::error::Result<()> {
         match row.get_opt::<MySqlValue, usize>(index) {
             Some(Ok(value)) => convert_from_mysql_value(value)
-                .map_err(|e| DatabaseError::new(DatabaseErrorKind::TypeConversionError, &e.to_string())),
             Some(Err(e)) => Err(DatabaseError::new(
-                DatabaseErrorKind::TypeConversionError, 
                 &format!("Failed to get value at index {}: {}", index, e)
-            )),
-            None => Ok(SqlValue::Null),
         }
     }
-}
-
 /// Production MySQL prepared statement
 #[derive(Debug)]
 pub struct ProductionMySqlStatement {
-    connection: PooledConn,
-    query: String,
-    driver: Arc<ProductionMySqlDriver>,
-    parameter_count: usize,
-}
-
 impl ProductionMySqlStatement {
     /// Create new prepared statement
     pub fn new(
-        connection: &PooledConn,
-        query: String,
-        driver: Arc<ProductionMySqlDriver>,
     ) -> MySqlResult<Self> {
         // For now, we'll use the connection directly
         // In a real implementation, we'd prepare the statement
@@ -784,17 +518,11 @@ impl ProductionMySqlStatement {
         if let Ok(mut stats) = driver.stats.write() {
             stats.statement_preparations += 1;
             stats.update();
-        }
-        
         // Clone connection for the statement
         let stmt_conn = connection.pool().get_conn()
             .map_err(|e| MySqlError::connection(format!("Failed to get connection for statement: {}", e)))?;
         
         Ok(Self {
-            connection: stmt_conn,
-            query,
-            driver,
-            parameter_count,
         })
     }
 }
@@ -803,11 +531,8 @@ impl DriverStmt for ProductionMySqlStatement {
     fn execute(&self, args: &[SqlValue]) -> crate::error::Result<()> {
         if args.len() != self.parameter_count {
             return Err(DatabaseError::new(
-                DatabaseErrorKind::QueryError,
                 &format!("Parameter count mismatch: expected {}, got {}", self.parameter_count, args.len())
             ));
-        }
-        
         let start_time = SystemTime::now();
         
         // Convert arguments
@@ -836,22 +561,13 @@ impl DriverStmt for ProductionMySqlStatement {
             stats.successful_queries += 1;
             stats.average_query_time = (stats.average_query_time + query_time) / 2;
             stats.update();
-        }
-        
         Ok(ExecuteResult {
-            rows_affected: affected_rows,
-            last_insert_id: if last_insert_id > 0 { Some(last_insert_id) } else { None },
         })
-    }
-
     fn query(&self, args: &[SqlValue]) -> crate::error::Result<()> {
         if args.len() != self.parameter_count {
             return Err(DatabaseError::new(
-                DatabaseErrorKind::QueryError,
                 &format!("Parameter count mismatch: expected {}, got {}", self.parameter_count, args.len())
             ));
-        }
-        
         let start_time = SystemTime::now();
         
         // Convert arguments
@@ -874,31 +590,17 @@ impl DriverStmt for ProductionMySqlStatement {
             stats.successful_queries += 1;
             stats.average_query_time = (stats.average_query_time + query_time) / 2;
             stats.update();
-        }
-        
         // Convert results
         self.convert_rows_to_result(rows)
-    }
-
     fn close(&self) -> crate::error::Result<()> {
         // Statement will be dropped automatically
         Ok(())
-    }
-
     fn query_string(&self) -> &str {
         &self.query
-    }
-
     fn parameter_count(&self) -> usize {
         self.parameter_count
-    }
-
     fn clone(&self) -> Box<dyn DriverStmt> {
         Box::new(ProductionMySqlStatement {
-            connection: self.connection.clone(),
-            query: self.query.clone(),
-            driver: Arc::clone(&self.driver),
-            parameter_count: self.parameter_count,
         })
     }
 }
@@ -908,12 +610,7 @@ impl ProductionMySqlStatement {
     fn convert_rows_to_result(&self, rows: Vec<Row>) -> crate::error::Result<()> {
         if rows.is_empty() {
             return Ok(QueryResult::new(
-                Vec::new(),
-                Vec::new(),
-                Vec::new(),
             ));
-        }
-        
         // Extract column information
         let column_names: Vec<String> = rows[0].columns()
             .iter()
@@ -934,44 +631,21 @@ impl ProductionMySqlStatement {
                 values.push(value);
             }
             result_rows.push(values);
-        }
-        
         Ok(QueryResult::new(column_names, column_types, result_rows))
-    }
-    
     /// Convert MySQL value at index
     fn convert_mysql_value_at_index(&self, row: &Row, index: usize) -> crate::error::Result<()> {
         match row.get_opt::<MySqlValue, usize>(index) {
             Some(Ok(value)) => convert_from_mysql_value(value)
-                .map_err(|e| DatabaseError::new(DatabaseErrorKind::TypeConversionError, &e.to_string())),
             Some(Err(e)) => Err(DatabaseError::new(
-                DatabaseErrorKind::TypeConversionError, 
                 &format!("Failed to get value at index {}: {}", index, e)
-            )),
-            None => Ok(SqlValue::Null),
         }
     }
-}
-
 /// Production MySQL transaction
 #[derive(Debug)]
 pub struct ProductionMySqlTransaction {
-    connection: PooledConn,
-    driver: Arc<ProductionMySqlDriver>,
-    transaction_active: Arc<Mutex<bool>>,
-    started_at: SystemTime,
-    committed: Arc<Mutex<bool>>,
-    rolled_back: Arc<Mutex<bool>>,
-    options: TxOptions,
-}
-
 impl ProductionMySqlTransaction {
     /// Create new transaction
     pub fn new(
-        connection: &PooledConn,
-        opts: TxOptions,
-        driver: Arc<ProductionMySqlDriver>,
-        transaction_active: Arc<Mutex<bool>>,
     ) -> MySqlResult<Self> {
         // Get a new connection for the transaction
         let tx_conn = connection.pool().get_conn()
@@ -985,40 +659,20 @@ impl ProductionMySqlTransaction {
         // Set isolation level if specified
         if let Some(isolation_level) = opts.isolation_level {
             let isolation_sql = match isolation_level {
-                SqlIsolationLevel::LevelReadUncommitted => "SET TRANSACTION ISOLATION LEVEL READ UNCOMMITTED",
-                SqlIsolationLevel::LevelReadCommitted => "SET TRANSACTION ISOLATION LEVEL READ COMMITTED",
-                SqlIsolationLevel::LevelRepeatableRead => "SET TRANSACTION ISOLATION LEVEL REPEATABLE READ",
-                SqlIsolationLevel::LevelSerializable => "SET TRANSACTION ISOLATION LEVEL SERIALIZABLE",
-            };
             
             conn.query_drop(isolation_sql)
                 .map_err(|e| MySqlError::transaction(format!("Failed to set isolation level: {}", e)))?;
-        }
-        
         if opts.read_only {
             conn.query_drop("SET TRANSACTION READ ONLY")
                 .map_err(|e| MySqlError::transaction(format!("Failed to set read-only mode: {}", e)))?;
-        }
-        
         // Mark transaction as active
         if let Ok(mut active) = transaction_active.lock() {
             *active = true;
-        }
-        
         // Update statistics
         if let Ok(mut stats) = driver.stats.write() {
             stats.transaction_count += 1;
             stats.update();
-        }
-        
         Ok(Self {
-            connection: tx_conn,
-            driver,
-            transaction_active,
-            started_at: SystemTime::now(),
-            committed: Arc::new(Mutex::new(false)),
-            rolled_back: Arc::new(Mutex::new(false)),
-            options: opts,
         })
     }
 }
@@ -1032,7 +686,6 @@ impl DriverTx for ProductionMySqlTransaction {
             
         if *committed || *rolled_back {
             return Err(DatabaseError::new(
-                DatabaseErrorKind::TransactionError,
                 "Transaction already completed"
             ));
         }
@@ -1045,16 +698,10 @@ impl DriverTx for ProductionMySqlTransaction {
         
         if let Ok(mut committed) = self.committed.lock() {
             *committed = true;
-        }
-        
         // Mark transaction as inactive
         if let Ok(mut active) = self.transaction_active.lock() {
             *active = false;
-        }
-        
         Ok(())
-    }
-
     fn rollback(&self) -> crate::error::Result<()> {
         let committed = self.committed.lock().map_err(|_| 
             DatabaseError::new(DatabaseErrorKind::TransactionError, "Failed to acquire commit lock"))?;
@@ -1063,7 +710,6 @@ impl DriverTx for ProductionMySqlTransaction {
             
         if *committed || *rolled_back {
             return Err(DatabaseError::new(
-                DatabaseErrorKind::TransactionError,
                 "Transaction already completed"
             ));
         }
@@ -1076,35 +722,22 @@ impl DriverTx for ProductionMySqlTransaction {
         
         if let Ok(mut rolled_back) = self.rolled_back.lock() {
             *rolled_back = true;
-        }
-        
         // Mark transaction as inactive
         if let Ok(mut active) = self.transaction_active.lock() {
             *active = false;
-        }
-        
         // Update statistics
         if let Ok(mut stats) = self.driver.stats.write() {
             stats.transaction_rollbacks += 1;
             stats.update();
-        }
-        
         Ok(())
-    }
-
     fn prepare(&self, query: &str) -> crate::error::Result<()> {
         SqlSanitizer::validate_query(query)
             .map_err(|e| DatabaseError::new(DatabaseErrorKind::QueryError, &e.to_string()))?;
         
         let stmt = ProductionMySqlStatement::new(
-            &self.connection,
-            query.to_string(),
-            Arc::clone(&self.driver),
         ).map_err(|e| DatabaseError::new(DatabaseErrorKind::QueryError, &e.to_string()))?;
         
         Ok(Box::new(stmt))
-    }
-
     fn query(&self, query: &str, args: &[SqlValue]) -> crate::error::Result<()> {
         SqlSanitizer::validate_query(query)
             .map_err(|e| DatabaseError::new(DatabaseErrorKind::QueryError, &e.to_string()))?;
@@ -1125,7 +758,6 @@ impl DriverTx for ProductionMySqlTransaction {
             conn.query(query)
         } else {
             conn.exec(query, mysql_params)
-        };
         
         let rows = result
             .map_err(|e| DatabaseError::new(DatabaseErrorKind::QueryError, &format!("Query execution failed: {}", e)))?;
@@ -1137,12 +769,8 @@ impl DriverTx for ProductionMySqlTransaction {
             stats.successful_queries += 1;
             stats.average_query_time = (stats.average_query_time + query_time) / 2;
             stats.update();
-        }
-        
         // Convert results
         self.convert_rows_to_result(rows)
-    }
-
     fn execute(&self, query: &str, args: &[SqlValue]) -> crate::error::Result<()> {
         SqlSanitizer::validate_query(query)
             .map_err(|e| DatabaseError::new(DatabaseErrorKind::QueryError, &e.to_string()))?;
@@ -1163,7 +791,6 @@ impl DriverTx for ProductionMySqlTransaction {
             conn.query_drop(query)
         } else {
             conn.exec_drop(query, mysql_params)
-        };
         
         result
             .map_err(|e| DatabaseError::new(DatabaseErrorKind::QueryError, &format!("Statement execution failed: {}", e)))?;
@@ -1179,33 +806,16 @@ impl DriverTx for ProductionMySqlTransaction {
             stats.successful_queries += 1;
             stats.average_query_time = (stats.average_query_time + query_time) / 2;
             stats.update();
-        }
-        
         Ok(ExecuteResult::new(
-            if last_insert_id > 0 { Some(last_insert_id) } else { None },
-            affected_rows,
         ))
-    }
-
     fn options(&self) -> &TxOptions {
         &self.options
-    }
-
     fn is_active(&self) -> bool {
         let committed = self.committed.lock().unwrap_or_else(|_| std::process::abort());
         let rolled_back = self.rolled_back.lock().unwrap_or_else(|_| std::process::abort());
         !*committed && !*rolled_back
-    }
-
     fn clone(&self) -> Box<dyn DriverTx> {
         Box::new(ProductionMySqlTransaction {
-            connection: self.connection.clone(),
-            driver: Arc::clone(&self.driver),
-            transaction_active: Arc::clone(&self.transaction_active),
-            started_at: self.started_at,
-            committed: Arc::clone(&self.committed),
-            rolled_back: Arc::clone(&self.rolled_back),
-            options: self.options.clone(),
         })
     }
 }
@@ -1215,12 +825,7 @@ impl ProductionMySqlTransaction {
     fn convert_rows_to_result(&self, rows: Vec<Row>) -> crate::error::Result<()> {
         if rows.is_empty() {
             return Ok(QueryResult::new(
-                Vec::new(),
-                Vec::new(), 
-                Vec::new(),
             ));
-        }
-        
         // Extract column information from the first row
         let column_names: Vec<String> = rows[0].columns()
             .iter()
@@ -1241,40 +846,23 @@ impl ProductionMySqlTransaction {
                 values.push(value);
             }
             result_rows.push(values);
-        }
-        
         Ok(QueryResult::new(column_names, column_types, result_rows))
-    }
-    
     /// Convert MySQL value at specific index
     fn convert_mysql_value_at_index(&self, row: &Row, index: usize) -> crate::error::Result<()> {
         match row.get_opt::<MySqlValue, usize>(index) {
             Some(Ok(value)) => convert_from_mysql_value(value)
-                .map_err(|e| DatabaseError::new(DatabaseErrorKind::TypeConversionError, &e.to_string())),
             Some(Err(e)) => Err(DatabaseError::new(
-                DatabaseErrorKind::TypeConversionError, 
                 &format!("Failed to get value at index {}: {}", index, e)
-            )),
-            None => Ok(SqlValue::Null),
         }
     }
-}
-
 /// Type conversion functions
 pub fn convert_to_mysql_value(value: &SqlValue) -> MySqlResult<MySqlValue> {
     match value {
-        SqlValue::Null => Ok(MySqlValue::NULL),
-        SqlValue::Boolean(b) => Ok(MySqlValue::from(*b)),
-        SqlValue::Integer(i) => Ok(MySqlValue::from(*i)),
-        SqlValue::Float(f) => Ok(MySqlValue::from(*f)),
-        SqlValue::String(s) => Ok(MySqlValue::from(s.clone())),
-        SqlValue::Bytes(b) => Ok(MySqlValue::from(b.clone())),
         SqlValue::Timestamp(t) => {
             let duration = t.duration_since(UNIX_EPOCH)
                 .map_err(|_| MySqlError::type_conversion("Invalid timestamp".to_string()))?;
             
             let timestamp = NaiveDateTime::from_timestamp_opt(
-                duration.as_secs() as i64, 
                 duration.subsec_nanos()
             ).ok_or_else(|| MySqlError::type_conversion("Timestamp out of range".to_string()))?;
             
@@ -1285,21 +873,12 @@ pub fn convert_to_mysql_value(value: &SqlValue) -> MySqlResult<MySqlValue> {
             Ok(MySqlValue::from(json_str))
         }
     }
-}
-
 pub fn convert_from_mysql_value(value: MySqlValue) -> MySqlResult<SqlValue> {
     match value {
-        MySqlValue::NULL => Ok(SqlValue::Null),
         MySqlValue::Bytes(b) => {
             match String::from_utf8(b.clone()) {
-                Ok(s) => Ok(SqlValue::String(s)),
-                Err(_) => Ok(SqlValue::Bytes(b)),
             }
         }
-        MySqlValue::Int(i) => Ok(SqlValue::Integer(i)),
-        MySqlValue::UInt(u) => Ok(SqlValue::Integer(u as i64)),
-        MySqlValue::Float(f) => Ok(SqlValue::Float(f as f64)),
-        MySqlValue::Double(d) => Ok(SqlValue::Float(d)),
         MySqlValue::Date(year, month, day, hour, minute, second, microsecond) => {
             let naive_date = NaiveDate::from_ymd_opt(
                 year as i32, month as u32, day as u32
@@ -1316,84 +895,48 @@ pub fn convert_from_mysql_value(value: MySqlValue) -> MySqlResult<SqlValue> {
                 -((days as i64 * 24 * 3600) + (hours as i64 * 3600) + (minutes as i64 * 60) + seconds as i64)
             } else {
                 (days as i64 * 24 * 3600) + (hours as i64 * 3600) + (minutes as i64 * 60) + seconds as i64
-            };
             
-            let time_str = format!("{}:{:02}:{:02}.{:06}", 
                 total_seconds / 3600, 
                 (total_seconds % 3600) / 60, 
-                total_seconds % 60, 
                 microseconds
             );
             Ok(SqlValue::String(time_str))
         }
     }
-}
-
 /// Failed connection placeholder
 #[derive(Debug)]
 pub struct FailedConnection {
-    error_message: String,
-}
-
 impl FailedConnection {
     pub fn new(error_message: String) -> Self {
         Self { error_message }
     }
-}
-
 impl DriverConn for FailedConnection {
     fn prepare(&self, _query: &str) -> crate::error::Result<()> {
         Err(DatabaseError::new(
-            DatabaseErrorKind::ConnectionError,
             &self.error_message
         ))
-    }
-
     fn query(&self, _query: &str, _args: &[SqlValue]) -> crate::error::Result<()> {
         Err(DatabaseError::new(
-            DatabaseErrorKind::ConnectionError,
             &self.error_message
         ))
-    }
-
     fn execute(&self, _query: &str, _args: &[SqlValue]) -> crate::error::Result<()> {
         Err(DatabaseError::new(
-            DatabaseErrorKind::ConnectionError,
             &self.error_message
         ))
-    }
-
     fn begin_transaction(&self, _opts: TxOptions) -> crate::error::Result<()> {
         Err(DatabaseError::new(
-            DatabaseErrorKind::ConnectionError,
             &self.error_message
         ))
-    }
-
     fn ping(&self) -> crate::error::Result<()> {
         Err(DatabaseError::new(
-            DatabaseErrorKind::ConnectionError,
             &self.error_message
         ))
-    }
-
     fn close(&self) -> crate::error::Result<()> {
         Ok(())
-    }
-
     fn is_alive(&self) -> bool {
         false
-    }
-
     fn metadata(&self) -> ConnectionMetadata {
         ConnectionMetadata {
-            server_version: "Unknown".to_string(),
-            database_name: "unknown".to_string(),
-            server_host: "unknown".to_string(),
-            server_port: 0,
-            username: "unknown".to_string(),
-            connected_at: SystemTime::now(),
-            additional_info: HashMap::new(),
         }
     }
 
@@ -1418,35 +961,18 @@ impl Driver for ProductionMySqlDriver {
             .map_err(|e| DatabaseError::new(DatabaseErrorKind::ConnectionError, &e.to_string()))?;
         
         Ok(Box::new(conn))
-    }
-
     fn name(&self) -> &str {
         "Production MySQL Driver for CURSED"
-    }
-
     fn capabilities(&self) -> DriverCapabilities {
         DriverCapabilities {
-            supports_transactions: true,
-            supports_prepared_statements: true,
-            supports_multiple_result_sets: true,
-            supports_stored_procedures: true,
-            supports_batch_operations: true,
-            supports_concurrent_connections: true,
             max_connections: {
                 if let Ok(config) = self.config.read() {
                     Some(config.max_connections)
                 } else {
                     Some(100)
                 }
-            },
             supported_isolation_levels: vec![
-                SqlIsolationLevel::LevelReadUncommitted,
-                SqlIsolationLevel::LevelReadCommitted,
-                SqlIsolationLevel::LevelRepeatableRead,
-                SqlIsolationLevel::LevelSerializable,
-            ],
             max_query_length: Some(16_777_216), // 16MB
-            max_parameter_count: Some(65535),
         }
     }
 
@@ -1458,10 +984,6 @@ impl Driver for ProductionMySqlDriver {
 /// Create production MySQL driver
 pub fn create_production_mysql_driver() -> ProductionMySqlDriver {
     ProductionMySqlDriver::new()
-}
-
 /// Create production MySQL driver with configuration
 pub fn create_production_mysql_driver_with_config(config: ProductionMySqlConfig) -> ProductionMySqlDriver {
     ProductionMySqlDriver::with_config(config)
-}
-

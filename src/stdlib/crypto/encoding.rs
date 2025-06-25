@@ -12,8 +12,6 @@ impl Base64Encoder {
         let encoded = base64::engine::general_purpose::STANDARD.encode(data);
         debug!(input_length = data.len(), output_length = encoded.len(), "Encoded to standard base64");
         encoded
-    }
-
     /// Decode standard base64
     #[instrument(skip(encoded))]
     pub fn decode_standard(encoded: &str) -> crate::error::Result<()> {
@@ -21,16 +19,12 @@ impl Base64Encoder {
             .map_err(|e| CursedError::new("base64_error", &format!("Invalid base64: {}", e)))?;
         debug!(input_length = encoded.len(), output_length = decoded.len(), "Decoded from standard base64");
         Ok(decoded)
-    }
-
     /// Encode bytes to URL-safe base64 (no padding)
     #[instrument(skip(data))]
     pub fn encode_url_safe(data: &[u8]) -> String {
         let encoded = base64::engine::general_purpose::URL_SAFE_NO_PAD.encode(data);
         debug!(input_length = data.len(), output_length = encoded.len(), "Encoded to URL-safe base64");
         encoded
-    }
-
     /// Decode URL-safe base64
     #[instrument(skip(encoded))]
     pub fn decode_url_safe(encoded: &str) -> crate::error::Result<()> {
@@ -38,15 +32,11 @@ impl Base64Encoder {
             .map_err(|e| CursedError::new("base64_error", &format!("Invalid URL-safe base64: {}", e)))?;
         debug!(input_length = encoded.len(), output_length = decoded.len(), "Decoded from URL-safe base64");
         Ok(decoded)
-    }
-
     /// Encode with custom alphabet and padding
     #[instrument(skip(data, alphabet))]
     pub fn encode_custom(data: &[u8], alphabet: &str, padding: Option<char>) -> crate::error::Result<()> {
         if alphabet.len() != 64 {
             return Err(CursedError::new("base64_error", "Custom alphabet must be exactly 64 characters"));
-        }
-
         let alphabet_bytes = alphabet.as_bytes();
         let mut result = String::new();
         let mut i = 0;
@@ -62,8 +52,6 @@ impl Base64Encoder {
             result.push(alphabet_bytes[(n & 63) as usize] as char);
             
             i += 3;
-        }
-
         // Handle remaining bytes
         match data.len() % 3 {
             1 => {
@@ -102,16 +90,12 @@ impl HexEncoder {
         let encoded = data.iter().map(|b| format!("{:02x}", b)).collect::<String>();
         debug!(input_length = data.len(), output_length = encoded.len(), "Encoded to lowercase hex");
         encoded
-    }
-
     /// Encode bytes to uppercase hex
     #[instrument(skip(data))]
     pub fn encode_upper(data: &[u8]) -> String {
         let encoded = data.iter().map(|b| format!("{:02X}", b)).collect::<String>();
         debug!(input_length = data.len(), output_length = encoded.len(), "Encoded to uppercase hex");
         encoded
-    }
-
     /// Decode hex string to bytes
     #[instrument(skip(hex))]
     pub fn decode(hex: &str) -> crate::error::Result<()> {
@@ -119,8 +103,6 @@ impl HexEncoder {
         
         if clean_hex.len() % 2 != 0 {
             return Err(CursedError::new("hex_error", "Hex string length must be even"));
-        }
-
         let mut result = Vec::with_capacity(clean_hex.len() / 2);
         for chunk in clean_hex.as_bytes().chunks(2) {
             let hex_str = std::str::from_utf8(chunk)
@@ -128,12 +110,8 @@ impl HexEncoder {
             let byte = u8::from_str_radix(hex_str, 16)
                 .map_err(|e| CursedError::new("hex_error", &format!("Invalid hex digit: {}", e)))?;
             result.push(byte);
-        }
-
         debug!(input_length = hex.len(), output_length = result.len(), "Decoded from hex");
         Ok(result)
-    }
-
     /// Encode with custom formatting (spaces, colons, etc.)
     #[instrument(skip(data))]
     pub fn encode_formatted(data: &[u8], separator: &str, uppercase: bool) -> String {
@@ -146,12 +124,8 @@ impl HexEncoder {
             }
             result.push(hex_chars.chars().nth((byte >> 4) as usize).unwrap());
             result.push(hex_chars.chars().nth((byte & 0x0f) as usize).unwrap());
-        }
-        
         debug!(input_length = data.len(), output_length = result.len(), separator, uppercase, "Encoded formatted hex");
         result
-    }
-
     /// Decode formatted hex (ignores separators)
     #[instrument(skip(formatted_hex))]
     pub fn decode_formatted(formatted_hex: &str) -> crate::error::Result<()> {
@@ -190,17 +164,11 @@ impl Base32Encoder {
         if bits > 0 {
             let index = ((buffer << (5 - bits)) & 0x1f) as usize;
             result.push(Self::ALPHABET.chars().nth(index).unwrap());
-        }
-
         // Add padding
         while result.len() % 8 != 0 {
             result.push('=');
-        }
-
         debug!(input_length = data.len(), output_length = result.len(), "Encoded to base32");
         result
-    }
-
     /// Decode base32 to bytes
     #[instrument(skip(encoded))]
     pub fn decode(encoded: &str) -> crate::error::Result<()> {
@@ -224,21 +192,15 @@ impl Base32Encoder {
 
         debug!(input_length = encoded.len(), output_length = result.len(), "Decoded from base32");
         Ok(result)
-    }
-
     /// Encode without padding
     #[instrument(skip(data))]
     pub fn encode_no_padding(data: &[u8]) -> String {
         Self::encode(data).trim_end_matches('=').to_string()
-    }
-
     /// Encode with custom alphabet
     #[instrument(skip(data, alphabet))]
     pub fn encode_custom(data: &[u8], alphabet: &str) -> crate::error::Result<()> {
         if alphabet.len() != 32 {
             return Err(CursedError::new("base32_error", "Custom alphabet must be exactly 32 characters"));
-        }
-
         let mut result = String::new();
         let mut buffer = 0u64;
         let mut bits = 0;
@@ -257,8 +219,6 @@ impl Base32Encoder {
         if bits > 0 {
             let index = ((buffer << (5 - bits)) & 0x1f) as usize;
             result.push(alphabet.chars().nth(index).unwrap());
-        }
-
         debug!(input_length = data.len(), output_length = result.len(), "Encoded with custom base32");
         Ok(result)
     }
@@ -273,15 +233,11 @@ impl Asn1Parser {
     pub fn parse_tag_length(data: &[u8]) -> crate::error::Result<()> {
         if data.is_empty() {
             return Err(CursedError::new("asn1_error", "Empty ASN.1 data"));
-        }
-
         let tag = data[0];
         let mut offset = 1;
 
         if offset >= data.len() {
             return Err(CursedError::new("asn1_error", "Incomplete ASN.1 length"));
-        }
-
         let length = if data[offset] & 0x80 == 0 {
             // Short form
             let len = data[offset] as usize;
@@ -295,37 +251,23 @@ impl Asn1Parser {
             }
             if length_octets > 4 {
                 return Err(CursedError::new("asn1_error", "Length too large"));
-            }
-            
             offset += 1;
             if offset + length_octets > data.len() {
                 return Err(CursedError::new("asn1_error", "Incomplete ASN.1 length octets"));
-            }
-
             let mut length = 0usize;
             for i in 0..length_octets {
                 length = (length << 8) | (data[offset + i] as usize);
             }
             offset += length_octets;
             length
-        };
 
         if offset + length > data.len() {
             return Err(CursedError::new("asn1_error", "ASN.1 content exceeds data length"));
-        }
-
         let content = &data[offset..offset + length];
         let element = Asn1Element {
-            tag,
-            length,
-            content: content.to_vec(),
-            total_length: offset + length,
-        };
 
         debug!(tag, length, total_length = element.total_length, "Parsed ASN.1 element");
         Ok(element)
-    }
-
     /// Parse ASN.1 sequence
     #[instrument(skip(data))]
     pub fn parse_sequence(data: &[u8]) -> crate::error::Result<()> {
@@ -333,8 +275,6 @@ impl Asn1Parser {
         
         if sequence_element.tag != 0x30 {
             return Err(CursedError::new("asn1_error", "Expected SEQUENCE tag (0x30)"));
-        }
-
         let mut elements = Vec::new();
         let mut offset = 0;
         let content = &sequence_element.content;
@@ -343,12 +283,8 @@ impl Asn1Parser {
             let element = Self::parse_tag_length(&content[offset..])?;
             offset += element.total_length;
             elements.push(element);
-        }
-
         debug!(element_count = elements.len(), "Parsed ASN.1 sequence");
         Ok(elements)
-    }
-
     /// Parse ASN.1 integer
     #[instrument(skip(data))]
     pub fn parse_integer(data: &[u8]) -> crate::error::Result<()> {
@@ -356,16 +292,10 @@ impl Asn1Parser {
         
         if element.tag != 0x02 {
             return Err(CursedError::new("asn1_error", "Expected INTEGER tag (0x02)"));
-        }
-
         if element.content.is_empty() {
             return Err(CursedError::new("asn1_error", "Empty integer content"));
-        }
-
         debug!(integer_length = element.content.len(), "Parsed ASN.1 integer");
         Ok(element.content)
-    }
-
     /// Parse ASN.1 octet string
     #[instrument(skip(data))]
     pub fn parse_octet_string(data: &[u8]) -> crate::error::Result<()> {
@@ -373,12 +303,8 @@ impl Asn1Parser {
         
         if element.tag != 0x04 {
             return Err(CursedError::new("asn1_error", "Expected OCTET STRING tag (0x04)"));
-        }
-
         debug!(octet_string_length = element.content.len(), "Parsed ASN.1 octet string");
         Ok(element.content)
-    }
-
     /// Parse ASN.1 bit string
     #[instrument(skip(data))]
     pub fn parse_bit_string(data: &[u8]) -> crate::error::Result<()> {
@@ -386,25 +312,14 @@ impl Asn1Parser {
         
         if element.tag != 0x03 {
             return Err(CursedError::new("asn1_error", "Expected BIT STRING tag (0x03)"));
-        }
-
         if element.content.is_empty() {
             return Err(CursedError::new("asn1_error", "Empty bit string content"));
-        }
-
         let unused_bits = element.content[0];
         if unused_bits > 7 {
-        }
-
         let bit_string = Asn1BitString {
-            unused_bits,
-            data: element.content[1..].to_vec(),
-        };
 
         debug!(unused_bits, data_length = bit_string.data.len(), "Parsed ASN.1 bit string");
         Ok(bit_string)
-    }
-
     /// Create ASN.1 DER encoding for integer
     #[instrument(skip(value))]
     pub fn encode_integer(value: &[u8]) -> Vec<u8> {
@@ -414,8 +329,6 @@ impl Asn1Parser {
         let mut trimmed = value;
         while trimmed.len() > 1 && trimmed[0] == 0 {
             trimmed = &trimmed[1..];
-        }
-        
         // Add zero byte if first bit is set (to keep it positive)
         let needs_zero_byte = !trimmed.is_empty() && trimmed[0] & 0x80 != 0;
         let content_length = trimmed.len() + if needs_zero_byte { 1 } else { 0 };
@@ -428,8 +341,6 @@ impl Asn1Parser {
             let significant_bytes = length_bytes.iter().position(|&b| b != 0).unwrap_or(7);
             result.push(0x80 | (8 - significant_bytes) as u8);
             result.extend_from_slice(&length_bytes[significant_bytes..]);
-        }
-        
         // Add content
         if needs_zero_byte {
             result.push(0);
@@ -444,19 +355,9 @@ impl Asn1Parser {
 /// ASN.1 element structure
 #[derive(Debug, Clone)]
 pub struct Asn1Element {
-    pub tag: u8,
-    pub length: usize,
-    pub content: Vec<u8>,
-    pub total_length: usize,
-}
-
 /// ASN.1 bit string
 #[derive(Debug, Clone)]
 pub struct Asn1BitString {
-    pub unused_bits: u8,
-    pub data: Vec<u8>,
-}
-
 /// URL encoding utilities for crypto parameters
 pub struct UrlEncoder;
 
@@ -477,8 +378,6 @@ impl UrlEncoder {
         }
         debug!(input_length = data.len(), output_length = result.len(), "URL encoded data");
         result
-    }
-
     /// URL decode string
     #[instrument(skip(encoded))]
     pub fn decode(encoded: &str) -> crate::error::Result<()> {
@@ -505,8 +404,6 @@ impl UrlEncoder {
                     result.push(ch as u8);
                 }
             }
-        }
-        
         debug!(input_length = encoded.len(), output_length = result.len(), "URL decoded data");
         Ok(result)
     }

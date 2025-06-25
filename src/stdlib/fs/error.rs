@@ -6,27 +6,15 @@ use std::io;
 #[derive(Debug, Clone)]
 pub enum FsError {
     /// File or directory not found
-    NotFound(String),
     /// Permission denied
-    PermissionDenied(String),
     /// File or directory already exists
-    AlreadyExists(String),
     /// Invalid path
-    InvalidPath(String),
     /// Directory not empty
-    DirectoryNotEmpty(String),
     /// I/O error occurred
-    IoError(String),
     /// Invalid operation
-    InvalidOperation(String),
     /// Path is not a file
-    NotAFile(String),
     /// Path is not a directory
-    NotADirectory(String),
     /// Unsupported operation
-    Unsupported(String),
-}
-
 // impl fmt::Display for FsError {
 //     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
 //         match self {

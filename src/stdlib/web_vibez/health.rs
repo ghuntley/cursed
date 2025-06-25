@@ -7,61 +7,28 @@ use std::time::{Duration, SystemTime};
 
 /// Health check system for monitoring service status
 pub struct HealthChecker {
-    checks: HashMap<String, Box<dyn HealthCheck>>,
-    timeout: Duration,
-    cache_duration: Duration,
-    cached_results: HashMap<String, CachedHealthResult>,
-}
-
 /// Health check result
 #[derive(Debug, Clone)]
 pub struct HealthResult {
-    pub name: String,
-    pub status: HealthStatus,
-    pub message: String,
-    pub duration: Duration,
-    pub timestamp: SystemTime,
-    pub details: HashMap<String, String>,
-}
-
 /// Cached health check result
 #[derive(Debug, Clone)]
 struct CachedHealthResult {
-    result: HealthResult,
-    cached_at: SystemTime,
-}
-
 /// Health status enum
 #[derive(Debug, Clone, PartialEq)]
 pub enum HealthStatus {
-    Healthy,
-    Degraded,
-    Unhealthy,
-    Unknown,
-}
-
 impl HealthStatus {
     /// Convert to HTTP status code
     pub fn to_http_status(&self) -> u16 {
         match self {
-            HealthStatus::Healthy => 200,
             HealthStatus::Degraded => 200, // Still operational
-            HealthStatus::Unhealthy => 503,
-            HealthStatus::Unknown => 503,
         }
     }
 
     /// Convert to string
     pub fn as_str(&self) -> &'static str {
         match self {
-            HealthStatus::Healthy => "healthy",
-            HealthStatus::Degraded => "degraded",
-            HealthStatus::Unhealthy => "unhealthy",
-            HealthStatus::Unknown => "unknown",
         }
     }
-}
-
 /// Health check trait
 pub trait HealthCheck: Send + Sync {
     fn check(&self) -> HealthResult;
@@ -73,10 +40,6 @@ impl HealthChecker {
     /// Create new health checker
     pub fn new() -> Self {
         Self {
-            checks: HashMap::new(),
-            timeout: Duration::from_secs(5),
-            cache_duration: Duration::from_secs(30),
-            cached_results: HashMap::new(),
         }
     }
 
@@ -84,20 +47,14 @@ impl HealthChecker {
     pub fn with_timeout(mut self, timeout: Duration) -> Self {
         self.timeout = timeout;
         self
-    }
-
     /// Set cache duration
     pub fn with_cache_duration(mut self, duration: Duration) -> Self {
         self.cache_duration = duration;
         self
-    }
-
     /// Register health check
     pub fn register_check(&mut self, check: Box<dyn HealthCheck>) {
         let name = check.name().to_string();
         self.checks.insert(name, check);
-    }
-
     /// Run all health checks
     pub fn check_all(&mut self) -> OverallHealthResult {
         let mut results = Vec::new();
@@ -116,10 +73,6 @@ impl HealthChecker {
         let total_duration = SystemTime::now().duration_since(start_time).unwrap_or_default();
 
         OverallHealthResult {
-            status: overall_status,
-            checks: results,
-            total_duration,
-            timestamp: SystemTime::now(),
         }
     }
 
@@ -139,8 +92,6 @@ impl HealthChecker {
             
             // Cache the result
             self.cached_results.insert(check_name.to_string(), CachedHealthResult {
-                result: result.clone(),
-                cached_at: now,
             });
             
             Some(result)
@@ -154,13 +105,9 @@ impl HealthChecker {
         self.cached_results.values()
             .map(|cached| cached.result.clone())
             .collect()
-    }
-
     /// Clear cache
     pub fn clear_cache(&mut self) {
         self.cached_results.clear();
-    }
-
     /// Run check with caching
     fn run_check_with_cache(&mut self, name: &str, check: &dyn HealthCheck) -> HealthResult {
         let now = SystemTime::now();
@@ -177,13 +124,9 @@ impl HealthChecker {
         
         // Cache the result
         self.cached_results.insert(name.to_string(), CachedHealthResult {
-            result: result.clone(),
-            cached_at: now,
         });
 
         result
-    }
-
     /// Run check with timeout using thread-based execution
     fn run_check_with_timeout(&self, check: &dyn HealthCheck) -> HealthResult {
         let start_time = SystemTime::now();
@@ -203,11 +146,6 @@ impl HealthChecker {
             Err(timeout_error) => {
                 let actual_duration = SystemTime::now().duration_since(start_time).unwrap_or_default();
                 HealthResult {
-                    name: check_name,
-                    status: HealthStatus::Unhealthy,
-                    message: timeout_error,
-                    duration: actual_duration,
-                    timestamp: SystemTime::now(),
                     details: {
                         let mut details = HashMap::new();
                         details.insert("timeout_duration".to_string(), format!("{:?}", timeout_duration));
@@ -215,7 +153,6 @@ impl HealthChecker {
                         details.insert("error_type".to_string(), "timeout".to_string());
                         details.insert("timeout_mechanism".to_string(), "thread_based".to_string());
                         details
-                    },
                 }
             }
         }
@@ -269,7 +206,6 @@ impl HealthChecker {
         
         // Check if execution exceeded timeout
         if execution_time > timeout {
-            Err(format!("Health check '{}' exceeded timeout: {:?} (limit: {:?})", 
                        check_name, execution_time, timeout))
         } else {
             Ok(result)
@@ -292,7 +228,6 @@ impl HealthChecker {
         let execution_time = SystemTime::now().duration_since(start_time).unwrap_or_default();
         
         if execution_time > timeout {
-            Err(format!("Health check '{}' timed out cooperatively after {:?}", 
                        check.name(), execution_time))
         } else {
             Ok(result)
@@ -313,12 +248,8 @@ impl HealthChecker {
                         }
                     }
                 }
-                HealthStatus::Degraded => has_degraded = true,
-                HealthStatus::Unknown => has_degraded = true,
                 HealthStatus::Healthy => {}
             }
-        }
-
         if has_critical_unhealthy {
             HealthStatus::Unhealthy
         } else if has_degraded {
@@ -338,24 +269,12 @@ impl HealthChecker {
         for cached in self.cached_results.values() {
             total_checks += 1;
             match cached.result.status {
-                HealthStatus::Healthy => healthy_checks += 1,
-                HealthStatus::Degraded => degraded_checks += 1,
-                HealthStatus::Unhealthy => unhealthy_checks += 1,
-                HealthStatus::Unknown => degraded_checks += 1,
             }
         }
 
         HealthStats {
-            total_checks,
-            healthy_checks,
-            degraded_checks,
-            unhealthy_checks,
-            cache_duration: self.cache_duration,
-            timeout: self.timeout,
         }
     }
-}
-
 impl Default for HealthChecker {
     fn default() -> Self {
         Self::new()
@@ -365,19 +284,12 @@ impl Default for HealthChecker {
 /// Overall health result
 #[derive(Debug)]
 pub struct OverallHealthResult {
-    pub status: HealthStatus,
-    pub checks: Vec<HealthResult>,
-    pub total_duration: Duration,
-    pub timestamp: SystemTime,
-}
-
 impl OverallHealthResult {
     /// Convert to JSON string
     pub fn to_json(&self) -> String {
         let mut json = String::new();
         json.push_str("{\n");
         json.push_str(&format!("  \"status\": \"{}\",\n", self.status.as_str()));
-        json.push_str(&format!("  \"timestamp\": {},\n", 
             self.timestamp.duration_since(SystemTime::UNIX_EPOCH).unwrap_or_default().as_secs()));
         json.push_str(&format!("  \"duration_ms\": {},\n", self.total_duration.as_millis()));
         json.push_str("  \"checks\": [\n");
@@ -403,16 +315,10 @@ impl OverallHealthResult {
                     json.push_str(&format!("        \"{}\": \"{}\"", key, value));
                 }
                 json.push_str("\n      }");
-            }
-            
             json.push_str("\n    }");
-        }
-
         json.push_str("\n  ]\n");
         json.push_str("}\n");
         json
-    }
-
     /// Get HTTP status code
     pub fn http_status(&self) -> u16 {
         self.status.to_http_status()
@@ -422,27 +328,11 @@ impl OverallHealthResult {
 /// Health statistics
 #[derive(Debug)]
 pub struct HealthStats {
-    pub total_checks: usize,
-    pub healthy_checks: usize,
-    pub degraded_checks: usize,
-    pub unhealthy_checks: usize,
-    pub cache_duration: Duration,
-    pub timeout: Duration,
-}
-
 /// Database health check
 pub struct DatabaseHealthCheck {
-    name: String,
-    connection_string: String,
-    is_critical: bool,
-}
-
 impl DatabaseHealthCheck {
     pub fn new(name: String, connection_string: String) -> Self {
         Self {
-            name,
-            connection_string,
-            is_critical: true,
         }
     }
 
@@ -466,26 +356,16 @@ impl HealthCheck for DatabaseHealthCheck {
         } else {
             // Simulate failed connection
             (HealthStatus::Unhealthy, "Database connection failed".to_string())
-        };
 
         let mut details = HashMap::new();
-        details.insert("connection_string".to_string(), 
                       self.connection_string.split('@').last().unwrap_or("hidden").to_string());
 
         HealthResult {
-            name: self.name.clone(),
-            status,
-            message,
-            duration: SystemTime::now().duration_since(start_time).unwrap_or_default(),
-            timestamp: SystemTime::now(),
-            details,
         }
     }
 
     fn name(&self) -> &str {
         &self.name
-    }
-
     fn is_critical(&self) -> bool {
         self.is_critical
     }
@@ -493,21 +373,11 @@ impl HealthCheck for DatabaseHealthCheck {
 
 /// Memory health check
 pub struct MemoryHealthCheck {
-    name: String,
-    warning_threshold: u64,
-    critical_threshold: u64,
-}
-
 impl MemoryHealthCheck {
     pub fn new(name: String, warning_threshold: u64, critical_threshold: u64) -> Self {
         Self {
-            name,
-            warning_threshold,
-            critical_threshold,
         }
     }
-}
-
 impl HealthCheck for MemoryHealthCheck {
     fn check(&self) -> HealthResult {
         let start_time = SystemTime::now();
@@ -521,7 +391,6 @@ impl HealthCheck for MemoryHealthCheck {
             (HealthStatus::Degraded, format!("Memory usage high: {} bytes", used_memory))
         } else {
             (HealthStatus::Healthy, format!("Memory usage normal: {} bytes", used_memory))
-        };
 
         let mut details = HashMap::new();
         details.insert("used_memory".to_string(), used_memory.to_string());
@@ -529,12 +398,6 @@ impl HealthCheck for MemoryHealthCheck {
         details.insert("critical_threshold".to_string(), self.critical_threshold.to_string());
 
         HealthResult {
-            name: self.name.clone(),
-            status,
-            message,
-            duration: SystemTime::now().duration_since(start_time).unwrap_or_default(),
-            timestamp: SystemTime::now(),
-            details,
         }
     }
 
@@ -545,27 +408,15 @@ impl HealthCheck for MemoryHealthCheck {
 
 /// External service health check
 pub struct ExternalServiceHealthCheck {
-    name: String,
-    url: String,
-    timeout: Duration,
-    is_critical: bool,
-}
-
 impl ExternalServiceHealthCheck {
     pub fn new(name: String, url: String) -> Self {
         Self {
-            name,
-            url,
-            timeout: Duration::from_secs(5),
-            is_critical: false,
         }
     }
 
     pub fn with_timeout(mut self, timeout: Duration) -> Self {
         self.timeout = timeout;
         self
-    }
-
     pub fn critical(mut self) -> Self {
         self.is_critical = true;
         self
@@ -583,26 +434,17 @@ impl HealthCheck for ExternalServiceHealthCheck {
             (HealthStatus::Degraded, "External service slow".to_string())
         } else {
             (HealthStatus::Unhealthy, "External service unreachable".to_string())
-        };
 
         let mut details = HashMap::new();
         details.insert("url".to_string(), self.url.clone());
         details.insert("timeout_ms".to_string(), self.timeout.as_millis().to_string());
 
         HealthResult {
-            name: self.name.clone(),
-            status,
-            message,
-            duration: SystemTime::now().duration_since(start_time).unwrap_or_default(),
-            timestamp: SystemTime::now(),
-            details,
         }
     }
 
     fn name(&self) -> &str {
         &self.name
-    }
-
     fn is_critical(&self) -> bool {
         self.is_critical
     }
@@ -610,26 +452,16 @@ impl HealthCheck for ExternalServiceHealthCheck {
 
 /// Disk space health check
 pub struct DiskSpaceHealthCheck {
-    name: String,
-    path: String,
     warning_threshold: f64, // Percentage
     critical_threshold: f64, // Percentage
-}
-
 /// Slow health check for testing timeout functionality
 
 
 impl DiskSpaceHealthCheck {
     pub fn new(name: String, path: String, warning_threshold: f64, critical_threshold: f64) -> Self {
         Self {
-            name,
-            path,
-            warning_threshold,
-            critical_threshold,
         }
     }
-}
-
 impl HealthCheck for DiskSpaceHealthCheck {
     fn check(&self) -> HealthResult {
         let start_time = SystemTime::now();
@@ -643,7 +475,6 @@ impl HealthCheck for DiskSpaceHealthCheck {
             (HealthStatus::Degraded, format!("Disk usage high: {:.1}%", used_percentage))
         } else {
             (HealthStatus::Healthy, format!("Disk usage normal: {:.1}%", used_percentage))
-        };
 
         let mut details = HashMap::new();
         details.insert("path".to_string(), self.path.clone());
@@ -652,12 +483,6 @@ impl HealthCheck for DiskSpaceHealthCheck {
         details.insert("critical_threshold".to_string(), format!("{:.1}", self.critical_threshold));
 
         HealthResult {
-            name: self.name.clone(),
-            status,
-            message,
-            duration: SystemTime::now().duration_since(start_time).unwrap_or_default(),
-            timestamp: SystemTime::now(),
-            details,
         }
     }
 

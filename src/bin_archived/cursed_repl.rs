@@ -28,14 +28,11 @@ fn main() {
     let result = run_repl(&matches);
 
     match result {
-        Ok(_) => process::exit(0),
         Err(e) => {
             eprintln!("CursedError: {}", e);
             process::exit(1);
         }
     }
-}
-
 fn build_cli() -> Command {
     Command::new("cursed-repl")
         .about("CURSED Interactive REPL - Enhanced shell for development")
@@ -81,8 +78,6 @@ fn build_cli() -> Command {
                 .help("Set timeout for command execution (default: 30)")
                 .default_value("30")
         )
-}
-
 fn run_repl(matches: &clap::ArgMatches) -> crate::error::Result<()> {
     let verbose = matches.get_flag("verbose");
     let enable_history = !matches.get_flag("no-history");
@@ -104,13 +99,9 @@ fn run_repl(matches: &clap::ArgMatches) -> crate::error::Result<()> {
     // Set working directory if provided
     if let Some(dir) = working_dir {
         repl = repl.with_working_directory(dir)?;
-    }
-
     // Load file if provided
     if let Some(file) = load_file {
         repl.load_file(file)?;
-    }
-
     // Start the interactive REPL
     Ok(repl.run()?)
 }

@@ -15,31 +15,12 @@ use super::transaction::{SqliteTransaction, RealSqliteTransaction};
 /// fr fr Connection state tracking
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum ConnectionState {
-    Connected,
-    Disconnected,
-    CursedError,
-    Busy,
-}
-
 /// fr fr SQLite connection information
 #[derive(Debug, Clone)]
 pub struct SqliteConnectionInfo {
-    pub database_path: String,
-    pub connection_id: String,
-    pub connected_at: SystemTime,
-    pub state: ConnectionState,
-    pub thread_id: Option<std::thread::ThreadId>,
-}
-
 /// fr fr SQLite connection implementation
 #[derive(Debug)]
 pub struct SqliteConnection {
-    handle: Arc<Mutex<Option<Connection>>>,
-    config: SqliteConfig,
-    info: SqliteConnectionInfo,
-    stats: Arc<Mutex<SqliteStats>>,
-}
-
 impl SqliteConnection {
     /// slay Create new SQLite connection
     pub fn new(config: SqliteConfig) -> SqliteResult<Self> {
@@ -52,26 +33,13 @@ impl SqliteConnection {
             .map_err(|e| SqliteError::connection(&format!("Failed to open SQLite database: {}", e)))?;
         
         let info = SqliteConnectionInfo {
-            database_path: config.database_path.clone(),
-            connection_id: uuid::Uuid::new_v4().to_string(),
-            connected_at: SystemTime::now(),
-            state: ConnectionState::Connected,
-            thread_id: Some(std::thread::current().id()),
-        };
 
         let connection = Self {
-            handle: Arc::new(Mutex::new(Some(handle))),
-            config,
-            info,
-            stats: Arc::new(Mutex::new(SqliteStats::default())),
-        };
 
         // Initialize connection with PRAGMA statements
         connection.initialize_connection()?;
 
         Ok(connection)
-    }
-
     /// slay Initialize connection with configuration
     fn initialize_connection(&self) -> SqliteResult<()> {
         let statements = self.config.initialization_sql();
@@ -81,21 +49,15 @@ impl SqliteConnection {
             for statement in statements {
                 if statement.trim().is_empty() {
                     continue;
-                }
-                
                 conn.execute(&statement, [])
                     .map_err(|e| SqliteError::execution(&format!("Failed to execute initialization SQL '{}': {}", statement, e)))?;
             }
         }
 
         Ok(())
-    }
-
     /// slay Get connection information
     pub fn info(&self) -> &SqliteConnectionInfo {
         &self.info
-    }
-
     /// slay Get connection configuration
     pub fn config(&self) -> &SqliteConfig {
         &self.config
@@ -111,7 +73,6 @@ impl DriverConn for SqliteConnection {
             Ok(Box::new(stmt))
         } else {
             Err(DatabaseError::new(
-                super::super::DatabaseErrorKind::ConnectionError,
                 "Connection is not available"
             ))
         }
@@ -143,17 +104,11 @@ impl DriverConn for SqliteConnection {
                     values.push(value);
                 }
                 result_rows.push(values);
-            }
-            
             Ok(super::super::driver::QueryResult {
-                column_names: columns,
                 column_types: vec![], // Would need to extract actual types
-                rows: result_rows,
-                error: None,
             })
         } else {
             Err(DatabaseError::new(
-                super::super::DatabaseErrorKind::ConnectionError,
                 "Connection is not available"
             ))
         }
@@ -173,12 +128,9 @@ impl DriverConn for SqliteConnection {
             let last_insert_id = conn.last_insert_rowid();
             
             Ok(super::super::driver::ExecuteResult {
-                rows_affected: changes as i64,
-                last_insert_id: Some(last_insert_id as i64),
             })
         } else {
             Err(DatabaseError::new(
-                super::super::DatabaseErrorKind::ConnectionError,
                 "Connection is not available"
             ))
         }
@@ -193,7 +145,6 @@ impl DriverConn for SqliteConnection {
             Ok(Box::new(tx))
         } else {
             Err(DatabaseError::new(
-                super::super::DatabaseErrorKind::ConnectionError,
                 "Connection is not available"
             ))
         }
@@ -203,7 +154,6 @@ impl DriverConn for SqliteConnection {
         // Simple ping by checking if handle is valid
         let handle = self.handle.lock()
             .map_err(|_| DatabaseError::new(
-                super::super::DatabaseErrorKind::ConnectionError,
                 "Failed to acquire connection lock"
             ))?;
         
@@ -211,7 +161,6 @@ impl DriverConn for SqliteConnection {
             Ok(())
         } else {
             Err(DatabaseError::new(
-                super::super::DatabaseErrorKind::ConnectionError,
                 "Connection is closed"
             ))
         }
@@ -220,7 +169,6 @@ impl DriverConn for SqliteConnection {
     fn close(&self) -> crate::error::Result<()> {
         let mut handle = self.handle.lock()
             .map_err(|_| DatabaseError::new(
-                super::super::DatabaseErrorKind::ConnectionError,
                 "Failed to acquire connection lock"
             ))?;
         
@@ -236,33 +184,19 @@ impl DriverConn for SqliteConnection {
         self.handle.lock()
             .map(|h| h.is_some())
             .unwrap_or(false)
-    }
-
     fn metadata(&self) -> super::super::driver::ConnectionMetadata {
         super::super::driver::ConnectionMetadata {
-            server_version: "SQLite".to_string(),
-            database_name: self.info.database_path.clone(),
-            server_host: "localhost".to_string(),
-            server_port: 0,
-            username: "sqlite".to_string(),
-            connected_at: self.info.connected_at,
-            additional_info: std::collections::HashMap::new(),
         }
     }
 
     fn clone(&self) -> Box<dyn DriverConn> {
         // Create a new connection with the same config
         match Self::new(self.config.clone()) {
-            Ok(conn) => Box::new(conn),
             Err(_) => {
                 // Return a closed connection as fallback
                 let mut info = self.info.clone();
                 info.state = ConnectionState::CursedError;
                 Box::new(Self {
-                    handle: Arc::new(Mutex::new(None)),
-                    config: self.config.clone(),
-                    info,
-                    stats: Arc::new(Mutex::new(SqliteStats::default())),
                 })
             }
         }
@@ -276,10 +210,5 @@ fn convert_value_from_sqlite(row: &rusqlite::Row, index: usize) -> crate::error:
         .map_err(|e| DatabaseError::new(super::super::DatabaseErrorKind::ConversionError, &format!("Failed to get column {}: {}", index, e)))?;
     
     match value {
-        SqliteValue::Null => Ok(SqlValue::Null),
-        SqliteValue::Integer(i) => Ok(SqlValue::Integer(i)),
-        SqliteValue::Real(f) => Ok(SqlValue::Float(f)),
-        SqliteValue::Text(s) => Ok(SqlValue::String(s)),
-        SqliteValue::Blob(b) => Ok(SqlValue::Bytes(b)),
     }
 }

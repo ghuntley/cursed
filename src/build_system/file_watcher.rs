@@ -102,7 +102,6 @@ pub struct WatchConfig {
     /// - `*` matches any sequence of characters within a path component
     /// - `**` matches any sequence of path components
     /// - `?` matches any single character
-    pub watch_patterns: Vec<String>,
     
     /// File patterns to ignore (takes precedence over watch_patterns).
     /// 
@@ -113,7 +112,6 @@ pub struct WatchConfig {
     /// - Version control directories
     /// - Dependencies and cached files
     /// - Editor backup files
-    pub ignore_patterns: Vec<String>,
     
     /// Duration to wait before processing events to prevent rapid-fire triggers.
     /// 
@@ -124,7 +122,6 @@ pub struct WatchConfig {
     /// - Development: 100-300ms (fast feedback)
     /// - Production: 500-1000ms (stability)
     /// - Large projects: 1000ms+ (resource management)
-    pub debounce_duration: Duration,
     
     /// Maximum number of events to batch together for efficient processing.
     /// 
@@ -136,7 +133,6 @@ pub struct WatchConfig {
     /// - Small projects: 10-25
     /// - Medium projects: 25-50  
     /// - Large projects: 50-200
-    pub max_batch_size: usize,
     
     /// Whether to watch directories recursively.
     /// 
@@ -145,7 +141,6 @@ pub struct WatchConfig {
     /// 
     /// Set to `false` for better performance when you only need to watch
     /// specific files or shallow directory structures.
-    pub recursive: bool,
     
     /// Whether to follow symbolic links when watching.
     /// 
@@ -155,7 +150,6 @@ pub struct WatchConfig {
     /// 
     /// Generally recommended to keep `false` unless you specifically need
     /// symlink support.
-    pub follow_symlinks: bool,
     
     /// Internal buffer size for the event channel.
     /// 
@@ -166,114 +160,51 @@ pub struct WatchConfig {
     /// - Small projects: 100-500
     /// - Medium projects: 500-1000
     /// - Large projects: 1000-5000
-    pub event_buffer_size: usize,
-}
-
 impl Default for WatchConfig {
     fn default() -> Self {
         Self {
             watch_patterns: vec![
-                "*.csd".to_string(),
-                "*.toml".to_string(),
-                "*.md".to_string(),
-                "Makefile".to_string(),
-            ],
             ignore_patterns: vec![
-                "*.tmp".to_string(),
-                "*.bak".to_string(),
                 "target/*".to_string(),
                 ".git/*".to_string(),
                 ".devenv/*".to_string(),
                 "coverage/*".to_string(),
-            ],
-            debounce_duration: Duration::from_millis(500),
-            max_batch_size: 50,
-            recursive: true,
-            follow_symlinks: false,
-            event_buffer_size: 1000,
         }
     }
-}
-
 /// Types of file watch events
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum FileWatchEvent {
     /// File was created
     Created {
-        path: PathBuf,
-        timestamp: SystemTime,
-    },
     /// File was modified
     Modified {
-        path: PathBuf,
-        timestamp: SystemTime,
-    },
     /// File was deleted
     Deleted {
-        path: PathBuf,
-        timestamp: SystemTime,
-    },
     /// File was renamed
     Renamed {
-        from: PathBuf,
-        to: PathBuf,
-        timestamp: SystemTime,
-    },
     /// Directory was created
     DirectoryCreated {
-        path: PathBuf,
-        timestamp: SystemTime,
-    },
     /// Directory was deleted
     DirectoryDeleted {
-        path: PathBuf,
-        timestamp: SystemTime,
-    },
     /// Batch of events processed together
     Batch {
-        events: Vec<FileWatchEvent>,
-        timestamp: SystemTime,
-    },
-}
-
 impl FileWatchEvent {
     /// Get the primary path affected by this event
     pub fn path(&self) -> &Path {
         match self {
-            FileWatchEvent::Created { path, .. } => path,
-            FileWatchEvent::Modified { path, .. } => path,
-            FileWatchEvent::Deleted { path, .. } => path,
-            FileWatchEvent::Renamed { to, .. } => to,
-            FileWatchEvent::DirectoryCreated { path, .. } => path,
-            FileWatchEvent::DirectoryDeleted { path, .. } => path,
             FileWatchEvent::Batch { events, .. } => {
                 events.first().map(|e| e.path()).unwrap_or(Path::new(""))
             }
         }
-    }
-    
     /// Get the timestamp of this event
     pub fn timestamp(&self) -> SystemTime {
         match self {
-            FileWatchEvent::Created { timestamp, .. } => *timestamp,
-            FileWatchEvent::Modified { timestamp, .. } => *timestamp,
-            FileWatchEvent::Deleted { timestamp, .. } => *timestamp,
-            FileWatchEvent::Renamed { timestamp, .. } => *timestamp,
-            FileWatchEvent::DirectoryCreated { timestamp, .. } => *timestamp,
-            FileWatchEvent::DirectoryDeleted { timestamp, .. } => *timestamp,
-            FileWatchEvent::Batch { timestamp, .. } => *timestamp,
         }
     }
     
     /// Check if this event indicates a file change that should trigger a rebuild
     pub fn should_trigger_rebuild(&self) -> bool {
         match self {
-            FileWatchEvent::Created { .. } => true,
-            FileWatchEvent::Modified { .. } => true,
-            FileWatchEvent::Deleted { .. } => true,
-            FileWatchEvent::Renamed { .. } => true,
-            FileWatchEvent::DirectoryCreated { .. } => false,
-            FileWatchEvent::DirectoryDeleted { .. } => true,
             FileWatchEvent::Batch { events, .. } => {
                 events.iter().any(|e| e.should_trigger_rebuild())
             }
@@ -285,24 +216,16 @@ impl FileWatchEvent {
 #[derive(Debug, Clone)]
 pub struct WatchedPath {
     /// The path being watched
-    pub path: PathBuf,
     
     /// When this path was first watched
-    pub watch_started: SystemTime,
     
     /// Last time this path was modified
-    pub last_modified: Option<SystemTime>,
     
     /// Number of events seen for this path
-    pub event_count: u64,
     
     /// Whether this is a directory
-    pub is_directory: bool,
     
     /// File size (if applicable)
-    pub file_size: Option<u64>,
-}
-
 impl WatchedPath {
     /// Create a new WatchedPath
     pub fn new(path: PathBuf) -> CursedResult<Self> {
@@ -310,15 +233,7 @@ impl WatchedPath {
             .map_err(|e| CursedError::system_error(&format!("Failed to get metadata for {}: {}", path.display(), e)))?;
         
         Ok(Self {
-            path,
-            watch_started: SystemTime::now(),
-            last_modified: metadata.modified().ok(),
-            event_count: 0,
-            is_directory: metadata.is_dir(),
-            file_size: if metadata.is_file() { Some(metadata.len()) } else { None },
         })
-    }
-    
     /// Update metadata for this watched path
     pub fn update_metadata(&mut self) -> CursedResult<()> {
         if let Ok(metadata) = std::fs::metadata(&self.path) {
@@ -334,21 +249,14 @@ impl WatchedPath {
 #[derive(Debug, Clone)]
 pub struct WatchStatistics {
     /// Total number of paths being watched
-    pub total_watched_paths: usize,
     
     /// Number of directories being watched
-    pub total_directories: usize,
     
     /// Number of files being watched
-    pub total_files: usize,
     
     /// Total number of events processed
-    pub total_events_processed: u64,
     
     /// Whether the watcher is currently running
-    pub is_running: bool,
-}
-
 /// High-performance file system watcher with intelligent event processing.
 ///
 /// The `FileWatcher` provides real-time monitoring of file system changes with
@@ -407,62 +315,37 @@ pub struct WatchStatistics {
 /// ```
 pub struct FileWatcher {
     /// Configuration settings for watching behavior
-    config: WatchConfig,
     
     /// Atomic flag indicating if the watcher is currently running
-    is_running: Arc<Mutex<bool>>,
     
     /// Map of all currently watched paths with their metadata
-    watched_paths: Arc<Mutex<HashMap<PathBuf, WatchedPath>>>,
     
     /// The underlying platform-specific file system watcher
-    watcher: Option<RecommendedWatcher>,
     
     /// Channel for sending events from the watcher to the processor
-    event_sender: Option<mpsc::Sender<notify::Result<Event>>>,
     
     /// Channel for receiving events in the processing thread
-    event_receiver: Option<mpsc::Receiver<notify::Result<Event>>>,
     
     /// Background thread handle for event processing
-    worker_thread: Option<JoinHandle<()>>,
     
     /// User-provided callback function for handling events
-    callback: Arc<Mutex<Option<Box<dyn Fn(FileWatchEvent) + Send + 'static>>>>,
     
     /// Debounce tracking to prevent rapid-fire events
-    debounce_map: Arc<Mutex<HashMap<PathBuf, Instant>>>,
-}
-
 impl FileWatcher {
     /// Create a new file watcher with the given configuration
     pub fn new(config: WatchConfig) -> CursedResult<Self> {
         let (event_sender, event_receiver) = mpsc::channel();
         
         Ok(Self {
-            config,
-            is_running: Arc::new(Mutex::new(false)),
-            watched_paths: Arc::new(Mutex::new(HashMap::new())),
-            watcher: None,
-            event_sender: Some(event_sender),
-            event_receiver: Some(event_receiver),
-            worker_thread: None,
-            callback: Arc::new(Mutex::new(None)),
-            debounce_map: Arc::new(Mutex::new(HashMap::new())),
         })
-    }
-    
     /// Set the callback function to be called when events are processed
     pub fn set_event_callback<F>(&mut self, callback: F) -> CursedResult<()>
     where
-        F: Fn(FileWatchEvent) + Send + 'static,
     {
         let mut cb = self.callback.lock().map_err(|_| 
             CursedError::system_error("Failed to acquire callback lock"))?;
         *cb = Some(Box::new(callback));
         Ok(())
-    }
-    
     /// Start watching the specified paths
     pub fn start_watching<P: AsRef<Path>>(&mut self, paths: &[P]) -> CursedResult<()> {
         // Create the watcher
@@ -474,8 +357,6 @@ impl FileWatcher {
                 if let Err(_) = event_sender.send(res) {
                     // Channel closed, watcher stopping
                 }
-            },
-            Config::default(),
         ).map_err(|e| CursedError::system_error(&format!("Failed to create watcher: {}", e)))?;
         
         self.watcher = Some(watcher);
@@ -490,20 +371,15 @@ impl FileWatcher {
                 
                 if !path_buf.exists() {
                     return Err(CursedError::system_error(&format!("Path does not exist: {}", path_buf.display())));
-                }
-                
                 // Watch the path
                 let recursive_mode = if self.config.recursive {
                     RecursiveMode::Recursive
                 } else {
                     RecursiveMode::NonRecursive
-                };
                 
                 if let Some(ref mut watcher) = self.watcher {
                     watcher.watch(&path_buf, recursive_mode)
                         .map_err(|e| CursedError::system_error(&format!("Failed to watch path {}: {}", path_buf.display(), e)))?;
-                }
-                
                 let watched_path = WatchedPath::new(path_buf.clone())?;
                 watched_paths.insert(path_buf, watched_path);
             }
@@ -517,11 +393,7 @@ impl FileWatcher {
             let mut is_running = self.is_running.lock().map_err(|_| 
                 CursedError::system_error("Failed to acquire running lock"))?;
             *is_running = true;
-        }
-        
         Ok(())
-    }
-    
     /// Stop watching all paths
     pub fn stop_watching(&mut self) -> CursedResult<()> {
         // Mark as not running
@@ -529,49 +401,33 @@ impl FileWatcher {
             let mut is_running = self.is_running.lock().map_err(|_| 
                 CursedError::system_error("Failed to acquire running lock"))?;
             *is_running = false;
-        }
-        
         // Stop the watcher
         if let Some(watcher) = self.watcher.take() {
             drop(watcher);
-        }
-        
         // Wait for worker thread to finish
         if let Some(thread) = self.worker_thread.take() {
             let _ = thread.join();
-        }
-        
         // Clear watched paths
         {
             let mut watched_paths = self.watched_paths.lock().map_err(|_| 
                 CursedError::system_error("Failed to acquire watched paths lock"))?;
             watched_paths.clear();
-        }
-        
         // Clear debounce map
         {
             let mut debounce_map = self.debounce_map.lock().map_err(|_| 
                 CursedError::system_error("Failed to acquire debounce map lock"))?;
             debounce_map.clear();
-        }
-        
         Ok(())
-    }
-    
     /// Check if the watcher is currently running
     pub fn is_running(&self) -> bool {
         self.is_running.lock()
             .map(|running| *running)
             .unwrap_or(false)
-    }
-    
     /// Get information about all watched paths
     pub fn get_watched_paths(&self) -> HashMap<PathBuf, WatchedPath> {
         self.watched_paths.lock()
             .map(|paths| paths.clone())
             .unwrap_or_default()
-    }
-    
     /// Get statistics about file watching
     pub fn get_statistics(&self) -> WatchStatistics {
         let (total_paths, total_events, directories) = self.watched_paths.lock()
@@ -587,11 +443,6 @@ impl FileWatcher {
         let is_running = self.is_running();
         
         WatchStatistics {
-            total_watched_paths: total_paths,
-            total_directories: directories,
-            total_files: files,
-            total_events_processed: total_events,
-            is_running,
         }
     }
     
@@ -646,8 +497,6 @@ impl FileWatcher {
                         break;
                     }
                 }
-            }
-            
             // Process any remaining events
             if !batch_events.is_empty() {
                 Self::process_event_batch(&mut batch_events, &callback);
@@ -656,8 +505,6 @@ impl FileWatcher {
         
         self.worker_thread = Some(thread);
         Ok(())
-    }
-    
     /// Convert notify event to our internal event type
     fn convert_notify_event(event: Event, config: &WatchConfig) -> Option<FileWatchEvent> {
         let timestamp = SystemTime::now();
@@ -674,13 +521,9 @@ impl FileWatcher {
                 if let Some(path) = event.paths.first() {
                     if path.is_dir() {
                         Some(FileWatchEvent::DirectoryCreated {
-                            path: path.clone(),
-                            timestamp,
                         })
                     } else {
                         Some(FileWatchEvent::Created {
-                            path: path.clone(),
-                            timestamp,
                         })
                     }
                 } else {
@@ -690,8 +533,6 @@ impl FileWatcher {
             EventKind::Modify(_) => {
                 if let Some(path) = event.paths.first() {
                     Some(FileWatchEvent::Modified {
-                        path: path.clone(),
-                        timestamp,
                     })
                 } else {
                     None
@@ -701,14 +542,11 @@ impl FileWatcher {
                 if let Some(path) = event.paths.first() {
                     // We can't check if it was a directory since it's deleted
                     Some(FileWatchEvent::Deleted {
-                        path: path.clone(),
-                        timestamp,
                     })
                 } else {
                     None
                 }
             }
-            _ => None,
         }
     }
     
@@ -726,8 +564,6 @@ impl FileWatcher {
         // Check watch patterns
         if watch_patterns.is_empty() {
             return true;
-        }
-        
         for pattern in watch_patterns {
             if Self::matches_pattern(&path_str, pattern) {
                 return true;
@@ -735,14 +571,10 @@ impl FileWatcher {
         }
         
         false
-    }
-    
     /// Simple pattern matching (supports * wildcard)
     fn matches_pattern(text: &str, pattern: &str) -> bool {
         if pattern == "*" {
             return true;
-        }
-        
         if pattern.contains('*') {
             let parts: Vec<&str> = pattern.split('*').collect();
             if parts.len() == 2 {
@@ -753,13 +585,8 @@ impl FileWatcher {
         }
         
         text == pattern || text.ends_with(pattern)
-    }
-    
     /// Check if event should be processed based on debouncing
     fn should_process_event(
-        event: &FileWatchEvent,
-        debounce_map: &Arc<Mutex<HashMap<PathBuf, Instant>>>,
-        debounce_duration: Duration,
     ) -> bool {
         let path = event.path().to_path_buf();
         let now = Instant::now();
@@ -779,8 +606,6 @@ impl FileWatcher {
     
     /// Update metadata for watched path
     fn update_watched_path_metadata(
-        event: &FileWatchEvent,
-        watched_paths: &Arc<Mutex<HashMap<PathBuf, WatchedPath>>>,
     ) {
         let path = event.path().to_path_buf();
         if let Ok(mut paths) = watched_paths.lock() {
@@ -788,17 +613,11 @@ impl FileWatcher {
                 let _ = watched_path.update_metadata();
             }
         }
-    }
-    
     /// Process a batch of events
     fn process_event_batch(
-        batch_events: &mut Vec<FileWatchEvent>,
-        callback: &Arc<Mutex<Option<Box<dyn Fn(FileWatchEvent) + Send + 'static>>>>,
     ) {
         if batch_events.is_empty() {
             return;
-        }
-        
         if let Ok(cb) = callback.lock() {
             if let Some(ref callback_fn) = *cb {
                 if batch_events.len() == 1 {
@@ -807,14 +626,9 @@ impl FileWatcher {
                 } else {
                     // Batch event
                     let batch = FileWatchEvent::Batch {
-                        events: batch_events.drain(..).collect(),
-                        timestamp: SystemTime::now(),
-                    };
                     callback_fn(batch);
                 }
             }
-        }
-        
         batch_events.clear();
     }
 }
@@ -827,14 +641,10 @@ impl Drop for FileWatcher {
 
 /// Builder for creating FileWatcher instances with custom configuration
 pub struct FileWatcherBuilder {
-    config: WatchConfig,
-}
-
 impl FileWatcherBuilder {
     /// Create a new builder with default configuration
     pub fn new() -> Self {
         Self {
-            config: WatchConfig::default(),
         }
     }
     
@@ -842,38 +652,26 @@ impl FileWatcherBuilder {
     pub fn watch_patterns(mut self, patterns: Vec<String>) -> Self {
         self.config.watch_patterns = patterns;
         self
-    }
-    
     /// Set the file patterns to ignore
     pub fn ignore_patterns(mut self, patterns: Vec<String>) -> Self {
         self.config.ignore_patterns = patterns;
         self
-    }
-    
     /// Set the debounce duration
     pub fn debounce_duration(mut self, duration: Duration) -> Self {
         self.config.debounce_duration = duration;
         self
-    }
-    
     /// Set the maximum batch size
     pub fn max_batch_size(mut self, size: usize) -> Self {
         self.config.max_batch_size = size;
         self
-    }
-    
     /// Set whether to watch recursively
     pub fn recursive(mut self, recursive: bool) -> Self {
         self.config.recursive = recursive;
         self
-    }
-    
     /// Set whether to follow symlinks
     pub fn follow_symlinks(mut self, follow: bool) -> Self {
         self.config.follow_symlinks = follow;
         self
-    }
-    
     /// Build the FileWatcher
     pub fn build(self) -> CursedResult<FileWatcher> {
         FileWatcher::new(self.config)
@@ -888,15 +686,9 @@ impl Default for FileWatcherBuilder {
 
 /// Real debounce manager for file events
 pub struct DebounceManager {
-    duration: Duration,
-    last_events: Arc<Mutex<HashMap<PathBuf, Instant>>>,
-}
-
 impl DebounceManager {
     pub fn new(duration: Duration) -> Self {
         Self {
-            duration,
-            last_events: Arc::new(Mutex::new(HashMap::new())),
         }
     }
     
@@ -924,22 +716,12 @@ impl DebounceManager {
             events.clear();
         }
     }
-}
-
 /// Real event filter for file patterns
 pub struct EventFilter {
-    watch_patterns: Vec<String>,
-    ignore_patterns: Vec<String>,
-}
-
 impl EventFilter {
     pub fn new(config: &WatchConfig) -> CursedResult<Self> {
         Ok(Self {
-            watch_patterns: config.watch_patterns.clone(),
-            ignore_patterns: config.ignore_patterns.clone(),
         })
-    }
-    
     /// Check if a path should be watched based on patterns
     pub fn should_watch(&self, path: &Path) -> bool {
         let path_str = path.to_string_lossy();
@@ -954,8 +736,6 @@ impl EventFilter {
         // Check watch patterns
         if self.watch_patterns.is_empty() {
             return true;
-        }
-        
         for pattern in &self.watch_patterns {
             if self.matches_pattern(&path_str, pattern) {
                 return true;
@@ -963,14 +743,10 @@ impl EventFilter {
         }
         
         false
-    }
-    
     /// Simple pattern matching (supports * wildcard)
     fn matches_pattern(&self, text: &str, pattern: &str) -> bool {
         if pattern == "*" {
             return true;
-        }
-        
         if pattern.contains('*') {
             let parts: Vec<&str> = pattern.split('*').collect();
             if parts.len() == 2 {

@@ -12,21 +12,14 @@ use super::ffi::SqliteFFI;
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct SqliteVersion {
     /// fr fr Version string (e.g., "3.39.4")
-    pub version_string: String,
     /// fr fr Numeric version (e.g., 3039004)
-    pub version_number: i32,
     /// fr fr Source ID string
-    pub source_id: String,
-}
-
 impl SqliteVersion {
     /// slay Parse version from string
     pub fn parse(version_str: &str) -> SqliteResult<Self> {
         let parts: Vec<&str> = version_str.split('.').collect();
         if parts.len() < 3 {
             return Err(SqliteError::invalid_parameter("Invalid version format"));
-        }
-
         let major: i32 = parts[0].parse()
             .map_err(|_| SqliteError::invalid_parameter("Invalid major version"))?;
         let minor: i32 = parts[1].parse()
@@ -37,39 +30,24 @@ impl SqliteVersion {
         let version_number = major * 1000000 + minor * 1000 + patch;
 
         Ok(Self {
-            version_string: version_str.to_string(),
-            version_number,
-            source_id: "Unknown".to_string(),
         })
-    }
-
     /// slay Check if version is at least the specified version
     pub fn is_at_least(&self, major: i32, minor: i32, patch: i32) -> bool {
         let required_version = major * 1000000 + minor * 1000 + patch;
         self.version_number >= required_version
-    }
-
     /// slay Get major version
     pub fn major(&self) -> i32 {
         self.version_number / 1000000
-    }
-
     /// slay Get minor version
     pub fn minor(&self) -> i32 {
         (self.version_number / 1000) % 1000
-    }
-
     /// slay Get patch version
     pub fn patch(&self) -> i32 {
         self.version_number % 1000
-    }
-
     /// slay Check if this is a stable release
     pub fn is_stable(&self) -> bool {
         // SQLite stable versions typically have even minor numbers
         self.minor() % 2 == 0
-    }
-
     /// slay Get version tuple (major, minor, patch)
     pub fn as_tuple(&self) -> (i32, i32, i32) {
         (self.major(), self.minor(), self.patch())
@@ -85,70 +63,36 @@ impl std::fmt::Display for SqliteVersion {
 impl Default for SqliteVersion {
     fn default() -> Self {
         Self {
-            version_string: "0.0.0".to_string(),
-            version_number: 0,
-            source_id: "Unknown".to_string(),
         }
     }
-}
-
 /// fr fr SQLite feature detection
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct SqliteFeatures {
     /// fr fr Thread safety level (0=none, 1=serialized, 2=multi-thread)
-    pub threadsafe: i32,
     /// fr fr Memory management enabled
-    pub has_memory_management: bool,
     /// fr fr Full-text search (FTS) versions
-    pub has_fts3: bool,
-    pub has_fts4: bool,
-    pub has_fts5: bool,
     /// fr fr JSON support
-    pub has_json1: bool,
     /// fr fr R-Tree spatial index
-    pub has_rtree: bool,
     /// fr fr ICU internationalization
-    pub has_icu: bool,
     /// fr fr Loadable extensions
-    pub has_loadable_extensions: bool,
     /// fr fr Virtual table support
-    pub has_virtual_tables: bool,
     /// fr fr Database encryption
-    pub has_encryption: bool,
     /// fr fr Math functions
-    pub has_math_functions: bool,
     /// fr fr Statistics functions  
-    pub has_stat4: bool,
     /// fr fr Session extension
-    pub has_session: bool,
     /// fr fr Preupdate hooks
-    pub has_preupdate_hook: bool,
     /// fr fr Window functions
-    pub has_window_functions: bool,
     /// fr fr Generated columns
-    pub has_generated_columns: bool,
     /// fr fr Without ROWID tables
-    pub has_without_rowid: bool,
     /// fr fr Common Table Expressions
-    pub has_cte: bool,
     /// fr fr Recursive CTEs
-    pub has_recursive_cte: bool,
     /// fr fr Partial indexes
-    pub has_partial_indexes: bool,
     /// fr fr Expression indexes
-    pub has_expression_indexes: bool,
     /// fr fr Foreign key support
-    pub has_foreign_keys: bool,
     /// fr fr Triggers
-    pub has_triggers: bool,
     /// fr fr Views
-    pub has_views: bool,
     /// fr fr Compound SELECT
-    pub has_compound_select: bool,
     /// fr fr UPSERT
-    pub has_upsert: bool,
-}
-
 impl SqliteFeatures {
     /// slay Detect available SQLite features
     pub fn detect() -> SqliteResult<Self> {
@@ -190,37 +134,9 @@ impl SqliteFeatures {
         features.threadsafe = 1; // Assume serialized by default
 
         Ok(features)
-    }
-
     /// slay Check if feature is available
     pub fn has_feature(&self, feature: &str) -> bool {
         match feature.to_lowercase().as_str() {
-            "fts3" => self.has_fts3,
-            "fts4" => self.has_fts4,
-            "fts5" => self.has_fts5,
-            "json1" | "json" => self.has_json1,
-            "rtree" => self.has_rtree,
-            "icu" => self.has_icu,
-            "loadable_extensions" => self.has_loadable_extensions,
-            "virtual_tables" => self.has_virtual_tables,
-            "encryption" => self.has_encryption,
-            "math_functions" => self.has_math_functions,
-            "stat4" => self.has_stat4,
-            "session" => self.has_session,
-            "preupdate_hook" => self.has_preupdate_hook,
-            "window_functions" => self.has_window_functions,
-            "generated_columns" => self.has_generated_columns,
-            "without_rowid" => self.has_without_rowid,
-            "cte" => self.has_cte,
-            "recursive_cte" => self.has_recursive_cte,
-            "partial_indexes" => self.has_partial_indexes,
-            "expression_indexes" => self.has_expression_indexes,
-            "foreign_keys" => self.has_foreign_keys,
-            "triggers" => self.has_triggers,
-            "views" => self.has_views,
-            "compound_select" => self.has_compound_select,
-            "upsert" => self.has_upsert,
-            _ => false,
         }
     }
 
@@ -255,15 +171,9 @@ impl SqliteFeatures {
 
         features.sort();
         features
-    }
-
     /// slay Get thread safety description
     pub fn thread_safety_description(&self) -> &'static str {
         match self.threadsafe {
-            0 => "Single-threaded",
-            1 => "Serialized (thread-safe)",
-            2 => "Multi-threaded (thread-safe with restrictions)",
-            _ => "Unknown",
         }
     }
 
@@ -276,37 +186,8 @@ impl SqliteFeatures {
 impl Default for SqliteFeatures {
     fn default() -> Self {
         Self {
-            threadsafe: 1,
-            has_memory_management: true,
-            has_fts3: false,
-            has_fts4: false,
-            has_fts5: false,
-            has_json1: false,
-            has_rtree: false,
-            has_icu: false,
-            has_loadable_extensions: false,
-            has_virtual_tables: true,
-            has_encryption: false,
-            has_math_functions: false,
-            has_stat4: false,
-            has_session: false,
-            has_preupdate_hook: false,
-            has_window_functions: false,
-            has_generated_columns: false,
-            has_without_rowid: true,
-            has_cte: true,
-            has_recursive_cte: true,
-            has_partial_indexes: true,
-            has_expression_indexes: true,
-            has_foreign_keys: true,
-            has_triggers: true,
-            has_views: true,
-            has_compound_select: true,
-            has_upsert: false,
         }
     }
-}
-
 /// fr fr SQLite utility functions
 pub struct SqliteUtils;
 
@@ -328,8 +209,6 @@ impl SqliteUtils {
     pub fn quote_string_literal(value: &str) -> String {
         // SQLite uses single quotes for string literals
         format!("'{}'", value.replace('\'', "''"))
-    }
-
     /// slay Escape LIKE pattern
     pub fn escape_like_pattern(pattern: &str, escape_char: Option<char>) -> String {
         let escape = escape_char.unwrap_or('\\');
@@ -345,49 +224,24 @@ impl SqliteUtils {
                     escaped.push(escape);
                     escaped.push(escape);
                 }
-                c => escaped.push(c),
             }
         }
         
         escaped
-    }
-
     /// slay Check if string is SQL keyword
     pub fn is_sql_keyword(word: &str) -> bool {
         const KEYWORDS: &[&str] = &[
-            "ABORT", "ACTION", "ADD", "AFTER", "ALL", "ALTER", "ANALYZE", "AND", "AS", "ASC",
-            "ATTACH", "AUTOINCREMENT", "BEFORE", "BEGIN", "BETWEEN", "BY", "CASCADE", "CASE",
-            "CAST", "CHECK", "COLLATE", "COLUMN", "COMMIT", "CONFLICT", "CONSTRAINT", "CREATE",
-            "CROSS", "CURRENT_DATE", "CURRENT_TIME", "CURRENT_TIMESTAMP", "DATABASE", "DEFAULT",
-            "DEFERRABLE", "DEFERRED", "DELETE", "DESC", "DETACH", "DISTINCT", "DROP", "EACH",
-            "ELSE", "END", "ESCAPE", "EXCEPT", "EXCLUSIVE", "EXISTS", "EXPLAIN", "FAIL", "FOR",
-            "FOREIGN", "FROM", "FULL", "GLOB", "GROUP", "HAVING", "IF", "IGNORE", "IMMEDIATE",
-            "IN", "INDEX", "INDEXED", "INITIALLY", "INNER", "INSERT", "INSTEAD", "INTERSECT",
-            "INTO", "IS", "ISNULL", "JOIN", "KEY", "LEFT", "LIKE", "LIMIT", "MATCH", "NATURAL",
-            "NO", "NOT", "NOTNULL", "NULL", "OF", "OFFSET", "ON", "OR", "ORDER", "OUTER", "PLAN",
-            "PRAGMA", "PRIMARY", "QUERY", "RAISE", "RECURSIVE", "REFERENCES", "REGEXP", "REINDEX",
-            "RELEASE", "RENAME", "REPLACE", "RESTRICT", "RIGHT", "ROLLBACK", "ROW", "SAVEPOINT",
-            "SELECT", "SET", "TABLE", "TEMP", "TEMPORARY", "THEN", "TO", "TRANSACTION", "TRIGGER",
-            "UNION", "UNIQUE", "UPDATE", "USING", "VACUUM", "VALUES", "VIEW", "VIRTUAL", "WHEN",
-            "WHERE", "WITH", "WITHOUT",
         ];
         
         KEYWORDS.contains(&word.to_uppercase().as_str())
-    }
-
     /// slay Generate CREATE TABLE statement
     pub fn generate_create_table(
-        table_name: &str,
         columns: &[(String, String, Vec<String>)], // (name, type, constraints)
-        table_constraints: &[String],
-        if_not_exists: bool,
     ) -> String {
         let mut sql = String::from("CREATE TABLE ");
         
         if if_not_exists {
             sql.push_str("IF NOT EXISTS ");
-        }
-        
         sql.push_str(&Self::quote_identifier(table_name));
         sql.push_str(" (\n");
         
@@ -395,51 +249,31 @@ impl SqliteUtils {
         
         // Add column definitions
         for (name, data_type, constraints) in columns {
-            let mut column_def = format!("  {} {}", 
-                Self::quote_identifier(name), 
                 data_type
             );
             
             for constraint in constraints {
                 column_def.push(' ');
                 column_def.push_str(constraint);
-            }
-            
             parts.push(column_def);
-        }
-        
         // Add table constraints
         for constraint in table_constraints {
             parts.push(format!("  {}", constraint));
-        }
-        
         sql.push_str(&parts.join(",\n"));
         sql.push_str("\n)");
         
         sql
-    }
-
     /// slay Generate CREATE INDEX statement
     pub fn generate_create_index(
-        index_name: &str,
-        table_name: &str,
-        columns: &[String],
-        unique: bool,
-        if_not_exists: bool,
-        where_clause: Option<&str>,
     ) -> String {
         let mut sql = String::from("CREATE ");
         
         if unique {
             sql.push_str("UNIQUE ");
-        }
-        
         sql.push_str("INDEX ");
         
         if if_not_exists {
             sql.push_str("IF NOT EXISTS ");
-        }
-        
         sql.push_str(&Self::quote_identifier(index_name));
         sql.push_str(" ON ");
         sql.push_str(&Self::quote_identifier(table_name));
@@ -455,27 +289,17 @@ impl SqliteUtils {
         if let Some(where_clause) = where_clause {
             sql.push_str(" WHERE ");
             sql.push_str(where_clause);
-        }
-        
         sql
-    }
-
     /// slay Validate table name
     pub fn validate_table_name(name: &str) -> SqliteResult<()> {
         if name.is_empty() {
             return Err(SqliteError::invalid_parameter("Table name cannot be empty"));
-        }
-        
         if name.len() > 128 {
             return Err(SqliteError::invalid_parameter("Table name too long (max 128 characters)"));
-        }
-        
         // Check for valid characters (alphanumeric, underscore, starts with letter or underscore)
         let first_char = name.chars().next().unwrap();
         if !first_char.is_alphabetic() && first_char != '_' {
             return Err(SqliteError::invalid_parameter("Table name must start with letter or underscore"));
-        }
-        
         for ch in name.chars() {
             if !ch.is_alphanumeric() && ch != '_' {
                 return Err(SqliteError::invalid_parameter("Table name contains invalid characters"));
@@ -483,14 +307,10 @@ impl SqliteUtils {
         }
         
         Ok(())
-    }
-
     /// slay Validate column name
     pub fn validate_column_name(name: &str) -> SqliteResult<()> {
         // Same rules as table name for simplicity
         Self::validate_table_name(name)
-    }
-
     /// slay Parse SQLite data type
     pub fn parse_data_type(type_str: &str) -> (String, Option<i32>, Option<i32>) {
         let type_upper = type_str.to_uppercase();
@@ -516,7 +336,6 @@ impl SqliteUtils {
                         let scale = params[1].parse::<i32>().ok();
                         (type_name, precision, scale)
                     }
-                    _ => (type_upper, None, None),
                 }
             } else {
                 (type_upper, None, None)
@@ -546,27 +365,17 @@ impl SqliteUtils {
     /// slay Format SQLite error for logging
     pub fn format_error_for_logging(error: &SqliteError) -> String {
         format!(
-            "[SQLite CursedError] Code: {:?}, Message: {}, Severity: {}",
-            error.code,
-            error.message,
             error.severity
         )
-    }
-
     /// slay Build connection string from components
     pub fn build_connection_string(
-        path: &str,
-        parameters: &HashMap<String, String>,
     ) -> String {
         if parameters.is_empty() {
             return path.to_string();
-        }
-
         let mut uri = if path == ":memory:" {
             ":memory:".to_string()
         } else {
             format!("file:{}", path)
-        };
 
         let params: Vec<String> = parameters.iter()
             .map(|(k, v)| format!("{}={}", k, v))
@@ -575,11 +384,7 @@ impl SqliteUtils {
         if !params.is_empty() {
             uri.push('?');
             uri.push_str(&params.join("&"));
-        }
-
         uri
-    }
-
     /// slay Get system information
     pub fn get_system_info() -> SqliteResult<HashMap<String, String>> {
         let mut info = HashMap::new();

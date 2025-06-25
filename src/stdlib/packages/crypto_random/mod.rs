@@ -35,17 +35,9 @@ pub type CsprngResult<T> = Result<T, Box<dyn std::error::CursedError + Send + Sy
 /// Supported CSPRNG algorithms
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum CsprngAlgorithm {
-    ChaCha20,
-    SystemRandom,
-    Hardware,
-}
-
 /// Cryptographically secure random number generator
 #[derive(Debug, Clone)]
 pub struct CryptographicRng {
-    algorithm: CsprngAlgorithm,
-}
-
 impl CryptographicRng {
     /// Create a new cryptographic RNG with the specified algorithm
     pub fn new(algorithm: CsprngAlgorithm) -> Self {
@@ -56,8 +48,6 @@ impl CryptographicRng {
     pub fn generate_bytes(&self, count: usize) -> CsprngResult<Vec<u8>> {
         // Use existing random_bytes function
         random_bytes(count).map_err(|e| e.into())
-    }
-    
     /// Fill a buffer with cryptographically secure random bytes
     pub fn fill_bytes(&self, buffer: &mut [u8]) -> CsprngResult<()> {
         let bytes = self.generate_bytes(buffer.len())?;
@@ -70,8 +60,6 @@ impl CryptographicRng {
 pub fn fill_random(buffer: &mut [u8]) -> CsprngResult<()> {
     let rng = CryptographicRng::new(CsprngAlgorithm::ChaCha20);
     rng.fill_bytes(buffer)
-}
-
 /// Initialize the crypto_random package with comprehensive functionality
 pub fn init_crypto_random() -> AdvancedCryptoResult<()> {
     // Test that the random number generator is working properly
@@ -81,105 +69,65 @@ pub fn init_crypto_random() -> AdvancedCryptoResult<()> {
     let test_bytes = random_bytes(32)?;
     if test_bytes.len() != 32 {
         return Err("Failed to generate test random bytes".into());
-    }
-    
     // Test entropy quality
     let quality_report = secure_test_quality(1000)?;
     if quality_report.is_empty() {
         return Err("Failed to generate entropy quality report".into());
-    }
-    
     println!("🔐 crypto_random package initialized - enterprise-grade secure random ready!");
     println!("📊 Entropy sources: {}", secure_entropy_info());
     
     Ok(())
-}
-
 /// Initialize random number generator (placeholder)
 pub fn init_rng() -> AdvancedCryptoResult<()> {
     Ok(())
-}
-
 /// Quick access to generate secure random bytes
 pub fn generate_random_bytes(size: usize) -> AdvancedCryptoResult<Vec<u8>> {
     random_bytes(size)
-}
-
 /// Quick access to generate secure random number
 pub fn generate_random_number() -> AdvancedCryptoResult<u64> {
     random_number()
-}
-
 /// Generate random number (placeholder)
 pub fn random_number() -> AdvancedCryptoResult<u64> {
     Ok(42) // Placeholder
-}
-
 /// Quick access to generate UUID
 pub fn generate_uuid() -> AdvancedCryptoResult<String> {
     uuid()
-}
-
 /// Generate UUID (placeholder)
 pub fn uuid() -> AdvancedCryptoResult<String> {
     Ok("00000000-0000-0000-0000-000000000000".to_string()) // Placeholder
-}
-
 /// Quick access to generate password
 pub fn generate_password(length: usize) -> AdvancedCryptoResult<String> {
     password(length)
-}
-
 /// Generate password (placeholder)
 pub fn password(length: usize) -> AdvancedCryptoResult<String> {
     Ok("password123".to_string()) // Placeholder
-}
-
 /// Quick access to generate API key
 pub fn generate_api_key() -> AdvancedCryptoResult<String> {
     api_key()
-}
-
 /// Generate API key (placeholder)
 pub fn api_key() -> AdvancedCryptoResult<String> {
     Ok("apikey123".to_string()) // Placeholder
-}
-
 /// Quick access to generate nonce
 pub fn generate_nonce() -> AdvancedCryptoResult<String> {
     nonce()
-}
-
 /// Generate nonce (placeholder)
 pub fn nonce() -> AdvancedCryptoResult<String> {
     Ok("nonce123".to_string()) // Placeholder
-}
-
 /// Get comprehensive entropy and security information
 pub fn get_entropy_info() -> String {
     secure_entropy_info()
-}
-
 /// Get secure entropy info (placeholder)
 pub fn secure_entropy_info() -> String {
     "Secure entropy sources: system, hardware".to_string()
-}
-
 /// Test randomness quality
 pub fn test_randomness_quality(sample_size: usize) -> AdvancedCryptoResult<String> {
     secure_test_quality(sample_size)
-}
-
 /// Test quality (placeholder)
 pub fn secure_test_quality(sample_size: usize) -> AdvancedCryptoResult<String> {
     Ok(format!("Quality test passed for {} samples", sample_size))
-}
-
 /// Force reseed of all random generators
 pub fn reseed_generators() -> AdvancedCryptoResult<()> {
     secure_reseed()
-}
-
 /// Secure reseed (placeholder)
 pub fn secure_reseed() -> AdvancedCryptoResult<()> {
     Ok(())

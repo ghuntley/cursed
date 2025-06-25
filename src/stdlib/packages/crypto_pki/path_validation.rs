@@ -35,271 +35,132 @@ pub enum PathValidationResult {
     /// Path validation succeeded
     Valid {
         /// Validated certificate chain from trust anchor to end entity
-        validated_chain: Vec<CertificateInfo>,
         /// Policies that were validated during path processing
-        validated_policies: HashSet<String>,
         /// Trust anchor used for validation
-        trust_anchor: TrustAnchor,
-    },
     
     /// Path validation failed
     Invalid {
         /// Detailed error information
-        error: PathValidationError,
         /// Partial chain that was built before failure
-        partial_chain: Vec<CertificateInfo>,
-    },
-}
-
 /// Comprehensive path validation errors
 #[derive(Debug, Clone, PartialEq)]
 pub enum PathValidationError {
     /// No valid certificate chain could be built
     ChainBuildingFailed {
-        reason: String,
-        attempted_paths: usize,
-    },
     
     /// Certificate signature verification failed
     SignatureVerificationFailed {
-        certificate_subject: String,
-        issuer: String,
-        algorithm: String,
-    },
     
     /// Certificate validity period violation
     ValidityPeriodViolation {
-        certificate_subject: String,
-        not_before: SystemTime,
-        not_after: SystemTime,
-        current_time: SystemTime,
-    },
     
     /// Path length constraint violation
     PathLengthConstraintViolation {
-        certificate_subject: String,
-        max_path_length: u32,
-        actual_path_length: u32,
-    },
     
     /// Certificate policy validation failed
     PolicyValidationFailed {
-        certificate_subject: String,
-        required_policies: HashSet<String>,
-        certificate_policies: HashSet<String>,
-        reason: String,
-    },
     
     /// Name constraint validation failed
     NameConstraintViolation {
-        certificate_subject: String,
-        constraint_type: NameConstraintType,
-        violated_name: String,
-        constraint: String,
-    },
     
     /// Critical extension not understood or properly processed
     CriticalExtensionNotSupported {
-        certificate_subject: String,
-        extension_oid: String,
-    },
     
     /// Key usage constraint violation
     KeyUsageViolation {
-        certificate_subject: String,
-        required_usage: KeyUsageFlags,
-        certificate_usage: KeyUsageFlags,
-    },
     
     /// Certificate revocation check failed
     RevocationCheckFailed {
-        certificate_subject: String,
-        revocation_reason: String,
-        revocation_time: Option<SystemTime>,
-    },
     
     /// Trust anchor not found or invalid
     TrustAnchorError {
-        reason: String,
-        available_anchors: usize,
-    },
     
     /// Certificate extension processing error
     ExtensionProcessingError {
-        certificate_subject: String,
-        extension_oid: String,
-        error: String,
-    },
-}
-
 /// Name constraint types for validation
 #[derive(Debug, Clone, PartialEq)]
 pub enum NameConstraintType {
-    DnsName,
-    EmailAddress,
-    IpAddress,
-    DirectoryName,
-    Uri,
-}
-
 /// Trust anchor representation for path validation
 #[derive(Debug, Clone, PartialEq)]
 pub struct TrustAnchor {
     /// Trust anchor certificate or public key info
-    pub certificate: Option<CertificateInfo>,
     /// Trust anchor public key
-    pub public_key: PublicKeyInfo,
     /// Distinguished name of trust anchor
-    pub subject_name: DistinguishedName,
     /// Key identifier for trust anchor matching
-    pub key_identifier: Option<Vec<u8>>,
     /// Name constraints imposed by trust anchor
-    pub name_constraints: Option<NameConstraints>,
     /// Certificate policies supported by trust anchor
-    pub certificate_policies: HashSet<String>,
-}
-
 /// Name constraints for certificate validation
 #[derive(Debug, Clone, PartialEq)]
 pub struct NameConstraints {
     /// Permitted name subtrees
-    pub permitted_subtrees: Vec<GeneralSubtree>,
     /// Excluded name subtrees
-    pub excluded_subtrees: Vec<GeneralSubtree>,
-}
-
 /// General subtree for name constraints
 #[derive(Debug, Clone, PartialEq)]
 pub struct GeneralSubtree {
     /// Base name for the subtree
-    pub base: GeneralName,
     /// Minimum distance from base
-    pub minimum: Option<u32>,
     /// Maximum distance from base
-    pub maximum: Option<u32>,
-}
-
 /// General name representation for constraints
 #[derive(Debug, Clone, PartialEq)]
 pub enum GeneralName {
-    DnsName(String),
-    EmailAddress(String),
-    IpAddress(Vec<u8>),
-    DirectoryName(DistinguishedName),
-    Uri(String),
-    Other(String, Vec<u8>),
-}
-
 /// Certificate path validation context
 #[derive(Debug, Clone)]
 pub struct PathValidationContext {
     /// Available trust anchors
-    pub trust_anchors: Vec<TrustAnchor>,
     /// Current validation time
-    pub validation_time: SystemTime,
     /// Required certificate policies
-    pub required_policies: HashSet<String>,
     /// Initial policy set
-    pub initial_policy_set: HashSet<String>,
     /// Enable policy mapping
-    pub enable_policy_mapping: bool,
     /// Require explicit policy
-    pub require_explicit_policy: bool,
     /// Inhibit policy mapping depth
-    pub inhibit_policy_mapping: Option<u32>,
     /// Inhibit any policy depth
-    pub inhibit_any_policy: Option<u32>,
     /// Maximum path length allowed
-    pub max_path_length: Option<u32>,
     /// Enable revocation checking
-    pub enable_revocation_checking: bool,
     /// CRL distribution points to check
-    pub crl_distribution_points: Vec<String>,
     /// OCSP responder URLs
-    pub ocsp_responders: Vec<String>,
-}
-
 /// Certificate policy information
 #[derive(Debug, Clone, PartialEq)]
 pub struct CertificatePolicy {
     /// Policy identifier (OID)
-    pub policy_id: String,
     /// Policy qualifiers
-    pub qualifiers: Vec<PolicyQualifier>,
-}
-
 /// Policy qualifier information
 #[derive(Debug, Clone, PartialEq)]
 pub struct PolicyQualifier {
     /// Qualifier ID
-    pub qualifier_id: String,
     /// Qualifier data
-    pub qualifier_data: Vec<u8>,
-}
-
 /// Path validation state during processing
 #[derive(Debug, Clone)]
 struct ValidationState {
     /// Current certificate being processed
-    current_cert: CertificateInfo,
     /// Current path length
-    path_length: u32,
     /// Maximum path length allowed
-    max_path_length: Option<u32>,
     /// Valid policy tree
-    valid_policy_tree: PolicyTree,
     /// Authority key identifier
-    authority_key_id: Option<Vec<u8>>,
     /// Working public key
-    working_public_key: PublicKeyInfo,
     /// Working public key algorithm
-    working_public_key_algorithm: String,
     /// Working public key parameters
-    working_public_key_parameters: Option<Vec<u8>>,
     /// Working issuer name
-    working_issuer_name: DistinguishedName,
     /// Name constraints
-    permitted_subtrees: Vec<GeneralSubtree>,
-    excluded_subtrees: Vec<GeneralSubtree>,
     /// Explicit policy indicator
-    explicit_policy: Option<u32>,
     /// Inhibit any policy indicator
-    inhibit_any_policy: Option<u32>,
     /// Policy mapping indicator
-    policy_mapping: Option<u32>,
-}
-
 /// Policy tree for certificate policy validation
 #[derive(Debug, Clone)]
 pub struct PolicyTree {
     /// Root policy nodes
-    pub root_nodes: Vec<PolicyNode>,
-}
-
 /// Policy tree node
 #[derive(Debug, Clone)]
 pub struct PolicyNode {
     /// Valid policy OID
-    pub valid_policy: String,
     /// Qualifier set
-    pub qualifier_set: Vec<PolicyQualifier>,
     /// Criticality indicator
-    pub criticality_indicator: bool,
     /// Expected policy set
-    pub expected_policy_set: HashSet<String>,
     /// Child nodes
-    pub children: Vec<PolicyNode>,
-}
-
 /// Main certificate path validator
 #[derive(Debug)]
 pub struct CertificatePathValidator {
     /// Validation context
-    context: PathValidationContext,
     /// Certificate cache for performance
-    certificate_cache: HashMap<String, CertificateInfo>,
-}
-
 impl CertificatePathValidator {
     /// Create new certificate path validator
     /// 
@@ -310,8 +171,6 @@ impl CertificatePathValidator {
     /// * Configured certificate path validator
     pub fn new(context: PathValidationContext) -> Self {
         Self {
-            context,
-            certificate_cache: HashMap::new(),
         }
     }
     
@@ -337,60 +196,36 @@ impl CertificatePathValidator {
     /// - Policy bypass vulnerabilities
     /// - Name constraint violations
     pub fn validate_path(
-        &mut self,
-        target_certificate: &CertificateInfo,
-        intermediate_certificates: &[CertificateInfo],
     ) -> crate::error::Result<()> {
         // Step 1: Build certificate chain
         let chain_result = self.build_certificate_chain(
-            target_certificate,
-            intermediate_certificates,
         )?;
         
         let certificate_chain = match chain_result {
-            Some(chain) => chain,
             None => {
                 return Ok(PathValidationResult::Invalid {
                     error: PathValidationError::ChainBuildingFailed {
-                        reason: "No valid certificate chain could be built".to_string(),
-                        attempted_paths: intermediate_certificates.len(),
-                    },
-                    partial_chain: vec![target_certificate.clone()],
                 });
             }
-        };
         
         // Step 2: Find appropriate trust anchor
         let trust_anchor = match self.find_trust_anchor(&certificate_chain)? {
-            Some(anchor) => anchor,
             None => {
                 return Ok(PathValidationResult::Invalid {
                     error: PathValidationError::TrustAnchorError {
-                        reason: "No suitable trust anchor found for certificate chain".to_string(),
-                        available_anchors: self.context.trust_anchors.len(),
-                    },
-                    partial_chain: certificate_chain,
                 });
             }
-        };
         
         // Step 3: Initialize validation state
         let mut validation_state = self.initialize_validation_state(
-            &certificate_chain,
-            &trust_anchor,
         )?;
         
         // Step 4: Process certificate chain (RFC 5280 Section 6.1.3)
         for (index, certificate) in certificate_chain.iter().enumerate() {
             if let Err(error) = self.process_certificate(
-                certificate,
-                index,
-                &mut validation_state,
                 index == certificate_chain.len() - 1, // is_end_entity
             ) {
                 return Ok(PathValidationResult::Invalid {
-                    error,
-                    partial_chain: certificate_chain[..=index].to_vec(),
                 });
             }
         }
@@ -398,21 +233,12 @@ impl CertificatePathValidator {
         // Step 5: Perform wrap-up procedures (RFC 5280 Section 6.1.5)
         if let Err(error) = self.perform_wrap_up_procedures(&validation_state) {
             return Ok(PathValidationResult::Invalid {
-                error,
-                partial_chain: certificate_chain,
             });
-        }
-        
         // Step 6: Extract validated policies
         let validated_policies = self.extract_validated_policies(&validation_state);
         
         Ok(PathValidationResult::Valid {
-            validated_chain: certificate_chain,
-            validated_policies,
-            trust_anchor,
         })
-    }
-    
     /// Build certificate chain from target to trust anchor
     /// 
     /// This function implements certificate chain building logic to find
@@ -425,9 +251,6 @@ impl CertificatePathValidator {
     /// # Returns
     /// * Optional certificate chain from end entity to trust anchor
     fn build_certificate_chain(
-        &self,
-        target_certificate: &CertificateInfo,
-        intermediate_certificates: &[CertificateInfo],
     ) -> crate::error::Result<()> {
         let mut chain = vec![target_certificate.clone()];
         let mut current_cert = target_certificate;
@@ -445,16 +268,11 @@ impl CertificatePathValidator {
                 }
                 // Self-signed but not trusted - chain building failed
                 return Ok(None);
-            }
-            
             // Find issuer certificate
             let issuer_cert = self.find_issuer_certificate(
-                current_cert,
-                intermediate_certificates,
             )?;
             
             let issuer = match issuer_cert {
-                Some(cert) => cert,
                 None => {
                     // Try to find in trust anchors
                     if let Some(anchor) = self.find_issuer_in_trust_anchors(current_cert)? {
@@ -465,13 +283,10 @@ impl CertificatePathValidator {
                     }
                     return Ok(None);
                 }
-            };
             
             // Check for loops in certificate chain
             if visited.contains(&issuer.subject_name) {
                 return Ok(None); // Circular chain detected
-            }
-            
             visited.insert(issuer.subject_name.clone());
             chain.push(issuer.clone());
             current_cert = &issuer;
@@ -483,12 +298,8 @@ impl CertificatePathValidator {
         }
         
         Ok(Some(chain))
-    }
-    
     /// Find appropriate trust anchor for certificate chain
     fn find_trust_anchor(
-        &self,
-        certificate_chain: &[CertificateInfo],
     ) -> crate::error::Result<()> {
         let root_cert = certificate_chain.last().unwrap();
         
@@ -504,64 +315,31 @@ impl CertificatePathValidator {
                     return Ok(Some(trust_anchor.clone()));
                 }
             }
-        }
-        
         Ok(None)
-    }
-    
     /// Initialize validation state for path processing
     fn initialize_validation_state(
-        &self,
-        certificate_chain: &[CertificateInfo],
-        trust_anchor: &TrustAnchor,
     ) -> crate::error::Result<()> {
         let root_cert = certificate_chain.last().unwrap();
         
         Ok(ValidationState {
-            current_cert: root_cert.clone(),
-            path_length: 0,
-            max_path_length: self.context.max_path_length,
             valid_policy_tree: PolicyTree {
                 root_nodes: vec![PolicyNode {
                     valid_policy: "2.5.29.32.0".to_string(), // any-policy
-                    qualifier_set: vec![],
-                    criticality_indicator: false,
-                    expected_policy_set: self.context.initial_policy_set.clone(),
-                    children: vec![],
-                }],
-            },
-            authority_key_id: root_cert.authority_key_identifier.clone(),
-            working_public_key: trust_anchor.public_key.clone(),
-            working_public_key_algorithm: trust_anchor.public_key.algorithm.clone(),
-            working_public_key_parameters: trust_anchor.public_key.parameters.clone(),
-            working_issuer_name: trust_anchor.subject_name.clone(),
             permitted_subtrees: if let Some(nc) = &trust_anchor.name_constraints {
                 nc.permitted_subtrees.clone()
             } else {
                 vec![]
-            },
             excluded_subtrees: if let Some(nc) = &trust_anchor.name_constraints {
                 nc.excluded_subtrees.clone()
             } else {
                 vec![]
-            },
             explicit_policy: if self.context.require_explicit_policy {
                 Some(0)
             } else {
                 None
-            },
-            inhibit_any_policy: self.context.inhibit_any_policy,
-            policy_mapping: self.context.inhibit_policy_mapping,
         })
-    }
-    
     /// Process individual certificate in the chain
     fn process_certificate(
-        &self,
-        certificate: &CertificateInfo,
-        index: usize,
-        state: &mut ValidationState,
-        is_end_entity: bool,
     ) -> crate::error::Result<()> {
         // Step 1: Verify certificate signature
         self.verify_certificate_signature(certificate, state)?;
@@ -572,8 +350,6 @@ impl CertificatePathValidator {
         // Step 3: Check revocation status
         if self.context.enable_revocation_checking {
             self.check_revocation_status(certificate)?;
-        }
-        
         // Step 4: Process certificate name
         self.verify_certificate_name(certificate, state)?;
         
@@ -595,16 +371,9 @@ impl CertificatePathValidator {
         // Step 10: Update state for next iteration
         if !is_end_entity {
             self.update_validation_state(certificate, state)?;
-        }
-        
         Ok(())
-    }
-    
     /// Verify certificate signature using working public key
     fn verify_certificate_signature(
-        &self,
-        certificate: &CertificateInfo,
-        state: &ValidationState,
     ) -> crate::error::Result<()> {
         // Extract signature algorithm and parameters
         let signature_algorithm = &certificate.signature_algorithm;
@@ -612,93 +381,46 @@ impl CertificatePathValidator {
         
         // Verify signature using working public key
         match self.verify_signature(
-            &certificate.tbs_certificate_data,
-            signature_value,
-            &state.working_public_key,
-            signature_algorithm,
         ) {
-            Ok(true) => Ok(()),
             Ok(false) => Err(PathValidationError::SignatureVerificationFailed {
-                certificate_subject: format!("{:?}", certificate.subject_name),
-                issuer: format!("{:?}", state.working_issuer_name),
-                algorithm: signature_algorithm.clone(),
-            }),
             Err(_) => Err(PathValidationError::SignatureVerificationFailed {
-                certificate_subject: format!("{:?}", certificate.subject_name),
-                issuer: format!("{:?}", state.working_issuer_name),
-                algorithm: signature_algorithm.clone(),
-            }),
         }
     }
     
     /// Check certificate validity period
     fn check_validity_period(
-        &self,
-        certificate: &CertificateInfo,
     ) -> crate::error::Result<()> {
         let current_time = self.context.validation_time;
         
         if current_time < certificate.not_before {
             return Err(PathValidationError::ValidityPeriodViolation {
-                certificate_subject: format!("{:?}", certificate.subject_name),
-                not_before: certificate.not_before,
-                not_after: certificate.not_after,
-                current_time,
             });
-        }
-        
         if current_time > certificate.not_after {
             return Err(PathValidationError::ValidityPeriodViolation {
-                certificate_subject: format!("{:?}", certificate.subject_name),
-                not_before: certificate.not_before,
-                not_after: certificate.not_after,
-                current_time,
             });
-        }
-        
         Ok(())
-    }
-    
     /// Check certificate revocation status
     fn check_revocation_status(
-        &self,
-        certificate: &CertificateInfo,
     ) -> crate::error::Result<()> {
         // Check CRL distribution points
         if let Some(crl_points) = &certificate.crl_distribution_points {
             for crl_point in crl_points {
                 if let Err(e) = self.check_crl_revocation(certificate, crl_point) {
                     return Err(PathValidationError::RevocationCheckFailed {
-                        certificate_subject: format!("{:?}", certificate.subject_name),
-                        revocation_reason: format!("CRL check failed: {}", e),
-                        revocation_time: None,
                     });
                 }
             }
-        }
-        
         // Check OCSP responders
         if let Some(ocsp_responders) = &certificate.ocsp_responders {
             for responder in ocsp_responders {
                 if let Err(e) = self.check_ocsp_revocation(certificate, responder) {
                     return Err(PathValidationError::RevocationCheckFailed {
-                        certificate_subject: format!("{:?}", certificate.subject_name),
-                        revocation_reason: format!("OCSP check failed: {}", e),
-                        revocation_time: None,
                     });
                 }
             }
-        }
-        
         Ok(())
-    }
-    
     /// Process certificate policies according to RFC 5280
     fn process_certificate_policies(
-        &self,
-        certificate: &CertificateInfo,
-        state: &mut ValidationState,
-        is_end_entity: bool,
     ) -> crate::error::Result<()> {
         // Extract certificate policies from certificate
         let cert_policies = self.extract_certificate_policies(certificate)?;
@@ -708,17 +430,11 @@ impl CertificatePathValidator {
             // No policies in certificate
             if state.explicit_policy == Some(0) {
                 return Err(PathValidationError::PolicyValidationFailed {
-                    certificate_subject: format!("{:?}", certificate.subject_name),
-                    required_policies: self.context.required_policies.clone(),
-                    certificate_policies: HashSet::new(),
-                    reason: "Explicit policy required but no policies found".to_string(),
                 });
             }
         } else {
             // Process certificate policies
             self.update_policy_tree(&mut state.valid_policy_tree, &cert_policies)?;
-        }
-        
         // Update policy indicators
         if let Some(ref mut explicit) = state.explicit_policy {
             if *explicit > 0 {
@@ -739,21 +455,14 @@ impl CertificatePathValidator {
         }
         
         Ok(())
-    }
-    
     /// Process name constraints
     fn process_name_constraints(
-        &self,
-        certificate: &CertificateInfo,
-        state: &mut ValidationState,
     ) -> crate::error::Result<()> {
         // Extract name constraints from certificate
         if let Some(name_constraints) = &certificate.name_constraints {
             // Add permitted subtrees
             for subtree in &name_constraints.permitted_subtrees {
                 state.permitted_subtrees.push(subtree.clone());
-            }
-            
             // Add excluded subtrees
             for subtree in &name_constraints.excluded_subtrees {
                 state.excluded_subtrees.push(subtree.clone());
@@ -771,35 +480,19 @@ impl CertificatePathValidator {
         }
         
         Ok(())
-    }
-    
     /// Process basic constraints extension
     fn process_basic_constraints(
-        &self,
-        certificate: &CertificateInfo,
-        state: &mut ValidationState,
-        is_end_entity: bool,
     ) -> crate::error::Result<()> {
         if let Some(basic_constraints) = &certificate.basic_constraints {
             // Check CA flag for non-end-entity certificates
             if !is_end_entity && !basic_constraints.ca {
                 return Err(PathValidationError::KeyUsageViolation {
-                    certificate_subject: format!("{:?}", certificate.subject_name),
-                    required_usage: KeyUsageFlags::KEY_CERT_SIGN,
-                    certificate_usage: certificate.key_usage.unwrap_or(KeyUsageFlags::empty()),
                 });
-            }
-            
             // Check path length constraint
             if let Some(path_len_constraint) = basic_constraints.path_len_constraint {
                 if state.path_length > path_len_constraint {
                     return Err(PathValidationError::PathLengthConstraintViolation {
-                        certificate_subject: format!("{:?}", certificate.subject_name),
-                        max_path_length: path_len_constraint,
-                        actual_path_length: state.path_length,
                     });
-                }
-                
                 // Update maximum path length
                 state.max_path_length = Some(
                     state.max_path_length
@@ -811,51 +504,31 @@ impl CertificatePathValidator {
         
         state.path_length += 1;
         Ok(())
-    }
-    
     /// Process key usage constraints
     fn process_key_usage_constraints(
-        &self,
-        certificate: &CertificateInfo,
-        is_end_entity: bool,
     ) -> crate::error::Result<()> {
         if let Some(key_usage) = certificate.key_usage {
             if !is_end_entity {
                 // CA certificates must have key cert sign usage
                 if !key_usage.contains(KeyUsageFlags::KEY_CERT_SIGN) {
                     return Err(PathValidationError::KeyUsageViolation {
-                        certificate_subject: format!("{:?}", certificate.subject_name),
-                        required_usage: KeyUsageFlags::KEY_CERT_SIGN,
-                        certificate_usage: key_usage,
                     });
                 }
             }
-        }
-        
         Ok(())
-    }
-    
     /// Process critical extensions
     fn process_critical_extensions(
-        &self,
-        certificate: &CertificateInfo,
     ) -> crate::error::Result<()> {
         for extension in &certificate.extensions {
             if extension.critical && !self.is_supported_critical_extension(&extension.oid) {
                 return Err(PathValidationError::CriticalExtensionNotSupported {
-                    certificate_subject: format!("{:?}", certificate.subject_name),
-                    extension_oid: extension.oid.clone(),
                 });
             }
         }
         
         Ok(())
-    }
-    
     /// Perform wrap-up procedures after path processing
     fn perform_wrap_up_procedures(
-        &self,
-        state: &ValidationState,
     ) -> crate::error::Result<()> {
         // Check explicit policy requirement
         if let Some(explicit_policy) = state.explicit_policy {
@@ -868,18 +541,10 @@ impl CertificatePathValidator {
                 
                 if !missing_policies.is_empty() {
                     return Err(PathValidationError::PolicyValidationFailed {
-                        certificate_subject: "Chain validation".to_string(),
-                        required_policies: self.context.required_policies.clone(),
-                        certificate_policies: validated_policies,
-                        reason: format!("Missing required policies: {:?}", missing_policies),
                     });
                 }
             }
-        }
-        
         Ok(())
-    }
-    
     /// Extract validated policies from policy tree
     fn extract_validated_policies(&self, state: &ValidationState) -> HashSet<String> {
         let mut policies = HashSet::new();
@@ -887,8 +552,6 @@ impl CertificatePathValidator {
         fn collect_policies(node: &PolicyNode, policies: &mut HashSet<String>) {
             if node.valid_policy != "2.5.29.32.0" { // Not any-policy
                 policies.insert(node.valid_policy.clone());
-            }
-            
             for child in &node.children {
                 collect_policies(child, policies);
             }
@@ -896,23 +559,13 @@ impl CertificatePathValidator {
         
         for root_node in &state.valid_policy_tree.root_nodes {
             collect_policies(root_node, &mut policies);
-        }
-        
         policies
-    }
-    
     // Helper methods for certificate operations
     
     fn is_self_signed(
-        &self,
-        certificate: &CertificateInfo,
     ) -> crate::error::Result<()> {
         Ok(certificate.subject_name == certificate.issuer_name)
-    }
-    
     fn is_trusted_root(
-        &self,
-        certificate: &CertificateInfo,
     ) -> crate::error::Result<()> {
         for trust_anchor in &self.context.trust_anchors {
             if let Some(anchor_cert) = &trust_anchor.certificate {
@@ -922,19 +575,12 @@ impl CertificatePathValidator {
             }
         }
         Ok(false)
-    }
-    
     fn find_issuer_certificate(
-        &self,
-        certificate: &CertificateInfo,
-        intermediates: &[CertificateInfo],
     ) -> crate::error::Result<()> {
         for intermediate in intermediates {
             if intermediate.subject_name == certificate.issuer_name {
                 // Verify key identifiers match if present
                 if let (Some(aki), Some(ski)) = (
-                    &certificate.authority_key_identifier,
-                    &intermediate.subject_key_identifier,
                 ) {
                     if aki == ski {
                         return Ok(Some(intermediate.clone()));
@@ -945,11 +591,7 @@ impl CertificatePathValidator {
             }
         }
         Ok(None)
-    }
-    
     fn find_issuer_in_trust_anchors(
-        &self,
-        certificate: &CertificateInfo,
     ) -> crate::error::Result<()> {
         for trust_anchor in &self.context.trust_anchors {
             if trust_anchor.subject_name == certificate.issuer_name {
@@ -965,52 +607,24 @@ impl CertificatePathValidator {
             }
         }
         Ok(None)
-    }
-    
     fn certificates_match(
-        &self,
-        cert1: &CertificateInfo,
-        cert2: &CertificateInfo,
     ) -> crate::error::Result<()> {
         Ok(cert1.subject_name == cert2.subject_name &&
            cert1.public_key == cert2.public_key)
-    }
-    
     fn certificate_matches_trust_anchor(
-        &self,
-        certificate: &CertificateInfo,
-        trust_anchor: &TrustAnchor,
     ) -> crate::error::Result<()> {
         Ok(certificate.subject_name == trust_anchor.subject_name &&
            certificate.public_key == trust_anchor.public_key)
-    }
-    
     fn verify_certificate_name(
-        &self,
-        certificate: &CertificateInfo,
-        state: &ValidationState,
     ) -> crate::error::Result<()> {
         // Verify issuer name matches working issuer name
         if certificate.issuer_name != state.working_issuer_name {
             return Err(PathValidationError::ChainBuildingFailed {
                 reason: format!(
-                    "Certificate issuer name {:?} does not match working issuer name {:?}",
-                    certificate.issuer_name,
                     state.working_issuer_name
-                ),
-                attempted_paths: 1,
             });
-        }
-        
         Ok(())
-    }
-    
     fn verify_signature(
-        &self,
-        data: &[u8],
-        signature: &[u8],
-        public_key: &PublicKeyInfo,
-        algorithm: &str,
     ) -> crate::error::Result<()> {
         // Implement signature verification based on algorithm
         match algorithm {
@@ -1036,35 +650,17 @@ impl CertificatePathValidator {
                 Err(format!("Unsupported signature algorithm: {}", algorithm).into())
             }
         }
-    }
-    
     fn verify_rsa_signature(
-        &self,
-        data: &[u8],
-        signature: &[u8],
-        public_key: &PublicKeyInfo,
-        hash_algorithm: &str,
     ) -> crate::error::Result<()> {
         // RSA signature verification implementation
         // This would integrate with actual cryptographic library
         Ok(true) // Placeholder
-    }
-    
     fn verify_ecdsa_signature(
-        &self,
-        data: &[u8],
-        signature: &[u8],
-        public_key: &PublicKeyInfo,
-        hash_algorithm: &str,
     ) -> crate::error::Result<()> {
         // ECDSA signature verification implementation
         // This would integrate with actual cryptographic library
         Ok(true) // Placeholder
-    }
-    
     fn extract_certificate_policies(
-        &self,
-        certificate: &CertificateInfo,
     ) -> crate::error::Result<()> {
         let mut policies = Vec::new();
         
@@ -1077,50 +673,27 @@ impl CertificatePathValidator {
         }
         
         Ok(policies)
-    }
-    
     fn parse_certificate_policies_extension(
-        &self,
-        extension_data: &[u8],
     ) -> crate::error::Result<()> {
         // Parse DER-encoded certificate policies extension
         // This would use actual ASN.1/DER parsing
         Ok(vec![]) // Placeholder
-    }
-    
     fn update_policy_tree(
-        &self,
-        policy_tree: &mut PolicyTree,
-        cert_policies: &[CertificatePolicy],
     ) -> crate::error::Result<()> {
         // Update policy tree according to RFC 5280 algorithm
         // This implements the complex policy tree processing logic
         Ok(()) // Placeholder
-    }
-    
     fn validate_name_constraints(
-        &self,
-        subject_name: &DistinguishedName,
-        state: &ValidationState,
     ) -> crate::error::Result<()> {
         // Convert distinguished name to general name for constraint checking
         let general_name = GeneralName::DirectoryName(subject_name.clone());
         self.validate_general_name_constraints(&general_name, state)
-    }
-    
     fn validate_general_name_constraints(
-        &self,
-        name: &GeneralName,
-        state: &ValidationState,
     ) -> crate::error::Result<()> {
         // Check excluded subtrees first
         for excluded in &state.excluded_subtrees {
             if self.name_matches_subtree(name, excluded)? {
                 return Err(PathValidationError::NameConstraintViolation {
-                    certificate_subject: "Name constraint validation".to_string(),
-                    constraint_type: self.get_constraint_type(name),
-                    violated_name: format!("{:?}", name),
-                    constraint: format!("{:?}", excluded.base),
                 });
             }
         }
@@ -1137,21 +710,12 @@ impl CertificatePathValidator {
             
             if !permitted {
                 return Err(PathValidationError::NameConstraintViolation {
-                    certificate_subject: "Name constraint validation".to_string(),
-                    constraint_type: self.get_constraint_type(name),
-                    violated_name: format!("{:?}", name),
-                    constraint: "Not in permitted subtrees".to_string(),
                 });
             }
         }
         
         Ok(())
-    }
-    
     fn name_matches_subtree(
-        &self,
-        name: &GeneralName,
-        subtree: &GeneralSubtree,
     ) -> crate::error::Result<()> {
         match (&name, &subtree.base) {
             (GeneralName::DnsName(name), GeneralName::DnsName(constraint)) => {
@@ -1216,27 +780,15 @@ impl CertificatePathValidator {
             }
         }
         true
-    }
-    
     fn directory_name_matches(
-        &self,
-        name: &DistinguishedName,
-        constraint: &DistinguishedName,
     ) -> bool {
         // Directory name matching - name must be subordinate to constraint
         self.is_subordinate_dn(name, constraint)
-    }
-    
     fn is_subordinate_dn(
-        &self,
-        name: &DistinguishedName,
-        parent: &DistinguishedName,
     ) -> bool {
         // Check if name is subordinate to parent in DN hierarchy
         // This would implement proper DN comparison logic
         false // Placeholder
-    }
-    
     fn uri_matches(&self, name: &str, constraint: &str) -> bool {
         // URI constraint matching
         if constraint.starts_with('.') {
@@ -1248,23 +800,13 @@ impl CertificatePathValidator {
             }
         }
         name.starts_with(constraint)
-    }
-    
     fn get_constraint_type(&self, name: &GeneralName) -> NameConstraintType {
         match name {
-            GeneralName::DnsName(_) => NameConstraintType::DnsName,
-            GeneralName::EmailAddress(_) => NameConstraintType::EmailAddress,
-            GeneralName::IpAddress(_) => NameConstraintType::IpAddress,
-            GeneralName::DirectoryName(_) => NameConstraintType::DirectoryName,
-            GeneralName::Uri(_) => NameConstraintType::Uri,
             GeneralName::Other(_, _) => NameConstraintType::DnsName, // Default
         }
     }
     
     fn update_validation_state(
-        &self,
-        certificate: &CertificateInfo,
-        state: &mut ValidationState,
     ) -> crate::error::Result<()> {
         // Update working public key
         state.working_public_key = certificate.public_key.clone();
@@ -1278,8 +820,6 @@ impl CertificatePathValidator {
         state.authority_key_id = certificate.subject_key_identifier.clone();
         
         Ok(())
-    }
-    
     fn is_supported_critical_extension(&self, oid: &str) -> bool {
         match oid {
             "2.5.29.15" => true, // Key Usage
@@ -1289,24 +829,15 @@ impl CertificatePathValidator {
             "2.5.29.36" => true, // Policy Constraints
             "2.5.29.37" => true, // Extended Key Usage
             "2.5.29.54" => true, // Inhibit Any Policy
-            _ => false,
         }
     }
     
     fn check_crl_revocation(
-        &self,
-        certificate: &CertificateInfo,
-        crl_point: &str,
     ) -> crate::error::Result<()> {
         // CRL revocation checking implementation
         // This would download and parse CRL, then check certificate serial number
         Ok(()) // Placeholder
-    }
-    
     fn check_ocsp_revocation(
-        &self,
-        certificate: &CertificateInfo,
-        ocsp_responder: &str,
     ) -> crate::error::Result<()> {
         // OCSP revocation checking implementation
         // This would send OCSP request and parse response
@@ -1318,40 +849,21 @@ impl CertificatePathValidator {
 impl Default for PathValidationContext {
     fn default() -> Self {
         Self {
-            trust_anchors: vec![],
-            validation_time: SystemTime::now(),
-            required_policies: HashSet::new(),
             initial_policy_set: {
                 let mut set = HashSet::new();
                 set.insert("2.5.29.32.0".to_string()); // any-policy
                 set
-            },
-            enable_policy_mapping: true,
-            require_explicit_policy: false,
-            inhibit_policy_mapping: None,
-            inhibit_any_policy: None,
-            max_path_length: Some(10),
-            enable_revocation_checking: false,
-            crl_distribution_points: vec![],
-            ocsp_responders: vec![],
         }
     }
-}
-
 /// Create path validation context with common trust anchors
 pub fn create_default_validation_context() -> PathValidationContext {
     PathValidationContext::default()
-}
-
 /// Create path validation context with custom trust anchors
 pub fn create_validation_context_with_anchors(
-    trust_anchors: Vec<TrustAnchor>,
 ) -> PathValidationContext {
     let mut context = PathValidationContext::default();
     context.trust_anchors = trust_anchors;
     context
-}
-
 /// Validate certificate path with default settings
 /// 
 /// This is a convenience function for simple path validation scenarios.
@@ -1386,13 +898,8 @@ pub fn create_validation_context_with_anchors(
 /// }
 /// ```
 pub fn validate_certificate_path_simple(
-    target_certificate: &CertificateInfo,
-    intermediate_certificates: &[CertificateInfo],
-    trust_anchors: &[TrustAnchor],
 ) -> crate::error::Result<()> {
     let context = create_validation_context_with_anchors(trust_anchors.to_vec());
     let mut validator = CertificatePathValidator::new(context);
     
     validator.validate_path(target_certificate, intermediate_certificates)
-}
-

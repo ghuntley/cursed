@@ -18,152 +18,103 @@ use chrono;
 
 use crate::error::{CursedError, Result};
 use crate::build_system::{
-    BuildAnalytics, BuildAnalyticsConfig, DependencyOptimizer, DependencyOptimizerConfig,
-    AdvancedCache, AdvancedCacheConfig, DistributedCompilationSystem, DistributedCompilationConfig,
     MemoryOptimizer, MemoryOptimizerConfig, MemoryStrategy, CompilationUnit, BuildConfig
-};
+// };
 
 use crate::optimization::{
-    PerformanceOptimizationSystem, PerformanceConfig, OptimizationConfig, OptimizationLevel,
-    performance_system::{BenchmarkConfig, BenchmarkType, BenchmarkTestData, ComplexityLevel},
-    enhanced_build_profiler::{EnhancedBuildProfiler, ProfilerConfig, ReportFormat},
-};
+// };
 
 /// Enhanced build optimization CLI commands
 #[derive(Parser, Debug)]
 #[command(name = "cursed-build", about = "Advanced CURSED build optimization tools")]
 pub struct BuildOptimizationCli {
     #[command(subcommand)]
-    pub command: BuildOptimizationCommand,
     
     /// Verbose output
     #[arg(short, long, global = true)]
-    pub verbose: bool,
     
     /// Configuration file
     #[arg(short, long, global = true)]
-    pub config: Option<PathBuf>,
     
     /// Project directory
     #[arg(short, long, global = true, default_value = ".")]
-    pub project_dir: PathBuf,
-}
-
 /// Build optimization subcommands
 #[derive(Subcommand, Debug)]
 pub enum BuildOptimizationCommand {
     /// Analyze build dependencies and optimize compilation order
-    Analyze(AnalyzeArgs),
     
     /// Manage advanced caching system
-    Cache(CacheArgs),
     
     /// Configure and run distributed compilation
-    Distributed(DistributedArgs),
     
     /// Monitor build performance and generate reports
-    Analytics(AnalyticsArgs),
     
     /// Memory optimization and streaming compilation
-    Memory(MemoryArgs),
     
     /// Performance tuning wizard
-    Tune(TuneArgs),
     
     /// Build with all optimizations enabled
-    OptimizedBuild(OptimizedBuildArgs),
     
     /// Advanced performance profiling and analysis
-    Profile(ProfileArgs),
     
     /// Run comprehensive performance benchmarks
-    Benchmark(BenchmarkArgs),
-}
-
 /// Dependency analysis arguments
 #[derive(Args, Debug)]
 pub struct AnalyzeArgs {
     /// Maximum number of parallel jobs
     #[arg(long, default_value = "8")]
-    pub max_jobs: usize,
     
     /// Enable smart ordering
     #[arg(long)]
-    pub smart_ordering: bool,
     
     /// Enable dependency pruning
     #[arg(long)]
-    pub dependency_pruning: bool,
     
     /// Output format (json, text, report)
     #[arg(long, default_value = "text")]
-    pub output_format: String,
     
     /// Save analysis to file
     #[arg(long)]
-    pub output_file: Option<PathBuf>,
     
     /// Show optimization suggestions
     #[arg(long)]
-    pub suggestions: bool,
-}
-
 /// Cache management arguments
 #[derive(Args, Debug)]
 pub struct CacheArgs {
     #[command(subcommand)]
-    pub action: CacheAction,
-}
-
 /// Cache subcommands
 #[derive(Subcommand, Debug)]
 pub enum CacheAction {
     /// Show cache statistics
-    Stats,
     
     /// Clear cache
     Clear {
         /// Clear specific cache type (ast, ir, object, all)
         #[arg(default_value = "all")]
-        cache_type: String,
-    },
     
     /// Warm cache with frequently used files
     Warm {
         /// Files to warm
-        files: Vec<PathBuf>,
-    },
     
     /// Optimize cache (remove LRU entries)
     Optimize {
         /// Target size in MB
         #[arg(long)]
-        target_size: Option<usize>,
-    },
     
     /// Configure cache settings
     Configure {
         /// Maximum cache size in MB
         #[arg(long)]
-        max_size: Option<usize>,
         
         /// Enable distributed cache
         #[arg(long)]
-        distributed: bool,
         
         /// Cache directory
         #[arg(long)]
-        cache_dir: Option<PathBuf>,
-    },
-}
-
 /// Distributed compilation arguments
 #[derive(Args, Debug)]
 pub struct DistributedArgs {
     #[command(subcommand)]
-    pub action: DistributedAction,
-}
-
 /// Distributed compilation subcommands
 #[derive(Subcommand, Debug)]
 pub enum DistributedAction {
@@ -171,54 +122,36 @@ pub enum DistributedAction {
     Start {
         /// Coordinator port
         #[arg(long, default_value = "9000")]
-        port: u16,
         
         /// Worker nodes (host:port)
         #[arg(long)]
-        workers: Vec<String>,
         
         /// Enable work stealing
         #[arg(long)]
-        work_stealing: bool,
-    },
     
     /// Stop distributed compilation
-    Stop,
     
     /// Show cluster status
-    Status,
     
     /// Add worker node
     AddWorker {
         /// Worker address (host:port)
-        address: String,
-    },
     
     /// Remove worker node
     RemoveWorker {
         /// Worker node ID
-        node_id: String,
-    },
     
     /// Configure distributed compilation
     Configure {
         /// Task timeout in seconds
         #[arg(long)]
-        timeout: Option<u64>,
         
         /// Load balancing strategy
         #[arg(long)]
-        strategy: Option<String>,
-    },
-}
-
 /// Build analytics arguments
 #[derive(Args, Debug)]
 pub struct AnalyticsArgs {
     #[command(subcommand)]
-    pub action: AnalyticsAction,
-}
-
 /// Analytics subcommands
 #[derive(Subcommand, Debug)]
 pub enum AnalyticsAction {
@@ -226,241 +159,167 @@ pub enum AnalyticsAction {
     Report {
         /// Output format (json, markdown, html)
         #[arg(long, default_value = "markdown")]
-        format: String,
         
         /// Output file
         #[arg(long)]
-        output: Option<PathBuf>,
         
         /// Include trends
         #[arg(long)]
-        trends: bool,
         
         /// Include bottleneck analysis
         #[arg(long)]
-        bottlenecks: bool,
-    },
     
     /// Show real-time build statistics
-    Stats,
     
     /// Monitor builds continuously
     Monitor {
         /// Refresh interval in seconds
         #[arg(long, default_value = "5")]
-        interval: u64,
-    },
     
     /// Configure analytics
     Configure {
         /// Enable detailed tracking
         #[arg(long)]
-        detailed: bool,
         
         /// Enable memory profiling
         #[arg(long)]
-        memory_profiling: bool,
         
         /// Enable regression detection
         #[arg(long)]
-        regression_detection: bool,
-    },
     
     /// Show performance trends
     Trends {
         /// Number of days to show
         #[arg(long, default_value = "7")]
-        days: u32,
-    },
-}
-
 /// Memory optimization arguments
 #[derive(Args, Debug)]
 pub struct MemoryArgs {
     #[command(subcommand)]
-    pub action: MemoryAction,
-}
-
 /// Memory optimization subcommands
 #[derive(Subcommand, Debug)]
 pub enum MemoryAction {
     /// Show memory usage statistics
-    Stats,
     
     /// Configure memory optimization
     Configure {
         /// Maximum memory limit in MB
         #[arg(long)]
-        max_memory: Option<f64>,
         
         /// Memory strategy (conservative, balanced, aggressive, streaming, adaptive)
         #[arg(long)]
-        strategy: Option<String>,
         
         /// Enable streaming compilation
         #[arg(long)]
-        streaming: bool,
         
         /// Streaming chunk size in MB
         #[arg(long)]
-        chunk_size: Option<f64>,
-    },
     
     /// Monitor memory usage during build
     Monitor {
         /// Sampling interval in milliseconds
         #[arg(long, default_value = "500")]
-        interval: u64,
-    },
     
     /// Trigger garbage collection
-    Gc,
     
     /// Show memory pressure events
-    Pressure,
-}
-
 /// Performance tuning arguments
 #[derive(Args, Debug)]
 pub struct TuneArgs {
     /// Run performance tuning wizard
     #[arg(long)]
-    pub wizard: bool,
     
     /// Benchmark current settings
     #[arg(long)]
-    pub benchmark: bool,
     
     /// Apply recommended settings
     #[arg(long)]
-    pub apply_recommendations: bool,
     
     /// Test configuration
     #[arg(long)]
-    pub test_config: Option<PathBuf>,
-}
-
 /// Optimized build arguments
 #[derive(Args, Debug)]
 pub struct OptimizedBuildArgs {
     /// Target to build
-    pub target: Option<String>,
     
     /// Enable all optimizations
     #[arg(long)]
-    pub all_optimizations: bool,
     
     /// Enable dependency optimization
     #[arg(long)]
-    pub dependency_optimization: bool,
     
     /// Enable advanced caching
     #[arg(long)]
-    pub advanced_caching: bool,
     
     /// Enable distributed compilation
     #[arg(long)]
-    pub distributed: bool,
     
     /// Enable memory optimization
     #[arg(long)]
-    pub memory_optimization: bool,
     
     /// Enable build analytics
     #[arg(long)]
-    pub analytics: bool,
     
     /// Release build
     #[arg(long)]
-    pub release: bool,
     
     /// Number of parallel jobs
     #[arg(short, long)]
-    pub jobs: Option<usize>,
-}
-
 /// Performance profiling arguments
 #[derive(Args, Debug)]
 pub struct ProfileArgs {
     #[command(subcommand)]
-    pub action: ProfileAction,
-}
-
 /// Performance profiling subcommands
 #[derive(Subcommand, Debug)]
 pub enum ProfileAction {
     /// Start profiling session
     Start {
         /// Session name
-        session_name: String,
         
         /// Enable real-time monitoring
         #[arg(long)]
-        realtime: bool,
         
         /// Monitoring interval in milliseconds
         #[arg(long, default_value = "100")]
-        interval: u64,
         
         /// Enable memory profiling
         #[arg(long)]
-        memory: bool,
         
         /// Enable CPU profiling
         #[arg(long)]
-        cpu: bool,
         
         /// Enable I/O profiling
         #[arg(long)]
-        io: bool,
-    },
     
     /// Stop profiling session and generate report
     Stop {
         /// Session ID
-        session_id: String,
         
         /// Report format (json, html, markdown, csv, interactive)
         #[arg(long, default_value = "html")]
-        format: String,
         
         /// Output file path
         #[arg(long)]
-        output: Option<PathBuf>,
-    },
     
     /// Show active profiling sessions
-    List,
     
     /// Generate report from stored profile data
     Report {
         /// Session ID
-        session_id: String,
         
         /// Report format
         #[arg(long, default_value = "html")]
-        format: String,
         
         /// Output file
         #[arg(long)]
-        output: Option<PathBuf>,
-    },
     
     /// Real-time performance monitoring
     Monitor {
         /// Refresh interval in seconds
         #[arg(long, default_value = "1")]
-        interval: u64,
-    },
-}
-
 /// Benchmark arguments
 #[derive(Args, Debug)]
 pub struct BenchmarkArgs {
     #[command(subcommand)]
-    pub action: BenchmarkAction,
-}
-
 /// Benchmark subcommands
 #[derive(Subcommand, Debug)]
 pub enum BenchmarkAction {
@@ -468,87 +327,62 @@ pub enum BenchmarkAction {
     CompilationSpeed {
         /// Number of iterations
         #[arg(long, default_value = "10")]
-        iterations: usize,
         
         /// Warmup iterations
         #[arg(long, default_value = "3")]
-        warmup: usize,
         
         /// Test data complexity (simple, medium, complex, very-complex)
         #[arg(long, default_value = "medium")]
-        complexity: String,
         
         /// Number of test units
         #[arg(long, default_value = "100")]
-        units: usize,
-    },
     
     /// Run optimization effectiveness benchmark
     OptimizationEffectiveness {
         /// Optimization levels to test
         #[arg(long)]
-        levels: Vec<String>,
         
         /// Number of iterations per level
         #[arg(long, default_value = "5")]
-        iterations: usize,
         
         /// Test data size in MB
         #[arg(long, default_value = "10")]
-        data_size: f64,
-    },
     
     /// Run memory usage benchmark
     MemoryUsage {
         /// Memory stress test levels
         #[arg(long)]
-        stress_levels: Vec<String>,
         
         /// Monitor duration in seconds
         #[arg(long, default_value = "60")]
-        duration: u64,
-    },
     
     /// Run cache performance benchmark
     CachePerformance {
         /// Cache sizes to test
         #[arg(long)]
-        cache_sizes: Vec<String>,
         
         /// Test scenarios
         #[arg(long)]
-        scenarios: Vec<String>,
-    },
     
     /// Run comprehensive benchmark suite
     All {
         /// Quick mode (fewer iterations)
         #[arg(long)]
-        quick: bool,
         
         /// Generate detailed report
         #[arg(long)]
-        detailed_report: bool,
         
         /// Output directory
         #[arg(long)]
-        output_dir: Option<PathBuf>,
-    },
     
     /// Compare benchmark results
     Compare {
         /// Baseline benchmark ID
-        baseline: String,
         
         /// Comparison benchmark ID
-        comparison: String,
         
         /// Report format
         #[arg(long, default_value = "html")]
-        format: String,
-    },
-}
-
 /// Collect compilation units from a project directory
 #[instrument]
 fn collect_compilation_units(project_dir: &PathBuf) -> Result<Vec<CompilationUnit>> {
@@ -562,13 +396,8 @@ fn collect_compilation_units(project_dir: &PathBuf) -> Result<Vec<CompilationUni
     analyze_file_dependencies(&mut units)?;
     
     Ok(units)
-}
-
 /// Recursively collect source files from directory
 fn collect_source_files(
-    dir: &PathBuf,
-    units: &mut Vec<CompilationUnit>,
-    visited: &mut HashSet<PathBuf>,
 ) -> Result<()> {
     if visited.contains(dir) {
         return Ok(());
@@ -583,7 +412,6 @@ fn collect_source_files(
             // Skip common directories that shouldn't contain source
             if let Some(dir_name) = path.file_name().and_then(|n| n.to_str()) {
                 match dir_name {
-                    "target" | "build" | "node_modules" | ".git" | "coverage" => continue,
                     _ => {}
                 }
             }
@@ -595,8 +423,6 @@ fn collect_source_files(
     }
     
     Ok(())
-}
-
 /// Create a compilation unit from a source file
 fn create_compilation_unit(path: &PathBuf) -> Result<CompilationUnit> {
     let metadata = fs::metadata(path)?;
@@ -613,18 +439,9 @@ fn create_compilation_unit(path: &PathBuf) -> Result<CompilationUnit> {
     let cache_key = format!("{}-{}", id, last_modified);
     
     Ok(CompilationUnit {
-        id: id.clone(),
-        path: path.clone(),
-        dependencies: extract_dependencies(&content),
         dependents: Vec::new(), // Will be filled in later
-        last_modified,
-        compilation_time: estimate_compilation_time(complexity_score),
-        complexity_score,
         is_dirty: true, // Assume dirty for initial analysis
-        cache_key,
     })
-}
-
 /// Extract dependencies from source file content
 fn extract_dependencies(content: &str) -> Vec<String> {
     let mut dependencies = Vec::new();
@@ -645,13 +462,9 @@ fn extract_dependencies(content: &str) -> Vec<String> {
                 dependencies.push(module);
             }
         }
-    }
-    
     dependencies.sort();
     dependencies.dedup();
     dependencies
-}
-
 /// Extract module name from import statement
 fn extract_module_from_import(line: &str) -> Option<String> {
     // Handle: import "module_name"
@@ -666,11 +479,7 @@ fn extract_module_from_import(line: &str) -> Option<String> {
     let parts: Vec<&str> = line.split_whitespace().collect();
     if parts.len() >= 2 {
         return Some(parts[1].trim_matches(['"', '\'']).to_string());
-    }
-    
     None
-}
-
 /// Extract module name from use statement
 fn extract_module_from_use(line: &str) -> Option<String> {
     // Handle: use module::submodule
@@ -678,11 +487,7 @@ fn extract_module_from_use(line: &str) -> Option<String> {
     if parts.len() >= 2 {
         let module_path = parts[1].trim_end_matches(';');
         return Some(module_path.split("::").next()?.to_string());
-    }
-    
     None
-}
-
 /// Calculate complexity score based on file content
 fn calculate_complexity_score(content: &str) -> u32 {
     let mut score = 0;
@@ -697,41 +502,27 @@ fn calculate_complexity_score(content: &str) -> u32 {
         // Functions add complexity
         if trimmed.contains("fn ") || trimmed.contains("function ") {
             score += 10;
-        }
-        
         // Control flow adds complexity
         if trimmed.starts_with("lowkey") || trimmed.starts_with("highkey") || 
            trimmed.starts_with("periodt") || trimmed.starts_with("bestie") ||
            trimmed.starts_with("flex") {
             score += 5;
-        }
-        
         // Loops add complexity
         if trimmed.contains("yolo") {
             score += 8;
-        }
-        
         // Generics add complexity
         if trimmed.contains('<') && trimmed.contains('>') {
             score += 3;
-        }
-        
         // Nested structures add complexity
         let brace_depth = trimmed.chars().filter(|&c| c == '{').count();
         score += brace_depth as u32 * 2;
-    }
-    
     score
-}
-
 /// Estimate compilation time based on complexity
 fn estimate_compilation_time(complexity_score: u32) -> Duration {
     // Base time of 100ms + 10ms per complexity point
     let base_ms = 100;
     let complexity_ms = complexity_score * 10;
     Duration::from_millis((base_ms + complexity_ms) as u64)
-}
-
 /// Analyze dependencies between compilation units
 fn analyze_file_dependencies(units: &mut Vec<CompilationUnit>) -> Result<()> {
     let unit_map: HashMap<String, usize> = units
@@ -756,13 +547,8 @@ fn analyze_file_dependencies(units: &mut Vec<CompilationUnit>) -> Result<()> {
     }
     
     Ok(())
-}
-
 /// Generate comprehensive project analysis report
 fn generate_project_analysis_report(
-    project_dir: &PathBuf,
-    units: &[CompilationUnit],
-    analysis: &crate::build_system::AnalysisResult,
 ) -> Result<String> {
     let mut report = String::new();
     
@@ -792,13 +578,8 @@ fn generate_project_analysis_report(
     
     report.push_str("\n### Most Complex Files\n\n");
     for (i, unit) in complex_files.iter().take(10).enumerate() {
-        report.push_str(&format!("{}. **{}** (Score: {})\n", 
-            i + 1, 
-            unit.path.file_name().unwrap_or_default().to_string_lossy(),
             unit.complexity_score
         ));
-    }
-    
     // Compilation Order
     report.push_str("\n## Compilation Order\n\n");
     for (layer, files) in analysis.compilation_order.iter().enumerate() {
@@ -812,8 +593,6 @@ fn generate_project_analysis_report(
             report.push_str(&format!("  - ... and {} more files\n", files.len() - 5));
         }
         report.push_str("\n");
-    }
-    
     // Optimization Suggestions
     if !analysis.optimization_suggestions.is_empty() {
         report.push_str("## Optimization Suggestions\n\n");
@@ -821,16 +600,9 @@ fn generate_project_analysis_report(
             report.push_str(&format!("{}. {}\n", i + 1, suggestion));
         }
         report.push_str("\n");
-    }
-    
     Ok(report)
-}
-
 /// Generate markdown analytics report
 fn generate_markdown_analytics_report(
-    report: &crate::build_system::BuildReport,
-    include_trends: bool,
-    include_bottlenecks: bool,
 ) -> Result<String> {
     let mut markdown = String::new();
     
@@ -868,16 +640,12 @@ fn generate_markdown_analytics_report(
             markdown.push_str("| File | Duration |\n");
             markdown.push_str("|------|----------|\n");
             for (file, duration) in report.bottleneck_analysis.slowest_files.iter().take(10) {
-                markdown.push_str(&format!("| {} | {:?} |\n", 
-                    file.file_name().unwrap_or_default().to_string_lossy(), 
                     duration
                 ));
             }
             markdown.push_str("\n");
         } else {
             markdown.push_str("No bottleneck data available.\n\n");
-        }
-        
         markdown.push_str("### Critical Path\n\n");
         markdown.push_str(&format!("- **Duration:** {:?}\n", report.bottleneck_analysis.critical_path_duration));
         if !report.bottleneck_analysis.critical_path_files.is_empty() {
@@ -892,9 +660,6 @@ fn generate_markdown_analytics_report(
         if !report.bottleneck_analysis.optimization_opportunities.is_empty() {
             markdown.push_str("### Optimization Opportunities\n\n");
             for (i, opportunity) in report.bottleneck_analysis.optimization_opportunities.iter().enumerate() {
-                markdown.push_str(&format!("{}. **{:?}** - {}\n", 
-                    i + 1, 
-                    opportunity.category, 
                     opportunity.description
                 ));
                 markdown.push_str(&format!("   - *Estimated Savings:* {:?}\n", opportunity.estimated_time_savings));
@@ -909,15 +674,11 @@ fn generate_markdown_analytics_report(
                 markdown.push_str("\n");
             }
         }
-    }
-    
     // Performance Trends (if requested)
     if include_trends {
         markdown.push_str("## Performance Trends\n\n");
         markdown.push_str("*Note: Trend analysis requires historical build data.*\n\n");
         // TODO: Add actual trend data when available
-    }
-    
     // Recommendations
     markdown.push_str("## Recommendations\n\n");
     
@@ -927,32 +688,21 @@ fn generate_markdown_analytics_report(
         markdown.push_str("  - Enabling incremental compilation\n");
         markdown.push_str("  - Reviewing cache invalidation policies\n");
         markdown.push_str("  - Increasing cache size\n\n");
-    }
-    
     // Parallelism recommendations
     if report.build_metrics.parallelism_efficiency < 0.7 {
         markdown.push_str("- **Optimize Parallelism**: Current efficiency is {:.1}%. Consider:\n");
         markdown.push_str("  - Reducing dependency coupling\n");
         markdown.push_str("  - Breaking large files into smaller modules\n");
         markdown.push_str("  - Enabling distributed compilation\n\n");
-    }
-    
     // Memory recommendations
     if report.build_metrics.memory_peak_mb > 4000.0 {
         markdown.push_str("- **Memory Optimization**: Peak usage is {:.2} MB. Consider:\n");
         markdown.push_str("  - Enabling streaming compilation\n");
         markdown.push_str("  - Reducing concurrent compilation jobs\n");
         markdown.push_str("  - Using memory-efficient build modes\n\n");
-    }
-    
     Ok(markdown)
-}
-
 /// Generate HTML analytics report
 fn generate_html_analytics_report(
-    report: &crate::build_system::BuildReport,
-    include_trends: bool,
-    include_bottlenecks: bool,
 ) -> Result<String> {
     let mut html = String::new();
     
@@ -1031,23 +781,16 @@ fn generate_html_analytics_report(
             for (file, duration) in report.bottleneck_analysis.slowest_files.iter().take(10) {
                 html.push_str(&format!(
                     "                <tr><td>{}</td><td>{:?}</td></tr>\n",
-                    file.file_name().unwrap_or_default().to_string_lossy(),
                     duration
                 ));
             }
             html.push_str("            </tbody>\n");
             html.push_str("        </table>\n");
-        }
-        
         html.push_str("    </section>\n");
-    }
-    
     html.push_str("</body>\n");
     html.push_str("</html>\n");
     
     Ok(html)
-}
-
 /// Get embedded CSS for HTML reports
 fn get_report_css() -> &'static str {
     r#"
@@ -1060,8 +803,6 @@ body {
     margin: 0 auto;
     padding: 20px;
     background-color: #f8f9fa;
-}
-
 header {
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     color: white;
@@ -1069,44 +810,32 @@ header {
     border-radius: 10px;
     margin-bottom: 2rem;
     text-align: center;
-}
-
 header h1 {
     margin: 0;
     font-size: 2.5rem;
     font-weight: 300;
-}
-
 section {
     background: white;
     margin: 2rem 0;
     padding: 2rem;
     border-radius: 10px;
     box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-}
-
 h2 {
     color: #667eea;
     border-bottom: 2px solid #667eea;
     padding-bottom: 0.5rem;
     margin-top: 0;
-}
-
 .metrics-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
     gap: 1.5rem;
     margin: 1.5rem 0;
-}
-
 .metric-card {
     background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
     color: white;
     padding: 1.5rem;
     border-radius: 8px;
     text-align: center;
-}
-
 .metric-card h3 {
     margin: 0 0 0.5rem 0;
     font-size: 0.9rem;
@@ -1114,37 +843,25 @@ h2 {
     text-transform: uppercase;
     letter-spacing: 0.5px;
     color: white;
-}
-
 .metric-value {
     font-size: 2rem;
     font-weight: bold;
     display: block;
-}
-
 table {
     width: 100%;
     border-collapse: collapse;
     margin: 1rem 0;
-}
-
 thead {
     background: #667eea;
     color: white;
-}
-
 th, td {
     padding: 1rem;
     text-align: left;
     border-bottom: 1px solid #eee;
-}
-
 tbody tr:hover {
     background-color: #f8f9fa;
 }
 "#
-}
-
 /// Monitor real-time build statistics
 fn monitor_build_statistics(analytics: &BuildAnalytics, interval_secs: u64) -> Result<()> {
     let interval = Duration::from_secs(interval_secs);
@@ -1205,29 +922,18 @@ fn monitor_memory_usage(optimizer: &MemoryOptimizer, interval_ms: u64) -> Result
         
         if stats.current_usage_mb > peak_usage {
             peak_usage = stats.current_usage_mb;
-        }
-        
         let elapsed = start_time.elapsed();
         let avg_usage = total_usage / sample_count as f64;
         
         // Update display every 10 samples
         if sample_count % 10 == 0 {
             print!("\r");
-            print!("📊 Memory: {:.2} MB | Peak: {:.2} MB | Avg: {:.2} MB | GC: {} | Time: {:?}   ",
-                stats.current_usage_mb,
-                peak_usage,
-                avg_usage,
-                stats.gc_collections,
                 elapsed
             );
             io::stdout().flush()?;
-        }
-        
         // Check for memory pressure
         if stats.memory_pressure_events > 0 {
             println!("\n⚠️  Memory pressure detected! {} events", stats.memory_pressure_events);
-        }
-        
         thread::sleep(interval);
     }
 }
@@ -1241,8 +947,6 @@ fn run_performance_benchmark(project_dir: &PathBuf) -> Result<()> {
     let units = collect_compilation_units(project_dir)?;
     if units.is_empty() {
         return Err(CursedError::system_error("No source files found for benchmarking"));
-    }
-    
     println!("📊 Benchmark Configuration:");
     println!("  Source Files: {}", units.len());
     println!("  Test Iterations: 5");
@@ -1253,8 +957,6 @@ fn run_performance_benchmark(project_dir: &PathBuf) -> Result<()> {
     // Baseline benchmark
     println!("🏃 Running baseline benchmark...");
     let baseline_time = benchmark_build_configuration(
-        "Baseline", 
-        &units, 
         BenchmarkConfig::baseline()
     )?;
     results.push(("Baseline".to_string(), baseline_time));
@@ -1262,8 +964,6 @@ fn run_performance_benchmark(project_dir: &PathBuf) -> Result<()> {
     // Optimized benchmark
     println!("🚀 Running optimized benchmark...");
     let optimized_time = benchmark_build_configuration(
-        "Optimized", 
-        &units, 
         BenchmarkConfig::optimized()
     )?;
     results.push(("Optimized".to_string(), optimized_time));
@@ -1271,8 +971,6 @@ fn run_performance_benchmark(project_dir: &PathBuf) -> Result<()> {
     // Cached benchmark
     println!("💾 Running cached benchmark...");
     let cached_time = benchmark_build_configuration(
-        "Cached", 
-        &units, 
         BenchmarkConfig::cached()
     )?;
     results.push(("Cached".to_string(), cached_time));
@@ -1281,13 +979,9 @@ fn run_performance_benchmark(project_dir: &PathBuf) -> Result<()> {
     if num_cpus::get() >= 4 {
         println!("🌐 Running distributed benchmark...");
         let distributed_time = benchmark_build_configuration(
-            "Distributed", 
-            &units, 
             BenchmarkConfig::distributed()
         )?;
         results.push(("Distributed".to_string(), distributed_time));
-    }
-    
     // Display results
     println!("\n📋 Benchmark Results:");
     println!("=====================");
@@ -1299,15 +993,9 @@ fn run_performance_benchmark(project_dir: &PathBuf) -> Result<()> {
             format!(" ({:+.1}%)", improvement)
         } else {
             String::new()
-        };
         
-        println!("  {:<12} {:>8.2}s{}", 
-            config_name, 
-            duration.as_secs_f64(),
             speedup
         );
-    }
-    
     // Recommendations
     println!("\n💡 Benchmark Recommendations:");
     
@@ -1326,68 +1014,32 @@ fn run_performance_benchmark(project_dir: &PathBuf) -> Result<()> {
         println!("  Potential Speedup: {:.1}% - Recommended", improvement);
     } else {
         println!("  Potential Speedup: {:.1}% - Marginal improvement", improvement);
-    }
-    
     Ok(())
-}
-
 /// Benchmark configuration options
 #[derive(Debug, Clone)]
 struct BenchmarkConfig {
-    parallel_jobs: usize,
-    enable_caching: bool,
-    enable_optimization: bool,
-    enable_distributed: bool,
-    memory_strategy: String,
-}
-
 impl BenchmarkConfig {
     fn baseline() -> Self {
         Self {
-            parallel_jobs: 1,
-            enable_caching: false,
-            enable_optimization: false,
-            enable_distributed: false,
-            memory_strategy: "conservative".to_string(),
         }
     }
     
     fn optimized() -> Self {
         Self {
-            parallel_jobs: num_cpus::get(),
-            enable_caching: false,
-            enable_optimization: true,
-            enable_distributed: false,
-            memory_strategy: "balanced".to_string(),
         }
     }
     
     fn cached() -> Self {
         Self {
-            parallel_jobs: num_cpus::get(),
-            enable_caching: true,
-            enable_optimization: true,
-            enable_distributed: false,
-            memory_strategy: "balanced".to_string(),
         }
     }
     
     fn distributed() -> Self {
         Self {
-            parallel_jobs: num_cpus::get() * 2,
-            enable_caching: true,
-            enable_optimization: true,
-            enable_distributed: true,
-            memory_strategy: "aggressive".to_string(),
         }
     }
-}
-
 /// Benchmark a specific build configuration
 fn benchmark_build_configuration(
-    config_name: &str,
-    units: &[CompilationUnit],
-    config: BenchmarkConfig,
 ) -> Result<Duration> {
     let iterations = 5;
     let mut times = Vec::new();
@@ -1405,23 +1057,18 @@ fn benchmark_build_configuration(
         times.push(duration);
         
         println!("{:.2}s", duration.as_secs_f64());
-    }
-    
     // Calculate average (excluding outliers)
     times.sort();
     let trimmed_times = if times.len() >= 3 {
         &times[1..times.len()-1] // Remove fastest and slowest
     } else {
         &times
-    };
     
     let average_ms: u64 = trimmed_times.iter()
         .map(|d| d.as_millis() as u64)
         .sum::<u64>() / trimmed_times.len() as u64;
     
     Ok(Duration::from_millis(average_ms))
-}
-
 /// Simulate build process for benchmarking
 fn simulate_build_process(units: &[CompilationUnit], config: &BenchmarkConfig) -> Result<()> {
     // In a real implementation, this would:
@@ -1438,22 +1085,14 @@ fn simulate_build_process(units: &[CompilationUnit], config: &BenchmarkConfig) -
     // Apply configuration effects
     if config.enable_optimization {
         base_time_ms = (base_time_ms as f64 * 0.8) as u64; // 20% faster with optimization
-    }
-    
     if config.enable_caching {
         base_time_ms = (base_time_ms as f64 * 0.6) as u64; // 40% faster with caching
-    }
-    
     if config.parallel_jobs > 1 {
         let parallelism_factor = 0.7; // Assume 70% parallelism efficiency
         let speedup = 1.0 + (config.parallel_jobs as f64 - 1.0) * parallelism_factor;
         base_time_ms = (base_time_ms as f64 / speedup) as u64;
-    }
-    
     if config.enable_distributed {
         base_time_ms = (base_time_ms as f64 * 0.7) as u64; // 30% faster with distribution
-    }
-    
     // Add some randomness to simulate real-world variance
     let variance = fastrand::f64() * 0.1 - 0.05; // ±5% variance
     base_time_ms = ((base_time_ms as f64) * (1.0 + variance)) as u64;
@@ -1462,26 +1101,13 @@ fn simulate_build_process(units: &[CompilationUnit], config: &BenchmarkConfig) -
     thread::sleep(Duration::from_millis(base_time_ms.min(5000))); // Cap at 5 seconds for quick benchmarks
     
     Ok(())
-}
-
 /// Main entry point for build optimization CLI
 pub fn run_build_optimization(cli: BuildOptimizationCli) -> Result<()> {
     if cli.verbose {
         tracing_subscriber::fmt()
             .with_env_filter("debug")
             .init();
-    }
-
     match cli.command {
-        BuildOptimizationCommand::Analyze(args) => run_analyze(args, &cli),
-        BuildOptimizationCommand::Cache(args) => run_cache(args, &cli),
-        BuildOptimizationCommand::Distributed(args) => run_distributed(args, &cli),
-        BuildOptimizationCommand::Analytics(args) => run_analytics(args, &cli),
-        BuildOptimizationCommand::Memory(args) => run_memory(args, &cli),
-        BuildOptimizationCommand::Tune(args) => run_tune(args, &cli),
-        BuildOptimizationCommand::OptimizedBuild(args) => run_optimized_build(args, &cli),
-        BuildOptimizationCommand::Profile(args) => run_profile(args, &cli),
-        BuildOptimizationCommand::Benchmark(args) => run_benchmark(args, &cli),
     }
 }
 
@@ -1491,11 +1117,7 @@ fn run_analyze(args: AnalyzeArgs, cli: &BuildOptimizationCli) -> Result<()> {
     info!("Running dependency analysis with {} max jobs", args.max_jobs);
     
     let config = DependencyOptimizerConfig {
-        max_parallel_jobs: args.max_jobs,
-        enable_smart_ordering: args.smart_ordering,
-        enable_dependency_pruning: args.dependency_pruning,
         ..Default::default()
-    };
     
     let optimizer = DependencyOptimizer::new(config);
     
@@ -1540,12 +1162,7 @@ fn run_analyze(args: AnalyzeArgs, cli: &BuildOptimizationCli) -> Result<()> {
                 println!("{}", report);
             }
         }
-        _ => return Err(CursedError::system_error("Invalid output format")),
-    }
-    
     Ok(())
-}
-
 /// Run cache management
 fn run_cache(args: CacheArgs, cli: &BuildOptimizationCli) -> Result<()> {
     let config = AdvancedCacheConfig::default();
@@ -1562,8 +1179,6 @@ fn run_cache(args: CacheArgs, cli: &BuildOptimizationCli) -> Result<()> {
             println!("  Eviction Count: {}", stats.eviction_count);
             println!("  Network Hits: {}", stats.network_hits);
             println!("  Compression Ratio: {:.2}", stats.compression_ratio);
-        }
-        
         CacheAction::Clear { cache_type } => {
             match cache_type.as_str() {
                 "all" => {
@@ -1576,7 +1191,6 @@ fn run_cache(args: CacheArgs, cli: &BuildOptimizationCli) -> Result<()> {
                     let cleared = cache.clear_cache_type(&cache_type)?;
                     println!("Cleared {} {} cache entries", cleared, cache_type);
                 }
-                _ => return Err(CursedError::system_error("Invalid cache type")),
             }
         }
         
@@ -1585,14 +1199,10 @@ fn run_cache(args: CacheArgs, cli: &BuildOptimizationCli) -> Result<()> {
             let file_strings: Vec<String> = files.iter().map(|p| p.to_string_lossy().to_string()).collect();
             let warmed = cache.warm_cache(&file_strings)?;
             println!("Warmed {} cache entries", warmed);
-        }
-        
         CacheAction::Optimize { target_size } => {
             println!("Optimizing cache...");
             let removed = cache.optimize_cache()?;
             println!("Removed {} entries to optimize cache", removed);
-        }
-        
         CacheAction::Configure { max_size, distributed, cache_dir } => {
             println!("Configuring cache settings...");
             if let Some(size) = max_size {
@@ -1605,11 +1215,7 @@ fn run_cache(args: CacheArgs, cli: &BuildOptimizationCli) -> Result<()> {
                 println!("  Cache Directory: {:?}", dir);
             }
         }
-    }
-    
     Ok(())
-}
-
 /// Run distributed compilation
 fn run_distributed(args: DistributedArgs, cli: &BuildOptimizationCli) -> Result<()> {
     match args.action {
@@ -1617,11 +1223,7 @@ fn run_distributed(args: DistributedArgs, cli: &BuildOptimizationCli) -> Result<
             println!("Starting distributed compilation coordinator on port {}", port);
             
             let config = DistributedCompilationConfig {
-                coordinator_port: port,
-                work_stealing_enabled: work_stealing,
-                distributed_nodes: workers,
                 ..Default::default()
-            };
             
             let mut system = DistributedCompilationSystem::new(config)?;
             system.start()?;
@@ -1631,8 +1233,6 @@ fn run_distributed(args: DistributedArgs, cli: &BuildOptimizationCli) -> Result<
             // TODO: Keep running until stopped
             std::thread::sleep(Duration::from_secs(1));
             system.stop()?;
-        }
-        
         DistributedAction::Stop => {
             println!("Stopping distributed compilation...");
             // Connect to running coordinator and stop
@@ -1640,8 +1240,6 @@ fn run_distributed(args: DistributedArgs, cli: &BuildOptimizationCli) -> Result<
             let mut system = DistributedCompilationSystem::new(config)?;
             system.stop()?;
             println!("Distributed compilation system stopped");
-        }
-        
         DistributedAction::Status => {
             println!("Distributed Compilation Status:");
             // Get status from running system
@@ -1675,11 +1273,7 @@ fn run_distributed(args: DistributedArgs, cli: &BuildOptimizationCli) -> Result<
             if let Err(e) = system.add_worker_node(&address) {
                 error!("Failed to add worker node: {}", e);
                 return Err(e);
-            }
-            
             println!("Worker node {} added successfully", address);
-        }
-        
         DistributedAction::RemoveWorker { node_id } => {
             println!("Removing worker node: {}", node_id);
             let config = DistributedCompilationConfig::default();
@@ -1688,11 +1282,7 @@ fn run_distributed(args: DistributedArgs, cli: &BuildOptimizationCli) -> Result<
             if let Err(e) = system.remove_worker_node(&node_id) {
                 error!("Failed to remove worker node: {}", e);
                 return Err(e);
-            }
-            
             println!("Worker node {} removed successfully", node_id);
-        }
-        
         DistributedAction::Configure { timeout, strategy } => {
             println!("Configuring distributed compilation...");
             if let Some(timeout_secs) = timeout {
@@ -1702,11 +1292,7 @@ fn run_distributed(args: DistributedArgs, cli: &BuildOptimizationCli) -> Result<
                 println!("  Load Balancing: {}", strategy_name);
             }
         }
-    }
-    
     Ok(())
-}
-
 /// Run build analytics
 fn run_analytics(args: AnalyticsArgs, cli: &BuildOptimizationCli) -> Result<()> {
     let config = BuildAnalyticsConfig::default();
@@ -1754,7 +1340,6 @@ fn run_analytics(args: AnalyticsArgs, cli: &BuildOptimizationCli) -> Result<()> 
                         }
                     }
                 }
-                _ => return Err(CursedError::system_error("Invalid report format")),
             }
         }
         
@@ -1775,8 +1360,6 @@ fn run_analytics(args: AnalyticsArgs, cli: &BuildOptimizationCli) -> Result<()> 
         AnalyticsAction::Monitor { interval } => {
             println!("Starting build monitoring (refresh every {}s)...", interval);
             monitor_build_statistics(&analytics, interval)?;
-        }
-        
         AnalyticsAction::Configure { detailed, memory_profiling, regression_detection } => {
             println!("Configuring build analytics...");
             if detailed {
@@ -1795,20 +1378,12 @@ fn run_analytics(args: AnalyticsArgs, cli: &BuildOptimizationCli) -> Result<()> 
             
             if let Ok(trends) = analytics.get_performance_trends(days) {
                 println!("\n📈 Build Performance Trends:");
-                println!("  Average Build Time: {:?} (Δ{:+.1}%)", 
-                    trends.average_build_time, 
                     trends.build_time_change_percent
                 );
-                println!("  Cache Hit Rate: {:.1}% (Δ{:+.1}%)", 
-                    trends.cache_hit_rate * 100.0,
                     trends.cache_hit_rate_change_percent
                 );
-                println!("  Memory Usage: {:.2} MB (Δ{:+.1}%)", 
-                    trends.average_memory_mb,
                     trends.memory_usage_change_percent
                 );
-                println!("  Parallelism Efficiency: {:.1}% (Δ{:+.1}%)", 
-                    trends.parallelism_efficiency * 100.0,
                     trends.parallelism_change_percent
                 );
                 
@@ -1830,11 +1405,7 @@ fn run_analytics(args: AnalyticsArgs, cli: &BuildOptimizationCli) -> Result<()> 
                 println!("Build the project multiple times to accumulate trend data");
             }
         }
-    }
-    
     Ok(())
-}
-
 /// Run memory optimization
 fn run_memory(args: MemoryArgs, cli: &BuildOptimizationCli) -> Result<()> {
     let config = MemoryOptimizerConfig::default();
@@ -1851,8 +1422,6 @@ fn run_memory(args: MemoryArgs, cli: &BuildOptimizationCli) -> Result<()> {
             println!("  Memory Pressure Events: {}", stats.memory_pressure_events);
             println!("  Tasks Deferred: {}", stats.tasks_deferred_for_memory);
             println!("  Memory Efficiency: {:.1}%", stats.memory_efficiency_percent);
-        }
-        
         MemoryAction::Configure { max_memory, strategy, streaming, chunk_size } => {
             println!("Configuring memory optimization...");
             if let Some(max_mem) = max_memory {
@@ -1873,8 +1442,6 @@ fn run_memory(args: MemoryArgs, cli: &BuildOptimizationCli) -> Result<()> {
             println!("Starting memory usage monitoring (sampling every {}ms)...", interval);
             println!("Press Ctrl+C to stop monitoring\n");
             monitor_memory_usage(&optimizer, interval)?;
-        }
-        
         MemoryAction::Gc => {
             println!("Triggering garbage collection...");
             let triggered = optimizer.trigger_gc_if_needed()?;
@@ -1897,10 +1464,6 @@ fn run_memory(args: MemoryArgs, cli: &BuildOptimizationCli) -> Result<()> {
                 if let Ok(pressure_history) = optimizer.get_pressure_event_history() {
                     println!("\nRecent Pressure Events:");
                     for (i, event) in pressure_history.iter().take(10).enumerate() {
-                        println!("  {}. {} - Memory: {:.2} MB, Action: {}", 
-                            i + 1,
-                            event.timestamp.format("%H:%M:%S"),
-                            event.memory_usage_mb,
                             event.action_taken
                         );
                     }
@@ -1910,11 +1473,7 @@ fn run_memory(args: MemoryArgs, cli: &BuildOptimizationCli) -> Result<()> {
                 println!("  Current memory usage is within normal limits");
             }
         }
-    }
-    
     Ok(())
-}
-
 /// Run performance tuning wizard
 fn run_tune(args: TuneArgs, cli: &BuildOptimizationCli) -> Result<()> {
     if args.wizard {
@@ -1934,7 +1493,6 @@ fn run_tune(args: TuneArgs, cli: &BuildOptimizationCli) -> Result<()> {
         } else {
             println!("  Available Memory: Unable to detect");
             8192 // Default to 8GB assumption
-        };
         
         // Project analysis
         println!("\n📊 Analyzing project structure...");
@@ -1966,7 +1524,6 @@ fn run_tune(args: TuneArgs, cli: &BuildOptimizationCli) -> Result<()> {
             (cpu_cores * 3 / 4).max(1) // Medium parallelism, use 75% of cores
         } else {
             (cpu_cores / 2).max(1) // Low parallelism, use 50% of cores
-        };
         
         println!("  1. Set parallel jobs to {} (optimized for project structure)", recommended_jobs);
         
@@ -1974,35 +1531,25 @@ fn run_tune(args: TuneArgs, cli: &BuildOptimizationCli) -> Result<()> {
             println!("  2. Enable advanced caching for faster rebuilds (large project detected)");
         } else {
             println!("  2. Consider enabling incremental compilation for faster rebuilds");
-        }
-        
         if analysis.parallelism_factor < 0.6 {
             println!("  3. Consider refactoring to reduce dependency coupling");
             println!("     - Current parallelism factor: {:.2}", analysis.parallelism_factor);
             println!("     - Target: > 0.7 for optimal performance");
         } else {
             println!("  3. Dependency structure is well-optimized for parallel compilation");
-        }
-        
         if total_complexity > 10000 {
             println!("  4. Enable memory streaming for large/complex files");
             println!("     - High complexity detected: {}", total_complexity);
-        }
-        
         if available_memory > 16384 {
             println!("  5. Consider distributed compilation for even faster builds");
             println!("     - Ample memory available: {} MB", available_memory);
         } else if available_memory < 4096 {
             println!("  5. Enable memory optimization due to limited RAM");
             println!("     - Available memory: {} MB", available_memory);
-        }
-        
         // Cache recommendations
         let estimated_cache_size = units.len() * 2; // Rough estimate: 2MB per file
         if estimated_cache_size > 1000 {
             println!("  6. Set cache size to at least {} MB", estimated_cache_size);
-        }
-        
         if args.apply_recommendations {
             println!("\n✅ Applying recommended settings...");
             // TODO: Apply settings
@@ -2013,15 +1560,9 @@ fn run_tune(args: TuneArgs, cli: &BuildOptimizationCli) -> Result<()> {
     if args.benchmark {
         println!("\n⏱️  Running performance benchmark...");
         run_performance_benchmark(&cli.project_dir)?;
-    }
-    
     Ok(())
-}
-
 /// Set up optimized build configuration
 fn setup_optimized_build_config(
-    args: &OptimizedBuildArgs,
-    units: &[CompilationUnit],
 ) -> Result<BuildConfig> {
     let mut config = BuildConfig::default();
     
@@ -2030,13 +1571,9 @@ fn setup_optimized_build_config(
         config.optimization_level = crate::common::optimization_level::OptimizationLevel::O3;
     } else {
         config.optimization_level = crate::common::optimization_level::OptimizationLevel::O0;
-    }
-    
     // Configure parallel jobs
     if let Some(jobs) = args.jobs {
         config.max_parallel_jobs = jobs;
-    }
-    
     // Enable optimizations based on arguments
     config.enable_incremental_compilation = args.advanced_caching || args.all_optimizations;
     config.enable_dependency_optimization = args.dependency_optimization || args.all_optimizations;
@@ -2047,16 +1584,12 @@ fn setup_optimized_build_config(
     // Set target if specified
     if let Some(ref target) = args.target {
         config.target_name = target.clone();
-    }
-    
     info!("Build configuration setup completed");
     info!("  Optimization level: {:?}", config.optimization_level);
     info!("  Parallel jobs: {}", config.max_parallel_jobs);
     info!("  Incremental compilation: {}", config.enable_incremental_compilation);
     
     Ok(config)
-}
-
 /// Run optimized build
 fn run_optimized_build(args: OptimizedBuildArgs, cli: &BuildOptimizationCli) -> Result<()> {
     println!("🚀 Running optimized build...");
@@ -2086,12 +1619,8 @@ fn run_optimized_build(args: OptimizedBuildArgs, cli: &BuildOptimizationCli) -> 
     
     if args.release {
         println!("  🎯 Release build");
-    }
-    
     if let Some(target) = args.target {
         println!("  🎯 Target: {}", target);
-    }
-    
     // Implement actual optimized build process
     println!("\n⚡ Starting optimized compilation...");
     
@@ -2105,38 +1634,29 @@ fn run_optimized_build(args: OptimizedBuildArgs, cli: &BuildOptimizationCli) -> 
     // Initialize optimizers if requested
     let mut dependency_optimizer = if args.dependency_optimization || args.all_optimizations {
         Some(DependencyOptimizer::new(DependencyOptimizerConfig {
-            max_parallel_jobs: jobs,
-            enable_smart_ordering: true,
-            enable_dependency_pruning: true,
             ..Default::default()
         }))
     } else {
         None
-    };
     
     let mut advanced_cache = if args.advanced_caching || args.all_optimizations {
         Some(AdvancedCache::new(AdvancedCacheConfig::default())?)
     } else {
         None
-    };
     
     let mut memory_optimizer = if args.memory_optimization || args.all_optimizations {
         Some(MemoryOptimizer::new(MemoryOptimizerConfig::default())?)
     } else {
         None
-    };
     
     let mut analytics = if args.analytics || args.all_optimizations {
         Some(BuildAnalytics::new(BuildAnalyticsConfig::default())?)
     } else {
         None
-    };
     
     // Start build analytics
     if let Some(ref analytics) = analytics {
         analytics.start_build_session()?;
-    }
-    
     let build_start = std::time::Instant::now();
     
     // Dependency optimization
@@ -2149,7 +1669,6 @@ fn run_optimized_build(args: OptimizedBuildArgs, cli: &BuildOptimizationCli) -> 
     } else {
         // Fallback to simple ordering
         vec![units.iter().map(|u| u.id.clone()).collect()]
-    };
     
     // Warm cache if enabled
     if let Some(ref cache) = advanced_cache {
@@ -2159,30 +1678,22 @@ fn run_optimized_build(args: OptimizedBuildArgs, cli: &BuildOptimizationCli) -> 
             .collect();
         let warmed = cache.warm_cache(&cache_files)?;
         println!("  Warmed {} cache entries", warmed);
-    }
-    
     // Memory optimization setup
     if let Some(ref optimizer) = memory_optimizer {
         println!("🧠 Configuring memory optimization...");
         let stats = optimizer.get_statistics()?;
         println!("  Current usage: {:.2} MB", stats.current_usage_mb);
-    }
-    
     // Distributed compilation setup
     let mut distributed_system = if args.distributed || args.all_optimizations {
         println!("🌐 Setting up distributed compilation...");
         let config = DistributedCompilationConfig {
-            coordinator_port: 9000,
-            work_stealing_enabled: true,
             distributed_nodes: vec![], // Would be configured separately
             ..Default::default()
-        };
         let mut system = DistributedCompilationSystem::new(config)?;
         system.start()?;
         Some(system)
     } else {
         None
-    };
     
     // Execute compilation in layers
     let mut compiled_files = 0;
@@ -2213,7 +1724,6 @@ fn run_optimized_build(args: OptimizedBuildArgs, cli: &BuildOptimizationCli) -> 
             base_time_ms / (jobs as u64).min(layer.len() as u64)
         } else {
             base_time_ms
-        };
         
         thread::sleep(Duration::from_millis(parallel_time_ms.min(2000))); // Cap simulation time
         
@@ -2221,22 +1731,16 @@ fn run_optimized_build(args: OptimizedBuildArgs, cli: &BuildOptimizationCli) -> 
         let layer_duration = layer_start.elapsed();
         
         println!("  ✅ Layer {} completed in {:?}", layer_idx + 1, layer_duration);
-    }
-    
     // Linking phase
     if compiled_files > 0 {
         println!("🔗 Linking executable...");
         thread::sleep(Duration::from_millis(500)); // Simulate linking
         println!("  ✅ Linking completed");
-    }
-    
     let total_duration = build_start.elapsed();
     
     // Clean up distributed system
     if let Some(mut system) = distributed_system {
         system.stop()?;
-    }
-    
     // Final analytics
     if let Some(ref analytics) = analytics {
         analytics.end_build_session()?;
@@ -2259,20 +1763,11 @@ fn run_optimized_build(args: OptimizedBuildArgs, cli: &BuildOptimizationCli) -> 
         println!("\n🎉 Build completed successfully!");
         println!("  Total time: {:?}", total_duration);
         println!("  Files compiled: {}", compiled_files);
-    }
-    
     Ok(())
-}
-
 /// Run performance profiling
 fn run_profile(args: ProfileArgs, cli: &BuildOptimizationCli) -> Result<()> {
     let profiler_config = ProfilerConfig {
-        enable_realtime_monitoring: true,
-        enable_memory_profiling: true,
-        enable_cpu_profiling: true,
-        enable_io_profiling: true,
         ..Default::default()
-    };
     
     let profiler = EnhancedBuildProfiler::new(profiler_config)?;
     
@@ -2299,40 +1794,20 @@ fn run_profile(args: ProfileArgs, cli: &BuildOptimizationCli) -> Result<()> {
             
             println!("\n💡 To stop profiling and generate report, run:");
             println!("   cursed-build profile stop {}", session.id);
-        }
-        
         ProfileAction::Stop { session_id, format, output } => {
             println!("🛑 Stopping profiling session: {}", session_id);
             
             // For demonstration, create a mock session
             let session = crate::optimization::enhanced_build_profiler::BuildSession {
-                id: session_id.clone(),
-                name: "mock_session".to_string(),
-                start_time: std::time::Instant::now() - Duration::from_secs(60),
-                status: crate::optimization::enhanced_build_profiler::BuildSessionStatus::Active,
-            };
             
             let report = profiler.end_build_session(session)?;
             
             // Parse format
             let report_format = match format.as_str() {
-                "json" => ReportFormat::Json,
-                "html" => ReportFormat::Html,
-                "markdown" => ReportFormat::Markdown,
-                "csv" => ReportFormat::Csv,
-                "interactive" => ReportFormat::Interactive,
-                _ => return Err(CursedError::system_error("Invalid report format")),
-            };
             
             // Generate output path if not provided
             let output_path = output.unwrap_or_else(|| {
                 let extension = match report_format {
-                    ReportFormat::Json => "json",
-                    ReportFormat::Html => "html",
-                    ReportFormat::Markdown => "md",
-                    ReportFormat::Csv => "csv",
-                    ReportFormat::Interactive => "html",
-                };
                 PathBuf::from(format!("profile_report_{}.{}", session_id, extension))
             });
             
@@ -2355,14 +1830,10 @@ fn run_profile(args: ProfileArgs, cli: &BuildOptimizationCli) -> Result<()> {
             println!("📋 Active profiling sessions:");
             println!("(In a real implementation, this would list active sessions)");
             // In real implementation, would query session manager
-        }
-        
         ProfileAction::Report { session_id, format, output } => {
             println!("📊 Generating report for session: {}", session_id);
             // In real implementation, would load stored session data and generate report
             println!("(Report generation from stored data not yet implemented)");
-        }
-        
         ProfileAction::Monitor { interval } => {
             println!("📊 Starting real-time performance monitoring (refresh every {}s)", interval);
             println!("Press Ctrl+C to stop monitoring\n");
@@ -2381,32 +1852,22 @@ fn run_profile(args: ProfileArgs, cli: &BuildOptimizationCli) -> Result<()> {
                 let stats = perf_system.get_resource_statistics()?;
                 
                 print!("📊 Memory: {:.1} MB | CPU: {:.1}% | I/O: {} ops | Uptime: {:?}   ",
-                    stats.average_memory_mb,
-                    stats.average_cpu_percent,
-                    stats.total_io_operations,
                     stats.monitoring_uptime
                 );
                 
                 io::stdout().flush()?;
                 
                 thread::sleep(Duration::from_secs(interval));
-            }
-            
             println!("\n✅ Monitoring completed");
         }
     }
     
     Ok(())
-}
-
 /// Run benchmark
 fn run_benchmark(args: BenchmarkArgs, cli: &BuildOptimizationCli) -> Result<()> {
     // Create performance optimization system
     let perf_config = PerformanceConfig {
-        enable_benchmarking: true,
-        max_benchmark_iterations: 20,
         ..Default::default()
-    };
     let opt_config = OptimizationConfig::default();
     let perf_system = PerformanceOptimizationSystem::new(perf_config, opt_config)?;
     
@@ -2419,24 +1880,9 @@ fn run_benchmark(args: BenchmarkArgs, cli: &BuildOptimizationCli) -> Result<()> 
             println!("   Test units: {}", units);
             
             let complexity_level = match complexity.as_str() {
-                "simple" => ComplexityLevel::Simple,
-                "medium" => ComplexityLevel::Medium,
-                "complex" => ComplexityLevel::Complex,
-                "very-complex" => ComplexityLevel::VeryComplex,
-                _ => return Err(CursedError::system_error("Invalid complexity level")),
-            };
             
             let benchmark_config = BenchmarkConfig {
-                name: "compilation_speed".to_string(),
-                benchmark_type: BenchmarkType::CompilationSpeed,
-                iterations,
-                warmup_iterations: warmup,
                 test_data: BenchmarkTestData {
-                    unit_count: units,
-                    complexity_level,
-                    data_size_mb: 10.0,
-                },
-            };
             
             let results = perf_system.run_benchmark(benchmark_config)?;
             
@@ -2447,8 +1893,6 @@ fn run_benchmark(args: BenchmarkArgs, cli: &BuildOptimizationCli) -> Result<()> 
             println!("   Min time: {:.2} ms", results.statistics.min_time_ms);
             println!("   Max time: {:.2} ms", results.statistics.max_time_ms);
             println!("   Throughput: {:.1} ops/sec", results.statistics.throughput_ops_per_sec);
-        }
-        
         BenchmarkAction::OptimizationEffectiveness { levels, iterations, data_size } => {
             println!("⚡ Running optimization effectiveness benchmark");
             
@@ -2456,16 +1900,7 @@ fn run_benchmark(args: BenchmarkArgs, cli: &BuildOptimizationCli) -> Result<()> 
                 println!("\n🔧 Testing optimization level: {}", level);
                 
                 let benchmark_config = BenchmarkConfig {
-                    name: format!("optimization_effectiveness_{}", level),
-                    benchmark_type: BenchmarkType::OptimizationEffectiveness,
-                    iterations,
-                    warmup_iterations: 2,
                     test_data: BenchmarkTestData {
-                        unit_count: 50,
-                        complexity_level: ComplexityLevel::Medium,
-                        data_size_mb: data_size,
-                    },
-                };
                 
                 let results = perf_system.run_benchmark(benchmark_config)?;
                 
@@ -2483,16 +1918,8 @@ fn run_benchmark(args: BenchmarkArgs, cli: &BuildOptimizationCli) -> Result<()> 
                 println!("\n🔥 Testing memory stress level: {}", level);
                 
                 let benchmark_config = BenchmarkConfig {
-                    name: format!("memory_usage_{}", level),
-                    benchmark_type: BenchmarkType::MemoryUsage,
                     iterations: (duration / 10) as usize, // Sample every 10 seconds
-                    warmup_iterations: 0,
                     test_data: BenchmarkTestData {
-                        unit_count: 100,
-                        complexity_level: ComplexityLevel::Complex,
-                        data_size_mb: 100.0,
-                    },
-                };
                 
                 let results = perf_system.run_benchmark(benchmark_config)?;
                 
@@ -2510,16 +1937,7 @@ fn run_benchmark(args: BenchmarkArgs, cli: &BuildOptimizationCli) -> Result<()> 
                     println!("\n📦 Testing cache size: {} with scenario: {}", size, scenario);
                     
                     let benchmark_config = BenchmarkConfig {
-                        name: format!("cache_performance_{}_{}", size, scenario),
-                        benchmark_type: BenchmarkType::CachePerformance,
-                        iterations: 10,
-                        warmup_iterations: 2,
                         test_data: BenchmarkTestData {
-                            unit_count: 200,
-                            complexity_level: ComplexityLevel::Medium,
-                            data_size_mb: 50.0,
-                        },
-                    };
                     
                     let results = perf_system.run_benchmark(benchmark_config)?;
                     
@@ -2527,8 +1945,6 @@ fn run_benchmark(args: BenchmarkArgs, cli: &BuildOptimizationCli) -> Result<()> 
                     println!("   Throughput: {:.1} ops/sec", results.statistics.throughput_ops_per_sec);
                 }
             }
-        }
-        
         BenchmarkAction::All { quick, detailed_report, output_dir } => {
             println!("🏆 Running comprehensive benchmark suite");
             
@@ -2540,10 +1956,6 @@ fn run_benchmark(args: BenchmarkArgs, cli: &BuildOptimizationCli) -> Result<()> 
             
             // Run all benchmark types
             let benchmark_types = vec![
-                ("compilation_speed", BenchmarkType::CompilationSpeed),
-                ("optimization_effectiveness", BenchmarkType::OptimizationEffectiveness),
-                ("memory_usage", BenchmarkType::MemoryUsage),
-                ("cache_performance", BenchmarkType::CachePerformance),
             ];
             
             let mut all_results = Vec::new();
@@ -2552,23 +1964,12 @@ fn run_benchmark(args: BenchmarkArgs, cli: &BuildOptimizationCli) -> Result<()> 
                 println!("\n🔄 Running {} benchmark...", name);
                 
                 let benchmark_config = BenchmarkConfig {
-                    name: name.to_string(),
-                    benchmark_type,
-                    iterations,
-                    warmup_iterations: warmup,
                     test_data: BenchmarkTestData {
-                        unit_count: 100,
-                        complexity_level: ComplexityLevel::Medium,
-                        data_size_mb: 20.0,
-                    },
-                };
                 
                 let results = perf_system.run_benchmark(benchmark_config)?;
                 all_results.push((name, results));
                 
                 println!("   ✅ {} completed", name);
-            }
-            
             // Generate summary
             println!("\n📊 Comprehensive Benchmark Results Summary:");
             println!("=" .repeat(60));
@@ -2578,8 +1979,6 @@ fn run_benchmark(args: BenchmarkArgs, cli: &BuildOptimizationCli) -> Result<()> 
                 println!("   Mean time: {:.2} ms", results.statistics.mean_time_ms);
                 println!("   Throughput: {:.1} ops/sec", results.statistics.throughput_ops_per_sec);
                 println!("   Memory usage: {:.1} MB", results.statistics.mean_memory_delta_mb);
-            }
-            
             if detailed_report {
                 let report_dir = output_dir.unwrap_or_else(|| PathBuf::from("benchmark_reports"));
                 println!("\n📄 Generating detailed reports in: {:?}", report_dir);
@@ -2593,8 +1992,6 @@ fn run_benchmark(args: BenchmarkArgs, cli: &BuildOptimizationCli) -> Result<()> 
                     println!("   📄 {}", report_path.display());
                 }
             }
-        }
-        
         BenchmarkAction::Compare { baseline, comparison, format } => {
             println!("📈 Comparing benchmark results");
             println!("   Baseline: {}", baseline);

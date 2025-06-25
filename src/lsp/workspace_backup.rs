@@ -20,35 +20,17 @@ use crate::imports::{ImportResolver, ImportResolverConfig};
 /// Workspace manager for the LSP server
 pub struct WorkspaceManager {
     /// Current workspace folders
-    workspace_folders: std::sync::RwLock<Vec<WorkspaceFolder>>,
     /// Root URI if no workspace folders
-    root_uri: std::sync::RwLock<Option<Url>>,
     /// Project files cache
-    project_files: DashMap<Url, ProjectFile>,
     /// Workspace symbol cache with semantic information
-    workspace_symbols: std::sync::RwLock<Vec<WorkspaceSymbol>>,
     /// Type checker for semantic analysis
-    type_checker: std::sync::RwLock<TypeChecker>,
     /// Import resolver for cross-file analysis
-    import_resolver: std::sync::RwLock<ImportResolver>,
     /// Parsed AST cache for semantic analysis
-    ast_cache: DashMap<Url, Program>,
-}
-
 /// Information about a project file with semantic analysis
 #[derive(Debug, Clone)]
 struct ProjectFile {
-    uri: Url,
-    path: PathBuf,
-    file_type: ProjectFileType,
-    last_modified: Option<std::time::SystemTime>,
-    symbols: Vec<WorkspaceSymbol>,
     /// Compilation errors and warnings
-    diagnostics: Vec<Diagnostic>,
     /// Type information for symbols
-    type_info: HashMap<String, Type>,
-}
-
 /// Type of project file
 #[derive(Debug, Clone, PartialEq)]
 enum ProjectFileType {
@@ -57,20 +39,10 @@ enum ProjectFileType {
     CursedBuild,       // CursedBuild.toml
     Documentation,     // .md files
     Configuration,     // .toml, .yaml, .json config files
-    Other,
-}
-
 impl WorkspaceManager {
     /// Create a new workspace manager with semantic analysis
     pub fn new() -> Self {
         Self {
-            workspace_folders: std::sync::RwLock::new(Vec::new()),
-            root_uri: std::sync::RwLock::new(None),
-            project_files: DashMap::new(),
-            workspace_symbols: std::sync::RwLock::new(Vec::new()),
-            type_checker: std::sync::RwLock::new(TypeChecker::new()),
-            import_resolver: std::sync::RwLock::new(ImportResolver::new(ImportResolverConfig::default())),
-            ast_cache: DashMap::new(),
         }
     }
 
@@ -82,12 +54,8 @@ impl WorkspaceManager {
         {
             let mut workspace_folders = self.workspace_folders.write().unwrap();
             *workspace_folders = folders;
-        }
-        
         // Scan workspace for files
         self.scan_workspace().await;
-    }
-
     /// Set root URI (fallback when no workspace folders)
     #[instrument(skip(self))]
     pub async fn set_root_uri(&self, uri: Url) {
@@ -96,21 +64,12 @@ impl WorkspaceManager {
         {
             let mut root_uri = self.root_uri.write().unwrap();
             *root_uri = Some(uri.clone());
-        }
-        
         // Convert to workspace folder and scan
         let workspace_folder = WorkspaceFolder {
-            uri,
-            name: "Root".to_string(),
-        };
         self.set_workspace_folders(Vec::from([workspace_folder])).await;
-    }
-
     /// Get all workspace folders
     pub async fn get_workspace_folders(&self) -> Vec<WorkspaceFolder> {
         self.workspace_folders.read().unwrap().clone()
-    }
-
     /// Get workspace root paths
     pub async fn get_workspace_roots(&self) -> Vec<PathBuf> {
         let folders = self.workspace_folders.read().unwrap();
@@ -121,8 +80,6 @@ impl WorkspaceManager {
             }
         }
         roots
-    }
-
     /// Scan workspace for project files
     #[instrument(skip(self))]
     pub async fn scan_workspace(&self) {
@@ -140,8 +97,6 @@ impl WorkspaceManager {
         self.update_workspace_symbols().await;
         
         info!("Workspace scan complete. Found {} files", self.project_files.len());
-    }
-
     /// Scan a directory for project files
     #[instrument(skip(self))]
     pub async fn scan_directory(&self, root_path: &Path) {
@@ -161,13 +116,9 @@ impl WorkspaceManager {
                 .map_or(false, |name| name.starts_with("."))
             {
                 continue;
-            }
-            
             // Skip common ignore patterns
             if self.should_ignore_path(path) {
                 continue;
-            }
-            
             if path.is_file() {
                 if let Some(file_type) = self.classify_file(path) {
                     if let Ok(uri) = Url::from_file_path(path) {
@@ -176,22 +127,13 @@ impl WorkspaceManager {
                             .and_then(|meta| meta.modified().ok());
                         
                         let project_file = ProjectFile {
-                            uri: uri.clone(),
-                            path: path.to_path_buf(),
-                            file_type: file_type.clone(),
-                            last_modified,
                             symbols: Vec::new(), // Will be populated by semantic analysis
-                            diagnostics: Vec::new(),
-                            type_info: HashMap::new(),
-                        };
                         
                         self.project_files.insert(uri, project_file);
                     }
                 }
             }
         }
-    }
-
     /// Check if a path should be ignored
     pub fn should_ignore_path(&self, path: &Path) -> bool {
         let ignore_patterns = [
@@ -214,27 +156,15 @@ impl WorkspaceManager {
                     return true;
                 }
             }
-        }
-        
         false
-    }
-
     /// Classify a file based on its extension and name
     pub fn classify_file(&self, path: &Path) -> Option<ProjectFileType> {
         if let Some(file_name) = path.file_name().and_then(|name| name.to_str()) {
             match file_name {
-                "CursedPackage.toml" => return Some(ProjectFileType::CursedPackage),
-                "CursedBuild.toml" => return Some(ProjectFileType::CursedBuild),
                 _ => {}
             }
-        }
-        
         if let Some(extension) = path.extension().and_then(|ext| ext.to_str()) {
             match extension {
-                "csd" => Some(ProjectFileType::CursedSource),
-                "md" => Some(ProjectFileType::Documentation),
-                "toml" | "yaml" | "yml" | "json" => Some(ProjectFileType::Configuration),
-                _ => Some(ProjectFileType::Other),
             }
         } else {
             None
@@ -253,7 +183,6 @@ impl WorkspaceManager {
             if project_file.file_type == ProjectFileType::CursedSource {
                 if let Ok(content) = std::fs::read_to_string(&project_file.path) {
                     match self.analyze_file_semantically(&content, &project_file.uri).await {
-                        Ok(symbols) => all_symbols.extend(symbols),
                         Err(err) => {
                             warn!("Failed to analyze file {}: {}", project_file.uri, err);
                             // Fallback to basic symbol extraction
@@ -263,17 +192,10 @@ impl WorkspaceManager {
                     }
                 }
             }
-        }
-        
         {
             let mut workspace_symbols = self.workspace_symbols.write().unwrap();
             *workspace_symbols = all_symbols;
-        }
-        
-        debug!("Updated workspace with {} symbols using semantic analysis", 
                self.workspace_symbols.read().unwrap().len());
-    }
-
     /// Analyze file semantically using CURSED compiler infrastructure
     pub async fn analyze_file_semantically(&self, content: &str, uri: &Url) -> crate::error::Result<()> {
         debug!("Performing semantic analysis on {}", uri);
@@ -295,15 +217,9 @@ impl WorkspaceManager {
             if let Err(err) = type_checker.check_program(&ast) {
                 warn!("Type checking failed for {}: {}", uri, err);
                 // Continue with symbol extraction even if type checking fails
-            }
-            
             // Extract symbols from the AST with type information
             symbols = self.extract_symbols_from_ast(&ast, uri, &type_checker);
-        }
-        
         Ok(symbols)
-    }
-    
     /// Extract symbols from AST with full semantic information
     pub fn extract_symbols_from_ast(&self, ast: &Program, uri: &Url, type_checker: &TypeChecker) -> Vec<WorkspaceSymbol> {
         let mut symbols = Vec::new();
@@ -339,11 +255,7 @@ impl WorkspaceManager {
                     symbols.push(var_symbol);
                 }
             }
-        }
-        
         symbols
-    }
-    
     /// Extract basic symbols as fallback when semantic analysis fails
     pub fn extract_basic_symbols(&self, content: &str, uri: &Url) -> Vec<WorkspaceSymbol> {
         let mut symbols = Vec::new();
@@ -354,20 +266,9 @@ impl WorkspaceManager {
             if line.contains("slay") || line.contains("yolo") {
                 if let Some(func_name) = self.extract_function_name(line) {
                     let location = Location {
-                        uri: uri.clone(),
                         range: Range {
-                            start: Position { line: line_num as u32, character: 0 },
-                            end: Position { line: line_num as u32, character: line.len() as u32 },
-                        },
-                    };
                     
                     symbols.push(WorkspaceSymbol {
-                        name: func_name,
-                        kind: SymbolKind::FUNCTION,
-                        tags: None,
-                        location: OneOf::Left(location),
-                        container_name: None,
-                        data: None,
                     });
                 }
             }
@@ -376,20 +277,9 @@ impl WorkspaceManager {
             if line.contains("squad") {
                 if let Some(struct_name) = self.extract_struct_name(line) {
                     let location = Location {
-                        uri: uri.clone(),
                         range: Range {
-                            start: Position { line: line_num as u32, character: 0 },
-                            end: Position { line: line_num as u32, character: line.len() as u32 },
-                        },
-                    };
                     
                     symbols.push(WorkspaceSymbol {
-                        name: struct_name,
-                        kind: SymbolKind::STRUCT,
-                        tags: None,
-                        location: OneOf::Left(location),
-                        container_name: None,
-                        data: None,
                     });
                 }
             }
@@ -398,20 +288,9 @@ impl WorkspaceManager {
             if line.contains("collab") {
                 if let Some(interface_name) = self.extract_interface_name(line) {
                     let location = Location {
-                        uri: uri.clone(),
                         range: Range {
-                            start: Position { line: line_num as u32, character: 0 },
-                            end: Position { line: line_num as u32, character: line.len() as u32 },
-                        },
-                    };
                     
                     symbols.push(WorkspaceSymbol {
-                        name: interface_name,
-                        kind: SymbolKind::INTERFACE,
-                        tags: None,
-                        location: OneOf::Left(location),
-                        container_name: None,
-                        data: None,
                     });
                 }
             }
@@ -420,38 +299,18 @@ impl WorkspaceManager {
             if line.contains("facts") || line.contains("sus") {
                 if let Some(var_name) = self.extract_variable_name(line) {
                     let location = Location {
-                        uri: uri.clone(),
                         range: Range {
-                            start: Position { line: line_num as u32, character: 0 },
-                            end: Position { line: line_num as u32, character: line.len() as u32 },
-                        },
-                    };
                     
                     symbols.push(WorkspaceSymbol {
-                        name: var_name,
-                        kind: SymbolKind::VARIABLE,
-                        tags: None,
-                        location: OneOf::Left(location),
-                        container_name: None,
-                        data: None,
                     });
                 }
             }
-        }
-        
         symbols
-    }
-    
     /// Extract function symbol with type information
     fn extract_function_symbol(&self, stmt: &str, uri: &Url, line: u32, type_checker: &TypeChecker) -> Option<WorkspaceSymbol> {
         if let Some(func_name) = self.extract_function_name(stmt) {
             let location = Location {
-                uri: uri.clone(),
                 range: Range {
-                    start: Position { line, character: 0 },
-                    end: Position { line, character: stmt.len() as u32 },
-                },
-            };
             
             // Extract function signature and return type
             let detail = if let Some((_, params, return_type)) = self.extract_function_signature(stmt) {
@@ -462,18 +321,10 @@ impl WorkspaceManager {
                 }
             } else {
                 func_name.clone()
-            };
             
             Some(WorkspaceSymbol {
-                name: func_name,
-                kind: SymbolKind::FUNCTION,
-                tags: None,
-                location: OneOf::Left(location),
-                container_name: None,
                 data: Some(serde_json::json!({
-                    "detail": detail,
                     "type": "function"
-                })),
             })
         } else {
             None
@@ -484,22 +335,11 @@ impl WorkspaceManager {
     fn extract_struct_symbol(&self, stmt: &str, uri: &Url, line: u32) -> Option<WorkspaceSymbol> {
         if let Some(struct_name) = self.extract_struct_name(stmt) {
             let location = Location {
-                uri: uri.clone(),
                 range: Range {
-                    start: Position { line, character: 0 },
-                    end: Position { line, character: stmt.len() as u32 },
-                },
-            };
             
             Some(WorkspaceSymbol {
-                name: struct_name,
-                kind: SymbolKind::STRUCT,
-                tags: None,
-                location: OneOf::Left(location),
-                container_name: None,
                 data: Some(serde_json::json!({
                     "type": "struct"
-                })),
             })
         } else {
             None
@@ -510,22 +350,11 @@ impl WorkspaceManager {
     fn extract_interface_symbol(&self, stmt: &str, uri: &Url, line: u32) -> Option<WorkspaceSymbol> {
         if let Some(interface_name) = self.extract_interface_name(stmt) {
             let location = Location {
-                uri: uri.clone(),
                 range: Range {
-                    start: Position { line, character: 0 },
-                    end: Position { line, character: stmt.len() as u32 },
-                },
-            };
             
             Some(WorkspaceSymbol {
-                name: interface_name,
-                kind: SymbolKind::INTERFACE,
-                tags: None,
-                location: OneOf::Left(location),
-                container_name: None,
                 data: Some(serde_json::json!({
                     "type": "interface"
-                })),
             })
         } else {
             None
@@ -536,12 +365,7 @@ impl WorkspaceManager {
     fn extract_variable_symbol(&self, stmt: &str, uri: &Url, line: u32, type_checker: &TypeChecker) -> Option<WorkspaceSymbol> {
         if let Some(var_name) = self.extract_variable_name(stmt) {
             let location = Location {
-                uri: uri.clone(),
                 range: Range {
-                    start: Position { line, character: 0 },
-                    end: Position { line, character: stmt.len() as u32 },
-                },
-            };
             
             // Try to determine variable type
             let var_type = if let Ok(inferred_type) = type_checker.check_type(&var_name) {
@@ -549,20 +373,12 @@ impl WorkspaceManager {
             } else {
                 // Fallback to basic type inference
                 self.infer_basic_type_from_declaration(stmt)
-            };
             
             let is_mutable = stmt.contains("sus ");
             
             Some(WorkspaceSymbol {
-                name: var_name,
-                kind: SymbolKind::VARIABLE,
-                tags: None,
-                location: OneOf::Left(location),
-                container_name: None,
                 data: Some(serde_json::json!({
-                    "type": var_type,
                     "mutable": is_mutable
-                })),
             })
         } else {
             None
@@ -611,15 +427,12 @@ impl WorkspaceManager {
                         line[arrow_pos + 2..].split('{').next()?.trim().to_string()
                     } else {
                         String::new()
-                    };
                     
                     return Some((func_name, params, return_type));
                 }
             }
         }
         None
-    }
-
     /// Search workspace symbols with semantic filtering
     #[instrument(skip(self))]
     pub async fn search_symbols(&self, query: &str) -> Vec<WorkspaceSymbol> {
@@ -629,8 +442,6 @@ impl WorkspaceManager {
         
         if query.is_empty() {
             return symbols.clone();
-        }
-        
         let query_lower = query.to_lowercase();
         let mut results = Vec::new();
         for symbol in symbols.iter() {
@@ -639,13 +450,9 @@ impl WorkspaceManager {
             }
         }
         results
-    }
-    
     /// Get AST for a file from cache
     pub async fn get_ast(&self, uri: &Url) -> Option<Program> {
         self.ast_cache.get(uri).map(|entry| entry.value().clone())
-    }
-    
     /// Get type information for a symbol
     pub async fn get_symbol_type(&self, uri: &Url, symbol_name: &str) -> Option<Type> {
         if let Some(file_info) = self.project_files.get(uri) {
@@ -676,8 +483,6 @@ impl WorkspaceManager {
                     file_entry.symbols = symbols;
                     file_entry.diagnostics.clear();
                     file_entry.last_modified = Some(std::time::SystemTime::now());
-                }
-                
                 // Update workspace symbols
                 self.update_workspace_symbols().await;
                 Ok(())
@@ -686,22 +491,11 @@ impl WorkspaceManager {
                 // Store diagnostic information for errors
                 if let Some(mut file_entry) = self.project_files.get_mut(uri) {
                     file_entry.diagnostics = vec![Diagnostic {
-                        range: Range::new(Position::new(0, 0), Position::new(0, 0)),
-                        severity: Some(DiagnosticSeverity::ERROR),
-                        code: None,
-                        code_description: None,
-                        source: Some("cursed-lsp".to_string()),
-                        message: format!("Analysis failed: {}", err),
-                        related_information: None,
-                        tags: None,
-                        data: None,
                     }];
                 }
                 Err(err)
             }
         }
-    }
-
     /// Get all project files of a specific type
     pub async fn get_files_by_type(&self, file_type: ProjectFileType) -> Vec<Url> {
         self.project_files
@@ -709,13 +503,9 @@ impl WorkspaceManager {
             .filter(|entry| entry.value().file_type == file_type)
             .map(|entry| entry.key().clone())
             .collect()
-    }
-
     /// Get all CURSED source files
     pub async fn get_cursed_files(&self) -> Vec<Url> {
         self.get_files_by_type(ProjectFileType::CursedSource).await
-    }
-
     /// Get project configuration files
     pub async fn get_config_files(&self) -> Vec<Url> {
         let mut configs = Vec::new();
@@ -723,18 +513,12 @@ impl WorkspaceManager {
         configs.extend(self.get_files_by_type(ProjectFileType::CursedBuild).await);
         configs.extend(self.get_files_by_type(ProjectFileType::Configuration).await);
         configs
-    }
-
     /// Check if a file is part of the workspace
     pub async fn is_workspace_file(&self, uri: &Url) -> bool {
         self.project_files.contains_key(uri)
-    }
-
     /// Get file info
     pub async fn get_file_info(&self, uri: &Url) -> Option<ProjectFile> {
         self.project_files.get(uri).map(|entry| entry.value().clone())
-    }
-
     /// Refresh workspace (rescan files)
     #[instrument(skip(self))]
     pub async fn refresh_workspace(&self) {
@@ -745,8 +529,6 @@ impl WorkspaceManager {
         
         // Rescan
         self.scan_workspace().await;
-    }
-
     /// File change notification
     #[instrument(skip(self))]
     pub async fn handle_file_changes(&self, changes: Vec<FileEvent>) {
@@ -765,14 +547,6 @@ impl WorkspaceManager {
                                 .and_then(|meta| meta.modified().ok());
                             
                             let project_file = ProjectFile {
-                                uri: change.uri.clone(),
-                                path,
-                                file_type: file_type.clone(),
-                                last_modified,
-                                symbols: Vec::new(),
-                                diagnostics: Vec::new(),
-                                type_info: HashMap::new(),
-                            };
                             
                             self.project_files.insert(change.uri, project_file);
                             
@@ -808,8 +582,6 @@ impl WorkspaceManager {
                     // Handle unknown file change types
                 }
             }
-        }
-        
         // Update symbols if needed
         if needs_symbol_update {
             self.update_workspace_symbols().await;
@@ -899,23 +671,11 @@ impl WorkspaceManager {
         let symbols = self.workspace_symbols.read().unwrap().len();
         
         WorkspaceStats {
-            total_files,
-            cursed_files,
-            config_files,
-            symbols,
         }
     }
-}
-
 /// Workspace statistics
 #[derive(Debug, Clone)]
 pub struct WorkspaceStats {
-    pub total_files: usize,
-    pub cursed_files: usize,
-    pub config_files: usize,
-    pub symbols: usize,
-}
-
 impl Default for WorkspaceManager {
     fn default() -> Self {
         Self::new()

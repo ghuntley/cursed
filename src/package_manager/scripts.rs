@@ -20,44 +20,16 @@ use tracing::{info, warn, error, debug, instrument};
 /// Script executor with sandboxing
 #[derive(Debug)]
 pub struct ScriptExecutor {
-    config: ScriptConfig,
-    temp_dir: TempDir,
-    enabled: bool,
-}
-
 /// Script execution configuration
 #[derive(Debug, Clone)]
 pub struct ScriptConfig {
-    pub timeout: Duration,
-    pub max_memory: usize,
-    pub allowed_commands: Vec<String>,
-    pub restricted_paths: Vec<PathBuf>,
-    pub environment_vars: HashMap<String, String>,
-    pub log_output: bool,
-    pub sandbox_enabled: bool,
-}
-
 /// Installation script definition
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct InstallScript {
-    pub name: String,
     pub phase: String, // pre-install, post-install, pre-uninstall, post-uninstall
-    pub interpreter: ScriptInterpreter,
-    pub content: String,
-    pub timeout_seconds: Option<u64>,
-    pub environment: HashMap<String, String>,
-    pub required: bool,
-}
-
 /// Script execution context
 #[derive(Debug, Clone)]
 pub struct ScriptContext {
-    pub package_name: String,
-    pub package_version: String,
-    pub install_dir: PathBuf,
-    pub temp_dir: PathBuf,
-}
-
 /// Supported script interpreters
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum ScriptInterpreter {
@@ -66,46 +38,27 @@ pub enum ScriptInterpreter {
     Python,     // python3
     Node,       // node.js
     Custom(String), // Custom interpreter command
-}
-
 /// Script execution result
 #[derive(Debug)]
 pub struct ScriptResult {
-    pub success: bool,
-    pub exit_code: Option<i32>,
-    pub stdout: String,
-    pub stderr: String,
-    pub duration: Duration,
-}
-
 /// Script execution errors
 #[derive(CursedError, Debug)]
 pub enum ScriptError {
     #[error("Script timeout: {script} exceeded {timeout_seconds} seconds")]
-    Timeout { script: String, timeout_seconds: u64 },
     
     #[error("Script failed: {script} exited with code {exit_code}")]
-    ExecutionFailed { script: String, exit_code: i32 },
     
     #[error("Interpreter not found: {interpreter}")]
-    InterpreterNotFound { interpreter: String },
     
     #[error("Script content invalid: {reason}")]
-    InvalidContent { reason: String },
     
     #[error("Permission denied: {operation}")]
-    PermissionDenied { operation: String },
     
     #[error("Security violation: {violation}")]
-    SecurityViolation { violation: String },
     
     #[error("Resource limit exceeded: {resource} - {limit}")]
-    ResourceLimitExceeded { resource: String, limit: String },
     
     #[error("IO error: {0}")]
-    Io(#[from] std::io::Error),
-}
-
 impl ScriptExecutor {
     /// Create a new script executor
     pub fn new(enabled: bool, work_dir: PathBuf) -> Self {
@@ -115,50 +68,25 @@ impl ScriptExecutor {
             timeout: Duration::from_secs(300), // 5 minutes default
             max_memory: 256 * 1024 * 1024,    // 256MB default
             allowed_commands: vec![
-                "echo".to_string(),
-                "mkdir".to_string(),
-                "cp".to_string(),
-                "mv".to_string(),
-                "chmod".to_string(),
-                "ln".to_string(),
-            ],
             restricted_paths: vec![
                 PathBuf::from("/etc"),
                 PathBuf::from("/bin"),
                 PathBuf::from("/usr/bin"),
                 PathBuf::from("/sbin"),
                 PathBuf::from("/usr/sbin"),
-            ],
-            environment_vars: HashMap::new(),
-            log_output: true,
-            sandbox_enabled: true,
-        };
         
         Self {
-            config,
-            temp_dir,
-            enabled,
         }
     }
     
     /// Execute an installation script
     #[instrument(skip(self, script, context), fields(script = %script.name, phase = %script.phase))]
     pub async fn execute_script(
-        &self,
-        script: &InstallScript,
-        context: &ScriptContext,
     ) -> crate::error::Result<()> {
         if !self.enabled {
             info!("Script execution disabled, skipping");
             return Ok(ScriptResult {
-                success: true,
-                exit_code: Some(0),
-                stdout: "Script execution disabled".to_string(),
-                stderr: String::new(),
-                duration: Duration::from_millis(0),
             });
-        }
-        
         info!("Executing script");
         
         // Validate script content
@@ -179,44 +107,23 @@ impl ScriptExecutor {
         let _ = std::fs::remove_file(&script_file);
         
         info!(
-            success = result.success,
-            duration = ?duration,
             "Script execution completed"
         );
         
         Ok(ScriptResult {
-            success: result.success,
-            exit_code: result.exit_code,
-            stdout: result.stdout,
-            stderr: result.stderr,
-            duration,
         })
-    }
-    
     /// Validate script content for security
     fn validate_script_content(&self, script: &InstallScript) -> crate::error::Result<()> {
         // Check for potentially dangerous commands
         let dangerous_patterns = vec![
             "rm -rf /",
-            "dd if=",
-            "mkfs",
-            "fdisk",
-            "format",
             "del /q",
             "rmdir /s",
-            "shutdown",
-            "reboot",
-            "halt",
-            "wget",
-            "curl",
-            "nc ",
-            "netcat",
         ];
         
         for pattern in &dangerous_patterns {
             if script.content.contains(pattern) {
                 return Err(ScriptError::SecurityViolation {
-                    violation: format!("Dangerous pattern detected: {}", pattern),
                 });
             }
         }
@@ -230,16 +137,9 @@ impl ScriptExecutor {
         }
         
         Ok(())
-    }
-    
     /// Create temporary script file
     fn create_script_file(&self, script: &InstallScript) -> crate::error::Result<()> {
         let extension = match script.interpreter {
-            ScriptInterpreter::Shell | ScriptInterpreter::Bash => "sh",
-            ScriptInterpreter::Python => "py",
-            ScriptInterpreter::Node => "js",
-            ScriptInterpreter::Custom(_) => "script",
-        };
         
         let script_file = self.temp_dir.path().join(format!("{}.{}", script.name, extension));
         
@@ -251,17 +151,9 @@ impl ScriptExecutor {
             use std::os::unix::fs::PermissionsExt;
             let permissions = std::fs::Permissions::from_mode(0o755);
             std::fs::set_permissions(&script_file, permissions)?;
-        }
-        
         Ok(script_file)
-    }
-    
     /// Prepare command for execution
     fn prepare_command(
-        &self,
-        script: &InstallScript,
-        script_file: &Path,
-        context: &ScriptContext,
     ) -> crate::error::Result<()> {
         let mut command = match &script.interpreter {
             ScriptInterpreter::Shell => {
@@ -303,7 +195,6 @@ impl ScriptExecutor {
                 cmd.arg(script_file);
                 cmd
             }
-        };
         
         // Set working directory
         command.current_dir(&context.install_dir);
@@ -325,30 +216,20 @@ impl ScriptExecutor {
         
         for (key, value) in env_vars {
             command.env(key, value);
-        }
-        
         // Security: Clear potentially dangerous environment variables
         let dangerous_env_vars = vec!["LD_PRELOAD", "DYLD_INSERT_LIBRARIES", "PATH"];
         for var in dangerous_env_vars {
             command.env_remove(var);
-        }
-        
         // Set limited PATH for security
         let safe_paths = if cfg!(unix) {
             "/usr/local/bin:/usr/bin:/bin"
         } else {
             r"C:\Windows\System32"
-        };
         command.env("PATH", safe_paths);
         
         Ok(command)
-    }
-    
     /// Execute command with timeout
     async fn execute_with_timeout(
-        &self,
-        command: &mut Command,
-        script: &InstallScript,
     ) -> crate::error::Result<()> {
         let timeout = script.timeout_seconds
             .map(Duration::from_secs)
@@ -391,11 +272,8 @@ impl ScriptExecutor {
                 // Timeout occurred, kill the process
                 warn!("Script timeout, terminating process");
                 return Err(ScriptError::Timeout {
-                    script: script.name.clone(),
-                    timeout_seconds: timeout.as_secs(),
                 });
             }
-        };
         
         let stdout = stdout_lines.join("\n");
         let stderr = stderr_lines.join("\n");
@@ -415,25 +293,14 @@ impl ScriptExecutor {
         if !success {
             if let Some(code) = exit_code {
                 return Err(ScriptError::ExecutionFailed {
-                    script: script.name.clone(),
-                    exit_code: code,
                 });
             }
         }
         
         Ok(ScriptResult {
-            success,
-            exit_code,
-            stdout,
-            stderr,
-            duration: start_time.elapsed(),
         })
-    }
-    
     /// Parse scripts from package metadata
     pub fn parse_scripts_from_metadata(
-        &self,
-        metadata: &str,
     ) -> crate::error::Result<()> {
         // Parse scripts from package.toml or similar metadata
         // This is a simplified implementation
@@ -445,13 +312,6 @@ impl ScriptExecutor {
                 for (phase, script_value) in scripts_table {
                     if let Some(script_content) = script_value.as_str() {
                         scripts.push(InstallScript {
-                            name: format!("{}_script", phase),
-                            phase: phase.clone(),
-                            interpreter: ScriptInterpreter::Shell,
-                            content: script_content.to_string(),
-                            timeout_seconds: None,
-                            environment: HashMap::new(),
-                            required: false,
                         });
                     }
                 }
@@ -459,8 +319,6 @@ impl ScriptExecutor {
         }
         
         Ok(scripts)
-    }
-    
     /// Check if interpreter is available
     pub fn check_interpreter(&self, interpreter: &ScriptInterpreter) -> bool {
         let command_name = match interpreter {
@@ -472,10 +330,6 @@ impl ScriptExecutor {
                 #[cfg(unix)] { "bash" }
                 #[cfg(windows)] { "powershell" }
             }
-            ScriptInterpreter::Python => "python3",
-            ScriptInterpreter::Node => "node",
-            ScriptInterpreter::Custom(cmd) => cmd,
-        };
         
         Command::new(command_name)
             .arg("--version")
@@ -484,15 +338,9 @@ impl ScriptExecutor {
             .status()
             .map(|status| status.success())
             .unwrap_or(false)
-    }
-    
     /// Get script execution statistics
     pub fn get_statistics(&self) -> ScriptStatistics {
         ScriptStatistics {
-            enabled: self.enabled,
-            temp_dir_size: self.get_temp_dir_size(),
-            sandbox_enabled: self.config.sandbox_enabled,
-            timeout_seconds: self.config.timeout.as_secs(),
         }
     }
     
@@ -512,8 +360,6 @@ impl ScriptExecutor {
                 }
             }
             size
-        }
-        
         dir_size(self.temp_dir.path())
     }
 }
@@ -521,47 +367,21 @@ impl ScriptExecutor {
 /// Script execution statistics
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ScriptStatistics {
-    pub enabled: bool,
-    pub temp_dir_size: u64,
-    pub sandbox_enabled: bool,
-    pub timeout_seconds: u64,
-}
-
 impl Default for ScriptConfig {
     fn default() -> Self {
         Self {
-            timeout: Duration::from_secs(300),
-            max_memory: 256 * 1024 * 1024,
             allowed_commands: vec![
-                "echo".to_string(),
-                "mkdir".to_string(),
-                "cp".to_string(),
-                "mv".to_string(),
-                "chmod".to_string(),
-                "ln".to_string(),
-            ],
             restricted_paths: vec![
                 PathBuf::from("/etc"),
                 PathBuf::from("/bin"),
                 PathBuf::from("/usr/bin"),
                 PathBuf::from("/sbin"),
                 PathBuf::from("/usr/sbin"),
-            ],
-            environment_vars: HashMap::new(),
-            log_output: true,
-            sandbox_enabled: true,
         }
     }
-}
-
 impl std::fmt::Display for ScriptInterpreter {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            ScriptInterpreter::Shell => write!(f, "shell"),
-            ScriptInterpreter::Bash => write!(f, "bash"),
-            ScriptInterpreter::Python => write!(f, "python"),
-            ScriptInterpreter::Node => write!(f, "node"),
-            ScriptInterpreter::Custom(cmd) => write!(f, "custom({})", cmd),
         }
     }
 }

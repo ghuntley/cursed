@@ -14,192 +14,63 @@ use serde::{Deserialize, Serialize};
 
 /// Real-time performance monitor with measurable metrics
 pub struct RealPerformanceMonitor {
-    start_time: Instant,
-    system_info: Arc<Mutex<System>>,
-    metrics: Arc<Mutex<PerformanceMetrics>>,
-    counters: PerformanceCounters,
-    config: MonitoringConfig,
-    trend_analyzer: TrendAnalyzer,
-    adaptive_optimizer: AdaptiveOptimizer,
-}
-
 /// Performance monitoring configuration
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct MonitoringConfig {
     /// Sampling interval for system metrics
-    pub sampling_interval: Duration,
     /// Number of samples to keep for trend analysis
-    pub sample_history_size: usize,
     /// CPU usage threshold for optimization warnings
-    pub cpu_threshold: f32,
     /// Memory usage threshold (percentage)
-    pub memory_threshold: f32,
     /// Enable detailed instruction counting
-    pub detailed_instruction_tracking: bool,
     /// Enable cache performance monitoring
-    pub cache_monitoring: bool,
     /// Enable adaptive optimization suggestions
-    pub adaptive_optimization: bool,
-}
-
 impl Default for MonitoringConfig {
     fn default() -> Self {
         Self {
-            sampling_interval: Duration::from_millis(100),
-            sample_history_size: 1000,
-            cpu_threshold: 80.0,
-            memory_threshold: 85.0,
-            detailed_instruction_tracking: true,
-            cache_monitoring: true,
-            adaptive_optimization: true,
         }
     }
-}
-
 /// Comprehensive performance metrics with real measurements
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct PerformanceMetrics {
     /// Compilation phase timings
-    pub phase_timings: HashMap<String, Duration>,
     /// Total compilation time
-    pub total_compilation_time: Duration,
     /// Memory usage statistics
-    pub memory_stats: MemoryStatistics,
     /// CPU usage statistics
-    pub cpu_stats: CpuStatistics,
     /// Instruction processing statistics
-    pub instruction_stats: InstructionStatistics,
     /// Cache performance metrics
-    pub cache_stats: CacheStatistics,
     /// Optimization effectiveness metrics
-    pub optimization_effectiveness: OptimizationEffectiveness,
     /// Performance trends
-    pub performance_trends: PerformanceTrends,
-}
-
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct MemoryStatistics {
-    pub peak_memory_usage_mb: f64,
-    pub current_memory_usage_mb: f64,
-    pub memory_efficiency: f64,
-    pub allocation_rate: f64,
-    pub gc_frequency: f64,
-    pub memory_fragmentation: f64,
-}
-
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct CpuStatistics {
-    pub average_cpu_usage: f32,
-    pub peak_cpu_usage: f32,
-    pub cpu_efficiency: f64,
-    pub core_utilization: Vec<f32>,
-    pub context_switches: u64,
-    pub cpu_cycles_per_instruction: f64,
-}
-
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct InstructionStatistics {
-    pub instructions_processed: u64,
-    pub instructions_per_second: f64,
-    pub optimization_passes_applied: u64,
-    pub instructions_eliminated: u64,
-    pub instruction_reduction_ratio: f64,
-}
-
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct CacheStatistics {
-    pub cache_hit_rate: f64,
-    pub cache_miss_rate: f64,
-    pub cache_efficiency: f64,
-    pub instruction_cache_misses: u64,
-    pub data_cache_misses: u64,
-    pub tlb_misses: u64,
-}
-
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct OptimizationEffectiveness {
-    pub runtime_improvement_factor: f64,
-    pub code_size_reduction_factor: f64,
-    pub compilation_speedup: f64,
-    pub optimization_success_rate: f64,
-    pub performance_per_watt: f64,
-}
-
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct PerformanceTrends {
-    pub compilation_time_trend: TrendDirection,
-    pub memory_usage_trend: TrendDirection,
-    pub optimization_effectiveness_trend: TrendDirection,
-    pub cpu_efficiency_trend: TrendDirection,
-    pub predicted_performance_gain: f64,
-}
-
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum TrendDirection {
-    Improving(f64),
-    Stable(f64),
-    Degrading(f64),
-}
-
 /// Atomic performance counters for thread-safe updates
 struct PerformanceCounters {
-    instructions_processed: AtomicU64,
-    optimization_passes: AtomicU64,
-    cache_hits: AtomicU64,
-    cache_misses: AtomicU64,
-    allocations: AtomicUsize,
-    context_switches: AtomicU64,
-}
-
 impl Default for PerformanceCounters {
     fn default() -> Self {
         Self {
-            instructions_processed: AtomicU64::new(0),
-            optimization_passes: AtomicU64::new(0),
-            cache_hits: AtomicU64::new(0),
-            cache_misses: AtomicU64::new(0),
-            allocations: AtomicUsize::new(0),
-            context_switches: AtomicU64::new(0),
         }
     }
-}
-
 /// Trend analyzer for performance metrics
 pub struct TrendAnalyzer {
-    sample_history: VecDeque<PerformanceSample>,
-    trend_calculations: TrendCalculations,
-}
-
 #[derive(Debug, Clone)]
 struct PerformanceSample {
-    timestamp: Instant,
-    cpu_usage: f32,
-    memory_usage: f64,
-    instruction_rate: f64,
-    optimization_effectiveness: f64,
-}
-
 struct TrendCalculations {
-    cpu_trend: LinearRegression,
-    memory_trend: LinearRegression,
-    performance_trend: LinearRegression,
-}
-
 /// Simple linear regression for trend analysis
 struct LinearRegression {
-    samples: Vec<(f64, f64)>,
-    slope: f64,
-    intercept: f64,
-    r_squared: f64,
-}
-
 impl LinearRegression {
     fn new() -> Self {
         Self {
-            samples: Vec::new(),
-            slope: 0.0,
-            intercept: 0.0,
-            r_squared: 0.0,
         }
     }
 
@@ -209,13 +80,9 @@ impl LinearRegression {
             self.samples.remove(0);
         }
         self.calculate_trend();
-    }
-
     fn calculate_trend(&mut self) {
         if self.samples.len() < 2 {
             return;
-        }
-
         let n = self.samples.len() as f64;
         let sum_x: f64 = self.samples.iter().map(|(x, _)| x).sum();
         let sum_y: f64 = self.samples.iter().map(|(_, y)| y).sum();
@@ -237,12 +104,8 @@ impl LinearRegression {
             .sum();
 
         self.r_squared = if ss_tot > 0.0 { 1.0 - (ss_res / ss_tot) } else { 0.0 };
-    }
-
     fn predict(&self, x: f64) -> f64 {
         self.slope * x + self.intercept
-    }
-
     fn trend_direction(&self) -> TrendDirection {
         let confidence = self.r_squared.abs();
         if confidence < 0.1 {
@@ -255,32 +118,12 @@ impl LinearRegression {
             TrendDirection::Stable(confidence)
         }
     }
-}
-
 /// Adaptive optimizer that suggests optimizations based on performance data
 pub struct AdaptiveOptimizer {
-    optimization_history: HashMap<String, OptimizationResult>,
-    current_strategy: OptimizationStrategy,
-    effectiveness_threshold: f64,
-}
-
 #[derive(Debug, Clone)]
 struct OptimizationResult {
-    strategy: OptimizationStrategy,
-    performance_improvement: f64,
-    resource_cost: f64,
-    success_count: usize,
-    failure_count: usize,
-}
-
 #[derive(Debug, Clone, PartialEq)]
 pub enum OptimizationStrategy {
-    Aggressive,
-    Balanced,
-    Conservative,
-    Adaptive,
-}
-
 impl RealPerformanceMonitor {
     /// Create new performance monitor
     #[instrument(skip(config))]
@@ -292,31 +135,13 @@ impl RealPerformanceMonitor {
         let counters = PerformanceCounters::default();
         
         let trend_analyzer = TrendAnalyzer {
-            sample_history: VecDeque::with_capacity(config.sample_history_size),
             trend_calculations: TrendCalculations {
-                cpu_trend: LinearRegression::new(),
-                memory_trend: LinearRegression::new(),
-                performance_trend: LinearRegression::new(),
-            },
-        };
 
         let adaptive_optimizer = AdaptiveOptimizer {
-            optimization_history: HashMap::new(),
-            current_strategy: OptimizationStrategy::Balanced,
             effectiveness_threshold: 1.2, // 20% improvement threshold
-        };
 
         Ok(Self {
-            start_time: Instant::now(),
-            system_info,
-            metrics,
-            counters,
-            config,
-            trend_analyzer,
-            adaptive_optimizer,
         })
-    }
-
     /// Start performance monitoring
     #[instrument(skip(self))]
     pub async fn start_monitoring(&mut self) -> Result<()> {
@@ -341,8 +166,6 @@ impl RealPerformanceMonitor {
         });
 
         Ok(())
-    }
-
     /// Record instruction processing metrics
     #[instrument(skip(self))]
     pub fn record_instruction_processing(&self, count: u64, pass_name: &str) {
@@ -350,11 +173,7 @@ impl RealPerformanceMonitor {
         
         if pass_name.contains("optimization") {
             self.counters.optimization_passes.fetch_add(1, Ordering::Relaxed);
-        }
-        
         debug!("Recorded {} instructions processed in pass: {}", count, pass_name);
-    }
-
     /// Record cache performance
     #[instrument(skip(self))]
     pub fn record_cache_performance(&self, hits: u64, misses: u64) {
@@ -363,8 +182,6 @@ impl RealPerformanceMonitor {
         
         let hit_rate = hits as f64 / (hits + misses) as f64;
         debug!("Cache performance: hit rate {:.2}%", hit_rate * 100.0);
-    }
-
     /// Record optimization phase timing
     #[instrument(skip(self))]
     pub fn record_phase_timing(&self, phase_name: &str, duration: Duration) {
@@ -372,14 +189,10 @@ impl RealPerformanceMonitor {
         metrics.phase_timings.insert(phase_name.to_string(), duration);
         
         info!("Phase '{}' completed in {:?}", phase_name, duration);
-    }
-
     /// Get current performance metrics
     pub fn get_current_metrics(&self) -> Result<PerformanceMetrics> {
         self.update_calculated_metrics()?;
         Ok(self.metrics.lock().unwrap().clone())
-    }
-
     /// Get optimization recommendations
     #[instrument(skip(self))]
     pub fn get_optimization_recommendations(&mut self) -> Result<Vec<OptimizationRecommendation>> {
@@ -389,60 +202,28 @@ impl RealPerformanceMonitor {
         // CPU usage recommendations
         if metrics.cpu_stats.average_cpu_usage > self.config.cpu_threshold {
             recommendations.push(OptimizationRecommendation {
-                category: RecommendationCategory::CpuOptimization,
-                priority: RecommendationPriority::High,
                 description: format!(
-                    "High CPU usage detected ({:.1}%). Consider reducing optimization level or enabling parallel compilation.",
                     metrics.cpu_stats.average_cpu_usage
-                ),
-                expected_improvement: 0.3,
-                implementation_cost: ImplementationCost::Medium,
             });
-        }
-
         // Memory usage recommendations
         if metrics.memory_stats.current_memory_usage_mb > self.config.memory_threshold as f64 * 1024.0 {
             recommendations.push(OptimizationRecommendation {
-                category: RecommendationCategory::MemoryOptimization,
-                priority: RecommendationPriority::High,
-                description: "High memory usage detected. Consider enabling incremental compilation or reducing cache size.".to_string(),
-                expected_improvement: 0.25,
-                implementation_cost: ImplementationCost::Low,
             });
-        }
-
         // Cache performance recommendations
         if metrics.cache_stats.cache_hit_rate < 0.7 {
             recommendations.push(OptimizationRecommendation {
-                category: RecommendationCategory::CacheOptimization,
-                priority: RecommendationPriority::Medium,
                 description: format!(
-                    "Low cache hit rate ({:.1}%). Consider adjusting cache size or improving data locality.",
                     metrics.cache_stats.cache_hit_rate * 100.0
-                ),
-                expected_improvement: 0.4,
-                implementation_cost: ImplementationCost::Medium,
             });
-        }
-
         // Instruction processing efficiency
         if metrics.instruction_stats.instructions_per_second < 10000.0 {
             recommendations.push(OptimizationRecommendation {
-                category: RecommendationCategory::InstructionOptimization,
-                priority: RecommendationPriority::Medium,
-                description: "Low instruction processing rate detected. Consider enabling SIMD optimizations or reducing optimization complexity.".to_string(),
-                expected_improvement: 0.5,
-                implementation_cost: ImplementationCost::High,
             });
-        }
-
         // Trend-based recommendations
         self.add_trend_based_recommendations(&mut recommendations)?;
 
         info!("Generated {} optimization recommendations", recommendations.len());
         Ok(recommendations)
-    }
-
     /// Update calculated metrics based on current counters
     fn update_calculated_metrics(&self) -> Result<()> {
         let mut metrics = self.metrics.lock().unwrap();
@@ -469,11 +250,7 @@ impl RealPerformanceMonitor {
             metrics.cache_stats.cache_hit_rate = cache_hits as f64 / total_cache_accesses as f64;
             metrics.cache_stats.cache_miss_rate = cache_misses as f64 / total_cache_accesses as f64;
             metrics.cache_stats.cache_efficiency = metrics.cache_stats.cache_hit_rate;
-        }
-
         Ok(())
-    }
-
     /// Update system metrics (memory, CPU, etc.)
     fn update_system_metrics(&self) -> Result<()> {
         let mut system = self.system_info.lock().unwrap();
@@ -501,12 +278,8 @@ impl RealPerformanceMonitor {
             .collect();
 
         Ok(())
-    }
-
     /// Background system metrics update
     fn update_system_metrics_background(
-        system_info: &Arc<Mutex<System>>,
-        metrics: &Arc<Mutex<PerformanceMetrics>>,
     ) -> Result<()> {
         let mut system = system_info.lock().unwrap();
         system.refresh_cpu();
@@ -523,8 +296,6 @@ impl RealPerformanceMonitor {
         metrics.cpu_stats.average_cpu_usage = cpu_usage;
 
         Ok(())
-    }
-
     /// Add trend-based recommendations
     fn add_trend_based_recommendations(&mut self, recommendations: &mut Vec<OptimizationRecommendation>) -> Result<()> {
         // Add current sample to trend analysis
@@ -532,18 +303,10 @@ impl RealPerformanceMonitor {
         let metrics = self.metrics.lock().unwrap();
         
         let sample = PerformanceSample {
-            timestamp: Instant::now(),
-            cpu_usage: metrics.cpu_stats.average_cpu_usage,
-            memory_usage: metrics.memory_stats.current_memory_usage_mb,
-            instruction_rate: metrics.instruction_stats.instructions_per_second,
-            optimization_effectiveness: metrics.optimization_effectiveness.runtime_improvement_factor,
-        };
 
         self.trend_analyzer.sample_history.push_back(sample.clone());
         if self.trend_analyzer.sample_history.len() > self.config.sample_history_size {
             self.trend_analyzer.sample_history.pop_front();
-        }
-
         // Update trend calculations
         self.trend_analyzer.trend_calculations.cpu_trend.add_sample(current_time, sample.cpu_usage as f64);
         self.trend_analyzer.trend_calculations.memory_trend.add_sample(current_time, sample.memory_usage);
@@ -553,105 +316,29 @@ impl RealPerformanceMonitor {
         match self.trend_analyzer.trend_calculations.cpu_trend.trend_direction() {
             TrendDirection::Degrading(confidence) if confidence > 0.7 => {
                 recommendations.push(OptimizationRecommendation {
-                    category: RecommendationCategory::TrendAnalysis,
-                    priority: RecommendationPriority::Medium,
-                    description: "CPU usage is trending upward. Consider proactive optimization to prevent performance degradation.".to_string(),
-                    expected_improvement: 0.2,
-                    implementation_cost: ImplementationCost::Medium,
                 });
             }
             _ => {}
-        }
-
         Ok(())
     }
 }
 
 #[derive(Debug, Clone)]
 pub struct OptimizationRecommendation {
-    pub category: RecommendationCategory,
-    pub priority: RecommendationPriority,
-    pub description: String,
-    pub expected_improvement: f64,
-    pub implementation_cost: ImplementationCost,
-}
-
 #[derive(Debug, Clone)]
 pub enum RecommendationCategory {
-    CpuOptimization,
-    MemoryOptimization,
-    CacheOptimization,
-    InstructionOptimization,
-    TrendAnalysis,
-    AdaptiveStrategy,
-}
-
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
 pub enum RecommendationPriority {
-    Low,
-    Medium,
-    High,
-    Critical,
-}
-
 #[derive(Debug, Clone)]
 pub enum ImplementationCost {
-    Low,
-    Medium,
-    High,
-}
-
 impl Default for PerformanceMetrics {
     fn default() -> Self {
         Self {
-            phase_timings: HashMap::new(),
-            total_compilation_time: Duration::from_secs(0),
             memory_stats: MemoryStatistics {
-                peak_memory_usage_mb: 0.0,
-                current_memory_usage_mb: 0.0,
-                memory_efficiency: 0.0,
-                allocation_rate: 0.0,
-                gc_frequency: 0.0,
-                memory_fragmentation: 0.0,
-            },
             cpu_stats: CpuStatistics {
-                average_cpu_usage: 0.0,
-                peak_cpu_usage: 0.0,
-                cpu_efficiency: 0.0,
-                core_utilization: Vec::new(),
-                context_switches: 0,
-                cpu_cycles_per_instruction: 0.0,
-            },
             instruction_stats: InstructionStatistics {
-                instructions_processed: 0,
-                instructions_per_second: 0.0,
-                optimization_passes_applied: 0,
-                instructions_eliminated: 0,
-                instruction_reduction_ratio: 0.0,
-            },
             cache_stats: CacheStatistics {
-                cache_hit_rate: 0.0,
-                cache_miss_rate: 0.0,
-                cache_efficiency: 0.0,
-                instruction_cache_misses: 0,
-                data_cache_misses: 0,
-                tlb_misses: 0,
-            },
             optimization_effectiveness: OptimizationEffectiveness {
-                runtime_improvement_factor: 1.0,
-                code_size_reduction_factor: 1.0,
-                compilation_speedup: 1.0,
-                optimization_success_rate: 0.0,
-                performance_per_watt: 0.0,
-            },
             performance_trends: PerformanceTrends {
-                compilation_time_trend: TrendDirection::Stable(0.0),
-                memory_usage_trend: TrendDirection::Stable(0.0),
-                optimization_effectiveness_trend: TrendDirection::Stable(0.0),
-                cpu_efficiency_trend: TrendDirection::Stable(0.0),
-                predicted_performance_gain: 0.0,
-            },
         }
     }
-}
-

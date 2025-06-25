@@ -19,35 +19,18 @@ static PROCESS_REGISTRY: RwLock<HashMap<u32, ProcessInfo>> = RwLock::new(HashMap
 /// Process information for tracking
 #[derive(Debug, Clone)]
 pub struct ProcessInfo {
-    pub pid: u32,
-    pub command: String,
-    pub args: Vec<String>,
-    pub start_time: Instant,
-    pub working_dir: Option<PathBuf>,
-}
-
 /// Get active process count
 pub fn get_active_process_count() -> usize {
     ACTIVE_PROCESSES.load(Ordering::Relaxed)
-}
-
 /// Get total spawned process count
 pub fn get_total_spawned_count() -> u64 {
     TOTAL_SPAWNED.load(Ordering::Relaxed)
-}
-
 /// Register a new process
 pub fn register_process(pid: u32, command: &str, args: &[String], working_dir: Option<PathBuf>) {
     ACTIVE_PROCESSES.fetch_add(1, Ordering::Relaxed);
     TOTAL_SPAWNED.fetch_add(1, Ordering::Relaxed);
     
     let info = ProcessInfo {
-        pid,
-        command: command.to_string(),
-        args: args.to_vec(),
-        start_time: Instant::now(),
-        working_dir,
-    };
     
     if let Ok(mut registry) = PROCESS_REGISTRY.write() {
         registry.insert(pid, info);
@@ -86,15 +69,11 @@ pub fn get_all_process_info() -> Vec<ProcessInfo> {
 /// Create a new Cmd instance to execute a given program
 pub fn Command(name: &str, args: &[&str]) -> super::cmd::Cmd {
     super::cmd::Cmd::new(name, args)
-}
-
 /// Create a new Cmd with a context for timeout/cancellation
 pub fn CommandContext(ctx: VibeContext, name: &str, args: &[&str]) -> super::cmd::Cmd {
     let mut cmd = super::cmd::Cmd::new(name, args);
     cmd.set_context(ctx);
     cmd
-}
-
 /// Look up the executable path for a named program
 pub fn LookPath(file: &str) -> ExecResult<String> {
     use std::env;
@@ -107,16 +86,12 @@ pub fn LookPath(file: &str) -> ExecResult<String> {
             return Ok(path.to_string_lossy().to_string());
         }
         return Err(execution_failed(file, "File not found or not executable"));
-    }
-    
     // Search in PATH
     if let Ok(path_var) = env::var("PATH") {
         for path_dir in env::split_paths(&path_var) {
             let full_path = path_dir.join(file);
             if full_path.is_file() && is_executable(&full_path) {
                 return Ok(full_path.to_string_lossy().to_string());
-            }
-            
             // On Windows, also try with common executable extensions
             #[cfg(windows)]
             {
@@ -128,11 +103,7 @@ pub fn LookPath(file: &str) -> ExecResult<String> {
                 }
             }
         }
-    }
-    
     Err(execution_failed(file, "Command not found in PATH"))
-}
-
 /// Check if a file is executable
 fn is_executable(path: &std::path::Path) -> bool {
     use std::os::unix::fs::PermissionsExt;
@@ -155,19 +126,11 @@ fn is_executable(path: &std::path::Path) -> bool {
     }
     
     false
-}
-
 /// Process lifecycle management
 pub struct ProcessLifecycle {
-    processes: Arc<Mutex<Vec<u32>>>,
-    cleanup_handlers: Arc<Mutex<Vec<Box<dyn Fn(u32) + Send + Sync>>>>,
-}
-
 impl ProcessLifecycle {
     pub fn new() -> Self {
         Self {
-            processes: Arc::new(Mutex::new(Vec::new())),
-            cleanup_handlers: Arc::new(Mutex::new(Vec::new())),
         }
     }
     
@@ -180,19 +143,14 @@ impl ProcessLifecycle {
     pub fn unregister_process(&self, pid: u32) {
         if let Ok(mut processes) = self.processes.lock() {
             processes.retain(|&p| p != pid);
-        }
-        
         // Run cleanup handlers
         if let Ok(handlers) = self.cleanup_handlers.lock() {
             for handler in handlers.iter() {
                 handler(pid);
             }
         }
-    }
-    
     pub fn add_cleanup_handler<F>(&self, handler: F)
     where
-        F: Fn(u32) + Send + Sync + 'static,
     {
         if let Ok(mut handlers) = self.cleanup_handlers.lock() {
             handlers.push(Box::new(handler));
@@ -206,8 +164,6 @@ impl ProcessLifecycle {
                 #[cfg(unix)]
                 unsafe {
                     libc::kill(pid as i32, libc::SIGTERM);
-                }
-                
                 #[cfg(windows)]
                 {
                     // Windows process termination would go here
@@ -216,15 +172,9 @@ impl ProcessLifecycle {
             }
         }
     }
-}
-
 // Global process lifecycle manager
 lazy_static! {
     pub static ref PROCESS_LIFECYCLE: ProcessLifecycle = ProcessLifecycle::new();
-}
-
 /// Get the global process lifecycle manager
 pub fn get_process_lifecycle() -> &'static ProcessLifecycle {
     &PROCESS_LIFECYCLE
-}
-

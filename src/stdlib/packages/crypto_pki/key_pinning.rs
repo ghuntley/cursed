@@ -13,12 +13,8 @@ pub type PinResult<T> = PkiResult<T>;
 
 pub fn create_pin_set() -> PinResult<PinSet> {
     Ok(PinSet)
-}
-
 pub fn add_pin_from_certificate(_pin_set: &mut PinSet, _cert: &Certificate) -> PinResult<()> {
     Ok(())
-}
-
 pub fn verify_pin(_cert: &Certificate, _pin_set: &PinSet) -> PinResult<bool> {
     Ok(true)
 }

@@ -46,8 +46,6 @@ impl Parser {
             self.skip_newlines();
             if self.current_token_is(&TokenType::RightBrace) {
                 break;
-            }
-            
             if self.current_token_is(&TokenType::Mood) {
                 self.advance_token()?;
                 
@@ -58,8 +56,6 @@ impl Parser {
                 while self.current_token_is(&TokenType::Comma) {
                     self.advance_token()?;
                     case_types.push(self.parse_type_case_label()?);
-                }
-                
                 self.expect_token(TokenType::Colon)?;
                 let mut statements = Vec::new();
                 
@@ -69,10 +65,7 @@ impl Parser {
                       !self.current_token_is(&TokenType::Eof) {
                     statements.push(self.parse_statement()?);
                     self.skip_newlines();
-                }
-                
                 let block = BlockStatement::new(
-                    "{".to_string(),
                     statements
                 );
                 cases.push(SwitchCase::new(case_types, block));
@@ -85,8 +78,6 @@ impl Parser {
                 while !self.current_token_is(&TokenType::RightBrace) && !self.current_token_is(&TokenType::Eof) {
                     statements.push(self.parse_statement()?);
                     self.skip_newlines();
-                }
-                
                 default_case = Some(statements);
                 break;
             } else {
@@ -101,16 +92,9 @@ impl Parser {
             Some(BlockStatement::new("{".to_string(), statements))
         } else {
             None
-        };
         
         Ok(Box::new(TypeSwitchStatement {
-            token: token.literal,
-            switch_expression: switch_expr,
-            cases,
-            default_case: default_block,
         }))
-    }
-    
     /// Parse type switch expression (handles both simple expr.(type) and var := expr.(type))
     fn parse_type_switch_expression(&mut self) -> crate::error::Result<()> {
         // Check for variable binding syntax (var := expr.(type))
@@ -145,7 +129,6 @@ impl Parser {
                 self.current_token.literal.clone()
             } else {
                 return Err(CursedError::Parse("Expected type name in type assertion".to_string()));
-            };
             self.advance_token()?;
             
             self.expect_token(TokenType::RightParen)?;
@@ -154,12 +137,10 @@ impl Parser {
             if self.current_token_is(&TokenType::Question) {
                 self.advance_token()?;
                 Ok(Box::new(TypeAssertionQuestion::new(
-                    expr.string(),
                     type_text
                 )))
             } else {
                 Ok(Box::new(TypeAssertion::new(
-                    expr.string(),
                     type_text
                 )))
             }
@@ -197,8 +178,6 @@ impl Parser {
         if self.current_token_is(&TokenType::Identifier) && self.peek_token_is(&TokenType::ShortVarDecl) {
             let _ = self.advance_token(); // skip identifier
             let _ = self.advance_token(); // skip :=
-        }
-        
         // Look for type assertion pattern: expr.(type)
         let mut has_type_assertion = false;
         let mut paren_depth = 0;
@@ -219,11 +198,7 @@ impl Parser {
                     break;
                 }
                 continue;
-            }
-            
             let _ = self.advance_token();
-        }
-        
         // Restore position
         self.current_position = saved_pos;
         self.current_token = saved_token;
@@ -236,12 +211,6 @@ impl Parser {
 /// AST node for type switch statements
 #[derive(Debug, Clone)]
 pub struct TypeSwitchStatement {
-    pub token: String,
-    pub switch_expression: Box<dyn Expression>,
-    pub cases: Vec<SwitchCase>,
-    pub default_case: Option<BlockStatement>,
-}
-
 impl crate::ast::traits::Node for TypeSwitchStatement {
     fn string(&self) -> String {
         let mut result = format!("vibe_check {} {{\n", self.switch_expression.string());
@@ -266,8 +235,6 @@ impl crate::ast::traits::Node for TypeSwitchStatement {
         
         result.push('}');
         result
-    }
-
     fn token_literal(&self) -> String {
         self.token.clone()
     }
@@ -276,8 +243,6 @@ impl crate::ast::traits::Node for TypeSwitchStatement {
 impl Statement for TypeSwitchStatement {
     fn as_any(&self) -> &dyn std::any::Any {
         self
-    }
-    
     fn clone_box(&self) -> Box<dyn Statement> {
         Box::new(self.clone())
     }
@@ -286,24 +251,14 @@ impl Statement for TypeSwitchStatement {
 /// AST node for type switch variable binding (var := expr.(type))
 #[derive(Debug, Clone)]
 pub struct TypeSwitchBinding {
-    pub variable_name: String,
-    pub type_assertion: Box<dyn Expression>,
-}
-
 impl TypeSwitchBinding {
     pub fn new(variable_name: String, type_assertion: Box<dyn Expression>) -> Self {
         Self {
-            variable_name,
-            type_assertion,
         }
     }
-}
-
 impl crate::ast::traits::Node for TypeSwitchBinding {
     fn string(&self) -> String {
         format!("{} := {}", self.variable_name, self.type_assertion.string())
-    }
-
     fn token_literal(&self) -> String {
         self.variable_name.clone()
     }
@@ -312,8 +267,6 @@ impl crate::ast::traits::Node for TypeSwitchBinding {
 impl Expression for TypeSwitchBinding {
     fn as_any(&self) -> &dyn std::any::Any {
         self
-    }
-    
     fn clone_box(&self) -> Box<dyn Expression> {
         Box::new(self.clone())
     }
@@ -322,20 +275,13 @@ impl Expression for TypeSwitchBinding {
 /// AST node for type literals in type switch cases
 #[derive(Debug, Clone)]
 pub struct TypeLiteral {
-    pub type_name: String,
-}
-
 impl TypeLiteral {
     pub fn new(type_name: String) -> Self {
         Self { type_name }
     }
-}
-
 impl crate::ast::traits::Node for TypeLiteral {
     fn string(&self) -> String {
         self.type_name.clone()
-    }
-
     fn token_literal(&self) -> String {
         self.type_name.clone()
     }
@@ -344,8 +290,6 @@ impl crate::ast::traits::Node for TypeLiteral {
 impl Expression for TypeLiteral {
     fn as_any(&self) -> &dyn std::any::Any {
         self
-    }
-    
     fn clone_box(&self) -> Box<dyn Expression> {
         Box::new(self.clone())
     }

@@ -13,25 +13,10 @@ use std::time::{Duration, Instant};
 use tracing::{info, instrument, warn};
 
 use inkwell::{
-    context::Context,
-    module::Module,
-    targets::{Target, TargetMachine, CodeModel, RelocMode, FileType},
-    OptimizationLevel as InkwellOptLevel,
-    passes::PassManager,
-    basic_block::BasicBlock,
-    values,
-};
+// };
 
 /// LLVM LTO Integration Manager
 pub struct LlvmLtoIntegration<'ctx> {
-    context: &'ctx Context,
-    config: LtoConfig,
-    target_machine: Option<TargetMachine>,
-    modules: Vec<Module<'ctx>>,
-    statistics: Arc<Mutex<LtoStatistics>>,
-    bitcode_cache: HashMap<String, Vec<u8>>,
-}
-
 impl<'ctx> LlvmLtoIntegration<'ctx> {
     /// Create new LLVM LTO integration
     #[instrument(skip(context, config))]
@@ -39,15 +24,7 @@ impl<'ctx> LlvmLtoIntegration<'ctx> {
         info!("Initializing LLVM LTO integration with level: {}", config.level.as_str());
 
         Ok(Self {
-            context,
-            config,
-            target_machine: None,
-            modules: Vec::new(),
-            statistics: Arc::new(Mutex::new(LtoStatistics::default())),
-            bitcode_cache: HashMap::new(),
         })
-    }
-
     /// Initialize target machine for LTO
     #[instrument(skip(self))]
     pub fn initialize_target(&mut self, target_triple: &str) -> Result<()> {
@@ -58,26 +35,14 @@ impl<'ctx> LlvmLtoIntegration<'ctx> {
             .map_err(|e| CursedError::General(format!("Failed to create target from triple: {}", e)))?;
 
         let optimization_level = match self.config.level {
-            LtoLevel::None => InkwellOptLevel::None,
-            LtoLevel::Thin => InkwellOptLevel::Default,
-            LtoLevel::Full => InkwellOptLevel::Aggressive,
-        };
 
         self.target_machine = Some(
             target.create_target_machine(
-                target_triple,
-                "generic",
-                "",
-                optimization_level,
-                RelocMode::PIC,
-                CodeModel::Default,
             ).ok_or_else(|| CursedError::General("Failed to create target machine".to_string()))?
         );
 
         info!("Target machine initialized for {}", target_triple);
         Ok(())
-    }
-
     /// Add module for LTO processing
     pub fn add_module(&mut self, module: Module<'ctx>) -> Result<()> {
         let module_name = module.get_name().to_str()
@@ -91,8 +56,6 @@ impl<'ctx> LlvmLtoIntegration<'ctx> {
 
         self.modules.push(module);
         Ok(())
-    }
-
     /// Perform LTO optimization
     #[instrument(skip(self))]
     pub fn perform_lto(&mut self) -> Result<LtoResult<'ctx>> {
@@ -112,8 +75,6 @@ impl<'ctx> LlvmLtoIntegration<'ctx> {
                 self.perform_full_lto()
             }
         }
-    }
-
     /// Perform per-module optimization (no LTO)
     fn perform_per_module_optimization(&mut self) -> Result<LtoResult<'ctx>> {
         let start_time = Instant::now();
@@ -122,21 +83,13 @@ impl<'ctx> LlvmLtoIntegration<'ctx> {
         for module in &self.modules {
             let optimized = self.optimize_single_module(module)?;
             optimized_modules.push(optimized);
-        }
-
         let duration = start_time.elapsed();
         let mut stats = self.statistics.lock().unwrap();
         stats.total_time = duration;
         stats.modules_processed = self.modules.len();
 
         Ok(LtoResult {
-            optimized_modules,
-            object_files: Vec::new(),
-            total_time: duration,
-            size_reduction: 0,
         })
-    }
-
     /// Perform Thin LTO optimization
     fn perform_thin_lto(&mut self) -> Result<LtoResult<'ctx>> {
         let start_time = Instant::now();
@@ -161,13 +114,7 @@ impl<'ctx> LlvmLtoIntegration<'ctx> {
         stats.functions_inlined = optimized_results.functions_inlined;
 
         Ok(LtoResult {
-            optimized_modules: optimized_results.optimized_modules,
-            object_files,
-            total_time: duration,
-            size_reduction: optimized_results.size_reduction,
         })
-    }
-
     /// Perform Full LTO optimization
     fn perform_full_lto(&mut self) -> Result<LtoResult<'ctx>> {
         let start_time = Instant::now();
@@ -188,13 +135,8 @@ impl<'ctx> LlvmLtoIntegration<'ctx> {
         stats.modules_processed = self.modules.len();
 
         Ok(LtoResult {
-            optimized_modules: vec![optimized_module],
-            object_files,
-            total_time: duration,
             size_reduction: 1024, // Mock value
         })
-    }
-
     /// Optimize a single module without LTO
     fn optimize_single_module(&self, module: &Module<'ctx>) -> Result<Module<'ctx>> {
         let module_name = module.get_name().to_str()
@@ -208,8 +150,6 @@ impl<'ctx> LlvmLtoIntegration<'ctx> {
         
         info!("Optimized module: {}", module_name);
         Ok(cloned_module)
-    }
-
     /// Clone module with complete content preservation for LTO
     #[instrument(skip(self, module))]
     fn clone_module_for_lto(&self, module: &Module<'ctx>) -> Result<Module<'ctx>> {
@@ -239,33 +179,21 @@ impl<'ctx> LlvmLtoIntegration<'ctx> {
 
         info!("Successfully cloned module {} for LTO optimization", module_name);
         Ok(cloned_module)
-    }
-
     /// Copy module-level attributes and data layout
     fn copy_module_attributes(&self, source: &Module<'ctx>, target: &Module<'ctx>) -> Result<()> {
         // Copy target triple
         if let Some(triple) = source.get_triple().to_str().ok() {
             target.set_triple(&target.get_triple());
-        }
-
         // Copy data layout
         if let Some(data_layout) = source.get_data_layout().get_data_layout() {
             target.set_data_layout(&data_layout);
-        }
-
         // Copy module-level inline assembly
         if let Some(inline_asm) = source.get_inline_assembly() {
             target.set_inline_assembly(&inline_asm);
-        }
-
         // Copy source filename if available
         if let Some(source_filename) = source.get_source_file_name().to_str().ok() {
             target.set_source_file_name(source_filename);
-        }
-
         Ok(())
-    }
-
     /// Clone all global variables and constants
     fn clone_global_variables(&self, source: &Module<'ctx>, target: &Module<'ctx>) -> Result<()> {
         for global in source.get_globals() {
@@ -287,18 +215,12 @@ impl<'ctx> LlvmLtoIntegration<'ctx> {
             // Copy initializer if present
             if let Some(initializer) = global.get_initializer() {
                 cloned_global.set_initializer(&initializer);
-            }
-
             // Copy attributes
             self.copy_global_attributes(&global, &cloned_global)?;
 
             // Apply LTO-specific global optimizations
             self.optimize_global_for_lto(&cloned_global)?;
-        }
-
         Ok(())
-    }
-
     /// Clone all functions (declarations and definitions)
     fn clone_functions(&self, source: &Module<'ctx>, target: &Module<'ctx>) -> Result<()> {
         // First pass: Create function declarations
@@ -319,8 +241,6 @@ impl<'ctx> LlvmLtoIntegration<'ctx> {
 
             // Copy function attributes
             self.copy_function_attributes(&function, &cloned_function)?;
-        }
-
         // Second pass: Clone function bodies
         for function in source.get_functions() {
             if function.count_basic_blocks() > 0 {
@@ -338,8 +258,6 @@ impl<'ctx> LlvmLtoIntegration<'ctx> {
         }
 
         Ok(())
-    }
-
     /// Clone function body with all basic blocks and instructions
     fn clone_function_body(&self, source: &inkwell::values::FunctionValue<'ctx>, target: &inkwell::values::FunctionValue<'ctx>) -> Result<()> {
         use inkwell::values::BasicValueEnum;
@@ -355,8 +273,6 @@ impl<'ctx> LlvmLtoIntegration<'ctx> {
 
             let cloned_block = self.context.append_basic_block(*target, block_name);
             block_map.insert(basic_block.get_name(), cloned_block);
-        }
-
         // Second pass: Clone instructions
         for (source_block, target_block) in source.get_basic_blocks().iter().zip(target.get_basic_blocks().iter()) {
             let builder = self.context.create_builder();
@@ -369,18 +285,9 @@ impl<'ctx> LlvmLtoIntegration<'ctx> {
                     value_map.insert(instruction.as_any_value_enum(), cloned_value);
                 }
             }
-        }
-
         Ok(())
-    }
-
     /// Clone a single instruction
     fn clone_instruction(
-        &self,
-        instruction: &inkwell::values::InstructionValue<'ctx>,
-        builder: &inkwell::builder::Builder<'ctx>,
-        value_map: &HashMap<inkwell::values::BasicValueEnum<'ctx>, inkwell::values::BasicValueEnum<'ctx>>,
-        block_map: &HashMap<BasicBlock<'ctx>, BasicBlock<'ctx>>,
     ) -> Result<Option<inkwell::values::BasicValueEnum<'ctx>>> {
         use inkwell::values::InstructionOpcode;
 
@@ -440,22 +347,13 @@ impl<'ctx> LlvmLtoIntegration<'ctx> {
                 Ok(None)
             }
         }
-    }
-
     /// Clone a call instruction with proper argument mapping
     fn clone_call_instruction(
-        &self,
-        instruction: &inkwell::values::InstructionValue<'ctx>,
-        builder: &inkwell::builder::Builder<'ctx>,
-        value_map: &HashMap<inkwell::values::BasicValueEnum<'ctx>, inkwell::values::BasicValueEnum<'ctx>>,
-        _block_map: &HashMap<BasicBlock<'ctx>, BasicBlock<'ctx>>,
     ) -> Result<Option<inkwell::values::BasicValueEnum<'ctx>>> {
         // Extract function and arguments from call instruction
         let num_operands = instruction.get_num_operands();
         if num_operands == 0 {
             return Err(CursedError::General("Call instruction has no operands".to_string()));
-        }
-
         // The last operand is typically the function being called
         let function_operand = instruction.get_operand(num_operands - 1).unwrap();
         let function_value = function_operand.left().unwrap();
@@ -466,31 +364,20 @@ impl<'ctx> LlvmLtoIntegration<'ctx> {
             let arg = instruction.get_operand(i).unwrap().left().unwrap();
             let mapped_arg = self.map_value(arg, value_map)?;
             mapped_args.push(mapped_arg.into());
-        }
-
         // Build the call instruction
         let result = builder.build_call(function_value.into_pointer_value(), &mapped_args, "call")
             .map_err(|e| CursedError::General(format!("Failed to build call instruction: {}", e)))?;
 
         Ok(result.try_as_basic_value().left())
-    }
-
     /// Map a value using the value map, or return the original if not found
     fn map_value(
-        &self,
-        value: inkwell::values::BasicValueEnum<'ctx>,
-        value_map: &HashMap<inkwell::values::BasicValueEnum<'ctx>, inkwell::values::BasicValueEnum<'ctx>>,
     ) -> Result<inkwell::values::BasicValueEnum<'ctx>> {
         Ok(value_map.get(&value).copied().unwrap_or(value))
-    }
-
     /// Clone type definitions and aliases
     fn clone_type_definitions(&self, _source: &Module<'ctx>, _target: &Module<'ctx>) -> Result<()> {
         // LLVM types are context-bound, so they're automatically available
         // in the same context. This is mainly for future extensibility.
         Ok(())
-    }
-
     /// Clone metadata and debug information
     fn clone_metadata(&self, source: &Module<'ctx>, target: &Module<'ctx>) -> Result<()> {
         // Clone named metadata
@@ -507,15 +394,11 @@ impl<'ctx> LlvmLtoIntegration<'ctx> {
         }
 
         Ok(())
-    }
-
     /// Copy global variable attributes
     fn copy_global_attributes(&self, source: &inkwell::values::GlobalValue<'ctx>, target: &inkwell::values::GlobalValue<'ctx>) -> Result<()> {
         // Copy alignment
         if let Some(alignment) = source.get_alignment() {
             target.set_alignment(alignment);
-        }
-
         // Copy section if present
         if let Some(section) = source.get_section() {
             if let Ok(section_str) = section.to_str() {
@@ -527,8 +410,6 @@ impl<'ctx> LlvmLtoIntegration<'ctx> {
         target.set_thread_local_mode(source.get_thread_local_mode());
 
         Ok(())
-    }
-
     /// Copy function attributes
     fn copy_function_attributes(&self, source: &inkwell::values::FunctionValue<'ctx>, target: &inkwell::values::FunctionValue<'ctx>) -> Result<()> {
         // Copy parameter attributes
@@ -543,17 +424,11 @@ impl<'ctx> LlvmLtoIntegration<'ctx> {
         let function_attributes = source.get_enum_attributes(inkwell::attributes::AttributeLoc::Function);
         for attr in function_attributes {
             target.add_enum_attribute(inkwell::attributes::AttributeLoc::Function, attr);
-        }
-
         // Copy return attributes
         let return_attributes = source.get_enum_attributes(inkwell::attributes::AttributeLoc::Return);
         for attr in return_attributes {
             target.add_enum_attribute(inkwell::attributes::AttributeLoc::Return, attr);
-        }
-
         Ok(())
-    }
-
     /// Apply LTO-specific optimizations to global variables
     fn optimize_global_for_lto(&self, global: &inkwell::values::GlobalValue<'ctx>) -> Result<()> {
         // Mark constant globals as internal if they're only used locally
@@ -567,8 +442,6 @@ impl<'ctx> LlvmLtoIntegration<'ctx> {
         }
 
         Ok(())
-    }
-
     /// Apply LTO-specific optimizations to functions
     fn optimize_function_for_lto(&self, function: &inkwell::values::FunctionValue<'ctx>) -> Result<()> {
         // Mark small functions as candidates for inlining
@@ -577,26 +450,18 @@ impl<'ctx> LlvmLtoIntegration<'ctx> {
             // Add inlining hint for small functions
             let context = function.get_type().get_context();
             let inline_attr = context.create_enum_attribute(
-                inkwell::attributes::Attribute::get_named_enum_kind_id("alwaysinline"), 
                 0
             );
             function.add_enum_attribute(inkwell::attributes::AttributeLoc::Function, inline_attr);
-        }
-
         // Mark internal functions for aggressive optimization
         if function.get_linkage() == inkwell::module::Linkage::Internal {
             let context = function.get_type().get_context();
             let optimize_attr = context.create_enum_attribute(
-                inkwell::attributes::Attribute::get_named_enum_kind_id("optnone"),
                 0
             );
             // Remove optnone if present to allow optimization
             function.remove_enum_attribute(inkwell::attributes::AttributeLoc::Function, optimize_attr);
-        }
-
         Ok(())
-    }
-
     /// Apply standard optimization passes to a single module
     fn apply_single_module_optimizations(&self, module: &Module<'ctx>) -> Result<()> {
         let pass_manager = PassManager::create(module);
@@ -621,30 +486,21 @@ impl<'ctx> LlvmLtoIntegration<'ctx> {
         // Run the optimization passes
         pass_manager.run_on(module);
 
-        info!("Applied single-module optimizations to {}", 
               module.get_name().to_str().unwrap_or("unknown"));
         Ok(())
-    }
-
     /// Validate the integrity of a cloned module
     fn validate_cloned_module(&self, module: &Module<'ctx>) -> Result<()> {
         // Check if module is well-formed
         if let Err(errors) = module.verify() {
             return Err(CursedError::General(format!("Cloned module validation failed: {}", errors)));
-        }
-
         // Check that the module has expected content
         let function_count = module.get_functions().count();
         let global_count = module.get_globals().count();
 
         if function_count == 0 && global_count == 0 {
             warn!("Cloned module appears to be empty");
-        }
-
         info!("Validated cloned module: {} functions, {} globals", function_count, global_count);
         Ok(())
-    }
-
     /// Generate module summaries for Thin LTO
     fn generate_module_summaries(&self) -> Result<Vec<ModuleSummary>> {
         let mut summaries = Vec::new();
@@ -652,23 +508,14 @@ impl<'ctx> LlvmLtoIntegration<'ctx> {
         for module in &self.modules {
             let summary = self.create_module_summary(module)?;
             summaries.push(summary);
-        }
-
         info!("Generated {} module summaries", summaries.len());
         Ok(summaries)
-    }
-
     /// Create summary for a single module
     fn create_module_summary(&self, module: &Module<'ctx>) -> Result<ModuleSummary> {
         let module_name = module.get_name().to_str()
             .map_err(|_| CursedError::General("Invalid module name".to_string()))?;
 
         let mut summary = ModuleSummary {
-            name: module_name.to_string(),
-            functions: Vec::new(),
-            globals: Vec::new(),
-            call_graph: HashMap::new(),
-        };
 
         // Analyze functions in the module
         for function in module.get_functions() {
@@ -676,34 +523,22 @@ impl<'ctx> LlvmLtoIntegration<'ctx> {
                 .map_err(|_| CursedError::General("Invalid function name".to_string()))?;
 
             let function_summary = FunctionSummary {
-                name: function_name.to_string(),
-                size: function.count_basic_blocks(),
                 is_hot: false, // Would be determined from profiling data
                 calls: Vec::new(), // Would be analyzed from function body
                 can_be_inlined: function.count_basic_blocks() <= 10, // Simple heuristic
-            };
 
             summary.functions.push(function_summary);
-        }
-
         // Analyze global variables
         for global in module.get_globals() {
             let global_name = global.get_name().to_str()
                 .map_err(|_| CursedError::General("Invalid global name".to_string()))?;
 
             let global_summary = GlobalSummary {
-                name: global_name.to_string(),
-                is_constant: global.is_constant(),
                 is_thread_local: false, // Would check actual thread-local status
                 size: 8, // Mock size
-            };
 
             summary.globals.push(global_summary);
-        }
-
         Ok(summary)
-    }
-
     /// Perform Thin LTO analysis to determine imports
     fn perform_thin_lto_analysis(&self, summaries: &[ModuleSummary]) -> Result<ImportMap> {
         let mut import_map = ImportMap::new();
@@ -715,12 +550,8 @@ impl<'ctx> LlvmLtoIntegration<'ctx> {
         for summary in summaries {
             let imports = self.determine_imports_for_module(summary, &global_call_graph)?;
             import_map.insert(summary.name.clone(), imports);
-        }
-
         info!("Generated import map for {} modules", summaries.len());
         Ok(import_map)
-    }
-
     /// Build global call graph from summaries
     fn build_global_call_graph(&self, summaries: &[ModuleSummary]) -> GlobalCallGraph {
         let mut call_graph = GlobalCallGraph::new();
@@ -731,16 +562,9 @@ impl<'ctx> LlvmLtoIntegration<'ctx> {
                     call_graph.add_call(&function.name, called_function);
                 }
             }
-        }
-
         call_graph
-    }
-
     /// Determine imports for a specific module
     fn determine_imports_for_module(
-        &self,
-        summary: &ModuleSummary,
-        global_call_graph: &GlobalCallGraph,
     ) -> Result<Vec<ImportDecision>> {
         let mut imports = Vec::new();
 
@@ -749,17 +573,11 @@ impl<'ctx> LlvmLtoIntegration<'ctx> {
                 // Check if this function should be imported for inlining
                 if self.should_import_function(called_function, global_call_graph) {
                     imports.push(ImportDecision {
-                        function_name: called_function.clone(),
-                        reason: ImportReason::Inlining,
                         estimated_benefit: 50, // Mock benefit calculation
                     });
                 }
             }
-        }
-
         Ok(imports)
-    }
-
     /// Determine if a function should be imported
     fn should_import_function(&self, function_name: &str, call_graph: &GlobalCallGraph) -> bool {
         // Simple heuristics for import decisions
@@ -768,8 +586,6 @@ impl<'ctx> LlvmLtoIntegration<'ctx> {
 
         // Import small, frequently called functions
         call_count > 1 && function_size < 20
-    }
-
     /// Optimize modules with imports
     fn optimize_with_imports(&self, import_map: &ImportMap) -> Result<OptimizationResult<'ctx>> {
         let mut optimized_modules = Vec::new();
@@ -786,20 +602,11 @@ impl<'ctx> LlvmLtoIntegration<'ctx> {
             let optimized = self.optimize_module_with_imports(module, &imports)?;
             functions_inlined += imports.len();
             optimized_modules.push(optimized);
-        }
-
         Ok(OptimizationResult {
-            optimized_modules,
-            functions_inlined,
             size_reduction: functions_inlined * 20, // Mock calculation
         })
-    }
-
     /// Optimize a single module with its imports
     fn optimize_module_with_imports(
-        &self,
-        module: &Module<'ctx>,
-        imports: &[ImportDecision],
     ) -> Result<Module<'ctx>> {
         let module_name = module.get_name().to_str()
             .map_err(|_| CursedError::General("Invalid module name".to_string()))?;
@@ -815,8 +622,6 @@ impl<'ctx> LlvmLtoIntegration<'ctx> {
 
         info!("Optimized module {} with {} imports", module_name, imports.len());
         Ok(optimized_module)
-    }
-
     /// Merge all modules into one for Full LTO
     fn merge_all_modules(&self) -> Result<Module<'ctx>> {
         let merged_module = self.context.create_module("merged_lto");
@@ -826,8 +631,6 @@ impl<'ctx> LlvmLtoIntegration<'ctx> {
 
         info!("Merged {} modules into single module", self.modules.len());
         Ok(merged_module)
-    }
-
     /// Perform whole-program optimization
     fn perform_whole_program_optimization(&self, module: &Module<'ctx>) -> Result<Module<'ctx>> {
         // Create pass manager for whole-program optimization
@@ -848,8 +651,6 @@ impl<'ctx> LlvmLtoIntegration<'ctx> {
 
         info!("Performed whole-program optimization");
         Ok(self.context.create_module("optimized_full_lto"))
-    }
-
     /// Generate object files from optimized modules
     fn generate_object_files(&self, modules: &[Module<'ctx>]) -> Result<Vec<ObjectFile>> {
         let mut object_files = Vec::new();
@@ -862,18 +663,10 @@ impl<'ctx> LlvmLtoIntegration<'ctx> {
                 .map_err(|e| CursedError::General(format!("Failed to generate object file: {}", e)))?;
 
             let object_file = ObjectFile {
-                name: format!("lto_module_{}.o", i),
-                data: object_data.as_slice().to_vec(),
-                size: object_data.get_size(),
-            };
 
             object_files.push(object_file);
-        }
-
         info!("Generated {} object files", object_files.len());
         Ok(object_files)
-    }
-
     /// Generate single object file for Full LTO
     fn generate_single_object_file(&self, module: &Module<'ctx>) -> Result<ObjectFile> {
         let target_machine = self.target_machine.as_ref()
@@ -883,17 +676,10 @@ impl<'ctx> LlvmLtoIntegration<'ctx> {
             .map_err(|e| CursedError::General(format!("Failed to generate object file: {}", e)))?;
 
         Ok(ObjectFile {
-            name: "lto_full.o".to_string(),
-            data: object_data.as_slice().to_vec(),
-            size: object_data.get_size(),
         })
-    }
-
     /// Get LTO statistics
     pub fn get_statistics(&self) -> LtoStatistics {
         self.statistics.lock().unwrap().clone()
-    }
-
     /// Write object files to disk
     pub fn write_object_files(&self, object_files: &[ObjectFile], output_dir: &Path) -> Result<Vec<PathBuf>> {
         let mut written_files = Vec::new();
@@ -907,12 +693,8 @@ impl<'ctx> LlvmLtoIntegration<'ctx> {
                 .map_err(|e| CursedError::General(format!("Failed to write object file: {}", e)))?;
             
             written_files.push(file_path);
-        }
-
         info!("Wrote {} object files to {}", object_files.len(), output_dir.display());
         Ok(written_files)
-    }
-
     /// Generate bitcode files for debugging
     pub fn generate_bitcode_files(&self, output_dir: &Path) -> Result<Vec<PathBuf>> {
         let mut bitcode_files = Vec::new();
@@ -926,8 +708,6 @@ impl<'ctx> LlvmLtoIntegration<'ctx> {
                 .map_err(|e| CursedError::General(format!("Failed to write bitcode file: {}", e)))?;
             
             bitcode_files.push(file_path);
-        }
-
         info!("Generated {} bitcode files", bitcode_files.len());
         Ok(bitcode_files)
     }
@@ -936,61 +716,24 @@ impl<'ctx> LlvmLtoIntegration<'ctx> {
 /// Module summary for Thin LTO analysis
 #[derive(Debug, Clone)]
 pub struct ModuleSummary {
-    pub name: String,
-    pub functions: Vec<FunctionSummary>,
-    pub globals: Vec<GlobalSummary>,
-    pub call_graph: HashMap<String, Vec<String>>,
-}
-
 /// Function summary for analysis
 #[derive(Debug, Clone)]
 pub struct FunctionSummary {
-    pub name: String,
-    pub size: u32,
-    pub is_hot: bool,
-    pub calls: Vec<String>,
-    pub can_be_inlined: bool,
-}
-
 /// Global variable summary
 #[derive(Debug, Clone)]
 pub struct GlobalSummary {
-    pub name: String,
-    pub is_constant: bool,
-    pub is_thread_local: bool,
-    pub size: usize,
-}
-
 /// Import decision for Thin LTO
 #[derive(Debug, Clone)]
 pub struct ImportDecision {
-    pub function_name: String,
-    pub reason: ImportReason,
-    pub estimated_benefit: usize,
-}
-
 /// Reason for importing a function
 #[derive(Debug, Clone)]
 pub enum ImportReason {
-    Inlining,
-    ConstantPropagation,
-    DeadCodeElimination,
-}
-
 /// Global call graph for analysis
 #[derive(Debug, Clone)]
 pub struct GlobalCallGraph {
-    calls: HashMap<String, Vec<String>>,
-    call_counts: HashMap<String, usize>,
-    function_sizes: HashMap<String, usize>,
-}
-
 impl GlobalCallGraph {
     pub fn new() -> Self {
         Self {
-            calls: HashMap::new(),
-            call_counts: HashMap::new(),
-            function_sizes: HashMap::new(),
         }
     }
 
@@ -1000,12 +743,8 @@ impl GlobalCallGraph {
             .push(callee.to_string());
         
         *self.call_counts.entry(callee.to_string()).or_insert(0) += 1;
-    }
-
     pub fn get_call_count(&self, function: &str) -> usize {
         self.call_counts.get(function).copied().unwrap_or(0)
-    }
-
     pub fn get_function_size(&self, function: &str) -> usize {
         self.function_sizes.get(function).copied().unwrap_or(0)
     }
@@ -1017,25 +756,9 @@ pub type ImportMap = HashMap<String, Vec<ImportDecision>>;
 /// LTO optimization result
 #[derive(Debug)]
 pub struct LtoResult<'ctx> {
-    pub optimized_modules: Vec<Module<'ctx>>,
-    pub object_files: Vec<ObjectFile>,
-    pub total_time: Duration,
-    pub size_reduction: usize,
-}
-
 /// Optimization result for Thin LTO
 #[derive(Debug)]
 pub struct OptimizationResult<'ctx> {
-    pub optimized_modules: Vec<Module<'ctx>>,
-    pub functions_inlined: usize,
-    pub size_reduction: usize,
-}
-
 /// Generated object file
 #[derive(Debug, Clone)]
 pub struct ObjectFile {
-    pub name: String,
-    pub data: Vec<u8>,
-    pub size: usize,
-}
-

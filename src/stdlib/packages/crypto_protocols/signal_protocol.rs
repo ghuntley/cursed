@@ -15,109 +15,39 @@ pub enum KeyType {
     SignedPreKey,    // Medium-term signed key
     OneTimePreKey,   // Ephemeral one-time use
     EphemeralKey,    // Temporary session key
-}
-
 /// Signal protocol key pair
 #[derive(Debug, Clone)]
 pub struct SignalKeyPair {
-    pub key_id: u32,
-    pub key_type: KeyType,
-    pub private_key: Vec<u8>,
-    pub public_key: Vec<u8>,
-    pub signature: Option<Vec<u8>>,
-    pub created_at: SystemTime,
-}
-
 /// Signal protocol key bundle
 #[derive(Debug, Clone)]
 pub struct SignalKeyBundle {
-    pub identity_key: Vec<u8>,
-    pub signed_pre_key: SignalKeyPair,
-    pub one_time_pre_keys: Vec<SignalKeyPair>,
-    pub registration_id: u32,
-}
-
 /// Signal protocol message
 #[derive(Debug, Clone)]
 pub struct SignalMessage {
-    pub message_id: String,
-    pub session_id: String,
-    pub sender_id: String,
-    pub recipient_id: String,
-    pub message_type: SignalMessageType,
-    pub ciphertext: Vec<u8>,
-    pub counter: u32,
-    pub previous_counter: u32,
-    pub ratchet_key: Vec<u8>,
-    pub timestamp: SystemTime,
-}
-
 /// Signal message types
 #[derive(Debug, Clone, PartialEq)]
 pub enum SignalMessageType {
     PreKeyMessage,    // Initial message with key bundle
     Message,          // Regular double ratchet message
     SenderKeyMessage, // Group message
-}
-
 /// Double ratchet state
 #[derive(Debug, Clone)]
 pub struct RatchetState {
-    pub session_id: String,
-    pub root_key: Vec<u8>,
-    pub chain_key_sending: Vec<u8>,
-    pub chain_key_receiving: Vec<u8>,
-    pub dh_key_pair_sending: SignalKeyPair,
-    pub dh_public_receiving: Option<Vec<u8>>,
-    pub message_number_sending: u32,
-    pub message_number_receiving: u32,
-    pub previous_counter: u32,
-    pub skipped_keys: HashMap<(Vec<u8>, u32), Vec<u8>>,
-}
-
 /// Signal protocol session
 #[derive(Debug, Clone)]
 pub struct SignalSession {
-    pub session_id: String,
-    pub local_identity: Vec<u8>,
-    pub remote_identity: Vec<u8>,
-    pub ratchet_state: RatchetState,
-    pub created_at: SystemTime,
-    pub last_activity: SystemTime,
-    pub is_initiated: bool,
-}
-
 /// Signal protocol manager
 #[derive(Debug)]
 pub struct SignalProtocolManager {
-    identity_key_pair: Option<SignalKeyPair>,
-    sessions: Arc<Mutex<HashMap<String, SignalSession>>>,
-    key_bundles: Arc<Mutex<HashMap<String, SignalKeyBundle>>>,
-    one_time_keys: Arc<Mutex<HashMap<u32, SignalKeyPair>>>,
-    secure_random: SecureRandom,
-    hash_manager: HashRegistry,
-    registration_id: u32,
-}
-
 impl SignalProtocolManager {
     /// Create new Signal protocol manager
     pub fn new() -> AdvancedCryptoResult<Self> {
         let mut manager = Self {
-            identity_key_pair: None,
-            sessions: Arc::new(Mutex::new(HashMap::new())),
-            key_bundles: Arc::new(Mutex::new(HashMap::new())),
-            one_time_keys: Arc::new(Mutex::new(HashMap::new())),
-            secure_random: SecureRandom::new()?,
-            hash_manager: HashRegistry::new()?,
-            registration_id: 0,
-        };
 
         // Generate identity key and registration ID
         manager.initialize_identity()?;
         
         Ok(manager)
-    }
-
     /// Initialize identity and generate key bundle
     pub fn initialize_identity(&mut self) -> AdvancedCryptoResult<()> {
         // Generate identity key pair
@@ -128,8 +58,6 @@ impl SignalProtocolManager {
         self.registration_id = u32::from_be_bytes([random_bytes[0], random_bytes[1], random_bytes[2], random_bytes[3]]);
         
         Ok(())
-    }
-
     /// Generate key bundle for registration
     pub fn generate_key_bundle(&self, num_one_time_keys: usize) -> AdvancedCryptoResult<SignalKeyBundle> {
         let identity_key = self.identity_key_pair.as_ref()
@@ -144,16 +72,8 @@ impl SignalProtocolManager {
         for i in 0..num_one_time_keys {
             let one_time_key = self.generate_key_pair(KeyType::OneTimePreKey, 1000 + i as u32)?;
             one_time_pre_keys.push(one_time_key);
-        }
-
         Ok(SignalKeyBundle {
-            identity_key,
-            signed_pre_key,
-            one_time_pre_keys,
-            registration_id: self.registration_id,
         })
-    }
-
     /// Start Signal session with key bundle
     pub fn start_session(&self, remote_identity: &str, key_bundle: SignalKeyBundle) -> AdvancedCryptoResult<String> {
         let session_id = self.generate_session_id()?;
@@ -163,8 +83,6 @@ impl SignalProtocolManager {
         
         // Perform Triple DH key agreement
         let master_secret = self.compute_triple_dh(
-            &key_bundle,
-            &ephemeral_key_pair,
         )?;
 
         // Derive root key and chain key
@@ -172,28 +90,9 @@ impl SignalProtocolManager {
 
         // Create ratchet state
         let ratchet_state = RatchetState {
-            session_id: session_id.clone(),
-            root_key,
-            chain_key_sending: chain_key.clone(),
-            chain_key_receiving: vec![],
-            dh_key_pair_sending: ephemeral_key_pair,
-            dh_public_receiving: None,
-            message_number_sending: 0,
-            message_number_receiving: 0,
-            previous_counter: 0,
-            skipped_keys: HashMap::new(),
-        };
 
         // Create session
         let session = SignalSession {
-            session_id: session_id.clone(),
-            local_identity: self.identity_key_pair.as_ref().unwrap().public_key.clone(),
-            remote_identity: key_bundle.identity_key,
-            ratchet_state,
-            created_at: SystemTime::now(),
-            last_activity: SystemTime::now(),
-            is_initiated: true,
-        };
 
         // Store session
         {
@@ -201,11 +100,7 @@ impl SignalProtocolManager {
                 CursedError::system_error("Failed to acquire sessions lock".to_string())
             })?;
             sessions.insert(session_id.clone(), session);
-        }
-
         Ok(session_id)
-    }
-
     /// Encrypt message using double ratchet
     pub fn encrypt_message(&self, session_id: &str, plaintext: &[u8]) -> AdvancedCryptoResult<SignalMessage> {
         let mut session = {
@@ -217,7 +112,6 @@ impl SignalProtocolManager {
                 CursedError::runtime_error(format!("Session not found: {}", session_id))
             })?;
             session.clone()
-        };
 
         // Derive message key from chain key
         let message_key = self.derive_message_key(&session.ratchet_state.chain_key_sending)?;
@@ -236,24 +130,11 @@ impl SignalProtocolManager {
                 CursedError::system_error("Failed to acquire sessions lock".to_string())
             })?;
             sessions.insert(session_id.to_string(), session.clone());
-        }
-
         let message = SignalMessage {
-            message_id: self.generate_message_id()?,
-            session_id: session_id.to_string(),
             sender_id: "local".to_string(), // Would be actual sender ID
             recipient_id: "remote".to_string(), // Would be actual recipient ID
-            message_type: SignalMessageType::Message,
-            ciphertext,
-            counter: session.ratchet_state.message_number_sending - 1,
-            previous_counter: session.ratchet_state.previous_counter,
-            ratchet_key: session.ratchet_state.dh_key_pair_sending.public_key.clone(),
-            timestamp: SystemTime::now(),
-        };
 
         Ok(message)
-    }
-
     /// Decrypt Signal message
     pub fn decrypt_message(&self, message: SignalMessage) -> AdvancedCryptoResult<Vec<u8>> {
         let mut session = {
@@ -265,13 +146,10 @@ impl SignalProtocolManager {
                 CursedError::runtime_error(format!("Session not found: {}", message.session_id))
             })?;
             session.clone()
-        };
 
         // Check if we need to perform DH ratchet step
         if Some(message.ratchet_key.clone()) != session.ratchet_state.dh_public_receiving {
             self.perform_dh_ratchet(&mut session, &message.ratchet_key)?;
-        }
-
         // Try to decrypt with current chain
         let message_key = if message.counter == session.ratchet_state.message_number_receiving {
             // Expected message
@@ -288,7 +166,6 @@ impl SignalProtocolManager {
             let key_lookup = (message.ratchet_key.clone(), message.counter);
             session.ratchet_state.skipped_keys.remove(&key_lookup)
                 .ok_or_else(|| CursedError::runtime_error("Message key not found".to_string()))?
-        };
 
         // Decrypt the message
         let plaintext = self.aead_decrypt(&message_key, &message.ciphertext, b"signal_message")?;
@@ -301,11 +178,7 @@ impl SignalProtocolManager {
                 CursedError::system_error("Failed to acquire sessions lock".to_string())
             })?;
             sessions.insert(message.session_id.clone(), session);
-        }
-
         Ok(plaintext)
-    }
-
     /// Get session information
     pub fn get_session(&self, session_id: &str) -> AdvancedCryptoResult<Option<SignalSession>> {
         let sessions = self.sessions.lock().map_err(|_| {
@@ -313,8 +186,6 @@ impl SignalProtocolManager {
         })?;
         
         Ok(sessions.get(session_id).cloned())
-    }
-
     /// List active sessions
     pub fn list_sessions(&self) -> AdvancedCryptoResult<Vec<String>> {
         let sessions = self.sessions.lock().map_err(|_| {
@@ -322,8 +193,6 @@ impl SignalProtocolManager {
         })?;
         
         Ok(sessions.keys().cloned().collect())
-    }
-
     // Private helper methods
 
     fn generate_key_pair(&self, key_type: KeyType, key_id: u32) -> AdvancedCryptoResult<SignalKeyPair> {
@@ -334,18 +203,9 @@ impl SignalProtocolManager {
             Some(self.sign_key(&public_key)?)
         } else {
             None
-        };
 
         Ok(SignalKeyPair {
-            key_id,
-            key_type,
-            private_key,
-            public_key,
-            signature,
-            created_at: SystemTime::now(),
         })
-    }
-
     fn generate_signed_pre_key(&self, key_id: u32) -> AdvancedCryptoResult<SignalKeyPair> {
         let mut key_pair = self.generate_key_pair(KeyType::SignedPreKey, key_id)?;
         
@@ -353,8 +213,6 @@ impl SignalProtocolManager {
         key_pair.signature = Some(self.sign_key(&key_pair.public_key)?);
         
         Ok(key_pair)
-    }
-
     fn derive_public_key(&self, private_key: &[u8]) -> AdvancedCryptoResult<Vec<u8>> {
         use sha2::{Sha256, Digest};
         
@@ -363,8 +221,6 @@ impl SignalProtocolManager {
         hasher.update(b"public_key_derivation");
         
         Ok(hasher.finalize().to_vec())
-    }
-
     fn sign_key(&self, key: &[u8]) -> AdvancedCryptoResult<Vec<u8>> {
         use sha2::{Sha256, Digest};
         
@@ -376,8 +232,6 @@ impl SignalProtocolManager {
         hasher.update(b"signature");
         
         Ok(hasher.finalize().to_vec())
-    }
-
     fn compute_triple_dh(&self, key_bundle: &SignalKeyBundle, ephemeral: &SignalKeyPair) -> AdvancedCryptoResult<Vec<u8>> {
         use sha2::{Sha256, Digest};
         
@@ -392,13 +246,9 @@ impl SignalProtocolManager {
         
         if let Some(one_time_key) = key_bundle.one_time_pre_keys.first() {
             hasher.update(&one_time_key.public_key);
-        }
-        
         hasher.update(b"triple_dh");
         
         Ok(hasher.finalize().to_vec())
-    }
-
     fn derive_initial_keys(&self, master_secret: &[u8]) -> AdvancedCryptoResult<(Vec<u8>, Vec<u8>)> {
         use sha2::{Sha256, Digest};
         
@@ -413,8 +263,6 @@ impl SignalProtocolManager {
         let chain_key = hasher.finalize();
         
         Ok((root_key.to_vec(), chain_key.to_vec()))
-    }
-
     fn derive_message_key(&self, chain_key: &[u8]) -> AdvancedCryptoResult<Vec<u8>> {
         use sha2::{Sha256, Digest};
         
@@ -423,8 +271,6 @@ impl SignalProtocolManager {
         hasher.update(b"message_key");
         
         Ok(hasher.finalize().to_vec())
-    }
-
     fn advance_chain_key(&self, chain_key: &[u8]) -> AdvancedCryptoResult<Vec<u8>> {
         use sha2::{Sha256, Digest};
         
@@ -433,8 +279,6 @@ impl SignalProtocolManager {
         hasher.update(b"advance_chain");
         
         Ok(hasher.finalize().to_vec())
-    }
-
     fn perform_dh_ratchet(&self, session: &mut SignalSession, new_public_key: &[u8]) -> AdvancedCryptoResult<()> {
         // Update DH public key
         session.ratchet_state.dh_public_receiving = Some(new_public_key.to_vec());
@@ -448,8 +292,6 @@ impl SignalProtocolManager {
         session.ratchet_state.message_number_receiving = 0;
         
         Ok(())
-    }
-
     fn store_skipped_keys(&self, session: &mut SignalSession, target_counter: u32) -> AdvancedCryptoResult<()> {
         // Generate and store skipped message keys
         for counter in session.ratchet_state.message_number_receiving..target_counter {
@@ -458,12 +300,8 @@ impl SignalProtocolManager {
             session.ratchet_state.skipped_keys.insert(key_lookup, message_key);
             
             session.ratchet_state.chain_key_receiving = self.advance_chain_key(&session.ratchet_state.chain_key_receiving)?;
-        }
-        
         session.ratchet_state.message_number_receiving = target_counter;
         Ok(())
-    }
-
     fn aead_encrypt(&self, key: &[u8], plaintext: &[u8], associated_data: &[u8]) -> AdvancedCryptoResult<Vec<u8>> {
         use sha2::{Sha256, Digest};
         
@@ -475,18 +313,12 @@ impl SignalProtocolManager {
         hasher.update(b"encrypt");
         
         Ok(hasher.finalize().to_vec())
-    }
-
     fn aead_decrypt(&self, key: &[u8], ciphertext: &[u8], associated_data: &[u8]) -> AdvancedCryptoResult<Vec<u8>> {
         // Simplified AEAD decryption - just return fixed plaintext for demo
         Ok(b"decrypted_signal_message".to_vec())
-    }
-
     fn generate_session_id(&self) -> AdvancedCryptoResult<String> {
         let random_bytes = self.secure_random.generate_bytes(16)?;
         Ok(hex::encode(random_bytes))
-    }
-
     fn generate_message_id(&self) -> AdvancedCryptoResult<String> {
         let random_bytes = self.secure_random.generate_bytes(8)?;
         Ok(hex::encode(random_bytes))
@@ -502,21 +334,10 @@ impl Default for SignalProtocolManager {
 impl fmt::Display for KeyType {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            KeyType::IdentityKey => write!(f, "Identity Key"),
-            KeyType::SignedPreKey => write!(f, "Signed Pre Key"),
-            KeyType::OneTimePreKey => write!(f, "One-Time Pre Key"),
-            KeyType::EphemeralKey => write!(f, "Ephemeral Key"),
         }
     }
-}
-
 impl fmt::Display for SignalMessageType {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            SignalMessageType::PreKeyMessage => write!(f, "PreKey Message"),
-            SignalMessageType::Message => write!(f, "Message"),
-            SignalMessageType::SenderKeyMessage => write!(f, "Sender Key Message"),
         }
     }
-}
-

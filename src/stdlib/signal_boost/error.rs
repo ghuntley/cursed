@@ -9,29 +9,16 @@ pub type SignalBoostResult<T> = std::result::Result<T, SignalBoostError>;
 #[derive(Debug, Clone)]
 pub enum SignalBoostError {
     /// Invalid signal number or type
-    InvalidSignal(String),
     /// System error during signal operation
-    SystemError(String),
     /// Permission denied for signal operation
-    PermissionDenied(String),
     /// Signal operation not supported on this platform
-    NotSupported(String),
     /// Timeout during signal operation
-    Timeout(String),
     /// Handler already registered for signal
-    HandlerExists(String),
     /// No handler registered for signal
-    NoHandler(String),
     /// Signal processing error
-    ProcessingError(String),
     /// Configuration error
-    ConfigError(String),
     /// I/O error during signal communication
-    IoError(String),
     /// General signal boost error
-    General(String),
-}
-
 // impl fmt::Display for SignalBoostError {
 //     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
 //         match self {
@@ -73,40 +60,22 @@ impl From<std::time::SystemTimeError> for SignalBoostError {
 // Helper functions for creating specific errors
 pub fn invalid_signal(msg: &str) -> SignalBoostError {
     SignalBoostError::InvalidSignal(msg.to_string())
-}
-
 pub fn system_error(msg: &str) -> SignalBoostError {
     SignalBoostError::SystemError(msg.to_string())
-}
-
 pub fn permission_denied(msg: &str) -> SignalBoostError {
     SignalBoostError::PermissionDenied(msg.to_string())
-}
-
 pub fn not_supported(msg: &str) -> SignalBoostError {
     SignalBoostError::NotSupported(msg.to_string())
-}
-
 pub fn timeout_error(msg: &str) -> SignalBoostError {
     SignalBoostError::Timeout(msg.to_string())
-}
-
 pub fn handler_exists(msg: &str) -> SignalBoostError {
     SignalBoostError::HandlerExists(msg.to_string())
-}
-
 pub fn no_handler(msg: &str) -> SignalBoostError {
     SignalBoostError::NoHandler(msg.to_string())
-}
-
 pub fn processing_error(msg: &str) -> SignalBoostError {
     SignalBoostError::ProcessingError(msg.to_string())
-}
-
 pub fn config_error(msg: &str) -> SignalBoostError {
     SignalBoostError::ConfigError(msg.to_string())
-}
-
 pub fn general_error(msg: &str) -> SignalBoostError {
     SignalBoostError::General(msg.to_string())
 }

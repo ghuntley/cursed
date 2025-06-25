@@ -15,44 +15,29 @@ use crate::ast::traits::TypeParameter;
 #[derive(Debug, Clone, PartialEq, Hash, Eq)]
 pub enum Kind {
     /// A concrete type (*)
-    Star,
     /// A type constructor that takes one type parameter (* -> *)
-    Arrow(Box<Kind>, Box<Kind>),
     /// A higher-order type constructor
-    HigherOrder(Vec<Kind>, Box<Kind>),
-}
-
 impl Kind {
     /// Create a type constructor kind (* -> *)
     pub fn type_constructor() -> Self {
         Kind::Arrow(Box::new(Kind::Star), Box::new(Kind::Star))
-    }
-
     /// Create a higher-order type constructor kind (* -> * -> *)
     pub fn binary_type_constructor() -> Self {
         Kind::Arrow(
-            Box::new(Kind::Star),
             Box::new(Kind::Arrow(Box::new(Kind::Star), Box::new(Kind::Star)))
         )
-    }
-
     /// Get the arity (number of type parameters) of this kind
     pub fn arity(&self) -> usize {
         match self {
-            Kind::Star => 0,
-            Kind::Arrow(_, result) => 1 + result.arity(),
-            Kind::HigherOrder(params, _) => params.len(),
         }
     }
 
     /// Check if this kind can be applied to another kind
     pub fn can_apply_to(&self, arg_kind: &Kind) -> bool {
         match self {
-            Kind::Arrow(param_kind, _) => param_kind.as_ref() == arg_kind,
             Kind::HigherOrder(param_kinds, _) => {
                 param_kinds.first().map_or(false, |first| first == arg_kind)
             }
-            Kind::Star => false,
         }
     }
 
@@ -64,7 +49,6 @@ impl Kind {
                     Ok(result_kind.as_ref().clone())
                 } else {
                     Err(CursedError::type_error(format!(
-                        "Cannot apply kind {:?} to argument kind {:?}",
                         self, arg_kind
                     )))
                 }
@@ -80,7 +64,6 @@ impl Kind {
                         }
                     } else {
                         Err(CursedError::type_error(format!(
-                            "Cannot apply higher-order kind {:?} to argument kind {:?}",
                             self, arg_kind
                         )))
                     }
@@ -88,90 +71,51 @@ impl Kind {
                     Err(CursedError::type_error("Cannot apply kind with no parameters".to_string()))
                 }
             }
-            Kind::Star => Err(CursedError::type_error("Cannot apply concrete type".to_string())),
         }
     }
-}
-
 /// Represents a type constructor (e.g., Option, List, Map)
 #[derive(Debug, Clone, PartialEq)]
 pub struct TypeConstructor {
     /// Name of the type constructor
-    pub name: String,
     /// Kind of the type constructor
-    pub kind: Kind,
     /// Type parameters and their kinds
-    pub type_parameters: Vec<(String, Kind)>,
     /// Documentation for the type constructor
-    pub documentation: Option<String>,
-}
-
 /// Represents a higher-kinded type parameter (e.g., F in forall F<_>)
 #[derive(Debug, Clone, PartialEq)]
 pub struct HigherKindedTypeParameter {
     /// Name of the type parameter
-    pub name: String,
     /// Kind of the type parameter
-    pub kind: Kind,
     /// Constraints on the type parameter
-    pub constraints: Vec<HigherKindedConstraint>,
-}
-
 /// Constraints that can be applied to higher-kinded type parameters
 #[derive(Debug, Clone, PartialEq)]
 pub enum HigherKindedConstraint {
     /// Must implement a specific type class (e.g., Functor, Monad)
-    TypeClass(String),
     /// Must have a specific kind signature
-    KindConstraint(Kind),
     /// Must be applicable to certain types
-    Applicability(Vec<Kind>),
-}
-
 /// Registry for managing higher-kinded types and type constructors
 #[derive(Debug)]
 pub struct HigherKindedTypeRegistry {
     /// Map from type constructor name to its definition
-    type_constructors: RwLock<HashMap<String, TypeConstructor>>,
     /// Map from type to its kind
-    kind_cache: RwLock<HashMap<Type, Kind>>,
     /// Registry of type classes and their instances
-    type_classes: RwLock<HashMap<String, TypeClass>>,
-}
-
 /// Represents a type class (e.g., Functor, Monad)
 #[derive(Debug, Clone)]
 pub struct TypeClass {
-    pub name: String,
-    pub kind_signature: Kind,
-    pub required_methods: Vec<String>,
     pub instances: HashSet<String>, // Type constructor names that implement this class
-}
-
 impl HigherKindedTypeRegistry {
     /// Create a new higher-kinded type registry
     #[instrument]
     pub fn new() -> Self {
         debug!("Creating new HigherKindedTypeRegistry");
         let mut registry = Self {
-            type_constructors: RwLock::new(HashMap::new()),
-            kind_cache: RwLock::new(HashMap::new()),
-            type_classes: RwLock::new(HashMap::new()),
-        };
 
         // Register common type constructors
         if let Err(e) = registry.register_builtin_type_constructors() {
             error!("Failed to register builtin type constructors: {}", e);
-        }
-
         // Register common type classes
         if let Err(e) = registry.register_builtin_type_classes() {
             error!("Failed to register builtin type classes: {}", e);
-        }
-
         registry
-    }
-
     /// Register a type constructor
     #[instrument(skip(self))]
     pub fn register_type_constructor(&self, constructor: TypeConstructor) -> crate::error::Result<()> {
@@ -186,8 +130,6 @@ impl HigherKindedTypeRegistry {
         constructors.insert(constructor.name.clone(), constructor);
         info!("Successfully registered type constructor");
         Ok(())
-    }
-
     /// Get a type constructor by name
     #[instrument(skip(self))]
     pub fn get_type_constructor(&self, name: &str) -> crate::error::Result<()> {
@@ -195,8 +137,6 @@ impl HigherKindedTypeRegistry {
             .map_err(|_| CursedError::system_error("Failed to acquire read lock"))?;
         
         Ok(constructors.get(name).cloned())
-    }
-
     /// Infer the kind of a type
     #[instrument(skip(self))]
     pub fn infer_kind(&self, type_ref: &Type) -> crate::error::Result<()> {
@@ -218,12 +158,8 @@ impl HigherKindedTypeRegistry {
             let mut cache = self.kind_cache.write()
                 .map_err(|_| CursedError::system_error("Failed to acquire write lock"))?;
             cache.insert(type_ref.clone(), kind.clone());
-        }
-
         debug!("Inferred kind {:?} for type {:?}", kind, type_ref);
         Ok(kind)
-    }
-
     /// Internal implementation for kind inference
     #[instrument(skip(self))]
     fn infer_kind_impl(&self, type_ref: &Type) -> crate::error::Result<()> {
@@ -231,8 +167,6 @@ impl HigherKindedTypeRegistry {
             // Basic types have kind *
             Type::Integer | Type::Float | Type::String | Type::Boolean | Type::Character => {
                 Ok(Kind::Star)
-            }
-
             // Generic types depend on their constructor
             Type::Generic(name) => {
                 if let Some(constructor) = self.get_type_constructor(name)? {
@@ -245,40 +179,28 @@ impl HigherKindedTypeRegistry {
             }
 
             // Function types have kind *
-            Type::Function { .. } => Ok(Kind::Star),
 
             // Array types have kind *
-            Type::Array(_) => Ok(Kind::Star),
 
             // Tuple types have kind *
-            Type::Tuple(_) => Ok(Kind::Star),
 
             // Interface types have kind *
-            Type::Interface(_) => Ok(Kind::Star),
 
             // Channel types have kind *
-            Type::Channel(_) => Ok(Kind::Star),
 
             // Associated type projections have kind *
-            Type::AssociatedTypeProjection { .. } => Ok(Kind::Star),
 
             // Nil type has kind *
-            Type::Nil => Ok(Kind::Star),
 
             // Any type has kind *
-            Type::Any => Ok(Kind::Star),
 
             // Struct types have kind *
-            Type::Struct(_) => Ok(Kind::Star),
 
             // Primitive types have kind *
-            Type::Primitive(_) => Ok(Kind::Star),
 
             // Map types have kind *
-            Type::Map(_, _) => Ok(Kind::Star),
 
             // Type parameters have kind *
-            Type::Parameter(_) => Ok(Kind::Star),
 
             // Type constructors have their defined kinds
             Type::Constructor { name, arity: _ } => {
@@ -290,7 +212,6 @@ impl HigherKindedTypeRegistry {
             }
 
             // Type applications have kind *
-            Type::Application { .. } => Ok(Kind::Star),
         }
     }
 
@@ -315,11 +236,7 @@ impl HigherKindedTypeRegistry {
                     return Err(CursedError::type_error("Cannot apply arguments to concrete type".to_string()));
                 }
             }
-        }
-
         Ok(current_kind)
-    }
-
     /// Check if a type constructor implements a type class
     #[instrument(skip(self))]
     pub fn implements_type_class(&self, constructor_name: &str, class_name: &str) -> crate::error::Result<()> {
@@ -354,71 +271,38 @@ impl HigherKindedTypeRegistry {
         // Validate name
         if constructor.name.is_empty() {
             return Err(CursedError::type_error("Type constructor name cannot be empty".to_string()));
-        }
-
         // Validate that the kind matches the number of type parameters
         let expected_arity = constructor.type_parameters.len();
         let actual_arity = constructor.kind.arity();
         
         if expected_arity != actual_arity {
             return Err(CursedError::type_error(format!(
-                "Type constructor {} has {} type parameters but kind has arity {}",
                 constructor.name, expected_arity, actual_arity
             )));
-        }
-
         Ok(())
-    }
-
     /// Register built-in type constructors
     #[instrument(skip(self))]
     fn register_builtin_type_constructors(&self) -> crate::error::Result<()> {
         // Option<T>
         let option_constructor = TypeConstructor {
-            name: "Option".to_string(),
-            kind: Kind::type_constructor(),
-            type_parameters: vec![("T".to_string(), Kind::Star)],
-            documentation: Some("Optional value type".to_string()),
-        };
         self.register_type_constructor(option_constructor)?;
 
         // List<T>
         let list_constructor = TypeConstructor {
-            name: "List".to_string(),
-            kind: Kind::type_constructor(),
-            type_parameters: vec![("T".to_string(), Kind::Star)],
-            documentation: Some("Dynamic list type".to_string()),
-        };
         self.register_type_constructor(list_constructor)?;
 
         // Map<K, V>
         let map_constructor = TypeConstructor {
-            name: "Map".to_string(),
-            kind: Kind::binary_type_constructor(),
             type_parameters: vec![
-                ("K".to_string(), Kind::Star),
-                ("V".to_string(), Kind::Star),
-            ],
-            documentation: Some("Key-value map type".to_string()),
-        };
         self.register_type_constructor(map_constructor)?;
 
         // Result<T, E>
         let result_constructor = TypeConstructor {
-            name: "Result".to_string(),
-            kind: Kind::binary_type_constructor(),
             type_parameters: vec![
-                ("T".to_string(), Kind::Star),
-                ("E".to_string(), Kind::Star),
-            ],
-            documentation: Some("Result type for error handling".to_string()),
-        };
         self.register_type_constructor(result_constructor)?;
 
         info!("Registered built-in type constructors");
         Ok(())
-    }
-
     /// Register built-in type classes
     #[instrument(skip(self))]
     fn register_builtin_type_classes(&self) -> crate::error::Result<()> {
@@ -427,35 +311,18 @@ impl HigherKindedTypeRegistry {
 
         // Functor type class
         let functor = TypeClass {
-            name: "Functor".to_string(),
-            kind_signature: Kind::type_constructor(),
-            required_methods: vec!["map".to_string()],
-            instances: HashSet::new(),
-        };
         type_classes.insert("Functor".to_string(), functor);
 
         // Monad type class
         let monad = TypeClass {
-            name: "Monad".to_string(),
-            kind_signature: Kind::type_constructor(),
-            required_methods: vec!["bind".to_string(), "return".to_string()],
-            instances: HashSet::new(),
-        };
         type_classes.insert("Monad".to_string(), monad);
 
         // Applicative type class
         let applicative = TypeClass {
-            name: "Applicative".to_string(),
-            kind_signature: Kind::type_constructor(),
-            required_methods: vec!["apply".to_string(), "pure".to_string()],
-            instances: HashSet::new(),
-        };
         type_classes.insert("Applicative".to_string(), applicative);
 
         info!("Registered built-in type classes");
         Ok(())
-    }
-
     /// Get statistics about the registry
     #[instrument(skip(self))]
     pub fn get_statistics(&self) -> crate::error::Result<()> {
@@ -471,10 +338,6 @@ impl HigherKindedTypeRegistry {
             .sum();
 
         Ok(HigherKindedTypeStatistics {
-            total_type_constructors: constructors.len(),
-            cached_kinds: kind_cache.len(),
-            total_type_classes: type_classes.len(),
-            total_type_class_instances: total_instances,
         })
     }
 }
@@ -482,12 +345,6 @@ impl HigherKindedTypeRegistry {
 /// Statistics about the higher-kinded type registry
 #[derive(Debug, Clone)]
 pub struct HigherKindedTypeStatistics {
-    pub total_type_constructors: usize,
-    pub cached_kinds: usize,
-    pub total_type_classes: usize,
-    pub total_type_class_instances: usize,
-}
-
 /// Trait for working with higher-kinded types
 pub trait HigherKindedTypeHandler {
     /// Apply a type constructor to type arguments
@@ -498,8 +355,6 @@ pub trait HigherKindedTypeHandler {
     
     /// Get the type constructor name from a generic type
     fn get_constructor_name(&self, type_ref: &Type) -> Option<String>;
-}
-
 impl HigherKindedTypeHandler for HigherKindedTypeRegistry {
     #[instrument(skip(self))]
     fn apply_type_constructor(&self, constructor_name: &str, type_args: &[Type]) -> crate::error::Result<()> {
@@ -509,7 +364,6 @@ impl HigherKindedTypeHandler for HigherKindedTypeRegistry {
                 Ok(Type::Generic(constructor_name.to_string()))
             } else {
                 Err(CursedError::type_error(format!(
-                    "Type constructor {} expects {} arguments, got {}",
                     constructor_name, constructor.type_parameters.len(), type_args.len()
                 )))
             }
@@ -524,14 +378,8 @@ impl HigherKindedTypeHandler for HigherKindedTypeRegistry {
     fn is_higher_kinded(&self, type_ref: &Type) -> crate::error::Result<()> {
         let kind = self.infer_kind(type_ref)?;
         Ok(matches!(kind, Kind::Arrow(_, _) | Kind::HigherOrder(_, _)))
-    }
-
     #[instrument(skip(self))]
     fn get_constructor_name(&self, type_ref: &Type) -> Option<String> {
         match type_ref {
-            Type::Generic(name) => Some(name.clone()),
-            _ => None,
         }
     }
-}
-

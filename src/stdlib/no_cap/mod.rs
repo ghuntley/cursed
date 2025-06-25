@@ -25,26 +25,17 @@ pub type Normie = i32;
 pub fn init_no_cap() -> NoCapResult<()> {
     // Module initialization logic if needed
     Ok(())
-}
-
 /// Get module statistics and information
 pub fn get_no_cap_stats() -> NoCap {
     NoCap {
-        functions_available: 10,
         conversions_supported: vec![
             "bool".to_string(), "int".to_string(), "uint".to_string(), "float".to_string()
-        ],
         slang_terms: vec![
-            "facts".to_string(), "cap".to_string(), "sus".to_string(), 
             "bussin".to_string(), "busted".to_string(), "no cap".to_string(), "fr fr".to_string()
-        ],
     }
 }
 
 /// Module information structure
 #[derive(Debug, Clone)]
 pub struct NoCap {
-    pub functions_available: usize,
-    pub conversions_supported: Vec<String>,
-    pub slang_terms: Vec<String>,
 }

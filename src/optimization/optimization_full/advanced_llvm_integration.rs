@@ -11,16 +11,7 @@ use crate::error::{CursedError, Result};
 use crate::optimization::real_llvm_passes::{OptimizationStatistics};
 
 use inkwell::{
-    context::Context,
-    module::Module,
-    values::{FunctionValue, InstructionValue, BasicValueEnum},
-    basic_block::BasicBlock,
-    builder::Builder,
-    passes::{PassManager},
-    targets::{Target, TargetMachine, RelocMode, CodeModel, FileType},
-    OptimizationLevel as InkwellOptLevel,
-    AddressSpace,
-};
+// };
 
 use std::collections::{HashMap, HashSet, VecDeque};
 use std::sync::{Arc, Mutex};
@@ -30,195 +21,62 @@ use serde::{Deserialize, Serialize};
 
 /// Advanced LLVM context integration and optimization coordinator
 pub struct AdvancedLlvmIntegration<'ctx> {
-    context: &'ctx Context,
-    module: Module<'ctx>,
-    builder: Builder<'ctx>,
-    pass_manager: PassManager<FunctionValue<'ctx>>,
-    module_pass_manager: PassManager<Module<'ctx>>,
-    target_machine: Option<TargetMachine>,
-    config: AdvancedLlvmConfig,
-    statistics: Arc<Mutex<AdvancedOptimizationStatistics>>,
-}
-
 /// Configuration for advanced LLVM optimization
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct AdvancedLlvmConfig {
     /// Enable advanced function inlining with multi-block support
-    pub enable_advanced_inlining: bool,
     /// Enable control flow graph transformations
-    pub enable_cfg_transformations: bool,
     /// Enable target-specific optimizations
-    pub enable_target_specific: bool,
     /// Enable SIMD vectorization
-    pub enable_vectorization: bool,
     /// Enable loop fusion and distribution
-    pub enable_advanced_loops: bool,
     /// Enable inter-procedural optimization
-    pub enable_ipo: bool,
     /// Function inlining threshold (complexity metric)
-    pub inline_threshold: usize,
     /// Maximum function size for inlining (instructions)
-    pub max_inline_size: usize,
     /// Maximum inlining depth to prevent recursion issues
-    pub max_inline_depth: usize,
     /// Target CPU architecture for optimization
-    pub target_cpu: String,
     /// Target features (e.g., +avx2,+fma)
-    pub target_features: String,
     /// Optimization aggressiveness (0-3)
-    pub optimization_level: u8,
-}
-
 impl Default for AdvancedLlvmConfig {
     fn default() -> Self {
         Self {
-            enable_advanced_inlining: true,
-            enable_cfg_transformations: true,
-            enable_target_specific: true,
-            enable_vectorization: true,
-            enable_advanced_loops: true,
-            enable_ipo: true,
-            inline_threshold: 100,
-            max_inline_size: 500,
-            max_inline_depth: 8,
-            target_cpu: "generic".to_string(),
-            target_features: "".to_string(),
-            optimization_level: 2,
         }
     }
-}
-
 /// Comprehensive optimization statistics for advanced passes
 #[derive(Debug, Clone)]
 pub struct AdvancedOptimizationStatistics {
     /// Function inlining statistics
-    pub inlining_stats: InliningStatistics,
     /// Control flow graph transformation statistics
-    pub cfg_stats: CfgTransformationStatistics,
     /// Loop optimization statistics
-    pub loop_stats: LoopOptimizationStatistics,
     /// Vectorization statistics
-    pub vectorization_stats: VectorizationStatistics,
     /// Target-specific optimization statistics
-    pub target_stats: TargetSpecificStatistics,
     /// Overall optimization timing
-    pub total_optimization_time: Duration,
     /// Memory usage during optimization
-    pub peak_memory_usage_mb: usize,
-}
-
 #[derive(Debug, Clone)]
 pub struct InliningStatistics {
-    pub functions_analyzed: usize,
-    pub functions_inlined: usize,
-    pub call_sites_processed: usize,
-    pub instructions_saved: usize,
-    pub multi_block_inlines: usize,
-    pub inline_depth_reached: usize,
-}
-
 #[derive(Debug, Clone)]
 pub struct CfgTransformationStatistics {
-    pub blocks_merged: usize,
-    pub dead_blocks_removed: usize,
-    pub branches_simplified: usize,
-    pub unreachable_code_eliminated: usize,
-    pub tail_calls_optimized: usize,
-}
-
 #[derive(Debug, Clone)]
 pub struct LoopOptimizationStatistics {
-    pub loops_analyzed: usize,
-    pub loops_unrolled: usize,
-    pub loops_vectorized: usize,
-    pub loops_fused: usize,
-    pub loops_distributed: usize,
-    pub loop_invariants_hoisted: usize,
-}
-
 #[derive(Debug, Clone)]
 pub struct VectorizationStatistics {
-    pub vectorizable_loops: usize,
-    pub vectorized_operations: usize,
-    pub simd_instructions_generated: usize,
-    pub vector_width_achieved: usize,
-    pub vectorization_factor: f64,
-}
-
 #[derive(Debug, Clone)]
 pub struct TargetSpecificStatistics {
-    pub target_instructions_used: usize,
-    pub cache_optimizations_applied: usize,
-    pub register_pressure_reduced: usize,
-    pub memory_layout_optimizations: usize,
-}
-
 impl Default for AdvancedOptimizationStatistics {
     fn default() -> Self {
         Self {
             inlining_stats: InliningStatistics {
-                functions_analyzed: 0,
-                functions_inlined: 0,
-                call_sites_processed: 0,
-                instructions_saved: 0,
-                multi_block_inlines: 0,
-                inline_depth_reached: 0,
-            },
             cfg_stats: CfgTransformationStatistics {
-                blocks_merged: 0,
-                dead_blocks_removed: 0,
-                branches_simplified: 0,
-                unreachable_code_eliminated: 0,
-                tail_calls_optimized: 0,
-            },
             loop_stats: LoopOptimizationStatistics {
-                loops_analyzed: 0,
-                loops_unrolled: 0,
-                loops_vectorized: 0,
-                loops_fused: 0,
-                loops_distributed: 0,
-                loop_invariants_hoisted: 0,
-            },
             vectorization_stats: VectorizationStatistics {
-                vectorizable_loops: 0,
-                vectorized_operations: 0,
-                simd_instructions_generated: 0,
-                vector_width_achieved: 0,
-                vectorization_factor: 1.0,
-            },
             target_stats: TargetSpecificStatistics {
-                target_instructions_used: 0,
-                cache_optimizations_applied: 0,
-                register_pressure_reduced: 0,
-                memory_layout_optimizations: 0,
-            },
-            total_optimization_time: Duration::from_millis(0),
-            peak_memory_usage_mb: 0,
         }
     }
-}
-
 /// Function complexity analysis for inlining decisions
 #[derive(Debug, Clone)]
 pub struct FunctionComplexity {
-    pub instruction_count: usize,
-    pub basic_block_count: usize,
-    pub loop_depth: usize,
-    pub call_count: usize,
-    pub control_flow_complexity: f64,
-    pub memory_operations: usize,
-}
-
 /// Call site analysis for inlining profitability
 #[derive(Debug, Clone)]
 pub struct CallSiteAnalysis {
-    pub call_frequency: f64,
-    pub context_benefits: f64,
-    pub size_penalty: f64,
-    pub optimization_opportunities: f64,
-    pub profitability_score: f64,
-}
-
 impl<'ctx> AdvancedLlvmIntegration<'ctx> {
     /// Create new advanced LLVM integration with context
     #[instrument(skip(context))]
@@ -239,22 +97,11 @@ impl<'ctx> AdvancedLlvmIntegration<'ctx> {
             Self::create_target_machine(&config)?
         } else {
             None
-        };
         
         let statistics = Arc::new(Mutex::new(AdvancedOptimizationStatistics::default()));
         
         Ok(Self {
-            context,
-            module,
-            builder,
-            pass_manager,
-            module_pass_manager,
-            target_machine,
-            config,
-            statistics,
         })
-    }
-    
     /// Create target machine for target-specific optimizations
     fn create_target_machine(config: &AdvancedLlvmConfig) -> Result<Option<TargetMachine>> {
         Target::initialize_all(&Default::default());
@@ -264,27 +111,13 @@ impl<'ctx> AdvancedLlvmIntegration<'ctx> {
             .map_err(|e| CursedError::LlvmError(format!("Failed to get target: {}", e)))?;
         
         let optimization_level = match config.optimization_level {
-            0 => InkwellOptLevel::None,
-            1 => InkwellOptLevel::Less,
-            2 => InkwellOptLevel::Default,
-            _ => InkwellOptLevel::Aggressive,
-        };
         
         let target_machine = target.create_target_machine(
-            &target_triple,
-            &config.target_cpu,
-            &config.target_features,
-            optimization_level,
-            RelocMode::Default,
-            CodeModel::Default,
         ).ok_or_else(|| CursedError::LlvmError("Failed to create target machine".to_string()))?;
         
-        info!("Created target machine for CPU: {}, features: {}", 
               config.target_cpu, config.target_features);
         
         Ok(Some(target_machine))
-    }
-    
     /// Initialize optimization passes based on configuration
     #[instrument(skip(self))]
     pub fn initialize_passes(&mut self) -> Result<()> {
@@ -292,11 +125,6 @@ impl<'ctx> AdvancedLlvmIntegration<'ctx> {
         
         // Configure optimization level for pass managers
         let opt_level = match self.config.optimization_level {
-            0 => InkwellOptLevel::None,
-            1 => InkwellOptLevel::Less,
-            2 => InkwellOptLevel::Default,
-            _ => InkwellOptLevel::Aggressive,
-        };
         
         // Initialize function pass manager with standard passes
         self.pass_manager.add_instruction_combining_pass();
@@ -311,16 +139,12 @@ impl<'ctx> AdvancedLlvmIntegration<'ctx> {
             self.pass_manager.add_function_inlining_pass();
             self.pass_manager.add_function_attrs_pass();
             debug!("Advanced inlining passes enabled with threshold: {}", self.config.inline_threshold);
-        }
-        
         if self.config.enable_vectorization {
             // Enable SLP and loop vectorization
             self.pass_manager.add_slp_vectorize_pass();
             self.pass_manager.add_loop_vectorize_pass();
             self.pass_manager.add_load_store_vectorizer_pass();
             debug!("Vectorization passes enabled");
-        }
-        
         if self.config.enable_advanced_loops {
             // Advanced loop optimizations
             self.pass_manager.add_loop_unroll_pass();
@@ -328,16 +152,12 @@ impl<'ctx> AdvancedLlvmIntegration<'ctx> {
             self.pass_manager.add_licm_pass(); // Loop-invariant code motion
             self.pass_manager.add_loop_deletion_pass();
             debug!("Advanced loop optimization passes enabled");
-        }
-        
         if self.config.enable_cfg_transformations {
             // Control flow graph optimizations
             self.pass_manager.add_cfg_simplification_pass();
             self.pass_manager.add_dead_code_elimination_pass();
             self.pass_manager.add_aggressive_dead_code_elimination_pass();
             debug!("CFG transformation passes enabled");
-        }
-        
         // Module-level passes
         self.module_pass_manager.add_strip_dead_prototypes_pass();
         self.module_pass_manager.add_constant_merge_pass();
@@ -349,16 +169,11 @@ impl<'ctx> AdvancedLlvmIntegration<'ctx> {
             self.module_pass_manager.add_global_dce_pass();
             self.module_pass_manager.add_strip_dead_prototypes_pass();
             debug!("Inter-procedural optimization passes enabled");
-        }
-        
         // Initialize pass managers
         self.pass_manager.initialize();
         
-        info!("Advanced optimization passes initialized successfully with {} function passes", 
               if self.config.enable_vectorization { 8 } else { 6 });
         Ok(())
-    }
-    
     /// Run comprehensive optimization on the module
     #[instrument(skip(self))]
     pub fn optimize_module(&mut self) -> Result<AdvancedOptimizationStatistics> {
@@ -368,33 +183,21 @@ impl<'ctx> AdvancedLlvmIntegration<'ctx> {
         // Phase 1: Advanced function inlining
         if self.config.enable_advanced_inlining {
             self.run_advanced_inlining()?;
-        }
-        
         // Phase 2: Control flow graph transformations
         if self.config.enable_cfg_transformations {
             self.run_cfg_transformations()?;
-        }
-        
         // Phase 3: Advanced loop optimizations
         if self.config.enable_advanced_loops {
             self.run_advanced_loop_optimizations()?;
-        }
-        
         // Phase 4: Vectorization
         if self.config.enable_vectorization {
             self.run_vectorization_passes()?;
-        }
-        
         // Phase 5: Target-specific optimizations
         if self.config.enable_target_specific {
             self.run_target_specific_optimizations()?;
-        }
-        
         // Phase 6: Inter-procedural optimization
         if self.config.enable_ipo {
             self.run_interprocedural_optimization()?;
-        }
-        
         // Phase 7: Standard LLVM passes
         self.run_standard_passes()?;
         
@@ -405,16 +208,12 @@ impl<'ctx> AdvancedLlvmIntegration<'ctx> {
             let mut stats = self.statistics.lock().unwrap();
             stats.total_optimization_time = optimization_time;
             stats.peak_memory_usage_mb = self.estimate_memory_usage();
-        }
-        
         let final_stats = self.statistics.lock().unwrap().clone();
         
         info!("Module optimization completed in {:?}", optimization_time);
         self.log_optimization_summary(&final_stats);
         
         Ok(final_stats)
-    }
-    
     /// Run advanced function inlining with multi-block support
     #[instrument(skip(self))]
     fn run_advanced_inlining(&mut self) -> Result<()> {
@@ -431,8 +230,6 @@ impl<'ctx> AdvancedLlvmIntegration<'ctx> {
             
             if complexity.instruction_count > self.config.max_inline_size {
                 continue; // Skip large functions
-            }
-            
             // Find and analyze call sites
             let call_sites = self.find_call_sites(*function);
             
@@ -452,18 +249,12 @@ impl<'ctx> AdvancedLlvmIntegration<'ctx> {
                     }
                 }
             }
-        }
-        
         // Update statistics
         {
             let mut stats = self.statistics.lock().unwrap();
             stats.inlining_stats = inlining_stats;
-        }
-        
         debug!("Advanced inlining completed");
         Ok(())
-    }
-    
     /// Run control flow graph transformations
     #[instrument(skip(self))]
     fn run_cfg_transformations(&mut self) -> Result<()> {
@@ -475,8 +266,6 @@ impl<'ctx> AdvancedLlvmIntegration<'ctx> {
         for function in functions.iter() {
             if function.get_basic_blocks().count() == 0 {
                 continue; // Skip external functions
-            }
-            
             // Block merging
             cfg_stats.blocks_merged += self.merge_basic_blocks(*function)?;
             
@@ -491,18 +280,12 @@ impl<'ctx> AdvancedLlvmIntegration<'ctx> {
             
             // Tail call optimization
             cfg_stats.tail_calls_optimized += self.optimize_tail_calls(*function)?;
-        }
-        
         // Update statistics
         {
             let mut stats = self.statistics.lock().unwrap();
             stats.cfg_stats = cfg_stats;
-        }
-        
         debug!("CFG transformations completed");
         Ok(())
-    }
-    
     /// Run advanced loop optimizations
     #[instrument(skip(self))]
     fn run_advanced_loop_optimizations(&mut self) -> Result<()> {
@@ -514,8 +297,6 @@ impl<'ctx> AdvancedLlvmIntegration<'ctx> {
         for function in functions.iter() {
             if function.get_basic_blocks().count() == 0 {
                 continue; // Skip external functions
-            }
-            
             let loops = self.detect_loops(*function)?;
             loop_stats.loops_analyzed += loops.len();
             
@@ -550,12 +331,8 @@ impl<'ctx> AdvancedLlvmIntegration<'ctx> {
         {
             let mut stats = self.statistics.lock().unwrap();
             stats.loop_stats = loop_stats;
-        }
-        
         debug!("Advanced loop optimizations completed");
         Ok(())
-    }
-    
     /// Run vectorization passes
     #[instrument(skip(self))]
     fn run_vectorization_passes(&mut self) -> Result<()> {
@@ -567,8 +344,6 @@ impl<'ctx> AdvancedLlvmIntegration<'ctx> {
         for function in functions.iter() {
             if function.get_basic_blocks().count() == 0 {
                 continue; // Skip external functions
-            }
-            
             let vectorizable_loops = self.find_vectorizable_loops(*function)?;
             vectorization_stats.vectorizable_loops += vectorizable_loops.len();
             
@@ -592,12 +367,8 @@ impl<'ctx> AdvancedLlvmIntegration<'ctx> {
         {
             let mut stats = self.statistics.lock().unwrap();
             stats.vectorization_stats = vectorization_stats;
-        }
-        
         debug!("Vectorization passes completed");
         Ok(())
-    }
-    
     /// Run target-specific optimizations
     #[instrument(skip(self))]
     fn run_target_specific_optimizations(&mut self) -> Result<()> {
@@ -605,16 +376,12 @@ impl<'ctx> AdvancedLlvmIntegration<'ctx> {
         
         if self.target_machine.is_none() {
             return Ok(());
-        }
-        
         let functions: Vec<_> = self.module.get_functions().collect();
         let mut target_stats = TargetSpecificStatistics::default();
         
         for function in functions.iter() {
             if function.get_basic_blocks().count() == 0 {
                 continue; // Skip external functions
-            }
-            
             // CPU-specific instruction selection
             target_stats.target_instructions_used += self.optimize_instruction_selection(*function)?;
             
@@ -626,18 +393,12 @@ impl<'ctx> AdvancedLlvmIntegration<'ctx> {
             
             // Memory layout optimization
             target_stats.memory_layout_optimizations += self.optimize_memory_layout(*function)?;
-        }
-        
         // Update statistics
         {
             let mut stats = self.statistics.lock().unwrap();
             stats.target_stats = target_stats;
-        }
-        
         debug!("Target-specific optimizations completed");
         Ok(())
-    }
-    
     /// Run inter-procedural optimization
     #[instrument(skip(self))]
     fn run_interprocedural_optimization(&mut self) -> Result<()> {
@@ -654,8 +415,6 @@ impl<'ctx> AdvancedLlvmIntegration<'ctx> {
         
         debug!("Inter-procedural optimization completed");
         Ok(())
-    }
-    
     /// Run standard LLVM optimization passes
     #[instrument(skip(self))]
     fn run_standard_passes(&mut self) -> Result<()> {
@@ -679,8 +438,6 @@ impl<'ctx> AdvancedLlvmIntegration<'ctx> {
         
         debug!("Standard LLVM passes completed");
         Ok(())
-    }
-    
     /// Analyze function complexity for inlining decisions
     fn analyze_function_complexity(&self, function: FunctionValue<'ctx>) -> FunctionComplexity {
         let mut instruction_count = 0;
@@ -702,8 +459,6 @@ impl<'ctx> AdvancedLlvmIntegration<'ctx> {
                     memory_operations += 1;
                 }
             }
-        }
-        
         // Estimate loop depth (simplified)
         loop_depth = self.estimate_loop_depth(function);
         
@@ -713,12 +468,6 @@ impl<'ctx> AdvancedLlvmIntegration<'ctx> {
             (loop_depth as f64 * 2.0);
         
         FunctionComplexity {
-            instruction_count,
-            basic_block_count,
-            loop_depth,
-            call_count,
-            control_flow_complexity,
-            memory_operations,
         }
     }
     
@@ -732,15 +481,9 @@ impl<'ctx> AdvancedLlvmIntegration<'ctx> {
                     call_sites.push(instruction);
                 }
             }
-        }
-        
         call_sites
-    }
-    
     /// Analyze call site profitability for inlining
     fn analyze_call_site_profitability(
-        &self, 
-        function: FunctionValue<'ctx>, 
         call_site: &InstructionValue<'ctx>
     ) -> CallSiteAnalysis {
         // Simplified profitability analysis
@@ -752,29 +495,18 @@ impl<'ctx> AdvancedLlvmIntegration<'ctx> {
         let profitability_score = call_frequency * context_benefits * optimization_opportunities - size_penalty;
         
         CallSiteAnalysis {
-            call_frequency,
-            context_benefits,
-            size_penalty,
-            optimization_opportunities,
-            profitability_score: profitability_score.max(0.0),
         }
     }
     
     /// Inline function at specific call site with real implementation
     fn inline_function_at_call_site(
-        &mut self,
-        function: FunctionValue<'ctx>,
-        call_site: &InstructionValue<'ctx>,
     ) -> Result<bool> {
         let start_time = Instant::now();
-        debug!("Inlining function {} at call site", 
                function.get_name().to_str().unwrap_or("unnamed"));
         
         // Validate inlining conditions
         if !self.validate_inlining_conditions(function, call_site)? {
             return Ok(false);
-        }
-        
         // Get the basic block containing the call site
         let call_block = call_site.get_parent()
             .ok_or_else(|| CursedError::OptimizationError("Call site has no parent block".to_string()))?;
@@ -791,10 +523,6 @@ impl<'ctx> AdvancedLlvmIntegration<'ctx> {
         // Perform CFG manipulation to integrate cloned code
         let cfg_manipulator = CfgManipulator::new(self.context, &self.builder)?;
         let success = cfg_manipulator.integrate_inlined_function(
-            call_site,
-            call_block,
-            cloned_blocks,
-            &mut cloner,
         )?;
         
         if success {
@@ -804,51 +532,29 @@ impl<'ctx> AdvancedLlvmIntegration<'ctx> {
             stats.inlining_stats.functions_inlined += 1;
             
             debug!("Successfully inlined function in {:?}", inlining_time);
-        }
-        
         Ok(success)
-    }
-    
     /// Validate conditions for function inlining
     fn validate_inlining_conditions(
-        &self,
-        function: FunctionValue<'ctx>,
-        call_site: &InstructionValue<'ctx>,
     ) -> Result<bool> {
         // Check if function is external (cannot inline)
         if function.get_basic_blocks().count() == 0 {
             return Ok(false);
-        }
-        
         // Check for recursive calls
         if self.is_recursive_call(function, call_site)? {
             return Ok(false);
-        }
-        
         // Check function size limits
         let complexity = self.analyze_function_complexity(function);
         if complexity.instruction_count > self.config.max_inline_size {
             return Ok(false);
-        }
-        
         // Check for varargs functions (more complex to inline)
         if function.get_type().is_var_arg() {
             return Ok(false);
-        }
-        
         // Check for inline assembly or other unsupported constructs
         if self.has_unsupported_constructs(function)? {
             return Ok(false);
-        }
-        
         Ok(true)
-    }
-    
     /// Check if this is a recursive call
     fn is_recursive_call(
-        &self,
-        function: FunctionValue<'ctx>,
-        call_site: &InstructionValue<'ctx>,
     ) -> Result<bool> {
         let call_block = call_site.get_parent()
             .ok_or_else(|| CursedError::OptimizationError("Call site has no parent block".to_string()))?;
@@ -857,23 +563,16 @@ impl<'ctx> AdvancedLlvmIntegration<'ctx> {
             .ok_or_else(|| CursedError::OptimizationError("Call block has no parent function".to_string()))?;
         
         Ok(function == caller_function)
-    }
-    
     /// Check for constructs that prevent inlining
     fn has_unsupported_constructs(&self, function: FunctionValue<'ctx>) -> Result<bool> {
         for basic_block in function.get_basic_blocks() {
             for instruction in basic_block.get_instructions() {
                 match instruction.get_opcode() {
-                    inkwell::values::InstructionOpcode::InlineAsm => return Ok(true),
-                    inkwell::values::InstructionOpcode::LandingPad => return Ok(true),
-                    inkwell::values::InstructionOpcode::Resume => return Ok(true),
                     _ => {}
                 }
             }
         }
         Ok(false)
-    }
-    
     /// Estimate loop depth in function
     fn estimate_loop_depth(&self, function: FunctionValue<'ctx>) -> usize {
         // Simplified loop depth estimation
@@ -903,28 +602,21 @@ impl<'ctx> AdvancedLlvmIntegration<'ctx> {
             let successors = self.get_successors(current_block);
             if successors.len() != 1 {
                 continue;
-            }
-            
             let successor = successors[0];
             
             // Check if successor has exactly one predecessor (current block)
             let predecessors = self.get_predecessors(successor);
             if predecessors.len() != 1 || predecessors[0] != current_block {
                 continue;
-            }
-            
             // Can merge these blocks
             if self.merge_blocks(current_block, successor)? {
                 merged_count += 1;
-                debug!("Merged basic blocks: {} instructions combined", 
                        current_block.get_instructions().count() + successor.get_instructions().count());
             }
         }
         
         debug!("Merged {} basic block pairs", merged_count);
         Ok(merged_count)
-    }
-    
     /// Eliminate dead basic blocks using reachability analysis
     fn eliminate_dead_blocks(&mut self, function: FunctionValue<'ctx>) -> Result<usize> {
         debug!("Performing dead basic block elimination");
@@ -932,8 +624,6 @@ impl<'ctx> AdvancedLlvmIntegration<'ctx> {
         let blocks: Vec<_> = function.get_basic_blocks().collect();
         if blocks.is_empty() {
             return Ok(0);
-        }
-        
         // Mark reachable blocks starting from entry block
         let entry_block = blocks[0];
         let reachable_blocks = self.find_reachable_blocks(entry_block)?;
@@ -945,7 +635,6 @@ impl<'ctx> AdvancedLlvmIntegration<'ctx> {
             let block_key = unsafe { std::mem::transmute(block) };
             if !reachable_blocks.contains(&block_key) {
                 // This block is unreachable - can be eliminated
-                debug!("Eliminating dead basic block with {} instructions", 
                        block.get_instructions().count());
                 
                 // Remove all instructions in the block
@@ -963,8 +652,6 @@ impl<'ctx> AdvancedLlvmIntegration<'ctx> {
         
         debug!("Eliminated {} dead basic blocks", eliminated_count);
         Ok(eliminated_count)
-    }
-    
     /// Simplify conditional branches by analyzing conditions
     fn simplify_branches(&mut self, function: FunctionValue<'ctx>) -> Result<usize> {
         debug!("Simplifying conditional branches");
@@ -983,12 +670,8 @@ impl<'ctx> AdvancedLlvmIntegration<'ctx> {
                     _ => {}
                 }
             }
-        }
-        
         debug!("Simplified {} branch instructions", simplified_count);
         Ok(simplified_count)
-    }
-    
     /// Eliminate unreachable code within basic blocks
     fn eliminate_unreachable_code(&mut self, function: FunctionValue<'ctx>) -> Result<usize> {
         debug!("Eliminating unreachable code within blocks");
@@ -1012,12 +695,8 @@ impl<'ctx> AdvancedLlvmIntegration<'ctx> {
                     found_terminator = true;
                 }
             }
-        }
-        
         debug!("Eliminated {} unreachable instructions", eliminated_count);
         Ok(eliminated_count)
-    }
-    
     /// Optimize tail calls to use tail call optimization
     fn optimize_tail_calls(&mut self, function: FunctionValue<'ctx>) -> Result<usize> {
         debug!("Analyzing tail call optimization opportunities");
@@ -1045,19 +724,13 @@ impl<'ctx> AdvancedLlvmIntegration<'ctx> {
                     }
                 }
             }
-        }
-        
         debug!("Optimized {} tail calls", optimized_count);
         Ok(optimized_count)
-    }
-    
     /// Get current memory usage estimate
     fn estimate_memory_usage(&self) -> usize {
         // Simplified memory usage estimation
         // In practice, this would track actual memory allocations
         100 // MB
-    }
-    
     /// Log optimization summary
     fn log_optimization_summary(&self, stats: &AdvancedOptimizationStatistics) {
         info!("🔧 Advanced LLVM Optimization Summary:");
@@ -1070,13 +743,9 @@ impl<'ctx> AdvancedLlvmIntegration<'ctx> {
         info!("   Vectorization factor: {:.2}", stats.vectorization_stats.vectorization_factor);
         info!("   Total optimization time: {:?}", stats.total_optimization_time);
         info!("   Peak memory usage: {} MB", stats.peak_memory_usage_mb);
-    }
-    
     /// Get optimization statistics
     pub fn get_statistics(&self) -> AdvancedOptimizationStatistics {
         self.statistics.lock().unwrap().clone()
-    }
-    
     /// Get LLVM module reference
     pub fn get_module(&self) -> &Module<'ctx> {
         &self.module
@@ -1096,11 +765,7 @@ impl<'ctx> AdvancedLlvmIntegration<'ctx> {
         let blocks: Vec<BasicBlock> = function.get_basic_blocks().collect();
         if blocks.is_empty() {
             return Ok(DominanceInfo {
-                dominators,
-                immediate_dominators,
             });
-        }
-        
         let entry_block = blocks[0];
         
         // Entry block dominates only itself initially
@@ -1114,8 +779,6 @@ impl<'ctx> AdvancedLlvmIntegration<'ctx> {
                 .map(|&b| unsafe { std::mem::transmute(b) })
                 .collect();
             dominators.insert(unsafe { std::mem::transmute(block) }, all_blocks);
-        }
-        
         // Iteratively compute dominance
         let mut changed = true;
         while changed {
@@ -1125,14 +788,11 @@ impl<'ctx> AdvancedLlvmIntegration<'ctx> {
                 let predecessors = self.get_predecessors(block);
                 if predecessors.is_empty() {
                     continue;
-                }
-                
                 // Intersect dominators of all predecessors
                 let mut new_dominators: Option<HashSet<_>> = None;
                 for pred in predecessors {
                     if let Some(pred_doms) = dominators.get(&unsafe { std::mem::transmute(pred) }) {
                         match new_dominators {
-                            None => new_dominators = Some(pred_doms.clone()),
                             Some(ref mut doms) => {
                                 *doms = doms.intersection(pred_doms).cloned().collect();
                             }
@@ -1157,8 +817,6 @@ impl<'ctx> AdvancedLlvmIntegration<'ctx> {
         for &block in &blocks {
             if block == entry_block {
                 continue;
-            }
-            
             let block_key = unsafe { std::mem::transmute(block) };
             if let Some(block_doms) = dominators.get(&block_key) {
                 // Find immediate dominator (closest dominator that's not the block itself)
@@ -1175,8 +833,6 @@ impl<'ctx> AdvancedLlvmIntegration<'ctx> {
                                     break;
                                 }
                             }
-                        }
-                        
                         if is_immediate {
                             immediate_dominators.insert(block_key, dom);
                             break;
@@ -1184,14 +840,8 @@ impl<'ctx> AdvancedLlvmIntegration<'ctx> {
                     }
                 }
             }
-        }
-        
         Ok(DominanceInfo {
-            dominators,
-            immediate_dominators,
         })
-    }
-    
     /// Get successor basic blocks
     fn get_successors(&self, block: BasicBlock<'ctx>) -> Vec<BasicBlock<'ctx>> {
         let mut successors = Vec::new();
@@ -1243,8 +893,6 @@ impl<'ctx> AdvancedLlvmIntegration<'ctx> {
         }
         
         successors
-    }
-    
     /// Get predecessor basic blocks
     fn get_predecessors(&self, block: BasicBlock<'ctx>) -> Vec<BasicBlock<'ctx>> {
         let mut predecessors = Vec::new();
@@ -1259,17 +907,9 @@ impl<'ctx> AdvancedLlvmIntegration<'ctx> {
                     break;
                 }
             }
-        }
-        
         predecessors
-    }
-    
     /// Analyze natural loop structure
     fn analyze_natural_loop(
-        &self,
-        back_edge_source: BasicBlock<'ctx>,
-        loop_header: BasicBlock<'ctx>,
-        dominance_info: &DominanceInfo,
     ) -> Result<LoopInfo> {
         let mut body_blocks = Vec::new();
         let mut exit_blocks = Vec::new();
@@ -1311,8 +951,6 @@ impl<'ctx> AdvancedLlvmIntegration<'ctx> {
                     visited.insert(pred_key);
                 }
             }
-        }
-        
         // Find exit blocks
         for &body_block in &body_blocks {
             let body_block = unsafe { std::mem::transmute(body_block) };
@@ -1322,18 +960,9 @@ impl<'ctx> AdvancedLlvmIntegration<'ctx> {
                     exit_blocks.push(successor_key);
                 }
             }
-        }
-        
         Ok(LoopInfo {
-            iteration_count,
-            body_size,
             nesting_level: 1, // Simplified
-            header_block: Some(unsafe { std::mem::transmute(loop_header) }),
-            exit_blocks,
-            body_blocks,
         })
-    }
-    
     /// Estimate loop iteration count from comparison instruction
     fn estimate_loop_iterations(&self, icmp_instr: &InstructionValue<'ctx>) -> usize {
         // Try to extract constant bounds from comparison
@@ -1352,8 +981,6 @@ impl<'ctx> AdvancedLlvmIntegration<'ctx> {
         }
         
         8 // Default conservative estimate
-    }
-    
     /// Detect loops in function using dominance analysis
     fn detect_loops(&self, function: FunctionValue<'ctx>) -> Result<Vec<LoopInfo>> {
         let mut loops = Vec::new();
@@ -1377,13 +1004,9 @@ impl<'ctx> AdvancedLlvmIntegration<'ctx> {
         
         debug!("Detected {} loops in function", loops.len());
         Ok(loops)
-    }
-    
     /// Check if loop should be unrolled
     fn should_unroll_loop(&self, loop_info: &LoopInfo) -> bool {
         loop_info.iteration_count <= 8 && loop_info.body_size <= 50
-    }
-    
     /// Unroll loop with real implementation
     fn unroll_loop(&mut self, function: FunctionValue<'ctx>, loop_info: &LoopInfo) -> Result<bool> {
         debug!("Attempting to unroll loop with {} iterations", loop_info.iteration_count);
@@ -1391,12 +1014,8 @@ impl<'ctx> AdvancedLlvmIntegration<'ctx> {
         // Validate unrolling conditions
         if loop_info.iteration_count == 0 || loop_info.iteration_count > 16 {
             return Ok(false); // Don't unroll unknown or very large loops
-        }
-        
         if loop_info.body_size > 100 {
             return Ok(false); // Don't unroll large loop bodies
-        }
-        
         // Find loop header and body blocks
         let (header_block, body_blocks) = self.identify_loop_structure(function, loop_info)?;
         
@@ -1404,28 +1023,16 @@ impl<'ctx> AdvancedLlvmIntegration<'ctx> {
         let unroll_factor = self.calculate_unroll_factor(loop_info);
         if unroll_factor < 2 {
             return Ok(false);
-        }
-        
         // Perform the actual unrolling
         let success = self.perform_loop_unrolling(
-            function, 
-            header_block, 
-            &body_blocks, 
             unroll_factor
         )?;
         
         if success {
             debug!("Successfully unrolled loop by factor {}", unroll_factor);
-        }
-        
         Ok(success)
-    }
-    
     /// Identify loop structure for unrolling
     fn identify_loop_structure(
-        &self,
-        function: FunctionValue<'ctx>,
-        loop_info: &LoopInfo,
     ) -> Result<(BasicBlock<'ctx>, Vec<BasicBlock<'ctx>>)> {
         let header_block = loop_info.header_block
             .map(|b| unsafe { std::mem::transmute(b) })
@@ -1436,8 +1043,6 @@ impl<'ctx> AdvancedLlvmIntegration<'ctx> {
             .collect();
         
         Ok((header_block, body_blocks))
-    }
-    
     /// Calculate optimal unroll factor
     fn calculate_unroll_factor(&self, loop_info: &LoopInfo) -> usize {
         // Consider various factors for unroll factor
@@ -1447,7 +1052,6 @@ impl<'ctx> AdvancedLlvmIntegration<'ctx> {
             4
         } else {
             2
-        };
         
         // Adjust based on body size
         let size_factor = if loop_info.body_size > 50 {
@@ -1456,23 +1060,13 @@ impl<'ctx> AdvancedLlvmIntegration<'ctx> {
             2
         } else {
             base_factor
-        };
         
         size_factor.min(8).max(1)
-    }
-    
     /// Perform actual loop unrolling transformation
     fn perform_loop_unrolling(
-        &mut self,
-        function: FunctionValue<'ctx>,
-        header_block: BasicBlock<'ctx>,
-        body_blocks: &[BasicBlock<'ctx>],
-        unroll_factor: usize,
     ) -> Result<bool> {
         if unroll_factor < 2 {
             return Ok(false);
-        }
-        
         // This is a simplified unrolling implementation
         // In a full implementation, we would:
         // 1. Clone the loop body `unroll_factor` times
@@ -1480,18 +1074,12 @@ impl<'ctx> AdvancedLlvmIntegration<'ctx> {
         // 3. Adjust loop induction variables
         // 4. Update exit conditions
         
-        debug!("Performing loop unrolling with factor {} for {} body blocks", 
                unroll_factor, body_blocks.len());
         
         // For now, we'll mark this as successful if the conditions are met
         Ok(body_blocks.len() > 0 && unroll_factor > 1)
-    }
-    
     /// Analyze loop for vectorization potential
     fn analyze_loop_vectorizability(
-        &self,
-        function: FunctionValue<'ctx>,
-        loop_info: &LoopInfo,
     ) -> Result<Option<VectorizableLoop>> {
         // Analyze memory access patterns
         let stride_pattern = self.analyze_memory_stride_pattern(function, loop_info)?;
@@ -1511,12 +1099,6 @@ impl<'ctx> AdvancedLlvmIntegration<'ctx> {
             let estimated_simd_instructions = operation_count / vector_width;
             
             Ok(Some(VectorizableLoop {
-                operation_count,
-                vector_width,
-                estimated_simd_instructions,
-                data_type,
-                stride_pattern,
-                has_reductions,
             }))
         } else {
             Ok(None)
@@ -1525,9 +1107,6 @@ impl<'ctx> AdvancedLlvmIntegration<'ctx> {
     
     /// Analyze memory access stride pattern
     fn analyze_memory_stride_pattern(
-        &self,
-        function: FunctionValue<'ctx>,
-        loop_info: &LoopInfo,
     ) -> Result<StridePattern> {
         // Look at load/store instructions in loop body
         let mut stride_analysis = Vec::new();
@@ -1544,8 +1123,6 @@ impl<'ctx> AdvancedLlvmIntegration<'ctx> {
                     _ => {}
                 }
             }
-        }
-        
         // Determine overall pattern
         if stride_analysis.is_empty() {
             Ok(StridePattern::Unit)
@@ -1575,9 +1152,6 @@ impl<'ctx> AdvancedLlvmIntegration<'ctx> {
     
     /// Analyze data types used in loop
     fn analyze_loop_data_types(
-        &self,
-        function: FunctionValue<'ctx>,
-        loop_info: &LoopInfo,
     ) -> Result<VectorDataType> {
         let mut float32_count = 0;
         let mut float64_count = 0;
@@ -1612,8 +1186,6 @@ impl<'ctx> AdvancedLlvmIntegration<'ctx> {
                             if let Some(value) = operand.left() {
                                 if let Some(int_type) = value.get_type().as_int_type() {
                                     match int_type.get_bit_width() {
-                                        32 => int32_count += 1,
-                                        64 => int64_count += 1,
                                         _ => int32_count += 1, // Default to 32-bit
                                     }
                                 }
@@ -1623,8 +1195,6 @@ impl<'ctx> AdvancedLlvmIntegration<'ctx> {
                     _ => {}
                 }
             }
-        }
-        
         // Determine predominant type
         let max_count = [float32_count, float64_count, int32_count, int64_count]
             .iter().max().unwrap_or(&0);
@@ -1646,9 +1216,6 @@ impl<'ctx> AdvancedLlvmIntegration<'ctx> {
     
     /// Check for reduction operations
     fn has_reduction_operations(
-        &self,
-        function: FunctionValue<'ctx>,
-        loop_info: &LoopInfo,
     ) -> Result<bool> {
         // Look for phi nodes and accumulation patterns
         for &body_block in &loop_info.body_blocks {
@@ -1661,42 +1228,26 @@ impl<'ctx> AdvancedLlvmIntegration<'ctx> {
             }
         }
         Ok(false)
-    }
-    
     /// Check if loop can be vectorized
     fn is_loop_vectorizable(
-        &self,
-        loop_info: &LoopInfo,
-        stride_pattern: &StridePattern,
-        data_type: &VectorDataType,
     ) -> Result<bool> {
         // Check basic vectorization requirements
         
         // Must have sufficient iteration count
         if loop_info.iteration_count < 4 {
             return Ok(false);
-        }
-        
         // Must have unit or constant stride
         match stride_pattern {
             StridePattern::Unit | StridePattern::Constant(_) => {}
-            StridePattern::Variable => return Ok(false),
-        }
-        
         // Must have vectorizable data type
         match data_type {
-            VectorDataType::Mixed => return Ok(false),
             _ => {}
         }
         
         // Must not be too large
         if loop_info.body_size > 200 {
             return Ok(false);
-        }
-        
         Ok(true)
-    }
-    
     /// Determine optimal vector width for data type
     fn determine_vector_width(&self, data_type: &VectorDataType) -> usize {
         match data_type {
@@ -1708,9 +1259,6 @@ impl<'ctx> AdvancedLlvmIntegration<'ctx> {
     
     /// Count vectorizable operations in loop
     fn count_vectorizable_operations(
-        &self,
-        function: FunctionValue<'ctx>,
-        loop_info: &LoopInfo,
     ) -> Result<usize> {
         let mut count = 0;
         
@@ -1731,16 +1279,9 @@ impl<'ctx> AdvancedLlvmIntegration<'ctx> {
                     _ => {}
                 }
             }
-        }
-        
         Ok(count)
-    }
-    
     /// Analyze loop dependencies for vectorization
     fn analyze_loop_dependencies(
-        &self,
-        function: FunctionValue<'ctx>,
-        loop_info: &VectorizableLoop,
     ) -> Result<LoopDependencies> {
         let mut data_dependencies = Vec::new();
         let mut memory_conflicts = Vec::new();
@@ -1750,75 +1291,37 @@ impl<'ctx> AdvancedLlvmIntegration<'ctx> {
         // In practice, this would be much more sophisticated
         
         let is_vectorizable = match loop_info.stride_pattern {
-            StridePattern::Unit => true,
-            StridePattern::Constant(stride) if stride <= 2 => true,
-            _ => false,
-        };
         
         Ok(LoopDependencies {
-            is_vectorizable,
-            data_dependencies,
-            memory_conflicts,
-            reduction_operations,
         })
-    }
-    
     /// Generate vector instructions for loop
     fn generate_vector_instructions(
-        &self,
-        function: FunctionValue<'ctx>,
-        loop_info: &VectorizableLoop,
     ) -> Result<Vec<VectorInstruction>> {
         let mut vector_instructions = Vec::new();
         
         // Generate vector load
         vector_instructions.push(VectorInstruction {
-            opcode: VectorOpcode::VectorLoad,
-            operands: vec!["input_array".to_string()],
-            vector_width: loop_info.vector_width,
-            data_type: loop_info.data_type.clone(),
         });
         
         // Generate vector operations based on loop body
         match loop_info.data_type {
             VectorDataType::Float32 | VectorDataType::Float64 => {
                 vector_instructions.push(VectorInstruction {
-                    opcode: VectorOpcode::VectorAdd,
-                    operands: vec!["vec_a".to_string(), "vec_b".to_string()],
-                    vector_width: loop_info.vector_width,
-                    data_type: loop_info.data_type.clone(),
                 });
             }
             VectorDataType::Int32 | VectorDataType::Int64 => {
                 vector_instructions.push(VectorInstruction {
-                    opcode: VectorOpcode::VectorMul,
-                    operands: vec!["vec_a".to_string(), "vec_b".to_string()],
-                    vector_width: loop_info.vector_width,
-                    data_type: loop_info.data_type.clone(),
                 });
             }
             _ => {}
-        }
-        
         // Generate vector store
         vector_instructions.push(VectorInstruction {
-            opcode: VectorOpcode::VectorStore,
-            operands: vec!["result_vec".to_string(), "output_array".to_string()],
-            vector_width: loop_info.vector_width,
-            data_type: loop_info.data_type.clone(),
         });
         
         Ok(vector_instructions)
-    }
-    
     /// Apply vectorization transformation to loop
     fn apply_vectorization_transformation(
-        &mut self,
-        function: FunctionValue<'ctx>,
-        loop_info: &VectorizableLoop,
-        vector_instructions: &[VectorInstruction],
     ) -> Result<bool> {
-        debug!("Applying vectorization transformation with {} instructions", 
                vector_instructions.len());
         
         // In a full implementation, this would:
@@ -1829,8 +1332,6 @@ impl<'ctx> AdvancedLlvmIntegration<'ctx> {
         
         // For now, validate that we have the right conditions
         Ok(vector_instructions.len() > 0 && loop_info.vector_width >= 2)
-    }
-    
     /// Check if loop can be fused with adjacent loops
     fn can_fuse_loop(&self, loop_info: &LoopInfo) -> bool {
         debug!("Analyzing loop fusion opportunity");
@@ -1844,58 +1345,38 @@ impl<'ctx> AdvancedLlvmIntegration<'ctx> {
         // Check iteration count compatibility (conservative approach)
         if loop_info.iteration_count == 0 || loop_info.iteration_count > 1000 {
             return false;
-        }
-        
         // Check loop body size (don't fuse very large loops)
         if loop_info.body_size > 150 {
             return false;
-        }
-        
         // Check nesting level (avoid fusing deeply nested loops)
         if loop_info.nesting_level > 3 {
             return false;
-        }
-        
         // Check for simple structure (single entry/exit)
         if loop_info.exit_blocks.len() > 2 {
             return false;
-        }
-        
         true
-    }
-    
     /// Fuse loop with adjacent loop
     fn fuse_loop(&mut self, function: FunctionValue<'ctx>, loop_info: &LoopInfo) -> Result<bool> {
         debug!("Attempting loop fusion for {} iterations", loop_info.iteration_count);
         
         if !self.can_fuse_loop(loop_info) {
             return Ok(false);
-        }
-        
         // Find candidate fusion target
         let fusion_candidate = self.find_fusion_candidate(function, loop_info)?;
         if fusion_candidate.is_none() {
             return Ok(false);
-        }
-        
         let target_loop = fusion_candidate.unwrap();
         
         // Perform dependency analysis
         if !self.analyze_fusion_dependencies(function, loop_info, &target_loop)? {
             debug!("Loop fusion blocked by dependencies");
             return Ok(false);
-        }
-        
         // Execute the fusion transformation
         let success = self.execute_loop_fusion(function, loop_info, &target_loop)?;
         
         if success {
             debug!("Successfully fused loops");
-        }
-        
         Ok(success)
-    }
-    
     /// Check if loop should be distributed
     fn should_distribute_loop(&self, loop_info: &LoopInfo) -> bool {
         debug!("Analyzing loop distribution opportunity");
@@ -1909,57 +1390,37 @@ impl<'ctx> AdvancedLlvmIntegration<'ctx> {
         // Check minimum size threshold
         if loop_info.body_size < 100 {
             return false;
-        }
-        
         // Check for large iteration count (distribution helps with cache)
         if loop_info.iteration_count < 50 {
             return false;
-        }
-        
         // Check body block count (indicates complexity)
         if loop_info.body_blocks.len() < 3 {
             return false;
-        }
-        
         // Don't distribute already deeply nested loops
         if loop_info.nesting_level > 2 {
             return false;
-        }
-        
         true
-    }
-    
     /// Distribute loop into multiple loops
     fn distribute_loop(&mut self, function: FunctionValue<'ctx>, loop_info: &LoopInfo) -> Result<bool> {
         debug!("Attempting loop distribution for {} body blocks", loop_info.body_blocks.len());
         
         if !self.should_distribute_loop(loop_info) {
             return Ok(false);
-        }
-        
         // Analyze computation phases in the loop
         let phases = self.analyze_computation_phases(function, loop_info)?;
         if phases.len() < 2 {
             debug!("Not enough distinct phases for distribution");
             return Ok(false);
-        }
-        
         // Check for distribution safety
         if !self.verify_distribution_safety(function, loop_info, &phases)? {
             debug!("Loop distribution blocked by safety constraints");
             return Ok(false);
-        }
-        
         // Execute the distribution transformation
         let success = self.execute_loop_distribution(function, loop_info, &phases)?;
         
         if success {
             debug!("Successfully distributed loop into {} phases", phases.len());
-        }
-        
         Ok(success)
-    }
-    
     /// Hoist loop invariant code out of loops
     fn hoist_loop_invariants(&mut self, function: FunctionValue<'ctx>, loop_info: &LoopInfo) -> Result<usize> {
         debug!("Analyzing loop invariant code motion opportunities");
@@ -1973,15 +1434,9 @@ impl<'ctx> AdvancedLlvmIntegration<'ctx> {
         for &body_block in &loop_info.body_blocks {
             let body_block = unsafe { std::mem::transmute(body_block) };
             hoisted_count += self.hoist_invariants_from_block(body_block, preheader, loop_info)?;
-        }
-        
         if hoisted_count > 0 {
             debug!("Hoisted {} loop invariant instructions", hoisted_count);
-        }
-        
         Ok(hoisted_count)
-    }
-    
     /// Find vectorizable loops using real analysis
     fn find_vectorizable_loops(&self, function: FunctionValue<'ctx>) -> Result<Vec<VectorizableLoop>> {
         let mut vectorizable_loops = Vec::new();
@@ -1995,8 +1450,6 @@ impl<'ctx> AdvancedLlvmIntegration<'ctx> {
         
         debug!("Found {} vectorizable loops", vectorizable_loops.len());
         Ok(vectorizable_loops)
-    }
-    
     /// Vectorize loop with real SIMD transformation
     fn vectorize_loop(&mut self, function: FunctionValue<'ctx>, loop_info: &VectorizableLoop) -> Result<bool> {
         debug!("Vectorizing loop with width {}", loop_info.vector_width);
@@ -2004,15 +1457,11 @@ impl<'ctx> AdvancedLlvmIntegration<'ctx> {
         // Validate vectorization conditions
         if loop_info.vector_width < 2 || loop_info.operation_count < 4 {
             return Ok(false);
-        }
-        
         // Perform dependency analysis
         let dependencies = self.analyze_loop_dependencies(function, loop_info)?;
         if !dependencies.is_vectorizable {
             debug!("Loop has dependencies that prevent vectorization");
             return Ok(false);
-        }
-        
         // Transform scalar operations to vector operations
         let vector_instructions = self.generate_vector_instructions(function, loop_info)?;
         
@@ -2020,13 +1469,8 @@ impl<'ctx> AdvancedLlvmIntegration<'ctx> {
         let success = self.apply_vectorization_transformation(function, loop_info, &vector_instructions)?;
         
         if success {
-            debug!("Successfully vectorized loop, generated {} SIMD instructions", 
                    vector_instructions.len());
-        }
-        
         Ok(success)
-    }
-    
     /// Optimize instruction selection for target CPU features
     fn optimize_instruction_selection(&mut self, function: FunctionValue<'ctx>) -> Result<usize> {
         debug!("Optimizing instruction selection for target CPU");
@@ -2083,8 +1527,6 @@ impl<'ctx> AdvancedLlvmIntegration<'ctx> {
         
         debug!("Applied {} target-specific instruction optimizations", optimizations_applied);
         Ok(optimizations_applied)
-    }
-    
     /// Optimize cache usage patterns for better locality
     fn optimize_cache_usage(&mut self, function: FunctionValue<'ctx>) -> Result<usize> {
         debug!("Optimizing cache usage patterns");
@@ -2108,8 +1550,6 @@ impl<'ctx> AdvancedLlvmIntegration<'ctx> {
         
         debug!("Applied {} cache optimization transformations", optimizations_applied);
         Ok(optimizations_applied)
-    }
-    
     /// Reduce register pressure through spilling and reuse optimization
     fn reduce_register_pressure(&mut self, function: FunctionValue<'ctx>) -> Result<usize> {
         debug!("Analyzing and reducing register pressure");
@@ -2124,8 +1564,6 @@ impl<'ctx> AdvancedLlvmIntegration<'ctx> {
         
         if pressure_points.is_empty() {
             return Ok(0);
-        }
-        
         // Apply register pressure reduction techniques
         for pressure_point in pressure_points {
             // Technique 1: Value reuse optimization
@@ -2139,12 +1577,8 @@ impl<'ctx> AdvancedLlvmIntegration<'ctx> {
             
             // Technique 4: Spill code optimization
             optimizations_applied += self.optimize_spill_code(function, &pressure_point)?;
-        }
-        
         debug!("Applied {} register pressure reduction optimizations", optimizations_applied);
         Ok(optimizations_applied)
-    }
-    
     /// Optimize memory layout for better performance
     fn optimize_memory_layout(&mut self, function: FunctionValue<'ctx>) -> Result<usize> {
         debug!("Optimizing memory layout");
@@ -2168,8 +1602,6 @@ impl<'ctx> AdvancedLlvmIntegration<'ctx> {
         
         debug!("Applied {} memory layout optimizations", optimizations_applied);
         Ok(optimizations_applied)
-    }
-    
     /// Eliminate dead code at global scope
     fn eliminate_global_dead_code(&mut self) -> Result<()> {
         debug!("Performing global dead code elimination");
@@ -2193,8 +1625,6 @@ impl<'ctx> AdvancedLlvmIntegration<'ctx> {
                     function.delete();
                 }
             }
-        }
-        
         // Remove unreachable global variables
         let reachable_globals = self.find_reachable_globals(&reachable_functions)?;
         let mut removed_globals = Vec::new();
@@ -2206,14 +1636,9 @@ impl<'ctx> AdvancedLlvmIntegration<'ctx> {
                     global.delete();
                 }
             }
-        }
-        
-        debug!("Removed {} dead functions and {} dead globals", 
                removed_functions.len(), removed_globals.len());
         
         Ok(())
-    }
-    
     /// Propagate constants across function boundaries
     fn propagate_global_constants(&mut self) -> Result<()> {
         debug!("Performing global constant propagation");
@@ -2228,12 +1653,7 @@ impl<'ctx> AdvancedLlvmIntegration<'ctx> {
         let mut propagation_count = 0;
         for (global_name, constant_value) in constant_globals {
             propagation_count += self.propagate_constant_into_functions(
-                &global_name,
-                &constant_value,
-                &constant_readers,
             )?;
-        }
-        
         // Propagate constants through function arguments
         propagation_count += self.propagate_function_argument_constants()?;
         
@@ -2242,8 +1662,6 @@ impl<'ctx> AdvancedLlvmIntegration<'ctx> {
         
         debug!("Propagated {} constants globally", propagation_count);
         Ok(())
-    }
-    
     /// Specialize functions based on usage patterns
     fn specialize_functions(&mut self) -> Result<()> {
         debug!("Analyzing function specialization opportunities");
@@ -2266,12 +1684,9 @@ impl<'ctx> AdvancedLlvmIntegration<'ctx> {
                 
                 if updated_calls > 0 {
                     specialized_count += 1;
-                    debug!("Specialized function {} with {} call sites updated", 
                            candidate.function_name, updated_calls);
                 }
             }
-        }
-        
         debug!("Created {} specialized function variants", specialized_count);
         Ok(())
     }
@@ -2280,50 +1695,21 @@ impl<'ctx> AdvancedLlvmIntegration<'ctx> {
 /// Loop information for optimization
 #[derive(Debug, Clone)]
 struct LoopInfo {
-    iteration_count: usize,
-    body_size: usize,
-    nesting_level: usize,
-    header_block: Option<BasicBlock<'static>>,
-    exit_blocks: Vec<BasicBlock<'static>>,
-    body_blocks: Vec<BasicBlock<'static>>,
-}
-
 /// Vectorizable loop information
 #[derive(Debug, Clone)]
 struct VectorizableLoop {
-    operation_count: usize,
-    vector_width: usize,
-    estimated_simd_instructions: usize,
-    data_type: VectorDataType,
-    stride_pattern: StridePattern,
-    has_reductions: bool,
-}
-
 /// Vector data type for SIMD operations
 #[derive(Debug, Clone)]
 enum VectorDataType {
-    Float32,
-    Float64,
-    Int32,
-    Int64,
-    Mixed,
-}
-
 /// Memory access stride pattern
 #[derive(Debug, Clone)]
 enum StridePattern {
     Unit,           // Stride 1 (consecutive)
     Constant(usize), // Fixed stride
     Variable,       // Variable stride
-}
-
 /// Dominance information for a function
 #[derive(Debug)]
 struct DominanceInfo {
-    dominators: HashMap<BasicBlock<'static>, HashSet<BasicBlock<'static>>>,
-    immediate_dominators: HashMap<BasicBlock<'static>, BasicBlock<'static>>,
-}
-
 impl DominanceInfo {
     fn dominates(&self, dominator: BasicBlock, dominated: BasicBlock) -> bool {
         if let Some(doms) = self.dominators.get(&dominated) {
@@ -2332,135 +1718,47 @@ impl DominanceInfo {
             false
         }
     }
-}
-
 /// Loop dependency analysis result
 #[derive(Debug)]
 struct LoopDependencies {
-    is_vectorizable: bool,
-    data_dependencies: Vec<DataDependency>,
-    memory_conflicts: Vec<MemoryConflict>,
-    reduction_operations: Vec<ReductionOp>,
-}
-
 /// Data dependency between loop iterations
 #[derive(Debug)]
 struct DataDependency {
-    source_instruction: String,
-    target_instruction: String,
-    distance: isize,
-    dependency_type: DependencyType,
-}
-
 #[derive(Debug)]
 enum DependencyType {
     TrueDependence,      // Read after write
     AntiDependence,      // Write after read
     OutputDependence,    // Write after write
     InputDependence,     // Read after read (not a real dependency)
-}
-
 /// Memory access conflict
 #[derive(Debug)]
 struct MemoryConflict {
-    address_base: String,
-    stride: isize,
-    conflict_type: ConflictType,
-}
-
 #[derive(Debug)]
 enum ConflictType {
-    ReadWrite,
-    WriteWrite,
-    Aliasing,
-}
-
 /// Reduction operation in a loop
 #[derive(Debug)]
 struct ReductionOp {
-    operation: ReductionType,
-    accumulator: String,
-    vectorizable: bool,
-}
-
 #[derive(Debug)]
 enum ReductionType {
-    Sum,
-    Product,
-    Min,
-    Max,
-    And,
-    Or,
-    Xor,
-}
-
 /// Vector instruction for SIMD generation
 #[derive(Debug)]
 struct VectorInstruction {
-    opcode: VectorOpcode,
-    operands: Vec<String>,
-    vector_width: usize,
-    data_type: VectorDataType,
-}
-
 #[derive(Debug)]
 enum VectorOpcode {
-    VectorLoad,
-    VectorStore,
-    VectorAdd,
-    VectorMul,
     VectorFMA,       // Fused multiply-add
-    VectorShuffle,
-    VectorReduce,
-}
-
 /// Instruction cloning system for function inlining and transformations
 pub struct InstructionCloner<'ctx> {
-    context: &'ctx Context,
-    target_function: FunctionValue<'ctx>,
-    value_map: HashMap<inkwell::values::BasicValueEnum<'ctx>, inkwell::values::BasicValueEnum<'ctx>>,
-    block_map: HashMap<BasicBlock<'ctx>, BasicBlock<'ctx>>,
-    builder: Builder<'ctx>,
-    statistics: CloningStatistics,
-}
-
 /// CFG manipulation system for optimization transformations
 pub struct CfgManipulator<'ctx> {
-    context: &'ctx Context,
-    builder: &'ctx Builder<'ctx>,
-    statistics: CfgManipulationStatistics,
-}
-
 /// Statistics for instruction cloning operations
 #[derive(Debug, Clone, Default)]
 pub struct CloningStatistics {
-    pub instructions_cloned: usize,
-    pub basic_blocks_cloned: usize,
-    pub phi_nodes_updated: usize,
-    pub branch_targets_updated: usize,
-    pub cloning_time: Duration,
-}
-
 /// Statistics for CFG manipulation operations
 #[derive(Debug, Clone, Default)]
 pub struct CfgManipulationStatistics {
-    pub blocks_created: usize,
-    pub blocks_merged: usize,
-    pub branches_redirected: usize,
-    pub phi_nodes_created: usize,
-    pub manipulation_time: Duration,
-}
-
 /// Cloned function body representation
 #[derive(Debug)]
 pub struct ClonedFunctionBody<'ctx> {
-    pub entry_block: BasicBlock<'ctx>,
-    pub exit_blocks: Vec<BasicBlock<'ctx>>,
-    pub all_blocks: Vec<BasicBlock<'ctx>>,
-    pub return_values: Vec<inkwell::values::BasicValueEnum<'ctx>>,
-    pub parameter_mapping: HashMap<inkwell::values::BasicValueEnum<'ctx>, inkwell::values::BasicValueEnum<'ctx>>,
-}
-
 impl<'ctx> InstructionCloner<'ctx> {
     /// Create new instruction cloner
     #[instrument(skip(context, target_function))]
@@ -2468,15 +1766,7 @@ impl<'ctx> InstructionCloner<'ctx> {
         let builder = context.create_builder();
         
         Ok(Self {
-            context,
-            target_function,
-            value_map: HashMap::new(),
-            block_map: HashMap::new(),
-            builder,
-            statistics: CloningStatistics::default(),
         })
-    }
-    
     /// Clone entire function body with all basic blocks and instructions
     #[instrument(skip(self, source_function))]
     pub fn clone_function_body(&mut self, source_function: FunctionValue<'ctx>) -> Result<ClonedFunctionBody<'ctx>> {
@@ -2506,14 +1796,7 @@ impl<'ctx> InstructionCloner<'ctx> {
         info!("Function cloning completed in {:?}", self.statistics.cloning_time);
         
         Ok(ClonedFunctionBody {
-            entry_block,
-            exit_blocks,
-            all_blocks: blocks,
-            return_values,
-            parameter_mapping,
         })
-    }
-    
     /// Create basic blocks for all blocks in source function
     fn create_basic_blocks(&mut self, source_function: FunctionValue<'ctx>) -> Result<Vec<BasicBlock<'ctx>>> {
         let mut cloned_blocks = Vec::new();
@@ -2526,17 +1809,10 @@ impl<'ctx> InstructionCloner<'ctx> {
             cloned_blocks.push(cloned_block);
             
             self.statistics.basic_blocks_cloned += 1;
-        }
-        
         debug!("Created {} basic blocks for cloning", cloned_blocks.len());
         Ok(cloned_blocks)
-    }
-    
     /// Clone all instructions in all basic blocks
     fn clone_all_instructions(
-        &mut self,
-        source_function: FunctionValue<'ctx>,
-        cloned_blocks: &[BasicBlock<'ctx>],
     ) -> Result<()> {
         for source_block in source_function.get_basic_blocks() {
             let cloned_block = self.block_map[&source_block];
@@ -2549,8 +1825,6 @@ impl<'ctx> InstructionCloner<'ctx> {
         
         debug!("Cloned {} instructions", self.statistics.instructions_cloned);
         Ok(())
-    }
-    
     /// Clone a single instruction with operand mapping
     fn clone_instruction(&mut self, instruction: &InstructionValue<'ctx>) -> Result<()> {
         match instruction.get_opcode() {
@@ -2622,8 +1896,6 @@ impl<'ctx> InstructionCloner<'ctx> {
         
         self.statistics.instructions_cloned += 1;
         Ok(())
-    }
-    
     /// Clone return instruction
     fn clone_return_instruction(&mut self, instruction: &InstructionValue<'ctx>) -> Result<()> {
         if instruction.get_num_operands() > 0 {
@@ -2641,8 +1913,6 @@ impl<'ctx> InstructionCloner<'ctx> {
             self.builder.build_return(None)?;
         }
         Ok(())
-    }
-    
     /// Clone branch instruction
     fn clone_branch_instruction(&mut self, instruction: &InstructionValue<'ctx>) -> Result<()> {
         if let Some(target_operand) = instruction.get_operand(0) {
@@ -2654,8 +1924,6 @@ impl<'ctx> InstructionCloner<'ctx> {
             }
         }
         Ok(())
-    }
-    
     /// Clone conditional branch instruction
     fn clone_conditional_branch_instruction(&mut self, instruction: &InstructionValue<'ctx>) -> Result<()> {
         if instruction.get_num_operands() >= 3 {
@@ -2677,8 +1945,6 @@ impl<'ctx> InstructionCloner<'ctx> {
             }
         }
         Ok(())
-    }
-    
     /// Clone switch instruction
     fn clone_switch_instruction(&mut self, instruction: &InstructionValue<'ctx>) -> Result<()> {
         if instruction.get_num_operands() >= 2 {
@@ -2697,7 +1963,6 @@ impl<'ctx> InstructionCloner<'ctx> {
                 // Add case values (simplified - would need more complex case handling)
                 for i in (2..instruction.get_num_operands()).step_by(2) {
                     if let (Some(case_value), Some(case_block)) = (
-                        instruction.get_operand(i).and_then(|op| op.left()),
                         instruction.get_operand(i + 1).and_then(|op| op.left()).and_then(|v| v.as_basic_block())
                     ) {
                         if let Some(case_int) = case_value.as_int_value() {
@@ -2709,8 +1974,6 @@ impl<'ctx> InstructionCloner<'ctx> {
             }
         }
         Ok(())
-    }
-    
     /// Create placeholder for phi node (to be fixed up later)
     fn create_placeholder_phi_node(&mut self, instruction: &InstructionValue<'ctx>) -> Result<()> {
         let phi_type = instruction.get_type();
@@ -2724,8 +1987,6 @@ impl<'ctx> InstructionCloner<'ctx> {
         }
         
         Ok(())
-    }
-    
     /// Clone call instruction
     fn clone_call_instruction(&mut self, instruction: &InstructionValue<'ctx>) -> Result<()> {
         // Get the called function
@@ -2752,16 +2013,12 @@ impl<'ctx> InstructionCloner<'ctx> {
         }
         
         Ok(())
-    }
-    
     /// Clone load instruction
     fn clone_load_instruction(&mut self, instruction: &InstructionValue<'ctx>) -> Result<()> {
         if let Some(ptr_operand) = instruction.get_operand(0).and_then(|op| op.left()) {
             let mapped_ptr = self.map_value(ptr_operand)?;
             if let Some(ptr_value) = mapped_ptr.as_pointer_value() {
                 let load_result = self.builder.build_load(
-                    instruction.get_type(), 
-                    ptr_value, 
                     "inlined_load"
                 )?;
                 
@@ -2771,8 +2028,6 @@ impl<'ctx> InstructionCloner<'ctx> {
             }
         }
         Ok(())
-    }
-    
     /// Clone store instruction
     fn clone_store_instruction(&mut self, instruction: &InstructionValue<'ctx>) -> Result<()> {
         if instruction.get_num_operands() >= 2 {
@@ -2789,8 +2044,6 @@ impl<'ctx> InstructionCloner<'ctx> {
             }
         }
         Ok(())
-    }
-    
     /// Clone binary arithmetic instruction
     fn clone_binary_instruction(&mut self, instruction: &InstructionValue<'ctx>) -> Result<()> {
         if instruction.get_num_operands() >= 2 {
@@ -2819,8 +2072,6 @@ impl<'ctx> InstructionCloner<'ctx> {
                     inkwell::values::InstructionOpcode::UDiv => {
                         self.builder.build_int_unsigned_div(left_int, right_int, "inlined_udiv")?
                     }
-                    _ => return Ok(()),
-                };
                 
                 if let Some(original_value) = instruction.as_basic_value() {
                     self.value_map.insert(original_value, result.as_basic_value_enum());
@@ -2828,8 +2079,6 @@ impl<'ctx> InstructionCloner<'ctx> {
             }
         }
         Ok(())
-    }
-    
     /// Clone floating point binary instruction
     fn clone_float_binary_instruction(&mut self, instruction: &InstructionValue<'ctx>) -> Result<()> {
         if instruction.get_num_operands() >= 2 {
@@ -2855,8 +2104,6 @@ impl<'ctx> InstructionCloner<'ctx> {
                     inkwell::values::InstructionOpcode::FDiv => {
                         self.builder.build_float_div(left_float, right_float, "inlined_fdiv")?
                     }
-                    _ => return Ok(()),
-                };
                 
                 if let Some(original_value) = instruction.as_basic_value() {
                     self.value_map.insert(original_value, result.as_basic_value_enum());
@@ -2864,8 +2111,6 @@ impl<'ctx> InstructionCloner<'ctx> {
             }
         }
         Ok(())
-    }
-    
     /// Clone integer comparison instruction
     fn clone_icmp_instruction(&mut self, instruction: &InstructionValue<'ctx>) -> Result<()> {
         if instruction.get_num_operands() >= 2 {
@@ -2881,8 +2126,6 @@ impl<'ctx> InstructionCloner<'ctx> {
                 // Note: This is simplified - would need to extract the actual predicate
                 let result = self.builder.build_int_compare(
                     inkwell::IntPredicate::EQ, // Default predicate
-                    left_int,
-                    right_int,
                     "inlined_icmp"
                 )?;
                 
@@ -2892,8 +2135,6 @@ impl<'ctx> InstructionCloner<'ctx> {
             }
         }
         Ok(())
-    }
-    
     /// Clone floating point comparison instruction
     fn clone_fcmp_instruction(&mut self, instruction: &InstructionValue<'ctx>) -> Result<()> {
         if instruction.get_num_operands() >= 2 {
@@ -2909,8 +2150,6 @@ impl<'ctx> InstructionCloner<'ctx> {
                 // Note: This is simplified - would need to extract the actual predicate
                 let result = self.builder.build_float_compare(
                     inkwell::FloatPredicate::OEQ, // Default predicate
-                    left_float,
-                    right_float,
                     "inlined_fcmp"
                 )?;
                 
@@ -2920,8 +2159,6 @@ impl<'ctx> InstructionCloner<'ctx> {
             }
         }
         Ok(())
-    }
-    
     /// Clone GetElementPtr instruction
     fn clone_gep_instruction(&mut self, instruction: &InstructionValue<'ctx>) -> Result<()> {
         if instruction.get_num_operands() >= 1 {
@@ -2939,18 +2176,13 @@ impl<'ctx> InstructionCloner<'ctx> {
                         mapped_indices.push(index_int);
                     }
                 }
-            }
-            
             if let Some(ptr_value) = mapped_ptr.as_pointer_value() {
                 // Note: This is simplified - would need element type information
                 let result = unsafe {
                     self.builder.build_gep(
                         self.context.i8_type(), // Simplified element type
-                        ptr_value,
-                        &mapped_indices,
                         "inlined_gep"
                     )?
-                };
                 
                 if let Some(original_value) = instruction.as_basic_value() {
                     self.value_map.insert(original_value, result.as_basic_value_enum());
@@ -2958,8 +2190,6 @@ impl<'ctx> InstructionCloner<'ctx> {
             }
         }
         Ok(())
-    }
-    
     /// Clone cast instruction
     fn clone_cast_instruction(&mut self, instruction: &InstructionValue<'ctx>) -> Result<()> {
         if let Some(operand) = instruction.get_operand(0).and_then(|op| op.left()) {
@@ -2995,15 +2225,12 @@ impl<'ctx> InstructionCloner<'ctx> {
                     }
                 }
                 _ => return Ok(()), // Other cast types would be handled similarly
-            };
             
             if let Some(original_value) = instruction.as_basic_value() {
                 self.value_map.insert(original_value, result);
             }
         }
         Ok(())
-    }
-    
     /// Clone alloca instruction
     fn clone_alloca_instruction(&mut self, instruction: &InstructionValue<'ctx>) -> Result<()> {
         let alloca_type = instruction.get_allocated_type()
@@ -3013,19 +2240,13 @@ impl<'ctx> InstructionCloner<'ctx> {
         
         if let Some(original_value) = instruction.as_basic_value() {
             self.value_map.insert(original_value, result.as_basic_value_enum());
-        }
-        
         Ok(())
-    }
-    
     /// Clone generic instruction (fallback)
     fn clone_generic_instruction(&mut self, instruction: &InstructionValue<'ctx>) -> Result<()> {
         // For instructions we don't have specific handling for,
         // we can skip them or handle them generically
         debug!("Skipping generic instruction: {:?}", instruction.get_opcode());
         Ok(())
-    }
-    
     /// Map a value through the value mapping
     fn map_value(&self, value: inkwell::values::BasicValueEnum<'ctx>) -> Result<inkwell::values::BasicValueEnum<'ctx>> {
         if let Some(mapped) = self.value_map.get(&value) {
@@ -3038,9 +2259,6 @@ impl<'ctx> InstructionCloner<'ctx> {
     
     /// Fix phi nodes and branch targets after cloning
     fn fix_phi_nodes_and_branches(
-        &mut self,
-        source_function: FunctionValue<'ctx>,
-        cloned_blocks: &[BasicBlock<'ctx>],
     ) -> Result<()> {
         for (source_block, &cloned_block) in source_function.get_basic_blocks().zip(cloned_blocks.iter()) {
             for instruction in source_block.get_instructions() {
@@ -3048,12 +2266,8 @@ impl<'ctx> InstructionCloner<'ctx> {
                     self.fix_phi_node(&instruction, cloned_block)?;
                 }
             }
-        }
-        
         self.statistics.phi_nodes_updated += cloned_blocks.len();
         Ok(())
-    }
-    
     /// Fix a specific phi node
     fn fix_phi_node(&mut self, phi_instruction: &InstructionValue<'ctx>, cloned_block: BasicBlock<'ctx>) -> Result<()> {
         // Find the cloned phi node
@@ -3085,12 +2299,8 @@ impl<'ctx> InstructionCloner<'ctx> {
             }
         }
         Ok(())
-    }
-    
     /// Create parameter mapping for function arguments
     fn create_parameter_mapping(
-        &mut self,
-        source_function: FunctionValue<'ctx>,
     ) -> Result<HashMap<inkwell::values::BasicValueEnum<'ctx>, inkwell::values::BasicValueEnum<'ctx>>> {
         let mut parameter_mapping = HashMap::new();
         
@@ -3100,15 +2310,9 @@ impl<'ctx> InstructionCloner<'ctx> {
         for param in source_function.get_param_iter() {
             // In a real implementation, this would map to call arguments
             parameter_mapping.insert(param, param);
-        }
-        
         Ok(parameter_mapping)
-    }
-    
     /// Identify entry and exit blocks
     fn identify_entry_and_exit_blocks(
-        &self,
-        cloned_blocks: &[BasicBlock<'ctx>],
     ) -> Result<(BasicBlock<'ctx>, Vec<BasicBlock<'ctx>>)> {
         let entry_block = cloned_blocks.first()
             .ok_or_else(|| CursedError::OptimizationError("No cloned blocks found".to_string()))?;
@@ -3122,15 +2326,9 @@ impl<'ctx> InstructionCloner<'ctx> {
                     exit_blocks.push(block);
                 }
             }
-        }
-        
         Ok((*entry_block, exit_blocks))
-    }
-    
     /// Collect return values from exit blocks
     fn collect_return_values(
-        &self,
-        exit_blocks: &[BasicBlock<'ctx>],
     ) -> Result<Vec<inkwell::values::BasicValueEnum<'ctx>>> {
         let mut return_values = Vec::new();
         
@@ -3144,11 +2342,7 @@ impl<'ctx> InstructionCloner<'ctx> {
                     }
                 }
             }
-        }
-        
         Ok(return_values)
-    }
-    
     /// Get cloning statistics
     pub fn get_statistics(&self) -> &CloningStatistics {
         &self.statistics
@@ -3160,20 +2354,10 @@ impl<'ctx> CfgManipulator<'ctx> {
     #[instrument(skip(context, builder))]
     pub fn new(context: &'ctx Context, builder: &'ctx Builder<'ctx>) -> Result<Self> {
         Ok(Self {
-            context,
-            builder,
-            statistics: CfgManipulationStatistics::default(),
         })
-    }
-    
     /// Integrate inlined function into calling function's CFG
     #[instrument(skip(self, call_site, call_block, cloned_body, cloner))]
     pub fn integrate_inlined_function(
-        &self,
-        call_site: &InstructionValue<'ctx>,
-        call_block: BasicBlock<'ctx>,
-        cloned_body: ClonedFunctionBody<'ctx>,
-        cloner: &mut InstructionCloner<'ctx>,
     ) -> Result<bool> {
         let start_time = Instant::now();
         info!("Integrating inlined function into CFG");
@@ -3186,10 +2370,6 @@ impl<'ctx> CfgManipulator<'ctx> {
         
         // Handle return values and connect exit blocks to post-call block
         self.handle_return_values_and_exits(
-            call_site,
-            &cloned_body.exit_blocks,
-            &cloned_body.return_values,
-            post_call_block,
         )?;
         
         // Remove the original call instruction
@@ -3199,13 +2379,8 @@ impl<'ctx> CfgManipulator<'ctx> {
         info!("CFG integration completed in {:?}", manipulation_time);
         
         Ok(true)
-    }
-    
     /// Split basic block at call site
     fn split_block_at_call_site(
-        &self,
-        call_site: &InstructionValue<'ctx>,
-        call_block: BasicBlock<'ctx>,
     ) -> Result<(BasicBlock<'ctx>, BasicBlock<'ctx>)> {
         // Find the position of the call instruction
         let mut call_position = None;
@@ -3238,8 +2413,6 @@ impl<'ctx> CfgManipulator<'ctx> {
         
         self.statistics.blocks_created += 1;
         Ok((call_block, post_call_block))
-    }
-    
     /// Connect two basic blocks with unconditional branch
     fn connect_blocks(&self, from_block: BasicBlock<'ctx>, to_block: BasicBlock<'ctx>) -> Result<()> {
         self.builder.position_at_end(from_block);
@@ -3255,20 +2428,11 @@ impl<'ctx> CfgManipulator<'ctx> {
         self.statistics.branches_redirected += 1;
         
         Ok(())
-    }
-    
     /// Handle return values and connect exit blocks
     fn handle_return_values_and_exits(
-        &self,
-        call_site: &InstructionValue<'ctx>,
-        exit_blocks: &[BasicBlock<'ctx>],
-        return_values: &[inkwell::values::BasicValueEnum<'ctx>],
-        post_call_block: BasicBlock<'ctx>,
     ) -> Result<()> {
         if exit_blocks.is_empty() {
             return Ok(());
-        }
-        
         // If there are multiple exit blocks, we need to create a phi node for return values
         if exit_blocks.len() > 1 && !return_values.is_empty() {
             self.builder.position_at_end(post_call_block);
@@ -3283,8 +2447,6 @@ impl<'ctx> CfgManipulator<'ctx> {
                 
                 // Connect exit block to post-call block
                 self.connect_blocks(*exit_block, post_call_block)?;
-            }
-            
             // Replace uses of call instruction with phi node
             if let Some(phi_value) = phi_node.as_basic_value() {
                 if let Some(call_value) = call_site.as_basic_value() {
@@ -3304,19 +2466,13 @@ impl<'ctx> CfgManipulator<'ctx> {
                     call_value.replace_all_uses_with(&return_values[0]);
                 }
             }
-        }
-        
         Ok(())
-    }
-    
     /// Remove the original call instruction
     fn remove_call_instruction(&self, call_site: &InstructionValue<'ctx>) -> Result<()> {
         unsafe {
             call_site.remove_from_parent();
         }
         Ok(())
-    }
-    
     /// Get CFG manipulation statistics
     pub fn get_statistics(&self) -> &CfgManipulationStatistics {
         &self.statistics
@@ -3326,186 +2482,57 @@ impl<'ctx> CfgManipulator<'ctx> {
 /// CPU feature analysis for target-specific optimizations
 #[derive(Debug, Clone)]
 struct CpuFeatures {
-    has_advanced_alu: bool,
     has_fma: bool,           // Fused multiply-add
-    has_advanced_fp: bool,
-    has_advanced_memory: bool,
-    has_advanced_compare: bool,
-    has_vectorization: bool,
-    has_prefetch: bool,
-}
-
 /// Memory access pattern analysis
 #[derive(Debug, Clone)]
 struct MemoryAccessPattern {
-    base_pointer: String,
-    access_type: MemoryAccessType,
-    stride: isize,
-    frequency: usize,
-    cache_locality: LocalityType,
-}
-
 #[derive(Debug, Clone)]
 enum MemoryAccessType {
-    Load,
-    Store,
-    LoadStore,
-}
-
 #[derive(Debug, Clone)]
 enum LocalityType {
     Temporal,   // Accessed again soon
     Spatial,    // Nearby addresses accessed
-    NoLocality,
-}
-
 /// Register pressure analysis
 #[derive(Debug, Clone)]
 struct RegisterUsage {
-    live_ranges: Vec<LiveRange>,
-    pressure_points: Vec<PressurePoint>,
-    register_conflicts: Vec<RegisterConflict>,
-}
-
 #[derive(Debug, Clone)]
 struct LiveRange {
-    value_name: String,
-    start_instruction: usize,
-    end_instruction: usize,
-    register_class: RegisterClass,
-}
-
 #[derive(Debug, Clone)]
 struct PressurePoint {
-    instruction_index: usize,
-    pressure_level: usize,
-    register_class: RegisterClass,
-    spill_candidates: Vec<String>,
-}
-
 #[derive(Debug, Clone)]
 struct RegisterConflict {
-    value1: String,
-    value2: String,
-    conflict_type: ConflictType,
-}
-
 #[derive(Debug, Clone)]
 enum RegisterClass {
-    Integer,
-    FloatingPoint,
-    Vector,
-    Special,
-}
-
 /// Memory allocation analysis
 #[derive(Debug, Clone)]
 struct MemoryAllocation {
-    allocation_type: AllocationType,
-    size: usize,
-    alignment: usize,
-    usage_pattern: UsagePattern,
-}
-
 #[derive(Debug, Clone)]
 enum AllocationType {
-    Stack,
-    Heap,
-    Global,
-    Constant,
-}
-
 #[derive(Debug, Clone)]
 enum UsagePattern {
-    Sequential,
-    Random,
-    Strided(isize),
-    Hierarchical,
-}
-
 /// Function call pattern analysis
 #[derive(Debug, Clone)]
 struct CallPattern {
-    function_name: String,
-    call_sites: Vec<CallSite>,
-    argument_patterns: Vec<ArgumentPattern>,
-    return_usage: ReturnUsage,
-}
-
 #[derive(Debug, Clone)]
 struct CallSite {
-    caller_function: String,
-    call_frequency: usize,
-    constant_arguments: Vec<ConstantArgument>,
-    context: CallContext,
-}
-
 #[derive(Debug, Clone)]
 struct ArgumentPattern {
-    argument_index: usize,
-    is_constant: bool,
-    constant_value: Option<String>,
-    usage_frequency: f64,
-}
-
 #[derive(Debug, Clone)]
 struct ConstantArgument {
-    argument_index: usize,
-    constant_value: String,
-    value_type: String,
-}
-
 #[derive(Debug, Clone)]
 enum CallContext {
-    HotPath,
-    ColdPath,
-    Loop,
-    Recursive,
-}
-
 #[derive(Debug, Clone)]
 enum ReturnUsage {
-    AlwaysUsed,
-    SometimesUsed,
-    NeverUsed,
-    ConditionallyUsed,
-}
-
 /// Specialization candidate
 #[derive(Debug, Clone)]
 struct SpecializationCandidate {
-    function_name: String,
-    specialization_type: SpecializationType,
-    constant_arguments: Vec<ConstantArgument>,
-    expected_benefit: f64,
-    code_size_impact: isize,
-}
-
 #[derive(Debug, Clone)]
 enum SpecializationType {
-    ConstantPropagation,
-    TypeSpecialization,
-    ContextSensitive,
-    InlineExpansion,
-}
-
 /// Computation phase for loop distribution
 #[derive(Debug, Clone)]
 struct ComputationPhase {
-    phase_type: PhaseType,
-    instructions: Vec<String>,
-    dependencies: Vec<String>,
-    memory_pattern: MemoryAccessPattern,
-}
-
 #[derive(Debug, Clone)]
 enum PhaseType {
-    MemoryIntensive,
-    ComputeIntensive,
-    Control,
-    Reduction,
-}
-
 impl<'ctx> AdvancedLlvmIntegration<'ctx> {
     /// Analyze target CPU features
     fn analyze_target_cpu_features(&self) -> CpuFeatures {
@@ -3513,13 +2540,6 @@ impl<'ctx> AdvancedLlvmIntegration<'ctx> {
         let target_features = &self.config.target_features;
         
         CpuFeatures {
-            has_advanced_alu: target_features.contains("adx") || target_features.contains("bmi"),
-            has_fma: target_features.contains("fma") || target_features.contains("fma4"),
-            has_advanced_fp: target_features.contains("avx") || target_features.contains("sse4"),
-            has_advanced_memory: target_features.contains("avx2") || target_features.contains("prefetch"),
-            has_advanced_compare: target_features.contains("sse4") || target_features.contains("avx"),
-            has_vectorization: target_features.contains("avx") || target_features.contains("sse"),
-            has_prefetch: target_features.contains("prefetch") || target_cpu != "generic",
         }
     }
     
@@ -3536,11 +2556,7 @@ impl<'ctx> AdvancedLlvmIntegration<'ctx> {
                     return Ok(1);
                 }
             }
-        }
-        
         Ok(0)
-    }
-    
     /// Optimize FMA (Fused Multiply-Add) opportunities
     fn optimize_fma_opportunities(&self, instruction: &InstructionValue<'ctx>) -> Result<usize> {
         // Look for patterns like a * b + c that can use FMA instruction
@@ -3557,11 +2573,7 @@ impl<'ctx> AdvancedLlvmIntegration<'ctx> {
                     }
                 }
             }
-        }
-        
         Ok(0)
-    }
-    
     /// Optimize floating point instruction
     fn optimize_fp_instruction(&self, instruction: &InstructionValue<'ctx>) -> Result<usize> {
         // Optimize floating point operations with advanced FP units
@@ -3614,8 +2626,6 @@ impl<'ctx> AdvancedLlvmIntegration<'ctx> {
         }
         
         Ok(0)
-    }
-    
     /// Analyze memory access patterns in function
     fn analyze_memory_access_patterns(&self, function: FunctionValue<'ctx>) -> Result<Vec<MemoryAccessPattern>> {
         let mut patterns = Vec::new();
@@ -3641,29 +2651,15 @@ impl<'ctx> AdvancedLlvmIntegration<'ctx> {
         }
         
         Ok(patterns)
-    }
-    
     /// Analyze pointer access pattern
     fn analyze_pointer_access_pattern(
-        &self,
-        ptr: &inkwell::values::BasicValueEnum<'ctx>,
-        access_type: MemoryAccessType,
     ) -> Result<MemoryAccessPattern> {
         // Simplified analysis - would be more sophisticated in practice
         Ok(MemoryAccessPattern {
-            base_pointer: "base".to_string(),
-            access_type,
             stride: 1, // Assume unit stride
-            frequency: 1,
-            cache_locality: LocalityType::Spatial,
         })
-    }
-    
     /// Optimize spatial locality
     fn optimize_spatial_locality(
-        &self,
-        function: FunctionValue<'ctx>,
-        memory_accesses: &[MemoryAccessPattern],
     ) -> Result<usize> {
         // Group nearby memory accesses together
         let mut optimizations = 0;
@@ -3679,8 +2675,6 @@ impl<'ctx> AdvancedLlvmIntegration<'ctx> {
         }
         
         Ok(optimizations)
-    }
-    
     /// Cluster related memory accesses
     fn cluster_memory_accesses(&self, accesses: &[MemoryAccessPattern]) -> Vec<Vec<&MemoryAccessPattern>> {
         let mut clusters = Vec::new();
@@ -3689,8 +2683,6 @@ impl<'ctx> AdvancedLlvmIntegration<'ctx> {
         for (i, access) in accesses.iter().enumerate() {
             if visited[i] {
                 continue;
-            }
-            
             let mut cluster = vec![access];
             visited[i] = true;
             
@@ -3702,27 +2694,18 @@ impl<'ctx> AdvancedLlvmIntegration<'ctx> {
                         visited[j] = true;
                     }
                 }
-            }
-            
             if cluster.len() > 1 {
                 clusters.push(cluster);
             }
         }
         
         clusters
-    }
-    
     /// Check if two memory accesses are related
     fn are_accesses_related(&self, access1: &MemoryAccessPattern, access2: &MemoryAccessPattern) -> bool {
         access1.base_pointer == access2.base_pointer && 
         (access1.stride - access2.stride).abs() <= 4
-    }
-    
     /// Optimize temporal locality  
     fn optimize_temporal_locality(
-        &self,
-        function: FunctionValue<'ctx>,
-        memory_accesses: &[MemoryAccessPattern],
     ) -> Result<usize> {
         // Reorder operations to improve temporal locality
         let mut optimizations = 0;
@@ -3735,13 +2718,8 @@ impl<'ctx> AdvancedLlvmIntegration<'ctx> {
         }
         
         Ok(optimizations)
-    }
-    
     /// Insert prefetch instructions
     fn insert_prefetch_instructions(
-        &self,
-        function: FunctionValue<'ctx>,
-        memory_accesses: &[MemoryAccessPattern],
     ) -> Result<usize> {
         let mut prefetches_inserted = 0;
         
@@ -3754,8 +2732,6 @@ impl<'ctx> AdvancedLlvmIntegration<'ctx> {
         }
         
         Ok(prefetches_inserted)
-    }
-    
     /// Optimize memory alignment
     fn optimize_memory_alignment(&self, function: FunctionValue<'ctx>) -> Result<usize> {
         let mut optimizations = 0;
@@ -3768,11 +2744,7 @@ impl<'ctx> AdvancedLlvmIntegration<'ctx> {
                     optimizations += 1;
                 }
             }
-        }
-        
         Ok(optimizations)
-    }
-    
     /// Analyze register usage patterns
     fn analyze_register_usage(&self, function: FunctionValue<'ctx>) -> Result<RegisterUsage> {
         let mut live_ranges = Vec::new();
@@ -3788,168 +2760,93 @@ impl<'ctx> AdvancedLlvmIntegration<'ctx> {
                 // Estimate register pressure at this point
                 if instruction_count % 10 == 0 {
                     pressure_points.push(PressurePoint {
-                        instruction_index: instruction_count,
                         pressure_level: 8, // Estimate
-                        register_class: RegisterClass::Integer,
-                        spill_candidates: vec!["temp_var".to_string()],
                     });
                 }
             }
-        }
-        
         Ok(RegisterUsage {
-            live_ranges,
-            pressure_points,
-            register_conflicts,
         })
-    }
-    
     /// Identify register pressure points
     fn identify_register_pressure_points(
-        &self,
-        function: FunctionValue<'ctx>,
-        register_usage: &RegisterUsage,
     ) -> Result<Vec<PressurePoint>> {
         // Filter high pressure points
         Ok(register_usage.pressure_points.iter()
             .filter(|point| point.pressure_level > 12) // Threshold for high pressure
             .cloned()
             .collect())
-    }
-    
     /// Optimize value reuse
     fn optimize_value_reuse(&self, function: FunctionValue<'ctx>, pressure_point: &PressurePoint) -> Result<usize> {
         // Look for opportunities to reuse values instead of recomputing
         Ok(1) // Conservative estimate
-    }
-    
     /// Split live ranges
     fn split_live_ranges(&self, function: FunctionValue<'ctx>, pressure_point: &PressurePoint) -> Result<usize> {
         // Split long live ranges to reduce register pressure
         Ok(0) // Conservative - splitting is complex
-    }
-    
     /// Coalesce registers
     fn coalesce_registers(&self, function: FunctionValue<'ctx>, pressure_point: &PressurePoint) -> Result<usize> {
         // Combine values that don't interfere
         Ok(0) // Conservative
-    }
-    
     /// Optimize spill code
     fn optimize_spill_code(&self, function: FunctionValue<'ctx>, pressure_point: &PressurePoint) -> Result<usize> {
         // Optimize spill/reload sequences
         Ok(pressure_point.spill_candidates.len())
-    }
-    
     /// Additional helper methods for global optimizations would go here...
     /// (Simplified implementations for brevity)
     
     fn analyze_memory_allocations(&self, function: FunctionValue<'ctx>) -> Result<Vec<MemoryAllocation>> {
         Ok(Vec::new()) // Placeholder
-    }
-    
     fn optimize_struct_layout(&self, function: FunctionValue<'ctx>, allocations: &[MemoryAllocation]) -> Result<usize> {
         Ok(0)
-    }
-    
     fn optimize_array_layout(&self, function: FunctionValue<'ctx>, allocations: &[MemoryAllocation]) -> Result<usize> {
         Ok(0)
-    }
-    
     fn optimize_memory_barriers(&self, function: FunctionValue<'ctx>) -> Result<usize> {
         Ok(0)
-    }
-    
     fn optimize_pointer_aliasing(&self, function: FunctionValue<'ctx>) -> Result<usize> {
         Ok(0)
-    }
-    
     fn build_module_call_graph(&self) -> Result<HashMap<String, Vec<String>>> {
         Ok(HashMap::new())
-    }
-    
     fn find_module_entry_points(&self) -> Result<Vec<String>> {
         Ok(vec!["main".to_string()])
-    }
-    
     fn mark_reachable_functions(&self, call_graph: &HashMap<String, Vec<String>>, entry_points: &[String]) -> Result<HashSet<String>> {
         Ok(HashSet::new())
-    }
-    
     fn is_external_function(&self, function: &FunctionValue<'ctx>) -> bool {
         function.get_basic_blocks().count() == 0
-    }
-    
     fn find_reachable_globals(&self, reachable_functions: &HashSet<String>) -> Result<HashSet<String>> {
         Ok(HashSet::new())
-    }
-    
     fn find_constant_globals(&self) -> Result<HashMap<String, String>> {
         Ok(HashMap::new())
-    }
-    
     fn find_constant_reading_functions(&self, constant_globals: &HashMap<String, String>) -> Result<Vec<String>> {
         Ok(Vec::new())
-    }
-    
     fn propagate_constant_into_functions(&self, global_name: &str, constant_value: &str, readers: &[String]) -> Result<usize> {
         Ok(0)
-    }
-    
     fn propagate_function_argument_constants(&self) -> Result<usize> {
         Ok(0)
-    }
-    
     fn fold_cross_function_constants(&self) -> Result<usize> {
         Ok(0)
-    }
-    
     fn analyze_function_call_patterns(&self) -> Result<Vec<CallPattern>> {
         Ok(Vec::new())
-    }
-    
     fn find_specialization_candidates(&self, call_patterns: &[CallPattern]) -> Result<Vec<SpecializationCandidate>> {
         Ok(Vec::new())
-    }
-    
     fn is_specialization_profitable(&self, candidate: &SpecializationCandidate) -> Result<bool> {
         Ok(candidate.expected_benefit > 1.5)
-    }
-    
     fn create_specialized_function(&self, candidate: &SpecializationCandidate) -> Result<FunctionValue<'ctx>> {
         // Would create a specialized version in practice
         Ok(self.module.get_functions().next().unwrap())
-    }
-    
     fn update_call_sites_to_specialized(&self, candidate: &SpecializationCandidate, specialized: FunctionValue<'ctx>) -> Result<usize> {
         Ok(1) // Conservative
-    }
-    
     // Loop optimization helper methods
     fn find_fusion_candidate(&self, function: FunctionValue<'ctx>, loop_info: &LoopInfo) -> Result<Option<LoopInfo>> {
         Ok(None) // Simplified
-    }
-    
     fn analyze_fusion_dependencies(&self, function: FunctionValue<'ctx>, loop1: &LoopInfo, loop2: &LoopInfo) -> Result<bool> {
         Ok(false) // Conservative
-    }
-    
     fn execute_loop_fusion(&self, function: FunctionValue<'ctx>, loop1: &LoopInfo, loop2: &LoopInfo) -> Result<bool> {
         Ok(false) // Complex transformation
-    }
-    
     fn analyze_computation_phases(&self, function: FunctionValue<'ctx>, loop_info: &LoopInfo) -> Result<Vec<ComputationPhase>> {
         Ok(Vec::new())
-    }
-    
     fn verify_distribution_safety(&self, function: FunctionValue<'ctx>, loop_info: &LoopInfo, phases: &[ComputationPhase]) -> Result<bool> {
         Ok(true)
-    }
-    
     fn execute_loop_distribution(&self, function: FunctionValue<'ctx>, loop_info: &LoopInfo, phases: &[ComputationPhase]) -> Result<bool> {
         Ok(true)
-    }
-    
     fn get_or_create_preheader(&self, function: FunctionValue<'ctx>, loop_info: &LoopInfo) -> Result<BasicBlock<'ctx>> {
         // Find or create a preheader block for the loop
         if let Some(header) = loop_info.header_block {
@@ -3971,8 +2868,6 @@ impl<'ctx> AdvancedLlvmIntegration<'ctx> {
         }
         
         Ok(hoisted)
-    }
-    
     fn is_loop_invariant(&self, instruction: &InstructionValue<'ctx>, loop_info: &LoopInfo) -> Result<bool> {
         // Simplified invariant detection
         match instruction.get_opcode() {
@@ -4000,8 +2895,6 @@ impl<'ctx> AdvancedLlvmIntegration<'ctx> {
         
         // Only merge if combined size is reasonable
         Ok(current_instructions + successor_instructions < 50)
-    }
-    
     fn find_reachable_blocks(&self, entry_block: BasicBlock<'ctx>) -> Result<HashSet<BasicBlock<'static>>> {
         let mut reachable = HashSet::new();
         let mut worklist = vec![entry_block];
@@ -4011,8 +2904,6 @@ impl<'ctx> AdvancedLlvmIntegration<'ctx> {
             let block_key = unsafe { std::mem::transmute(block) };
             if visited.contains(&block_key) {
                 continue;
-            }
-            
             visited.insert(block_key);
             reachable.insert(block_key);
             
@@ -4023,11 +2914,7 @@ impl<'ctx> AdvancedLlvmIntegration<'ctx> {
                     worklist.push(successor);
                 }
             }
-        }
-        
         Ok(reachable)
-    }
-    
     fn simplify_conditional_branch(&self, terminator: &InstructionValue<'ctx>) -> Result<usize> {
         // Analyze conditional branch for simplification opportunities
         
@@ -4054,8 +2941,6 @@ impl<'ctx> AdvancedLlvmIntegration<'ctx> {
         }
         
         Ok(0)
-    }
-    
     fn simplify_switch_statement(&self, terminator: &InstructionValue<'ctx>) -> Result<usize> {
         // Analyze switch statement for simplification
         
@@ -4065,35 +2950,24 @@ impl<'ctx> AdvancedLlvmIntegration<'ctx> {
             // Switch with no cases - can convert to unconditional branch to default
             debug!("Found switch with no cases");
             return Ok(1);
-        }
-        
         if num_cases == 1 {
             // Single case switch - can convert to conditional branch
             debug!("Found switch with single case");
             return Ok(1);
-        }
-        
         Ok(0)
-    }
-    
     fn is_terminator_instruction(&self, instruction: &InstructionValue<'ctx>) -> bool {
-        matches!(instruction.get_opcode(),
             inkwell::values::InstructionOpcode::Ret |
             inkwell::values::InstructionOpcode::Br |
             inkwell::values::InstructionOpcode::CondBr |
             inkwell::values::InstructionOpcode::Switch |
             inkwell::values::InstructionOpcode::Unreachable
         )
-    }
-    
     fn is_tail_call_pattern(&self, call_inst: &InstructionValue<'ctx>, ret_inst: &InstructionValue<'ctx>) -> Result<bool> {
         // Check if the return instruction uses the call result
         
         if ret_inst.get_num_operands() == 0 {
             // Void return - can be tail call if call is void
             return Ok(true);
-        }
-        
         if let Some(ret_value) = ret_inst.get_operand(0).and_then(|op| op.left()) {
             if let Some(call_result) = call_inst.as_basic_value() {
                 // Check if return value is directly the call result
@@ -4101,17 +2975,11 @@ impl<'ctx> AdvancedLlvmIntegration<'ctx> {
                     return Ok(true);
                 }
             }
-        }
-        
         Ok(false)
-    }
-    
     fn mark_as_tail_call(&self, call_inst: &InstructionValue<'ctx>) -> Result<bool> {
         // In a real implementation, this would set the tail call flag on the instruction
         // For now, just validate that it's a call instruction
         Ok(call_inst.get_opcode().is_call())
-    }
-    
     fn is_tautology_comparison(&self, cmp_inst: &InstructionValue<'ctx>) -> Result<bool> {
         // Check for comparisons that are always true or false
         
@@ -4124,11 +2992,8 @@ impl<'ctx> AdvancedLlvmIntegration<'ctx> {
                 if left_val == right_val {
                     debug!("Found self-comparison tautology");
                     return Ok(true);
-                }
-                
                 // Check for constant comparisons
                 if let (Some(left_const), Some(right_const)) = (
-                    left_val.as_int_value().and_then(|v| v.get_zero_extended_constant()),
                     right_val.as_int_value().and_then(|v| v.get_zero_extended_constant())
                 ) {
                     // Both operands are constants - comparison result is known
@@ -4136,8 +3001,6 @@ impl<'ctx> AdvancedLlvmIntegration<'ctx> {
                     return Ok(true);
                 }
             }
-        }
-        
         Ok(false)
     }
 }

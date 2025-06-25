@@ -18,74 +18,50 @@ use rand::thread_rng;
 pub fn sort<T: Sortable>(data: &mut T) -> SortaFreshResult<()> {
     if data.is_empty() {
         return Ok(());
-    }
-    
     let len = data.len();
     if len <= 1 {
         return Ok(());
-    }
-    
     quick_sort_impl(data, 0, len - 1)?;
     Ok(())
-}
-
 /// Sorts data in reverse order
 /// slay Reverse(data Sortable)
 pub fn reverse_sort<T: Sortable>(data: &mut T) -> SortaFreshResult<()> {
     if data.is_empty() {
         return Ok(());
-    }
-    
     let len = data.len();
     if len <= 1 {
         return Ok(());
-    }
-    
     // Use reverse comparison for sorting
     reverse_quick_sort_impl(data, 0, len - 1)?;
     Ok(())
-}
-
 /// Reports whether data is sorted in ascending order
 /// slay IsSorted(data Sortable) lit
 pub fn is_sorted<T: Sortable>(data: &T) -> bool {
     let len = data.len();
     if len <= 1 {
         return true;
-    }
-    
     for i in 0..len - 1 {
         if data.less(i + 1, i) {
             return false;
         }
     }
     true
-}
-
 /// Performs a stable sort on data
 /// slay Stable(data Sortable)
 pub fn stable_sort<T: Sortable>(data: &mut T) -> SortaFreshResult<()> {
     if data.is_empty() {
         return Ok(());
-    }
-    
     let len = data.len();
     if len <= 1 {
         return Ok(());
-    }
-    
     merge_sort_impl(data, 0, len - 1)?;
     Ok(())
-}
-
 /// Randomizes the order of elements in data
 /// slay Shuffle(data Sortable)
 pub fn shuffle<T: Sortable>(data: &mut T) -> SortaFreshResult<()> {
     let len = data.len();
     if len <= 1 {
         return Ok(());
-    }
-    
     let mut rng = thread_rng();
     
     // Fisher-Yates shuffle implementation
@@ -97,8 +73,6 @@ pub fn shuffle<T: Sortable>(data: &mut T) -> SortaFreshResult<()> {
     }
     
     Ok(())
-}
-
 /// Internal quicksort implementation
 fn quick_sort_impl<T: Sortable>(data: &mut T, low: i32, high: i32) -> SortaFreshResult<()> {
     if low < high {
@@ -107,8 +81,6 @@ fn quick_sort_impl<T: Sortable>(data: &mut T, low: i32, high: i32) -> SortaFresh
         quick_sort_impl(data, pivot + 1, high)?;
     }
     Ok(())
-}
-
 /// Internal reverse quicksort implementation
 fn reverse_quick_sort_impl<T: Sortable>(data: &mut T, low: i32, high: i32) -> SortaFreshResult<()> {
     if low < high {
@@ -117,8 +89,6 @@ fn reverse_quick_sort_impl<T: Sortable>(data: &mut T, low: i32, high: i32) -> So
         reverse_quick_sort_impl(data, pivot + 1, high)?;
     }
     Ok(())
-}
-
 /// Partition function for quicksort
 fn partition<T: Sortable>(data: &mut T, low: i32, high: i32) -> SortaFreshResult<i32> {
     let mut i = low - 1;
@@ -132,8 +102,6 @@ fn partition<T: Sortable>(data: &mut T, low: i32, high: i32) -> SortaFreshResult
     
     data.swap(i + 1, high);
     Ok(i + 1)
-}
-
 /// Reverse partition function for quicksort
 fn reverse_partition<T: Sortable>(data: &mut T, low: i32, high: i32) -> SortaFreshResult<i32> {
     let mut i = low - 1;
@@ -147,8 +115,6 @@ fn reverse_partition<T: Sortable>(data: &mut T, low: i32, high: i32) -> SortaFre
     
     data.swap(i + 1, high);
     Ok(i + 1)
-}
-
 /// Internal merge sort implementation for stable sorting
 fn merge_sort_impl<T: Sortable>(data: &mut T, left: i32, right: i32) -> SortaFreshResult<()> {
     if left < right {
@@ -159,16 +125,12 @@ fn merge_sort_impl<T: Sortable>(data: &mut T, left: i32, right: i32) -> SortaFre
         merge(data, left, mid, right)?;
     }
     Ok(())
-}
-
 /// Merge function for merge sort - implements stable merging
 fn merge<T: Sortable>(data: &mut T, left: i32, mid: i32, right: i32) -> SortaFreshResult<()> {
     // For a proper merge sort implementation on Sortable trait,
     // we would need auxiliary storage. For now, we'll use insertion sort
     // on small ranges as a stable alternative.
     insertion_sort_range(data, left, right)
-}
-
 /// Insertion sort for a range - always stable
 fn insertion_sort_range<T: Sortable>(data: &mut T, start: i32, end: i32) -> SortaFreshResult<()> {
     for i in start + 1..=end {
@@ -179,18 +141,13 @@ fn insertion_sort_range<T: Sortable>(data: &mut T, start: i32, end: i32) -> Sort
         }
     }
     Ok(())
-}
-
 /// Generic sort function for slices with custom comparison
 /// slay SortSlice[T any](slice []T, less func(i, j normie) lit)
 pub fn sort_slice<T, F>(slice: &mut [T], less: F) -> SortaFreshResult<()>
 where
-    F: Fn(&T, &T) -> bool,
 {
     if slice.len() <= 1 {
         return Ok(());
-    }
-    
     slice.sort_by(|a, b| {
         if less(a, b) {
             std::cmp::Ordering::Less
@@ -202,18 +159,13 @@ where
     });
     
     Ok(())
-}
-
 /// Stable sort function for slices with custom comparison
 /// slay StableSortSlice[T any](slice []T, less func(i, j normie) lit)
 pub fn stable_sort_slice<T, F>(slice: &mut [T], less: F) -> SortaFreshResult<()>
 where
-    F: Fn(&T, &T) -> bool,
 {
     if slice.len() <= 1 {
         return Ok(());
-    }
-    
     slice.sort_by(|a, b| {
         if less(a, b) {
             std::cmp::Ordering::Less
@@ -225,47 +177,29 @@ where
     });
     
     Ok(())
-}
-
 /// Sort function with comparison function
 /// slay SortFunc[T any](slice []T, cmp func(a, b T) normie)
 pub fn sort_func<T, F>(slice: &mut [T], cmp: F) -> SortaFreshResult<()>
 where
-    F: Fn(&T, &T) -> i32,
 {
     if slice.len() <= 1 {
         return Ok(());
-    }
-    
     slice.sort_by(|a, b| {
         match cmp(a, b) {
-            x if x < 0 => std::cmp::Ordering::Less,
-            x if x > 0 => std::cmp::Ordering::Greater,
-            _ => std::cmp::Ordering::Equal,
         }
     });
     
     Ok(())
-}
-
 /// Stable sort function with comparison function
 /// slay StableSortFunc[T any](slice []T, cmp func(a, b T) normie)
 pub fn stable_sort_func<T, F>(slice: &mut [T], cmp: F) -> SortaFreshResult<()>
 where
-    F: Fn(&T, &T) -> i32,
 {
     if slice.len() <= 1 {
         return Ok(());
-    }
-    
     slice.stable_sort_by(|a, b| {
         match cmp(a, b) {
-            x if x < 0 => std::cmp::Ordering::Less,
-            x if x > 0 => std::cmp::Ordering::Greater,
-            _ => std::cmp::Ordering::Equal,
         }
     });
     
     Ok(())
-}
-

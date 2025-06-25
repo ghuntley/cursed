@@ -11,13 +11,9 @@ use std::collections::HashMap;
 
 /// HTML documentation generator
 pub struct HtmlGenerator {
-    config: DocGeneratorConfig,
-}
-
 impl HtmlGenerator {
     pub fn new(config: &DocGeneratorConfig) -> Self {
         Self {
-            config: config.clone(),
         }
     }
 
@@ -34,17 +30,11 @@ impl HtmlGenerator {
         
         if let Some(description) = &self.config.description {
             content.push_str(&format!("<p class=\"lead\">{}</p>\n", description));
-        }
-        
         // Project information
         if let Some(version) = &self.config.version {
             content.push_str(&format!("<p><strong>Version:</strong> {}</p>\n", version));
-        }
-        
         if !self.config.authors.is_empty() {
             content.push_str(&format!("<p><strong>Authors:</strong> {}</p>\n", self.config.authors.join(", ")));
-        }
-        
         // Module index
         content.push_str("<h2>Modules</h2>\n");
         content.push_str("<div class=\"module-grid\">\n");
@@ -56,12 +46,8 @@ impl HtmlGenerator {
             
             if let Some(package) = &doc.package_name {
                 content.push_str(&format!("<p><strong>Package:</strong> {}</p>\n", package));
-            }
-            
             content.push_str(&format!("<p>{} items</p>\n", doc.items.len()));
             content.push_str("</div>\n");
-        }
-        
         content.push_str("</div>\n");
         
         // Quick statistics
@@ -82,8 +68,6 @@ impl HtmlGenerator {
         
         fs::write(index_path, content).map_err(CursedError::Io)?;
         Ok(())
-    }
-
     /// Generate module documentation page
     pub fn generate_module_page(&self, doc: &ExtractedDocumentation, output_dir: &Path) -> crate::error::Result<()> {
         let module_path = output_dir.join(format!("{}.html", self.sanitize_filename(&doc.module_name)));
@@ -97,8 +81,6 @@ impl HtmlGenerator {
         
         if let Some(package) = &doc.package_name {
             content.push_str(&format!("<p><strong>Package:</strong> {}</p>\n", package));
-        }
-        
         // Module information
         content.push_str("<div class=\"module-info\">\n");
         content.push_str(&format!("<p><strong>File:</strong> {}</p>\n", doc.file_path.display()));
@@ -114,8 +96,6 @@ impl HtmlGenerator {
                 content.push_str(&format!("<li><code>{}</code></li>\n", import));
             }
             content.push_str("</ul>\n");
-        }
-        
         // Group items by type
         let mut functions = Vec::new();
         let mut structs = Vec::new();
@@ -125,15 +105,8 @@ impl HtmlGenerator {
         
         for item in &doc.items {
             match item.kind {
-                crate::docs::generator::ItemKind::Function => functions.push(item),
-                crate::docs::generator::ItemKind::Struct => structs.push(item),
-                crate::docs::generator::ItemKind::Interface => interfaces.push(item),
-                crate::docs::generator::ItemKind::Variable => variables.push(item),
-                crate::docs::generator::ItemKind::Constant => constants.push(item),
                 _ => {}
             }
-        }
-        
         // Generate sections for each type
         if !functions.is_empty() {
             content.push_str("<h2>Functions</h2>\n");
@@ -175,8 +148,6 @@ impl HtmlGenerator {
         
         fs::write(module_path, content).map_err(CursedError::Io)?;
         Ok(())
-    }
-
     /// Generate documentation for a single item
     fn generate_item_documentation(&self, item: &DocumentationItem) -> crate::error::Result<()> {
         let mut content = String::new();
@@ -189,14 +160,10 @@ impl HtmlGenerator {
             content.push_str("<div class=\"signature\">\n");
             content.push_str(&format!("<pre><code>{}</code></pre>\n", signature));
             content.push_str("</div>\n");
-        }
-        
         // Summary and description
         content.push_str(&format!("<p class=\"summary\">{}</p>\n", item.summary));
         if !item.description.is_empty() && item.description != item.summary {
             content.push_str(&format!("<div class=\"description\">{}</div>\n", self.format_description(&item.description)));
-        }
-        
         // Parameters
         if !item.parameters.is_empty() {
             content.push_str("<h4>Parameters</h4>\n");
@@ -211,18 +178,12 @@ impl HtmlGenerator {
                 content.push_str(&format!("<td>{}</td>\n", param.description));
                 content.push_str(&format!("<td><code>{}</code></td>\n", param.default_value.as_deref().unwrap_or("None")));
                 content.push_str("</tr>\n");
-            }
-            
             content.push_str("</tbody>\n");
             content.push_str("</table>\n");
-        }
-        
         // Return type
         if let Some(return_type) = &item.return_type {
             content.push_str("<h4>Returns</h4>\n");
             content.push_str(&format!("<p><code>{}</code></p>\n", return_type));
-        }
-        
         // Examples
         if !item.examples.is_empty() {
             content.push_str("<h4>Examples</h4>\n");
@@ -244,8 +205,6 @@ impl HtmlGenerator {
                     content.push_str("</div>\n");
                 }
             }
-        }
-        
         // Source code
         if self.config.include_examples && item.source_code.is_some() {
             content.push_str("<details class=\"source-code\">\n");
@@ -253,12 +212,8 @@ impl HtmlGenerator {
             content.push_str(&format!("<pre><code class=\"language-cursed\">{}</code></pre>\n", 
                 item.source_code.as_ref().unwrap()));
             content.push_str("</details>\n");
-        }
-        
         content.push_str("</div>\n");
         Ok(content)
-    }
-
     /// Generate search index
     pub fn generate_search_index(&self, search_index: &[SearchIndexEntry], output_dir: &Path) -> crate::error::Result<()> {
         let search_path = output_dir.join("search.js");
@@ -273,8 +228,6 @@ impl HtmlGenerator {
         
         fs::write(search_path, content).map_err(CursedError::Io)?;
         Ok(())
-    }
-
     /// Copy static assets (CSS, JS, images)
     pub fn copy_static_assets(&self, output_dir: &Path) -> crate::error::Result<()> {
         // Create CSS file
@@ -283,7 +236,6 @@ impl HtmlGenerator {
             format!("{}\n\n{}", self.get_default_css(), custom_css)
         } else {
             self.get_default_css()
-        };
         fs::write(css_path, css_content).map_err(CursedError::Io)?;
         
         // Create JavaScript file
@@ -291,8 +243,6 @@ impl HtmlGenerator {
         fs::write(js_path, self.get_default_js()).map_err(CursedError::Io)?;
         
         Ok(())
-    }
-
     /// Get HTML header with navigation
     fn get_html_header(&self, title: &str, current_module: &str) -> crate::error::Result<()> {
         let header = format!(r#"<!DOCTYPE html>
@@ -322,8 +272,6 @@ impl HtmlGenerator {
     </header>
 "#, title, self.config.title);
         Ok(header)
-    }
-
     /// Get HTML footer
     fn get_html_footer(&self) -> crate::error::Result<()> {
         let footer = format!(r#"    <footer class="footer">
@@ -333,12 +281,9 @@ impl HtmlGenerator {
     </footer>
 </body>
 </html>"#, 
-            chrono::Utc::now().format("%Y"),
             self.config.authors.first().unwrap_or(&"CURSED Project".to_string())
         );
         Ok(footer)
-    }
-
     /// Format description with basic markdown support
     fn format_description(&self, description: &str) -> String {
         // Basic markdown formatting
@@ -357,16 +302,12 @@ impl HtmlGenerator {
         formatted = formatted.replace("\n", "<br>");
         
         formatted
-    }
-
     /// Sanitize filename for web use
     fn sanitize_filename(&self, name: &str) -> String {
         name.replace("::", "_")
             .replace(" ", "_")
             .replace("/", "_")
             .to_lowercase()
-    }
-
     /// Get default CSS content
     fn get_default_css(&self) -> String {
         // Read from template file if it exists, otherwise use embedded content
@@ -397,98 +338,68 @@ impl HtmlGenerator {
     --background-color: #ffffff;
     --text-color: #1e293b;
     --border-color: #e2e8f0;
-}
-
 body {
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     line-height: 1.6;
     color: var(--text-color);
     background-color: var(--background-color);
-}
-
 .container {
     max-width: 1200px;
     margin: 0 auto;
     padding: 0 2rem;
-}
-
 .header {
     background-color: var(--background-color);
     border-bottom: 1px solid var(--border-color);
     padding: 1rem 0;
-}
-
 .navbar {
     display: flex;
     justify-content: space-between;
     align-items: center;
-}
-
 .navbar-brand a {
     font-size: 1.5rem;
     font-weight: bold;
     color: var(--primary-color);
     text-decoration: none;
-}
-
 h1, h2, h3 {
     color: var(--text-color);
     margin-bottom: 1rem;
-}
-
 code {
     background-color: #f1f5f9;
     padding: 0.125rem 0.25rem;
     border-radius: 0.25rem;
     font-family: monospace;
-}
-
 pre {
     background-color: #f1f5f9;
     padding: 1rem;
     border-radius: 0.5rem;
     overflow-x: auto;
-}
-
 .item {
     background-color: #f8fafc;
     border: 1px solid var(--border-color);
     border-radius: 0.5rem;
     padding: 2rem;
     margin: 2rem 0;
-}
-
 .module-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
     gap: 1.5rem;
     margin: 2rem 0;
-}
-
 .module-card {
     background-color: #f8fafc;
     border: 1px solid var(--border-color);
     border-radius: 0.5rem;
     padding: 1.5rem;
-}
-
 table {
     width: 100%;
     border-collapse: collapse;
     margin: 1rem 0;
-}
-
 th, td {
     padding: 0.75rem;
     text-align: left;
     border-bottom: 1px solid var(--border-color);
-}
-
 th {
     background-color: #f8fafc;
     font-weight: 600;
-}
-
 .footer {
     background-color: #f8fafc;
     border-top: 1px solid var(--border-color);
@@ -497,8 +408,6 @@ th {
     text-align: center;
     color: #64748b;
 }"#.to_string()
-    }
-
     /// Get embedded JavaScript content
     fn get_embedded_js(&self) -> String {
         r#"// CURSED Documentation JavaScript
@@ -517,8 +426,6 @@ th {
             if (query.length < 2) {
                 searchResults.style.display = 'none';
                 return;
-            }
-            
             const results = searchIndex.filter(item => 
                 item.name.toLowerCase().includes(query) ||
                 item.description.toLowerCase().includes(query)
@@ -545,8 +452,6 @@ th {
                 searchResults.style.display = 'none';
             }
         });
-    }
-    
     // Copy code blocks
     document.querySelectorAll('pre code').forEach(code => {
         const pre = code.parentElement;

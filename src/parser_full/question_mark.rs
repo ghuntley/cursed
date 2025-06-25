@@ -24,12 +24,7 @@ impl Parser {
         // We should be sitting on the '?' token
         if !self.current_token_is(&TokenType::Question) {
             return Err(CursedError::parse_error_with_location(
-                format!("Expected '?' token, found {:?}", self.current_token.token_type),
-                self.current_token.location.line,
-                self.current_token.location.column,
             ));
-        }
-
         let question_token = self.current_token.clone();
         
         // Move past the '?' token
@@ -37,14 +32,9 @@ impl Parser {
         
         // Create the question mark expression
         let question_expr = QuestionMarkExpression::new(
-            left,
-            question_token.location.line,
-            question_token.location.column,
         );
         
         Ok(Box::new(question_expr))
-    }
-
     /// Parse error propagation expression (for backward compatibility)
     /// 
     /// This maintains compatibility with the existing ErrorPropagation type
@@ -52,12 +42,7 @@ impl Parser {
     pub fn parse_error_propagation(&mut self, left: Box<dyn Expression>) -> crate::error::Result<()> {
         if !self.current_token_is(&TokenType::Question) {
             return Err(CursedError::parse_error_with_location(
-                format!("Expected '?' token, found {:?}", self.current_token.token_type),
-                self.current_token.location.line,
-                self.current_token.location.column,
             ));
-        }
-
         let question_token = self.current_token.clone();
         
         // Move past the '?' token using parser's advance method
@@ -67,13 +52,9 @@ impl Parser {
         let error_prop = ErrorPropagation::new(left);
         
         Ok(Box::new(error_prop))
-    }
-
     /// Check if the current token is a question mark
     pub fn is_question_mark(&self) -> bool {
         self.current_token_is(&TokenType::Question)
-    }
-    
     /// Get the precedence for the question mark operator
     /// 
     /// Question mark should have high precedence, similar to function calls
@@ -88,25 +69,12 @@ impl Parser {
 pub enum QuestionMarkParseError {
     /// Missing expression before question mark
     MissingExpression {
-        line: usize,
-        column: usize,
-    },
     
     /// Invalid expression type for question mark
     InvalidExpressionType {
-        expression_type: String,
-        line: usize,
-        column: usize,
-    },
     
     /// Question mark in invalid context
     InvalidContext {
-        context: String,
-        line: usize,
-        column: usize,
-    },
-}
-
 // impl fmt::Display for QuestionMarkParseError {
 //     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
 //         match self {
@@ -135,8 +103,6 @@ impl Parser {
         // that returns a Result-like type. For now, we'll allow it on all expressions
         // and let the type checker handle the validation.
         Ok(())
-    }
-    
     /// Check if question mark is allowed in the current parsing context
     pub fn is_question_mark_allowed(&self) -> bool {
         // Question mark is not allowed in certain contexts like:
@@ -145,8 +111,6 @@ impl Parser {
         // - Return type declarations
         // For now, we'll allow it everywhere and refine later
         true
-    }
-    
     /// Parse chained question marks (expr??.foo?)
     pub fn parse_chained_question_marks(&mut self, mut expr: Box<dyn Expression>) -> crate::error::Result<()> {
         while self.is_question_mark() {

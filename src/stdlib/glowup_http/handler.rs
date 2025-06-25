@@ -13,8 +13,6 @@ use crate::error::CursedError;
 pub trait Handler: Send + Sync {
     /// Handle an HTTP request and write response
     fn handle_vibe(&self, w: &ResponderVibe, r: &VibeRequest) -> GlowUpResult<()>;
-}
-
 /// Function type that can be used as a handler
 /// This follows the CURSED spec's `HandlerFunc` naming
 pub type HandlerFunc = Arc<dyn Fn(&ResponderVibe, &VibeRequest) -> GlowUpResult<()> + Send + Sync>;
@@ -45,26 +43,16 @@ impl Handler for Arc<dyn Handler> {
 /// Simple handler that returns a fixed response
 #[derive(Debug)]
 pub struct StaticHandler {
-    content: String,
-    content_type: String,
-}
-
 impl StaticHandler {
     pub fn new(content: impl Into<String>, content_type: impl Into<String>) -> Self {
         Self {
-            content: content.into(),
-            content_type: content_type.into(),
         }
     }
     
     pub fn text(content: impl Into<String>) -> Self {
         Self::new(content, "text/plain")
-    }
-    
     pub fn html(content: impl Into<String>) -> Self {
         Self::new(content, "text/html")
-    }
-    
     pub fn json(content: impl Into<String>) -> Self {
         Self::new(content, "application/json")
     }
@@ -79,8 +67,6 @@ impl Handler for StaticHandler {
         {
             let mut headers = w.header().lock().unwrap();
             headers.insert("content-type".to_string(), self.content_type.clone());
-        }
-        
         w.write(self.content.as_bytes())?;
         Ok(())
     }
@@ -89,15 +75,9 @@ impl Handler for StaticHandler {
 /// File server handler
 #[derive(Debug)]
 pub struct FileHandler {
-    root: String,
-    index_file: String,
-}
-
 impl FileHandler {
     pub fn new(root: impl Into<String>) -> Self {
         Self {
-            root: root.into(),
-            index_file: "index.html".to_string(),
         }
     }
     
@@ -120,15 +100,11 @@ impl Handler for FileHandler {
         let mut path = r.url.trim_start_matches('/');
         if path.is_empty() {
             path = &self.index_file;
-        }
-        
         // Prevent directory traversal
         if path.contains("..") {
             w.write_header(StatusCode::BadRequest);
             w.write(b"Bad Request")?;
             return Ok(());
-        }
-        
         let file_path = PathBuf::from(&self.root).join(path);
         
         // Check if file exists and is not a directory
@@ -143,8 +119,6 @@ impl Handler for FileHandler {
                         {
                             let mut headers = w.header().lock().unwrap();
                             headers.insert("content-type".to_string(), content_type);
-                        }
-                        
                         w.write(&content)?;
                     }
                     Err(_) => {
@@ -164,8 +138,6 @@ impl Handler for FileHandler {
                             {
                                 let mut headers = w.header().lock().unwrap();
                                 headers.insert("content-type".to_string(), content_type);
-                            }
-                            
                             w.write(&content)?;
                         }
                         Err(_) => {
@@ -216,22 +188,14 @@ impl FileHandler {
 /// Redirect handler
 #[derive(Debug)]
 pub struct RedirectHandler {
-    url: String,
-    permanent: bool,
-}
-
 impl RedirectHandler {
     pub fn new(url: impl Into<String>, permanent: bool) -> Self {
         Self {
-            url: url.into(),
-            permanent,
         }
     }
     
     pub fn temporary(url: impl Into<String>) -> Self {
         Self::new(url, false)
-    }
-    
     pub fn permanent(url: impl Into<String>) -> Self {
         Self::new(url, true)
     }
@@ -248,7 +212,6 @@ impl Handler for RedirectHandler {
             StatusCode::MovedPermanently
         } else {
             StatusCode::Found
-        };
         
         w.redirect(&self.url, status_code)?;
         Ok(())
@@ -258,28 +221,20 @@ impl Handler for RedirectHandler {
 /// Helper function to create a handler from a closure
 pub fn handler_func<F>(f: F) -> HandlerFunc
 where
-    F: Fn(&dyn ResponderVibe, &VibeRequest) -> GlowUpResult<()> + Send + Sync + 'static,
 {
     Arc::new(f)
-}
-
 /// Helper function to create a JSON handler
 pub fn json_handler<T, F>(f: F) -> HandlerFunc
 where
-    T: serde::Serialize,
-    F: Fn(&VibeRequest) -> GlowUpResult<T> + Send + Sync + 'static,
 {
     Arc::new(move |w: &ResponderVibe, r: &VibeRequest| {
         let data = f(r)?;
         w.write_json(&data)?;
         Ok(())
     })
-}
-
 /// Helper function to create a text handler
 pub fn text_handler<F>(f: F) -> HandlerFunc
 where
-    F: Fn(&VibeRequest) -> GlowUpResult<String> + Send + Sync + 'static,
 {
     Arc::new(move |w: &ResponderVibe, r: &VibeRequest| {
         let text = f(r)?;
@@ -287,17 +242,12 @@ where
         {
             let mut headers = w.header().lock().unwrap();
             headers.insert("content-type".to_string(), "text/plain".to_string());
-        }
-        
         w.write(text.as_bytes())?;
         Ok(())
     })
-}
-
 /// Helper function to create an HTML handler
 pub fn html_handler<F>(f: F) -> HandlerFunc
 where
-    F: Fn(&VibeRequest) -> GlowUpResult<String> + Send + Sync + 'static,
 {
     Arc::new(move |w: &ResponderVibe, r: &VibeRequest| {
         let html = f(r)?;
@@ -305,10 +255,6 @@ where
         {
             let mut headers = w.header().lock().unwrap();
             headers.insert("content-type".to_string(), "text/html".to_string());
-        }
-        
         w.write(html.as_bytes())?;
         Ok(())
     })
-}
-

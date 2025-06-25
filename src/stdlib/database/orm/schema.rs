@@ -14,25 +14,15 @@ use super::entity::{Entity, ColumnDefinition, SqlColumnType, IndexDefinition, Fo
 #[derive(Debug, Clone)]
 pub struct DatabaseSchema {
     /// Schema name
-    pub name: String,
     /// Tables in the schema
-    pub tables: HashMap<String, TableSchema>,
     /// Applied migrations
-    pub applied_migrations: Vec<String>,
     /// Schema version
-    pub version: String,
-}
-
 impl DatabaseSchema {
     /// slay Create new database schema
     #[instrument]
     pub fn new() -> Self {
         info!("Creating new database schema");
         Self {
-            name: "main".to_string(),
-            tables: HashMap::new(),
-            applied_migrations: Vec::new(),
-            version: "0.0.0".to_string(),
         }
     }
 
@@ -41,30 +31,20 @@ impl DatabaseSchema {
     pub fn add_table(&mut self, table: TableSchema) {
         debug!(table = %table.name, "Adding table to schema");
         self.tables.insert(table.name.clone(), table);
-    }
-
     /// periodt Remove table from schema
     #[instrument(skip(self))]
     pub fn remove_table(&mut self, table_name: &str) {
         debug!(table = table_name, "Removing table from schema");
         self.tables.remove(table_name);
-    }
-
     /// bestie Get table by name
     pub fn get_table(&self, table_name: &str) -> Option<&TableSchema> {
         self.tables.get(table_name)
-    }
-
     /// yolo Get mutable table by name
     pub fn get_table_mut(&mut self, table_name: &str) -> Option<&mut TableSchema> {
         self.tables.get_mut(table_name)
-    }
-
     /// slay Get applied migrations
     pub fn get_applied_migrations(&self) -> &[String] {
         &self.applied_migrations
-    }
-
     /// lit Add applied migration
     pub fn add_migration(&mut self, migration_version: String) {
         if !self.applied_migrations.contains(&migration_version) {
@@ -83,18 +63,12 @@ impl DatabaseSchema {
         // Generate table creation statements
         for table in self.tables.values() {
             statements.push(table.to_create_sql(dialect));
-        }
-        
         // Generate foreign key constraint statements
         for table in self.tables.values() {
             statements.extend(table.to_foreign_key_statements(dialect));
-        }
-        
         // Generate index creation statements
         for table in self.tables.values() {
             statements.extend(table.to_index_statements(dialect));
-        }
-        
         info!(statements = statements.len(), "Generated CREATE statements");
         statements
     }
@@ -104,31 +78,17 @@ impl DatabaseSchema {
 #[derive(Debug, Clone)]
 pub struct TableSchema {
     /// Table name
-    pub name: String,
     /// Columns in the table
-    pub columns: HashMap<String, ColumnSchema>,
     /// Primary key columns
-    pub primary_keys: Vec<String>,
     /// Foreign keys
-    pub foreign_keys: Vec<ForeignKeyDefinition>,
     /// Indexes
-    pub indexes: Vec<IndexDefinition>,
     /// Table constraints
-    pub constraints: Vec<TableConstraint>,
-}
-
 impl TableSchema {
     /// slay Create new table schema
     #[instrument]
     pub fn new(name: &str) -> Self {
         debug!(table = name, "Creating new table schema");
         Self {
-            name: name.to_string(),
-            columns: HashMap::new(),
-            primary_keys: Vec::new(),
-            foreign_keys: Vec::new(),
-            indexes: Vec::new(),
-            constraints: Vec::new(),
         }
     }
 
@@ -142,19 +102,11 @@ impl TableSchema {
         
         for col_def in column_definitions {
             let column = ColumnSchema {
-                name: col_def.name.clone(),
-                sql_type: col_def.sql_type.clone(),
-                nullable: col_def.nullable,
-                default_value: col_def.default,
-                auto_increment: col_def.primary_key && matches!(col_def.sql_type, SqlColumnType::Integer | SqlColumnType::BigInteger),
-            };
             
             table.add_column(column);
             
             if col_def.primary_key {
                 table.primary_keys.push(col_def.name);
-            }
-            
             if let Some(fk) = col_def.foreign_key {
                 table.foreign_keys.push(fk);
             }
@@ -162,29 +114,21 @@ impl TableSchema {
         
         debug!(columns = table.columns.len(), "Table schema created from entity");
         Ok(table)
-    }
-
     /// periodt Add column to table
     #[instrument(skip(self))]
     pub fn add_column(&mut self, column: ColumnSchema) {
         debug!(table = %self.name, column = %column.name, "Adding column to table");
         self.columns.insert(column.name.clone(), column);
-    }
-
     /// bestie Remove column from table
     #[instrument(skip(self))]
     pub fn remove_column(&mut self, column_name: &str) {
         debug!(table = %self.name, column = column_name, "Removing column from table");
         self.columns.remove(column_name);
-    }
-
     /// yolo Add index to table
     #[instrument(skip(self))]
     pub fn add_index(&mut self, index: IndexDefinition) {
         debug!(table = %self.name, index = %index.name, "Adding index to table");
         self.indexes.push(index);
-    }
-
     /// slay Generate CREATE TABLE SQL
     #[instrument(skip(self))]
     pub fn to_create_sql(&self, dialect: &str) -> String {
@@ -202,19 +146,13 @@ impl TableSchema {
         // Add primary key constraint
         if !self.primary_keys.is_empty() {
             sql.push_str(&format!(",\n  PRIMARY KEY ({})", self.primary_keys.join(", ")));
-        }
-        
         // Add table constraints
         for constraint in &self.constraints {
             sql.push_str(&format!(",\n  {}", constraint.to_sql(dialect)));
-        }
-        
         sql.push_str("\n);");
         
         debug!(sql = %sql, "Generated CREATE TABLE SQL");
         sql
-    }
-
     /// lit Generate foreign key constraint statements
     #[instrument(skip(self))]
     pub fn to_foreign_key_statements(&self, dialect: &str) -> Vec<String> {
@@ -222,19 +160,10 @@ impl TableSchema {
         
         self.foreign_keys.iter()
             .map(|fk| format!(
-                "ALTER TABLE {} ADD CONSTRAINT fk_{}_{} FOREIGN KEY ({}) REFERENCES {} ({}) ON DELETE {} ON UPDATE {};",
-                self.name,
-                self.name,
-                fk.referenced_table,
                 self.name, // Assuming foreign key column name matches table name + "_id"
-                fk.referenced_table,
-                fk.referenced_column,
-                fk.on_delete,
                 fk.on_update
             ))
             .collect()
-    }
-
     /// tea Generate index creation statements
     #[instrument(skip(self))]
     pub fn to_index_statements(&self, dialect: &str) -> Vec<String> {
@@ -247,14 +176,8 @@ impl TableSchema {
                     format!(" WHERE {}", condition)
                 } else {
                     String::new()
-                };
                 
                 format!(
-                    "CREATE {}INDEX {} ON {} ({}){};",
-                    unique_keyword,
-                    idx.name,
-                    self.name,
-                    idx.columns.join(", "),
                     condition_clause
                 )
             })
@@ -266,17 +189,10 @@ impl TableSchema {
 #[derive(Debug, Clone)]
 pub struct ColumnSchema {
     /// Column name
-    pub name: String,
     /// SQL data type
-    pub sql_type: SqlColumnType,
     /// Whether column allows NULL
-    pub nullable: bool,
     /// Default value
-    pub default_value: Option<String>,
     /// Whether column is auto-increment
-    pub auto_increment: bool,
-}
-
 impl ColumnSchema {
     /// facts Generate SQL column definition
     #[instrument(skip(self))]
@@ -285,21 +201,12 @@ impl ColumnSchema {
         
         if self.auto_increment {
             match dialect {
-                "postgresql" => sql.push_str(" SERIAL"),
-                "mysql" => sql.push_str(" AUTO_INCREMENT"),
-                "sqlite" => sql.push_str(" AUTOINCREMENT"),
                 _ => {}
             }
-        }
-        
         if !self.nullable {
             sql.push_str(" NOT NULL");
-        }
-        
         if let Some(default) = &self.default_value {
             sql.push_str(&format!(" DEFAULT {}", default));
-        }
-        
         sql
     }
 }
@@ -308,13 +215,8 @@ impl ColumnSchema {
 #[derive(Debug, Clone)]
 pub enum TableConstraint {
     /// Check constraint
-    Check { name: String, condition: String },
     /// Unique constraint
-    Unique { name: String, columns: Vec<String> },
     /// Custom constraint
-    Custom { definition: String },
-}
-
 impl TableConstraint {
     /// Generate SQL for constraint
     pub fn to_sql(&self, _dialect: &str) -> String {
@@ -325,11 +227,8 @@ impl TableConstraint {
             TableConstraint::Unique { name, columns } => {
                 format!("CONSTRAINT {} UNIQUE ({})", name, columns.join(", "))
             }
-            TableConstraint::Custom { definition } => definition.clone(),
         }
     }
-}
-
 /// fr fr Index schema representation (already defined in entity.rs)
 pub use super::entity::IndexDefinition as IndexSchema;
 
@@ -337,9 +236,6 @@ pub use super::entity::IndexDefinition as IndexSchema;
 #[derive(Debug)]
 pub struct SchemaBuilder {
     /// Schema being built
-    schema: DatabaseSchema,
-}
-
 impl SchemaBuilder {
     /// slay Create new schema builder
     #[instrument]
@@ -347,11 +243,6 @@ impl SchemaBuilder {
         info!(schema = name, "Creating new schema builder");
         Self {
             schema: DatabaseSchema {
-                name: name.to_string(),
-                tables: HashMap::new(),
-                applied_migrations: Vec::new(),
-                version: "1.0.0".to_string(),
-            },
         }
     }
 
@@ -359,7 +250,6 @@ impl SchemaBuilder {
     #[instrument(skip(self, builder_fn))]
     pub fn table<F>(mut self, name: &str, builder_fn: F) -> Self
     where
-        F: FnOnce(TableBuilder) -> TableBuilder,
     {
         debug!(table = name, "Adding table to schema");
         
@@ -368,8 +258,6 @@ impl SchemaBuilder {
         self.schema.add_table(table);
         
         self
-    }
-
     /// periodt Build the schema
     #[instrument(skip(self))]
     pub fn build(self) -> DatabaseSchema {
@@ -382,14 +270,10 @@ impl SchemaBuilder {
 #[derive(Debug)]
 pub struct TableBuilder {
     /// Table being built
-    table: TableSchema,
-}
-
 impl TableBuilder {
     /// slay Create new table builder
     pub fn new(name: &str) -> Self {
         Self {
-            table: TableSchema::new(name),
         }
     }
 
@@ -398,55 +282,33 @@ impl TableBuilder {
     pub fn column(mut self, name: &str, sql_type: SqlColumnType) -> ColumnBuilder {
         debug!(table = %self.table.name, column = name, "Adding column to table");
         ColumnBuilder::new(self, name, sql_type)
-    }
-
     /// periodt Add primary key
     #[instrument(skip(self))]
     pub fn primary_key(mut self, columns: &[&str]) -> Self {
         debug!(table = %self.table.name, columns = ?columns, "Setting primary key");
         self.table.primary_keys = columns.iter().map(|s| s.to_string()).collect();
         self
-    }
-
     /// bestie Add index
     #[instrument(skip(self))]
     pub fn index(mut self, name: &str, columns: &[&str]) -> Self {
         debug!(table = %self.table.name, index = name, columns = ?columns, "Adding index");
         
         let index = IndexDefinition {
-            name: name.to_string(),
-            columns: columns.iter().map(|s| s.to_string()).collect(),
-            unique: false,
-            index_type: super::entity::IndexType::BTree,
-            condition: None,
-        };
         
         self.table.add_index(index);
         self
-    }
-
     /// yolo Add unique index
     #[instrument(skip(self))]
     pub fn unique_index(mut self, name: &str, columns: &[&str]) -> Self {
         debug!(table = %self.table.name, index = name, columns = ?columns, "Adding unique index");
         
         let index = IndexDefinition {
-            name: name.to_string(),
-            columns: columns.iter().map(|s| s.to_string()).collect(),
-            unique: true,
-            index_type: super::entity::IndexType::BTree,
-            condition: None,
-        };
         
         self.table.add_index(index);
         self
-    }
-
     /// slay Build the table
     pub fn build(self) -> TableSchema {
         self.table
-    }
-
     /// Internal method to add column from ColumnBuilder
     fn add_column_schema(&mut self, column: ColumnSchema) {
         self.table.add_column(column);
@@ -457,23 +319,12 @@ impl TableBuilder {
 #[derive(Debug)]
 pub struct ColumnBuilder {
     /// Table builder reference
-    table_builder: TableBuilder,
     /// Column being built
-    column: ColumnSchema,
-}
-
 impl ColumnBuilder {
     /// Create new column builder
     fn new(table_builder: TableBuilder, name: &str, sql_type: SqlColumnType) -> Self {
         Self {
-            table_builder,
             column: ColumnSchema {
-                name: name.to_string(),
-                sql_type,
-                nullable: true,
-                default_value: None,
-                auto_increment: false,
-            },
         }
     }
 
@@ -481,20 +332,14 @@ impl ColumnBuilder {
     pub fn not_null(mut self) -> Self {
         self.column.nullable = false;
         self
-    }
-
     /// periodt Set default value
     pub fn default_value(mut self, value: &str) -> Self {
         self.column.default_value = Some(value.to_string());
         self
-    }
-
     /// bestie Make column auto-increment
     pub fn auto_increment(mut self) -> Self {
         self.column.auto_increment = true;
         self
-    }
-
     /// yolo Finish column and return to table builder
     pub fn end_column(mut self) -> TableBuilder {
         self.table_builder.add_column_schema(self.column);
@@ -536,18 +381,11 @@ impl SchemaComparator {
                     diff.modified_tables.push(table_diff);
                 }
             }
-        }
-        
         info!(
-            added = diff.added_tables.len(),
-            removed = diff.removed_tables.len(),
-            modified = diff.modified_tables.len(),
             "Schema comparison completed"
         );
         
         diff
-    }
-
     /// facts Compare two tables
     fn compare_tables(current: &TableSchema, target: &TableSchema) -> TableDiff {
         let mut diff = TableDiff::new(&target.name);
@@ -573,11 +411,7 @@ impl SchemaComparator {
                     diff.modified_columns.push((current_col.clone(), target_col.clone()));
                 }
             }
-        }
-        
         diff
-    }
-
     /// periodt Check if two columns are equal
     fn columns_equal(current: &ColumnSchema, target: &ColumnSchema) -> bool {
         current.name == target.name &&
@@ -592,19 +426,11 @@ impl SchemaComparator {
 #[derive(Debug, Clone)]
 pub struct SchemaDiff {
     /// Tables added in target schema
-    pub added_tables: Vec<TableSchema>,
     /// Tables removed from current schema
-    pub removed_tables: Vec<TableSchema>,
     /// Tables modified between schemas
-    pub modified_tables: Vec<TableDiff>,
-}
-
 impl SchemaDiff {
     fn new() -> Self {
         Self {
-            added_tables: Vec::new(),
-            removed_tables: Vec::new(),
-            modified_tables: Vec::new(),
         }
     }
 
@@ -620,22 +446,12 @@ impl SchemaDiff {
 #[derive(Debug, Clone)]
 pub struct TableDiff {
     /// Table name
-    pub table_name: String,
     /// Columns added
-    pub added_columns: Vec<ColumnSchema>,
     /// Columns removed
-    pub removed_columns: Vec<ColumnSchema>,
     /// Columns modified (current, target)
-    pub modified_columns: Vec<(ColumnSchema, ColumnSchema)>,
-}
-
 impl TableDiff {
     fn new(table_name: &str) -> Self {
         Self {
-            table_name: table_name.to_string(),
-            added_columns: Vec::new(),
-            removed_columns: Vec::new(),
-            modified_columns: Vec::new(),
         }
     }
 
@@ -662,22 +478,14 @@ impl SchemaMigrator {
         // Create new tables
         for table in &diff.added_tables {
             statements.push(table.to_create_sql(dialect));
-        }
-        
         // Drop removed tables
         for table in &diff.removed_tables {
             statements.push(format!("DROP TABLE {};", table.name));
-        }
-        
         // Modify existing tables
         for table_diff in &diff.modified_tables {
             statements.extend(Self::generate_table_modification_sql(table_diff, dialect));
-        }
-        
         info!(statements = statements.len(), "Generated migration SQL");
         statements
-    }
-
     /// facts Generate SQL for table modifications
     fn generate_table_modification_sql(table_diff: &TableDiff, dialect: &str) -> Vec<String> {
         let mut statements = Vec::new();
@@ -685,36 +493,23 @@ impl SchemaMigrator {
         // Add new columns
         for column in &table_diff.added_columns {
             statements.push(format!(
-                "ALTER TABLE {} ADD COLUMN {};",
-                table_diff.table_name,
                 column.to_sql_definition(dialect)
             ));
-        }
-        
         // Drop removed columns
         for column in &table_diff.removed_columns {
             statements.push(format!(
-                "ALTER TABLE {} DROP COLUMN {};",
-                table_diff.table_name,
                 column.name
             ));
-        }
-        
         // Modify existing columns
         for (current, target) in &table_diff.modified_columns {
             match dialect {
                 "postgresql" => {
                     statements.push(format!(
-                        "ALTER TABLE {} ALTER COLUMN {} TYPE {};",
-                        table_diff.table_name,
-                        target.name,
                         target.sql_type.to_sql(dialect)
                     ));
                 }
                 "mysql" => {
                     statements.push(format!(
-                        "ALTER TABLE {} MODIFY COLUMN {};",
-                        table_diff.table_name,
                         target.to_sql_definition(dialect)
                     ));
                 }
@@ -723,8 +518,6 @@ impl SchemaMigrator {
                     warn!("Column modification not supported for dialect: {}", dialect);
                 }
             }
-        }
-        
         statements
     }
 }

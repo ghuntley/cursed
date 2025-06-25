@@ -4,11 +4,8 @@
 /// runtime profiling capabilities, and export functionality.
 
 use crate::error::CursedError;
-// use crate::stdlib::vibecheck::{
-    memory_profiler::{self, MemoryProfilerConfig, MemoryStats},
-    cpu_profiler::{self, CpuProfilerConfig, CpuProfile},
-    profile_data::{ProfileData, ProfileReportConfig, ReportFormat, MetricValue},
-};
+// Placeholder imports disabled
+// };
 
 use std::sync::{Arc, Mutex, RwLock, atomic::{AtomicBool, Ordering}};
 use std::time::{Duration, Instant};
@@ -21,115 +18,56 @@ use std::path::Path;
 #[derive(Debug, Clone)]
 pub struct ProfilerConfig {
     /// Memory profiler configuration
-    pub memory: MemoryProfilerConfig,
     /// CPU profiler configuration
-    pub cpu: CpuProfilerConfig,
     /// Enable automatic profiling
-    pub auto_profiling: bool,
     /// Profile session name
-    pub session_name: String,
     /// Target application name
-    pub target_name: String,
     /// Export directory
-    pub export_dir: String,
     /// Export formats
-    pub export_formats: Vec<ReportFormat>,
     /// Enable real-time profiling
-    pub real_time: bool,
     /// Real-time update interval
-    pub update_interval: Duration,
-}
-
 impl Default for ProfilerConfig {
     fn default() -> Self {
         Self {
-            memory: MemoryProfilerConfig::default(),
-            cpu: CpuProfilerConfig::default(),
-            auto_profiling: false,
-            session_name: "cursed_profile".to_string(),
-            target_name: "cursed_app".to_string(),
             export_dir: "./profiles".to_string(),
-            export_formats: vec![ReportFormat::Text, ReportFormat::Json],
-            real_time: false,
-            update_interval: Duration::from_secs(5),
         }
     }
-}
-
 /// Profiling session state
 #[derive(Debug, Clone, PartialEq)]
 pub enum ProfilerState {
     /// Profiler is stopped
-    Stopped,
     /// Profiler is starting up
-    Starting,
     /// Profiler is running
-    Running,
     /// Profiler is stopping
-    Stopping,
     /// Profiler encountered an error
-    CursedError(String),
-}
-
 /// Profiling statistics
 #[derive(Debug, Clone)]
 pub struct ProfilingStats {
     /// Memory profiling enabled
-    pub memory_enabled: bool,
     /// CPU profiling enabled
-    pub cpu_enabled: bool,
     /// Profiling start time
-    pub start_time: Option<Instant>,
     /// Current profiling duration
-    pub duration: Duration,
     /// Number of memory samples collected
-    pub memory_samples: u64,
     /// Number of CPU samples collected
-    pub cpu_samples: u64,
     /// Current memory usage
-    pub current_memory_kb: u64,
     /// Peak memory usage
-    pub peak_memory_kb: u64,
     /// Estimated overhead percentage
-    pub overhead_percentage: f64,
-}
-
 /// Main profiler interface
 pub struct Profiler {
-    config: ProfilerConfig,
-    state: Arc<RwLock<ProfilerState>>,
-    profile_data: Arc<Mutex<ProfileData>>,
-    stats: Arc<Mutex<ProfilingStats>>,
-    real_time_thread: Arc<Mutex<Option<thread::JoinHandle<()>>>>,
-    hooks: Arc<Mutex<ProfilerHooks>>,
-    is_memory_enabled: AtomicBool,
-    is_cpu_enabled: AtomicBool,
-}
-
 /// Profiler event hooks
 #[derive(Debug, Default)]
 struct ProfilerHooks {
     /// Called when profiling starts
-    on_start: Option<Box<dyn Fn() + Send + Sync>>,
     /// Called when profiling stops
-    on_stop: Option<Box<dyn Fn(&ProfileData) + Send + Sync>>,
     /// Called on real-time updates
-    on_update: Option<Box<dyn Fn(&ProfilingStats) + Send + Sync>>,
     /// Called on memory allocation
-    on_memory_event: Option<Box<dyn Fn(usize, bool) + Send + Sync>>,
     /// Called on function entry/exit
-    on_cpu_event: Option<Box<dyn Fn(&str, bool) + Send + Sync>>,
-}
-
 impl Profiler {
     /// Create a new profiler with default configuration
     pub fn new() -> Self {
         Self::with_config(ProfilerConfig::default())
-    }
-
     /// Create a new profiler with custom configuration
     pub fn with_config(config: ProfilerConfig) -> Self {
-        let session_id = format!("{}_{}", config.session_name, 
             std::time::SystemTime::now()
                 .duration_since(std::time::UNIX_EPOCH)
                 .unwrap_or_default()
@@ -138,14 +76,6 @@ impl Profiler {
         let profile_data = ProfileData::new(session_id, config.target_name.clone());
 
         Self {
-            state: Arc::new(RwLock::new(ProfilerState::Stopped)),
-            profile_data: Arc::new(Mutex::new(profile_data)),
-            stats: Arc::new(Mutex::new(ProfilingStats::default())),
-            real_time_thread: Arc::new(Mutex::new(None)),
-            hooks: Arc::new(Mutex::new(ProfilerHooks::default())),
-            is_memory_enabled: AtomicBool::new(false),
-            is_cpu_enabled: AtomicBool::new(false),
-            config,
         }
     }
 
@@ -156,8 +86,6 @@ impl Profiler {
 
         if *state != ProfilerState::Stopped {
             return Err(CursedError::Runtime("Profiler is already running or starting".to_string()));
-        }
-
         *state = ProfilerState::Starting;
         drop(state);
 
@@ -165,15 +93,11 @@ impl Profiler {
         if self.config.memory.sample_rate > 0 {
             memory_profiler::configure_memory_profiler(self.config.memory.clone())?;
             self.is_memory_enabled.store(true, Ordering::SeqCst);
-        }
-
         // Configure and start CPU profiler
         if self.config.cpu.sample_rate > 0 {
             cpu_profiler::configure_cpu_profiler(self.config.cpu.clone())?;
             cpu_profiler::start_cpu_profiling()?;
             self.is_cpu_enabled.store(true, Ordering::SeqCst);
-        }
-
         // Initialize profiling statistics
         {
             let mut stats = self.stats.lock()
@@ -181,13 +105,9 @@ impl Profiler {
             stats.start_time = Some(Instant::now());
             stats.memory_enabled = self.is_memory_enabled.load(Ordering::SeqCst);
             stats.cpu_enabled = self.is_cpu_enabled.load(Ordering::SeqCst);
-        }
-
         // Start real-time monitoring if enabled
         if self.config.real_time {
             self.start_real_time_monitoring()?;
-        }
-
         // Call start hook
         {
             let hooks = self.hooks.lock()
@@ -202,11 +122,7 @@ impl Profiler {
             let mut state = self.state.write()
                 .map_err(|_| CursedError::Runtime("Failed to lock profiler state".to_string()))?;
             *state = ProfilerState::Running;
-        }
-
         Ok(())
-    }
-
     /// Stop profiling and return results
     pub fn stop(&self) -> crate::error::Result<()> {
         let mut state = self.state.write()
@@ -214,8 +130,6 @@ impl Profiler {
 
         if *state != ProfilerState::Running {
             return Err(CursedError::Runtime("Profiler is not running".to_string()));
-        }
-
         *state = ProfilerState::Stopping;
         drop(state);
 
@@ -227,7 +141,6 @@ impl Profiler {
             let profile_data = self.profile_data.lock()
                 .map_err(|_| CursedError::Runtime("Failed to lock profile data".to_string()))?;
             profile_data.clone()
-        };
 
         // Collect memory statistics
         if self.is_memory_enabled.load(Ordering::SeqCst) {
@@ -239,8 +152,6 @@ impl Profiler {
                     eprintln!("Warning: Failed to collect memory statistics: {}", e);
                 }
             }
-        }
-
         // Stop CPU profiler and collect statistics
         if self.is_cpu_enabled.load(Ordering::SeqCst) {
             match cpu_profiler::stop_cpu_profiling() {
@@ -252,8 +163,6 @@ impl Profiler {
                 }
             }
             self.is_cpu_enabled.store(false, Ordering::SeqCst);
-        }
-
         // Finalize profile data
         final_profile_data.finalize();
 
@@ -280,18 +189,12 @@ impl Profiler {
             let mut state = self.state.write()
                 .map_err(|_| CursedError::Runtime("Failed to lock profiler state".to_string()))?;
             *state = ProfilerState::Stopped;
-        }
-
         Ok(final_profile_data)
-    }
-
     /// Get current profiling state
     pub fn get_state(&self) -> crate::error::Result<()> {
         let state = self.state.read()
             .map_err(|_| CursedError::Runtime("Failed to lock profiler state".to_string()))?;
         Ok(state.clone())
-    }
-
     /// Get current profiling statistics
     pub fn get_stats(&self) -> crate::error::Result<()> {
         let mut stats = self.stats.lock()
@@ -300,8 +203,6 @@ impl Profiler {
         // Update duration
         if let Some(start_time) = stats.start_time {
             stats.duration = start_time.elapsed();
-        }
-
         // Update memory statistics
         if self.is_memory_enabled.load(Ordering::SeqCst) {
             if let Ok(memory_stats) = memory_profiler::memory_profile() {
@@ -315,14 +216,10 @@ impl Profiler {
         stats.overhead_percentage = self.estimate_overhead();
 
         Ok(stats.clone())
-    }
-
     /// Record memory allocation (called by allocator hooks)
     pub fn record_allocation(&self, address: usize, size: usize, object_type: Option<String>) -> crate::error::Result<()> {
         if !self.is_memory_enabled.load(Ordering::SeqCst) {
             return Ok(());
-        }
-
         memory_profiler::profile_allocation(address, size, object_type.clone())?;
 
         // Call memory event hook
@@ -335,14 +232,10 @@ impl Profiler {
         }
 
         Ok(())
-    }
-
     /// Record memory deallocation (called by allocator hooks)
     pub fn record_deallocation(&self, address: usize) -> crate::error::Result<()> {
         if !self.is_memory_enabled.load(Ordering::SeqCst) {
             return Ok(());
-        }
-
         memory_profiler::profile_deallocation(address)?;
 
         // Call memory event hook
@@ -355,14 +248,10 @@ impl Profiler {
         }
 
         Ok(())
-    }
-
     /// Record function entry (called by instrumentation)
     pub fn record_function_entry(&self, name: String, module: String) -> crate::error::Result<()> {
         if !self.is_cpu_enabled.load(Ordering::SeqCst) {
             return Ok(());
-        }
-
         cpu_profiler::profile_function_enter(name.clone(), module)?;
 
         // Call CPU event hook
@@ -375,14 +264,10 @@ impl Profiler {
         }
 
         Ok(())
-    }
-
     /// Record function exit (called by instrumentation)
     pub fn record_function_exit(&self) -> crate::error::Result<()> {
         if !self.is_cpu_enabled.load(Ordering::SeqCst) {
             return Ok(());
-        }
-
         cpu_profiler::profile_function_exit()?;
 
         // Call CPU event hook
@@ -395,16 +280,12 @@ impl Profiler {
         }
 
         Ok(())
-    }
-
     /// Add custom metric
     pub fn add_custom_metric(&self, name: String, value: MetricValue) -> crate::error::Result<()> {
         let mut profile_data = self.profile_data.lock()
             .map_err(|_| CursedError::Runtime("Failed to lock profile data".to_string()))?;
         profile_data.add_custom_metric(name, value);
         Ok(())
-    }
-
     /// Generate profile report
     pub fn generate_report(&self, config: ProfileReportConfig) -> crate::error::Result<()> {
         let profile_data = self.profile_data.lock()
@@ -412,13 +293,7 @@ impl Profiler {
         
         let report = profile_data.create_report(config);
         report.generate()
-    }
-
     /// Set profiler hooks
-    pub fn set_hooks(&self, 
-        on_start: Option<Box<dyn Fn() + Send + Sync>>,
-        on_stop: Option<Box<dyn Fn(&ProfileData) + Send + Sync>>,
-        on_update: Option<Box<dyn Fn(&ProfilingStats) + Send + Sync>>,
     ) -> crate::error::Result<()> {
         let mut hooks = self.hooks.lock()
             .map_err(|_| CursedError::Runtime("Failed to lock profiler hooks".to_string()))?;
@@ -428,8 +303,6 @@ impl Profiler {
         hooks.on_update = on_update;
         
         Ok(())
-    }
-
     /// Start real-time monitoring thread
     fn start_real_time_monitoring(&self) -> crate::error::Result<()> {
         let stats_clone = self.stats.clone();
@@ -450,8 +323,6 @@ impl Profiler {
                             on_update(&stats);
                         }
                     }
-                }
-
                 thread::sleep(update_interval);
             }
         });
@@ -461,8 +332,6 @@ impl Profiler {
         *real_time_thread = Some(monitoring_thread);
 
         Ok(())
-    }
-
     /// Stop real-time monitoring thread
     fn stop_real_time_monitoring(&self) -> crate::error::Result<()> {
         let mut real_time_thread = self.real_time_thread.lock()
@@ -470,11 +339,7 @@ impl Profiler {
 
         if let Some(thread_handle) = real_time_thread.take() {
             let _ = thread_handle.join();
-        }
-
         Ok(())
-    }
-
     /// Export profiles to configured formats
     fn export_profiles(&self, profile_data: &ProfileData) -> crate::error::Result<()> {
         // Create export directory if it doesn't exist
@@ -488,12 +353,6 @@ impl Profiler {
 
         for format in &self.config.export_formats {
             let filename = match format {
-                ReportFormat::Text => format!("{}_{}.txt", self.config.session_name, timestamp),
-                ReportFormat::Json => format!("{}_{}.json", self.config.session_name, timestamp),
-                ReportFormat::Html => format!("{}_{}.html", self.config.session_name, timestamp),
-                ReportFormat::Markdown => format!("{}_{}.md", self.config.session_name, timestamp),
-                ReportFormat::Csv => format!("{}_{}.csv", self.config.session_name, timestamp),
-            };
 
             let filepath = Path::new(&self.config.export_dir).join(filename);
             
@@ -505,27 +364,17 @@ impl Profiler {
 
             fs::write(&filepath, content)
                 .map_err(|e| CursedError::Runtime(format!("Failed to write profile report: {}", e)))?;
-        }
-
         Ok(())
-    }
-
     /// Estimate profiling overhead
     fn estimate_overhead(&self) -> f64 {
         let mut overhead = 0.0;
 
         if self.is_memory_enabled.load(Ordering::SeqCst) {
             overhead += 2.0; // ~2% for memory profiling
-        }
-
         if self.is_cpu_enabled.load(Ordering::SeqCst) {
             overhead += 5.0; // ~5% for CPU profiling
-        }
-
         if self.config.real_time {
             overhead += 1.0; // ~1% for real-time monitoring
-        }
-
         overhead
     }
 }
@@ -533,19 +382,8 @@ impl Profiler {
 impl Default for ProfilingStats {
     fn default() -> Self {
         Self {
-            memory_enabled: false,
-            cpu_enabled: false,
-            start_time: None,
-            duration: Duration::from_secs(0),
-            memory_samples: 0,
-            cpu_samples: 0,
-            current_memory_kb: 0,
-            peak_memory_kb: 0,
-            overhead_percentage: 0.0,
         }
     }
-}
-
 /// Global profiler instance
 static GLOBAL_PROFILER: std::sync::OnceLock<Arc<Profiler>> = std::sync::OnceLock::new();
 
@@ -554,53 +392,36 @@ pub fn get_profiler() -> Arc<Profiler> {
     GLOBAL_PROFILER.get_or_init(|| {
         Arc::new(Profiler::new())
     }).clone()
-}
-
 /// Configure the global profiler
 pub fn configure_profiler(config: ProfilerConfig) -> crate::error::Result<()> {
     let profiler = Arc::new(Profiler::with_config(config));
     GLOBAL_PROFILER.set(profiler)
         .map_err(|_| CursedError::Runtime("Profiler already configured".to_string()))?;
     Ok(())
-}
-
 /// Start global profiling
 pub fn start_profiling() -> crate::error::Result<()> {
     let profiler = get_profiler();
     profiler.start()
-}
-
 /// Stop global profiling
 pub fn stop_profiling() -> crate::error::Result<()> {
     let profiler = get_profiler();
     profiler.stop()
-}
-
 /// Get current profiling statistics
 pub fn profiling_stats() -> crate::error::Result<()> {
     let profiler = get_profiler();
     profiler.get_stats()
-}
-
 /// Generate a profiling report
 pub fn generate_profiling_report(config: ProfileReportConfig) -> crate::error::Result<()> {
     let profiler = get_profiler();
     profiler.generate_report(config)
-}
-
 /// Quick profiling function for RAII-style profiling
 pub struct ProfileScope {
-    profiler: Arc<Profiler>,
-}
-
 impl ProfileScope {
     /// Create a new profile scope that starts profiling
     pub fn new() -> crate::error::Result<()> {
         let profiler = get_profiler();
         profiler.start()?;
         Ok(Self { profiler })
-    }
-
     /// Create a new profile scope with custom configuration
     pub fn with_config(config: ProfilerConfig) -> crate::error::Result<()> {
         configure_profiler(config)?;
@@ -614,16 +435,10 @@ impl Drop for ProfileScope {
             eprintln!("Warning: Failed to stop profiling: {}", e);
         }
     }
-}
-
 /// Macro for easy function profiling
 #[macro_export]
 macro_rules! profile_scope {
     () => {
 //         let _profile_scope = $crate::stdlib::vibecheck::profiler::ProfileScope::new()?;
-    };
     ($config:expr) => {
 //         let _profile_scope = $crate::stdlib::vibecheck::profiler::ProfileScope::with_config($config)?;
-    };
-}
-

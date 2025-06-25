@@ -13,12 +13,7 @@ use std::collections::HashMap;
 
 // Import real inkwell types for LLVM integration
 use inkwell::{
-    values::{BasicValueEnum, FunctionValue, PointerValue, IntValue},
-    types::{BasicTypeEnum, IntType, PointerType, FunctionType},
-    basic_block::BasicBlock,
-    AddressSpace,
-    IntPredicate,
-};
+// };
 
 /// Runtime goroutine scheduler reference for LLVM integration
 static mut RUNTIME_SCHEDULER: Option<*mut crate::runtime::goroutine::GoroutineScheduler> = None;
@@ -51,8 +46,6 @@ pub trait GoroutineCompiler<'ctx> {
     
     /// Declare runtime FFI functions in the module
     fn declare_goroutine_runtime_functions(&mut self) -> crate::error::Result<()>;
-}
-
 /// Implementation of GoroutineCompiler for the real LLVM code generator
 impl<'ctx> GoroutineCompiler<'ctx> for crate::codegen::llvm::LlvmCodeGeneratorReal<'ctx> {
     fn compile_goroutine_spawn(&mut self, spawn: &GoroutineSpawn) -> crate::error::Result<()> {
@@ -66,14 +59,12 @@ impl<'ctx> GoroutineCompiler<'ctx> for crate::codegen::llvm::LlvmCodeGeneratorRe
         
         // Get or create the function to be spawned
         let target_function = match self.module().get_function(&function_name) {
-            Some(func) => func,
             None => {
                 // If function doesn't exist, create a wrapper that calls it
                 let void_type = self.context().void_type();
                 let fn_type = void_type.fn_type(&[], false);
                 self.module().add_function(&function_name, fn_type, None)
             }
-        };
         
         // Get the spawn function from the runtime
         let spawn_fn = self.module().get_function("cursed_spawn_goroutine")
@@ -85,18 +76,12 @@ impl<'ctx> GoroutineCompiler<'ctx> for crate::codegen::llvm::LlvmCodeGeneratorRe
         // Create function pointer for the target function
         let i8_ptr_type = self.context().i8_type().ptr_type(AddressSpace::Generic);
         let target_fn_ptr = self.builder().build_bitcast(
-            target_function.as_global_value().as_pointer_value(),
-            i8_ptr_type,
             "target_fn_ptr"
         );
         
         // Call cursed_spawn_goroutine(scheduler_ptr, function_ptr)
         let spawn_call_result = self.builder().build_call(
-            spawn_fn,
             &[
-                scheduler_ptr.into(),
-                target_fn_ptr.into(),
-            ],
             "goroutine_id"
         );
         
@@ -104,13 +89,10 @@ impl<'ctx> GoroutineCompiler<'ctx> for crate::codegen::llvm::LlvmCodeGeneratorRe
             .ok_or_else(|| CursedError::Compile("Failed to get goroutine spawn result".to_string()))?;
         
         tracing::info!(
-            function_name = %function_name,
             "Successfully compiled goroutine spawn"
         );
         
         Ok(goroutine_id)
-    }
-    
     fn generate_yield_point(&mut self, location: &str) -> crate::error::Result<()> {
         tracing::info!(location = %location, "Generating yield point (yolo keyword)");
         
@@ -129,8 +111,6 @@ impl<'ctx> GoroutineCompiler<'ctx> for crate::codegen::llvm::LlvmCodeGeneratorRe
         
         let scheduler_ptr = self.get_runtime_scheduler_ptr()?;
         let gc_check_result = self.builder().build_call(
-            gc_requested_fn,
-            &[scheduler_ptr.into()],
             "gc_requested"
         );
         
@@ -151,8 +131,6 @@ impl<'ctx> GoroutineCompiler<'ctx> for crate::codegen::llvm::LlvmCodeGeneratorRe
             .ok_or_else(|| CursedError::Compile("cursed_yield_goroutine function not found".to_string()))?;
         
         self.builder().build_call(
-            yield_fn,
-            &[scheduler_ptr.into()],
             ""
         );
         self.builder().build_unconditional_branch(continue_block);
@@ -162,8 +140,6 @@ impl<'ctx> GoroutineCompiler<'ctx> for crate::codegen::llvm::LlvmCodeGeneratorRe
         
         tracing::info!(location = %location, "Successfully generated yield point");
         Ok(())
-    }
-    
     fn generate_safe_point(&mut self, location: &str) -> crate::error::Result<()> {
         tracing::info!(location = %location, "Generating GC safe point");
         
@@ -181,18 +157,12 @@ impl<'ctx> GoroutineCompiler<'ctx> for crate::codegen::llvm::LlvmCodeGeneratorRe
         
         // Call cursed_safe_point(scheduler_ptr, location_str)
         self.builder().build_call(
-            safe_point_fn,
             &[
-                scheduler_ptr.into(),
-                location_str.into(),
-            ],
             ""
         );
         
         tracing::info!(location = %location, "Successfully generated safe point");
         Ok(())
-    }
-    
     fn setup_goroutine_runtime(&mut self) -> crate::error::Result<()> {
         tracing::info!("Setting up goroutine runtime");
         
@@ -205,8 +175,6 @@ impl<'ctx> GoroutineCompiler<'ctx> for crate::codegen::llvm::LlvmCodeGeneratorRe
         
         tracing::info!("Successfully set up goroutine runtime");
         Ok(scheduler_ptr)
-    }
-    
     fn declare_goroutine_runtime_functions(&mut self) -> crate::error::Result<()> {
         let i8_type = self.context().i8_type();
         let i8_ptr_type = i8_type.ptr_type(AddressSpace::Generic);
@@ -221,16 +189,12 @@ impl<'ctx> GoroutineCompiler<'ctx> for crate::codegen::llvm::LlvmCodeGeneratorRe
                 i8_ptr_type.into(), // function_ptr (changed from extern "C" fn())
             ], false);
             self.module().add_function("cursed_spawn_goroutine", spawn_fn_type, None);
-        }
-        
         // Declare cursed_yield_goroutine(scheduler_ptr)
         if self.module().get_function("cursed_yield_goroutine").is_none() {
             let yield_fn_type = void_type.fn_type(&[
                 i8_ptr_type.into(), // scheduler_ptr
             ], false);
             self.module().add_function("cursed_yield_goroutine", yield_fn_type, None);
-        }
-        
         // Declare cursed_safe_point(scheduler_ptr, location)
         if self.module().get_function("cursed_safe_point").is_none() {
             let safe_point_fn_type = void_type.fn_type(&[
@@ -238,16 +202,12 @@ impl<'ctx> GoroutineCompiler<'ctx> for crate::codegen::llvm::LlvmCodeGeneratorRe
                 i8_ptr_type.into(), // location
             ], false);
             self.module().add_function("cursed_safe_point", safe_point_fn_type, None);
-        }
-        
         // Declare cursed_gc_requested(scheduler_ptr) -> bool
         if self.module().get_function("cursed_gc_requested").is_none() {
             let gc_requested_fn_type = bool_type.fn_type(&[
                 i8_ptr_type.into(), // scheduler_ptr
             ], false);
             self.module().add_function("cursed_gc_requested", gc_requested_fn_type, None);
-        }
-        
         tracing::info!("Successfully declared goroutine runtime functions");
         Ok(())
     }
@@ -283,14 +243,10 @@ impl<'ctx> crate::codegen::llvm::LlvmCodeGeneratorReal<'ctx> {
         let i8_ptr_type = self.context().i8_type().ptr_type(AddressSpace::Generic);
         let scheduler_ptr_int = self.context().i64_type().const_int(scheduler_ptr_raw as u64, false);
         let scheduler_ptr = self.builder().build_int_to_ptr(
-            scheduler_ptr_int,
-            i8_ptr_type,
             "scheduler_ptr"
         );
         
         Ok(scheduler_ptr)
-    }
-    
     /// Create a global string constant
     fn create_global_string(&self, text: &str) -> PointerValue<'ctx> {
         let string_value = self.context().const_string(text.as_bytes(), true);
@@ -303,8 +259,6 @@ impl<'ctx> crate::codegen::llvm::LlvmCodeGeneratorReal<'ctx> {
         // Get pointer to the string data
         let i8_ptr_type = self.context().i8_type().ptr_type(AddressSpace::Generic);
         self.builder().build_bitcast(
-            global.as_pointer_value(),
-            i8_ptr_type,
             "str_ptr"
         )
     }
@@ -312,16 +266,11 @@ impl<'ctx> crate::codegen::llvm::LlvmCodeGeneratorReal<'ctx> {
 
 /// Generate yield points in loops (for `yolo` keyword) - compatible version for legacy usage
 pub fn generate_loop_yield_point<'ctx>(
-    generator: &mut impl GoroutineCompiler<'ctx>,
-    loop_location: &str,
 ) -> crate::error::Result<()> {
     // Generate conditional yield points based on GC coordination requests
     generator.generate_yield_point(loop_location)
-}
-
 /// Convenience function for creating goroutine runtime integration
 pub fn initialize_goroutine_runtime<'ctx>(
-    generator: &mut impl GoroutineCompiler<'ctx>,
 ) -> crate::error::Result<()> {
     // Set up the goroutine runtime and declare all necessary functions
     generator.declare_goroutine_runtime_functions()?;
@@ -329,8 +278,6 @@ pub fn initialize_goroutine_runtime<'ctx>(
     
     tracing::info!("Goroutine runtime successfully initialized for LLVM compilation");
     Ok(())
-}
-
 /// Update the runtime FFI functions to match our LLVM declarations
 pub mod runtime_integration {
     use super::*;
@@ -346,8 +293,6 @@ pub mod runtime_integration {
         
         tracing::info!("Runtime scheduler initialized and started");
         Ok(scheduler_ptr)
-    }
-    
     /// Clean up the runtime scheduler
     pub fn cleanup_scheduler() -> crate::error::Result<()> {
         if let Some(scheduler_ptr) = get_runtime_scheduler() {
@@ -355,13 +300,9 @@ pub mod runtime_integration {
                 let mut scheduler = Box::from_raw(scheduler_ptr);
                 scheduler.stop()
                     .map_err(|e| CursedError::Runtime(format!("Failed to stop scheduler: {}", e)))?;
-            }
-            
             // Clear the global reference
             set_runtime_scheduler(std::ptr::null_mut());
             tracing::info!("Runtime scheduler cleaned up");
-        }
-        
         Ok(())
     }
 }

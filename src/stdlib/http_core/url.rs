@@ -12,14 +12,10 @@ use std::str::FromStr;
 /// URL query parameters
 #[derive(Debug, Clone, PartialEq)]
 pub struct QueryParams {
-    params: HashMap<String, Vec<String>>,
-}
-
 impl QueryParams {
     /// Create new empty query parameters
     pub fn new() -> Self {
         Self {
-            params: HashMap::new(),
         }
     }
 
@@ -29,8 +25,6 @@ impl QueryParams {
 
         if query_string.is_empty() {
             return Self { params };
-        }
-
         for pair in query_string.split('&') {
             if let Some(eq_pos) = pair.find('=') {
                 let key = urlencoding::decode(&pair[..eq_pos])
@@ -55,64 +49,40 @@ impl QueryParams {
     /// Get first value for parameter
     pub fn get(&self, name: &str) -> Option<&str> {
         self.params.get(name)?.first().map(|s| s.as_str())
-    }
-
     /// Get all values for parameter
     pub fn get_all(&self, name: &str) -> Option<&Vec<String>> {
         self.params.get(name)
-    }
-
     /// Insert parameter (replaces existing)
     pub fn insert<K, V>(&mut self, key: K, value: V)
     where
-        K: Into<String>,
-        V: Into<String>,
     {
         self.params.insert(key.into(), Vec::from([value.into()]));
-    }
-
     /// Add parameter value (appends to existing)
     pub fn add<K, V>(&mut self, key: K, value: V)
     where
-        K: Into<String>,
-        V: Into<String>,
     {
         self.params
             .entry(key.into())
             .or_insert_with(Vec::new)
             .push(value.into());
-    }
-
     /// Remove parameter
     pub fn remove(&mut self, key: &str) -> Option<Vec<String>> {
         self.params.remove(key)
-    }
-
     /// Check if parameter exists
     pub fn contains_key(&self, key: &str) -> bool {
         self.params.contains_key(key)
-    }
-
     /// Get all parameter names
     pub fn keys(&self) -> impl Iterator<Item = &String> {
         self.params.keys()
-    }
-
     /// Get number of parameters
     pub fn len(&self) -> usize {
         self.params.len()
-    }
-
     /// Check if empty
     pub fn is_empty(&self) -> bool {
         self.params.is_empty()
-    }
-
     /// Clear all parameters
     pub fn clear(&mut self) {
         self.params.clear();
-    }
-
     /// Convert to query string
     pub fn to_string(&self) -> String {
         let mut parts = Vec::new();
@@ -127,11 +97,7 @@ impl QueryParams {
                     parts.push(format!("{}={}", encoded_key, encoded_value));
                 }
             }
-        }
-
         parts.join("&")
-    }
-
     /// Merge another QueryParams into this one
     pub fn merge(&mut self, other: QueryParams) {
         for (key, values) in other.params {
@@ -166,56 +132,36 @@ impl IntoIterator for QueryParams {
 /// URL path parameters (for route matching)
 #[derive(Debug, Clone, PartialEq)]
 pub struct PathParams {
-    params: HashMap<String, String>,
-}
-
 impl PathParams {
     /// Create new empty path parameters
     pub fn new() -> Self {
         Self {
-            params: HashMap::new(),
         }
     }
 
     /// Get path parameter value
     pub fn get(&self, name: &str) -> Option<&str> {
         self.params.get(name).map(|s| s.as_str())
-    }
-
     /// Insert path parameter
     pub fn insert<K, V>(&mut self, key: K, value: V)
     where
-        K: Into<String>,
-        V: Into<String>,
     {
         self.params.insert(key.into(), value.into());
-    }
-
     /// Remove path parameter
     pub fn remove(&mut self, key: &str) -> Option<String> {
         self.params.remove(key)
-    }
-
     /// Check if parameter exists
     pub fn contains_key(&self, key: &str) -> bool {
         self.params.contains_key(key)
-    }
-
     /// Get all parameter names
     pub fn keys(&self) -> impl Iterator<Item = &String> {
         self.params.keys()
-    }
-
     /// Get number of parameters
     pub fn len(&self) -> usize {
         self.params.len()
-    }
-
     /// Check if empty
     pub fn is_empty(&self) -> bool {
         self.params.is_empty()
-    }
-
     /// Clear all parameters
     pub fn clear(&mut self) {
         self.params.clear();
@@ -232,32 +178,16 @@ impl Default for PathParams {
 #[derive(Debug, Clone, PartialEq)]
 pub struct Url {
     /// URL scheme (http, https, etc.)
-    pub scheme: Option<String>,
     /// Host (domain or IP)
-    pub host: Option<String>,
     /// Port number
-    pub port: Option<u16>,
     /// URL path
-    pub path: String,
     /// Query parameters
-    pub query_params: QueryParams,
     /// URL fragment
-    pub fragment: Option<String>,
     /// Path parameters (for route matching)
-    pub path_params: PathParams,
-}
-
 impl Url {
     /// Create a new URL
     pub fn new<P: Into<String>>(path: P) -> Self {
         Self {
-            scheme: None,
-            host: None,
-            port: None,
-            path: path.into(),
-            query_params: QueryParams::new(),
-            fragment: None,
-            path_params: PathParams::new(),
         }
     }
 
@@ -265,8 +195,6 @@ impl Url {
     pub fn parse(url_str: &str) -> HttpResult<Self> {
         if url_str.is_empty() {
             return Err(HttpError::InvalidUrl("Empty URL".to_string()));
-        }
-
         let mut url = Self::new("");
         let mut remaining = url_str;
 
@@ -274,20 +202,14 @@ impl Url {
         if let Some(scheme_end) = remaining.find("://") {
             url.scheme = Some(remaining[..scheme_end].to_string());
             remaining = &remaining[scheme_end + 3..];
-        }
-
         // Parse fragment first (if present)
         if let Some(fragment_start) = remaining.find('#') {
             url.fragment = Some(remaining[fragment_start + 1..].to_string());
             remaining = &remaining[..fragment_start];
-        }
-
         // Parse query parameters
         if let Some(query_start) = remaining.find('?') {
             url.query_params = QueryParams::parse(&remaining[query_start + 1..]);
             remaining = &remaining[..query_start];
-        }
-
         // Parse host and port (if scheme is present)
         if url.scheme.is_some() {
             if let Some(path_start) = remaining.find('/') {
@@ -301,23 +223,15 @@ impl Url {
         } else {
             // No scheme, treat as path only
             url.path = remaining.to_string();
-        }
-
         // Ensure path starts with '/' if not empty
         if !url.path.is_empty() && !url.path.starts_with('/') {
             url.path = format!("/{}", url.path);
-        }
-
         url.validate()?;
         Ok(url)
-    }
-
     /// Parse host and port
     fn parse_host_port(&mut self, host_port: &str) -> HttpResult<()> {
         if host_port.is_empty() {
             return Ok(());
-        }
-
         if host_port.starts_with('[') && host_port.contains(']') {
             // IPv6 address
             if let Some(bracket_end) = host_port.find(']') {
@@ -337,51 +251,33 @@ impl Url {
         } else {
             // Host only
             self.host = Some(host_port.to_string());
-        }
-
         Ok(())
-    }
-
     /// Set scheme
     pub fn scheme<S: Into<String>>(mut self, scheme: S) -> Self {
         self.scheme = Some(scheme.into());
         self
-    }
-
     /// Set host
     pub fn host<H: Into<String>>(mut self, host: H) -> Self {
         self.host = Some(host.into());
         self
-    }
-
     /// Set port
     pub fn port(mut self, port: u16) -> Self {
         self.port = Some(port);
         self
-    }
-
     /// Set path
     pub fn with_path<P: Into<String>>(mut self, path: P) -> Self {
         self.path = path.into();
         self
-    }
-
     /// Add query parameter
     pub fn query<K, V>(mut self, key: K, value: V) -> Self
     where
-        K: Into<String>,
-        V: Into<String>,
     {
         self.query_params.add(key, value);
         self
-    }
-
     /// Set fragment
     pub fn fragment<F: Into<String>>(mut self, fragment: F) -> Self {
         self.fragment = Some(fragment.into());
         self
-    }
-
     /// Get full URL as string
     pub fn to_string(&self) -> String {
         let mut url = String::new();
@@ -389,8 +285,6 @@ impl Url {
         if let Some(scheme) = &self.scheme {
             url.push_str(scheme);
             url.push_str("://");
-        }
-
         if let Some(host) = &self.host {
             if host.contains(':') && !host.starts_with('[') {
                 // IPv6 without brackets
@@ -399,73 +293,45 @@ impl Url {
                 url.push(']');
             } else {
                 url.push_str(host);
-            }
-
             if let Some(port) = self.port {
                 // Only include port if it's not the default for the scheme
                 let include_port = match (self.scheme.as_deref(), port) {
-                    (Some("http"), 80) => false,
-                    (Some("https"), 443) => false,
-                    _ => true,
-                };
 
                 if include_port {
                     url.push(':');
                     url.push_str(&port.to_string());
                 }
             }
-        }
-
         url.push_str(&self.path);
 
         if !self.query_params.is_empty() {
             url.push('?');
             url.push_str(&self.query_params.to_string());
-        }
-
         if let Some(fragment) = &self.fragment {
             url.push('#');
             url.push_str(fragment);
-        }
-
         url
-    }
-
     /// Get path
     pub fn path(&self) -> &str {
         &self.path
-    }
-
     /// Get query parameters
     pub fn query_params(&self) -> &QueryParams {
         &self.query_params
-    }
-
     /// Get mutable query parameters
     pub fn query_params_mut(&mut self) -> &mut QueryParams {
         &mut self.query_params
-    }
-
     /// Get path parameters
     pub fn path_params(&self) -> &PathParams {
         &self.path_params
-    }
-
     /// Get mutable path parameters
     pub fn path_params_mut(&mut self) -> &mut PathParams {
         &mut self.path_params
-    }
-
     /// Check if URL is absolute (has scheme)
     pub fn is_absolute(&self) -> bool {
         self.scheme.is_some()
-    }
-
     /// Check if URL is secure (HTTPS)
     pub fn is_secure(&self) -> bool {
         matches!(self.scheme.as_deref(), Some("https"))
-    }
-
     /// Get authority (host:port)
     pub fn authority(&self) -> Option<String> {
         if let Some(host) = &self.host {
@@ -482,19 +348,12 @@ impl Url {
     /// Get default port for scheme
     pub fn default_port(&self) -> Option<u16> {
         match self.scheme.as_deref() {
-            Some("http") => Some(80),
-            Some("https") => Some(443),
-            Some("ftp") => Some(21),
-            Some("ssh") => Some(22),
-            _ => None,
         }
     }
 
     /// Get effective port (explicit or default)
     pub fn effective_port(&self) -> Option<u16> {
         self.port.or_else(|| self.default_port())
-    }
-
     /// Join with another path
     pub fn join(&self, path: &str) -> Self {
         let mut new_url = self.clone();
@@ -511,26 +370,20 @@ impl Url {
                 }
             }
             new_url.path = format!("{}{}", base_path, path);
-        }
-
         // Clear query and fragment for joined path
         new_url.query_params = QueryParams::new();
         new_url.fragment = None;
 
         new_url
-    }
-
     /// Normalize the URL path
     pub fn normalize(&mut self) {
         let mut parts = Vec::new();
         
         for segment in self.path.split('/') {
             match segment {
-                "" | "." => continue,
                 ".." => {
                     parts.pop();
                 }
-                _ => parts.push(segment),
             }
         }
 
@@ -538,8 +391,6 @@ impl Url {
             self.path = format!("/{}", parts.join("/"));
         } else {
             self.path = parts.join("/");
-        }
-
         if self.path.is_empty() {
             self.path = "/".to_string();
         }
@@ -571,8 +422,6 @@ impl Url {
         // Validate path
         if self.path.contains('\0') {
             return Err(HttpError::InvalidUrl("Path contains null byte".to_string()));
-        }
-
         Ok(())
     }
 }

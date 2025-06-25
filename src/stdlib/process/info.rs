@@ -11,242 +11,111 @@ use std::io::{BufRead, BufReader};
 use std::path::Path;
 use std::time::{Duration, SystemTime};
 
-// use crate::stdlib::process::error::{
+// Placeholder imports disabled
     ProcessError, ProcessResult, process_not_found_pid, system_error, io_error
-};
+// };
 
 /// Process status enumeration
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum ProcessStatus {
     /// Process is running
-    Running,
     /// Process is sleeping (interruptible)
-    Sleeping,
     /// Process is in uninterruptible sleep
-    UninterruptibleSleep,
     /// Process is stopped
-    Stopped,
     /// Process is a zombie
-    Zombie,
     /// Process is traced/debugged
-    Traced,
     /// Process is dead
-    Dead,
     /// Unknown status
-    Unknown(String),
-}
-
 /// Process state information
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum ProcessState {
     /// Process is created but not yet started
-    Created,
     /// Process is running normally
-    Running,
     /// Process is paused/suspended
-    Paused,
     /// Process is waiting for some condition
-    Waiting,
     /// Process has stopped execution
-    Stopped,
     /// Process has terminated normally
-    Terminated,
     /// Process was killed by signal
-    Killed,
     /// Process state is unknown
-    Unknown,
-}
-
 impl fmt::Display for ProcessStatus {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            ProcessStatus::Running => write!(f, "Running"),
-            ProcessStatus::Sleeping => write!(f, "Sleeping"),
-            ProcessStatus::UninterruptibleSleep => write!(f, "Uninterruptible Sleep"),
-            ProcessStatus::Stopped => write!(f, "Stopped"),
-            ProcessStatus::Zombie => write!(f, "Zombie"),
-            ProcessStatus::Traced => write!(f, "Traced"),
-            ProcessStatus::Dead => write!(f, "Dead"),
-            ProcessStatus::Unknown(status) => write!(f, "Unknown ({})", status),
         }
     }
-}
-
 impl From<char> for ProcessStatus {
     fn from(c: char) -> Self {
         match c {
-            'R' => ProcessStatus::Running,
-            'S' => ProcessStatus::Sleeping,
-            'D' => ProcessStatus::UninterruptibleSleep,
-            'T' => ProcessStatus::Stopped,
-            'Z' => ProcessStatus::Zombie,
-            't' => ProcessStatus::Traced,
-            'X' | 'x' => ProcessStatus::Dead,
-            _ => ProcessStatus::Unknown(c.to_string()),
         }
     }
-}
-
 /// Memory information for a process
 #[derive(Debug, Clone)]
 pub struct MemoryInfo {
     /// Virtual memory size in bytes
-    pub virtual_size: u64,
     /// Resident set size in bytes
-    pub resident_size: u64,
     /// Shared memory size in bytes
-    pub shared_size: u64,
     /// Peak virtual memory size in bytes
-    pub peak_virtual_size: u64,
     /// Peak resident set size in bytes
-    pub peak_resident_size: u64,
     /// Memory usage percentage
-    pub percentage: f64,
-}
-
 impl MemoryInfo {
     pub fn new() -> Self {
         Self {
-            virtual_size: 0,
-            resident_size: 0,
-            shared_size: 0,
-            peak_virtual_size: 0,
-            peak_resident_size: 0,
-            percentage: 0.0,
         }
     }
-}
-
 /// CPU information for a process
 #[derive(Debug, Clone)]
 pub struct CpuInfo {
     /// CPU usage percentage
-    pub cpu_percent: f64,
     /// User time in milliseconds
-    pub user_time: u64,
     /// System time in milliseconds
-    pub system_time: u64,
     /// Total time (user + system)
-    pub total_time: u64,
     /// CPU time percentage since last measurement
-    pub cpu_time_percent: f64,
     /// Number of context switches
-    pub context_switches: u64,
-}
-
 impl CpuInfo {
     pub fn new() -> Self {
         Self {
-            cpu_percent: 0.0,
-            user_time: 0,
-            system_time: 0,
-            total_time: 0,
-            cpu_time_percent: 0.0,
-            context_switches: 0,
         }
     }
-}
-
 /// Comprehensive process information
 #[derive(Debug, Clone)]
 pub struct ProcessInfo {
     /// Process ID
-    pub pid: u32,
     /// Parent process ID
-    pub ppid: u32,
     /// Process group ID
-    pub pgid: u32,
     /// Session ID
-    pub sid: u32,
     /// Terminal/TTY
-    pub tty: Option<String>,
     /// Process name/command
-    pub name: String,
     /// Full command line
-    pub cmdline: Vec<String>,
     /// Process status
-    pub status: ProcessStatus,
     /// Process priority
-    pub priority: i32,
     /// Nice value
-    pub nice: i32,
     /// Number of threads
-    pub threads: u32,
     /// Process start time
-    pub start_time: SystemTime,
     /// Process uptime
-    pub uptime: Duration,
     /// User ID
-    pub uid: u32,
     /// Group ID
-    pub gid: u32,
     /// Working directory
-    pub cwd: Option<String>,
     /// Executable path
-    pub exe: Option<String>,
     /// Memory information
-    pub memory: MemoryInfo,
     /// CPU information
-    pub cpu: CpuInfo,
     /// Environment variables
-    pub environment: HashMap<String, String>,
     /// Open file descriptors count
-    pub fd_count: u32,
-}
-
 impl ProcessInfo {
     pub fn new(pid: u32) -> Self {
         Self {
-            pid,
-            ppid: 0,
-            pgid: 0,
-            sid: 0,
-            tty: None,
-            name: String::new(),
-            cmdline: Vec::new(),
-            status: ProcessStatus::Unknown("Unknown".to_string()),
-            priority: 0,
-            nice: 0,
-            threads: 1,
-            start_time: SystemTime::now(),
-            uptime: Duration::from_secs(0),
-            uid: 0,
-            gid: 0,
-            cwd: None,
-            exe: None,
-            memory: MemoryInfo::new(),
-            cpu: CpuInfo::new(),
-            environment: HashMap::new(),
-            fd_count: 0,
         }
     }
-}
-
 /// Process list entry (minimal information for listing)
 #[derive(Debug, Clone)]
 pub struct ProcessListEntry {
-    pub pid: u32,
-    pub ppid: u32,
-    pub name: String,
-    pub status: ProcessStatus,
-    pub cpu_percent: f64,
-    pub memory_percent: f64,
-    pub start_time: SystemTime,
-}
-
 /// Get current process ID
 pub fn get_current_pid() -> u32 {
     std::process::id()
-}
-
 /// Get parent process ID
 pub fn get_parent_pid() -> ProcessResult<u32> {
     #[cfg(unix)]
     {
         let ppid = unsafe { libc::getppid() };
         Ok(ppid as u32)
-    }
-    
     #[cfg(windows)]
     {
         use std::process::Command;
@@ -269,8 +138,6 @@ pub fn get_parent_pid() -> ProcessResult<u32> {
                     }
                 }
             }
-        }
-        
         // Fallback: try PowerShell approach
         let output = Command::new("powershell")
             .args(&["-Command", &format!("Get-Process -Id {} | Select-Object -ExpandProperty Parent", current_pid)])
@@ -313,19 +180,13 @@ pub fn is_process_running(pid: u32) -> bool {
             false
         }
     }
-}
-
 /// Get detailed process information
 pub fn get_process_info(pid: u32) -> ProcessResult<ProcessInfo> {
     if !is_process_running(pid) {
         return Err(process_not_found_pid(pid, "Process not found"));
-    }
-    
     #[cfg(unix)]
     {
         get_process_info_unix(pid)
-    }
-    
     #[cfg(windows)]
     {
         get_process_info_windows(pid)
@@ -342,8 +203,6 @@ fn get_process_info_unix(pid: u32) -> ProcessResult<ProcessInfo> {
     // Read basic status information
     if let Ok(status_content) = fs::read_to_string(format!("{}/status", proc_path)) {
         parse_proc_status(&status_content, &mut info)?;
-    }
-    
     // Read command line
     if let Ok(cmdline_content) = fs::read(format!("{}/cmdline", proc_path)) {
         let cmdline_str = String::from_utf8_lossy(&cmdline_content);
@@ -360,28 +219,18 @@ fn get_process_info_unix(pid: u32) -> ProcessResult<ProcessInfo> {
     // Read stat information for timing and CPU info
     if let Ok(stat_content) = fs::read_to_string(format!("{}/stat", proc_path)) {
         parse_proc_stat(&stat_content, &mut info)?;
-    }
-    
     // Read memory information
     if let Ok(statm_content) = fs::read_to_string(format!("{}/statm", proc_path)) {
         parse_proc_statm(&statm_content, &mut info)?;
-    }
-    
     // Read current working directory
     if let Ok(cwd_path) = fs::read_link(format!("{}/cwd", proc_path)) {
         info.cwd = Some(cwd_path.to_string_lossy().to_string());
-    }
-    
     // Read executable path
     if let Ok(exe_path) = fs::read_link(format!("{}/exe", proc_path)) {
         info.exe = Some(exe_path.to_string_lossy().to_string());
-    }
-    
     // Count file descriptors
     if let Ok(fd_dir) = fs::read_dir(format!("{}/fd", proc_path)) {
         info.fd_count = fd_dir.count() as u32;
-    }
-    
     // Read environment variables
     if let Ok(environ_content) = fs::read(format!("{}/environ", proc_path)) {
         let environ_str = String::from_utf8_lossy(&environ_content);
@@ -392,11 +241,7 @@ fn get_process_info_unix(pid: u32) -> ProcessResult<ProcessInfo> {
                 info.environment.insert(key, value);
             }
         }
-    }
-    
     Ok(info)
-}
-
 #[cfg(windows)]
 fn get_process_info_windows(pid: u32) -> ProcessResult<ProcessInfo> {
     use std::process::Command;
@@ -431,16 +276,10 @@ fn get_process_info_windows(pid: u32) -> ProcessResult<ProcessInfo> {
     // Get process environment variables
     if let Ok(env_vars) = get_process_environment_windows(pid) {
         info.environment = env_vars;
-    }
-    
     // Get process working directory
     if let Ok(cwd) = get_process_working_directory_windows(pid) {
         info.cwd = Some(cwd);
-    }
-    
     Ok(info)
-}
-
 #[cfg(windows)]
 fn get_process_details_powershell(pid: u32, info: &mut ProcessInfo) -> ProcessResult<()> {
     use std::process::Command;
@@ -450,21 +289,8 @@ fn get_process_details_powershell(pid: u32, info: &mut ProcessInfo) -> ProcessRe
         r#"
         $proc = Get-Process -Id {} -ErrorAction SilentlyContinue
         if ($proc) {{
-            $proc | Select-Object @{{n='Name';e={{$_.ProcessName}}}},
-                                 @{{n='StartTime';e={{$_.StartTime}}}},
-                                 @{{n='TotalProcessorTime';e={{$_.TotalProcessorTime.TotalMilliseconds}}}},
-                                 @{{n='UserProcessorTime';e={{$_.UserProcessorTime.TotalMilliseconds}}}},
-                                 @{{n='PrivilegedProcessorTime';e={{$_.PrivilegedProcessorTime.TotalMilliseconds}}}},
-                                 @{{n='WorkingSet';e={{$_.WorkingSet}}}},
-                                 @{{n='VirtualMemorySize';e={{$_.VirtualMemorySize}}}},
-                                 @{{n='PagedMemorySize';e={{$_.PagedMemorySize}}}},
-                                 @{{n='NonpagedSystemMemorySize';e={{$_.NonpagedSystemMemorySize}}}},
-                                 @{{n='PagedSystemMemorySize';e={{$_.PagedSystemMemorySize}}}},
-                                 @{{n='PriorityClass';e={{$_.PriorityClass}}}},
-                                 @{{n='Threads';e={{$_.Threads.Count}}}},
                                  @{{n='Handles';e={{$_.HandleCount}}}} | ConvertTo-Json -Compress
         }}
-        "#,
         pid
     );
     
@@ -481,8 +307,6 @@ fn get_process_details_powershell(pid: u32, info: &mut ProcessInfo) -> ProcessRe
     }
     
     Ok(())
-}
-
 #[cfg(windows)]
 fn parse_powershell_json(json_str: &str, info: &mut ProcessInfo) -> ProcessResult<()> {
     // Simple JSON parsing - in production would use serde_json
@@ -492,37 +316,21 @@ fn parse_powershell_json(json_str: &str, info: &mut ProcessInfo) -> ProcessResul
     // Extract values using simple string parsing
     if let Some(name) = extract_json_string_value(&json_content, "Name") {
         info.name = name;
-    }
-    
     if let Some(working_set) = extract_json_number_value(&json_content, "WorkingSet") {
         info.memory.resident_size = working_set;
-    }
-    
     if let Some(virtual_size) = extract_json_number_value(&json_content, "VirtualMemorySize") {
         info.memory.virtual_size = virtual_size;
-    }
-    
     if let Some(user_time) = extract_json_number_value(&json_content, "UserProcessorTime") {
         info.cpu.user_time = user_time;
-    }
-    
     if let Some(system_time) = extract_json_number_value(&json_content, "PrivilegedProcessorTime") {
         info.cpu.system_time = system_time;
-    }
-    
     if let Some(threads) = extract_json_number_value(&json_content, "Threads") {
         info.threads = threads as u32;
-    }
-    
     if let Some(handles) = extract_json_number_value(&json_content, "Handles") {
         info.fd_count = handles as u32;
-    }
-    
     info.cpu.total_time = info.cpu.user_time + info.cpu.system_time;
     
     Ok(())
-}
-
 #[cfg(windows)]
 fn extract_json_string_value(json: &str, key: &str) -> Option<String> {
     let search_pattern = format!("\"{}\":", key);
@@ -536,8 +344,6 @@ fn extract_json_string_value(json: &str, key: &str) -> Option<String> {
         }
     }
     None
-}
-
 #[cfg(windows)]
 fn extract_json_number_value(json: &str, key: &str) -> Option<u64> {
     let search_pattern = format!("\"{}\":", key);
@@ -552,8 +358,6 @@ fn extract_json_number_value(json: &str, key: &str) -> Option<u64> {
         }
     }
     None
-}
-
 #[cfg(windows)]
 fn get_process_environment_windows(pid: u32) -> ProcessResult<HashMap<String, String>> {
     use std::process::Command;
@@ -586,11 +390,7 @@ fn get_process_environment_windows(pid: u32) -> ProcessResult<HashMap<String, St
                 env_vars.insert(var_name.to_string(), value);
             }
         }
-    }
-    
     Ok(env_vars)
-}
-
 #[cfg(windows)]
 fn get_process_working_directory_windows(pid: u32) -> ProcessResult<String> {
     use std::process::Command;
@@ -598,7 +398,6 @@ fn get_process_working_directory_windows(pid: u32) -> ProcessResult<String> {
     // Try PowerShell approach first
     let output = Command::new("powershell")
         .args(&["-Command", &format!(
-            "Get-Process -Id {} | Select-Object -ExpandProperty Path | Split-Path -Parent", 
             pid
         )])
         .output()
@@ -616,8 +415,6 @@ fn get_process_working_directory_windows(pid: u32) -> ProcessResult<String> {
     std::env::current_dir()
         .map(|path| path.to_string_lossy().to_string())
         .map_err(|e| system_error(-1, "get_process_cwd", &e.to_string()))
-}
-
 #[cfg(unix)]
 fn parse_proc_status(content: &str, info: &mut ProcessInfo) -> ProcessResult<()> {
     for line in content.split("\n") {
@@ -626,7 +423,6 @@ fn parse_proc_status(content: &str, info: &mut ProcessInfo) -> ProcessResult<()>
             let value = line[colon_pos + 1..].trim();
             
             match key {
-                "Name" => info.name = value.to_string(),
                 "State" => {
                     if let Some(first_char) = value.chars().next() {
                         info.status = ProcessStatus::from(first_char);
@@ -688,11 +484,7 @@ fn parse_proc_status(content: &str, info: &mut ProcessInfo) -> ProcessResult<()>
                 _ => {}
             }
         }
-    }
-    
     Ok(())
-}
-
 #[cfg(unix)]
 fn parse_proc_stat(content: &str, info: &mut ProcessInfo) -> ProcessResult<()> {
     let fields: Vec<&str> = content.split_whitespace().collect();
@@ -722,8 +514,6 @@ fn parse_proc_stat(content: &str, info: &mut ProcessInfo) -> ProcessResult<()> {
         }
         if let Ok(stime) = fields[14].parse::<u64>() {
             info.cpu.system_time = stime;
-        }
-        
         info.cpu.total_time = info.cpu.user_time + info.cpu.system_time;
         
         // Calculate start time (field 21 is starttime in clock ticks since boot)
@@ -736,8 +526,6 @@ fn parse_proc_stat(content: &str, info: &mut ProcessInfo) -> ProcessResult<()> {
     }
     
     Ok(())
-}
-
 #[cfg(unix)]
 fn parse_proc_statm(content: &str, info: &mut ProcessInfo) -> ProcessResult<()> {
     let fields: Vec<&str> = content.split_whitespace().collect();
@@ -756,8 +544,6 @@ fn parse_proc_statm(content: &str, info: &mut ProcessInfo) -> ProcessResult<()> 
     }
     
     Ok(())
-}
-
 #[cfg(windows)]
 fn parse_tasklist_output(line: &str, info: &mut ProcessInfo) -> ProcessResult<()> {
     // Parse CSV output from tasklist
@@ -768,8 +554,6 @@ fn parse_tasklist_output(line: &str, info: &mut ProcessInfo) -> ProcessResult<()
         
         if let Ok(pid) = fields[1].parse::<u32>() {
             info.pid = pid;
-        }
-        
         // Session name is in fields[2]
         // Session number is in fields[3]
         
@@ -782,11 +566,7 @@ fn parse_tasklist_output(line: &str, info: &mut ProcessInfo) -> ProcessResult<()
         
         // Status - Windows tasklist doesn't provide detailed status
         info.status = ProcessStatus::Running;
-    }
-    
     Ok(())
-}
-
 #[cfg(windows)]
 fn parse_wmic_output(line: &str, info: &mut ProcessInfo) -> ProcessResult<()> {
     let fields: Vec<&str> = line.split(',').collect();
@@ -799,8 +579,6 @@ fn parse_wmic_output(line: &str, info: &mut ProcessInfo) -> ProcessResult<()> {
             }
             if !fields[2].is_empty() {
                 info.exe = Some(fields[2].to_string());
-            }
-            
             // Parse memory information
             if !fields[4].is_empty() {
                 if let Ok(page_file) = fields[4].parse::<u64>() {
@@ -830,20 +608,14 @@ fn parse_wmic_output(line: &str, info: &mut ProcessInfo) -> ProcessResult<()> {
     }
     
     Ok(())
-}
-
 /// Get memory information for a specific process
 pub fn get_process_memory(pid: u32) -> ProcessResult<MemoryInfo> {
     let info = get_process_info(pid)?;
     Ok(info.memory)
-}
-
 /// Get CPU information for a specific process
 pub fn get_process_cpu(pid: u32) -> ProcessResult<CpuInfo> {
     let info = get_process_info(pid)?;
     Ok(info.cpu)
-}
-
 /// Get list of all processes
 pub fn get_process_list() -> ProcessResult<Vec<ProcessListEntry>> {
     let mut processes = Vec::new();
@@ -856,13 +628,6 @@ pub fn get_process_list() -> ProcessResult<Vec<ProcessListEntry>> {
                     if let Ok(pid) = filename.parse::<u32>() {
                         if let Ok(info) = get_process_info(pid) {
                             processes.push(ProcessListEntry {
-                                pid: info.pid,
-                                ppid: info.ppid,
-                                name: info.name,
-                                status: info.status,
-                                cpu_percent: info.cpu.cpu_percent,
-                                memory_percent: info.memory.percentage,
-                                start_time: info.start_time,
                             });
                         }
                     }
@@ -887,10 +652,7 @@ pub fn get_process_list() -> ProcessResult<Vec<ProcessListEntry>> {
                 if fields.len() >= 5 {
                     if let Ok(pid) = fields[1].parse::<u32>() {
                         processes.push(ProcessListEntry {
-                            pid,
                             ppid: 0, // Not available from tasklist
-                            name: fields[0].to_string(),
-                            status: ProcessStatus::Running,
                             cpu_percent: 0.0, // Not available from basic tasklist
                             memory_percent: 0.0, // Would need calculation
                             start_time: SystemTime::now(), // Not available from tasklist
@@ -899,11 +661,7 @@ pub fn get_process_list() -> ProcessResult<Vec<ProcessListEntry>> {
                 }
             }
         }
-    }
-    
     Ok(processes)
-}
-
 /// Find processes by name
 pub fn find_processes_by_name(name: &str) -> ProcessResult<Vec<ProcessListEntry>> {
     let all_processes = get_process_list()?;
@@ -911,8 +669,6 @@ pub fn find_processes_by_name(name: &str) -> ProcessResult<Vec<ProcessListEntry>
         .into_iter()
         .filter(|p| p.name.contains(name))
         .collect())
-}
-
 /// Get process tree starting from a given PID
 pub fn get_process_tree(root_pid: u32) -> ProcessResult<Vec<ProcessListEntry>> {
     let all_processes = get_process_list()?;
@@ -929,11 +685,7 @@ pub fn get_process_tree(root_pid: u32) -> ProcessResult<Vec<ProcessListEntry>> {
                 to_visit.push(child.pid);
             }
         }
-    }
-    
     Ok(tree)
-}
-
 /// Get system load average (Unix only)
 #[cfg(unix)]
 pub fn get_load_average() -> ProcessResult<(f64, f64, f64)> {
@@ -952,8 +704,6 @@ pub fn get_load_average() -> ProcessResult<(f64, f64, f64)> {
     }
     
     Err(io_error("get_load_average", "ReadError", "Could not read load average"))
-}
-
 #[cfg(windows)]
 pub fn get_load_average() -> ProcessResult<(f64, f64, f64)> {
     // Windows doesn't have a direct equivalent to Unix load average
@@ -988,13 +738,9 @@ pub fn get_load_average() -> ProcessResult<(f64, f64, f64)> {
     let estimated_load = cpu_count * 0.5; // Assume 50% utilization as default
     
     Ok((estimated_load, estimated_load, estimated_load))
-}
-
 /// Get number of CPU cores
 pub fn get_cpu_count() -> usize {
     num_cpus::get()
-}
-
 /// Get system uptime
 #[cfg(unix)]
 pub fn get_system_uptime() -> ProcessResult<Duration> {
@@ -1004,11 +750,7 @@ pub fn get_system_uptime() -> ProcessResult<Duration> {
                 return Ok(Duration::from_secs_f64(uptime_secs));
             }
         }
-    }
-    
     Err(io_error("get_system_uptime", "ReadError", "Could not read system uptime"))
-}
-
 #[cfg(windows)]
 pub fn get_system_uptime() -> ProcessResult<Duration> {
     use std::process::Command;
@@ -1030,8 +772,6 @@ pub fn get_system_uptime() -> ProcessResult<Duration> {
                 return Ok(Duration::from_secs(seconds));
             }
         }
-    }
-    
     // Fallback: Use WMIC to get boot time
     if let Ok(output) = Command::new("wmic")
         .args(&["os", "get", "LastBootUpTime", "/value"])
@@ -1063,15 +803,9 @@ pub fn get_system_uptime() -> ProcessResult<Duration> {
                 return Ok(Duration::from_secs(seconds));
             }
         }
-    }
-    
     Err(system_error(
-        -1,
-        "get_system_uptime",
         "Could not determine system uptime on Windows"
     ))
-}
-
 #[cfg(windows)]
 fn parse_wmi_datetime(datetime_str: &str) -> Result<u64, ()> {
     // WMI datetime format: YYYYMMDDHHMMSS.mmmmmm+UUU
@@ -1107,19 +841,8 @@ impl SystemInfo {
     /// Create a new SystemInfo instance
     pub fn new() -> Self {
         Self {
-            hostname: String::new(),
-            os_name: String::new(),
-            os_version: String::new(),
-            architecture: String::new(),
-            cpu_count: 0,
-            total_memory: 0,
-            available_memory: 0,
-            uptime: Duration::new(0, 0),
-            load_average: Vec::new(),
         }
     }
-}
-
 impl Default for SystemInfo {
     fn default() -> Self {
         Self::new()

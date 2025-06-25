@@ -8,44 +8,24 @@ use serde_json;
 #[derive(Debug, Clone)]
 pub struct VibeMapper {
     /// Configuration options for the mapper
-    config: VibeMapperConfig,
-}
-
 /// Configuration for VibeMapper behavior
 #[derive(Debug, Clone)]
 pub struct VibeMapperConfig {
     /// Whether to use JSON tags for field names
-    pub use_json_tags: bool,
     /// Whether to omit empty fields
-    pub omit_empty: bool,
     /// Whether to include unexported fields
-    pub include_unexported: bool,
     /// Custom field name transformations
-    pub field_name_transformer: Option<fn(&str) -> String>,
     /// Whether to handle nested structs recursively
-    pub recursive: bool,
     /// Maximum depth for recursive operations
-    pub max_depth: usize,
-}
-
 impl Default for VibeMapperConfig {
     fn default() -> Self {
         Self {
-            use_json_tags: true,
-            omit_empty: false,
-            include_unexported: false,
-            field_name_transformer: None,
-            recursive: true,
-            max_depth: 10,
         }
     }
-}
-
 impl VibeMapper {
     /// Create a new VibeMapper with default configuration
     pub fn new() -> Self {
         Self {
-            config: VibeMapperConfig::default(),
         }
     }
 
@@ -59,45 +39,29 @@ impl VibeMapper {
         let json_value = self.to_json_value(v, 0)?;
         serde_json::to_vec(&json_value)
             .map_err(|e| LookinGlassError::JsonError(e.to_string()))
-    }
-
     /// Convert JSON bytes to a value
     pub fn from_json(&self, data: &[u8], target_type: Option<&Type>) -> LookinGlassResult<Value> {
         let json_value: serde_json::Value = serde_json::from_slice(data)
             .map_err(|e| LookinGlassError::JsonError(e.to_string()))?;
         
         map_to_value(&json_value, target_type)
-    }
-
     /// Convert a value to a map
     pub fn to_map(&self, v: &Value) -> LookinGlassResult<HashMap<String, Value>> {
         self.to_map_internal(v, 0)
-    }
-
     /// Convert a map to a value of the specified type
     pub fn from_map(&self, m: &HashMap<String, Value>, target_type: &Type) -> LookinGlassResult<Value> {
         self.from_map_internal(m, target_type, 0)
-    }
-
     /// Create a deep clone of a value
     pub fn clone(&self, v: &Value) -> LookinGlassResult<Value> {
         deep_copy(v)
-    }
-
     /// Merge two values (dst = dst merged with src)
     pub fn merge(&self, dst: &Value, src: &Value) -> LookinGlassResult<Value> {
         self.merge_internal(dst, src, 0)
-    }
-
     /// Convert value to JSON value for serialization
     fn to_json_value(&self, v: &Value, depth: usize) -> LookinGlassResult<serde_json::Value> {
         if depth > self.config.max_depth {
             return Err(reflection_error("Maximum recursion depth exceeded"));
-        }
-
         match v.kind() {
-            Kind::Invalid => Ok(serde_json::Value::Null),
-            Kind::Bool => Ok(serde_json::Value::Bool(v.bool()?)),
             Kind::Int | Kind::Int8 | Kind::Int16 | Kind::Int32 | Kind::Int64 => {
                 Ok(serde_json::Value::Number(serde_json::Number::from(v.int()?)))
             }
@@ -111,12 +75,9 @@ impl VibeMapper {
                     Ok(serde_json::Value::Null)
                 }
             }
-            Kind::String => Ok(serde_json::Value::String(v.string()?)),
             Kind::Slice | Kind::Array => {
                 if !self.config.recursive {
                     return Ok(serde_json::Value::String(format!("<{} len={}>", v.kind(), v.len()?)));
-                }
-                
                 let len = v.len()?;
                 let mut array = Vec::new();
                 for i in 0..len {
@@ -128,8 +89,6 @@ impl VibeMapper {
             Kind::Map => {
                 if !self.config.recursive {
                     return Ok(serde_json::Value::String(format!("<map len={}>", v.len()?)));
-                }
-                
                 let keys = v.map_keys()?;
                 let mut object = serde_json::Map::new();
                 for key in keys {
@@ -142,8 +101,6 @@ impl VibeMapper {
             Kind::Struct => {
                 if !self.config.recursive {
                     return Ok(serde_json::Value::String(format!("<struct fields={}>", v.num_field())));
-                }
-                
                 self.struct_to_json_object(v, depth + 1)
             }
             Kind::Pointer | Kind::Interface => {
@@ -154,7 +111,6 @@ impl VibeMapper {
                     self.to_json_value(&elem, depth + 1)
                 }
             }
-            _ => Ok(serde_json::Value::String(format!("<{}>", v.kind()))),
         }
     }
 
@@ -170,45 +126,31 @@ impl VibeMapper {
             // Skip unexported fields if configured
             if !self.config.include_unexported && !field_info.is_exported() {
                 continue;
-            }
-            
             // Skip JSON ignored fields
             if field_info.json_ignored() {
                 continue;
-            }
-            
             // Skip empty fields if omit_empty is enabled
             if self.config.omit_empty && field_info.omit_empty() && field_value.is_zero() {
                 continue;
-            }
-            
             // Determine field name
             let field_name = if self.config.use_json_tags {
                 field_info.json_name().unwrap_or_else(|| field_info.name().to_string())
             } else {
                 field_info.name().to_string()
-            };
             
             // Apply field name transformation if configured
             let final_name = if let Some(transformer) = self.config.field_name_transformer {
                 transformer(&field_name)
             } else {
                 field_name
-            };
             
             let json_value = self.to_json_value(&field_value, depth)?;
             object.insert(final_name, json_value);
-        }
-        
         Ok(serde_json::Value::Object(object))
-    }
-
     /// Convert value to map (internal implementation with depth tracking)
     fn to_map_internal(&self, v: &Value, depth: usize) -> LookinGlassResult<HashMap<String, Value>> {
         if depth > self.config.max_depth {
             return Err(reflection_error("Maximum recursion depth exceeded"));
-        }
-
         match v.kind() {
             Kind::Struct => {
                 let mut result = HashMap::new();
@@ -221,38 +163,29 @@ impl VibeMapper {
                     // Skip unexported fields if configured
                     if !self.config.include_unexported && !field_info.is_exported() {
                         continue;
-                    }
-                    
                     // Skip JSON ignored fields
                     if field_info.json_ignored() {
                         continue;
-                    }
-                    
                     // Skip empty fields if omit_empty is enabled
                     if self.config.omit_empty && field_info.omit_empty() && field_value.is_zero() {
                         continue;
-                    }
-                    
                     // Determine field name
                     let field_name = if self.config.use_json_tags {
                         field_info.json_name().unwrap_or_else(|| field_info.name().to_string())
                     } else {
                         field_info.name().to_string()
-                    };
                     
                     // Apply field name transformation if configured
                     let final_name = if let Some(transformer) = self.config.field_name_transformer {
                         transformer(&field_name)
                     } else {
                         field_name
-                    };
                     
                     // Recursively convert nested structs if enabled
                     let final_value = if self.config.recursive && field_value.kind() == Kind::Struct {
                         let nested_map = self.to_map_internal(&field_value, depth + 1)?;
                         // Convert nested map back to a map value
 //                         let map_type = crate::stdlib::lookin_glass::core_functions::map_of(
-                            Type::basic(Kind::String),
                             Type::new(Kind::Interface, "interface{}".to_string(), "".to_string())
                         );
 //                         Value::new(map_type, crate::stdlib::lookin_glass::value::ValueData::Map(
@@ -260,11 +193,8 @@ impl VibeMapper {
                         ))
                     } else {
                         field_value
-                    };
                     
                     result.insert(final_name, final_value);
-                }
-                
                 Ok(result)
             }
             Kind::Map => {
@@ -277,7 +207,6 @@ impl VibeMapper {
                 }
                 Ok(result)
             }
-            _ => Err(type_error(&format!("Cannot convert {} to map", v.kind()))),
         }
     }
 
@@ -285,8 +214,6 @@ impl VibeMapper {
     fn from_map_internal(&self, m: &HashMap<String, Value>, target_type: &Type, depth: usize) -> LookinGlassResult<Value> {
         if depth > self.config.max_depth {
             return Err(reflection_error("Maximum recursion depth exceeded"));
-        }
-
         match target_type.kind() {
             Kind::Struct => {
                 let num_fields = target_type.num_field();
@@ -312,12 +239,8 @@ impl VibeMapper {
                     } else {
                         // Use zero value for missing fields
 //                         crate::stdlib::lookin_glass::core_functions::zero(field_info.field_type().clone())?
-                    };
                     
                     field_values.push(final_value);
-                }
-                
-                Ok(Value::new(target_type.clone(), 
 //                     crate::stdlib::lookin_glass::value::ValueData::Struct(field_values)))
             }
             Kind::Map => {
@@ -326,10 +249,8 @@ impl VibeMapper {
                     let key_val = Value::from_string(key.clone());
                     map_data.insert(key_val, value.clone());
                 }
-                Ok(Value::new(target_type.clone(), 
 //                     crate::stdlib::lookin_glass::value::ValueData::Map(map_data)))
             }
-            _ => Err(type_error(&format!("Cannot convert map to {}", target_type.kind()))),
         }
     }
 
@@ -344,13 +265,9 @@ impl VibeMapper {
                     return Ok(Some(value.clone()));
                 }
             }
-        }
-        
         // Strategy 2: Try exact field name
         if let Some(value) = m.get(field_name) {
             return Ok(Some(value.clone()));
-        }
-        
         // Strategy 3: Try field name transformation if configured
         if let Some(transformer) = self.config.field_name_transformer {
             let transformed_name = transformer(field_name);
@@ -367,19 +284,13 @@ impl VibeMapper {
         }
         
         Ok(None)
-    }
-
     /// Merge two values (internal implementation with depth tracking)
     fn merge_internal(&self, dst: &Value, src: &Value, depth: usize) -> LookinGlassResult<Value> {
         if depth > self.config.max_depth {
             return Err(reflection_error("Maximum recursion depth exceeded"));
-        }
-
         // If types don't match, return source
         if dst.typ() != src.typ() {
             return Ok(src.clone());
-        }
-
         match dst.kind() {
             Kind::Struct => {
                 let dst_map = self.to_map_internal(dst, depth + 1)?;
@@ -411,16 +322,11 @@ impl VibeMapper {
                 for key in dst_keys {
                     let value = dst.map_index(&key)?;
                     merged_map.insert(key, value);
-                }
-                
                 // Add/overwrite with src entries
                 let src_keys = src.map_keys()?;
                 for key in src_keys {
                     let value = src.map_index(&key)?;
                     merged_map.insert(key, value);
-                }
-                
-                Ok(Value::new(dst.typ().clone(), 
 //                     crate::stdlib::lookin_glass::value::ValueData::Map(merged_map)))
             }
             Kind::Slice | Kind::Array => {
@@ -434,13 +340,10 @@ impl VibeMapper {
                 }
                 for i in 0..src_len {
                     merged_elements.push(src.index(i)?);
-                }
-                
                 let data = if dst.kind() == Kind::Array {
 //                     crate::stdlib::lookin_glass::value::ValueData::Array(merged_elements)
                 } else {
 //                     crate::stdlib::lookin_glass::value::ValueData::Slice(merged_elements)
-                };
                 
                 Ok(Value::new(dst.typ().clone(), data))
             }
@@ -449,40 +352,28 @@ impl VibeMapper {
                 Ok(src.clone())
             }
         }
-    }
-
     /// Builder methods for configuration
 
     /// Set whether to use JSON tags for field names
     pub fn use_json_tags(mut self, use_tags: bool) -> Self {
         self.config.use_json_tags = use_tags;
         self
-    }
-
     /// Set whether to omit empty fields
     pub fn omit_empty(mut self, omit: bool) -> Self {
         self.config.omit_empty = omit;
         self
-    }
-
     /// Set whether to include unexported fields
     pub fn include_unexported(mut self, include: bool) -> Self {
         self.config.include_unexported = include;
         self
-    }
-
     /// Set field name transformer
     pub fn field_name_transformer(mut self, transformer: fn(&str) -> String) -> Self {
         self.config.field_name_transformer = Some(transformer);
         self
-    }
-
     /// Set whether to handle nested structs recursively
     pub fn recursive(mut self, recursive: bool) -> Self {
         self.config.recursive = recursive;
         self
-    }
-
     /// Set maximum recursion depth
     pub fn max_depth(mut self, depth: usize) -> Self {
         self.config.max_depth = depth;
@@ -505,8 +396,6 @@ pub fn camel_to_snake(input: &str) -> String {
     
     if let Some(first) = chars.next() {
         result.push(first.to_lowercase().next().unwrap());
-    }
-    
     for ch in chars {
         if ch.is_uppercase() {
             result.push('_');
@@ -517,8 +406,6 @@ pub fn camel_to_snake(input: &str) -> String {
     }
     
     result
-}
-
 /// Convert snake_case to camelCase
 pub fn snake_to_camel(input: &str) -> String {
     let mut result = String::new();
@@ -536,15 +423,9 @@ pub fn snake_to_camel(input: &str) -> String {
     }
     
     result
-}
-
 /// Convert to lowercase
 pub fn to_lowercase(input: &str) -> String {
     input.to_lowercase()
-}
-
 /// Convert to uppercase
 pub fn to_uppercase(input: &str) -> String {
     input.to_uppercase()
-}
-

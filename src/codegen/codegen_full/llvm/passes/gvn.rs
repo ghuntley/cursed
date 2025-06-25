@@ -9,14 +9,7 @@ use super::{OptimizationPass, PassConfiguration, PassResult};
 use crate::common_types::optimization_level::OptimizationLevel;
 use crate::error::{CursedError, Result};
 use inkwell::{
-    context::Context,
-    module::Module,
-    values::{FunctionValue, BasicValueEnum, InstructionValue, BasicValue, IntValue, FloatValue},
-    basic_block::BasicBlock,
-    builder::Builder,
-    types::BasicType,
-    IntPredicate, FloatPredicate,
-};
+// };
 
 use std::collections::{HashMap, HashSet, BTreeMap};
 use std::time::{Duration, Instant};
@@ -25,62 +18,32 @@ use tracing::{debug, info, instrument, warn};
 
 /// GVN optimization pass
 pub struct GvnPass<'ctx> {
-    context_lifetime: std::marker::PhantomData<&'ctx ()>,
-    statistics: GvnStatistics,
-    max_expressions: usize,
-    enable_load_elimination: bool,
-}
-
 impl<'ctx> GvnPass<'ctx> {
     /// Create new GVN pass
     pub fn new() -> Self {
         Self {
-            context_lifetime: std::marker::PhantomData,
-            statistics: GvnStatistics::default(),
-            max_expressions: 10000,
-            enable_load_elimination: true,
         }
     }
     
     /// Create GVN pass with custom settings
     pub fn with_settings(max_expressions: usize, enable_load_elimination: bool) -> Self {
         Self {
-            context_lifetime: std::marker::PhantomData,
-            statistics: GvnStatistics::default(),
-            max_expressions,
-            enable_load_elimination,
         }
     }
-}
-
 impl<'ctx> OptimizationPass<'ctx> for GvnPass<'ctx> {
     fn name(&self) -> &str {
         "gvn"
-    }
-    
     fn description(&self) -> &str {
         "Global Value Numbering - eliminates redundant computations globally"
-    }
-    
     fn dependencies(&self) -> Vec<String> {
         vec![
-            "mem2reg".to_string(),
-            "dead_code_elimination".to_string(),
         ]
-    }
-    
     fn should_run(&self, config: &PassConfiguration) -> bool {
         config.enable_memory_optimizations && config.optimization_level >= OptimizationLevel::O2
-    }
-    
     fn required_optimization_level(&self) -> OptimizationLevel {
         OptimizationLevel::O2
-    }
-    
     fn estimated_execution_time(&self) -> Duration {
         Duration::from_millis(500)
-    }
-    
     #[instrument(skip(self, module, context))]
     fn run_on_module(&mut self, module: &Module<'ctx>, context: &'ctx Context) -> Result<PassResult> {
         let start_time = Instant::now();
@@ -99,12 +62,9 @@ impl<'ctx> OptimizationPass<'ctx> for GvnPass<'ctx> {
         
         total_result.execution_time = start_time.elapsed();
         
-        info!("GVN pass completed: {} redundant expressions eliminated",
               total_result.instructions_eliminated);
         
         Ok(total_result)
-    }
-    
     #[instrument(skip(self, function, context))]
     fn run_on_function(&mut self, function: &FunctionValue<'ctx>, context: &'ctx Context) -> Result<PassResult> {
         let mut result = PassResult::unchanged();
@@ -123,59 +83,25 @@ impl<'ctx> OptimizationPass<'ctx> for GvnPass<'ctx> {
             // Update statistics
             self.statistics.functions_processed += 1;
             self.statistics.total_expressions_eliminated += eliminated_count;
-        }
-        
         Ok(result)
-    }
-    
     fn get_statistics(&self) -> super::PassStatistics {
         super::PassStatistics {
-            total_executions: self.statistics.functions_processed,
-            successful_executions: self.statistics.functions_processed,
-            total_execution_time: Duration::from_millis(0),
-            average_execution_time: Duration::from_millis(0),
-            total_instructions_eliminated: self.statistics.total_expressions_eliminated,
-            total_functions_inlined: 0,
-            total_optimizations_applied: self.statistics.total_expressions_eliminated,
-            peak_memory_usage: 0,
         }
     }
-}
-
 /// GVN solver that performs the value numbering analysis
 struct GvnSolver<'ctx> {
-    function: &'ctx FunctionValue<'ctx>,
-    context: &'ctx Context,
-    enable_load_elimination: bool,
     
     // Expression to value number mapping
-    expression_to_vn: HashMap<Expression, ValueNumber>,
     // Value number to representative value mapping
-    vn_to_value: HashMap<ValueNumber, BasicValueEnum<'ctx>>,
     // Instruction to value number mapping
-    instruction_to_vn: HashMap<usize, ValueNumber>,
     
     // Next available value number
-    next_vn: ValueNumber,
     
     // Redundant instructions to eliminate
-    redundant_instructions: HashSet<InstructionValue<'ctx>>,
-    replacement_map: HashMap<InstructionValue<'ctx>, BasicValueEnum<'ctx>>,
-}
-
 impl<'ctx> GvnSolver<'ctx> {
     /// Create new GVN solver
     fn new(function: &'ctx FunctionValue<'ctx>, context: &'ctx Context, enable_load_elimination: bool) -> Self {
         Self {
-            function,
-            context,
-            enable_load_elimination,
-            expression_to_vn: HashMap::new(),
-            vn_to_value: HashMap::new(),
-            instruction_to_vn: HashMap::new(),
-            next_vn: ValueNumber(0),
-            redundant_instructions: HashSet::new(),
-            replacement_map: HashMap::new(),
         }
     }
     
@@ -185,19 +111,13 @@ impl<'ctx> GvnSolver<'ctx> {
         for param in self.function.get_param_iter() {
             let vn = self.get_next_value_number();
             self.vn_to_value.insert(vn, param.as_basic_value_enum());
-        }
-        
         // Process all basic blocks
         let mut block = self.function.get_first_basic_block();
         while let Some(bb) = block {
             self.process_basic_block(bb)?;
             block = bb.get_next_basic_block();
-        }
-        
         // Check if we found any redundancies
         Ok(!self.redundant_instructions.is_empty())
-    }
-    
     /// Process a basic block
     fn process_basic_block(&mut self, block: BasicBlock<'ctx>) -> Result<()> {
         let mut instruction = block.get_first_instruction();
@@ -205,11 +125,7 @@ impl<'ctx> GvnSolver<'ctx> {
         while let Some(instr) = instruction {
             self.process_instruction(instr)?;
             instruction = instr.get_next_instruction();
-        }
-        
         Ok(())
-    }
-    
     /// Process a single instruction
     fn process_instruction(&mut self, instruction: InstructionValue<'ctx>) -> Result<()> {
         let opcode = instruction.get_opcode();
@@ -261,8 +177,6 @@ impl<'ctx> GvnSolver<'ctx> {
         }
         
         Ok(())
-    }
-    
     /// Process binary operator instruction
     fn process_binary_operator(&mut self, instruction: InstructionValue<'ctx>) -> Result<()> {
         if let (Some(lhs), Some(rhs)) = (instruction.get_operand(0), instruction.get_operand(1)) {
@@ -271,17 +185,11 @@ impl<'ctx> GvnSolver<'ctx> {
                 let rhs_vn = self.get_value_number_for_value(rhs_val);
                 
                 let expression = Expression::BinaryOp {
-                    opcode: instruction.get_opcode(),
-                    lhs: lhs_vn,
-                    rhs: rhs_vn,
-                };
                 
                 self.process_expression(instruction, expression);
             }
         }
         Ok(())
-    }
-    
     /// Process compare instruction
     fn process_compare_instruction(&mut self, instruction: InstructionValue<'ctx>) -> Result<()> {
         if let (Some(lhs), Some(rhs)) = (instruction.get_operand(0), instruction.get_operand(1)) {
@@ -293,17 +201,11 @@ impl<'ctx> GvnSolver<'ctx> {
                 let predicate = self.get_compare_predicate(&instruction);
                 
                 let expression = Expression::Compare {
-                    predicate,
-                    lhs: lhs_vn,
-                    rhs: rhs_vn,
-                };
                 
                 self.process_expression(instruction, expression);
             }
         }
         Ok(())
-    }
-    
     /// Process load instruction
     fn process_load_instruction(&mut self, instruction: InstructionValue<'ctx>) -> Result<()> {
         if let Some(ptr_operand) = instruction.get_operand(0) {
@@ -311,31 +213,23 @@ impl<'ctx> GvnSolver<'ctx> {
                 let ptr_vn = self.get_value_number_for_value(ptr_val);
                 
                 let expression = Expression::Load {
-                    pointer: ptr_vn,
-                };
                 
                 self.process_expression(instruction, expression);
             }
         }
         Ok(())
-    }
-    
     /// Process store instruction
     fn process_store_instruction(&mut self, instruction: InstructionValue<'ctx>) -> Result<()> {
         // Stores invalidate memory-based expressions
         // For now, we don't do sophisticated alias analysis
         // In a full implementation, we'd invalidate potentially aliased loads
         Ok(())
-    }
-    
     /// Process call instruction
     fn process_call_instruction(&mut self, instruction: InstructionValue<'ctx>) -> Result<()> {
         // Function calls generally can't be eliminated due to side effects
         // However, pure functions could potentially be optimized
         self.assign_new_value_number(instruction);
         Ok(())
-    }
-    
     /// Process PHI instruction
     fn process_phi_instruction(&mut self, instruction: InstructionValue<'ctx>) -> Result<()> {
         // Collect all PHI operands
@@ -348,13 +242,9 @@ impl<'ctx> GvnSolver<'ctx> {
                     operands.push(vn);
                 }
             }
-        }
-        
         let expression = Expression::Phi { operands };
         self.process_expression(instruction, expression);
         Ok(())
-    }
-    
     /// Process select instruction
     fn process_select_instruction(&mut self, instruction: InstructionValue<'ctx>) -> Result<()> {
         if let (Some(cond), Some(true_val), Some(false_val)) = 
@@ -367,17 +257,11 @@ impl<'ctx> GvnSolver<'ctx> {
                 let false_vn = self.get_value_number_for_value(false_v);
                 
                 let expression = Expression::Select {
-                    condition: cond_vn,
-                    true_value: true_vn,
-                    false_value: false_vn,
-                };
                 
                 self.process_expression(instruction, expression);
             }
         }
         Ok(())
-    }
-    
     /// Process an expression and check for redundancy
     fn process_expression(&mut self, instruction: InstructionValue<'ctx>, expression: Expression) {
         if let Some(&existing_vn) = self.expression_to_vn.get(&expression) {
@@ -409,16 +293,12 @@ impl<'ctx> GvnSolver<'ctx> {
         
         let instr_key = self.get_instruction_key(&instruction);
         self.instruction_to_vn.insert(instr_key, vn);
-    }
-    
     /// Get value number for a given value
     fn get_value_number_for_value(&mut self, value: BasicValueEnum<'ctx>) -> ValueNumber {
         // Check if it's a constant
         if value.is_const() {
             // Create expression for constant
             let expression = Expression::Constant {
-                value: self.get_constant_representation(value),
-            };
             
             if let Some(&vn) = self.expression_to_vn.get(&expression) {
                 return vn;
@@ -448,32 +328,22 @@ impl<'ctx> GvnSolver<'ctx> {
                     return vn;
                 }
             }
-        }
-        
         // Create new value number
         let vn = self.get_next_value_number();
         self.vn_to_value.insert(vn, value);
         vn
-    }
-    
     /// Get next available value number
     fn get_next_value_number(&mut self) -> ValueNumber {
         let vn = self.next_vn;
         self.next_vn = ValueNumber(self.next_vn.0 + 1);
         vn
-    }
-    
     /// Get unique key for an instruction
     fn get_instruction_key(&self, instruction: &InstructionValue<'ctx>) -> usize {
         instruction.as_any_value_enum().as_any().address()
-    }
-    
     /// Check if two values are equal
     fn values_equal(&self, a: BasicValueEnum<'ctx>, b: BasicValueEnum<'ctx>) -> bool {
         // Simplified value equality check
         a.as_any_value_enum().as_any().address() == b.as_any_value_enum().as_any().address()
-    }
-    
     /// Get constant representation for GVN
     fn get_constant_representation(&self, value: BasicValueEnum<'ctx>) -> ConstantValue {
         if let Ok(int_val) = value.try_into() as Result<IntValue<'ctx>, _> {
@@ -489,15 +359,11 @@ impl<'ctx> GvnSolver<'ctx> {
         }
         
         ConstantValue::Other
-    }
-    
     /// Get compare predicate from instruction
     fn get_compare_predicate(&self, instruction: &InstructionValue<'ctx>) -> ComparePredicate {
         // This would need to extract the actual predicate from the instruction
         // For now, return a default
         ComparePredicate::IntEQ
-    }
-    
     /// Eliminate redundant expressions
     fn eliminate_redundant_expressions(&mut self) -> Result<usize> {
         let mut eliminated_count = 0;
@@ -524,70 +390,18 @@ struct ValueNumber(u32);
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 enum Expression {
     Constant {
-        value: ConstantValue,
-    },
     BinaryOp {
-        opcode: inkwell::values::InstructionOpcode,
-        lhs: ValueNumber,
-        rhs: ValueNumber,
-    },
     Compare {
-        predicate: ComparePredicate,
-        lhs: ValueNumber,
-        rhs: ValueNumber,
-    },
     Load {
-        pointer: ValueNumber,
-    },
     Phi {
-        operands: Vec<ValueNumber>,
-    },
     Select {
-        condition: ValueNumber,
-        true_value: ValueNumber,
-        false_value: ValueNumber,
-    },
-}
-
 /// Constant value representation
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 enum ConstantValue {
-    Int(i64),
     Float(i64), // Using i64 to store float bits for hashing
-    Other,
-}
-
 /// Compare predicate representation
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 enum ComparePredicate {
-    IntEQ,
-    IntNE,
-    IntSLT,
-    IntSLE,
-    IntSGT,
-    IntSGE,
-    IntULT,
-    IntULE,
-    IntUGT,
-    IntUGE,
-    FloatOEQ,
-    FloatONE,
-    FloatOLT,
-    FloatOLE,
-    FloatOGT,
-    FloatOGE,
-    FloatUEQ,
-    FloatUNE,
-    FloatULT,
-    FloatULE,
-    FloatUGT,
-    FloatUGE,
-}
-
 /// Statistics for GVN pass
 #[derive(Debug, Default)]
 struct GvnStatistics {
-    pub functions_processed: u64,
-    pub total_expressions_eliminated: usize,
-}
-

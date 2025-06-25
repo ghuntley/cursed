@@ -11,150 +11,78 @@ use crate::object::Object as CursedObject;
 #[derive(Debug, Clone)]
 pub enum TemplateFormat {
     /// Plain text output
-    Text,
     /// HTML output with escaping
-    Html,
     /// JSON output
-    Json,
     /// YAML output
-    Yaml,
     /// XML output
-    Xml,
     /// Markdown output
-    Markdown,
     /// CSV output
-    Csv,
     /// Email template (text + HTML)
-    Email,
     /// Configuration file formats
-    Config(ConfigFormat),
     /// Document templates
-    Document(DocumentFormat),
     /// API specification formats
-    Api(ApiFormat),
     /// Build system formats
-    Build(BuildFormat),
-}
-
 /// Configuration file formats
 #[derive(Debug, Clone)]
 pub enum ConfigFormat {
     /// TOML configuration
-    Toml,
     /// INI configuration
-    Ini,
     /// Environment variables
-    Env,
     /// Shell script
-    Shell,
     /// Dockerfile
-    Dockerfile,
     /// Nginx configuration
-    Nginx,
     /// Apache configuration
-    Apache,
     /// Kubernetes YAML
-    Kubernetes,
     /// Docker Compose
-    DockerCompose,
-}
-
 /// Document template formats
 #[derive(Debug, Clone)]
 pub enum DocumentFormat {
     /// README file
-    Readme,
     /// License file
-    License,
     /// Changelog
-    Changelog,
     /// Code documentation
-    CodeDoc,
     /// API documentation
-    ApiDoc,
     /// Project documentation
-    ProjectDoc,
     /// Release notes
-    ReleaseNotes,
-}
-
 /// API specification formats
 #[derive(Debug, Clone)]
 pub enum ApiFormat {
     /// OpenAPI/Swagger specification
-    OpenApi,
     /// GraphQL schema
-    GraphQL,
     /// Protocol Buffers
-    Protobuf,
     /// JSON Schema
-    JsonSchema,
     /// WSDL
-    Wsdl,
     /// AsyncAPI
-    AsyncApi,
-}
-
 /// Build system formats
 #[derive(Debug, Clone)]
 pub enum BuildFormat {
     /// Makefile
-    Makefile,
     /// Cargo build script
-    BuildRs,
     /// CMake
-    CMake,
     /// Gradle
-    Gradle,
     /// Maven POM
-    Maven,
     /// Package.json
-    PackageJson,
     /// GitHub Actions
-    GitHubActions,
     /// CI/CD configuration
-    CiCd,
-}
-
 /// Template format renderer
 pub struct TemplateFormatRenderer {
-    format: TemplateFormat,
-    options: FormatOptions,
-}
-
 /// Format rendering options
 #[derive(Debug, Clone)]
 pub struct FormatOptions {
     /// Pretty print output
-    pub pretty: bool,
     /// Indent size for pretty printing
-    pub indent_size: usize,
     /// Include format validation
-    pub validate: bool,
     /// Auto-escape content
-    pub auto_escape: bool,
     /// Custom format options
-    pub custom: HashMap<String, String>,
-}
-
 impl Default for FormatOptions {
     fn default() -> Self {
         Self {
-            pretty: true,
-            indent_size: 2,
-            validate: true,
-            auto_escape: true,
-            custom: HashMap::new(),
         }
     }
-}
-
 impl TemplateFormatRenderer {
     /// Create a new format renderer
     pub fn new(format: TemplateFormat) -> Self {
         Self { 
-            format,
-            options: FormatOptions::default(),
         }
     }
 
@@ -169,30 +97,12 @@ impl TemplateFormatRenderer {
         debug!(format = ?self.format, "Rendering template in format");
 
         match &self.format {
-            TemplateFormat::Text => self.render_text(data),
-            TemplateFormat::Html => self.render_html(data),
-            TemplateFormat::Json => self.render_json(data),
-            TemplateFormat::Yaml => self.render_yaml(data),
-            TemplateFormat::Xml => self.render_xml(data),
-            TemplateFormat::Markdown => self.render_markdown(data),
-            TemplateFormat::Csv => self.render_csv(data),
-            TemplateFormat::Email => self.render_email(data),
-            TemplateFormat::Config(config_format) => self.render_config(data, config_format),
-            TemplateFormat::Document(doc_format) => self.render_document(data, doc_format),
-            TemplateFormat::Api(api_format) => self.render_api(data, api_format),
-            TemplateFormat::Build(build_format) => self.render_build(data, build_format),
         }
     }
 
     /// Render as plain text
     fn render_text(&self, data: &CursedObject) -> crate::error::Result<()> {
         match data {
-            CursedObject::String(s) => Ok(s.clone()),
-            CursedObject::Integer(n) => Ok(n.to_string()),
-            CursedObject::Float(n) => Ok(n.to_string()),
-            CursedObject::Boolean(b) => Ok(b.to_string()),
-            CursedObject::Char(c) => Ok(c.to_string()),
-            CursedObject::Nil => Ok("".to_string()),
             CursedObject::Array(arr) => {
                 let items: Vec<String> = arr.iter()
                     .map(|item| self.render_text(item))
@@ -208,17 +118,9 @@ impl TemplateFormatRenderer {
                 Ok(output)
             }
         }
-    }
-
     /// Render as HTML
     fn render_html(&self, data: &CursedObject) -> crate::error::Result<()> {
         match data {
-            CursedObject::String(s) => Ok(self.escape_html(s)),
-            CursedObject::Integer(n) => Ok(n.to_string()),
-            CursedObject::Float(n) => Ok(n.to_string()),
-            CursedObject::Boolean(b) => Ok(b.to_string()),
-            CursedObject::Char(c) => Ok(c.to_string()),
-            CursedObject::Nil => Ok("".to_string()),
             CursedObject::Array(arr) => {
                 let mut html = String::from("<ul>\n");
                 for item in arr {
@@ -239,28 +141,18 @@ impl TemplateFormatRenderer {
                 Ok(html)
             }
         }
-    }
-
     /// Render as JSON
     fn render_json(&self, data: &CursedObject) -> crate::error::Result<()> {
         let json_value = self.cursed_to_json(data)?;
         serde_json::to_string_pretty(&json_value)
             .map_err(|e| CursedError::TemplateError {
-                message: format!("JSON serialization error: {}", e),
-                source_location: None,
             })
-    }
-
     /// Render as YAML
     fn render_yaml(&self, data: &CursedObject) -> crate::error::Result<()> {
         let json_value = self.cursed_to_json(data)?;
         serde_yaml::to_string(&json_value)
             .map_err(|e| CursedError::TemplateError {
-                message: format!("YAML serialization error: {}", e),
-                source_location: None,
             })
-    }
-
     /// Render as XML
     fn render_xml(&self, data: &CursedObject) -> crate::error::Result<()> {
         let mut xml = String::from("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n");
@@ -268,8 +160,6 @@ impl TemplateFormatRenderer {
         xml.push_str(&self.render_xml_element("data", data, 1)?);
         xml.push_str("</root>");
         Ok(xml)
-    }
-
     /// Render XML element recursively
     fn render_xml_element(&self, tag: &str, data: &CursedObject, depth: usize) -> crate::error::Result<()> {
         let indent = "  ".repeat(depth);
@@ -311,17 +201,9 @@ impl TemplateFormatRenderer {
                 Ok(xml)
             }
         }
-    }
-
     /// Render as Markdown
     fn render_markdown(&self, data: &CursedObject) -> crate::error::Result<()> {
         match data {
-            CursedObject::String(s) => Ok(s.clone()),
-            CursedObject::Integer(n) => Ok(n.to_string()),
-            CursedObject::Float(n) => Ok(n.to_string()),
-            CursedObject::Boolean(b) => Ok(b.to_string()),
-            CursedObject::Char(c) => Ok(c.to_string()),
-            CursedObject::Nil => Ok("".to_string()),
             CursedObject::Array(arr) => {
                 let mut md = String::new();
                 for item in arr {
@@ -339,21 +221,15 @@ impl TemplateFormatRenderer {
                 Ok(md)
             }
         }
-    }
-
     /// Render as CSV
     fn render_csv(&self, data: &CursedObject) -> crate::error::Result<()> {
         match data {
             CursedObject::Array(arr) => {
                 if arr.is_empty() {
                     return Ok(String::new());
-                }
-
                 // Check if all items are maps (rows)
                 if arr.iter().all(|item| matches!(item, CursedObject::Map(_))) {
                     return self.render_csv_from_maps(arr);
-                }
-
                 // Otherwise, render as simple CSV
                 let mut csv = String::new();
                 for item in arr {
@@ -371,8 +247,6 @@ impl TemplateFormatRenderer {
                 for (key, value) in map {
                     headers.push(self.escape_csv(key));
                     values.push(self.cursed_to_csv_value(value)?);
-                }
-
                 let mut csv = headers.join(",");
                 csv.push('\n');
                 csv.push_str(&values.join(","));
@@ -384,14 +258,10 @@ impl TemplateFormatRenderer {
                 Ok(format!("{}\n", value))
             }
         }
-    }
-
     /// Render CSV from array of maps
     fn render_csv_from_maps(&self, arr: &[CursedObject]) -> crate::error::Result<()> {
         if arr.is_empty() {
             return Ok(String::new());
-        }
-
         // Get all unique keys from all maps
         let mut all_keys = std::collections::HashSet::new();
         for item in arr {
@@ -400,8 +270,6 @@ impl TemplateFormatRenderer {
                     all_keys.insert(key.clone());
                 }
             }
-        }
-
         let mut sorted_keys: Vec<String> = all_keys.into_iter().collect();
         sorted_keys.sort();
 
@@ -428,8 +296,6 @@ impl TemplateFormatRenderer {
         }
 
         Ok(csv)
-    }
-
     /// Render as email template
     fn render_email(&self, data: &CursedObject) -> crate::error::Result<()> {
         match data {
@@ -464,34 +330,20 @@ impl TemplateFormatRenderer {
                     email.push_str("Content-Type: text/plain; charset=UTF-8\n\n");
                     email.push_str(&text_body);
                     email.push_str("\n\n");
-                }
-
                 if !html_body.is_empty() {
                     email.push_str("--boundary\n");
                     email.push_str("Content-Type: text/html; charset=UTF-8\n\n");
                     email.push_str(&html_body);
                     email.push_str("\n\n");
-                }
-
                 email.push_str("--boundary--\n");
                 Ok(email)
             }
-            _ => self.render_text(data),
         }
     }
 
     /// Render configuration files
     fn render_config(&self, data: &CursedObject, format: &ConfigFormat) -> crate::error::Result<()> {
         match format {
-            ConfigFormat::Toml => self.render_toml(data),
-            ConfigFormat::Ini => self.render_ini(data),
-            ConfigFormat::Env => self.render_env(data),
-            ConfigFormat::Shell => self.render_shell(data),
-            ConfigFormat::Dockerfile => self.render_dockerfile(data),
-            ConfigFormat::Nginx => self.render_nginx(data),
-            ConfigFormat::Apache => self.render_apache(data),
-            ConfigFormat::Kubernetes => self.render_kubernetes(data),
-            ConfigFormat::DockerCompose => self.render_docker_compose(data),
         }
     }
 
@@ -517,11 +369,6 @@ impl TemplateFormatRenderer {
                         CursedObject::Array(arr) => {
                             let values: Vec<String> = arr.iter()
                                 .map(|item| match item {
-                                    CursedObject::String(s) => format!("\"{}\"", s),
-                                    CursedObject::Integer(n) => n.to_string(),
-                                    CursedObject::Float(n) => n.to_string(),
-                                    CursedObject::Boolean(b) => b.to_string(),
-                                    _ => "\"\"".to_string(),
                                 })
                                 .collect();
                             toml.push_str(&format!("{} = [{}]\n", key, values.join(", ")));
@@ -542,9 +389,6 @@ impl TemplateFormatRenderer {
                 Ok(toml)
             }
             _ => Err(CursedError::TemplateError {
-                message: "TOML format requires a map".to_string(),
-                source_location: None,
-            }),
         }
     }
 
@@ -572,9 +416,6 @@ impl TemplateFormatRenderer {
                 Ok(ini)
             }
             _ => Err(CursedError::TemplateError {
-                message: "INI format requires a map".to_string(),
-                source_location: None,
-            }),
         }
     }
 
@@ -591,9 +432,6 @@ impl TemplateFormatRenderer {
                 Ok(env)
             }
             _ => Err(CursedError::TemplateError {
-                message: "Environment format requires a map".to_string(),
-                source_location: None,
-            }),
         }
     }
 
@@ -620,8 +458,6 @@ impl TemplateFormatRenderer {
             }
         }
         Ok(script)
-    }
-
     /// Render as Dockerfile
     fn render_dockerfile(&self, data: &CursedObject) -> crate::error::Result<()> {
         match data {
@@ -632,13 +468,9 @@ impl TemplateFormatRenderer {
                 if let Some(from) = map.get("from") {
                     let from_str = self.render_text(from)?;
                     dockerfile.push_str(&format!("FROM {}\n", from_str));
-                }
-
                 if let Some(workdir) = map.get("workdir") {
                     let workdir_str = self.render_text(workdir)?;
                     dockerfile.push_str(&format!("WORKDIR {}\n", workdir_str));
-                }
-
                 if let Some(run) = map.get("run") {
                     match run {
                         CursedObject::Array(commands) => {
@@ -652,8 +484,6 @@ impl TemplateFormatRenderer {
                             dockerfile.push_str(&format!("RUN {}\n", cmd_str));
                         }
                     }
-                }
-
                 if let Some(copy) = map.get("copy") {
                     match copy {
                         CursedObject::Array(files) => {
@@ -667,24 +497,15 @@ impl TemplateFormatRenderer {
                             dockerfile.push_str(&format!("COPY {}\n", file_str));
                         }
                     }
-                }
-
                 if let Some(expose) = map.get("expose") {
                     let port_str = self.render_text(expose)?;
                     dockerfile.push_str(&format!("EXPOSE {}\n", port_str));
-                }
-
                 if let Some(cmd) = map.get("cmd") {
                     let cmd_str = self.render_text(cmd)?;
                     dockerfile.push_str(&format!("CMD {}\n", cmd_str));
-                }
-
                 Ok(dockerfile)
             }
             _ => Err(CursedError::TemplateError {
-                message: "Dockerfile format requires a map".to_string(),
-                source_location: None,
-            }),
         }
     }
 
@@ -715,14 +536,9 @@ impl TemplateFormatRenderer {
                             nginx.push_str(&format!("{} {};\n", directive, value_str));
                         }
                     }
-                }
-
                 Ok(nginx)
             }
             _ => Err(CursedError::TemplateError {
-                message: "Nginx format requires a map".to_string(),
-                source_location: None,
-            }),
         }
     }
 
@@ -771,14 +587,9 @@ impl TemplateFormatRenderer {
                             apache.push_str(&format!("{} {}\n", directive, value_str));
                         }
                     }
-                }
-
                 Ok(apache)
             }
             _ => Err(CursedError::TemplateError {
-                message: "Apache format requires a map".to_string(),
-                source_location: None,
-            }),
         }
     }
 
@@ -791,20 +602,14 @@ impl TemplateFormatRenderer {
                 if let Some(kind) = map.get("kind") {
                     let kind_str = self.render_text(kind)?;
                     k8s.push_str(&format!("kind: {}\n", kind_str));
-                }
-
                 k8s.push_str("metadata:\n");
                 if let Some(metadata) = map.get("metadata") {
                     let metadata_yaml = self.render_kubernetes_object(metadata, 1)?;
                     k8s.push_str(&metadata_yaml);
-                }
-
                 if let Some(spec) = map.get("spec") {
                     k8s.push_str("spec:\n");
                     let spec_yaml = self.render_kubernetes_object(spec, 1)?;
                     k8s.push_str(&spec_yaml);
-                }
-
                 Ok(k8s)
             }
             _ => self.render_yaml(data)
@@ -826,20 +631,14 @@ impl TemplateFormatRenderer {
                             compose.push_str(&service_yaml);
                         }
                     }
-                }
-
                 if let Some(volumes) = map.get("volumes") {
                     compose.push_str("\nvolumes:\n");
                     let volumes_yaml = self.render_kubernetes_object(volumes, 1)?;
                     compose.push_str(&volumes_yaml);
-                }
-
                 if let Some(networks) = map.get("networks") {
                     compose.push_str("\nnetworks:\n");
                     let networks_yaml = self.render_kubernetes_object(networks, 1)?;
                     compose.push_str(&networks_yaml);
-                }
-
                 Ok(compose)
             }
             _ => self.render_yaml(data)
@@ -849,39 +648,18 @@ impl TemplateFormatRenderer {
     /// Render document templates
     fn render_document(&self, data: &CursedObject, format: &DocumentFormat) -> crate::error::Result<()> {
         match format {
-            DocumentFormat::Readme => self.render_readme(data),
-            DocumentFormat::License => self.render_license(data),
-            DocumentFormat::Changelog => self.render_changelog(data),
-            DocumentFormat::CodeDoc => self.render_code_doc(data),
-            DocumentFormat::ApiDoc => self.render_api_doc(data),
-            DocumentFormat::ProjectDoc => self.render_project_doc(data),
-            DocumentFormat::ReleaseNotes => self.render_release_notes(data),
         }
     }
 
     /// Render API specifications
     fn render_api(&self, data: &CursedObject, format: &ApiFormat) -> crate::error::Result<()> {
         match format {
-            ApiFormat::OpenApi => self.render_openapi(data),
-            ApiFormat::GraphQL => self.render_graphql(data),
-            ApiFormat::Protobuf => self.render_protobuf(data),
-            ApiFormat::JsonSchema => self.render_json_schema(data),
-            ApiFormat::Wsdl => self.render_wsdl(data),
-            ApiFormat::AsyncApi => self.render_asyncapi(data),
         }
     }
 
     /// Render build system files
     fn render_build(&self, data: &CursedObject, format: &BuildFormat) -> crate::error::Result<()> {
         match format {
-            BuildFormat::Makefile => self.render_makefile(data),
-            BuildFormat::BuildRs => self.render_build_rs(data),
-            BuildFormat::CMake => self.render_cmake(data),
-            BuildFormat::Gradle => self.render_gradle(data),
-            BuildFormat::Maven => self.render_maven(data),
-            BuildFormat::PackageJson => self.render_package_json(data),
-            BuildFormat::GitHubActions => self.render_github_actions(data),
-            BuildFormat::CiCd => self.render_ci_cd(data),
         }
     }
 
@@ -894,31 +672,21 @@ impl TemplateFormatRenderer {
                 if let Some(title) = map.get("title") {
                     let title_str = self.render_text(title)?;
                     readme.push_str(&format!("# {}\n\n", title_str));
-                }
-
                 if let Some(description) = map.get("description") {
                     let desc_str = self.render_text(description)?;
                     readme.push_str(&format!("{}\n\n", desc_str));
-                }
-
                 if let Some(installation) = map.get("installation") {
                     readme.push_str("## Installation\n\n");
                     let install_str = self.render_text(installation)?;
                     readme.push_str(&format!("{}\n\n", install_str));
-                }
-
                 if let Some(usage) = map.get("usage") {
                     readme.push_str("## Usage\n\n");
                     let usage_str = self.render_text(usage)?;
                     readme.push_str(&format!("{}\n\n", usage_str));
-                }
-
                 if let Some(license) = map.get("license") {
                     readme.push_str("## License\n\n");
                     let license_str = self.render_text(license)?;
                     readme.push_str(&format!("{}\n\n", license_str));
-                }
-
                 Ok(readme)
             }
             _ => self.render_markdown(data)
@@ -935,14 +703,10 @@ impl TemplateFormatRenderer {
                     openapi.push_str("info:\n");
                     let info_yaml = self.render_kubernetes_object(info, 1)?;
                     openapi.push_str(&info_yaml);
-                }
-
                 if let Some(paths) = map.get("paths") {
                     openapi.push_str("paths:\n");
                     let paths_yaml = self.render_kubernetes_object(paths, 1)?;
                     openapi.push_str(&paths_yaml);
-                }
-
                 Ok(openapi)
             }
             _ => self.render_yaml(data)
@@ -964,8 +728,6 @@ impl TemplateFormatRenderer {
                                 makefile.push_str(&format!("{}: {}\n", target, deps_str));
                             } else {
                                 makefile.push_str(&format!("{}:\n", target));
-                            }
-
                             // Add commands
                             if let Some(commands) = target_config.get("commands") {
                                 match commands {
@@ -989,14 +751,9 @@ impl TemplateFormatRenderer {
                         }
                     }
                     makefile.push('\n');
-                }
-
                 Ok(makefile)
             }
             _ => Err(CursedError::TemplateError {
-                message: "Makefile format requires a map".to_string(),
-                source_location: None,
-            }),
         }
     }
 
@@ -1043,8 +800,6 @@ impl TemplateFormatRenderer {
         }
 
         Ok(result)
-    }
-
     /// Render license file
     fn render_license(&self, data: &CursedObject) -> crate::error::Result<()> {
         match data {
@@ -1083,8 +838,6 @@ impl TemplateFormatRenderer {
                         } else {
                             license.push_str(&format!("MIT License\n\n"));
                             license.push_str(&format!("Copyright (c) {} {}\n\n", year, holder));
-                        }
-                        
                         license.push_str("Permission is hereby granted, free of charge, to any person obtaining a copy\n");
                         license.push_str("of this software and associated documentation files (the \"Software\"), to deal\n");
                         license.push_str("in the Software without restriction, including without limitation the rights\n");
@@ -1196,8 +949,6 @@ impl TemplateFormatRenderer {
                             license.push_str("of this Software is strictly prohibited.\n");
                         }
                     }
-                }
-                
                 Ok(license)
             }
             _ => {
@@ -1217,8 +968,6 @@ impl TemplateFormatRenderer {
                     changelog.push_str(&format!("# {}\n\n", title_str));
                 } else {
                     changelog.push_str("# Changelog\n\n");
-                }
-
                 if let Some(description) = map.get("description") {
                     let desc_str = self.render_text(description)?;
                     changelog.push_str(&format!("{}\n\n", desc_str));
@@ -1226,8 +975,6 @@ impl TemplateFormatRenderer {
                     changelog.push_str("All notable changes to this project will be documented in this file.\n\n");
                     changelog.push_str("The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),\n");
                     changelog.push_str("and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).\n\n");
-                }
-
                 // Handle versions
                 if let Some(versions) = map.get("versions") {
                     match versions {
@@ -1239,16 +986,12 @@ impl TemplateFormatRenderer {
                         _ => {
                             warn!("Versions should be an array");
                             return Err(CursedError::TemplateError {
-                                message: "Versions field must be an array".to_string(),
-                                source_location: None,
                             });
                         }
                     }
                 } else {
                     // If no versions provided, treat the entire map as a single version
                     changelog.push_str(&self.render_changelog_version(data)?);
-                }
-
                 Ok(changelog)
             }
             _ => {
@@ -1256,8 +999,6 @@ impl TemplateFormatRenderer {
                 self.render_markdown(data)
             }
         }
-    }
-
     /// Render a single changelog version entry
     fn render_changelog_version(&self, version_obj: &CursedObject) -> crate::error::Result<()> {
         match version_obj {
@@ -1277,12 +1018,6 @@ impl TemplateFormatRenderer {
 
                 // Render change sections in standard order
                 let sections = vec![
-                    ("added", "### Added"),
-                    ("changed", "### Changed"),
-                    ("deprecated", "### Deprecated"),
-                    ("removed", "### Removed"),
-                    ("fixed", "### Fixed"),
-                    ("security", "### Security"),
                 ];
 
                 for (section_key, section_header) in sections {
@@ -1311,8 +1046,6 @@ impl TemplateFormatRenderer {
                 Ok(format!("## {}\n\n", text))
             }
         }
-    }
-
     /// Render a changelog section (list of changes)
     fn render_changelog_section(&self, section_data: &CursedObject) -> crate::error::Result<()> {
         match section_data {
@@ -1348,8 +1081,6 @@ impl TemplateFormatRenderer {
     fn capitalize_first(&self, s: &str) -> String {
         let mut chars = s.chars();
         match chars.next() {
-            None => String::new(),
-            Some(first) => first.to_uppercase().collect::<String>() + chars.as_str(),
         }
     }
     /// Render code documentation
@@ -1362,8 +1093,6 @@ impl TemplateFormatRenderer {
                 if let Some(title) = map.get("title") {
                     let title_str = self.render_text(title)?;
                     doc.push_str(&format!("# {}\n\n", title_str));
-                }
-                
                 // Language detection for syntax highlighting
                 let language = map.get("language")
                     .map(|l| self.render_text(l))
@@ -1401,66 +1130,45 @@ impl TemplateFormatRenderer {
                             doc.push_str("\n");
                         }
                     }
-                }
-                
                 // Overview section
                 if let Some(overview) = map.get("overview") {
                     doc.push_str("## Overview\n\n");
                     let overview_str = self.render_text(overview)?;
                     doc.push_str(&format!("{}\n\n", overview_str));
-                }
-                
                 // Installation section
                 if let Some(installation) = map.get("installation") {
                     doc.push_str("## Installation\n\n");
                     let install_str = self.render_text(installation)?;
-                    doc.push_str(&format!("```{}\n{}\n```\n\n", 
                         self.get_install_language(&language), install_str));
-                }
-                
                 // Quick start section
                 if let Some(quick_start) = map.get("quick_start") {
                     doc.push_str("## Quick Start\n\n");
                     let quick_start_str = self.render_text(quick_start)?;
                     doc.push_str(&format!("```{}\n{}\n```\n\n", language, quick_start_str));
-                }
-                
                 // Render modules
                 if let Some(modules) = map.get("modules") {
                     doc.push_str(&self.render_modules(modules, &language)?);
-                }
-                
                 // Global functions (functions not in modules)
                 if let Some(functions) = map.get("functions") {
                     doc.push_str("## Functions\n\n");
                     doc.push_str(&self.render_functions(functions, &language, None)?);
-                }
-                
                 // Global classes/types
                 if let Some(classes) = map.get("classes") {
                     doc.push_str("## Classes\n\n");
                     doc.push_str(&self.render_classes(classes, &language)?);
-                }
-                
                 // Global constants
                 if let Some(constants) = map.get("constants") {
                     doc.push_str("## Constants\n\n");
                     doc.push_str(&self.render_constants(constants, &language)?);
-                }
-                
                 // Examples section
                 if let Some(examples) = map.get("examples") {
                     doc.push_str("## Examples\n\n");
                     doc.push_str(&self.render_examples(examples, &language)?);
-                }
-                
                 // License section
                 if let Some(license) = map.get("license") {
                     doc.push_str("## License\n\n");
                     let license_str = self.render_text(license)?;
                     doc.push_str(&format!("{}\n\n", license_str));
-                }
-                
                 Ok(doc)
             }
             _ => self.render_markdown(data)
@@ -1485,32 +1193,22 @@ impl TemplateFormatRenderer {
                     if let Some(description) = module_map.get("description") {
                         let desc_str = self.render_text(description)?;
                         doc.push_str(&format!("{}\n\n", desc_str));
-                    }
-                    
                     // Module import/usage
                     if let Some(import) = module_map.get("import") {
                         let import_str = self.render_text(import)?;
                         doc.push_str(&format!("```{}\n{}\n```\n\n", language, import_str));
-                    }
-                    
                     // Module functions
                     if let Some(functions) = module_map.get("functions") {
                         doc.push_str("### Functions\n\n");
                         doc.push_str(&self.render_functions(functions, language, Some(&module_name))?);
-                    }
-                    
                     // Module classes
                     if let Some(classes) = module_map.get("classes") {
                         doc.push_str("### Classes\n\n");
                         doc.push_str(&self.render_classes(classes, language)?);
-                    }
-                    
                     // Module constants
                     if let Some(constants) = module_map.get("constants") {
                         doc.push_str("### Constants\n\n");
                         doc.push_str(&self.render_constants(constants, language)?);
-                    }
-                    
                     // Module types/interfaces
                     if let Some(types) = module_map.get("types") {
                         doc.push_str("### Types\n\n");
@@ -1521,8 +1219,6 @@ impl TemplateFormatRenderer {
         }
         
         Ok(doc)
-    }
-    
     /// Render functions section
     fn render_functions(&self, functions: &CursedObject, language: &str, module_name: Option<&str>) -> crate::error::Result<()> {
         let mut doc = String::new();
@@ -1538,7 +1234,6 @@ impl TemplateFormatRenderer {
                         format!("{}.{}", module, func_name)
                     } else {
                         func_name.clone()
-                    };
                     
                     let anchor = self.generate_anchor(&full_name);
                     doc.push_str(&format!("#### `{}` {{#{}}}\n\n", func_name, anchor));
@@ -1547,8 +1242,6 @@ impl TemplateFormatRenderer {
                     if let Some(description) = func_map.get("description") {
                         let desc_str = self.render_text(description)?;
                         doc.push_str(&format!("{}\n\n", desc_str));
-                    }
-                    
                     // Function signature
                     let signature = self.generate_function_signature(func_map, language)?;
                     doc.push_str(&format!("```{}\n{}\n```\n\n", language, signature));
@@ -1557,41 +1250,27 @@ impl TemplateFormatRenderer {
                     if let Some(parameters) = func_map.get("parameters") {
                         doc.push_str("**Parameters:**\n\n");
                         doc.push_str(&self.render_parameters(parameters)?);
-                    }
-                    
                     // Returns
                     if let Some(returns) = func_map.get("returns") {
                         doc.push_str("**Returns:**\n\n");
                         doc.push_str(&self.render_return_type(returns)?);
-                    }
-                    
                     // Throws/Errors
                     if let Some(throws) = func_map.get("throws") {
                         doc.push_str("**Throws:**\n\n");
                         doc.push_str(&self.render_errors(throws)?);
-                    }
-                    
                     // Examples
                     if let Some(examples) = func_map.get("examples") {
                         doc.push_str("**Examples:**\n\n");
                         doc.push_str(&self.render_function_examples(examples, language)?);
-                    }
-                    
                     // Notes/See Also
                     if let Some(notes) = func_map.get("notes") {
                         doc.push_str("**Notes:**\n\n");
                         let notes_str = self.render_text(notes)?;
                         doc.push_str(&format!("{}\n\n", notes_str));
-                    }
-                    
                     doc.push_str("---\n\n");
                 }
             }
-        }
-        
         Ok(doc)
-    }
-    
     /// Render classes section
     fn render_classes(&self, classes: &CursedObject, language: &str) -> crate::error::Result<()> {
         let mut doc = String::new();
@@ -1610,34 +1289,22 @@ impl TemplateFormatRenderer {
                     if let Some(description) = class_map.get("description") {
                         let desc_str = self.render_text(description)?;
                         doc.push_str(&format!("{}\n\n", desc_str));
-                    }
-                    
                     // Class definition
                     if let Some(definition) = class_map.get("definition") {
                         let def_str = self.render_text(definition)?;
                         doc.push_str(&format!("```{}\n{}\n```\n\n", language, def_str));
-                    }
-                    
                     // Properties
                     if let Some(properties) = class_map.get("properties") {
                         doc.push_str("**Properties:**\n\n");
                         doc.push_str(&self.render_properties(properties)?);
-                    }
-                    
                     // Methods
                     if let Some(methods) = class_map.get("methods") {
                         doc.push_str("**Methods:**\n\n");
                         doc.push_str(&self.render_functions(methods, language, Some(&class_name))?);
-                    }
-                    
                     doc.push_str("---\n\n");
                 }
             }
-        }
-        
         Ok(doc)
-    }
-    
     /// Render constants section
     fn render_constants(&self, constants: &CursedObject, language: &str) -> crate::error::Result<()> {
         let mut doc = String::new();
@@ -1664,16 +1331,11 @@ impl TemplateFormatRenderer {
                         .map(|d| self.render_text(d))
                         .unwrap_or_else(|| Ok("".to_string()))?;
                     
-                    doc.push_str(&format!("| `{}` | `{}` | `{}` | {} |\n", 
                         name, const_type, value, description));
                 }
             }
             doc.push_str("\n");
-        }
-        
         Ok(doc)
-    }
-    
     /// Render types/interfaces section
     fn render_types(&self, types: &CursedObject, language: &str) -> crate::error::Result<()> {
         let mut doc = String::new();
@@ -1692,28 +1354,18 @@ impl TemplateFormatRenderer {
                     if let Some(description) = type_map.get("description") {
                         let desc_str = self.render_text(description)?;
                         doc.push_str(&format!("{}\n\n", desc_str));
-                    }
-                    
                     // Type definition
                     if let Some(definition) = type_map.get("definition") {
                         let def_str = self.render_text(definition)?;
                         doc.push_str(&format!("```{}\n{}\n```\n\n", language, def_str));
-                    }
-                    
                     // Type fields/properties
                     if let Some(fields) = type_map.get("fields") {
                         doc.push_str("**Fields:**\n\n");
                         doc.push_str(&self.render_properties(fields)?);
-                    }
-                    
                     doc.push_str("---\n\n");
                 }
             }
-        }
-        
         Ok(doc)
-    }
-    
     /// Render examples section
     fn render_examples(&self, examples: &CursedObject, language: &str) -> crate::error::Result<()> {
         let mut doc = String::new();
@@ -1728,18 +1380,12 @@ impl TemplateFormatRenderer {
                                 doc.push_str(&format!("### {}\n\n", title_str));
                             } else {
                                 doc.push_str(&format!("### Example {}\n\n", i + 1));
-                            }
-                            
                             if let Some(description) = example_map.get("description") {
                                 let desc_str = self.render_text(description)?;
                                 doc.push_str(&format!("{}\n\n", desc_str));
-                            }
-                            
                             if let Some(code) = example_map.get("code") {
                                 let code_str = self.render_text(code)?;
                                 doc.push_str(&format!("```{}\n{}\n```\n\n", language, code_str));
-                            }
-                            
                             if let Some(output) = example_map.get("output") {
                                 let output_str = self.render_text(output)?;
                                 doc.push_str("**Output:**\n\n");
@@ -1761,8 +1407,6 @@ impl TemplateFormatRenderer {
         }
         
         Ok(doc)
-    }
-    
     /// Render function parameters
     fn render_parameters(&self, parameters: &CursedObject) -> crate::error::Result<()> {
         let mut doc = String::new();
@@ -1784,8 +1428,6 @@ impl TemplateFormatRenderer {
                     
                     let optional = param_map.get("optional")
                         .and_then(|o| match o {
-                            CursedObject::Boolean(b) => Some(*b),
-                            _ => None,
                         })
                         .unwrap_or(false);
                     
@@ -1796,27 +1438,17 @@ impl TemplateFormatRenderer {
                     
                     if optional {
                         doc.push_str(" *(optional)*");
-                    }
-                    
                     doc.push_str(&format!(" (`{}`)", param_type));
                     
                     if let Some(Ok(default)) = default_value {
                         doc.push_str(&format!(" - Default: `{}`", default));
-                    }
-                    
                     if !description.is_empty() {
                         doc.push_str(&format!(" - {}", description));
-                    }
-                    
                     doc.push_str("\n");
                 }
             }
             doc.push_str("\n");
-        }
-        
         Ok(doc)
-    }
-    
     /// Render return type information
     fn render_return_type(&self, returns: &CursedObject) -> crate::error::Result<()> {
         match returns {
@@ -1835,8 +1467,6 @@ impl TemplateFormatRenderer {
                 if let Some(properties) = return_map.get("properties") {
                     doc.push_str("**Properties:**\n\n");
                     doc.push_str(&self.render_properties(properties)?);
-                }
-                
                 Ok(doc)
             }
             _ => {
@@ -1844,8 +1474,6 @@ impl TemplateFormatRenderer {
                 Ok(format!("`{}` - Return value\n\n", return_str))
             }
         }
-    }
-    
     /// Render error/exception information
     fn render_errors(&self, throws: &CursedObject) -> crate::error::Result<()> {
         let mut doc = String::new();
@@ -1868,11 +1496,7 @@ impl TemplateFormatRenderer {
                 }
             }
             doc.push_str("\n");
-        }
-        
         Ok(doc)
-    }
-    
     /// Render properties/fields table
     fn render_properties(&self, properties: &CursedObject) -> crate::error::Result<()> {
         let mut doc = String::new();
@@ -1899,11 +1523,7 @@ impl TemplateFormatRenderer {
                 }
             }
             doc.push_str("\n");
-        }
-        
         Ok(doc)
-    }
-    
     /// Render function examples with proper formatting
     fn render_function_examples(&self, examples: &CursedObject, language: &str) -> crate::error::Result<()> {
         let mut doc = String::new();
@@ -1915,13 +1535,9 @@ impl TemplateFormatRenderer {
                         if let Some(description) = example_map.get("description") {
                             let desc_str = self.render_text(description)?;
                             doc.push_str(&format!("{}\n\n", desc_str));
-                        }
-                        
                         if let Some(code) = example_map.get("code") {
                             let code_str = self.render_text(code)?;
                             doc.push_str(&format!("```{}\n{}\n```\n\n", language, code_str));
-                        }
-                        
                         if let Some(output) = example_map.get("output") {
                             let output_str = self.render_text(output)?;
                             doc.push_str(&format!("Output:\n```\n{}\n```\n\n", output_str));
@@ -1940,11 +1556,7 @@ impl TemplateFormatRenderer {
         } else {
             let example_str = self.render_text(examples)?;
             doc.push_str(&format!("```{}\n{}\n```\n\n", language, example_str));
-        }
-        
         Ok(doc)
-    }
-    
     /// Generate function signature based on language
     fn generate_function_signature(&self, func_map: &std::collections::HashMap<String, CursedObject>, language: &str) -> crate::error::Result<()> {
         let func_name = func_map.get("name")
@@ -1961,8 +1573,6 @@ impl TemplateFormatRenderer {
                 
                 if let Some(parameters) = func_map.get("parameters") {
                     signature.push_str(&self.format_rust_parameters(parameters)?);
-                }
-                
                 signature.push(')');
                 
                 if let Some(returns) = func_map.get("returns") {
@@ -1984,8 +1594,6 @@ impl TemplateFormatRenderer {
                 
                 if let Some(parameters) = func_map.get("parameters") {
                     signature.push_str(&self.format_python_parameters(parameters)?);
-                }
-                
                 signature.push(')');
                 
                 if let Some(returns) = func_map.get("returns") {
@@ -2009,8 +1617,6 @@ impl TemplateFormatRenderer {
                 
                 if let Some(parameters) = func_map.get("parameters") {
                     signature.push_str(&self.format_js_parameters(parameters, language == "typescript")?);
-                }
-                
                 signature.push(')');
                 
                 if language == "typescript" {
@@ -2034,15 +1640,11 @@ impl TemplateFormatRenderer {
                 
                 if let Some(parameters) = func_map.get("parameters") {
                     signature.push_str(&self.format_generic_parameters(parameters)?);
-                }
-                
                 signature.push(')');
             }
         }
         
         Ok(signature)
-    }
-    
     /// Format parameters for Rust
     fn format_rust_parameters(&self, parameters: &CursedObject) -> crate::error::Result<()> {
         if let CursedObject::Array(param_array) = parameters {
@@ -2082,13 +1684,9 @@ impl TemplateFormatRenderer {
                         if let Some(param_type) = param_map.get("type") {
                             let type_str = self.render_text(param_type)?;
                             param_str = format!("{}: {}", param_str, type_str);
-                        }
-                        
                         if let Some(default) = param_map.get("default") {
                             let default_str = self.render_text(default)?;
                             param_str = format!("{} = {}", param_str, default_str);
-                        }
-                        
                         Ok(param_str)
                     } else {
                         Ok("param".to_string())
@@ -2123,8 +1721,6 @@ impl TemplateFormatRenderer {
                         if let Some(default) = param_map.get("default") {
                             let default_str = self.render_text(default)?;
                             param_str = format!("{} = {}", param_str, default_str);
-                        }
-                        
                         Ok(param_str)
                     } else {
                         Ok("param".to_string())
@@ -2175,17 +1771,9 @@ impl TemplateFormatRenderer {
             .collect::<String>()
             .trim_matches('-')
             .to_string()
-    }
-    
     /// Get appropriate language for installation commands
     fn get_install_language(&self, language: &str) -> &str {
         match language {
-            "rust" => "bash",
-            "python" => "bash",
-            "javascript" | "typescript" => "bash",
-            "go" => "bash",
-            "java" => "bash",
-            _ => "bash",
         }
     }
     /// Render API documentation
@@ -2200,26 +1788,18 @@ impl TemplateFormatRenderer {
                     doc.push_str(&format!("# {} API Documentation\n\n", title_str));
                 } else {
                     doc.push_str("# API Documentation\n\n");
-                }
-                
                 // API description/overview
                 if let Some(description) = map.get("description") {
                     let desc_str = self.render_text(description)?;
                     doc.push_str(&format!("{}\n\n", desc_str));
-                }
-                
                 // Base URL
                 if let Some(base_url) = map.get("base_url") {
                     let url_str = self.render_text(base_url)?;
                     doc.push_str(&format!("**Base URL:** `{}`\n\n", url_str));
-                }
-                
                 // API version
                 if let Some(version) = map.get("version") {
                     let version_str = self.render_text(version)?;
                     doc.push_str(&format!("**Version:** {}\n\n", version_str));
-                }
-                
                 // Authentication
                 if let Some(auth) = map.get("authentication") {
                     doc.push_str("## Authentication\n\n");
@@ -2243,34 +1823,24 @@ impl TemplateFormatRenderer {
                             doc.push_str(&format!("{}\n\n", auth_str));
                         }
                     }
-                }
-                
                 // Rate limiting
                 if let Some(rate_limit) = map.get("rate_limit") {
                     doc.push_str("## Rate Limiting\n\n");
                     let rate_str = self.render_text(rate_limit)?;
                     doc.push_str(&format!("{}\n\n", rate_str));
-                }
-                
                 // Endpoints
                 if let Some(endpoints) = map.get("endpoints") {
                     doc.push_str("## Endpoints\n\n");
                     doc.push_str(&self.render_api_endpoints(endpoints)?);
-                }
-                
                 // CursedError codes
                 if let Some(errors) = map.get("errors") {
                     doc.push_str("## CursedError Codes\n\n");
                     doc.push_str(&self.render_api_errors(errors)?);
-                }
-                
                 // Response formats
                 if let Some(formats) = map.get("response_formats") {
                     doc.push_str("## Response Formats\n\n");
                     let formats_str = self.render_text(formats)?;
                     doc.push_str(&format!("{}\n\n", formats_str));
-                }
-                
                 // SDKs and libraries
                 if let Some(sdks) = map.get("sdks") {
                     doc.push_str("## SDKs and Libraries\n\n");
@@ -2292,8 +1862,6 @@ impl TemplateFormatRenderer {
                 if let Some(examples) = map.get("examples") {
                     doc.push_str("## Examples\n\n");
                     doc.push_str(&self.render_api_examples(examples)?);
-                }
-                
                 Ok(doc)
             }
             _ => self.render_markdown(data)
@@ -2310,29 +1878,13 @@ impl TemplateFormatRenderer {
                 if let Some(title) = map.get("title") {
                     let title_str = self.render_text(title)?;
                     doc.push_str(&format!("# {}\n\n", title_str));
-                }
-                
                 // Project description
                 if let Some(description) = map.get("description") {
                     let desc_str = self.render_text(description)?;
                     doc.push_str(&format!("{}\n\n", desc_str));
-                }
-                
                 // Table of contents
                 doc.push_str("## Table of Contents\n\n");
                 let sections = vec![
-                    ("overview", "Overview"),
-                    ("architecture", "Architecture"),
-                    ("installation", "Installation"),
-                    ("configuration", "Configuration"),
-                    ("usage", "Usage"),
-                    ("api", "API Reference"),
-                    ("development", "Development"),
-                    ("testing", "Testing"),
-                    ("deployment", "Deployment"),
-                    ("contributing", "Contributing"),
-                    ("changelog", "Changelog"),
-                    ("license", "License"),
                 ];
                 
                 for (key, title) in &sections {
@@ -2396,30 +1948,20 @@ impl TemplateFormatRenderer {
                     notes.push_str(&format!("# {}\n\n", title_str));
                 } else {
                     notes.push_str("# Release Notes\n\n");
-                }
-                
                 // Release summary
                 if let Some(summary) = map.get("summary") {
                     let summary_str = self.render_text(summary)?;
                     notes.push_str(&format!("{}\n\n", summary_str));
-                }
-                
                 // Release information
                 if let Some(version) = map.get("version") {
                     let version_str = self.render_text(version)?;
                     notes.push_str(&format!("**Version:** {}\n", version_str));
-                }
-                
                 if let Some(date) = map.get("date") {
                     let date_str = self.render_text(date)?;
                     notes.push_str(&format!("**Release Date:** {}\n", date_str));
-                }
-                
                 if let Some(tag) = map.get("tag") {
                     let tag_str = self.render_text(tag)?;
                     notes.push_str(&format!("**Git Tag:** {}\n", tag_str));
-                }
-                
                 notes.push_str("\n");
                 
                 // Highlights
@@ -2438,18 +1980,8 @@ impl TemplateFormatRenderer {
                         }
                     }
                     notes.push_str("\n");
-                }
-                
                 // Changes sections
                 let change_sections = vec![
-                    ("breaking_changes", "🚨 Breaking Changes"),
-                    ("new_features", "🚀 New Features"),
-                    ("improvements", "⚡ Improvements"),
-                    ("bug_fixes", "🐛 Bug Fixes"),
-                    ("security", "🔒 Security"),
-                    ("documentation", "📚 Documentation"),
-                    ("performance", "🏎️ Performance"),
-                    ("dependencies", "📦 Dependencies"),
                 ];
                 
                 for (key, title) in change_sections {
@@ -2511,22 +2043,16 @@ impl TemplateFormatRenderer {
                         }
                     }
                     notes.push_str("\n");
-                }
-                
                 // Migration notes
                 if let Some(migration) = map.get("migration") {
                     notes.push_str("## 📝 Migration Guide\n\n");
                     let migration_str = self.render_text(migration)?;
                     notes.push_str(&format!("{}\n\n", migration_str));
-                }
-                
                 // Installation/upgrade instructions
                 if let Some(installation) = map.get("installation") {
                     notes.push_str("## 📥 Installation\n\n");
                     let install_str = self.render_text(installation)?;
                     notes.push_str(&format!("{}\n\n", install_str));
-                }
-                
                 // Links
                 if let Some(links) = map.get("links") {
                     notes.push_str("## 🔗 Links\n\n");
@@ -2537,8 +2063,6 @@ impl TemplateFormatRenderer {
                         }
                     }
                     notes.push_str("\n");
-                }
-                
                 Ok(notes)
             }
             _ => self.render_markdown(data)
@@ -2554,29 +2078,19 @@ impl TemplateFormatRenderer {
                 if let Some(description) = map.get("description") {
                     let desc_str = self.render_text(description)?;
                     schema.push_str(&format!("\"\"\"\n{}\n\"\"\"\n", desc_str));
-                }
-                
                 // Render schema definition
                 if let Some(schema_def) = map.get("schema") {
                     schema.push_str(&self.render_graphql_schema_definition(schema_def)?);
                     schema.push('\n');
-                }
-                
                 // Render custom scalars
                 if let Some(scalars) = map.get("scalars") {
                     schema.push_str(&self.render_graphql_scalars(scalars)?);
-                }
-                
                 // Render directives
                 if let Some(directives) = map.get("directives") {
                     schema.push_str(&self.render_graphql_directives(directives)?);
-                }
-                
                 // Render types
                 if let Some(types) = map.get("types") {
                     schema.push_str(&self.render_graphql_types(types)?);
-                }
-                
                 Ok(schema.trim().to_string())
             }
             _ => self.render_text(data)
@@ -2592,18 +2106,12 @@ impl TemplateFormatRenderer {
                 if let Some(query) = map.get("query") {
                     let query_str = self.render_text(query)?;
                     schema.push_str(&format!("  query: {}\n", query_str));
-                }
-                
                 if let Some(mutation) = map.get("mutation") {
                     let mutation_str = self.render_text(mutation)?;
                     schema.push_str(&format!("  mutation: {}\n", mutation_str));
-                }
-                
                 if let Some(subscription) = map.get("subscription") {
                     let subscription_str = self.render_text(subscription)?;
                     schema.push_str(&format!("  subscription: {}\n", subscription_str));
-                }
-                
                 schema.push_str("}\n");
                 Ok(schema)
             }
@@ -2625,15 +2133,11 @@ impl TemplateFormatRenderer {
                             if let Some(description) = scalar_map.get("description") {
                                 let desc_str = self.render_text(description)?;
                                 result.push_str(&format!("\"\"\"\n{}\n\"\"\"\n", desc_str));
-                            }
-                            
                             result.push_str(&format!("scalar {}", name_str));
                             
                             // Add directives if present
                             if let Some(directives) = scalar_map.get("directives") {
                                 result.push_str(&self.render_graphql_field_directives(directives)?);
-                            }
-                            
                             result.push_str("\n\n");
                         }
                     }
@@ -2658,15 +2162,11 @@ impl TemplateFormatRenderer {
                             if let Some(description) = dir_map.get("description") {
                                 let desc_str = self.render_text(description)?;
                                 result.push_str(&format!("\"\"\"\n{}\n\"\"\"\n", desc_str));
-                            }
-                            
                             result.push_str(&format!("directive @{}", name_str));
                             
                             // Add arguments if present
                             if let Some(arguments) = dir_map.get("arguments") {
                                 result.push_str(&self.render_graphql_arguments(arguments, false)?);
-                            }
-                            
                             // Add locations
                             if let Some(locations) = dir_map.get("locations") {
                                 result.push_str(" on ");
@@ -2682,8 +2182,6 @@ impl TemplateFormatRenderer {
                                         result.push_str(&loc_str);
                                     }
                                 }
-                            }
-                            
                             result.push_str("\n\n");
                         }
                     }
@@ -2727,8 +2225,6 @@ impl TemplateFormatRenderer {
         if let Some(description) = type_map.get("description") {
             let desc_str = self.render_text(description)?;
             type_def.push_str(&format!("\"\"\"\n{}\n\"\"\"\n", desc_str));
-        }
-        
         match kind.as_str() {
             "object" => {
                 type_def.push_str(&format!("type {}", name));
@@ -2748,20 +2244,14 @@ impl TemplateFormatRenderer {
                             type_def.push_str(&impl_str);
                         }
                     }
-                }
-                
                 // Add directives if present
                 if let Some(directives) = type_map.get("directives") {
                     type_def.push_str(&self.render_graphql_field_directives(directives)?);
-                }
-                
                 type_def.push_str(" {\n");
                 
                 // Add fields
                 if let Some(fields) = type_map.get("fields") {
                     type_def.push_str(&self.render_graphql_fields(fields)?);
-                }
-                
                 type_def.push('}');
             }
             "interface" => {
@@ -2782,20 +2272,14 @@ impl TemplateFormatRenderer {
                             type_def.push_str(&impl_str);
                         }
                     }
-                }
-                
                 // Add directives if present
                 if let Some(directives) = type_map.get("directives") {
                     type_def.push_str(&self.render_graphql_field_directives(directives)?);
-                }
-                
                 type_def.push_str(" {\n");
                 
                 // Add fields
                 if let Some(fields) = type_map.get("fields") {
                     type_def.push_str(&self.render_graphql_fields(fields)?);
-                }
-                
                 type_def.push('}');
             }
             "union" => {
@@ -2804,8 +2288,6 @@ impl TemplateFormatRenderer {
                 // Add directives if present
                 if let Some(directives) = type_map.get("directives") {
                     type_def.push_str(&self.render_graphql_field_directives(directives)?);
-                }
-                
                 // Add union members
                 if let Some(types) = type_map.get("types") {
                     type_def.push_str(" = ");
@@ -2829,15 +2311,11 @@ impl TemplateFormatRenderer {
                 // Add directives if present
                 if let Some(directives) = type_map.get("directives") {
                     type_def.push_str(&self.render_graphql_field_directives(directives)?);
-                }
-                
                 type_def.push_str(" {\n");
                 
                 // Add enum values
                 if let Some(values) = type_map.get("values") {
                     type_def.push_str(&self.render_graphql_enum_values(values)?);
-                }
-                
                 type_def.push('}');
             }
             "input" => {
@@ -2846,15 +2324,11 @@ impl TemplateFormatRenderer {
                 // Add directives if present
                 if let Some(directives) = type_map.get("directives") {
                     type_def.push_str(&self.render_graphql_field_directives(directives)?);
-                }
-                
                 type_def.push_str(" {\n");
                 
                 // Add input fields
                 if let Some(fields) = type_map.get("fields") {
                     type_def.push_str(&self.render_graphql_input_fields(fields)?);
-                }
-                
                 type_def.push('}');
             }
             "scalar" => {
@@ -2872,15 +2346,11 @@ impl TemplateFormatRenderer {
                 
                 if let Some(fields) = type_map.get("fields") {
                     type_def.push_str(&self.render_graphql_fields(fields)?);
-                }
-                
                 type_def.push('}');
             }
         }
         
         Ok(type_def)
-    }
-    
     /// Render GraphQL fields
     fn render_graphql_fields(&self, fields: &CursedObject) -> crate::error::Result<()> {
         match fields {
@@ -2906,8 +2376,6 @@ impl TemplateFormatRenderer {
         if let Some(description) = field_map.get("description") {
             let desc_str = self.render_text(description)?;
             field_def.push_str(&format!("  \"\"\"\n  {}\n  \"\"\"\n", desc_str));
-        }
-        
         field_def.push_str("  ");
         
         let name = field_map.get("name")
@@ -2919,22 +2387,14 @@ impl TemplateFormatRenderer {
         // Add arguments if present
         if let Some(arguments) = field_map.get("arguments") {
             field_def.push_str(&self.render_graphql_arguments(arguments, true)?);
-        }
-        
         // Add type
         if let Some(field_type) = field_map.get("type") {
             let type_str = self.render_text(field_type)?;
             field_def.push_str(&format!(": {}", type_str));
-        }
-        
         // Add directives if present
         if let Some(directives) = field_map.get("directives") {
             field_def.push_str(&self.render_graphql_field_directives(directives)?);
-        }
-        
         Ok(field_def)
-    }
-    
     /// Render GraphQL input fields
     fn render_graphql_input_fields(&self, fields: &CursedObject) -> crate::error::Result<()> {
         match fields {
@@ -2960,8 +2420,6 @@ impl TemplateFormatRenderer {
         if let Some(description) = field_map.get("description") {
             let desc_str = self.render_text(description)?;
             field_def.push_str(&format!("  \"\"\"\n  {}\n  \"\"\"\n", desc_str));
-        }
-        
         field_def.push_str("  ");
         
         let name = field_map.get("name")
@@ -2974,22 +2432,14 @@ impl TemplateFormatRenderer {
         if let Some(field_type) = field_map.get("type") {
             let type_str = self.render_text(field_type)?;
             field_def.push_str(&format!(": {}", type_str));
-        }
-        
         // Add default value if present
         if let Some(default_value) = field_map.get("defaultValue") {
             let default_str = self.render_graphql_value(default_value)?;
             field_def.push_str(&format!(" = {}", default_str));
-        }
-        
         // Add directives if present
         if let Some(directives) = field_map.get("directives") {
             field_def.push_str(&self.render_graphql_field_directives(directives)?);
-        }
-        
         Ok(field_def)
-    }
-    
     /// Render GraphQL enum values
     fn render_graphql_enum_values(&self, values: &CursedObject) -> crate::error::Result<()> {
         match values {
@@ -3002,8 +2452,6 @@ impl TemplateFormatRenderer {
                             if let Some(description) = value_map.get("description") {
                                 let desc_str = self.render_text(description)?;
                                 result.push_str(&format!("  \"\"\"\n  {}\n  \"\"\"\n", desc_str));
-                            }
-                            
                             result.push_str("  ");
                             
                             let name = value_map.get("name")
@@ -3015,8 +2463,6 @@ impl TemplateFormatRenderer {
                             // Add directives if present
                             if let Some(directives) = value_map.get("directives") {
                                 result.push_str(&self.render_graphql_field_directives(directives)?);
-                            }
-                            
                             result.push('\n');
                         }
                         _ => {
@@ -3038,15 +2484,11 @@ impl TemplateFormatRenderer {
             CursedObject::Array(arr) => {
                 if arr.is_empty() {
                     return Ok(String::new());
-                }
-                
                 let mut result = String::from("(");
                 
                 for (i, arg) in arr.iter().enumerate() {
                     if i > 0 {
                         result.push_str(", ");
-                    }
-                    
                     if let CursedObject::Map(arg_map) = arg {
                         let name = arg_map.get("name")
                             .map(|n| self.render_text(n))
@@ -3057,21 +2499,15 @@ impl TemplateFormatRenderer {
                         if let Some(arg_type) = arg_map.get("type") {
                             let type_str = self.render_text(arg_type)?;
                             result.push_str(&format!(": {}", type_str));
-                        }
-                        
                         // Add default value if present
                         if let Some(default_value) = arg_map.get("defaultValue") {
                             let default_str = self.render_graphql_value(default_value)?;
                             result.push_str(&format!(" = {}", default_str));
-                        }
-                        
                         // Add directives if present
                         if let Some(directives) = arg_map.get("directives") {
                             result.push_str(&self.render_graphql_field_directives(directives)?);
                         }
                     }
-                }
-                
                 result.push(')');
                 Ok(result)
             }
@@ -3120,12 +2556,6 @@ impl TemplateFormatRenderer {
     /// Render GraphQL value (for default values, directive arguments, etc.)
     fn render_graphql_value(&self, value: &CursedObject) -> crate::error::Result<()> {
         match value {
-            CursedObject::String(s) => Ok(format!("\"{}\"", s.replace('"', "\\\""))),
-            CursedObject::Integer(n) => Ok(n.to_string()),
-            CursedObject::Float(n) => Ok(n.to_string()),
-            CursedObject::Boolean(b) => Ok(b.to_string()),
-            CursedObject::Char(c) => Ok(format!("\"{}\"", c)),
-            CursedObject::Nil => Ok("null".to_string()),
             CursedObject::Array(arr) => {
                 let values: crate::error::Result<()> = arr.iter()
                     .map(|item| self.render_graphql_value(item))
@@ -3163,8 +2593,6 @@ impl TemplateFormatRenderer {
                 if let Some(package) = map.get("package") {
                     let pkg_str = self.render_text(package)?;
                     proto.push_str(&format!("package {};\n\n", pkg_str));
-                }
-                
                 // Imports
                 if let Some(imports) = map.get("imports") {
                     match imports {
@@ -3180,8 +2608,6 @@ impl TemplateFormatRenderer {
                             proto.push_str(&format!("import \"{}\";\n\n", import_str));
                         }
                     }
-                }
-                
                 // Options
                 if let Some(options) = map.get("options") {
                     if let CursedObject::Map(option_map) = options {
@@ -3201,8 +2627,6 @@ impl TemplateFormatRenderer {
                             proto.push('\n');
                         }
                     }
-                }
-                
                 // Messages
                 if let Some(messages) = map.get("messages") {
                     if let CursedObject::Array(message_list) = messages {
@@ -3211,8 +2635,6 @@ impl TemplateFormatRenderer {
                             proto.push('\n');
                         }
                     }
-                }
-                
                 // Services
                 if let Some(services) = map.get("services") {
                     if let CursedObject::Array(service_list) = services {
@@ -3221,14 +2643,9 @@ impl TemplateFormatRenderer {
                             proto.push('\n');
                         }
                     }
-                }
-                
                 Ok(proto.trim_end().to_string())
             }
             _ => Err(CursedError::TemplateError {
-                message: "Protobuf format requires a map with schema definition".to_string(),
-                source_location: None,
-            }),
         }
     }
     
@@ -3237,8 +2654,6 @@ impl TemplateFormatRenderer {
         if let CursedObject::Map(enum_map) = enum_def {
             let name = enum_map.get("name")
                 .ok_or_else(|| CursedError::TemplateError {
-                    message: "Enum definition requires a 'name' field".to_string(),
-                    source_location: None,
                 })?;
             let name_str = self.render_text(name)?;
             
@@ -3277,8 +2692,6 @@ impl TemplateFormatRenderer {
             Ok(enum_proto)
         } else {
             Err(CursedError::TemplateError {
-                message: "Enum definition must be a map".to_string(),
-                source_location: None,
             })
         }
     }
@@ -3288,8 +2701,6 @@ impl TemplateFormatRenderer {
         if let CursedObject::Map(message_map) = message {
             let name = message_map.get("name")
                 .ok_or_else(|| CursedError::TemplateError {
-                    message: "Message definition requires a 'name' field".to_string(),
-                    source_location: None,
                 })?;
             let name_str = self.render_text(name)?;
             
@@ -3320,8 +2731,6 @@ impl TemplateFormatRenderer {
                         message_proto.push_str("\n\n");
                     }
                 }
-            }
-            
             // Nested messages
             if let Some(nested_messages) = message_map.get("messages") {
                 if let CursedObject::Array(nested_list) = nested_messages {
@@ -3330,8 +2739,6 @@ impl TemplateFormatRenderer {
                         message_proto.push_str("\n\n");
                     }
                 }
-            }
-            
             // Oneofs
             if let Some(oneofs) = message_map.get("oneofs") {
                 if let CursedObject::Array(oneof_list) = oneofs {
@@ -3340,8 +2747,6 @@ impl TemplateFormatRenderer {
                         message_proto.push_str("\n\n");
                     }
                 }
-            }
-            
             // Fields
             if let Some(fields) = message_map.get("fields") {
                 if let CursedObject::Array(field_list) = fields {
@@ -3350,14 +2755,10 @@ impl TemplateFormatRenderer {
                         message_proto.push('\n');
                     }
                 }
-            }
-            
             message_proto.push_str(&format!("{}}}", indent));
             Ok(message_proto)
         } else {
             Err(CursedError::TemplateError {
-                message: "Message definition must be a map".to_string(),
-                source_location: None,
             })
         }
     }
@@ -3367,8 +2768,6 @@ impl TemplateFormatRenderer {
         if let CursedObject::Map(oneof_map) = oneof {
             let name = oneof_map.get("name")
                 .ok_or_else(|| CursedError::TemplateError {
-                    message: "Oneof definition requires a 'name' field".to_string(),
-                    source_location: None,
                 })?;
             let name_str = self.render_text(name)?;
             
@@ -3382,14 +2781,10 @@ impl TemplateFormatRenderer {
                         oneof_proto.push('\n');
                     }
                 }
-            }
-            
             oneof_proto.push_str(&format!("{}}}", indent));
             Ok(oneof_proto)
         } else {
             Err(CursedError::TemplateError {
-                message: "Oneof definition must be a map".to_string(),
-                source_location: None,
             })
         }
     }
@@ -3399,22 +2794,16 @@ impl TemplateFormatRenderer {
         if let CursedObject::Map(field_map) = field {
             let field_type = field_map.get("type")
                 .ok_or_else(|| CursedError::TemplateError {
-                    message: "Field definition requires a 'type' field".to_string(),
-                    source_location: None,
                 })?;
             let type_str = self.render_text(field_type)?;
             
             let name = field_map.get("name")
                 .ok_or_else(|| CursedError::TemplateError {
-                    message: "Field definition requires a 'name' field".to_string(),
-                    source_location: None,
                 })?;
             let name_str = self.render_text(name)?;
             
             let number = field_map.get("number")
                 .ok_or_else(|| CursedError::TemplateError {
-                    message: "Field definition requires a 'number' field".to_string(),
-                    source_location: None,
                 })?;
             let number_str = self.render_text(number)?;
             
@@ -3424,16 +2813,12 @@ impl TemplateFormatRenderer {
             // Check if field is repeated
             let is_repeated = field_map.get("repeated")
                 .map(|r| match r {
-                    CursedObject::Boolean(b) => *b,
-                    _ => false,
                 })
                 .unwrap_or(false);
             
             // Check if field is optional (proto3)
             let is_optional = field_map.get("optional")
                 .map(|o| match o {
-                    CursedObject::Boolean(b) => *b,
-                    _ => false,
                 })
                 .unwrap_or(false);
             
@@ -3444,8 +2829,6 @@ impl TemplateFormatRenderer {
                 field_proto.push_str(&format!("{}optional {} {} = {}", indent, type_str, name_str, number_str));
             } else {
                 field_proto.push_str(&format!("{}{} {} = {}", indent, type_str, name_str, number_str));
-            }
-            
             // Field options
             if let Some(options) = field_map.get("options") {
                 if let CursedObject::Map(option_map) = options {
@@ -3458,14 +2841,10 @@ impl TemplateFormatRenderer {
                         field_proto.push_str(&format!(" [{}]", option_strs.join(", ")));
                     }
                 }
-            }
-            
             field_proto.push(';');
             Ok(field_proto)
         } else {
             Err(CursedError::TemplateError {
-                message: "Field definition must be a map".to_string(),
-                source_location: None,
             })
         }
     }
@@ -3475,8 +2854,6 @@ impl TemplateFormatRenderer {
         if let CursedObject::Map(service_map) = service {
             let name = service_map.get("name")
                 .ok_or_else(|| CursedError::TemplateError {
-                    message: "Service definition requires a 'name' field".to_string(),
-                    source_location: None,
                 })?;
             let name_str = self.render_text(name)?;
             
@@ -3501,14 +2878,10 @@ impl TemplateFormatRenderer {
                         service_proto.push('\n');
                     }
                 }
-            }
-            
             service_proto.push('}');
             Ok(service_proto)
         } else {
             Err(CursedError::TemplateError {
-                message: "Service definition must be a map".to_string(),
-                source_location: None,
             })
         }
     }
@@ -3518,44 +2891,33 @@ impl TemplateFormatRenderer {
         if let CursedObject::Map(method_map) = method {
             let name = method_map.get("name")
                 .ok_or_else(|| CursedError::TemplateError {
-                    message: "RPC method requires a 'name' field".to_string(),
-                    source_location: None,
                 })?;
             let name_str = self.render_text(name)?;
             
             let input_type = method_map.get("input_type")
                 .ok_or_else(|| CursedError::TemplateError {
-                    message: "RPC method requires an 'input_type' field".to_string(),
-                    source_location: None,
                 })?;
             let input_str = self.render_text(input_type)?;
             
             let output_type = method_map.get("output_type")
                 .ok_or_else(|| CursedError::TemplateError {
-                    message: "RPC method requires an 'output_type' field".to_string(),
-                    source_location: None,
                 })?;
             let output_str = self.render_text(output_type)?;
             
             // Check for streaming
             let client_streaming = method_map.get("client_streaming")
                 .map(|s| match s {
-                    CursedObject::Boolean(b) => *b,
-                    _ => false,
                 })
                 .unwrap_or(false);
             
             let server_streaming = method_map.get("server_streaming")
                 .map(|s| match s {
-                    CursedObject::Boolean(b) => *b,
-                    _ => false,
                 })
                 .unwrap_or(false);
             
             let input_prefix = if client_streaming { "stream " } else { "" };
             let output_prefix = if server_streaming { "stream " } else { "" };
             
-            let mut rpc_proto = format!("  rpc {}({}{}) returns ({}{});", 
                 name_str, input_prefix, input_str, output_prefix, output_str);
             
             // Method options
@@ -3570,13 +2932,9 @@ impl TemplateFormatRenderer {
                         rpc_proto.push_str("  }");
                     }
                 }
-            }
-            
             Ok(rpc_proto)
         } else {
             Err(CursedError::TemplateError {
-                message: "RPC method definition must be a map".to_string(),
-                source_location: None,
             })
         }
     }
@@ -3584,12 +2942,6 @@ impl TemplateFormatRenderer {
     /// Render protobuf option value with proper formatting
     fn render_protobuf_option_value(&self, value: &CursedObject) -> crate::error::Result<()> {
         match value {
-            CursedObject::String(s) => Ok(format!("\"{}\"", s)),
-            CursedObject::Integer(n) => Ok(n.to_string()),
-            CursedObject::Float(n) => Ok(n.to_string()),
-            CursedObject::Boolean(b) => Ok(b.to_string()),
-            CursedObject::Char(c) => Ok(format!("\"{}\"", c)),
-            CursedObject::Nil => Ok("null".to_string()),
             _ => {
                 let text = self.render_text(value)?;
                 if text.chars().all(|c| c.is_alphanumeric() || c == '_' || c == '.') {
@@ -3604,11 +2956,7 @@ impl TemplateFormatRenderer {
         let schema = self.build_json_schema(data)?;
         serde_json::to_string_pretty(&schema)
             .map_err(|e| CursedError::TemplateError {
-                message: format!("JSON Schema serialization error: {}", e),
-                source_location: None,
             })
-    }
-
     /// Build JSON Schema from CursedObject
     fn build_json_schema(&self, data: &CursedObject) -> crate::error::Result<()> {
         match data {
@@ -3618,11 +2966,8 @@ impl TemplateFormatRenderer {
                 // Set default schema version if not specified
                 if !map.contains_key("$schema") {
                     schema.insert(
-                        "$schema".to_string(),
                         JsonValue::String("https://json-schema.org/draft/2020-12/schema".to_string())
                     );
-                }
-                
                 // Process all schema fields
                 for (key, value) in map {
                     match key.as_str() {
@@ -3677,8 +3022,6 @@ impl TemplateFormatRenderer {
                             schema.insert(key.clone(), self.cursed_to_json(value)?);
                         }
                     }
-                }
-                
                 Ok(JsonValue::Object(schema))
             }
             _ => {
@@ -3686,8 +3029,6 @@ impl TemplateFormatRenderer {
                 self.infer_schema_from_value(data)
             }
         }
-    }
-
     /// Build properties object for JSON Schema
     fn build_schema_properties(&self, data: &CursedObject) -> crate::error::Result<()> {
         match data {
@@ -3696,13 +3037,10 @@ impl TemplateFormatRenderer {
                 
                 for (prop_name, prop_schema) in props {
                     properties.insert(prop_name.clone(), self.build_json_schema(prop_schema)?);
-                }
-                
                 Ok(JsonValue::Object(properties))
             }
             _ => Err(CursedError::TemplateError {
                 message: "Properties must be an object/map".to_string(),
-                source_location: None,
             })
         }
     }
@@ -3722,26 +3060,19 @@ impl TemplateFormatRenderer {
                 self.build_json_schema(data)
             }
         }
-    }
-
     /// Build required array
     fn build_required_array(&self, data: &CursedObject) -> crate::error::Result<()> {
         match data {
             CursedObject::Array(arr) => {
                 let required: crate::error::Result<()> = arr.iter()
                     .map(|item| match item {
-                        CursedObject::String(s) => Ok(JsonValue::String(s.clone())),
                         _ => Err(CursedError::TemplateError {
-                            message: "Required array must contain strings".to_string(),
-                            source_location: None,
                         })
                     })
                     .collect();
                 Ok(JsonValue::Array(required?))
             }
             _ => Err(CursedError::TemplateError {
-                message: "Required must be an array".to_string(),
-                source_location: None,
             })
         }
     }
@@ -3756,8 +3087,6 @@ impl TemplateFormatRenderer {
                 Ok(JsonValue::Array(enum_values?))
             }
             _ => Err(CursedError::TemplateError {
-                message: "Enum must be an array".to_string(),
-                source_location: None,
             })
         }
     }
@@ -3770,13 +3099,10 @@ impl TemplateFormatRenderer {
                 
                 for (def_name, def_schema) in defs {
                     definitions.insert(def_name.clone(), self.build_json_schema(def_schema)?);
-                }
-                
                 Ok(JsonValue::Object(definitions))
             }
             _ => Err(CursedError::TemplateError {
                 message: "Definitions must be an object/map".to_string(),
-                source_location: None,
             })
         }
     }
@@ -3791,8 +3117,6 @@ impl TemplateFormatRenderer {
                 Ok(JsonValue::Array(schema_array?))
             }
             _ => Err(CursedError::TemplateError {
-                message: "Schema combinators must be arrays".to_string(),
-                source_location: None,
             })
         }
     }
@@ -3803,7 +3127,6 @@ impl TemplateFormatRenderer {
         
         // Set default schema version
         schema.insert(
-            "$schema".to_string(),
             JsonValue::String("https://json-schema.org/draft/2020-12/schema".to_string())
         );
         
@@ -3846,16 +3169,10 @@ impl TemplateFormatRenderer {
                 for (key, value) in map {
                     properties.insert(key.clone(), self.infer_schema_from_value(value)?);
                     required.push(JsonValue::String(key.clone()));
-                }
-                
                 if !properties.is_empty() {
                     schema.insert("properties".to_string(), JsonValue::Object(properties));
-                }
-                
                 if !required.is_empty() {
                     schema.insert("required".to_string(), JsonValue::Array(required));
-                }
-                
                 schema.insert("additionalProperties".to_string(), JsonValue::Bool(false));
             }
         }
@@ -3910,8 +3227,6 @@ impl TemplateFormatRenderer {
                     }
                     wsdl.push_str("    </xsd:schema>\n");
                     wsdl.push_str("  </types>\n\n");
-                }
-                
                 // Messages
                 if let Some(messages) = map.get("messages") {
                     if let CursedObject::Array(msg_array) = messages {
@@ -3941,8 +3256,6 @@ impl TemplateFormatRenderer {
                             }
                         }
                     }
-                }
-                
                 // Port types
                 if let Some(port_types) = map.get("port_types") {
                     if let CursedObject::Array(pt_array) = port_types {
@@ -3964,13 +3277,9 @@ impl TemplateFormatRenderer {
                                                     if let Some(input) = op_map.get("input") {
                                                         let input_str = self.render_text(input)?;
                                                         wsdl.push_str(&format!("      <input message=\"tns:{}\"/>\n", input_str));
-                                                    }
-                                                    
                                                     if let Some(output) = op_map.get("output") {
                                                         let output_str = self.render_text(output)?;
                                                         wsdl.push_str(&format!("      <output message=\"tns:{}\"/>\n", output_str));
-                                                    }
-                                                    
                                                     wsdl.push_str("    </operation>\n");
                                                 }
                                             }
@@ -3981,8 +3290,6 @@ impl TemplateFormatRenderer {
                             }
                         }
                     }
-                }
-                
                 // Bindings
                 if let Some(bindings) = map.get("bindings") {
                     if let CursedObject::Array(binding_array) = bindings {
@@ -4001,8 +3308,6 @@ impl TemplateFormatRenderer {
                             }
                         }
                     }
-                }
-                
                 // Service
                 if let Some(service) = map.get("service") {
                     if let CursedObject::Map(service_map) = service {
@@ -4066,8 +3371,6 @@ impl TemplateFormatRenderer {
                         }
                     }
                     asyncapi.push_str("\n");
-                }
-                
                 // Servers
                 if let Some(servers) = map.get("servers") {
                     asyncapi.push_str("servers:\n");
@@ -4083,8 +3386,6 @@ impl TemplateFormatRenderer {
                         }
                     }
                     asyncapi.push_str("\n");
-                }
-                
                 // Channels
                 if let Some(channels) = map.get("channels") {
                     asyncapi.push_str("channels:\n");
@@ -4096,8 +3397,6 @@ impl TemplateFormatRenderer {
                                 if let Some(description) = config.get("description") {
                                     let desc_str = self.render_text(description)?;
                                     asyncapi.push_str(&format!("    description: {}\n", desc_str));
-                                }
-                                
                                 // Subscribe operation
                                 if let Some(subscribe) = config.get("subscribe") {
                                     asyncapi.push_str("    subscribe:\n");
@@ -4120,8 +3419,6 @@ impl TemplateFormatRenderer {
                                             }
                                         }
                                     }
-                                }
-                                
                                 // Publish operation
                                 if let Some(publish) = config.get("publish") {
                                     asyncapi.push_str("    publish:\n");
@@ -4149,8 +3446,6 @@ impl TemplateFormatRenderer {
                         }
                     }
                     asyncapi.push_str("\n");
-                }
-                
                 // Components
                 if let Some(components) = map.get("components") {
                     asyncapi.push_str("components:\n");
@@ -4164,8 +3459,6 @@ impl TemplateFormatRenderer {
                                     asyncapi.push_str(&self.render_kubernetes_object(msg_config, 3)?);
                                 }
                             }
-                        }
-                        
                         // Schemas
                         if let Some(schemas) = comp_map.get("schemas") {
                             asyncapi.push_str("  schemas:\n");
@@ -4175,16 +3468,12 @@ impl TemplateFormatRenderer {
                                     asyncapi.push_str(&self.render_kubernetes_object(schema_config, 3)?);
                                 }
                             }
-                        }
-                        
                         // Security schemes
                         if let Some(security_schemes) = comp_map.get("securitySchemes") {
                             asyncapi.push_str("  securitySchemes:\n");
                             asyncapi.push_str(&self.render_kubernetes_object(security_schemes, 2)?);
                         }
                     }
-                }
-                
                 Ok(asyncapi)
             }
             _ => self.render_yaml(data)
@@ -4215,8 +3504,6 @@ impl TemplateFormatRenderer {
                         }
                     }
                     build_rs.push('\n');
-                }
-
                 // Handle link search paths
                 if let Some(link_search) = map.get("link_search") {
                     match link_search {
@@ -4232,8 +3519,6 @@ impl TemplateFormatRenderer {
                         }
                     }
                     build_rs.push('\n');
-                }
-
                 // Handle environment variables
                 if let Some(env_vars) = map.get("env_vars") {
                     if let CursedObject::Map(env_map) = env_vars {
@@ -4268,8 +3553,6 @@ impl TemplateFormatRenderer {
                         }
                     }
                     build_rs.push('\n');
-                }
-
                 // Handle custom code
                 if let Some(custom) = map.get("custom_code") {
                     build_rs.push_str("    // Custom build logic\n");
@@ -4283,8 +3566,6 @@ impl TemplateFormatRenderer {
                         }
                     }
                     build_rs.push('\n');
-                }
-
                 // Handle target-specific configuration
                 if let Some(targets) = map.get("targets") {
                     if let CursedObject::Map(target_map) = targets {
@@ -4296,10 +3577,6 @@ impl TemplateFormatRenderer {
                                 for (key, value) in target_config {
                                     let value_str = self.render_text(value)?;
                                     match key.as_str() {
-                                        "link_lib" => build_rs.push_str(&format!("        println!(\"cargo:rustc-link-lib={}\");\n", value_str)),
-                                        "link_search" => build_rs.push_str(&format!("        println!(\"cargo:rustc-link-search=native={}\");\n", value_str)),
-                                        "cfg" => build_rs.push_str(&format!("        println!(\"cargo:rustc-cfg={}\");\n", value_str)),
-                                        _ => build_rs.push_str(&format!("        println!(\"cargo:{}={}\");\n", key, value_str)),
                                     }
                                 }
                             }
@@ -4313,9 +3590,6 @@ impl TemplateFormatRenderer {
                 Ok(build_rs)
             }
             _ => Err(CursedError::TemplateError {
-                message: "build.rs format requires a map".to_string(),
-                source_location: None,
-            }),
         }
     }
 
@@ -4343,8 +3617,6 @@ impl TemplateFormatRenderer {
                             if let Some(version) = proj_map.get("version") {
                                 let version_str = self.render_text(version)?;
                                 cmake.push_str(&format!(" VERSION {}", version_str));
-                            }
-
                             if let Some(languages) = proj_map.get("languages") {
                                 match languages {
                                     CursedObject::Array(langs) => {
@@ -4367,15 +3639,11 @@ impl TemplateFormatRenderer {
                             cmake.push_str(&format!("project({})\n\n", name));
                         }
                     }
-                }
-
                 // Set C++ standard
                 if let Some(cxx_standard) = map.get("cxx_standard") {
                     let std_str = self.render_text(cxx_standard)?;
                     cmake.push_str(&format!("set(CMAKE_CXX_STANDARD {})\n", std_str));
                     cmake.push_str("set(CMAKE_CXX_STANDARD_REQUIRED ON)\n\n");
-                }
-
                 // Find packages
                 if let Some(packages) = map.get("find_package") {
                     match packages {
@@ -4391,8 +3659,6 @@ impl TemplateFormatRenderer {
                                         if let Some(version) = pkg_map.get("version") {
                                             let version_str = self.render_text(version)?;
                                             cmake.push_str(&format!(" {}", version_str));
-                                        }
-
                                         if let Some(required) = pkg_map.get("required") {
                                             if let CursedObject::Boolean(true) = required {
                                                 cmake.push_str(" REQUIRED");
@@ -4414,8 +3680,6 @@ impl TemplateFormatRenderer {
                             cmake.push_str(&format!("find_package({})\n\n", pkg_str));
                         }
                     }
-                }
-
                 // Add subdirectories
                 if let Some(subdirs) = map.get("add_subdirectory") {
                     match subdirs {
@@ -4431,8 +3695,6 @@ impl TemplateFormatRenderer {
                             cmake.push_str(&format!("add_subdirectory({})\n\n", dir_str));
                         }
                     }
-                }
-
                 // Targets (executables and libraries)
                 if let Some(targets) = map.get("targets") {
                     if let CursedObject::Map(target_map) = targets {
@@ -4491,8 +3753,6 @@ impl TemplateFormatRenderer {
                                         }
                                     }
                                     cmake.push_str(")\n");
-                                }
-
                                 // Link libraries
                                 if let Some(link_libs) = config.get("link_libraries") {
                                     cmake.push_str(&format!("target_link_libraries({}", target_name));
@@ -4509,8 +3769,6 @@ impl TemplateFormatRenderer {
                                         }
                                     }
                                     cmake.push_str(")\n");
-                                }
-
                                 // Compile definitions
                                 if let Some(definitions) = config.get("compile_definitions") {
                                     cmake.push_str(&format!("target_compile_definitions({} PRIVATE", target_name));
@@ -4527,8 +3785,6 @@ impl TemplateFormatRenderer {
                                         }
                                     }
                                     cmake.push_str(")\n");
-                                }
-
                                 cmake.push('\n');
                             }
                         }
@@ -4555,9 +3811,6 @@ impl TemplateFormatRenderer {
                 Ok(cmake)
             }
             _ => Err(CursedError::TemplateError {
-                message: "CMake format requires a map".to_string(),
-                source_location: None,
-            }),
         }
     }
 
@@ -4603,24 +3856,16 @@ impl TemplateFormatRenderer {
                         }
                     }
                     gradle.push_str("}\n\n");
-                }
-
                 // Project properties
                 if let Some(group) = map.get("group") {
                     let group_str = self.render_text(group)?;
                     gradle.push_str(&format!("group = \"{}\"\n", group_str));
-                }
-
                 if let Some(version) = map.get("version") {
                     let version_str = self.render_text(version)?;
                     gradle.push_str(&format!("version = \"{}\"\n", version_str));
-                }
-
                 if let Some(description) = map.get("description") {
                     let desc_str = self.render_text(description)?;
                     gradle.push_str(&format!("description = \"{}\"\n", desc_str));
-                }
-
                 gradle.push('\n');
 
                 // Java configuration
@@ -4637,8 +3882,6 @@ impl TemplateFormatRenderer {
                         }
                     }
                     gradle.push_str("}\n\n");
-                }
-
                 // Repositories
                 if let Some(repositories) = map.get("repositories") {
                     gradle.push_str("repositories {\n");
@@ -4662,8 +3905,6 @@ impl TemplateFormatRenderer {
                         }
                     }
                     gradle.push_str("}\n\n");
-                }
-
                 // Dependencies
                 if let Some(dependencies) = map.get("dependencies") {
                     gradle.push_str("dependencies {\n");
@@ -4697,8 +3938,6 @@ impl TemplateFormatRenderer {
                         }
                     }
                     gradle.push_str("}\n\n");
-                }
-
                 // Tasks
                 if let Some(tasks) = map.get("tasks") {
                     if let CursedObject::Map(task_map) = tasks {
@@ -4709,15 +3948,10 @@ impl TemplateFormatRenderer {
                                     gradle.push_str(&format!("tasks.register<{}>(\"{}\") {{\n", type_str, task_name));
                                 } else {
                                     gradle.push_str(&format!("tasks.register(\"{}\") {{\n", task_name));
-                                }
-
                                 for (key, value) in config {
                                     if key != "type" {
                                         let value_str = self.render_text(value)?;
                                         match key.as_str() {
-                                            "doLast" => gradle.push_str(&format!("    doLast {{ {} }}\n", value_str)),
-                                            "dependsOn" => gradle.push_str(&format!("    dependsOn(\"{}\")\n", value_str)),
-                                            _ => gradle.push_str(&format!("    {} = \"{}\"\n", key, value_str)),
                                         }
                                     }
                                 }
@@ -4749,14 +3983,9 @@ impl TemplateFormatRenderer {
                         }
                     }
                     gradle.push_str("}\n\n");
-                }
-
                 Ok(gradle)
             }
             _ => Err(CursedError::TemplateError {
-                message: "Gradle format requires a map".to_string(),
-                source_location: None,
-            }),
         }
     }
 
@@ -4775,33 +4004,21 @@ impl TemplateFormatRenderer {
                 if let Some(group_id) = map.get("groupId") {
                     let group_str = self.render_text(group_id)?;
                     pom.push_str(&format!("    <groupId>{}</groupId>\n", self.escape_xml(&group_str)));
-                }
-
                 if let Some(artifact_id) = map.get("artifactId") {
                     let artifact_str = self.render_text(artifact_id)?;
                     pom.push_str(&format!("    <artifactId>{}</artifactId>\n", self.escape_xml(&artifact_str)));
-                }
-
                 if let Some(version) = map.get("version") {
                     let version_str = self.render_text(version)?;
                     pom.push_str(&format!("    <version>{}</version>\n", self.escape_xml(&version_str)));
-                }
-
                 if let Some(packaging) = map.get("packaging") {
                     let packaging_str = self.render_text(packaging)?;
                     pom.push_str(&format!("    <packaging>{}</packaging>\n", self.escape_xml(&packaging_str)));
-                }
-
                 if let Some(name) = map.get("name") {
                     let name_str = self.render_text(name)?;
                     pom.push_str(&format!("    <name>{}</name>\n", self.escape_xml(&name_str)));
-                }
-
                 if let Some(description) = map.get("description") {
                     let desc_str = self.render_text(description)?;
                     pom.push_str(&format!("    <description>{}</description>\n", self.escape_xml(&desc_str)));
-                }
-
                 pom.push('\n');
 
                 // Parent
@@ -4822,8 +4039,6 @@ impl TemplateFormatRenderer {
                         }
                     }
                     pom.push_str("    </parent>\n\n");
-                }
-
                 // Properties
                 if let Some(properties) = map.get("properties") {
                     pom.push_str("    <properties>\n");
@@ -4831,14 +4046,10 @@ impl TemplateFormatRenderer {
                         for (key, value) in prop_map {
                             let value_str = self.render_text(value)?;
                             pom.push_str(&format!("        <{}>{}</{}>\n", 
-                                self.sanitize_xml_tag(key), 
-                                self.escape_xml(&value_str), 
                                 self.sanitize_xml_tag(key)));
                         }
                     }
                     pom.push_str("    </properties>\n\n");
-                }
-
                 // Dependencies
                 if let Some(dependencies) = map.get("dependencies") {
                     pom.push_str("    <dependencies>\n");
@@ -4850,23 +4061,15 @@ impl TemplateFormatRenderer {
                                 if let Some(group_id) = dep_map.get("groupId") {
                                     let group_str = self.render_text(group_id)?;
                                     pom.push_str(&format!("            <groupId>{}</groupId>\n", self.escape_xml(&group_str)));
-                                }
-                                
                                 if let Some(artifact_id) = dep_map.get("artifactId") {
                                     let artifact_str = self.render_text(artifact_id)?;
                                     pom.push_str(&format!("            <artifactId>{}</artifactId>\n", self.escape_xml(&artifact_str)));
-                                }
-                                
                                 if let Some(version) = dep_map.get("version") {
                                     let version_str = self.render_text(version)?;
                                     pom.push_str(&format!("            <version>{}</version>\n", self.escape_xml(&version_str)));
-                                }
-                                
                                 if let Some(scope) = dep_map.get("scope") {
                                     let scope_str = self.render_text(scope)?;
                                     pom.push_str(&format!("            <scope>{}</scope>\n", self.escape_xml(&scope_str)));
-                                }
-                                
                                 if let Some(optional) = dep_map.get("optional") {
                                     if let CursedObject::Boolean(true) = optional {
                                         pom.push_str("            <optional>true</optional>\n");
@@ -4878,8 +4081,6 @@ impl TemplateFormatRenderer {
                         }
                     }
                     pom.push_str("    </dependencies>\n\n");
-                }
-
                 // Build section
                 if let Some(build) = map.get("build") {
                     pom.push_str("    <build>\n");
@@ -4888,8 +4089,6 @@ impl TemplateFormatRenderer {
                         if let Some(source_dir) = build_map.get("sourceDirectory") {
                             let source_str = self.render_text(source_dir)?;
                             pom.push_str(&format!("        <sourceDirectory>{}</sourceDirectory>\n", self.escape_xml(&source_str)));
-                        }
-
                         // Plugins
                         if let Some(plugins) = build_map.get("plugins") {
                             pom.push_str("        <plugins>\n");
@@ -4901,25 +4100,17 @@ impl TemplateFormatRenderer {
                                         if let Some(group_id) = plugin_map.get("groupId") {
                                             let group_str = self.render_text(group_id)?;
                                             pom.push_str(&format!("                <groupId>{}</groupId>\n", self.escape_xml(&group_str)));
-                                        }
-                                        
                                         if let Some(artifact_id) = plugin_map.get("artifactId") {
                                             let artifact_str = self.render_text(artifact_id)?;
                                             pom.push_str(&format!("                <artifactId>{}</artifactId>\n", self.escape_xml(&artifact_str)));
-                                        }
-                                        
                                         if let Some(version) = plugin_map.get("version") {
                                             let version_str = self.render_text(version)?;
                                             pom.push_str(&format!("                <version>{}</version>\n", self.escape_xml(&version_str)));
-                                        }
-                                        
                                         // Configuration
                                         if let Some(configuration) = plugin_map.get("configuration") {
                                             pom.push_str("                <configuration>\n");
                                             pom.push_str(&self.render_maven_configuration(configuration, 5)?);
                                             pom.push_str("                </configuration>\n");
-                                        }
-                                        
                                         pom.push_str("            </plugin>\n");
                                     }
                                 }
@@ -4928,8 +4119,6 @@ impl TemplateFormatRenderer {
                         }
                     }
                     pom.push_str("    </build>\n\n");
-                }
-
                 // Repositories
                 if let Some(repositories) = map.get("repositories") {
                     pom.push_str("    <repositories>\n");
@@ -4941,20 +4130,14 @@ impl TemplateFormatRenderer {
                                 if let Some(id) = repo_map.get("id") {
                                     let id_str = self.render_text(id)?;
                                     pom.push_str(&format!("            <id>{}</id>\n", self.escape_xml(&id_str)));
-                                }
-                                
                                 if let Some(url) = repo_map.get("url") {
                                     let url_str = self.render_text(url)?;
                                     pom.push_str(&format!("            <url>{}</url>\n", self.escape_xml(&url_str)));
-                                }
-                                
                                 pom.push_str("        </repository>\n");
                             }
                         }
                     }
                     pom.push_str("    </repositories>\n\n");
-                }
-
                 // Profiles
                 if let Some(profiles) = map.get("profiles") {
                     pom.push_str("    <profiles>\n");
@@ -4966,23 +4149,16 @@ impl TemplateFormatRenderer {
                                 if let Some(id) = profile_map.get("id") {
                                     let id_str = self.render_text(id)?;
                                     pom.push_str(&format!("            <id>{}</id>\n", self.escape_xml(&id_str)));
-                                }
-                                
                                 // Add other profile elements as needed
                                 pom.push_str("        </profile>\n");
                             }
                         }
                     }
                     pom.push_str("    </profiles>\n\n");
-                }
-
                 pom.push_str("</project>\n");
                 Ok(pom)
             }
             _ => Err(CursedError::TemplateError {
-                message: "Maven POM format requires a map".to_string(),
-                source_location: None,
-            }),
         }
     }
 
@@ -5031,12 +4207,6 @@ impl TemplateFormatRenderer {
                 
                 // Define field order for proper package.json structure
                 let field_order = [
-                    "name", "version", "description", "keywords", "homepage", "bugs", "license",
-                    "author", "contributors", "maintainers", "funding", "files", "main", "browser",
-                    "bin", "man", "directories", "repository", "scripts", "config", "dependencies",
-                    "devDependencies", "peerDependencies", "peerDependenciesMeta", "bundleDependencies",
-                    "optionalDependencies", "overrides", "engines", "os", "cpu", "private", "publishConfig",
-                    "workspaces", "exports", "imports", "type", "types", "typings", "module", "esnext",
                     "sideEffects"
                 ];
 
@@ -5088,20 +4258,13 @@ impl TemplateFormatRenderer {
                 }
                 if !package_json.contains_key("version") {
                     warn!("package.json missing required 'version' field");
-                }
-
                 // Format with proper indentation
                 let json_value = JsonValue::Object(package_json);
                 serde_json::to_string_pretty(&json_value)
                     .map_err(|e| CursedError::TemplateError {
-                        message: format!("Package.json serialization error: {}", e),
-                        source_location: None,
                     })
             }
             _ => Err(CursedError::TemplateError {
-                message: "Package.json format requires a map".to_string(),
-                source_location: None,
-            }),
         }
     }
 
@@ -5152,19 +4315,14 @@ impl TemplateFormatRenderer {
     /// Render package.json workspaces field
     fn render_package_workspaces(&self, obj: &CursedObject) -> crate::error::Result<()> {
         match obj {
-            CursedObject::Array(_) => self.render_package_array(obj),
             CursedObject::Map(map) => {
                 // Workspaces object with packages and nohoist
                 let mut json_map = serde_json::Map::new();
                 
                 if let Some(packages) = map.get("packages") {
                     json_map.insert("packages".to_string(), self.render_package_array(packages)?);
-                }
-                
                 if let Some(nohoist) = map.get("nohoist") {
                     json_map.insert("nohoist".to_string(), self.render_package_array(nohoist)?);
-                }
-                
                 for (key, value) in map {
                     if key != "packages" && key != "nohoist" {
                         json_map.insert(key.clone(), self.cursed_to_json(value)?);
@@ -5180,7 +4338,6 @@ impl TemplateFormatRenderer {
     /// Render package.json exports/imports field
     fn render_package_exports(&self, obj: &CursedObject) -> crate::error::Result<()> {
         match obj {
-            CursedObject::String(_) => self.cursed_to_json(obj),
             CursedObject::Map(map) => {
                 let mut json_map = serde_json::Map::new();
                 for (key, value) in map {
@@ -5203,7 +4360,6 @@ impl TemplateFormatRenderer {
     /// Render package.json person field (author, contributors, etc.)
     fn render_package_person(&self, obj: &CursedObject) -> crate::error::Result<()> {
         match obj {
-            CursedObject::String(s) => Ok(JsonValue::String(s.clone())),
             CursedObject::Map(map) => {
                 let mut json_map = serde_json::Map::new();
                 
@@ -5214,8 +4370,6 @@ impl TemplateFormatRenderer {
                             json_map.insert(field.to_string(), JsonValue::String(s.clone()));
                         }
                     }
-                }
-                
                 Ok(JsonValue::Object(json_map))
             }
             _ => self.cursed_to_json(obj)
@@ -5225,7 +4379,6 @@ impl TemplateFormatRenderer {
     /// Render package.json repository/bugs field
     fn render_package_repository(&self, obj: &CursedObject) -> crate::error::Result<()> {
         match obj {
-            CursedObject::String(s) => Ok(JsonValue::String(s.clone())),
             CursedObject::Map(map) => {
                 let mut json_map = serde_json::Map::new();
                 
@@ -5245,8 +4398,6 @@ impl TemplateFormatRenderer {
     /// Render package.json bin field
     fn render_package_bin(&self, obj: &CursedObject) -> crate::error::Result<()> {
         match obj {
-            CursedObject::String(s) => Ok(JsonValue::String(s.clone())),
-            CursedObject::Map(_) => self.render_package_object(obj),
             _ => self.cursed_to_json(obj)
         }
     }
@@ -5260,55 +4411,38 @@ impl TemplateFormatRenderer {
                 if let Some(name) = map.get("name") {
                     let name_str = self.render_text(name)?;
                     workflow.push_str(&format!("name: {}\n\n", name_str));
-                }
-
                 // Workflow triggers (on)
                 if let Some(on_triggers) = map.get("on") {
                     workflow.push_str("on:\n");
                     workflow.push_str(&self.render_github_actions_triggers(on_triggers, 1)?);
                     workflow.push('\n');
-                }
-
                 // Global environment variables
                 if let Some(env) = map.get("env") {
                     workflow.push_str("env:\n");
                     workflow.push_str(&self.render_github_actions_env(env, 1)?);
                     workflow.push('\n');
-                }
-
                 // Global defaults
                 if let Some(defaults) = map.get("defaults") {
                     workflow.push_str("defaults:\n");
                     workflow.push_str(&self.render_kubernetes_object(defaults, 1)?);
                     workflow.push('\n');
-                }
-
                 // Concurrency settings
                 if let Some(concurrency) = map.get("concurrency") {
                     workflow.push_str("concurrency:\n");
                     workflow.push_str(&self.render_kubernetes_object(concurrency, 1)?);
                     workflow.push('\n');
-                }
-
                 // Permissions
                 if let Some(permissions) = map.get("permissions") {
                     workflow.push_str("permissions:\n");
                     workflow.push_str(&self.render_kubernetes_object(permissions, 1)?);
                     workflow.push('\n');
-                }
-
                 // Jobs
                 if let Some(jobs) = map.get("jobs") {
                     workflow.push_str("jobs:\n");
                     workflow.push_str(&self.render_github_actions_jobs(jobs, 1)?);
-                }
-
                 Ok(workflow)
             }
             _ => Err(CursedError::TemplateError {
-                message: "GitHub Actions format requires a map with workflow structure".to_string(),
-                source_location: None,
-            }),
         }
     }
 
@@ -5383,8 +4517,6 @@ impl TemplateFormatRenderer {
         }
 
         Ok(result)
-    }
-
     /// Render GitHub Actions environment variables
     fn render_github_actions_env(&self, env: &CursedObject, indent_level: usize) -> crate::error::Result<()> {
         let indent = "  ".repeat(indent_level);
@@ -5403,14 +4535,7 @@ impl TemplateFormatRenderer {
                 }
             }
             _ => return Err(CursedError::TemplateError {
-                message: "Environment variables must be a map".to_string(),
-                source_location: None,
-            }),
-        }
-
         Ok(result)
-    }
-
     /// Render GitHub Actions jobs
     fn render_github_actions_jobs(&self, jobs: &CursedObject, indent_level: usize) -> crate::error::Result<()> {
         let indent = "  ".repeat(indent_level);
@@ -5425,14 +4550,7 @@ impl TemplateFormatRenderer {
                 }
             }
             _ => return Err(CursedError::TemplateError {
-                message: "Jobs must be a map of job configurations".to_string(),
-                source_location: None,
-            }),
-        }
-
         Ok(result)
-    }
-
     /// Render a single GitHub Actions job
     fn render_github_actions_job(&self, job: &CursedObject, indent_level: usize) -> crate::error::Result<()> {
         let indent = "  ".repeat(indent_level);
@@ -5446,8 +4564,6 @@ impl TemplateFormatRenderer {
                 if let Some(name) = job_map.get("name") {
                     let name_str = self.render_text(name)?;
                     result.push_str(&format!("{}name: {}\n", indent, name_str));
-                }
-
                 // runs-on (required)
                 if let Some(runs_on) = job_map.get("runs-on") {
                     match runs_on {
@@ -5463,8 +4579,6 @@ impl TemplateFormatRenderer {
                             result.push_str(&format!("{}runs-on: {}\n", indent, runs_on_str));
                         }
                     }
-                }
-
                 // Job dependencies
                 if let Some(needs) = job_map.get("needs") {
                     match needs {
@@ -5480,62 +4594,42 @@ impl TemplateFormatRenderer {
                             result.push_str(&format!("{}needs: {}\n", indent, needs_str));
                         }
                     }
-                }
-
                 // Conditional execution
                 if let Some(condition) = job_map.get("if") {
                     let condition_str = self.render_text(condition)?;
                     result.push_str(&format!("{}if: {}\n", indent, condition_str));
-                }
-
                 // Strategy (matrix builds)
                 if let Some(strategy) = job_map.get("strategy") {
                     result.push_str(&format!("{}strategy:\n", indent));
                     result.push_str(&self.render_github_actions_strategy(strategy, indent_level + 1)?);
-                }
-
                 // Job environment variables
                 if let Some(env) = job_map.get("env") {
                     result.push_str(&format!("{}env:\n", indent));
                     result.push_str(&self.render_github_actions_env(env, indent_level + 1)?);
-                }
-
                 // Job outputs
                 if let Some(outputs) = job_map.get("outputs") {
                     result.push_str(&format!("{}outputs:\n", indent));
                     result.push_str(&self.render_kubernetes_object(outputs, indent_level + 1)?);
-                }
-
                 // Job defaults
                 if let Some(defaults) = job_map.get("defaults") {
                     result.push_str(&format!("{}defaults:\n", indent));
                     result.push_str(&self.render_kubernetes_object(defaults, indent_level + 1)?);
-                }
-
                 // Timeout
                 if let Some(timeout_minutes) = job_map.get("timeout-minutes") {
                     let timeout_str = self.render_text(timeout_minutes)?;
                     result.push_str(&format!("{}timeout-minutes: {}\n", indent, timeout_str));
-                }
-
                 // Continue on error
                 if let Some(continue_on_error) = job_map.get("continue-on-error") {
                     let continue_str = self.render_text(continue_on_error)?;
                     result.push_str(&format!("{}continue-on-error: {}\n", indent, continue_str));
-                }
-
                 // Container
                 if let Some(container) = job_map.get("container") {
                     result.push_str(&format!("{}container:\n", indent));
                     result.push_str(&self.render_kubernetes_object(container, indent_level + 1)?);
-                }
-
                 // Services
                 if let Some(services) = job_map.get("services") {
                     result.push_str(&format!("{}services:\n", indent));
                     result.push_str(&self.render_kubernetes_object(services, indent_level + 1)?);
-                }
-
                 // Steps (most important part)
                 if let Some(steps) = job_map.get("steps") {
                     result.push_str(&format!("{}steps:\n", indent));
@@ -5543,14 +4637,7 @@ impl TemplateFormatRenderer {
                 }
             }
             _ => return Err(CursedError::TemplateError {
-                message: "Job configuration must be a map".to_string(),
-                source_location: None,
-            }),
-        }
-
         Ok(result)
-    }
-
     /// Render GitHub Actions strategy (matrix builds)
     fn render_github_actions_strategy(&self, strategy: &CursedObject, indent_level: usize) -> crate::error::Result<()> {
         let indent = "  ".repeat(indent_level);
@@ -5583,14 +4670,10 @@ impl TemplateFormatRenderer {
                             result.push_str(&self.render_kubernetes_object(matrix, indent_level + 1)?);
                         }
                     }
-                }
-
                 // Fail-fast
                 if let Some(fail_fast) = strategy_map.get("fail-fast") {
                     let fail_fast_str = self.render_text(fail_fast)?;
                     result.push_str(&format!("{}fail-fast: {}\n", indent, fail_fast_str));
-                }
-
                 // Max-parallel
                 if let Some(max_parallel) = strategy_map.get("max-parallel") {
                     let max_parallel_str = self.render_text(max_parallel)?;
@@ -5603,8 +4686,6 @@ impl TemplateFormatRenderer {
         }
 
         Ok(result)
-    }
-
     /// Render GitHub Actions steps
     fn render_github_actions_steps(&self, steps: &CursedObject, indent_level: usize) -> crate::error::Result<()> {
         let indent = "  ".repeat(indent_level);
@@ -5618,14 +4699,7 @@ impl TemplateFormatRenderer {
                 }
             }
             _ => return Err(CursedError::TemplateError {
-                message: "Steps must be an array of step configurations".to_string(),
-                source_location: None,
-            }),
-        }
-
         Ok(result)
-    }
-
     /// Render a single GitHub Actions step
     fn render_github_actions_step(&self, step: &CursedObject, indent_level: usize) -> crate::error::Result<()> {
         let indent = "  ".repeat(indent_level);
@@ -5716,8 +4790,6 @@ impl TemplateFormatRenderer {
                             has_content = true;
                         }
                     }
-                }
-
                 // Shell
                 if let Some(shell) = step_map.get("shell") {
                     let shell_str = self.render_text(shell)?;
@@ -5775,14 +4847,7 @@ impl TemplateFormatRenderer {
                 }
             }
             _ => return Err(CursedError::TemplateError {
-                message: "Step must be a map with step configuration".to_string(),
-                source_location: None,
-            }),
-        }
-
         Ok(result)
-    }
-
     /// Render GitHub Actions 'with' parameters
     fn render_github_actions_with(&self, with: &CursedObject, indent_level: usize) -> crate::error::Result<()> {
         let indent = "  ".repeat(indent_level);
@@ -5808,11 +4873,6 @@ impl TemplateFormatRenderer {
                 }
             }
             _ => return Err(CursedError::TemplateError {
-                message: "'with' parameters must be a map".to_string(),
-                source_location: None,
-            }),
-        }
-
         Ok(result)
     }
     /// Render CI/CD configuration
@@ -5825,12 +4885,6 @@ impl TemplateFormatRenderer {
                     .unwrap_or_else(|| Ok("gitlab".to_string()))?;
                 
                 match platform.to_lowercase().as_str() {
-                    "gitlab" | "gitlab-ci" => self.render_gitlab_ci(data),
-                    "github" | "github-actions" => self.render_github_actions(data),
-                    "jenkins" => self.render_jenkins(data),
-                    "travis" => self.render_travis_ci(data),
-                    "circleci" => self.render_circle_ci(data),
-                    "azure" | "azure-pipelines" => self.render_azure_pipelines(data),
                     _ => self.render_gitlab_ci(data), // Default to GitLab CI
                 }
             }
@@ -5854,8 +4908,6 @@ impl TemplateFormatRenderer {
                         }
                     }
                     gitlab_ci.push_str("\n");
-                }
-                
                 // Global variables
                 if let Some(variables) = map.get("variables") {
                     gitlab_ci.push_str("variables:\n");
@@ -5866,8 +4918,6 @@ impl TemplateFormatRenderer {
                         }
                     }
                     gitlab_ci.push_str("\n");
-                }
-                
                 // Before script
                 if let Some(before_script) = map.get("before_script") {
                     gitlab_ci.push_str("before_script:\n");
@@ -5878,8 +4928,6 @@ impl TemplateFormatRenderer {
                         }
                     }
                     gitlab_ci.push_str("\n");
-                }
-                
                 // After script
                 if let Some(after_script) = map.get("after_script") {
                     gitlab_ci.push_str("after_script:\n");
@@ -5890,8 +4938,6 @@ impl TemplateFormatRenderer {
                         }
                     }
                     gitlab_ci.push_str("\n");
-                }
-                
                 // Jobs
                 if let Some(jobs) = map.get("jobs") {
                     if let CursedObject::Map(job_map) = jobs {
@@ -5950,8 +4996,6 @@ impl TemplateFormatRenderer {
                             gitlab_ci.push_str("\n");
                         }
                     }
-                }
-                
                 Ok(gitlab_ci)
             }
             _ => self.render_yaml(data)
@@ -5970,8 +5014,6 @@ impl TemplateFormatRenderer {
                     jenkins.push_str(&format!("    agent {}\n\n", agent_str));
                 } else {
                     jenkins.push_str("    agent any\n\n");
-                }
-                
                 // Environment
                 if let Some(environment) = map.get("environment") {
                     jenkins.push_str("    environment {\n");
@@ -5982,8 +5024,6 @@ impl TemplateFormatRenderer {
                         }
                     }
                     jenkins.push_str("    }\n\n");
-                }
-                
                 // Stages
                 if let Some(stages) = map.get("stages") {
                     jenkins.push_str("    stages {\n");
@@ -6008,8 +5048,6 @@ impl TemplateFormatRenderer {
                         }
                     }
                     jenkins.push_str("    }\n\n");
-                }
-                
                 // Post actions
                 if let Some(post) = map.get("post") {
                     jenkins.push_str("    post {\n");
@@ -6026,14 +5064,10 @@ impl TemplateFormatRenderer {
                         }
                     }
                     jenkins.push_str("    }\n");
-                }
-                
                 jenkins.push_str("}\n");
                 Ok(jenkins)
             }
             _ => Err(CursedError::TemplateError {
-                message: "Jenkins pipeline format requires a map".to_string(),
-                source_location: None,
             })
         }
     }
@@ -6048,18 +5082,9 @@ impl TemplateFormatRenderer {
                 if let Some(language) = map.get("language") {
                     let lang_str = self.render_text(language)?;
                     travis.push_str(&format!("language: {}\n", lang_str));
-                }
-                
                 // Language versions
                 if let Some(versions) = map.get("versions") {
                     match map.get("language").map(|l| self.render_text(l)).unwrap_or_else(|| Ok("generic".to_string()))?.as_str() {
-                        "node_js" => travis.push_str("node_js:\n"),
-                        "python" => travis.push_str("python:\n"),
-                        "ruby" => travis.push_str("ruby:\n"),
-                        "java" => travis.push_str("jdk:\n"),
-                        _ => travis.push_str("versions:\n"),
-                    }
-                    
                     if let CursedObject::Array(version_array) = versions {
                         for version in version_array {
                             let version_str = self.render_text(version)?;
@@ -6067,8 +5092,6 @@ impl TemplateFormatRenderer {
                         }
                     }
                     travis.push_str("\n");
-                }
-                
                 // Environment variables
                 if let Some(env) = map.get("env") {
                     travis.push_str("env:\n");
@@ -6079,17 +5102,8 @@ impl TemplateFormatRenderer {
                         }
                     }
                     travis.push_str("\n");
-                }
-                
                 // Script phases
                 let phases = vec![
-                    ("before_install", "before_install"),
-                    ("install", "install"),
-                    ("before_script", "before_script"),
-                    ("script", "script"),
-                    ("after_success", "after_success"),
-                    ("after_failure", "after_failure"),
-                    ("after_script", "after_script"),
                 ];
                 
                 for (key, section) in phases {
@@ -6130,8 +5144,6 @@ impl TemplateFormatRenderer {
                         }
                     }
                     circle.push_str("\n");
-                }
-                
                 // Jobs
                 if let Some(jobs) = map.get("jobs") {
                     circle.push_str("jobs:\n");
@@ -6142,14 +5154,10 @@ impl TemplateFormatRenderer {
                         }
                     }
                     circle.push_str("\n");
-                }
-                
                 // Workflows
                 if let Some(workflows) = map.get("workflows") {
                     circle.push_str("workflows:\n");
                     circle.push_str(&self.render_kubernetes_object(workflows, 1)?);
-                }
-                
                 Ok(circle)
             }
             _ => self.render_yaml(data)
@@ -6172,8 +5180,6 @@ impl TemplateFormatRenderer {
                         }
                     }
                     azure.push_str("\n");
-                }
-                
                 // Pool
                 if let Some(pool) = map.get("pool") {
                     azure.push_str("pool:\n");
@@ -6187,8 +5193,6 @@ impl TemplateFormatRenderer {
                         azure.push_str(&format!("  vmImage: {}\n", pool_str));
                     }
                     azure.push_str("\n");
-                }
-                
                 // Variables
                 if let Some(variables) = map.get("variables") {
                     azure.push_str("variables:\n");
@@ -6199,8 +5203,6 @@ impl TemplateFormatRenderer {
                         }
                     }
                     azure.push_str("\n");
-                }
-                
                 // Steps
                 if let Some(steps) = map.get("steps") {
                     azure.push_str("steps:\n");
@@ -6210,8 +5212,6 @@ impl TemplateFormatRenderer {
                             azure.push_str(&self.render_azure_step(step)?);
                         }
                     }
-                }
-                
                 Ok(azure)
             }
             _ => self.render_yaml(data)
@@ -6231,8 +5231,6 @@ impl TemplateFormatRenderer {
                 } else if let Some(script) = step_map.get("script") {
                     let script_str = self.render_text(script)?;
                     step_yaml.push_str(&format!("script: {}\n", script_str));
-                }
-                
                 // Other step properties
                 for (key, value) in step_map {
                     if key != "task" && key != "script" {
@@ -6256,8 +5254,6 @@ impl TemplateFormatRenderer {
                 Ok(format!("script: {}\n", step_str))
             }
         }
-    }
-
     /// Render API endpoints
     fn render_api_endpoints(&self, endpoints: &CursedObject) -> crate::error::Result<()> {
         let mut doc = String::new();
@@ -6279,21 +5275,15 @@ impl TemplateFormatRenderer {
                         doc.push_str(&format!("### {} {}\n\n", method.to_uppercase(), path));
                         if !description.is_empty() {
                             doc.push_str(&format!("{}\n\n", description));
-                        }
-                        
                         // Parameters
                         if let Some(parameters) = endpoint_map.get("parameters") {
                             doc.push_str("**Parameters:**\n\n");
                             doc.push_str(&self.render_parameters(parameters)?);
-                        }
-                        
                         // Request body
                         if let Some(request_body) = endpoint_map.get("request_body") {
                             doc.push_str("**Request Body:**\n\n");
                             let body_str = self.render_text(request_body)?;
                             doc.push_str(&format!("```json\n{}\n```\n\n", body_str));
-                        }
-                        
                         // Responses
                         if let Some(responses) = endpoint_map.get("responses") {
                             doc.push_str("**Responses:**\n\n");
@@ -6316,15 +5306,11 @@ impl TemplateFormatRenderer {
                                 }
                             }
                             doc.push_str("\n");
-                        }
-                        
                         // Example
                         if let Some(example) = endpoint_map.get("example") {
                             doc.push_str("**Example:**\n\n");
                             let example_str = self.render_text(example)?;
                             doc.push_str(&format!("```bash\n{}\n```\n\n", example_str));
-                        }
-                        
                         doc.push_str("---\n\n");
                     }
                 }
@@ -6336,8 +5322,6 @@ impl TemplateFormatRenderer {
         }
         
         Ok(doc)
-    }
-    
     /// Render API errors
     fn render_api_errors(&self, errors: &CursedObject) -> crate::error::Result<()> {
         let mut doc = String::new();
@@ -6392,8 +5376,6 @@ impl TemplateFormatRenderer {
         }
         
         Ok(doc)
-    }
-    
     /// Render API examples
     fn render_api_examples(&self, examples: &CursedObject) -> crate::error::Result<()> {
         let mut doc = String::new();
@@ -6411,14 +5393,10 @@ impl TemplateFormatRenderer {
                         if let Some(description) = example_map.get("description") {
                             let desc_str = self.render_text(description)?;
                             doc.push_str(&format!("{}\n\n", desc_str));
-                        }
-                        
                         if let Some(request) = example_map.get("request") {
                             doc.push_str("**Request:**\n\n");
                             let request_str = self.render_text(request)?;
                             doc.push_str(&format!("```bash\n{}\n```\n\n", request_str));
-                        }
-                        
                         if let Some(response) = example_map.get("response") {
                             doc.push_str("**Response:**\n\n");
                             let response_str = self.render_text(response)?;
@@ -6438,8 +5416,6 @@ impl TemplateFormatRenderer {
         }
         
         Ok(doc)
-    }
-
     /// Helper methods for escaping and conversion
     fn escape_html(&self, s: &str) -> String {
         s.replace('&', "&amp;")
@@ -6447,16 +5423,12 @@ impl TemplateFormatRenderer {
          .replace('>', "&gt;")
          .replace('"', "&quot;")
          .replace('\'', "&#x27;")
-    }
-
     fn escape_xml(&self, s: &str) -> String {
         s.replace('&', "&amp;")
          .replace('<', "&lt;")
          .replace('>', "&gt;")
          .replace('"', "&quot;")
          .replace('\'', "&apos;")
-    }
-
     fn escape_csv(&self, s: &str) -> String {
         if s.contains(',') || s.contains('"') || s.contains('\n') {
             format!("\"{}\"", s.replace('"', "\"\""))
@@ -6479,12 +5451,8 @@ impl TemplateFormatRenderer {
             .collect::<String>()
             .trim_matches(|c: char| c.is_ascii_digit())
             .to_string()
-    }
-
     fn cursed_to_json(&self, obj: &CursedObject) -> crate::error::Result<()> {
         match obj {
-            CursedObject::String(s) => Ok(JsonValue::String(s.clone())),
-            CursedObject::Integer(n) => Ok(JsonValue::Number(serde_json::Number::from(*n))),
             CursedObject::Float(n) => {
                 if let Some(num) = serde_json::Number::from_f64(*n) {
                     Ok(JsonValue::Number(num))
@@ -6492,9 +5460,6 @@ impl TemplateFormatRenderer {
                     Ok(JsonValue::Null)
                 }
             }
-            CursedObject::Boolean(b) => Ok(JsonValue::Bool(*b)),
-            CursedObject::Char(c) => Ok(JsonValue::String(c.to_string())),
-            CursedObject::Nil => Ok(JsonValue::Null),
             CursedObject::Array(arr) => {
                 let json_arr: crate::error::Result<()> = arr.iter()
                     .map(|item| self.cursed_to_json(item))
@@ -6509,13 +5474,9 @@ impl TemplateFormatRenderer {
                 Ok(JsonValue::Object(json_map))
             }
         }
-    }
-
     fn cursed_to_csv_value(&self, obj: &CursedObject) -> crate::error::Result<()> {
         let text = self.render_text(obj)?;
         Ok(self.escape_csv(&text))
-    }
-
     /// Get Content-Type header for the format
     pub fn content_type(&self) -> &'static str {
         match &self.format {
@@ -6537,7 +5498,6 @@ impl TemplateFormatRenderer {
                 ConfigFormat::Apache => "text/plain",
                 ConfigFormat::Kubernetes => "application/x-yaml",
                 ConfigFormat::DockerCompose => "application/x-yaml",
-            },
             TemplateFormat::Document(_) => "text/markdown",
             TemplateFormat::Api(api_format) => match api_format {
                 ApiFormat::OpenApi => "application/x-yaml",
@@ -6546,7 +5506,6 @@ impl TemplateFormatRenderer {
                 ApiFormat::JsonSchema => "application/schema+json",
                 ApiFormat::Wsdl => "application/wsdl+xml",
                 ApiFormat::AsyncApi => "application/x-yaml",
-            },
             TemplateFormat::Build(_) => "text/plain",
         }
     }
@@ -6555,37 +5514,27 @@ impl TemplateFormatRenderer {
     pub fn validate(&self, content: &str) -> crate::error::Result<()> {
         if !self.options.validate {
             return Ok(());
-        }
-
         match &self.format {
             TemplateFormat::Json => {
                 serde_json::from_str::<JsonValue>(content)
                     .map_err(|e| CursedError::TemplateError {
-                        message: format!("Invalid JSON: {}", e),
-                        source_location: None,
                     })?;
             }
             TemplateFormat::Yaml => {
                 serde_yaml::from_str::<JsonValue>(content)
                     .map_err(|e| CursedError::TemplateError {
-                        message: format!("Invalid YAML: {}", e),
-                        source_location: None,
                     })?;
             }
             TemplateFormat::Xml => {
                 // Basic XML validation - just check for well-formed structure
                 if !self.is_well_formed_xml(content) {
                     return Err(CursedError::TemplateError {
-                        message: "Invalid XML structure".to_string(),
-                        source_location: None,
                     });
                 }
             }
             _ => {} // No validation for other formats yet
         }
         Ok(())
-    }
-
     /// Basic XML well-formedness check
     fn is_well_formed_xml(&self, content: &str) -> bool {
         let mut stack = Vec::new();
@@ -6626,8 +5575,6 @@ impl TemplateFormatRenderer {
                 }
                 _ => {}
             }
-        }
-        
         stack.is_empty()
     }
 }
@@ -6642,39 +5589,14 @@ impl FormatDetector {
         let extension = path.extension()?.to_str()?.to_lowercase();
         
         match extension.as_str() {
-            "txt" => Some(TemplateFormat::Text),
-            "html" | "htm" => Some(TemplateFormat::Html),
-            "json" => Some(TemplateFormat::Json),
-            "yaml" | "yml" => Some(TemplateFormat::Yaml),
-            "xml" => Some(TemplateFormat::Xml),
-            "md" | "markdown" => Some(TemplateFormat::Markdown),
-            "csv" => Some(TemplateFormat::Csv),
-            "toml" => Some(TemplateFormat::Config(ConfigFormat::Toml)),
-            "ini" => Some(TemplateFormat::Config(ConfigFormat::Ini)),
-            "env" => Some(TemplateFormat::Config(ConfigFormat::Env)),
-            "sh" | "bash" => Some(TemplateFormat::Config(ConfigFormat::Shell)),
-            "dockerfile" => Some(TemplateFormat::Config(ConfigFormat::Dockerfile)),
-            "conf" => Some(TemplateFormat::Config(ConfigFormat::Nginx)),
-            "graphql" | "gql" => Some(TemplateFormat::Api(ApiFormat::GraphQL)),
-            "proto" => Some(TemplateFormat::Api(ApiFormat::Protobuf)),
-            "makefile" | "mk" => Some(TemplateFormat::Build(BuildFormat::Makefile)),
             "rs" if path.file_name().unwrap_or_default() == "build.rs" => {
                 Some(TemplateFormat::Build(BuildFormat::BuildRs))
-            },
             _ => {
                 // Check by filename
                 if let Some(filename) = path.file_name().and_then(|n| n.to_str()) {
                     match filename.to_lowercase().as_str() {
-                        "makefile" => Some(TemplateFormat::Build(BuildFormat::Makefile)),
-                        "dockerfile" => Some(TemplateFormat::Config(ConfigFormat::Dockerfile)),
                         "docker-compose.yml" | "docker-compose.yaml" => {
                             Some(TemplateFormat::Config(ConfigFormat::DockerCompose))
-                        },
-                        "readme.md" | "readme" => Some(TemplateFormat::Document(DocumentFormat::Readme)),
-                        "license" | "license.txt" => Some(TemplateFormat::Document(DocumentFormat::License)),
-                        "changelog.md" | "changelog" => Some(TemplateFormat::Document(DocumentFormat::Changelog)),
-                        "package.json" => Some(TemplateFormat::Build(BuildFormat::PackageJson)),
-                        _ => None,
                     }
                 } else {
                     None
@@ -6699,16 +5621,12 @@ impl FormatDetector {
         if trimmed.starts_with("<?xml") || 
            (trimmed.starts_with('<') && trimmed.ends_with('>')) {
             return Some(TemplateFormat::Xml);
-        }
-        
         // Check for HTML
         if trimmed.contains("<!DOCTYPE html") || 
            trimmed.contains("<html") ||
            trimmed.contains("<head>") ||
            trimmed.contains("<body>") {
             return Some(TemplateFormat::Html);
-        }
-        
         // Check for YAML
         if content.split("\n").any(|line| {
             let line = line.trim();
@@ -6716,25 +5634,15 @@ impl FormatDetector {
             !line.contains('=') && !line.contains('<')
         }) {
             return Some(TemplateFormat::Yaml);
-        }
-        
         // Check for specific formats by content patterns
         if content.split("\n").any(|line| line.trim().starts_with("FROM ")) {
             return Some(TemplateFormat::Config(ConfigFormat::Dockerfile));
-        }
-        
         if content.split("\n").any(|line| line.trim().starts_with("server {")) {
             return Some(TemplateFormat::Config(ConfigFormat::Nginx));
-        }
-        
         if content.contains("openapi:") || content.contains("swagger:") {
             return Some(TemplateFormat::Api(ApiFormat::OpenApi));
-        }
-        
         if content.contains("type Query") || content.contains("type Mutation") {
             return Some(TemplateFormat::Api(ApiFormat::GraphQL));
-        }
-        
         None
     }
 }
@@ -6745,33 +5653,21 @@ pub struct FormatConverter;
 impl FormatConverter {
     /// Convert between formats
     pub fn convert(
-        content: &str,
-        from: TemplateFormat,
-        to: TemplateFormat,
-        data: &CursedObject,
     ) -> crate::error::Result<()> {
         // For now, just re-render with the target format
         let renderer = TemplateFormatRenderer::new(to);
         renderer.render(data)
-    }
-
     /// Compose multiple templates
     pub fn compose(
-        templates: &[(TemplateFormat, &CursedObject)],
-        separator: &str,
     ) -> crate::error::Result<()> {
         let mut result = String::new();
         
         for (i, (format, data)) in templates.iter().enumerate() {
             if i > 0 {
                 result.push_str(separator);
-            }
-            
             let renderer = TemplateFormatRenderer::new(format.clone());
             let rendered = renderer.render(data)?;
             result.push_str(&rendered);
-        }
-        
         Ok(result)
     }
 }

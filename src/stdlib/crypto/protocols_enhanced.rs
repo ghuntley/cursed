@@ -36,31 +36,17 @@ use crate::error::CursedError;
 #[derive(Debug, Clone, PartialEq)]
 pub enum ProtocolError {
     /// Handshake failed
-    HandshakeFailed(String),
     /// Invalid message
-    InvalidMessage(String),
     /// Authentication failed
-    AuthenticationFailed(String),
     /// Key exchange failed
-    KeyExchangeFailed(String),
     /// Protocol violation
-    ProtocolViolation(String),
     /// Invalid state
-    InvalidState(String),
     /// Verification failed
-    VerificationFailed(String),
     /// Timeout occurred
-    Timeout(String),
     /// Configuration error
-    ConfigurationError(String),
     /// Cryptographic error
-    CryptographicError(String),
     /// Channel error
-    ChannelError(String),
     /// Internal error
-    InternalError(String),
-}
-
 // impl fmt::Display for ProtocolError {
 //     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
 //         match self {
@@ -94,17 +80,9 @@ pub type ProtocolResult<T> = std::result::Result<T, ProtocolError>;
 /// Security level for protocols
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum SecurityLevel {
-    Level128,
-    Level192,
-    Level256,
-}
-
 impl SecurityLevel {
     pub fn bits(&self) -> u32 {
         match self {
-            SecurityLevel::Level128 => 128,
-            SecurityLevel::Level192 => 192,
-            SecurityLevel::Level256 => 256,
         }
     }
 
@@ -115,8 +93,6 @@ impl SecurityLevel {
             SecurityLevel::Level256 => 64,  // 512 bits
         }
     }
-}
-
 /// Cryptographic primitives helper
 struct CryptoPrimitives;
 
@@ -126,8 +102,6 @@ impl CryptoPrimitives {
         let mut bytes = vec![0u8; len];
         OsRng.fill_bytes(&mut bytes);
         bytes
-    }
-
     /// HKDF key derivation
     fn hkdf(ikm: &[u8], salt: &[u8], info: &[u8], length: usize) -> ProtocolResult<Vec<u8>> {
         type HmacSha256 = Hmac<sha2::Sha256>;
@@ -151,12 +125,8 @@ impl CryptoPrimitives {
             expand_mac.update(&[i as u8]);
             t = expand_mac.finalize().into_bytes().to_vec();
             output.extend_from_slice(&t);
-        }
-
         output.truncate(length);
         Ok(output)
-    }
-
     /// AEAD encryption (simplified ChaCha20-Poly1305)
     fn aead_encrypt(key: &[u8], nonce: &[u8], plaintext: &[u8], aad: &[u8]) -> ProtocolResult<Vec<u8>> {
         // Simplified AEAD using HMAC for authentication
@@ -166,22 +136,16 @@ impl CryptoPrimitives {
         let keystream = Self::generate_keystream(key, nonce, plaintext.len())?;
         for (c, k) in ciphertext.iter_mut().zip(keystream.iter()) {
             *c ^= k;
-        }
-
         // Compute authentication tag
         let tag = Self::compute_auth_tag(key, nonce, &ciphertext, aad)?;
         
         // Append tag to ciphertext
         ciphertext.extend_from_slice(&tag);
         Ok(ciphertext)
-    }
-
     /// AEAD decryption
     fn aead_decrypt(key: &[u8], nonce: &[u8], ciphertext: &[u8], aad: &[u8]) -> ProtocolResult<Vec<u8>> {
         if ciphertext.len() < 16 {
             return Err(ProtocolError::CryptographicError("Ciphertext too short".to_string()));
-        }
-
         // Split ciphertext and tag
         let (ct, tag) = ciphertext.split_at(ciphertext.len() - 16);
         
@@ -189,18 +153,12 @@ impl CryptoPrimitives {
         let expected_tag = Self::compute_auth_tag(key, nonce, ct, aad)?;
         if !Self::constant_time_eq(tag, &expected_tag) {
             return Err(ProtocolError::CryptographicError("Authentication failed".to_string()));
-        }
-
         // Decrypt
         let mut plaintext = ct.to_vec();
         let keystream = Self::generate_keystream(key, nonce, ct.len())?;
         for (p, k) in plaintext.iter_mut().zip(keystream.iter()) {
             *p ^= k;
-        }
-
         Ok(plaintext)
-    }
-
     fn generate_keystream(key: &[u8], nonce: &[u8], length: usize) -> ProtocolResult<Vec<u8>> {
         let mut keystream = Vec::with_capacity(length);
         let mut counter = 0u64;
@@ -218,11 +176,7 @@ impl CryptoPrimitives {
             keystream.extend_from_slice(&block[..take]);
             
             counter += 1;
-        }
-
         Ok(keystream)
-    }
-
     fn compute_auth_tag(key: &[u8], nonce: &[u8], data: &[u8], aad: &[u8]) -> ProtocolResult<Vec<u8>> {
         type HmacSha256 = Hmac<sha2::Sha256>;
         
@@ -235,18 +189,12 @@ impl CryptoPrimitives {
         
         let tag = mac.finalize().into_bytes();
         Ok(tag[..16].to_vec()) // Truncate to 128 bits
-    }
-
     fn constant_time_eq(a: &[u8], b: &[u8]) -> bool {
         if a.len() != b.len() {
             return false;
-        }
-        
         let mut result = 0u8;
         for (x, y) in a.iter().zip(b.iter()) {
             result |= x ^ y;
-        }
-        
         result == 0
     }
 }
@@ -258,95 +206,29 @@ impl CryptoPrimitives {
 /// TLS version enumeration
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum TlsVersion {
-    Tls12,
-    Tls13,
-}
-
 /// TLS cipher suite
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum CipherSuite {
-    ChaCha20Poly1305,
-    Aes256Gcm,
-    Aes128Gcm,
-}
-
 /// TLS handshake state
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum HandshakeState {
-    Initial,
-    ClientHelloSent,
-    ServerHelloReceived,
-    CertificateReceived,
-    KeyExchangeComplete,
-    Finished,
-    Failed,
-}
-
 /// TLS message types
 #[derive(Debug, Clone)]
 pub enum TlsMessage {
     ClientHello {
-        version: TlsVersion,
-        random: Vec<u8>,
-        cipher_suites: Vec<CipherSuite>,
-        extensions: HashMap<String, Vec<u8>>,
-    },
     ServerHello {
-        version: TlsVersion,
-        random: Vec<u8>,
-        cipher_suite: CipherSuite,
-        extensions: HashMap<String, Vec<u8>>,
-    },
     Certificate {
-        certificates: Vec<Vec<u8>>,
-    },
     ServerKeyExchange {
-        key_exchange_data: Vec<u8>,
-    },
     ClientKeyExchange {
-        encrypted_premaster: Vec<u8>,
-    },
     Finished {
-        verify_data: Vec<u8>,
-    },
-}
-
 /// TLS handshake simulator
 pub struct TlsHandshake {
-    pub version: TlsVersion,
-    pub state: HandshakeState,
-    pub security_level: SecurityLevel,
-    pub client_random: Vec<u8>,
-    pub server_random: Vec<u8>,
-    pub premaster_secret: Vec<u8>,
-    pub master_secret: Vec<u8>,
-    pub session_keys: TlsSessionKeys,
-    pub cipher_suite: Option<CipherSuite>,
-}
-
 #[derive(Debug, Clone, Default)]
 pub struct TlsSessionKeys {
-    pub client_write_key: Vec<u8>,
-    pub server_write_key: Vec<u8>,
-    pub client_write_iv: Vec<u8>,
-    pub server_write_iv: Vec<u8>,
-    pub client_mac_key: Vec<u8>,
-    pub server_mac_key: Vec<u8>,
-}
-
 impl TlsHandshake {
     /// Create new TLS handshake
     pub fn new(version: TlsVersion, security_level: SecurityLevel) -> Self {
         Self {
-            version,
-            state: HandshakeState::Initial,
-            security_level,
-            client_random: Vec::new(),
-            server_random: Vec::new(),
-            premaster_secret: Vec::new(),
-            master_secret: Vec::new(),
-            session_keys: TlsSessionKeys::default(),
-            cipher_suite: None,
         }
     }
 
@@ -354,8 +236,6 @@ impl TlsHandshake {
     pub fn client_hello(&mut self) -> ProtocolResult<TlsMessage> {
         if self.state != HandshakeState::Initial {
             return Err(ProtocolError::InvalidState("Expected initial state".to_string()));
-        }
-
         self.client_random = CryptoPrimitives::random_bytes(32);
         
         let mut extensions = HashMap::new();
@@ -365,31 +245,20 @@ impl TlsHandshake {
         self.state = HandshakeState::ClientHelloSent;
         
         Ok(TlsMessage::ClientHello {
-            version: self.version,
-            random: self.client_random.clone(),
-            cipher_suites: vec![CipherSuite::ChaCha20Poly1305, CipherSuite::Aes256Gcm],
-            extensions,
         })
-    }
-
     /// Process server hello message
     pub fn process_server_hello(&mut self, message: &TlsMessage) -> ProtocolResult<()> {
         if self.state != HandshakeState::ClientHelloSent {
             return Err(ProtocolError::InvalidState("Expected client hello sent state".to_string()));
-        }
-
         match message {
             TlsMessage::ServerHello { version, random, cipher_suite, extensions } => {
                 if *version != self.version {
                     return Err(ProtocolError::ProtocolViolation("Version mismatch".to_string()));
-                }
-
                 self.server_random = random.clone();
                 self.cipher_suite = Some(*cipher_suite);
                 self.state = HandshakeState::ServerHelloReceived;
                 Ok(())
             }
-            _ => Err(ProtocolError::InvalidMessage("Expected ServerHello".to_string())),
         }
     }
 
@@ -397,20 +266,15 @@ impl TlsHandshake {
     pub fn process_certificate(&mut self, message: &TlsMessage) -> ProtocolResult<()> {
         if self.state != HandshakeState::ServerHelloReceived {
             return Err(ProtocolError::InvalidState("Expected server hello received state".to_string()));
-        }
-
         match message {
             TlsMessage::Certificate { certificates } => {
                 if certificates.is_empty() {
                     return Err(ProtocolError::InvalidMessage("No certificates provided".to_string()));
-                }
-
                 // Simplified certificate validation
                 self.validate_certificate_chain(certificates)?;
                 self.state = HandshakeState::CertificateReceived;
                 Ok(())
             }
-            _ => Err(ProtocolError::InvalidMessage("Expected Certificate".to_string())),
         }
     }
 
@@ -418,8 +282,6 @@ impl TlsHandshake {
     pub fn client_key_exchange(&mut self) -> ProtocolResult<TlsMessage> {
         if self.state != HandshakeState::CertificateReceived {
             return Err(ProtocolError::InvalidState("Expected certificate received state".to_string()));
-        }
-
         // Generate premaster secret
         self.premaster_secret = CryptoPrimitives::random_bytes(48);
         self.premaster_secret[0] = 0x03; // TLS version major
@@ -437,22 +299,15 @@ impl TlsHandshake {
         self.state = HandshakeState::KeyExchangeComplete;
 
         Ok(TlsMessage::ClientKeyExchange {
-            encrypted_premaster,
         })
-    }
-
     /// Generate finished message
     pub fn client_finished(&mut self) -> ProtocolResult<TlsMessage> {
         if self.state != HandshakeState::KeyExchangeComplete {
             return Err(ProtocolError::InvalidState("Expected key exchange complete state".to_string()));
-        }
-
         let verify_data = self.compute_finished_data("client")?;
         self.state = HandshakeState::Finished;
 
         Ok(TlsMessage::Finished { verify_data })
-    }
-
     /// Verify server finished message
     pub fn verify_server_finished(&mut self, message: &TlsMessage) -> ProtocolResult<bool> {
         match message {
@@ -460,7 +315,6 @@ impl TlsHandshake {
                 let expected_verify_data = self.compute_finished_data("server")?;
                 Ok(CryptoPrimitives::constant_time_eq(verify_data, &expected_verify_data))
             }
-            _ => Err(ProtocolError::InvalidMessage("Expected Finished".to_string())),
         }
     }
 
@@ -473,8 +327,6 @@ impl TlsHandshake {
         summary.insert("security_level".to_string(), format!("{} bits", self.security_level.bits()));
         summary.insert("completed".to_string(), (self.state == HandshakeState::Finished).to_string());
         summary
-    }
-
     // Private helper methods
 
     fn validate_certificate_chain(&self, certificates: &[Vec<u8>]) -> ProtocolResult<()> {
@@ -485,8 +337,6 @@ impl TlsHandshake {
             }
         }
         Ok(())
-    }
-
     fn encrypt_premaster_secret(&self, premaster: &[u8]) -> ProtocolResult<Vec<u8>> {
         // Simplified RSA encryption simulation
         let mut encrypted = premaster.to_vec();
@@ -502,28 +352,17 @@ impl TlsHandshake {
         let hash = hasher.finalize();
         
         Ok(hash.to_vec())
-    }
-
     fn derive_master_secret(&mut self) -> ProtocolResult<()> {
         let seed = [&self.client_random[..], &self.server_random[..]].concat();
         
         self.master_secret = CryptoPrimitives::hkdf(
-            &self.premaster_secret,
-            &seed,
-            b"master secret",
-            48,
         )?;
         
         Ok(())
-    }
-
     fn generate_session_keys(&mut self) -> ProtocolResult<()> {
         let seed = [&self.server_random[..], &self.client_random[..]].concat();
         
         let key_material = CryptoPrimitives::hkdf(
-            &self.master_secret,
-            &seed,
-            b"key expansion",
             128, // Enough for all keys
         )?;
 
@@ -552,8 +391,6 @@ impl TlsHandshake {
         self.session_keys.server_write_iv = key_material[offset..offset + iv_size].to_vec();
 
         Ok(())
-    }
-
     fn compute_finished_data(&self, label: &str) -> ProtocolResult<Vec<u8>> {
         // Simplified finished message computation
         let mut hasher = Sha3_256::new();
@@ -575,10 +412,6 @@ impl TlsHandshake {
 /// Signal protocol key pair
 #[derive(Debug, Clone)]
 pub struct SignalKeyPair {
-    pub private_key: Vec<u8>,
-    pub public_key: Vec<u8>,
-}
-
 /// Double ratchet state
 #[derive(Debug, Clone)]
 pub struct DoubleRatchetState {
@@ -591,42 +424,19 @@ pub struct DoubleRatchetState {
     pub ns: u32,                  // Number of messages in sending chain
     pub nr: u32,                  // Number of messages in receiving chain
     pub mkskipped: HashMap<(Vec<u8>, u32), Vec<u8>>, // Skipped message keys
-}
-
 /// Signal protocol implementation
 pub struct SignalProtocol {
-    pub state: DoubleRatchetState,
-    pub security_level: SecurityLevel,
-}
-
 impl SignalProtocol {
     /// Initialize Signal protocol
     pub fn new(security_level: SecurityLevel) -> ProtocolResult<Self> {
         let dh_s = Self::generate_key_pair()?;
         
         let state = DoubleRatchetState {
-            dh_s,
-            dh_r: None,
-            root_key: CryptoPrimitives::random_bytes(32),
-            chain_key_s: vec![0u8; 32],
-            chain_key_r: vec![0u8; 32],
-            pn: 0,
-            ns: 0,
-            nr: 0,
-            mkskipped: HashMap::new(),
-        };
 
         Ok(Self {
-            state,
-            security_level,
         })
-    }
-
     /// Initialize from shared secret (Alice)
     pub fn initialize_alice(
-        shared_secret: &[u8],
-        bob_public_key: &[u8],
-        security_level: SecurityLevel,
     ) -> ProtocolResult<Self> {
         let mut protocol = Self::new(security_level)?;
         
@@ -640,18 +450,12 @@ impl SignalProtocol {
         protocol.state.chain_key_s = chain_key;
         
         Ok(protocol)
-    }
-
     /// Initialize from shared secret (Bob)
     pub fn initialize_bob(
-        shared_secret: &[u8],
-        security_level: SecurityLevel,
     ) -> ProtocolResult<Self> {
         let mut protocol = Self::new(security_level)?;
         protocol.state.root_key = shared_secret.to_vec();
         Ok(protocol)
-    }
-
     /// Encrypt message
     pub fn encrypt(&mut self, plaintext: &[u8], associated_data: &[u8]) -> ProtocolResult<Vec<u8>> {
         let (chain_key, message_key) = self.kdf_ck(&self.state.chain_key_s)?;
@@ -659,10 +463,6 @@ impl SignalProtocol {
         
         let header = self.encode_header()?;
         let ciphertext = CryptoPrimitives::aead_encrypt(
-            &message_key,
-            &self.generate_nonce(self.state.ns),
-            plaintext,
-            associated_data,
         )?;
         
         self.state.ns += 1;
@@ -671,8 +471,6 @@ impl SignalProtocol {
         let mut result = header;
         result.extend_from_slice(&ciphertext);
         Ok(result)
-    }
-
     /// Decrypt message
     pub fn decrypt(&mut self, message: &[u8], associated_data: &[u8]) -> ProtocolResult<Vec<u8>> {
         let (header, ciphertext) = self.decode_message(message)?;
@@ -680,19 +478,11 @@ impl SignalProtocol {
         // Check if we need to skip messages
         if let Some(message_key) = self.try_skipped_message_key(&header)? {
             return CryptoPrimitives::aead_decrypt(
-                &message_key,
-                &self.generate_nonce(header.message_number),
-                ciphertext,
-                associated_data,
             );
-        }
-
         // Check if we need to perform DH ratchet step
         if Some(&header.public_key) != self.state.dh_r.as_ref() {
             self.skip_message_keys(header.previous_chain_length)?;
             self.dh_ratchet(&header.public_key)?;
-        }
-
         // Skip message keys if needed
         self.skip_message_keys(header.message_number)?;
 
@@ -702,13 +492,7 @@ impl SignalProtocol {
         self.state.nr += 1;
 
         CryptoPrimitives::aead_decrypt(
-            &message_key,
-            &self.generate_nonce(header.message_number),
-            ciphertext,
-            associated_data,
         )
-    }
-
     /// Get current state summary
     pub fn get_state_summary(&self) -> HashMap<String, String> {
         let mut summary = HashMap::new();
@@ -718,8 +502,6 @@ impl SignalProtocol {
         summary.insert("has_remote_key".to_string(), self.state.dh_r.is_some().to_string());
         summary.insert("skipped_keys".to_string(), self.state.mkskipped.len().to_string());
         summary
-    }
-
     // Private helper methods
 
     fn generate_key_pair() -> ProtocolResult<SignalKeyPair> {
@@ -732,11 +514,7 @@ impl SignalProtocol {
         let public_key = hasher.finalize().to_vec();
 
         Ok(SignalKeyPair {
-            private_key,
-            public_key,
         })
-    }
-
     fn dh(&self, private_key: &[u8], public_key: &[u8]) -> ProtocolResult<Vec<u8>> {
         // Simplified Diffie-Hellman using hash combination
         let mut hasher = Blake3Hasher::new();
@@ -747,8 +525,6 @@ impl SignalProtocol {
         let mut output = [0u8; 32];
         hasher.finalize_xof().fill(&mut output);
         Ok(output.to_vec())
-    }
-
     fn kdf_rk(&self, root_key: &[u8], dh_out: &[u8]) -> ProtocolResult<(Vec<u8>, Vec<u8>)> {
         let key_material = CryptoPrimitives::hkdf(root_key, dh_out, b"signal_kdf_rk", 64)?;
         
@@ -756,8 +532,6 @@ impl SignalProtocol {
         let new_chain_key = key_material[32..64].to_vec();
         
         Ok((new_root_key, new_chain_key))
-    }
-
     fn kdf_ck(&self, chain_key: &[u8]) -> ProtocolResult<(Vec<u8>, Vec<u8>)> {
         type HmacSha256 = Hmac<sha2::Sha256>;
         
@@ -774,8 +548,6 @@ impl SignalProtocol {
         let message_key = message_mac.finalize().into_bytes().to_vec();
 
         Ok((new_chain_key, message_key))
-    }
-
     fn dh_ratchet(&mut self, remote_public_key: &[u8]) -> ProtocolResult<()> {
         self.state.pn = self.state.ns;
         self.state.ns = 0;
@@ -800,32 +572,20 @@ impl SignalProtocol {
         self.state.chain_key_s = chain_key_s;
 
         Ok(())
-    }
-
     fn skip_message_keys(&mut self, until: u32) -> ProtocolResult<()> {
         if self.state.nr + 1000 < until {
             return Err(ProtocolError::ProtocolViolation("Too many skipped messages".to_string()));
-        }
-
         while self.state.nr < until {
             let (chain_key, message_key) = self.kdf_ck(&self.state.chain_key_r)?;
             self.state.chain_key_r = chain_key;
             
             if let Some(dh_r) = &self.state.dh_r {
                 self.state.mkskipped.insert((dh_r.clone(), self.state.nr), message_key);
-            }
-            
             self.state.nr += 1;
-        }
-
         Ok(())
-    }
-
     fn try_skipped_message_key(&mut self, header: &MessageHeader) -> ProtocolResult<Option<Vec<u8>>> {
         let key = (header.public_key.clone(), header.message_number);
         Ok(self.state.mkskipped.remove(&key))
-    }
-
     fn encode_header(&self) -> ProtocolResult<Vec<u8>> {
         let mut header = Vec::new();
         
@@ -839,30 +599,18 @@ impl SignalProtocol {
         header.extend_from_slice(&self.state.ns.to_le_bytes());
         
         Ok(header)
-    }
-
     fn decode_message(&self, message: &[u8]) -> ProtocolResult<(MessageHeader, &[u8])> {
         if message.len() < 40 {
             return Err(ProtocolError::InvalidMessage("Message too short".to_string()));
-        }
-
         let public_key = message[0..32].to_vec();
         let previous_chain_length = u32::from_le_bytes([
-            message[32], message[33], message[34], message[35],
         ]);
         let message_number = u32::from_le_bytes([
-            message[36], message[37], message[38], message[39],
         ]);
 
         let header = MessageHeader {
-            public_key,
-            previous_chain_length,
-            message_number,
-        };
 
         Ok((header, &message[40..]))
-    }
-
     fn generate_nonce(&self, message_number: u32) -> Vec<u8> {
         let mut nonce = vec![0u8; 12];
         nonce[8..12].copy_from_slice(&message_number.to_le_bytes());
@@ -872,33 +620,16 @@ impl SignalProtocol {
 
 #[derive(Debug, Clone)]
 struct MessageHeader {
-    pub public_key: Vec<u8>,
-    pub previous_chain_length: u32,
-    pub message_number: u32,
-}
-
 // ============================================================================
 // PERFECT FORWARD SECRECY
 // ============================================================================
 
 /// Perfect Forward Secrecy manager
 pub struct PerfectForwardSecrecy {
-    pub security_level: SecurityLevel,
-    pub key_rotation_interval: Duration,
-    pub current_epoch: u64,
-    pub ephemeral_keys: HashMap<u64, Vec<u8>>,
-    pub last_rotation: SystemTime,
-}
-
 impl PerfectForwardSecrecy {
     /// Create new PFS manager
     pub fn new(security_level: SecurityLevel, rotation_interval: Duration) -> Self {
         Self {
-            security_level,
-            key_rotation_interval: rotation_interval,
-            current_epoch: 0,
-            ephemeral_keys: HashMap::new(),
-            last_rotation: SystemTime::now(),
         }
     }
 
@@ -927,31 +658,21 @@ impl PerfectForwardSecrecy {
         // Clean up old keys (keep last 10 epochs)
         if self.current_epoch > 10 {
             self.ephemeral_keys.remove(&(self.current_epoch - 10));
-        }
-        
         self.current_epoch += 1;
         self.last_rotation = SystemTime::now();
         
         Ok(())
-    }
-
     /// Get current ephemeral key
     pub fn get_current_key(&self) -> ProtocolResult<Vec<u8>> {
         if self.current_epoch == 0 {
             return Err(ProtocolError::InvalidState("No keys available".to_string()));
-        }
-        
         self.ephemeral_keys
             .get(&(self.current_epoch - 1))
             .cloned()
             .ok_or_else(|| ProtocolError::InternalError("Current key not found".to_string()))
-    }
-
     /// Get key for specific epoch
     pub fn get_key_for_epoch(&self, epoch: u64) -> Option<Vec<u8>> {
         self.ephemeral_keys.get(&epoch).cloned()
-    }
-
     /// Get PFS statistics
     pub fn get_statistics(&self) -> HashMap<String, String> {
         let mut stats = HashMap::new();
@@ -975,43 +696,16 @@ impl PerfectForwardSecrecy {
 /// Secure channel state
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum ChannelState {
-    Uninitialized,
-    Handshaking,
-    Established,
-    Closing,
-    Closed,
-    CursedError,
-}
-
 /// Secure channel implementation
 pub struct SecureChannel {
-    pub state: ChannelState,
-    pub security_level: SecurityLevel,
-    pub session_id: Vec<u8>,
-    pub encryption_key: Vec<u8>,
-    pub mac_key: Vec<u8>,
-    pub send_sequence: u64,
-    pub receive_sequence: u64,
-    pub pfs_manager: PerfectForwardSecrecy,
-}
-
 impl SecureChannel {
     /// Create new secure channel
     pub fn new(security_level: SecurityLevel) -> Self {
         let pfs_manager = PerfectForwardSecrecy::new(
-            security_level,
             Duration::from_secs(3600), // 1 hour rotation
         );
 
         Self {
-            state: ChannelState::Uninitialized,
-            security_level,
-            session_id: CryptoPrimitives::random_bytes(16),
-            encryption_key: Vec::new(),
-            mac_key: Vec::new(),
-            send_sequence: 0,
-            receive_sequence: 0,
-            pfs_manager,
         }
     }
 
@@ -1019,16 +713,10 @@ impl SecureChannel {
     pub fn establish(&mut self, shared_secret: &[u8]) -> ProtocolResult<()> {
         if self.state != ChannelState::Uninitialized {
             return Err(ProtocolError::InvalidState("Channel already initialized".to_string()));
-        }
-
         self.state = ChannelState::Handshaking;
 
         // Derive session keys
         let key_material = CryptoPrimitives::hkdf(
-            shared_secret,
-            &self.session_id,
-            b"secure_channel",
-            64,
         )?;
 
         self.encryption_key = key_material[..32].to_vec();
@@ -1039,14 +727,10 @@ impl SecureChannel {
 
         self.state = ChannelState::Established;
         Ok(())
-    }
-
     /// Send message over secure channel
     pub fn send(&mut self, message: &[u8]) -> ProtocolResult<Vec<u8>> {
         if self.state != ChannelState::Established {
             return Err(ProtocolError::InvalidState("Channel not established".to_string()));
-        }
-
         // Rotate keys if needed
         self.pfs_manager.maybe_rotate_keys()?;
 
@@ -1061,10 +745,6 @@ impl SecureChannel {
 
         // Encrypt message
         let ciphertext = CryptoPrimitives::aead_encrypt(
-            &self.encryption_key,
-            &nonce,
-            message,
-            &aad,
         )?;
 
         self.send_sequence += 1;
@@ -1075,29 +755,19 @@ impl SecureChannel {
         packet.extend_from_slice(&ciphertext);
 
         Ok(packet)
-    }
-
     /// Receive message from secure channel
     pub fn receive(&mut self, packet: &[u8]) -> ProtocolResult<Vec<u8>> {
         if self.state != ChannelState::Established {
             return Err(ProtocolError::InvalidState("Channel not established".to_string()));
-        }
-
         if packet.len() < 8 {
             return Err(ProtocolError::InvalidMessage("Packet too short".to_string()));
-        }
-
         // Extract sequence number
         let sequence = u64::from_le_bytes([
-            packet[0], packet[1], packet[2], packet[3],
-            packet[4], packet[5], packet[6], packet[7],
         ]);
 
         // Check sequence number
         if sequence != self.receive_sequence + 1 {
             return Err(ProtocolError::ProtocolViolation("Invalid sequence number".to_string()));
-        }
-
         let ciphertext = &packet[8..];
 
         // Prepare associated data
@@ -1111,16 +781,10 @@ impl SecureChannel {
 
         // Decrypt message
         let plaintext = CryptoPrimitives::aead_decrypt(
-            &self.encryption_key,
-            &nonce,
-            ciphertext,
-            &aad,
         )?;
 
         self.receive_sequence = sequence;
         Ok(plaintext)
-    }
-
     /// Close secure channel
     pub fn close(&mut self) -> ProtocolResult<()> {
         self.state = ChannelState::Closing;
@@ -1131,8 +795,6 @@ impl SecureChannel {
         
         self.state = ChannelState::Closed;
         Ok(())
-    }
-
     /// Get channel statistics
     pub fn get_statistics(&self) -> HashMap<String, String> {
         let mut stats = HashMap::new();
@@ -1146,8 +808,6 @@ impl SecureChannel {
         let pfs_stats = self.pfs_manager.get_statistics();
         for (key, value) in pfs_stats {
             stats.insert(format!("pfs_{}", key), value);
-        }
-        
         stats
     }
 }

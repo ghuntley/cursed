@@ -9,58 +9,38 @@ pub fn run_with_timeout(mut command: SlayCommand, timeout: Duration) -> SlayResu
     // Apply timeout to command options
     command.options.timeout = Some(timeout);
     command.run()
-}
-
 /// Run a command with a timeout and return output
 pub fn output_with_timeout(mut command: SlayCommand, timeout: Duration) -> SlayResult<Vec<u8>> {
     // Apply timeout to command options
     command.options.timeout = Some(timeout);
     command.output()
-}
-
 /// Run a command with a timeout and return combined output
 pub fn combined_output_with_timeout(mut command: SlayCommand, timeout: Duration) -> SlayResult<Vec<u8>> {
     // Apply timeout to command options
     command.options.timeout = Some(timeout);
     command.combined_output()
-}
-
 /// Run a command with a timeout using command name and args directly
 pub fn run_command_with_timeout(name: &str, args: &[&str], timeout: Duration) -> SlayResult<()> {
     let command = SlayCommand::new(name, args);
     run_with_timeout(command, timeout)
-}
-
 /// Get output from a command with timeout using command name and args directly
 pub fn get_output_with_timeout(name: &str, args: &[&str], timeout: Duration) -> SlayResult<Vec<u8>> {
     let command = SlayCommand::new(name, args);
     output_with_timeout(command, timeout)
-}
-
 /// Get combined output from a command with timeout using command name and args directly
 pub fn get_combined_output_with_timeout(name: &str, args: &[&str], timeout: Duration) -> SlayResult<Vec<u8>> {
     let command = SlayCommand::new(name, args);
     combined_output_with_timeout(command, timeout)
-}
-
 /// Timeout configuration builder
 #[derive(Debug, Clone)]
 pub struct TimeoutConfig {
     /// Command execution timeout
-    pub execution_timeout: Option<Duration>,
     /// Timeout for waiting before force kill
-    pub kill_timeout: Option<Duration>,
     /// Timeout for I/O operations
-    pub io_timeout: Option<Duration>,
-}
-
 impl TimeoutConfig {
     /// Create a new timeout configuration
     pub fn new() -> Self {
         Self {
-            execution_timeout: None,
-            kill_timeout: None,
-            io_timeout: None,
         }
     }
 
@@ -68,20 +48,14 @@ impl TimeoutConfig {
     pub fn with_execution_timeout(mut self, timeout: Duration) -> Self {
         self.execution_timeout = Some(timeout);
         self
-    }
-
     /// Set kill timeout
     pub fn with_kill_timeout(mut self, timeout: Duration) -> Self {
         self.kill_timeout = Some(timeout);
         self
-    }
-
     /// Set I/O timeout
     pub fn with_io_timeout(mut self, timeout: Duration) -> Self {
         self.io_timeout = Some(timeout);
         self
-    }
-
     /// Apply this configuration to a command
     pub fn apply_to_command(self, mut command: SlayCommand) -> SlayCommand {
         if let Some(timeout) = self.execution_timeout {
@@ -108,7 +82,6 @@ pub mod utils {
     /// Execute a function with a timeout
     pub fn with_timeout<F, T>(timeout: Duration, f: F) -> SlayResult<T>
     where
-        F: FnOnce() -> SlayResult<T>,
     {
         let start = Instant::now();
         
@@ -126,13 +99,9 @@ pub mod utils {
     /// Sleep for a duration (useful in timeout scenarios)
     pub fn sleep(duration: Duration) {
         std::thread::sleep(duration);
-    }
-
     /// Get current time (useful for timeout calculations)
     pub fn now() -> Instant {
         Instant::now()
-    }
-
     /// Check if duration has elapsed since start time
     pub fn has_elapsed(start: Instant, duration: Duration) -> bool {
         start.elapsed() >= duration

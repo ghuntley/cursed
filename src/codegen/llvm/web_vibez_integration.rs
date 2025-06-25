@@ -18,60 +18,32 @@ use crate::memory::object_id::{ObjectId, ObjectIdGenerator, ObjectMetadata, Obje
 
 /// LLVM Integration for web_vibez HTTP functionality
 pub struct WebVibezLlvmIntegration<'ctx> {
-    context: &'ctx Context,
-    module: &'ctx Module<'ctx>,
-    builder: Builder<'ctx>,
     
     // HTTP type mappings
-    http_types: HttpTypeRegistry<'ctx>,
     
     // Function declarations cache
-    function_declarations: HashMap<String, FunctionValue<'ctx>>,
     
     // Runtime linking for system functions
-    runtime_functions: HashMap<String, FunctionValue<'ctx>>,
     
     // GC integration
-    gc_metadata: GcMetadataRegistry<'ctx>,
     
     // Object ID generator for GC tracking
-    object_id_generator: ObjectIdGenerator,
     
     // Object registry for GC management
-    object_registry: SharedObjectRegistry,
-}
-
 /// Type registry for HTTP-related LLVM types
 pub struct HttpTypeRegistry<'ctx> {
     // Core HTTP types
-    http_server_type: StructType<'ctx>,
-    http_request_type: StructType<'ctx>,
-    http_response_type: StructType<'ctx>,
-    response_writer_type: StructType<'ctx>,
     
     // Utility types
-    headers_type: StructType<'ctx>,
-    status_code_type: IntType<'ctx>,
-    http_method_type: IntType<'ctx>,
     
     // String and buffer types
-    string_type: StructType<'ctx>,
-    buffer_type: StructType<'ctx>,
     
     // CursedError types
-    web_error_type: StructType<'ctx>,
-}
-
 /// GC metadata registry for memory management
 pub struct GcMetadataRegistry<'ctx> {
     // GC-managed types that need cleanup
-    gc_object_types: HashMap<String, StructType<'ctx>>,
     // Reference counting functions
-    ref_count_funcs: HashMap<String, FunctionValue<'ctx>>,
     // Cleanup functions
-    cleanup_funcs: HashMap<String, FunctionValue<'ctx>>,
-}
-
 impl<'ctx> WebVibezLlvmIntegration<'ctx> {
     /// Create new web_vibez LLVM integration
     pub fn new(context: &'ctx Context, module: &'ctx Module<'ctx>) -> crate::error::Result<()> {
@@ -84,16 +56,6 @@ impl<'ctx> WebVibezLlvmIntegration<'ctx> {
         let gc_metadata = GcMetadataRegistry::new(context, module)?;
         
         let mut integration = Self {
-            context,
-            module,
-            builder,
-            http_types,
-            function_declarations: HashMap::new(),
-            runtime_functions: HashMap::new(),
-            gc_metadata,
-            object_id_generator: ObjectIdGenerator::new(),
-            object_registry: SharedObjectRegistry::new(),
-        };
         
         // Register all HTTP functions
         integration.register_http_functions()?;
@@ -105,8 +67,6 @@ impl<'ctx> WebVibezLlvmIntegration<'ctx> {
         integration.register_runtime_implementations()?;
         
         Ok(integration)
-    }
-    
     /// Register all HTTP server functions in LLVM
     fn register_http_functions(&mut self) -> crate::error::Result<()> {
         // Server lifecycle functions
@@ -125,8 +85,6 @@ impl<'ctx> WebVibezLlvmIntegration<'ctx> {
         self.register_utility_functions()?;
         
         Ok(())
-    }
-    
     /// Register HTTP server lifecycle functions
     fn register_server_functions(&mut self) -> crate::error::Result<()> {
         let i32_type = self.context.i32_type();
@@ -140,8 +98,6 @@ impl<'ctx> WebVibezLlvmIntegration<'ctx> {
         ], false);
         
         let listen_serve_func = self.module.add_function(
-            "web_vibez.ListenAndServe",
-            listen_serve_type,
             None
         );
         self.function_declarations.insert("ListenAndServe".to_string(), listen_serve_func);
@@ -155,8 +111,6 @@ impl<'ctx> WebVibezLlvmIntegration<'ctx> {
         ], false);
         
         let listen_serve_tls_func = self.module.add_function(
-            "web_vibez.ListenAndServeTLS",
-            listen_serve_tls_type,
             None
         );
         self.function_declarations.insert("ListenAndServeTLS".to_string(), listen_serve_tls_func);
@@ -168,15 +122,11 @@ impl<'ctx> WebVibezLlvmIntegration<'ctx> {
         ], false);
         
         let handle_func = self.module.add_function(
-            "web_vibez.HandleFunc",
-            handle_func_type,
             None
         );
         self.function_declarations.insert("HandleFunc".to_string(), handle_func);
         
         Ok(())
-    }
-    
     /// Register HTTP request handling functions
     fn register_request_functions(&mut self) -> crate::error::Result<()> {
         let i8_ptr_type = self.context.i8_type().ptr_type(AddressSpace::default());
@@ -187,8 +137,6 @@ impl<'ctx> WebVibezLlvmIntegration<'ctx> {
         ], false);
         
         let request_url_func = self.module.add_function(
-            "web_vibez.Request.URL",
-            request_url_type,
             None
         );
         self.function_declarations.insert("Request.URL".to_string(), request_url_func);
@@ -199,21 +147,16 @@ impl<'ctx> WebVibezLlvmIntegration<'ctx> {
         ], false);
         
         let request_method_func = self.module.add_function(
-            "web_vibez.Request.Method",
-            request_method_type,
             None
         );
         self.function_declarations.insert("Request.Method".to_string(), request_method_func);
         
         // Request.Header(key: string) -> string
         let request_header_type = self.http_types.string_type.fn_type(&[
-            self.http_types.http_request_type.ptr_type(AddressSpace::default()).into(),
             self.http_types.string_type.into()
         ], false);
         
         let request_header_func = self.module.add_function(
-            "web_vibez.Request.Header",
-            request_header_type,
             None
         );
         self.function_declarations.insert("Request.Header".to_string(), request_header_func);
@@ -224,15 +167,11 @@ impl<'ctx> WebVibezLlvmIntegration<'ctx> {
         ], false);
         
         let request_body_func = self.module.add_function(
-            "web_vibez.Request.Body",
-            request_body_type,
             None
         );
         self.function_declarations.insert("Request.Body".to_string(), request_body_func);
         
         Ok(())
-    }
-    
     /// Register HTTP response building functions
     fn register_response_functions(&mut self) -> crate::error::Result<()> {
         let void_type = self.context.void_type();
@@ -240,47 +179,35 @@ impl<'ctx> WebVibezLlvmIntegration<'ctx> {
         
         // ResponseWriter.Write(data: string) -> (int, CursedError)
         let response_write_type = i32_type.fn_type(&[
-            self.http_types.response_writer_type.ptr_type(AddressSpace::default()).into(),
             self.http_types.string_type.into()
         ], false);
         
         let response_write_func = self.module.add_function(
-            "web_vibez.ResponseWriter.Write",
-            response_write_type,
             None
         );
         self.function_declarations.insert("ResponseWriter.Write".to_string(), response_write_func);
         
         // ResponseWriter.WriteHeader(statusCode: int)
         let response_write_header_type = void_type.fn_type(&[
-            self.http_types.response_writer_type.ptr_type(AddressSpace::default()).into(),
             i32_type.into()
         ], false);
         
         let response_write_header_func = self.module.add_function(
-            "web_vibez.ResponseWriter.WriteHeader",
-            response_write_header_type,
             None
         );
         self.function_declarations.insert("ResponseWriter.WriteHeader".to_string(), response_write_header_func);
         
         // ResponseWriter.Header(key: string, value: string)
         let response_header_type = void_type.fn_type(&[
-            self.http_types.response_writer_type.ptr_type(AddressSpace::default()).into(),
-            self.http_types.string_type.into(),
             self.http_types.string_type.into()
         ], false);
         
         let response_header_func = self.module.add_function(
-            "web_vibez.ResponseWriter.Header",
-            response_header_type,
             None
         );
         self.function_declarations.insert("ResponseWriter.Header".to_string(), response_header_func);
         
         Ok(())
-    }
-    
     /// Register HTTP client functions
     fn register_client_functions(&mut self) -> crate::error::Result<()> {
         // Get(url: string) -> (Response, CursedError)
@@ -289,8 +216,6 @@ impl<'ctx> WebVibezLlvmIntegration<'ctx> {
         ], false);
         
         let get_func = self.module.add_function(
-            "web_vibez.Get",
-            get_type,
             None
         );
         self.function_declarations.insert("Get".to_string(), get_func);
@@ -303,8 +228,6 @@ impl<'ctx> WebVibezLlvmIntegration<'ctx> {
         ], false);
         
         let post_func = self.module.add_function(
-            "web_vibez.Post",
-            post_type,
             None
         );
         self.function_declarations.insert("Post".to_string(), post_func);
@@ -315,8 +238,6 @@ impl<'ctx> WebVibezLlvmIntegration<'ctx> {
         ], false);
         
         let head_func = self.module.add_function(
-            "web_vibez.Head",
-            head_type,
             None
         );
         self.function_declarations.insert("Head".to_string(), head_func);
@@ -327,15 +248,11 @@ impl<'ctx> WebVibezLlvmIntegration<'ctx> {
         ], false);
         
         let delete_func = self.module.add_function(
-            "web_vibez.Delete",
-            delete_type,
             None
         );
         self.function_declarations.insert("Delete".to_string(), delete_func);
         
         Ok(())
-    }
-    
     /// Register utility functions
     fn register_utility_functions(&mut self) -> crate::error::Result<()> {
         let i32_type = self.context.i32_type();
@@ -360,15 +277,11 @@ impl<'ctx> WebVibezLlvmIntegration<'ctx> {
         ], false);
         
         let client_timeout_func = self.module.add_function(
-            "web_vibez.client_timeout",
-            client_timeout_type,
             None
         );
         self.function_declarations.insert("client_timeout".to_string(), client_timeout_func);
         
         Ok(())
-    }
-    
     /// Register runtime networking functions for system integration
     fn register_runtime_functions(&mut self) -> crate::error::Result<()> {
         let i32_type = self.context.i32_type();
@@ -377,8 +290,6 @@ impl<'ctx> WebVibezLlvmIntegration<'ctx> {
         
         // socket(domain: int, type: int, protocol: int) -> int
         let socket_type = i32_type.fn_type(&[
-            i32_type.into(),
-            i32_type.into(),
             i32_type.into()
         ], false);
         
@@ -387,8 +298,6 @@ impl<'ctx> WebVibezLlvmIntegration<'ctx> {
         
         // bind(sockfd: int, addr: ptr, addrlen: int) -> int
         let bind_type = i32_type.fn_type(&[
-            i32_type.into(),
-            i8_ptr_type.into(),
             i32_type.into()
         ], false);
         
@@ -397,7 +306,6 @@ impl<'ctx> WebVibezLlvmIntegration<'ctx> {
         
         // listen(sockfd: int, backlog: int) -> int
         let listen_type = i32_type.fn_type(&[
-            i32_type.into(),
             i32_type.into()
         ], false);
         
@@ -406,8 +314,6 @@ impl<'ctx> WebVibezLlvmIntegration<'ctx> {
         
         // accept(sockfd: int, addr: ptr, addrlen: ptr) -> int
         let accept_type = i32_type.fn_type(&[
-            i32_type.into(),
-            i8_ptr_type.into(),
             i8_ptr_type.into()
         ], false);
         
@@ -416,9 +322,6 @@ impl<'ctx> WebVibezLlvmIntegration<'ctx> {
         
         // recv(sockfd: int, buf: ptr, len: int, flags: int) -> int
         let recv_type = i32_type.fn_type(&[
-            i32_type.into(),
-            i8_ptr_type.into(),
-            i32_type.into(),
             i32_type.into()
         ], false);
         
@@ -427,9 +330,6 @@ impl<'ctx> WebVibezLlvmIntegration<'ctx> {
         
         // send(sockfd: int, buf: ptr, len: int, flags: int) -> int
         let send_type = i32_type.fn_type(&[
-            i32_type.into(),
-            i8_ptr_type.into(),
-            i32_type.into(),
             i32_type.into()
         ], false);
         
@@ -442,8 +342,6 @@ impl<'ctx> WebVibezLlvmIntegration<'ctx> {
         self.runtime_functions.insert("close".to_string(), close_func);
         
         Ok(())
-    }
-    
     /// Register actual runtime implementation functions
     fn register_runtime_implementations(&mut self) -> crate::error::Result<()> {
         let i32_type = self.context.i32_type();
@@ -458,8 +356,6 @@ impl<'ctx> WebVibezLlvmIntegration<'ctx> {
         ], false);
         
         let listen_serve_impl = self.module.add_function(
-            "web_vibez_listen_and_serve",
-            listen_serve_impl_type,
             None
         );
         self.runtime_functions.insert("web_vibez_listen_and_serve".to_string(), listen_serve_impl);
@@ -473,8 +369,6 @@ impl<'ctx> WebVibezLlvmIntegration<'ctx> {
         ], false);
         
         let listen_serve_tls_impl = self.module.add_function(
-            "web_vibez_listen_and_serve_tls",
-            listen_serve_tls_impl_type,
             None
         );
         self.runtime_functions.insert("web_vibez_listen_and_serve_tls".to_string(), listen_serve_tls_impl);
@@ -486,8 +380,6 @@ impl<'ctx> WebVibezLlvmIntegration<'ctx> {
         ], false);
         
         let handle_func_impl = self.module.add_function(
-            "web_vibez_handle_func",
-            handle_func_impl_type,
             None
         );
         self.runtime_functions.insert("web_vibez_handle_func".to_string(), handle_func_impl);
@@ -555,28 +447,12 @@ impl<'ctx> WebVibezLlvmIntegration<'ctx> {
         self.runtime_functions.insert("web_vibez_free_string".to_string(), free_string_impl);
         
         Ok(())
-    }
-    
     /// Compile a web_vibez function call
     pub fn compile_function_call(
-        &self, 
-        function_name: &str, 
         args: &[BasicValueEnum<'ctx>]
     ) -> crate::error::Result<()> {
         
         match function_name {
-            "ListenAndServe" => self.compile_listen_and_serve(args),
-            "HandleFunc" => self.compile_handle_func(args),
-            "Get" => self.compile_http_get(args),
-            "Post" => self.compile_http_post(args),
-            "Head" => self.compile_http_head(args),
-            "Delete" => self.compile_http_delete(args),
-            "client_timeout" => self.compile_client_timeout(args),
-            "ResponseWriter.Write" => self.compile_response_write(args),
-            "ResponseWriter.WriteHeader" => self.compile_response_write_header(args),
-            "Request.URL" => self.compile_request_url(args),
-            "Request.Method" => self.compile_request_method(args),
-            "Request.Body" => self.compile_request_body(args),
             _ => Err(CursedError::Compile(format!("Unknown web_vibez function: {}", function_name)))
         }
     }
@@ -584,14 +460,10 @@ impl<'ctx> WebVibezLlvmIntegration<'ctx> {
     /// Helper function to convert BasicValueEnum to BasicMetadataValueEnum
     fn convert_args(&self, args: &[BasicValueEnum<'ctx>]) -> Vec<BasicMetadataValueEnum<'ctx>> {
         args.iter().map(|arg| (*arg).into()).collect()
-    }
-
     /// Compile ListenAndServe function call with performance optimizations
     fn compile_listen_and_serve(&self, args: &[BasicValueEnum<'ctx>]) -> crate::error::Result<()> {
         if args.len() != 2 {
             return Err(CursedError::Compile("ListenAndServe requires 2 arguments".to_string()));
-        }
-        
         // Get the actual runtime implementation function
         let func = self.runtime_functions
             .get("web_vibez_listen_and_serve")
@@ -611,14 +483,10 @@ impl<'ctx> WebVibezLlvmIntegration<'ctx> {
         Ok(call_result.try_as_basic_value().left().unwrap_or_else(|| {
             self.context.i32_type().const_zero().into()
         }))
-    }
-    
     /// Compile HTTP GET request with optimized networking
     fn compile_http_get(&self, args: &[BasicValueEnum<'ctx>]) -> crate::error::Result<()> {
         if args.is_empty() {
             return Err(CursedError::Compile("Get requires at least 1 argument".to_string()));
-        }
-        
         // Get the actual runtime implementation function
         let func = self.runtime_functions
             .get("web_vibez_get")
@@ -640,8 +508,6 @@ impl<'ctx> WebVibezLlvmIntegration<'ctx> {
         Ok(call_result.try_as_basic_value().left().unwrap_or_else(|| {
             self.context.i8_type().ptr_type(AddressSpace::default()).const_null().into()
         }))
-    }
-    
     /// Compile client timeout configuration
     fn compile_client_timeout(&self, args: &[BasicValueEnum<'ctx>]) -> crate::error::Result<()> {
         let func = self.runtime_functions
@@ -655,14 +521,10 @@ impl<'ctx> WebVibezLlvmIntegration<'ctx> {
         Ok(call_result.try_as_basic_value().left().unwrap_or_else(|| {
             self.context.i64_type().const_zero().into()
         }))
-    }
-    
     /// Compile HTTP POST request with body handling
     fn compile_http_post(&self, args: &[BasicValueEnum<'ctx>]) -> crate::error::Result<()> {
         if args.len() < 3 {
             return Err(CursedError::Compile("Post requires at least 3 arguments".to_string()));
-        }
-        
         let func = self.function_declarations
             .get("Post")
             .ok_or_else(|| CursedError::Compile("Post function not found".to_string()))?;
@@ -678,17 +540,11 @@ impl<'ctx> WebVibezLlvmIntegration<'ctx> {
         Ok(call_result.try_as_basic_value().left().unwrap_or_else(|| {
             response_ptr.into()
         }))
-    }
-    
     /// Compile other HTTP methods (HEAD, DELETE)
     fn compile_http_head(&self, args: &[BasicValueEnum<'ctx>]) -> crate::error::Result<()> {
         self.compile_simple_http_method("Head", args)
-    }
-    
     fn compile_http_delete(&self, args: &[BasicValueEnum<'ctx>]) -> crate::error::Result<()> {
         self.compile_simple_http_method("Delete", args)
-    }
-    
     /// Generic compilation for simple HTTP methods
     fn compile_simple_http_method(&self, method: &str, args: &[BasicValueEnum<'ctx>]) -> crate::error::Result<()> {
         let func = self.function_declarations
@@ -702,14 +558,10 @@ impl<'ctx> WebVibezLlvmIntegration<'ctx> {
         Ok(call_result.try_as_basic_value().left().unwrap_or_else(|| {
             self.context.i32_type().const_zero().into()
         }))
-    }
-    
     /// Compile HandleFunc registration
     fn compile_handle_func(&self, args: &[BasicValueEnum<'ctx>]) -> crate::error::Result<()> {
         if args.len() != 2 {
             return Err(CursedError::Compile("HandleFunc requires 2 arguments".to_string()));
-        }
-        
         let func = self.function_declarations
             .get("HandleFunc")
             .ok_or_else(|| CursedError::Compile("HandleFunc function not found".to_string()))?;
@@ -720,14 +572,10 @@ impl<'ctx> WebVibezLlvmIntegration<'ctx> {
         
         // HandleFunc returns void
         Ok(self.context.i32_type().const_zero().into())
-    }
-    
     /// Compile response writing operations
     fn compile_response_write(&self, args: &[BasicValueEnum<'ctx>]) -> crate::error::Result<()> {
         if args.len() != 2 {
             return Err(CursedError::Compile("ResponseWriter.Write requires 2 arguments".to_string()));
-        }
-        
         let func = self.function_declarations
             .get("ResponseWriter.Write")
             .ok_or_else(|| CursedError::Compile("ResponseWriter.Write function not found".to_string()))?;
@@ -739,13 +587,9 @@ impl<'ctx> WebVibezLlvmIntegration<'ctx> {
         Ok(call_result.try_as_basic_value().left().unwrap_or_else(|| {
             self.context.i32_type().const_zero().into()
         }))
-    }
-    
     fn compile_response_write_header(&self, args: &[BasicValueEnum<'ctx>]) -> crate::error::Result<()> {
         if args.len() != 2 {
             return Err(CursedError::Compile("ResponseWriter.WriteHeader requires 2 arguments".to_string()));
-        }
-        
         let func = self.function_declarations
             .get("ResponseWriter.WriteHeader")
             .ok_or_else(|| CursedError::Compile("ResponseWriter.WriteHeader function not found".to_string()))?;
@@ -755,27 +599,17 @@ impl<'ctx> WebVibezLlvmIntegration<'ctx> {
             .map_err(|e| CursedError::Compile(format!("Failed to build ResponseWriter.WriteHeader call: {:?}", e)))?;
         
         Ok(self.context.i32_type().const_zero().into())
-    }
-    
     /// Compile request property access
     fn compile_request_url(&self, args: &[BasicValueEnum<'ctx>]) -> crate::error::Result<()> {
         self.compile_request_property("Request.URL", args)
-    }
-    
     fn compile_request_method(&self, args: &[BasicValueEnum<'ctx>]) -> crate::error::Result<()> {
         self.compile_request_property("Request.Method", args)
-    }
-    
     fn compile_request_body(&self, args: &[BasicValueEnum<'ctx>]) -> crate::error::Result<()> {
         self.compile_request_property("Request.Body", args)
-    }
-    
     /// Generic request property compilation
     fn compile_request_property(&self, property: &str, args: &[BasicValueEnum<'ctx>]) -> crate::error::Result<()> {
         if args.len() != 1 {
             return Err(CursedError::Compile(format!("{} requires 1 argument", property)));
-        }
-        
         let func = self.function_declarations
             .get(property)
             .ok_or_else(|| CursedError::Compile(format!("{} function not found", property)))?;
@@ -788,8 +622,6 @@ impl<'ctx> WebVibezLlvmIntegration<'ctx> {
             // Return empty string for request properties
             self.create_empty_string().into()
         }))
-    }
-    
     /// Allocate GC-managed object for HTTP types
     fn allocate_gc_object(&self, type_name: &str) -> crate::error::Result<()> {
         let i8_ptr_type = self.context.i8_type().ptr_type(AddressSpace::default());
@@ -800,7 +632,6 @@ impl<'ctx> WebVibezLlvmIntegration<'ctx> {
             "HttpResponse" => 2048, // Larger for response with body
             "Headers" => 512,       // Header map size
             _ => 256,               // Default size
-        };
         
         // Allocate with GC tracking
         let size_value = self.context.i64_type().const_int(size, false);
@@ -817,8 +648,6 @@ impl<'ctx> WebVibezLlvmIntegration<'ctx> {
         self.register_gc_object(ptr, type_name)?;
         
         Ok(ptr)
-    }
-    
     /// Get or create malloc function for memory allocation
     fn get_or_create_malloc_function(&self) -> FunctionValue<'ctx> {
         let i8_ptr_type = self.context.i8_type().ptr_type(AddressSpace::default());
@@ -843,7 +672,6 @@ impl<'ctx> WebVibezLlvmIntegration<'ctx> {
             "HttpResponse" => 2048, // Larger for response with body
             "Headers" => 512,       // Header map size
             _ => 256,               // Default size
-        };
         
         // Create object metadata
         let metadata = ObjectMetadata::new(object_id, size, type_name.to_string());
@@ -851,7 +679,6 @@ impl<'ctx> WebVibezLlvmIntegration<'ctx> {
         // Register with object registry
         match self.object_registry.register(metadata) {
             Ok(()) => {
-                tracing::debug!("Successfully registered GC object: {} (ID: {}) at {:?}", 
                                type_name, object_id, ptr);
                 
                 // Add to GC root set if this is a top-level allocation
@@ -865,8 +692,6 @@ impl<'ctx> WebVibezLlvmIntegration<'ctx> {
                 Err(CursedError::Compile(format!("Failed to register GC object: {}", e)))
             }
         }
-    }
-    
     /// Add object to GC root set for protection during compilation
     fn add_to_gc_roots(&self, object_id: ObjectId, ptr: PointerValue<'ctx>) -> crate::error::Result<()> {
         // For LLVM-generated objects, we need to ensure they're not collected
@@ -876,36 +701,24 @@ impl<'ctx> WebVibezLlvmIntegration<'ctx> {
         // This would integrate with the actual GC root set manager
         // For now, we ensure the object stays registered
         Ok(())
-    }
-    
     /// Create empty string constant
     fn create_empty_string(&self) -> PointerValue<'ctx> {
         let empty_str = self.context.const_string(b"", false);
         let global = self.module.add_global(empty_str.get_type(), Some(AddressSpace::default()), "empty_string");
         global.set_initializer(&empty_str);
         global.as_pointer_value()
-    }
-    
     /// Add debug information for function calls
     fn add_debug_info(&self, function_name: &str, args: &[BasicValueEnum<'ctx>]) {
         tracing::debug!("Compiling {} with {} arguments", function_name, args.len());
-    }
-    
     /// Add performance tracking for HTTP operations
     fn add_performance_tracking(&self, operation: &str, args: &[BasicValueEnum<'ctx>]) {
         tracing::info!("Performance tracking: {} with {} args", operation, args.len());
-    }
-    
     /// Get function declaration by name
     pub fn get_function_declaration(&self, name: &str) -> Option<&FunctionValue<'ctx>> {
         self.function_declarations.get(name)
-    }
-    
     /// Get all registered function names
     pub fn get_function_names(&self) -> Vec<&String> {
         self.function_declarations.keys().collect()
-    }
-    
     /// Validate all function declarations
     pub fn validate_declarations(&self) -> Result<(), Vec<String>> {
         let mut errors = Vec::new();
@@ -924,8 +737,6 @@ impl<'ctx> WebVibezLlvmIntegration<'ctx> {
             Err(errors)
         }
     }
-}
-
 impl<'ctx> HttpTypeRegistry<'ctx> {
     /// Create new HTTP type registry with all required types
     pub fn new(context: &'ctx Context) -> crate::error::Result<()> {
@@ -998,34 +809,16 @@ impl<'ctx> HttpTypeRegistry<'ctx> {
         ], false);
         
         Ok(Self {
-            http_server_type,
-            http_request_type,
-            http_response_type,
-            response_writer_type,
-            headers_type,
-            status_code_type: i32_type,
-            http_method_type: i32_type,
-            string_type,
-            buffer_type,
-            web_error_type,
         })
-    }
-    
     /// Get string type for LLVM integration
     pub fn string_type(&self) -> StructType<'ctx> {
         self.string_type
-    }
-    
     /// Get HTTP request type
     pub fn request_type(&self) -> StructType<'ctx> {
         self.http_request_type
-    }
-    
     /// Get HTTP response type
     pub fn response_type(&self) -> StructType<'ctx> {
         self.http_response_type
-    }
-    
     /// Get response writer type
     pub fn response_writer_type(&self) -> StructType<'ctx> {
         self.response_writer_type
@@ -1062,17 +855,10 @@ impl<'ctx> GcMetadataRegistry<'ctx> {
         cleanup_funcs.insert("HttpResponse".to_string(), cleanup_response_func);
         
         Ok(Self {
-            gc_object_types,
-            ref_count_funcs,
-            cleanup_funcs,
         })
-    }
-    
     /// Register a type for GC management
     pub fn register_type(&mut self, name: String, type_info: StructType<'ctx>) {
         self.gc_object_types.insert(name, type_info);
-    }
-    
     /// Get cleanup function for a type
     pub fn get_cleanup_function(&self, type_name: &str) -> Option<&FunctionValue<'ctx>> {
         self.cleanup_funcs.get(type_name)

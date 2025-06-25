@@ -10,24 +10,12 @@ use super::flags::LstdFlags;
 /// access to the Writer.
 #[derive(Clone)]
 pub struct Logger {
-    inner: Arc<Mutex<LoggerInner>>,
-}
-
 struct LoggerInner {
-    output: Box<dyn Write + Send>,
-    prefix: String,
-    flags: i32,
-}
-
 impl Logger {
     /// Create a new Logger with the specified output destination, prefix, and flags
     pub fn new(output: Box<dyn Write + Send>, prefix: String, flags: i32) -> Self {
         Logger {
             inner: Arc::new(Mutex::new(LoggerInner {
-                output,
-                prefix,
-                flags,
-            })),
         }
     }
 
@@ -38,38 +26,26 @@ impl Logger {
             .collect::<Vec<_>>()
             .join(" ");
         self.output(2, &message)
-    }
-
     /// spillf - Print formatted string
     pub fn spillf(&self, format: &str, args: &[Value]) -> crate::error::Result<()> {
         let formatted = self.format_string(format, args)?;
         self.output(2, &formatted)
-    }
-
     /// fatal - Print args and exit with code 1
     pub fn fatal(&self, args: &[Value]) -> ! {
         let _ = self.spill(args);
         std::process::exit(1);
-    }
-
     /// fatalf - Print formatted string and exit with code 1
     pub fn fatalf(&self, format: &str, args: &[Value]) -> ! {
         let _ = self.spillf(format, args);
         std::process::exit(1);
-    }
-
     /// shook - Print args and trigger panic
     pub fn shook(&self, args: &[Value]) -> ! {
         let _ = self.spill(args);
         panic!("shook triggered");
-    }
-
     /// shookf - Print formatted string and trigger panic
     pub fn shookf(&self, format: &str, args: &[Value]) -> ! {
         let _ = self.spillf(format, args);
         panic!("shookf triggered");
-    }
-
     /// output - Low-level output method
     pub fn output(&self, call_depth: usize, message: &str) -> crate::error::Result<()> {
         let mut inner = self.inner.lock().map_err(|_| {
@@ -77,10 +53,6 @@ impl Logger {
         })?;
 
         let formatted_entry = format_log_entry(
-            &inner.prefix,
-            inner.flags,
-            call_depth,
-            message,
         )?;
 
         inner.output.write_all(formatted_entry.as_bytes()).map_err(|e| {
@@ -92,8 +64,6 @@ impl Logger {
         })?;
 
         Ok(())
-    }
-
     /// setFlags - Set output flags
     pub fn set_flags(&self, flags: i32) {
         if let Ok(mut inner) = self.inner.lock() {
@@ -120,15 +90,11 @@ impl Logger {
         self.inner.lock()
             .map(|inner| inner.flags)
             .unwrap_or(0)
-    }
-
     /// prefix - Get current prefix
     pub fn prefix(&self) -> String {
         self.inner.lock()
             .map(|inner| inner.prefix.clone())
             .unwrap_or_default()
-    }
-
     /// Simple format string implementation for spillf
     fn format_string(&self, format: &str, args: &[Value]) -> crate::error::Result<()> {
         let mut result = String::new();
@@ -203,5 +169,3 @@ impl Logger {
 /// Convenience function to create a new logger
 pub fn new_logger(output: Box<dyn Write + Send>, prefix: String, flags: i32) -> Logger {
     Logger::new(output, prefix, flags)
-}
-

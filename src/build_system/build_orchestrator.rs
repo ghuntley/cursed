@@ -4,18 +4,13 @@
 // and provides build caching and incremental compilation.
 
 use crate::build_system::{
-    BuildConfig, BuildTarget, BuildProfile, IncrementalCache, DependencyResolver,
-    TargetType, TestDiscovery, TestDiscoveryConfig, TestExecutor, 
-    TestExecutionConfig, TestExecutionResult, TestFilter, TestCategory,
-    ParallelCompiler, ParallelCompilationConfig, IncrementalOptimizer, IncrementalConfig,
     BuildProfiler, ProfilerConfig, ArtifactManager, ArtifactConfig
-};
+// };
 use crate::error::CursedError;
 use crate::common_types::optimization_level::OptimizationLevel;
 use crate::build_system::{
-    BootstrapPipeline, BootstrapConfig, BootstrapBuildResult, BootstrapStatistics,
     BootstrapIntegration
-};
+// };
 
 use crate::build_system::build_pipeline::{BuildPipeline, PipelineContext, PipelineResult};
 use crate::package_manager::{PackageManager, PackageManagerError};
@@ -39,15 +34,9 @@ use regex;
 #[derive(Debug, Clone)]
 pub struct WatchConfig {
     /// File patterns to watch
-    pub patterns: Vec<String>,
     /// Debounce delay to prevent rapid rebuilds
-    pub debounce_ms: u64,
     /// Whether to run full build or incremental
-    pub incremental: bool,
     /// Profile to use for rebuild
-    pub build_profile: String,
-}
-
 impl Default for WatchConfig {
     fn default() -> Self {
         Self {
@@ -56,252 +45,138 @@ impl Default for WatchConfig {
                 "**/Cargo.toml".to_string(),
                 "**/CursedBuild.toml".to_string(),
                 "**/CursedPackage.toml".to_string(),
-            ],
-            debounce_ms: 500,
-            incremental: true,
-            build_profile: "dev".to_string(),
         }
     }
-}
-
 /// File watcher state
 pub struct FileWatcher {
-    watcher: RecommendedWatcher,
-    event_receiver: Option<Receiver<NotifyResult<Event>>>,
-    watch_thread: Option<thread::JoinHandle<()>>,
-    shutdown_sender: Option<Sender<()>>,
-}
-
 /// Main build orchestrator
 pub struct BuildOrchestrator {
-    config: BuildConfig,
-    cache: IncrementalCache,
-    dependency_resolver: DependencyResolver,
-    package_manager: PackageManager,
-    pipeline: BuildPipeline,
-    work_dir: PathBuf,
-    file_watcher: Option<FileWatcher>,
-    watch_config: WatchConfig,
     // Advanced features
-    parallel_compiler: Option<ParallelCompiler>,
-    incremental_optimizer: Option<IncrementalOptimizer>,
-    build_profiler: Option<BuildProfiler>,
-    artifact_manager: Option<ArtifactManager>,
     // Bootstrap integration
-    bootstrap_pipeline: Option<BootstrapPipeline>,
-    bootstrap_config: Option<BootstrapConfig>,
-}
-
 /// Build result information
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct BuildResult {
     /// Whether the build succeeded
-    pub success: bool,
     
     /// Build duration
-    pub duration: Duration,
     
     /// Targets that were built
-    pub targets_built: Vec<String>,
     
     /// Targets that were skipped (cache hit)
-    pub targets_skipped: Vec<String>,
     
     /// Output files generated
-    pub outputs: Vec<PathBuf>,
     
     /// Build artifacts
-    pub artifacts: HashMap<String, PathBuf>,
     
     /// Warnings generated during build
-    pub warnings: Vec<String>,
     
     /// Build statistics
-    pub statistics: BuildStatistics,
-}
-
 /// Build statistics
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct BuildStatistics {
     /// Number of files compiled
-    pub files_compiled: usize,
     
     /// Number of files from cache
-    pub files_cached: usize,
     
     /// Total lines of code compiled
-    pub lines_compiled: usize,
     
     /// Peak memory usage (in bytes)
-    pub peak_memory: usize,
     
     /// Compilation phases timing
-    pub phase_timings: HashMap<String, Duration>,
-}
-
 /// Comprehensive build performance report
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct BuildPerformanceReport {
     /// Total build duration
-    pub total_duration: Duration,
     
     /// Build efficiency score (0.0 to 1.0)
-    pub efficiency_score: f64,
     
     /// Performance improvement recommendations
-    pub performance_recommendations: Vec<String>,
     
     /// Resource utilization analysis
-    pub resource_analysis: ResourceUtilizationAnalysis,
     
     /// Breakdown of time spent in each phase
-    pub phase_breakdown: HashMap<String, Duration>,
     
     /// Cache effectiveness metrics
-    pub cache_effectiveness: CacheEffectivenessMetrics,
     
     /// Identified bottlenecks
-    pub bottleneck_analysis: Vec<BuildBottleneck>,
-}
-
 /// Resource utilization analysis
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ResourceUtilizationAnalysis {
     /// Peak memory usage in MB
-    pub memory_peak_mb: usize,
     
     /// Memory efficiency score (0.0 to 1.0)
-    pub memory_efficiency: f64,
     
     /// CPU-intensive build phases
-    pub cpu_intensive_phases: Vec<String>,
     
     /// I/O-intensive build phases
-    pub io_intensive_phases: Vec<String>,
     
     /// Identified parallelization opportunities
-    pub parallelization_opportunities: Vec<String>,
     
     /// Total build time
-    pub total_build_time: Duration,
-}
-
 /// Cache effectiveness metrics
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct CacheEffectivenessMetrics {
     /// Cache hit rate (0.0 to 1.0)
-    pub hit_rate: f64,
     
     /// Number of files retrieved from cache
-    pub files_from_cache: usize,
     
     /// Total number of files processed
-    pub total_files: usize,
     
     /// Estimated time saved by caching
-    pub estimated_time_saved: Duration,
     
     /// Cache storage efficiency
-    pub cache_storage_efficiency: f64,
-}
-
 /// Build bottleneck analysis
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct BuildBottleneck {
     /// Phase where bottleneck occurs
-    pub phase: String,
     
     /// Duration of the bottleneck
-    pub duration: Duration,
     
     /// Percentage of total build time
-    pub percentage: f64,
     
     /// Severity level
-    pub severity: BottleneckSeverity,
     
     /// Specific recommendations for this bottleneck
-    pub recommendations: Vec<String>,
-}
-
 /// Bottleneck severity levels
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum BottleneckSeverity {
-    Low,
-    Medium,
-    High,
-    Critical,
-}
-
 /// Build error types
 #[derive(Debug, thiserror::CursedError)]
 pub enum BuildError {
     #[error("Configuration error: {0}")]
-    ConfigError(String),
     
     #[error("Dependency resolution failed: {0}")]
-    DependencyError(String),
     
     #[error("Compilation failed: {0}")]
-    CompilationError(String),
     
     #[error("Target not found: {0}")]
-    TargetNotFound(String),
     
     #[error("Cache error: {0}")]
-    CacheError(#[from] CacheError),
     
     #[error("IO error: {0}")]
-    IoError(#[from] std::io::Error),
     
     #[error("Package manager error: {0}")]
-    PackageError(#[from] PackageManagerError),
     
     #[error("Tool integration error: {0}")]
-    ToolError(String),
     
     #[error("Configuration error: {0}")]
-    ConfigurationError(#[from] crate::build_system::build_config::ConfigError),
     
     #[error("File watcher error: {0}")]
-    WatcherError(#[from] notify::CursedError),
     
     #[error("Bootstrap error: {0}")]
-    BootstrapError(String),
-}
-
 impl BuildOrchestrator {
     /// Create a new build orchestrator
     pub fn new(config: BuildConfig, work_dir: PathBuf) -> crate::error::Result<()> {
         let cache = IncrementalCache::new(work_dir.join("target").join("cache"))?;
         let dependency_resolver = DependencyResolver::new();
         let package_manager_config = crate::package_manager::PackageManagerConfig {
-            workspace_dir: work_dir.clone(),
-            cache_dir: work_dir.join(".cursed-cache"),
             registry_url: "https://packages.cursed-lang.org".to_string(),
             max_cache_size: 1024 * 1024 * 1024, // 1GB
-            timeout_seconds: 30,
-            parallel_downloads: 4,
-        };
         let package_manager = PackageManager::new(package_manager_config)?;
         let pipeline = BuildPipeline::new(config.clone(), work_dir.clone())?;
         
         Ok(BuildOrchestrator {
-            config,
-            cache,
-            dependency_resolver,
-            package_manager,
-            pipeline,
-            work_dir,
-            file_watcher: None,
-            watch_config: WatchConfig::default(),
-            parallel_compiler: None,
-            incremental_optimizer: None,
-            build_profiler: None,
-            artifact_manager: None,
         })
-    }
-    
     /// Build all targets
     #[instrument(skip(self))]
     pub async fn build_all(&mut self, profile: &str) -> crate::error::Result<()> {
@@ -309,21 +184,7 @@ impl BuildOrchestrator {
         
         let start_time = Instant::now();
         let mut result = BuildResult {
-            success: true,
-            duration: Duration::default(),
-            targets_built: Vec::from([]),
-            targets_skipped: Vec::from([]),
-            outputs: Vec::from([]),
-            artifacts: HashMap::new(),
-            warnings: Vec::from([]),
             statistics: BuildStatistics {
-                files_compiled: 0,
-                files_cached: 0,
-                lines_compiled: 0,
-                peak_memory: 0,
-                phase_timings: HashMap::new(),
-            },
-        };
         
         // Resolve dependencies first
         self.resolve_dependencies().await?;
@@ -357,37 +218,22 @@ impl BuildOrchestrator {
                     return Err(e);
                 }
             }
-        }
-        
         result.duration = start_time.elapsed();
         info!("Build completed in {:?}", result.duration);
         
         Ok(result)
-    }
-    
     /// Build using comprehensive pipeline (enhanced method)
     #[instrument(skip(self))]
     pub async fn build_with_pipeline(&mut self, profile: &str, targets: Vec<String>, force_rebuild: bool, parallel: bool) -> crate::error::Result<()> {
         info!("Starting pipeline build with profile: {}", profile);
         
         let context = PipelineContext {
-            profile: profile.to_string(),
-            targets,
-            work_dir: self.work_dir.clone(),
-            force_rebuild,
-            parallel,
-            verbose: true,
-        };
         
         self.pipeline.execute(context).await
-    }
-    
     /// Build specific targets with pipeline
     #[instrument(skip(self))]
     pub async fn build_targets_with_pipeline(&mut self, profile: &str, target_names: &[String]) -> crate::error::Result<()> {
         self.build_with_pipeline(profile, target_names.to_vec(), false, true).await
-    }
-    
     /// Quick build (skip formatting and linting)
     #[instrument(skip(self))]
     pub async fn quick_build(&mut self, profile: &str) -> crate::error::Result<()> {
@@ -401,13 +247,6 @@ impl BuildOrchestrator {
         let mut quick_pipeline = BuildPipeline::new(quick_config, self.work_dir.clone())?;
         
         let context = PipelineContext {
-            profile: profile.to_string(),
-            targets: Vec::from([]),
-            work_dir: self.work_dir.clone(),
-            force_rebuild: false,
-            parallel: true,
-            verbose: false,
-        };
         
         let pipeline_result = quick_pipeline.execute(context).await?;
         
@@ -415,17 +254,7 @@ impl BuildOrchestrator {
         let enhanced_statistics = self.extract_enhanced_pipeline_metrics(&pipeline_result)?;
         
         Ok(BuildResult {
-            success: pipeline_result.success,
-            duration: pipeline_result.duration,
-            targets_built: pipeline_result.stages.keys().cloned().collect(),
-            targets_skipped: Vec::from([]),
-            outputs: pipeline_result.artifacts.values().cloned().collect(),
-            artifacts: pipeline_result.artifacts,
-            warnings: pipeline_result.warnings,
-            statistics: enhanced_statistics,
         })
-    }
-    
     /// Clean build artifacts and cache
     #[instrument(skip(self))]
     pub async fn clean_all(&mut self, clean_cache: bool) -> crate::error::Result<()> {
@@ -436,8 +265,6 @@ impl BuildOrchestrator {
             std::fs::remove_dir_all(&target_dir)
                 .map_err(|e| BuildError::IoError(e))?;
             info!("Removed target directory");
-        }
-        
         if clean_cache {
             let cache_dir = self.work_dir.join(".cursed-cache");
             if cache_dir.exists() {
@@ -448,8 +275,6 @@ impl BuildOrchestrator {
         }
         
         Ok(())
-    }
-    
     /// Watch for file changes and rebuild
     #[instrument(skip(self))]
     pub async fn watch(&mut self, profile: &str, command: &str) -> crate::error::Result<()> {
@@ -512,8 +337,6 @@ impl BuildOrchestrator {
         if let Some(cached_result) = self.check_cache(target).await? {
             info!("Target '{}' is up to date, using cached result", target.name);
             return Ok(cached_result);
-        }
-        
         // Run pre-build scripts
         self.run_pre_build_scripts(target).await?;
         
@@ -530,8 +353,6 @@ impl BuildOrchestrator {
         debug!("Target '{}' built in {:?}", target.name, duration);
         
         Ok(compilation_result)
-    }
-    
     /// Resolve package dependencies
     #[instrument(skip(self))]
     async fn resolve_dependencies(&mut self) -> crate::error::Result<()> {
@@ -544,11 +365,7 @@ impl BuildOrchestrator {
         // Download and install packages through package manager
         for (package, version) in &self.config.dependencies {
             self.package_manager.install_package(package, Some(version)).await?;
-        }
-        
         Ok(())
-    }
-    
     /// Check if target is cached and up to date
     async fn check_cache(&self, target: &BuildTarget) -> crate::error::Result<()> {
         if let Some(entry) = self.cache.get(&target.name) {
@@ -558,33 +375,16 @@ impl BuildOrchestrator {
             if entry.timestamp >= source_modified {
                 // Cache hit - return cached result
                 return Ok(Some(BuildResult {
-                    success: true,
-                    duration: Duration::from_millis(0),
-                    targets_built: Vec::from([]),
-                    targets_skipped: Vec::from([target.name.clone()]),
-                    outputs: entry.outputs.clone(),
-                    artifacts: entry.artifacts.clone(),
-                    warnings: Vec::from([]),
                     statistics: BuildStatistics {
-                        files_compiled: 0,
-                        files_cached: entry.files_count,
-                        lines_compiled: 0,
-                        peak_memory: 0,
-                        phase_timings: HashMap::new(),
-                    },
                 }));
             }
         }
         
         Ok(None)
-    }
-    
     /// Get modification time for source files
     fn get_source_modification_time(&self, path: &Path) -> crate::error::Result<()> {
         let metadata = std::fs::metadata(path)?;
         Ok(metadata.modified()?)
-    }
-    
     /// Compile a target using CURSED compiler
     #[instrument(skip(self, target, profile))]
     async fn compile_target(&self, target: &BuildTarget, profile: &BuildProfile) -> crate::error::Result<()> {
@@ -592,13 +392,6 @@ impl BuildOrchestrator {
         
         // Determine output path using actual profile name
         let profile_name = match profile.optimization {
-            OptimizationLevel::O0 => "debug",
-            OptimizationLevel::O1 => "dev", 
-            OptimizationLevel::O2 => "release",
-            OptimizationLevel::O3 => "release",
-            OptimizationLevel::Os => "release-small",
-            OptimizationLevel::Oz => "release-small",
-        };
         
         let output_dir = self.work_dir.join("target").join(profile_name);
         std::fs::create_dir_all(&output_dir)?;
@@ -615,7 +408,6 @@ impl BuildOrchestrator {
             TargetType::CDynLib => {
                 output_dir.join(format!("lib{}.so", target.name))
             }
-        };
         
         // Start memory monitoring
         let memory_monitor = MemoryMonitor::new();
@@ -654,18 +446,12 @@ impl BuildOrchestrator {
         // Add debug information
         if profile.debug {
             cmd.arg("--debug");
-        }
-        
         // Add LLVM arguments
         for arg in &profile.llvm_args {
             cmd.arg("--llvm-arg").arg(arg);
-        }
-        
         // Set environment variables
         for (key, value) in &profile.env {
             cmd.env(key, value);
-        }
-        
         // Execute compilation
         debug!("Executing: {:?}", cmd);
         let compilation_start = Instant::now();
@@ -684,8 +470,6 @@ impl BuildOrchestrator {
             return Err(BuildError::CompilationError(format!(
                 "Compilation failed for target '{}': {}", target.name, stderr
             )));
-        }
-        
         // Parse compilation output for warnings and metrics
         let stdout = String::from_utf8_lossy(&output.stdout);
         let warnings = extract_warnings(&stdout);
@@ -712,74 +496,42 @@ impl BuildOrchestrator {
         }
         if let Some(linking_time) = compilation_metrics.get("linking_time") {
             phase_timings.insert("linking".to_string(), Duration::from_millis(*linking_time as u64));
-        }
-        
         Ok(BuildResult {
-            success: true,
-            duration,
-            targets_built: Vec::from([target.name.clone()]),
-            targets_skipped: Vec::from([]),
-            outputs: Vec::from([output_path]),
-            artifacts,
-            warnings,
             statistics: BuildStatistics {
-                files_compiled: 1,
-                files_cached: 0,
-                lines_compiled: compilation_metrics.get("lines_compiled").copied().unwrap_or(0.0) as usize,
-                peak_memory,
-                phase_timings,
-            },
         })
-    }
-    
     /// Run pre-build scripts
     async fn run_pre_build_scripts(&self, target: &BuildTarget) -> crate::error::Result<()> {
         if let Some(script) = self.config.scripts.get("pre-build") {
             info!("Running pre-build script for target: {}", target.name);
             self.run_script(script).await?;
-        }
-        
         // Target-specific pre-build script
         let target_script_name = format!("pre-build-{}", target.name);
         if let Some(script) = self.config.scripts.get(&target_script_name) {
             info!("Running target-specific pre-build script for: {}", target.name);
             self.run_script(script).await?;
-        }
-        
         Ok(())
-    }
-    
     /// Run post-build scripts
     async fn run_post_build_scripts(&self, target: &BuildTarget, result: &BuildResult) -> crate::error::Result<()> {
         if let Some(script) = self.config.scripts.get("post-build") {
             info!("Running post-build script for target: {}", target.name);
             self.run_script(script).await?;
-        }
-        
         // Target-specific post-build script
         let target_script_name = format!("post-build-{}", target.name);
         if let Some(script) = self.config.scripts.get(&target_script_name) {
             info!("Running target-specific post-build script for: {}", target.name);
             self.run_script(script).await?;
-        }
-        
         Ok(())
-    }
-    
     /// Execute a build script
     async fn run_script(&self, script: &str) -> crate::error::Result<()> {
         let mut cmd = if cfg!(target_os = "windows") {
             Command::new("cmd")
         } else {
             Command::new("sh")
-        };
         
         if cfg!(target_os = "windows") {
             cmd.args(["/C", script]);
         } else {
             cmd.args(["-c", script]);
-        }
-        
         cmd.current_dir(&self.work_dir);
         
         let output = cmd.output()?;
@@ -789,23 +541,13 @@ impl BuildOrchestrator {
             return Err(BuildError::ToolError(format!(
                 "Script execution failed: {}", stderr
             )));
-        }
-        
         Ok(())
-    }
-    
     /// Update build cache
     async fn update_cache(&mut self, target: &BuildTarget, result: &BuildResult) -> crate::error::Result<()> {
         self.cache.insert(
-            &target.name,
-            result.outputs.clone(),
-            result.artifacts.clone(),
-            result.statistics.files_compiled,
         )?;
         
         Ok(())
-    }
-    
     /// Clean build artifacts
     #[instrument(skip(self))]
     pub fn clean(&self) -> crate::error::Result<()> {
@@ -815,11 +557,7 @@ impl BuildOrchestrator {
         if target_dir.exists() {
             std::fs::remove_dir_all(&target_dir)?;
             info!("Removed target directory: {}", target_dir.display());
-        }
-        
         Ok(())
-    }
-    
     /// Run tests with comprehensive discovery and execution
     #[instrument(skip(self))]
     pub async fn test(&mut self, profile: &str) -> crate::error::Result<()> {
@@ -829,19 +567,9 @@ impl BuildOrchestrator {
         
         // Configure test discovery
         let discovery_config = TestDiscoveryConfig {
-            root_dir: self.work_dir.clone(),
-            include_unit_tests: true,
-            include_integration_tests: true,
-            include_doc_tests: false,
-            include_benchmarks: false,
-            include_examples: false,
-            custom_patterns: Vec::new(),
             exclude_patterns: vec![
                 "target/**".to_string(),
                 ".git/**".to_string(),
-                "*.bak".to_string(),
-            ],
-        };
         
         // Discover tests
         let test_discovery = TestDiscovery::new(discovery_config)
@@ -850,31 +578,13 @@ impl BuildOrchestrator {
         let discovery_result = test_discovery.discover_tests()
             .map_err(|e| BuildError::ConfigError(e.to_string()))?;
         
-        info!("Discovered {} tests ({} unit, {} integration)", 
-              discovery_result.statistics.total_tests,
-              discovery_result.statistics.unit_tests,
               discovery_result.statistics.integration_tests);
         
         if discovery_result.tests.is_empty() {
             warn!("No tests found in project");
             return Ok(BuildResult {
-                success: true,
-                duration: start_time.elapsed(),
-                targets_built: Vec::from(["tests".to_string()]),
-                targets_skipped: Vec::from([]),
-                outputs: Vec::from([]),
-                artifacts: HashMap::new(),
-                warnings: vec!["No tests found in project".to_string()],
                 statistics: BuildStatistics {
-                    files_compiled: 0,
-                    files_cached: 0,
-                    lines_compiled: 0,
-                    peak_memory: 0,
-                    phase_timings: HashMap::new(),
-                },
             });
-        }
-        
         // Configure test execution
         let mut execution_config = TestExecutionConfig::default();
         execution_config.work_dir = self.work_dir.clone();
@@ -885,11 +595,9 @@ impl BuildOrchestrator {
         
         // Add linking fix environment variables for Nix compatibility
         execution_config.env_vars.insert(
-            "LIBRARY_PATH".to_string(),
             "/nix/store/6pak77li0iw9x0b3yhmbjvp846w3p6bx-libffi-3.4.6/lib:/nix/store/l5g2v1jgfyf3j0jp9iv5b79fi8yrwzpp-zlib-1.3.1/lib:/nix/store/k3a7dzrqphj9ksbb43i24vy6inz8ys51-ncurses-6.4.20221231/lib:/nix/store/hd6llsw2dkiazk9d2ywv13cc6alhflly-libxml2-2.13.5/lib:/nix/store/dsqzw96w4sxsp4q9yvkfl2yh701mpwgi-sqlite-3.46.1/lib".to_string()
         );
         execution_config.env_vars.insert(
-            "RUSTFLAGS".to_string(),
             "-C linker=gcc -C link-arg=-fuse-ld=bfd".to_string()
         );
         
@@ -911,11 +619,7 @@ impl BuildOrchestrator {
             info!("All tests passed successfully!");
         } else {
             error!("Some tests failed. Check output for details.");
-        }
-        
         Ok(build_result)
-    }
-    
     /// Run tests with custom filter patterns
     #[instrument(skip(self))]
     pub async fn test_with_filter(&mut self, profile: &str, patterns: &[String]) -> crate::error::Result<()> {
@@ -925,19 +629,9 @@ impl BuildOrchestrator {
         
         // Configure test discovery
         let discovery_config = TestDiscoveryConfig {
-            root_dir: self.work_dir.clone(),
-            include_unit_tests: true,
-            include_integration_tests: true,
-            include_doc_tests: false,
-            include_benchmarks: false,
-            include_examples: false,
-            custom_patterns: Vec::new(),
             exclude_patterns: vec![
                 "target/**".to_string(),
                 ".git/**".to_string(),
-                "*.bak".to_string(),
-            ],
-        };
         
         // Discover tests
         let test_discovery = TestDiscovery::new(discovery_config)
@@ -949,29 +643,13 @@ impl BuildOrchestrator {
         // Apply custom filter patterns
         let filtered_tests = test_discovery.filter_tests(&discovery_result, patterns);
         
-        info!("Found {} tests matching patterns from {} total tests", 
               filtered_tests.len(), discovery_result.statistics.total_tests);
         
         if filtered_tests.is_empty() {
             warn!("No tests found matching filter patterns: {:?}", patterns);
             return Ok(BuildResult {
-                success: true,
-                duration: start_time.elapsed(),
-                targets_built: Vec::from(["tests".to_string()]),
-                targets_skipped: Vec::from([]),
-                outputs: Vec::from([]),
-                artifacts: HashMap::new(),
-                warnings: vec![format!("No tests found matching patterns: {:?}", patterns)],
                 statistics: BuildStatistics {
-                    files_compiled: 0,
-                    files_cached: 0,
-                    lines_compiled: 0,
-                    peak_memory: 0,
-                    phase_timings: HashMap::new(),
-                },
             });
-        }
-        
         // Configure test execution
         let mut execution_config = TestExecutionConfig::default();
         execution_config.work_dir = self.work_dir.clone();
@@ -981,11 +659,9 @@ impl BuildOrchestrator {
         
         // Add linking fix environment variables
         execution_config.env_vars.insert(
-            "LIBRARY_PATH".to_string(),
             "/nix/store/6pak77li0iw9x0b3yhmbjvp846w3p6bx-libffi-3.4.6/lib:/nix/store/l5g2v1jgfyf3j0jp9iv5b79fi8yrwzpp-zlib-1.3.1/lib:/nix/store/k3a7dzrqphj9ksbb43i24vy6inz8ys51-ncurses-6.4.20221231/lib:/nix/store/hd6llsw2dkiazk9d2ywv13cc6alhflly-libxml2-2.13.5/lib:/nix/store/dsqzw96w4sxsp4q9yvkfl2yh701mpwgi-sqlite-3.46.1/lib".to_string()
         );
         execution_config.env_vars.insert(
-            "RUSTFLAGS".to_string(),
             "-C linker=gcc -C link-arg=-fuse-ld=bfd".to_string()
         );
         
@@ -998,8 +674,6 @@ impl BuildOrchestrator {
         let build_result = self.convert_test_results_to_build_result(execution_result, start_time.elapsed())?;
         
         Ok(build_result)
-    }
-    
     /// Run only ignored tests
     #[instrument(skip(self))]
     pub async fn test_ignored(&mut self, profile: &str) -> crate::error::Result<()> {
@@ -1009,19 +683,9 @@ impl BuildOrchestrator {
         
         // Configure test discovery
         let discovery_config = TestDiscoveryConfig {
-            root_dir: self.work_dir.clone(),
-            include_unit_tests: true,
-            include_integration_tests: true,
-            include_doc_tests: false,
-            include_benchmarks: false,
-            include_examples: false,
-            custom_patterns: Vec::new(),
             exclude_patterns: vec![
                 "target/**".to_string(),
                 ".git/**".to_string(),
-                "*.bak".to_string(),
-            ],
-        };
         
         // Discover tests
         let test_discovery = TestDiscovery::new(discovery_config)
@@ -1032,35 +696,16 @@ impl BuildOrchestrator {
         
         // Filter for ignored tests only
         let test_filter = TestFilter {
-            only_ignored: true,
-            include_ignored: true,
             ..Default::default()
-        };
         let ignored_tests = test_filter.apply(&discovery_result);
         
-        info!("Found {} ignored tests out of {} total tests", 
               ignored_tests.len(), discovery_result.statistics.total_tests);
         
         if ignored_tests.is_empty() {
             info!("No ignored tests found");
             return Ok(BuildResult {
-                success: true,
-                duration: start_time.elapsed(),
-                targets_built: Vec::from(["ignored_tests".to_string()]),
-                targets_skipped: Vec::from([]),
-                outputs: Vec::from([]),
-                artifacts: HashMap::new(),
-                warnings: Vec::from([]),
                 statistics: BuildStatistics {
-                    files_compiled: 0,
-                    files_cached: 0,
-                    lines_compiled: 0,
-                    peak_memory: 0,
-                    phase_timings: HashMap::new(),
-                },
             });
-        }
-        
         // Configure test execution for ignored tests
         let mut execution_config = TestExecutionConfig::default();
         execution_config.work_dir = self.work_dir.clone();
@@ -1071,11 +716,9 @@ impl BuildOrchestrator {
         
         // Add linking fix environment variables
         execution_config.env_vars.insert(
-            "LIBRARY_PATH".to_string(),
             "/nix/store/6pak77li0iw9x0b3yhmbjvp846w3p6bx-libffi-3.4.6/lib:/nix/store/l5g2v1jgfyf3j0jp9iv5b79fi8yrwzpp-zlib-1.3.1/lib:/nix/store/k3a7dzrqphj9ksbb43i24vy6inz8ys51-ncurses-6.4.20221231/lib:/nix/store/hd6llsw2dkiazk9d2ywv13cc6alhflly-libxml2-2.13.5/lib:/nix/store/dsqzw96w4sxsp4q9yvkfl2yh701mpwgi-sqlite-3.46.1/lib".to_string()
         );
         execution_config.env_vars.insert(
-            "RUSTFLAGS".to_string(),
             "-C linker=gcc -C link-arg=-fuse-ld=bfd".to_string()
         );
         
@@ -1088,12 +731,8 @@ impl BuildOrchestrator {
         let build_result = self.convert_test_results_to_build_result(execution_result, start_time.elapsed())?;
         
         Ok(build_result)
-    }
-    
     /// Convert test execution results to BuildResult format
     fn convert_test_results_to_build_result(
-        &self, 
-        execution_result: TestExecutionResult, 
         total_duration: Duration
     ) -> crate::error::Result<()> {
         let success = execution_result.summary.success;
@@ -1103,50 +742,29 @@ impl BuildOrchestrator {
         let mut warnings = Vec::new();
         for failed_test in &execution_result.summary.failed_tests {
             warnings.push(format!(
-                "Test '{}' failed: {}",
-                failed_test.test_name,
                 failed_test.reason
             ));
-        }
-        
         // Add performance insights as warnings
         for insight in &execution_result.summary.performance_insights {
             warnings.push(format!("Performance insight: {}", insight));
-        }
-        
         // Create build statistics from test statistics
         let build_statistics = BuildStatistics {
-            files_compiled: statistics.total_tests,
             files_cached: 0, // Tests aren't cached in the same way
             lines_compiled: 0, // Could be computed from test files
-            peak_memory: statistics.total_memory_usage.unwrap_or(0),
             phase_timings: {
                 let mut timings = HashMap::new();
                 timings.insert("test_discovery".to_string(), Duration::from_millis(100)); // Estimated
                 timings.insert("test_execution".to_string(), execution_result.total_duration);
                 timings
-            },
-        };
         
         // Create artifacts from test results (test reports, coverage, etc.)
         let mut artifacts = HashMap::new();
         artifacts.insert(
-            "test_results".to_string(),
             self.work_dir.join("target").join("test_results.json")
         );
         
         Ok(BuildResult {
-            success,
-            duration: total_duration,
-            targets_built: vec![format!("tests ({} passed)", statistics.passed)],
-            targets_skipped: vec![format!("{} ignored", statistics.ignored)],
-            outputs: vec![self.work_dir.join("target").join("test_results.json")],
-            artifacts,
-            warnings,
-            statistics: build_statistics,
         })
-    }
-    
     /// Run toolchain integration (format, lint, etc.)
     #[instrument(skip(self))]
     pub async fn run_tools(&self) -> crate::error::Result<()> {
@@ -1155,21 +773,13 @@ impl BuildOrchestrator {
         // Run formatter
         if self.config.tools.formatter.format_on_build {
             self.run_formatter().await?;
-        }
-        
         // Run linter
         if self.config.tools.linter.lint_on_build {
             self.run_linter().await?;
-        }
-        
         // Run documentation generator
         if self.config.tools.docs.generate_on_build {
             self.run_docs().await?;
-        }
-        
         Ok(())
-    }
-    
     /// Run CURSED formatter
     async fn run_formatter(&self) -> crate::error::Result<()> {
         info!("Running CURSED formatter");
@@ -1183,11 +793,7 @@ impl BuildOrchestrator {
         if !output.status.success() {
             let stderr = String::from_utf8_lossy(&output.stderr);
             warn!("Formatter found issues: {}", stderr);
-        }
-        
         Ok(())
-    }
-    
     /// Run CURSED linter
     async fn run_linter(&self) -> crate::error::Result<()> {
         info!("Running CURSED linter");
@@ -1200,11 +806,7 @@ impl BuildOrchestrator {
         if !output.status.success() {
             let stderr = String::from_utf8_lossy(&output.stderr);
             warn!("Linter found issues: {}", stderr);
-        }
-        
         Ok(())
-    }
-    
     /// Run documentation generator
     async fn run_docs(&self) -> crate::error::Result<()> {
         info!("Running documentation generator");
@@ -1221,19 +823,13 @@ impl BuildOrchestrator {
         if !output.status.success() {
             let stderr = String::from_utf8_lossy(&output.stderr);
             warn!("Documentation generator issues: {}", stderr);
-        }
-        
         Ok(())
-    }
-    
     /// Start file watching
     #[instrument(skip(self))]
     pub async fn start_file_watching(&mut self) -> crate::error::Result<()> {
         if self.file_watcher.is_some() {
             warn!("File watcher already running");
             return Ok(());
-        }
-        
         info!("Configuring file watcher for patterns: {:?}", self.watch_config.patterns);
         
         let (event_sender, event_receiver) = mpsc::channel();
@@ -1245,8 +841,6 @@ impl BuildOrchestrator {
                 if let Err(e) = event_sender.send(res) {
                     error!("Failed to send file watcher event: {}", e);
                 }
-            },
-            Config::default(),
         )?;
         
         // Watch source directories
@@ -1254,28 +848,18 @@ impl BuildOrchestrator {
         if src_dir.exists() {
             watcher.watch(&src_dir, RecursiveMode::Recursive)?;
             debug!("Watching directory: {}", src_dir.display());
-        }
-        
         // Watch examples directory
         let examples_dir = self.work_dir.join("examples");
         if examples_dir.exists() {
             watcher.watch(&examples_dir, RecursiveMode::Recursive)?;
             debug!("Watching directory: {}", examples_dir.display());
-        }
-        
         // Watch tests directory
         let tests_dir = self.work_dir.join("tests");
         if tests_dir.exists() {
             watcher.watch(&tests_dir, RecursiveMode::Recursive)?;
             debug!("Watching directory: {}", tests_dir.display());
-        }
-        
         // Watch configuration files
         let config_files = [
-            "Cargo.toml",
-            "CursedBuild.toml", 
-            "CursedPackage.toml",
-            "cursed.lock",
         ];
         
         for config_file in &config_files {
@@ -1299,8 +883,6 @@ impl BuildOrchestrator {
                 if shutdown_receiver.try_recv().is_ok() {
                     debug!("File watcher thread received shutdown signal");
                     break;
-                }
-                
                 // Process file events
                 match event_receiver.try_recv() {
                     Ok(Ok(event)) => {
@@ -1341,8 +923,6 @@ impl BuildOrchestrator {
                                     pending_events.clear();
                                 }
                             }
-                        }
-                        
                         // Small sleep to prevent busy waiting
                         thread::sleep(Duration::from_millis(10));
                     }
@@ -1351,16 +931,11 @@ impl BuildOrchestrator {
         });
         
         self.file_watcher = Some(FileWatcher {
-            watcher,
             event_receiver: None, // Moved to thread
-            watch_thread: Some(watch_thread),
-            shutdown_sender: Some(shutdown_sender),
         });
         
         info!("File watcher started successfully");
         Ok(())
-    }
-    
     /// Stop file watching
     #[instrument(skip(self))]
     pub async fn stop_file_watching(&mut self) -> crate::error::Result<()> {
@@ -1370,8 +945,6 @@ impl BuildOrchestrator {
             // Send shutdown signal
             if let Some(shutdown_sender) = file_watcher.shutdown_sender.take() {
                 let _ = shutdown_sender.send(());
-            }
-            
             // Wait for thread to finish
             if let Some(watch_thread) = file_watcher.watch_thread.take() {
                 if let Err(e) = watch_thread.join() {
@@ -1380,29 +953,19 @@ impl BuildOrchestrator {
             }
             
             info!("File watcher stopped");
-        }
-        
         Ok(())
-    }
-    
     /// Check if we need to trigger a rebuild
     async fn check_for_rebuild_trigger(&self) -> crate::error::Result<()> {
         // This is a placeholder - in the real implementation,
         // the file watcher thread would set a flag that we check here
         // For now, we return false to prevent constant rebuilding
         Ok(false)
-    }
-    
     /// Configure watch patterns
     pub fn set_watch_config(&mut self, config: WatchConfig) {
         self.watch_config = config;
-    }
-    
     /// Get current watch configuration
     pub fn get_watch_config(&self) -> &WatchConfig {
         &self.watch_config
-    }
-    
     /// Enable advanced parallel compilation
     #[instrument(skip(self))]
     pub async fn enable_parallel_compilation(&mut self, config: Option<ParallelCompilationConfig>) -> crate::error::Result<()> {
@@ -1416,8 +979,6 @@ impl BuildOrchestrator {
         info!("Parallel compilation enabled with {} workers", worker_count);
         
         Ok(())
-    }
-    
     /// Enable incremental optimization
     #[instrument(skip(self))]
     pub async fn enable_incremental_optimization(&mut self, config: Option<IncrementalConfig>) -> crate::error::Result<()> {
@@ -1431,8 +992,6 @@ impl BuildOrchestrator {
         info!("Incremental optimization enabled with fine-grained dependency tracking");
         
         Ok(())
-    }
-    
     /// Enable build profiling
     #[instrument(skip(self))]
     pub async fn enable_build_profiling(&mut self, config: Option<ProfilerConfig>) -> crate::error::Result<()> {
@@ -1446,8 +1005,6 @@ impl BuildOrchestrator {
         info!("Build profiling enabled with detailed performance analysis");
         
         Ok(())
-    }
-    
     /// Enable artifact management
     #[instrument(skip(self))]
     pub async fn enable_artifact_management(&mut self, config: Option<ArtifactConfig>) -> crate::error::Result<()> {
@@ -1461,8 +1018,6 @@ impl BuildOrchestrator {
         info!("Artifact management enabled with intelligent storage and versioning");
         
         Ok(())
-    }
-    
     /// Build with advanced optimization
     #[instrument(skip(self))]
     pub async fn build_optimized(&mut self, profile: &str) -> crate::error::Result<()> {
@@ -1476,34 +1031,16 @@ impl BuildOrchestrator {
         
         let start_time = Instant::now();
         let mut result = BuildResult {
-            success: true,
-            duration: Duration::default(),
-            targets_built: Vec::new(),
-            targets_skipped: Vec::new(),
-            outputs: Vec::new(),
-            artifacts: HashMap::new(),
-            warnings: Vec::new(),
             statistics: BuildStatistics {
-                files_compiled: 0,
-                files_cached: 0,
-                lines_compiled: 0,
-                peak_memory: 0,
-                phase_timings: HashMap::new(),
-            },
-        };
         
         // Run incremental analysis if enabled
         if let Some(ref mut optimizer) = self.incremental_optimizer {
             let incremental_plan = optimizer.analyze_incremental_build(
-                &self.config.targets,
                 &self.config.get_effective_profile(profile)
                     .map_err(|e| BuildError::ConfigError(e.to_string()))?
             ).await?;
             
             info!(
-                "Incremental analysis: {} files to compile, {} from cache, {:.1}% cache hit rate",
-                incremental_plan.files_to_compile.len(),
-                incremental_plan.files_from_cache.len(),
                 incremental_plan.cache_hit_rate * 100.0
             );
             
@@ -1511,22 +1048,17 @@ impl BuildOrchestrator {
                 .iter()
                 .map(|p| p.to_string_lossy().to_string())
                 .collect();
-        }
-        
         // Use parallel compilation if enabled
         if let Some(ref mut parallel_compiler) = self.parallel_compiler {
             // Convert targets to compilation tasks
             let compilation_tasks = self.create_compilation_tasks(&self.config.targets, profile)?;
             
             let parallel_result = parallel_compiler.compile_parallel(
-                compilation_tasks,
                 &self.config.get_effective_profile(profile)
                     .map_err(|e| BuildError::ConfigError(e.to_string()))?
             ).await?;
             
             info!(
-                "Parallel compilation completed: {} tasks, {:.1}% efficiency",
-                parallel_result.tasks_completed,
                 parallel_result.parallel_efficiency * 100.0
             );
             
@@ -1541,20 +1073,14 @@ impl BuildOrchestrator {
         } else {
             // Fall back to standard build
             result = self.build_all(profile).await?;
-        }
-        
         // Store artifacts if artifact management is enabled
         if let Some(ref mut artifact_manager) = self.artifact_manager {
             let stored_artifacts = artifact_manager.store_artifacts(
-                &result,
-                &self.config,
                 &self.config.get_effective_profile(profile)
                     .map_err(|e| BuildError::ConfigError(e.to_string()))?
             ).await.map_err(|e| BuildError::ConfigError(e.to_string()))?;
             
             info!("Stored {} artifacts", stored_artifacts.len());
-        }
-        
         result.duration = start_time.elapsed();
         
         // Generate profiling report if enabled
@@ -1562,16 +1088,12 @@ impl BuildOrchestrator {
             let profiling_report = profiler.stop_profiling().await?;
             
             info!(
-                "Build profiling completed - Performance score: {:.1}, {} optimization recommendations",
-                profiling_report.performance_analysis.overall_score * 100.0,
                 profiling_report.optimization_recommendations.len()
             );
             
             // Add profiling insights to warnings
             for recommendation in &profiling_report.optimization_recommendations {
                 result.warnings.push(format!(
-                    "Performance recommendation: {} (potential savings: {:?})",
-                    recommendation.title,
                     recommendation.expected_improvement.time_savings
                 ));
             }
@@ -1579,36 +1101,24 @@ impl BuildOrchestrator {
         
         info!("Optimized build completed in {:?}", result.duration);
         Ok(result)
-    }
-    
     /// Get performance insights from profiler
     pub fn get_performance_insights(&self) -> Option<String> {
         self.build_profiler.as_ref().map(|profiler| {
             let stats = profiler.get_current_statistics();
             format!(
-                "Current build performance:\n- Total time: {:?}\n- Compilation time: {:?}\n- Peak memory: {} MB\n- CPU usage: {:.1}%",
-                stats.timing_metrics.total_build_time,
-                stats.timing_metrics.compilation_time,
                 stats.resource_metrics.peak_memory_usage / (1024 * 1024),
                 stats.resource_metrics.peak_cpu_usage
             )
         })
-    }
-    
     /// Get artifact management statistics
     pub fn get_artifact_statistics(&self) -> Option<String> {
         self.artifact_manager.as_ref().map(|manager| {
             let stats = manager.get_statistics();
             format!(
-                "Artifact storage:\n- Total artifacts: {}\n- Storage used: {} MB\n- Cache hit rate: {:.1}%\n- Deduplication savings: {} MB",
-                stats.total_artifacts,
                 stats.total_storage_used / (1024 * 1024),
-                stats.cache_hit_rate * 100.0,
                 stats.deduplication_savings / (1024 * 1024)
             )
         })
-    }
-    
     /// Extract enhanced metrics from pipeline results
     fn extract_enhanced_pipeline_metrics(&self, pipeline_result: &PipelineResult) -> crate::error::Result<()> {
         let mut phase_timings = HashMap::new();
@@ -1622,8 +1132,6 @@ impl BuildOrchestrator {
                         phase_timings.insert(stage_name.clone(), Duration::from_millis(millis));
                     }
                 }
-            }
-            
             // Extract lines compiled for this stage
             if let Some(lines) = stage_info.get("lines_compiled") {
                 if let Some(lines_str) = lines.as_str() {
@@ -1645,14 +1153,7 @@ impl BuildOrchestrator {
         let peak_memory = pipeline_result.statistics.resource_usage.peak_memory;
         
         Ok(BuildStatistics {
-            files_compiled,
-            files_cached,
-            lines_compiled: total_lines_compiled,
-            peak_memory,
-            phase_timings,
         })
-    }
-    
     /// Analyze build performance and generate recommendations
     fn analyze_build_performance(&self, statistics: &BuildStatistics) -> Vec<String> {
         let mut recommendations = Vec::new();
@@ -1665,7 +1166,6 @@ impl BuildOrchestrator {
                 (duration.as_millis() as f64 / total_time.as_millis() as f64) * 100.0
             } else {
                 0.0
-            };
             
             match phase.as_str() {
                 "compilation" if percentage > 60.0 => {
@@ -1684,22 +1184,15 @@ impl BuildOrchestrator {
         // Memory usage analysis
         if statistics.peak_memory > 2 * 1024 * 1024 * 1024 { // > 2GB
             recommendations.push("High memory usage detected - consider reducing parallel workers or enabling incremental compilation".to_string());
-        }
-        
         // Cache efficiency analysis
         let cache_hit_rate = if statistics.files_compiled + statistics.files_cached > 0 {
             statistics.files_cached as f64 / (statistics.files_compiled + statistics.files_cached) as f64
         } else {
             0.0
-        };
         
         if cache_hit_rate < 0.3 {
             recommendations.push("Low cache hit rate - ensure incremental builds are properly configured".to_string());
-        }
-        
         recommendations
-    }
-    
     /// Enhanced build metrics collection
     fn collect_enhanced_build_metrics(&self, result: &BuildResult) -> BuildPerformanceReport {
         let performance_recommendations = self.analyze_build_performance(&result.statistics);
@@ -1711,13 +1204,6 @@ impl BuildOrchestrator {
         let resource_analysis = self.analyze_resource_utilization(&result.statistics);
         
         BuildPerformanceReport {
-            total_duration: result.duration,
-            efficiency_score,
-            performance_recommendations,
-            resource_analysis,
-            phase_breakdown: result.statistics.phase_timings.clone(),
-            cache_effectiveness: self.calculate_cache_effectiveness(&result.statistics),
-            bottleneck_analysis: self.identify_build_bottlenecks(&result.statistics),
         }
     }
     
@@ -1730,7 +1216,6 @@ impl BuildOrchestrator {
             statistics.files_cached as f64 / (statistics.files_compiled + statistics.files_cached) as f64
         } else {
             0.0
-        };
         score *= 0.3 + (cache_ratio * 0.7); // Weight cache usage heavily
         
         // Factor in memory efficiency (penalize excessive memory usage)
@@ -1738,7 +1223,6 @@ impl BuildOrchestrator {
             1.0 - ((statistics.peak_memory as f64 / (4.0 * 1024.0 * 1024.0 * 1024.0)).min(1.0)) // Normalize against 4GB
         } else {
             1.0
-        };
         score *= 0.7 + (memory_efficiency * 0.3);
         
         // Factor in compilation speed (lines per second)
@@ -1750,22 +1234,13 @@ impl BuildOrchestrator {
             let lines_per_second = statistics.lines_compiled as f64 / total_time_secs;
             let speed_factor = (lines_per_second / 1000.0).min(1.0); // Normalize against 1000 lines/sec
             score *= 0.8 + (speed_factor * 0.2);
-        }
-        
         score.max(0.0).min(1.0)
-    }
-    
     /// Analyze resource utilization patterns
     fn analyze_resource_utilization(&self, statistics: &BuildStatistics) -> ResourceUtilizationAnalysis {
         let total_time = statistics.phase_timings.values().sum::<Duration>();
         
         ResourceUtilizationAnalysis {
             memory_peak_mb: statistics.peak_memory / (1024 * 1024),
-            memory_efficiency: self.calculate_memory_efficiency(statistics),
-            cpu_intensive_phases: self.identify_cpu_intensive_phases(statistics),
-            io_intensive_phases: self.identify_io_intensive_phases(statistics),
-            parallelization_opportunities: self.identify_parallelization_opportunities(statistics),
-            total_build_time: total_time,
         }
     }
     
@@ -1776,12 +1251,8 @@ impl BuildOrchestrator {
             statistics.files_cached as f64 / total_files as f64
         } else {
             0.0
-        };
         
         CacheEffectivenessMetrics {
-            hit_rate,
-            files_from_cache: statistics.files_cached,
-            total_files,
             estimated_time_saved: Duration::from_secs((statistics.files_cached as u64) * 2), // Estimate 2s saved per cached file
             cache_storage_efficiency: 0.85, // Placeholder - would be calculated from actual cache data
         }
@@ -1797,49 +1268,28 @@ impl BuildOrchestrator {
                 (duration.as_millis() as f64 / total_time.as_millis() as f64) * 100.0
             } else {
                 0.0
-            };
             
             if percentage > 25.0 {
                 bottlenecks.push(BuildBottleneck {
-                    phase: phase.clone(),
-                    duration: *duration,
-                    percentage,
                     severity: if percentage > 50.0 { 
                         BottleneckSeverity::Critical 
                     } else if percentage > 35.0 { 
                         BottleneckSeverity::High 
                     } else { 
                         BottleneckSeverity::Medium 
-                    },
-                    recommendations: self.get_bottleneck_recommendations(phase, percentage),
                 });
             }
         }
         
         bottlenecks
-    }
-    
     /// Get specific recommendations for bottlenecks
     fn get_bottleneck_recommendations(&self, phase: &str, percentage: f64) -> Vec<String> {
         match phase {
             "compilation" => vec![
-                "Enable parallel compilation with optimal worker count".to_string(),
-                "Consider using precompiled headers".to_string(),
                 "Enable unity/jumbo builds for faster compilation".to_string(),
-            ],
             "linking" => vec![
-                "Use incremental linking (--incremental-linker-compatible)".to_string(),
-                "Consider link-time optimization (LTO) for release builds only".to_string(),
-                "Split large executables into smaller libraries".to_string(),
-            ],
             "parsing" => vec![
-                "Reduce template instantiation complexity".to_string(),
-                "Use forward declarations to reduce parsing overhead".to_string(),
-                "Consider module system for better parsing performance".to_string(),
-            ],
             _ => vec![
-                format!("Optimize {} phase which consumes {:.1}% of build time", phase, percentage),
-            ],
         }
     }
     
@@ -1848,30 +1298,22 @@ impl BuildOrchestrator {
         // Calculate based on peak memory vs files compiled
         if statistics.files_compiled == 0 {
             return 1.0;
-        }
-        
         let memory_per_file = statistics.peak_memory as f64 / statistics.files_compiled as f64;
         let optimal_memory_per_file = 128.0 * 1024.0 * 1024.0; // 128MB per file is reasonable
         
         (optimal_memory_per_file / memory_per_file).min(1.0)
-    }
-    
     fn identify_cpu_intensive_phases(&self, statistics: &BuildStatistics) -> Vec<String> {
         let cpu_phases = vec!["compilation", "optimization", "codegen"];
         statistics.phase_timings.keys()
             .filter(|phase| cpu_phases.iter().any(|cpu_phase| phase.contains(cpu_phase)))
             .cloned()
             .collect()
-    }
-    
     fn identify_io_intensive_phases(&self, statistics: &BuildStatistics) -> Vec<String> {
         let io_phases = vec!["parsing", "linking", "dependency_resolution"];
         statistics.phase_timings.keys()
             .filter(|phase| io_phases.iter().any(|io_phase| phase.contains(io_phase)))
             .cloned()
             .collect()
-    }
-    
     fn identify_parallelization_opportunities(&self, statistics: &BuildStatistics) -> Vec<String> {
         let mut opportunities = Vec::new();
         
@@ -1883,33 +1325,19 @@ impl BuildOrchestrator {
         
         if statistics.files_compiled > 10 {
             opportunities.push("Multiple compilation units can be processed in parallel".to_string());
-        }
-        
         opportunities
-    }
-    
     /// Create compilation tasks from build targets
     fn create_compilation_tasks(&self, targets: &[BuildTarget], profile: &str) -> crate::error::Result<()> {
         let mut tasks = Vec::new();
         
         for target in targets {
             let task = crate::build_system::parallel_compilation::CompilationTask {
-                id: target.name.clone(),
-                target: target.clone(),
                 profile: self.config.get_effective_profile(profile)
-                    .map_err(|e| BuildError::ConfigError(e.to_string()))?,
-                dependencies: target.dependencies.clone(),
                 estimated_duration: Duration::from_secs(10), // Placeholder estimation
                 memory_requirement: 256 * 1024 * 1024, // 256MB placeholder
-                priority: crate::build_system::TaskPriority::Normal,
                 compilation_units: Vec::new(), // Would be populated from analysis
-            };
             tasks.push(task);
-        }
-        
         Ok(tasks)
-    }
-
     /// Execute bootstrap compilation process
     #[instrument(skip(self))]
     pub async fn bootstrap_compile(&mut self, config: Option<BootstrapConfig>) -> crate::error::Result<()> {
@@ -1925,8 +1353,6 @@ impl BuildOrchestrator {
         // let mut bootstrap_manager = BootstrapPipeline::new(bootstrap_config, self.work_dir.clone())?;
         // bootstrap_manager.execute_bootstrap(&self.config).await
         //     .map_err(|e| BuildError::BootstrapError(e.to_string()))
-    }
-
     /// Execute quick bootstrap verification
     #[instrument(skip(self))]
     pub async fn bootstrap_verify(&mut self, config: Option<BootstrapConfig>) -> crate::error::Result<()> {
@@ -1942,8 +1368,6 @@ impl BuildOrchestrator {
         // let mut bootstrap_manager = BootstrapPipeline::new(bootstrap_config, self.work_dir.clone())?;
         // bootstrap_manager.execute_bootstrap(&self.config).await
         //     .map_err(|e| BuildError::BootstrapError(e.to_string()))
-    }
-
     /// Check bootstrap feasibility
     #[instrument(skip(self))]
     pub async fn check_bootstrap_feasibility(&mut self) -> crate::error::Result<()> {
@@ -1954,8 +1378,6 @@ impl BuildOrchestrator {
         if !bootstrap_source.exists() {
             warn!("Bootstrap source not found at: {}", bootstrap_source.display());
             return Ok(false);
-        }
-
         // Check if we have a working Rust compiler
         let rust_compiler = self.work_dir.join("target").join("release").join("cursed");
         if !rust_compiler.exists() {
@@ -1973,18 +1395,12 @@ impl BuildOrchestrator {
                     return Ok(false);
                 }
             }
-        }
-
         // Check if the compiler has basic functionality
         if !self.test_rust_compiler_basic_functionality(&rust_compiler).await? {
             warn!("Rust-based compiler failed basic functionality test");
             return Ok(false);
-        }
-
         info!("Bootstrap feasibility check passed");
         Ok(true)
-    }
-
     /// Test basic functionality of the Rust-based compiler
     async fn test_rust_compiler_basic_functionality(&self, compiler_path: &Path) -> crate::error::Result<()> {
         use std::process::{Command, Stdio};
@@ -2019,14 +1435,11 @@ slay main() -> normie {
         let _ = std::fs::remove_dir_all(&test_dir);
 
         match output {
-            Ok(output) => Ok(output.status.success()),
             Err(_) => {
                 debug!("Basic functionality test skipped (compiler not ready)");
                 Ok(true) // Assume success for now during development
             }
         }
-    }
-
     /// Get bootstrap configuration recommendations
     pub fn get_bootstrap_config_recommendations(&self) -> BootstrapConfig {
         let mut config = BootstrapConfig::default();
@@ -2037,8 +1450,6 @@ slay main() -> normie {
             config.bootstrap_cycles = 4; // More cycles for better verification
         } else {
             config.bootstrap_cycles = 3; // Standard 3 cycles
-        }
-
         // Adjust timeouts based on expected performance
         config.stage_timeout = Duration::from_secs(if cpu_count >= 4 { 300 } else { 600 });
 
@@ -2056,8 +1467,6 @@ impl Drop for BuildOrchestrator {
             let _ = futures::executor::block_on(self.stop_file_watching());
         }
     }
-}
-
 /// Extract warnings from compiler output
 fn extract_warnings(output: &str) -> Vec<String> {
     output
@@ -2065,33 +1474,16 @@ fn extract_warnings(output: &str) -> Vec<String> {
         .filter(|line| line.contains("warning:") || line.contains("WARNING:"))
         .map(|line| line.to_string())
         .collect()
-}
-
 /// Count lines of code in a file
 fn count_lines(path: &Path) -> crate::error::Result<()> {
     let content = std::fs::read_to_string(path)?;
     Ok(content.split("\n").count())
-}
-
 /// Memory monitoring for compilation
 pub struct MemoryMonitor {
-    start_time: Instant,
-    samples: Arc<Mutex<Vec<(Instant, f64)>>>,
-    monitoring: Arc<Mutex<bool>>,
-}
-
 pub struct MemoryStats {
-    pub peak_memory_mb: f64,
-    pub average_memory_mb: f64,
-    pub duration: Duration,
-}
-
 impl MemoryMonitor {
     pub fn new() -> Self {
         Self {
-            start_time: Instant::now(),
-            samples: Arc::new(Mutex::new(Vec::new())),
-            monitoring: Arc::new(Mutex::new(false)),
         }
     }
     
@@ -2099,8 +1491,6 @@ impl MemoryMonitor {
         {
             let mut monitoring = self.monitoring.lock().unwrap();
             *monitoring = true;
-        }
-        
         let samples = Arc::clone(&self.samples);
         let monitoring = Arc::clone(&self.monitoring);
         
@@ -2124,14 +1514,10 @@ impl MemoryMonitor {
                 thread::sleep(Duration::from_millis(100));
             }
         });
-    }
-    
     pub fn stop_monitoring(&self) -> MemoryStats {
         {
             let mut monitoring = self.monitoring.lock().unwrap();
             *monitoring = false;
-        }
-        
         thread::sleep(Duration::from_millis(150)); // Let monitoring thread finish
         
         let samples = self.samples.lock().unwrap();
@@ -2139,23 +1525,12 @@ impl MemoryMonitor {
         
         if samples.is_empty() {
             return MemoryStats {
-                peak_memory_mb: 0.0,
-                average_memory_mb: 0.0,
-                duration,
-            };
-        }
-        
         let peak_memory_mb = samples.iter().map(|(_, mem)| *mem).fold(0.0, f64::max);
         let average_memory_mb = samples.iter().map(|(_, mem)| *mem).sum::<f64>() / samples.len() as f64;
         
         MemoryStats {
-            peak_memory_mb,
-            average_memory_mb,
-            duration,
         }
     }
-}
-
 /// Extract compilation metrics from compiler output
 fn extract_compilation_metrics(output: &str) -> HashMap<String, f64> {
     let mut metrics = HashMap::new();
@@ -2179,8 +1554,6 @@ fn extract_compilation_metrics(output: &str) -> HashMap<String, f64> {
                 metrics.insert("lines_compiled".to_string(), lines);
             }
         }
-    }
-    
     // Parse timing information from verbose output
     for line in output.split("\n") {
         if line.contains("parsing took") {
@@ -2195,8 +1568,6 @@ fn extract_compilation_metrics(output: &str) -> HashMap<String, f64> {
     }
     
     metrics
-}
-
 /// Extract timing information from a compiler output line
 fn extract_time_from_line(line: &str, metric_name: &str, metrics: &mut HashMap<String, f64>) {
     use regex::Regex;
@@ -2206,14 +1577,8 @@ fn extract_time_from_line(line: &str, metric_name: &str, metrics: &mut HashMap<S
             if let (Some(value_match), Some(unit_match)) = (captures.get(1), captures.get(2)) {
                 if let Ok(value) = value_match.as_str().parse::<f64>() {
                     let time_ms = match unit_match.as_str() {
-                        "s" => value * 1000.0,
-                        "ms" => value,
-                        _ => value,
-                    };
                     metrics.insert(metric_name.to_string(), time_ms);
                 }
             }
         }
     }
-}
-

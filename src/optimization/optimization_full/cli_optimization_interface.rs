@@ -9,9 +9,7 @@ use clap::{Arg, ArgAction, Command, ArgMatches};
 use tracing::{info, error};
 
 use crate::optimization::comprehensive_optimization_enablement::{
-    ComprehensiveOptimizationSystem, ComprehensiveOptimizationConfig,
-    OptimizationResults,
-};
+// };
 
 use crate::common_types::optimization_level::OptimizationLevel;
 use crate::error::{CursedError, Result};
@@ -279,8 +277,6 @@ impl OptimizationCLI {
                     .action(ArgAction::SetTrue)
                     .help("Optimize for minimum binary size (equivalent to -Os)")
             )
-    }
-    
     /// Parse CLI arguments and create optimization configuration
     pub fn parse_optimization_config(matches: &ArgMatches) -> Result<ComprehensiveOptimizationConfig> {
         let mut config = ComprehensiveOptimizationConfig::default();
@@ -299,25 +295,10 @@ impl OptimizationCLI {
             // Parse optimization level
             if let Some(opt_level_str) = matches.get_one::<String>("opt-level") {
                 config.optimization_level = match opt_level_str.as_str() {
-                    "0" => OptimizationLevel::O0,
-                    "1" => OptimizationLevel::O1,
-                    "2" => OptimizationLevel::O2,
-                    "3" => OptimizationLevel::O3,
-                    "s" => OptimizationLevel::Os,
                     "z" => OptimizationLevel::Os, // Treat z as size for now
-                    "fast" => OptimizationLevel::Fast,
-                    _ => return Err(CursedError::generic(format!("Invalid optimization level: {}", opt_level_str))),
-                };
                 
                 // Apply appropriate configuration for the level
                 config = match config.optimization_level {
-                    OptimizationLevel::O0 => ComprehensiveOptimizationConfig::debug_config(),
-                    OptimizationLevel::O1 => ComprehensiveOptimizationConfig::basic_config(),
-                    OptimizationLevel::O2 => ComprehensiveOptimizationConfig::standard_config(),
-                    OptimizationLevel::O3 => ComprehensiveOptimizationConfig::aggressive_config(),
-                    OptimizationLevel::Os => ComprehensiveOptimizationConfig::size_config(),
-                    OptimizationLevel::Fast => ComprehensiveOptimizationConfig::aggressive_config(),
-                };
             }
         }
         
@@ -325,8 +306,6 @@ impl OptimizationCLI {
         Self::apply_optimization_overrides(&mut config, matches)?;
         
         Ok(config)
-    }
-    
     /// Apply specific optimization overrides from CLI flags
     fn apply_optimization_overrides(config: &mut ComprehensiveOptimizationConfig, matches: &ArgMatches) -> Result<()> {
         // Core optimization passes
@@ -334,127 +313,78 @@ impl OptimizationCLI {
             config.enable_function_inlining = true;
         } else if matches.get_flag("disable-inlining") {
             config.enable_function_inlining = false;
-        }
-        
         if matches.get_flag("enable-vectorization") {
             config.enable_vectorization = true;
         } else if matches.get_flag("disable-vectorization") {
             config.enable_vectorization = false;
-        }
-        
         if matches.get_flag("enable-loop-unrolling") {
             config.enable_loop_unrolling = true;
         } else if matches.get_flag("disable-loop-unrolling") {
             config.enable_loop_unrolling = false;
-        }
-        
         if matches.get_flag("enable-cse") {
             config.enable_common_subexpression_elimination = true;
         } else if matches.get_flag("disable-cse") {
             config.enable_common_subexpression_elimination = false;
-        }
-        
         if matches.get_flag("enable-tail-call") {
             config.enable_tail_call_optimization = true;
         } else if matches.get_flag("disable-tail-call") {
             config.enable_tail_call_optimization = false;
-        }
-        
         if matches.get_flag("enable-lto") {
             config.enable_link_time_optimization = true;
         } else if matches.get_flag("disable-lto") {
             config.enable_link_time_optimization = false;
-        }
-        
         if matches.get_flag("enable-ipa") {
             config.enable_interprocedural_analysis = true;
         } else if matches.get_flag("disable-ipa") {
             config.enable_interprocedural_analysis = false;
-        }
-        
         // Advanced optimization features
         if matches.get_flag("enable-pgo") {
             config.enable_profile_guided_optimization = true;
         } else if matches.get_flag("disable-pgo") {
             config.enable_profile_guided_optimization = false;
-        }
-        
         if matches.get_flag("enable-memory-layout") {
             config.enable_memory_layout_optimization = true;
-        }
-        
         if matches.get_flag("enable-advanced-vectorization") {
             config.enable_advanced_vectorization = true;
-        }
-        
         if matches.get_flag("enable-loop-fusion") {
             config.enable_loop_fusion = true;
-        }
-        
         if matches.get_flag("enable-prefetch") {
             config.enable_prefetch_insertion = true;
-        }
-        
         if matches.get_flag("enable-numa") {
             config.enable_numa_optimization = true;
-        }
-        
         // Compilation speed improvements
         if let Some(jobs_str) = matches.get_one::<String>("parallel-jobs") {
             let jobs: usize = jobs_str.parse()
                 .map_err(|_| CursedError::generic("Invalid parallel jobs value"))?;
             config.max_parallel_jobs = if jobs == 0 { num_cpus::get() } else { jobs };
             config.enable_parallel_compilation = config.max_parallel_jobs > 1;
-        }
-        
         if matches.get_flag("enable-incremental") {
             config.enable_incremental_compilation = true;
         } else if matches.get_flag("disable-incremental") {
             config.enable_incremental_compilation = false;
-        }
-        
         if matches.get_flag("enable-caching") {
             config.enable_caching_mechanisms = true;
         } else if matches.get_flag("disable-caching") {
             config.enable_caching_mechanisms = false;
-        }
-        
         if let Some(cache_dir) = matches.get_one::<String>("cache-dir") {
             config.cache_directory = Some(PathBuf::from(cache_dir));
-        }
-        
         // Performance monitoring
         if matches.get_flag("enable-benchmarking") {
             config.enable_benchmark_measurement = true;
-        }
-        
         if matches.get_flag("enable-profiling") {
             config.enable_profiling_integration = true;
-        }
-        
         if let Some(profile_dir) = matches.get_one::<String>("profile-data-dir") {
             config.profile_data_directory = Some(PathBuf::from(profile_dir));
-        }
-        
         if let Some(timeout_str) = matches.get_one::<String>("optimization-timeout") {
             let timeout_secs: u64 = timeout_str.parse()
                 .map_err(|_| CursedError::generic("Invalid optimization timeout value"))?;
             config.optimization_timeout = Duration::from_secs(timeout_secs);
-        }
-        
         // Smart optimization features
         if matches.get_flag("enable-smart-selection") {
             config.enable_smart_optimization_selection = true;
-        }
-        
         Ok(())
-    }
-    
     /// Optimize source code using CLI configuration
     pub fn optimize_source_code(
-        source_code: &str,
-        target_path: &Path,
-        matches: &ArgMatches,
     ) -> Result<OptimizationResults> {
         let config = Self::parse_optimization_config(matches)?;
         let mut system = ComprehensiveOptimizationSystem::with_config(config)?;
@@ -468,15 +398,11 @@ impl OptimizationCLI {
             info!("  Link-time optimization: {}", system.config.enable_link_time_optimization);
             info!("  Profile-guided optimization: {}", system.config.enable_profile_guided_optimization);
             info!("  Parallel compilation: {} (jobs: {})", system.config.enable_parallel_compilation, system.config.max_parallel_jobs);
-        }
-        
         let results = system.optimize_source_code(source_code, target_path)?;
         
         if matches.get_flag("optimization-report") {
             let report = system.generate_performance_report()?;
             println!("\n{}", report);
-        }
-        
         if matches.get_flag("verbose-optimization") {
             println!("\nOptimization Results:");
             println!("  Overall improvement: {:.1}%", results.overall_improvement * 100.0);
@@ -488,11 +414,7 @@ impl OptimizationCLI {
             println!("  Cache hit rate: {:.1}%", results.cache_hit_rate * 100.0);
             println!("  Parallel efficiency: {:.1}%", results.parallel_efficiency * 100.0);
             println!("  Optimizations applied: {}", results.optimizations_applied);
-        }
-        
         Ok(results)
-    }
-    
     /// Display optimization help information
     pub fn display_optimization_help() {
         // TODO: implement

@@ -9,62 +9,40 @@ use std::fmt;
 /// HTTP header map
 #[derive(Debug, Clone)]
 pub struct HttpHeaders {
-    pub headers: HashMap<String, String>,
-}
-
 impl HttpHeaders {
     /// Create new empty headers
     pub fn new() -> Self {
         Self {
-            headers: HashMap::new(),
         }
     }
     
     /// Set a header value
     pub fn set(&mut self, name: &str, value: &str) {
         self.headers.insert(name.to_lowercase(), value.to_string());
-    }
-    
     /// Get a header value
     pub fn get(&self, name: &str) -> Option<&String> {
         self.headers.get(&name.to_lowercase())
-    }
-    
     /// Remove a header
     pub fn remove(&mut self, name: &str) -> Option<String> {
         self.headers.remove(&name.to_lowercase())
-    }
-    
     /// Check if header exists
     pub fn contains(&self, name: &str) -> bool {
         self.headers.contains_key(&name.to_lowercase())
-    }
-    
     /// Get all header names
     pub fn names(&self) -> Vec<&String> {
         self.headers.keys().collect()
-    }
-    
     /// Get all header values
     pub fn values(&self) -> Vec<&String> {
         self.headers.values().collect()
-    }
-    
     /// Clear all headers
     pub fn clear(&mut self) {
         self.headers.clear();
-    }
-    
     /// Get number of headers
     pub fn len(&self) -> usize {
         self.headers.len()
-    }
-    
     /// Check if headers is empty
     pub fn is_empty(&self) -> bool {
         self.headers.is_empty()
-    }
-    
     /// Merge headers from another HttpHeaders
     pub fn extend(&mut self, other: &HttpHeaders) {
         for (name, value) in &other.headers {
@@ -96,32 +74,22 @@ impl fmt::Display for HttpHeaders {
 /// HTTP header value wrapper
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct HeaderValue {
-    value: String,
-}
-
 impl HeaderValue {
     /// Create new header value
     pub fn from_str(value: &str) -> Self {
         Self {
-            value: value.to_string(),
         }
     }
     
     /// Get value as string
     pub fn as_str(&self) -> &str {
         &self.value
-    }
-    
     /// Get value as bytes
     pub fn as_bytes(&self) -> &[u8] {
         self.value.as_bytes()
-    }
-    
     /// Check if value is empty
     pub fn is_empty(&self) -> bool {
         self.value.is_empty()
-    }
-    
     /// Get length of value
     pub fn len(&self) -> usize {
         self.value.len()
@@ -144,8 +112,6 @@ impl From<String> for HeaderValue {
     fn from(value: String) -> Self {
         Self { value }
     }
-}
-
 impl From<HeaderValue> for String {
     fn from(header: HeaderValue) -> Self {
         header.value
@@ -182,8 +148,6 @@ pub mod header {
     pub const TRANSFER_ENCODING: &str = "transfer-encoding";
     pub const USER_AGENT: &str = "user-agent";
     pub const WWW_AUTHENTICATE: &str = "www-authenticate";
-}
-
 /// HTTP header utilities
 pub mod utils {
     use super::*;
@@ -203,8 +167,6 @@ pub mod utils {
         }
         
         (media_type, params)
-    }
-    
     /// Format Content-Type header
     pub fn format_content_type(media_type: &str, params: &HashMap<String, String>) -> String {
         let mut result = media_type.to_string();
@@ -212,8 +174,6 @@ pub mod utils {
             result.push_str(&format!("; {}={}", key, value));
         }
         result
-    }
-    
     /// Parse Cache-Control header
     pub fn parse_cache_control(value: &str) -> HashMap<String, Option<String>> {
         let mut directives = HashMap::new();
@@ -230,14 +190,10 @@ pub mod utils {
         }
         
         directives
-    }
-    
     /// Check if header value contains a token
     pub fn contains_token(value: &str, token: &str) -> bool {
         value.split(',')
             .any(|part| part.trim().eq_ignore_ascii_case(token))
-    }
-    
     /// Parse quality values (q-values)
     pub fn parse_quality_values(value: &str) -> Vec<(String, f32)> {
         let mut items = Vec::new();
@@ -252,7 +208,6 @@ pub mod utils {
                     params[q_pos + 2..].trim().parse().unwrap_or(1.0)
                 } else {
                     1.0
-                };
                 
                 items.push((media_type, quality));
             } else {
@@ -263,34 +218,23 @@ pub mod utils {
         // Sort by quality value (highest first)
         items.sort_by(|a, b| b.1.partial_cmp(&a.1).unwrap_or(std::cmp::Ordering::Equal));
         items
-    }
-    
     /// Validate header name according to HTTP specification
     pub fn is_valid_header_name(name: &str) -> bool {
         if name.is_empty() {
             return false;
-        }
-        
         name.chars().all(|c| {
-            c.is_ascii() && !c.is_control() && !matches!(c, 
                 ' ' | '\t' | '(' | ')' | '<' | '>' | '@' | ',' | ';' | ':' | 
                 '\\' | '"' | '/' | '[' | ']' | '?' | '=' | '{' | '}'
             )
         })
-    }
-    
     /// Validate header value according to HTTP specification
     pub fn is_valid_header_value(value: &str) -> bool {
         value.chars().all(|c| {
             c.is_ascii() && (c == '\t' || (c >= ' ' && c != '\u{7f}'))
         })
-    }
-    
     /// Normalize header name (convert to lowercase)
     pub fn normalize_header_name(name: &str) -> String {
         name.to_lowercase()
-    }
-    
     /// Get standard header capitalization
     pub fn canonical_header_name(name: &str) -> String {
         name.split('-')

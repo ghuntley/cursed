@@ -18,8 +18,6 @@ use std::sync::{Arc, Mutex};
 /// fr fr Driver registry for managing all available database drivers
 pub struct DriverRegistry {
     drivers: Arc<Mutex<HashMap<String, Box<dyn DatabaseDriver + Send + Sync>>>>
-}
-
 impl DriverRegistry {
     /// sus Create new driver registry with built-in drivers
     pub fn new() -> Self {
@@ -46,13 +44,8 @@ impl DriverRegistry {
             Some(_) => {
                 // Return a new instance since we can't clone the trait object
                 match name {
-                    "sqlite" => Ok(Box::new(SqliteDriver::new())),
-                    "postgres" | "postgresql" => Ok(Box::new(PostgresDriver::new())),
-                    "mysql" => Ok(Box::new(MySqlDriver::new())),
-                    "mock" => Ok(Box::new(MockDriver::new())),
                     _ => Err(SqlError::connection(format!("Driver '{}' not implemented yet bestie", name)))
                 }
-            },
             None => Err(SqlError::connection(format!("Driver '{}' not found - check the spelling periodt", name)))
         }
     }
@@ -64,16 +57,12 @@ impl DriverRegistry {
         
         drivers.insert(name, driver);
         Ok(())
-    }
-    
     /// highkey List all available drivers
     pub fn list_drivers(&self) -> SqlResult<Vec<String>> {
         let drivers = self.drivers.lock()
             .map_err(|_| SqlError::connection("Failed to lock driver registry - that's sus".to_string()))?;
         
         Ok(drivers.keys().cloned().collect())
-    }
-    
     /// periodt Check if a driver is available
     pub fn has_driver(&self, name: &str) -> bool {
         if let Ok(drivers) = self.drivers.lock() {
@@ -82,8 +71,6 @@ impl DriverRegistry {
             false
         }
     }
-}
-
 impl Default for DriverRegistry {
     fn default() -> Self {
         Self::new()

@@ -10,58 +10,23 @@ pub type ValidationResult<T> = std::result::Result<T, CryptoError>;
 /// Hash validation status
 #[derive(Debug, Clone, PartialEq)]
 pub enum ValidationStatus {
-    Valid,
-    Invalid,
-    Unknown,
-    Corrupted,
-    Tampered,
-}
-
 impl ValidationStatus {
     pub fn is_valid(&self) -> bool {
         matches!(self, ValidationStatus::Valid)
-    }
-    
     pub fn description(&self) -> &'static str {
         match self {
-            ValidationStatus::Valid => "Hash is valid and verified",
-            ValidationStatus::Invalid => "Hash is invalid or incorrect",
-            ValidationStatus::Unknown => "Hash validation status unknown",
-            ValidationStatus::Corrupted => "Data appears to be corrupted",
-            ValidationStatus::Tampered => "Data shows signs of tampering",
         }
     }
-}
-
 /// Hash validation result
 #[derive(Debug, Clone)]
 pub struct HashValidationResult {
-    pub status: ValidationStatus,
-    pub algorithm: String,
-    pub computed_hash: Vec<u8>,
-    pub expected_hash: Vec<u8>,
-    pub validation_time: Duration,
-    pub data_size: usize,
-    pub error_details: Option<String>,
-}
-
 /// Hash integrity checker
 #[derive(Debug, Clone)]
 pub struct HashIntegrityChecker {
-    pub algorithm: String,
-    pub digest_size: usize,
-    pub hash_value: Vec<u8>,
-    pub created_at: Instant,
-}
-
 impl HashIntegrityChecker {
     pub fn new<H: Hasher>(mut hasher: H, data: &[u8]) -> Self {
         let hash_value = hasher.hash(data);
         Self {
-            algorithm: hasher.algorithm().to_string(),
-            digest_size: hasher.digest_size(),
-            hash_value,
-            created_at: Instant::now(),
         }
     }
     
@@ -72,19 +37,9 @@ impl HashIntegrityChecker {
         // Verify algorithm matches
         if hasher.algorithm() != self.algorithm {
             return Ok(HashValidationResult {
-                status: ValidationStatus::Invalid,
-                algorithm: hasher.algorithm().to_string(),
-                computed_hash: Vec::new(),
-                expected_hash: self.hash_value.clone(),
-                validation_time: start_time.elapsed(),
-                data_size: data.len(),
                 error_details: Some(format!(
-                    "Algorithm mismatch: expected {}, got {}", 
                     self.algorithm, hasher.algorithm()
-                )),
             });
-        }
-        
         // Compute hash
         let computed_hash = hasher.hash(data);
         
@@ -94,31 +49,17 @@ impl HashIntegrityChecker {
         } else {
             // Perform deeper analysis to determine type of failure
             self.analyze_hash_mismatch(&computed_hash, data)
-        };
         
         Ok(HashValidationResult {
-            status,
-            algorithm: hasher.algorithm().to_string(),
-            computed_hash,
-            expected_hash: self.hash_value.clone(),
-            validation_time: start_time.elapsed(),
-            data_size: data.len(),
-            error_details: None,
         })
-    }
-    
     /// Analyze why a hash mismatch occurred
     fn analyze_hash_mismatch(&self, computed_hash: &[u8], data: &[u8]) -> ValidationStatus {
         // Check for obvious corruption patterns
         if data.iter().all(|&b| b == 0) {
             return ValidationStatus::Corrupted;
-        }
-        
         // Check if hash lengths match (basic format validation)
         if computed_hash.len() != self.hash_value.len() {
             return ValidationStatus::Invalid;
-        }
-        
         // Check for patterns suggesting tampering
         let hamming_distance = self.calculate_hamming_distance(computed_hash, &self.hash_value);
         let max_distance = self.hash_value.len() * 8;
@@ -134,8 +75,6 @@ impl HashIntegrityChecker {
     fn calculate_hamming_distance(&self, a: &[u8], b: &[u8]) -> usize {
         if a.len() != b.len() {
             return usize::MAX;
-        }
-        
         a.iter()
             .zip(b.iter())
             .map(|(byte_a, byte_b)| (byte_a ^ byte_b).count_ones() as usize)
@@ -145,9 +84,6 @@ impl HashIntegrityChecker {
 
 /// Hash validator with multiple algorithm support
 pub struct MultiHashValidator {
-    validators: HashMap<String, Box<dyn Fn(&[u8]) -> Vec<u8> + Send + Sync>>,
-}
-
 impl MultiHashValidator {
     pub fn new() -> Self {
         let mut validators = HashMap::new();
@@ -168,11 +104,8 @@ impl MultiHashValidator {
     /// Add a custom hash validator
     pub fn add_validator<F>(&mut self, algorithm: String, validator: F)
     where
-        F: Fn(&[u8]) -> Vec<u8> + Send + Sync + 'static,
     {
         self.validators.insert(algorithm, Box::new(validator));
-    }
-    
     /// Validate data against multiple hash algorithms
     pub fn validate_multi(&self, data: &[u8], expected_hashes: &HashMap<String, Vec<u8>>) 
         -> ValidationResult<MultiValidationResult> {
@@ -187,25 +120,15 @@ impl MultiHashValidator {
                 
                 if !is_valid {
                     all_valid = false;
-                }
-                
                 results.push(SingleValidationResult {
-                    algorithm: algorithm.clone(),
                     status: if is_valid { 
                         ValidationStatus::Valid 
                     } else { 
                         ValidationStatus::Invalid 
-                    },
-                    computed_hash,
-                    expected_hash: expected_hash.clone(),
                 });
             } else {
                 all_valid = false;
                 results.push(SingleValidationResult {
-                    algorithm: algorithm.clone(),
-                    status: ValidationStatus::Unknown,
-                    computed_hash: Vec::new(),
-                    expected_hash: expected_hash.clone(),
                 });
             }
         }
@@ -217,46 +140,24 @@ impl MultiHashValidator {
                 ValidationStatus::Invalid // Partial validation
             } else {
                 ValidationStatus::Invalid
-            },
-            individual_results: results,
-            validation_time: start_time.elapsed(),
-            data_size: data.len(),
         })
     }
 }
 
 #[derive(Debug, Clone)]
 pub struct MultiValidationResult {
-    pub overall_status: ValidationStatus,
-    pub individual_results: Vec<SingleValidationResult>,
-    pub validation_time: Duration,
-    pub data_size: usize,
-}
-
 #[derive(Debug, Clone)]
 pub struct SingleValidationResult {
-    pub algorithm: String,
-    pub status: ValidationStatus,
-    pub computed_hash: Vec<u8>,
-    pub expected_hash: Vec<u8>,
-}
-
 /// Test vector validator for hash functions
 pub struct TestVectorValidator {
-    test_vectors: Vec<TestVector>,
-}
-
 impl TestVectorValidator {
     pub fn new() -> Self {
         Self {
-            test_vectors: STANDARD_TEST_VECTORS.to_vec(),
         }
     }
     
     pub fn add_test_vector(&mut self, vector: TestVector) {
         self.test_vectors.push(vector);
-    }
-    
     /// Validate a hasher against known test vectors
     pub fn validate_hasher<H: Hasher + Clone>(&self, hasher: H) -> ValidationResult<TestVectorValidationResult> {
         let start_time = Instant::now();
@@ -271,15 +172,7 @@ impl TestVectorValidator {
         
         if relevant_vectors.is_empty() {
             return Ok(TestVectorValidationResult {
-                algorithm: algorithm.to_string(),
-                total_vectors: 0,
-                passed_vectors: 0,
-                failed_vectors: Vec::new(),
-                validation_time: start_time.elapsed(),
-                overall_status: ValidationStatus::Unknown,
             });
-        }
-        
         let mut passed = 0;
         let mut failed_vectors = Vec::new();
         
@@ -291,10 +184,6 @@ impl TestVectorValidator {
                 passed += 1;
             } else {
                 failed_vectors.push(TestVectorFailure {
-                    description: vector.description.to_string(),
-                    input: vector.input.to_vec(),
-                    expected: vector.expected.to_vec(),
-                    computed,
                 });
             }
         }
@@ -306,42 +195,18 @@ impl TestVectorValidator {
             ValidationStatus::Invalid
         } else {
             ValidationStatus::Invalid
-        };
         
         Ok(TestVectorValidationResult {
-            algorithm: algorithm.to_string(),
-            total_vectors: total,
-            passed_vectors: passed,
-            failed_vectors,
-            validation_time: start_time.elapsed(),
-            overall_status,
         })
     }
 }
 
 #[derive(Debug, Clone)]
 pub struct TestVectorValidationResult {
-    pub algorithm: String,
-    pub total_vectors: usize,
-    pub passed_vectors: usize,
-    pub failed_vectors: Vec<TestVectorFailure>,
-    pub validation_time: Duration,
-    pub overall_status: ValidationStatus,
-}
-
 #[derive(Debug, Clone)]
 pub struct TestVectorFailure {
-    pub description: String,
-    pub input: Vec<u8>,
-    pub expected: Vec<u8>,
-    pub computed: Vec<u8>,
-}
-
 /// Hash chain validator for blockchain-like structures
 pub struct HashChainValidator<H: Hasher> {
-    hasher: H,
-}
-
 impl<H: Hasher + Clone> HashChainValidator<H> {
     pub fn new(hasher: H) -> Self {
         Self { hasher }
@@ -354,14 +219,7 @@ impl<H: Hasher + Clone> HashChainValidator<H> {
         
         if chain.is_empty() {
             return Ok(ChainValidationResult {
-                total_blocks: 0,
-                valid_blocks: 0,
-                invalid_blocks,
-                validation_time: start_time.elapsed(),
-                overall_status: ValidationStatus::Valid,
             });
-        }
-        
         // Validate first block (no previous hash to check)
         let mut previous_hash = &chain[0].hash;
         
@@ -375,85 +233,43 @@ impl<H: Hasher + Clone> HashChainValidator<H> {
             
             if !constant_time_eq(&computed_hash, &block.hash) {
                 invalid_blocks.push(ChainBlockFailure {
-                    block_index: index,
-                    block_id: block.id.clone(),
-                    expected_hash: block.hash.clone(),
-                    computed_hash,
                 });
-            }
-            
             previous_hash = &block.hash;
-        }
-        
         let total_blocks = chain.len();
         let valid_blocks = total_blocks - invalid_blocks.len();
         let overall_status = if invalid_blocks.is_empty() {
             ValidationStatus::Valid
         } else {
             ValidationStatus::Invalid
-        };
         
         Ok(ChainValidationResult {
-            total_blocks,
-            valid_blocks,
-            invalid_blocks,
-            validation_time: start_time.elapsed(),
-            overall_status,
         })
     }
 }
 
 #[derive(Debug, Clone)]
 pub struct HashChainBlock {
-    pub id: String,
-    pub data: Vec<u8>,
-    pub hash: Vec<u8>,
-}
-
 #[derive(Debug, Clone)]
 pub struct ChainValidationResult {
-    pub total_blocks: usize,
-    pub valid_blocks: usize,
-    pub invalid_blocks: Vec<ChainBlockFailure>,
-    pub validation_time: Duration,
-    pub overall_status: ValidationStatus,
-}
-
 #[derive(Debug, Clone)]
 pub struct ChainBlockFailure {
-    pub block_index: usize,
-    pub block_id: String,
-    pub expected_hash: Vec<u8>,
-    pub computed_hash: Vec<u8>,
-}
-
 /// Comprehensive hash validation utilities
 pub fn validate_hash_format(hash: &[u8], expected_size: usize) -> ValidationResult<()> {
     if hash.len() != expected_size {
         return Err(CursedError::InvalidArgument(
             format!("Invalid hash size: expected {} bytes, got {}", expected_size, hash.len())
         ));
-    }
-    
     // Check for obvious invalid patterns
     if hash.iter().all(|&b| b == 0) {
         return Err(CursedError::InvalidArgument("Hash appears to be all zeros".to_string()));
-    }
-    
     Ok(())
-}
-
 /// Convert hash to hex string for display
 pub fn hash_to_hex(hash: &[u8]) -> String {
     hash.iter().map(|b| format!("{:02x}", b)).collect()
-}
-
 /// Parse hex string to hash bytes
 pub fn hex_to_hash(hex: &str) -> ValidationResult<Vec<u8>> {
     if hex.len() % 2 != 0 {
         return Err(CursedError::InvalidArgument("Hex string must have even length".to_string()));
-    }
-    
     let mut result = Vec::new();
     for chunk in hex.as_bytes().chunks(2) {
         let hex_byte = std::str::from_utf8(chunk)
@@ -463,8 +279,4 @@ pub fn hex_to_hash(hex: &str) -> ValidationResult<Vec<u8>> {
             .map_err(|_| CursedError::InvalidArgument(format!("Invalid hex byte: {}", hex_byte)))?;
         
         result.push(byte);
-    }
-    
     Ok(result)
-}
-

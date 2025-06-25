@@ -34,17 +34,10 @@ pub type AtomicResult<T> = CursedResult<T>;
 #[derive(Debug, Clone, PartialEq)]
 pub enum AtomicError {
     /// Operation failed due to concurrent modification
-    ConcurrentModification,
     /// Invalid memory ordering specified
-    InvalidMemoryOrder,
     /// Operation not supported on this platform
-    UnsupportedOperation,
     /// Alignment error for 64-bit operations on 32-bit platforms
-    AlignmentError,
     /// General atomic operation failure
-    OperationFailed(String),
-}
-
 // impl std::fmt::Display for AtomicError {
 //     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
 //         match self {
@@ -68,18 +61,12 @@ pub enum AtomicError {
 /// Helper function to create atomic operation error
 pub fn atomic_error(msg: &str) -> CursedError {
     AtomicError::OperationFailed(msg.to_string()).into()
-}
-
 /// Helper function to create concurrent modification error
 pub fn concurrent_modification_error() -> CursedError {
     AtomicError::ConcurrentModification.into()
-}
-
 /// Helper function to create alignment error
 pub fn alignment_error() -> CursedError {
     AtomicError::AlignmentError.into()
-}
-
 /// Initialize atomic_drip module
 pub fn init() -> CursedResult<()> {
     // Check platform capabilities and set up optimizations
@@ -87,14 +74,8 @@ pub fn init() -> CursedResult<()> {
     {
         // On 32-bit platforms, 64-bit atomics may require special handling
         log::debug!("atomic_drip: Initializing on 32-bit platform, 64-bit atomics may have alignment requirements");
-    }
-    
     #[cfg(target_pointer_width = "64")]
     {
         log::debug!("atomic_drip: Initializing on 64-bit platform, all atomic operations supported");
-    }
-    
     log::info!("atomic_drip module initialized successfully");
     Ok(())
-}
-

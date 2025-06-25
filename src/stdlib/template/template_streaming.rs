@@ -20,145 +20,73 @@ use super::template_filters::FilterRegistry;
 #[derive(Debug, Clone)]
 pub struct StreamingConfig {
     /// Buffer size for streaming output
-    pub buffer_size: usize,
     /// Chunk size for streaming data
-    pub chunk_size: usize,
     /// Enable async rendering
-    pub enable_async: bool,
     /// Maximum concurrent operations
-    pub max_concurrent_operations: usize,
     /// Streaming timeout
-    pub stream_timeout: Duration,
     /// Enable compression
-    pub enable_compression: bool,
     /// Memory pressure threshold
-    pub memory_pressure_threshold: usize,
     /// Enable progressive rendering
-    pub enable_progressive_rendering: bool,
-}
-
 impl Default for StreamingConfig {
     fn default() -> Self {
         Self {
-            buffer_size: 8192,
-            chunk_size: 4096,
-            enable_async: true,
-            max_concurrent_operations: 8,
-            stream_timeout: Duration::from_secs(30),
-            enable_compression: false,
             memory_pressure_threshold: 50 * 1024 * 1024, // 50MB
-            enable_progressive_rendering: true,
         }
     }
-}
-
 /// Streaming render result
 #[derive(Debug)]
 pub struct StreamingResult {
     /// Total bytes written
-    pub bytes_written: usize,
     /// Rendering duration
-    pub render_time: Duration,
     /// Number of chunks processed
-    pub chunks_processed: usize,
     /// Memory high water mark
-    pub memory_high_water_mark: usize,
     /// Whether compression was used
-    pub compression_used: bool,
     /// Stream completion status
-    pub completed_successfully: bool,
-}
-
 /// Chunk types for streaming
 #[derive(Debug, Clone)]
 pub enum StreamChunk {
     /// Text content
-    Text(String),
     /// Raw HTML content
-    Html(String),
     /// JSON data
-    Json(String),
     /// Binary data
-    Binary(Vec<u8>),
     /// Control chunk (flush, end, etc.)
-    Control(ControlCommand),
-}
-
 /// Control commands for streaming
 #[derive(Debug, Clone)]
 pub enum ControlCommand {
     /// Flush output buffer
-    Flush,
     /// End of stream
-    End,
     /// CursedError occurred
-    CursedError(String),
     /// Progress update
-    Progress(f32),
-}
-
 /// Async streaming template renderer
 pub struct StreamingTemplateRenderer {
     /// Base template renderer
-    base_renderer: TemplateRenderer,
     /// Streaming configuration
-    config: StreamingConfig,
     /// Concurrency semaphore
-    semaphore: Arc<Semaphore>,
     /// Performance metrics
-    metrics: Arc<Mutex<StreamingMetrics>>,
-}
-
 /// Streaming performance metrics
 #[derive(Debug, Clone)]
 pub struct StreamingMetrics {
     /// Total streams processed
-    pub total_streams: u64,
     /// Average streaming time
-    pub average_stream_time: Duration,
     /// Total bytes streamed
-    pub total_bytes_streamed: u64,
     /// Peak concurrent streams
-    pub peak_concurrent_streams: usize,
     /// Stream errors
-    pub stream_errors: u64,
     /// Compression ratio (when enabled)
-    pub compression_ratio: f64,
-}
-
 impl StreamingTemplateRenderer {
     /// Create a new streaming renderer
     pub fn new(
-        filters: Arc<FilterRegistry>,
-        loader: Arc<dyn TemplateLoader>,
-        template_config: &TemplateConfig,
-        streaming_config: StreamingConfig,
     ) -> Self {
         let base_renderer = TemplateRenderer::new(filters, loader, template_config);
         let semaphore = Arc::new(Semaphore::new(streaming_config.max_concurrent_operations));
         
         Self {
-            base_renderer,
-            config: streaming_config,
-            semaphore,
             metrics: Arc::new(Mutex::new(StreamingMetrics {
-                total_streams: 0,
-                average_stream_time: Duration::from_secs(0),
-                total_bytes_streamed: 0,
-                peak_concurrent_streams: 0,
-                stream_errors: 0,
-                compression_ratio: 1.0,
-            })),
         }
     }
     
     /// Stream template to a writer
     #[instrument(skip(self, ast, context, writer))]
     pub async fn stream_to_writer<W: AsyncWrite + Unpin>(
-        &self,
-        ast: &TemplateAst,
-        context: RenderContext,
-        writer: W,
     ) -> crate::error::Result<StreamingResult> {
         let start_time = Instant::now();
         info!("Starting streaming template render");
@@ -166,8 +94,6 @@ impl StreamingTemplateRenderer {
         // Acquire semaphore for concurrency control
         let _permit = self.semaphore.acquire().await
             .map_err(|e| CursedError::TemplateError {
-                message: format!("Failed to acquire streaming permit: {}", e),
-                source_location: None,
             })?;
         
         let mut buf_writer = AsyncBufWriter::with_capacity(self.config.buffer_size, writer);
@@ -187,8 +113,6 @@ impl StreamingTemplateRenderer {
                 StreamChunk::Text(text) => {
                     buf_writer.write_all(text.as_bytes()).await
                         .map_err(|e| CursedError::TemplateError {
-                            message: format!("Failed to write text chunk: {}", e),
-                            source_location: None,
                         })?;
                     bytes_written += text.len();
                     memory_usage += text.len();
@@ -196,8 +120,6 @@ impl StreamingTemplateRenderer {
                 StreamChunk::Html(html) => {
                     buf_writer.write_all(html.as_bytes()).await
                         .map_err(|e| CursedError::TemplateError {
-                            message: format!("Failed to write HTML chunk: {}", e),
-                            source_location: None,
                         })?;
                     bytes_written += html.len();
                     memory_usage += html.len();
@@ -205,8 +127,6 @@ impl StreamingTemplateRenderer {
                 StreamChunk::Json(json) => {
                     buf_writer.write_all(json.as_bytes()).await
                         .map_err(|e| CursedError::TemplateError {
-                            message: format!("Failed to write JSON chunk: {}", e),
-                            source_location: None,
                         })?;
                     bytes_written += json.len();
                     memory_usage += json.len();
@@ -214,8 +134,6 @@ impl StreamingTemplateRenderer {
                 StreamChunk::Binary(data) => {
                     buf_writer.write_all(&data).await
                         .map_err(|e| CursedError::TemplateError {
-                            message: format!("Failed to write binary chunk: {}", e),
-                            source_location: None,
                         })?;
                     bytes_written += data.len();
                     memory_usage += data.len();
@@ -223,8 +141,6 @@ impl StreamingTemplateRenderer {
                 StreamChunk::Control(ControlCommand::Flush) => {
                     buf_writer.flush().await
                         .map_err(|e| CursedError::TemplateError {
-                            message: format!("Failed to flush output: {}", e),
-                            source_location: None,
                         })?;
                 }
                 StreamChunk::Control(ControlCommand::End) => {
@@ -232,8 +148,6 @@ impl StreamingTemplateRenderer {
                 }
                 StreamChunk::Control(ControlCommand::CursedError(error_msg)) => {
                     return Err(CursedError::TemplateError {
-                        message: format!("Streaming error: {}", error_msg),
-                        source_location: None,
                     });
                 }
                 StreamChunk::Control(ControlCommand::Progress(progress)) => {
@@ -247,8 +161,6 @@ impl StreamingTemplateRenderer {
             if memory_usage > self.config.memory_pressure_threshold {
                 buf_writer.flush().await
                     .map_err(|e| CursedError::TemplateError {
-                        message: format!("Failed to flush under memory pressure: {}", e),
-                        source_location: None,
                     })?;
                 memory_usage = 0;
             }
@@ -257,15 +169,11 @@ impl StreamingTemplateRenderer {
         // Final flush
         buf_writer.flush().await
             .map_err(|e| CursedError::TemplateError {
-                message: format!("Failed to flush final output: {}", e),
-                source_location: None,
             })?;
         
         // Wait for background processing to complete
         let processing_completed = processing_handle.await
             .map_err(|e| CursedError::TemplateError {
-                message: format!("Background processing failed: {}", e),
-                source_location: None,
             })??;
         
         let render_time = start_time.elapsed();
@@ -274,28 +182,13 @@ impl StreamingTemplateRenderer {
         self.update_streaming_metrics(bytes_written, render_time, chunks_processed);
         
         info!(
-            bytes_written = bytes_written,
-            chunks_processed = chunks_processed,
-            render_time_ms = render_time.as_millis(),
             "Streaming template render completed"
         );
         
         Ok(StreamingResult {
-            bytes_written,
-            render_time,
-            chunks_processed,
-            memory_high_water_mark: memory_usage,
-            compression_used: self.config.enable_compression,
-            completed_successfully: processing_completed,
         })
-    }
-    
     /// Start background template processing
     async fn start_background_processing(
-        &self,
-        ast: TemplateAst,
-        context: RenderContext,
-        chunk_sender: mpsc::Sender<StreamChunk>,
     ) -> crate::error::crate::error::Result<tokio::task::JoinHandle<Result<bool>>> {
         let config = self.config.clone();
         
@@ -338,13 +231,8 @@ impl StreamingTemplateRenderer {
         });
         
         Ok(handle)
-    }
-    
     /// Process a template node into chunks
     async fn process_node_to_chunks(
-        node: &TemplateNode,
-        context: &RenderContext,
-        config: &StreamingConfig,
     ) -> crate::error::Result<Vec<StreamChunk>> {
         let mut chunks = Vec::new();
         
@@ -363,9 +251,6 @@ impl StreamingTemplateRenderer {
             TemplateNode::Variable { expression, filters, .. } => {
                 // Resolve variable and apply filters  
                 let name = match expression {
-                    TemplateExpression::Variable(var_name) => var_name.clone(),
-                    _ => "unknown".to_string(),
-                };
                 if let Some(value) = context.get(&name) {
                     let processed_value = Self::apply_filters_to_value(&value, &filters.iter().map(|f| f.name.clone()).collect::<Vec<_>>(), context).await?;
                     let text_value = Self::object_to_string(&processed_value)?;
@@ -374,9 +259,6 @@ impl StreamingTemplateRenderer {
                     let escaped_value = Self::apply_security_escaping(&text_value, context)?;
                     
                     chunks.push(match context.output_format {
-                        OutputFormat::Html => StreamChunk::Html(escaped_value),
-                        OutputFormat::Json => StreamChunk::Json(escaped_value),
-                        _ => StreamChunk::Text(escaped_value),
                     });
                 } else {
                     // Variable not found - emit empty chunk or error based on strict mode
@@ -386,10 +268,6 @@ impl StreamingTemplateRenderer {
             TemplateNode::Block { block, .. } => {
                 // Process block content recursively  
                 let content_nodes = match block {
-                    BlockNode::If { then_branch, .. } => then_branch.clone(),
-                    BlockNode::For { body, .. } => body.clone(),
-                    _ => vec![],
-                };
                 if !content_nodes.is_empty() {
                     for content_node in content_nodes {
                         let mut node_chunks = Self::process_node_to_chunks(&content_node, context, config).await?;
@@ -430,43 +308,25 @@ impl StreamingTemplateRenderer {
         }
         
         Ok(chunks)
-    }
-    
     /// Apply filters to a value (simplified version for streaming)
     async fn apply_filters_to_value(
-        value: &CursedObject,
-        _filters: &[String],
-        _context: &RenderContext,
     ) -> crate::error::Result<CursedObject> {
         // For streaming, we'll use a simplified filter application
         // In a full implementation, this would use the FilterRegistry
         Ok(value.clone())
-    }
-    
     /// Apply security escaping
     fn apply_security_escaping(text: &str, context: &RenderContext) -> crate::error::Result<String> {
         match context.security_level {
             SecurityLevel::Strict | SecurityLevel::Moderate => {
                 match context.output_format {
-                    OutputFormat::Html => Ok(Self::escape_html(text)),
-                    OutputFormat::Xml => Ok(Self::escape_xml(text)),
-                    OutputFormat::Json => Ok(Self::escape_json(text)),
-                    _ => Ok(text.to_string()),
                 }
             }
-            SecurityLevel::Relaxed => Ok(text.to_string()),
         }
     }
     
     /// Convert object to string
     fn object_to_string(obj: &CursedObject) -> crate::error::Result<String> {
         match obj {
-            CursedObject::String(s) => Ok(s.clone()),
-            CursedObject::Integer(n) => Ok(n.to_string()),
-            CursedObject::Float(n) => Ok(n.to_string()),
-            CursedObject::Boolean(b) => Ok(b.to_string()),
-            CursedObject::Char(c) => Ok(c.to_string()),
-            CursedObject::Nil => Ok(String::new()),
             CursedObject::Array(arr) => {
                 let items: Vec<String> = arr.iter()
                     .map(|item| Self::object_to_string(item))
@@ -480,8 +340,6 @@ impl StreamingTemplateRenderer {
                 Ok(format!("{{{}}}", items?.join(", ")))
             }
         }
-    }
-    
     /// Escape HTML characters
     fn escape_html(s: &str) -> String {
         s.replace('&', "&amp;")
@@ -489,8 +347,6 @@ impl StreamingTemplateRenderer {
          .replace('>', "&gt;")
          .replace('"', "&quot;")
          .replace('\'', "&#x27;")
-    }
-    
     /// Escape XML characters
     fn escape_xml(s: &str) -> String {
         s.replace('&', "&amp;")
@@ -498,8 +354,6 @@ impl StreamingTemplateRenderer {
          .replace('>', "&gt;")
          .replace('"', "&quot;")
          .replace('\'', "&apos;")
-    }
-    
     /// Escape JSON characters
     fn escape_json(s: &str) -> String {
         s.replace('\\', "\\\\")
@@ -507,8 +361,6 @@ impl StreamingTemplateRenderer {
          .replace('\n', "\\n")
          .replace('\r', "\\r")
          .replace('\t', "\\t")
-    }
-    
     /// Update streaming metrics
     fn update_streaming_metrics(&self, bytes_written: usize, render_time: Duration, chunks_processed: usize) {
         if let Ok(mut metrics) = self.metrics.lock() {
@@ -524,21 +376,14 @@ impl StreamingTemplateRenderer {
     /// Get streaming metrics
     pub fn get_metrics(&self) -> Option<StreamingMetrics> {
         self.metrics.lock().ok().map(|m| m.clone())
-    }
-    
     /// Stream template to a string (for testing)
     pub async fn stream_to_string(
-        &self,
-        ast: &TemplateAst,
-        context: RenderContext,
     ) -> crate::error::Result<()> {
         let mut output = Vec::new();
         let result = self.stream_to_writer(ast, context, &mut output).await?;
         
         let output_string = String::from_utf8(output)
             .map_err(|e| CursedError::TemplateError {
-                message: format!("Failed to convert output to UTF-8: {}", e),
-                source_location: None,
             })?;
         
         Ok((output_string, result))
@@ -548,24 +393,15 @@ impl StreamingTemplateRenderer {
 /// Async template stream - provides a Stream interface for template rendering
 pub struct TemplateStream {
     /// Chunk receiver
-    chunk_receiver: mpsc::Receiver<StreamChunk>,
     /// Background processing handle
-    _processing_handle: JoinHandle<crate::error::Result<()>>,
-}
-
 impl TemplateStream {
     /// Create a new template stream
     pub async fn new(
-        renderer: &StreamingTemplateRenderer,
-        ast: TemplateAst,
-        context: RenderContext,
     ) -> crate::error::Result<Self> {
         let (chunk_sender, chunk_receiver) = mpsc::channel::<StreamChunk>(renderer.config.max_concurrent_operations);
         let processing_handle = renderer.start_background_processing(ast, context, chunk_sender).await?;
         
         Ok(Self {
-            chunk_receiver,
-            _processing_handle: processing_handle,
         })
     }
 }
@@ -574,14 +410,7 @@ impl Stream for TemplateStream {
     type Item = crate::error::Result<StreamChunk>;
     
     fn poll_next(
-        mut self: std::pin::Pin<&mut Self>,
-        cx: &mut std::task::Context<'_>,
     ) -> std::task::Poll<Option<Self::Item>> {
         match self.chunk_receiver.poll_recv(cx) {
-            std::task::Poll::Ready(Some(chunk)) => std::task::Poll::Ready(Some(Ok(chunk))),
-            std::task::Poll::Ready(None) => std::task::Poll::Ready(None),
-            std::task::Poll::Pending => std::task::Poll::Pending,
         }
     }
-}
-

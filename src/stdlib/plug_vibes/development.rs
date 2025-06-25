@@ -9,25 +9,11 @@ use std::sync::{Arc, Mutex, OnceLock};
 /// Development configuration
 #[derive(Debug, Clone)]
 pub struct DevelopmentConfig {
-    pub hot_reload: bool,
-    pub debug_symbols: bool,
-    pub reload_watch_dirs: Vec<String>,
-    pub auto_rebuild: bool,
-    pub test_mode: bool,
-}
-
 impl Default for DevelopmentConfig {
     fn default() -> Self {
         Self {
-            hot_reload: true,
-            debug_symbols: true,
-            reload_watch_dirs: vec![],
-            auto_rebuild: false,
-            test_mode: false,
         }
     }
-}
-
 /// Global plugin exports registry
 static PLUGIN_EXPORTS: OnceLock<Arc<Mutex<HashMap<String, Value>>>> = OnceLock::new();
 
@@ -57,9 +43,6 @@ pub trait PlugCapabilities: Send + Sync {
 /// Default plugin capabilities implementation
 #[derive(Debug, Clone, Default)]
 pub struct DefaultPlugCapabilities {
-    capabilities: Vec<String>,
-}
-
 impl DefaultPlugCapabilities {
     /// Create new capabilities with the given list
     pub fn new(capabilities: Vec<String>) -> Self {
@@ -87,22 +70,10 @@ impl PlugCapabilities for DefaultPlugCapabilities {
 
 /// Plugin development context
 pub struct PluginContext {
-    pub name: String,
-    pub version: String,
-    pub exports: HashMap<String, Value>,
-    pub capabilities: Box<dyn PlugCapabilities>,
-    pub initialized: bool,
-}
-
 impl PluginContext {
     /// Create a new plugin context
     pub fn new(name: &str, version: &str) -> Self {
         Self {
-            name: name.to_string(),
-            version: version.to_string(),
-            exports: HashMap::new(),
-            capabilities: Box::new(DefaultPlugCapabilities::default()),
-            initialized: false,
         }
     }
 
@@ -111,23 +82,15 @@ impl PluginContext {
         self.exports.insert(name.to_string(), value);
         register_export(name, value)?;
         Ok(())
-    }
-
     /// Get an exported value
     pub fn get_export(&self, name: &str) -> Option<&Value> {
         self.exports.get(name)
-    }
-
     /// Set capabilities for this plugin
     pub fn set_capabilities(&mut self, capabilities: Box<dyn PlugCapabilities>) {
         self.capabilities = capabilities;
-    }
-
     /// Mark plugin as initialized
     pub fn mark_initialized(&mut self) {
         self.initialized = true;
-    }
-
     /// Check if plugin is initialized
     pub fn is_initialized(&self) -> bool {
         self.initialized
@@ -137,27 +100,8 @@ impl PluginContext {
 /// Plugin manifest function that must be exported by all plugins
 /// This is a helper for creating plugin manifests
 pub fn create_plugin_manifest(
-    name: &str,
-    version: &str,
-    api: &str,
-    author: &str,
-    description: &str,
-    capabilities: Vec<String>,
 ) -> PlugInfo {
     PlugInfo {
-        name: name.to_string(),
-        version: version.to_string(),
-        api: api.to_string(),
-        author: author.to_string(),
-        description: description.to_string(),
-        build_time: std::time::SystemTime::now(),
-        dependencies: Vec::new(),
-        capabilities,
-        imports: Vec::new(),
-        exports: Vec::new(),
-        signature: String::new(),
-        is_verified: false,
-        is_compatible: true,
     }
 }
 
@@ -168,8 +112,6 @@ pub fn is_running_as_plugin() -> bool {
         .lock()
         .map(|running| *running)
         .unwrap_or(false)
-}
-
 /// Set the running as plugin state (used by plugin loaders)
 pub fn set_running_as_plugin(running: bool) -> PluginResult<()> {
     let running_state = IS_RUNNING_AS_PLUGIN
@@ -181,8 +123,6 @@ pub fn set_running_as_plugin(running: bool) -> PluginResult<()> {
     
     *state = running;
     Ok(())
-}
-
 /// Get host application information
 pub fn get_host_info() -> HostInfo {
     HOST_INFO
@@ -190,8 +130,6 @@ pub fn get_host_info() -> HostInfo {
         .lock()
         .map(|info| info.clone())
         .unwrap_or_else(|_| HostInfo::default())
-}
-
 /// Set host information (used by host applications)
 pub fn set_host_info(info: HostInfo) -> PluginResult<()> {
     let host_info = HOST_INFO
@@ -203,13 +141,9 @@ pub fn set_host_info(info: HostInfo) -> PluginResult<()> {
     
     *current_info = info;
     Ok(())
-}
-
 /// Get the plugin API version
 pub fn get_plugin_api() -> String {
     PLUGIN_API_VERSION.to_string()
-}
-
 /// Register an export from a plugin
 pub fn register_export(name: &str, value: Value) -> PluginResult<()> {
     let exports = PLUGIN_EXPORTS
@@ -221,8 +155,6 @@ pub fn register_export(name: &str, value: Value) -> PluginResult<()> {
     
     export_map.insert(name.to_string(), value);
     Ok(())
-}
-
 /// Get an exported value by name
 pub fn get_export(name: &str) -> Option<Value> {
     let exports = PLUGIN_EXPORTS
@@ -232,8 +164,6 @@ pub fn get_export(name: &str) -> Option<Value> {
         .ok()?
         .get(name)
         .cloned()
-}
-
 /// List all exported values
 pub fn list_exports() -> Vec<String> {
     let exports = PLUGIN_EXPORTS
@@ -242,8 +172,6 @@ pub fn list_exports() -> Vec<String> {
     exports.lock()
         .map(|map| map.keys().cloned().collect())
         .unwrap_or_else(|_| Vec::new())
-}
-
 /// Clear all exports
 pub fn clear_exports() -> PluginResult<()> {
     let exports = PLUGIN_EXPORTS
@@ -255,12 +183,9 @@ pub fn clear_exports() -> PluginResult<()> {
     
     export_map.clear();
     Ok(())
-}
-
 /// Register a hook callback
 pub fn register_hook<F>(name: &str, callback: F) -> PluginResult<()>
 where
-    F: Fn(&[Value]) -> PluginResult<Vec<Value>> + Send + Sync + 'static,
 {
     let hooks = PLUGIN_HOOKS
         .get_or_init(|| Arc::new(Mutex::new(HashMap::new())));
@@ -271,8 +196,6 @@ where
     
     hook_map.insert(name.to_string(), Box::new(callback));
     Ok(())
-}
-
 /// Call a registered hook
 pub fn call_hook(name: &str, args: &[Value]) -> PluginResult<Vec<Value>> {
     let hooks = PLUGIN_HOOKS
@@ -297,8 +220,6 @@ pub fn list_hooks() -> Vec<String> {
     hooks.lock()
         .map(|map| map.keys().cloned().collect())
         .unwrap_or_else(|_| Vec::new())
-}
-
 /// Clear all hooks
 pub fn clear_hooks() -> PluginResult<()> {
     let hooks = PLUGIN_HOOKS
@@ -310,14 +231,10 @@ pub fn clear_hooks() -> PluginResult<()> {
     
     hook_map.clear();
     Ok(())
-}
-
 /// Plugin initialization helper
 pub fn initialize_plugin(context: &mut PluginContext) -> PluginResult<()> {
     if context.is_initialized() {
         return Err(PluginError::initialization_failed("Plugin already initialized"));
-    }
-
     // Set running as plugin state
     set_running_as_plugin(true)?;
 
@@ -330,14 +247,10 @@ pub fn initialize_plugin(context: &mut PluginContext) -> PluginResult<()> {
     context.mark_initialized();
 
     Ok(())
-}
-
 /// Plugin cleanup helper
 pub fn cleanup_plugin(context: &mut PluginContext) -> PluginResult<()> {
     if !context.is_initialized() {
         return Ok(());
-    }
-
     // Clear exports for this plugin
     for export_name in context.exports.keys() {
         // In a real implementation, we'd track which exports belong to which plugin
@@ -357,8 +270,6 @@ pub fn cleanup_plugin(context: &mut PluginContext) -> PluginResult<()> {
     context.initialized = false;
 
     Ok(())
-}
-
 /// Validate plugin compatibility with host
 pub fn validate_plugin_compatibility(plugin_info: &PlugInfo) -> PluginResult<()> {
     let host_info = get_host_info();
@@ -366,58 +277,39 @@ pub fn validate_plugin_compatibility(plugin_info: &PlugInfo) -> PluginResult<()>
     // Check API compatibility
     if plugin_info.api != host_info.api_version {
         return Err(PluginError::version_incompatible(&format!(
-            "Plugin API version {} incompatible with host API version {}",
             plugin_info.api, host_info.api_version
         )));
-    }
-
     // Check platform compatibility
     let current_platform = std::env::consts::OS;
     // For now, assume all plugins are compatible with current platform
     // In a real implementation, check plugin metadata for platform requirements
 
     Ok(())
-}
-
 /// Create a simple capability checker
 pub fn create_capability_checker(capabilities: Vec<String>) -> Box<dyn PlugCapabilities> {
     Box::new(DefaultPlugCapabilities::new(capabilities))
-}
-
 /// Development utilities for testing plugins
 pub mod testing {
     use super::*;
 
     /// Mock host environment for testing
     pub struct MockHost {
-        pub info: HostInfo,
-        pub exports: HashMap<String, Value>,
-    }
-
     impl MockHost {
         pub fn new() -> Self {
             Self {
-                info: HostInfo::default(),
-                exports: HashMap::new(),
             }
         }
 
         pub fn with_name(mut self, name: &str) -> Self {
             self.info.name = name.to_string();
             self
-        }
-
         pub fn with_version(mut self, version: &str) -> Self {
             self.info.version = version.to_string();
             self
-        }
-
         pub fn setup(&self) -> PluginResult<()> {
             set_host_info(self.info.clone())?;
             set_running_as_plugin(false)?;
             Ok(())
-        }
-
         pub fn teardown(&self) -> PluginResult<()> {
             clear_exports()?;
             clear_hooks()?;
@@ -436,13 +328,9 @@ pub mod testing {
     pub fn create_test_plugin(name: &str, version: &str) -> PluginContext {
         let mut context = PluginContext::new(name, version);
         let capabilities = create_capability_checker(vec![
-            "test".to_string(),
-            "mock".to_string(),
         ]);
         context.set_capabilities(capabilities);
         context
-    }
-
     /// Simulate plugin loading
     pub fn simulate_plugin_load(context: &mut PluginContext) -> PluginResult<()> {
         initialize_plugin(context)?;
@@ -451,8 +339,6 @@ pub mod testing {
         context.export("test_function", Value::String("test_implementation".to_string()))?;
         
         Ok(())
-    }
-
     /// Simulate plugin unloading
     pub fn simulate_plugin_unload(context: &mut PluginContext) -> PluginResult<()> {
         cleanup_plugin(context)
@@ -463,13 +349,7 @@ pub mod testing {
 pub fn scaffold_plugin(name: &str, target_dir: &str) -> PluginResult<PlugInfo> {
     // Create basic plugin info
     let info = PlugInfo {
-        name: name.to_string(),
-        version: "0.1.0".to_string(),
-        api: "1.0".to_string(),
-        author: "Plugin Developer".to_string(),
-        description: format!("A CURSED plugin named {}", name),
         ..Default::default()
-    };
     
     // In a real implementation, this would create:
     // - Plugin directory structure
@@ -479,5 +359,3 @@ pub fn scaffold_plugin(name: &str, target_dir: &str) -> PluginResult<PlugInfo> {
     
     // For now, just return the plugin info
     Ok(info)
-}
-

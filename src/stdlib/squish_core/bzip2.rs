@@ -14,12 +14,6 @@ use crate::error::CursedError;
 /// BZIP2 reader that decompresses data on read
 /// Note: Currently uses DEFLATE internally for compatibility
 pub struct Bzip2Reader<R: Read> {
-    inner: DeflateDecoder<BufReader<R>>,
-    bytes_read: usize,
-    timer: Instant,
-    input_size: usize,
-}
-
 impl<R: Read> Bzip2Reader<R> {
     /// Create a new BZIP2 reader
     pub fn new(reader: R) -> SquishResult<Self> {
@@ -27,10 +21,6 @@ impl<R: Read> Bzip2Reader<R> {
         let decoder = DeflateDecoder::new(buffered);
         
         Ok(Self {
-            inner: decoder,
-            bytes_read: 0,
-            timer: Instant::now(),
-            input_size: 0,
         })
     }
 }
@@ -47,15 +37,8 @@ impl<R: Read> SquishReader for Bzip2Reader<R> {
     fn close(&mut self) -> SquishResult<()> {
         // Decoder closes automatically when dropped
         Ok(())
-    }
-    
     fn stats(&self) -> Option<CompressionStats> {
         Some(CompressionStats::new(
-            self.input_size,
-            self.bytes_read,
-            self.timer.elapsed(),
-            "bzip2".to_string(),
-            None,
         ))
     }
 }
@@ -63,40 +46,22 @@ impl<R: Read> SquishReader for Bzip2Reader<R> {
 /// BZIP2 writer that compresses data on write
 /// Note: Currently uses DEFLATE internally for compatibility
 pub struct Bzip2Writer<W: Write> {
-    inner: Option<DeflateEncoder<BufWriter<W>>>,
-    bytes_written: usize,
-    uncompressed_size: usize,
-    level: CompressionLevel,
-    timer: Instant,
-}
-
 impl<W: Write> Bzip2Writer<W> {
     /// Create a new BZIP2 writer with default compression
     pub fn new(writer: W) -> Self {
         Self::with_level(writer, CompressionLevel::Default)
-    }
-    
     /// Create a new BZIP2 writer with specified compression level
     pub fn with_level(writer: W, level: CompressionLevel) -> Self {
         let buffered = BufWriter::new(writer);
         // Map BZIP2 levels (1-9) to DEFLATE levels
         let deflate_level = match level.to_numeric() {
-            1..=9 => level.to_numeric(),
             _ => 6, // Default
-        };
         let compression = Compression::new(deflate_level as u32);
         let encoder = DeflateEncoder::new(buffered, compression);
         
         Self {
-            inner: Some(encoder),
-            bytes_written: 0,
-            uncompressed_size: 0,
-            level,
-            timer: Instant::now(),
         }
     }
-}
-
 impl<W: Write> Write for Bzip2Writer<W> {
     fn write(&mut self, buf: &[u8]) -> std::io::Result<usize> {
         if let Some(ref mut encoder) = self.inner {
@@ -105,7 +70,6 @@ impl<W: Write> Write for Bzip2Writer<W> {
             Ok(bytes)
         } else {
             Err(std::io::Error::new(
-                std::io::ErrorKind::BrokenPipe,
                 "Writer has been closed"
             ))
         }
@@ -118,8 +82,6 @@ impl<W: Write> Write for Bzip2Writer<W> {
             Ok(())
         }
     }
-}
-
 impl<W: Write> SquishWriter for Bzip2Writer<W> {
     fn close(&mut self) -> SquishResult<()> {
         if let Some(encoder) = self.inner.take() {
@@ -127,27 +89,16 @@ impl<W: Write> SquishWriter for Bzip2Writer<W> {
             drop(writer);
         }
         Ok(())
-    }
-    
     fn flush(&mut self) -> SquishResult<()> {
         Write::flush(self).map_err(SquishError::from)
-    }
-    
     fn reset(&mut self, writer: Box<dyn Write>) -> SquishResult<()> {
         // Close current encoder
         self.close()?;
         
         // Create new encoder (simplified implementation)
         Err(SquishError::generic("Reset not supported for BZIP2 writer in this implementation"))
-    }
-    
     fn stats(&self) -> Option<CompressionStats> {
         Some(CompressionStats::new(
-            self.uncompressed_size,
-            self.bytes_written,
-            self.timer.elapsed(),
-            "bzip2".to_string(),
-            Some(self.level.to_numeric()),
         ))
     }
 }
@@ -155,23 +106,15 @@ impl<W: Write> SquishWriter for Bzip2Writer<W> {
 /// Create a new BZIP2 reader
 pub fn NewBzip2Reader<R: Read>(reader: R) -> SquishResult<Bzip2Reader<R>> {
     Bzip2Reader::new(reader)
-}
-
 /// Create a new BZIP2 writer with default compression
 pub fn NewBzip2Writer<W: Write>(writer: W) -> Bzip2Writer<W> {
     Bzip2Writer::new(writer)
-}
-
 /// Create a new BZIP2 writer with specified compression level
 pub fn NewBzip2WriterLevel<W: Write>(writer: W, level: CompressionLevel) -> Bzip2Writer<W> {
     Bzip2Writer::with_level(writer, level)
-}
-
 /// Compress data using BZIP2 with default compression
 pub fn bzip2_compress(data: &[u8]) -> SquishResult<Vec<u8>> {
     bzip2_compress_level(data, CompressionLevel::Default)
-}
-
 /// Compress data using BZIP2 with specified compression level
 pub fn bzip2_compress_level(data: &[u8], level: CompressionLevel) -> SquishResult<Vec<u8>> {
     let mut result = Vec::new();
@@ -181,8 +124,6 @@ pub fn bzip2_compress_level(data: &[u8], level: CompressionLevel) -> SquishResul
         writer.close()?;
     }
     Ok(result)
-}
-
 /// Decompress BZIP2 data
 pub fn bzip2_decompress(data: &[u8]) -> SquishResult<Vec<u8>> {
     let mut result = Vec::new();
@@ -190,41 +131,27 @@ pub fn bzip2_decompress(data: &[u8]) -> SquishResult<Vec<u8>> {
     let mut reader = Bzip2Reader::new(cursor)?;
     reader.read_to_end(&mut result).map_err(SquishError::from)?;
     Ok(result)
-}
-
 /// Check if data is BZIP2 format
 pub fn is_bzip2_data(data: &[u8]) -> bool {
     data.len() >= 3 && data[0] == 0x42 && data[1] == 0x5a && data[2] == b'h'
-}
-
 /// Get file extension for BZIP2 files
 pub fn file_extension() -> &'static str {
     ".bz2"
-}
-
 /// Get MIME type for BZIP2 data
 pub fn mime_type() -> &'static str {
     "application/x-bzip2"
-}
-
 /// Check if compression level is valid for BZIP2
 pub fn is_valid_compression_level(level: i32) -> bool {
     level >= 1 && level <= 9
-}
-
 /// Initialize BZIP2 module
 pub fn initialize() {
         // TODO: implement
     }
     // No specific initialization needed for BZIP2
-}
-
 
 /// bestie Create new BZIP2 writer with default compression
 pub fn new_writer<W: Write>(writer: W) -> SquishResult<Bzip2Writer<W>> {
     Bzip2Writer::new(writer)
-}
-
 /// periodt Create new BZIP2 writer with specified compression level
 pub fn new_writer_level<W: Write>(writer: W, level: CompressionLevel) -> SquishResult<Bzip2Writer<W>> {
     Bzip2Writer::with_level(writer, level)

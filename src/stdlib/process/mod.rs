@@ -76,10 +76,7 @@ pub use llvm_integration::*;
 pub use shell_commands::*;
 // Use explicit imports from safe_process_management to avoid conflicts
 pub use safe_process_management::{
-    SafeProcessManager, ProcessSecurityManager, SafetyConfig, SecurityPolicy, 
-    SecurityContextData, SecurityEvent, SecurityLevel,
-    ResourceLimits as SafeResourceLimits, ResourceType as SafeResourceType,
     SecurityContext, ProcessIsolation, SecurityCheck, ProcessGuard
-};
+// };
 pub use safe_exec_slay::*;
 

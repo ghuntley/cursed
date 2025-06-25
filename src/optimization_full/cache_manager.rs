@@ -13,68 +13,28 @@ use serde::{Deserialize, Serialize};
 /// Cache entry metadata
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct CacheEntry {
-    pub key: String,
-    pub file_path: PathBuf,
-    pub created_at: SystemTime,
-    pub last_accessed: SystemTime,
-    pub size_bytes: u64,
-    pub source_hash: String,
-    pub optimization_level: String,
-    pub dependencies: Vec<String>,
-}
-
 /// Cache statistics
 #[derive(Debug, Default, Clone)]
 pub struct CacheStatistics {
-    pub total_entries: usize,
-    pub total_size_bytes: u64,
-    pub hits: usize,
-    pub misses: usize,
-    pub evictions: usize,
-    pub cache_hit_rate: f64,
-}
-
 /// Configuration for cache manager
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct CacheConfig {
-    pub cache_directory: PathBuf,
-    pub max_cache_size_mb: u64,
-    pub max_entries: usize,
-    pub entry_ttl_hours: u64,
-    pub enable_compression: bool,
-    pub cleanup_interval_hours: u64,
-}
-
 impl Default for CacheConfig {
     fn default() -> Self {
         Self {
-            cache_directory: PathBuf::from(".cursed_cache"),
             max_cache_size_mb: 1024, // 1GB
-            max_entries: 10000,
             entry_ttl_hours: 24 * 7, // 1 week
-            enable_compression: true,
-            cleanup_interval_hours: 24,
         }
     }
-}
-
 /// Cache manager for compilation artifacts
 #[derive(Debug)]
 pub struct CacheManager {
-    config: CacheConfig,
-    entries: HashMap<String, CacheEntry>,
-    statistics: CacheStatistics,
-    last_cleanup: SystemTime,
-}
-
 impl CacheManager {
     /// Create a new cache manager
     #[instrument]
     pub fn new() -> Result<Self> {
         let config = CacheConfig::default();
         Self::new_with_config(config)
-    }
-
     /// Create a new cache manager with custom configuration
     #[instrument]
     pub fn new_with_config(config: CacheConfig) -> Result<Self> {
@@ -85,14 +45,7 @@ impl CacheManager {
             fs::create_dir_all(&config.cache_directory).map_err(|e| {
                 CursedError::optimization_error(&format!("Failed to create cache directory: {}", e))
             })?;
-        }
-
         let mut manager = Self {
-            config,
-            entries: HashMap::new(),
-            statistics: CacheStatistics::default(),
-            last_cleanup: SystemTime::now(),
-        };
 
         // Load existing cache entries
         manager.load_cache_index()?;
@@ -101,8 +54,6 @@ impl CacheManager {
         manager.cleanup_expired_entries()?;
 
         Ok(manager)
-    }
-
     /// Check if a compilation unit result is cached
     #[instrument(skip(self, unit))]
     pub fn get_cached_result(&mut self, unit: &CompilationUnit) -> Result<Option<PathBuf>> {
@@ -133,8 +84,6 @@ impl CacheManager {
         debug!("Cache miss for unit: {}", unit.name);
         
         Ok(None)
-    }
-    
     /// Get cached data and decompress it
     pub fn get_cached_data(&mut self, unit: &CompilationUnit) -> Result<Option<Vec<u8>>> {
         if let Some(file_path) = self.get_cached_result(unit)? {
@@ -156,10 +105,6 @@ impl CacheManager {
     /// Store a compilation result in the cache
     #[instrument(skip(self, unit, result_data))]
     pub fn store_result(
-        &mut self,
-        unit: &CompilationUnit,
-        result_data: &[u8],
-        optimization_level: String,
     ) -> Result<()> {
         let cache_key = self.generate_cache_key(unit)?;
         let file_path = self.config.cache_directory.join(format!("{}.cache", cache_key));
@@ -167,8 +112,6 @@ impl CacheManager {
         // Check cache size limits before storing
         if self.would_exceed_limits(result_data.len() as u64)? {
             self.evict_entries_to_make_space(result_data.len() as u64)?;
-        }
-
         // Write data to cache file with compression
         let data_to_write = self.compress_data(result_data)?;
 
@@ -178,15 +121,6 @@ impl CacheManager {
 
         // Create cache entry
         let entry = CacheEntry {
-            key: cache_key.clone(),
-            file_path: file_path.clone(),
-            created_at: SystemTime::now(),
-            last_accessed: SystemTime::now(),
-            size_bytes: result_data.len() as u64,
-            source_hash: self.compute_source_hash(unit)?,
-            optimization_level,
-            dependencies: unit.dependencies.clone(),
-        };
 
         // Update statistics
         self.statistics.total_entries += 1;
@@ -200,8 +134,6 @@ impl CacheManager {
 
         debug!("Stored cache entry for unit: {}", unit.name);
         Ok(())
-    }
-
     /// Invalidate cache entries for a compilation unit
     #[instrument(skip(self, unit))]
     pub fn invalidate(&mut self, unit: &CompilationUnit) -> Result<()> {
@@ -210,11 +142,7 @@ impl CacheManager {
         if self.entries.contains_key(&cache_key) {
             self.remove_entry(&cache_key)?;
             info!("Invalidated cache entry for unit: {}", unit.name);
-        }
-
         Ok(())
-    }
-
     /// Clear all cache entries
     #[instrument(skip(self))]
     pub fn clear_all(&mut self) -> Result<()> {
@@ -235,13 +163,9 @@ impl CacheManager {
         self.save_cache_index()?;
 
         Ok(())
-    }
-
     /// Get current cache statistics
     pub fn get_statistics(&self) -> &CacheStatistics {
         &self.statistics
-    }
-
     /// Perform cache cleanup (remove expired entries)
     #[instrument(skip(self))]
     pub fn cleanup(&mut self) -> Result<()> {
@@ -250,29 +174,21 @@ impl CacheManager {
             self.last_cleanup = SystemTime::now();
         }
         Ok(())
-    }
-
     /// Generate a cache key for a compilation unit
     fn generate_cache_key(&self, unit: &CompilationUnit) -> Result<String> {
         let source_hash = self.compute_source_hash(unit)?;
         let deps_hash = self.compute_dependencies_hash(&unit.dependencies)?;
         
         Ok(format!("{}_{}", source_hash, deps_hash))
-    }
-
     /// Compute hash of source files
     fn compute_source_hash(&self, unit: &CompilationUnit) -> Result<String> {
         // Simplified hash computation (in real implementation, would hash file contents)
         let combined = unit.source_files.join("|");
         Ok(format!("{:x}", self.simple_hash(combined.as_bytes())))
-    }
-
     /// Compute hash of dependencies
     fn compute_dependencies_hash(&self, dependencies: &[String]) -> Result<String> {
         let combined = dependencies.join("|");
         Ok(format!("{:x}", self.simple_hash(combined.as_bytes())))
-    }
-
     /// Simple hash function for demonstration
     fn simple_hash(&self, data: &[u8]) -> u64 {
         use std::collections::hash_map::DefaultHasher;
@@ -281,25 +197,17 @@ impl CacheManager {
         let mut hasher = DefaultHasher::new();
         data.hash(&mut hasher);
         hasher.finish()
-    }
-
     /// Check if a cache entry is still valid
     fn is_entry_valid(&self, entry: &CacheEntry) -> Result<bool> {
         // Check if file exists
         if !entry.file_path.exists() {
             return Ok(false);
-        }
-
         // Check TTL
         let ttl = Duration::from_secs(self.config.entry_ttl_hours * 3600);
         if entry.created_at.elapsed().unwrap_or(Duration::MAX) > ttl {
             return Ok(false);
-        }
-
         // In a real implementation, would also check source file modification times
         Ok(true)
-    }
-
     /// Check if storing new data would exceed cache limits
     fn would_exceed_limits(&self, new_data_size: u64) -> Result<bool> {
         let would_exceed_size = self.statistics.total_size_bytes + new_data_size > 
@@ -307,8 +215,6 @@ impl CacheManager {
         let would_exceed_entries = self.statistics.total_entries + 1 > self.config.max_entries;
         
         Ok(would_exceed_size || would_exceed_entries)
-    }
-
     /// Evict entries to make space for new data
     fn evict_entries_to_make_space(&mut self, needed_space: u64) -> Result<()> {
         debug!("Evicting cache entries to make space for {} bytes", needed_space);
@@ -333,28 +239,18 @@ impl CacheManager {
         for key in keys_to_remove {
             self.remove_entry(&key)?;
             self.statistics.evictions += 1;
-        }
-
         info!("Evicted {} entries, freed {} bytes", self.statistics.evictions, freed_space);
         Ok(())
-    }
-
     /// Remove a cache entry
     fn remove_entry(&mut self, key: &str) -> Result<()> {
         if let Some(entry) = self.entries.remove(key) {
             // Remove file
             if let Err(e) = fs::remove_file(&entry.file_path) {
                 warn!("Failed to remove cache file {:?}: {}", entry.file_path, e);
-            }
-
             // Update statistics
             self.statistics.total_entries = self.statistics.total_entries.saturating_sub(1);
             self.statistics.total_size_bytes = self.statistics.total_size_bytes.saturating_sub(entry.size_bytes);
-        }
-
         Ok(())
-    }
-
     /// Clean up expired cache entries
     fn cleanup_expired_entries(&mut self) -> Result<()> {
         debug!("Cleaning up expired cache entries");
@@ -369,18 +265,12 @@ impl CacheManager {
 
         for key in keys_to_remove {
             self.remove_entry(&key)?;
-        }
-
         self.save_cache_index()?;
         Ok(())
-    }
-
     /// Check if cleanup should be performed
     fn should_perform_cleanup(&self) -> bool {
         let cleanup_interval = Duration::from_secs(self.config.cleanup_interval_hours * 3600);
         self.last_cleanup.elapsed().unwrap_or(Duration::ZERO) > cleanup_interval
-    }
-
     /// Update cache hit rate
     fn update_hit_rate(&mut self) {
         let total_requests = self.statistics.hits + self.statistics.misses;
@@ -410,11 +300,7 @@ impl CacheManager {
             self.entries = entries;
             
             debug!("Loaded {} cache entries from index", self.entries.len());
-        }
-
         Ok(())
-    }
-
     /// Save cache index to disk
     fn save_cache_index(&self) -> Result<()> {
         let index_path = self.config.cache_directory.join("index.json");
@@ -428,14 +314,10 @@ impl CacheManager {
         })?;
 
         Ok(())
-    }
-
     /// Compress data for storage
     fn compress_data(&self, data: &[u8]) -> Result<Vec<u8>> {
         if !self.config.enable_compression {
             return Ok(data.to_vec());
-        }
-        
         // Try to use compression if available, otherwise fall back to no compression
         #[cfg(feature = "compression")]
         {
@@ -450,13 +332,9 @@ impl CacheManager {
                 CursedError::optimization_error(&format!("Failed to finish compression: {}", e))
             })?;
             
-            debug!("Compressed {} bytes to {} bytes ({:.1}% ratio)", 
-                   data.len(), compressed.len(), 
                    (compressed.len() as f64 / data.len() as f64) * 100.0);
             
             Ok(compressed)
-        }
-        
         #[cfg(not(feature = "compression"))]
         {
             // Fallback: simple compression using basic algorithm
@@ -470,8 +348,6 @@ impl CacheManager {
     fn decompress_data(&self, compressed_data: &[u8]) -> Result<Vec<u8>> {
         if !self.config.enable_compression {
             return Ok(compressed_data.to_vec());
-        }
-        
         #[cfg(feature = "compression")]
         {
             use std::io::Read;
@@ -483,8 +359,6 @@ impl CacheManager {
             })?;
             
             Ok(decompressed)
-        }
-        
         #[cfg(not(feature = "compression"))]
         {
             // Fallback: simple decompression
@@ -499,8 +373,6 @@ impl CacheManager {
         let mut compressed = Vec::new();
         if data.is_empty() {
             return compressed;
-        }
-        
         let mut current_byte = data[0];
         let mut count = 1u8;
         
@@ -520,16 +392,12 @@ impl CacheManager {
         compressed.push(current_byte);
         
         compressed
-    }
-    
     /// Simple decompression fallback
     fn simple_decompress(&self, compressed_data: &[u8]) -> Result<Vec<u8>> {
         let mut decompressed = Vec::new();
         
         if compressed_data.len() % 2 != 0 {
             return Err(CursedError::optimization_error("Invalid compressed data format"));
-        }
-        
         for chunk in compressed_data.chunks(2) {
             let count = chunk[0];
             let byte_value = chunk[1];
@@ -540,8 +408,6 @@ impl CacheManager {
         }
         
         Ok(decompressed)
-    }
-
     /// Update cache configuration
     pub fn update_config(&mut self, new_config: CacheConfig) -> Result<()> {
         info!("Updating cache manager configuration");

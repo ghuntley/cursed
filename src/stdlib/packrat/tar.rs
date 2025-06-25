@@ -21,13 +21,7 @@ const TAR_GNU_MAGIC: &[u8] = b"ustar  \0";
 // TAR format variants
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Format {
-    FormatUnknown,
-    FormatLegacy,
-    FormatPOSIX,
-    FormatGNU,
     FormatOldVibe, // Custom format with Gen Z metadata
-}
-
 impl Default for Format {
     fn default() -> Self {
         Format::FormatPOSIX
@@ -37,49 +31,14 @@ impl Default for Format {
 // TAR header structure
 #[derive(Debug, Clone)]
 pub struct RatHeader {
-    pub name: String,
-    pub mode: i64,
-    pub uid: i32,
-    pub gid: i32,
-    pub size: i64,
-    pub mod_time: SystemTime,
-    pub typeflag: u8,
-    pub linkname: String,
-    pub uname: String,
-    pub gname: String,
-    pub devmajor: i64,
-    pub devminor: i64,
-    pub access_time: SystemTime,
-    pub change_time: SystemTime,
-    pub format: Format,
     
     // Extended attributes for OldVibe format
-    pub gen_z_metadata: HashMap<String, String>,
-}
-
 impl Default for RatHeader {
     fn default() -> Self {
         RatHeader {
-            name: String::new(),
-            mode: 0o644,
-            uid: 0,
-            gid: 0,
-            size: 0,
-            mod_time: SystemTime::now(),
             typeflag: b'0', // Regular file
-            linkname: String::new(),
-            uname: String::new(),
-            gname: String::new(),
-            devmajor: 0,
-            devminor: 0,
-            access_time: SystemTime::now(),
-            change_time: SystemTime::now(),
-            format: Format::FormatPOSIX,
-            gen_z_metadata: HashMap::new(),
         }
     }
-}
-
 impl RatHeader {
     // Create header from file info (simplified version)
     pub fn from_file_info(name: &str, size: u64, mode: u32) -> Self {
@@ -89,28 +48,18 @@ impl RatHeader {
         header.mode = mode as i64;
         header.mod_time = SystemTime::now();
         header
-    }
-    
     // Validate header for security issues
     pub fn validate(&self) -> ArchiveResult<()> {
         // Check for path traversal
         if self.name.contains("..") || self.name.starts_with('/') {
             return Err(ArchiveError::PathTraversal(format!("Unsafe path: {}", self.name)));
-        }
-        
         // Check name length
         if self.name.len() > 255 {
             return Err(ArchiveError::NameTooLong(format!("Name too long: {}", self.name.len())));
-        }
-        
         // Check size is reasonable
         if self.size < 0 {
             return Err(invalid_header("Negative file size"));
-        }
-        
         Ok(())
-    }
-    
     // Convert to TAR header bytes
     pub fn to_bytes(&self) -> ArchiveResult<Vec<u8>> {
         let mut header = vec![0u8; TAR_BLOCK_SIZE];
@@ -154,8 +103,6 @@ impl RatHeader {
         let linkname_bytes = self.linkname.as_bytes();
         if linkname_bytes.len() < 100 {
             header[157..157 + linkname_bytes.len()].copy_from_slice(linkname_bytes);
-        }
-        
         // Magic (6 bytes)
         header[TAR_MAGIC_OFFSET..TAR_MAGIC_OFFSET + 6].copy_from_slice(b"ustar\0");
         
@@ -166,33 +113,23 @@ impl RatHeader {
         let uname_bytes = self.uname.as_bytes();
         if uname_bytes.len() < 32 {
             header[265..265 + uname_bytes.len()].copy_from_slice(uname_bytes);
-        }
-        
         // Group name (32 bytes)
         let gname_bytes = self.gname.as_bytes();
         if gname_bytes.len() < 32 {
             header[297..297 + gname_bytes.len()].copy_from_slice(gname_bytes);
-        }
-        
         // Calculate and set checksum
         let checksum = self.calculate_checksum(&header);
         let checksum_str = format!("{:06o}\0 ", checksum);
         header[148..156].copy_from_slice(checksum_str.as_bytes());
         
         Ok(header)
-    }
-    
     // Parse header from bytes
     pub fn from_bytes(data: &[u8]) -> ArchiveResult<Self> {
         if data.len() < TAR_BLOCK_SIZE {
             return Err(invalid_header("Header too short"));
-        }
-        
         // Check if this is an empty block (all zeros)
         if data.iter().all(|&b| b == 0) {
             return Err(invalid_header("Empty header block"));
-        }
-        
         let mut header = RatHeader::default();
         
         // Parse name
@@ -228,24 +165,17 @@ impl RatHeader {
             Format::FormatGNU
         } else {
             Format::FormatLegacy
-        };
         
         // Parse user and group names (POSIX/GNU only)
         if header.format != Format::FormatLegacy {
             header.uname = parse_null_terminated_string(&data[265..297])?;
             header.gname = parse_null_terminated_string(&data[297..329])?;
-        }
-        
         // Verify checksum
         let stored_checksum = parse_octal(&data[148..156])? as u32;
         let calculated_checksum = header.calculate_checksum(data);
         if stored_checksum != calculated_checksum {
             return Err(corrupt_archive("Header checksum mismatch"));
-        }
-        
         Ok(header)
-    }
-    
     // Calculate TAR header checksum
     fn calculate_checksum(&self, header: &[u8]) -> u32 {
         let mut checksum = 0u32;
@@ -263,17 +193,9 @@ impl RatHeader {
 
 // TAR reader (RatPack)
 pub struct RatPack<R: Read> {
-    reader: BufReader<R>,
-    current_file_remaining: i64,
-    finished: bool,
-}
-
 impl<R: Read> RatPack<R> {
     pub fn new(reader: R) -> Self {
         RatPack {
-            reader: BufReader::new(reader),
-            current_file_remaining: 0,
-            finished: false,
         }
     }
     
@@ -281,24 +203,15 @@ impl<R: Read> RatPack<R> {
     pub fn next(&mut self) -> ArchiveResult<Option<RatHeader>> {
         if self.finished {
             return Ok(None);
-        }
-        
         // Skip remaining bytes from current file
         if self.current_file_remaining > 0 {
             self.skip_current_file()?;
-        }
-        
         // Read header block
         let mut header_buf = vec![0u8; TAR_BLOCK_SIZE];
         match self.reader.read_exact(&mut header_buf) {
-            Ok(()) => {},
             Err(ref e) if e.kind() == std::io::ErrorKind::UnexpectedEof => {
                 self.finished = true;
                 return Ok(None);
-            },
-            Err(e) => return Err(e.into()),
-        }
-        
         // Check for end-of-archive (two empty blocks)
         if header_buf.iter().all(|&b| b == 0) {
             // Read second empty block to confirm end
@@ -307,8 +220,6 @@ impl<R: Read> RatPack<R> {
                 Ok(()) if empty_buf.iter().all(|&b| b == 0) => {
                     self.finished = true;
                     return Ok(None);
-                },
-                _ => return Err(corrupt_archive("Invalid end-of-archive marker")),
             }
         }
         
@@ -320,14 +231,10 @@ impl<R: Read> RatPack<R> {
         
         debug!("Read TAR header: {} ({} bytes)", header.name, header.size);
         Ok(Some(header))
-    }
-    
     // Skip current file data
     fn skip_current_file(&mut self) -> ArchiveResult<()> {
         if self.current_file_remaining <= 0 {
             return Ok(());
-        }
-        
         // Calculate blocks to skip (including padding)
         let blocks_to_skip = (self.current_file_remaining + TAR_BLOCK_SIZE as i64 - 1) / TAR_BLOCK_SIZE as i64;
         let bytes_to_skip = blocks_to_skip * TAR_BLOCK_SIZE as i64;
@@ -340,8 +247,6 @@ impl<R: Read> RatPack<R> {
             let to_read = std::cmp::min(remaining, buffer.len() as i64);
             self.reader.read_exact(&mut buffer[..to_read as usize])?;
             remaining -= to_read;
-        }
-        
         self.current_file_remaining = 0;
         Ok(())
     }
@@ -351,8 +256,6 @@ impl<R: Read> Read for RatPack<R> {
     fn read(&mut self, buf: &mut [u8]) -> std::io::Result<usize> {
         if self.current_file_remaining <= 0 {
             return Ok(0);
-        }
-        
         let to_read = std::cmp::min(buf.len() as i64, self.current_file_remaining) as usize;
         let bytes_read = self.reader.read(&mut buf[..to_read])?;
         self.current_file_remaining -= bytes_read as i64;
@@ -363,19 +266,9 @@ impl<R: Read> Read for RatPack<R> {
 
 // TAR writer (RatStash)
 pub struct RatStash<W: Write> {
-    writer: BufWriter<W>,
-    current_file_size: i64,
-    current_file_written: i64,
-    finished: bool,
-}
-
 impl<W: Write> RatStash<W> {
     pub fn new(writer: W) -> Self {
         RatStash {
-            writer: BufWriter::new(writer),
-            current_file_size: 0,
-            current_file_written: 0,
-            finished: false,
         }
     }
     
@@ -383,13 +276,9 @@ impl<W: Write> RatStash<W> {
     pub fn write_header(&mut self, header: &RatHeader) -> ArchiveResult<()> {
         if self.finished {
             return Err(io_error("Archive already finished"));
-        }
-        
         // Finish current file if needed
         if self.current_file_written < self.current_file_size {
             self.pad_current_file()?;
-        }
-        
         // Validate header
         header.validate()?;
         
@@ -402,8 +291,6 @@ impl<W: Write> RatStash<W> {
         
         debug!("Wrote TAR header: {} ({} bytes)", header.name, header.size);
         Ok(())
-    }
-    
     // Pad current file to block boundary
     fn pad_current_file(&mut self) -> ArchiveResult<()> {
         let remaining = self.current_file_size - self.current_file_written;
@@ -411,36 +298,24 @@ impl<W: Write> RatStash<W> {
             // Write zeros for remaining file data
             let zeros = vec![0u8; remaining as usize];
             self.writer.write_all(&zeros)?;
-        }
-        
         // Pad to block boundary
         let padding_needed = (TAR_BLOCK_SIZE as i64 - (self.current_file_size % TAR_BLOCK_SIZE as i64)) % TAR_BLOCK_SIZE as i64;
         if padding_needed > 0 {
             let padding = vec![0u8; padding_needed as usize];
             self.writer.write_all(&padding)?;
-        }
-        
         self.current_file_written = self.current_file_size;
         Ok(())
-    }
-    
     // Flush buffered data
     pub fn flush(&mut self) -> ArchiveResult<()> {
         self.writer.flush()?;
         Ok(())
-    }
-    
     // Close archive (write end markers)
     pub fn close(&mut self) -> ArchiveResult<()> {
         if self.finished {
             return Ok(());
-        }
-        
         // Finish current file
         if self.current_file_written < self.current_file_size {
             self.pad_current_file()?;
-        }
-        
         // Write two empty blocks to mark end of archive
         let empty_block = vec![0u8; TAR_BLOCK_SIZE];
         self.writer.write_all(&empty_block)?;
@@ -458,20 +333,14 @@ impl<W: Write> Write for RatStash<W> {
     fn write(&mut self, buf: &[u8]) -> std::io::Result<usize> {
         if self.finished {
             return Err(std::io::Error::new(std::io::ErrorKind::BrokenPipe, "Archive finished"));
-        }
-        
         let remaining_space = self.current_file_size - self.current_file_written;
         if remaining_space <= 0 {
             return Ok(0);
-        }
-        
         let to_write = std::cmp::min(buf.len() as i64, remaining_space) as usize;
         let bytes_written = self.writer.write(&buf[..to_write])?;
         self.current_file_written += bytes_written as i64;
         
         Ok(bytes_written)
-    }
-    
     fn flush(&mut self) -> std::io::Result<()> {
         self.writer.flush()
     }
@@ -483,30 +352,20 @@ impl<W: Write> Drop for RatStash<W> {
             let _ = self.close();
         }
     }
-}
-
 // Helper functions for parsing TAR headers
 fn parse_null_terminated_string(data: &[u8]) -> ArchiveResult<String> {
     let end = data.iter().position(|&b| b == 0).unwrap_or(data.len());
     String::from_utf8(data[..end].to_vec())
         .map_err(|_| invalid_header("Invalid UTF-8 in string field"))
-}
-
 fn parse_octal(data: &[u8]) -> ArchiveResult<u64> {
     let s = parse_null_terminated_string(data)?;
     let trimmed = s.trim();
     if trimmed.is_empty() {
         return Ok(0);
-    }
-    
     u64::from_str_radix(trimmed, 8)
         .map_err(|_| invalid_header(&format!("Invalid octal number: {}", trimmed)))
-}
-
 // Create header from file info (public function)
 pub fn FileInfoHeader(name: &str, size: u64, mode: u32, link: &str) -> ArchiveResult<RatHeader> {
     let mut header = RatHeader::from_file_info(name, size, mode);
     header.linkname = link.to_string();
     Ok(header)
-}
-

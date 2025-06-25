@@ -16,117 +16,49 @@ pub enum EntropySource {
     ProcessStats,    // Process and system statistics
     NetworkTiming,   // Network timing variations
     Custom(String),  // Custom entropy source
-}
-
 /// Entropy source information and statistics
 #[derive(Debug, Clone)]
 pub struct EntropySourceInfo {
-    pub source: EntropySource,
-    pub available: bool,
     pub quality_estimate: f64,  // 0.0 to 1.0
-    pub bytes_collected: u64,
-    pub collection_failures: u64,
-    pub last_collection: Option<SystemTime>,
     pub collection_rate: f64,   // bytes per second
-}
-
 /// Entropy source manager
 pub struct EntropySourceManager {
-    sources: Arc<Mutex<HashMap<EntropySource, EntropySourceInfo>>>,
-    collection_stats: Arc<Mutex<CollectionStats>>,
-}
-
 #[derive(Debug, Default)]
 struct CollectionStats {
-    total_bytes_collected: u64,
-    total_collections: u64,
-    failed_collections: u64,
-    average_collection_time: Duration,
-}
-
 impl EntropySourceManager {
     /// Create new entropy source manager
     pub fn new() -> Self {
         let mut manager = Self {
-            sources: Arc::new(Mutex::new(HashMap::new())),
-            collection_stats: Arc::new(Mutex::new(CollectionStats::default())),
-        };
         
         manager.discover_sources();
         manager
-    }
-    
     /// Discover available entropy sources
     fn discover_sources(&self) {
         let mut sources = self.sources.lock().unwrap();
         
         // System random source (/dev/urandom)
         sources.insert(EntropySource::SystemRandom, EntropySourceInfo {
-            source: EntropySource::SystemRandom,
-            available: Self::check_system_random(),
-            quality_estimate: 0.95,
-            bytes_collected: 0,
-            collection_failures: 0,
-            last_collection: None,
-            collection_rate: 0.0,
         });
         
         // Hardware RNG
         sources.insert(EntropySource::HardwareRng, EntropySourceInfo {
-            source: EntropySource::HardwareRng,
-            available: Self::check_hardware_rng(),
-            quality_estimate: 0.98,
-            bytes_collected: 0,
-            collection_failures: 0,
-            last_collection: None,
-            collection_rate: 0.0,
         });
         
         // Timing jitter
         sources.insert(EntropySource::TimingJitter, EntropySourceInfo {
-            source: EntropySource::TimingJitter,
-            available: true,
-            quality_estimate: 0.7,
-            bytes_collected: 0,
-            collection_failures: 0,
-            last_collection: None,
-            collection_rate: 0.0,
         });
         
         // Memory layout
         sources.insert(EntropySource::MemoryLayout, EntropySourceInfo {
-            source: EntropySource::MemoryLayout,
-            available: true,
-            quality_estimate: 0.6,
-            bytes_collected: 0,
-            collection_failures: 0,
-            last_collection: None,
-            collection_rate: 0.0,
         });
         
         // Process statistics
         sources.insert(EntropySource::ProcessStats, EntropySourceInfo {
-            source: EntropySource::ProcessStats,
-            available: true,
-            quality_estimate: 0.5,
-            bytes_collected: 0,
-            collection_failures: 0,
-            last_collection: None,
-            collection_rate: 0.0,
         });
         
         // Network timing
         sources.insert(EntropySource::NetworkTiming, EntropySourceInfo {
-            source: EntropySource::NetworkTiming,
-            available: Self::check_network_available(),
-            quality_estimate: 0.4,
-            bytes_collected: 0,
-            collection_failures: 0,
-            last_collection: None,
-            collection_rate: 0.0,
         });
-    }
-    
     /// Check if system random source is available
     fn check_system_random() -> bool {
         #[cfg(unix)]
@@ -150,8 +82,6 @@ impl EntropySourceManager {
             // Check for RDRAND instruction support
             if cfg!(target_feature = "rdrand") {
                 return true;
-            }
-            
             // Check CPUID for RDRAND support
             #[cfg(target_arch = "x86_64")]
             {
@@ -176,8 +106,6 @@ impl EntropySourceManager {
     fn check_network_available() -> bool {
         // Simple check - try to create a UDP socket
         std::net::UdpSocket::bind("127.0.0.1:0").is_ok()
-    }
-    
     /// Get list of available entropy sources
     pub fn get_available_sources(&self) -> Vec<EntropySource> {
         let sources = self.sources.lock().unwrap();
@@ -185,37 +113,24 @@ impl EntropySourceManager {
             .filter(|info| info.available)
             .map(|info| info.source.clone())
             .collect()
-    }
-    
     /// Get entropy source information
     pub fn get_source_info(&self, source: &EntropySource) -> Option<EntropySourceInfo> {
         let sources = self.sources.lock().unwrap();
         sources.get(source).cloned()
-    }
-    
     /// Collect entropy from specified source
     pub fn collect_entropy(&self, source: &EntropySource, size: usize) -> AdvancedCryptoResult<Vec<u8>> {
         let start_time = SystemTime::now();
         
         let result = match source {
-            EntropySource::SystemRandom => self.collect_system_random(size),
-            EntropySource::HardwareRng => self.collect_hardware_rng(size),
-            EntropySource::TimingJitter => self.collect_timing_jitter(size),
-            EntropySource::MemoryLayout => self.collect_memory_layout(size),
-            EntropySource::ProcessStats => self.collect_process_stats(size),
-            EntropySource::NetworkTiming => self.collect_network_timing(size),
             EntropySource::Custom(name) => {
                 return Err(format!("Custom entropy source '{}' not implemented", name).into());
             }
-        };
         
         // Update statistics
         let collection_time = start_time.elapsed().unwrap_or(Duration::from_millis(1));
         self.update_source_stats(source, &result, collection_time);
         
         result
-    }
-    
     /// Collect entropy from system random source
     fn collect_system_random(&self, size: usize) -> AdvancedCryptoResult<Vec<u8>> {
         let mut buffer = vec![0u8; size];
@@ -224,8 +139,6 @@ impl EntropySourceManager {
         {
             let mut file = File::open("/dev/urandom")?;
             file.read_exact(&mut buffer)?;
-        }
-        
         #[cfg(windows)]
         {
             use std::ptr;
@@ -234,40 +147,23 @@ impl EntropySourceManager {
             // Use Windows CryptGenRandom
             extern "system" {
                 fn CryptAcquireContextW(
-                    phProv: *mut usize,
-                    pszContainer: *const u16,
-                    pszProvider: *const u16,
-                    dwProvType: u32,
-                    dwFlags: u32,
                 ) -> i32;
                 
                 fn CryptGenRandom(
-                    hProv: usize,
-                    dwLen: u32,
-                    pbBuffer: *mut u8,
                 ) -> i32;
                 
                 fn CryptReleaseContext(hProv: usize, dwFlags: u32) -> i32;
-            }
-            
             let mut hprov = 0usize;
             let result = unsafe {
                 CryptAcquireContextW(
-                    &mut hprov,
-                    ptr::null(),
-                    ptr::null(),
                     1, // PROV_RSA_FULL
                     0xF0000040, // CRYPT_VERIFYCONTEXT | CRYPT_SILENT
                 )
-            };
             
             if result == 0 {
                 return Err("Failed to acquire Windows crypto context".into());
-            }
-            
             let gen_result = unsafe {
                 CryptGenRandom(hprov, size as u32, buffer.as_mut_ptr())
-            };
             
             unsafe { CryptReleaseContext(hprov, 0) };
             
@@ -277,8 +173,6 @@ impl EntropySourceManager {
         }
         
         Ok(buffer)
-    }
-    
     /// Collect entropy from hardware RNG
     fn collect_hardware_rng(&self, size: usize) -> AdvancedCryptoResult<Vec<u8>> {
         let mut buffer = vec![0u8; size];
@@ -297,8 +191,6 @@ impl EntropySourceManager {
                         
                         if success == 0 {
                             return Err("Hardware RNG failed to generate random value".into());
-                        }
-                        
                         let bytes = value.to_le_bytes();
                         let copy_len = std::cmp::min(8, size - offset);
                         buffer[offset..offset + copy_len].copy_from_slice(&bytes[..copy_len]);
@@ -317,8 +209,6 @@ impl EntropySourceManager {
                         
                         if success == 0 {
                             return Err("Hardware RNG failed to generate random value".into());
-                        }
-                        
                         let bytes = value.to_le_bytes();
                         let copy_len = std::cmp::min(4, size - offset);
                         buffer[offset..offset + copy_len].copy_from_slice(&bytes[..copy_len]);
@@ -331,8 +221,6 @@ impl EntropySourceManager {
         }
         
         Err("Hardware RNG not available on this platform".into())
-    }
-    
     /// Collect entropy from timing jitter
     fn collect_timing_jitter(&self, size: usize) -> AdvancedCryptoResult<Vec<u8>> {
         let mut buffer = vec![0u8; size];
@@ -349,21 +237,13 @@ impl EntropySourceManager {
                 let mut sum = 0u64;
                 for j in 0..100 {
                     sum = sum.wrapping_add(j);
-                }
-                
                 let elapsed = start.elapsed().unwrap_or(Duration::from_nanos(1));
                 let jitter_bit = (elapsed.as_nanos() & 1) as u8;
                 
                 byte_value |= jitter_bit << bit;
                 entropy_bits += 1;
-            }
-            
             buffer[i] = byte_value;
-        }
-        
         Ok(buffer)
-    }
-    
     /// Collect entropy from memory layout
     fn collect_memory_layout(&self, size: usize) -> AdvancedCryptoResult<Vec<u8>> {
         let mut buffer = vec![0u8; size];
@@ -384,8 +264,6 @@ impl EntropySourceManager {
         }
         
         Ok(buffer)
-    }
-    
     /// Collect entropy from process statistics
     fn collect_process_stats(&self, size: usize) -> AdvancedCryptoResult<Vec<u8>> {
         let mut buffer = vec![0u8; size];
@@ -398,11 +276,7 @@ impl EntropySourceManager {
             // Mix process ID, time, and counter
             let mixed = (pid as u128) ^ time ^ (i as u128 * 0x9e3779b97f4a7c15);
             buffer[i] = (mixed & 0xff) as u8;
-        }
-        
         Ok(buffer)
-    }
-    
     /// Collect entropy from network timing
     fn collect_network_timing(&self, size: usize) -> AdvancedCryptoResult<Vec<u8>> {
         let mut buffer = vec![0u8; size];
@@ -419,11 +293,7 @@ impl EntropySourceManager {
             }
         } else {
             return Err("Network not available for timing entropy".into());
-        }
-        
         Ok(buffer)
-    }
-    
     /// Update source statistics
     fn update_source_stats(&self, source: &EntropySource, result: &AdvancedCryptoResult<Vec<u8>>, collection_time: Duration) {
         let mut sources = self.sources.lock().unwrap();
@@ -456,13 +326,9 @@ impl EntropySourceManager {
     /// Get collection statistics
     pub fn get_collection_stats(&self) -> CollectionStats {
         self.collection_stats.lock().unwrap().clone()
-    }
-    
     /// Test entropy source availability
     pub fn test_source(&self, source: &EntropySource) -> bool {
         match self.collect_entropy(source, 32) {
-            Ok(_) => true,
-            Err(_) => false,
         }
     }
     

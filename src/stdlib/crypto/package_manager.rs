@@ -12,123 +12,37 @@ use serde::{Serialize, Deserialize};
 use crate::error::CursedError;
 // use crate::stdlib::value::Value;
 use super::unified_api::{
-    UnifiedCryptoError, UnifiedCryptoResult, UnifiedCryptoManager, CryptoConfig, 
     PerformanceMetrics, SecurityAuditResult, CryptoOperation
-};
+// };
 use super::integration_manager::{CryptoIntegrationManager, IntegrationTestResult};
 
 /// fr fr Package information
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct PackageInfo {
-    pub name: String,
-    pub version: String,
-    pub description: String,
-    pub algorithms: Vec<String>,
-    pub dependencies: Vec<String>,
-    pub features: Vec<String>,
-    pub security_level: String,
-    pub performance_tier: String,
-    pub last_updated: SystemTime,
-    pub initialization_time: Option<Duration>,
-}
-
 /// fr fr Package registry entry
 #[derive(Debug, Clone)]
 pub struct PackageRegistryEntry {
-    pub info: PackageInfo,
-    pub status: PackageStatus,
-    pub init_function: Option<fn() -> crate::error::Result<()>>,
-    pub test_function: Option<fn() -> UnifiedCryptoResult<HashMap<String, bool>>>,
-    pub capabilities: PackageCapabilities,
-}
-
 /// fr fr Package status
 #[derive(Debug, Clone, PartialEq)]
 pub enum PackageStatus {
-    NotRegistered,
-    Registered,
-    Initializing,
-    Ready,
-    Failed(String),
-    Updating,
-    Disabled,
-}
-
 /// fr fr Package capabilities
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct PackageCapabilities {
-    pub encryption: bool,
-    pub decryption: bool,
-    pub key_generation: bool,
-    pub key_derivation: bool,
-    pub digital_signatures: bool,
-    pub hash_functions: bool,
-    pub random_generation: bool,
-    pub certificate_handling: bool,
-    pub post_quantum: bool,
-    pub zero_knowledge: bool,
-    pub protocols: bool,
-    pub hardware_support: bool,
-}
-
 impl Default for PackageCapabilities {
     fn default() -> Self {
         Self {
-            encryption: false,
-            decryption: false,
-            key_generation: false,
-            key_derivation: false,
-            digital_signatures: false,
-            hash_functions: false,
-            random_generation: false,
-            certificate_handling: false,
-            post_quantum: false,
-            zero_knowledge: false,
-            protocols: false,
-            hardware_support: false,
         }
     }
-}
-
 /// fr fr Crypto package statistics
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct PackageStatistics {
-    pub total_operations: u64,
-    pub successful_operations: u64,
-    pub failed_operations: u64,
-    pub average_duration: Duration,
-    pub peak_memory_usage: u64,
-    pub last_operation: Option<SystemTime>,
-    pub uptime: Duration,
-    pub error_rate: f64,
-}
-
 impl Default for PackageStatistics {
     fn default() -> Self {
         Self {
-            total_operations: 0,
-            successful_operations: 0,
-            failed_operations: 0,
-            average_duration: Duration::from_millis(0),
-            peak_memory_usage: 0,
-            last_operation: None,
-            uptime: Duration::from_secs(0),
-            error_rate: 0.0,
         }
     }
-}
-
 /// fr fr Comprehensive crypto package manager
 pub struct CryptoPackageManager {
-    registry: Arc<RwLock<HashMap<String, PackageRegistryEntry>>>,
-    unified_manager: Arc<UnifiedCryptoManager>,
-    integration_manager: Arc<CryptoIntegrationManager>,
-    package_stats: Arc<RwLock<HashMap<String, PackageStatistics>>>,
-    global_config: Arc<RwLock<CryptoConfig>>,
-    startup_time: Instant,
-    monitoring_enabled: Arc<RwLock<bool>>,
-}
-
 impl Default for CryptoPackageManager {
     fn default() -> Self {
         Self::new()
@@ -139,13 +53,6 @@ impl CryptoPackageManager {
     /// slay Create a new crypto package manager
     pub fn new() -> Self {
         Self {
-            registry: Arc::new(RwLock::new(HashMap::new())),
-            unified_manager: Arc::new(UnifiedCryptoManager::new()),
-            integration_manager: Arc::new(CryptoIntegrationManager::new()),
-            package_stats: Arc::new(RwLock::new(HashMap::new())),
-            global_config: Arc::new(RwLock::new(CryptoConfig::default())),
-            startup_time: Instant::now(),
-            monitoring_enabled: Arc::new(RwLock::new(true)),
         }
     }
 
@@ -173,21 +80,9 @@ impl CryptoPackageManager {
 
         println!("🔐 Crypto Package Manager initialized successfully - all systems ready bestie!");
         Ok(())
-    }
-
     /// slay Register all crypto packages
     fn register_all_packages(&self) -> UnifiedCryptoResult<()> {
         let packages = vec![
-            self.create_crypto_advanced_entry(),
-            self.create_crypto_asymmetric_entry(),
-            self.create_crypto_hash_advanced_entry(),
-            self.create_crypto_signatures_entry(),
-            self.create_crypto_kdf_entry(),
-            self.create_crypto_random_entry(),
-            self.create_crypto_pki_entry(),
-            self.create_crypto_zk_entry(),
-            self.create_crypto_pqc_entry(),
-            self.create_crypto_protocols_entry(),
         ];
 
         let mut registry = self.registry.write()
@@ -201,11 +96,7 @@ impl CryptoPackageManager {
             let mut stats = self.package_stats.write()
                 .map_err(|_| UnifiedCryptoError::Configuration("Failed to write stats".to_string()))?;
             stats.insert(name, PackageStatistics::default());
-        }
-
         Ok(())
-    }
-
     /// slay Create crypto_advanced package entry
     fn create_crypto_advanced_entry(&self) -> PackageRegistryEntry {
         let mut capabilities = PackageCapabilities::default();
@@ -215,34 +106,11 @@ impl CryptoPackageManager {
 
         PackageRegistryEntry {
             info: PackageInfo {
-                name: "crypto_advanced".to_string(),
-                version: "1.0.0".to_string(),
-                description: "Advanced symmetric encryption algorithms".to_string(),
                 algorithms: vec![
-                    "AES-128-GCM".to_string(),
-                    "AES-192-GCM".to_string(),
-                    "AES-256-GCM".to_string(),
-                    "ChaCha20-Poly1305".to_string(),
-                    "XChaCha20-Poly1305".to_string(),
-                ],
-                dependencies: vec!["crypto_random".to_string()],
                 features: vec![
-                    "authenticated_encryption".to_string(),
-                    "constant_time".to_string(),
-                    "memory_protection".to_string(),
-                ],
-                security_level: "High".to_string(),
-                performance_tier: "Optimized".to_string(),
-                last_updated: SystemTime::now(),
-                initialization_time: None,
-            },
-            status: PackageStatus::Registered,
             init_function: Some(|| {
 //                 crate::stdlib::packages::crypto_advanced::init_crypto_advanced()
                     .map_err(|e| CursedError::Runtime(e.to_string()))
-            }),
-            test_function: None,
-            capabilities,
         }
     }
 
@@ -256,37 +124,11 @@ impl CryptoPackageManager {
 
         PackageRegistryEntry {
             info: PackageInfo {
-                name: "crypto_asymmetric".to_string(),
-                version: "1.0.0".to_string(),
-                description: "Asymmetric cryptography and key exchange".to_string(),
                 algorithms: vec![
-                    "RSA-2048".to_string(),
-                    "RSA-3072".to_string(),
-                    "RSA-4096".to_string(),
-                    "ECC-P256".to_string(),
-                    "ECC-P384".to_string(),
-                    "ECC-P521".to_string(),
-                    "X25519".to_string(),
-                    "Ed25519".to_string(),
-                ],
-                dependencies: vec!["crypto_random".to_string(), "crypto_hash_advanced".to_string()],
                 features: vec![
-                    "key_exchange".to_string(),
-                    "digital_signatures".to_string(),
-                    "elliptic_curves".to_string(),
-                ],
-                security_level: "High".to_string(),
-                performance_tier: "Standard".to_string(),
-                last_updated: SystemTime::now(),
-                initialization_time: None,
-            },
-            status: PackageStatus::Registered,
             init_function: Some(|| {
 //                 crate::stdlib::packages::crypto_asymmetric::init_crypto_asymmetric()
                     .map_err(|e| CursedError::Runtime(e.to_string()))
-            }),
-            test_function: None,
-            capabilities,
         }
     }
 
@@ -297,28 +139,10 @@ impl CryptoPackageManager {
 
         PackageRegistryEntry {
             info: PackageInfo {
-                name: "crypto_hash_advanced".to_string(),
-                version: "1.0.0".to_string(),
-                description: "Advanced cryptographic hash functions".to_string(),
                 algorithms: vec![
-                    "SHA-256".to_string(), "SHA-384".to_string(), "SHA-512".to_string(),
-                    "SHA-3-256".to_string(), "SHA-3-384".to_string(), "SHA-3-512".to_string(),
-                    "BLAKE3".to_string(), "HMAC".to_string(),
-                ],
-                dependencies: vec![],
-                features: vec!["hmac".to_string(), "sha3".to_string(), "blake3".to_string()],
-                security_level: "High".to_string(),
-                performance_tier: "Optimized".to_string(),
-                last_updated: SystemTime::now(),
-                initialization_time: None,
-            },
-            status: PackageStatus::Registered,
             init_function: Some(|| {
 //                 crate::stdlib::packages::crypto_hash_advanced::init_crypto_hash_advanced()
                     .map_err(|e| CursedError::Runtime(e.to_string()))
-            }),
-            test_function: None,
-            capabilities,
         }
     }
 
@@ -328,24 +152,9 @@ impl CryptoPackageManager {
 
         PackageRegistryEntry {
             info: PackageInfo {
-                name: "crypto_signatures".to_string(),
-                version: "1.0.0".to_string(),
-                description: "Digital signature algorithms".to_string(),
-                algorithms: vec!["Ed25519".to_string(), "ECDSA".to_string(), "RSA-PSS".to_string()],
-                dependencies: vec!["crypto_asymmetric".to_string(), "crypto_hash_advanced".to_string()],
-                features: vec!["verification".to_string(), "batch_verification".to_string()],
-                security_level: "High".to_string(),
-                performance_tier: "Standard".to_string(),
-                last_updated: SystemTime::now(),
-                initialization_time: None,
-            },
-            status: PackageStatus::Registered,
             init_function: Some(|| {
 //                 crate::stdlib::packages::crypto_signatures::init_crypto_signatures()
                     .map_err(|e| CursedError::Runtime(e.to_string()))
-            }),
-            test_function: None,
-            capabilities,
         }
     }
 
@@ -355,24 +164,9 @@ impl CryptoPackageManager {
 
         PackageRegistryEntry {
             info: PackageInfo {
-                name: "crypto_kdf".to_string(),
-                version: "1.0.0".to_string(),
-                description: "Key derivation functions".to_string(),
-                algorithms: vec!["PBKDF2".to_string(), "Argon2".to_string(), "HKDF".to_string(), "scrypt".to_string()],
-                dependencies: vec!["crypto_hash_advanced".to_string()],
-                features: vec!["pbkdf2".to_string(), "argon2".to_string(), "hkdf".to_string()],
-                security_level: "High".to_string(),
-                performance_tier: "Standard".to_string(),
-                last_updated: SystemTime::now(),
-                initialization_time: None,
-            },
-            status: PackageStatus::Registered,
             init_function: Some(|| {
 //                 crate::stdlib::packages::crypto_kdf::init_crypto_kdf()
                     .map_err(|e| CursedError::Runtime(e.to_string()))
-            }),
-            test_function: None,
-            capabilities,
         }
     }
 
@@ -382,24 +176,9 @@ impl CryptoPackageManager {
 
         PackageRegistryEntry {
             info: PackageInfo {
-                name: "crypto_random".to_string(),
-                version: "1.0.0".to_string(),
-                description: "Cryptographically secure random number generation".to_string(),
-                algorithms: vec!["ChaCha20Rng".to_string(), "SystemRandom".to_string()],
-                dependencies: vec![],
-                features: vec!["secure_random".to_string(), "hardware_random".to_string()],
-                security_level: "Critical".to_string(),
-                performance_tier: "Optimized".to_string(),
-                last_updated: SystemTime::now(),
-                initialization_time: None,
-            },
-            status: PackageStatus::Registered,
             init_function: Some(|| {
 //                 crate::stdlib::packages::crypto_random::init_crypto_random()
                     .map_err(|e| CursedError::Runtime(e.to_string()))
-            }),
-            test_function: None,
-            capabilities,
         }
     }
 
@@ -410,24 +189,9 @@ impl CryptoPackageManager {
 
         PackageRegistryEntry {
             info: PackageInfo {
-                name: "crypto_pki".to_string(),
-                version: "1.0.0".to_string(),
-                description: "Public Key Infrastructure and certificates".to_string(),
-                algorithms: vec!["X.509".to_string(), "PKCS#10".to_string(), "PKCS#12".to_string()],
-                dependencies: vec!["crypto_asymmetric".to_string(), "crypto_signatures".to_string()],
-                features: vec!["certificate_validation".to_string(), "csr_processing".to_string()],
-                security_level: "High".to_string(),
-                performance_tier: "Standard".to_string(),
-                last_updated: SystemTime::now(),
-                initialization_time: None,
-            },
-            status: PackageStatus::Registered,
             init_function: Some(|| {
 //                 crate::stdlib::packages::crypto_pki::init_crypto_pki()
                     .map_err(|e| CursedError::Runtime(e.to_string()))
-            }),
-            test_function: None,
-            capabilities,
         }
     }
 
@@ -437,24 +201,9 @@ impl CryptoPackageManager {
 
         PackageRegistryEntry {
             info: PackageInfo {
-                name: "crypto_zk".to_string(),
-                version: "1.0.0".to_string(),
-                description: "Zero-knowledge proof systems".to_string(),
-                algorithms: vec!["ZK-SNARKs".to_string(), "ZK-STARKs".to_string(), "Bulletproofs".to_string()],
-                dependencies: vec!["crypto_random".to_string(), "crypto_hash_advanced".to_string()],
-                features: vec!["zkp_verification".to_string(), "proof_generation".to_string()],
-                security_level: "Research".to_string(),
-                performance_tier: "Experimental".to_string(),
-                last_updated: SystemTime::now(),
-                initialization_time: None,
-            },
-            status: PackageStatus::Registered,
             init_function: Some(|| {
 //                 crate::stdlib::packages::crypto_zk::init_crypto_zk()
                     .map_err(|e| CursedError::Runtime(e.to_string()))
-            }),
-            test_function: None,
-            capabilities,
         }
     }
 
@@ -466,27 +215,10 @@ impl CryptoPackageManager {
 
         PackageRegistryEntry {
             info: PackageInfo {
-                name: "crypto_pqc".to_string(),
-                version: "1.0.0".to_string(),
-                description: "Post-quantum cryptography".to_string(),
                 algorithms: vec![
-                    "Kyber-512".to_string(), "Kyber-768".to_string(), "Kyber-1024".to_string(),
-                    "Dilithium-2".to_string(), "Dilithium-3".to_string(), "Dilithium-5".to_string(),
-                ],
-                dependencies: vec!["crypto_random".to_string(), "crypto_hash_advanced".to_string()],
-                features: vec!["quantum_resistant".to_string(), "hybrid_modes".to_string()],
-                security_level: "Future".to_string(),
-                performance_tier: "Standard".to_string(),
-                last_updated: SystemTime::now(),
-                initialization_time: None,
-            },
-            status: PackageStatus::Registered,
             init_function: Some(|| {
 //                 crate::stdlib::packages::crypto_pqc::init_crypto_pqc()
                     .map_err(|e| CursedError::Runtime(e.to_string()))
-            }),
-            test_function: None,
-            capabilities,
         }
     }
 
@@ -497,29 +229,12 @@ impl CryptoPackageManager {
 
         PackageRegistryEntry {
             info: PackageInfo {
-                name: "crypto_protocols".to_string(),
-                version: "1.0.0".to_string(),
-                description: "Cryptographic protocols and schemes".to_string(),
                 algorithms: vec![
-                    "TLS".to_string(), "Noise".to_string(), "Signal".to_string(),
-                    "Diffie-Hellman".to_string(), "ECDH".to_string(),
-                ],
                 dependencies: vec![
                     "crypto_advanced".to_string(), "crypto_asymmetric".to_string(), "crypto_kdf".to_string()
-                ],
-                features: vec!["key_exchange".to_string(), "secure_channels".to_string()],
-                security_level: "High".to_string(),
-                performance_tier: "Standard".to_string(),
-                last_updated: SystemTime::now(),
-                initialization_time: None,
-            },
-            status: PackageStatus::Registered,
             init_function: Some(|| {
 //                 crate::stdlib::packages::crypto_protocols::init_crypto_protocols()
                     .map_err(|e| CursedError::Runtime(e.to_string()))
-            }),
-            test_function: None,
-            capabilities,
         }
     }
 
@@ -529,15 +244,10 @@ impl CryptoPackageManager {
             let registry = self.registry.read()
                 .map_err(|_| UnifiedCryptoError::Configuration("Failed to read registry".to_string()))?;
             registry.keys().cloned().collect()
-        };
 
         for package_name in package_names {
             self.initialize_package(&package_name)?;
-        }
-
         Ok(())
-    }
-
     /// slay Initialize a specific package
     pub fn initialize_package(&self, package_name: &str) -> UnifiedCryptoResult<()> {
         let start_time = Instant::now();
@@ -568,7 +278,6 @@ impl CryptoPackageManager {
             } else {
                 Err(UnifiedCryptoError::PackageNotInitialized(format!("Package not found: {}", package_name)))
             }
-        };
 
         let initialization_time = start_time.elapsed();
 
@@ -583,18 +292,12 @@ impl CryptoPackageManager {
                         entry.status = PackageStatus::Ready;
                         entry.info.initialization_time = Some(initialization_time);
                         println!("✅ Package {} initialized in {:?}", package_name, initialization_time);
-                    },
                     Err(ref e) => {
                         entry.status = PackageStatus::Failed(e.to_string());
                         println!("❌ Package {} failed to initialize: {}", package_name, e);
-                    },
                 }
             }
-        }
-
         init_result
-    }
-
     /// slay Run comprehensive tests across all packages
     fn run_comprehensive_tests(&self) -> UnifiedCryptoResult<()> {
         println!("🧪 Running comprehensive crypto package tests...");
@@ -604,7 +307,6 @@ impl CryptoPackageManager {
             let registry = self.registry.read()
                 .map_err(|_| UnifiedCryptoError::Configuration("Failed to read registry".to_string()))?;
             registry.keys().cloned().collect()
-        };
 
         for package_name in &package_names {
             if let Err(e) = self.test_package(package_name) {
@@ -615,13 +317,7 @@ impl CryptoPackageManager {
         // Run integration tests
         let integration_results = self.integration_manager.run_basic_integration_tests();
         match integration_results {
-            Ok(_) => println!("✅ Integration tests completed successfully"),
-            Err(e) => println!("⚠️  Integration tests failed: {}", e),
-        }
-
         Ok(())
-    }
-
     /// slay Test a specific package
     pub fn test_package(&self, package_name: &str) -> UnifiedCryptoResult<HashMap<String, bool>> {
         let registry = self.registry.read()
@@ -645,8 +341,6 @@ impl CryptoPackageManager {
     pub fn perform_security_audit(&self) -> UnifiedCryptoResult<SecurityAuditResult> {
         println!("🔍 Performing comprehensive security audit...");
         self.unified_manager.perform_security_audit()
-    }
-
     /// slay Get package information
     pub fn get_package_info(&self, package_name: &str) -> UnifiedCryptoResult<PackageInfo> {
         let registry = self.registry.read()
@@ -655,16 +349,12 @@ impl CryptoPackageManager {
         registry.get(package_name)
             .map(|entry| entry.info.clone())
             .ok_or_else(|| UnifiedCryptoError::PackageNotInitialized(format!("Package not found: {}", package_name)))
-    }
-
     /// slay List all packages
     pub fn list_packages(&self) -> UnifiedCryptoResult<Vec<PackageInfo>> {
         let registry = self.registry.read()
             .map_err(|_| UnifiedCryptoError::Configuration("Failed to read registry".to_string()))?;
 
         Ok(registry.values().map(|entry| entry.info.clone()).collect())
-    }
-
     /// slay Get package statistics
     pub fn get_package_statistics(&self, package_name: &str) -> UnifiedCryptoResult<PackageStatistics> {
         let stats = self.package_stats.read()
@@ -673,8 +363,6 @@ impl CryptoPackageManager {
         stats.get(package_name)
             .cloned()
             .ok_or_else(|| UnifiedCryptoError::PackageNotInitialized(format!("Package not found: {}", package_name)))
-    }
-
     /// slay Get system overview
     pub fn get_system_overview(&self) -> UnifiedCryptoResult<HashMap<String, Value>> {
         let mut overview = HashMap::new();
@@ -690,17 +378,7 @@ impl CryptoPackageManager {
         let mut status_counts = HashMap::new();
         for entry in registry.values() {
             let status_name = match &entry.status {
-                PackageStatus::NotRegistered => "not_registered",
-                PackageStatus::Registered => "registered",
-                PackageStatus::Initializing => "initializing",
-                PackageStatus::Ready => "ready",
-                PackageStatus::Failed(_) => "failed",
-                PackageStatus::Updating => "updating",
-                PackageStatus::Disabled => "disabled",
-            };
             *status_counts.entry(status_name.to_string()).or_insert(0) += 1;
-        }
-
         let mut status_obj = HashMap::new();
         for (status, count) in status_counts {
             status_obj.insert(status, Value::Number(count as f64));
@@ -710,18 +388,12 @@ impl CryptoPackageManager {
         // Performance metrics
         if let Ok(perf_stats) = self.unified_manager.get_performance_statistics() {
             overview.insert("performance".to_string(), Value::Object(perf_stats));
-        }
-
         Ok(overview)
-    }
-
     /// slay Get global configuration
     pub fn get_global_config(&self) -> UnifiedCryptoResult<CryptoConfig> {
         let config = self.global_config.read()
             .map_err(|_| UnifiedCryptoError::Configuration("Failed to read config".to_string()))?;
         Ok(config.clone())
-    }
-
     /// slay Update global configuration
     pub fn update_global_config(&self, new_config: CryptoConfig) -> UnifiedCryptoResult<()> {
         let mut config = self.global_config.write()
@@ -742,10 +414,6 @@ static GLOBAL_PACKAGE_MANAGER: std::sync::LazyLock<CryptoPackageManager> =
 /// slay Get the global package manager
 pub fn global_package_manager() -> &'static CryptoPackageManager {
     &GLOBAL_PACKAGE_MANAGER
-}
-
 /// slay Initialize the crypto package ecosystem
 pub fn initialize_crypto_ecosystem() -> UnifiedCryptoResult<()> {
     global_package_manager().initialize()
-}
-

@@ -29,8 +29,6 @@ pub trait IpcResource {
     
     /// Check if the resource is open
     fn is_open(&self) -> bool;
-}
-
 /// Trait for IPC resources that support reading
 pub trait IpcReadable {
     /// Read data from the resource
@@ -41,8 +39,6 @@ pub trait IpcReadable {
     
     /// Check if data is available for reading
     fn readable(&self) -> IpcResult<bool>;
-}
-
 /// Trait for IPC resources that support writing
 pub trait IpcWritable {
     /// Write data to the resource
@@ -56,8 +52,6 @@ pub trait IpcWritable {
     
     /// Check if the resource is ready for writing
     fn writable(&self) -> IpcResult<bool>;
-}
-
 /// Trait for IPC resources that support synchronization
 pub trait IpcSynchronizable {
     /// Wait for a signal
@@ -71,8 +65,6 @@ pub trait IpcSynchronizable {
     
     /// Try to acquire without blocking
     fn try_wait(&mut self) -> IpcResult<bool>;
-}
-
 /// Trait for IPC resources that support messaging
 pub trait IpcMessaging {
     /// The type of message this resource handles
@@ -89,8 +81,6 @@ pub trait IpcMessaging {
     
     /// Receive a message with timeout
     fn receive_timeout(&mut self, timeout: Duration) -> IpcResult<Option<Self::Message>>;
-}
-
 /// Trait for IPC resources that support cleanup
 pub trait IpcCleanup {
     /// Cleanup the resource from the system
@@ -98,45 +88,23 @@ pub trait IpcCleanup {
     
     /// Check if cleanup is needed
     fn needs_cleanup(&self) -> bool;
-}
-
 /// Trait for IPC resources that provide statistics
 pub trait IpcStats {
     /// Get statistics about the resource
     fn stats(&self) -> IpcResult<IpcResourceStats>;
-}
-
 /// Statistics for IPC resources
 #[derive(Debug, Clone)]
 pub struct IpcResourceStats {
     /// Number of bytes read
-    pub bytes_read: u64,
     /// Number of bytes written
-    pub bytes_written: u64,
     /// Number of messages sent
-    pub messages_sent: u64,
     /// Number of messages received
-    pub messages_received: u64,
     /// Number of connections
-    pub connections: u64,
     /// Creation time
-    pub created_at: std::time::SystemTime,
     /// Last accessed time
-    pub last_accessed: std::time::SystemTime,
-}
-
 impl Default for IpcResourceStats {
     fn default() -> Self {
         let now = std::time::SystemTime::now();
         Self {
-            bytes_read: 0,
-            bytes_written: 0,
-            messages_sent: 0,
-            messages_received: 0,
-            connections: 0,
-            created_at: now,
-            last_accessed: now,
         }
     }
-}
-

@@ -28,8 +28,6 @@ pub fn TempFile(t: &VibeTest, pattern: &str) -> TestVibesResult<(TempFileHandle,
     t.Log(&[Value::String(format!("Created temp file: {}", path_str))])?;
     
     Ok((TempFileHandle::new(file_path), path_str))
-}
-
 /// Create a temporary directory for testing
 pub fn TempDir(t: &VibeTest, pattern: &str) -> TestVibesResult<String> {
     let temp_base = std::env::temp_dir();
@@ -44,27 +42,17 @@ pub fn TempDir(t: &VibeTest, pattern: &str) -> TestVibesResult<String> {
     t.Log(&[Value::String(format!("Created temp directory: {}", path_str))])?;
     
     Ok(path_str)
-}
-
 /// Handle for temporary files that cleans up on drop
 pub struct TempFileHandle {
-    path: PathBuf,
-    cleaned: Arc<Mutex<bool>>,
-}
-
 impl TempFileHandle {
     fn new(path: PathBuf) -> Self {
         Self {
-            path,
-            cleaned: Arc::new(Mutex::new(false)),
         }
     }
 
     /// Get the file path
     pub fn path(&self) -> &Path {
         &self.path
-    }
-
     /// Manually clean up the file
     pub fn cleanup(&self) -> TestVibesResult<()> {
         let mut cleaned = self.cleaned.lock().unwrap();
@@ -112,19 +100,12 @@ pub fn Parallel(t: &VibeTest, test_fns: Vec<Box<dyn Fn(&VibeTest) -> TestVibesRe
                 errors.push(format!("Parallel function {} panicked", i));
             }
         }
-    }
-    
     if !errors.is_empty() {
         return t.Fatal(&[Value::String(format!("Parallel execution failures:\n{}", errors.join("\n")))]);
-    }
-    
     Ok(())
-}
-
 /// Run function with timeout
 pub fn WithDeadline<F>(t: &VibeTest, duration: Duration, test_fn: F) -> TestVibesResult<()>
 where
-    F: Fn(&VibeTest) -> TestVibesResult<()> + Send + 'static,
 {
     let sub_test = VibeTest::new(&format!("{}_timed", t.Name()));
     let start_time = Instant::now();
@@ -142,31 +123,20 @@ where
     loop {
         if handle.is_finished() {
             match handle.join() {
-                Ok(result) => return result,
-                Err(_) => return t.Fatal(&[Value::String("Test function panicked".to_string())]),
             }
         }
         
         elapsed += check_interval;
         if elapsed >= duration {
             return t.Fatal(&[Value::String(format!("Test timed out after {:?}", duration))]);
-        }
-        
         thread::sleep(check_interval);
     }
 }
 
 /// Run test with setup and teardown
 pub fn WithSetup<S, T, F>(
-    test: &VibeTest,
-    setup: S,
-    teardown: T,
-    test_fn: F,
 ) -> TestVibesResult<()>
 where
-    S: Fn() -> TestVibesResult<()>,
-    T: Fn() -> TestVibesResult<()>,
-    F: Fn(&VibeTest) -> TestVibesResult<()>,
 {
     test.Log(&[Value::String("Running setup".to_string())])?;
     setup()?;
@@ -179,19 +149,15 @@ where
     
     // Return test result, but log teardown errors
     match (test_result, teardown_result) {
-        (Ok(()), Ok(())) => Ok(()),
         (Ok(()), Err(teardown_err)) => {
             test.Log(&[Value::String(format!("Teardown failed: {}", teardown_err))])?;
             Err(teardown_err)
         }
-        (Err(test_err), Ok(())) => Err(test_err),
         (Err(test_err), Err(teardown_err)) => {
             test.Log(&[Value::String(format!("Teardown also failed: {}", teardown_err))])?;
             Err(test_err)
         }
     }
-}
-
 // Random data generation
 
 /// Generate random string of specified length
@@ -212,14 +178,10 @@ pub fn RandomString(n: usize) -> String {
             CHARS[idx] as char
         })
         .collect()
-}
-
 /// Generate random integer in range [min, max]
 pub fn RandomInt(min: i32, max: i32) -> i32 {
     if min >= max {
         return min;
-    }
-    
     use std::collections::hash_map::DefaultHasher;
     use std::hash::{Hash, Hasher};
     
@@ -229,14 +191,10 @@ pub fn RandomInt(min: i32, max: i32) -> i32 {
     
     let range = (max - min + 1) as u64;
     min + (rng_state % range) as i32
-}
-
 /// Generate random float in range [min, max)
 pub fn RandomFloat(min: f64, max: f64) -> f64 {
     if min >= max {
         return min;
-    }
-    
     use std::collections::hash_map::DefaultHasher;
     use std::hash::{Hash, Hasher};
     
@@ -246,8 +204,6 @@ pub fn RandomFloat(min: f64, max: f64) -> f64 {
     
     let normalized = (rng_state as f64) / (u64::MAX as f64);
     min + normalized * (max - min)
-}
-
 /// Generate random bytes
 pub fn RandomBytes(n: usize) -> Vec<u8> {
     use std::collections::hash_map::DefaultHasher;
@@ -263,46 +219,26 @@ pub fn RandomBytes(n: usize) -> Vec<u8> {
             (rng_state % 256) as u8
         })
         .collect()
-}
-
 // Test data generation helpers
 
 /// Generate test user data
 pub fn generate_test_user(id: i32) -> Value {
     let users = vec![
-        ("Alice", "alice@example.com", 25),
-        ("Bob", "bob@example.com", 30),
-        ("Charlie", "charlie@example.com", 35),
-        ("Diana", "diana@example.com", 28),
-        ("Eve", "eve@example.com", 32),
     ];
     
     let (name, email, age) = users[id as usize % users.len()];
     
     let user_data = vec![
-        ("id".to_string(), Value::Int(id)),
-        ("name".to_string(), Value::String(name.to_string())),
-        ("email".to_string(), Value::String(email.to_string())),
-        ("age".to_string(), Value::Int(age)),
-        ("created_at".to_string(), Value::String("2023-01-01T00:00:00Z".to_string())),
     ];
     
     Value::Object(user_data.into_iter().collect())
-}
-
 /// Generate test configuration
 pub fn generate_test_config() -> Value {
     let config = vec![
         ("database_url".to_string(), Value::String("sqlite://test.db".to_string())),
-        ("port".to_string(), Value::Int(8080)),
-        ("debug".to_string(), Value::Bool(true)),
-        ("max_connections".to_string(), Value::Int(100)),
-        ("timeout_seconds".to_string(), Value::Int(30)),
     ];
     
     Value::Object(config.into_iter().collect())
-}
-
 /// Generate test HTTP request
 pub fn generate_test_request(method: &str, path: &str) -> Value {
     let headers = vec![
@@ -312,24 +248,13 @@ pub fn generate_test_request(method: &str, path: &str) -> Value {
     ];
     
     let request = vec![
-        ("method".to_string(), Value::String(method.to_string())),
-        ("path".to_string(), Value::String(path.to_string())),
-        ("headers".to_string(), Value::Object(headers.into_iter().collect())),
-        ("body".to_string(), Value::String("{}".to_string())),
-        ("timestamp".to_string(), Value::String("2023-01-01T12:00:00Z".to_string())),
     ];
     
     Value::Object(request.into_iter().collect())
-}
-
 // Test assertion helpers
 
 /// Assert that function completes within time limit
 pub fn assert_completes_within(
-    t: &VibeTest,
-    duration: Duration,
-    operation: &str,
-    test_fn: impl Fn() -> TestVibesResult<()>,
 ) -> TestVibesResult<()> {
     let start_time = Instant::now();
     
@@ -340,21 +265,12 @@ pub fn assert_completes_within(
     
     if elapsed > duration {
         return t.Fatal(&[Value::String(format!(
-            "Operation '{}' took {:?}, expected under {:?}",
             operation, elapsed, duration
         ))]);
-    }
-    
     t.Log(&[Value::String(format!("Operation '{}' completed in {:?}", operation, elapsed))])?;
     result
-}
-
 /// Assert that operation uses less than specified memory
 pub fn assert_memory_usage_under(
-    t: &VibeTest,
-    max_bytes: usize,
-    operation: &str,
-    test_fn: impl Fn() -> TestVibesResult<()>,
 ) -> TestVibesResult<()> {
     // In a real implementation, would capture actual memory usage
     // For now, we'll simulate it
@@ -368,19 +284,13 @@ pub fn assert_memory_usage_under(
     
     if simulated_usage > max_bytes {
         return t.Fatal(&[Value::String(format!(
-            "Operation '{}' used {} bytes, expected under {} bytes",
             operation, simulated_usage, max_bytes
         ))]);
-    }
-    
     t.Log(&[Value::String(format!(
-        "Operation '{}' used {} bytes (under {} limit)",
         operation, simulated_usage, max_bytes
     ))])?;
     
     result
-}
-
 // Helper functions
 
 /// Generate random suffix for temporary files
@@ -393,5 +303,3 @@ fn random_suffix() -> String {
     thread::current().id().hash(&mut hasher);
     
     format!("{:x}", hasher.finish())
-}
-

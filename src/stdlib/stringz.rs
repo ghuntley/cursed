@@ -33,8 +33,6 @@ pub type StringzResult<T> = StringResult<T>;
 /// ```
 pub fn string_length(s: &str) -> usize {
     string::length(s)
-}
-
 /// Checks if a tea is empty (no cap)
 /// 
 /// # Examples
@@ -44,8 +42,6 @@ pub fn string_length(s: &str) -> usize {
 /// ```
 pub fn is_empty_tea(s: &str) -> bool {
     string::is_empty(s)
-}
-
 /// Concatenates two teas together (merge the vibes)
 /// 
 /// # Examples
@@ -54,8 +50,6 @@ pub fn is_empty_tea(s: &str) -> bool {
 /// ```
 pub fn concat_tea(s1: &str, s2: &str) -> String {
     string::concat(s1, s2)
-}
-
 /// Repeats a tea n times (spam those vibes)
 /// 
 /// # Examples
@@ -64,8 +58,6 @@ pub fn concat_tea(s1: &str, s2: &str) -> String {
 /// ```
 pub fn repeat_tea(s: &str, n: usize) -> String {
     string::repeat(s, n)
-}
-
 /// Reverses a tea (flip the script)
 /// 
 /// # Examples
@@ -74,8 +66,6 @@ pub fn repeat_tea(s: &str, n: usize) -> String {
 /// ```
 pub fn reverse_tea(s: &str) -> String {
     string::reverse(s)
-}
-
 /// Gets character at specific index (peek the char)
 /// 
 /// # Examples
@@ -84,8 +74,6 @@ pub fn reverse_tea(s: &str) -> String {
 /// ```
 pub fn char_at_index(s: &str, index: usize) -> Option<char> {
     string::char_at(s, index)
-}
-
 // ================================
 // SEARCH AND REPLACE FUNCTIONS
 // ================================
@@ -98,8 +86,6 @@ pub fn char_at_index(s: &str, index: usize) -> Option<char> {
 /// ```
 pub fn contains_tea(s: &str, substr: &str) -> bool {
     string::contains(s, substr)
-}
-
 /// Checks if tea starts with prefix (check the opening)
 /// 
 /// # Examples
@@ -108,8 +94,6 @@ pub fn contains_tea(s: &str, substr: &str) -> bool {
 /// ```
 pub fn starts_with_tea(s: &str, prefix: &str) -> bool {
     string::starts_with(s, prefix)
-}
-
 /// Checks if tea ends with suffix (check the closing)
 /// 
 /// # Examples
@@ -118,8 +102,6 @@ pub fn starts_with_tea(s: &str, prefix: &str) -> bool {
 /// ```
 pub fn ends_with_tea(s: &str, suffix: &str) -> bool {
     string::ends_with(s, suffix)
-}
-
 /// Finds first occurrence of substring (locate the vibes)
 /// 
 /// # Examples
@@ -128,8 +110,6 @@ pub fn ends_with_tea(s: &str, suffix: &str) -> bool {
 /// ```
 pub fn find_tea(s: &str, substr: &str) -> Option<usize> {
     string::find(s, substr)
-}
-
 /// Finds last occurrence of substring (locate from the back)
 /// 
 /// # Examples
@@ -138,8 +118,6 @@ pub fn find_tea(s: &str, substr: &str) -> Option<usize> {
 /// ```
 pub fn find_last_tea(s: &str, substr: &str) -> Option<usize> {
     string::find_last(s, substr)
-}
-
 /// Replaces all occurrences of substring (swap the vibes)
 /// 
 /// # Examples
@@ -148,8 +126,6 @@ pub fn find_last_tea(s: &str, substr: &str) -> Option<usize> {
 /// ```
 pub fn replace_all_tea(s: &str, old: &str, new: &str) -> String {
     string::replace(s, old, new)
-}
-
 /// Replaces first occurrence of substring (swap once)
 /// 
 /// # Examples
@@ -158,8 +134,6 @@ pub fn replace_all_tea(s: &str, old: &str, new: &str) -> String {
 /// ```
 pub fn replace_first_tea(s: &str, old: &str, new: &str) -> String {
     string::replace_first(s, old, new)
-}
-
 /// Counts occurrences of substring (count the vibes)
 /// 
 /// # Examples
@@ -168,8 +142,6 @@ pub fn replace_first_tea(s: &str, old: &str, new: &str) -> String {
 /// ```
 pub fn count_tea(s: &str, substr: &str) -> usize {
     string::count_occurrences(s, substr)
-}
-
 // ================================
 // TRANSFORMATION FUNCTIONS
 // ================================
@@ -182,8 +154,6 @@ pub fn count_tea(s: &str, substr: &str) -> usize {
 /// ```
 pub fn substring_tea(s: &str, start: usize, end: usize) -> StringzResult<String> {
     string::substring(s, start, end)
-}
-
 /// Trims whitespace from both ends (clean the edges)
 /// 
 /// # Examples
@@ -192,8 +162,6 @@ pub fn substring_tea(s: &str, start: usize, end: usize) -> StringzResult<String>
 /// ```
 pub fn trim_tea(s: &str) -> String {
     string::trim(s)
-}
-
 /// Trims whitespace from start (clean the front)
 /// 
 /// # Examples
@@ -202,8 +170,6 @@ pub fn trim_tea(s: &str) -> String {
 /// ```
 pub fn trim_start_tea(s: &str) -> String {
     string::trim_start(s)
-}
-
 /// Trims whitespace from end (clean the back)
 /// 
 /// # Examples
@@ -212,8 +178,6 @@ pub fn trim_start_tea(s: &str) -> String {
 /// ```
 pub fn trim_end_tea(s: &str) -> String {
     string::trim_end(s)
-}
-
 /// Converts tea to lowercase (make it chill)
 /// 
 /// # Examples
@@ -222,8 +186,6 @@ pub fn trim_end_tea(s: &str) -> String {
 /// ```
 pub fn to_lowercase_tea(s: &str) -> String {
     string::to_lowercase(s)
-}
-
 /// Converts tea to uppercase (make it loud)
 /// 
 /// # Examples
@@ -232,8 +194,6 @@ pub fn to_lowercase_tea(s: &str) -> String {
 /// ```
 pub fn to_uppercase_tea(s: &str) -> String {
     string::to_uppercase(s)
-}
-
 /// Converts tea to title case (make it proper)
 /// 
 /// # Examples
@@ -242,8 +202,6 @@ pub fn to_uppercase_tea(s: &str) -> String {
 /// ```
 pub fn to_title_case_tea(s: &str) -> String {
     string::to_title_case(s)
-}
-
 /// Converts tea to camelCase (make it camel)
 /// 
 /// # Examples
@@ -252,8 +210,6 @@ pub fn to_title_case_tea(s: &str) -> String {
 /// ```
 pub fn to_camel_case_tea(s: &str) -> String {
     string::to_camel_case(s)
-}
-
 /// Converts tea to PascalCase (make it pascal)
 /// 
 /// # Examples
@@ -262,8 +218,6 @@ pub fn to_camel_case_tea(s: &str) -> String {
 /// ```
 pub fn to_pascal_case_tea(s: &str) -> String {
     string::to_pascal_case(s)
-}
-
 /// Converts tea to snake_case (make it snake)
 /// 
 /// # Examples
@@ -272,8 +226,6 @@ pub fn to_pascal_case_tea(s: &str) -> String {
 /// ```
 pub fn to_snake_case_tea(s: &str) -> String {
     string::to_snake_case(s)
-}
-
 /// Converts tea to kebab-case (make it kebab)
 /// 
 /// # Examples
@@ -282,8 +234,6 @@ pub fn to_snake_case_tea(s: &str) -> String {
 /// ```
 pub fn to_kebab_case_tea(s: &str) -> String {
     string::to_kebab_case(s)
-}
-
 /// Capitalizes first letter (make it proper start)
 /// 
 /// # Examples
@@ -292,8 +242,6 @@ pub fn to_kebab_case_tea(s: &str) -> String {
 /// ```
 pub fn capitalize_tea(s: &str) -> String {
     string::capitalize(s)
-}
-
 // ================================
 // SPLITTING AND JOINING FUNCTIONS
 // ================================
@@ -306,8 +254,6 @@ pub fn capitalize_tea(s: &str) -> String {
 /// ```
 pub fn split_tea(s: &str, delimiter: &str) -> Vec<String> {
     string::split(s, delimiter)
-}
-
 /// Splits tea by delimiter with limit (controlled break)
 /// 
 /// # Examples
@@ -316,8 +262,6 @@ pub fn split_tea(s: &str, delimiter: &str) -> Vec<String> {
 /// ```
 pub fn split_tea_n(s: &str, delimiter: &str, n: usize) -> Vec<String> {
     string::split_n(s, delimiter, n)
-}
-
 /// Splits tea by lines (break by lines)
 /// 
 /// # Examples
@@ -326,8 +270,6 @@ pub fn split_tea_n(s: &str, delimiter: &str, n: usize) -> Vec<String> {
 /// ```
 pub fn split_lines_tea(s: &str) -> Vec<String> {
     string::split_lines(s)
-}
-
 /// Splits tea by whitespace (break by spaces)
 /// 
 /// # Examples
@@ -336,8 +278,6 @@ pub fn split_lines_tea(s: &str) -> Vec<String> {
 /// ```
 pub fn split_whitespace_tea(s: &str) -> Vec<String> {
     string::split_whitespace(s)
-}
-
 /// Joins tea slices with separator (merge the vibes)
 /// 
 /// # Examples
@@ -346,8 +286,6 @@ pub fn split_whitespace_tea(s: &str) -> Vec<String> {
 /// ```
 pub fn join_tea(parts: &[&str], separator: &str) -> String {
     string::join(parts, separator)
-}
-
 /// Joins owned tea slices with separator (merge owned vibes)
 /// 
 /// # Examples
@@ -357,8 +295,6 @@ pub fn join_tea(parts: &[&str], separator: &str) -> String {
 /// ```
 pub fn join_owned_tea(parts: &[String], separator: &str) -> String {
     string::join_owned(parts, separator)
-}
-
 // ================================
 // VALIDATION FUNCTIONS
 // ================================
@@ -372,8 +308,6 @@ pub fn join_owned_tea(parts: &[String], separator: &str) -> String {
 /// ```
 pub fn is_numeric_tea(s: &str) -> bool {
     string::is_numeric(s)
-}
-
 /// Checks if tea is integer (whole number vibes)
 /// 
 /// # Examples
@@ -383,8 +317,6 @@ pub fn is_numeric_tea(s: &str) -> bool {
 /// ```
 pub fn is_integer_tea(s: &str) -> bool {
     string::is_integer(s)
-}
-
 /// Checks if tea is alphabetic (letters only vibes)
 /// 
 /// # Examples
@@ -394,8 +326,6 @@ pub fn is_integer_tea(s: &str) -> bool {
 /// ```
 pub fn is_alphabetic_tea(s: &str) -> bool {
     string::is_alphabetic(s)
-}
-
 /// Checks if tea is alphanumeric (letters and digits vibes)
 /// 
 /// # Examples
@@ -405,8 +335,6 @@ pub fn is_alphabetic_tea(s: &str) -> bool {
 /// ```
 pub fn is_alphanumeric_tea(s: &str) -> bool {
     string::is_alphanumeric(s)
-}
-
 /// Checks if tea is whitespace only (empty vibes)
 /// 
 /// # Examples
@@ -416,8 +344,6 @@ pub fn is_alphanumeric_tea(s: &str) -> bool {
 /// ```
 pub fn is_whitespace_tea(s: &str) -> bool {
     string::is_whitespace(s)
-}
-
 /// Checks if tea is uppercase (loud vibes)
 /// 
 /// # Examples
@@ -427,8 +353,6 @@ pub fn is_whitespace_tea(s: &str) -> bool {
 /// ```
 pub fn is_uppercase_tea(s: &str) -> bool {
     string::is_uppercase(s)
-}
-
 /// Checks if tea is lowercase (quiet vibes)
 /// 
 /// # Examples
@@ -438,8 +362,6 @@ pub fn is_uppercase_tea(s: &str) -> bool {
 /// ```
 pub fn is_lowercase_tea(s: &str) -> bool {
     string::is_lowercase(s)
-}
-
 /// Checks if tea is valid email (email vibes)
 /// 
 /// # Examples
@@ -449,8 +371,6 @@ pub fn is_lowercase_tea(s: &str) -> bool {
 /// ```
 pub fn is_email_tea(s: &str) -> bool {
     string::is_email(s)
-}
-
 /// Checks if tea is valid URL (link vibes)
 /// 
 /// # Examples
@@ -460,8 +380,6 @@ pub fn is_email_tea(s: &str) -> bool {
 /// ```
 pub fn is_url_tea(s: &str) -> bool {
     string::is_url(s)
-}
-
 /// Checks if tea is palindrome (same forward and backward vibes)
 /// 
 /// # Examples
@@ -471,8 +389,6 @@ pub fn is_url_tea(s: &str) -> bool {
 /// ```
 pub fn is_palindrome_tea(s: &str) -> bool {
     string::is_palindrome(s)
-}
-
 // ================================
 // FORMATTING FUNCTIONS
 // ================================
@@ -485,8 +401,6 @@ pub fn is_palindrome_tea(s: &str) -> bool {
 /// ```
 pub fn pad_left_tea(s: &str, width: usize) -> String {
     string::pad_left(s, width)
-}
-
 /// Pads tea to right with spaces (add right vibes)
 /// 
 /// # Examples
@@ -495,8 +409,6 @@ pub fn pad_left_tea(s: &str, width: usize) -> String {
 /// ```
 pub fn pad_right_tea(s: &str, width: usize) -> String {
     string::pad_right(s, width)
-}
-
 /// Centers tea with spaces (center the vibes)
 /// 
 /// # Examples
@@ -505,8 +417,6 @@ pub fn pad_right_tea(s: &str, width: usize) -> String {
 /// ```
 pub fn center_tea(s: &str, width: usize) -> String {
     string::center(s, width)
-}
-
 /// Truncates tea to max length (cut the vibes)
 /// 
 /// # Examples
@@ -515,8 +425,6 @@ pub fn center_tea(s: &str, width: usize) -> String {
 /// ```
 pub fn truncate_tea(s: &str, max_len: usize) -> String {
     string::truncate(s, max_len)
-}
-
 /// Wraps tea to specified width (wrap the vibes)
 /// 
 /// # Examples
@@ -525,8 +433,6 @@ pub fn truncate_tea(s: &str, max_len: usize) -> String {
 /// ```
 pub fn wrap_text_tea(s: &str, width: usize) -> String {
     string::wrap_text(s, width)
-}
-
 /// Escapes HTML characters (make it web safe)
 /// 
 /// # Examples
@@ -535,8 +441,6 @@ pub fn wrap_text_tea(s: &str, width: usize) -> String {
 /// ```
 pub fn escape_html_tea(s: &str) -> String {
     string::escape_html(s)
-}
-
 /// Escapes JSON characters (make it JSON safe)
 /// 
 /// # Examples
@@ -545,8 +449,6 @@ pub fn escape_html_tea(s: &str) -> String {
 /// ```
 pub fn escape_json_tea(s: &str) -> String {
     string::escape_json(s)
-}
-
 // ================================
 // ENHANCED TEA FUNCTIONS
 // ================================
@@ -559,8 +461,6 @@ pub fn escape_json_tea(s: &str) -> String {
 /// ```
 pub fn tea_to_bytes(s: &str) -> Vec<u8> {
     s.as_bytes().to_vec()
-}
-
 /// Converts bytes to tea (string vibes)
 /// 
 /// # Examples
@@ -569,8 +469,6 @@ pub fn tea_to_bytes(s: &str) -> Vec<u8> {
 /// ```
 pub fn bytes_to_tea(bytes: &[u8]) -> StringzResult<String> {
     string::from_utf8(bytes)
-}
-
 /// Gets tea characters as vec (char collection vibes)
 /// 
 /// # Examples
@@ -579,8 +477,6 @@ pub fn bytes_to_tea(bytes: &[u8]) -> StringzResult<String> {
 /// ```
 pub fn tea_chars(s: &str) -> Vec<char> {
     string::chars(s)
-}
-
 /// Checks if tea is ASCII only (basic vibes)
 /// 
 /// # Examples
@@ -590,8 +486,6 @@ pub fn tea_chars(s: &str) -> Vec<char> {
 /// ```
 pub fn is_ascii_tea(s: &str) -> bool {
     string::is_ascii(s)
-}
-
 /// Inserts tea at position (inject vibes)
 /// 
 /// # Examples
@@ -600,8 +494,6 @@ pub fn is_ascii_tea(s: &str) -> bool {
 /// ```
 pub fn insert_at_tea(s: &str, pos: usize, text: &str) -> StringzResult<String> {
     string::insert_at(s, pos, text)
-}
-
 /// Removes range from tea (cut out vibes)
 /// 
 /// # Examples
@@ -610,8 +502,6 @@ pub fn insert_at_tea(s: &str, pos: usize, text: &str) -> StringzResult<String> {
 /// ```
 pub fn remove_range_tea(s: &str, start: usize, end: usize) -> StringzResult<String> {
     string::remove_range(s, start, end)
-}
-
 // ================================
 // UTILITY FUNCTIONS
 // ================================
@@ -624,8 +514,6 @@ pub fn remove_range_tea(s: &str, start: usize, end: usize) -> StringzResult<Stri
 /// ```
 pub fn partition_tea(s: &str, delimiter: &str) -> (String, String) {
     string::partition(s, delimiter)
-}
-
 /// Partitions tea by last delimiter (split from end)
 /// 
 /// # Examples
@@ -634,8 +522,6 @@ pub fn partition_tea(s: &str, delimiter: &str) -> (String, String) {
 /// ```
 pub fn rpartition_tea(s: &str, delimiter: &str) -> (String, String) {
     string::rpartition(s, delimiter)
-}
-
 /// Chunks tea into pieces (break into chunks)
 /// 
 /// # Examples
@@ -644,8 +530,6 @@ pub fn rpartition_tea(s: &str, delimiter: &str) -> (String, String) {
 /// ```
 pub fn chunk_tea(s: &str, size: usize) -> StringzResult<Vec<String>> {
     string::chunk(s, size)
-}
-
 /// Adds line numbers to tea (number the lines)
 /// 
 /// # Examples
@@ -654,8 +538,6 @@ pub fn chunk_tea(s: &str, size: usize) -> StringzResult<Vec<String>> {
 /// ```
 pub fn add_line_numbers_tea(s: &str) -> String {
     string::add_line_numbers(s)
-}
-
 /// Indents all lines in tea (add spacing)
 /// 
 /// # Examples
@@ -664,8 +546,6 @@ pub fn add_line_numbers_tea(s: &str) -> String {
 /// ```
 pub fn indent_lines_tea(s: &str, indent: &str) -> String {
     string::indent_lines(s, indent)
-}
-
 /// Checks if parentheses are balanced (valid structure)
 /// 
 /// # Examples
@@ -675,8 +555,6 @@ pub fn indent_lines_tea(s: &str, indent: &str) -> String {
 /// ```
 pub fn has_balanced_parentheses_tea(s: &str) -> bool {
     string::has_balanced_parentheses(s)
-}
-
 /// Checks if brackets are balanced (valid structure)
 /// 
 /// # Examples
@@ -686,14 +564,10 @@ pub fn has_balanced_parentheses_tea(s: &str) -> bool {
 /// ```
 pub fn has_balanced_brackets_tea(s: &str) -> bool {
     string::has_balanced_brackets(s)
-}
-
 /// Module initialization function
 pub fn init_stringz() -> StringzResult<()> {
     // Initialize any global state for StringZ module
     Ok(())
-}
-
 /// Get module statistics and information
 pub fn get_stringz_stats() -> HashMap<String, String> {
     let mut stats = HashMap::new();
@@ -701,5 +575,3 @@ pub fn get_stringz_stats() -> HashMap<String, String> {
     stats.insert("functions".to_string(), "50+".to_string());
     stats.insert("features".to_string(), "Unicode-aware, Gen Z naming".to_string());
     stats
-}
-

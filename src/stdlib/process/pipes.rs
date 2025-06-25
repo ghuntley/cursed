@@ -27,76 +27,38 @@ mod windows_constants {
     pub const OPEN_EXISTING: u32 = 3;
     pub const ERROR_BROKEN_PIPE: u32 = 109;
     pub const INVALID_HANDLE_VALUE: isize = -1;
-}
-
 // use crate::stdlib::process::error::{ProcessError, ProcessResult, communication_error, timeout_error};
 
 /// Options for pipe configuration
 #[derive(Debug, Clone)]
 pub struct PipeOptions {
     /// Pipe buffer size
-    pub buffer_size: usize,
     /// Read timeout
-    pub read_timeout: Option<Duration>,
     /// Write timeout
-    pub write_timeout: Option<Duration>,
     /// Enable blocking mode
-    pub blocking: bool,
-}
-
 impl Default for PipeOptions {
     fn default() -> Self {
         Self {
-            buffer_size: 4096,
-            read_timeout: Some(Duration::from_secs(30)),
-            write_timeout: Some(Duration::from_secs(30)),
-            blocking: true,
         }
     }
-}
-
 /// Process pipe for inter-process communication
 pub type ProcessPipe = NamedPipe;
 
 /// Cross-platform named pipe
 pub struct NamedPipe {
-    name: String,
-    mode: PipeMode,
-    inner: Arc<Mutex<PipeInner>>,
-}
-
 /// Pipe access modes
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum PipeMode {
-    Read,
-    Write,
-    ReadWrite,
-}
-
 /// Platform-specific pipe implementation
 enum PipeInner {
     #[cfg(unix)]
     Unix {
-        path: PathBuf,
-        file: Option<std::fs::File>,
-    },
     #[cfg(windows)]
     Windows {
-        handle: Option<PipeHandle>,
-    },
     /// Cross-platform fallback using channels
     Channel {
-        sender: Option<mpsc::Sender<Vec<u8>>>,
-        receiver: Option<mpsc::Receiver<Vec<u8>>>,
-    },
-}
-
 #[cfg(windows)]
 struct PipeHandle {
-    handle: RawHandle,
-    is_server: bool,
-}
-
 #[cfg(windows)]
 impl Drop for PipeHandle {
     fn drop(&mut self) {
@@ -113,13 +75,9 @@ impl NamedPipe {
         #[cfg(unix)]
         {
             Self::create_unix_pipe(name, mode)
-        }
-        
         #[cfg(windows)]
         {
             Self::create_windows_pipe(name, mode)
-        }
-        
         #[cfg(not(any(unix, windows)))]
         {
             Self::create_channel_pipe(name, mode)
@@ -133,13 +91,9 @@ impl NamedPipe {
         #[cfg(unix)]
         {
             Self::open_unix_pipe(name, mode)
-        }
-        
         #[cfg(windows)]
         {
             Self::open_windows_pipe(name, mode)
-        }
-        
         #[cfg(not(any(unix, windows)))]
         {
             Self::create_channel_pipe(name, mode)
@@ -155,7 +109,6 @@ impl NamedPipe {
             PathBuf::from(&name)
         } else {
             PathBuf::from("/tmp").join(&name)
-        };
         
         // Create FIFO
         let path_cstr = std::ffi::CString::new(path.to_string_lossy().as_bytes())
@@ -164,20 +117,11 @@ impl NamedPipe {
         let result = unsafe { libc::mkfifo(path_cstr.as_ptr(), 0o666) };
         if result != 0 && std::io::Error::last_os_error().kind() != io::ErrorKind::AlreadyExists {
             return Err(communication_error("create_pipe", &format!("Failed to create FIFO: {}", std::io::Error::last_os_error())));
-        }
-        
         let inner = Arc::new(Mutex::new(PipeInner::Unix {
-            path: path.clone(),
-            file: None,
         }));
         
         Ok(NamedPipe {
-            name,
-            mode,
-            inner,
         })
-    }
-    
     #[cfg(unix)]
     fn open_unix_pipe(name: String, mode: PipeMode) -> ProcessResult<Self> {
         use std::fs::OpenOptions;
@@ -186,7 +130,6 @@ impl NamedPipe {
             PathBuf::from(&name)
         } else {
             PathBuf::from("/tmp").join(&name)
-        };
         
         let mut options = OpenOptions::new();
         match mode {
@@ -199,17 +142,10 @@ impl NamedPipe {
             .map_err(|e| communication_error("open_pipe", &format!("Failed to open pipe: {}", e)))?;
         
         let inner = Arc::new(Mutex::new(PipeInner::Unix {
-            path,
-            file: Some(file),
         }));
         
         Ok(NamedPipe {
-            name,
-            mode,
-            inner,
         })
-    }
-    
     #[cfg(windows)]
     fn create_windows_pipe(name: String, mode: PipeMode) -> ProcessResult<Self> {
         use std::ffi::OsString;
@@ -221,7 +157,6 @@ impl NamedPipe {
             name
         } else {
             format!("\\\\.\\pipe\\{}", name)
-        };
         
         // Convert to wide string for Windows API
         let wide_name: Vec<u16> = OsString::from(pipe_name)
@@ -231,45 +166,27 @@ impl NamedPipe {
         
         // Determine access rights
         let open_mode = match mode {
-            PipeMode::Read => PIPE_ACCESS_INBOUND,
-            PipeMode::Write => PIPE_ACCESS_OUTBOUND,
-            PipeMode::ReadWrite => PIPE_ACCESS_DUPLEX,
-        };
         
         // Windows API call implementation
-        use winapi::um::winbase::{CreateNamedPipeW, PIPE_ACCESS_INBOUND, PIPE_ACCESS_OUTBOUND, PIPE_ACCESS_DUPLEX,
                                  PIPE_TYPE_BYTE, PIPE_READMODE_BYTE, PIPE_WAIT, INVALID_HANDLE_VALUE};
         
         let handle = unsafe {
             CreateNamedPipeW(
-                wide_name.as_ptr(),
-                open_mode,
-                PIPE_TYPE_BYTE | PIPE_READMODE_BYTE | PIPE_WAIT,
                 1, // nMaxInstances
                 4096, // nOutBufferSize
                 4096, // nInBufferSize
                 0, // nDefaultTimeOut
                 std::ptr::null_mut(), // lpSecurityAttributes
             )
-        };
         
         if handle == INVALID_HANDLE_VALUE {
             let error = unsafe { GetLastError() };
             return Err(communication_error("create_windows_pipe", &format!("CreateNamedPipeW failed with error {}", error)));
-        }
-        
         let inner = Arc::new(Mutex::new(PipeInner::Windows {
-            handle: handle as *mut std::ffi::c_void,
-            name: name.clone(),
-            mode,
         }));
         
         Ok(ProcessPipe {
-            inner,
-            name: Some(name),
         })
-    }
-    
     #[cfg(windows)]
     fn open_windows_pipe(name: String, mode: PipeMode) -> ProcessResult<Self> {
         use std::ffi::OsString;
@@ -281,7 +198,6 @@ impl NamedPipe {
             name
         } else {
             format!("\\\\.\\pipe\\{}", name)
-        };
         
         // Convert to wide string for Windows API
         let wide_name: Vec<u16> = OsString::from(pipe_name)
@@ -291,10 +207,6 @@ impl NamedPipe {
         
         // Determine access rights for CreateFile
         let desired_access = match mode {
-            PipeMode::Read => GENERIC_READ,
-            PipeMode::Write => GENERIC_WRITE,
-            PipeMode::ReadWrite => GENERIC_READ | GENERIC_WRITE,
-        };
         
         // Windows API call implementation
         use winapi::um::fileapi::{CreateFileW, OPEN_EXISTING};
@@ -303,54 +215,32 @@ impl NamedPipe {
         
         let handle = unsafe {
             CreateFileW(
-                wide_name.as_ptr(),
-                desired_access,
                 0, // dwShareMode
                 std::ptr::null_mut(), // lpSecurityAttributes
-                OPEN_EXISTING,
                 0, // dwFlagsAndAttributes
                 std::ptr::null_mut(), // hTemplateFile
             )
-        };
         
         if handle == INVALID_HANDLE_VALUE {
             let error = unsafe { GetLastError() };
             return Err(communication_error("open_windows_pipe", &format!("CreateFileW failed with error {}", error)));
-        }
-        
         let inner = Arc::new(Mutex::new(PipeInner::Windows {
-            handle: handle as *mut std::ffi::c_void,
-            name: name.clone(),
-            mode,
         }));
         
         Ok(ProcessPipe {
-            inner,
-            name: Some(name),
         })
-    }
-    
     fn create_channel_pipe(name: String, mode: PipeMode) -> ProcessResult<Self> {
         let (sender, receiver) = mpsc::channel();
         
         let inner = Arc::new(Mutex::new(PipeInner::Channel {
-            sender: Some(sender),
-            receiver: Some(receiver),
         }));
         
         Ok(NamedPipe {
-            name,
-            mode,
-            inner,
         })
-    }
-    
     /// Write data to the pipe
     pub fn write(&self, data: &[u8]) -> ProcessResult<usize> {
         if !self.can_write() {
             return Err(communication_error("write", "Pipe not open for writing"));
-        }
-        
         let mut inner = self.inner.lock()
             .map_err(|_| communication_error("write", "Failed to lock pipe"))?;
         
@@ -372,13 +262,8 @@ impl NamedPipe {
                 let mut bytes_written = 0u32;
                 let success = unsafe {
                     WriteFile(
-                        pipe_handle.handle,
-                        data.as_ptr() as *const std::ffi::c_void,
-                        data.len() as u32,
-                        &mut bytes_written,
                         std::ptr::null_mut()
                     )
-                };
                 
                 if success != 0 {
                     Ok(bytes_written as usize)
@@ -400,8 +285,6 @@ impl NamedPipe {
     pub fn read(&self, buffer: &mut [u8]) -> ProcessResult<usize> {
         if !self.can_read() {
             return Err(communication_error("read", "Pipe not open for reading"));
-        }
-        
         let mut inner = self.inner.lock()
             .map_err(|_| communication_error("read", "Failed to lock pipe"))?;
         
@@ -426,13 +309,8 @@ impl NamedPipe {
                 let mut bytes_read = 0u32;
                 let success = unsafe {
                     ReadFile(
-                        pipe_handle.handle,
-                        buffer.as_mut_ptr() as *mut std::ffi::c_void,
-                        buffer.len() as u32,
-                        &mut bytes_read,
                         std::ptr::null_mut()
                     )
-                };
                 
                 if success != 0 {
                     Ok(bytes_read as usize)
@@ -452,7 +330,6 @@ impl NamedPipe {
                         buffer[..bytes_to_copy].copy_from_slice(&data[..bytes_to_copy]);
                         Ok(bytes_to_copy)
                     }
-                    Err(mpsc::TryRecvError::Empty) => Ok(0),
                     Err(_) => Err(communication_error("read", "Channel receive failed"))
                 }
             }
@@ -472,24 +349,17 @@ impl NamedPipe {
                     }
                     thread::sleep(Duration::from_millis(10));
                 }
-                result => return result,
             }
         }
-    }
-    
     /// Write data with timeout
     pub fn write_timeout(&self, data: &[u8], timeout: Duration) -> ProcessResult<usize> {
         // For simplicity, just delegate to regular write
         // In a real implementation, this would handle timeouts for blocking writes
         self.write(data)
-    }
-    
     /// Flush the pipe
     pub fn flush(&self) -> ProcessResult<()> {
         if !self.can_write() {
             return Ok(());
-        }
-        
         let mut inner = self.inner.lock()
             .map_err(|_| communication_error("flush", "Failed to lock pipe"))?;
         
@@ -515,23 +385,15 @@ impl NamedPipe {
     /// Check if pipe can be read from
     pub fn can_read(&self) -> bool {
         matches!(self.mode, PipeMode::Read | PipeMode::ReadWrite)
-    }
-    
     /// Check if pipe can be written to
     pub fn can_write(&self) -> bool {
         matches!(self.mode, PipeMode::Write | PipeMode::ReadWrite)
-    }
-    
     /// Get pipe name
     pub fn name(&self) -> &str {
         &self.name
-    }
-    
     /// Get pipe mode
     pub fn mode(&self) -> &PipeMode {
         &self.mode
-    }
-    
     /// Close the pipe
     pub fn close(&mut self) -> ProcessResult<()> {
         let mut inner = self.inner.lock()
@@ -567,10 +429,6 @@ impl Drop for NamedPipe {
 
 /// Bidirectional pipe pair
 pub struct PipePair {
-    pub reader: NamedPipe,
-    pub writer: NamedPipe,
-}
-
 impl PipePair {
     /// Create a bidirectional pipe pair
     pub fn create<P: AsRef<Path>>(base_path: P) -> ProcessResult<Self> {
@@ -582,18 +440,12 @@ impl PipePair {
         let writer = NamedPipe::create(&writer_path, PipeMode::Write)?;
         
         Ok(PipePair { reader, writer })
-    }
-    
     /// Send data through the pipe pair
     pub fn send(&self, data: &[u8]) -> ProcessResult<usize> {
         self.writer.write(data)
-    }
-    
     /// Receive data through the pipe pair
     pub fn receive(&self, buffer: &mut [u8]) -> ProcessResult<usize> {
         self.reader.read(buffer)
-    }
-    
     /// Send and receive data (request-response pattern)
     pub fn exchange(&self, request: &[u8], response: &mut [u8], timeout: Duration) -> ProcessResult<usize> {
         self.send(request)?;
@@ -604,18 +456,10 @@ impl PipePair {
 
 /// Pipe server for handling multiple clients
 pub struct PipeServer {
-    name: String,
-    clients: Arc<Mutex<HashMap<u32, NamedPipe>>>,
-    next_client_id: Arc<Mutex<u32>>,
-}
-
 impl PipeServer {
     /// Create a new pipe server
     pub fn new<S: Into<String>>(name: S) -> Self {
         Self {
-            name: name.into(),
-            clients: Arc::new(Mutex::new(HashMap::new())),
-            next_client_id: Arc::new(Mutex::new(1)),
         }
     }
     
@@ -627,7 +471,6 @@ impl PipeServer {
             let current_id = *id;
             *id += 1;
             current_id
-        };
         
         let client_pipe_name = format!("{}_{}", self.name, client_id);
         let client_pipe = NamedPipe::create(&client_pipe_name, PipeMode::ReadWrite)?;
@@ -637,8 +480,6 @@ impl PipeServer {
         clients.insert(client_id, client_pipe);
         
         Ok(client_id)
-    }
-    
     /// Send data to a specific client
     pub fn send_to_client(&self, client_id: u32, data: &[u8]) -> ProcessResult<usize> {
         let clients = self.clients.lock()
@@ -671,11 +512,7 @@ impl PipeServer {
         let mut total_sent = 0;
         for client_pipe in clients.values() {
             total_sent += client_pipe.write(data)?;
-        }
-        
         Ok(total_sent)
-    }
-    
     /// Remove a client
     pub fn remove_client(&self, client_id: u32) -> ProcessResult<()> {
         let mut clients = self.clients.lock()
@@ -693,8 +530,6 @@ impl PipeServer {
         self.clients.lock()
             .map(|clients| clients.len())
             .unwrap_or(0)
-    }
-    
     /// Get list of connected client IDs
     pub fn client_ids(&self) -> Vec<u32> {
         self.clients.lock()
@@ -718,8 +553,6 @@ pub mod message {
         pub sequence: u32,        // Sequence number
         pub timestamp: u64,       // Message timestamp
         pub checksum: u32,        // Simple checksum
-    }
-    
     impl MessageHeader {
         pub const MAGIC: u32 = 0xDEADBEEF;
         pub const SIZE: usize = mem::size_of::<MessageHeader>();
@@ -727,21 +560,12 @@ pub mod message {
         /// Create a new message header
         pub fn new(message_type: u32, payload_length: u32, sequence: u32) -> Self {
             let mut header = Self {
-                magic: Self::MAGIC,
-                message_type,
-                payload_length,
-                sequence,
                 timestamp: std::time::SystemTime::now()
                     .duration_since(std::time::UNIX_EPOCH)
                     .unwrap_or_default()
-                    .as_millis() as u64,
-                checksum: 0,
-            };
             
             header.checksum = header.calculate_checksum();
             header
-        }
-        
         /// Calculate checksum
         fn calculate_checksum(&self) -> u32 {
             let mut checksum = 0u32;
@@ -752,13 +576,9 @@ pub mod message {
             checksum = checksum.wrapping_add((self.timestamp & 0xFFFFFFFF) as u32);
             checksum = checksum.wrapping_add((self.timestamp >> 32) as u32);
             checksum
-        }
-        
         /// Validate the header
         pub fn is_valid(&self) -> bool {
             self.magic == Self::MAGIC && self.checksum == self.calculate_checksum()
-        }
-        
         /// Convert to bytes
         pub fn to_bytes(&self) -> [u8; Self::SIZE] {
             unsafe { mem::transmute(*self) }
@@ -768,14 +588,8 @@ pub mod message {
         pub fn from_bytes(bytes: &[u8; Self::SIZE]) -> Self {
             unsafe { mem::transmute(*bytes) }
         }
-    }
-    
     /// Message container
     pub struct Message {
-        pub header: MessageHeader,
-        pub payload: Vec<u8>,
-    }
-    
     impl Message {
         /// Create a new message
         pub fn new(message_type: u32, payload: Vec<u8>, sequence: u32) -> Self {
@@ -790,17 +604,11 @@ pub mod message {
             
             if header_sent != MessageHeader::SIZE {
                 return Err(communication_error("send_message", "Failed to send complete header"));
-            }
-            
             let payload_sent = pipe.write(&self.payload)?;
             
             if payload_sent != self.payload.len() {
                 return Err(communication_error("send_message", "Failed to send complete payload"));
-            }
-            
             Ok(header_sent + payload_sent)
-        }
-        
         /// Receive message from pipe
         pub fn receive(pipe: &NamedPipe, timeout: Duration) -> ProcessResult<Self> {
             let mut header_bytes = [0u8; MessageHeader::SIZE];
@@ -809,13 +617,9 @@ pub mod message {
             let header = MessageHeader::from_bytes(&header_bytes);
             if !header.is_valid() {
                 return Err(communication_error("receive_message", "Invalid message header"));
-            }
-            
             let mut payload = vec![0u8; header.payload_length as usize];
             pipe.read_timeout(&mut payload, timeout)?;
             
             Ok(Message { header, payload })
         }
     }
-}
-

@@ -47,8 +47,6 @@ pub type Chonky = f64;
 /// ```
 pub fn drop_tea(text: &str) -> DropzResult<()> {
     io::print(text)
-}
-
 /// Print tea with newline (drop line vibes)
 /// 
 /// # Examples
@@ -57,8 +55,6 @@ pub fn drop_tea(text: &str) -> DropzResult<()> {
 /// ```
 pub fn drop_line_tea(text: &str) -> DropzResult<()> {
     io::println(text)
-}
-
 /// Print error tea without newline (drop error vibes)
 /// 
 /// # Examples
@@ -68,8 +64,6 @@ pub fn drop_line_tea(text: &str) -> DropzResult<()> {
 /// ```
 pub fn drop_error_tea(text: &str) -> DropzResult<()> {
     io::eprint(text)
-}
-
 /// Print error tea with newline (drop error line vibes)
 /// 
 /// # Examples
@@ -78,8 +72,6 @@ pub fn drop_error_tea(text: &str) -> DropzResult<()> {
 /// ```
 pub fn drop_error_line_tea(text: &str) -> DropzResult<()> {
     io::eprintln(text)
-}
-
 /// Print formatted tea (drop formatted vibes)
 /// 
 /// # Examples
@@ -92,8 +84,6 @@ pub fn drop_formatted_tea(format: &str, args: &[&str]) -> DropzResult<()> {
 //         .map(|&s| crate::stdlib::value::Value::String(s.to_string()))
         .collect();
     io::printf(format, &values)
-}
-
 /// Flush output buffers (force drop vibes)
 /// 
 /// # Examples
@@ -103,8 +93,6 @@ pub fn drop_formatted_tea(format: &str, args: &[&str]) -> DropzResult<()> {
 /// ```
 pub fn flush_drops() -> DropzResult<()> {
     io::flush()
-}
-
 // ================================
 // BASIC INPUT OPERATIONS (CATCH VIBES)
 // ================================
@@ -117,8 +105,6 @@ pub fn flush_drops() -> DropzResult<()> {
 /// ```
 pub fn catch_line_tea() -> DropzResult<Tea> {
     io::read_line()
-}
-
 /// Read single character from input (catch char vibes)
 /// 
 /// # Examples
@@ -127,8 +113,6 @@ pub fn catch_line_tea() -> DropzResult<Tea> {
 /// ```
 pub fn catch_char_vibes() -> DropzResult<char> {
     io::read_char()
-}
-
 /// Read until delimiter (catch until vibes)
 /// 
 /// # Examples
@@ -137,8 +121,6 @@ pub fn catch_char_vibes() -> DropzResult<char> {
 /// ```
 pub fn catch_until_vibes(delimiter: char) -> DropzResult<Tea> {
     io::read_until(delimiter)
-}
-
 /// Read all input until EOF (catch all vibes)
 /// 
 /// # Examples
@@ -147,8 +129,6 @@ pub fn catch_until_vibes(delimiter: char) -> DropzResult<Tea> {
 /// ```
 pub fn catch_all_tea() -> DropzResult<Tea> {
     io::read_all()
-}
-
 // ================================
 // INTERACTIVE INPUT OPERATIONS (VIBE CHECK)
 // ================================
@@ -161,8 +141,6 @@ pub fn catch_all_tea() -> DropzResult<Tea> {
 /// ```
 pub fn vibe_check_tea(prompt: &str) -> DropzResult<Tea> {
     io::prompt(prompt)
-}
-
 /// Ask yes/no question (vibe check bool vibes)
 /// 
 /// # Examples
@@ -171,8 +149,6 @@ pub fn vibe_check_tea(prompt: &str) -> DropzResult<Tea> {
 /// ```
 pub fn vibe_check_bool(prompt: &str) -> DropzResult<bool> {
     io::confirm(prompt)
-}
-
 /// Read password without echo (vibe check secret vibes)
 /// 
 /// # Examples
@@ -181,8 +157,6 @@ pub fn vibe_check_bool(prompt: &str) -> DropzResult<bool> {
 /// ```
 pub fn vibe_check_secret(prompt: &str) -> DropzResult<Tea> {
     io::read_password(prompt)
-}
-
 /// Select from options (vibe check choice vibes)
 /// 
 /// # Examples
@@ -192,8 +166,6 @@ pub fn vibe_check_secret(prompt: &str) -> DropzResult<Tea> {
 /// ```
 pub fn vibe_check_choice(prompt: &str, options: &[String]) -> DropzResult<usize> {
     io::select(prompt, options)
-}
-
 /// Select multiple options (vibe check multiple vibes)
 /// 
 /// # Examples
@@ -203,8 +175,6 @@ pub fn vibe_check_choice(prompt: &str, options: &[String]) -> DropzResult<usize>
 /// ```
 pub fn vibe_check_multiple(prompt: &str, options: &[String]) -> DropzResult<Vec<usize>> {
     io::multi_select(prompt, options)
-}
-
 // ================================
 // NUMBER INPUT OPERATIONS (NUMERIC VIBES)
 // ================================
@@ -219,8 +189,6 @@ pub fn catch_normie_vibes(prompt: &str) -> DropzResult<Normie> {
     let input = vibe_check_tea(prompt)?;
     input.trim().parse::<Normie>()
         .map_err(|_| DropzError::InvalidInput(format!("Invalid normie number: {}", input)))
-}
-
 /// Read thicc number from input (catch thicc vibes)
 /// 
 /// # Examples
@@ -231,8 +199,6 @@ pub fn catch_thicc_vibes(prompt: &str) -> DropzResult<Thicc> {
     let input = vibe_check_tea(prompt)?;
     input.trim().parse::<Thicc>()
         .map_err(|_| DropzError::InvalidInput(format!("Invalid thicc number: {}", input)))
-}
-
 /// Read chonky number from input (catch chonky vibes)
 /// 
 /// # Examples
@@ -243,8 +209,6 @@ pub fn catch_chonky_vibes(prompt: &str) -> DropzResult<Chonky> {
     let input = vibe_check_tea(prompt)?;
     input.trim().parse::<Chonky>()
         .map_err(|_| DropzError::InvalidInput(format!("Invalid chonky number: {}", input)))
-}
-
 // ================================
 // BUFFERED I/O OPERATIONS (STREAMING VIBES)
 // ================================
@@ -257,14 +221,10 @@ pub fn catch_chonky_vibes(prompt: &str) -> DropzResult<Chonky> {
 /// facts line = reader.catch_line();
 /// ```
 pub struct StreamCatcherVibes<R: std::io::Read> {
-    reader: BufReader<R>,
-}
-
 impl<R: std::io::Read> StreamCatcherVibes<R> {
     /// Create new buffered reader (new stream catcher vibes)
     pub fn new(reader: R) -> Self {
         Self {
-            reader: BufReader::new(reader),
         }
     }
     
@@ -283,8 +243,6 @@ impl<R: std::io::Read> StreamCatcherVibes<R> {
         }
         
         Ok(line)
-    }
-    
     /// Read all lines from buffered reader (catch all lines vibes)
     pub fn catch_all_lines(&mut self) -> DropzResult<Vec<Tea>> {
         let mut lines = Vec::new();
@@ -295,8 +253,6 @@ impl<R: std::io::Read> StreamCatcherVibes<R> {
             
             if bytes_read == 0 {
                 break; // EOF
-            }
-            
             // Remove trailing newline if present
             if line.ends_with('\n') {
                 line.pop();
@@ -308,17 +264,11 @@ impl<R: std::io::Read> StreamCatcherVibes<R> {
             lines.push(line);
         }
         Ok(lines)
-    }
-    
     /// Check if more data is available (has more vibes)
     pub fn has_more_vibes(&mut self) -> DropzResult<bool> {
         match self.reader.fill_buf() {
-            Ok(buffer) => Ok(!buffer.is_empty()),
-            Err(e) => Err(DropzError::General(e.to_string())),
         }
     }
-}
-
 /// Buffered writer for efficient output (stream dropper vibes)
 /// 
 /// # Examples
@@ -328,14 +278,10 @@ impl<R: std::io::Read> StreamCatcherVibes<R> {
 /// writer.flush_it();
 /// ```
 pub struct StreamDropperVibes<W: std::io::Write> {
-    writer: BufWriter<W>,
-}
-
 impl<W: std::io::Write> StreamDropperVibes<W> {
     /// Create new buffered writer (new stream dropper vibes)
     pub fn new(writer: W) -> Self {
         Self {
-            writer: BufWriter::new(writer),
         }
     }
     
@@ -343,28 +289,20 @@ impl<W: std::io::Write> StreamDropperVibes<W> {
     pub fn drop_tea(&mut self, text: &str) -> DropzResult<()> {
         self.writer.write_all(text.as_bytes())
             .map_err(|e| DropzError::General(e.to_string()))
-    }
-    
     /// Write tea with newline to buffered writer (drop line to stream vibes)
     pub fn drop_line(&mut self, text: &str) -> DropzResult<()> {
         writeln!(self.writer, "{}", text)
             .map_err(|e| DropzError::General(e.to_string()))
-    }
-    
     /// Flush buffered writer (force stream drop vibes)
     pub fn flush_it(&mut self) -> DropzResult<()> {
         self.writer.flush()
             .map_err(|e| DropzError::General(e.to_string()))
-    }
-    
     /// Write multiple lines (drop multiple lines vibes)
     pub fn drop_lines(&mut self, lines: &[&str]) -> DropzResult<()> {
         for line in lines {
             self.drop_line(line)?;
         }
         Ok(())
-    }
-    
     /// Write formatted tea (drop formatted to stream vibes)
     pub fn drop_formatted(&mut self, format: &str, args: &[&str]) -> DropzResult<()> {
         let formatted = simple_format(format, args)?;
@@ -385,20 +323,10 @@ impl<W: std::io::Write> StreamDropperVibes<W> {
 /// progress.finish_it();
 /// ```
 pub struct ProgressVibes {
-    total: usize,
-    width: usize,
-    current: usize,
-    message: Tea,
-}
-
 impl ProgressVibes {
     /// Create new progress bar (new progress vibes)
     pub fn new(total: usize, width: usize) -> Self {
         Self {
-            total,
-            width,
-            current: 0,
-            message: String::new(),
         }
     }
     
@@ -406,50 +334,35 @@ impl ProgressVibes {
     pub fn update_it(&mut self, current: usize) -> DropzResult<()> {
         self.current = current.min(self.total);
         self.render_it()
-    }
-    
     /// Set progress message (set message vibes)
     pub fn set_message(&mut self, message: Tea) {
         self.message = message;
-    }
-    
     /// Render progress bar (show vibes)
     fn render_it(&self) -> DropzResult<()> {
         let percentage = if self.total > 0 {
             (self.current * 100) / self.total
         } else {
             0
-        };
         
         let filled = if self.total > 0 {
             (self.current * self.width) / self.total
         } else {
             0
-        };
         
         let empty = self.width.saturating_sub(filled);
         
         let bar = format!(
             "\r{} [{}{}] {}% ({}/{})",
-            self.message,
-            "█".repeat(filled),
-            "░".repeat(empty),
-            percentage,
-            self.current,
             self.total
         );
         
         drop_tea(&bar)?;
         flush_drops()
-    }
-    
     /// Finish progress bar (complete vibes)
     pub fn finish_it(&mut self) -> DropzResult<()> {
         self.current = self.total;
         self.render_it()?;
         drop_line_tea("")
-    }
-    
     /// Increment progress (step vibes)
     pub fn step_it(&mut self) -> DropzResult<()> {
         self.update_it(self.current + 1)
@@ -464,8 +377,6 @@ impl ProgressVibes {
 /// ```
 pub fn new_progress_vibes(total: usize, width: usize) -> ProgressVibes {
     ProgressVibes::new(total, width)
-}
-
 // ================================
 // PAGINATED OUTPUT (PAGINATION VIBES)
 // ================================
@@ -480,8 +391,6 @@ pub fn new_progress_vibes(total: usize, width: usize) -> ProgressVibes {
 pub fn paginate_drops(lines: &[Tea], page_size: usize) -> DropzResult<()> {
     if lines.is_empty() {
         return Ok(());
-    }
-    
     let mut start = 0;
     loop {
         let end = (start + page_size).min(lines.len());
@@ -489,13 +398,9 @@ pub fn paginate_drops(lines: &[Tea], page_size: usize) -> DropzResult<()> {
         // Display current page
         for line in &lines[start..end] {
             drop_line_tea(line)?;
-        }
-        
         // Check if we're done
         if end >= lines.len() {
             break;
-        }
-        
         // Ask user to continue
         drop_tea(&format!("Page {}/{} - Press Enter to continue, 'q' to quit: ", 
                          (start / page_size) + 1, 
@@ -505,14 +410,8 @@ pub fn paginate_drops(lines: &[Tea], page_size: usize) -> DropzResult<()> {
         let input = catch_line_tea()?;
         if input.trim().to_lowercase() == "q" {
             break;
-        }
-        
         start = end;
-    }
-    
     Ok(())
-}
-
 // ================================
 // UTILITY FUNCTIONS
 // ================================
@@ -524,8 +423,6 @@ fn simple_format(format: &str, args: &[&str]) -> DropzResult<Tea> {
     for (i, arg) in args.iter().enumerate() {
         let placeholder = format!("{{{}}}", i);
         result = result.replace(&placeholder, arg);
-    }
-    
     // Also support {} placeholder
     let mut arg_index = 0;
     while let Some(pos) = result.find("{}") {
@@ -538,8 +435,6 @@ fn simple_format(format: &str, args: &[&str]) -> DropzResult<Tea> {
     }
     
     Ok(result)
-}
-
 /// Clear screen (clear vibes)
 /// 
 /// # Examples
@@ -562,8 +457,6 @@ pub fn clear_drops() -> DropzResult<()> {
 /// ```
 pub fn move_cursor_vibes(row: usize, col: usize) -> DropzResult<()> {
     drop_tea(&format!("\x1B[{};{}H", row, col))
-}
-
 /// Hide cursor (hide cursor vibes)
 /// 
 /// # Examples
@@ -572,8 +465,6 @@ pub fn move_cursor_vibes(row: usize, col: usize) -> DropzResult<()> {
 /// ```
 pub fn hide_cursor_vibes() -> DropzResult<()> {
     drop_tea("\x1B[?25l")
-}
-
 /// Show cursor (show cursor vibes)
 /// 
 /// # Examples
@@ -582,8 +473,6 @@ pub fn hide_cursor_vibes() -> DropzResult<()> {
 /// ```
 pub fn show_cursor_vibes() -> DropzResult<()> {
     drop_tea("\x1B[?25h")
-}
-
 /// Get terminal size (terminal size vibes)
 /// 
 /// # Examples
@@ -593,8 +482,6 @@ pub fn show_cursor_vibes() -> DropzResult<()> {
 pub fn get_terminal_size_vibes() -> DropzResult<(usize, usize)> {
     // Basic implementation - in real world this would use termios/winapi
     Ok((80, 24)) // Default terminal size
-}
-
 /// Set text color (color vibes)
 /// 
 /// # Examples
@@ -605,20 +492,8 @@ pub fn get_terminal_size_vibes() -> DropzResult<(usize, usize)> {
 /// ```
 pub fn set_text_color_vibes(color: &str) -> DropzResult<()> {
     let color_code = match color.to_lowercase().as_str() {
-        "red" => "31",
-        "green" => "32", 
-        "yellow" => "33",
-        "blue" => "34",
-        "magenta" => "35",
-        "cyan" => "36",
-        "white" => "37",
-        "black" => "30",
-        _ => return Err(DropzError::InvalidInput(format!("Unknown color: {}", color))),
-    };
     
     drop_tea(&format!("\x1B[{}m", color_code))
-}
-
 /// Reset text color (reset color vibes)
 /// 
 /// # Examples
@@ -627,14 +502,10 @@ pub fn set_text_color_vibes(color: &str) -> DropzResult<()> {
 /// ```
 pub fn reset_text_color_vibes() -> DropzResult<()> {
     drop_tea("\x1B[0m")
-}
-
 /// Module initialization function
 pub fn init_dropz() -> DropzResult<()> {
     // Initialize any global state for DropZ module
     Ok(())
-}
-
 /// Get module statistics and information
 pub fn get_dropz_stats() -> HashMap<String, String> {
     let mut stats = HashMap::new();
@@ -643,5 +514,3 @@ pub fn get_dropz_stats() -> HashMap<String, String> {
     stats.insert("features".to_string(), "Gen Z naming, CURSED types, interactive I/O".to_string());
     stats.insert("types".to_string(), "tea, normie, thicc, chonky".to_string());
     stats
-}
-

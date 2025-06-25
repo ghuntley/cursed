@@ -12,16 +12,8 @@ use serde_json;
 
 use cursed::optimization::{
     performance_optimization_system::{
-        PerformanceOptimizationSystem, SmartCompilationResults,
-    },
     performance_system::{
-        PerformanceSystemConfig, PerformanceMonitoringLevel,
-        ParallelConfig, CacheConfig,
-    },
-    build_profiles::BuildProfile,
-    benchmarking::BenchmarkType,
-    compilation_speed::CompilationUnit,
-};
+// };
 use crate::error::CursedError;
 
 fn main() -> Result<()> {
@@ -176,19 +168,11 @@ fn main() -> Result<()> {
         .get_matches();
 
     match matches.subcommand() {
-        ("profile", Some(matches)) => handle_profile_command(matches),
-        ("benchmark", Some(matches)) => handle_benchmark_command(matches),
-        ("optimize", Some(matches)) => handle_optimize_command(matches),
-        ("analyze", Some(matches)) => handle_analyze_command(matches),
-        ("cache", Some(matches)) => handle_cache_command(matches),
-        ("config", Some(matches)) => handle_config_command(matches),
         _ => {
             println!("Use 'cursed-performance --help' for usage information");
             Ok(())
         }
     }
-}
-
 fn handle_profile_command(matches: &ArgMatches) -> Result<()> {
     let input = matches.value_of("input").unwrap();
     let output = matches.value_of("output");
@@ -207,15 +191,9 @@ fn handle_profile_command(matches: &ArgMatches) -> Result<()> {
 
     // Create performance system configuration
     let config = PerformanceSystemConfig {
-        build_profile,
-        compilation_time_budget: time_budget,
-        performance_monitoring_level: monitoring_level,
         parallel_config: ParallelConfig {
-            max_threads: if parallel_threads == 0 { num_cpus::get() } else { parallel_threads },
             ..Default::default()
-        },
         ..Default::default()
-    };
 
     let system = PerformanceOptimizationSystem::new(config)
         .context("Failed to initialize performance system")?;
@@ -242,7 +220,6 @@ fn handle_profile_command(matches: &ArgMatches) -> Result<()> {
     // Generate and display results
     println!("\n✅ Profiling completed in {:.2}s", profile_time.as_secs_f64());
     println!("   Units processed: {}", results.compilation_results.len());
-    println!("   Successful compilations: {}", 
              results.compilation_results.iter().filter(|(_, r)| r.is_ok()).count());
     println!("   Optimization level: {:?}", results.performance_metrics.optimization_level);
     println!("   Cache hit rate: {:.1}%", results.performance_metrics.cache_hit_rate * 100.0);
@@ -276,11 +253,7 @@ fn handle_profile_command(matches: &ArgMatches) -> Result<()> {
     } else {
         println!("\n📄 Full Performance Report:");
         println!("{}", report);
-    }
-
     Ok(())
-}
-
 fn handle_benchmark_command(matches: &ArgMatches) -> Result<()> {
     let benchmark_type = parse_benchmark_type(matches.value_of("type").unwrap())?;
     let iterations: usize = matches.value_of("iterations").unwrap().parse()
@@ -315,8 +288,6 @@ fn handle_benchmark_command(matches: &ArgMatches) -> Result<()> {
         fs::write(output_file, json_results)
             .context("Failed to write benchmark results")?;
         println!("\n📄 Results saved to: {}", output_file);
-    }
-
     // Compare with previous results if specified
     if let Some(compare_file) = compare {
         println!("\n📊 Comparison with previous results:");
@@ -355,8 +326,6 @@ fn handle_benchmark_command(matches: &ArgMatches) -> Result<()> {
     }
 
     Ok(())
-}
-
 fn handle_optimize_command(matches: &ArgMatches) -> Result<()> {
     let input = matches.value_of("input").unwrap();
     let output = matches.value_of("output");
@@ -373,17 +342,9 @@ fn handle_optimize_command(matches: &ArgMatches) -> Result<()> {
 
     // Determine optimal build profile based on target
     let build_profile = match target {
-        "speed" => BuildProfile::Development,
-        "size" => BuildProfile::Size,
-        "balanced" => BuildProfile::Release,
-        _ => return Err(anyhow::anyhow!("Invalid optimization target: {}", target)),
-    };
 
     let mut config = PerformanceSystemConfig {
-        build_profile,
-        enable_adaptive_optimization: adaptive,
         ..Default::default()
-    };
 
     let mut system = PerformanceOptimizationSystem::new(config.clone())
         .context("Failed to initialize performance system")?;
@@ -408,11 +369,7 @@ fn handle_optimize_command(matches: &ArgMatches) -> Result<()> {
 
         // Calculate performance score (lower is better)
         let performance_score = match target {
-            "speed" => compile_time,
             "size" => results.compilation_results.len() as f64, // Simplified size metric
-            "balanced" => compile_time + (results.compilation_results.len() as f64 * 0.1),
-            _ => compile_time,
-        };
 
         println!("   Performance score: {:.2}", performance_score);
 
@@ -420,8 +377,6 @@ fn handle_optimize_command(matches: &ArgMatches) -> Result<()> {
             best_performance = performance_score;
             best_config = system.get_config().clone();
             println!("   ✅ New best configuration found!");
-        }
-
         // Apply adaptive optimizations for next iteration
         if adaptive && iteration < iterations - 1 {
             // Adjust configuration based on results
@@ -430,8 +385,6 @@ fn handle_optimize_command(matches: &ArgMatches) -> Result<()> {
             }
             if results.performance_metrics.parallel_efficiency < 0.5 {
                 config.parallel_config.max_threads = (config.parallel_config.max_threads / 2).max(1);
-            }
-
             system.update_config(config.clone())
                 .context("Failed to update configuration")?;
         }
@@ -450,11 +403,7 @@ fn handle_optimize_command(matches: &ArgMatches) -> Result<()> {
         fs::write(output_file, json_config)
             .context("Failed to write optimized configuration")?;
         println!("\n📄 Optimized configuration saved to: {}", output_file);
-    }
-
     Ok(())
-}
-
 fn handle_analyze_command(matches: &ArgMatches) -> Result<()> {
     let profile_data = matches.value_of("profile-data").unwrap();
     let output = matches.value_of("output");
@@ -476,11 +425,7 @@ fn handle_analyze_command(matches: &ArgMatches) -> Result<()> {
     } else {
         println!("\n📄 Analysis Report:");
         println!("{}", analysis_report);
-    }
-
     Ok(())
-}
-
 fn handle_cache_command(matches: &ArgMatches) -> Result<()> {
     let action = matches.value_of("action").unwrap();
     let cache_dir = PathBuf::from(matches.value_of("cache-dir").unwrap());
@@ -530,8 +475,6 @@ fn handle_cache_command(matches: &ArgMatches) -> Result<()> {
     }
 
     Ok(())
-}
-
 fn handle_config_command(matches: &ArgMatches) -> Result<()> {
     let action = matches.value_of("action").unwrap();
     let key = matches.value_of("key");
@@ -579,52 +522,19 @@ fn handle_config_command(matches: &ArgMatches) -> Result<()> {
     }
 
     Ok(())
-}
-
 // Cache optimization structures and implementation
 
 #[derive(Debug, Clone)]
 struct CacheOptimizationResult {
-    files_analyzed: usize,
-    stale_entries_removed: usize,
-    duplicates_removed: usize,
-    space_saved_mb: f64,
-    compression_ratio: f64,
-    fragmentation_reduction: f64,
-    optimization_time_ms: u64,
-}
-
 #[derive(Debug, Clone)]
 struct CacheEntry {
-    path: PathBuf,
-    size: u64,
-    last_modified: std::time::SystemTime,
-    last_accessed: std::time::SystemTime,
-    content_hash: String,
-    is_compressed: bool,
-    dependency_count: usize,
-    access_frequency: f64,
-}
-
 #[derive(Debug, Clone)]
 struct CacheAnalysis {
-    total_entries: usize,
-    total_size_mb: f64,
-    stale_entries: Vec<PathBuf>,
-    duplicate_groups: Vec<Vec<PathBuf>>,
-    large_entries: Vec<PathBuf>,
-    unused_entries: Vec<PathBuf>,
-    fragmentation_score: f64,
-    compression_candidates: Vec<PathBuf>,
-}
-
 fn optimize_cache(cache_dir: &PathBuf, size_limit: Option<usize>) -> Result<CacheOptimizationResult> {
     let start_time = std::time::Instant::now();
     
     if !cache_dir.exists() {
         return Err(anyhow::anyhow!("Cache directory does not exist: {}", cache_dir.display()));
-    }
-
     println!("      🔍 Analyzing cache structure...");
     let analysis = analyze_cache(cache_dir)?;
     
@@ -636,14 +546,6 @@ fn optimize_cache(cache_dir: &PathBuf, size_limit: Option<usize>) -> Result<Cach
     println!("         Fragmentation score: {:.1}%", analysis.fragmentation_score * 100.0);
 
     let mut result = CacheOptimizationResult {
-        files_analyzed: analysis.total_entries,
-        stale_entries_removed: 0,
-        duplicates_removed: 0,
-        space_saved_mb: 0.0,
-        compression_ratio: 0.0,
-        fragmentation_reduction: 0.0,
-        optimization_time_ms: 0,
-    };
 
     // Step 1: Remove stale entries
     println!("      🗑️  Removing stale entries...");
@@ -676,16 +578,12 @@ fn optimize_cache(cache_dir: &PathBuf, size_limit: Option<usize>) -> Result<Cach
         println!("      📏 Applying size limits ({} MB)...", limit_mb);
         let limit_space_saved = enforce_cache_size_limit(cache_dir, limit_mb)?;
         result.space_saved_mb += limit_space_saved;
-    }
-
     // Step 6: Update cache metadata and statistics
     println!("      📋 Updating cache metadata...");
     update_cache_metadata(cache_dir, &result)?;
 
     result.optimization_time_ms = start_time.elapsed().as_millis() as u64;
     Ok(result)
-}
-
 fn analyze_cache(cache_dir: &PathBuf) -> Result<CacheAnalysis> {
     let mut entries = Vec::new();
     let mut total_size = 0u64;
@@ -714,8 +612,6 @@ fn analyze_cache(cache_dir: &PathBuf) -> Result<CacheAnalysis> {
         hash_groups.entry(entry.content_hash.clone())
             .or_insert_with(Vec::new)
             .push(entry.path.clone());
-    }
-    
     let duplicate_groups: Vec<Vec<PathBuf>> = hash_groups.into_values()
         .filter(|group| group.len() > 1)
         .collect();
@@ -743,17 +639,7 @@ fn analyze_cache(cache_dir: &PathBuf) -> Result<CacheAnalysis> {
         .collect();
 
     Ok(CacheAnalysis {
-        total_entries: entries.len(),
-        total_size_mb,
-        stale_entries,
-        duplicate_groups,
-        large_entries,
-        unused_entries,
-        fragmentation_score,
-        compression_candidates,
     })
-}
-
 fn collect_cache_entries(dir: &PathBuf, entries: &mut Vec<CacheEntry>, total_size: &mut u64) -> Result<()> {
     for entry in fs::read_dir(dir).context("Failed to read cache directory")? {
         let entry = entry.context("Failed to read directory entry")?;
@@ -783,14 +669,7 @@ fn collect_cache_entries(dir: &PathBuf, entries: &mut Vec<CacheEntry>, total_siz
             let access_frequency = if age_days > 0.0 { 1.0 / age_days } else { 1.0 };
             
             entries.push(CacheEntry {
-                path,
-                size,
-                last_modified,
-                last_accessed,
-                content_hash,
-                is_compressed,
                 dependency_count: 0, // Would be calculated from cache metadata
-                access_frequency,
             });
         } else if path.is_dir() {
             collect_cache_entries(&path, entries, total_size)?;
@@ -798,8 +677,6 @@ fn collect_cache_entries(dir: &PathBuf, entries: &mut Vec<CacheEntry>, total_siz
     }
     
     Ok(())
-}
-
 fn calculate_file_hash(path: &PathBuf) -> Result<String> {
     use std::collections::hash_map::DefaultHasher;
     use std::hash::{Hash, Hasher};
@@ -820,13 +697,9 @@ fn calculate_file_hash(path: &PathBuf) -> Result<String> {
     }
     
     Ok(format!("{:x}", hasher.finish()))
-}
-
 fn calculate_fragmentation_score(entries: &[CacheEntry]) -> f64 {
     if entries.is_empty() {
         return 0.0;
-    }
-
     // Calculate fragmentation based on file size distribution and directory structure
     let total_size: u64 = entries.iter().map(|e| e.size).sum();
     let avg_size = total_size as f64 / entries.len() as f64;
@@ -840,8 +713,6 @@ fn calculate_fragmentation_score(entries: &[CacheEntry]) -> f64 {
     
     // Normalize fragmentation score (0.0 = no fragmentation, 1.0 = high fragmentation)
     (std_dev / (avg_size + 1.0)).min(1.0)
-}
-
 fn remove_stale_entries(stale_entries: &[PathBuf]) -> Result<f64> {
     let mut space_saved = 0u64;
     
@@ -859,16 +730,12 @@ fn remove_stale_entries(stale_entries: &[PathBuf]) -> Result<f64> {
     }
     
     Ok(space_saved as f64 / 1024.0 / 1024.0)
-}
-
 fn deduplicate_cache_entries(duplicate_groups: &[Vec<PathBuf>]) -> Result<f64> {
     let mut space_saved = 0u64;
     
     for group in duplicate_groups {
         if group.len() <= 1 {
             continue;
-        }
-        
         // Keep the most recently accessed file, remove others
         let mut group_with_metadata: Vec<(PathBuf, std::time::SystemTime)> = Vec::new();
         
@@ -897,11 +764,7 @@ fn deduplicate_cache_entries(duplicate_groups: &[Vec<PathBuf>]) -> Result<f64> {
                 space_saved += size;
             }
         }
-    }
-    
     Ok(space_saved as f64 / 1024.0 / 1024.0)
-}
-
 fn compress_cache_entries(compression_candidates: &[PathBuf]) -> Result<(usize, f64, f64)> {
     let mut compressed_count = 0;
     let mut space_saved = 0u64;
@@ -911,8 +774,6 @@ fn compress_cache_entries(compression_candidates: &[PathBuf]) -> Result<(usize, 
     for path in compression_candidates {
         if !path.exists() {
             continue;
-        }
-        
         let original_size = fs::metadata(path)
             .context("Failed to get file metadata")?
             .len();
@@ -945,17 +806,12 @@ fn compress_cache_entries(compression_candidates: &[PathBuf]) -> Result<(usize, 
         // Remove original (in real implementation, only after successful compression)
         fs::remove_file(path)
             .with_context(|| format!("Failed to remove original file: {}", path.display()))?;
-    }
-    
     let overall_compression_ratio = if total_original_size > 0 {
         total_compressed_size as f64 / total_original_size as f64
     } else {
         1.0
-    };
     
     Ok((compressed_count, space_saved as f64 / 1024.0 / 1024.0, overall_compression_ratio))
-}
-
 fn optimize_cache_layout(cache_dir: &PathBuf) -> Result<f64> {
     // In a real implementation, this would:
     // 1. Reorganize files by access frequency
@@ -965,16 +821,12 @@ fn optimize_cache_layout(cache_dir: &PathBuf) -> Result<f64> {
     
     // For now, return a simulated fragmentation reduction
     Ok(0.15) // 15% fragmentation reduction
-}
-
 fn enforce_cache_size_limit(cache_dir: &PathBuf, limit_mb: usize) -> Result<f64> {
     let current_size = calculate_directory_size(cache_dir)?;
     let limit_bytes = (limit_mb * 1024 * 1024) as u64;
     
     if current_size <= limit_bytes {
         return Ok(0.0); // No cleanup needed
-    }
-    
     // Collect all files with their access times
     let mut files_with_access: Vec<(PathBuf, std::time::SystemTime, u64)> = Vec::new();
     collect_files_with_access(cache_dir, &mut files_with_access)?;
@@ -988,18 +840,12 @@ fn enforce_cache_size_limit(cache_dir: &PathBuf, limit_mb: usize) -> Result<f64>
     for (path, _, size) in files_with_access {
         if space_to_free == 0 {
             break;
-        }
-        
         fs::remove_file(&path)
             .with_context(|| format!("Failed to remove file: {}", path.display()))?;
         
         space_freed += size;
         space_to_free = space_to_free.saturating_sub(size);
-    }
-    
     Ok(space_freed as f64 / 1024.0 / 1024.0)
-}
-
 fn collect_files_with_access(dir: &PathBuf, files: &mut Vec<(PathBuf, std::time::SystemTime, u64)>) -> Result<()> {
     for entry in fs::read_dir(dir).context("Failed to read directory")? {
         let entry = entry.context("Failed to read directory entry")?;
@@ -1016,23 +862,12 @@ fn collect_files_with_access(dir: &PathBuf, files: &mut Vec<(PathBuf, std::time:
     }
     
     Ok(())
-}
-
 fn update_cache_metadata(cache_dir: &PathBuf, result: &CacheOptimizationResult) -> Result<()> {
     let metadata = serde_json::json!({
         "last_optimization": std::time::SystemTime::now()
             .duration_since(std::time::UNIX_EPOCH)
             .unwrap()
-            .as_secs(),
         "optimization_result": {
-            "files_analyzed": result.files_analyzed,
-            "stale_entries_removed": result.stale_entries_removed,
-            "duplicates_removed": result.duplicates_removed,
-            "space_saved_mb": result.space_saved_mb,
-            "compression_ratio": result.compression_ratio,
-            "fragmentation_reduction": result.fragmentation_reduction,
-            "optimization_time_ms": result.optimization_time_ms,
-        },
         "cache_version": "1.0.0"
     });
     
@@ -1041,33 +876,18 @@ fn update_cache_metadata(cache_dir: &PathBuf, result: &CacheOptimizationResult) 
         .context("Failed to write cache metadata")?;
     
     Ok(())
-}
-
 // Helper functions
 
 fn parse_build_profile(profile: &str) -> Result<BuildProfile> {
     BuildProfile::from_str(profile)
         .map_err(|e| anyhow::anyhow!("Invalid build profile: {}", e))
-}
-
 fn parse_monitoring_level(level: &str) -> Result<PerformanceMonitoringLevel> {
     match level.to_lowercase().as_str() {
-        "minimal" => Ok(PerformanceMonitoringLevel::Minimal),
-        "basic" => Ok(PerformanceMonitoringLevel::Basic),
-        "standard" => Ok(PerformanceMonitoringLevel::Standard),
-        "comprehensive" => Ok(PerformanceMonitoringLevel::Comprehensive),
-        "maximum" => Ok(PerformanceMonitoringLevel::Maximum),
-        _ => Err(anyhow::anyhow!("Invalid monitoring level: {}", level)),
     }
 }
 
 fn parse_benchmark_type(benchmark_type: &str) -> Result<BenchmarkType> {
     match benchmark_type.to_lowercase().as_str() {
-        "compilation" => Ok(BenchmarkType::Compilation),
-        "runtime" => Ok(BenchmarkType::Runtime),
-        "memory" => Ok(BenchmarkType::Memory),
-        "all" => Ok(BenchmarkType::Comprehensive),
-        _ => Err(anyhow::anyhow!("Invalid benchmark type: {}", benchmark_type)),
     }
 }
 
@@ -1081,19 +901,9 @@ fn load_compilation_units(input: &str) -> Result<Vec<CompilationUnit>> {
             .context("Failed to read input file")?;
         
         let unit = CompilationUnit {
-            id: input_path.file_stem().unwrap().to_string_lossy().to_string(),
-            source_path: input_path.clone(),
-            module_name: input_path.file_stem().unwrap().to_string_lossy().to_string(),
-            source_code,
-            dependencies: vec![],
             last_modified: fs::metadata(&input_path)
                 .context("Failed to get file metadata")?
                 .modified()
-                .context("Failed to get modification time")?,
-            status: cursed::optimization::compilation_speed::CompilationStatus::Pending,
-            priority: 1,
-            content_hash: String::new(),
-        };
         
         units.push(unit);
     } else if input_path.is_dir() {
@@ -1108,34 +918,18 @@ fn load_compilation_units(input: &str) -> Result<Vec<CompilationUnit>> {
                     .context("Failed to read source file")?;
                 
                 let unit = CompilationUnit {
-                    id: path.file_stem().unwrap().to_string_lossy().to_string(),
-                    source_path: path.clone(),
-                    module_name: path.file_stem().unwrap().to_string_lossy().to_string(),
-                    source_code,
-                    dependencies: vec![],
                     last_modified: fs::metadata(&path)
                         .context("Failed to get file metadata")?
                         .modified()
-                        .context("Failed to get modification time")?,
-                    status: cursed::optimization::compilation_speed::CompilationStatus::Pending,
-                    priority: 1,
-                    content_hash: String::new(),
-                };
                 
                 units.push(unit);
             }
         }
     } else {
         return Err(anyhow::anyhow!("Input path does not exist: {}", input));
-    }
-
     if units.is_empty() {
         return Err(anyhow::anyhow!("No compilation units found in: {}", input));
-    }
-
     Ok(units)
-}
-
 fn calculate_directory_size(dir: &PathBuf) -> Result<u64> {
     let mut total_size = 0;
     
@@ -1151,8 +945,6 @@ fn calculate_directory_size(dir: &PathBuf) -> Result<u64> {
     }
     
     Ok(total_size)
-}
-
 fn count_cache_entries(dir: &PathBuf) -> Result<usize> {
     let mut count = 0;
     

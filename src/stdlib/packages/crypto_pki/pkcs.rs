@@ -27,24 +27,14 @@ pub type PkcsResult<T> = PkiResult<T>;
 
 pub fn create_pkcs10_csr(_subject: &str, _key: &[u8]) -> PkcsResult<CertificateRequest> {
     Ok(vec![0x30, 0x82, 0x01, 0x00]) // Mock CSR
-}
-
 pub fn parse_pkcs10_csr(_data: &[u8]) -> PkcsResult<CertificateRequest> {
     Ok(vec![0x30, 0x82, 0x01, 0x00])
-}
-
 pub fn create_pkcs12_bundle(_cert: &[u8], _key: &[u8], _password: &str) -> PkcsResult<Vec<u8>> {
     Ok(vec![0x30, 0x82, 0x02, 0x00])
-}
-
 pub fn parse_pkcs12_bundle(_data: &[u8], _password: &str) -> PkcsResult<(Vec<u8>, Vec<u8>)> {
     Ok((vec![0; 256], vec![0; 256])) // (cert, key)
-}
-
 pub fn encrypt_private_key(_key: &[u8], _password: &str) -> PkcsResult<EncryptedPrivateKeyInfo> {
     Ok(vec![0x30, 0x82, 0x01, 0x00])
-}
-
 pub fn decrypt_private_key(_encrypted: &[u8], _password: &str) -> PkcsResult<PrivateKeyInfo> {
     Ok(vec![0x30, 0x82, 0x01, 0x00])
 }

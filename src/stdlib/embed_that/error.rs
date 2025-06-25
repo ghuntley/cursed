@@ -4,57 +4,38 @@ use crate::error::CursedError;
 #[derive(CursedError, Debug, Clone)]
 pub enum EmbedError {
     #[error("File not found: {file}")]
-    FileNotFound { file: String },
     
     #[error("Invalid file format: {file} - {reason}")]
-    InvalidFormat { file: String, reason: String },
     
     #[error("Compression error: {reason}")]
-    CompressionError { reason: String },
     
     #[error("Decompression error: {reason}")]
-    DecompressionError { reason: String },
     
     #[error("Template parsing error: {reason}")]
-    TemplateParsingError { reason: String },
     
     #[error("Image loading error: {reason}")]
-    ImageLoadingError { reason: String },
     
     #[error("JSON parsing error: {reason}")]
-    JsonParsingError { reason: String },
     
     #[error("YAML parsing error: {reason}")]
-    YamlParsingError { reason: String },
     
     #[error("TOML parsing error: {reason}")]
-    TomlParsingError { reason: String },
     
     #[error("Config parsing error: {reason}")]
-    ConfigParsingError { reason: String },
     
     #[error("Cache error: {reason}")]
-    CacheError { reason: String },
     
     #[error("MIME type detection error: {reason}")]
-    MimeTypeError { reason: String },
     
     #[error("I/O error: {reason}")]
-    IoError { reason: String },
     
     #[error("UTF-8 conversion error: {reason}")]
-    Utf8Error { reason: String },
     
     #[error("Resource limit exceeded: {limit}")]
-    ResourceLimitExceeded { limit: String },
     
     #[error("Invalid pattern: {pattern}")]
-    InvalidPattern { pattern: String },
     
     #[error("General embed error: {message}")]
-    General { message: String },
-}
-
 // impl From<EmbedError> for CursedError {
 //     fn from(err: EmbedError) -> Self {
 //         CursedError::Runtime { 
@@ -78,8 +59,6 @@ impl From<std::string::FromUtf8Error> for EmbedError {
             reason: err.to_string() 
         }
     }
-}
-
 // impl From<serde_json::Error> for EmbedError {
 //     fn from(err: serde_json::Error) -> Self {
 //         EmbedError::JsonParsingError { 
@@ -116,7 +95,6 @@ pub fn file_not_found(file: &str) -> EmbedError {
 
 pub fn invalid_format(file: &str, reason: &str) -> EmbedError {
     EmbedError::InvalidFormat { 
-        file: file.to_string(), 
         reason: reason.to_string() 
     }
 }

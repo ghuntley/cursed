@@ -17,9 +17,8 @@ use std::thread;
 use rusqlite::{Connection, OpenFlags, Statement, Transaction, Savepoint, types::Value as SqliteValue, params};
 use super::{SqliteError, SqliteResult, SqliteConfig};
 use super::super::{
-    DriverConn, DatabaseError, DatabaseErrorKind, SqlValue, TxOptions, 
     DriverStmt, DriverTx, SqlIsolationLevel
-};
+// };
 use crate::error::CursedError;
 use super::super::driver::{QueryResult, ExecuteResult, ConnectionMetadata};
 
@@ -27,70 +26,36 @@ use super::super::driver::{QueryResult, ExecuteResult, ConnectionMetadata};
 #[derive(Debug)]
 pub struct ProductionSqliteConnection {
     /// The underlying rusqlite connection
-    connection: Arc<Mutex<Option<Connection>>>,
     /// Connection configuration
-    config: SqliteConfig,
     /// Unique connection identifier
-    connection_id: String,
     /// When this connection was created
-    connected_at: SystemTime,
     /// Connection statistics
-    stats: Arc<Mutex<ConnectionStats>>,
     /// Prepared statement cache
-    statement_cache: Arc<Mutex<HashMap<String, CachedStatement>>>,
     /// Connection pool if this is part of a pool
-    pool_info: Option<PoolInfo>,
     /// Whether this connection is in a transaction
-    in_transaction: Arc<Mutex<bool>>,
     /// Transaction savepoint stack
-    savepoint_stack: Arc<Mutex<Vec<String>>>,
-}
-
 /// Connection statistics for monitoring
 #[derive(Debug, Clone, Default)]
 pub struct ConnectionStats {
     /// Total queries executed
-    pub queries_executed: u64,
     /// Total statements prepared
-    pub statements_prepared: u64,
     /// Total transactions committed
-    pub transactions_committed: u64,
     /// Total transactions rolled back
-    pub transactions_rolled_back: u64,
     /// Total time spent executing queries
-    pub total_query_time: Duration,
     /// Last activity timestamp
-    pub last_activity: SystemTime,
     /// Connection errors encountered
-    pub error_count: u64,
     /// Cache hits for prepared statements
-    pub cache_hits: u64,
     /// Cache misses for prepared statements
-    pub cache_misses: u64,
-}
-
 /// Cached prepared statement
 #[derive(Debug)]
 struct CachedStatement {
     /// The query string
-    query: String,
     /// When this was cached
-    cached_at: Instant,
     /// How many times it's been used
-    use_count: u64,
     /// Last time it was used
-    last_used: Instant,
-}
-
 /// Information about connection pooling
 #[derive(Debug, Clone)]
 struct PoolInfo {
-    pub pool_id: String,
-    pub connection_index: usize,
-    pub max_idle_time: Duration,
-    pub created_at: SystemTime,
-}
-
 impl ProductionSqliteConnection {
     /// Create new production SQLite connection
     pub fn new(config: SqliteConfig) -> SqliteResult<Self> {
@@ -100,35 +65,18 @@ impl ProductionSqliteConnection {
             .map_err(|e| SqliteError::connection(&format!("Failed to open SQLite database '{}': {}", config.database_path, e)))?;
         
         let conn = Self {
-            connection: Arc::new(Mutex::new(Some(connection))),
-            config: config.clone(),
-            connection_id: uuid::Uuid::new_v4().to_string(),
-            connected_at: SystemTime::now(),
-            stats: Arc::new(Mutex::new(ConnectionStats::default())),
-            statement_cache: Arc::new(Mutex::new(HashMap::new())),
-            pool_info: None,
-            in_transaction: Arc::new(Mutex::new(false)),
-            savepoint_stack: Arc::new(Mutex::new(Vec::new())),
-        };
 
         // Initialize connection with configuration
         conn.initialize_connection()?;
         
         Ok(conn)
-    }
-
     /// Create connection with pool information
     pub fn new_pooled(config: SqliteConfig, pool_id: String, connection_index: usize) -> SqliteResult<Self> {
         let mut conn = Self::new(config)?;
         conn.pool_info = Some(PoolInfo {
-            pool_id,
-            connection_index,
             max_idle_time: Duration::from_secs(300), // 5 minutes default
-            created_at: SystemTime::now(),
         });
         Ok(conn)
-    }
-
     /// Build SQLite open flags from configuration
     fn build_open_flags(config: &SqliteConfig) -> OpenFlags {
         let mut flags = OpenFlags::SQLITE_OPEN_URI;
@@ -137,21 +85,15 @@ impl ProductionSqliteConnection {
             flags |= OpenFlags::SQLITE_OPEN_READ_ONLY;
         } else {
             flags |= OpenFlags::SQLITE_OPEN_READ_WRITE | OpenFlags::SQLITE_OPEN_CREATE;
-        }
-        
         // Thread safety configuration
         if config.enable_shared_cache {
             flags |= OpenFlags::SQLITE_OPEN_SHARED_CACHE;
         } else {
             flags |= OpenFlags::SQLITE_OPEN_PRIVATE_CACHE;
-        }
-        
         // Use full mutex for thread safety
         flags |= OpenFlags::SQLITE_OPEN_FULL_MUTEX;
         
         flags
-    }
-
     /// Initialize connection with PRAGMA statements and configuration
     fn initialize_connection(&self) -> SqliteResult<()> {
         let initialization_sql = self.config.initialization_sql();
@@ -161,30 +103,18 @@ impl ProductionSqliteConnection {
             for statement in initialization_sql {
                 if statement.trim().is_empty() {
                     continue;
-                }
-                
                 conn.execute(&statement, [])
                     .map_err(|e| SqliteError::execution(&format!("Failed to execute initialization SQL '{}': {}", statement, e)))?;
-            }
-            
             // Set additional performance and safety pragmas
             self.set_performance_pragmas(conn)?;
-        }
-
         Ok(())
-    }
-
     /// Set performance and safety PRAGMA statements
     fn set_performance_pragmas(&self, conn: &Connection) -> SqliteResult<()> {
         let pragmas = vec![
             // Enable foreign key constraints
-            "PRAGMA foreign_keys = ON",
             // Optimize for better performance
-            "PRAGMA optimize",
             // Set reasonable timeouts
-            "PRAGMA busy_timeout = 30000",
             // Enable automatic indexing
-            "PRAGMA automatic_index = ON",
             // Set memory limits
             "PRAGMA cache_size = -16384", // 16MB cache
         ];
@@ -192,23 +122,16 @@ impl ProductionSqliteConnection {
         for pragma in pragmas {
             conn.execute(pragma, [])
                 .map_err(|e| SqliteError::execution(&format!("Failed to set pragma '{}': {}", pragma, e)))?;
-        }
-
         Ok(())
-    }
-
     /// Update connection statistics
     fn update_stats<F>(&self, updater: F) -> SqliteResult<()>
     where
-        F: FnOnce(&mut ConnectionStats),
     {
         if let Ok(mut stats) = self.stats.lock() {
             updater(&mut stats);
             stats.last_activity = SystemTime::now();
         }
         Ok(())
-    }
-
     /// Get cached statement or prepare new one
     fn get_or_prepare_statement(&self, query: &str) -> SqliteResult<()> {
         let mut cache = self.statement_cache.lock().unwrap();
@@ -218,27 +141,17 @@ impl ProductionSqliteConnection {
             if let Some(cached) = cache.get_mut(query) {
                 cached.use_count += 1;
                 cached.last_used = Instant::now();
-            }
-            
             self.update_stats(|stats| stats.cache_hits += 1)?;
         } else {
             // Prepare new statement and cache it
             cache.insert(query.to_string(), CachedStatement {
-                query: query.to_string(),
-                cached_at: Instant::now(),
-                use_count: 1,
-                last_used: Instant::now(),
             });
             
             self.update_stats(|stats| {
                 stats.statements_prepared += 1;
                 stats.cache_misses += 1;
             })?;
-        }
-        
         Ok(())
-    }
-
     /// Clean up old cached statements
     fn cleanup_statement_cache(&self) -> SqliteResult<()> {
         let mut cache = self.statement_cache.lock().unwrap();
@@ -250,12 +163,9 @@ impl ProductionSqliteConnection {
         });
         
         Ok(())
-    }
-
     /// Execute query with timing and error handling
     fn execute_with_timing<F, R>(&self, operation: F) -> crate::error::Result<()>
     where
-        F: FnOnce() -> crate::error::Result<()>,
     {
         let start = Instant::now();
         let result = operation();
@@ -276,29 +186,19 @@ impl ProductionSqliteConnection {
         }
         
         result
-    }
-
     /// Get connection statistics
     pub fn get_stats(&self) -> SqliteResult<ConnectionStats> {
         let stats = self.stats.lock().unwrap();
         Ok(stats.clone())
-    }
-
     /// Get connection ID
     pub fn connection_id(&self) -> &str {
         &self.connection_id
-    }
-
     /// Check if connection is pooled
     pub fn is_pooled(&self) -> bool {
         self.pool_info.is_some()
-    }
-
     /// Get pool information
     pub fn pool_info(&self) -> Option<&PoolInfo> {
         self.pool_info.as_ref()
-    }
-
     /// Set busy timeout for the connection
     pub fn set_busy_timeout(&self, timeout: Duration) -> SqliteResult<()> {
         let handle = self.connection.lock().unwrap();
@@ -307,8 +207,6 @@ impl ProductionSqliteConnection {
                 .map_err(|e| SqliteError::execution(&format!("Failed to set busy timeout: {}", e)))?;
         }
         Ok(())
-    }
-
     /// Get database file size
     pub fn get_database_size(&self) -> SqliteResult<u64> {
         let handle = self.connection.lock().unwrap();
@@ -339,8 +237,6 @@ impl ProductionSqliteConnection {
                 .map_err(|e| SqliteError::execution(&format!("Failed to vacuum database: {}", e)))?;
         }
         Ok(())
-    }
-
     /// Analyze the database for optimization
     pub fn analyze(&self) -> SqliteResult<()> {
         let handle = self.connection.lock().unwrap();
@@ -359,15 +255,11 @@ impl DriverConn for ProductionSqliteConnection {
                 .map_err(|e| DatabaseError::new(DatabaseErrorKind::QueryError, &e.to_string()))?;
             
             let stmt = ProductionSqliteStatement::new(
-                self.connection.clone(),
-                query.to_string(),
                 self.stats.clone()
             )?;
             
             Ok(Box::new(stmt) as Box<dyn DriverStmt>)
         })
-    }
-
     fn query(&self, query: &str, args: &[SqlValue]) -> crate::error::Result<()> {
         self.execute_with_timing(|| {
             let handle = self.connection.lock().unwrap();
@@ -399,23 +291,14 @@ impl DriverConn for ProductionSqliteConnection {
                         values.push(value);
                     }
                     result_rows.push(values);
-                }
-                
                 Ok(QueryResult {
-                    column_names,
-                    column_types,
-                    rows: result_rows,
-                    error: None,
                 })
             } else {
                 Err(DatabaseError::new(
-                    DatabaseErrorKind::ConnectionError,
                     "Connection is not available"
                 ))
             }
         })
-    }
-
     fn execute(&self, query: &str, args: &[SqlValue]) -> crate::error::Result<()> {
         self.execute_with_timing(|| {
             let handle = self.connection.lock().unwrap();
@@ -431,18 +314,13 @@ impl DriverConn for ProductionSqliteConnection {
                 let last_insert_id = conn.last_insert_rowid();
                 
                 Ok(ExecuteResult {
-                    rows_affected: changes as i64,
-                    last_insert_id: Some(last_insert_id as i64),
                 })
             } else {
                 Err(DatabaseError::new(
-                    DatabaseErrorKind::ConnectionError,
                     "Connection is not available"
                 ))
             }
         })
-    }
-
     fn begin_transaction(&self, opts: TxOptions) -> crate::error::Result<()> {
         let mut in_tx = self.in_transaction.lock().unwrap();
         if *in_tx {
@@ -452,28 +330,17 @@ impl DriverConn for ProductionSqliteConnection {
             savepoints.push(savepoint_name.clone());
             
             let tx = ProductionSqliteTransaction::new_savepoint(
-                self.connection.clone(),
-                opts,
-                savepoint_name,
-                self.stats.clone(),
                 self.savepoint_stack.clone()
             )?;
             
             return Ok(Box::new(tx));
-        }
-        
         *in_tx = true;
         
         let tx = ProductionSqliteTransaction::new(
-            self.connection.clone(),
-            opts,
-            self.stats.clone(),
             self.in_transaction.clone()
         )?;
         
         Ok(Box::new(tx))
-    }
-
     fn ping(&self) -> crate::error::Result<()> {
         self.execute_with_timing(|| {
             let handle = self.connection.lock().unwrap();
@@ -483,13 +350,10 @@ impl DriverConn for ProductionSqliteConnection {
                 Ok(())
             } else {
                 Err(DatabaseError::new(
-                    DatabaseErrorKind::ConnectionError,
                     "Connection is not available"
                 ))
             }
         })
-    }
-
     fn close(&self) -> crate::error::Result<()> {
         // Clean up cached statements
         let _ = self.cleanup_statement_cache();
@@ -500,12 +364,8 @@ impl DriverConn for ProductionSqliteConnection {
             drop(conn);
         }
         Ok(())
-    }
-
     fn is_alive(&self) -> bool {
         self.ping().is_ok()
-    }
-
     fn metadata(&self) -> ConnectionMetadata {
         let mut additional_info = HashMap::new();
         additional_info.insert("driver_name".to_string(), "ProductionSQLite".to_string());
@@ -525,16 +385,7 @@ impl DriverConn for ProductionSqliteConnection {
                     "0.00%".to_string()
                 }
             });
-        }
-        
         ConnectionMetadata {
-            database_name: self.config.database_path.clone(),
-            server_version: "SQLite 3.x".to_string(),
-            server_host: "localhost".to_string(),
-            server_port: 0,
-            username: "".to_string(),
-            connected_at: self.connected_at,
-            additional_info,
         }
     }
 
@@ -550,38 +401,20 @@ impl DriverConn for ProductionSqliteConnection {
 #[derive(Debug)]
 pub struct ProductionSqliteStatement {
     /// The connection handle
-    connection: Arc<Mutex<Option<Connection>>>,
     /// The SQL query
-    query: String,
     /// Statistics for monitoring
-    stats: Arc<Mutex<ConnectionStats>>,
     /// Statement ID for tracking
-    statement_id: String,
     /// Parameter count (cached)
-    parameter_count: Option<usize>,
-}
-
 impl ProductionSqliteStatement {
     pub fn new(
-        connection: Arc<Mutex<Option<Connection>>>,
-        query: String,
         stats: Arc<Mutex<ConnectionStats>>
     ) -> crate::error::Result<()> {
         Ok(Self {
-            connection,
-            query,
-            stats,
-            statement_id: uuid::Uuid::new_v4().to_string(),
-            parameter_count: None,
         })
-    }
-
     /// Get parameter count by parsing the query
     fn get_parameter_count(&mut self) -> crate::error::Result<()> {
         if let Some(count) = self.parameter_count {
             return Ok(count);
-        }
-
         let handle = self.connection.lock().unwrap();
         if let Some(ref conn) = *handle {
             let stmt = conn.prepare(&self.query)
@@ -592,13 +425,10 @@ impl ProductionSqliteStatement {
             Ok(count)
         } else {
             Err(DatabaseError::new(
-                DatabaseErrorKind::ConnectionError,
                 "Connection is not available"
             ))
         }
     }
-}
-
 impl DriverStmt for ProductionSqliteStatement {
     fn execute(&self, args: &[SqlValue]) -> crate::error::Result<()> {
         let start = Instant::now();
@@ -620,15 +450,10 @@ impl DriverStmt for ProductionSqliteStatement {
                 stats.queries_executed += 1;
                 stats.total_query_time += start.elapsed();
                 stats.last_activity = SystemTime::now();
-            }
-            
             Ok(ExecuteResult {
-                rows_affected: changes as i64,
-                last_insert_id: Some(last_insert_id as i64),
             })
         } else {
             Err(DatabaseError::new(
-                DatabaseErrorKind::ConnectionError,
                 "Connection is not available"
             ))
         }
@@ -664,24 +489,15 @@ impl DriverStmt for ProductionSqliteStatement {
                     values.push(value);
                 }
                 result_rows.push(values);
-            }
-            
             // Update statistics
             if let Ok(mut stats) = self.stats.lock() {
                 stats.queries_executed += 1;
                 stats.total_query_time += start.elapsed();
                 stats.last_activity = SystemTime::now();
-            }
-            
             Ok(QueryResult {
-                column_names,
-                column_types,
-                rows: result_rows,
-                error: None,
             })
         } else {
             Err(DatabaseError::new(
-                DatabaseErrorKind::ConnectionError,
                 "Connection is not available"
             ))
         }
@@ -690,12 +506,8 @@ impl DriverStmt for ProductionSqliteStatement {
     fn close(&self) -> crate::error::Result<()> {
         // Statement cleanup is handled automatically by rusqlite
         Ok(())
-    }
-
     fn query_string(&self) -> &str {
         &self.query
-    }
-
     fn parameter_count(&self) -> usize {
         // Try to get cached parameter count, fall back to 0 if error
         if let Ok(mut stmt) = &mut { self.clone() } {
@@ -707,11 +519,6 @@ impl DriverStmt for ProductionSqliteStatement {
 
     fn clone(&self) -> Box<dyn DriverStmt> {
         Box::new(ProductionSqliteStatement {
-            connection: self.connection.clone(),
-            query: self.query.clone(),
-            stats: self.stats.clone(),
-            statement_id: uuid::Uuid::new_v4().to_string(),
-            parameter_count: self.parameter_count,
         })
     }
 }
@@ -720,31 +527,17 @@ impl DriverStmt for ProductionSqliteStatement {
 #[derive(Debug)]
 pub struct ProductionSqliteTransaction {
     /// The connection handle
-    connection: Arc<Mutex<Option<Connection>>>,
     /// Transaction options
-    options: TxOptions,
     /// Statistics for monitoring
-    stats: Arc<Mutex<ConnectionStats>>,
     /// Whether this is the main transaction or a savepoint
-    is_savepoint: bool,
     /// Savepoint name if this is a savepoint
-    savepoint_name: Option<String>,
     /// Transaction state
-    in_transaction: Option<Arc<Mutex<bool>>>,
     /// Savepoint stack
-    savepoint_stack: Option<Arc<Mutex<Vec<String>>>>,
     /// Transaction ID
-    transaction_id: String,
     /// When transaction started
-    started_at: SystemTime,
-}
-
 impl ProductionSqliteTransaction {
     /// Create new main transaction
     pub fn new(
-        connection: Arc<Mutex<Option<Connection>>>,
-        options: TxOptions,
-        stats: Arc<Mutex<ConnectionStats>>,
         in_transaction: Arc<Mutex<bool>>
     ) -> crate::error::Result<()> {
         // Begin transaction
@@ -752,11 +545,6 @@ impl ProductionSqliteTransaction {
             let handle = connection.lock().unwrap();
             if let Some(ref conn) = *handle {
                 let isolation_sql = match options.isolation {
-                    SqlIsolationLevel::LevelReadUncommitted => "BEGIN IMMEDIATE",
-                    SqlIsolationLevel::LevelReadCommitted => "BEGIN IMMEDIATE",
-                    SqlIsolationLevel::LevelSerializable => "BEGIN EXCLUSIVE",
-                    _ => "BEGIN",
-                };
                 
                 conn.execute(isolation_sql, [])
                     .map_err(|e| DatabaseError::new(DatabaseErrorKind::TransactionError, &format!("Failed to begin transaction: {}", e)))?;
@@ -764,24 +552,9 @@ impl ProductionSqliteTransaction {
         }
         
         Ok(Self {
-            connection,
-            options,
-            stats,
-            is_savepoint: false,
-            savepoint_name: None,
-            in_transaction: Some(in_transaction),
-            savepoint_stack: None,
-            transaction_id: uuid::Uuid::new_v4().to_string(),
-            started_at: SystemTime::now(),
         })
-    }
-
     /// Create new savepoint transaction
     pub fn new_savepoint(
-        connection: Arc<Mutex<Option<Connection>>>,
-        options: TxOptions,
-        savepoint_name: String,
-        stats: Arc<Mutex<ConnectionStats>>,
         savepoint_stack: Arc<Mutex<Vec<String>>>
     ) -> crate::error::Result<()> {
         // Create savepoint
@@ -794,15 +567,6 @@ impl ProductionSqliteTransaction {
         }
         
         Ok(Self {
-            connection,
-            options,
-            stats,
-            is_savepoint: true,
-            savepoint_name: Some(savepoint_name),
-            in_transaction: None,
-            savepoint_stack: Some(savepoint_stack),
-            transaction_id: uuid::Uuid::new_v4().to_string(),
-            started_at: SystemTime::now(),
         })
     }
 }
@@ -840,8 +604,6 @@ impl DriverTx for ProductionSqliteTransaction {
             }
         }
         Ok(())
-    }
-
     fn rollback(&self) -> crate::error::Result<()> {
         let handle = self.connection.lock().unwrap();
         if let Some(ref conn) = *handle {
@@ -874,31 +636,19 @@ impl DriverTx for ProductionSqliteTransaction {
             }
         }
         Ok(())
-    }
-
     fn prepare(&self, query: &str) -> crate::error::Result<()> {
         let stmt = ProductionSqliteStatement::new(
-            self.connection.clone(),
-            query.to_string(),
             self.stats.clone()
         )?;
         Ok(Box::new(stmt))
-    }
-
     fn query(&self, query: &str, args: &[SqlValue]) -> crate::error::Result<()> {
         let stmt = self.prepare(query)?;
         stmt.query(args)
-    }
-
     fn execute(&self, query: &str, args: &[SqlValue]) -> crate::error::Result<()> {
         let stmt = self.prepare(query)?;
         stmt.execute(args)
-    }
-
     fn options(&self) -> &TxOptions {
         &self.options
-    }
-
     fn is_active(&self) -> bool {
         if self.is_savepoint {
             if let Some(ref stack) = self.savepoint_stack {
@@ -912,20 +662,9 @@ impl DriverTx for ProductionSqliteTransaction {
             return *tx_state;
         }
         false
-    }
-
     fn clone(&self) -> Box<dyn DriverTx> {
         // Transactions cannot be truly cloned, return a new one with same options
         Box::new(ProductionSqliteTransaction {
-            connection: self.connection.clone(),
-            options: self.options.clone(),
-            stats: self.stats.clone(),
-            is_savepoint: false,
-            savepoint_name: None,
-            in_transaction: self.in_transaction.clone(),
-            savepoint_stack: None,
-            transaction_id: uuid::Uuid::new_v4().to_string(),
-            started_at: SystemTime::now(),
         })
     }
 }
@@ -936,43 +675,26 @@ fn convert_args_to_rusqlite_params(args: &[SqlValue]) -> crate::error::Result<()
     
     for arg in args {
         match arg {
-            SqlValue::Null => params.push(Box::new(rusqlite::types::Null) as Box<dyn rusqlite::ToSql>),
-            SqlValue::Boolean(b) => params.push(Box::new(*b) as Box<dyn rusqlite::ToSql>),
-            SqlValue::Integer(i) => params.push(Box::new(*i) as Box<dyn rusqlite::ToSql>),
-            SqlValue::Float(f) => params.push(Box::new(*f) as Box<dyn rusqlite::ToSql>),
-            SqlValue::String(s) => params.push(Box::new(s.clone()) as Box<dyn rusqlite::ToSql>),
-            SqlValue::Bytes(b) => params.push(Box::new(b.clone()) as Box<dyn rusqlite::ToSql>),
             SqlValue::Timestamp(ts) => {
                 // Convert SystemTime to ISO string representation
                 let timestamp_str = format!("{:?}", ts);
                 params.push(Box::new(timestamp_str) as Box<dyn rusqlite::ToSql>);
-            },
             SqlValue::Json(j) => {
                 // Convert JSON to string representation
                 let json_str = j.to_string();
                 params.push(Box::new(json_str) as Box<dyn rusqlite::ToSql>);
-            },
             _ => return Err(DatabaseError::new(
-                DatabaseErrorKind::ConversionError,
                 &format!("Unsupported SqlValue type for SQLite: {:?}", arg)
-            )),
         }
     }
     
     Ok(params)
-}
-
 /// Convert rusqlite value to CURSED SqlValue
 fn convert_rusqlite_value_to_sql_value(row: &rusqlite::Row, index: usize) -> crate::error::Result<()> {
     let value: SqliteValue = row.get(index)
         .map_err(|e| DatabaseError::new(DatabaseErrorKind::ConversionError, &format!("Failed to get column {}: {}", index, e)))?;
     
     match value {
-        SqliteValue::Null => Ok(SqlValue::Null),
-        SqliteValue::Integer(i) => Ok(SqlValue::Integer(i)),
-        SqliteValue::Real(f) => Ok(SqlValue::Float(f)),
-        SqliteValue::Text(s) => Ok(SqlValue::String(s)),
-        SqliteValue::Blob(b) => Ok(SqlValue::Bytes(b)),
     }
 }
 

@@ -7,15 +7,9 @@ use std::collections::HashMap;
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum NormalizationForm {
     /// Canonical Decomposition followed by Canonical Composition
-    NFC,
     /// Canonical Decomposition
-    NFD,
     /// Compatibility Decomposition followed by Canonical Composition
-    NFKC,
     /// Compatibility Decomposition
-    NFKD,
-}
-
 /// Constants for normalization forms
 pub const NFC: NormalizationForm = NormalizationForm::NFC;
 pub const NFD: NormalizationForm = NormalizationForm::NFD;
@@ -25,13 +19,9 @@ pub const NFKD: NormalizationForm = NormalizationForm::NFKD;
 /// Convert a string to uppercase
 pub fn to_upper_string(s: &str) -> String {
     s.chars().map(to_upper).collect()
-}
-
 /// Convert a string to lowercase
 pub fn to_lower_string(s: &str) -> String {
     s.chars().map(to_lower).collect()
-}
-
 /// Convert a string to titlecase
 pub fn to_title_string(s: &str) -> String {
     let mut result = String::new();
@@ -50,8 +40,6 @@ pub fn to_title_string(s: &str) -> String {
     }
     
     result
-}
-
 /// Normalize a string using the specified normalization form
 pub fn normalize_string(s: &str, form: NormalizationForm) -> GlyphGangResult<String> {
     // For now, this is a simplified implementation
@@ -78,13 +66,9 @@ pub fn normalize_string(s: &str, form: NormalizationForm) -> GlyphGangResult<Str
             Ok(s.to_string())
         }
     }
-}
-
 /// Count the number of Unicode code points (runes) in a string
 pub fn rune_count(s: &str) -> usize {
     s.chars().count()
-}
-
 /// Get the first rune and its byte size from a string
 pub fn first_rune(s: &str) -> (char, usize) {
     if let Some(ch) = s.chars().next() {
@@ -106,18 +90,12 @@ pub fn last_rune(s: &str) -> (char, usize) {
 /// Get the rune at the specified index (by rune position, not byte position)
 pub fn rune_at(s: &str, index: usize) -> char {
     s.chars().nth(index).unwrap_or('\0')
-}
-
 /// Get the byte indices of all runes in a string
 pub fn rune_indices(s: &str) -> Vec<usize> {
     s.char_indices().map(|(i, _)| i).collect()
-}
-
 /// Get the display width of a string (accounting for double-width characters)
 pub fn string_width(s: &str) -> usize {
     s.chars().map(get_char_width).sum()
-}
-
 /// Get the display width of a single character
 pub fn get_char_width(ch: char) -> usize {
     let code_point = ch as u32;
@@ -128,22 +106,14 @@ pub fn get_char_width(ch: char) -> usize {
             return 0; // Control characters have no visible width
         }
         return 1;
-    }
-    
     // Zero-width characters
     if is_zero_width(ch) {
         return 0;
-    }
-    
     // Double-width characters (East Asian)
     if is_double_width(ch) {
         return 2;
-    }
-    
     // Default to width 1
     1
-}
-
 /// Check if a character has zero display width
 fn is_zero_width(ch: char) -> bool {
     let code_point = ch as u32;
@@ -151,16 +121,12 @@ fn is_zero_width(ch: char) -> bool {
     // Combining marks
     if (0x0300..=0x036F).contains(&code_point) {
         return true;
-    }
-    
     // Zero-width characters
     match code_point {
         0x200B | // Zero Width Space
         0x200C | // Zero Width Non-Joiner
         0x200D | // Zero Width Joiner
         0xFEFF   // Zero Width No-Break Space
-        => true,
-        _ => false,
     }
 }
 
@@ -197,16 +163,10 @@ fn is_double_width(ch: char) -> bool {
        (0x30000..=0x3FFFD).contains(&code_point)    // CJK Extensions
     {
         return true;
-    }
-    
     false
-}
-
 /// Get the total display width of a string
 pub fn get_string_width(s: &str) -> usize {
     string_width(s)
-}
-
 /// Truncate a string to a maximum display width
 pub fn truncate_string(s: &str, max_width: usize) -> String {
     let mut result = String::new();
@@ -219,37 +179,23 @@ pub fn truncate_string(s: &str, max_width: usize) -> String {
         }
         result.push(ch);
         current_width += char_width;
-    }
-    
     result
-}
-
 /// Truncate a string with ellipsis to fit within the specified width
 pub fn truncate_with_ellipsis(s: &str, max_width: usize) -> String {
     if max_width == 0 {
         return String::new();
-    }
-    
     if string_width(s) <= max_width {
         return s.to_string();
-    }
-    
     if max_width < 3 {
         // Not enough space for ellipsis
         return truncate_string(s, max_width);
-    }
-    
     // Reserve space for ellipsis (3 characters)
     let truncated = truncate_string(s, max_width - 3);
     format!("{}...", truncated)
-}
-
 /// Wrap text to fit within the specified width
 pub fn wrap_text(s: &str, width: usize) -> Vec<String> {
     if width == 0 {
         return vec![String::new()];
-    }
-    
     let mut lines = Vec::new();
     let mut current_line = String::new();
     let mut current_width = 0;
@@ -264,8 +210,6 @@ pub fn wrap_text(s: &str, width: usize) -> Vec<String> {
                 lines.push(current_line);
                 current_line = String::new();
                 current_width = 0;
-            }
-            
             // If the word itself is too long, we might need to break it
             if word_width > width {
                 // For now, just add it as-is (word breaking is complex)
@@ -288,22 +232,14 @@ pub fn wrap_text(s: &str, width: usize) -> Vec<String> {
     // Add the last line if it's not empty
     if !current_line.is_empty() {
         lines.push(current_line);
-    }
-    
     if lines.is_empty() {
         lines.push(String::new());
-    }
-    
     lines
-}
-
 /// Reverse a string while preserving Unicode grapheme clusters
 pub fn reverse_string(s: &str) -> String {
     // For now, just reverse by characters
     // In a production implementation, this would use proper grapheme cluster segmentation
     s.chars().rev().collect()
-}
-
 /// Find word boundaries in a string (simplified implementation)
 pub fn word_boundaries(s: &str) -> Vec<usize> {
     let mut boundaries = vec![0];
@@ -316,18 +252,10 @@ pub fn word_boundaries(s: &str) -> Vec<usize> {
         if in_word != is_word_char {
             boundaries.push(byte_pos);
             in_word = is_word_char;
-        }
-        
         byte_pos += ch.len_utf8();
-    }
-    
     if boundaries.last() != Some(&s.len()) {
         boundaries.push(s.len());
-    }
-    
     boundaries
-}
-
 /// Find sentence boundaries in a string (simplified implementation)
 pub fn sentence_boundaries(s: &str) -> Vec<usize> {
     let mut boundaries = vec![0];
@@ -337,19 +265,11 @@ pub fn sentence_boundaries(s: &str) -> Vec<usize> {
     for ch in s.chars() {
         if matches!(last_char, '.' | '!' | '?') && ch.is_whitespace() {
             boundaries.push(byte_pos);
-        }
-        
         last_char = ch;
         byte_pos += ch.len_utf8();
-    }
-    
     if boundaries.last() != Some(&s.len()) {
         boundaries.push(s.len());
-    }
-    
     boundaries
-}
-
 /// Find line break opportunities in a string (simplified implementation)
 pub fn line_break_opportunities(s: &str) -> Vec<usize> {
     let mut opportunities = vec![0];
@@ -358,23 +278,13 @@ pub fn line_break_opportunities(s: &str) -> Vec<usize> {
     for ch in s.chars() {
         if ch.is_whitespace() || ch == '-' {
             opportunities.push(byte_pos + ch.len_utf8());
-        }
-        
         byte_pos += ch.len_utf8();
-    }
-    
     if opportunities.last() != Some(&s.len()) {
         opportunities.push(s.len());
-    }
-    
     opportunities
-}
-
 /// Case-insensitive string folding for comparison
 pub fn fold_string(s: &str) -> String {
     s.chars().map(simple_fold).collect()
-}
-
 /// Case-insensitive string equality comparison
 pub fn equal_fold(s1: &str, s2: &str) -> bool {
     if s1.len() != s2.len() {
@@ -384,8 +294,6 @@ pub fn equal_fold(s1: &str, s2: &str) -> bool {
         
         if chars1.len() != chars2.len() {
             return false;
-        }
-        
         for (c1, c2) in chars1.iter().zip(chars2.iter()) {
             if simple_fold(*c1) != simple_fold(*c2) {
                 return false;

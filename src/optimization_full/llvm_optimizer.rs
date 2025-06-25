@@ -12,37 +12,12 @@ use tracing::{info, debug, warn, error, instrument};
 /// LLVM optimizer with pass management and optimization coordination
 #[derive(Debug)]
 pub struct LlvmOptimizer {
-    config: OptimizationConfig,
-    pass_manager: LlvmPassManager,
-    optimization_cache: HashMap<String, OptimizationResult>,
-    statistics: OptimizerStatistics,
-}
-
 /// Result of an optimization operation
 #[derive(Debug, Clone)]
 pub struct OptimizationResult {
-    pub unit_name: String,
-    pub optimization_level: OptimizationLevel,
-    pub before_size_bytes: usize,
-    pub after_size_bytes: usize,
-    pub optimization_time_ms: u64,
-    pub passes_applied: Vec<String>,
-    pub warnings: Vec<String>,
-    pub errors: Vec<String>,
-}
-
 /// Statistics tracking for the optimizer
 #[derive(Debug, Default)]
 pub struct OptimizerStatistics {
-    pub total_units_optimized: usize,
-    pub total_optimization_time_ms: u64,
-    pub total_size_reduction_bytes: i64,
-    pub cache_hits: usize,
-    pub cache_misses: usize,
-    pub optimization_failures: usize,
-    pub average_optimization_time_ms: f64,
-}
-
 impl LlvmOptimizer {
     /// Create a new LLVM optimizer with the given configuration
     #[instrument]
@@ -57,13 +32,7 @@ impl LlvmOptimizer {
         let pass_manager = LlvmPassManager::new(&config)?;
 
         Ok(Self {
-            config,
-            pass_manager,
-            optimization_cache: HashMap::new(),
-            statistics: OptimizerStatistics::default(),
         })
-    }
-
     /// Optimize a compilation unit
     #[instrument(skip(self, unit))]
     pub fn optimize_unit(&mut self, unit: &mut CompilationUnit) -> Result<OptimizationResult> {
@@ -79,22 +48,18 @@ impl LlvmOptimizer {
                 return Ok(cached_result);
             }
             self.statistics.cache_misses += 1;
-        }
-
         let before_size = unit.estimated_size_bytes;
         let mut warnings = Vec::new();
         let mut errors = Vec::new();
 
         // Apply optimization passes
         let passes_applied = match self.apply_optimization_passes(unit) {
-            Ok(passes) => passes,
             Err(e) => {
                 error!("Optimization failed for unit {}: {}", unit.name, e);
                 self.statistics.optimization_failures += 1;
                 errors.push(e.to_string());
                 Vec::new()
             }
-        };
 
         // Apply target-specific optimizations if enabled
         if self.config.enable_target_specific {
@@ -108,15 +73,6 @@ impl LlvmOptimizer {
         let optimization_time = start_time.elapsed();
 
         let result = OptimizationResult {
-            unit_name: unit.name.clone(),
-            optimization_level: self.config.optimization_level.clone(),
-            before_size_bytes: before_size,
-            after_size_bytes: after_size,
-            optimization_time_ms: optimization_time.as_millis() as u64,
-            passes_applied,
-            warnings,
-            errors,
-        };
 
         // Update statistics
         self.update_statistics(&result);
@@ -124,19 +80,11 @@ impl LlvmOptimizer {
         // Cache the result if caching is enabled
         if self.config.enable_caching {
             self.cache_result(result.clone());
-        }
-
         info!(
-            "Optimization completed for {}: {} -> {} bytes in {}ms",
-            unit.name,
-            before_size,
-            after_size,
             optimization_time.as_millis()
         );
 
         Ok(result)
-    }
-
     /// Apply optimization passes based on configuration
     #[instrument(skip(self, unit))]
     fn apply_optimization_passes(&mut self, unit: &mut CompilationUnit) -> Result<Vec<String>> {
@@ -178,8 +126,6 @@ impl LlvmOptimizer {
         }
 
         Ok(applied_passes)
-    }
-
     /// Apply basic optimization passes (O1 level)
     fn apply_basic_passes(&mut self, unit: &mut CompilationUnit) -> Result<Vec<String>> {
         let mut passes = Vec::new();
@@ -187,8 +133,6 @@ impl LlvmOptimizer {
         if self.config.enable_dce {
             self.pass_manager.apply_dead_code_elimination(unit)?;
             passes.push("dead-code-elimination".to_string());
-        }
-
         // Basic constant folding and propagation
         self.pass_manager.apply_constant_folding(unit)?;
         passes.push("constant-folding".to_string());
@@ -198,8 +142,6 @@ impl LlvmOptimizer {
         passes.push("block-merging".to_string());
 
         Ok(passes)
-    }
-
     /// Apply standard optimization passes (O2 level)
     fn apply_standard_passes(&mut self, unit: &mut CompilationUnit) -> Result<Vec<String>> {
         let mut passes = Vec::new();
@@ -207,18 +149,12 @@ impl LlvmOptimizer {
         if self.config.enable_inlining {
             self.pass_manager.apply_function_inlining(unit)?;
             passes.push("function-inlining".to_string());
-        }
-
         if self.config.enable_loop_optimizations {
             self.pass_manager.apply_loop_optimizations(unit)?;
             passes.push("loop-optimizations".to_string());
-        }
-
         if self.config.enable_vectorization {
             self.pass_manager.apply_vectorization(unit)?;
             passes.push("vectorization".to_string());
-        }
-
         // Global value numbering
         self.pass_manager.apply_global_value_numbering(unit)?;
         passes.push("global-value-numbering".to_string());
@@ -228,8 +164,6 @@ impl LlvmOptimizer {
         passes.push("instruction-combining".to_string());
 
         Ok(passes)
-    }
-
     /// Apply aggressive optimization passes (O3 level)
     fn apply_aggressive_passes(&mut self, unit: &mut CompilationUnit) -> Result<Vec<String>> {
         let mut passes = Vec::new();
@@ -251,8 +185,6 @@ impl LlvmOptimizer {
         passes.push("interprocedural-optimizations".to_string());
 
         Ok(passes)
-    }
-
     /// Apply size-focused optimization passes
     fn apply_size_passes(&mut self, unit: &mut CompilationUnit) -> Result<Vec<String>> {
         let mut passes = Vec::new();
@@ -261,8 +193,6 @@ impl LlvmOptimizer {
         if self.config.enable_dce {
             self.pass_manager.apply_dead_code_elimination(unit)?;
             passes.push("dead-code-elimination".to_string());
-        }
-
         // Conservative inlining for size
         self.pass_manager.apply_size_optimized_inlining(unit)?;
         passes.push("size-optimized-inlining".to_string());
@@ -272,8 +202,6 @@ impl LlvmOptimizer {
         passes.push("code-deduplication".to_string());
 
         Ok(passes)
-    }
-
     /// Apply fast optimization passes (Ofast level)
     fn apply_fast_passes(&mut self, unit: &mut CompilationUnit) -> Result<Vec<String>> {
         let mut passes = self.apply_standard_passes(unit)?;
@@ -287,8 +215,6 @@ impl LlvmOptimizer {
         passes.push("unsafe-optimizations".to_string());
 
         Ok(passes)
-    }
-
     /// Apply target-specific optimizations
     fn apply_target_optimizations(&mut self, unit: &mut CompilationUnit) -> Result<()> {
         // Apply CPU-specific optimizations
@@ -298,18 +224,12 @@ impl LlvmOptimizer {
         self.pass_manager.apply_architecture_optimizations(unit)?;
         
         Ok(())
-    }
-
     /// Check optimization cache for existing result
     fn check_cache(&self, unit_name: &str) -> Option<OptimizationResult> {
         self.optimization_cache.get(unit_name).cloned()
-    }
-
     /// Cache an optimization result
     fn cache_result(&mut self, result: OptimizationResult) {
         self.optimization_cache.insert(result.unit_name.clone(), result);
-    }
-
     /// Update optimizer statistics
     fn update_statistics(&mut self, result: &OptimizationResult) {
         self.statistics.total_units_optimized += 1;
@@ -321,19 +241,13 @@ impl LlvmOptimizer {
         self.statistics.average_optimization_time_ms = 
             self.statistics.total_optimization_time_ms as f64 / 
             self.statistics.total_units_optimized as f64;
-    }
-
     /// Get optimizer statistics
     pub fn get_statistics(&self) -> &OptimizerStatistics {
         &self.statistics
-    }
-
     /// Clear optimization cache
     pub fn clear_cache(&mut self) {
         info!("Clearing optimization cache");
         self.optimization_cache.clear();
-    }
-
     /// Update optimizer configuration
     #[instrument(skip(self))]
     pub fn update_config(&mut self, new_config: OptimizationConfig) -> Result<()> {

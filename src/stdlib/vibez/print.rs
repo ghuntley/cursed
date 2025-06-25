@@ -20,16 +20,12 @@ pub fn print(args: &[Value]) -> io::Result<()> {
         write!(output, "{}", format_value(arg))?;
     }
     output.flush()
-}
-
 /// Print arguments to stdout with a newline
 /// Example: println("Hello World", 42)
 pub fn println(args: &[Value]) -> io::Result<()> {
     print(args)?;
     println!();
     Ok(())
-}
-
 /// Print arguments to stderr without a newline
 /// Example: eprint("CursedError:", error_msg)
 pub fn eprint(args: &[Value]) -> io::Result<()> {
@@ -41,16 +37,12 @@ pub fn eprint(args: &[Value]) -> io::Result<()> {
         write!(output, "{}", format_value(arg))?;
     }
     output.flush()
-}
-
 /// Print arguments to stderr with a newline
 /// Example: eprintln("Fatal error occurred")
 pub fn eprintln(args: &[Value]) -> io::Result<()> {
     eprint(args)?;
     eprintln!();
     Ok(())
-}
-
 /// Print to a specific writer
 /// Example: print_to(&mut buffer, &[Value::String("test".to_string())])
 pub fn print_to<W: Write>(writer: &mut W, args: &[Value]) -> io::Result<()> {
@@ -61,57 +53,22 @@ pub fn print_to<W: Write>(writer: &mut W, args: &[Value]) -> io::Result<()> {
         write!(writer, "{}", format_value(arg))?;
     }
     writer.flush()
-}
-
 /// Print to a specific writer with newline
 /// Example: println_to(&mut buffer, &[Value::Int(42)])
 pub fn println_to<W: Write>(writer: &mut W, args: &[Value]) -> io::Result<()> {
     print_to(writer, args)?;
     writeln!(writer)?;
     Ok(())
-}
-
 /// Print styling options
 #[derive(Debug, Clone)]
 pub enum PrintStyle {
-    Normal,
-    Bold,
-    Italic,
-    Underline,
-    Strikethrough,
-}
-
 /// Print color options
 #[derive(Debug, Clone)]
 pub enum PrintColor {
-    Default,
-    Black,
-    Red,
-    Green,
-    Yellow,
-    Blue,
-    Magenta,
-    Cyan,
-    White,
-    BrightRed,
-    BrightGreen,
-    BrightYellow,
-    BrightBlue,
-    BrightMagenta,
-    BrightCyan,
-    BrightWhite,
-}
-
 /// Print with styling
 /// Example: print_styled(&[Value::String("Important".to_string())], PrintStyle::Bold)
 pub fn print_styled(args: &[Value], style: PrintStyle) -> io::Result<()> {
     let style_code = match style {
-        PrintStyle::Normal => "",
-        PrintStyle::Bold => "\x1b[1m",
-        PrintStyle::Italic => "\x1b[3m",
-        PrintStyle::Underline => "\x1b[4m",
-        PrintStyle::Strikethrough => "\x1b[9m",
-    };
     
     let reset_code = if matches!(style, PrintStyle::Normal) { "" } else { "\x1b[0m" };
     
@@ -120,37 +77,16 @@ pub fn print_styled(args: &[Value], style: PrintStyle) -> io::Result<()> {
     print!("{}", reset_code);
     
     Ok(())
-}
-
 /// Print with styling and newline
 /// Example: println_styled(&[Value::String("Success!".to_string())], PrintStyle::Bold)
 pub fn println_styled(args: &[Value], style: PrintStyle) -> io::Result<()> {
     print_styled(args, style)?;
     println!();
     Ok(())
-}
-
 /// Print with color
 /// Example: print_colored(&[Value::String("CursedError".to_string())], PrintColor::Red)
 pub fn print_colored(args: &[Value], color: PrintColor) -> io::Result<()> {
     let color_code = match color {
-        PrintColor::Default => "",
-        PrintColor::Black => "\x1b[30m",
-        PrintColor::Red => "\x1b[31m",
-        PrintColor::Green => "\x1b[32m",
-        PrintColor::Yellow => "\x1b[33m",
-        PrintColor::Blue => "\x1b[34m",
-        PrintColor::Magenta => "\x1b[35m",
-        PrintColor::Cyan => "\x1b[36m",
-        PrintColor::White => "\x1b[37m",
-        PrintColor::BrightRed => "\x1b[91m",
-        PrintColor::BrightGreen => "\x1b[92m",
-        PrintColor::BrightYellow => "\x1b[93m",
-        PrintColor::BrightBlue => "\x1b[94m",
-        PrintColor::BrightMagenta => "\x1b[95m",
-        PrintColor::BrightCyan => "\x1b[96m",
-        PrintColor::BrightWhite => "\x1b[97m",
-    };
     
     let reset_code = if matches!(color, PrintColor::Default) { "" } else { "\x1b[0m" };
     
@@ -159,16 +95,12 @@ pub fn print_colored(args: &[Value], color: PrintColor) -> io::Result<()> {
     print!("{}", reset_code);
     
     Ok(())
-}
-
 /// Print with color and newline
 /// Example: println_colored(&[Value::String("Success!".to_string())], PrintColor::Green)
 pub fn println_colored(args: &[Value], color: PrintColor) -> io::Result<()> {
     print_colored(args, color)?;
     println!();
     Ok(())
-}
-
 // ================================
 // SPILL FUNCTIONS (GEN Z OUTPUT/INPUT VIBES)
 // ================================
@@ -185,8 +117,6 @@ pub fn spill(args: &[Value]) -> io::Result<()> {
     if args.is_empty() {
         println!();
         return Ok(());
-    }
-    
     let mut output = stdout();
     for (i, arg) in args.iter().enumerate() {
         if i > 0 {
@@ -196,8 +126,6 @@ pub fn spill(args: &[Value]) -> io::Result<()> {
     }
     writeln!(output)?;
     output.flush()
-}
-
 /// Spill with format string (formatted spill vibes)
 /// Equivalent to Go's `fmt.Printf` but with Gen Z naming
 /// 
@@ -210,8 +138,6 @@ pub fn spillf(format: &str, args: &[Value]) -> io::Result<()> {
     let formatted = format_with_args(format, args)?;
     print!("{}", formatted);
     stdout().flush()
-}
-
 /// Spill and return formatted string (string spill vibes)
 /// Equivalent to Go's `fmt.Sprintf` with Gen Z naming
 /// 
@@ -222,8 +148,6 @@ pub fn spillf(format: &str, args: &[Value]) -> io::Result<()> {
 /// ```
 pub fn spillstr(format: &str, args: &[Value]) -> io::Result<String> {
     format_with_args(format, args)
-}
-
 /// Scan input into args (input scan vibes)
 /// Equivalent to Go's `fmt.Scan` with Gen Z naming
 /// 
@@ -241,8 +165,6 @@ pub fn scan(args: &mut [&mut Value]) -> io::Result<usize> {
     for (i, arg) in args.iter_mut().enumerate() {
         if i >= parts.len() {
             break;
-        }
-        
         if let Ok(parsed) = parse_value_from_str(parts[i], arg) {
             **arg = parsed;
             scanned += 1;
@@ -252,8 +174,6 @@ pub fn scan(args: &mut [&mut Value]) -> io::Result<usize> {
     }
     
     Ok(scanned)
-}
-
 /// Scan line into args (line scan vibes)
 /// Equivalent to Go's `fmt.Scanln` with Gen Z naming
 /// 
@@ -267,14 +187,10 @@ pub fn scanln(args: &mut [&mut Value]) -> io::Result<usize> {
     
     if args.is_empty() {
         return Ok(0);
-    }
-    
     // For scanln, if there's only one arg, give it the whole line
     if args.len() == 1 {
         *args[0] = Value::String(input);
         return Ok(1);
-    }
-    
     // Otherwise, split by whitespace like scan
     let parts: Vec<&str> = input.split_whitespace().collect();
     let mut scanned = 0;
@@ -282,8 +198,6 @@ pub fn scanln(args: &mut [&mut Value]) -> io::Result<usize> {
     for (i, arg) in args.iter_mut().enumerate() {
         if i >= parts.len() {
             break;
-        }
-        
         if let Ok(parsed) = parse_value_from_str(parts[i], arg) {
             **arg = parsed;
             scanned += 1;
@@ -293,8 +207,6 @@ pub fn scanln(args: &mut [&mut Value]) -> io::Result<usize> {
     }
     
     Ok(scanned)
-}
-
 // ================================
 // HELPER FUNCTIONS FOR SPILL OPERATIONS
 // ================================
@@ -313,8 +225,6 @@ fn format_with_args(format: &str, args: &[Value]) -> io::Result<String> {
                     chars.next();
                     result.push('%');
                     continue;
-                }
-                
                 // Parse format specifier
                 let mut spec = String::new();
                 spec.push('%');
@@ -348,8 +258,6 @@ fn format_with_args(format: &str, args: &[Value]) -> io::Result<String> {
     }
     
     Ok(result)
-}
-
 /// Format a single argument with a format specifier
 fn format_arg_with_spec(spec: &str, arg: &Value) -> io::Result<String> {
     let last_char = spec.chars().last().unwrap_or('s');
@@ -357,14 +265,9 @@ fn format_arg_with_spec(spec: &str, arg: &Value) -> io::Result<String> {
     match last_char {
         'd' | 'i' => {
             match arg {
-                Value::Int(i) => Ok(i.to_string()),
-                Value::Float(f) => Ok((*f as i64).to_string()),
                 Value::String(s) => s.parse::<i64>()
                     .map(|i| i.to_string())
-                    .map_err(|_| std::io::Error::new(io::ErrorKind::InvalidInput, "Invalid integer")),
-                _ => Ok("0".to_string()),
             }
-        },
         'f' | 'F' => {
             match arg {
                 Value::Float(f) => {
@@ -378,42 +281,22 @@ fn format_arg_with_spec(spec: &str, arg: &Value) -> io::Result<String> {
                         }
                     }
                     Ok(format!("{}", f))
-                },
-                Value::Int(i) => Ok(format!("{:.6}", *i as f64)),
                 Value::String(s) => s.parse::<f64>()
                     .map(|f| format!("{}", f))
-                    .map_err(|_| std::io::Error::new(io::ErrorKind::InvalidInput, "Invalid float")),
-                _ => Ok("0.000000".to_string()),
             }
-        },
-        's' => Ok(format_value(arg)),
         'c' => {
             match arg {
-                Value::Int(i) => Ok(char::from_u32(*i as u32).unwrap_or('?').to_string()),
-                Value::String(s) => Ok(s.chars().next().unwrap_or('?').to_string()),
-                _ => Ok("?".to_string()),
             }
-        },
         'x' => {
             match arg {
-                Value::Int(i) => Ok(format!("{:x}", i)),
-                _ => Ok("0".to_string()),
             }
-        },
         'X' => {
             match arg {
-                Value::Int(i) => Ok(format!("{:X}", i)),
-                _ => Ok("0".to_string()),
             }
-        },
         'o' => {
             match arg {
-                Value::Int(i) => Ok(format!("{:o}", i)),
-                _ => Ok("0".to_string()),
             }
-        },
         'v' => Ok(format_value(arg)), // Default format
-        _ => Ok(format_value(arg)),
     }
 }
 
@@ -431,60 +314,36 @@ fn read_line_input() -> io::Result<String> {
     }
     
     Ok(line)
-}
-
 /// Parse a string value into the appropriate CURSED Value type
 fn parse_value_from_str(s: &str, target_type: &Value) -> crate::error::Result<()> {
     match target_type {
-        Value::String(_) => Ok(Value::String(s.to_string())),
         Value::Int(_) => {
             s.parse::<i64>()
                 .map(Value::Int)
                 .map_err(|_| std::io::Error::new(io::ErrorKind::InvalidInput, "Invalid integer"))
-        },
         Value::Float(_) => {
             s.parse::<f64>()
                 .map(Value::Float)
                 .map_err(|_| std::io::Error::new(io::ErrorKind::InvalidInput, "Invalid float"))
-        },
         Value::Bool(_) => {
             match s.to_lowercase().as_str() {
-                "true" | "t" | "1" | "yes" | "y" => Ok(Value::Bool(true)),
-                "false" | "f" | "0" | "no" | "n" => Ok(Value::Bool(false)),
-                _ => Err(std::io::Error::new(io::ErrorKind::InvalidInput, "Invalid boolean")),
             }
-        },
         _ => {
             // Default to string for complex types
             Ok(Value::String(s.to_string()))
         }
     }
-}
-
 /// Format a CURSED Value for printing
 fn format_value(value: &Value) -> String {
     match value {
-        Value::Nil => "nil".to_string(),
-        Value::Bool(b) => b.to_string(),
-        Value::Int(i) => i.to_string(),
-        Value::Float(f) => f.to_string(),
-        Value::String(s) => s.clone(),
         Value::Array(arr) => {
             let items: Vec<String> = arr.iter().map(format_value).collect();
             format!("[{}]", items.join(", "))
-        },
         Value::Object(obj) => {
             let items: Vec<String> = obj.iter()
                 .map(|(k, v)| format!("{}: {}", k, format_value(v)))
                 .collect();
             format!("{{{}}}", items.join(", "))
-        },
-        Value::Function(_) => "<function>".to_string(),
-        Value::NativeFunction(_) => "<native_function>".to_string(),
-        Value::Channel(_) => "<channel>".to_string(),
-        Value::Interface(_) => "<interface>".to_string(),
-        Value::CursedError(e) => format!("CursedError: {}", e),
-        Value::Bytes(b) => format!("<bytes[{}]>", b.len()),
     }
 }
 

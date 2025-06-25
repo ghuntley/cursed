@@ -16,105 +16,31 @@ use crate::error::{CursedError, Result};
 /// Represents a compilation unit with its dependencies
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct CompilationUnit {
-    pub id: String,
-    pub path: PathBuf,
-    pub dependencies: Vec<String>,
-    pub dependents: Vec<String>,
-    pub last_modified: u64,
-    pub compilation_time: Duration,
-    pub complexity_score: u32,
-    pub is_dirty: bool,
-    pub cache_key: String,
-}
-
 /// Dependency graph for smart compilation ordering
 #[derive(Debug, Clone)]
 pub struct DependencyGraph {
-    pub nodes: HashMap<String, CompilationUnit>,
-    pub edges: HashMap<String, Vec<String>>,
-    pub reverse_edges: HashMap<String, Vec<String>>,
-    pub changed_files: HashSet<String>,
-    pub compilation_layers: Vec<Vec<String>>,
-}
-
 /// Configuration for dependency optimization
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct DependencyOptimizerConfig {
-    pub max_parallel_jobs: usize,
-    pub enable_partial_rebuilds: bool,
-    pub enable_smart_ordering: bool,
-    pub enable_dependency_pruning: bool,
-    pub complexity_threshold: u32,
-    pub cache_dependency_graph: bool,
-    pub incremental_analysis: bool,
-    pub max_graph_depth: usize,
-}
-
 impl Default for DependencyOptimizerConfig {
     fn default() -> Self {
         Self {
-            max_parallel_jobs: num_cpus::get(),
-            enable_partial_rebuilds: true,
-            enable_smart_ordering: true,
-            enable_dependency_pruning: true,
-            complexity_threshold: 1000,
-            cache_dependency_graph: true,
-            incremental_analysis: true,
-            max_graph_depth: 100,
         }
     }
-}
-
 /// Smart dependency analyzer and optimizer
 pub struct DependencyOptimizer {
-    config: DependencyOptimizerConfig,
-    dependency_graph: Arc<RwLock<DependencyGraph>>,
-    compilation_history: Arc<Mutex<HashMap<String, Vec<Duration>>>>,
-    parallel_executor: Arc<Mutex<ParallelExecutor>>,
-    cache: Arc<RwLock<DependencyCache>>,
-}
-
 /// Parallel execution coordinator
 #[derive(Debug)]
 pub struct ParallelExecutor {
-    active_jobs: HashMap<String, Instant>,
-    completed_jobs: HashSet<String>,
-    failed_jobs: HashMap<String, String>,
-    job_queue: VecDeque<String>,
-    max_concurrent: usize,
-}
-
 /// Cache for dependency analysis results
 #[derive(Debug, Clone)]
 pub struct DependencyCache {
-    graph_cache: HashMap<String, DependencyGraph>,
-    analysis_cache: HashMap<String, AnalysisResult>,
-    timestamp_cache: HashMap<String, u64>,
-    invalidation_keys: HashSet<String>,
-}
-
 /// Result of dependency analysis
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct AnalysisResult {
-    pub compilation_order: Vec<Vec<String>>,
-    pub affected_units: HashSet<String>,
-    pub estimated_time: Duration,
-    pub parallelism_factor: f64,
-    pub cache_hits: usize,
-    pub optimization_suggestions: Vec<String>,
-}
-
 /// Build optimization statistics
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct OptimizationStats {
-    pub total_units: usize,
-    pub rebuilt_units: usize,
-    pub cached_units: usize,
-    pub parallel_efficiency: f64,
-    pub time_saved: Duration,
-    pub cache_hit_rate: f64,
-}
-
 impl DependencyOptimizer {
     /// Create a new dependency optimizer with configuration
     #[instrument]
@@ -123,27 +49,8 @@ impl DependencyOptimizer {
         
         Self {
             parallel_executor: Arc::new(Mutex::new(ParallelExecutor {
-                active_jobs: HashMap::new(),
-                completed_jobs: HashSet::new(),
-                failed_jobs: HashMap::new(),
-                job_queue: VecDeque::new(),
-                max_concurrent: config.max_parallel_jobs,
-            })),
             dependency_graph: Arc::new(RwLock::new(DependencyGraph {
-                nodes: HashMap::new(),
-                edges: HashMap::new(),
-                reverse_edges: HashMap::new(),
-                changed_files: HashSet::new(),
-                compilation_layers: Vec::new(),
-            })),
-            compilation_history: Arc::new(Mutex::new(HashMap::new())),
             cache: Arc::new(RwLock::new(DependencyCache {
-                graph_cache: HashMap::new(),
-                analysis_cache: HashMap::new(),
-                timestamp_cache: HashMap::new(),
-                invalidation_keys: HashSet::new(),
-            })),
-            config,
         }
     }
 
@@ -175,39 +82,20 @@ impl DependencyOptimizer {
         let suggestions = self.generate_optimization_suggestions(&graph)?;
         
         let result = AnalysisResult {
-            compilation_order: optimized_order,
-            affected_units,
-            estimated_time,
-            parallelism_factor,
             cache_hits: 0, // Will be updated during actual compilation
-            optimization_suggestions: suggestions,
-        };
         
         // Cache the result
         if self.config.cache_dependency_graph {
             self.cache_analysis_result(&result)?;
-        }
-        
         info!(
-            analysis_time = ?start.elapsed(),
-            total_units = units.len(),
-            affected_units = result.affected_units.len(),
             "Dependency analysis completed"
         );
         
         Ok(result)
-    }
-
     /// Build dependency graph from compilation units
     #[instrument(skip(self, units))]
     fn build_dependency_graph(&self, units: &[CompilationUnit]) -> Result<DependencyGraph> {
         let mut graph = DependencyGraph {
-            nodes: HashMap::new(),
-            edges: HashMap::new(),
-            reverse_edges: HashMap::new(),
-            changed_files: HashSet::new(),
-            compilation_layers: Vec::new(),
-        };
         
         // Add all nodes
         for unit in units {
@@ -237,8 +125,6 @@ impl DependencyOptimizer {
         
         debug!(nodes = graph.nodes.len(), edges = graph.edges.len(), "Built dependency graph");
         Ok(graph)
-    }
-
     /// Detect cycles in dependency graph
     #[instrument(skip(self, graph))]
     fn detect_cycles(&self, graph: &DependencyGraph) -> Result<()> {
@@ -253,18 +139,9 @@ impl DependencyOptimizer {
                     )));
                 }
             }
-        }
-        
         Ok(())
-    }
-
     /// DFS helper for cycle detection
     fn has_cycle_dfs(
-        &self,
-        node_id: &str,
-        graph: &DependencyGraph,
-        visited: &mut HashSet<String>,
-        rec_stack: &mut HashSet<String>,
     ) -> Result<bool> {
         visited.insert(node_id.to_string());
         rec_stack.insert(node_id.to_string());
@@ -279,12 +156,8 @@ impl DependencyOptimizer {
                     return Ok(true);
                 }
             }
-        }
-        
         rec_stack.remove(node_id);
         Ok(false)
-    }
-
     /// Calculate compilation layers for parallel execution
     #[instrument(skip(self, graph))]
     fn calculate_compilation_layers(&self, graph: &mut DependencyGraph) -> Result<Vec<Vec<String>>> {
@@ -296,8 +169,6 @@ impl DependencyOptimizer {
         for node_id in &remaining_nodes {
             let count = graph.reverse_edges.get(node_id).map_or(0, |deps| deps.len());
             dependency_counts.insert(node_id.clone(), count);
-        }
-        
         while !remaining_nodes.is_empty() {
             let mut current_layer = Vec::new();
             
@@ -312,8 +183,6 @@ impl DependencyOptimizer {
                 return Err(CursedError::system_error(
                     "Unable to resolve dependencies - possible circular dependency"
                 ));
-            }
-            
             // Sort by compilation complexity for optimal scheduling
             let mut sorted_ready = ready_nodes;
             sorted_ready.sort_by(|a, b| {
@@ -337,13 +206,9 @@ impl DependencyOptimizer {
             }
             
             layers.push(current_layer);
-        }
-        
         graph.compilation_layers = layers.clone();
         debug!(layers = layers.len(), "Calculated compilation layers");
         Ok(layers)
-    }
-
     /// Calculate affected units based on changes
     #[instrument(skip(self, graph))]
     fn calculate_affected_units(&self, graph: &DependencyGraph) -> Result<HashSet<String>> {
@@ -363,14 +228,9 @@ impl DependencyOptimizer {
         
         debug!(affected_count = affected.len(), "Calculated affected units");
         Ok(affected)
-    }
-
     /// Optimize compilation order within layers
     #[instrument(skip(self, graph, layers))]
     fn optimize_compilation_order(
-        &self,
-        graph: &DependencyGraph,
-        layers: &[Vec<String>],
     ) -> Result<Vec<Vec<String>>> {
         let mut optimized_layers = Vec::new();
         
@@ -385,17 +245,10 @@ impl DependencyOptimizer {
             });
             
             optimized_layers.push(optimized_layer);
-        }
-        
         Ok(optimized_layers)
-    }
-
     /// Estimate total compilation time
     #[instrument(skip(self, layers, graph))]
     fn estimate_compilation_time(
-        &self,
-        layers: &[Vec<String>],
-        graph: &DependencyGraph,
     ) -> Result<Duration> {
         let mut total_time = Duration::ZERO;
         
@@ -414,11 +267,7 @@ impl DependencyOptimizer {
                 .sum();
             
             total_time += layer_time;
-        }
-        
         Ok(total_time)
-    }
-
     /// Calculate parallelism factor
     #[instrument(skip(self, layers))]
     fn calculate_parallelism_factor(&self, layers: &[Vec<String>]) -> Result<f64> {
@@ -427,8 +276,6 @@ impl DependencyOptimizer {
         let average_parallel_units = total_units as f64 / layers.len() as f64;
         
         Ok(average_parallel_units / self.config.max_parallel_jobs as f64)
-    }
-
     /// Generate optimization suggestions
     #[instrument(skip(self, graph))]
     fn generate_optimization_suggestions(&self, graph: &DependencyGraph) -> Result<Vec<String>> {
@@ -445,11 +292,8 @@ impl DependencyOptimizer {
         if !high_degree_nodes.is_empty() {
             high_degree_nodes.sort_by(|a, b| b.1.cmp(&a.1));
             suggestions.push(format!(
-                "Consider refactoring high-degree nodes to reduce dependencies: {:?}",
                 high_degree_nodes.iter().take(3).map(|(id, _)| id).collect::<Vec<_>>()
             ));
-        }
-        
         // Check for unbalanced layers
         let layer_sizes: Vec<usize> = graph.compilation_layers.iter().map(|layer| layer.len()).collect();
         let max_layer_size = layer_sizes.iter().max().unwrap_or(&0);
@@ -457,16 +301,10 @@ impl DependencyOptimizer {
         
         if *max_layer_size as f64 > avg_layer_size * 2.0 {
             suggestions.push("Consider breaking up large compilation layers to improve parallelism".to_string());
-        }
-        
         // Check for very long dependency chains
         if graph.compilation_layers.len() > 20 {
             suggestions.push("Long dependency chains detected - consider architecture refactoring".to_string());
-        }
-        
         Ok(suggestions)
-    }
-
     /// Cache analysis result
     #[instrument(skip(self, result))]
     fn cache_analysis_result(&self, result: &AnalysisResult) -> Result<()> {
@@ -476,53 +314,29 @@ impl DependencyOptimizer {
             debug!("Cached analysis result");
         }
         Ok(())
-    }
-
     /// Execute compilation with optimized scheduling
     #[instrument(skip(self, analysis_result, compile_fn))]
     pub fn execute_optimized_compilation(
-        &self,
-        analysis_result: &AnalysisResult,
-        compile_fn: impl Fn(&str) -> Result<()> + Send + Sync + 'static,
     ) -> Result<OptimizationStats> {
         let start = Instant::now();
         let compile_fn = Arc::new(compile_fn);
         let mut stats = OptimizationStats {
-            total_units: analysis_result.compilation_order.iter().map(|layer| layer.len()).sum(),
-            rebuilt_units: 0,
-            cached_units: 0,
-            parallel_efficiency: 0.0,
-            time_saved: Duration::ZERO,
-            cache_hit_rate: 0.0,
-        };
         
         for layer in &analysis_result.compilation_order {
             self.execute_layer_parallel(layer, compile_fn.clone(), &mut stats)?;
-        }
-        
         let total_time = start.elapsed();
         stats.parallel_efficiency = analysis_result.estimated_time.as_secs_f64() / total_time.as_secs_f64();
         stats.time_saved = analysis_result.estimated_time.saturating_sub(total_time);
         stats.cache_hit_rate = stats.cached_units as f64 / stats.total_units as f64;
         
         info!(
-            total_time = ?total_time,
-            rebuilt_units = stats.rebuilt_units,
-            cached_units = stats.cached_units,
-            parallel_efficiency = stats.parallel_efficiency,
             "Optimized compilation completed"
         );
         
         Ok(stats)
-    }
-
     /// Execute a single layer in parallel
     #[instrument(skip(self, layer, compile_fn, stats))]
     fn execute_layer_parallel(
-        &self,
-        layer: &[String],
-        compile_fn: Arc<dyn Fn(&str) -> Result<()> + Send + Sync>,
-        stats: &mut OptimizationStats,
     ) -> Result<()> {
         use std::thread;
         use std::sync::mpsc;
@@ -560,16 +374,10 @@ impl DependencyOptimizer {
                     return Err(e);
                 }
             }
-        }
-        
         // Wait for all threads to complete
         for handle in handles {
             handle.join().map_err(|_| CursedError::system_error("Thread join failed"))?;
-        }
-        
         Ok(())
-    }
-
     /// Update dependency graph with new file changes
     #[instrument(skip(self, changed_files))]
     pub fn update_changed_files(&self, changed_files: &[String]) -> Result<()> {
@@ -586,25 +394,14 @@ impl DependencyOptimizer {
             // Invalidate cache
             if let Ok(mut cache) = self.cache.write() {
                 cache.invalidation_keys.extend(changed_files.iter().cloned());
-            }
-            
             debug!(changed_files = changed_files.len(), "Updated changed files");
-        }
-        
         Ok(())
-    }
-
     /// Get optimization statistics
     pub fn get_statistics(&self) -> Result<OptimizationStats> {
         let graph = self.dependency_graph.read().map_err(|_| CursedError::system_error("Failed to read dependency graph"))?;
         
         Ok(OptimizationStats {
-            total_units: graph.nodes.len(),
-            rebuilt_units: graph.changed_files.len(),
-            cached_units: graph.nodes.len() - graph.changed_files.len(),
             parallel_efficiency: 0.0, // Will be calculated during execution
-            time_saved: Duration::ZERO,
-            cache_hit_rate: 0.0,
         })
     }
 }

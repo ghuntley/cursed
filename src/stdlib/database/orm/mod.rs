@@ -26,41 +26,32 @@ pub mod mapping;
 
 // Re-export main types for easy access
 pub use entity::{
-    Entity, EntityManager, EntityState, EntityMetadata,
     PrimaryKey, ForeignKey, Timestamped
-};
+// };
 pub use query_builder::{
-    VibeQuery, FluentQueryBuilder, QueryExecutor,
     WhereClause, JoinClause, OrderByClause, GroupByClause
-};
+// };
 pub use migration::{
-    Migration, MigrationManager, MigrationStatus, SchemaVersion,
     CreateTable, DropTable, AddColumn, DropColumn, AddIndex
-};
+// };
 pub use relationships::{
-    Relationship, RelationshipType, RelationshipManager,
     HasOne, HasMany, BelongsTo, BelongsToMany, LazyLoader, EagerLoader
-};
+// };
 pub use cache::{
-    QueryCache, EntityCache, CacheStrategy, CacheStats,
     MemoryCache, RedisCache, CacheInvalidator
-};
+// };
 pub use validation::{
-    Validator, ValidationRule, ValidationError, ValidationContext,
     Required, MinLength, MaxLength, EmailFormat, CustomValidator
-};
+// };
 pub use transaction_ops::{
-    TransactionalRepository, TransactionScope, UnitOfWork,
     TransactionState, TransactionMetrics
-};
+// };
 pub use schema::{
-    SchemaBuilder, TableSchema, ColumnSchema, IndexSchema,
     DatabaseSchema, SchemaComparator, SchemaMigrator
-};
+// };
 pub use mapping::{
-    TypeMapper, ColumnMapper, ResultMapper,
     SqlTypeMapping, CustomMapping, MappingRegistry
-};
+// };
 
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
@@ -74,21 +65,12 @@ use crate::error::CursedError;
 #[derive(Debug)]
 pub struct OrmContext {
     /// Database connection
-    pub db: Arc<DB>,
     /// Entity manager for model operations
-    pub entity_manager: EntityManager,
     /// Migration manager for schema changes
-    pub migration_manager: MigrationManager,
     /// Relationship manager for association handling
-    pub relationship_manager: RelationshipManager,
     /// Query cache for performance optimization
-    pub query_cache: Arc<Mutex<QueryCache>>,
     /// Type mapper for SQL type conversions
-    pub type_mapper: TypeMapper,
     /// Configuration settings
-    pub config: OrmConfig,
-}
-
 impl OrmContext {
     /// slay Create new ORM context with database connection
     #[instrument(skip(db))]
@@ -102,13 +84,6 @@ impl OrmContext {
         let type_mapper = TypeMapper::new();
         
         Self {
-            db,
-            entity_manager,
-            migration_manager,
-            relationship_manager,
-            query_cache,
-            type_mapper,
-            config,
         }
     }
 
@@ -117,19 +92,12 @@ impl OrmContext {
     pub fn repository<T: Entity>(&self) -> Repository<T> {
         debug!(entity = T::table_name(), "Creating repository");
         Repository::new(
-            self.db.clone(),
-            self.query_cache.clone(),
-            self.config.clone(),
         )
-    }
-
     /// periodt Execute migrations to update database schema
     #[instrument(skip(self))]
     pub async fn migrate(&self) -> crate::error::Result<()> {
         info!("Executing database migrations");
         self.migration_manager.migrate().await
-    }
-
     /// bestie Clear all caches
     #[instrument(skip(self))]
     pub fn clear_caches(&self) -> crate::error::Result<()> {
@@ -139,8 +107,6 @@ impl OrmContext {
         }
         self.entity_manager.clear_caches();
         Ok(())
-    }
-
     /// yolo Get ORM statistics and metrics
     #[instrument(skip(self))]
     pub fn stats(&self) -> OrmStats {
@@ -149,34 +115,17 @@ impl OrmContext {
             .unwrap_or_default();
         
         OrmStats {
-            cache_stats,
-            entity_stats: self.entity_manager.stats(),
-            migration_stats: self.migration_manager.stats(),
         }
     }
-}
-
 /// fr fr Repository pattern implementation for entity operations
 #[derive(Debug)]
 pub struct Repository<T: Entity> {
-    db: Arc<DB>,
-    query_cache: Arc<Mutex<QueryCache>>,
-    config: OrmConfig,
-    _phantom: std::marker::PhantomData<T>,
-}
-
 impl<T: Entity> Repository<T> {
     /// slay Create new repository
     pub fn new(
-        db: Arc<DB>, 
-        query_cache: Arc<Mutex<QueryCache>>, 
         config: OrmConfig
     ) -> Self {
         Self {
-            db,
-            query_cache,
-            config,
-            _phantom: std::marker::PhantomData,
         }
     }
 
@@ -210,8 +159,6 @@ impl<T: Entity> Repository<T> {
         }
         
         Ok(entity)
-    }
-
     /// sus Find entities matching criteria
     #[instrument(skip(self))]
     pub async fn find_where_its_at(&self, conditions: &[(&str, SqlValue)]) -> crate::error::Result<()> {
@@ -220,11 +167,7 @@ impl<T: Entity> Repository<T> {
         let mut query = self.query();
         for (field, value) in conditions {
             query = query.where_clause(&format!("{} = ?", field), Vec::from([value.clone()]));
-        }
-        
         query.execute().await
-    }
-
     /// periodt Save entity (create or update)
     #[instrument(skip(self, entity))]
     pub async fn save_it(&self, entity: &T) -> crate::error::Result<()> {
@@ -247,14 +190,11 @@ impl<T: Entity> Repository<T> {
             self.update_entity(&entity).await?
         } else {
             self.create_entity(&entity).await?
-        };
         
         // Invalidate related caches
         self.invalidate_caches(&result).await?;
         
         Ok(result)
-    }
-
     /// lowkey Delete entity
     #[instrument(skip(self, entity))]
     pub async fn delete_sus(&self, entity: &T) -> crate::error::Result<()> {
@@ -264,8 +204,6 @@ impl<T: Entity> Repository<T> {
             .ok_or_else(|| DatabaseError::validation_error("Entity must have primary key for deletion"))?;
         
         let sql = format!(
-            "DELETE FROM {} WHERE {} = $1",
-            T::table_name(),
             T::primary_key_name()
         );
         
@@ -283,23 +221,15 @@ impl<T: Entity> Repository<T> {
             self.invalidate_caches(entity).await?;
         } else {
             warn!("No entity was deleted - entity may not exist");
-        }
-        
         Ok(deleted)
-    }
-
     /// highkey Create fluent query builder
     #[instrument(skip(self))]
     pub fn query(&self) -> FluentQueryBuilder<T> {
         debug!(entity = T::table_name(), "Creating query builder");
         FluentQueryBuilder::new(T::table_name(), self.db.clone())
-    }
-
     /// slay Get database connection
     pub fn db(&self) -> &Arc<DB> {
         &self.db
-    }
-
     /// bestie Bulk insert entities with transaction
     #[instrument(skip(self, entities))]
     pub async fn bulk_insert_vibes(&self, entities: &[T]) -> crate::error::Result<()> {
@@ -307,13 +237,9 @@ impl<T: Entity> Repository<T> {
         
         if entities.is_empty() {
             return Ok(Vec::new());
-        }
-        
         // Validate all entities
         for entity in entities {
             entity.validate()?;
-        }
-        
         // Use transaction for bulk operation  
         let ctx = super::VibeContext::default();
         let mut tx = self.db.begin_tx(ctx, None)?;
@@ -337,16 +263,10 @@ impl<T: Entity> Repository<T> {
             
             // Build INSERT for this entity
             let sql = format!(
-                "INSERT INTO {} ({}) VALUES ({})",
-                T::table_name(),
-                field_names.join(", "),
                 placeholders_per_row.join(", ")
             );
             
             debug!(
-                entity_index = entity_index,
-                sql = %sql,
-                values = ?field_values,
                 "Executing batch INSERT"
             );
             
@@ -357,29 +277,19 @@ impl<T: Entity> Repository<T> {
             let mut created_entity = entity.clone();
             if let Ok(insert_id) = result.last_insert_id() {
                 created_entity.set_primary_key_value(SqlValue::Integer(insert_id));
-            }
-            
             results.push(created_entity);
-        }
-        
         // Commit transaction
         tx.commit()?;
         
         // Clear relevant caches
         if let Ok(mut cache) = self.query_cache.lock() {
             cache.invalidate_pattern(&format!("{}:*", T::table_name()));
-        }
-        
         info!(created = results.len(), "Bulk insert completed");
         Ok(results)
-    }
-
     /// facts Load relationships eagerly
     #[instrument(skip(self, entity))]
     pub async fn with_vibes<R: Entity>(&self, entity: &T, relationship: &str) -> crate::error::Result<()> {
         debug!(
-            entity = T::table_name(),
-            relationship = relationship,
             "Loading relationship eagerly"
         );
         
@@ -394,8 +304,6 @@ impl<T: Entity> Repository<T> {
                     .ok_or_else(|| DatabaseError::validation_error("Entity must have primary key for relationship loading"))?;
                 
                 let query = format!(
-                    "SELECT * FROM {} WHERE {} = ?",
-                    R::table_name(),
                     foreign_key
                 );
                 
@@ -408,8 +316,6 @@ impl<T: Entity> Repository<T> {
                 Ok(Vec::new())
             }
         }
-    }
-
     // Helper methods
     async fn create_entity(&self, entity: &T) -> crate::error::Result<()> {
         debug!(entity = T::table_name(), "Creating new entity");
@@ -424,9 +330,6 @@ impl<T: Entity> Repository<T> {
             .collect();
         
         let sql = format!(
-            "INSERT INTO {} ({}) VALUES ({})",
-            T::table_name(),
-            field_names.join(", "),
             placeholders.join(", ")
         );
         
@@ -439,12 +342,8 @@ impl<T: Entity> Repository<T> {
         let mut created_entity = entity.clone();
         if let Ok(insert_id) = result.last_insert_id() {
             created_entity.set_primary_key_value(SqlValue::Integer(insert_id));
-        }
-        
         info!("Entity created successfully");
         Ok(created_entity)
-    }
-    
     async fn update_entity(&self, entity: &T) -> crate::error::Result<()> {
         debug!(entity = T::table_name(), "Updating existing entity");
         
@@ -469,10 +368,6 @@ impl<T: Entity> Repository<T> {
         field_values.push(pk_value);
         
         let sql = format!(
-            "UPDATE {} SET {} WHERE {} = ${}",
-            T::table_name(),
-            field_assignments.join(", "),
-            T::primary_key_name(),
             param_index
         );
         
@@ -483,20 +378,14 @@ impl<T: Entity> Repository<T> {
         
         if result.rows_affected()? == 0 {
             return Err(DatabaseError::not_found("No rows were updated").into());
-        }
-        
         info!("Entity updated successfully");
         Ok(entity.clone())
-    }
-    
     async fn invalidate_caches(&self, entity: &T) -> crate::error::Result<()> {
         if let Ok(mut cache) = self.query_cache.lock() {
             let pk_value = entity.primary_key_value();
             if let Some(pk) = pk_value {
                 let cache_key = format!("{}:{}", T::table_name(), pk);
                 cache.remove(&cache_key);
-            }
-            
             // Invalidate query caches for this table
             cache.invalidate_pattern(&format!("query:{}:*", T::table_name()));
         }
@@ -508,64 +397,30 @@ impl<T: Entity> Repository<T> {
 #[derive(Debug, Clone)]
 pub struct OrmConfig {
     /// Cache configuration
-    pub cache_config: CacheConfig,
     /// Query timeout settings
-    pub query_timeout: std::time::Duration,
     /// Enable query logging
-    pub enable_query_logging: bool,
     /// Connection pool settings
-    pub pool_config: PoolConfig,
     /// Migration settings
-    pub migration_config: MigrationConfig,
-}
-
 impl Default for OrmConfig {
     fn default() -> Self {
         Self {
-            cache_config: CacheConfig::default(),
-            query_timeout: std::time::Duration::from_secs(30),
-            enable_query_logging: false,
-            pool_config: PoolConfig::default(),
-            migration_config: MigrationConfig::default(),
         }
     }
-}
-
 
 
 /// fr fr Pool configuration placeholder
 #[derive(Debug, Clone, Default)]
 pub struct PoolConfig {
-    pub max_connections: usize,
-    pub min_connections: usize,
-}
-
 /// fr fr Migration configuration placeholder  
 #[derive(Debug, Clone, Default)]
 pub struct MigrationConfig {
-    pub migrations_dir: String,
-    pub auto_migrate: bool,
-}
-
 /// fr fr ORM statistics and metrics
 #[derive(Debug, Clone, Default)]
 pub struct OrmStats {
-    pub cache_stats: CacheStats,
-    pub entity_stats: EntityStats,
-    pub migration_stats: MigrationStats,
-}
-
 /// fr fr Entity operation statistics placeholder
 #[derive(Debug, Clone, Default)]
 pub struct EntityStats {
-    pub total_queries: u64,
-    pub cache_hits: u64,
-    pub cache_misses: u64,
-}
-
 /// fr fr Migration operation statistics placeholder
 #[derive(Debug, Clone, Default)]
 pub struct MigrationStats {
-    pub pending_migrations: usize,
-    pub applied_migrations: usize,
 }

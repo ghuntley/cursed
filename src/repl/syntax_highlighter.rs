@@ -9,22 +9,9 @@ use once_cell::sync::Lazy;
 
 /// ANSI color codes for syntax highlighting
 pub struct Colors {
-    pub reset: &'static str,
-    pub keyword: &'static str,
-    pub operator: &'static str,
-    pub string: &'static str,
-    pub number: &'static str,
-    pub comment: &'static str,
-    pub type_name: &'static str,
-    pub function: &'static str,
-    pub variable: &'static str,
-    pub error: &'static str,
-}
-
 impl Colors {
     pub const fn new() -> Self {
         Self {
-            reset: "\x1b[0m",
             keyword: "\x1b[35m",      // Magenta
             operator: "\x1b[33m",     // Yellow
             string: "\x1b[32m",       // Green
@@ -36,29 +23,16 @@ impl Colors {
             error: "\x1b[31m",        // Red
         }
     }
-}
-
 static COLORS: Colors = Colors::new();
 
 /// CURSED language keywords for highlighting
 static CURSED_KEYWORDS: Lazy<HashSet<&'static str>> = Lazy::new(|| {
     [
         // Gen Z slang keywords
-        "slay", "yolo", "sus", "facts", "lowkey", "highkey", "periodt",
-        "bestie", "flex", "vibe_check", "mood", "basic", "no_cap",
-        "straight_fire", "it_hits_different", "absolute_unit", "send_it",
-        "that_slaps", "bussin", "fire", "slaps", "bet", "say_less",
-        "cap", "no_printer", "frfr", "ong", "sheesh", "valid", "slick",
         
         // Traditional keywords
-        "func", "var", "const", "type", "interface", "struct", "enum",
-        "if", "else", "for", "while", "switch", "case", "default",
-        "break", "continue", "return", "defer", "go", "chan", "select",
-        "package", "import", "nil", "true", "false",
         
         // CURSED-specific
-        "squad", "collab", "vibes", "energy", "aura", "rizz",
-        "main_character", "side_character", "npc",
     ].into_iter().collect()
 });
 
@@ -66,34 +40,22 @@ static CURSED_KEYWORDS: Lazy<HashSet<&'static str>> = Lazy::new(|| {
 static CURSED_OPERATORS: Lazy<HashSet<&'static str>> = Lazy::new(|| {
     [
         "+", "-", "*", "/", "%", "=", "==", "!=", "<", ">", "<=", ">=",
-        "&&", "||", "!", "&", "|", "^", "<<", ">>", "++", "--",
         "+=", "-=", "*=", "/=", "%=", "&=", "|=", "^=", "<<=", ">>=",
-        "->", "=>", ":=", "...", "..", "?", ":", ";", ",", ".",
-        "(", ")", "[", "]", "{", "}", "<-",
     ].into_iter().collect()
 });
 
 /// CURSED type names for highlighting
 static CURSED_TYPES: Lazy<HashSet<&'static str>> = Lazy::new(|| {
     [
-        "int", "int8", "int16", "int32", "int64",
-        "uint", "uint8", "uint16", "uint32", "uint64",
-        "float32", "float64", "bool", "string", "byte", "rune",
-        "error", "interface{}", "chan", "map", "slice",
-        "Energy", "Vibes", "Aura", "Rizz",
     ].into_iter().collect()
 });
 
 /// Syntax highlighter for CURSED code
 pub struct SyntaxHighlighter {
-    enable_colors: bool,
-}
-
 impl SyntaxHighlighter {
     /// Create a new syntax highlighter
     pub fn new() -> Self {
         Self {
-            enable_colors: atty::is(atty::Stream::Stdout),
         }
     }
 
@@ -106,8 +68,6 @@ impl SyntaxHighlighter {
     pub fn highlight(&self, code: &str) -> String {
         if !self.enable_colors {
             return code.to_string();
-        }
-
         let mut result = String::new();
         let mut chars = code.chars().peekable();
         let mut current_token = String::new();
@@ -162,28 +122,20 @@ impl SyntaxHighlighter {
                     result.push(ch);
                     current_token.clear();
                     in_comment = false;
-                }
-                
                 // Numbers
                 c if c.is_ascii_digit() && !in_string && !in_comment => {
                     if current_token.is_empty() {
                         in_number = true;
                     }
                     current_token.push(ch);
-                }
-                
                 '.' if in_number && !in_string && !in_comment => {
                     current_token.push(ch);
-                }
-                
                 // Operators and delimiters
                 c if self.is_operator_char(c) && !in_string && !in_comment && !in_number => {
                     if !current_token.is_empty() {
                         result.push_str(&self.highlight_token(&current_token));
                         current_token.clear();
                         in_number = false;
-                    }
-                    
                     // Handle multi-character operators
                     let mut operator = String::new();
                     operator.push(c);
@@ -199,8 +151,6 @@ impl SyntaxHighlighter {
                     }
                     
                     result.push_str(&self.colorize(&operator, TokenType::Operator));
-                }
-                
                 // Whitespace and other characters
                 c if c.is_whitespace() => {
                     if !current_token.is_empty() {
@@ -248,14 +198,10 @@ impl SyntaxHighlighter {
         }
 
         result
-    }
-
     /// Highlight a single token
     fn highlight_token(&self, token: &str) -> String {
         let token_type = self.classify_token(token);
         self.colorize(token, token_type)
-    }
-
     /// Classify a token to determine its type
     fn classify_token(&self, token: &str) -> TokenType {
         if CURSED_KEYWORDS.contains(token) {
@@ -282,8 +228,6 @@ impl SyntaxHighlighter {
         matches!(ch, '+' | '-' | '*' | '/' | '%' | '=' | '!' | '<' | '>' | 
                      '&' | '|' | '^' | '?' | ':' | ';' | ',' | '.' | 
                      '(' | ')' | '[' | ']' | '{' | '}')
-    }
-
     /// Check if a token is likely a function name
     fn is_function_name(&self, token: &str) -> bool {
         // Simple heuristic: if it's followed by '(' in context
@@ -293,25 +237,11 @@ impl SyntaxHighlighter {
         token.starts_with("set_") ||
         token.starts_with("is_") ||
         token.starts_with("has_")
-    }
-
     /// Apply color to a token based on its type
     fn colorize(&self, token: &str, token_type: TokenType) -> String {
         if !self.enable_colors {
             return token.to_string();
-        }
-
         let color = match token_type {
-            TokenType::Keyword => COLORS.keyword,
-            TokenType::Operator => COLORS.operator,
-            TokenType::String => COLORS.string,
-            TokenType::Number => COLORS.number,
-            TokenType::Comment => COLORS.comment,
-            TokenType::TypeName => COLORS.type_name,
-            TokenType::Function => COLORS.function,
-            TokenType::Variable => COLORS.variable,
-            TokenType::CursedError => COLORS.error,
-        };
 
         format!("{}{}{}", color, token, COLORS.reset)
     }
@@ -320,17 +250,6 @@ impl SyntaxHighlighter {
 /// Token types for syntax highlighting
 #[derive(Debug, Clone, Copy, PartialEq)]
 enum TokenType {
-    Keyword,
-    Operator,
-    String,
-    Number,
-    Comment,
-    TypeName,
-    Function,
-    Variable,
-    CursedError,
-}
-
 impl Default for SyntaxHighlighter {
     fn default() -> Self {
         Self::new()

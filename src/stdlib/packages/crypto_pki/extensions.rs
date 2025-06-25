@@ -4,11 +4,6 @@
 use crate::error::CursedError;
 
 pub struct Extension {
-    pub oid: String,
-    pub critical: bool,
-    pub value: Vec<u8>,
-}
-
 // Additional types
 pub type ExtensionValue = Vec<u8>;
 pub type ExtensionOid = String;
@@ -28,8 +23,6 @@ pub type ExtensionValidator = Extension;
 
 pub fn create_extension(oid: String, critical: bool, value: Vec<u8>) -> ExtensionResult<Extension> {
     Ok(Extension { oid, critical, value })
-}
-
 pub fn parse_extension(_data: &[u8]) -> ExtensionResult<Extension> {
     create_extension("2.5.29.1".to_string(), false, vec![0])
 }

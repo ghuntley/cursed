@@ -28,46 +28,22 @@ pub use transactions::*;
 #[derive(Debug, Clone)]
 pub struct RedisConfig {
     /// Connection URL (redis://localhost:6379)
-    pub url: String,
     /// Connection timeout
-    pub timeout: Duration,
     /// Maximum connections in pool
-    pub max_connections: usize,
     /// Command timeout
-    pub command_timeout: Duration,
     /// Enable TLS/SSL
-    pub use_tls: bool,
     /// Username for authentication
-    pub username: Option<String>,
     /// Password for authentication
-    pub password: Option<String>,
     /// Database number (0-15)
-    pub database: u8,
-}
-
 impl Default for RedisConfig {
     fn default() -> Self {
         Self {
             url: "redis://127.0.0.1:6379".to_string(),
-            timeout: Duration::from_secs(5),
-            max_connections: 10,
-            command_timeout: Duration::from_secs(30),
-            use_tls: false,
-            username: None,
-            password: None,
-            database: 0,
         }
     }
-}
-
 /// Main Redis client
 #[derive(Debug)]
 pub struct RedisClient {
-    config: RedisConfig,
-    pool: Option<RedisConnectionPool>,
-    monitor: RedisMonitor,
-}
-
 impl RedisClient {
     /// Create new Redis client
     #[instrument]
@@ -77,12 +53,7 @@ impl RedisClient {
         let monitor = RedisMonitor::new()?;
         
         Ok(Self {
-            config,
-            pool: None,
-            monitor,
         })
-    }
-    
     /// Connect to Redis server
     #[instrument(skip(self))]
     pub async fn connect(&mut self) -> crate::error::Result<()> {
@@ -92,8 +63,6 @@ impl RedisClient {
         self.pool = Some(pool);
         
         Ok(())
-    }
-    
     /// Execute Redis command with timing
     #[instrument(skip(self, operation))]
     pub async fn execute_with_timing<T>(&self, command: &str, operation: impl FnOnce() -> crate::error::Result<()>) -> crate::error::Result<()> {
@@ -117,8 +86,6 @@ impl RedisClient {
         }
         
         result
-    }
-    
     /// Get value from Redis
     #[instrument(skip(self))]
     pub async fn get(&self, key: &str) -> crate::error::Result<()> {
@@ -127,8 +94,6 @@ impl RedisClient {
             debug!(key = key, "Getting value from Redis");
             Ok(None)
         }).await
-    }
-    
     /// Set value in Redis
     #[instrument(skip(self, value))]
     pub async fn set(&self, key: &str, value: &str) -> crate::error::Result<()> {
@@ -136,8 +101,6 @@ impl RedisClient {
             debug!(key = key, "Setting value in Redis");
             Ok(())
         }).await
-    }
-    
     /// Delete key from Redis
     #[instrument(skip(self))]
     pub async fn del(&self, key: &str) -> crate::error::Result<()> {
@@ -145,8 +108,6 @@ impl RedisClient {
             debug!(key = key, "Deleting key from Redis");
             Ok(true)
         }).await
-    }
-    
     /// Check if key exists
     #[instrument(skip(self))]
     pub async fn exists(&self, key: &str) -> crate::error::Result<()> {
@@ -154,8 +115,6 @@ impl RedisClient {
             debug!(key = key, "Checking if key exists in Redis");
             Ok(false)
         }).await
-    }
-    
     /// Set expiration on key
     #[instrument(skip(self))]
     pub async fn expire(&self, key: &str, seconds: u64) -> crate::error::Result<()> {
@@ -163,8 +122,6 @@ impl RedisClient {
             debug!(key = key, seconds = seconds, "Setting expiration on key");
             Ok(true)
         }).await
-    }
-    
     /// Get time to live for key
     #[instrument(skip(self))]
     pub async fn ttl(&self, key: &str) -> crate::error::Result<()> {
@@ -172,13 +129,9 @@ impl RedisClient {
             debug!(key = key, "Getting TTL for key");
             Ok(-1) // Key doesn't exist or has no expiration
         }).await
-    }
-    
     /// Get monitoring statistics
     pub fn get_monitor(&self) -> &RedisMonitor {
         &self.monitor
-    }
-    
     /// Close the Redis connection
     #[instrument(skip(self))]
     pub async fn close(&mut self) -> crate::error::Result<()> {
@@ -186,8 +139,6 @@ impl RedisClient {
         
         if let Some(pool) = self.pool.take() {
             pool.close().await?;
-        }
-        
         Ok(())
     }
 }

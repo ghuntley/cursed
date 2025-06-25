@@ -24,5 +24,3 @@ pub use redis::{RedisDriver, RedisConnection, RedisConfig, RedisConnectionPool};
 // pub fn init_db_nosql() -> crate::stdlib::packages::db_core::error::DatabaseResult<()> {
     println!("📄 db_nosql package initialized - NoSQL drivers ready bestie!");
     Ok(())
-}
-

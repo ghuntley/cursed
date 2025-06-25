@@ -32,9 +32,6 @@ use crate::error::CursedError;
 /// - Memory management for very large numbers must be efficient
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct BigInt {
-    inner: NumBigInt,
-}
-
 /// Arbitrary-precision rational number type
 /// 
 /// BigRat provides unlimited precision rational number arithmetic.
@@ -46,9 +43,6 @@ pub struct BigInt {
 /// - Memory efficiency for large numerators/denominators is critical
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct BigRat {
-    inner: BigRational,
-}
-
 /// Arbitrary-precision floating-point number type
 /// 
 /// BigFloat provides high-precision floating-point arithmetic.
@@ -61,9 +55,6 @@ pub struct BigRat {
 #[derive(Debug, Clone, PartialEq)]
 pub struct BigFloat {
     value: f64, // Simplified implementation using f64 with tracking
-    precision: u32,
-}
-
 /// Fixed-point decimal type for financial calculations
 /// 
 /// Decimal ensures exact decimal arithmetic without floating-point errors.
@@ -74,10 +65,7 @@ pub struct BigFloat {
 /// - String formatting must match financial display requirements
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct Decimal {
-    value: BigInt,
     scale: u8, // Number of decimal places
-}
-
 /// Complex number with arbitrary-precision components
 /// 
 /// BigComplex provides high-precision complex number arithmetic.
@@ -88,29 +76,12 @@ pub struct Decimal {
 /// - Trigonometric identities must be maintained
 #[derive(Debug, Clone, PartialEq)]
 pub struct BigComplex {
-    real: BigFloat,
-    imag: BigFloat,
-}
-
 /// Accuracy indicator for conversions and operations
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum Accuracy {
-    Below = -1,
-    Exact = 0,
-    Above = 1,
-}
-
 /// Rounding mode for floating-point operations
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum RoundingMode {
-    ToNearestEven,
-    ToNearestAway,
-    ToZero,
-    AwayFromZero,
-    ToNegativeInf,
-    ToPositiveInf,
-}
-
 // BigInt Implementation
 impl BigInt {
     /// Creates a new BigInt from an i64 value
@@ -122,49 +93,42 @@ impl BigInt {
     /// A new BigInt instance
     pub fn new(value: i64) -> Self {
         Self {
-            inner: NumBigInt::from(value),
         }
     }
 
     /// Creates a new BigInt from zero
     pub fn zero() -> Self {
         Self {
-            inner: NumBigInt::zero(),
         }
     }
 
     /// Creates a new BigInt from one
     pub fn one() -> Self {
         Self {
-            inner: NumBigInt::one(),
         }
     }
 
     /// Returns the absolute value
     pub fn abs(&self) -> Self {
         Self {
-            inner: self.inner.abs(),
         }
     }
 
     /// Adds two BigInts
     pub fn add(&self, other: &BigInt) -> Self {
         Self {
-            inner: &self.inner + &other.inner,
         }
     }
 
     /// Subtracts two BigInts
     pub fn sub(&self, other: &BigInt) -> Self {
         Self {
-            inner: &self.inner - &other.inner,
         }
     }
 
     /// Multiplies two BigInts
     pub fn mul(&self, other: &BigInt) -> Self {
         Self {
-            inner: &self.inner * &other.inner,
         }
     }
 
@@ -172,57 +136,39 @@ impl BigInt {
     pub fn div(&self, other: &BigInt) -> MathResult<Self> {
         if other.inner.is_zero() {
             return Err(MathError::DivisionByZero {
-                function: "BigInt::div".to_string(),
             });
         }
         Ok(Self {
             inner: &self.inner / &other.inner,
         })
-    }
-
     /// Computes remainder
     pub fn rem(&self, other: &BigInt) -> MathResult<Self> {
         if other.inner.is_zero() {
             return Err(MathError::DivisionByZero {
-                function: "BigInt::rem".to_string(),
             });
         }
         Ok(Self {
-            inner: &self.inner % &other.inner,
         })
-    }
-
     /// Computes division and remainder simultaneously
     pub fn div_rem(&self, other: &BigInt) -> MathResult<(Self, Self)> {
         if other.inner.is_zero() {
             return Err(MathError::DivisionByZero {
-                function: "BigInt::div_rem".to_string(),
             });
         }
         let (div, rem) = self.inner.div_rem(&other.inner);
         Ok((Self { inner: div }, Self { inner: rem }))
-    }
-
     /// Compares with another BigInt
     pub fn cmp(&self, other: &BigInt) -> std::cmp::Ordering {
         self.inner.cmp(&other.inner)
-    }
-
     /// Sets value from another BigInt
     pub fn set(&mut self, other: &BigInt) {
         self.inner = other.inner.clone();
-    }
-
     /// Sets value from i64
     pub fn set_i64(&mut self, value: i64) {
         self.inner = NumBigInt::from(value);
-    }
-
     /// Sets value from u64
     pub fn set_u64(&mut self, value: u64) {
         self.inner = NumBigInt::from(value);
-    }
-
     /// Sets value from string with specified base
     pub fn set_string(&mut self, s: &str, base: u32) -> MathResult<()> {
         match NumBigInt::from_str_radix(s, base) {
@@ -231,48 +177,31 @@ impl BigInt {
                 Ok(())
             }
             Err(_) => Err(MathError::InvalidInput {
-                function: "BigInt::set_string".to_string(),
-                parameter: "string".to_string(),
-                value: 0.0,
-            }),
         }
     }
 
     /// Sets value from byte array (big-endian)
     pub fn set_bytes(&mut self, bytes: &[u8]) {
         self.inner = NumBigInt::from_bytes_be(Sign::Plus, bytes);
-    }
-
     /// Converts to i64 (may lose precision)
     pub fn to_i64(&self) -> Option<i64> {
         self.inner.to_i64()
-    }
-
     /// Converts to u64 (may lose precision)
     pub fn to_u64(&self) -> Option<u64> {
         self.inner.to_u64()
-    }
-
     /// Converts to byte array (big-endian)
     pub fn to_bytes(&self) -> Vec<u8> {
         self.inner.to_bytes_be().1
-    }
-
     /// Returns the number of bits needed to represent this number
     pub fn bit_len(&self) -> usize {
         self.inner.bits()
-    }
-
     /// Returns string representation in specified base
     pub fn to_string_radix(&self, base: u32) -> String {
         self.inner.to_str_radix(base)
-    }
-
     /// Computes greatest common divisor
     pub fn gcd(&self, other: &BigInt) -> Self {
         use num_integer::Integer;
         Self {
-            inner: self.inner.gcd(&other.inner),
         }
     }
 
@@ -280,57 +209,45 @@ impl BigInt {
     pub fn mod_pow(&self, exp: &BigInt, modulus: &BigInt) -> MathResult<Self> {
         if modulus.inner.is_zero() {
             return Err(MathError::DivisionByZero {
-                function: "BigInt::mod_pow".to_string(),
             });
         }
         Ok(Self {
-            inner: self.inner.modpow(&exp.inner, &modulus.inner),
         })
-    }
-
     /// Left shift by n bits
     pub fn shl(&self, n: u32) -> Self {
         Self {
-            inner: &self.inner << n,
         }
     }
 
     /// Right shift by n bits
     pub fn shr(&self, n: u32) -> Self {
         Self {
-            inner: &self.inner >> n,
         }
     }
 
     /// Bitwise AND
     pub fn bitand(&self, other: &BigInt) -> Self {
         Self {
-            inner: &self.inner & &other.inner,
         }
     }
 
     /// Bitwise OR
     pub fn bitor(&self, other: &BigInt) -> Self {
         Self {
-            inner: &self.inner | &other.inner,
         }
     }
 
     /// Bitwise XOR
     pub fn bitxor(&self, other: &BigInt) -> Self {
         Self {
-            inner: &self.inner ^ &other.inner,
         }
     }
 
     /// Bitwise NOT
     pub fn not(&self) -> Self {
         Self {
-            inner: !&self.inner,
         }
     }
-}
-
 impl fmt::Display for BigInt {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "{}", self.inner)
@@ -342,69 +259,52 @@ impl FromStr for BigInt {
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         match NumBigInt::from_str(s) {
-            Ok(value) => Ok(Self { inner: value }),
             Err(_) => Err(MathError::InvalidInput {
-                function: "BigInt::from_str".to_string(),
-                parameter: "string".to_string(),
-                value: 0.0,
-            }),
         }
     }
-}
-
 // BigRat Implementation
 impl BigRat {
     /// Creates a new BigRat from numerator and denominator
     pub fn new(numer: i64, denom: i64) -> MathResult<Self> {
         if denom == 0 {
             return Err(MathError::DivisionByZero {
-                function: "BigRat::new".to_string(),
             });
         }
         Ok(Self {
-            inner: BigRational::new(NumBigInt::from(numer), NumBigInt::from(denom)),
         })
-    }
-
     /// Creates a new BigRat from zero
     pub fn zero() -> Self {
         Self {
-            inner: BigRational::zero(),
         }
     }
 
     /// Creates a new BigRat from one
     pub fn one() -> Self {
         Self {
-            inner: BigRational::one(),
         }
     }
 
     /// Returns the absolute value
     pub fn abs(&self) -> Self {
         Self {
-            inner: self.inner.abs(),
         }
     }
 
     /// Adds two BigRats
     pub fn add(&self, other: &BigRat) -> Self {
         Self {
-            inner: &self.inner + &other.inner,
         }
     }
 
     /// Subtracts two BigRats
     pub fn sub(&self, other: &BigRat) -> Self {
         Self {
-            inner: &self.inner - &other.inner,
         }
     }
 
     /// Multiplies two BigRats
     pub fn mul(&self, other: &BigRat) -> Self {
         Self {
-            inner: &self.inner * &other.inner,
         }
     }
 
@@ -412,56 +312,39 @@ impl BigRat {
     pub fn div(&self, other: &BigRat) -> MathResult<Self> {
         if other.inner.is_zero() {
             return Err(MathError::DivisionByZero {
-                function: "BigRat::div".to_string(),
             });
         }
         Ok(Self {
             inner: &self.inner / &other.inner,
         })
-    }
-
     /// Compares with another BigRat
     pub fn cmp(&self, other: &BigRat) -> std::cmp::Ordering {
         self.inner.cmp(&other.inner)
-    }
-
     /// Sets value from another BigRat
     pub fn set(&mut self, other: &BigRat) {
         self.inner = other.inner.clone();
-    }
-
     /// Sets value from BigInt
     pub fn set_int(&mut self, value: &BigInt) {
         self.inner = BigRational::from(value.inner.clone());
-    }
-
     /// Sets value from BigInt fraction
     pub fn set_frac(&mut self, numer: &BigInt, denom: &BigInt) -> MathResult<()> {
         if denom.inner.is_zero() {
             return Err(MathError::DivisionByZero {
-                function: "BigRat::set_frac".to_string(),
             });
         }
         self.inner = BigRational::new(numer.inner.clone(), denom.inner.clone());
         Ok(())
-    }
-
     /// Sets value from i64
     pub fn set_i64(&mut self, value: i64) {
         self.inner = BigRational::from(NumBigInt::from(value));
-    }
-
     /// Sets value from i64 fraction
     pub fn set_frac64(&mut self, numer: i64, denom: i64) -> MathResult<()> {
         if denom == 0 {
             return Err(MathError::DivisionByZero {
-                function: "BigRat::set_frac64".to_string(),
             });
         }
         self.inner = BigRational::new(NumBigInt::from(numer), NumBigInt::from(denom));
         Ok(())
-    }
-
     /// Sets value from string
     pub fn set_string(&mut self, s: &str) -> MathResult<()> {
         match BigRational::from_str(s) {
@@ -470,10 +353,6 @@ impl BigRat {
                 Ok(())
             }
             Err(_) => Err(MathError::InvalidInput {
-                function: "BigRat::set_string".to_string(),
-                parameter: "string".to_string(),
-                value: 0.0,
-            }),
         }
     }
 
@@ -481,26 +360,19 @@ impl BigRat {
     pub fn set_f64(&mut self, value: f64) -> MathResult<()> {
         if !value.is_finite() {
             return Err(MathError::InvalidInput {
-                function: "BigRat::set_f64".to_string(),
-                parameter: "value".to_string(),
-                value,
             });
         }
         self.inner = BigRational::from_float(value).unwrap();
         Ok(())
-    }
-
     /// Returns numerator
     pub fn numer(&self) -> BigInt {
         BigInt {
-            inner: self.inner.numer().clone(),
         }
     }
 
     /// Returns denominator
     pub fn denom(&self) -> BigInt {
         BigInt {
-            inner: self.inner.denom().clone(),
         }
     }
 
@@ -517,10 +389,8 @@ impl BigRat {
                     Accuracy::Below
                 } else {
                     Accuracy::Above
-                };
                 (f, accuracy)
             }
-            None => (f64::NAN, Accuracy::Below),
         }
     }
 
@@ -543,22 +413,14 @@ impl FromStr for BigRat {
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         match BigRational::from_str(s) {
-            Ok(value) => Ok(Self { inner: value }),
             Err(_) => Err(MathError::InvalidInput {
-                function: "BigRat::from_str".to_string(),
-                parameter: "string".to_string(),
-                value: 0.0,
-            }),
         }
     }
-}
-
 // BigFloat Implementation (Simplified)
 impl BigFloat {
     /// Creates a new BigFloat from f64
     pub fn new(value: f64) -> Self {
         Self {
-            value,
             precision: 64, // Default precision
         }
     }
@@ -566,58 +428,42 @@ impl BigFloat {
     /// Creates a new BigFloat from zero
     pub fn zero() -> Self {
         Self {
-            value: 0.0,
-            precision: 64,
         }
     }
 
     /// Creates a new BigFloat from one
     pub fn one() -> Self {
         Self {
-            value: 1.0,
-            precision: 64,
         }
     }
 
     /// Sets precision (bits)
     pub fn set_precision(&mut self, precision: u32) {
         self.precision = precision;
-    }
-
     /// Gets precision (bits)
     pub fn precision(&self) -> u32 {
         self.precision
-    }
-
     /// Returns the absolute value
     pub fn abs(&self) -> Self {
         Self {
-            value: self.value.abs(),
-            precision: self.precision,
         }
     }
 
     /// Adds two BigFloats
     pub fn add(&self, other: &BigFloat) -> Self {
         Self {
-            value: self.value + other.value,
-            precision: self.precision.min(other.precision),
         }
     }
 
     /// Subtracts two BigFloats
     pub fn sub(&self, other: &BigFloat) -> Self {
         Self {
-            value: self.value - other.value,
-            precision: self.precision.min(other.precision),
         }
     }
 
     /// Multiplies two BigFloats
     pub fn mul(&self, other: &BigFloat) -> Self {
         Self {
-            value: self.value * other.value,
-            precision: self.precision.min(other.precision),
         }
     }
 
@@ -625,52 +471,34 @@ impl BigFloat {
     pub fn div(&self, other: &BigFloat) -> MathResult<Self> {
         if other.value == 0.0 {
             return Err(MathError::DivisionByZero {
-                function: "BigFloat::div".to_string(),
             });
         }
         Ok(Self {
             value: self.value / other.value,
-            precision: self.precision.min(other.precision),
         })
-    }
-
     /// Compares with another BigFloat
     pub fn cmp(&self, other: &BigFloat) -> std::cmp::Ordering {
         self.value.partial_cmp(&other.value).unwrap_or(std::cmp::Ordering::Equal)
-    }
-
     /// Sets value from another BigFloat
     pub fn set(&mut self, other: &BigFloat) {
         self.value = other.value;
         self.precision = other.precision;
-    }
-
     /// Sets value from BigInt
     pub fn set_int(&mut self, value: &BigInt) {
         self.value = value.inner.to_f64().unwrap_or(0.0);
-    }
-
     /// Sets value from BigRat
     pub fn set_rat(&mut self, value: &BigRat) {
         let (f, _) = value.to_f64();
         self.value = f;
-    }
-
     /// Sets value from i64
     pub fn set_i64(&mut self, value: i64) {
         self.value = value as f64;
-    }
-
     /// Sets value from u64
     pub fn set_u64(&mut self, value: u64) {
         self.value = value as f64;
-    }
-
     /// Sets value from f64
     pub fn set_f64(&mut self, value: f64) {
         self.value = value;
-    }
-
     /// Sets value from string
     pub fn set_string(&mut self, s: &str) -> MathResult<()> {
         match s.parse::<f64>() {
@@ -679,10 +507,6 @@ impl BigFloat {
                 Ok(())
             }
             Err(_) => Err(MathError::InvalidInput {
-                function: "BigFloat::set_string".to_string(),
-                parameter: "string".to_string(),
-                value: 0.0,
-            }),
         }
     }
 
@@ -696,15 +520,10 @@ impl BigFloat {
             Accuracy::Above
         } else {
             Accuracy::Below
-        };
         (f32_val, accuracy)
-    }
-
     /// Converts to f64 with accuracy indication
     pub fn to_f64(&self) -> (f64, Accuracy) {
         (self.value, Accuracy::Exact) // Simplified
-    }
-
     /// Converts to BigInt with accuracy indication
     pub fn to_int(&self) -> (BigInt, Accuracy) {
         let int_val = self.value.trunc() as i64;
@@ -714,7 +533,6 @@ impl BigFloat {
             Accuracy::Above
         } else {
             Accuracy::Below
-        };
         (BigInt::new(int_val), accuracy)
     }
 }
@@ -731,27 +549,14 @@ impl Decimal {
     pub fn new(s: &str) -> MathResult<Self> {
         let parts: Vec<&str> = s.split('.').collect();
         let (integer_part, scale) = match parts.len() {
-            1 => (parts[0], 0),
-            2 => (parts[0], parts[1].len() as u8),
             _ => return Err(MathError::InvalidInput {
-                function: "Decimal::new".to_string(),
-                parameter: "string".to_string(),
-                value: 0.0,
-            }),
-        };
 
         let mut value_str = integer_part.to_string();
         if parts.len() == 2 {
             value_str.push_str(parts[1]);
-        }
-
         let value = BigInt::from_str(&value_str)?;
         Ok(Self {
-            value,
-            scale,
         })
-    }
-
     /// Creates a Decimal from BigInt with specified scale
     pub fn from_big_int(value: BigInt, scale: u8) -> Self {
         Self { value, scale }
@@ -763,16 +568,12 @@ impl Decimal {
         let self_scaled = self.scale_to(max_scale);
         let other_scaled = other.scale_to(max_scale);
         Self {
-            value: self_scaled.value.add(&other_scaled.value),
-            scale: max_scale,
         }
     }
 
     /// Multiplies two Decimals
     pub fn mul(&self, other: &Decimal) -> Self {
         Self {
-            value: self.value.mul(&other.value),
-            scale: self.scale + other.scale,
         }
     }
 
@@ -784,16 +585,12 @@ impl Decimal {
             let scale_diff = target_scale - self.scale;
             let multiplier = BigInt::new(10_i64.pow(scale_diff as u32));
             Self {
-                value: self.value.mul(&multiplier),
-                scale: target_scale,
             }
         } else {
             // Would need to handle rounding - simplified for now
             self.clone()
         }
     }
-}
-
 impl fmt::Display for Decimal {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let s = self.value.to_string();
@@ -821,18 +618,12 @@ impl BigComplex {
     /// Returns the real part
     pub fn real(&self) -> &BigFloat {
         &self.real
-    }
-
     /// Returns the imaginary part
     pub fn imag(&self) -> &BigFloat {
         &self.imag
-    }
-
     /// Adds two BigComplex numbers
     pub fn add(&self, other: &BigComplex) -> Self {
         Self {
-            real: self.real.add(&other.real),
-            imag: self.imag.add(&other.imag),
         }
     }
 
@@ -845,12 +636,8 @@ impl BigComplex {
         let bc = self.imag.mul(&other.real);
         
         Self {
-            real: ac.sub(&bd),
-            imag: ad.add(&bc),
         }
     }
-}
-
 // Utility Functions
 
 /// Parses an integer from string with specified base
@@ -858,26 +645,18 @@ pub fn parse_int(s: &str, base: u32) -> MathResult<BigInt> {
     let mut result = BigInt::zero();
     result.set_string(s, base)?;
     Ok(result)
-}
-
 /// Parses a rational number from string
 pub fn parse_rat(s: &str) -> MathResult<BigRat> {
     BigRat::from_str(s)
-}
-
 /// Parses a floating-point number with specified precision
 pub fn parse_float(s: &str, precision: u32) -> MathResult<BigFloat> {
     let mut result = BigFloat::zero();
     result.set_precision(precision);
     result.set_string(s)?;
     Ok(result)
-}
-
 /// Computes greatest common divisor
 pub fn gcd(a: &BigInt, b: &BigInt) -> BigInt {
     a.gcd(b)
-}
-
 /// Computes binomial coefficient (n choose k)
 pub fn binomial(n: i64, k: i64) -> MathResult<BigInt> {
     if k < 0 || k > n {
@@ -885,8 +664,6 @@ pub fn binomial(n: i64, k: i64) -> MathResult<BigInt> {
     }
     if k == 0 || k == n {
         return Ok(BigInt::one());
-    }
-
     let k = k.min(n - k); // Take advantage of symmetry
     let mut result = BigInt::one();
     
@@ -894,33 +671,20 @@ pub fn binomial(n: i64, k: i64) -> MathResult<BigInt> {
         let numerator = BigInt::new(n - i);
         let denominator = BigInt::new(i + 1);
         result = result.mul(&numerator).div(&denominator)?;
-    }
-    
     Ok(result)
-}
-
 /// Enhanced mathematical functions
 
 /// Computes square root of BigFloat
 pub fn sqrt(x: &BigFloat) -> MathResult<BigFloat> {
     if x.value < 0.0 {
         return Err(MathError::DomainError {
-            function: "big_mood::sqrt".to_string(),
-            value: x.value,
-            message: "Square root of negative number".to_string(),
         });
     }
     Ok(BigFloat {
-        value: x.value.sqrt(),
-        precision: x.precision,
     })
-}
-
 /// Computes cube root of BigFloat
 pub fn cbrt(x: &BigFloat) -> BigFloat {
     BigFloat {
-        value: x.value.cbrt(),
-        precision: x.precision,
     }
 }
 
@@ -928,73 +692,47 @@ pub fn cbrt(x: &BigFloat) -> BigFloat {
 pub fn nth_root(x: &BigFloat, n: u32) -> MathResult<BigFloat> {
     if n == 0 {
         return Err(MathError::DivisionByZero {
-            function: "big_mood::nth_root".to_string(),
         });
     }
     if n % 2 == 0 && x.value < 0.0 {
         return Err(MathError::DomainError {
-            function: "big_mood::nth_root".to_string(),
-            value: x.value,
-            message: "Even root of negative number".to_string(),
         });
-    }
-    
     let result = if x.value >= 0.0 {
         x.value.powf(1.0 / n as f64)
     } else {
         -((-x.value).powf(1.0 / n as f64))
-    };
     
     Ok(BigFloat {
-        value: result,
-        precision: x.precision,
     })
-}
-
 /// Computes natural logarithm of BigFloat
 pub fn ln(x: &BigFloat) -> MathResult<BigFloat> {
     if x.value <= 0.0 {
         return Err(MathError::DomainError {
-            function: "big_mood::ln".to_string(),
-            value: x.value,
-            message: "Logarithm of non-positive number".to_string(),
         });
     }
     Ok(BigFloat {
-        value: x.value.ln(),
-        precision: x.precision,
     })
-}
-
 /// Computes exponential function of BigFloat
 pub fn exp(x: &BigFloat) -> BigFloat {
     BigFloat {
-        value: x.value.exp(),
-        precision: x.precision,
     }
 }
 
 /// Computes sine of BigFloat
 pub fn sin(x: &BigFloat) -> BigFloat {
     BigFloat {
-        value: x.value.sin(),
-        precision: x.precision,
     }
 }
 
 /// Computes cosine of BigFloat
 pub fn cos(x: &BigFloat) -> BigFloat {
     BigFloat {
-        value: x.value.cos(),
-        precision: x.precision,
     }
 }
 
 /// Computes tangent of BigFloat
 pub fn tan(x: &BigFloat) -> BigFloat {
     BigFloat {
-        value: x.value.tan(),
-        precision: x.precision,
     }
 }
 
@@ -1007,13 +745,9 @@ pub fn rand_prime<R: Rng>(rng: &mut R, bits: usize) -> BigInt {
     candidate = candidate | BigInt::one().inner;
     if candidate.bit_len() != bits {
         candidate = candidate | (BigInt::one().inner << (bits - 1));
-    }
-    
     // Simple primality test (Miller-Rabin would be better for cryptographic use)
     while !is_probably_prime(&candidate, 10) {
         candidate = &candidate + &BigInt::new(2).inner;
-    }
-    
     BigInt { inner: candidate }
 }
 
@@ -1029,8 +763,6 @@ fn is_probably_prime(n: &NumBigInt, k: usize) -> bool {
     }
     if n.is_even() {
         return false;
-    }
-    
     // Simple trial division for small numbers
     for i in 3..=100 {
         if n % i == NumBigInt::zero() {
@@ -1040,12 +772,8 @@ fn is_probably_prime(n: &NumBigInt, k: usize) -> bool {
     
     // For larger numbers, assume prime (simplified)
     true
-}
-
 /// Fast multiplication algorithm for very large numbers
 pub fn fast_mul(x: &BigInt, y: &BigInt) -> BigInt {
     // For now, just use the standard multiplication
     // Real implementation would use Karatsuba or FFT-based multiplication
     x.mul(y)
-}
-

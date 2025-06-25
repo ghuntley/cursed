@@ -15,96 +15,36 @@ use std::io::Write;
 /// Configuration for bootstrap verification
 #[derive(Debug, Clone)]
 pub struct VerificationConfig {
-    pub work_dir: PathBuf,
-    pub compilation_timeout: Duration,
-    pub execution_timeout: Duration,
-    pub keep_intermediates: bool,
-    pub optimization_levels: Vec<String>,
-    pub bootstrap_cycles: usize,
-}
-
 impl Default for VerificationConfig {
     fn default() -> Self {
         Self {
-            work_dir: PathBuf::from("bootstrap_verification"),
-            compilation_timeout: Duration::from_secs(300),
-            execution_timeout: Duration::from_secs(60),
-            keep_intermediates: false,
-            optimization_levels: vec!["-O0".to_string(), "-O2".to_string()],
-            bootstrap_cycles: 3,
         }
     }
-}
-
 /// Results from a verification run
 #[derive(Debug, Clone)]
 pub struct VerificationResult {
-    pub success: bool,
-    pub stages_completed: usize,
-    pub total_time: Duration,
-    pub stage_results: Vec<StageResult>,
-    pub performance_metrics: PerformanceMetrics,
-    pub convergence_analysis: ConvergenceAnalysis,
-    pub issues: Vec<String>,
-}
-
 /// Results from a single stage
 #[derive(Debug, Clone)]
 pub struct StageResult {
-    pub stage: u8,
-    pub success: bool,
-    pub compilation_time: Duration,
-    pub execution_time: Duration,
-    pub binary_checksum: String,
-    pub output_files: Vec<PathBuf>,
-    pub errors: Vec<String>,
-}
-
 /// Performance metrics across stages
 #[derive(Debug, Clone)]
 pub struct PerformanceMetrics {
-    pub compilation_times: Vec<Duration>,
-    pub binary_sizes: Vec<u64>,
-    pub execution_times: Vec<Duration>,
-    pub memory_usage: Vec<u64>,
-}
-
 impl Default for PerformanceMetrics {
     fn default() -> Self {
         Self {
-            compilation_times: Vec::new(),
-            binary_sizes: Vec::new(),
-            execution_times: Vec::new(),
-            memory_usage: Vec::new(),
         }
     }
-}
-
 /// Analysis of compiler convergence
 #[derive(Debug, Clone)]
 pub struct ConvergenceAnalysis {
-    pub binary_stability: bool,
-    pub performance_stability: bool,
-    pub convergence_cycle: Option<usize>,
-    pub stability_threshold: f64,
-}
-
 impl Default for ConvergenceAnalysis {
     fn default() -> Self {
         Self {
-            binary_stability: false,
-            performance_stability: false,
-            convergence_cycle: None,
             stability_threshold: 0.05, // 5% variance threshold
         }
     }
-}
-
 /// Main bootstrap verification coordinator
 pub struct SelfCompilationVerifier {
-    config: VerificationConfig,
-}
-
 impl SelfCompilationVerifier {
     /// Create a new verifier with the given configuration
     pub fn new(config: VerificationConfig) -> Self {
@@ -114,20 +54,10 @@ impl SelfCompilationVerifier {
     /// Create a verifier with default configuration
     pub fn default() -> Self {
         Self::new(VerificationConfig::default())
-    }
-
     /// Run the complete bootstrap verification process
     pub fn verify(&self) -> crate::error::Result<()> {
         let start_time = Instant::now();
         let mut result = VerificationResult {
-            success: false,
-            stages_completed: 0,
-            total_time: Duration::default(),
-            stage_results: Vec::new(),
-            performance_metrics: PerformanceMetrics::default(),
-            convergence_analysis: ConvergenceAnalysis::default(),
-            issues: Vec::new(),
-        };
 
         // Create working directory
         if self.config.work_dir.exists() {
@@ -147,8 +77,6 @@ impl SelfCompilationVerifier {
             result.issues.push("Stage 1 (Rust compiler) verification failed".to_string());
             result.total_time = start_time.elapsed();
             return Ok(result);
-        }
-
         // Stage 2: Build CURSED-based compiler using Stage 1
         let stage2_result = self.verify_stage2(&stage1_result)?;
         result.stage_results.push(stage2_result.clone());
@@ -158,24 +86,18 @@ impl SelfCompilationVerifier {
             result.issues.push("Stage 2 (CURSED compiler) verification failed".to_string());
             result.total_time = start_time.elapsed();
             return Ok(result);
-        }
-
         // Functional equivalence testing
         let equiv_result = self.verify_functional_equivalence(&stage1_result, &stage2_result)?;
         if !equiv_result {
             result.issues.push("Functional equivalence test failed".to_string());
             result.total_time = start_time.elapsed();
             return Ok(result);
-        }
-
         // Bootstrap cycles for convergence testing
         let convergence_result = self.verify_bootstrap_cycles(&stage2_result)?;
         result.convergence_analysis = convergence_result.clone();
 
         if !convergence_result.binary_stability {
             result.issues.push("Bootstrap cycle convergence failed".to_string());
-        }
-
         // Collect performance metrics
         self.collect_performance_metrics(&mut result);
 
@@ -188,19 +110,11 @@ impl SelfCompilationVerifier {
         println!("✅ Bootstrap verification completed in {:.2}s", result.total_time.as_secs_f64());
 
         Ok(result)
-    }
-
     /// Run the complete bootstrap verification process
     pub async fn run_verification(&self) -> crate::error::Result<()> {
         println!("🚀 Starting CURSED Bootstrap Verification...");
         
         let mut result = VerificationResult {
-            stages: Vec::new(),
-            overall_success: false,
-            total_time: Duration::default(),
-            convergence_achieved: false,
-            performance_analysis: None,
-        };
         
         let start_time = Instant::now();
         
@@ -250,8 +164,6 @@ impl SelfCompilationVerifier {
                     break;
                 }
             }
-        }
-        
         // Check for convergence
         result.convergence_achieved = self.check_convergence(&result.stages);
         result.overall_success = result.stage_results.iter().all(|s| s.success) && result.convergence_achieved;
@@ -259,22 +171,12 @@ impl SelfCompilationVerifier {
         
         println!("✅ Bootstrap verification completed in {:?}", result.total_time);
         Ok(result)
-    }
-
     /// Verify Stage 1: Rust-based CURSED compiler
     fn verify_stage1(&self) -> crate::error::Result<()> {
         println!("🔧 Stage 1: Building Rust-based CURSED compiler...");
         let start_time = Instant::now();
 
         let mut result = StageResult {
-            stage: 1,
-            success: false,
-            compilation_time: Duration::default(),
-            execution_time: Duration::default(),
-            binary_checksum: String::new(),
-            output_files: Vec::new(),
-            errors: Vec::new(),
-        };
 
         // Build the Rust-based compiler
         let output = Command::new("cargo")
@@ -288,14 +190,10 @@ impl SelfCompilationVerifier {
         if !output.status.success() {
             result.errors.push(String::from_utf8_lossy(&output.stderr).to_string());
             return Ok(result);
-        }
-
         let binary_path = PathBuf::from("target/release/cursed");
         if !binary_path.exists() {
             result.errors.push("Stage 1 binary not found after compilation".to_string());
             return Ok(result);
-        }
-
         // Calculate binary checksum
         result.binary_checksum = self.calculate_checksum(&binary_path)?;
         result.output_files.push(binary_path);
@@ -308,28 +206,16 @@ impl SelfCompilationVerifier {
         if !test_success {
             result.errors.push("Stage 1 basic functionality test failed".to_string());
             return Ok(result);
-        }
-
         result.success = true;
         println!("✅ Stage 1 completed successfully in {:.2}s", result.compilation_time.as_secs_f64());
 
         Ok(result)
-    }
-
     /// Verify Stage 2: CURSED-based compiler compiled by Stage 1
     fn verify_stage2(&self, stage1: &StageResult) -> crate::error::Result<()> {
         println!("🔧 Stage 2: Building CURSED-based compiler using Stage 1...");
         let start_time = Instant::now();
 
         let mut result = StageResult {
-            stage: 2,
-            success: false,
-            compilation_time: Duration::default(),
-            execution_time: Duration::default(),
-            binary_checksum: String::new(),
-            output_files: Vec::new(),
-            errors: Vec::new(),
-        };
 
         // Use the real Stage 2 CURSED compiler source
         let stage2_source_dir = PathBuf::from("src/bootstrap/stage2");
@@ -338,15 +224,10 @@ impl SelfCompilationVerifier {
         if !cursed_compiler_source.exists() {
             result.errors.push("Stage 2 CURSED compiler source not found at src/bootstrap/stage2/main.csd".to_string());
             return Ok(result);
-        }
-
         // Use Stage 1 to compile the CURSED compiler
         let stage1_binary = &stage1.output_files[0];
         let output = Command::new(stage1_binary)
             .args(&[
-                "compile", 
-                cursed_compiler_source.to_str().unwrap(),
-                "-o", 
                 self.config.work_dir.join("cursed_v2").to_str().unwrap()
             ])
             .stdout(Stdio::piped())
@@ -387,11 +268,7 @@ impl SelfCompilationVerifier {
 
         if result.success {
             println!("✅ Stage 2 completed successfully in {:.2}s", result.compilation_time.as_secs_f64());
-        }
-
         Ok(result)
-    }
-
     /// Verify functional equivalence between compiler stages
     fn verify_functional_equivalence(&self, stage1: &StageResult, stage2: &StageResult) -> crate::error::Result<()> {
         println!("🔍 Testing functional equivalence between compiler stages...");
@@ -419,8 +296,6 @@ impl SelfCompilationVerifier {
         }
 
         Ok(all_passed)
-    }
-
     /// Verify bootstrap cycles for convergence
     fn verify_bootstrap_cycles(&self, stage2: &StageResult) -> crate::error::Result<()> {
         println!("🔄 Testing bootstrap convergence ({} cycles)...", self.config.bootstrap_cycles);
@@ -457,11 +332,7 @@ impl SelfCompilationVerifier {
                 analysis.convergence_cycle = Some(cycle);
                 println!("    ✅ Binary convergence achieved at cycle {}", cycle);
                 break;
-            }
-
             current_binary = next_binary;
-        }
-
         // Analyze performance stability
         if performance_times.len() >= 2 {
             let avg_time = performance_times.iter().sum::<Duration>().as_secs_f64() / performance_times.len() as f64;
@@ -471,11 +342,7 @@ impl SelfCompilationVerifier {
             let coefficient_of_variation = variance.sqrt() / avg_time;
             
             analysis.performance_stability = coefficient_of_variation < analysis.stability_threshold;
-        }
-
         Ok(analysis)
-    }
-
     /// Collect performance metrics from all stages
     fn collect_performance_metrics(&self, result: &mut VerificationResult) {
         for stage_result in &result.stage_results {
@@ -514,15 +381,12 @@ slay main() -> normie {
             .output();
 
         match output {
-            Ok(output) => Ok(output.status.success()),
             Err(_) => {
                 // Compiler might not be fully implemented yet
                 println!("    ⚠️  Basic functionality test skipped (compiler not ready)");
                 Ok(true) // Assume success for now
             }
         }
-    }
-
     /// Create test programs for equivalence testing
     fn create_test_programs(&self) -> crate::error::Result<()> {
         let mut programs = Vec::new();
@@ -563,17 +427,12 @@ slay main() -> normie {
         programs.push(("control_flow".to_string(), control_path));
 
         Ok(programs)
-    }
-
     /// Compile a program with a specific compiler stage
     fn compile_with_stage(&self, compiler_path: &Path, program_path: &Path, stage_name: &str) -> crate::error::Result<()> {
         let output_path = self.config.work_dir.join(format!("output_{}_{}", stage_name, program_path.file_name().unwrap().to_str().unwrap()));
         
         let output = Command::new(compiler_path)
             .args(&[
-                "compile", 
-                program_path.to_str().unwrap(),
-                "-o",
                 output_path.to_str().unwrap()
             ])
             .stdout(Stdio::piped())
@@ -592,8 +451,6 @@ slay main() -> normie {
                 Ok(format!("compile_error_{}", e))
             }
         }
-    }
-
     /// Create a test CURSED compiler source (placeholder)
     fn create_test_cursed_compiler(&self, output_path: &Path) -> crate::error::Result<()> {
         let content = r#"
@@ -603,8 +460,6 @@ slay main() -> normie {
 slay main() -> normie {
     // Compiler entry point
     yeet 0;
-}
-
 slay compile(source: tea, output: tea) -> normie {
     // Compilation logic would go here
     yeet 0;
@@ -612,8 +467,6 @@ slay compile(source: tea, output: tea) -> normie {
 "#;
         fs::write(output_path, content)?;
         Ok(())
-    }
-
     /// Calculate checksum of a file
     fn calculate_checksum(&self, file_path: &Path) -> crate::error::Result<()> {
         use std::collections::hash_map::DefaultHasher;
@@ -621,14 +474,10 @@ slay compile(source: tea, output: tea) -> normie {
 
         if !file_path.exists() {
             return Ok("file_not_found".to_string());
-        }
-
         let contents = fs::read(file_path)?;
         let mut hasher = DefaultHasher::new();
         contents.hash(&mut hasher);
         Ok(format!("{:x}", hasher.finish()))
-    }
-
     /// Generate a verification report
     pub fn generate_report(&self, result: &VerificationResult, output_path: &Path) -> crate::error::Result<()> {
         let mut report = String::new();
@@ -642,8 +491,6 @@ slay compile(source: tea, output: tea) -> normie {
         // Stage results
         report.push_str("## Stage Results\n\n");
         for stage_result in &result.stage_results {
-            report.push_str(&format!("### Stage {} - {}\n\n", 
-                stage_result.stage, 
                 if stage_result.success { "✅ SUCCESS" } else { "❌ FAILED" }
             ));
             report.push_str(&format!("- **Compilation Time:** {:.2}s\n", stage_result.compilation_time.as_secs_f64()));
@@ -657,35 +504,25 @@ slay compile(source: tea, output: tea) -> normie {
                 }
             }
             report.push_str("\n");
-        }
-
         // Performance metrics
         report.push_str("## Performance Analysis\n\n");
         if !result.performance_metrics.compilation_times.is_empty() {
             let avg_compile_time = result.performance_metrics.compilation_times.iter().sum::<Duration>().as_secs_f64() 
                 / result.performance_metrics.compilation_times.len() as f64;
             report.push_str(&format!("- **Average Compilation Time:** {:.2}s\n", avg_compile_time));
-        }
-
         if !result.performance_metrics.binary_sizes.is_empty() {
             let avg_binary_size = result.performance_metrics.binary_sizes.iter().sum::<u64>() 
                 / result.performance_metrics.binary_sizes.len() as u64;
             report.push_str(&format!("- **Average Binary Size:** {} bytes\n", avg_binary_size));
-        }
-
         // Convergence analysis
         report.push_str("\n## Convergence Analysis\n\n");
-        report.push_str(&format!("- **Binary Stability:** {}\n", 
             if result.convergence_analysis.binary_stability { "✅ Achieved" } else { "❌ Not Achieved" }
         ));
-        report.push_str(&format!("- **Performance Stability:** {}\n", 
             if result.convergence_analysis.performance_stability { "✅ Stable" } else { "❌ Unstable" }
         ));
         
         if let Some(cycle) = result.convergence_analysis.convergence_cycle {
             report.push_str(&format!("- **Convergence Cycle:** {}\n", cycle));
-        }
-
         // Issues
         if !result.issues.is_empty() {
             report.push_str("\n## Issues Found\n\n");

@@ -11,23 +11,10 @@ use std::sync::{Arc, Mutex};
 use tracing::{debug, info, instrument, warn};
 
 use inkwell::{
-    context::Context,
-    module::Module,
-    values::{FunctionValue, BasicValueEnum, InstructionValue, CallSiteValue},
-    basic_block::BasicBlock,
-    builder::Builder,
-    types::BasicType,
-};
+// };
 
 /// Interprocedural analysis coordinator
 pub struct InterproceduralAnalyzer<'ctx> {
-    context: &'ctx Context,
-    optimization_level: OptimizationLevel,
-    call_graph: CallGraph<'ctx>,
-    function_attributes: FunctionAttributeMap<'ctx>,
-    statistics: Arc<Mutex<InterproceduralStatistics>>,
-}
-
 impl<'ctx> InterproceduralAnalyzer<'ctx> {
     /// Create new interprocedural analyzer
     #[instrument(skip(context))]
@@ -35,11 +22,6 @@ impl<'ctx> InterproceduralAnalyzer<'ctx> {
         info!("Initializing interprocedural analyzer");
         
         Self {
-            context,
-            optimization_level,
-            call_graph: CallGraph::new(),
-            function_attributes: FunctionAttributeMap::new(),
-            statistics: Arc::new(Mutex::new(InterproceduralStatistics::default())),
         }
     }
     
@@ -64,23 +46,12 @@ impl<'ctx> InterproceduralAnalyzer<'ctx> {
         let dead_functions = self.eliminate_dead_functions(module)?;
         
         let final_results = InterproceduralResults {
-            call_graph_nodes: self.call_graph.functions.len(),
-            call_graph_edges: self.call_graph.call_sites.len(),
-            inferred_attributes: self.function_attributes.len(),
-            optimization_opportunities: opportunities,
-            dead_functions_eliminated: dead_functions,
-            performance_improvements: self.calculate_performance_improvements(&results),
-        };
         
         info!(
-            call_graph_nodes = final_results.call_graph_nodes,
-            dead_functions = final_results.dead_functions_eliminated,
             "Interprocedural analysis completed"
         );
         
         Ok(final_results)
-    }
-    
     /// Build call graph for the module
     fn build_call_graph(&mut self, module: &Module<'ctx>) -> Result<()> {
         debug!("Building call graph");
@@ -88,17 +59,7 @@ impl<'ctx> InterproceduralAnalyzer<'ctx> {
         // First pass: collect all functions
         for function in module.get_functions() {
             let function_info = FunctionInfo {
-                function,
-                is_recursive: false,
-                is_leaf: true,
-                call_count: 0,
-                is_pure: None,
-                is_const: None,
-                may_throw: None,
-            };
             self.call_graph.functions.insert(function, function_info);
-        }
-        
         // Second pass: analyze call relationships
         for function in module.get_functions() {
             if function.get_first_basic_block().is_some() {
@@ -111,8 +72,6 @@ impl<'ctx> InterproceduralAnalyzer<'ctx> {
         self.calculate_call_frequencies()?;
         
         Ok(())
-    }
-    
     /// Analyze calls within a function
     fn analyze_function_calls(&mut self, function: FunctionValue<'ctx>) -> Result<()> {
         let mut block = function.get_first_basic_block();
@@ -124,20 +83,12 @@ impl<'ctx> InterproceduralAnalyzer<'ctx> {
                     if let Some(called_function) = self.extract_called_function(&instr) {
                         // Record call site
                         let call_site = CallSite {
-                            caller: function,
-                            callee: called_function,
-                            instruction: instr,
-                            call_type: self.classify_call_type(&instr),
-                            estimated_frequency: self.estimate_call_frequency(&instr, bb),
-                        };
                         
                         self.call_graph.call_sites.push(call_site);
                         
                         // Update function info
                         if let Some(caller_info) = self.call_graph.functions.get_mut(&function) {
                             caller_info.is_leaf = false;
-                        }
-                        
                         if let Some(callee_info) = self.call_graph.functions.get_mut(&called_function) {
                             callee_info.call_count += 1;
                         }
@@ -146,11 +97,7 @@ impl<'ctx> InterproceduralAnalyzer<'ctx> {
                 instruction = instr.get_next_instruction();
             }
             block = bb.get_next_basic_block();
-        }
-        
         Ok(())
-    }
-    
     /// Extract called function from call instruction
     fn extract_called_function(&self, call_instr: &InstructionValue<'ctx>) -> Option<FunctionValue<'ctx>> {
         let num_operands = call_instr.get_num_operands();
@@ -162,8 +109,6 @@ impl<'ctx> InterproceduralAnalyzer<'ctx> {
             }
         }
         None
-    }
-    
     /// Classify call type for optimization purposes
     fn classify_call_type(&self, call_instr: &InstructionValue<'ctx>) -> CallType {
         // Analyze call characteristics
@@ -192,8 +137,6 @@ impl<'ctx> InterproceduralAnalyzer<'ctx> {
     fn is_inline_candidate(&self, _call_instr: &InstructionValue<'ctx>) -> bool {
         // Simplified analysis - would need more sophisticated heuristics
         true
-    }
-    
     /// Check if call is virtual/indirect
     fn is_virtual_call(&self, call_instr: &InstructionValue<'ctx>) -> bool {
         // Check if called function is determined at runtime
@@ -217,16 +160,10 @@ impl<'ctx> InterproceduralAnalyzer<'ctx> {
         // Check if call is in a loop
         if self.is_in_loop_context(block) {
             frequency *= 10.0; // Calls in loops are executed more frequently
-        }
-        
         // Check if call is in conditional branch
         if self.is_in_conditional_context(call_instr) {
             frequency *= 0.5; // Calls in conditions may not always execute
-        }
-        
         frequency
-    }
-    
     /// Check if instruction is in loop context
     fn is_in_loop_context(&self, block: BasicBlock<'ctx>) -> bool {
         // Look for PHI nodes indicating loop headers
@@ -238,14 +175,10 @@ impl<'ctx> InterproceduralAnalyzer<'ctx> {
             instruction = instr.get_next_instruction();
         }
         false
-    }
-    
     /// Check if instruction is in conditional context
     fn is_in_conditional_context(&self, _call_instr: &InstructionValue<'ctx>) -> bool {
         // Simplified analysis
         false
-    }
-    
     /// Detect recursive functions
     fn detect_recursion(&mut self) -> Result<()> {
         // Use DFS to detect cycles in call graph
@@ -257,18 +190,12 @@ impl<'ctx> InterproceduralAnalyzer<'ctx> {
             }
         }
         Ok(())
-    }
-    
     /// Check if function has recursive path
     fn has_recursive_path(
-        &self, 
-        function: FunctionValue<'ctx>, 
         visited: &mut HashSet<FunctionValue<'ctx>>
     ) -> Result<bool> {
         if visited.contains(&function) {
             return Ok(true); // Cycle detected
-        }
-        
         visited.insert(function);
         
         // Check all callees
@@ -278,12 +205,8 @@ impl<'ctx> InterproceduralAnalyzer<'ctx> {
                     return Ok(true);
                 }
             }
-        }
-        
         visited.remove(&function);
         Ok(false)
-    }
-    
     /// Calculate call frequencies using iterative algorithm
     fn calculate_call_frequencies(&mut self) -> Result<()> {
         // Implement iterative algorithm to calculate realistic call frequencies
@@ -297,16 +220,12 @@ impl<'ctx> InterproceduralAnalyzer<'ctx> {
             // Adjust for function characteristics
             if caller_info.is_recursive {
                 call_site.estimated_frequency = base_frequency * 5.0; // Recursive calls execute more
-            }
-            
             if matches!(call_site.call_type, CallType::TailCall) {
                 call_site.estimated_frequency = base_frequency * 0.8; // Tail calls slightly less frequent
             }
         }
         
         Ok(())
-    }
-    
     /// Analyze function attributes for optimization
     fn analyze_function_attributes(&mut self, module: &Module<'ctx>) -> Result<()> {
         debug!("Analyzing function attributes");
@@ -319,8 +238,6 @@ impl<'ctx> InterproceduralAnalyzer<'ctx> {
         }
         
         Ok(())
-    }
-    
     /// Infer function attributes through analysis
     fn infer_function_attributes(&self, function: FunctionValue<'ctx>) -> Result<InferredAttributes> {
         let mut attributes = InferredAttributes::default();
@@ -341,8 +258,6 @@ impl<'ctx> InterproceduralAnalyzer<'ctx> {
         attributes.return_dependency = self.analyze_return_dependency(function)?;
         
         Ok(attributes)
-    }
-    
     /// Analyze if function is pure (no side effects)
     fn analyze_function_purity(&self, function: FunctionValue<'ctx>) -> Result<bool> {
         let mut block = function.get_first_basic_block();
@@ -363,11 +278,7 @@ impl<'ctx> InterproceduralAnalyzer<'ctx> {
                 instruction = instr.get_next_instruction();
             }
             block = bb.get_next_basic_block();
-        }
-        
         Ok(true)
-    }
-    
     /// Check if specific operation is pure
     fn is_pure_operation(&self, instruction: &InstructionValue<'ctx>) -> Result<bool> {
         match instruction.get_opcode() {
@@ -397,8 +308,6 @@ impl<'ctx> InterproceduralAnalyzer<'ctx> {
         // Function is const if it's pure and doesn't depend on global state
         if !self.analyze_function_purity(function)? {
             return Ok(false);
-        }
-        
         // Check for global variable access
         let mut block = function.get_first_basic_block();
         while let Some(bb) = block {
@@ -410,17 +319,11 @@ impl<'ctx> InterproceduralAnalyzer<'ctx> {
                 instruction = instr.get_next_instruction();
             }
             block = bb.get_next_basic_block();
-        }
-        
         Ok(true)
-    }
-    
     /// Check for global variable access
     fn check_global_access(&self, _instruction: &InstructionValue<'ctx>) -> Option<GlobalAccessType> {
         // Simplified analysis
         None
-    }
-    
     /// Analyze exception behavior
     fn analyze_exception_behavior(&self, function: FunctionValue<'ctx>) -> Result<bool> {
         // Check for operations that might throw exceptions
@@ -435,11 +338,7 @@ impl<'ctx> InterproceduralAnalyzer<'ctx> {
                 instruction = instr.get_next_instruction();
             }
             block = bb.get_next_basic_block();
-        }
-        
         Ok(false)
-    }
-    
     /// Check if instruction may throw exception
     fn may_throw_exception(&self, instruction: &InstructionValue<'ctx>) -> Result<bool> {
         match instruction.get_opcode() {
@@ -461,20 +360,12 @@ impl<'ctx> InterproceduralAnalyzer<'ctx> {
     /// Analyze memory effects
     fn analyze_memory_effects(&self, function: FunctionValue<'ctx>) -> Result<MemoryEffects> {
         let mut effects = MemoryEffects {
-            reads_memory: false,
-            writes_memory: false,
-            allocates_memory: false,
-            accesses_globals: false,
-        };
         
         let mut block = function.get_first_basic_block();
         while let Some(bb) = block {
             let mut instruction = bb.get_first_instruction();
             while let Some(instr) = instruction {
                 match instr.get_opcode() {
-                    inkwell::values::InstructionOpcode::Load => effects.reads_memory = true,
-                    inkwell::values::InstructionOpcode::Store => effects.writes_memory = true,
-                    inkwell::values::InstructionOpcode::Alloca => effects.allocates_memory = true,
                     inkwell::values::InstructionOpcode::Call => {
                         // Function calls might have any effect
                         effects.reads_memory = true;
@@ -485,20 +376,11 @@ impl<'ctx> InterproceduralAnalyzer<'ctx> {
                 instruction = instr.get_next_instruction();
             }
             block = bb.get_next_basic_block();
-        }
-        
         Ok(effects)
-    }
-    
     /// Analyze return value dependency
     fn analyze_return_dependency(&self, function: FunctionValue<'ctx>) -> Result<ReturnDependency> {
         // Analyze what the return value depends on
         let mut dependency = ReturnDependency {
-            depends_on_parameters: false,
-            depends_on_globals: false,
-            depends_on_memory: false,
-            is_constant: false,
-        };
         
         // Find return instructions and trace back dependencies
         let mut block = function.get_first_basic_block();
@@ -518,22 +400,14 @@ impl<'ctx> InterproceduralAnalyzer<'ctx> {
                 instruction = instr.get_next_instruction();
             }
             block = bb.get_next_basic_block();
-        }
-        
         Ok(dependency)
-    }
-    
     /// Trace value dependency back to its sources
     fn trace_value_dependency(
-        &self, 
-        _value: BasicValueEnum<'ctx>, 
         dependency: &mut ReturnDependency
     ) -> Result<()> {
         // Simplified dependency analysis
         dependency.depends_on_parameters = true;
         Ok(())
-    }
-    
     /// Identify optimization opportunities
     fn identify_optimization_opportunities(&self, module: &Module<'ctx>) -> Result<Vec<OptimizationOpportunity<'ctx>>> {
         let mut opportunities = Vec::new();
@@ -551,8 +425,6 @@ impl<'ctx> InterproceduralAnalyzer<'ctx> {
         opportunities.extend(self.identify_specialization_opportunities()?);
         
         Ok(opportunities)
-    }
-    
     /// Identify function inlining opportunities
     fn identify_inline_opportunities(&self) -> Result<Vec<OptimizationOpportunity<'ctx>>> {
         let mut opportunities = Vec::new();
@@ -560,18 +432,11 @@ impl<'ctx> InterproceduralAnalyzer<'ctx> {
         for call_site in &self.call_graph.call_sites {
             if self.should_inline_function(call_site)? {
                 opportunities.push(OptimizationOpportunity {
-                    opportunity_type: OpportunityType::InlineExpansion,
-                    target_function: call_site.callee,
-                    call_site: Some(*call_site),
-                    estimated_benefit: self.calculate_inline_benefit(call_site)?,
-                    confidence: self.calculate_inline_confidence(call_site)?,
                 });
             }
         }
         
         Ok(opportunities)
-    }
-    
     /// Check if function should be inlined
     fn should_inline_function(&self, call_site: &CallSite<'ctx>) -> Result<bool> {
         let callee_info = self.call_graph.functions.get(&call_site.callee).unwrap();
@@ -584,8 +449,6 @@ impl<'ctx> InterproceduralAnalyzer<'ctx> {
         let is_not_recursive = !callee_info.is_recursive;
         
         Ok(is_small && (is_leaf || is_frequently_called) && is_not_recursive)
-    }
-    
     /// Estimate function size in instructions
     fn estimate_function_size(&self, function: FunctionValue<'ctx>) -> usize {
         let mut size = 0;
@@ -598,11 +461,7 @@ impl<'ctx> InterproceduralAnalyzer<'ctx> {
                 instruction = instruction.unwrap().get_next_instruction();
             }
             block = bb.get_next_basic_block();
-        }
-        
         size
-    }
-    
     /// Calculate inlining benefit
     fn calculate_inline_benefit(&self, call_site: &CallSite<'ctx>) -> Result<f64> {
         let function_size = self.estimate_function_size(call_site.callee) as f64;
@@ -611,8 +470,6 @@ impl<'ctx> InterproceduralAnalyzer<'ctx> {
         
         // Benefit = saved call overhead * frequency - code size increase
         Ok(call_overhead * call_frequency - function_size * 0.1)
-    }
-    
     /// Calculate confidence in inlining decision
     fn calculate_inline_confidence(&self, call_site: &CallSite<'ctx>) -> Result<f64> {
         let mut confidence = 0.8; // Base confidence
@@ -621,19 +478,11 @@ impl<'ctx> InterproceduralAnalyzer<'ctx> {
         
         if callee_info.is_leaf {
             confidence += 0.1; // More confidence for leaf functions
-        }
-        
         if callee_info.is_recursive {
             confidence -= 0.3; // Less confidence for recursive functions
-        }
-        
         if call_site.estimated_frequency > 5.0 {
             confidence += 0.1; // More confidence for hot calls
-        }
-        
         Ok(confidence.min(1.0).max(0.0))
-    }
-    
     /// Identify tail call optimization opportunities
     fn identify_tail_call_opportunities(&self) -> Result<Vec<OptimizationOpportunity<'ctx>>> {
         let mut opportunities = Vec::new();
@@ -641,18 +490,12 @@ impl<'ctx> InterproceduralAnalyzer<'ctx> {
         for call_site in &self.call_graph.call_sites {
             if matches!(call_site.call_type, CallType::TailCall) {
                 opportunities.push(OptimizationOpportunity {
-                    opportunity_type: OpportunityType::TailCallOptimization,
-                    target_function: call_site.callee,
-                    call_site: Some(*call_site),
                     estimated_benefit: 2.0, // Stack space savings
-                    confidence: 0.9,
                 });
             }
         }
         
         Ok(opportunities)
-    }
-    
     /// Identify devirtualization opportunities
     fn identify_devirtualization_opportunities(&self) -> Result<Vec<OptimizationOpportunity<'ctx>>> {
         let mut opportunities = Vec::new();
@@ -661,25 +504,15 @@ impl<'ctx> InterproceduralAnalyzer<'ctx> {
             if matches!(call_site.call_type, CallType::VirtualCall) {
                 if let Some(concrete_target) = self.analyze_virtual_call_target(call_site)? {
                     opportunities.push(OptimizationOpportunity {
-                        opportunity_type: OpportunityType::Devirtualization,
-                        target_function: concrete_target,
-                        call_site: Some(*call_site),
                         estimated_benefit: 5.0, // Significant savings from avoiding virtual dispatch
-                        confidence: 0.7,
                     });
                 }
             }
-        }
-        
         Ok(opportunities)
-    }
-    
     /// Analyze virtual call to find concrete target
     fn analyze_virtual_call_target(&self, _call_site: &CallSite<'ctx>) -> Result<Option<FunctionValue<'ctx>>> {
         // Simplified analysis - would need type analysis in practice
         Ok(None)
-    }
-    
     /// Identify function specialization opportunities
     fn identify_specialization_opportunities(&self) -> Result<Vec<OptimizationOpportunity<'ctx>>> {
         let mut opportunities = Vec::new();
@@ -688,29 +521,17 @@ impl<'ctx> InterproceduralAnalyzer<'ctx> {
         for call_site in &self.call_graph.call_sites {
             if self.has_constant_arguments(call_site)? {
                 opportunities.push(OptimizationOpportunity {
-                    opportunity_type: OpportunityType::FunctionSpecialization,
-                    target_function: call_site.callee,
-                    call_site: Some(*call_site),
-                    estimated_benefit: 3.0,
-                    confidence: 0.6,
                 });
             }
         }
         
         Ok(opportunities)
-    }
-    
     /// Check if call site has constant arguments
     fn has_constant_arguments(&self, _call_site: &CallSite<'ctx>) -> Result<bool> {
         // Simplified - would need constant analysis
         Ok(false)
-    }
-    
     /// Apply interprocedural optimizations
     fn apply_interprocedural_optimizations(
-        &mut self,
-        module: &Module<'ctx>,
-        opportunities: &[OptimizationOpportunity<'ctx>],
     ) -> Result<OptimizationResults> {
         let mut results = OptimizationResults::default();
         
@@ -744,36 +565,26 @@ impl<'ctx> InterproceduralAnalyzer<'ctx> {
         }
         
         Ok(results)
-    }
-    
     /// Apply inline expansion optimization
     fn apply_inline_expansion(&self, opportunity: &OptimizationOpportunity<'ctx>) -> Result<bool> {
         // Implementation would perform actual inlining
         debug!("Applying inline expansion for function: {:?}", opportunity.target_function);
         Ok(true)
-    }
-    
     /// Apply tail call optimization
     fn apply_tail_call_optimization(&self, opportunity: &OptimizationOpportunity<'ctx>) -> Result<bool> {
         // Implementation would convert tail calls to jumps
         debug!("Applying tail call optimization for function: {:?}", opportunity.target_function);
         Ok(true)
-    }
-    
     /// Apply devirtualization
     fn apply_devirtualization(&self, opportunity: &OptimizationOpportunity<'ctx>) -> Result<bool> {
         // Implementation would replace virtual calls with direct calls
         debug!("Applying devirtualization for function: {:?}", opportunity.target_function);
         Ok(true)
-    }
-    
     /// Apply function specialization
     fn apply_function_specialization(&self, opportunity: &OptimizationOpportunity<'ctx>) -> Result<bool> {
         // Implementation would create specialized versions of functions
         debug!("Applying function specialization for function: {:?}", opportunity.target_function);
         Ok(true)
-    }
-    
     /// Eliminate dead functions
     fn eliminate_dead_functions(&mut self, module: &Module<'ctx>) -> Result<usize> {
         let mut dead_functions = Vec::new();
@@ -796,8 +607,6 @@ impl<'ctx> InterproceduralAnalyzer<'ctx> {
                     worklist.push_back(call_site.callee);
                 }
             }
-        }
-        
         // Identify dead functions
         for function in module.get_functions() {
             if !reachable_functions.contains(&function) && function.get_first_basic_block().is_some() {
@@ -810,22 +619,14 @@ impl<'ctx> InterproceduralAnalyzer<'ctx> {
         for dead_function in dead_functions {
             debug!("Dead function identified: {:?}", dead_function);
             // In practice: dead_function.delete();
-        }
-        
         {
             let mut stats = self.statistics.lock().unwrap();
             stats.dead_functions_eliminated = dead_count;
-        }
-        
         Ok(dead_count)
-    }
-    
     /// Check if function is an entry point
     fn is_entry_point(&self, function: FunctionValue<'ctx>) -> bool {
         let name = function.get_name().to_str().unwrap_or("");
         matches!(name, "main" | "_start") || !function.get_linkage().is_private()
-    }
-    
     /// Calculate performance improvements
     fn calculate_performance_improvements(&self, results: &OptimizationResults) -> PerformanceImprovements {
         let function_call_overhead_reduction = results.functions_inlined as f64 * 2.0; // 2% per inlined function
@@ -834,8 +635,6 @@ impl<'ctx> InterproceduralAnalyzer<'ctx> {
         let specialization_benefit = results.functions_specialized as f64 * 2.5; // 2.5% benefit per specialized function
         
         PerformanceImprovements {
-            runtime_improvement: function_call_overhead_reduction + devirtualization_speedup + specialization_benefit,
-            memory_savings: tail_call_memory_savings,
             code_size_change: -(results.functions_inlined as f64 * 1.5), // Inlining increases code size
         }
     }
@@ -851,144 +650,51 @@ impl<'ctx> InterproceduralAnalyzer<'ctx> {
 /// Call graph representation
 #[derive(Debug)]
 pub struct CallGraph<'ctx> {
-    pub functions: HashMap<FunctionValue<'ctx>, FunctionInfo<'ctx>>,
-    pub call_sites: Vec<CallSite<'ctx>>,
-}
-
 impl<'ctx> CallGraph<'ctx> {
     pub fn new() -> Self {
         Self {
-            functions: HashMap::new(),
-            call_sites: Vec::new(),
         }
     }
-}
-
 /// Function information in call graph
 #[derive(Debug, Clone)]
 pub struct FunctionInfo<'ctx> {
-    pub function: FunctionValue<'ctx>,
-    pub is_recursive: bool,
-    pub is_leaf: bool,
-    pub call_count: usize,
-    pub is_pure: Option<bool>,
-    pub is_const: Option<bool>,
-    pub may_throw: Option<bool>,
-}
-
 /// Call site information
 #[derive(Debug, Clone, Copy)]
 pub struct CallSite<'ctx> {
-    pub caller: FunctionValue<'ctx>,
-    pub callee: FunctionValue<'ctx>,
-    pub instruction: InstructionValue<'ctx>,
-    pub call_type: CallType,
-    pub estimated_frequency: f64,
-}
-
 /// Call type classification
 #[derive(Debug, Clone, Copy)]
 pub enum CallType {
-    DirectCall,
-    TailCall,
-    VirtualCall,
-    InlineCandidate,
-}
-
 /// Function attribute map
 pub type FunctionAttributeMap<'ctx> = HashMap<FunctionValue<'ctx>, InferredAttributes>;
 
 /// Inferred function attributes
 #[derive(Debug, Clone, Default)]
 pub struct InferredAttributes {
-    pub is_pure: bool,
-    pub is_const: bool,
-    pub may_throw: bool,
-    pub memory_effects: MemoryEffects,
-    pub return_dependency: ReturnDependency,
-}
-
 /// Memory effects analysis
 #[derive(Debug, Clone, Default)]
 pub struct MemoryEffects {
-    pub reads_memory: bool,
-    pub writes_memory: bool,
-    pub allocates_memory: bool,
-    pub accesses_globals: bool,
-}
-
 /// Return value dependency analysis
 #[derive(Debug, Clone, Default)]
 pub struct ReturnDependency {
-    pub depends_on_parameters: bool,
-    pub depends_on_globals: bool,
-    pub depends_on_memory: bool,
-    pub is_constant: bool,
-}
-
 /// Global access type
 #[derive(Debug, Clone)]
 pub enum GlobalAccessType {
-    Read,
-    Write,
-    ReadWrite,
-}
-
 /// Optimization opportunity
 #[derive(Debug, Clone)]
 pub struct OptimizationOpportunity<'ctx> {
-    pub opportunity_type: OpportunityType,
-    pub target_function: FunctionValue<'ctx>,
-    pub call_site: Option<CallSite<'ctx>>,
-    pub estimated_benefit: f64,
-    pub confidence: f64,
-}
-
 /// Types of optimization opportunities
 #[derive(Debug, Clone)]
 pub enum OpportunityType {
-    InlineExpansion,
-    TailCallOptimization,
-    Devirtualization,
-    FunctionSpecialization,
-}
-
 /// Interprocedural analysis results
 #[derive(Debug, Clone)]
 pub struct InterproceduralResults {
-    pub call_graph_nodes: usize,
-    pub call_graph_edges: usize,
-    pub inferred_attributes: usize,
     pub optimization_opportunities: Vec<OptimizationOpportunity<'static>>, // Simplified lifetime
-    pub dead_functions_eliminated: usize,
-    pub performance_improvements: PerformanceImprovements,
-}
-
 /// Optimization results
 #[derive(Debug, Clone, Default)]
 pub struct OptimizationResults {
-    pub functions_inlined: usize,
-    pub tail_calls_optimized: usize,
-    pub calls_devirtualized: usize,
-    pub functions_specialized: usize,
-}
-
 /// Performance improvements from interprocedural optimizations
 #[derive(Debug, Clone, Default)]
 pub struct PerformanceImprovements {
-    pub runtime_improvement: f64,
-    pub memory_savings: f64,
-    pub code_size_change: f64,
-}
-
 /// Interprocedural analysis statistics
 #[derive(Debug, Clone, Default)]
 pub struct InterproceduralStatistics {
-    pub call_graph_construction_time: std::time::Duration,
-    pub attribute_analysis_time: std::time::Duration,
-    pub optimization_time: std::time::Duration,
-    pub dead_functions_eliminated: usize,
-    pub total_functions_analyzed: usize,
-    pub total_call_sites_analyzed: usize,
-}
-

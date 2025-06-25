@@ -23,8 +23,6 @@ pub trait Migration: Send + Sync + Debug {
     /// Dependencies (migrations that must run before this one)
     fn dependencies(&self) -> Vec<String> {
         Vec::new()
-    }
-    
     /// Apply the migration (move schema forward)
     fn up(&self, schema: &mut DatabaseSchema) -> crate::error::Result<()>;
     
@@ -48,45 +46,22 @@ pub trait Migration: Send + Sync + Debug {
 #[derive(Debug, Clone, PartialEq)]
 pub enum MigrationOperation {
     CreateTable { 
-        name: String,
-        columns: Vec<ColumnDefinition>,
-        indexes: Vec<IndexDefinition>,
-    },
     DropTable { 
         name: String 
-    },
     AddColumn { 
-        table: String,
         column: ColumnDefinition 
-    },
     DropColumn { 
-        table: String,
         column: String 
-    },
     AddIndex { 
-        table: String,
         index: IndexDefinition 
-    },
     DropIndex { 
-        table: String,
         index: String 
-    },
-}
-
 impl MigrationOperation {
     /// Get operation name
     pub fn name(&self) -> &str {
         match self {
-            MigrationOperation::CreateTable { .. } => "create_table",
-            MigrationOperation::DropTable { .. } => "drop_table",
-            MigrationOperation::AddColumn { .. } => "add_column",
-            MigrationOperation::DropColumn { .. } => "drop_column",
-            MigrationOperation::AddIndex { .. } => "add_index",
-            MigrationOperation::DropIndex { .. } => "drop_index",
         }
     }
-}
-
 /// fr fr Type aliases for migration operations
 pub type CreateTable = MigrationOperation;
 pub type DropTable = MigrationOperation;
@@ -98,66 +73,35 @@ pub type AddIndex = MigrationOperation;
 #[derive(Debug, Clone, PartialEq)]
 pub enum MigrationStatus {
     /// Migration is pending (not yet applied)
-    Pending,
     /// Migration has been applied successfully
     Applied { 
-        applied_at: std::time::SystemTime,
-        duration_ms: u64,
-    },
     /// Migration failed during application
     Failed { 
-        error: String,
-        failed_at: std::time::SystemTime,
-    },
     /// Migration is currently being applied
     InProgress { 
-        started_at: std::time::SystemTime,
-    },
     /// Migration was rolled back
     RolledBack { 
-        rolled_back_at: std::time::SystemTime,
-    },
-}
-
 /// fr fr Schema version information
 #[derive(Debug, Clone)]
 pub struct SchemaVersion {
     /// Current schema version
-    pub version: String,
     /// Applied migrations
-    pub applied_migrations: Vec<String>,
     /// Last migration timestamp
-    pub last_migration_at: Option<std::time::SystemTime>,
     /// Database dialect
-    pub dialect: String,
-}
-
 /// fr fr Migration manager for coordinating schema changes
 #[derive(Debug)]
 pub struct MigrationManager {
     /// Database connection
-    db: Arc<DB>,
     /// Registered migrations
-    migrations: Arc<Mutex<HashMap<String, Box<dyn Migration>>>>,
     /// Migration status tracking
-    status_tracker: Arc<Mutex<HashMap<String, MigrationStatus>>>,
     /// Current schema state
-    schema: Arc<Mutex<DatabaseSchema>>,
     /// Configuration
-    config: MigrationConfig,
-}
-
 impl MigrationManager {
     /// slay Create new migration manager
     #[instrument(skip(db))]
     pub fn new(db: Arc<DB>) -> Self {
         info!("Creating new migration manager");
         Self {
-            db,
-            migrations: Arc::new(Mutex::new(HashMap::new())),
-            status_tracker: Arc::new(Mutex::new(HashMap::new())),
-            schema: Arc::new(Mutex::new(DatabaseSchema::new())),
-            config: MigrationConfig::default(),
         }
     }
 
@@ -174,17 +118,11 @@ impl MigrationManager {
                 ));
             }
             migrations.insert(version.clone(), migration);
-        }
-        
         // Initialize status as pending
         if let Ok(mut tracker) = self.status_tracker.lock() {
             tracker.insert(version, MigrationStatus::Pending);
-        }
-        
         debug!("Migration registered successfully");
         Ok(())
-    }
-
     /// periodt Apply all pending migrations
     #[instrument(skip(self))]
     pub async fn migrate(&self) -> crate::error::Result<()> {
@@ -199,12 +137,8 @@ impl MigrationManager {
         for migration_version in sorted_migrations {
             let status = self.apply_migration(&migration_version).await?;
             results.push(status);
-        }
-        
         info!(applied = results.len(), "Migration process completed");
         Ok(results)
-    }
-
     /// bestie Rollback to specific version
     #[instrument(skip(self))]
     pub async fn rollback_to(&self, target_version: &str) -> crate::error::Result<()> {
@@ -221,25 +155,17 @@ impl MigrationManager {
                 break;
             }
             rollback_migrations.push(version.clone());
-        }
-        
         if !found_target {
             return Err(DatabaseError::validation_error(
                 &format!("Target version {} not found in applied migrations", target_version)
             ));
-        }
-        
         let mut results = Vec::new();
         
         for migration_version in rollback_migrations {
             let status = self.rollback_migration(&migration_version).await?;
             results.push(status);
-        }
-        
         info!(rolled_back = results.len(), "Rollback process completed");
         Ok(results)
-    }
-
     /// yolo Get current schema version
     #[instrument(skip(self))]
     pub fn current_version(&self) -> crate::error::Result<()> {
@@ -252,13 +178,7 @@ impl MigrationManager {
         let dialect = self.detect_database_dialect()?;
         
         Ok(SchemaVersion {
-            version: latest_version,
-            applied_migrations,
-            last_migration_at: Some(std::time::SystemTime::now()),
-            dialect,
         })
-    }
-
     /// slay Check migration status
     #[instrument(skip(self))]
     pub fn migration_status(&self, version: &str) -> Option<MigrationStatus> {
@@ -297,8 +217,6 @@ impl MigrationManager {
                 Ok(Box::new(DropIndexMigration::<T>::new(version, migration_name, index)))
             }
         }
-    }
-
     /// tea Get migration statistics
     #[instrument(skip(self))]
     pub fn stats(&self) -> super::MigrationStats {
@@ -308,11 +226,8 @@ impl MigrationManager {
             (pending, applied)
         } else {
             (0, 0)
-        };
         
         super::MigrationStats {
-            pending_migrations: status_counts.0,
-            applied_migrations: status_counts.1,
         }
     }
 
@@ -323,10 +238,7 @@ impl MigrationManager {
         // Update status to in progress
         if let Ok(mut tracker) = self.status_tracker.lock() {
             tracker.insert(version.to_string(), MigrationStatus::InProgress {
-                started_at: std::time::SystemTime::now(),
             });
-        }
-        
         let start_time = std::time::Instant::now();
         
         // Get migration and apply it
@@ -334,7 +246,6 @@ impl MigrationManager {
             migrations.contains_key(version)
         } else {
             return Err(DatabaseError::internal_error("Failed to access migrations"));
-        };
         
         if migration_exists {
             // Execute migration with reference
@@ -347,27 +258,17 @@ impl MigrationManager {
                 Ok(_) => {
                     let duration = start_time.elapsed().as_millis() as u64;
                     let status = MigrationStatus::Applied {
-                        applied_at: std::time::SystemTime::now(),
-                        duration_ms: duration,
-                    };
                     
                     if let Ok(mut tracker) = self.status_tracker.lock() {
                         tracker.insert(version.to_string(), status.clone());
-                    }
-                    
                     info!(version = version, duration_ms = duration, "Migration applied successfully");
                     Ok(status)
                 }
                 Err(error) => {
                     let status = MigrationStatus::Failed {
-                        error: error.to_string(),
-                        failed_at: std::time::SystemTime::now(),
-                    };
                     
                     if let Ok(mut tracker) = self.status_tracker.lock() {
                         tracker.insert(version.to_string(), status.clone());
-                    }
-                    
                     error!(version = version, error = %error, "Migration failed");
                     Err(error)
                 }
@@ -384,7 +285,6 @@ impl MigrationManager {
             migrations.contains_key(version)
         } else {
             return Err(DatabaseError::internal_error("Failed to access migrations"));
-        };
         
         if migration_exists {
             // Execute migration rollback with reference
@@ -395,13 +295,9 @@ impl MigrationManager {
             self.execute_migration_down(migration.as_ref()).await?;
             
             let status = MigrationStatus::RolledBack {
-                rolled_back_at: std::time::SystemTime::now(),
-            };
             
             if let Ok(mut tracker) = self.status_tracker.lock() {
                 tracker.insert(version.to_string(), status.clone());
-            }
-            
             info!(version = version, "Migration rolled back successfully");
             Ok(status)
         } else {
@@ -416,7 +312,6 @@ impl MigrationManager {
             migration.up(&mut schema)?
         } else {
             return Err(DatabaseError::internal_error("Failed to access schema"));
-        };
         
         // Execute SQL statements within a transaction
         let mut tx = self.db.begin().map_err(|e| {
@@ -430,16 +325,12 @@ impl MigrationManager {
                 error!(sql = %sql, error = %e, "Failed to execute migration SQL");
                 e
             })?;
-        }
-        
         tx.commit().map_err(|e| {
             error!(error = %e, "Failed to commit migration transaction");
             e
         })?;
         
         Ok(())
-    }
-    
     async fn execute_migration_down(&self, migration: &dyn Migration) -> crate::error::Result<()> {
         debug!(migration = %migration.name(), "Executing migration down");
         
@@ -447,7 +338,6 @@ impl MigrationManager {
             migration.down(&mut schema)?
         } else {
             return Err(DatabaseError::internal_error("Failed to access schema"));
-        };
         
         // Execute SQL statements in reverse order within a transaction
         let mut tx = self.db.begin().map_err(|e| {
@@ -461,16 +351,12 @@ impl MigrationManager {
                 error!(sql = %sql, error = %e, "Failed to execute rollback SQL");
                 e
             })?;
-        }
-        
         tx.commit().map_err(|e| {
             error!(error = %e, "Failed to commit rollback transaction");
             e
         })?;
         
         Ok(())
-    }
-    
     fn get_pending_migrations(&self) -> crate::error::Result<()> {
         if let Ok(tracker) = self.status_tracker.lock() {
             let pending: Vec<String> = tracker.iter()
@@ -547,8 +433,6 @@ impl MigrationManager {
                     }
                 }
             }
-        }
-        
         // Check for circular dependencies
         if result.len() != migrations.len() {
             let remaining: Vec<String> = migrations.into_iter()
@@ -558,12 +442,8 @@ impl MigrationManager {
             return Err(DatabaseError::validation_error(
                 &format!("Circular dependency detected in migrations: {:?}", remaining)
             ));
-        }
-        
         debug!(sorted_migrations = ?result, "Sorted migrations by dependencies");
         Ok(result)
-    }
-    
     fn generate_version(&self) -> String {
         use std::time::{SystemTime, UNIX_EPOCH};
         let timestamp = SystemTime::now()
@@ -571,8 +451,6 @@ impl MigrationManager {
             .unwrap()
             .as_secs();
         format!("{}", timestamp)
-    }
-
     /// Detect database dialect from connection information
     /// 
     /// This method analyzes the database driver name and connection string to determine
@@ -605,11 +483,6 @@ impl MigrationManager {
         
         // Detect based on driver name first
         let dialect = match driver_name.to_lowercase().as_str() {
-            "postgres" | "postgresql" | "pg" => "postgresql",
-            "mysql" => "mysql", 
-            "sqlite" | "sqlite3" => "sqlite",
-            "mssql" | "sqlserver" => "mssql",
-            "oracle" => "oracle",
             _ => {
                 // Try to detect from data source name/connection string
                 if data_source.contains("postgres") || data_source.contains("postgresql") {
@@ -628,7 +501,6 @@ impl MigrationManager {
                     "postgresql"
                 }
             }
-        };
         
         debug!(dialect = dialect, "Detected database dialect");
         Ok(dialect.to_string())
@@ -641,62 +513,35 @@ impl MigrationManager {
 #[derive(Debug, Clone)]
 pub struct MigrationConfig {
     /// Directory containing migration files
-    pub migrations_dir: String,
     /// Whether to automatically run migrations on startup
-    pub auto_migrate: bool,
     /// Maximum number of migrations to apply in one batch
-    pub batch_size: usize,
     /// Migration timeout
-    pub timeout: std::time::Duration,
-}
-
 impl Default for MigrationConfig {
     fn default() -> Self {
         Self {
-            migrations_dir: "migrations".to_string(),
-            auto_migrate: false,
-            batch_size: 100,
             timeout: std::time::Duration::from_secs(300), // 5 minutes
         }
     }
-}
-
 // Concrete migration implementations
 
 /// fr fr Create table migration
 #[derive(Debug)]
 pub struct CreateTableMigration<T: Entity> {
-    version: String,
-    name: String,
-    _phantom: std::marker::PhantomData<T>,
-}
-
 impl<T: Entity> CreateTableMigration<T> {
     pub fn new(version: String, name: String) -> Self {
         Self {
-            version,
-            name,
-            _phantom: std::marker::PhantomData,
         }
     }
-}
-
 impl<T: Entity> Migration for CreateTableMigration<T> {
     fn version(&self) -> String {
         self.version.clone()
-    }
-    
     fn name(&self) -> String {
         self.name.clone()
-    }
-    
     fn up(&self, schema: &mut DatabaseSchema) -> crate::error::Result<()> {
         let table_schema = TableSchema::from_entity::<T>()?;
         let sql = table_schema.to_create_sql("postgresql");
         schema.add_table(table_schema);
         Ok(Vec::from([sql]))
-    }
-    
     fn down(&self, schema: &mut DatabaseSchema) -> crate::error::Result<()> {
         let sql = format!("DROP TABLE IF EXISTS {}", T::table_name());
         schema.remove_table(T::table_name());
@@ -707,36 +552,20 @@ impl<T: Entity> Migration for CreateTableMigration<T> {
 /// fr fr Drop table migration
 #[derive(Debug)]
 pub struct DropTableMigration<T: Entity> {
-    version: String,
-    name: String,
-    _phantom: std::marker::PhantomData<T>,
-}
-
 impl<T: Entity> DropTableMigration<T> {
     pub fn new(version: String, name: String) -> Self {
         Self {
-            version,
-            name,
-            _phantom: std::marker::PhantomData,
         }
     }
-}
-
 impl<T: Entity> Migration for DropTableMigration<T> {
     fn version(&self) -> String {
         self.version.clone()
-    }
-    
     fn name(&self) -> String {
         self.name.clone()
-    }
-    
     fn up(&self, schema: &mut DatabaseSchema) -> crate::error::Result<()> {
         let sql = format!("DROP TABLE IF EXISTS {}", T::table_name());
         schema.remove_table(T::table_name());
         Ok(Vec::from([sql]))
-    }
-    
     fn down(&self, schema: &mut DatabaseSchema) -> crate::error::Result<()> {
         let table_schema = TableSchema::from_entity::<T>()?;
         let sql = table_schema.to_create_sql("postgresql");
@@ -748,66 +577,33 @@ impl<T: Entity> Migration for DropTableMigration<T> {
 /// fr fr Add column migration
 #[derive(Debug)]
 pub struct AddColumnMigration<T: Entity> {
-    version: String,
-    name: String,
-    column: ColumnDefinition,
-    _phantom: std::marker::PhantomData<T>,
-}
-
 impl<T: Entity> AddColumnMigration<T> {
     pub fn new(version: String, name: String, column: ColumnDefinition) -> Self {
         Self {
-            version,
-            name,
-            column,
-            _phantom: std::marker::PhantomData,
         }
     }
-}
-
 impl<T: Entity> Migration for AddColumnMigration<T> {
     fn version(&self) -> String {
         self.version.clone()
-    }
-    
     fn name(&self) -> String {
         self.name.clone()
-    }
-    
     fn up(&self, schema: &mut DatabaseSchema) -> crate::error::Result<()> {
         let sql = format!(
-            "ALTER TABLE {} ADD COLUMN {} {}{}",
-            T::table_name(),
-            self.column.name,
-            self.column.sql_type.to_sql("postgresql"),
             if self.column.nullable { "" } else { " NOT NULL" }
         );
         
         if let Some(table) = schema.get_table_mut(T::table_name()) {
             let column_schema = ColumnSchema {
-                name: self.column.name.clone(),
-                sql_type: self.column.sql_type.clone(),
-                nullable: self.column.nullable,
-                default_value: self.column.default.clone(),
                 auto_increment: false, // ColumnDefinition doesn't track this, default to false
-            };
             table.add_column(column_schema);
-        }
-        
         Ok(Vec::from([sql]))
-    }
-    
     fn down(&self, schema: &mut DatabaseSchema) -> crate::error::Result<()> {
         let sql = format!(
-            "ALTER TABLE {} DROP COLUMN {}",
-            T::table_name(),
             self.column.name
         );
         
         if let Some(table) = schema.get_table_mut(T::table_name()) {
             table.remove_column(&self.column.name);
-        }
-        
         Ok(Vec::from([sql]))
     }
 }
@@ -815,54 +611,30 @@ impl<T: Entity> Migration for AddColumnMigration<T> {
 /// fr fr Drop column migration
 #[derive(Debug)]
 pub struct DropColumnMigration<T: Entity> {
-    version: String,
-    name: String,
-    column_name: String,
-    _phantom: std::marker::PhantomData<T>,
-}
-
 impl<T: Entity> DropColumnMigration<T> {
     pub fn new(version: String, name: String, column_name: String) -> Self {
         Self {
-            version,
-            name,
-            column_name,
-            _phantom: std::marker::PhantomData,
         }
     }
-}
-
 impl<T: Entity> Migration for DropColumnMigration<T> {
     fn version(&self) -> String {
         self.version.clone()
-    }
-    
     fn name(&self) -> String {
         self.name.clone()
-    }
-    
     fn up(&self, schema: &mut DatabaseSchema) -> crate::error::Result<()> {
         let sql = format!(
-            "ALTER TABLE {} DROP COLUMN {}",
-            T::table_name(),
             self.column_name
         );
         
         if let Some(table) = schema.get_table_mut(T::table_name()) {
             table.remove_column(&self.column_name);
-        }
-        
         Ok(Vec::from([sql]))
-    }
-    
     fn down(&self, schema: &mut DatabaseSchema) -> crate::error::Result<()> {
         // Note: This is a destructive operation - we can't perfectly restore the column
         // In a real implementation, we'd need to store the original column definition
         warn!("Dropping column is a destructive operation - rollback may not be perfect");
         
         let sql = format!(
-            "ALTER TABLE {} ADD COLUMN {} TEXT",
-            T::table_name(),
             self.column_name
         );
         
@@ -898,12 +670,6 @@ impl<T: Entity> Migration for DropColumnMigration<T> {
 /// ```
 #[derive(Debug)]
 pub struct AddIndexMigration<T: Entity> {
-    version: String,
-    name: String,
-    index: IndexDefinition,
-    _phantom: std::marker::PhantomData<T>,
-}
-
 impl<T: Entity> AddIndexMigration<T> {
     /// Create a new index addition migration
     /// 
@@ -918,56 +684,34 @@ impl<T: Entity> AddIndexMigration<T> {
     /// A new `AddIndexMigration` instance ready for registration with the migration manager
     pub fn new(version: String, name: String, index: IndexDefinition) -> Self {
         Self {
-            version,
-            name,
-            index,
-            _phantom: std::marker::PhantomData,
         }
     }
-}
-
 impl<T: Entity> Migration for AddIndexMigration<T> {
     fn version(&self) -> String {
         self.version.clone()
-    }
-    
     fn name(&self) -> String {
         self.name.clone()
-    }
-    
     fn up(&self, schema: &mut DatabaseSchema) -> crate::error::Result<()> {
         let unique_keyword = if self.index.unique { "UNIQUE " } else { "" };
         let condition_clause = if let Some(condition) = &self.index.condition {
             format!(" WHERE {}", condition)
         } else {
             String::new()
-        };
         
         let sql = format!(
-            "CREATE {}INDEX {} ON {} ({}){};",
-            unique_keyword,
-            self.index.name,
-            T::table_name(),
-            self.index.columns.join(", "),
             condition_clause
         );
         
         // Add index to schema
         if let Some(table) = schema.get_table_mut(T::table_name()) {
             table.indexes.push(self.index.clone());
-        }
-        
         Ok(Vec::from([sql]))
-    }
-    
     fn down(&self, schema: &mut DatabaseSchema) -> crate::error::Result<()> {
         let sql = format!("DROP INDEX IF EXISTS {};", self.index.name);
         
         // Remove index from schema
         if let Some(table) = schema.get_table_mut(T::table_name()) {
             table.indexes.retain(|idx| idx.name != self.index.name);
-        }
-        
         Ok(Vec::from([sql]))
     }
 }
@@ -996,12 +740,6 @@ impl<T: Entity> Migration for AddIndexMigration<T> {
 /// on the 'id' column but cannot restore the original index specification.
 #[derive(Debug)]
 pub struct DropIndexMigration<T: Entity> {
-    version: String,
-    name: String,
-    index_name: String,
-    _phantom: std::marker::PhantomData<T>,
-}
-
 impl<T: Entity> DropIndexMigration<T> {
     /// Create a new index removal migration
     /// 
@@ -1016,34 +754,20 @@ impl<T: Entity> DropIndexMigration<T> {
     /// A new `DropIndexMigration` instance ready for registration with the migration manager
     pub fn new(version: String, name: String, index_name: String) -> Self {
         Self {
-            version,
-            name,
-            index_name,
-            _phantom: std::marker::PhantomData,
         }
     }
-}
-
 impl<T: Entity> Migration for DropIndexMigration<T> {
     fn version(&self) -> String {
         self.version.clone()
-    }
-    
     fn name(&self) -> String {
         self.name.clone()
-    }
-    
     fn up(&self, schema: &mut DatabaseSchema) -> crate::error::Result<()> {
         let sql = format!("DROP INDEX IF EXISTS {};", self.index_name);
         
         // Remove index from schema
         if let Some(table) = schema.get_table_mut(T::table_name()) {
             table.indexes.retain(|idx| idx.name != self.index_name);
-        }
-        
         Ok(Vec::from([sql]))
-    }
-    
     fn down(&self, schema: &mut DatabaseSchema) -> crate::error::Result<()> {
         // Note: This is a destructive operation - we can't perfectly restore the index
         // In a real implementation, we'd need to store the original index definition
@@ -1051,9 +775,6 @@ impl<T: Entity> Migration for DropIndexMigration<T> {
         
         // Create a basic B-tree index for rollback
         let sql = format!(
-            "CREATE INDEX {} ON {} ({});",
-            self.index_name,
-            T::table_name(),
             "id" // Default to 'id' column if we don't know the original columns
         );
         
@@ -1087,14 +808,7 @@ impl IndexType {
     /// ```
     pub fn to_sql(&self, dialect: &str) -> String {
         match (self, dialect) {
-            (IndexType::BTree, "postgresql") => "USING btree",
-            (IndexType::Hash, "postgresql") => "USING hash",
-            (IndexType::Gin, "postgresql") => "USING gin",
-            (IndexType::Gist, "postgresql") => "USING gist",
-            (IndexType::BTree, "mysql") => "USING BTREE",
-            (IndexType::Hash, "mysql") => "USING HASH",
             (IndexType::BTree, "sqlite") => "", // SQLite doesn't support type specification
-            (IndexType::Hash, "sqlite") => "",
             _ => "", // Default: no specific type clause
         }.to_string()
     }

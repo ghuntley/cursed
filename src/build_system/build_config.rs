@@ -13,224 +13,132 @@ use toml;
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct BuildConfig {
     /// Project metadata
-    pub project: ProjectMetadata,
     
     /// Build targets (executables, libraries, etc.)
     #[serde(default)]
-    pub targets: Vec<BuildTarget>,
     
     /// Build profiles (dev, release, custom, etc.)
     #[serde(default)]
-    pub profiles: HashMap<String, BuildProfile>,
     
     /// Dependencies
     #[serde(default)]
-    pub dependencies: HashMap<String, String>,
     
     /// Development dependencies
     #[serde(default = "HashMap::new")]
-    pub dev_dependencies: HashMap<String, String>,
     
     /// Build dependencies
     #[serde(default = "HashMap::new")]
-    pub build_dependencies: HashMap<String, String>,
     
     /// Feature flags
     #[serde(default)]
-    pub features: HashMap<String, Vec<String>>,
     
     /// Build scripts and hooks
     #[serde(default)]
-    pub scripts: HashMap<String, String>,
     
     /// Tool configurations
     #[serde(default)]
-    pub tools: ToolConfigurations,
-}
-
 /// Project metadata
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ProjectMetadata {
     /// Project name
-    pub name: String,
     
     /// Project version
-    pub version: String,
     
     /// Project description
     #[serde(default)]
-    pub description: Option<String>,
     
     /// Authors
     #[serde(default)]
-    pub authors: Vec<String>,
     
     /// License
     #[serde(default)]
-    pub license: Option<String>,
     
     /// Repository URL
     #[serde(default)]
-    pub repository: Option<String>,
     
     /// Documentation URL
     #[serde(default)]
-    pub documentation: Option<String>,
     
     /// Keywords
     #[serde(default)]
-    pub keywords: Vec<String>,
     
     /// Categories
     #[serde(default)]
-    pub categories: Vec<String>,
     
     /// CURSED edition
     #[serde(default = "default_edition")]
-    pub edition: String,
-}
-
 fn default_edition() -> String {
     "2024".to_string()
-}
-
 /// Build target definition
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct BuildTarget {
     /// Target name
-    pub name: String,
     
     /// Target type (bin, lib, staticlib, dylib)
     #[serde(rename = "type")]
-    pub target_type: TargetType,
     
     /// Entry point file path
-    pub path: PathBuf,
     
     /// Required features for this target
     #[serde(default)]
-    pub required_features: Vec<String>,
     
     /// Target-specific configurations
     #[serde(default)]
-    pub config: HashMap<String, toml::Value>,
-}
-
 /// Target types
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "lowercase")]
 pub enum TargetType {
     /// Executable binary
-    Bin,
     /// Library
-    Lib,
     /// Static library
-    StaticLib,
     /// Dynamic library
-    DynLib,
     /// C-compatible dynamic library
-    CDynLib,
-}
-
 /// Build profile configuration
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct BuildProfile {
     /// Inherits from another profile
     #[serde(default)]
-    pub inherits: Option<String>,
     
     /// Optimization level (none, basic, max, size)
     #[serde(default = "default_optimization")]
-    pub optimization: OptimizationLevel,
     
     /// Include debug information
     #[serde(default = "default_debug")]
-    pub debug: bool,
     
     /// Strip symbols from output
     #[serde(default)]
-    pub strip: bool,
     
     /// Link-time optimization
     #[serde(default)]
-    pub lto: bool,
     
     /// Panic strategy (unwind, abort)
     #[serde(default = "default_panic")]
-    pub panic: PanicStrategy,
     
     /// Code generation units
     #[serde(default)]
-    pub codegen_units: Option<u32>,
     
     /// Additional LLVM flags
     #[serde(default)]
-    pub llvm_args: Vec<String>,
     
     /// Environment variables for build
     #[serde(default)]
-    pub env: HashMap<String, String>,
-}
-
 fn default_optimization() -> OptimizationLevel {
     OptimizationLevel::O1
-}
-
 fn default_debug() -> bool {
     true
-}
-
 fn default_panic() -> PanicStrategy {
     PanicStrategy::Unwind
-}
-
 impl Default for BuildProfile {
     fn default() -> Self {
         Self {
-            optimization: OptimizationLevel::O1,
-            debug: true,
-            panic: PanicStrategy::Unwind,
-            lto: false,
-            incremental: true,
-            codegen_units: 1,
-            strip: false,
-            cross_target: None,
-            llvm_args: Vec::new(),
-            env: HashMap::new(),
         }
     }
-}
-
 impl Default for BuildConfig {
     fn default() -> Self {
         Self {
             project: ProjectMetadata {
-                name: "unnamed".to_string(),
-                version: "0.1.0".to_string(),
-                authors: Vec::new(),
-                edition: "2024".to_string(),
-                description: None,
-                license: None,
-                repository: None,
-                homepage: None,
-                documentation: None,
-                readme: None,
-                keywords: Vec::new(),
-                categories: Vec::new(),
-                project_type: ProjectType::Binary,
-            },
-            targets: Vec::new(),
-            profiles: HashMap::new(),
-            dependencies: HashMap::new(),
-            dev_dependencies: HashMap::new(),
-            build_dependencies: HashMap::new(),
-            features: HashMap::new(),
-            scripts: HashMap::new(),
-            tools: ToolConfigurations::default(),
         }
     }
-}
-
 // Use canonical OptimizationLevel from optimization config
 pub use crate::common_types::optimization_level::OptimizationLevel;
 
@@ -239,292 +147,195 @@ pub use crate::common_types::optimization_level::OptimizationLevel;
 #[serde(rename_all = "lowercase")]
 pub enum PanicStrategy {
     /// Stack unwinding
-    Unwind,
     /// Process abort
-    Abort,
-}
-
 /// Tool-specific configurations
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct ToolConfigurations {
     /// Formatter configuration
     #[serde(default)]
-    pub formatter: FormatterConfig,
     
     /// Linter configuration
     #[serde(default)]
-    pub linter: LinterConfig,
     
     /// Documentation configuration
     #[serde(default)]
-    pub docs: DocsConfig,
     
     /// Package manager configuration
     #[serde(default)]
-    pub package_manager: PackageManagerConfig,
     
     /// Compiler-specific configurations
     #[serde(default)]
-    pub compiler: CompilerConfig,
     
     /// Cross-compilation targets
     #[serde(default)]
-    pub targets: HashMap<String, CrossTargetConfig>,
-}
-
 /// Formatter configuration
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct FormatterConfig {
     /// Indentation style (spaces or tabs)
     #[serde(default = "default_indent_style")]
-    pub indent_style: String,
     
     /// Number of spaces per indent level
     #[serde(default = "default_indent_size")]
-    pub indent_size: u32,
     
     /// Maximum line width
     #[serde(default = "default_line_width")]
-    pub line_width: u32,
     
     /// Brace style (same_line, next_line, next_line_unindented)
     #[serde(default = "default_brace_style")]
-    pub brace_style: String,
     
     /// Format on build
     #[serde(default)]
-    pub format_on_build: bool,
     
     /// Additional formatter options
     #[serde(default)]
-    pub options: HashMap<String, toml::Value>,
-}
-
 /// Linter configuration
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct LinterConfig {
     /// Lint on build
     #[serde(default)]
-    pub lint_on_build: bool,
     
     /// Auto-fix issues when possible
     #[serde(default)]
-    pub auto_fix: bool,
     
     /// Severity level (error, warning, info)
     #[serde(default = "default_severity")]
-    pub severity: String,
     
     /// Disabled rules
     #[serde(default)]
-    pub disabled_rules: Vec<String>,
     
     /// Enabled rules (if empty, all default rules are enabled)
     #[serde(default)]
-    pub enabled_rules: Vec<String>,
     
     /// Additional linter options
     #[serde(default)]
-    pub options: HashMap<String, toml::Value>,
-}
-
 /// Documentation configuration
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct DocsConfig {
     /// Generate docs on build
     #[serde(default)]
-    pub generate_on_build: bool,
     
     /// Output format (html, markdown, json)
     #[serde(default = "default_docs_format")]
-    pub format: String,
     
     /// Output directory
     #[serde(default = "default_docs_output")]
-    pub output_dir: PathBuf,
     
     /// Include private items
     #[serde(default)]
-    pub include_private: bool,
     
     /// Theme for HTML output
     #[serde(default = "default_docs_theme")]
-    pub theme: String,
     
     /// Additional documentation options
     #[serde(default)]
-    pub options: HashMap<String, toml::Value>,
-}
-
 /// Package manager configuration  
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct PackageManagerConfig {
     /// Registry URL
     #[serde(default = "default_registry_url")]
-    pub registry: String,
     
     /// Cache directory
     #[serde(default)]
-    pub cache_dir: Option<PathBuf>,
     
     /// Offline mode
     #[serde(default)]
-    pub offline: bool,
     
     /// Additional package manager options
     #[serde(default)]
-    pub options: HashMap<String, toml::Value>,
-}
-
 /// Compiler configuration
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct CompilerConfig {
     /// Default target triple
     #[serde(default)]
-    pub default_target: Option<String>,
     
     /// LLVM optimization passes
     #[serde(default)]
-    pub llvm_passes: Vec<String>,
     
     /// Parallel compilation threads
     #[serde(default)]
-    pub parallel_threads: Option<u32>,
     
     /// Incremental compilation
     #[serde(default = "default_incremental")]
-    pub incremental: bool,
     
     /// Debug information configuration
     #[serde(default)]
-    pub debug: DebugBuildConfig,
     
     /// Additional compiler options
     #[serde(default)]
-    pub options: HashMap<String, toml::Value>,
-}
-
 /// Debug build configuration
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct DebugBuildConfig {
     /// Enable debug information generation
     #[serde(default = "default_true")]
-    pub enabled: bool,
     
     /// Debug information level (0-3)
     #[serde(default = "default_debug_level")]
-    pub level: u8,
     
     /// Include source code in debug information
     #[serde(default)]
-    pub include_source: bool,
     
     /// Generate optimized debug information
     #[serde(default)]
-    pub optimized: bool,
     
     /// Compress debug sections
     #[serde(default)]
-    pub compress: bool,
     
     /// Split debug information into separate file
     #[serde(default)]
-    pub split_debug_info: bool,
     
     /// Debug information output directory
     #[serde(default)]
-    pub output_dir: Option<PathBuf>,
     
     /// DWARF version to generate (2, 3, 4, or 5)
     #[serde(default = "default_dwarf_version")]
-    pub dwarf_version: u8,
     
     /// Generate debug info for inlined functions
     #[serde(default = "default_true")]
-    pub inline_debug: bool,
     
     /// Generate debug info for type definitions
     #[serde(default = "default_true")]
-    pub type_debug: bool,
     
     /// Generate debug info for variables
     #[serde(default = "default_true")]
-    pub variable_debug: bool,
     
     /// Generate debug info for function parameters
     #[serde(default = "default_true")]
-    pub parameter_debug: bool,
     
     /// Generate debug info for local scopes
     #[serde(default = "default_true")]
-    pub scope_debug: bool,
     
     /// Generate debug info for line numbers
     #[serde(default = "default_true")]
-    pub line_debug: bool,
     
     /// Generate debug info for column numbers
     #[serde(default)]
-    pub column_debug: bool,
-}
-
 impl Default for DebugBuildConfig {
     fn default() -> Self {
         Self {
-            enabled: true,
-            level: 2,
-            include_source: false,
-            optimized: false,
-            compress: false,
-            split_debug_info: false,
-            output_dir: None,
-            dwarf_version: 4,
-            inline_debug: true,
-            type_debug: true,
-            variable_debug: true,
-            parameter_debug: true,
-            scope_debug: true,
-            line_debug: true,
-            column_debug: false,
         }
     }
-}
-
 fn default_true() -> bool {
     true
-}
-
 fn default_debug_level() -> u8 {
     2
-}
-
 fn default_dwarf_version() -> u8 {
     4
-}
-
 /// Cross-compilation target configuration
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct CrossTargetConfig {
     /// Target triple (e.g., x86_64-pc-windows-gnu)
-    pub triple: String,
     
     /// Linker to use for this target
     #[serde(default)]
-    pub linker: Option<String>,
     
     /// Additional linker arguments
     #[serde(default)]
-    pub linker_args: Vec<String>,
     
     /// Environment variables for cross-compilation
     #[serde(default)]
-    pub env: HashMap<String, String>,
     
     /// Target-specific configuration
     #[serde(default)]
-    pub config: HashMap<String, toml::Value>,
-}
-
 fn default_indent_style() -> String { "spaces".to_string() }
 fn default_indent_size() -> u32 { 4 }
 fn default_line_width() -> u32 { 100 }
@@ -534,8 +345,6 @@ fn default_docs_format() -> String { "html".to_string() }
 fn default_docs_output() -> PathBuf { PathBuf::from("docs") }
 fn default_docs_theme() -> String { "light".to_string() }
 fn default_registry_url() -> String { "https://registry.cursed-lang.org".to_string() }
-fn default_incremental() -> bool { true }
-
 impl BuildConfig {
     /// Load configuration from TOML file
     pub fn load_from_file(path: &PathBuf) -> crate::error::Result<()> {
@@ -547,8 +356,6 @@ impl BuildConfig {
         
         config.validate()?;
         Ok(config)
-    }
-    
     /// Save configuration to TOML file
     pub fn save_to_file(&self, path: &PathBuf) -> crate::error::Result<()> {
         let content = toml::to_string_pretty(self)
@@ -558,20 +365,14 @@ impl BuildConfig {
             .map_err(|e| ConfigError::IoError(e))?;
         
         Ok(())
-    }
-    
     /// Validate the configuration
     pub fn validate(&self) -> crate::error::Result<()> {
         // Validate project name
         if self.project.name.trim().is_empty() {
             return Err(ConfigError::ValidationError("Project name cannot be empty".to_string()));
-        }
-        
         // Validate version format (semantic versioning)
         if !is_valid_semver(&self.project.version) {
             return Err(ConfigError::ValidationError("Invalid version format".to_string()));
-        }
-        
         // Validate target paths exist
         for target in &self.targets {
             if !target.path.exists() {
@@ -590,24 +391,16 @@ impl BuildConfig {
                     ));
                 }
             }
-        }
-        
         Ok(())
-    }
-    
     /// Get effective profile configuration (with inheritance resolved)
     pub fn get_effective_profile(&self, profile_name: &str) -> crate::error::Result<()> {
         let mut visited = std::collections::HashSet::new();
         self.resolve_profile(profile_name, &mut visited)
-    }
-    
     fn resolve_profile(&self, name: &str, visited: &mut std::collections::HashSet<String>) -> crate::error::Result<()> {
         if visited.contains(name) {
             return Err(ConfigError::ValidationError(
                 format!("Circular profile inheritance detected: {}", name)
             ));
-        }
-        
         visited.insert(name.to_string());
         
         let profile = self.profiles.get(name)
@@ -645,73 +438,25 @@ impl BuildConfig {
     pub fn default_for_project(name: &str, project_type: ProjectType) -> Self {
         let mut config = BuildConfig {
             project: ProjectMetadata {
-                name: name.to_string(),
-                version: "0.1.0".to_string(),
                 description: Some(format!("A CURSED {} project", match project_type {
-                    ProjectType::Binary => "binary",
-                    ProjectType::Library => "library",
-                })),
-                authors: Vec::from(["Your Name <your.email@example.com>".to_string()]),
-                license: Some("MIT OR Apache-2.0".to_string()),
-                repository: None,
-                documentation: None,
-                keywords: Vec::from([]),
-                categories: Vec::from([]),
-                edition: "2024".to_string(),
-            },
-            targets: Vec::from([]),
-            profiles: HashMap::new(),
-            dependencies: HashMap::new(),
-            dev_dependencies: HashMap::new(),
-            build_dependencies: HashMap::new(),
-            features: HashMap::new(),
-            scripts: HashMap::new(),
-            tools: ToolConfigurations::default(),
-        };
         
         // Add default profiles
         config.profiles.insert("dev".to_string(), BuildProfile {
-            inherits: None,
-            optimization: OptimizationLevel::O0,
-            debug: true,
-            strip: false,
-            lto: false,
-            panic: PanicStrategy::Unwind,
-            codegen_units: None,
-            llvm_args: Vec::from([]),
-            env: HashMap::new(),
         });
         
         config.profiles.insert("release".to_string(), BuildProfile {
-            inherits: None,
-            optimization: OptimizationLevel::O3,
-            debug: false,
-            strip: true,
-            lto: true,
-            panic: PanicStrategy::Abort,
-            codegen_units: Some(1),
-            llvm_args: Vec::from([]),
-            env: HashMap::new(),
         });
         
         // Add default target based on project type
         match project_type {
             ProjectType::Binary => {
                 config.targets.push(BuildTarget {
-                    name: name.to_string(),
-                    target_type: TargetType::Bin,
                     path: PathBuf::from("src/main.csd"),
-                    required_features: Vec::from([]),
-                    config: HashMap::new(),
                 });
             }
             ProjectType::Library => {
                 config.targets.push(BuildTarget {
-                    name: name.to_string(),
-                    target_type: TargetType::Lib,
                     path: PathBuf::from("src/lib.csd"),
-                    required_features: Vec::from([]),
-                    config: HashMap::new(),
                 });
             }
         }
@@ -723,33 +468,19 @@ impl BuildConfig {
 /// Project types for initialization
 #[derive(Debug, Clone)]
 pub enum ProjectType {
-    Binary,
-    Library,
-}
-
 /// Configuration error types
 #[derive(Debug, thiserror::CursedError)]
 pub enum ConfigError {
     #[error("IO error: {0}")]
-    IoError(#[from] std::io::Error),
     
     #[error("Parse error: {0}")]
-    ParseError(#[from] toml::de::Error),
     
     #[error("Serialize error: {0}")]
-    SerializeError(#[from] toml::ser::Error),
     
     #[error("Validation error: {0}")]
-    ValidationError(String),
-}
-
 fn is_valid_semver(version: &str) -> bool {
     // Simple semantic version validation
     let parts: Vec<&str> = version.split('.').collect();
     if parts.len() != 3 {
         return false;
-    }
-    
     parts.iter().all(|part| part.parse::<u32>().is_ok())
-}
-

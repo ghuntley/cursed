@@ -12,34 +12,22 @@ use crate::runtime::r#async::{Future, Promise, PromiseResolver, PromiseRejecter}
 
 /// Async mutex for protecting shared data
 pub struct AsyncMutex<T> {
-    data: Arc<Mutex<Option<T>>>,
-    waiters: Arc<Mutex<VecDeque<Waker>>>,
-}
-
 impl<T> AsyncMutex<T> {
     pub fn new(data: T) -> Self {
         Self {
-            data: Arc::new(Mutex::new(Some(data))),
-            waiters: Arc::new(Mutex::new(VecDeque::new())),
         }
     }
 
     /// Lock the mutex asynchronously
     pub async fn lock(&self) -> AsyncMutexGuard<T> {
         AsyncMutexLockFuture {
-            mutex: self.clone(),
-            acquired: false,
         }.await
-    }
-
     /// Try to lock the mutex without waiting
     pub fn try_lock(&self) -> Option<AsyncMutexGuard<T>> {
         let mut data = self.data.lock().unwrap();
         if data.is_some() {
             let value = data.take().unwrap();
             Some(AsyncMutexGuard {
-                mutex: self.clone(),
-                data: Some(value),
             })
         } else {
             None
@@ -50,31 +38,19 @@ impl<T> AsyncMutex<T> {
         {
             let mut data = self.data.lock().unwrap();
             *data = Some(value);
-        }
-
         // Wake next waiter
         let mut waiters = self.waiters.lock().unwrap();
         if let Some(waker) = waiters.pop_front() {
             waker.wake();
         }
     }
-}
-
 impl<T> Clone for AsyncMutex<T> {
     fn clone(&self) -> Self {
         Self {
-            data: self.data.clone(),
-            waiters: self.waiters.clone(),
         }
     }
-}
-
 /// Guard for async mutex
 pub struct AsyncMutexGuard<T> {
-    mutex: AsyncMutex<T>,
-    data: Option<T>,
-}
-
 impl<T> std::ops::Deref for AsyncMutexGuard<T> {
     type Target = T;
 
@@ -95,22 +71,14 @@ impl<T> Drop for AsyncMutexGuard<T> {
             self.mutex.unlock(data);
         }
     }
-}
-
 /// Future for async mutex lock
 struct AsyncMutexLockFuture<T> {
-    mutex: AsyncMutex<T>,
-    acquired: bool,
-}
-
 impl<T> Future for AsyncMutexLockFuture<T> {
     type Output = AsyncMutexGuard<T>;
 
     fn poll(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
         if self.acquired {
             return Poll::Pending;
-        }
-
         // Try to acquire the lock
         if let Some(guard) = self.mutex.try_lock() {
             self.acquired = true;
@@ -122,8 +90,6 @@ impl<T> Future for AsyncMutexLockFuture<T> {
             Poll::Pending
         }
     }
-}
-
 // Implement standard Future trait for AsyncMutexLockFuture to support .await syntax
 impl<T> StdFuture for AsyncMutexLockFuture<T> {
     type Output = AsyncMutexGuard<T>;
@@ -136,41 +102,21 @@ impl<T> StdFuture for AsyncMutexLockFuture<T> {
 
 /// Async read-write lock
 pub struct AsyncRwLock<T> {
-    data: Arc<Mutex<AsyncRwLockInner<T>>>,
-}
-
 struct AsyncRwLockInner<T> {
-    data: Option<T>,
-    readers: usize,
-    writer: bool,
-    read_waiters: VecDeque<Waker>,
-    write_waiters: VecDeque<Waker>,
-}
-
 impl<T> AsyncRwLock<T> {
     pub fn new(data: T) -> Self {
         Self {
             data: Arc::new(Mutex::new(AsyncRwLockInner {
-                data: Some(data),
-                readers: 0,
-                writer: false,
-                read_waiters: VecDeque::new(),
-                write_waiters: VecDeque::new(),
-            })),
         }
     }
 
     /// Acquire read lock
     pub async fn read(&self) -> AsyncRwLockReadGuard<T> {
         AsyncRwLockReadFuture {
-            lock: self.clone(),
         }.await
-    }
-
     /// Acquire write lock
     pub async fn write(&self) -> AsyncRwLockWriteGuard<T> {
         AsyncRwLockWriteFuture {
-            lock: self.clone(),
         }.await
     }
 }
@@ -178,17 +124,10 @@ impl<T> AsyncRwLock<T> {
 impl<T> Clone for AsyncRwLock<T> {
     fn clone(&self) -> Self {
         Self {
-            data: self.data.clone(),
         }
     }
-}
-
 /// Read guard for async RwLock
 pub struct AsyncRwLockReadGuard<T> {
-    lock: AsyncRwLock<T>,
-    _phantom: std::marker::PhantomData<T>,
-}
-
 impl<T> Drop for AsyncRwLockReadGuard<T> {
     fn drop(&mut self) {
         let mut inner = self.lock.data.lock().unwrap();
@@ -205,10 +144,6 @@ impl<T> Drop for AsyncRwLockReadGuard<T> {
 
 /// Write guard for async RwLock
 pub struct AsyncRwLockWriteGuard<T> {
-    lock: AsyncRwLock<T>,
-    _phantom: std::marker::PhantomData<T>,
-}
-
 impl<T> Drop for AsyncRwLockWriteGuard<T> {
     fn drop(&mut self) {
         let mut inner = self.lock.data.lock().unwrap();
@@ -222,12 +157,7 @@ impl<T> Drop for AsyncRwLockWriteGuard<T> {
             waker.wake();
         }
     }
-}
-
 struct AsyncRwLockReadFuture<T> {
-    lock: AsyncRwLock<T>,
-}
-
 impl<T> Future for AsyncRwLockReadFuture<T> {
     type Output = AsyncRwLockReadGuard<T>;
 
@@ -238,8 +168,6 @@ impl<T> Future for AsyncRwLockReadFuture<T> {
             // Can acquire read lock
             inner.readers += 1;
             Poll::Ready(AsyncRwLockReadGuard {
-                lock: self.lock.clone(),
-                _phantom: std::marker::PhantomData,
             })
         } else {
             // Must wait
@@ -247,8 +175,6 @@ impl<T> Future for AsyncRwLockReadFuture<T> {
             Poll::Pending
         }
     }
-}
-
 impl<T> StdFuture for AsyncRwLockReadFuture<T> {
     type Output = AsyncRwLockReadGuard<T>;
 
@@ -259,9 +185,6 @@ impl<T> StdFuture for AsyncRwLockReadFuture<T> {
 }
 
 struct AsyncRwLockWriteFuture<T> {
-    lock: AsyncRwLock<T>,
-}
-
 impl<T> Future for AsyncRwLockWriteFuture<T> {
     type Output = AsyncRwLockWriteGuard<T>;
 
@@ -272,8 +195,6 @@ impl<T> Future for AsyncRwLockWriteFuture<T> {
             // Can acquire write lock
             inner.writer = true;
             Poll::Ready(AsyncRwLockWriteGuard {
-                lock: self.lock.clone(),
-                _phantom: std::marker::PhantomData,
             })
         } else {
             // Must wait
@@ -281,8 +202,6 @@ impl<T> Future for AsyncRwLockWriteFuture<T> {
             Poll::Pending
         }
     }
-}
-
 impl<T> StdFuture for AsyncRwLockWriteFuture<T> {
     type Output = AsyncRwLockWriteGuard<T>;
 
@@ -294,38 +213,24 @@ impl<T> StdFuture for AsyncRwLockWriteFuture<T> {
 
 /// Async semaphore
 pub struct AsyncSemaphore {
-    permits: Arc<Mutex<AsyncSemaphoreInner>>,
-}
-
 struct AsyncSemaphoreInner {
-    available: usize,
-    waiters: VecDeque<Waker>,
-}
-
 impl AsyncSemaphore {
     pub fn new(permits: usize) -> Self {
         Self {
             permits: Arc::new(Mutex::new(AsyncSemaphoreInner {
-                available: permits,
-                waiters: VecDeque::new(),
-            })),
         }
     }
 
     /// Acquire a permit
     pub async fn acquire(&self) -> AsyncSemaphorePermit {
         AsyncSemaphoreAcquireFuture {
-            semaphore: self.clone(),
         }.await
-    }
-
     /// Try to acquire a permit without waiting
     pub fn try_acquire(&self) -> Option<AsyncSemaphorePermit> {
         let mut inner = self.permits.lock().unwrap();
         if inner.available > 0 {
             inner.available -= 1;
             Some(AsyncSemaphorePermit {
-                semaphore: self.clone(),
             })
         } else {
             None
@@ -341,21 +246,13 @@ impl AsyncSemaphore {
             waker.wake();
         }
     }
-}
-
 impl Clone for AsyncSemaphore {
     fn clone(&self) -> Self {
         Self {
-            permits: self.permits.clone(),
         }
     }
-}
-
 /// Permit for async semaphore
 pub struct AsyncSemaphorePermit {
-    semaphore: AsyncSemaphore,
-}
-
 impl Drop for AsyncSemaphorePermit {
     fn drop(&mut self) {
         self.semaphore.release();
@@ -363,9 +260,6 @@ impl Drop for AsyncSemaphorePermit {
 }
 
 struct AsyncSemaphoreAcquireFuture {
-    semaphore: AsyncSemaphore,
-}
-
 impl Future for AsyncSemaphoreAcquireFuture {
     type Output = AsyncSemaphorePermit;
 
@@ -378,8 +272,6 @@ impl Future for AsyncSemaphoreAcquireFuture {
             Poll::Pending
         }
     }
-}
-
 impl StdFuture for AsyncSemaphoreAcquireFuture {
     type Output = AsyncSemaphorePermit;
 
@@ -391,24 +283,16 @@ impl StdFuture for AsyncSemaphoreAcquireFuture {
 
 /// Async condition variable
 pub struct AsyncCondVar {
-    waiters: Arc<Mutex<VecDeque<Waker>>>,
-}
-
 impl AsyncCondVar {
     pub fn new() -> Self {
         Self {
-            waiters: Arc::new(Mutex::new(VecDeque::new())),
         }
     }
 
     /// Wait for notification
     pub async fn wait(&self) {
         AsyncCondVarWaitFuture {
-            condvar: self.clone(),
-            registered: false,
         }.await
-    }
-
     /// Notify one waiter
     pub fn notify_one(&self) {
         let mut waiters = self.waiters.lock().unwrap();
@@ -424,16 +308,11 @@ impl AsyncCondVar {
             waker.wake();
         }
     }
-}
-
 impl Clone for AsyncCondVar {
     fn clone(&self) -> Self {
         Self {
-            waiters: self.waiters.clone(),
         }
     }
-}
-
 impl Default for AsyncCondVar {
     fn default() -> Self {
         Self::new()
@@ -441,10 +320,6 @@ impl Default for AsyncCondVar {
 }
 
 struct AsyncCondVarWaitFuture {
-    condvar: AsyncCondVar,
-    registered: bool,
-}
-
 impl Future for AsyncCondVarWaitFuture {
     type Output = ();
 
@@ -469,39 +344,17 @@ impl StdFuture for AsyncCondVarWaitFuture {
 
 /// Simple async channel
 pub struct Channel<T> {
-    inner: Arc<Mutex<ChannelInner<T>>>,
-}
-
 struct ChannelInner<T> {
-    queue: VecDeque<T>,
-    capacity: Option<usize>,
-    senders: VecDeque<Waker>,
-    receivers: VecDeque<Waker>,
-    closed: bool,
-}
-
 impl<T> Channel<T> {
     pub fn unbounded() -> (Sender<T>, Receiver<T>) {
         let inner = Arc::new(Mutex::new(ChannelInner {
-            queue: VecDeque::new(),
-            capacity: None,
-            senders: VecDeque::new(),
-            receivers: VecDeque::new(),
-            closed: false,
         }));
 
         let sender = Sender { inner: inner.clone() };
         let receiver = Receiver { inner };
         (sender, receiver)
-    }
-
     pub fn bounded(capacity: usize) -> (Sender<T>, Receiver<T>) {
         let inner = Arc::new(Mutex::new(ChannelInner {
-            queue: VecDeque::with_capacity(capacity),
-            capacity: Some(capacity),
-            senders: VecDeque::new(),
-            receivers: VecDeque::new(),
-            closed: false,
         }));
 
         let sender = Sender { inner: inner.clone() };
@@ -512,26 +365,17 @@ impl<T> Channel<T> {
 
 /// Sender half of a channel
 pub struct Sender<T> {
-    inner: Arc<Mutex<ChannelInner<T>>>,
-}
-
 impl<T> Sender<T> {
     /// Send a value
     pub async fn send(&self, value: T) -> AsyncResult<()> {
         SendFuture {
-            sender: self.clone(),
-            value: Some(value),
         }.await
-    }
-
     /// Try to send without waiting
     pub fn try_send(&self, value: T) -> crate::error::Result<()> {
         let mut inner = self.inner.lock().unwrap();
         
         if inner.closed {
             return Err(AsyncError::Channel("Channel closed".to_string()));
-        }
-
         if let Some(capacity) = inner.capacity {
             if inner.queue.len() >= capacity {
                 return Err(AsyncError::Channel("Channel full".to_string()));
@@ -543,11 +387,7 @@ impl<T> Sender<T> {
         // Wake a receiver
         if let Some(waker) = inner.receivers.pop_front() {
             waker.wake();
-        }
-
         Ok(())
-    }
-
     /// Close the channel
     pub fn close(&self) {
         let mut inner = self.inner.lock().unwrap();
@@ -561,29 +401,18 @@ impl<T> Sender<T> {
             waker.wake();
         }
     }
-}
-
 impl<T> Clone for Sender<T> {
     fn clone(&self) -> Self {
         Self {
-            inner: self.inner.clone(),
         }
     }
-}
-
 /// Receiver half of a channel
 pub struct Receiver<T> {
-    inner: Arc<Mutex<ChannelInner<T>>>,
-}
-
 impl<T> Receiver<T> {
     /// Receive a value
     pub async fn recv(&self) -> AsyncResult<T> {
         RecvFuture {
-            receiver: self.clone(),
         }.await
-    }
-
     /// Try to receive without waiting
     pub fn try_recv(&self) -> crate::error::Result<()> {
         let mut inner = self.inner.lock().unwrap();
@@ -600,28 +429,18 @@ impl<T> Receiver<T> {
             Err(AsyncError::Channel("Channel empty".to_string()))
         }
     }
-}
-
 impl<T> Clone for Receiver<T> {
     fn clone(&self) -> Self {
         Self {
-            inner: self.inner.clone(),
         }
     }
-}
-
 struct SendFuture<T> {
-    sender: Sender<T>,
-    value: Option<T>,
-}
-
 impl<T> Future for SendFuture<T> {
     type Output = AsyncResult<()>;
 
     fn poll(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
         if let Some(value) = self.value.take() {
             match self.sender.try_send(value) {
-                Ok(()) => Poll::Ready(Ok(())),
                 Err(AsyncError::Channel(msg)) if msg.contains("full") => {
                     // Add to senders queue
                     let mut inner = self.sender.inner.lock().unwrap();
@@ -629,14 +448,11 @@ impl<T> Future for SendFuture<T> {
                     self.value = Some(value); // Put value back
                     Poll::Pending
                 }
-                Err(e) => Poll::Ready(Err(e)),
             }
         } else {
             Poll::Ready(Err(AsyncError::Channel("Value already consumed".to_string())))
         }
     }
-}
-
 impl<T> StdFuture for SendFuture<T> {
     type Output = AsyncResult<()>;
 
@@ -647,26 +463,19 @@ impl<T> StdFuture for SendFuture<T> {
 }
 
 struct RecvFuture<T> {
-    receiver: Receiver<T>,
-}
-
 impl<T> Future for RecvFuture<T> {
     type Output = AsyncResult<T>;
 
     fn poll(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
         match self.receiver.try_recv() {
-            Ok(value) => Poll::Ready(Ok(value)),
             Err(AsyncError::Channel(msg)) if msg.contains("empty") => {
                 // Add to receivers queue
                 let mut inner = self.receiver.inner.lock().unwrap();
                 inner.receivers.push_back(cx.waker().clone());
                 Poll::Pending
             }
-            Err(e) => Poll::Ready(Err(e)),
         }
     }
-}
-
 impl<T> StdFuture for RecvFuture<T> {
     type Output = AsyncResult<T>;
 
@@ -681,8 +490,6 @@ pub mod mpsc {
 
     pub fn unbounded<T>() -> (Sender<T>, Receiver<T>) {
         Channel::unbounded()
-    }
-
     pub fn bounded<T>(capacity: usize) -> (Sender<T>, Receiver<T>) {
         Channel::bounded(capacity)
     }
@@ -695,15 +502,8 @@ pub mod oneshot {
     pub fn channel<T>() -> (OneshotSender<T>, OneshotReceiver<T>) {
         let (sender, receiver) = Promise::new();
         (
-            OneshotSender { resolver: Some(sender) },
-            OneshotReceiver { promise: receiver },
         )
-    }
-
     pub struct OneshotSender<T> {
-        resolver: Option<PromiseResolver<T>>,
-    }
-
     impl<T> OneshotSender<T> {
         pub fn send(mut self, value: T) -> Result<(), T> {
             if let Some(resolver) = self.resolver.take() {
@@ -712,17 +512,10 @@ pub mod oneshot {
                 Err(value)
             }
         }
-    }
-
     pub struct OneshotReceiver<T> {
-        promise: Promise<T>,
-    }
-
     impl<T: Clone> OneshotReceiver<T> {
         pub async fn recv(self) -> AsyncResult<T> {
             match self.promise.await {
-                Ok(value) => Ok(value),
-                Err(e) => Err(e.into()),
             }
         }
     }
@@ -734,36 +527,19 @@ pub mod broadcast {
 
     pub fn channel<T>(capacity: usize) -> (BroadcastSender<T>, BroadcastReceiver<T>) {
         let inner = Arc::new(Mutex::new(BroadcastInner {
-            queue: VecDeque::with_capacity(capacity),
-            capacity,
-            receivers: Vec::new(),
-            closed: false,
         }));
 
         let sender = BroadcastSender { inner: inner.clone() };
         let receiver = BroadcastReceiver { inner, position: 0 };
         (sender, receiver)
-    }
-
     struct BroadcastInner<T> {
-        queue: VecDeque<T>,
-        capacity: usize,
-        receivers: Vec<Waker>,
-        closed: bool,
-    }
-
     pub struct BroadcastSender<T> {
-        inner: Arc<Mutex<BroadcastInner<T>>>,
-    }
-
     impl<T: Clone> BroadcastSender<T> {
         pub async fn send(&self, value: T) -> AsyncResult<()> {
             let mut inner = self.inner.lock().unwrap();
             
             if inner.closed {
                 return Err(AsyncError::Channel("Channel closed".to_string()));
-            }
-
             // Add value, removing old ones if at capacity
             if inner.queue.len() >= inner.capacity {
                 inner.queue.pop_front();
@@ -773,11 +549,7 @@ pub mod broadcast {
             // Wake all receivers
             for waker in inner.receivers.drain(..) {
                 waker.wake();
-            }
-
             Ok(())
-        }
-
         pub fn close(&self) {
             let mut inner = self.inner.lock().unwrap();
             inner.closed = true;
@@ -786,25 +558,15 @@ pub mod broadcast {
                 waker.wake();
             }
         }
-    }
-
     pub struct BroadcastReceiver<T> {
-        inner: Arc<Mutex<BroadcastInner<T>>>,
-        position: usize,
-    }
-
     impl<T: Clone> BroadcastReceiver<T> {
         pub async fn recv(&mut self) -> AsyncResult<T> {
             BroadcastRecvFuture {
-                receiver: self,
             }.await
         }
     }
 
     struct BroadcastRecvFuture<'a, T> {
-        receiver: &'a mut BroadcastReceiver<T>,
-    }
-
     impl<'a, T: Clone> Future for BroadcastRecvFuture<'a, T> {
         type Output = AsyncResult<T>;
 
@@ -822,8 +584,6 @@ pub mod broadcast {
                 Poll::Pending
             }
         }
-    }
-
     impl<'a, T: Clone> StdFuture for BroadcastRecvFuture<'a, T> {
         type Output = AsyncResult<T>;
 
@@ -831,47 +591,25 @@ pub mod broadcast {
             Future::poll(self, cx)
         }
     }
-}
-
 /// Select macro-like functionality
 pub async fn select<F1, F2, T1, T2>(
-    future1: F1,
-    future2: F2,
 ) -> Either<T1, T2>
 where
-    F1: Future<Output = T1>,
-    F2: Future<Output = T2>,
 {
     // Simplified select implementation
     // A real implementation would use proper select! machinery
     SelectTwoFuture::new(future1, future2).await
-}
-
 /// Either type for select results
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Either<L, R> {
-    Left(L),
-    Right(R),
-}
-
 struct SelectTwoFuture<F1, F2> {
-    future1: Option<F1>,
-    future2: Option<F2>,
-}
-
 impl<F1, F2> SelectTwoFuture<F1, F2> {
     fn new(f1: F1, f2: F2) -> Self {
         Self {
-            future1: Some(f1),
-            future2: Some(f2),
         }
     }
-}
-
 impl<F1, F2> Future for SelectTwoFuture<F1, F2>
 where
-    F1: Future,
-    F2: Future,
 {
     type Output = Either<F1::Output, F2::Output>;
 
@@ -900,8 +638,6 @@ where
 
 impl<F1, F2> StdFuture for SelectTwoFuture<F1, F2>
 where
-    F1: Future,
-    F2: Future,
 {
     type Output = Either<F1::Output, F2::Output>;
 
@@ -912,29 +648,17 @@ where
 
 /// Join multiple futures
 pub async fn join<F1, F2, T1, T2>(
-    future1: F1,
-    future2: F2,
 ) -> (T1, T2)
 where
-    F1: Future<Output = T1>,
-    F2: Future<Output = T2>,
 {
     use crate::runtime::r#async::future::JoinTwoFuture;
     JoinTwoFuture::new(future1, future2).await
-}
-
 /// Race multiple futures
 pub async fn race<F1, F2, T>(
-    future1: F1,
-    future2: F2,
 ) -> T
 where
-    F1: Future<Output = T>,
-    F2: Future<Output = T>,
 {
     match select(future1, future2).await {
-        Either::Left(result) => result,
-        Either::Right(result) => result,
     }
 }
 

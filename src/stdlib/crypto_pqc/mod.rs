@@ -78,45 +78,24 @@ use std::fmt;
 #[derive(Debug, Clone, PartialEq)]
 pub enum PqcError {
     /// Invalid key size or format
-    InvalidKey(String),
     /// Invalid ciphertext or signature
-    InvalidCiphertext(String),
     /// Invalid signature or verification failed
-    InvalidSignature(String),
     /// Unsupported parameter set or security level
-    UnsupportedParameters(String),
     /// Random number generation failed
-    RandomGenerationFailed(String),
     /// Key generation failed
-    KeyGenerationFailed(String),
     /// Encapsulation failed
-    EncapsulationFailed(String),
     /// Decapsulation failed
-    DecapsulationFailed(String),
     /// Signing operation failed
-    SigningFailed(String),
     /// Verification operation failed
-    VerificationFailed(String),
     /// Encryption failed
-    EncryptionFailed(String),
     /// Decryption failed
-    DecryptionFailed(String),
     /// Parameter validation failed
-    ParameterValidation(String),
     /// Internal algorithm error
-    InternalError(String),
     /// Algorithm not available
-    AlgorithmNotAvailable(String),
     /// Hybrid protocol error
-    HybridError(String),
     /// Format conversion error
-    FormatError(String),
     /// Benchmark error
-    BenchmarkError(String),
     /// Analysis error
-    AnalysisError(String),
-}
-
 // impl fmt::Display for PqcError {
 //     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
 //         match self {
@@ -158,116 +137,57 @@ pub type PqcResult<T> = std::result::Result<T, PqcError>;
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum SecurityLevel {
     /// NIST Level 1 - Equivalent to AES-128
-    Level1,
     /// NIST Level 3 - Equivalent to AES-192  
-    Level3,
     /// NIST Level 5 - Equivalent to AES-256
-    Level5,
-}
-
 impl SecurityLevel {
     /// Get the equivalent classical security strength in bits
     pub fn classical_bits(&self) -> u32 {
         match self {
-            SecurityLevel::Level1 => 128,
-            SecurityLevel::Level3 => 192,
-            SecurityLevel::Level5 => 256,
         }
     }
 
     /// Get a description of the security level
     pub fn description(&self) -> &'static str {
         match self {
-            SecurityLevel::Level1 => "NIST Level 1 (AES-128 equivalent)",
-            SecurityLevel::Level3 => "NIST Level 3 (AES-192 equivalent)", 
-            SecurityLevel::Level5 => "NIST Level 5 (AES-256 equivalent)",
         }
     }
-}
-
 /// Algorithm type enumeration
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum AlgorithmType {
     // Lattice-based
-    Kyber,
-    Dilithium,
-    Ntru,
-    FrodoKem,
     
     // Hash-based
-    Sphincs,
-    Lms,
-    Xmss,
     
     // Multivariate
-    Rainbow,
-    GeMSS,
     
     // Code-based
-    ClassicMcEliece,
-    Bike,
-    Hqc,
     
     // Isogeny-based (deprecated/research)
-    Sike,
-}
-
 impl fmt::Display for AlgorithmType {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            AlgorithmType::Kyber => write!(f, "Kyber"),
-            AlgorithmType::Dilithium => write!(f, "Dilithium"),
-            AlgorithmType::Ntru => write!(f, "NTRU"),
-            AlgorithmType::FrodoKem => write!(f, "FrodoKEM"),
-            AlgorithmType::Sphincs => write!(f, "SPHINCS+"),
-            AlgorithmType::Lms => write!(f, "LMS"),
-            AlgorithmType::Xmss => write!(f, "XMSS"),
-            AlgorithmType::Rainbow => write!(f, "Rainbow"),
-            AlgorithmType::GeMSS => write!(f, "GeMSS"),
-            AlgorithmType::ClassicMcEliece => write!(f, "Classic McEliece"),
-            AlgorithmType::Bike => write!(f, "BIKE"),
-            AlgorithmType::Hqc => write!(f, "HQC"),
-            AlgorithmType::Sike => write!(f, "SIKE"),
         }
     }
-}
-
 /// Algorithm family classification
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum AlgorithmFamily {
-    LatticeBased,
-    HashBased,
-    Multivariate,
-    CodeBased,
-    IsogenyBased,
-}
-
 impl AlgorithmFamily {
     /// Get the family for a given algorithm
     pub fn from_algorithm(alg: AlgorithmType) -> Self {
         match alg {
             AlgorithmType::Kyber | AlgorithmType::Dilithium | 
-            AlgorithmType::Ntru | AlgorithmType::FrodoKem => AlgorithmFamily::LatticeBased,
             
             AlgorithmType::Sphincs | AlgorithmType::Lms | 
-            AlgorithmType::Xmss => AlgorithmFamily::HashBased,
             
-            AlgorithmType::Rainbow | AlgorithmType::GeMSS => AlgorithmFamily::Multivariate,
             
             AlgorithmType::ClassicMcEliece | AlgorithmType::Bike | 
-            AlgorithmType::Hqc => AlgorithmFamily::CodeBased,
             
-            AlgorithmType::Sike => AlgorithmFamily::IsogenyBased,
         }
     }
 
     /// Get a description of the algorithm family
     pub fn description(&self) -> &'static str {
         match self {
-            AlgorithmFamily::LatticeBased => "Lattice-based algorithms (NTRU, Module-LWE, etc.)",
-            AlgorithmFamily::HashBased => "Hash-based signatures (stateless and stateful)",
-            AlgorithmFamily::Multivariate => "Multivariate polynomial equations",
-            AlgorithmFamily::CodeBased => "CursedError-correcting codes",
             AlgorithmFamily::IsogenyBased => "Isogeny-based (deprecated/research only)",
         }
     }
@@ -275,56 +195,34 @@ impl AlgorithmFamily {
     /// Get the quantum resistance confidence level
     pub fn quantum_confidence(&self) -> &'static str {
         match self {
-            AlgorithmFamily::LatticeBased => "High confidence - well-studied",
-            AlgorithmFamily::HashBased => "Very high confidence - provable security",
-            AlgorithmFamily::Multivariate => "Medium confidence - ongoing research",
-            AlgorithmFamily::CodeBased => "High confidence - well-established",
-            AlgorithmFamily::IsogenyBased => "Broken - not quantum secure",
         }
     }
-}
-
 /// Standardization status of algorithms
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum StandardizationStatus {
     /// NIST standardized (final)
-    NistStandardized,
     /// NIST finalist (under consideration)
-    NistFinalist,
     /// NIST alternate candidate
-    NistAlternate,
     /// Research/experimental only
-    Research,
     /// Deprecated/broken
-    Deprecated,
-}
-
 impl StandardizationStatus {
     /// Get standardization status for an algorithm
     pub fn for_algorithm(alg: AlgorithmType) -> Self {
         match alg {
             AlgorithmType::Kyber | AlgorithmType::Dilithium | 
-            AlgorithmType::Sphincs => StandardizationStatus::NistStandardized,
             
-            AlgorithmType::Ntru => StandardizationStatus::NistFinalist,
             
-            AlgorithmType::ClassicMcEliece => StandardizationStatus::NistAlternate,
             
             AlgorithmType::FrodoKem | AlgorithmType::Bike | 
             AlgorithmType::Hqc | AlgorithmType::Rainbow | 
             AlgorithmType::GeMSS | AlgorithmType::Lms | 
-            AlgorithmType::Xmss => StandardizationStatus::Research,
             
-            AlgorithmType::Sike => StandardizationStatus::Deprecated,
         }
     }
 
     /// Get a description of the standardization status
     pub fn description(&self) -> &'static str {
         match self {
-            StandardizationStatus::NistStandardized => "NIST standardized - production ready",
-            StandardizationStatus::NistFinalist => "NIST finalist - nearly production ready",
-            StandardizationStatus::NistAlternate => "NIST alternate - backup option",
             StandardizationStatus::Research => "Research/experimental - not for production",
             StandardizationStatus::Deprecated => "Deprecated/broken - do not use",
         }

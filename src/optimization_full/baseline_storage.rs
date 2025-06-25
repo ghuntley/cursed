@@ -18,110 +18,59 @@ use crate::optimization::benchmarks::{BenchmarkResult, BenchmarkSuiteResult};
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct PerformanceBaseline {
     /// Unique identifier for this baseline
-    pub baseline_id: String,
     /// Human-readable name
-    pub name: String,
     /// Baseline type (commit, release, manual)
-    pub baseline_type: BaselineType,
     /// Timestamp when baseline was created
-    pub created_at: DateTime<Utc>,
     /// Git commit hash (if applicable)
-    pub git_commit: Option<String>,
     /// Version or release tag (if applicable)
-    pub version: Option<String>,
     /// Performance metrics for each benchmark
-    pub benchmarks: HashMap<String, BaselineBenchmark>,
     /// Metadata about the baseline
-    pub metadata: HashMap<String, String>,
     /// Confidence level of this baseline (0.0 to 1.0)
-    pub confidence_level: f64,
-}
-
 /// Type of performance baseline
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub enum BaselineType {
     /// Baseline from a specific git commit
-    GitCommit,
     /// Baseline from a release version
-    Release,
     /// Manually created baseline
-    Manual,
     /// Continuous integration baseline
-    CI,
     /// Development branch baseline
-    Development,
-}
-
 /// Performance metrics for a single benchmark in a baseline
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct BaselineBenchmark {
     /// Benchmark name
-    pub name: String,
     /// Compilation time metrics
-    pub compile_time_metrics: TimeMetrics,
     /// Runtime performance metrics (if available)
-    pub runtime_metrics: Option<TimeMetrics>,
     /// Binary size in bytes
-    pub binary_size: usize,
     /// Peak memory usage in bytes
-    pub peak_memory_usage: usize,
     /// Number of optimization passes
-    pub optimization_passes: usize,
     /// Additional custom metrics
-    pub custom_metrics: HashMap<String, f64>,
-}
-
 /// Statistical metrics for time measurements
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct TimeMetrics {
     /// Mean time
-    pub mean: Duration,
     /// Standard deviation
-    pub std_dev: Duration,
     /// Minimum time observed
-    pub min: Duration,
     /// Maximum time observed
-    pub max: Duration,
     /// Number of samples
-    pub sample_count: usize,
     /// 95th percentile
-    pub percentile_95: Duration,
-}
-
 /// Baseline storage manager
 pub struct BaselineStorage {
     /// Directory where baselines are stored
-    storage_dir: PathBuf,
     /// Currently loaded baselines
-    loaded_baselines: HashMap<String, PerformanceBaseline>,
     /// Default baseline ID
-    default_baseline_id: Option<String>,
-}
-
 /// Configuration for baseline storage
 #[derive(Debug, Clone)]
 pub struct BaselineStorageConfig {
     /// Storage directory path
-    pub storage_dir: PathBuf,
     /// Maximum number of baselines to keep
-    pub max_baselines: usize,
     /// Automatically clean old baselines
-    pub auto_cleanup: bool,
     /// Minimum confidence level for baselines
-    pub min_confidence_level: f64,
-}
-
 impl Default for BaselineStorageConfig {
     fn default() -> Self {
         Self {
             storage_dir: PathBuf::from(".cursed/baselines"),
-            max_baselines: 50,
-            auto_cleanup: true,
-            min_confidence_level: 0.7,
         }
     }
-}
-
 impl BaselineStorage {
     /// Create a new baseline storage manager
     #[instrument(skip(config))]
@@ -133,10 +82,6 @@ impl BaselineStorage {
             .map_err(|e| CursedError::General(format!("Failed to create baseline storage directory: {}", e)))?;
 
         let mut storage = Self {
-            storage_dir: config.storage_dir,
-            loaded_baselines: HashMap::new(),
-            default_baseline_id: None,
-        };
 
         // Load existing baselines
         storage.load_all_baselines()?;
@@ -144,20 +89,10 @@ impl BaselineStorage {
         // Auto-cleanup if enabled
         if config.auto_cleanup {
             storage.cleanup_old_baselines(config.max_baselines)?;
-        }
-
         Ok(storage)
-    }
-
     /// Create a new baseline from benchmark results
     #[instrument(skip(self, suite_result))]
     pub fn create_baseline(
-        &mut self,
-        name: String,
-        baseline_type: BaselineType,
-        suite_result: &BenchmarkSuiteResult,
-        git_commit: Option<String>,
-        version: Option<String>,
     ) -> Result<String> {
         info!("Creating new baseline: {}", name);
 
@@ -168,53 +103,20 @@ impl BaselineStorage {
         // Convert benchmark results to baseline benchmarks
         for result in &suite_result.results {
             let time_metrics = TimeMetrics {
-                mean: result.compile_time,
                 std_dev: Duration::from_millis(50), // TODO: Calculate from multiple runs
-                min: result.compile_time,
-                max: result.compile_time,
-                sample_count: 1,
-                percentile_95: result.compile_time,
-            };
 
             let runtime_metrics = result.runtime_performance.map(|runtime| TimeMetrics {
-                mean: runtime,
-                std_dev: Duration::from_millis(10),
-                min: runtime,
-                max: runtime,
-                sample_count: 1,
-                percentile_95: runtime,
             });
 
             benchmarks.insert(result.name.clone(), BaselineBenchmark {
-                name: result.name.clone(),
-                compile_time_metrics: time_metrics,
-                runtime_metrics,
-                binary_size: result.binary_size,
-                peak_memory_usage: result.peak_memory_usage,
-                optimization_passes: result.optimization_passes,
-                custom_metrics: HashMap::new(),
             });
-        }
-
         let mut metadata = HashMap::new();
         metadata.insert("suite_name".to_string(), suite_result.suite_name.clone());
         metadata.insert("benchmark_count".to_string(), suite_result.results.len().to_string());
-        metadata.insert("success_rate".to_string(), 
-                        format!("{:.1}%", 
                                (suite_result.statistics.successful_benchmarks as f64 / 
                                 suite_result.statistics.total_benchmarks as f64) * 100.0));
 
         let baseline = PerformanceBaseline {
-            baseline_id: baseline_id.clone(),
-            name,
-            baseline_type,
-            created_at: Utc::now(),
-            git_commit,
-            version,
-            benchmarks,
-            metadata,
-            confidence_level: self.calculate_confidence_level(suite_result),
-        };
 
         // Save to storage
         self.save_baseline(&baseline)?;
@@ -222,19 +124,13 @@ impl BaselineStorage {
 
         info!("Baseline created successfully: {}", baseline_id);
         Ok(baseline_id)
-    }
-
     /// Load a specific baseline by ID
     pub fn load_baseline(&mut self, baseline_id: &str) -> Result<Option<&PerformanceBaseline>> {
         if let Some(baseline) = self.loaded_baselines.get(baseline_id) {
             return Ok(Some(baseline));
-        }
-
         let baseline_path = self.get_baseline_path(baseline_id);
         if !baseline_path.exists() {
             return Ok(None);
-        }
-
         let content = std::fs::read_to_string(&baseline_path)
             .map_err(|e| CursedError::General(format!("Failed to read baseline file: {}", e)))?;
         
@@ -245,8 +141,6 @@ impl BaselineStorage {
         self.loaded_baselines.insert(baseline_id.clone(), baseline);
         
         Ok(self.loaded_baselines.get(&baseline_id))
-    }
-
     /// Load all baselines from storage
     fn load_all_baselines(&mut self) -> Result<()> {
         debug!("Loading all baselines from storage");
@@ -269,8 +163,6 @@ impl BaselineStorage {
 
         info!("Loaded {} baselines", self.loaded_baselines.len());
         Ok(())
-    }
-
     /// Save a baseline to storage
     fn save_baseline(&self, baseline: &PerformanceBaseline) -> Result<()> {
         let baseline_path = self.get_baseline_path(&baseline.baseline_id);
@@ -283,13 +175,9 @@ impl BaselineStorage {
         
         debug!("Baseline saved: {}", baseline_path.display());
         Ok(())
-    }
-
     /// Get all available baselines
     pub fn list_baselines(&self) -> Vec<&PerformanceBaseline> {
         self.loaded_baselines.values().collect()
-    }
-
     /// Get the default baseline
     pub fn get_default_baseline(&self) -> Option<&PerformanceBaseline> {
         if let Some(ref default_id) = self.default_baseline_id {
@@ -307,13 +195,9 @@ impl BaselineStorage {
     pub fn set_default_baseline(&mut self, baseline_id: String) -> Result<()> {
         if !self.loaded_baselines.contains_key(&baseline_id) {
             return Err(CursedError::General(format!("Baseline not found: {}", baseline_id)));
-        }
-        
         self.default_baseline_id = Some(baseline_id.clone());
         info!("Default baseline set to: {}", baseline_id);
         Ok(())
-    }
-
     /// Find the most suitable baseline for comparison
     pub fn find_comparison_baseline(&self, benchmark_name: &str) -> Option<&PerformanceBaseline> {
         // Priority order:
@@ -335,14 +219,10 @@ impl BaselineStorage {
                     .filter(|b| b.benchmarks.contains_key(benchmark_name))
                     .max_by_key(|b| b.created_at)
             })
-    }
-
     /// Clean up old baselines
     fn cleanup_old_baselines(&mut self, max_baselines: usize) -> Result<()> {
         if self.loaded_baselines.len() <= max_baselines {
             return Ok(());
-        }
-
         info!("Cleaning up old baselines, keeping {} most recent", max_baselines);
 
         // Sort baselines by creation time, keeping the most recent
@@ -355,44 +235,26 @@ impl BaselineStorage {
             if baseline.baseline_type == BaselineType::Release ||
                Some(&baseline.baseline_id) == self.default_baseline_id.as_ref() {
                 continue;
-            }
-
             let baseline_path = self.get_baseline_path(&baseline.baseline_id);
             if let Err(e) = std::fs::remove_file(&baseline_path) {
                 warn!("Failed to remove baseline file {}: {}", baseline_path.display(), e);
             } else {
                 debug!("Removed old baseline: {}", baseline.baseline_id);
-            }
-            
             self.loaded_baselines.remove(&baseline.baseline_id);
-        }
-
         Ok(())
-    }
-
     /// Generate a unique baseline ID
     fn generate_baseline_id(&self, name: &str, baseline_type: &BaselineType) -> String {
         let timestamp = Utc::now().format("%Y%m%d_%H%M%S");
         let type_prefix = match baseline_type {
-            BaselineType::GitCommit => "commit",
-            BaselineType::Release => "release",
-            BaselineType::Manual => "manual",
-            BaselineType::CI => "ci",
-            BaselineType::Development => "dev",
-        };
         
         let sanitized_name = name.chars()
             .map(|c| if c.is_alphanumeric() || c == '_' || c == '-' { c } else { '_' })
             .collect::<String>();
         
         format!("{}_{}_{}", type_prefix, sanitized_name, timestamp)
-    }
-
     /// Get the file path for a baseline
     fn get_baseline_path(&self, baseline_id: &str) -> PathBuf {
         self.storage_dir.join(format!("{}.json", baseline_id))
-    }
-
     /// Calculate confidence level for a baseline
     fn calculate_confidence_level(&self, suite_result: &BenchmarkSuiteResult) -> f64 {
         let success_rate = suite_result.statistics.successful_benchmarks as f64 / 
@@ -405,11 +267,8 @@ impl BaselineStorage {
             0.8
         } else {
             0.7
-        };
         
         success_rate * benchmark_confidence
-    }
-
     /// Export baselines to a portable format
     pub fn export_baselines(&self, export_path: &Path, baseline_ids: Option<Vec<String>>) -> Result<()> {
         let baselines_to_export: Vec<_> = if let Some(ids) = baseline_ids {
@@ -418,7 +277,6 @@ impl BaselineStorage {
                 .collect()
         } else {
             self.loaded_baselines.values().collect()
-        };
 
         let export_data = serde_json::to_string_pretty(&baselines_to_export)
             .map_err(|e| CursedError::General(format!("Failed to serialize export data: {}", e)))?;
@@ -428,8 +286,6 @@ impl BaselineStorage {
 
         info!("Exported {} baselines to: {}", baselines_to_export.len(), export_path.display());
         Ok(())
-    }
-
     /// Import baselines from a portable format
     pub fn import_baselines(&mut self, import_path: &Path, overwrite_existing: bool) -> Result<usize> {
         let content = std::fs::read_to_string(import_path)
@@ -443,13 +299,9 @@ impl BaselineStorage {
             if !overwrite_existing && self.loaded_baselines.contains_key(&baseline.baseline_id) {
                 debug!("Skipping existing baseline: {}", baseline.baseline_id);
                 continue;
-            }
-
             self.save_baseline(&baseline)?;
             self.loaded_baselines.insert(baseline.baseline_id.clone(), baseline);
             imported_count += 1;
-        }
-
         info!("Imported {} baselines from: {}", imported_count, import_path.display());
         Ok(imported_count)
     }

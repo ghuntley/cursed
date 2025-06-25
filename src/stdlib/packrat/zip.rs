@@ -26,82 +26,34 @@ const COMPRESSION_DEFLATE: u16 = 8; // Deflate compression
 // ZIP file header
 #[derive(Debug, Clone)]
 pub struct HoardFileHeader {
-    pub name: String,
-    pub comment: String,
-    pub creator_version: u16,
-    pub reader_version: u16,
-    pub flags: u16,
-    pub method: u16,
-    pub modified_time: u16,
-    pub modified_date: u16,
-    pub crc32: u32,
-    pub compressed_size: u32,
-    pub uncompressed_size: u32,
-    pub extra: Vec<u8>,
-    pub external_attrs: u32,
-    pub modified: SystemTime,
     
     // Internal fields
-    pub(crate) offset: u64,
-    pub(crate) header_offset: u64,
-}
-
 impl Default for HoardFileHeader {
     fn default() -> Self {
         let now = SystemTime::now();
         let (dos_time, dos_date) = system_time_to_dos_time(now);
         
         HoardFileHeader {
-            name: String::new(),
-            comment: String::new(),
-            creator_version: ZIP_VERSION_MADE_BY,
-            reader_version: ZIP_VERSION_NEEDED,
-            flags: 0,
-            method: COMPRESSION_STORED,
-            modified_time: dos_time,
-            modified_date: dos_date,
-            crc32: 0,
-            compressed_size: 0,
-            uncompressed_size: 0,
-            extra: Vec::new(),
-            external_attrs: 0,
-            modified: now,
-            offset: 0,
-            header_offset: 0,
         }
     }
-}
-
 impl HoardFileHeader {
     pub fn new(name: &str) -> Self {
         let mut header = HoardFileHeader::default();
         header.name = name.to_string();
         header
-    }
-    
     pub fn validate(&self) -> ArchiveResult<()> {
         // Check for path traversal
         if self.name.contains("..") || self.name.starts_with('/') {
             return Err(ArchiveError::PathTraversal(format!("Unsafe path: {}", self.name)));
-        }
-        
         // Check name length
         if self.name.len() > 65535 {
             return Err(ArchiveError::NameTooLong(format!("Name too long: {}", self.name.len())));
-        }
-        
         // Check sizes are reasonable
         if self.compressed_size as u64 > i64::MAX as u64 {
             return Err(invalid_header("Compressed size too large"));
-        }
-        
         if self.uncompressed_size as u64 > i64::MAX as u64 {
             return Err(invalid_header("Uncompressed size too large"));
-        }
-        
         Ok(())
-    }
-    
     // Write local file header
     pub(crate) fn write_local_header<W: Write>(&self, writer: &mut W) -> ArchiveResult<()> {
         let name_bytes = self.name.as_bytes();
@@ -138,8 +90,6 @@ impl HoardFileHeader {
         writer.write_all(&self.extra)?;
         
         Ok(())
-    }
-    
     // Write central directory header
     pub(crate) fn write_central_header<W: Write>(&self, writer: &mut W) -> ArchiveResult<()> {
         let name_bytes = self.name.as_bytes();
@@ -198,15 +148,9 @@ impl HoardFileHeader {
 // ZIP file entry
 #[derive(Debug)]
 pub struct HoardFile {
-    pub file_header: HoardFileHeader,
-    pub(crate) data: Vec<u8>,
-}
-
 impl HoardFile {
     pub fn new(header: HoardFileHeader, data: Vec<u8>) -> Self {
         HoardFile {
-            file_header: header,
-            data,
         }
     }
     
@@ -215,8 +159,6 @@ impl HoardFile {
         // For now, return cursor over stored data
         // In full implementation, would handle compression
         Ok(Box::new(Cursor::new(self.data.clone())))
-    }
-    
     // Get data offset (for compatibility)
     pub fn data_offset(&self) -> ArchiveResult<i64> {
         Ok(self.file_header.offset as i64)
@@ -225,31 +167,16 @@ impl HoardFile {
 
 // ZIP reader (HoardPack)
 pub struct HoardPack<R: Read + Seek> {
-    reader: R,
-    pub files: Vec<HoardFile>,
-    central_dir_offset: u64,
-    central_dir_size: u64,
-}
-
 impl<R: Read + Seek> HoardPack<R> {
     pub fn new(mut reader: R, size: i64) -> ArchiveResult<Self> {
         Self::new_with_files(reader, size, Vec::new())
-    }
-    
     pub fn new_with_files(mut reader: R, size: i64, files: Vec<HoardFile>) -> ArchiveResult<Self> {
         let mut pack = HoardPack {
-            reader,
-            files,
-            central_dir_offset: 0,
-            central_dir_size: 0,
-        };
         
         // Find and parse central directory
         pack.read_central_directory(size as u64)?;
         
         Ok(pack)
-    }
-    
     fn read_central_directory(&mut self, archive_size: u64) -> ArchiveResult<()> {
         // Find end of central directory record
         let eocd_offset = self.find_eocd_record(archive_size)?;
@@ -266,12 +193,8 @@ impl<R: Read + Seek> HoardPack<R> {
         for _ in 0..eocd.total_entries {
             let file = self.read_central_dir_entry()?;
             self.files.push(file);
-        }
-        
         debug!("Read {} files from ZIP central directory", self.files.len());
         Ok(())
-    }
-    
     fn find_eocd_record(&mut self, archive_size: u64) -> ArchiveResult<u64> {
         // Search backwards from end of file for EOCD signature
         const MAX_COMMENT_SIZE: u64 = 65535;
@@ -281,7 +204,6 @@ impl<R: Read + Seek> HoardPack<R> {
             archive_size - MAX_COMMENT_SIZE - EOCD_SIZE
         } else {
             0
-        };
         
         self.reader.seek(SeekFrom::Start(search_start))?;
         let mut buffer = Vec::new();
@@ -299,8 +221,6 @@ impl<R: Read + Seek> HoardPack<R> {
         }
         
         Err(corrupt_archive("Could not find end of central directory record"))
-    }
-    
     fn read_eocd_record(&mut self) -> ArchiveResult<EndOfCentralDir> {
         let mut buf = [0u8; 22];
         self.reader.read_exact(&mut buf)?;
@@ -308,19 +228,8 @@ impl<R: Read + Seek> HoardPack<R> {
         let signature = u32::from_le_bytes([buf[0], buf[1], buf[2], buf[3]]);
         if signature != ZIP_END_CENTRAL_DIR_SIGNATURE {
             return Err(corrupt_archive("Invalid EOCD signature"));
-        }
-        
         Ok(EndOfCentralDir {
-            disk_number: u16::from_le_bytes([buf[4], buf[5]]),
-            central_dir_disk: u16::from_le_bytes([buf[6], buf[7]]),
-            disk_entries: u16::from_le_bytes([buf[8], buf[9]]),
-            total_entries: u16::from_le_bytes([buf[10], buf[11]]),
-            central_dir_size: u32::from_le_bytes([buf[12], buf[13], buf[14], buf[15]]) as u64,
-            central_dir_offset: u32::from_le_bytes([buf[16], buf[17], buf[18], buf[19]]) as u64,
-            comment_length: u16::from_le_bytes([buf[20], buf[21]]),
         })
-    }
-    
     fn read_central_dir_entry(&mut self) -> ArchiveResult<HoardFile> {
         let mut buf = [0u8; 46];
         self.reader.read_exact(&mut buf)?;
@@ -328,8 +237,6 @@ impl<R: Read + Seek> HoardPack<R> {
         let signature = u32::from_le_bytes([buf[0], buf[1], buf[2], buf[3]]);
         if signature != ZIP_CENTRAL_HEADER_SIGNATURE {
             return Err(corrupt_archive("Invalid central directory header signature"));
-        }
-        
         let name_len = u16::from_le_bytes([buf[28], buf[29]]) as usize;
         let extra_len = u16::from_le_bytes([buf[30], buf[31]]) as usize;
         let comment_len = u16::from_le_bytes([buf[32], buf[33]]) as usize;
@@ -349,26 +256,8 @@ impl<R: Read + Seek> HoardPack<R> {
             .map_err(|_| invalid_format("Invalid UTF-8 in comment"))?;
         
         let header = HoardFileHeader {
-            name,
-            comment,
-            creator_version: u16::from_le_bytes([buf[4], buf[5]]),
-            reader_version: u16::from_le_bytes([buf[6], buf[7]]),
-            flags: u16::from_le_bytes([buf[8], buf[9]]),
-            method: u16::from_le_bytes([buf[10], buf[11]]),
-            modified_time: u16::from_le_bytes([buf[12], buf[13]]),
-            modified_date: u16::from_le_bytes([buf[14], buf[15]]),
-            crc32: u32::from_le_bytes([buf[16], buf[17], buf[18], buf[19]]),
-            compressed_size: u32::from_le_bytes([buf[20], buf[21], buf[22], buf[23]]),
-            uncompressed_size: u32::from_le_bytes([buf[24], buf[25], buf[26], buf[27]]),
-            extra,
-            external_attrs: u32::from_le_bytes([buf[38], buf[39], buf[40], buf[41]]),
             modified: dos_time_to_system_time(
-                u16::from_le_bytes([buf[12], buf[13]]),
                 u16::from_le_bytes([buf[14], buf[15]])
-            ),
-            offset: u32::from_le_bytes([buf[42], buf[43], buf[44], buf[45]]) as u64,
-            header_offset: u32::from_le_bytes([buf[42], buf[43], buf[44], buf[45]]) as u64,
-        };
         
         // For now, create empty file data (would read actual data in full implementation)
         Ok(HoardFile::new(header, Vec::new()))
@@ -377,19 +266,9 @@ impl<R: Read + Seek> HoardPack<R> {
 
 // ZIP writer (HoardStash)
 pub struct HoardStash<W: Write + Seek> {
-    writer: W,
-    files: Vec<HoardFileHeader>,
-    current_offset: u64,
-    finished: bool,
-}
-
 impl<W: Write + Seek> HoardStash<W> {
     pub fn new(writer: W) -> Self {
         HoardStash {
-            writer,
-            files: Vec::new(),
-            current_offset: 0,
-            finished: false,
         }
     }
     
@@ -397,18 +276,12 @@ impl<W: Write + Seek> HoardStash<W> {
     pub fn create(&mut self, name: &str) -> ArchiveResult<ZipFileWriter<'_, W>> {
         if self.finished {
             return Err(io_error("Archive already finished"));
-        }
-        
         let header = HoardFileHeader::new(name);
         self.create_header(&header)
-    }
-    
     // Create file with custom header
     pub fn create_header(&mut self, header: &HoardFileHeader) -> ArchiveResult<ZipFileWriter<'_, W>> {
         if self.finished {
             return Err(io_error("Archive already finished"));
-        }
-        
         header.validate()?;
         
         let mut file_header = header.clone();
@@ -421,20 +294,11 @@ impl<W: Write + Seek> HoardStash<W> {
         self.current_offset += header_size as u64;
         
         Ok(ZipFileWriter {
-            stash: self,
-            header: file_header,
-            data_start: self.current_offset,
-            crc: crc32fast::Hasher::new(),
-            data: Vec::new(),
         })
-    }
-    
     // Close archive
     pub fn close(&mut self) -> ArchiveResult<()> {
         if self.finished {
             return Ok(());
-        }
-        
         let central_dir_start = self.current_offset;
         
         // Write central directory
@@ -442,8 +306,6 @@ impl<W: Write + Seek> HoardStash<W> {
             header.write_central_header(&mut self.writer)?;
             let entry_size = 46 + header.name.len() + header.extra.len() + header.comment.len();
             self.current_offset += entry_size as u64;
-        }
-        
         let central_dir_size = self.current_offset - central_dir_start;
         
         // Write end of central directory record
@@ -452,8 +314,6 @@ impl<W: Write + Seek> HoardStash<W> {
         self.finished = true;
         debug!("Closed ZIP archive with {} files", self.files.len());
         Ok(())
-    }
-    
     fn write_eocd_record(&mut self, central_dir_offset: u64, central_dir_size: u64) -> ArchiveResult<()> {
         // End of central directory signature
         self.writer.write_all(&ZIP_END_CENTRAL_DIR_SIGNATURE.to_le_bytes())?;
@@ -475,8 +335,6 @@ impl<W: Write + Seek> HoardStash<W> {
         self.writer.write_all(&0u16.to_le_bytes())?;
         
         Ok(())
-    }
-    
     fn add_file(&mut self, mut header: HoardFileHeader) {
         header.offset = header.header_offset;
         self.files.push(header);
@@ -489,23 +347,12 @@ impl<W: Write + Seek> Drop for HoardStash<W> {
             let _ = self.close();
         }
     }
-}
-
 // ZIP file writer helper
 pub struct ZipFileWriter<'a, W: Write + Seek> {
-    stash: &'a mut HoardStash<W>,
-    header: HoardFileHeader,
-    data_start: u64,
-    crc: crc32fast::Hasher,
-    data: Vec<u8>,
-}
-
 impl<'a, W: Write + Seek> Write for ZipFileWriter<'a, W> {
     fn write(&mut self, buf: &[u8]) -> std::io::Result<usize> {
         self.data.extend_from_slice(buf);
         Ok(buf.len())
-    }
-    
     fn flush(&mut self) -> std::io::Result<()> {
         Ok(())
     }
@@ -518,8 +365,6 @@ impl<'a, W: Write + Seek> Drop for ZipFileWriter<'a, W> {
             error!("CursedError finishing ZIP file: {}", e);
         }
     }
-}
-
 impl<'a, W: Write + Seek> ZipFileWriter<'a, W> {
     fn finish(&mut self) -> ArchiveResult<()> {
         // Write file data
@@ -544,23 +389,12 @@ impl<'a, W: Write + Seek> ZipFileWriter<'a, W> {
 // Helper structures
 #[derive(Debug)]
 struct EndOfCentralDir {
-    disk_number: u16,
-    central_dir_disk: u16,
-    disk_entries: u16,
-    total_entries: u16,
-    central_dir_size: u64,
-    central_dir_offset: u64,
-    comment_length: u16,
-}
-
 // Create header from file info (public function)  
 pub fn FileInfoHeader(name: &str, size: u64, mode: u32) -> ArchiveResult<HoardFileHeader> {
     let mut header = HoardFileHeader::new(name);
     header.uncompressed_size = size as u32;
     header.external_attrs = (mode << 16) as u32;
     Ok(header)
-}
-
 // DOS time conversion helpers
 fn system_time_to_dos_time(time: SystemTime) -> (u16, u16) {
     let duration = time.duration_since(UNIX_EPOCH).unwrap_or_default();
@@ -571,8 +405,6 @@ fn system_time_to_dos_time(time: SystemTime) -> (u16, u16) {
     let dos_date = ((secs / 86400) + 719163) as u16; // Days since 1980-01-01
     
     (dos_time, dos_date)
-}
-
 fn dos_time_to_system_time(dos_time: u16, dos_date: u16) -> SystemTime {
     // Convert DOS date/time to SystemTime (simplified)
     let days_since_epoch = dos_date as u64 - 719163;
@@ -580,5 +412,3 @@ fn dos_time_to_system_time(dos_time: u16, dos_date: u16) -> SystemTime {
     let total_secs = days_since_epoch * 86400 + secs_in_day;
     
     UNIX_EPOCH + std::time::Duration::from_secs(total_secs)
-}
-

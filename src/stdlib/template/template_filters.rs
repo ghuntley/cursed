@@ -19,11 +19,7 @@ pub trait TemplateFilter: Send + Sync {
     fn name(&self) -> &str;
     
     /// Filter description
-    fn description(&self) -> &str { "" }
-    
     /// Required number of arguments (None for variable args)
-    fn required_args(&self) -> Option<usize> { None }
-    
     /// Apply the filter
     fn apply(&self, context: &FilterContext, args: &[CursedObject]) -> crate::error::Result<()>;
     
@@ -35,36 +31,21 @@ pub trait TemplateFilter: Send + Sync {
 #[derive(Debug, Clone)]
 pub struct FilterContext {
     /// Current template being rendered
-    pub template_name: Option<String>,
     /// Filter chain depth (for preventing infinite recursion)
-    pub chain_depth: usize,
     /// Performance tracking enabled
-    pub track_performance: bool,
     /// Cache enabled
-    pub cache_enabled: bool,
     /// Maximum chain depth
-    pub max_chain_depth: usize,
     /// Start time for performance tracking
-    pub start_time: Option<Instant>,
-}
-
 impl FilterContext {
     /// Create new filter context
     pub fn new() -> Self {
         Self {
-            template_name: None,
-            chain_depth: 0,
-            track_performance: true,
-            cache_enabled: true,
-            max_chain_depth: 10,
-            start_time: None,
         }
     }
     
     /// Create context for template
     pub fn for_template(template_name: String) -> Self {
         Self {
-            template_name: Some(template_name),
             ..Self::new()
         }
     }
@@ -73,13 +54,8 @@ impl FilterContext {
     pub fn deeper(&self) -> crate::error::Result<()> {
         if self.chain_depth >= self.max_chain_depth {
             return Err(CursedError::TemplateError {
-                message: format!("Filter chain depth exceeded maximum of {}", self.max_chain_depth),
-                source_location: None,
             });
-        }
-        
         Ok(Self {
-            chain_depth: self.chain_depth + 1,
             ..self.clone()
         })
     }
@@ -94,21 +70,9 @@ impl Default for FilterContext {
 /// Filter performance statistics
 #[derive(Debug, Clone)]
 pub struct FilterStats {
-    pub call_count: u64,
-    pub total_duration: Duration,
-    pub avg_duration: Duration,
-    pub cache_hits: u64,
-    pub cache_misses: u64,
-}
-
 impl FilterStats {
     fn new() -> Self {
         Self {
-            call_count: 0,
-            total_duration: Duration::from_nanos(0),
-            avg_duration: Duration::from_nanos(0),
-            cache_hits: 0,
-            cache_misses: 0,
         }
     }
     
@@ -123,16 +87,8 @@ impl FilterStats {
             self.cache_misses += 1;
         }
     }
-}
-
 /// Registry of template filters and functions
 pub struct FilterRegistry {
-    filters: Arc<RwLock<HashMap<String, FilterFn>>>,
-    trait_filters: Arc<RwLock<HashMap<String, Box<dyn TemplateFilter>>>>,
-    stats: Arc<RwLock<HashMap<String, FilterStats>>>,
-    cache: Arc<RwLock<HashMap<String, CursedObject>>>,
-}
-
 impl std::fmt::Debug for FilterRegistry {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let filter_count = self.filters.read().unwrap().len();
@@ -149,20 +105,12 @@ impl FilterRegistry {
     /// Create a new filter registry with built-in filters
     pub fn new() -> Self {
         let registry = Self {
-            filters: Arc::new(RwLock::new(HashMap::new())),
-            trait_filters: Arc::new(RwLock::new(HashMap::new())),
-            stats: Arc::new(RwLock::new(HashMap::new())),
-            cache: Arc::new(RwLock::new(HashMap::new())),
-        };
         registry.register_builtin_filters();
         registry.register_cursed_filters();
         registry
-    }
-
     /// Register a custom filter function
     pub fn register<F>(&self, name: &str, filter: F)
     where
-        F: Fn(&FilterContext, &[CursedObject]) -> crate::error::Result<()> + Send + Sync + 'static,
     {
         if let Ok(mut filters) = self.filters.write() {
             filters.insert(name.to_string(), Box::new(filter));
@@ -172,7 +120,6 @@ impl FilterRegistry {
     /// Register a trait-based filter
     pub fn register_trait_filter<T>(&self, filter: T)
     where
-        T: TemplateFilter + 'static,
     {
         let name = filter.name().to_string();
         if let Ok(mut trait_filters) = self.trait_filters.write() {
@@ -185,8 +132,6 @@ impl FilterRegistry {
     pub fn apply(&self, name: &str, args: &[CursedObject]) -> crate::error::Result<()> {
         let context = FilterContext::new();
         self.apply_with_context(name, &context, args)
-    }
-    
     /// Apply a filter with explicit context
     #[instrument(skip(self, args))]
     pub fn apply_with_context(&self, name: &str, context: &FilterContext, args: &[CursedObject]) -> crate::error::Result<()> {
@@ -201,8 +146,6 @@ impl FilterRegistry {
                     return Ok(cached_result.clone());
                 }
             }
-        }
-        
         // Try trait-based filters first
         if let Ok(trait_filters) = self.trait_filters.read() {
             if let Some(filter) = trait_filters.get(name) {
@@ -241,11 +184,7 @@ impl FilterRegistry {
         
         warn!(filter = name, "Unknown filter");
         Err(CursedError::TemplateError {
-            message: format!("Unknown filter: {}", name),
-            source_location: None,
         })
-    }
-    
     /// Clear filter cache
     pub fn clear_cache(&self) {
         if let Ok(mut cache) = self.cache.write() {
@@ -285,16 +224,10 @@ impl FilterRegistry {
         
         if let Ok(filters) = self.filters.read() {
             names.extend(filters.keys().cloned());
-        }
-        
         if let Ok(trait_filters) = self.trait_filters.read() {
             names.extend(trait_filters.keys().cloned());
-        }
-        
         names.sort();
         names
-    }
-    
     /// Check if a filter exists
     pub fn has_filter(&self, name: &str) -> bool {
         if let Ok(filters) = self.filters.read() {
@@ -310,8 +243,6 @@ impl FilterRegistry {
         }
         
         false
-    }
-
     /// Register all built-in filters
     fn register_builtin_filters(&self) {
         // Text manipulation filters
@@ -331,8 +262,6 @@ impl FilterRegistry {
                 .map(|word| {
                     let mut chars = word.chars();
                     match chars.next() {
-                        None => String::new(),
-                        Some(first) => first.to_uppercase().collect::<String>() + &chars.as_str().to_lowercase(),
                     }
                 })
                 .collect::<Vec<_>>()
@@ -442,8 +371,6 @@ impl FilterRegistry {
             let s = extract_string(&args[0])?;
             let substr = extract_string(&args[1])?;
             match s.find(&substr) {
-                Some(pos) => Ok(CursedObject::Integer(pos as i64)),
-                None => Ok(CursedObject::Integer(-1)),
             }
         });
 
@@ -451,8 +378,6 @@ impl FilterRegistry {
             let s = extract_string(&args[0])?;
             let substr = extract_string(&args[1])?;
             match s.rfind(&substr) {
-                Some(pos) => Ok(CursedObject::Integer(pos as i64)),
-                None => Ok(CursedObject::Integer(-1)),
             }
         });
 
@@ -460,11 +385,7 @@ impl FilterRegistry {
         self.register("printf", |_context, args| {
             if args.is_empty() {
                 return Err(CursedError::TemplateError {
-                    message: "printf filter requires at least a format string".to_string(),
-                    source_location: None,
                 });
-            }
-            
             let format = extract_string(&args[0])?;
             let format_args = &args[1..];
             
@@ -474,11 +395,7 @@ impl FilterRegistry {
         self.register("sprintf", |_context, args| {
             if args.is_empty() {
                 return Err(CursedError::TemplateError {
-                    message: "sprintf filter requires at least a format string".to_string(),
-                    source_location: None,
                 });
-            }
-            
             let format = extract_string(&args[0])?;
             let format_args = &args[1..];
             
@@ -505,8 +422,6 @@ impl FilterRegistry {
             while size >= 1024.0 && unit_index < units.len() - 1 {
                 size /= 1024.0;
                 unit_index += 1;
-            }
-            
             Ok(CursedObject::String(format!("{:.1} {}", size, units[unit_index])))
         });
 
@@ -529,10 +444,6 @@ impl FilterRegistry {
         // Collection operations
         self.register("len", |_context, args| {
             match &args[0] {
-                CursedObject::String(s) => Ok(CursedObject::Integer(s.chars().count() as i64)),
-                CursedObject::Array(arr) => Ok(CursedObject::Integer(arr.len() as i64)),
-                CursedObject::Map(map) => Ok(CursedObject::Integer(map.len() as i64)),
-                _ => Ok(CursedObject::Integer(0)),
             }
         });
 
@@ -580,9 +491,6 @@ impl FilterRegistry {
                     Ok(CursedObject::Array(keys))
                 }
                 _ => Err(CursedError::TemplateError {
-                    message: "keys filter requires a map".to_string(),
-                    source_location: None,
-                }),
             }
         });
 
@@ -593,9 +501,6 @@ impl FilterRegistry {
                     Ok(CursedObject::Array(values))
                 }
                 _ => Err(CursedError::TemplateError {
-                    message: "values filter requires a map".to_string(),
-                    source_location: None,
-                }),
             }
         });
 
@@ -603,12 +508,6 @@ impl FilterRegistry {
         self.register("toJSON", |_context, args| {
             // Simplified JSON serialization
             match &args[0] {
-                CursedObject::String(s) => Ok(CursedObject::String(format!("\"{}\"", s))),
-                CursedObject::Integer(n) => Ok(CursedObject::String(n.to_string())),
-                CursedObject::Float(n) => Ok(CursedObject::String(n.to_string())),
-                CursedObject::Boolean(b) => Ok(CursedObject::String(b.to_string())),
-                CursedObject::Nil => Ok(CursedObject::String("null".to_string())),
-                _ => Ok(CursedObject::String("{}".to_string())),
             }
         });
 
@@ -622,81 +521,40 @@ impl FilterRegistry {
             let s = extract_string(&args[0])?;
             match general_purpose::STANDARD.decode(&s) {
                 Ok(bytes) => match String::from_utf8(bytes) {
-                    Ok(decoded) => Ok(CursedObject::String(decoded)),
                     Err(_) => Err(CursedError::TemplateError {
-                        message: "Invalid UTF-8 in base64 data".to_string(),
-                        source_location: None,
-                    }),
-                },
                 Err(_) => Err(CursedError::TemplateError {
-                    message: "Invalid base64 encoding".to_string(),
-                    source_location: None,
-                }),
             }
         });
 
         self.register("toBool", |_context, args| {
             let result = match &args[0] {
-                CursedObject::Boolean(b) => *b,
-                CursedObject::String(s) => !s.is_empty(),
-                CursedObject::Integer(n) => *n != 0,
-                CursedObject::Float(n) => *n != 0.0,
-                CursedObject::Nil => false,
-                _ => true,
-            };
             Ok(CursedObject::Boolean(result))
         });
 
         self.register("toString", |_context, args| {
             let result = match &args[0] {
-                CursedObject::String(s) => s.clone(),
-                CursedObject::Integer(n) => n.to_string(),
-                CursedObject::Float(n) => n.to_string(),
-                CursedObject::Boolean(b) => b.to_string(),
-            CursedObject::Char(c) => c.to_string(),
-                CursedObject::Nil => "".to_string(),
-                _ => format!("{:?}", args[0]),
-            };
             Ok(CursedObject::String(result))
         });
 
         self.register("toInt", |_context, args| {
             match &args[0] {
-                CursedObject::Integer(n) => Ok(CursedObject::Integer(*n)),
-                CursedObject::Float(n) => Ok(CursedObject::Integer(*n as i64)),
                 CursedObject::String(s) => {
                     match s.parse::<i64>() {
-                        Ok(n) => Ok(CursedObject::Integer(n)),
                         Err(_) => Err(CursedError::TemplateError {
-                            message: format!("Cannot convert '{}' to integer", s),
-                            source_location: None,
-                        }),
                     }
                 }
                 _ => Err(CursedError::TemplateError {
-                    message: "Cannot convert to integer".to_string(),
-                    source_location: None,
-                }),
             }
         });
 
         self.register("toFloat", |_context, args| {
             match &args[0] {
-                CursedObject::Float(n) => Ok(CursedObject::Float(*n)),
-                CursedObject::Integer(n) => Ok(CursedObject::Float(*n as f64)),
                 CursedObject::String(s) => {
                     match s.parse::<f64>() {
-                        Ok(n) => Ok(CursedObject::Float(n)),
                         Err(_) => Err(CursedError::TemplateError {
-                            message: format!("Cannot convert '{}' to float", s),
-                            source_location: None,
-                        }),
                     }
                 }
                 _ => Err(CursedError::TemplateError {
-                    message: "Cannot convert to float".to_string(),
-                    source_location: None,
-                }),
             }
         });
 
@@ -760,10 +618,6 @@ impl FilterRegistry {
 
         self.register("isZero", |_context, args| {
             let result = match &args[0] {
-                CursedObject::Integer(n) => *n == 0,
-                CursedObject::Float(n) => *n == 0.0,
-                _ => false,
-            };
             Ok(CursedObject::Boolean(result))
         });
 
@@ -773,12 +627,6 @@ impl FilterRegistry {
 
         self.register("isEmpty", |_context, args| {
             let result = match &args[0] {
-                CursedObject::String(s) => s.is_empty(),
-                CursedObject::Array(arr) => arr.is_empty(),
-                CursedObject::Map(map) => map.is_empty(),
-                CursedObject::Nil => true,
-                _ => false,
-            };
             Ok(CursedObject::Boolean(result))
         });
 
@@ -792,11 +640,7 @@ impl FilterRegistry {
         self.register("urlDecode", |_context, args| {
             let s = extract_string(&args[0])?;
             match urlencoding::decode(&s) {
-                Ok(decoded) => Ok(CursedObject::String(decoded.to_string())),
                 Err(_) => Err(CursedError::TemplateError {
-                    message: "Invalid URL encoding".to_string(),
-                    source_location: None,
-                }),
             }
         });
 
@@ -909,8 +753,6 @@ impl FilterRegistry {
             let b = extract_float(&args[1])?;
             if b == 0.0 {
                 return Err(CursedError::TemplateError {
-                    message: "Division by zero".to_string(),
-                    source_location: None,
                 });
             }
             Ok(CursedObject::Float(a / b))
@@ -921,8 +763,6 @@ impl FilterRegistry {
             let b = extract_int(&args[1])?;
             if b == 0 {
                 return Err(CursedError::TemplateError {
-                    message: "Modulo by zero".to_string(),
-                    source_location: None,
                 });
             }
             Ok(CursedObject::Integer(a % b))
@@ -956,8 +796,6 @@ impl FilterRegistry {
             let num = extract_float(&args[0])?;
             Ok(CursedObject::Float(num.floor()))
         });
-    }
-    
     /// Register CURSED-style Gen Z slang filters
     fn register_cursed_filters(&self) {
         // Gen Z slang aliases for common filters
@@ -1045,7 +883,6 @@ impl FilterRegistry {
                 "it's alright"
             } else {
                 "nah chief"
-            };
             Ok(CursedObject::String(result.to_string()))
         });
         
@@ -1058,8 +895,6 @@ impl FilterRegistry {
                 Ok(CursedObject::String(dt.format(&format).to_string()))
             } else {
                 Err(CursedError::TemplateError {
-                    message: "Invalid timestamp".to_string(),
-                    source_location: None,
                 })
             }
         });
@@ -1077,7 +912,6 @@ impl FilterRegistry {
                 format!("{} hours ago", diff / 3600)
             } else {
                 format!("{} days ago", diff / 86400)
-            };
             
             Ok(CursedObject::String(result))
         });
@@ -1090,8 +924,6 @@ impl FilterRegistry {
                 Ok(CursedObject::String(dt.format(&format).to_string()))
             } else {
                 Err(CursedError::TemplateError {
-                    message: "Invalid timestamp".to_string(),
-                    source_location: None,
                 })
             }
         });
@@ -1116,13 +948,10 @@ impl FilterRegistry {
             let result = html.chars()
                 .fold((String::new(), false), |(mut acc, in_tag), c| {
                     match c {
-                        '<' => (acc, true),
-                        '>' => (acc, false),
                         _ if !in_tag => {
                             acc.push(c);
                             (acc, in_tag)
                         }
-                        _ => (acc, in_tag),
                     }
                 }).0;
             Ok(CursedObject::String(result))
@@ -1155,10 +984,6 @@ impl FilterRegistry {
             let mut arr = extract_array(&args[0])?;
             arr.sort_by(|a, b| {
                 match (a, b) {
-                    (CursedObject::String(s1), CursedObject::String(s2)) => s1.cmp(s2),
-                    (CursedObject::Integer(i1), CursedObject::Integer(i2)) => i1.cmp(i2),
-                    (CursedObject::Float(f1), CursedObject::Float(f2)) => f1.partial_cmp(f2).unwrap_or(std::cmp::Ordering::Equal),
-                    _ => std::cmp::Ordering::Equal,
                 }
             });
             Ok(CursedObject::Array(arr))
@@ -1171,13 +996,7 @@ impl FilterRegistry {
             let filtered: Vec<CursedObject> = arr.into_iter()
                 .filter(|item| {
                     match condition {
-                        CursedObject::String(field) if field == "truthy" => is_truthy(item),
                         CursedObject::String(field) if field == "non_empty" => match item {
-                            CursedObject::String(s) => !s.is_empty(),
-                            CursedObject::Array(a) => !a.is_empty(),
-                            _ => true,
-                        },
-                        _ => is_truthy(condition),
                     }
                 })
                 .collect();
@@ -1193,22 +1012,8 @@ impl FilterRegistry {
                 .map(|item| {
                     match operation.as_str() {
                         "upper" => match item {
-                            CursedObject::String(s) => Ok(CursedObject::String(s.to_uppercase())),
-                            _ => Ok(item.clone()),
-                        },
                         "lower" => match item {
-                            CursedObject::String(s) => Ok(CursedObject::String(s.to_lowercase())),
-                            _ => Ok(item.clone()),
-                        },
                         "toString" => Ok(CursedObject::String(match item {
-                            CursedObject::String(s) => s.clone(),
-                            CursedObject::Integer(n) => n.to_string(),
-                            CursedObject::Float(n) => n.to_string(),
-                            CursedObject::Boolean(b) => b.to_string(),
-                            CursedObject::Char(c) => c.to_string(),
-                            _ => format!("{:?}", item),
-                        })),
-                        _ => Ok(item.clone()),
                     }
                 })
                 .collect();
@@ -1218,10 +1023,6 @@ impl FilterRegistry {
         
         self.register("length", |_context, args| {
             match &args[0] {
-                CursedObject::String(s) => Ok(CursedObject::Integer(s.chars().count() as i64)),
-                CursedObject::Array(arr) => Ok(CursedObject::Integer(arr.len() as i64)),
-                CursedObject::Map(map) => Ok(CursedObject::Integer(map.len() as i64)),
-                _ => Ok(CursedObject::Integer(0)),
             }
         });
         
@@ -1247,25 +1048,12 @@ impl FilterRegistry {
         
         self.register("abs", |_context, args| {
             match &args[0] {
-                CursedObject::Integer(n) => Ok(CursedObject::Integer(n.abs())),
-                CursedObject::Float(n) => Ok(CursedObject::Float(n.abs())),
                 _ => Err(CursedError::TemplateError {
-                    message: "abs filter requires a number".to_string(),
-                    source_location: None,
-                }),
             }
         });
         
         self.register("to_string", |_context, args| {
             let result = match &args[0] {
-                CursedObject::String(s) => s.clone(),
-                CursedObject::Integer(n) => n.to_string(),
-                CursedObject::Float(n) => n.to_string(),
-                CursedObject::Boolean(b) => b.to_string(),
-                CursedObject::Char(c) => c.to_string(),
-                CursedObject::Nil => "".to_string(),
-                _ => format!("{:?}", args[0]),
-            };
             Ok(CursedObject::String(result))
         });
     }
@@ -1277,16 +1065,12 @@ pub struct CapitalizeFilter;
 impl TemplateFilter for CapitalizeFilter {
     fn name(&self) -> &str { "capitalize" }
     fn description(&self) -> &str { "Capitalize the first letter of each word" }
-    fn required_args(&self) -> Option<usize> { Some(1) }
-    
     fn apply(&self, _context: &FilterContext, args: &[CursedObject]) -> crate::error::Result<()> {
         let s = extract_string(&args[0])?;
         let result = s.split_whitespace()
             .map(|word| {
                 let mut chars = word.chars();
                 match chars.next() {
-                    None => String::new(),
-                    Some(first) => first.to_uppercase().collect::<String>() + &chars.as_str(),
                 }
             })
             .collect::<Vec<_>>()
@@ -1300,8 +1084,6 @@ pub struct ReverseStringFilter;
 impl TemplateFilter for ReverseStringFilter {
     fn name(&self) -> &str { "reverse_string" }
     fn description(&self) -> &str { "Reverse a string character by character" }
-    fn required_args(&self) -> Option<usize> { Some(1) }
-    
     fn apply(&self, _context: &FilterContext, args: &[CursedObject]) -> crate::error::Result<()> {
         let s = extract_string(&args[0])?;
         let reversed: String = s.chars().rev().collect();
@@ -1319,11 +1101,7 @@ impl TemplateFilter for ChainableFilter {
     fn apply(&self, context: &FilterContext, args: &[CursedObject]) -> crate::error::Result<()> {
         if args.len() < 2 {
             return Err(CursedError::TemplateError {
-                message: "chain filter requires at least 2 arguments: value and filter name".to_string(),
-                source_location: None,
             });
-        }
-        
         let mut result = args[0].clone();
         let context = context.deeper()?;
         
@@ -1335,8 +1113,6 @@ impl TemplateFilter for ChainableFilter {
             // This would need to be passed through context in a real implementation
             warn!("Chain filter needs registry access - not fully implemented");
             return Ok(result);
-        }
-        
         Ok(result)
     }
 }
@@ -1350,88 +1126,49 @@ impl Default for FilterRegistry {
 /// Helper function to extract string from CursedObject
 fn extract_string(obj: &CursedObject) -> crate::error::Result<()> {
     match obj {
-        CursedObject::String(s) => Ok(s.clone()),
-        CursedObject::Integer(n) => Ok(n.to_string()),
-        CursedObject::Float(n) => Ok(n.to_string()),
-        CursedObject::Boolean(b) => Ok(b.to_string()),
-            CursedObject::Char(c) => Ok(c.to_string()),
         _ => Err(CursedError::TemplateError {
-            message: "Expected string value".to_string(),
-            source_location: None,
-        }),
     }
 }
 
 /// Helper function to extract integer from CursedObject
 fn extract_int(obj: &CursedObject) -> crate::error::Result<()> {
     match obj {
-        CursedObject::Integer(n) => Ok(*n),
-        CursedObject::Float(n) => Ok(*n as i64),
         CursedObject::String(s) => {
             s.parse::<i64>().map_err(|_| CursedError::TemplateError {
-                message: "Expected integer value".to_string(),
-                source_location: None,
             })
         }
         _ => Err(CursedError::TemplateError {
-            message: "Expected integer value".to_string(),
-            source_location: None,
-        }),
     }
 }
 
 /// Helper function to extract float from CursedObject
 fn extract_float(obj: &CursedObject) -> crate::error::Result<()> {
     match obj {
-        CursedObject::Float(n) => Ok(*n),
-        CursedObject::Integer(n) => Ok(*n as f64),
         CursedObject::String(s) => {
             s.parse::<f64>().map_err(|_| CursedError::TemplateError {
-                message: "Expected numeric value".to_string(),
-                source_location: None,
             })
         }
         _ => Err(CursedError::TemplateError {
-            message: "Expected numeric value".to_string(),
-            source_location: None,
-        }),
     }
 }
 
 /// Helper function to extract array from CursedObject
 fn extract_array(obj: &CursedObject) -> crate::error::Result<()> {
     match obj {
-        CursedObject::Array(arr) => Ok(arr.clone()),
         _ => Err(CursedError::TemplateError {
-            message: "Expected array value".to_string(),
-            source_location: None,
-        }),
     }
 }
 
 /// Helper function to check if objects are equal
 fn objects_equal(left: &CursedObject, right: &CursedObject) -> bool {
     match (left, right) {
-        (CursedObject::String(a), CursedObject::String(b)) => a == b,
-        (CursedObject::Integer(a), CursedObject::Integer(b)) => a == b,
-        (CursedObject::Float(a), CursedObject::Float(b)) => (a - b).abs() < f64::EPSILON,
-        (CursedObject::Boolean(a), CursedObject::Boolean(b)) => a == b,
-        (CursedObject::Nil, CursedObject::Nil) => true,
-        _ => false,
     }
 }
 
 /// Helper function to check if object is truthy
 fn is_truthy(obj: &CursedObject) -> bool {
     match obj {
-        CursedObject::Boolean(b) => *b,
-        CursedObject::Nil => false,
-        CursedObject::Integer(n) => *n != 0,
-        CursedObject::Float(n) => *n != 0.0,
-        CursedObject::String(s) => !s.is_empty(),
         CursedObject::Char(_) => true, // Characters are always truthy
-        CursedObject::Array(arr) => !arr.is_empty(),
-        CursedObject::Map(map) => !map.is_empty(),
     }
 }
 
@@ -1454,11 +1191,7 @@ fn format_string_cursed(format: &str, args: &[CursedObject]) -> crate::error::Re
                     
                     if arg_index >= args.len() {
                         return Err(CursedError::TemplateError {
-                            message: format!("Not enough arguments for format string: expected at least {}", arg_index + 1),
-                            source_location: None,
                         });
-                    }
-                    
                     let formatted = format_argument(&args[arg_index], &format_spec)?;
                     result.push_str(&formatted);
                     arg_index += 1;
@@ -1478,11 +1211,7 @@ fn format_string_cursed(format: &str, args: &[CursedObject]) -> crate::error::Re
                     
                     if arg_index >= args.len() {
                         return Err(CursedError::TemplateError {
-                            message: format!("Not enough arguments for format string: expected at least {}", arg_index + 1),
-                            source_location: None,
                         });
-                    }
-                    
                     let formatted = extract_string(&args[arg_index])?;
                     result.push_str(&formatted);
                     arg_index += 1;
@@ -1494,8 +1223,6 @@ fn format_string_cursed(format: &str, args: &[CursedObject]) -> crate::error::Re
                         Ok(index) => {
                             if index >= args.len() {
                                 return Err(CursedError::TemplateError {
-                                    message: format!("Argument index {} out of range", index),
-                                    source_location: None,
                                 });
                             }
                             extract_string(&args[index])?
@@ -1504,15 +1231,12 @@ fn format_string_cursed(format: &str, args: &[CursedObject]) -> crate::error::Re
                             // For named placeholders, just use current arg_index
                             if arg_index >= args.len() {
                                 return Err(CursedError::TemplateError {
-                                    message: format!("Not enough arguments for format string: expected at least {}", arg_index + 1),
-                                    source_location: None,
                                 });
                             }
                             let formatted = extract_string(&args[arg_index])?;
                             arg_index += 1;
                             formatted
                         }
-                    };
                     
                     result.push_str(&formatted);
                 }
@@ -1537,8 +1261,6 @@ fn format_string_cursed(format: &str, args: &[CursedObject]) -> crate::error::Re
     }
     
     Ok(CursedObject::String(result))
-}
-
 /// Parse a printf-style format specifier
 fn parse_format_specifier(chars: &mut std::iter::Peekable<std::str::Chars>) -> crate::error::Result<()> {
     let mut spec = FormatSpecifier::default();
@@ -1643,11 +1365,7 @@ fn parse_format_specifier(chars: &mut std::iter::Peekable<std::str::Chars>) -> c
                 break;
             }
         }
-    }
-    
     Ok(spec)
-}
-
 /// Parse a placeholder like {0} or {name}
 fn parse_placeholder(chars: &mut std::iter::Peekable<std::str::Chars>) -> crate::error::Result<()> {
     let mut placeholder = String::new();
@@ -1663,20 +1381,9 @@ fn parse_placeholder(chars: &mut std::iter::Peekable<std::str::Chars>) -> crate:
     }
     
     Ok(placeholder)
-}
-
 /// Format specifier for printf-style formatting
 #[derive(Debug, Default)]
 struct FormatSpecifier {
-    conversion: char,
-    width: usize,
-    precision: Option<usize>,
-    left_align: bool,
-    show_sign: bool,
-    space_pad: bool,
-    alternate_form: bool,
-}
-
 /// Format an argument according to a format specifier
 fn format_argument(arg: &CursedObject, spec: &FormatSpecifier) -> crate::error::Result<()> {
     let result = match spec.conversion {
@@ -1687,29 +1394,20 @@ fn format_argument(arg: &CursedObject, spec: &FormatSpecifier) -> crate::error::
                         ch.to_string()
                     } else {
                         return Err(CursedError::TemplateError {
-                            message: format!("Invalid character code: {}", n),
-                            source_location: None,
                         });
                     }
                 }
-                CursedObject::Char(ch) => ch.to_string(),
                 CursedObject::String(s) => {
                     if let Some(ch) = s.chars().next() {
                         ch.to_string()
                     } else {
                         return Err(CursedError::TemplateError {
-                            message: "Cannot convert empty string to character".to_string(),
-                            source_location: None,
                         });
                     }
                 }
                 _ => return Err(CursedError::TemplateError {
-                    message: "Invalid argument type for %c format".to_string(),
-                    source_location: None,
-                }),
             }
         }
-        's' => extract_string(arg)?,
         'd' | 'i' => {
             let num = extract_int(arg)?;
             if spec.show_sign && num >= 0 {
@@ -1757,8 +1455,6 @@ fn format_argument(arg: &CursedObject, spec: &FormatSpecifier) -> crate::error::
             let num = extract_int(arg)?;
             format!("{:o}", num)
         }
-        _ => extract_string(arg)?,
-    };
     
     // Apply width and alignment
     Ok(if spec.width > 0 && result.len() < spec.width {
@@ -1771,11 +1467,8 @@ fn format_argument(arg: &CursedObject, spec: &FormatSpecifier) -> crate::error::
     } else {
         result
     })
-}
-
 impl std::fmt::Display for FormatSpecifier {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "FormatSpecifier {{ conversion: '{}', width: {}, precision: {:?}, left_align: {}, show_sign: {}, space_pad: {}, alternate_form: {} }}", 
                self.conversion, self.width, self.precision, self.left_align, self.show_sign, self.space_pad, self.alternate_form)
     }
 }

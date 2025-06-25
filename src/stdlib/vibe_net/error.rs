@@ -12,54 +12,36 @@ use std::io;
 #[derive(Debug, Clone)]
 pub enum NetError {
     /// Address resolution failed
-    AddressResolution(String),
     
     /// Connection failed
-    ConnectionFailed(String),
     
     /// Connection timeout
-    Timeout(String),
     
     /// Invalid network protocol
-    InvalidProtocol(String),
     
     /// DNS resolution failed
-    DnsResolution(String),
     
     /// Network interface error
-    InterfaceError(String),
     
     /// Socket operation failed
-    SocketError(String),
     
     /// TLS/SSL error
-    TlsError(String),
     
     /// Protocol-specific error
-    ProtocolError(String),
     
     /// Rate limiting error
-    RateLimit(String),
     
     /// Circuit breaker open
-    CircuitBreakerOpen(String),
     
     /// Connection pool exhausted
-    PoolExhausted(String),
     
     /// General I/O error
-    Io(String),
     
     /// Permission denied
-    PermissionDenied(String),
     
     /// Resource unavailable
-    ResourceUnavailable(String),
     
     /// Invalid configuration
-    InvalidConfig(String),
-}
-
 // impl fmt::Display for NetError {
 //     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
 //         match self {
@@ -115,80 +97,48 @@ impl From<AddrParseError> for NetError {
 /// Create an address resolution error
 pub fn address_resolution_error(msg: &str) -> NetError {
     NetError::AddressResolution(msg.to_string())
-}
-
 /// Create a connection failed error
 pub fn connection_failed_error(msg: &str) -> NetError {
     NetError::ConnectionFailed(msg.to_string())
-}
-
 /// Create a timeout error
 pub fn timeout_error(msg: &str) -> NetError {
     NetError::Timeout(msg.to_string())
-}
-
 /// Create an invalid protocol error
 pub fn invalid_protocol_error(msg: &str) -> NetError {
     NetError::InvalidProtocol(msg.to_string())
-}
-
 /// Create a DNS resolution error
 pub fn dns_resolution_error(msg: &str) -> NetError {
     NetError::DnsResolution(msg.to_string())
-}
-
 /// Create an interface error
 pub fn interface_error(msg: &str) -> NetError {
     NetError::InterfaceError(msg.to_string())
-}
-
 /// Create a socket error
 pub fn socket_error(msg: &str) -> NetError {
     NetError::SocketError(msg.to_string())
-}
-
 /// Create a TLS error
 pub fn tls_error(msg: &str) -> NetError {
     NetError::TlsError(msg.to_string())
-}
-
 /// Create a protocol error
 pub fn protocol_error(msg: &str) -> NetError {
     NetError::ProtocolError(msg.to_string())
-}
-
 /// Create a rate limit error
 pub fn rate_limit_error(msg: &str) -> NetError {
     NetError::RateLimit(msg.to_string())
-}
-
 /// Create a circuit breaker error
 pub fn circuit_breaker_error(msg: &str) -> NetError {
     NetError::CircuitBreakerOpen(msg.to_string())
-}
-
 /// Create a pool exhausted error
 pub fn pool_exhausted_error(msg: &str) -> NetError {
     NetError::PoolExhausted(msg.to_string())
-}
-
 /// Create an I/O error
 pub fn io_error(msg: &str) -> NetError {
     NetError::Io(msg.to_string())
-}
-
 /// Create a permission denied error
 pub fn permission_denied_error(msg: &str) -> NetError {
     NetError::PermissionDenied(msg.to_string())
-}
-
 /// Create a resource unavailable error
 pub fn resource_unavailable_error(msg: &str) -> NetError {
     NetError::ResourceUnavailable(msg.to_string())
-}
-
 /// Create an invalid configuration error
 pub fn invalid_config_error(msg: &str) -> NetError {
     NetError::InvalidConfig(msg.to_string())
-}
-

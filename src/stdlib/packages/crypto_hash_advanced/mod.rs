@@ -71,37 +71,27 @@ pub fn init_crypto_hash_advanced() -> crate::error::Result<()> {
     println!("   ⚡ Performance: benchmarking and optimization");
     
     Ok(())
-}
-
 /// Get comprehensive hash algorithm information
 pub fn get_supported_algorithms() -> Vec<hash_traits::HashAlgorithmInfo> {
     let registry = hash_traits::HashRegistry::new();
     registry.list_algorithms().to_vec()
-}
-
 /// Quick hash function for common use cases
 pub fn quick_hash(algorithm: &str, data: &[u8]) -> crate::error::Result<()> {
     match algorithm.to_lowercase().as_str() {
         "blake3" => {
             let mut hasher = blake3::Blake3Hasher::new();
             Ok(hasher.hash(data))
-        },
         "sha3-256" => {
             let mut hasher = sha3::Sha3Hasher::new(sha3::Sha3Variant::Sha3_256);
             Ok(hasher.hash(data))
-        },
         "keccak256" => {
             Ok(keccak::keccak256(data))
-        },
         "xxhash64" => {
             let mut hasher = xxhash::XxHash64::new();
             Ok(hasher.hash(data))
-        },
         "siphash" => {
             let mut hasher = siphash::SipHash::new(&[0u8; 16]);
             Ok(hasher.hash(data))
-        },
-        _ => Err(CursedError::InvalidArgument(format!("Unknown hash algorithm: {}", algorithm))),
     }
 }
 
@@ -109,8 +99,6 @@ pub fn quick_hash(algorithm: &str, data: &[u8]) -> crate::error::Result<()> {
 pub fn hash_password(password: &str) -> crate::error::Result<()> {
     let hasher = password_hashing::PasswordHasher::with_defaults();
     hasher.hash_password(password)
-}
-
 /// Verify a password against a hash
 pub fn verify_password(password: &str, hash: &password_hashing::PasswordHash) -> crate::error::Result<()> {
     let hasher = password_hashing::PasswordHasher::new(hash.config.clone());

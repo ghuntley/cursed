@@ -32,94 +32,54 @@ use super::{KeyEncapsulation, ParameterSet, AlgorithmPerformance, KeySizes};
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum RealMcElieceParams {
     /// mceliece348864: n=3488, k=2720, t=64, m=12 (NIST Level 1)
-    McEliece348864 { n: usize, k: usize, t: usize, m: usize },
     /// mceliece460896: n=4608, k=3360, t=96, m=13 (NIST Level 3)
-    McEliece460896 { n: usize, k: usize, t: usize, m: usize },
     /// mceliece6688128: n=6688, k=5024, t=128, m=13 (NIST Level 5)
-    McEliece6688128 { n: usize, k: usize, t: usize, m: usize },
     /// mceliece6960119: n=6960, k=5413, t=119, m=13 (NIST Level 5)
-    McEliece6960119 { n: usize, k: usize, t: usize, m: usize },
     /// mceliece8192128: n=8192, k=6528, t=128, m=13 (NIST Level 5)
-    McEliece8192128 { n: usize, k: usize, t: usize, m: usize },
-}
-
 impl RealMcElieceParams {
     /// Create parameter set for security level
     pub fn new(security_level: SecurityLevel) -> Self {
         match security_level {
-            SecurityLevel::Level1 => RealMcElieceParams::McEliece348864 { n: 3488, k: 2720, t: 64, m: 12 },
-            SecurityLevel::Level3 => RealMcElieceParams::McEliece460896 { n: 4608, k: 3360, t: 96, m: 13 },
-            SecurityLevel::Level5 => RealMcElieceParams::McEliece6688128 { n: 6688, k: 5024, t: 128, m: 13 },
         }
     }
 
     /// Code length (number of positions in codeword)
     pub fn n(&self) -> usize {
         match self {
-            RealMcElieceParams::McEliece348864 { n, .. } => *n,
-            RealMcElieceParams::McEliece460896 { n, .. } => *n,
-            RealMcElieceParams::McEliece6688128 { n, .. } => *n,
-            RealMcElieceParams::McEliece6960119 { n, .. } => *n,
-            RealMcElieceParams::McEliece8192128 { n, .. } => *n,
         }
     }
 
     /// Code dimension (number of information symbols)
     pub fn k(&self) -> usize {
         match self {
-            RealMcElieceParams::McEliece348864 { k, .. } => *k,
-            RealMcElieceParams::McEliece460896 { k, .. } => *k,
-            RealMcElieceParams::McEliece6688128 { k, .. } => *k,
-            RealMcElieceParams::McEliece6960119 { k, .. } => *k,
-            RealMcElieceParams::McEliece8192128 { k, .. } => *k,
         }
     }
 
     /// CursedError correction capability (maximum correctable errors)
     pub fn t(&self) -> usize {
         match self {
-            RealMcElieceParams::McEliece348864 { t, .. } => *t,
-            RealMcElieceParams::McEliece460896 { t, .. } => *t,
-            RealMcElieceParams::McEliece6688128 { t, .. } => *t,
-            RealMcElieceParams::McEliece6960119 { t, .. } => *t,
-            RealMcElieceParams::McEliece8192128 { t, .. } => *t,
         }
     }
 
     /// Extension degree (field GF(2^m))
     pub fn m(&self) -> usize {
         match self {
-            RealMcElieceParams::McEliece348864 { m, .. } => *m,
-            RealMcElieceParams::McEliece460896 { m, .. } => *m,
-            RealMcElieceParams::McEliece6688128 { m, .. } => *m,
-            RealMcElieceParams::McEliece6960119 { m, .. } => *m,
-            RealMcElieceParams::McEliece8192128 { m, .. } => *m,
         }
     }
 
     /// Field size q = 2^m
     pub fn q(&self) -> usize {
         1 << self.m()
-    }
-
     /// Shared secret size in bytes
     pub fn shared_secret_size(&self) -> usize {
         match self.security_level() {
-            SecurityLevel::Level1 => 16,
-            SecurityLevel::Level3 => 24,
-            SecurityLevel::Level5 => 32,
         }
     }
-}
-
 impl ParameterSet for RealMcElieceParams {
     fn security_level(&self) -> SecurityLevel {
         match self {
-            RealMcElieceParams::McEliece348864 { .. } => SecurityLevel::Level1,
-            RealMcElieceParams::McEliece460896 { .. } => SecurityLevel::Level3,
             RealMcElieceParams::McEliece6688128 { .. } |
             RealMcElieceParams::McEliece6960119 { .. } |
-            RealMcElieceParams::McEliece8192128 { .. } => SecurityLevel::Level5,
         }
     }
 
@@ -128,8 +88,6 @@ impl ParameterSet for RealMcElieceParams {
         // Public key stores the P matrix in compact form
         let r = self.n() - self.k(); // Redundancy
         (self.k() * r + 7) / 8 // Bits to bytes
-    }
-
     fn secret_key_size(&self) -> usize {
         // Secret key stores:
         // - Goppa polynomial coefficients: (t+1) * m bits
@@ -139,12 +97,9 @@ impl ParameterSet for RealMcElieceParams {
         let support_size = self.n() * self.m();
         let perm_size = self.n() * 20; // Approximately log2(n) * constant
         (poly_size + support_size + perm_size + 7) / 8
-    }
-
     fn additional_sizes(&self) -> Vec<(&'static str, usize)> {
         vec![
             ("ciphertext", (self.n() + 7) / 8), // n bits for error vector
-            ("shared_secret", self.shared_secret_size()),
         ]
     }
 }
@@ -152,22 +107,11 @@ impl ParameterSet for RealMcElieceParams {
 impl fmt::Display for RealMcElieceParams {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            RealMcElieceParams::McEliece348864 { .. } => write!(f, "mceliece348864"),
-            RealMcElieceParams::McEliece460896 { .. } => write!(f, "mceliece460896"),
-            RealMcElieceParams::McEliece6688128 { .. } => write!(f, "mceliece6688128"),
-            RealMcElieceParams::McEliece6960119 { .. } => write!(f, "mceliece6960119"),
-            RealMcElieceParams::McEliece8192128 { .. } => write!(f, "mceliece8192128"),
         }
     }
-}
-
 /// Finite field element in GF(2^m)
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct FieldElement {
-    value: u16,
-    m: usize,
-}
-
 impl FieldElement {
     pub fn new(value: u16, m: usize) -> Self {
         let mask = (1u16 << m) - 1;
@@ -215,8 +159,6 @@ impl FieldElement {
     pub fn inverse(&self, irreducible_poly: u16) -> Option<Self> {
         if self.value == 0 {
             return None;
-        }
-        
         let mut u = self.value as u32;
         let mut v = irreducible_poly as u32;
         let mut g1 = 1u32;
@@ -228,16 +170,10 @@ impl FieldElement {
                 std::mem::swap(&mut u, &mut v);
                 std::mem::swap(&mut g1, &mut g2);
                 continue;
-            }
-            
             u ^= v << j;
             g1 ^= g2 << j;
-        }
-        
         let mask = (1u32 << self.m) - 1;
         Some(Self { value: (g1 & mask) as u16, m: self.m })
-    }
-
     pub fn value(&self) -> u16 {
         self.value
     }
@@ -246,10 +182,6 @@ impl FieldElement {
 /// Goppa polynomial over GF(2^m)
 #[derive(Debug, Clone)]
 pub struct GoppaPolynomial {
-    coefficients: Vec<FieldElement>,
-    m: usize,
-}
-
 impl GoppaPolynomial {
     /// Create new Goppa polynomial of degree t
     pub fn new(coefficients: Vec<FieldElement>, m: usize) -> Self {
@@ -269,15 +201,11 @@ impl GoppaPolynomial {
             OsRng.fill_bytes(&mut random_bytes);
             let value = u16::from_le_bytes(random_bytes);
             coefficients.push(FieldElement::new(value, m));
-        }
-        
         // Reverse to have leading coefficient first
         coefficients.reverse();
         
         // TODO: Check irreducibility - simplified for now
         Ok(Self::new(coefficients, m))
-    }
-
     /// Evaluate polynomial at given point
     pub fn evaluate(&self, point: FieldElement, irreducible_poly: u16) -> FieldElement {
         let mut result = FieldElement::zero(self.m);
@@ -287,11 +215,7 @@ impl GoppaPolynomial {
             let term = coeff.multiply(&power, irreducible_poly);
             result = result.add(&term);
             power = power.multiply(&point, irreducible_poly);
-        }
-        
         result
-    }
-
     /// Get degree of polynomial
     pub fn degree(&self) -> usize {
         self.coefficients.len().saturating_sub(1)
@@ -301,10 +225,6 @@ impl GoppaPolynomial {
 /// Support set for Goppa code (evaluation points)
 #[derive(Debug, Clone)]
 pub struct SupportSet {
-    elements: Vec<FieldElement>,
-    m: usize,
-}
-
 impl SupportSet {
     /// Generate random support set of size n
     pub fn generate_random(n: usize, m: usize) -> PqcResult<Self> {
@@ -324,12 +244,8 @@ impl SupportSet {
         }
         
         Ok(Self { elements, m })
-    }
-
     pub fn elements(&self) -> &[FieldElement] {
         &self.elements
-    }
-
     pub fn len(&self) -> usize {
         self.elements.len()
     }
@@ -338,19 +254,9 @@ impl SupportSet {
 /// Parity check matrix for Goppa code
 #[derive(Debug, Clone)]
 pub struct ParityCheckMatrix {
-    matrix: Vec<Vec<bool>>,
-    rows: usize,
-    cols: usize,
-}
-
 impl ParityCheckMatrix {
     /// Generate parity check matrix from Goppa polynomial and support set
     pub fn from_goppa_code(
-        goppa_poly: &GoppaPolynomial,
-        support: &SupportSet,
-        irreducible_poly: u16,
-        m: usize,
-        t: usize,
     ) -> PqcResult<Self> {
         let n = support.len();
         let rows = t * m;
@@ -365,8 +271,6 @@ impl ParityCheckMatrix {
                 return Err(PqcError::KeyGenerationFailed(
                     "Support element is a root of Goppa polynomial".to_string()
                 ));
-            }
-            
             let inv_g_alpha = g_alpha.inverse(irreducible_poly)
                 .ok_or_else(|| PqcError::KeyGenerationFailed(
                     "Cannot compute inverse in finite field".to_string()
@@ -381,15 +285,11 @@ impl ParityCheckMatrix {
                 for bit in 0..m {
                     let bit_value = (entry.value() >> bit) & 1;
                     matrix[row * m + bit][col] = bit_value != 0;
-                }
-                
                 alpha_power = alpha_power.multiply(&alpha, irreducible_poly);
             }
         }
         
         Ok(Self { matrix, rows, cols: n })
-    }
-
     /// Convert to systematic form and extract generator matrix
     pub fn to_systematic(&mut self) -> PqcResult<Vec<Vec<bool>>> {
         let k = self.cols - self.rows;
@@ -414,8 +314,6 @@ impl ParityCheckMatrix {
             
             if !found_pivot {
                 continue;
-            }
-            
             pivot_cols.push(col);
             
             // Eliminate other rows
@@ -425,8 +323,6 @@ impl ParityCheckMatrix {
                         self.matrix[row][c] ^= self.matrix[pivot_row][c];
                     }
                 }
-            }
-            
             pivot_row += 1;
             if pivot_row >= self.rows {
                 break;
@@ -450,19 +346,11 @@ impl ParityCheckMatrix {
                     generator[row][pivot_col] = self.matrix[parity_row][info_col];
                 }
             }
-        }
-        
         Ok(generator)
-    }
-
     pub fn rows(&self) -> usize {
         self.rows
-    }
-
     pub fn cols(&self) -> usize {
         self.cols
-    }
-
     /// Syndrome computation: s = H * e^T
     pub fn syndrome(&self, error_vector: &[bool]) -> Vec<bool> {
         let mut syndrome = vec![false; self.rows];
@@ -475,8 +363,6 @@ impl ParityCheckMatrix {
                 }
             }
             syndrome[i] = sum;
-        }
-        
         syndrome
     }
 }
@@ -484,16 +370,11 @@ impl ParityCheckMatrix {
 /// Classic McEliece Public Key
 #[derive(Debug, Clone)]
 pub struct RealMcEliecePublicKey {
-    pub params: RealMcElieceParams,
     pub generator_matrix: Vec<Vec<bool>>, // k × n systematic generator matrix
-}
-
 impl RealMcEliecePublicKey {
     pub fn new(params: RealMcElieceParams, generator_matrix: Vec<Vec<bool>>) -> PqcResult<Self> {
         if generator_matrix.len() != params.k() {
             return Err(PqcError::InvalidKey("Invalid generator matrix dimensions".to_string()));
-        }
-        
         for row in &generator_matrix {
             if row.len() != params.n() {
                 return Err(PqcError::InvalidKey("Invalid generator matrix row length".to_string()));
@@ -501,8 +382,6 @@ impl RealMcEliecePublicKey {
         }
         
         Ok(Self { params, generator_matrix })
-    }
-
     pub fn as_bytes(&self) -> Vec<u8> {
         let mut bytes = Vec::new();
         
@@ -522,13 +401,9 @@ impl RealMcEliecePublicKey {
         }
         
         bytes
-    }
-
     pub fn encode(&self, message: &[bool]) -> PqcResult<Vec<bool>> {
         if message.len() != self.params.k() {
             return Err(PqcError::EncryptionFailed("Invalid message length".to_string()));
-        }
-        
         let mut codeword = vec![false; self.params.n()];
         
         // Matrix multiplication: c = m * G
@@ -538,8 +413,6 @@ impl RealMcEliecePublicKey {
                     codeword[j] ^= bit;
                 }
             }
-        }
-        
         Ok(codeword)
     }
 }
@@ -547,27 +420,10 @@ impl RealMcEliecePublicKey {
 /// Classic McEliece Secret Key  
 #[derive(Debug, Clone)]
 pub struct RealMcElieceSecretKey {
-    pub params: RealMcElieceParams,
-    pub goppa_polynomial: GoppaPolynomial,
-    pub support_set: SupportSet,
-    pub parity_check_matrix: ParityCheckMatrix,
-    pub irreducible_poly: u16,
-}
-
 impl RealMcElieceSecretKey {
     pub fn new(
-        params: RealMcElieceParams,
-        goppa_polynomial: GoppaPolynomial,
-        support_set: SupportSet,
-        parity_check_matrix: ParityCheckMatrix,
-        irreducible_poly: u16,
     ) -> Self {
         Self {
-            params,
-            goppa_polynomial,
-            support_set,
-            parity_check_matrix,
-            irreducible_poly,
         }
     }
 
@@ -575,16 +431,12 @@ impl RealMcElieceSecretKey {
     pub fn decode(&self, received: &[bool]) -> PqcResult<Vec<bool>> {
         if received.len() != self.params.n() {
             return Err(PqcError::DecryptionFailed("Invalid received word length".to_string()));
-        }
-        
         // Compute syndrome
         let syndrome = self.parity_check_matrix.syndrome(received);
         
         // Check if syndrome is zero (no errors)
         if syndrome.iter().all(|&b| !b) {
             return Ok(received.to_vec());
-        }
-        
         // Simplified error correction - find error positions
         let error_positions = self.find_error_positions(&syndrome)?;
         
@@ -597,8 +449,6 @@ impl RealMcElieceSecretKey {
         }
         
         Ok(corrected)
-    }
-
     /// Find error positions using simplified algorithm
     fn find_error_positions(&self, syndrome: &[bool]) -> PqcResult<Vec<usize>> {
         let mut error_positions = Vec::new();
@@ -614,14 +464,10 @@ impl RealMcElieceSecretKey {
         }
         
         Err(PqcError::DecryptionFailed("Cannot locate errors".to_string()))
-    }
-
     /// Try to find error pattern of specific weight
     fn try_error_weight(&self, syndrome: &[bool], weight: usize) -> PqcResult<Vec<usize>> {
         if weight == 0 {
             return Ok(Vec::new());
-        }
-        
         // Generate all combinations of error positions with given weight
         let n = self.params.n();
         let mut positions = (0..weight).collect::<Vec<_>>();
@@ -637,12 +483,8 @@ impl RealMcElieceSecretKey {
                         *syndrome_bit ^= self.parity_check_matrix.matrix[row][pos];
                     }
                 }
-            }
-            
             if test_syndrome == syndrome {
                 return Ok(positions);
-            }
-            
             // Generate next combination
             if !Self::next_combination(&mut positions, n) {
                 break;
@@ -650,8 +492,6 @@ impl RealMcElieceSecretKey {
         }
         
         Err(PqcError::DecryptionFailed("CursedError pattern not found".to_string()))
-    }
-
     /// Generate next combination in lexicographic order
     fn next_combination(positions: &mut Vec<usize>, n: usize) -> bool {
         let k = positions.len();
@@ -664,8 +504,6 @@ impl RealMcElieceSecretKey {
                 // Set subsequent elements
                 for j in (i + 1)..k {
                     positions[j] = positions[j - 1] + 1;
-                }
-                
                 return true;
             }
         }
@@ -677,18 +515,12 @@ impl RealMcElieceSecretKey {
 /// Classic McEliece Ciphertext
 #[derive(Debug, Clone)]
 pub struct RealMcElieceCiphertext {
-    pub params: RealMcElieceParams,
-    pub ciphertext: Vec<bool>,
-}
-
 impl RealMcElieceCiphertext {
     pub fn new(params: RealMcElieceParams, ciphertext: Vec<bool>) -> PqcResult<Self> {
         if ciphertext.len() != params.n() {
             return Err(PqcError::InvalidCiphertext("Invalid ciphertext length".to_string()));
         }
         Ok(Self { params, ciphertext })
-    }
-
     pub fn as_bytes(&self) -> Vec<u8> {
         let mut bytes = Vec::new();
         
@@ -700,17 +532,11 @@ impl RealMcElieceCiphertext {
                 }
             }
             bytes.push(byte);
-        }
-        
         bytes
-    }
-
     pub fn from_bytes(params: RealMcElieceParams, data: &[u8]) -> PqcResult<Self> {
         let expected_bytes = (params.n() + 7) / 8;
         if data.len() != expected_bytes {
             return Err(PqcError::InvalidCiphertext("Invalid ciphertext size".to_string()));
-        }
-        
         let mut ciphertext = Vec::with_capacity(params.n());
         
         for (byte_idx, &byte) in data.iter().enumerate() {
@@ -729,9 +555,6 @@ impl RealMcElieceCiphertext {
 /// Classic McEliece Shared Secret
 #[derive(Debug, Clone)]
 pub struct RealMcElieceSharedSecret {
-    pub data: Vec<u8>,
-}
-
 impl RealMcElieceSharedSecret {
     pub fn new(data: Vec<u8>) -> Self {
         Self { data }
@@ -754,8 +577,6 @@ impl KeyEncapsulation for RealClassicMcEliece {
     fn keygen(security_level: SecurityLevel) -> PqcResult<(Self::PublicKey, Self::SecretKey)> {
         let params = RealMcElieceParams::new(security_level);
         Self::keygen_with_params(params)
-    }
-
     fn encaps(public_key: &Self::PublicKey) -> PqcResult<(Self::Ciphertext, Self::SharedSecret)> {
         let params = public_key.params;
         
@@ -793,13 +614,9 @@ impl KeyEncapsulation for RealClassicMcEliece {
         let shared_secret = Self::derive_shared_secret(&message_bytes, params.shared_secret_size())?;
         
         Ok((ciphertext, shared_secret))
-    }
-
     fn decaps(secret_key: &Self::SecretKey, ciphertext: &Self::Ciphertext) -> PqcResult<Self::SharedSecret> {
         if secret_key.params != ciphertext.params {
             return Err(PqcError::ParameterValidation("Parameter mismatch".to_string()));
-        }
-        
         let params = secret_key.params;
         
         // Decode the received ciphertext
@@ -820,8 +637,6 @@ impl KeyEncapsulation for RealClassicMcEliece {
         
         // Derive shared secret from recovered message
         Self::derive_shared_secret(&message_bytes, params.shared_secret_size())
-    }
-
     fn algorithm_type() -> AlgorithmType {
         AlgorithmType::ClassicMcEliece
     }
@@ -846,11 +661,6 @@ impl RealClassicMcEliece {
         
         // Generate parity check matrix from Goppa code
         let mut parity_check_matrix = ParityCheckMatrix::from_goppa_code(
-            &goppa_polynomial,
-            &support_set,
-            irreducible_poly,
-            m,
-            t,
         )?;
         
         // Convert to systematic form and get generator matrix
@@ -858,22 +668,13 @@ impl RealClassicMcEliece {
         
         let public_key = RealMcEliecePublicKey::new(params, generator_matrix)?;
         let secret_key = RealMcElieceSecretKey::new(
-            params,
-            goppa_polynomial,
-            support_set,
-            parity_check_matrix,
-            irreducible_poly,
         );
         
         Ok((public_key, secret_key))
-    }
-
     /// Generate random error vector with exactly t errors
     fn generate_error_vector(n: usize, t: usize) -> PqcResult<Vec<bool>> {
         if t > n {
             return Err(PqcError::ParameterValidation("Too many errors for code length".to_string()));
-        }
-        
         let mut error_vector = vec![false; n];
         let mut error_positions = HashSet::new();
         
@@ -889,8 +690,6 @@ impl RealClassicMcEliece {
         }
         
         Ok(error_vector)
-    }
-
     /// Derive shared secret using hash function
     fn derive_shared_secret(input: &[u8], output_size: usize) -> PqcResult<RealMcElieceSharedSecret> {
         let hash = match output_size {
@@ -898,60 +697,35 @@ impl RealClassicMcEliece {
                 let mut hasher = Sha3_256::new();
                 hasher.update(input);
                 hasher.finalize()[..16].to_vec()
-            },
             24 => {
                 let mut hasher = Sha3_512::new();
                 hasher.update(input);
                 hasher.finalize()[..24].to_vec()
-            },
             32 => {
                 let mut hasher = Sha3_256::new();
                 hasher.update(input);
                 hasher.finalize().to_vec()
-            },
-            _ => return Err(PqcError::UnsupportedParameters(format!("Unsupported shared secret size: {}", output_size))),
-        };
         
         Ok(RealMcElieceSharedSecret::new(hash))
-    }
-
     /// Get irreducible polynomial for GF(2^m)
     fn get_irreducible_polynomial(m: usize) -> PqcResult<u16> {
         // Standard irreducible polynomials for common field sizes
         let poly = match m {
             12 => 0x1053, // x^12 + x^6 + x^4 + x + 1
             13 => 0x201B, // x^13 + x^4 + x^3 + x + 1
-            _ => return Err(PqcError::UnsupportedParameters(format!("No irreducible polynomial for GF(2^{})", m))),
-        };
         
         Ok(poly)
-    }
-
     /// Get performance characteristics
     pub fn performance_characteristics(params: RealMcElieceParams) -> AlgorithmPerformance {
         let (keygen_ms, encaps_ms, decaps_ms) = match params {
-            RealMcElieceParams::McEliece348864 { .. } => (500.0, 0.5, 2.0),
-            RealMcElieceParams::McEliece460896 { .. } => (800.0, 0.7, 3.0),
-            RealMcElieceParams::McEliece6688128 { .. } => (1200.0, 1.0, 5.0),
-            RealMcElieceParams::McEliece6960119 { .. } => (1300.0, 1.1, 5.5),
-            RealMcElieceParams::McEliece8192128 { .. } => (1500.0, 1.3, 6.0),
-        };
 
         AlgorithmPerformance {
-            keygen_time_ms: keygen_ms,
             operation_time_ms: (encaps_ms + decaps_ms) / 2.0,
             key_sizes: KeySizes {
-                public_key: params.public_key_size(),
-                secret_key: params.secret_key_size(),
                 ciphertext_or_signature: params.additional_sizes()
                     .iter()
                     .find(|(name, _)| *name == "ciphertext")
                     .map(|(_, size)| *size)
-                    .unwrap_or(0),
-                shared_secret: Some(params.shared_secret_size()),
-            },
             throughput_ops_per_sec: 1000.0 / encaps_ms,
         }
     }
-}
-

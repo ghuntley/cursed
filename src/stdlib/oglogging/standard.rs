@@ -49,32 +49,24 @@ lazy_static::lazy_static! {
     static ref STANDARD_LOGGER: Arc<Mutex<Logger>> = Arc::new(Mutex::new(
         Logger::new(Box::new(stdout()), String::new(), LstdFlags)
     ));
-}
-
 /// Helper function to acquire logger lock with proper error handling
 #[inline]
 fn with_logger<F, R>(f: F) -> crate::error::Result<()>
 where
-    F: FnOnce(&Logger) -> crate::error::Result<()>,
 {
     let logger = STANDARD_LOGGER.lock().map_err(|_| {
         CursedError::Runtime("Failed to acquire global logger lock".to_string())
     })?;
     f(&*logger)
-}
-
 /// Helper function to acquire mutable logger lock with proper error handling
 #[inline]
 fn with_logger_mut<F, R>(f: F) -> crate::error::Result<()>
 where
-    F: FnOnce(&mut Logger) -> crate::error::Result<()>,
 {
     let mut logger = STANDARD_LOGGER.lock().map_err(|_| {
         CursedError::Runtime("Failed to acquire global logger lock".to_string())
     })?;
     f(&mut *logger)
-}
-
 // =============================================================================
 // Output Functions
 // =============================================================================
@@ -104,8 +96,6 @@ where
 /// ```
 pub fn spill(args: &[Value]) -> crate::error::Result<()> {
     with_logger(|logger| logger.spill(args))
-}
-
 /// Print formatted string to the standard logger
 /// 
 /// This is equivalent to calling `spillf` on the global logger instance.
@@ -128,8 +118,6 @@ pub fn spill(args: &[Value]) -> crate::error::Result<()> {
 /// ```
 pub fn spillf(format: &str, args: &[Value]) -> crate::error::Result<()> {
     with_logger(|logger| logger.spillf(format, args))
-}
-
 /// Print arguments and exit the program with exit code 1
 /// 
 /// This function prints the arguments using the standard logger and then
@@ -153,8 +141,6 @@ pub fn fatal(args: &[Value]) -> ! {
         let _ = logger.flush();
     }
     std::process::exit(1);
-}
-
 /// Print formatted string and exit the program with exit code 1
 /// 
 /// This function prints a formatted message using the standard logger and then
@@ -182,8 +168,6 @@ pub fn fatalf(format: &str, args: &[Value]) -> ! {
         let _ = logger.flush();
     }
     std::process::exit(1);
-}
-
 /// Print arguments and trigger a panic
 /// 
 /// This function prints the arguments using the standard logger and then
@@ -207,8 +191,6 @@ pub fn shook(args: &[Value]) -> ! {
         let _ = logger.flush();
     }
     panic!("shook: logging panic triggered");
-}
-
 /// Print formatted string and trigger a panic
 /// 
 /// This function prints a formatted message using the standard logger and then
@@ -236,8 +218,6 @@ pub fn shookf(format: &str, args: &[Value]) -> ! {
         let _ = logger.flush();
     }
     panic!("shookf: logging panic triggered");
-}
-
 // =============================================================================
 // Configuration Functions
 // =============================================================================
@@ -265,8 +245,6 @@ pub fn set_flags(flags: i32) -> crate::error::Result<()> {
         logger.set_flags(flags);
         Ok(())
     })
-}
-
 /// Set the output destination for the standard logger
 /// 
 /// Changes where the standard logger writes its output. The writer must
@@ -291,8 +269,6 @@ pub fn set_output(writer: Box<dyn Write + Send>) -> crate::error::Result<()> {
         logger.set_output(writer);
         Ok(())
     })
-}
-
 /// Set the prefix for the standard logger
 /// 
 /// The prefix is prepended to each log message. This is useful for identifying
@@ -316,8 +292,6 @@ pub fn set_prefix(prefix: &str) -> crate::error::Result<()> {
         logger.set_prefix(prefix.to_string());
         Ok(())
     })
-}
-
 /// Get the current flags from the standard logger
 /// 
 /// Returns the current flag configuration that controls log message formatting.
@@ -333,8 +307,6 @@ pub fn set_prefix(prefix: &str) -> crate::error::Result<()> {
 /// ```
 pub fn flags() -> crate::error::Result<()> {
     with_logger(|logger| Ok(logger.flags()))
-}
-
 /// Get the current prefix from the standard logger
 /// 
 /// Returns the current prefix string that is prepended to log messages.
@@ -350,8 +322,6 @@ pub fn flags() -> crate::error::Result<()> {
 /// ```
 pub fn prefix() -> crate::error::Result<()> {
     with_logger(|logger| Ok(logger.prefix()))
-}
-
 /// Get information about the current writer
 /// 
 /// Note: Due to Rust's type system limitations, this function cannot return
@@ -373,8 +343,6 @@ pub fn writer() -> crate::error::Result<()> {
         // we return a descriptive string instead
         Ok("Global standard logger writer (type information not available)".to_string())
     })
-}
-
 /// Flush the standard logger's output
 /// 
 /// Forces any buffered output to be written immediately. This is useful when
@@ -391,8 +359,6 @@ pub fn writer() -> crate::error::Result<()> {
 /// ```
 pub fn flush() -> crate::error::Result<()> {
     with_logger(|logger| logger.flush())
-}
-
 /// Reset the standard logger to default settings
 /// 
 /// Resets the standard logger to use stdout as output, empty prefix,
@@ -412,8 +378,6 @@ pub fn reset_standard_logger() -> crate::error::Result<()> {
     })?;
     *logger = Logger::new(Box::new(stdout()), String::new(), LstdFlags);
     Ok(())
-}
-
 /// Get a clone of the standard logger for advanced use cases
 /// 
 /// Returns a clone of the global standard logger, which can be used
@@ -431,8 +395,6 @@ pub fn reset_standard_logger() -> crate::error::Result<()> {
 /// ```
 pub fn get_standard_logger() -> crate::error::Result<()> {
     with_logger(|logger| Ok(logger.clone()))
-}
-
 // =============================================================================
 // Tests
 // =============================================================================

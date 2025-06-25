@@ -6,10 +6,7 @@ use crate::error::CursedError;
 
 use clap::{App, Arg, SubCommand, ArgMatches};
 use cursed::optimization::{
-    PerformanceOptimizationSystem, PerformanceConfig, OptimizationConfig,
-    ml_optimization::{MLOptimizationEngine, MLOptimizationConfig, FeatureVector},
-    BenchmarkConfig, BenchmarkType, ComplexityLevel, BenchmarkTestData,
-};
+// };
 
 use cursed::error::Result;
 use std::fs;
@@ -210,8 +207,6 @@ fn main() -> crate::error::Result<()> {
     }
 
     Ok(())
-}
-
 /// Profile optimization performance
 fn profile_optimizations(matches: &ArgMatches) -> Result<()> {
     let input_path = matches.value_of("input").unwrap();
@@ -225,14 +220,6 @@ fn profile_optimizations(matches: &ArgMatches) -> Result<()> {
 
     // Create optimization system
     let performance_config = PerformanceConfig {
-        enable_realtime_monitoring: true,
-        enable_benchmarking: true,
-        enable_prediction: enable_ml,
-        monitoring_interval_ms: 100,
-        max_benchmark_iterations: iterations,
-        max_performance_entries: 10000,
-        resource_monitoring_level: cursed::optimization::ResourceMonitoringLevel::Detailed,
-    };
 
     let optimization_config = OptimizationConfig::default();
     let system = PerformanceOptimizationSystem::new(performance_config, optimization_config)?;
@@ -258,17 +245,9 @@ fn profile_optimizations(matches: &ArgMatches) -> Result<()> {
         let iteration_time = iteration_start.elapsed();
         
         profile_results.add_iteration(IterationResult {
-            iteration: i,
-            compilation_time: iteration_time,
-            optimizations_applied: compilation_result.optimizations_applied,
-            memory_usage: compilation_result.peak_memory,
-            cache_hits: compilation_result.cache_hits,
-            cache_misses: compilation_result.cache_misses,
         });
         
         debug!("Iteration {} completed in {:?}", i + 1, iteration_time);
-    }
-
     // Stop monitoring
     system.stop_monitoring()?;
 
@@ -283,8 +262,6 @@ fn profile_optimizations(matches: &ArgMatches) -> Result<()> {
     if enable_ml {
         info!("Running ML analysis");
         profile_results.ml_analysis = Some(run_ml_analysis(input_path)?);
-    }
-
     // Save results
     let output = serde_json::to_string_pretty(&profile_results)?;
     fs::write(output_path, output)?;
@@ -293,8 +270,6 @@ fn profile_optimizations(matches: &ArgMatches) -> Result<()> {
     print_profiling_summary(&profile_results);
 
     Ok(())
-}
-
 /// Run optimization benchmarks
 fn run_benchmarks(matches: &ArgMatches) -> Result<()> {
     let benchmark_type_str = matches.value_of("benchmark-type").unwrap();
@@ -306,31 +281,11 @@ fn run_benchmarks(matches: &ArgMatches) -> Result<()> {
     info!("Type: {}, Complexity: {}, Functions: {}", benchmark_type_str, complexity_str, function_count);
 
     let benchmark_type = match benchmark_type_str {
-        "compilation" => BenchmarkType::Compilation,
-        "execution" => BenchmarkType::Execution,
-        "memory" => BenchmarkType::Memory,
-        _ => return Err("Invalid benchmark type".into()),
-    };
 
     let complexity_level = match complexity_str {
-        "simple" => ComplexityLevel::Simple,
-        "medium" => ComplexityLevel::Medium,
-        "complex" => ComplexityLevel::Complex,
-        _ => return Err("Invalid complexity level".into()),
-    };
 
     let benchmark_config = BenchmarkConfig {
-        benchmark_type,
-        iterations: 10,
-        warmup_iterations: 3,
-        complexity_level,
-        enable_profiling: true,
-        timeout: Duration::from_secs(timeout),
         test_data: BenchmarkTestData::Synthetic {
-            function_count,
-            complexity_factor: 1.0,
-        },
-    };
 
     // Create optimization system for benchmarking
     let performance_config = PerformanceConfig::default();
@@ -344,8 +299,6 @@ fn run_benchmarks(matches: &ArgMatches) -> Result<()> {
     print_benchmark_summary(&results);
 
     Ok(())
-}
-
 /// Analyze optimization data
 fn analyze_optimization_data(matches: &ArgMatches) -> Result<()> {
     let profile_data_path = matches.value_of("profile-data").unwrap();
@@ -373,12 +326,7 @@ fn analyze_optimization_data(matches: &ArgMatches) -> Result<()> {
         "html" => {
             print_html_analysis(&analysis);
         }
-        _ => return Err("Invalid output format".into()),
-    }
-
     Ok(())
-}
-
 /// Train ML optimization models
 fn train_ml_models(matches: &ArgMatches) -> Result<()> {
     let training_data_dir = matches.value_of("training-data").unwrap();
@@ -390,15 +338,6 @@ fn train_ml_models(matches: &ArgMatches) -> Result<()> {
     info!("Data dir: {}, Epochs: {}, LR: {}", training_data_dir, epochs, learning_rate);
 
     let ml_config = MLOptimizationConfig {
-        enabled: true,
-        learning_rate,
-        training_epochs: epochs,
-        batch_size: 32,
-        feature_vector_size: 128,
-        model_update_frequency: Duration::from_secs(300),
-        confidence_threshold: 0.8,
-        fallback_to_heuristics: true,
-    };
 
     let mut ml_engine = MLOptimizationEngine::new(ml_config)?;
 
@@ -409,8 +348,6 @@ fn train_ml_models(matches: &ArgMatches) -> Result<()> {
     // Add samples to engine
     for sample in training_samples {
         ml_engine.add_training_sample(sample)?;
-    }
-
     // Train models
     info!("Starting model training...");
     ml_engine.train_models()?;
@@ -432,8 +369,6 @@ fn train_ml_models(matches: &ArgMatches) -> Result<()> {
     info!("Model saved to: {}", model_output);
 
     Ok(())
-}
-
 /// Profile CURSED-specific optimizations
 fn profile_cursed_specific(matches: &ArgMatches) -> Result<()> {
     let input_path = matches.value_of("input").unwrap();
@@ -466,13 +401,6 @@ fn profile_cursed_specific(matches: &ArgMatches) -> Result<()> {
     // Additional focus-specific analysis would go here
 
     let cursed_analysis = CursedSpecificAnalysis {
-        source_file: input_path.to_string(),
-        focus_area: focus_area.to_string(),
-        features,
-        analysis,
-        recommendations,
-        timestamp: std::time::SystemTime::now(),
-    };
 
     // Save analysis
     let output = serde_json::to_string_pretty(&cursed_analysis)?;
@@ -482,118 +410,35 @@ fn profile_cursed_specific(matches: &ArgMatches) -> Result<()> {
     print_cursed_analysis_summary(&cursed_analysis);
 
     Ok(())
-}
-
 // Helper data structures and functions
 
 #[derive(Debug, serde::Serialize, serde::Deserialize)]
 struct ProfilingResults {
-    iterations: Vec<IterationResult>,
-    system_statistics: Option<cursed::optimization::metrics::SystemStatistics>,
-    resource_statistics: Option<cursed::optimization::metrics::ResourceStatistics>,
-    ml_analysis: Option<MLAnalysisResult>,
-    timestamp: std::time::SystemTime,
-}
-
 #[derive(Debug, serde::Serialize, serde::Deserialize)]
 struct IterationResult {
-    iteration: usize,
-    compilation_time: Duration,
-    optimizations_applied: usize,
-    memory_usage: usize,
-    cache_hits: usize,
-    cache_misses: usize,
-}
-
 #[derive(Debug, serde::Serialize, serde::Deserialize)]
 struct MLAnalysisResult {
-    decisions_made: usize,
-    accuracy_estimate: f64,
-    feature_importance: std::collections::HashMap<String, f64>,
-    recommendations: Vec<String>,
-}
-
 #[derive(Debug, serde::Serialize, serde::Deserialize)]
 struct CompilationResult {
-    optimizations_applied: usize,
-    peak_memory: usize,
-    cache_hits: usize,
-    cache_misses: usize,
-}
-
 #[derive(Debug, serde::Serialize, serde::Deserialize)]
 struct OptimizationAnalysis {
-    average_compilation_time: Duration,
-    optimization_effectiveness: f64,
-    memory_efficiency: f64,
-    cache_efficiency: f64,
-    recommendations: Vec<String>,
-    detailed_analysis: Option<DetailedAnalysis>,
-}
-
 #[derive(Debug, serde::Serialize, serde::Deserialize)]
 struct DetailedAnalysis {
-    per_iteration_analysis: Vec<IterationAnalysis>,
-    trend_analysis: TrendAnalysis,
-    bottleneck_analysis: BottleneckAnalysis,
-}
-
 #[derive(Debug, serde::Serialize, serde::Deserialize)]
 struct IterationAnalysis {
-    iteration: usize,
-    performance_score: f64,
-    optimization_score: f64,
-    efficiency_metrics: EfficiencyMetrics,
-}
-
 #[derive(Debug, serde::Serialize, serde::Deserialize)]
 struct TrendAnalysis {
-    compilation_time_trend: String,
-    memory_usage_trend: String,
-    optimization_trend: String,
-}
-
 #[derive(Debug, serde::Serialize, serde::Deserialize)]
 struct BottleneckAnalysis {
-    primary_bottleneck: String,
-    secondary_bottlenecks: Vec<String>,
-    improvement_suggestions: Vec<String>,
-}
-
 #[derive(Debug, serde::Serialize, serde::Deserialize)]
 struct EfficiencyMetrics {
-    time_efficiency: f64,
-    memory_efficiency: f64,
-    cache_efficiency: f64,
-}
-
 #[derive(Debug, serde::Serialize, serde::Deserialize)]
 struct CursedSpecificAnalysis {
-    source_file: String,
-    focus_area: String,
-    features: FeatureVector,
-    analysis: CursedFeatureAnalysis,
-    recommendations: Vec<(String, cursed::optimization::ml_optimization::OptimizationDecision)>,
-    timestamp: std::time::SystemTime,
-}
-
 #[derive(Debug, serde::Serialize, serde::Deserialize)]
 struct CursedFeatureAnalysis {
-    goroutine_patterns: usize,
-    channel_usage: usize,
-    slang_usage: usize,
-    interface_complexity: f64,
-    error_propagation: usize,
-}
-
 impl ProfilingResults {
     fn new() -> Self {
         Self {
-            iterations: Vec::new(),
-            system_statistics: None,
-            resource_statistics: None,
-            ml_analysis: None,
-            timestamp: std::time::SystemTime::now(),
         }
     }
 
@@ -632,29 +477,20 @@ impl OptimizationAnalysis {
             total_cache_hits as f64 / total_cache_ops as f64
         } else {
             0.0
-        };
 
         let mut recommendations = Vec::new();
         
         if optimization_effectiveness < 5.0 {
             recommendations.push("Consider enabling more aggressive optimization passes".to_string());
-        }
-        
         if cache_efficiency < 0.8 {
             recommendations.push("Cache efficiency is low - consider optimization caching strategies".to_string());
-        }
-        
         if average_time > Duration::from_secs(10) {
             recommendations.push("Compilation time is high - consider incremental compilation".to_string());
-        }
-
         let detailed_analysis = if detailed {
             Some(DetailedAnalysis {
                 per_iteration_analysis: results.iterations.iter().enumerate().map(|(i, iter)| {
                     IterationAnalysis {
-                        iteration: i,
                         performance_score: 100.0 / iter.compilation_time.as_secs_f64(),
-                        optimization_score: iter.optimizations_applied as f64,
                         efficiency_metrics: EfficiencyMetrics {
                             time_efficiency: 1.0 / iter.compilation_time.as_secs_f64(),
                             memory_efficiency: 1.0 / (iter.memory_usage as f64 / 1024.0 / 1024.0),
@@ -662,39 +498,18 @@ impl OptimizationAnalysis {
                                 iter.cache_hits as f64 / (iter.cache_hits + iter.cache_misses) as f64
                             } else {
                                 0.0
-                            },
-                        },
                     }
-                }).collect(),
                 trend_analysis: TrendAnalysis {
                     compilation_time_trend: "stable".to_string(), // Would calculate actual trends
-                    memory_usage_trend: "stable".to_string(),
-                    optimization_trend: "improving".to_string(),
-                },
                 bottleneck_analysis: BottleneckAnalysis {
-                    primary_bottleneck: "compilation_time".to_string(),
-                    secondary_bottlenecks: vec!["memory_usage".to_string()],
                     improvement_suggestions: vec![
-                        "Enable parallel compilation".to_string(),
-                        "Implement incremental caching".to_string(),
-                    ],
-                },
             })
         } else {
             None
-        };
 
         Self {
-            average_compilation_time: average_time,
-            optimization_effectiveness,
-            memory_efficiency,
-            cache_efficiency,
-            recommendations,
-            detailed_analysis,
         }
     }
-}
-
 /// Simulate compilation for profiling
 fn simulate_compilation(input_path: &str, opt_level: u8) -> Result<CompilationResult> {
     // This would integrate with the actual CURSED compiler
@@ -709,36 +524,16 @@ fn simulate_compilation(input_path: &str, opt_level: u8) -> Result<CompilationRe
     let cache_misses = optimizations_applied / 2;
     
     Ok(CompilationResult {
-        optimizations_applied,
-        peak_memory,
-        cache_hits,
-        cache_misses,
     })
-}
-
 /// Run ML analysis on the source
 fn run_ml_analysis(input_path: &str) -> Result<MLAnalysisResult> {
     // This would use the actual ML engine
     // For now, simulate the analysis
     
     Ok(MLAnalysisResult {
-        decisions_made: 5,
-        accuracy_estimate: 0.85,
         feature_importance: std::collections::HashMap::from([
-            ("function_size".to_string(), 0.3),
-            ("call_frequency".to_string(), 0.25),
-            ("loop_complexity".to_string(), 0.2),
-            ("memory_patterns".to_string(), 0.15),
-            ("goroutine_usage".to_string(), 0.1),
-        ]),
         recommendations: vec![
-            "Enable function inlining for small functions".to_string(),
-            "Consider loop vectorization for arithmetic operations".to_string(),
-            "Optimize goroutine stack sizes".to_string(),
-        ],
     })
-}
-
 /// Load training data from directory
 fn load_training_data(data_dir: &str) -> Result<Vec<cursed::optimization::ml_optimization::TrainingSample>> {
     let mut samples = Vec::new();
@@ -748,27 +543,10 @@ fn load_training_data(data_dir: &str) -> Result<Vec<cursed::optimization::ml_opt
     
     for i in 0..10 {
         let sample = cursed::optimization::ml_optimization::TrainingSample {
-            features: FeatureVector::default(),
             optimization_decision: cursed::optimization::ml_optimization::OptimizationDecision::Inline {
-                should_inline: i % 2 == 0,
-                confidence: 0.8 + (i as f64 * 0.01),
-            },
             actual_performance: cursed::optimization::ml_optimization::PerformanceMetrics {
-                execution_time: Duration::from_millis(100 + i as u64 * 10),
-                memory_usage: 1024 + i * 100,
-                cache_misses: 50 + i * 2,
-                energy_consumption: 0.5 + (i as f64 * 0.01),
-                throughput: 1000.0 + (i as f64 * 50.0),
-            },
-            timestamp: std::time::SystemTime::now(),
-            quality_score: 0.8 + (i as f64 * 0.02),
-        };
         samples.push(sample);
-    }
-    
     Ok(samples)
-}
-
 /// Analyze CURSED-specific features
 fn analyze_cursed_features(source_code: &str, focus_area: &str) -> Result<CursedFeatureAnalysis> {
     // This would use actual source analysis
@@ -777,14 +555,8 @@ fn analyze_cursed_features(source_code: &str, focus_area: &str) -> Result<Cursed
     let lines = source_code.split("\n").count();
     
     Ok(CursedFeatureAnalysis {
-        goroutine_patterns: source_code.matches("stan ").count(),
-        channel_usage: source_code.matches("chan ").count(),
-        slang_usage: source_code.matches("slay").count() + source_code.matches("yolo").count(),
         interface_complexity: lines as f64 / 100.0,
-        error_propagation: source_code.matches("?").count(),
     })
-}
-
 /// Extract CURSED features for ML
 fn extract_cursed_features(source_code: &str) -> Result<FeatureVector> {
     let mut features = FeatureVector::default();
@@ -801,8 +573,6 @@ fn extract_cursed_features(source_code: &str) -> Result<FeatureVector> {
     features.cursed_features.error_propagation_usage.question_mark_operator_usage = source_code.matches("?").count();
     
     Ok(features)
-}
-
 /// Print profiling summary
 fn print_profiling_summary(results: &ProfilingResults) {
     println!("\n=== Optimization Profiling Summary ===");
@@ -819,8 +589,6 @@ fn print_profiling_summary(results: &ProfilingResults) {
         
         println!("Average compilation time: {:?}", avg_time);
         println!("Average optimizations applied: {}", avg_optimizations);
-    }
-    
     if let Some(ml_analysis) = &results.ml_analysis {
         println!("ML analysis accuracy: {:.2}%", ml_analysis.accuracy_estimate * 100.0);
         println!("ML recommendations: {}", ml_analysis.recommendations.len());
@@ -834,8 +602,6 @@ fn print_benchmark_summary(results: &cursed::optimization::BenchmarkResults) {
     println!("Average time per iteration: {:?}", results.average_time);
     println!("Total time: {:?}", results.total_time);
     println!("Performance score: {:.2}", results.performance_score);
-}
-
 /// Print CSV analysis
 fn print_csv_analysis(analysis: &OptimizationAnalysis) {
     println!("Metric,Value");
@@ -843,8 +609,6 @@ fn print_csv_analysis(analysis: &OptimizationAnalysis) {
     println!("Optimization Effectiveness,{:.2}", analysis.optimization_effectiveness);
     println!("Memory Efficiency,{:.2}", analysis.memory_efficiency);
     println!("Cache Efficiency,{:.2}", analysis.cache_efficiency);
-}
-
 /// Print HTML analysis
 fn print_html_analysis(analysis: &OptimizationAnalysis) {
     println!("<html><body>");
@@ -857,8 +621,6 @@ fn print_html_analysis(analysis: &OptimizationAnalysis) {
     println!("<tr><td>Cache Efficiency</td><td>{:.2}</td></tr>", analysis.cache_efficiency);
     println!("</table>");
     println!("</body></html>");
-}
-
 /// Print CURSED-specific analysis summary
 fn print_cursed_analysis_summary(analysis: &CursedSpecificAnalysis) {
     println!("\n=== CURSED-Specific Analysis Summary ===");

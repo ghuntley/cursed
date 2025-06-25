@@ -6,11 +6,7 @@
 
 use crate::ast::traits::Expression;
 use crate::ast::{
-    operators::{BinaryExpression, UnaryExpression, AssignmentExpression, IndexExpression},
-    expressions::{Literal, LiteralValue, ParenthesizedExpression, FunctionLiteral, QuestionMarkExpression},
-    identifiers::{Identifier, QualifiedName, TypeIdentifier},
-    calls::CallExpression,
-};
+// };
 use crate::error::CursedError;
 
 // use crate::debug::SourceLocation;
@@ -18,14 +14,7 @@ use crate::type_system::{TypeSystem, TypeInference, TypeEnvironment};
 use crate::codegen::llvm::type_system::{TypeCompilationContext, CompiledGenericInstance};
 use crate::codegen::llvm::variable_management::VariableManager;
 use inkwell::{
-    builder::Builder,
-    context::Context,
-    module::Module,
-    values::{BasicValueEnum, FunctionValue, PointerValue, IntValue, FloatValue},
-    types::{BasicTypeEnum, BasicType},
-    AddressSpace,
-    IntPredicate, FloatPredicate,
-};
+// };
 
 use std::any::Any;
 use std::collections::HashMap;
@@ -36,67 +25,41 @@ use tracing::{debug, info, warn, error, instrument};
 /// LLVM value representation for compiled expressions
 #[derive(Debug, Clone)]
 pub struct LlvmValue {
-    pub value_type: LlvmType,
-    pub llvm_value: BasicValueEnum<'static>,
-    pub is_constant: bool,
     pub llvm_name: String, // Add llvm_name field for backward compatibility
-}
-
 impl LlvmValue {
     /// Create a new LLVM value with actual LLVM value
     pub fn new(value_type: LlvmType, llvm_value: BasicValueEnum<'static>, is_constant: bool) -> Self {
         // Generate a name based on the value type and properties
-        let llvm_name = format!("%temp_val_{}", 
             if is_constant { "const" } else { "var" });
         
         Self {
-            value_type,
-            llvm_value,
-            is_constant,
-            llvm_name,
         }
     }
     
     /// Create a new LLVM value with explicit name
     pub fn new_with_name(value_type: LlvmType, llvm_value: BasicValueEnum<'static>, is_constant: bool, llvm_name: String) -> Self {
         Self {
-            value_type,
-            llvm_value,
-            is_constant,
-            llvm_name,
         }
     }
     
     /// Check if this is a struct value
     pub fn is_struct_value(&self) -> bool {
         self.llvm_value.is_struct_value()
-    }
-    
     /// Check if this is a float value
     pub fn is_float_value(&self) -> bool {
         matches!(self.value_type, LlvmType::Float64) && self.llvm_value.is_float_value()
-    }
-    
     /// Check if this is an int value
     pub fn is_int_value(&self) -> bool {
         matches!(self.value_type, LlvmType::Int32 | LlvmType::Int64) && self.llvm_value.is_int_value()
-    }
-    
     /// Convert to int value
     pub fn into_int_value(self) -> IntValue<'static> {
         self.llvm_value.into_int_value()
-    }
-
     /// Convert to float value
     pub fn into_float_value(self) -> FloatValue<'static> {
         self.llvm_value.into_float_value()
-    }
-
     /// Convert to pointer value
     pub fn into_pointer_value(self) -> PointerValue<'static> {
         self.llvm_value.into_pointer_value()
-    }
-
     /// Get the underlying LLVM value
     pub fn as_basic_value(&self) -> BasicValueEnum<'static> {
         self.llvm_value
@@ -106,33 +69,12 @@ impl LlvmValue {
 /// LLVM type system mapping
 #[derive(Debug, Clone, PartialEq)]
 pub enum LlvmType {
-    Int32,
-    Int64,
-    Float64,
-    Boolean,
-    String,
-    Void,
-    Array,
-    Object,
-    Pointer(Box<LlvmType>),
     Function {
-        return_type: Box<LlvmType>,
-        param_types: Vec<LlvmType>,
-    },
-}
-
 impl LlvmType {
     pub fn to_llvm_string(&self) -> String {
         match self {
-            LlvmType::Int32 => "i32".to_string(),
-            LlvmType::Int64 => "i64".to_string(),
-            LlvmType::Float64 => "double".to_string(),
-            LlvmType::Boolean => "i1".to_string(),
-            LlvmType::String => "i8*".to_string(),
-            LlvmType::Void => "void".to_string(),
             LlvmType::Array => "i8*".to_string(), // Arrays are represented as opaque pointers
             LlvmType::Object => "i8*".to_string(), // Objects are represented as opaque pointers
-            LlvmType::Pointer(inner) => format!("{}*", inner.to_llvm_string()),
             LlvmType::Function { return_type, param_types } => {
                 let params: Vec<String> = param_types.iter()
                     .map(|t| t.to_llvm_string())
@@ -146,43 +88,24 @@ impl LlvmType {
 /// Expression compilation context
 #[derive(Debug)]
 pub struct ExpressionContext<'ctx> {
-    pub temp_counter: u32,
-    pub current_location: Option<SourceLocation>,
     /// Type compilation context for constraint resolution
-    pub type_context: Option<TypeCompilationContext>,
     /// Generic method instantiation cache
-    pub generic_methods: HashMap<String, CompiledGenericInstance>,
     /// Variable manager for handling variable operations
-    pub variable_manager: Option<Rc<RefCell<VariableManager<'ctx>>>>,
-}
-
 impl<'ctx> ExpressionContext<'ctx> {
     pub fn new() -> Self {
         Self {
-            temp_counter: 0,
-            current_location: None,
-            type_context: None,
-            generic_methods: HashMap::new(),
-            variable_manager: None,
         }
     }
 
     /// Create context with type compilation support
     pub fn with_type_context(type_context: TypeCompilationContext) -> Self {
         Self {
-            temp_counter: 0,
-            current_location: None,
-            type_context: Some(type_context),
-            generic_methods: HashMap::new(),
-            variable_manager: None,
         }
     }
 
     /// Set variable manager
     pub fn set_variable_manager(&mut self, variable_manager: Rc<RefCell<VariableManager<'ctx>>>) {
         self.variable_manager = Some(variable_manager);
-    }
-    
     pub fn next_temp(&mut self) -> u32 {
         self.temp_counter += 1;
         self.temp_counter
@@ -192,33 +115,17 @@ impl<'ctx> ExpressionContext<'ctx> {
 /// Main expression compiler
 pub struct LlvmExpressionCompiler<'ctx> {
     /// LLVM context
-    llvm_context: &'ctx Context,
     /// LLVM module
-    module: &'ctx Module<'ctx>,
     /// LLVM builder
-    builder: &'ctx Builder<'ctx>,
     /// Expression compilation context
-    context: ExpressionContext<'ctx>,
     /// Variable manager
-    variable_manager: Rc<RefCell<VariableManager<'ctx>>>,
-}
-
 impl<'ctx> LlvmExpressionCompiler<'ctx> {
     pub fn new(
-        llvm_context: &'ctx Context,
-        module: &'ctx Module<'ctx>,
-        builder: &'ctx Builder<'ctx>,
-        variable_manager: Rc<RefCell<VariableManager<'ctx>>>,
     ) -> Self {
         let mut context = ExpressionContext::new();
         context.set_variable_manager(variable_manager.clone());
         
         Self {
-            llvm_context,
-            module,
-            builder,
-            context,
-            variable_manager,
         }
     }
     
@@ -242,9 +149,6 @@ impl<'ctx> LlvmExpressionCompiler<'ctx> {
         
         // cursed_error_propagation(i8*, i32, i32) -> i8*
         let propagate_fn_type = i8_ptr_type.fn_type(&[
-            i8_ptr_type.into(),
-            i32_type.into(),
-            i32_type.into(),
         ], false);
         self.module.add_function("cursed_error_propagation", propagate_fn_type, None);
         
@@ -253,8 +157,6 @@ impl<'ctx> LlvmExpressionCompiler<'ctx> {
         self.module.add_function("cursed_error_propagation_panic", panic_fn_type, None);
         
         debug!("CursedError propagation declarations added successfully");
-    }
-    
     /// Compile any expression to LLVM IR
     #[instrument(skip(self, expr))]
     pub fn compile_expression(&mut self, expr: &dyn Expression) -> crate::error::Result<()> {
@@ -282,7 +184,6 @@ impl<'ctx> LlvmExpressionCompiler<'ctx> {
         } else {
             error!("Unsupported expression type: {}", expr.string());
             Err(CursedError::Compile(format!(
-                "Unsupported expression type for compilation: {}",
                 expr.string()
             )))
         }
@@ -300,9 +201,6 @@ impl<'ctx> LlvmExpressionCompiler<'ctx> {
                 let const_value = i64_type.const_int(*value as u64, false);
                 
                 Ok(LlvmValue::new(
-                    LlvmType::Int64,
-                    const_value.into(),
-                    true,
                 ))
             }
             LiteralValue::Float(value) => {
@@ -311,9 +209,6 @@ impl<'ctx> LlvmExpressionCompiler<'ctx> {
                 let const_value = f64_type.const_float(*value);
                 
                 Ok(LlvmValue::new(
-                    LlvmType::Float64,
-                    const_value.into(),
-                    true,
                 ))
             }
             LiteralValue::String(value) => {
@@ -335,17 +230,10 @@ impl<'ctx> LlvmExpressionCompiler<'ctx> {
                 let zero = self.llvm_context.i32_type().const_zero();
                 let gep = unsafe {
                     self.builder.build_gep(
-                        string_type,
-                        global.as_pointer_value(),
-                        &[zero, zero],
                         "str_ptr"
                     ).map_err(|e| CursedError::Compile(format!("Failed to build GEP for string: {:?}", e)))?
-                };
                 
                 Ok(LlvmValue::new(
-                    LlvmType::String,
-                    gep.into(),
-                    true,
                 ))
             }
             LiteralValue::Boolean(value) => {
@@ -354,9 +242,6 @@ impl<'ctx> LlvmExpressionCompiler<'ctx> {
                 let const_value = i1_type.const_int(*value as u64, false);
                 
                 Ok(LlvmValue::new(
-                    LlvmType::Boolean,
-                    const_value.into(),
-                    true,
                 ))
             }
             LiteralValue::Nil => {
@@ -365,18 +250,12 @@ impl<'ctx> LlvmExpressionCompiler<'ctx> {
                 let null_ptr = i8_ptr_type.const_null();
                 
                 Ok(LlvmValue::new(
-                    LlvmType::Pointer(Box::new(LlvmType::Void)),
-                    null_ptr.into(),
-                    true,
                 ))
             }
         }
-    }
-    
     /// Compile binary expressions (arithmetic, logical, comparison)
     #[instrument(skip(self, binary))]
     fn compile_binary_expression(&mut self, binary: &BinaryExpression) -> crate::error::Result<()> {
-        debug!("Compiling binary expression: {} {} {}", 
                binary.left.string(), binary.operator, binary.right.string());
         
         let left_val = self.compile_expression(binary.left.as_ref())?;
@@ -395,16 +274,12 @@ impl<'ctx> LlvmExpressionCompiler<'ctx> {
                     self.builder.build_int_add(left_int, right_int, "add_tmp")
                         .map_err(|e| CursedError::Compile(format!("Failed to build int add: {:?}", e)))?
                         .into()
-                },
                 (LlvmType::Float64, LlvmType::Float64) => {
                     let left_float = left_val.llvm_value.into_float_value();
                     let right_float = right_val.llvm_value.into_float_value();
                     self.builder.build_float_add(left_float, right_float, "fadd_tmp")
                         .map_err(|e| CursedError::Compile(format!("Failed to build float add: {:?}", e)))?
                         .into()
-                },
-                _ => return Err(CursedError::Compile("Invalid types for addition".to_string())),
-            },
             "-" => match (&left_val.value_type, &right_val.value_type) {
                 (LlvmType::Int64, LlvmType::Int64) => {
                     let left_int = left_val.llvm_value.into_int_value();
@@ -412,16 +287,12 @@ impl<'ctx> LlvmExpressionCompiler<'ctx> {
                     self.builder.build_int_sub(left_int, right_int, "sub_tmp")
                         .map_err(|e| CursedError::Compile(format!("Failed to build int sub: {:?}", e)))?
                         .into()
-                },
                 (LlvmType::Float64, LlvmType::Float64) => {
                     let left_float = left_val.llvm_value.into_float_value();
                     let right_float = right_val.llvm_value.into_float_value();
                     self.builder.build_float_sub(left_float, right_float, "fsub_tmp")
                         .map_err(|e| CursedError::Compile(format!("Failed to build float sub: {:?}", e)))?
                         .into()
-                },
-                _ => return Err(CursedError::Compile("Invalid types for subtraction".to_string())),
-            },
             "*" => match (&left_val.value_type, &right_val.value_type) {
                 (LlvmType::Int64, LlvmType::Int64) => {
                     let left_int = left_val.llvm_value.into_int_value();
@@ -429,16 +300,12 @@ impl<'ctx> LlvmExpressionCompiler<'ctx> {
                     self.builder.build_int_mul(left_int, right_int, "mul_tmp")
                         .map_err(|e| CursedError::Compile(format!("Failed to build int mul: {:?}", e)))?
                         .into()
-                },
                 (LlvmType::Float64, LlvmType::Float64) => {
                     let left_float = left_val.llvm_value.into_float_value();
                     let right_float = right_val.llvm_value.into_float_value();
                     self.builder.build_float_mul(left_float, right_float, "fmul_tmp")
                         .map_err(|e| CursedError::Compile(format!("Failed to build float mul: {:?}", e)))?
                         .into()
-                },
-                _ => return Err(CursedError::Compile("Invalid types for multiplication".to_string())),
-            },
             "/" => match (&left_val.value_type, &right_val.value_type) {
                 (LlvmType::Int64, LlvmType::Int64) => {
                     let left_int = left_val.llvm_value.into_int_value();
@@ -446,16 +313,12 @@ impl<'ctx> LlvmExpressionCompiler<'ctx> {
                     self.builder.build_int_signed_div(left_int, right_int, "div_tmp")
                         .map_err(|e| CursedError::Compile(format!("Failed to build int div: {:?}", e)))?
                         .into()
-                },
                 (LlvmType::Float64, LlvmType::Float64) => {
                     let left_float = left_val.llvm_value.into_float_value();
                     let right_float = right_val.llvm_value.into_float_value();
                     self.builder.build_float_div(left_float, right_float, "fdiv_tmp")
                         .map_err(|e| CursedError::Compile(format!("Failed to build float div: {:?}", e)))?
                         .into()
-                },
-                _ => return Err(CursedError::Compile("Invalid types for division".to_string())),
-            },
             "%" => match (&left_val.value_type, &right_val.value_type) {
                 (LlvmType::Int64, LlvmType::Int64) => {
                     let left_int = left_val.llvm_value.into_int_value();
@@ -463,9 +326,6 @@ impl<'ctx> LlvmExpressionCompiler<'ctx> {
                     self.builder.build_int_signed_rem(left_int, right_int, "rem_tmp")
                         .map_err(|e| CursedError::Compile(format!("Failed to build int rem: {:?}", e)))?
                         .into()
-                },
-                _ => return Err(CursedError::Compile("Modulo only supported for integers".to_string())),
-            },
             
             // Comparison operators
             "==" => match (&left_val.value_type, &right_val.value_type) {
@@ -475,23 +335,18 @@ impl<'ctx> LlvmExpressionCompiler<'ctx> {
                     self.builder.build_int_compare(IntPredicate::EQ, left_int, right_int, "eq_tmp")
                         .map_err(|e| CursedError::Compile(format!("Failed to build int compare: {:?}", e)))?
                         .into()
-                },
                 (LlvmType::Float64, LlvmType::Float64) => {
                     let left_float = left_val.llvm_value.into_float_value();
                     let right_float = right_val.llvm_value.into_float_value();
                     self.builder.build_float_compare(FloatPredicate::OEQ, left_float, right_float, "feq_tmp")
                         .map_err(|e| CursedError::Compile(format!("Failed to build float compare: {:?}", e)))?
                         .into()
-                },
                 (LlvmType::Boolean, LlvmType::Boolean) => {
                     let left_bool = left_val.llvm_value.into_int_value();
                     let right_bool = right_val.llvm_value.into_int_value();
                     self.builder.build_int_compare(IntPredicate::EQ, left_bool, right_bool, "beq_tmp")
                         .map_err(|e| CursedError::Compile(format!("Failed to build bool compare: {:?}", e)))?
                         .into()
-                },
-                _ => return Err(CursedError::Compile("Invalid types for equality comparison".to_string())),
-            },
             "!=" => match (&left_val.value_type, &right_val.value_type) {
                 (LlvmType::Int64, LlvmType::Int64) => {
                     let left_int = left_val.llvm_value.into_int_value();
@@ -499,23 +354,18 @@ impl<'ctx> LlvmExpressionCompiler<'ctx> {
                     self.builder.build_int_compare(IntPredicate::NE, left_int, right_int, "ne_tmp")
                         .map_err(|e| CursedError::Compile(format!("Failed to build int compare: {:?}", e)))?
                         .into()
-                },
                 (LlvmType::Float64, LlvmType::Float64) => {
                     let left_float = left_val.llvm_value.into_float_value();
                     let right_float = right_val.llvm_value.into_float_value();
                     self.builder.build_float_compare(FloatPredicate::ONE, left_float, right_float, "fne_tmp")
                         .map_err(|e| CursedError::Compile(format!("Failed to build float compare: {:?}", e)))?
                         .into()
-                },
                 (LlvmType::Boolean, LlvmType::Boolean) => {
                     let left_bool = left_val.llvm_value.into_int_value();
                     let right_bool = right_val.llvm_value.into_int_value();
                     self.builder.build_int_compare(IntPredicate::NE, left_bool, right_bool, "bne_tmp")
                         .map_err(|e| CursedError::Compile(format!("Failed to build bool compare: {:?}", e)))?
                         .into()
-                },
-                _ => return Err(CursedError::Compile("Invalid types for inequality comparison".to_string())),
-            },
             "<" => match (&left_val.value_type, &right_val.value_type) {
                 (LlvmType::Int64, LlvmType::Int64) => {
                     let left_int = left_val.llvm_value.into_int_value();
@@ -523,16 +373,12 @@ impl<'ctx> LlvmExpressionCompiler<'ctx> {
                     self.builder.build_int_compare(IntPredicate::SLT, left_int, right_int, "lt_tmp")
                         .map_err(|e| CursedError::Compile(format!("Failed to build int compare: {:?}", e)))?
                         .into()
-                },
                 (LlvmType::Float64, LlvmType::Float64) => {
                     let left_float = left_val.llvm_value.into_float_value();
                     let right_float = right_val.llvm_value.into_float_value();
                     self.builder.build_float_compare(FloatPredicate::OLT, left_float, right_float, "flt_tmp")
                         .map_err(|e| CursedError::Compile(format!("Failed to build float compare: {:?}", e)))?
                         .into()
-                },
-                _ => return Err(CursedError::Compile("Invalid types for less-than comparison".to_string())),
-            },
             ">" => match (&left_val.value_type, &right_val.value_type) {
                 (LlvmType::Int64, LlvmType::Int64) => {
                     let left_int = left_val.llvm_value.into_int_value();
@@ -540,16 +386,12 @@ impl<'ctx> LlvmExpressionCompiler<'ctx> {
                     self.builder.build_int_compare(IntPredicate::SGT, left_int, right_int, "gt_tmp")
                         .map_err(|e| CursedError::Compile(format!("Failed to build int compare: {:?}", e)))?
                         .into()
-                },
                 (LlvmType::Float64, LlvmType::Float64) => {
                     let left_float = left_val.llvm_value.into_float_value();
                     let right_float = right_val.llvm_value.into_float_value();
                     self.builder.build_float_compare(FloatPredicate::OGT, left_float, right_float, "fgt_tmp")
                         .map_err(|e| CursedError::Compile(format!("Failed to build float compare: {:?}", e)))?
                         .into()
-                },
-                _ => return Err(CursedError::Compile("Invalid types for greater-than comparison".to_string())),
-            },
             "<=" => match (&left_val.value_type, &right_val.value_type) {
                 (LlvmType::Int64, LlvmType::Int64) => {
                     let left_int = left_val.llvm_value.into_int_value();
@@ -557,16 +399,12 @@ impl<'ctx> LlvmExpressionCompiler<'ctx> {
                     self.builder.build_int_compare(IntPredicate::SLE, left_int, right_int, "le_tmp")
                         .map_err(|e| CursedError::Compile(format!("Failed to build int compare: {:?}", e)))?
                         .into()
-                },
                 (LlvmType::Float64, LlvmType::Float64) => {
                     let left_float = left_val.llvm_value.into_float_value();
                     let right_float = right_val.llvm_value.into_float_value();
                     self.builder.build_float_compare(FloatPredicate::OLE, left_float, right_float, "fle_tmp")
                         .map_err(|e| CursedError::Compile(format!("Failed to build float compare: {:?}", e)))?
                         .into()
-                },
-                _ => return Err(CursedError::Compile("Invalid types for less-than-or-equal comparison".to_string())),
-            },
             ">=" => match (&left_val.value_type, &right_val.value_type) {
                 (LlvmType::Int64, LlvmType::Int64) => {
                     let left_int = left_val.llvm_value.into_int_value();
@@ -574,16 +412,12 @@ impl<'ctx> LlvmExpressionCompiler<'ctx> {
                     self.builder.build_int_compare(IntPredicate::SGE, left_int, right_int, "ge_tmp")
                         .map_err(|e| CursedError::Compile(format!("Failed to build int compare: {:?}", e)))?
                         .into()
-                },
                 (LlvmType::Float64, LlvmType::Float64) => {
                     let left_float = left_val.llvm_value.into_float_value();
                     let right_float = right_val.llvm_value.into_float_value();
                     self.builder.build_float_compare(FloatPredicate::OGE, left_float, right_float, "fge_tmp")
                         .map_err(|e| CursedError::Compile(format!("Failed to build float compare: {:?}", e)))?
                         .into()
-                },
-                _ => return Err(CursedError::Compile("Invalid types for greater-than-or-equal comparison".to_string())),
-            },
             
             // Logical operators
             "&&" | "and" => {
@@ -596,7 +430,6 @@ impl<'ctx> LlvmExpressionCompiler<'ctx> {
                 } else {
                     return Err(CursedError::Compile("Logical and requires boolean operands".to_string()));
                 }
-            },
             "||" | "or" => {
                 if left_val.value_type == LlvmType::Boolean && right_val.value_type == LlvmType::Boolean {
                     let left_bool = left_val.llvm_value.into_int_value();
@@ -607,7 +440,6 @@ impl<'ctx> LlvmExpressionCompiler<'ctx> {
                 } else {
                     return Err(CursedError::Compile("Logical or requires boolean operands".to_string()));
                 }
-            },
             
             // Bitwise operators
             "&" => {
@@ -620,7 +452,6 @@ impl<'ctx> LlvmExpressionCompiler<'ctx> {
                 } else {
                     return Err(CursedError::Compile("Bitwise and requires integer operands".to_string()));
                 }
-            },
             "|" => {
                 if left_val.value_type == LlvmType::Int64 && right_val.value_type == LlvmType::Int64 {
                     let left_int = left_val.llvm_value.into_int_value();
@@ -631,7 +462,6 @@ impl<'ctx> LlvmExpressionCompiler<'ctx> {
                 } else {
                     return Err(CursedError::Compile("Bitwise or requires integer operands".to_string()));
                 }
-            },
             "^" => {
                 if left_val.value_type == LlvmType::Int64 && right_val.value_type == LlvmType::Int64 {
                     let left_int = left_val.llvm_value.into_int_value();
@@ -642,7 +472,6 @@ impl<'ctx> LlvmExpressionCompiler<'ctx> {
                 } else {
                     return Err(CursedError::Compile("Bitwise xor requires integer operands".to_string()));
                 }
-            },
             "<<" => {
                 if left_val.value_type == LlvmType::Int64 && right_val.value_type == LlvmType::Int64 {
                     let left_int = left_val.llvm_value.into_int_value();
@@ -653,7 +482,6 @@ impl<'ctx> LlvmExpressionCompiler<'ctx> {
                 } else {
                     return Err(CursedError::Compile("Left shift requires integer operands".to_string()));
                 }
-            },
             ">>" => {
                 if left_val.value_type == LlvmType::Int64 && right_val.value_type == LlvmType::Int64 {
                     let left_int = left_val.llvm_value.into_int_value();
@@ -664,15 +492,10 @@ impl<'ctx> LlvmExpressionCompiler<'ctx> {
                 } else {
                     return Err(CursedError::Compile("Right shift requires integer operands".to_string()));
                 }
-            },
             
-            _ => return Err(CursedError::Compile(format!("Unsupported binary operator: {}", binary.operator))),
-        };
         
         debug!("Binary expression compiled successfully");
         Ok(LlvmValue::new(result_type, result_value, false))
-    }
-    
     /// Compile unary expressions
     #[instrument(skip(self, unary))]
     fn compile_unary_expression(&mut self, unary: &UnaryExpression) -> crate::error::Result<()> {
@@ -688,16 +511,12 @@ impl<'ctx> LlvmExpressionCompiler<'ctx> {
                     self.builder.build_int_sub(zero, operand_int, "neg_tmp")
                         .map_err(|e| CursedError::Compile(format!("Failed to build int negation: {:?}", e)))?
                         .into()
-                },
                 LlvmType::Float64 => {
                     let operand_float = operand_val.llvm_value.into_float_value();
                     let zero = self.llvm_context.f64_type().const_zero();
                     self.builder.build_float_sub(zero, operand_float, "fneg_tmp")
                         .map_err(|e| CursedError::Compile(format!("Failed to build float negation: {:?}", e)))?
                         .into()
-                },
-                _ => return Err(CursedError::Compile("Invalid type for negation".to_string())),
-            },
             "!" | "not" => match operand_val.value_type {
                 LlvmType::Boolean => {
                     let operand_bool = operand_val.llvm_value.into_int_value();
@@ -705,9 +524,6 @@ impl<'ctx> LlvmExpressionCompiler<'ctx> {
                     self.builder.build_xor(operand_bool, true_val, "not_tmp")
                         .map_err(|e| CursedError::Compile(format!("Failed to build logical not: {:?}", e)))?
                         .into()
-                },
-                _ => return Err(CursedError::Compile("Logical not requires boolean operand".to_string())),
-            },
             "~" => match operand_val.value_type {
                 LlvmType::Int64 => {
                     let operand_int = operand_val.llvm_value.into_int_value();
@@ -715,16 +531,9 @@ impl<'ctx> LlvmExpressionCompiler<'ctx> {
                     self.builder.build_xor(operand_int, all_ones, "bitnot_tmp")
                         .map_err(|e| CursedError::Compile(format!("Failed to build bitwise not: {:?}", e)))?
                         .into()
-                },
-                _ => return Err(CursedError::Compile("Bitwise not requires integer operand".to_string())),
-            },
-            _ => return Err(CursedError::Compile(format!("Unsupported unary operator: {}", unary.operator))),
-        };
         
         debug!("Unary expression compiled successfully");
         Ok(LlvmValue::new(operand_val.value_type, result_value, false))
-    }
-    
     /// Compile identifier (variable access)
     #[instrument(skip(self, identifier))]
     fn compile_identifier(&mut self, identifier: &Identifier) -> crate::error::Result<()> {
@@ -739,14 +548,7 @@ impl<'ctx> LlvmExpressionCompiler<'ctx> {
             // Get variable type information
             if let Some((_, var_type)) = var_manager_ref.get_variable(&identifier.value) {
                 let llvm_type = match var_type {
-                    crate::type_system::Type::Normie => LlvmType::Int64,
-                    crate::type_system::Type::Thicc => LlvmType::Int64,
-                    crate::type_system::Type::Lit => LlvmType::Boolean,
-                    crate::type_system::Type::Tea => LlvmType::String,
-                    crate::type_system::Type::Meal => LlvmType::Float64,
-                    crate::type_system::Type::Cap => LlvmType::Pointer(Box::new(LlvmType::Void)),
                     _ => LlvmType::Int64, // Default fallback
-                };
                 
                 debug!("Variable '{}' loaded successfully with type {:?}", identifier.value, llvm_type);
                 Ok(LlvmValue::new(llvm_type, value, false))
@@ -777,23 +579,15 @@ impl<'ctx> LlvmExpressionCompiler<'ctx> {
             arg_types.push(arg_val.value_type.clone());
             arg_llvm_names.push(arg_val.llvm_name.clone());
             arg_values.push(arg_val);
-        }
-        
         // For now, we'll use a simplified approach since we don't have access to the function registry
         // In a full implementation, this would integrate with the function registry from the main generator
         
         // Check for built-in functions
         let (return_type, llvm_return_type) = match func_name.as_str() {
-            "print" | "println" => (LlvmType::Void, self.llvm_context.void_type().into()),
-            "malloc" => (LlvmType::Pointer(Box::new(LlvmType::Void)), self.llvm_context.i8_type().ptr_type(AddressSpace::default()).into()),
-            "strlen" => (LlvmType::Int64, self.llvm_context.i64_type().into()),
-            "abs" => (LlvmType::Int32, self.llvm_context.i32_type().into()),
-            "sqrt" | "fabs" | "pow" => (LlvmType::Float64, self.llvm_context.f64_type().into()),
             _ => {
                 info!("Unknown function '{}', assuming i32 return type", func_name);
                 (LlvmType::Int32, self.llvm_context.i32_type().into())
             }
-        };
         
         // Generate function call IR
         let call_temp = self.context.next_temp();
@@ -842,37 +636,20 @@ impl<'ctx> LlvmExpressionCompiler<'ctx> {
         
         // Create function type
         match return_inkwell_type {
-            inkwell::types::BasicTypeEnum::ArrayType(t) => Ok(t.fn_type(&param_types, false)),
-            inkwell::types::BasicTypeEnum::FloatType(t) => Ok(t.fn_type(&param_types, false)),
-            inkwell::types::BasicTypeEnum::IntType(t) => Ok(t.fn_type(&param_types, false)),
-            inkwell::types::BasicTypeEnum::PointerType(t) => Ok(t.fn_type(&param_types, false)),
-            inkwell::types::BasicTypeEnum::StructType(t) => Ok(t.fn_type(&param_types, false)),
-            inkwell::types::BasicTypeEnum::VectorType(t) => Ok(t.fn_type(&param_types, false)),
         }
     }
     
     /// Convert LlvmType to inkwell BasicTypeEnum
     fn llvm_type_to_inkwell_type(&self, llvm_type: &LlvmType) -> crate::error::Result<()> {
         match llvm_type {
-            LlvmType::Int32 => Ok(self.llvm_context.i32_type().into()),
-            LlvmType::Int64 => Ok(self.llvm_context.i64_type().into()),
-            LlvmType::Float64 => Ok(self.llvm_context.f64_type().into()),
-            LlvmType::Boolean => Ok(self.llvm_context.bool_type().into()),
-            LlvmType::String => Ok(self.llvm_context.i8_type().ptr_type(AddressSpace::default()).into()),
-            LlvmType::Pointer(_) => Ok(self.llvm_context.i8_type().ptr_type(AddressSpace::default()).into()),
-            LlvmType::Array => Ok(self.llvm_context.i8_type().ptr_type(AddressSpace::default()).into()),
-            LlvmType::Object => Ok(self.llvm_context.i8_type().ptr_type(AddressSpace::default()).into()),
             LlvmType::Void => {
                 // For void types, we'll return i32 as a placeholder since BasicTypeEnum doesn't include void
                 Ok(self.llvm_context.i32_type().into())
-            },
             LlvmType::Function { .. } => {
                 // Function types are represented as function pointers
                 Ok(self.llvm_context.i8_type().ptr_type(AddressSpace::default()).into())
             }
         }
-    }
-    
     /// Compile assignment expressions
     #[instrument(skip(self, assignment))]
     fn compile_assignment_expression(&mut self, assignment: &AssignmentExpression) -> crate::error::Result<()> {
@@ -888,9 +665,6 @@ impl<'ctx> LlvmExpressionCompiler<'ctx> {
                 
                 // Create assignment expression for the variable manager
                 let assign_expr = crate::ast::operators::AssignmentExpression::new(
-                    assignment.token.clone(),
-                    assignment.to_string().clone(),
-                    assignment.value.clone(),
                 );
                 
                 var_manager_ref.compile_assignment(&assign_expr)
@@ -916,36 +690,22 @@ impl<'ctx> LlvmExpressionCompiler<'ctx> {
         // Ensure index is integer type
         if index_val.value_type != LlvmType::Int64 {
             return Err(CursedError::Compile("Array index must be integer".to_string()));
-        }
-        
         let temp_name = self.context.next_temp();
         
         // Generate GEP instruction for array access
         match array_val.value_type {
             LlvmType::Pointer(ref inner_type) => {
                 self.ir_output.push(format!(
-                    "  {} = getelementptr inbounds {}, {}* {}, i64 {}",
-                    temp_name,
-                    inner_type.to_llvm_string(),
-                    inner_type.to_llvm_string(),
-                    array_val.llvm_name,
                     index_val.llvm_name
                 ));
                 
                 // Load the value
                 let load_temp = self.context.next_temp();
                 self.ir_output.push(format!(
-                    "  {} = load {}, {}* {}",
-                    load_temp,
-                    inner_type.to_llvm_string(),
-                    inner_type.to_llvm_string(),
                     temp_name
                 ));
                 
                 Ok(LlvmValue {
-                    value_type: (**inner_type).clone(),
-                    llvm_name: load_temp,
-                    is_constant: false,
                 })
             }
             _ => Err(CursedError::Compile("Index operation requires pointer/array type".to_string())),
@@ -958,8 +718,6 @@ impl<'ctx> LlvmExpressionCompiler<'ctx> {
         debug!("Compiling parenthesized expression");
         // Parentheses don't change the expression, just compile the inner expression
         self.compile_expression(paren.expression.as_ref())
-    }
-    
     /// Compile question mark operator expressions
     pub fn compile_question_mark_expression(&mut self, question_mark: &QuestionMarkExpression) -> crate::error::Result<()> {
         // Compile the inner expression first
@@ -987,20 +745,17 @@ impl<'ctx> LlvmExpressionCompiler<'ctx> {
             
             // Extract is_ok flag from Result type
             self.ir_output.push(format!(
-                "  {} = extractvalue {} {}, 0  ; Extract is_ok flag",
                 is_ok_temp, inner_type_string, inner_value.llvm_name
             ));
             
             // Branch based on is_ok flag
             self.ir_output.push(format!(
-                "  br i1 {}, label %{}, label %{}",
                 is_ok_temp, success_block, error_block
             ));
             
             // Success block: extract value and continue
             self.ir_output.push(format!("{}:", success_block));
             self.ir_output.push(format!(
-                "  {} = extractvalue {} {}, 1  ; Extract success value",
                 value_temp, inner_type_string, inner_value.llvm_name
             ));
             self.ir_output.push(format!("  br label %{}", merge_block));
@@ -1008,24 +763,20 @@ impl<'ctx> LlvmExpressionCompiler<'ctx> {
             // CursedError block: extract error and propagate (early return)
             self.ir_output.push(format!("{}:", error_block));
             self.ir_output.push(format!(
-                "  {} = extractvalue {} {}, 2  ; Extract error value",
                 error_temp, inner_type_string, inner_value.llvm_name
             ));
             
             // Generate error propagation runtime call
             self.ir_output.push(format!(
-                "  {} = call i8* @cursed_error_propagation(i8* {}, i32 0, i32 0)",
                 propagation_temp, error_temp
             ));
             
             // Create propagated Result with error
             let result_temp = self.context.next_temp();
             self.ir_output.push(format!(
-                "  {} = insertvalue {} undef, i1 false, 0  ; Set is_ok to false",
                 result_temp, inner_type_string
             ));
             self.ir_output.push(format!(
-                "  {} = insertvalue {} {}, {} {}, 2  ; Insert error value",
                 result_temp, inner_type_string, result_temp, error_type.to_llvm_string(), error_temp
             ));
             
@@ -1037,9 +788,6 @@ impl<'ctx> LlvmExpressionCompiler<'ctx> {
             
             // Return the extracted value
             Ok(LlvmValue {
-                value_type,
-                llvm_name: value_temp,
-                is_constant: false,
             })
         } else if inner_type_string.starts_with("Option<") {
             // Extract value type from Option<T>
@@ -1047,20 +795,17 @@ impl<'ctx> LlvmExpressionCompiler<'ctx> {
             
             // Extract is_some flag from Option type
             self.ir_output.push(format!(
-                "  {} = extractvalue {} {}, 0  ; Extract is_some flag",
                 is_ok_temp, inner_type_string, inner_value.llvm_name
             ));
             
             // Branch based on is_some flag
             self.ir_output.push(format!(
-                "  br i1 {}, label %{}, label %{}",
                 is_ok_temp, success_block, error_block
             ));
             
             // Success block: extract value and continue
             self.ir_output.push(format!("{}:", success_block));
             self.ir_output.push(format!(
-                "  {} = extractvalue {} {}, 1  ; Extract some value",
                 value_temp, inner_type_string, inner_value.llvm_name
             ));
             self.ir_output.push(format!("  br label %{}", merge_block));
@@ -1076,7 +821,6 @@ impl<'ctx> LlvmExpressionCompiler<'ctx> {
             // Create propagated Option with None
             let none_temp = self.context.next_temp();
             self.ir_output.push(format!(
-                "  {} = insertvalue {} undef, i1 false, 0  ; Set is_some to false",
                 none_temp, inner_type_string
             ));
             
@@ -1088,13 +832,9 @@ impl<'ctx> LlvmExpressionCompiler<'ctx> {
             
             // Return the extracted value
             Ok(LlvmValue {
-                value_type,
-                llvm_name: value_temp,
-                is_constant: false,
             })
         } else {
             Err(CursedError::Compile(format!(
-                "Question mark operator can only be applied to Result<T, E> or Option<T> types, not {}",
                 inner_type_string
             )))
         }
@@ -1110,67 +850,40 @@ impl<'ctx> LlvmExpressionCompiler<'ctx> {
             (LlvmType::Float64, LlvmType::Int64, "+"|"-"|"*"|"/") => Ok(LlvmType::Float64),
             
             // Comparison operations always return boolean
-            (LlvmType::Int64, LlvmType::Int64, "=="|"!="|"<"|">"|"<="|">=") => Ok(LlvmType::Boolean),
-            (LlvmType::Float64, LlvmType::Float64, "=="|"!="|"<"|">"|"<="|">=") => Ok(LlvmType::Boolean),
-            (LlvmType::Boolean, LlvmType::Boolean, "=="|"!=") => Ok(LlvmType::Boolean),
             
             // Logical operations
-            (LlvmType::Boolean, LlvmType::Boolean, "&&"|"||"|"and"|"or") => Ok(LlvmType::Boolean),
             
             // Bitwise operations
-            (LlvmType::Int64, LlvmType::Int64, "&"|"|"|"^"|"<<"|">>") => Ok(LlvmType::Int64),
             
             _ => Err(CursedError::Compile(format!(
-                "Type mismatch: cannot apply {} to {:?} and {:?}",
                 operator, left, right
-            ))),
         }
     }
     
     /// Get compilation context
     pub fn get_context(&self) -> &ExpressionContext<'ctx> {
         &self.context
-    }
-    
     /// Get mutable compilation context
     pub fn get_context_mut(&mut self) -> &mut ExpressionContext<'ctx> {
         &mut self.context
-    }
-    
     /// Set current source location for debug info
     pub fn set_location(&mut self, location: SourceLocation) {
         self.context.current_location = Some(location);
-    }
-
     /// Get the LLVM context
     pub fn llvm_context(&self) -> &'ctx Context {
         self.llvm_context
-    }
-
     /// Get the LLVM module
     pub fn module(&self) -> &'ctx Module<'ctx> {
         self.module
-    }
-
     /// Get the LLVM builder
     pub fn builder(&self) -> &'ctx Builder<'ctx> {
         self.builder
-    }
-
     /// Get variable manager
     pub fn variable_manager(&self) -> &Rc<RefCell<VariableManager<'ctx>>> {
         &self.variable_manager
-    }
-    
     /// Get string representation of a type (helper for question mark operator)
     fn get_type_string(&self, llvm_type: &LlvmType) -> String {
         match llvm_type {
-            LlvmType::Boolean => "bool".to_string(),
-            LlvmType::Int32 => "i32".to_string(),
-            LlvmType::Int64 => "i64".to_string(),
-            LlvmType::Float64 => "f64".to_string(),
-            LlvmType::String => "string".to_string(),
-            LlvmType::Pointer(inner) => format!("*{}", self.get_type_string(inner)),
             LlvmType::Function { return_type, param_types } => {
                 let params = param_types.iter()
                     .map(|t| self.get_type_string(t))
@@ -1178,7 +891,6 @@ impl<'ctx> LlvmExpressionCompiler<'ctx> {
                     .join(", ");
                 format!("({}) -> {}", params, self.get_type_string(return_type))
             }
-            LlvmType::Void => "void".to_string(),
         }
     }
     
@@ -1186,42 +898,26 @@ impl<'ctx> LlvmExpressionCompiler<'ctx> {
     fn extract_result_types(&self, result_type_string: &str) -> crate::error::Result<()> {
         if !result_type_string.starts_with("Result<") || !result_type_string.ends_with('>') {
             return Err(CursedError::Compile("Invalid Result type format".to_string()));
-        }
-        
         // Extract "T, E" from "Result<T, E>"
         let inner = &result_type_string[7..result_type_string.len()-1];
         let parts: Vec<&str> = inner.splitn(2, ',').collect();
         
         if parts.len() != 2 {
             return Err(CursedError::Compile("Result must have exactly two type parameters".to_string()));
-        }
-        
         let value_type = self.parse_type_string(parts[0].trim())?;
         let error_type = self.parse_type_string(parts[1].trim())?;
         
         Ok((value_type, error_type))
-    }
-    
     /// Extract value type from Option<T> string
     fn extract_option_type(&self, option_type_string: &str) -> crate::error::Result<()> {
         if !option_type_string.starts_with("Option<") || !option_type_string.ends_with('>') {
             return Err(CursedError::Compile("Invalid Option type format".to_string()));
-        }
-        
         // Extract "T" from "Option<T>"
         let inner = &option_type_string[7..option_type_string.len()-1];
         self.parse_type_string(inner.trim())
-    }
-    
     /// Parse a type string into LlvmType
     fn parse_type_string(&self, type_str: &str) -> crate::error::Result<()> {
         match type_str {
-            "bool" | "facts" => Ok(LlvmType::Boolean),
-            "i32" | "normie" => Ok(LlvmType::Int32),
-            "i64" => Ok(LlvmType::Int64),
-            "f64" | "double" => Ok(LlvmType::Float64),
-            "string" | "tea" => Ok(LlvmType::String),
-            "void" => Ok(LlvmType::Void),
             s if s.starts_with('*') => {
                 let inner_type = self.parse_type_string(&s[1..])?;
                 Ok(LlvmType::Pointer(Box::new(inner_type)))
@@ -1239,8 +935,6 @@ impl<'ctx> LlvmExpressionCompiler<'ctx> {
 impl<'ctx> LlvmExpressionCompiler<'ctx> {
     /// Compile a generic method call with constraint checking
     pub fn compile_generic_call(
-        &mut self,
-        call: &CallExpression,
         type_context: &mut TypeCompilationContext
     ) -> crate::error::Result<()> {
         let function_name = call.function.string();
@@ -1248,8 +942,6 @@ impl<'ctx> LlvmExpressionCompiler<'ctx> {
         // Check if function name contains generic type indicators
         if !function_name.contains('<') && !function_name.contains("_") {
             return Err(CursedError::TypeCompilation("Not a generic call".to_string()));
-        }
-        
         // Extract base function name and type arguments
         let (base_name, type_args) = self.parse_generic_call(&function_name)?;
         
@@ -1257,8 +949,6 @@ impl<'ctx> LlvmExpressionCompiler<'ctx> {
         let instance_key = format!("{}_{}", base_name, type_args.join("_"));
         if let Some(cached) = self.context.generic_methods.get(&instance_key).cloned() {
             return self.generate_instantiated_call(&cached, call);
-        }
-        
         // Instantiate generic method
         let instance = type_context.instantiate_generic(&base_name, &type_args)?;
         
@@ -1267,8 +957,6 @@ impl<'ctx> LlvmExpressionCompiler<'ctx> {
         
         // Generate call with instantiated method
         self.generate_instantiated_call(&instance, call)
-    }
-
     /// Parse generic call syntax to extract base name and type arguments
     fn parse_generic_call(&self, function_name: &str) -> crate::error::Result<()> {
         // Handle syntax like "function<T, U>" or "function_T_U"
@@ -1276,8 +964,6 @@ impl<'ctx> LlvmExpressionCompiler<'ctx> {
             let parts: Vec<&str> = function_name.splitn(2, '<').collect();
             if parts.len() != 2 {
                 return Err(CursedError::TypeCompilation("Invalid generic syntax".to_string()));
-            }
-            
             let base_name = parts[0].to_string();
             let type_part = parts[1].trim_end_matches('>');
             let type_args: Vec<String> = type_part.split(',')
@@ -1290,8 +976,6 @@ impl<'ctx> LlvmExpressionCompiler<'ctx> {
             let parts: Vec<&str> = function_name.split('_').collect();
             if parts.len() < 2 {
                 return Err(CursedError::TypeCompilation("Invalid generic syntax".to_string()));
-            }
-            
             let base_name = parts[0].to_string();
             let type_args: Vec<String> = parts[1..].iter().map(|s| s.to_string()).collect();
             
@@ -1303,8 +987,6 @@ impl<'ctx> LlvmExpressionCompiler<'ctx> {
 
     /// Generate call IR for instantiated generic method
     fn generate_instantiated_call(
-        &mut self,
-        instance: &CompiledGenericInstance,
         call: &CallExpression
     ) -> crate::error::Result<()> {
         // Compile arguments
@@ -1315,8 +997,6 @@ impl<'ctx> LlvmExpressionCompiler<'ctx> {
             let arg_val = self.compile_expression(arg.as_ref())?;
             arg_types.push(arg_val.value_type.to_llvm_string());
             arg_values.push(arg_val.llvm_name);
-        }
-        
         let temp_name = self.context.next_temp();
         let args_str = arg_values.iter()
             .zip(arg_types.iter())
@@ -1326,35 +1006,22 @@ impl<'ctx> LlvmExpressionCompiler<'ctx> {
         
         // Generate call to instantiated function
         self.ir_output.push(format!(
-            "  {} = call {} @{}({})",
-            temp_name,
             "i32", // Return type from instance metadata
-            instance.instance_name,
             args_str
         ));
         
         Ok(LlvmValue {
             value_type: LlvmType::Int32, // Should be inferred from instance
-            llvm_name: temp_name,
-            is_constant: false,
         })
-    }
-
     /// Compile expression with type inference (simplified for now)
     pub fn compile_expression_with_inference(
-        &mut self,
-        expr: &dyn Expression,
         _type_context: &TypeCompilationContext
     ) -> crate::error::Result<()> {
         // For now, just fall back to regular compilation
         // TODO: Integrate proper type inference
         self.compile_expression(expr)
-    }
-
     /// Compile literal with type information
     fn compile_typed_literal(
-        &mut self,
-        expr: &dyn Expression,
         inferred_type: &str
     ) -> crate::error::Result<()> {
         let literal_value = expr.string();
@@ -1364,35 +1031,19 @@ impl<'ctx> LlvmExpressionCompiler<'ctx> {
             "normie" => {
                 self.ir_output.push(format!("  {} = add i64 0, {}", temp_name, literal_value));
                 Ok(LlvmValue {
-                    value_type: LlvmType::Int64,
-                    llvm_name: temp_name,
-                    is_constant: true,
                 })
-            },
             "facts" => {
                 let bool_val = if literal_value == "true" { "1" } else { "0" };
                 self.ir_output.push(format!("  {} = add i1 0, {}", temp_name, bool_val));
                 Ok(LlvmValue {
-                    value_type: LlvmType::Boolean,
-                    llvm_name: temp_name,
-                    is_constant: true,
                 })
-            },
             "tea" => {
                 let str_name = self.context.next_temp();
                 self.ir_output.push(format!(
-                    "  {} = getelementptr inbounds [{} x i8], [{} x i8]* @str_{}, i32 0, i32 0",
-                    temp_name,
-                    literal_value.len() + 1,
-                    literal_value.len() + 1,
                     str_name
                 ));
                 Ok(LlvmValue {
-                    value_type: LlvmType::String,
-                    llvm_name: temp_name,
-                    is_constant: true,
                 })
-            },
             _ => {
                 // Fallback to regular compilation
                 self.compile_expression(expr)

@@ -8,16 +8,10 @@ use super::{MemoryOrder, atomic_error};
 /// Allows one or more goroutines to wait for a collection of other goroutines to finish
 #[derive(Debug)]
 pub struct WaitGroup {
-    counter: AtomicI32,
-    waiters: Arc<(Mutex<bool>, Condvar)>,
-}
-
 impl WaitGroup {
     /// Create a new wait group with counter initialized to 0
     pub fn new() -> Self {
         Self {
-            counter: AtomicI32::new(0),
-            waiters: Arc::new((Mutex::new(false), Condvar::new())),
         }
     }
 
@@ -33,8 +27,6 @@ impl WaitGroup {
             // Counter went negative, this is an error
             self.counter.store(0, Ordering::SeqCst);
             return Err(atomic_error("WaitGroup counter went negative"));
-        }
-        
         if new_count == 0 {
             // Counter reached zero, notify all waiters
             let (lock, cvar) = &*self.waiters;
@@ -45,40 +37,28 @@ impl WaitGroup {
         }
         
         Ok(())
-    }
-
     /// Decrement the counter by 1
     /// Equivalent to add(-1)
     pub fn done(&self) -> CursedResult<()> {
         self.add(-1)
-    }
-
     /// Wait for the counter to reach 0
     /// Blocks the current goroutine until the counter is 0
     pub fn wait(&self) -> CursedResult<()> {
         // Quick check first
         if self.counter.load(Ordering::SeqCst) == 0 {
             return Ok(());
-        }
-        
         let (lock, cvar) = &*self.waiters;
         let mut finished = lock.lock().map_err(|_| atomic_error("Failed to acquire wait lock"))?;
         
         while self.counter.load(Ordering::SeqCst) != 0 && !*finished {
             finished = cvar.wait(finished).map_err(|_| atomic_error("Wait condition failed"))?;
-        }
-        
         Ok(())
-    }
-
     /// Wait for the counter to reach 0 with a timeout
     /// Returns true if the wait completed before timeout, false if it timed out
     pub fn wait_timeout(&self, timeout: Duration) -> CursedResult<bool> {
         // Quick check first
         if self.counter.load(Ordering::SeqCst) == 0 {
             return Ok(true);
-        }
-        
         let (lock, cvar) = &*self.waiters;
         let mut finished = lock.lock().map_err(|_| atomic_error("Failed to acquire wait lock"))?;
         
@@ -93,14 +73,10 @@ impl WaitGroup {
         }
         
         Ok(true)
-    }
-
     /// Get the current counter value
     /// This is primarily for debugging and testing
     pub fn count(&self) -> i32 {
         self.counter.load(Ordering::SeqCst)
-    }
-
     /// Reset the wait group to initial state
     /// This is generally not safe to use in concurrent scenarios
     pub fn reset(&self) {
@@ -110,8 +86,6 @@ impl WaitGroup {
             *finished = false;
         }
     }
-}
-
 impl Default for WaitGroup {
     fn default() -> Self {
         Self::new()
@@ -124,15 +98,9 @@ unsafe impl Sync for WaitGroup {}
 impl Clone for WaitGroup {
     fn clone(&self) -> Self {
         Self {
-            counter: AtomicI32::new(self.counter.load(Ordering::SeqCst)),
-            waiters: Arc::clone(&self.waiters),
         }
     }
-}
-
 /// Create a new wait group
 /// Convenience function for creating wait groups
 pub fn new_wait_group() -> WaitGroup {
     WaitGroup::new()
-}
-

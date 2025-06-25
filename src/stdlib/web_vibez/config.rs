@@ -13,293 +13,86 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct WebVibezConfig {
-    pub server: ServerConfig,
-    pub security: SecurityConfig,
-    pub performance: PerformanceConfig,
-    pub session: SessionConfig,
-    pub template: TemplateConfig,
-    pub static_files: StaticFileConfig,
-    pub logging: LoggingConfig,
-    pub development: DevelopmentConfig,
-}
-
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ServerConfig {
-    pub host: String,
-    pub port: u16,
-    pub max_connections: usize,
-    pub request_timeout: Duration,
-    pub keep_alive_timeout: Duration,
-    pub header_timeout: Duration,
-    pub connection_timeout: Duration,
-    pub max_header_size: usize,
-    pub max_body_size: usize,
-}
-
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct SecurityConfig {
-    pub csrf_secret: String,
-    pub session_secret: String,
-    pub enable_xss_protection: bool,
-    pub enable_csrf_protection: bool,
-    pub allowed_origins: Vec<String>,
-    pub content_security_policy: Option<String>,
-    pub hsts_max_age: Option<u64>,
-    pub enable_secure_headers: bool,
-}
-
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct PerformanceConfig {
-    pub enable_compression: bool,
-    pub compression_level: u8,
-    pub compression_threshold: usize,
-    pub connection_pool_size: usize,
-    pub keep_alive_connections: usize,
-    pub enable_http2: bool,
-    pub enable_caching: bool,
-    pub cache_max_age: Duration,
-}
-
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct SessionConfig {
-    pub cookie_name: String,
-    pub max_age: Duration,
-    pub secure: bool,
-    pub http_only: bool,
-    pub same_site: SameSitePolicy,
-    pub store_type: SessionStoreType,
-    pub cleanup_interval: Duration,
-    pub database_timeout: Duration,
-    pub session_timeout: Duration,
-}
-
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct TemplateConfig {
-    pub template_dir: PathBuf,
-    pub cache_templates: bool,
-    pub auto_reload: bool,
-    pub template_extension: String,
-    pub custom_filters: HashMap<String, String>,
-}
-
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct StaticFileConfig {
-    pub static_dir: PathBuf,
-    pub enable_caching: bool,
-    pub cache_max_age: Duration,
-    pub enable_compression: bool,
-    pub enable_etag: bool,
-    pub enable_last_modified: bool,
-    pub allowed_extensions: Vec<String>,
-}
-
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct LoggingConfig {
-    pub enable_request_logging: bool,
-    pub enable_response_logging: bool,
-    pub enable_error_logging: bool,
-    pub log_level: LogLevel,
-    pub log_format: LogFormat,
-    pub access_log_path: Option<PathBuf>,
-    pub error_log_path: Option<PathBuf>,
-}
-
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct DevelopmentConfig {
-    pub enable_hot_reload: bool,
-    pub enable_debug_mode: bool,
-    pub enable_metrics: bool,
-    pub metrics_endpoint: String,
-    pub health_check_endpoint: String,
-    pub debug_endpoint: Option<String>,
-}
-
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum SameSitePolicy {
-    Strict,
-    Lax,
-    None,
-}
-
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum SessionStoreType {
-    Memory,
-    File(PathBuf),
-    Redis(String),
-    Database(String),
-}
-
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum LogLevel {
-    CursedError,
-    Warn,
-    Info,
-    Debug,
-    Trace,
-}
-
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum LogFormat {
-    Common,
-    Combined,
-    Json,
-    Custom(String),
-}
-
 impl Default for WebVibezConfig {
     fn default() -> Self {
         Self {
-            server: ServerConfig::default(),
-            security: SecurityConfig::default(),
-            performance: PerformanceConfig::default(),
-            session: SessionConfig::default(),
-            template: TemplateConfig::default(),
-            static_files: StaticFileConfig::default(),
-            logging: LoggingConfig::default(),
-            development: DevelopmentConfig::default(),
         }
     }
-}
-
 impl Default for ServerConfig {
     fn default() -> Self {
         Self {
-            host: "127.0.0.1".to_string(),
-            port: 8080,
-            max_connections: 1000,
-            request_timeout: Duration::from_secs(30),
-            keep_alive_timeout: Duration::from_secs(5),
-            header_timeout: Duration::from_secs(10),
-            connection_timeout: Duration::from_secs(15),
-            max_header_size: 8192,
             max_body_size: 10 * 1024 * 1024, // 10MB
         }
     }
-}
-
 impl Default for SecurityConfig {
     fn default() -> Self {
         Self {
-            csrf_secret: "changeme".to_string(),
-            session_secret: "changeme".to_string(),
-            enable_xss_protection: true,
-            enable_csrf_protection: true,
-            allowed_origins: Vec::from(["*".to_string()]),
-            content_security_policy: Some("default-src 'self'".to_string()),
             hsts_max_age: Some(31536000), // 1 year
-            enable_secure_headers: true,
         }
     }
-}
-
 impl Default for PerformanceConfig {
     fn default() -> Self {
         Self {
-            enable_compression: true,
-            compression_level: 6,
-            compression_threshold: 1024,
-            connection_pool_size: 100,
-            keep_alive_connections: 50,
-            enable_http2: true,
-            enable_caching: true,
-            cache_max_age: Duration::from_secs(3600),
         }
     }
-}
-
 impl Default for SessionConfig {
     fn default() -> Self {
         Self {
-            cookie_name: "cursed_session".to_string(),
             max_age: Duration::from_secs(24 * 60 * 60), // 24 hours
-            secure: false,
-            http_only: true,
-            same_site: SameSitePolicy::Lax,
-            store_type: SessionStoreType::Memory,
             cleanup_interval: Duration::from_secs(300), // 5 minutes
-            database_timeout: Duration::from_secs(10),
             session_timeout: Duration::from_secs(30 * 60), // 30 minutes
         }
     }
-}
-
 impl Default for TemplateConfig {
     fn default() -> Self {
         Self {
-            template_dir: PathBuf::from("templates"),
-            cache_templates: true,
-            auto_reload: false,
-            template_extension: ".html".to_string(),
-            custom_filters: HashMap::new(),
         }
     }
-}
-
 impl Default for StaticFileConfig {
     fn default() -> Self {
         Self {
-            static_dir: PathBuf::from("static"),
-            enable_caching: true,
-            cache_max_age: Duration::from_secs(3600),
-            enable_compression: true,
-            enable_etag: true,
-            enable_last_modified: true,
             allowed_extensions: vec![
-                ".html".to_string(),
-                ".css".to_string(),
-                ".js".to_string(),
-                ".png".to_string(),
-                ".jpg".to_string(),
-                ".jpeg".to_string(),
-                ".gif".to_string(),
-                ".svg".to_string(),
-                ".woff".to_string(),
-                ".woff2".to_string(),
-                ".ttf".to_string(),
-                ".eot".to_string(),
-            ],
         }
     }
-}
-
 impl Default for LoggingConfig {
     fn default() -> Self {
         Self {
-            enable_request_logging: true,
-            enable_response_logging: true,
-            enable_error_logging: true,
-            log_level: LogLevel::Info,
-            log_format: LogFormat::Combined,
-            access_log_path: None,
-            error_log_path: None,
         }
     }
-}
-
 impl Default for DevelopmentConfig {
     fn default() -> Self {
         Self {
-            enable_hot_reload: false,
-            enable_debug_mode: false,
-            enable_metrics: true,
             metrics_endpoint: "/metrics".to_string(),
             health_check_endpoint: "/health".to_string(),
-            debug_endpoint: None,
         }
     }
-}
-
 /// Configuration error types
 #[derive(Debug)]
 pub enum ConfigError {
-    IoError(std::io::Error),
-    ParseError(toml::de::Error),
-    ValidationError(String),
-    EnvironmentError(String),
-    InvalidValue { field: String, value: String, reason: String },
-    MissingRequiredField(String),
-}
-
 // impl std::fmt::Display for ConfigError {
 //     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
 //         match self {
@@ -333,12 +126,6 @@ pub enum ConfigError {
 
 /// Configuration watcher for hot reloading
 pub struct ConfigWatcher {
-    config: Arc<std::sync::RwLock<WebVibezConfig>>,
-    watching: Arc<AtomicBool>,
-    file_path: PathBuf,
-    last_modified: SystemTime,
-}
-
 impl ConfigWatcher {
     pub fn new(config: WebVibezConfig, file_path: PathBuf) -> crate::error::Result<()> {
         let last_modified = std::fs::metadata(&file_path)
@@ -347,18 +134,10 @@ impl ConfigWatcher {
             .map_err(ConfigError::from)?;
 
         Ok(ConfigWatcher {
-            config: Arc::new(std::sync::RwLock::new(config)),
-            watching: Arc::new(AtomicBool::new(false)),
-            file_path,
-            last_modified,
         })
-    }
-
     pub fn start_watching(&self) -> crate::error::Result<()> {
         if self.watching.load(Ordering::Relaxed) {
             return Ok(());
-        }
-
         self.watching.store(true, Ordering::Relaxed);
         
         // Simple file modification time watching instead of complex file system watching
@@ -389,12 +168,8 @@ impl ConfigWatcher {
         });
 
         Ok(())
-    }
-
     pub fn stop_watching(&self) {
         self.watching.store(false, Ordering::Relaxed);
-    }
-
     pub fn get_config(&self) -> Arc<std::sync::RwLock<WebVibezConfig>> {
         Arc::clone(&self.config)
     }
@@ -417,10 +192,8 @@ fn expand_environment_variables(content: &str) -> crate::error::Result<()> {
                 (&var_content[..colon_pos], Some(&var_content[colon_pos + 1..]))
             } else {
                 (var_content, None)
-            };
             
             let value = match std::env::var(var_name) {
-                Ok(val) => val,
                 Err(_) => {
                     if let Some(default) = default_value {
                         default.to_string()
@@ -430,7 +203,6 @@ fn expand_environment_variables(content: &str) -> crate::error::Result<()> {
                         ));
                     }
                 }
-            };
             
             expanded.replace_range(abs_start..=abs_end, &value);
             start = abs_start + value.len();
@@ -440,22 +212,16 @@ fn expand_environment_variables(content: &str) -> crate::error::Result<()> {
     }
     
     Ok(expanded)
-}
-
 impl WebVibezConfig {
     /// Load configuration from file with enhanced error handling
     pub fn from_file(path: &str) -> crate::error::Result<()> {
         let content = std::fs::read_to_string(path)?;
         Self::from_toml(&content)
-    }
-
     /// Load configuration with environment variable support
     pub fn from_file_with_env(path: &str) -> crate::error::Result<()> {
         let content = std::fs::read_to_string(path)?;
         let expanded_content = expand_environment_variables(&content)?;
         Self::from_toml_enhanced(&expanded_content)
-    }
-
     /// Parse configuration from TOML string (legacy method)
     pub fn from_toml(toml_str: &str) -> crate::error::Result<()> {
         // Parse the TOML string into a toml::Value first for custom handling
@@ -468,38 +234,24 @@ impl WebVibezConfig {
             // Parse server config
             if let Some(server_table) = table.get("server").and_then(|v| v.as_table()) {
                 config.server = parse_server_config(server_table)?;
-            }
-            
             // Parse security config
             if let Some(security_table) = table.get("security").and_then(|v| v.as_table()) {
                 config.security = parse_security_config(security_table)?;
-            }
-            
             // Parse performance config
             if let Some(performance_table) = table.get("performance").and_then(|v| v.as_table()) {
                 config.performance = parse_performance_config(performance_table)?;
-            }
-            
             // Parse session config
             if let Some(session_table) = table.get("session").and_then(|v| v.as_table()) {
                 config.session = parse_session_config(session_table)?;
-            }
-            
             // Parse template config
             if let Some(template_table) = table.get("template").and_then(|v| v.as_table()) {
                 config.template = parse_template_config(template_table)?;
-            }
-            
             // Parse static files config
             if let Some(static_table) = table.get("static_files").and_then(|v| v.as_table()) {
                 config.static_files = parse_static_file_config(static_table)?;
-            }
-            
             // Parse logging config
             if let Some(logging_table) = table.get("logging").and_then(|v| v.as_table()) {
                 config.logging = parse_logging_config(logging_table)?;
-            }
-            
             // Parse development config
             if let Some(dev_table) = table.get("development").and_then(|v| v.as_table()) {
                 config.development = parse_development_config(dev_table)?;
@@ -507,8 +259,6 @@ impl WebVibezConfig {
         }
         
         Ok(config)
-    }
-
     /// Parse configuration from TOML string with comprehensive validation
     pub fn from_toml_enhanced(toml_str: &str) -> crate::error::Result<()> {
         // Parse the TOML string into a toml::Value first for custom handling
@@ -521,38 +271,24 @@ impl WebVibezConfig {
             // Parse server config with validation
             if let Some(server_table) = table.get("server").and_then(|v| v.as_table()) {
                 config.server = parse_server_config_enhanced(server_table)?;
-            }
-            
             // Parse security config with validation
             if let Some(security_table) = table.get("security").and_then(|v| v.as_table()) {
                 config.security = parse_security_config_enhanced(security_table)?;
-            }
-            
             // Parse performance config with validation
             if let Some(performance_table) = table.get("performance").and_then(|v| v.as_table()) {
                 config.performance = parse_performance_config_enhanced(performance_table)?;
-            }
-            
             // Parse session config with validation
             if let Some(session_table) = table.get("session").and_then(|v| v.as_table()) {
                 config.session = parse_session_config_enhanced(session_table)?;
-            }
-            
             // Parse template config with validation
             if let Some(template_table) = table.get("template").and_then(|v| v.as_table()) {
                 config.template = parse_template_config_enhanced(template_table)?;
-            }
-            
             // Parse static files config with validation
             if let Some(static_table) = table.get("static_files").and_then(|v| v.as_table()) {
                 config.static_files = parse_static_file_config_enhanced(static_table)?;
-            }
-            
             // Parse logging config with validation
             if let Some(logging_table) = table.get("logging").and_then(|v| v.as_table()) {
                 config.logging = parse_logging_config_enhanced(logging_table)?;
-            }
-            
             // Parse development config with validation
             if let Some(dev_table) = table.get("development").and_then(|v| v.as_table()) {
                 config.development = parse_development_config_enhanced(dev_table)?;
@@ -563,14 +299,10 @@ impl WebVibezConfig {
         config.validate_enhanced()?;
         
         Ok(config)
-    }
-
     /// Create a configuration watcher for hot reloading
     pub fn create_watcher(path: &str) -> crate::error::Result<()> {
         let config = Self::from_file_with_env(path)?;
         ConfigWatcher::new(config, PathBuf::from(path))
-    }
-
     /// Convert configuration to TOML string
     pub fn to_toml(&self) -> String {
         let mut toml_string = String::new();
@@ -669,151 +401,75 @@ impl WebVibezConfig {
         toml_string.push_str(&format!("health_check_endpoint = \"{}\"\n", self.development.health_check_endpoint));
         if let Some(ref endpoint) = self.development.debug_endpoint {
             toml_string.push_str(&format!("debug_endpoint = \"{}\"\n", endpoint));
-        }
-        
         toml_string
-    }
-
     /// Validate configuration
     pub fn validate(&self) -> Result<(), String> {
         if self.server.port == 0 {
             return Err("Server port cannot be 0".to_string());
-        }
-
         if self.server.max_connections == 0 {
             return Err("Max connections cannot be 0".to_string());
-        }
-
         if self.security.csrf_secret == "changeme" {
             return Err("CSRF secret must be changed from default".to_string());
-        }
-
         if self.security.session_secret == "changeme" {
             return Err("Session secret must be changed from default".to_string());
-        }
-
         if self.performance.compression_level > 9 {
             return Err("Compression level must be between 0 and 9".to_string());
-        }
-
         Ok(())
-    }
-
     /// Enhanced validation with comprehensive checks
     pub fn validate_enhanced(&self) -> crate::error::Result<()> {
         // Server validation
         if self.server.port == 0 {
             return Err(ConfigError::InvalidValue {
-                field: "server.port".to_string(),
-                value: "0".to_string(),
-                reason: "Port cannot be 0".to_string(),
             });
-        }
-
         if self.server.port > 65535 {
             return Err(ConfigError::InvalidValue {
-                field: "server.port".to_string(),
-                value: self.server.port.to_string(),
-                reason: "Port must be <= 65535".to_string(),
             });
-        }
-
         if self.server.max_connections == 0 {
             return Err(ConfigError::InvalidValue {
-                field: "server.max_connections".to_string(),
-                value: "0".to_string(),
-                reason: "Max connections cannot be 0".to_string(),
             });
-        }
-
         if self.server.max_header_size < 1024 {
             return Err(ConfigError::InvalidValue {
-                field: "server.max_header_size".to_string(),
-                value: self.server.max_header_size.to_string(),
-                reason: "Header size should be at least 1KB".to_string(),
             });
-        }
-
         if self.server.max_body_size < 1024 {
             return Err(ConfigError::InvalidValue {
-                field: "server.max_body_size".to_string(),
-                value: self.server.max_body_size.to_string(),
-                reason: "Body size should be at least 1KB".to_string(),
             });
-        }
-
         // Security validation
         if self.security.csrf_secret == "changeme" {
             return Err(ConfigError::ValidationError(
                 "CSRF secret must be changed from default 'changeme'".to_string()
             ));
-        }
-
         if self.security.session_secret == "changeme" {
             return Err(ConfigError::ValidationError(
                 "Session secret must be changed from default 'changeme'".to_string()
             ));
-        }
-
         if self.security.csrf_secret.len() < 32 {
             return Err(ConfigError::InvalidValue {
-                field: "security.csrf_secret".to_string(),
-                value: "[REDACTED]".to_string(),
-                reason: "CSRF secret should be at least 32 characters".to_string(),
             });
-        }
-
         if self.security.session_secret.len() < 32 {
             return Err(ConfigError::InvalidValue {
-                field: "security.session_secret".to_string(),
-                value: "[REDACTED]".to_string(),
-                reason: "Session secret should be at least 32 characters".to_string(),
             });
-        }
-
         // Performance validation
         if self.performance.compression_level > 9 {
             return Err(ConfigError::InvalidValue {
-                field: "performance.compression_level".to_string(),
-                value: self.performance.compression_level.to_string(),
-                reason: "Compression level must be between 0 and 9".to_string(),
             });
-        }
-
         if self.performance.connection_pool_size == 0 {
             return Err(ConfigError::InvalidValue {
-                field: "performance.connection_pool_size".to_string(),
-                value: "0".to_string(),
-                reason: "Connection pool size cannot be 0".to_string(),
             });
-        }
-
         // Template validation
         if !self.template.template_dir.exists() && !self.development.enable_debug_mode {
             return Err(ConfigError::ValidationError(
                 format!("Template directory does not exist: {}", self.template.template_dir.display())
             ));
-        }
-
         // Static files validation
         if !self.static_files.static_dir.exists() && !self.development.enable_debug_mode {
             return Err(ConfigError::ValidationError(
                 format!("Static files directory does not exist: {}", self.static_files.static_dir.display())
             ));
-        }
-
         // Session validation
         if self.session.max_age.as_secs() == 0 {
             return Err(ConfigError::InvalidValue {
-                field: "session.max_age".to_string(),
-                value: "0".to_string(),
-                reason: "Session max age cannot be 0".to_string(),
             });
-        }
-
         Ok(())
-    }
-
     /// Create production-ready configuration
     pub fn production() -> Self {
         let mut config = Self::default();
@@ -826,8 +482,6 @@ impl WebVibezConfig {
         config.performance.enable_compression = true;
         config.performance.enable_caching = true;
         config
-    }
-
     /// Create development-friendly configuration
     pub fn development() -> Self {
         let mut config = Self::default();
@@ -870,11 +524,7 @@ fn parse_server_config(table: &toml::map::Map<String, toml::Value>) -> crate::er
     }
     if let Some(size) = table.get("max_body_size").and_then(|v| v.as_integer()) {
         config.max_body_size = size as usize;
-    }
-    
     Ok(config)
-}
-
 fn parse_security_config(table: &toml::map::Map<String, toml::Value>) -> crate::error::Result<()> {
     let mut config = SecurityConfig::default();
     
@@ -904,11 +554,7 @@ fn parse_security_config(table: &toml::map::Map<String, toml::Value>) -> crate::
     }
     if let Some(enable) = table.get("enable_secure_headers").and_then(|v| v.as_bool()) {
         config.enable_secure_headers = enable;
-    }
-    
     Ok(config)
-}
-
 fn parse_performance_config(table: &toml::map::Map<String, toml::Value>) -> crate::error::Result<()> {
     let mut config = PerformanceConfig::default();
     
@@ -935,11 +581,7 @@ fn parse_performance_config(table: &toml::map::Map<String, toml::Value>) -> crat
     }
     if let Some(max_age) = table.get("cache_max_age").and_then(|v| v.as_integer()) {
         config.cache_max_age = Duration::from_secs(max_age as u64);
-    }
-    
     Ok(config)
-}
-
 fn parse_session_config(table: &toml::map::Map<String, toml::Value>) -> crate::error::Result<()> {
     let mut config = SessionConfig::default();
     
@@ -957,15 +599,9 @@ fn parse_session_config(table: &toml::map::Map<String, toml::Value>) -> crate::e
     }
     if let Some(same_site) = table.get("same_site").and_then(|v| v.as_str()) {
         config.same_site = match same_site {
-            "Strict" => SameSitePolicy::Strict,
-            "Lax" => SameSitePolicy::Lax,
-            "None" => SameSitePolicy::None,
-            _ => SameSitePolicy::Lax,
-        };
     }
     if let Some(store_type) = table.get("store_type").and_then(|v| v.as_str()) {
         config.store_type = match store_type {
-            "Memory" => SessionStoreType::Memory,
             s if s.starts_with("File(") => {
                 let path = s.trim_start_matches("File(").trim_end_matches(")");
                 SessionStoreType::File(PathBuf::from(path))
@@ -978,8 +614,6 @@ fn parse_session_config(table: &toml::map::Map<String, toml::Value>) -> crate::e
                 let conn = s.trim_start_matches("Database(").trim_end_matches(")");
                 SessionStoreType::Database(conn.to_string())
             }
-            _ => SessionStoreType::Memory,
-        };
     }
     if let Some(interval) = table.get("cleanup_interval").and_then(|v| v.as_integer()) {
         config.cleanup_interval = Duration::from_secs(interval as u64);
@@ -989,11 +623,7 @@ fn parse_session_config(table: &toml::map::Map<String, toml::Value>) -> crate::e
     }
     if let Some(timeout) = table.get("session_timeout").and_then(|v| v.as_integer()) {
         config.session_timeout = Duration::from_secs(timeout as u64);
-    }
-    
     Ok(config)
-}
-
 fn parse_template_config(table: &toml::map::Map<String, toml::Value>) -> crate::error::Result<()> {
     let mut config = TemplateConfig::default();
     
@@ -1015,11 +645,7 @@ fn parse_template_config(table: &toml::map::Map<String, toml::Value>) -> crate::
                 config.custom_filters.insert(key.clone(), filter_value.to_string());
             }
         }
-    }
-    
     Ok(config)
-}
-
 fn parse_static_file_config(table: &toml::map::Map<String, toml::Value>) -> crate::error::Result<()> {
     let mut config = StaticFileConfig::default();
     
@@ -1046,11 +672,7 @@ fn parse_static_file_config(table: &toml::map::Map<String, toml::Value>) -> crat
             .filter_map(|v| v.as_str())
             .map(|s| s.to_string())
             .collect();
-    }
-    
     Ok(config)
-}
-
 fn parse_logging_config(table: &toml::map::Map<String, toml::Value>) -> crate::error::Result<()> {
     let mut config = LoggingConfig::default();
     
@@ -1065,36 +687,20 @@ fn parse_logging_config(table: &toml::map::Map<String, toml::Value>) -> crate::e
     }
     if let Some(level) = table.get("log_level").and_then(|v| v.as_str()) {
         config.log_level = match level {
-            "CursedError" => LogLevel::CursedError,
-            "Warn" => LogLevel::Warn,
-            "Info" => LogLevel::Info,
-            "Debug" => LogLevel::Debug,
-            "Trace" => LogLevel::Trace,
-            _ => LogLevel::Info,
-        };
     }
     if let Some(format) = table.get("log_format").and_then(|v| v.as_str()) {
         config.log_format = match format {
-            "Common" => LogFormat::Common,
-            "Combined" => LogFormat::Combined,
-            "Json" => LogFormat::Json,
             s if s.starts_with("Custom(") => {
                 let custom = s.trim_start_matches("Custom(").trim_end_matches(")");
                 LogFormat::Custom(custom.to_string())
             }
-            _ => LogFormat::Combined,
-        };
     }
     if let Some(path) = table.get("access_log_path").and_then(|v| v.as_str()) {
         config.access_log_path = Some(PathBuf::from(path));
     }
     if let Some(path) = table.get("error_log_path").and_then(|v| v.as_str()) {
         config.error_log_path = Some(PathBuf::from(path));
-    }
-    
     Ok(config)
-}
-
 fn parse_development_config(table: &toml::map::Map<String, toml::Value>) -> crate::error::Result<()> {
     let mut config = DevelopmentConfig::default();
     
@@ -1115,11 +721,7 @@ fn parse_development_config(table: &toml::map::Map<String, toml::Value>) -> crat
     }
     if let Some(endpoint) = table.get("debug_endpoint").and_then(|v| v.as_str()) {
         config.debug_endpoint = Some(endpoint.to_string());
-    }
-    
     Ok(config)
-}
-
 // Enhanced parsing functions with comprehensive validation
 
 fn parse_server_config_enhanced(table: &toml::map::Map<String, toml::Value>) -> crate::error::Result<()> {
@@ -1127,95 +729,48 @@ fn parse_server_config_enhanced(table: &toml::map::Map<String, toml::Value>) -> 
     
     if let Some(host) = table.get("host").and_then(|v| v.as_str()) {
         config.host = host.to_string();
-    }
-    
     if let Some(port) = table.get("port") {
         match port.as_integer() {
             Some(p) => {
                 if p < 1 || p > 65535 {
                     return Err(ConfigError::InvalidValue {
-                        field: "server.port".to_string(),
-                        value: p.to_string(),
-                        reason: "Port must be between 1 and 65535".to_string(),
                     });
                 }
                 config.port = p as u16;
             }
             None => return Err(ConfigError::InvalidValue {
-                field: "server.port".to_string(),
-                value: format!("{:?}", port),
-                reason: "Port must be a number".to_string(),
-            }),
         }
     }
     
     if let Some(max_conn) = table.get("max_connections") {
         match max_conn.as_integer() {
-            Some(mc) if mc > 0 => config.max_connections = mc as usize,
             Some(mc) => return Err(ConfigError::InvalidValue {
-                field: "server.max_connections".to_string(),
-                value: mc.to_string(),
-                reason: "Max connections must be greater than 0".to_string(),
-            }),
             None => return Err(ConfigError::InvalidValue {
-                field: "server.max_connections".to_string(),
-                value: format!("{:?}", max_conn),
-                reason: "Max connections must be a number".to_string(),
-            }),
         }
     }
     
     if let Some(timeout) = table.get("request_timeout") {
         match timeout.as_integer() {
-            Some(t) if t > 0 => config.request_timeout = Duration::from_secs(t as u64),
             Some(t) => return Err(ConfigError::InvalidValue {
-                field: "server.request_timeout".to_string(),
-                value: t.to_string(),
-                reason: "Request timeout must be greater than 0".to_string(),
-            }),
             None => return Err(ConfigError::InvalidValue {
-                field: "server.request_timeout".to_string(),
-                value: format!("{:?}", timeout),
-                reason: "Request timeout must be a number".to_string(),
-            }),
         }
     }
     
     if let Some(size) = table.get("max_header_size") {
         match size.as_integer() {
-            Some(s) if s >= 1024 => config.max_header_size = s as usize,
             Some(s) => return Err(ConfigError::InvalidValue {
-                field: "server.max_header_size".to_string(),
-                value: s.to_string(),
-                reason: "Max header size must be at least 1024 bytes".to_string(),
-            }),
             None => return Err(ConfigError::InvalidValue {
-                field: "server.max_header_size".to_string(),
-                value: format!("{:?}", size),
-                reason: "Max header size must be a number".to_string(),
-            }),
         }
     }
     
     if let Some(size) = table.get("max_body_size") {
         match size.as_integer() {
-            Some(s) if s >= 1024 => config.max_body_size = s as usize,
             Some(s) => return Err(ConfigError::InvalidValue {
-                field: "server.max_body_size".to_string(),
-                value: s.to_string(),
-                reason: "Max body size must be at least 1024 bytes".to_string(),
-            }),
             None => return Err(ConfigError::InvalidValue {
-                field: "server.max_body_size".to_string(),
-                value: format!("{:?}", size),
-                reason: "Max body size must be a number".to_string(),
-            }),
         }
     }
     
     Ok(config)
-}
-
 fn parse_security_config_enhanced(table: &toml::map::Map<String, toml::Value>) -> crate::error::Result<()> {
     let mut config = SecurityConfig::default();
     
@@ -1227,14 +782,9 @@ fn parse_security_config_enhanced(table: &toml::map::Map<String, toml::Value>) -
         }
         if secret.len() < 32 {
             return Err(ConfigError::InvalidValue {
-                field: "security.csrf_secret".to_string(),
-                value: "[REDACTED]".to_string(),
-                reason: "CSRF secret must be at least 32 characters".to_string(),
             });
         }
         config.csrf_secret = secret.to_string();
-    }
-    
     if let Some(secret) = table.get("session_secret").and_then(|v| v.as_str()) {
         if secret == "changeme" {
             return Err(ConfigError::ValidationError(
@@ -1243,14 +793,9 @@ fn parse_security_config_enhanced(table: &toml::map::Map<String, toml::Value>) -
         }
         if secret.len() < 32 {
             return Err(ConfigError::InvalidValue {
-                field: "security.session_secret".to_string(),
-                value: "[REDACTED]".to_string(),
-                reason: "Session secret must be at least 32 characters".to_string(),
             });
         }
         config.session_secret = secret.to_string();
-    }
-    
     if let Some(enable) = table.get("enable_xss_protection").and_then(|v| v.as_bool()) {
         config.enable_xss_protection = enable;
     }
@@ -1271,63 +816,30 @@ fn parse_security_config_enhanced(table: &toml::map::Map<String, toml::Value>) -
     }
     if let Some(enable) = table.get("enable_secure_headers").and_then(|v| v.as_bool()) {
         config.enable_secure_headers = enable;
-    }
-    
     Ok(config)
-}
-
 fn parse_performance_config_enhanced(table: &toml::map::Map<String, toml::Value>) -> crate::error::Result<()> {
     let mut config = PerformanceConfig::default();
     
     if let Some(enable) = table.get("enable_compression").and_then(|v| v.as_bool()) {
         config.enable_compression = enable;
-    }
-    
     if let Some(level) = table.get("compression_level") {
         match level.as_integer() {
-            Some(l) if l >= 0 && l <= 9 => config.compression_level = l as u8,
             Some(l) => return Err(ConfigError::InvalidValue {
-                field: "performance.compression_level".to_string(),
-                value: l.to_string(),
-                reason: "Compression level must be between 0 and 9".to_string(),
-            }),
             None => return Err(ConfigError::InvalidValue {
-                field: "performance.compression_level".to_string(),
-                value: format!("{:?}", level),
-                reason: "Compression level must be a number".to_string(),
-            }),
         }
     }
     
     if let Some(threshold) = table.get("compression_threshold") {
         match threshold.as_integer() {
-            Some(t) if t > 0 => config.compression_threshold = t as usize,
             Some(t) => return Err(ConfigError::InvalidValue {
-                field: "performance.compression_threshold".to_string(),
-                value: t.to_string(),
-                reason: "Compression threshold must be greater than 0".to_string(),
-            }),
             None => return Err(ConfigError::InvalidValue {
-                field: "performance.compression_threshold".to_string(),
-                value: format!("{:?}", threshold),
-                reason: "Compression threshold must be a number".to_string(),
-            }),
         }
     }
     
     if let Some(pool_size) = table.get("connection_pool_size") {
         match pool_size.as_integer() {
-            Some(ps) if ps > 0 => config.connection_pool_size = ps as usize,
             Some(ps) => return Err(ConfigError::InvalidValue {
-                field: "performance.connection_pool_size".to_string(),
-                value: ps.to_string(),
-                reason: "Connection pool size must be greater than 0".to_string(),
-            }),
             None => return Err(ConfigError::InvalidValue {
-                field: "performance.connection_pool_size".to_string(),
-                value: format!("{:?}", pool_size),
-                reason: "Connection pool size must be a number".to_string(),
-            }),
         }
     }
     
@@ -1342,38 +854,20 @@ fn parse_performance_config_enhanced(table: &toml::map::Map<String, toml::Value>
     }
     if let Some(max_age) = table.get("cache_max_age").and_then(|v| v.as_integer()) {
         config.cache_max_age = Duration::from_secs(max_age as u64);
-    }
-    
     Ok(config)
-}
-
 fn parse_session_config_enhanced(table: &toml::map::Map<String, toml::Value>) -> crate::error::Result<()> {
     let mut config = SessionConfig::default();
     
     if let Some(name) = table.get("cookie_name").and_then(|v| v.as_str()) {
         if name.is_empty() {
             return Err(ConfigError::InvalidValue {
-                field: "session.cookie_name".to_string(),
-                value: "".to_string(),
-                reason: "Cookie name cannot be empty".to_string(),
             });
         }
         config.cookie_name = name.to_string();
-    }
-    
     if let Some(max_age) = table.get("max_age") {
         match max_age.as_integer() {
-            Some(ma) if ma > 0 => config.max_age = Duration::from_secs(ma as u64),
             Some(ma) => return Err(ConfigError::InvalidValue {
-                field: "session.max_age".to_string(),
-                value: ma.to_string(),
-                reason: "Session max age must be greater than 0".to_string(),
-            }),
             None => return Err(ConfigError::InvalidValue {
-                field: "session.max_age".to_string(),
-                value: format!("{:?}", max_age),
-                reason: "Session max age must be a number".to_string(),
-            }),
         }
     }
     
@@ -1385,19 +879,10 @@ fn parse_session_config_enhanced(table: &toml::map::Map<String, toml::Value>) ->
     }
     if let Some(same_site) = table.get("same_site").and_then(|v| v.as_str()) {
         config.same_site = match same_site {
-            "Strict" => SameSitePolicy::Strict,
-            "Lax" => SameSitePolicy::Lax,
-            "None" => SameSitePolicy::None,
             _ => return Err(ConfigError::InvalidValue {
-                field: "session.same_site".to_string(),
-                value: same_site.to_string(),
-                reason: "Same site policy must be 'Strict', 'Lax', or 'None'".to_string(),
-            }),
-        };
     }
     if let Some(store_type) = table.get("store_type").and_then(|v| v.as_str()) {
         config.store_type = match store_type {
-            "Memory" => SessionStoreType::Memory,
             s if s.starts_with("File(") => {
                 let path = s.trim_start_matches("File(").trim_end_matches(")");
                 SessionStoreType::File(PathBuf::from(path))
@@ -1411,19 +896,10 @@ fn parse_session_config_enhanced(table: &toml::map::Map<String, toml::Value>) ->
                 SessionStoreType::Database(conn.to_string())
             }
             _ => return Err(ConfigError::InvalidValue {
-                field: "session.store_type".to_string(),
-                value: store_type.to_string(),
-                reason: "Invalid session store type".to_string(),
-            }),
-        };
     }
     if let Some(interval) = table.get("cleanup_interval").and_then(|v| v.as_integer()) {
         config.cleanup_interval = Duration::from_secs(interval as u64);
-    }
-    
     Ok(config)
-}
-
 fn parse_template_config_enhanced(table: &toml::map::Map<String, toml::Value>) -> crate::error::Result<()> {
     let mut config = TemplateConfig::default();
     
@@ -1439,9 +915,6 @@ fn parse_template_config_enhanced(table: &toml::map::Map<String, toml::Value>) -
     if let Some(ext) = table.get("template_extension").and_then(|v| v.as_str()) {
         if !ext.starts_with('.') {
             return Err(ConfigError::InvalidValue {
-                field: "template.template_extension".to_string(),
-                value: ext.to_string(),
-                reason: "Template extension must start with '.'".to_string(),
             });
         }
         config.template_extension = ext.to_string();
@@ -1452,11 +925,7 @@ fn parse_template_config_enhanced(table: &toml::map::Map<String, toml::Value>) -
                 config.custom_filters.insert(key.clone(), filter_value.to_string());
             }
         }
-    }
-    
     Ok(config)
-}
-
 fn parse_static_file_config_enhanced(table: &toml::map::Map<String, toml::Value>) -> crate::error::Result<()> {
     let mut config = StaticFileConfig::default();
     
@@ -1490,11 +959,7 @@ fn parse_static_file_config_enhanced(table: &toml::map::Map<String, toml::Value>
             })
             .collect();
         config.allowed_extensions = exts;
-    }
-    
     Ok(config)
-}
-
 fn parse_logging_config_enhanced(table: &toml::map::Map<String, toml::Value>) -> crate::error::Result<()> {
     let mut config = LoggingConfig::default();
     
@@ -1509,44 +974,22 @@ fn parse_logging_config_enhanced(table: &toml::map::Map<String, toml::Value>) ->
     }
     if let Some(level) = table.get("log_level").and_then(|v| v.as_str()) {
         config.log_level = match level {
-            "CursedError" => LogLevel::CursedError,
-            "Warn" => LogLevel::Warn,
-            "Info" => LogLevel::Info,
-            "Debug" => LogLevel::Debug,
-            "Trace" => LogLevel::Trace,
             _ => return Err(ConfigError::InvalidValue {
-                field: "logging.log_level".to_string(),
-                value: level.to_string(),
-                reason: "Log level must be 'CursedError', 'Warn', 'Info', 'Debug', or 'Trace'".to_string(),
-            }),
-        };
     }
     if let Some(format) = table.get("log_format").and_then(|v| v.as_str()) {
         config.log_format = match format {
-            "Common" => LogFormat::Common,
-            "Combined" => LogFormat::Combined,
-            "Json" => LogFormat::Json,
             s if s.starts_with("Custom(") => {
                 let custom = s.trim_start_matches("Custom(").trim_end_matches(")");
                 LogFormat::Custom(custom.to_string())
             }
             _ => return Err(ConfigError::InvalidValue {
-                field: "logging.log_format".to_string(),
-                value: format.to_string(),
-                reason: "Log format must be 'Common', 'Combined', 'Json', or 'Custom(...)'".to_string(),
-            }),
-        };
     }
     if let Some(path) = table.get("access_log_path").and_then(|v| v.as_str()) {
         config.access_log_path = Some(PathBuf::from(path));
     }
     if let Some(path) = table.get("error_log_path").and_then(|v| v.as_str()) {
         config.error_log_path = Some(PathBuf::from(path));
-    }
-    
     Ok(config)
-}
-
 fn parse_development_config_enhanced(table: &toml::map::Map<String, toml::Value>) -> crate::error::Result<()> {
     let mut config = DevelopmentConfig::default();
     
@@ -1562,8 +1005,6 @@ fn parse_development_config_enhanced(table: &toml::map::Map<String, toml::Value>
     if let Some(endpoint) = table.get("metrics_endpoint").and_then(|v| v.as_str()) {
         if !endpoint.starts_with('/') {
             return Err(ConfigError::InvalidValue {
-                field: "development.metrics_endpoint".to_string(),
-                value: endpoint.to_string(),
                 reason: "Endpoint must start with '/'".to_string(),
             });
         }
@@ -1572,8 +1013,6 @@ fn parse_development_config_enhanced(table: &toml::map::Map<String, toml::Value>
     if let Some(endpoint) = table.get("health_check_endpoint").and_then(|v| v.as_str()) {
         if !endpoint.starts_with('/') {
             return Err(ConfigError::InvalidValue {
-                field: "development.health_check_endpoint".to_string(),
-                value: endpoint.to_string(),
                 reason: "Endpoint must start with '/'".to_string(),
             });
         }
@@ -1582,13 +1021,9 @@ fn parse_development_config_enhanced(table: &toml::map::Map<String, toml::Value>
     if let Some(endpoint) = table.get("debug_endpoint").and_then(|v| v.as_str()) {
         if !endpoint.starts_with('/') {
             return Err(ConfigError::InvalidValue {
-                field: "development.debug_endpoint".to_string(),
-                value: endpoint.to_string(),
                 reason: "Endpoint must start with '/'".to_string(),
             });
         }
         config.debug_endpoint = Some(endpoint.to_string());
-    }
-    
     Ok(config)
 }

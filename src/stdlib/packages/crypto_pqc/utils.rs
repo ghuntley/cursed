@@ -6,18 +6,10 @@ use std::fmt;
 /// Polynomial ring element for lattice-based cryptography
 #[derive(Debug, Clone, PartialEq)]
 pub struct Polynomial {
-    pub coefficients: Vec<i32>,
-    pub modulus: i32,
-    pub degree: usize,
-}
-
 impl Polynomial {
     /// Create new polynomial with given degree and modulus
     pub fn new(degree: usize, modulus: i32) -> Self {
         Self {
-            coefficients: vec![0; degree],
-            modulus,
-            degree,
         }
     }
     
@@ -25,9 +17,6 @@ impl Polynomial {
     pub fn from_coefficients(coefficients: Vec<i32>, modulus: i32) -> Self {
         let degree = coefficients.len();
         Self {
-            coefficients,
-            modulus,
-            degree,
         }
     }
     
@@ -38,9 +27,6 @@ impl Polynomial {
             .collect();
         
         Self {
-            coefficients,
-            modulus,
-            degree,
         }
     }
     
@@ -48,8 +34,6 @@ impl Polynomial {
     pub fn add(&self, other: &Polynomial) -> AdvancedCryptoResult<Polynomial> {
         if self.degree != other.degree || self.modulus != other.modulus {
             return Err(CursedError::InvalidInput("Polynomial dimensions mismatch".to_string()));
-        }
-        
         let result_coeffs: Vec<i32> = self.coefficients
             .iter()
             .zip(other.coefficients.iter())
@@ -57,14 +41,10 @@ impl Polynomial {
             .collect();
         
         Ok(Polynomial::from_coefficients(result_coeffs, self.modulus))
-    }
-    
     /// Subtract two polynomials
     pub fn subtract(&self, other: &Polynomial) -> AdvancedCryptoResult<Polynomial> {
         if self.degree != other.degree || self.modulus != other.modulus {
             return Err(CursedError::InvalidInput("Polynomial dimensions mismatch".to_string()));
-        }
-        
         let result_coeffs: Vec<i32> = self.coefficients
             .iter()
             .zip(other.coefficients.iter())
@@ -72,8 +52,6 @@ impl Polynomial {
             .collect();
         
         Ok(Polynomial::from_coefficients(result_coeffs, self.modulus))
-    }
-    
     /// Multiply polynomial by scalar
     pub fn scalar_multiply(&self, scalar: i32) -> Polynomial {
         let result_coeffs: Vec<i32> = self.coefficients
@@ -82,14 +60,10 @@ impl Polynomial {
             .collect();
         
         Polynomial::from_coefficients(result_coeffs, self.modulus)
-    }
-    
     /// Polynomial multiplication (convolution)
     pub fn multiply(&self, other: &Polynomial) -> AdvancedCryptoResult<Polynomial> {
         if self.modulus != other.modulus {
             return Err(CursedError::InvalidInput("Polynomial modulus mismatch".to_string()));
-        }
-        
         let result_degree = self.degree.max(other.degree);
         let mut result_coeffs = vec![0; result_degree];
         
@@ -101,8 +75,6 @@ impl Polynomial {
         }
         
         Ok(Polynomial::from_coefficients(result_coeffs, self.modulus))
-    }
-    
     /// Apply centered reduction
     pub fn centered_reduce(&mut self) {
         for coeff in &mut self.coefficients {
@@ -118,8 +90,6 @@ impl Polynomial {
             .sum();
         
         (sum_squares as f64).sqrt()
-    }
-    
     /// Get infinity norm of polynomial
     pub fn infinity_norm(&self) -> i32 {
         self.coefficients
@@ -127,8 +97,6 @@ impl Polynomial {
             .map(|&c| c.abs())
             .max()
             .unwrap_or(0)
-    }
-    
     /// Serialize polynomial to bytes
     pub fn to_bytes(&self) -> Vec<u8> {
         let mut bytes = Vec::new();
@@ -140,37 +108,23 @@ impl Polynomial {
         // Add coefficients (4 bytes each)
         for &coeff in &self.coefficients {
             bytes.extend_from_slice(&(coeff as u32).to_be_bytes());
-        }
-        
         bytes
-    }
-    
     /// Deserialize polynomial from bytes
     pub fn from_bytes(bytes: &[u8]) -> AdvancedCryptoResult<Polynomial> {
         if bytes.len() < 8 {
             return Err(CursedError::InvalidInput("Invalid polynomial data: too short".to_string()));
-        }
-        
         let degree = u32::from_be_bytes([bytes[0], bytes[1], bytes[2], bytes[3]]) as usize;
         let modulus = u32::from_be_bytes([bytes[4], bytes[5], bytes[6], bytes[7]]) as i32;
         
         let expected_len = 8 + degree * 4;
         if bytes.len() != expected_len {
             return Err(CursedError::InvalidInput("Invalid polynomial data: wrong length".to_string()));
-        }
-        
         let mut coefficients = Vec::new();
         for i in 0..degree {
             let offset = 8 + i * 4;
             let coeff = u32::from_be_bytes([
-                bytes[offset],
-                bytes[offset + 1],
-                bytes[offset + 2],
-                bytes[offset + 3],
             ]) as i32;
             coefficients.push(coeff);
-        }
-        
         Ok(Polynomial::from_coefficients(coefficients, modulus))
     }
 }
@@ -193,20 +147,10 @@ impl fmt::Display for Polynomial {
 /// Matrix operations for lattice-based cryptography
 #[derive(Debug, Clone)]
 pub struct Matrix {
-    pub data: Vec<Vec<i32>>,
-    pub rows: usize,
-    pub cols: usize,
-    pub modulus: i32,
-}
-
 impl Matrix {
     /// Create new matrix
     pub fn new(rows: usize, cols: usize, modulus: i32) -> Self {
         Self {
-            data: vec![vec![0; cols]; rows],
-            rows,
-            cols,
-            modulus,
         }
     }
     
@@ -226,14 +170,10 @@ impl Matrix {
             matrix.data[i][i] = 1;
         }
         matrix
-    }
-    
     /// Matrix-vector multiplication
     pub fn multiply_vector(&self, vector: &[i32]) -> AdvancedCryptoResult<Vec<i32>> {
         if vector.len() != self.cols {
             return Err(CursedError::InvalidInput("Vector dimension mismatch".to_string()));
-        }
-        
         let mut result = vec![0; self.rows];
         for i in 0..self.rows {
             for j in 0..self.cols {
@@ -242,14 +182,10 @@ impl Matrix {
         }
         
         Ok(result)
-    }
-    
     /// Matrix multiplication
     pub fn multiply_matrix(&self, other: &Matrix) -> AdvancedCryptoResult<Matrix> {
         if self.cols != other.rows || self.modulus != other.modulus {
             return Err(CursedError::InvalidInput("Matrix dimensions or modulus mismatch".to_string()));
-        }
-        
         let mut result = Matrix::new(self.rows, other.cols, self.modulus);
         
         for i in 0..self.rows {
@@ -258,17 +194,11 @@ impl Matrix {
                     result.data[i][j] = (result.data[i][j] + self.data[i][k] * other.data[k][j]) % self.modulus;
                 }
             }
-        }
-        
         Ok(result)
-    }
-    
     /// Add matrices
     pub fn add(&self, other: &Matrix) -> AdvancedCryptoResult<Matrix> {
         if self.rows != other.rows || self.cols != other.cols || self.modulus != other.modulus {
             return Err(CursedError::InvalidInput("Matrix dimensions mismatch".to_string()));
-        }
-        
         let mut result = Matrix::new(self.rows, self.cols, self.modulus);
         for i in 0..self.rows {
             for j in 0..self.cols {
@@ -277,8 +207,6 @@ impl Matrix {
         }
         
         Ok(result)
-    }
-    
     /// Transpose matrix
     pub fn transpose(&self) -> Matrix {
         let mut result = Matrix::new(self.cols, self.rows, self.modulus);
@@ -288,16 +216,12 @@ impl Matrix {
             }
         }
         result
-    }
-    
     /// Get matrix element
     pub fn get(&self, row: usize, col: usize) -> AdvancedCryptoResult<i32> {
         if row >= self.rows || col >= self.cols {
             return Err(CursedError::InvalidInput("Matrix index out of bounds".to_string()));
         }
         Ok(self.data[row][col])
-    }
-    
     /// Set matrix element
     pub fn set(&mut self, row: usize, col: usize, value: i32) -> AdvancedCryptoResult<()> {
         if row >= self.rows || col >= self.cols {
@@ -310,23 +234,12 @@ impl Matrix {
 
 /// Gaussian sampling for lattice-based cryptography
 pub struct GaussianSampler {
-    sigma: f64,
-    precision: usize,
-    table: Vec<f64>,
-}
-
 impl GaussianSampler {
     /// Create new Gaussian sampler
     pub fn new(sigma: f64, precision: usize) -> Self {
         let mut sampler = Self {
-            sigma,
-            precision,
-            table: Vec::new(),
-        };
         sampler.precompute_table();
         sampler
-    }
-    
     /// Precompute probability table for rejection sampling
     fn precompute_table(&mut self) {
         let range = (6.0 * self.sigma) as i32;
@@ -362,8 +275,6 @@ impl GaussianSampler {
     /// Sample vector from discrete Gaussian
     pub fn sample_vector(&self, length: usize) -> Vec<i32> {
         (0..length).map(|_| self.sample()).collect()
-    }
-    
     /// Sample polynomial with Gaussian coefficients
     pub fn sample_polynomial(&self, degree: usize, modulus: i32) -> Polynomial {
         let coefficients = self.sample_vector(degree);
@@ -378,9 +289,6 @@ impl GaussianSampler {
 
 /// Rejection sampling utilities
 pub struct RejectionSampler {
-    max_iterations: usize,
-}
-
 impl RejectionSampler {
     /// Create new rejection sampler
     pub fn new(max_iterations: usize) -> Self {
@@ -390,7 +298,6 @@ impl RejectionSampler {
     /// Sample with rejection based on predicate
     pub fn sample_with_condition<F, T>(&self, generator: F, condition: fn(&T) -> bool) -> Option<T>
     where
-        F: Fn() -> T,
     {
         for _ in 0..self.max_iterations {
             let sample = generator();
@@ -399,33 +306,21 @@ impl RejectionSampler {
             }
         }
         None
-    }
-    
     /// Sample uniform integer in range [min, max)
     pub fn uniform_int(&self, min: i32, max: i32) -> i32 {
         fastrand::i32(min..max)
-    }
-    
     /// Sample uniform vector
     pub fn uniform_vector(&self, length: usize, min: i32, max: i32) -> Vec<i32> {
         (0..length).map(|_| self.uniform_int(min, max)).collect()
-    }
-    
     /// Sample ternary vector (coefficients in {-1, 0, 1})
     pub fn ternary_vector(&self, length: usize) -> Vec<i32> {
         (0..length).map(|_| self.uniform_int(-1, 2)).collect()
-    }
-    
     /// Sample binary vector (coefficients in {0, 1})
     pub fn binary_vector(&self, length: usize) -> Vec<i32> {
         (0..length).map(|_| self.uniform_int(0, 2)).collect()
-    }
-    
     /// Sample with Hamming weight constraint
     pub fn hamming_weight_vector(&self, length: usize, target_weight: usize) -> Option<Vec<i32>> {
         self.sample_with_condition(
-            || self.ternary_vector(length),
-            |v| v.iter().filter(|&&x| x != 0).count() == target_weight,
         )
     }
 }
@@ -434,8 +329,6 @@ impl RejectionSampler {
 pub trait SecureZeroize {
     /// Securely zeroize memory
     fn secure_zeroize(&mut self);
-}
-
 impl SecureZeroize for Vec<u8> {
     fn secure_zeroize(&mut self) {
         // Use volatile operations to prevent compiler optimization
@@ -489,8 +382,6 @@ impl SecureZeroize for Matrix {
             row.secure_zeroize();
         }
     }
-}
-
 /// Secure memory allocation utilities
 pub struct SecureMemory;
 
@@ -498,45 +389,30 @@ impl SecureMemory {
     /// Allocate secure memory that will be zeroized on drop
     pub fn allocate_secure_vec(size: usize) -> SecureVec<u8> {
         SecureVec {
-            data: vec![0u8; size],
         }
     }
     
     /// Allocate secure integer vector
     pub fn allocate_secure_int_vec(size: usize) -> SecureVec<i32> {
         SecureVec {
-            data: vec![0i32; size],
         }
     }
-}
-
 /// Secure vector that zeroizes on drop
 pub struct SecureVec<T>
 where
-    T: SecureZeroize,
 {
-    data: Vec<T>,
-}
-
 impl<T> SecureVec<T>
 where
-    T: SecureZeroize,
 {
     /// Get reference to data
     pub fn as_slice(&self) -> &[T] {
         &self.data
-    }
-    
     /// Get mutable reference to data
     pub fn as_mut_slice(&mut self) -> &mut [T] {
         &mut self.data
-    }
-    
     /// Get length
     pub fn len(&self) -> usize {
         self.data.len()
-    }
-    
     /// Check if empty
     pub fn is_empty(&self) -> bool {
         self.data.is_empty()
@@ -545,7 +421,6 @@ where
 
 impl<T> Drop for SecureVec<T>
 where
-T: SecureZeroize,
 {
     fn drop(&mut self) {
         self.data.secure_zeroize();
@@ -592,8 +467,6 @@ pub fn mod_inverse(a: i32, m: i32) -> Option<i32> {
         let temp_s = s;
         s = old_s - quotient * s;
         old_s = temp_s;
-    }
-    
     if old_r > 1 {
         None // No inverse exists
     } else {
@@ -603,8 +476,6 @@ pub fn mod_inverse(a: i32, m: i32) -> Option<i32> {
 
 /// Fast modular exponentiation
 pub fn mod_pow(base: i64, exp: i64, modulus: i64) -> i64 {
-    if modulus == 1 { return 0; }
-    
     let mut result = 1;
     let mut base = base % modulus;
     let mut exp = exp;
@@ -615,39 +486,18 @@ pub fn mod_pow(base: i64, exp: i64, modulus: i64) -> i64 {
         }
         exp >>= 1;
         base = (base * base) % modulus;
-    }
-    
     result
-}
-
 /// Number theoretic transform (NTT) for fast polynomial multiplication
 pub struct NumberTheoreticTransform {
-    pub modulus: i32,
-    pub primitive_root: i32,
-    pub n: usize,
-    pub roots: Vec<i32>,
-    pub inv_roots: Vec<i32>,
-}
-
 impl NumberTheoreticTransform {
     /// Create NTT for given parameters
     pub fn new(n: usize, modulus: i32, primitive_root: i32) -> AdvancedCryptoResult<Self> {
         if !is_power_of_two(n) {
             return Err(CursedError::InvalidInput("N must be power of 2".to_string()));
-        }
-        
         let mut ntt = Self {
-            modulus,
-            primitive_root,
-            n,
-            roots: Vec::new(),
-            inv_roots: Vec::new(),
-        };
         
         ntt.precompute_roots()?;
         Ok(ntt)
-    }
-    
     /// Precompute roots of unity
     fn precompute_roots(&mut self) -> AdvancedCryptoResult<()> {
         self.roots = vec![1; self.n];
@@ -660,17 +510,11 @@ impl NumberTheoreticTransform {
         for i in 1..self.n {
             self.roots[i] = (self.roots[i-1] as i64 * root as i64 % self.modulus as i64) as i32;
             self.inv_roots[i] = (self.inv_roots[i-1] as i64 * inv_root as i64 % self.modulus as i64) as i32;
-        }
-        
         Ok(())
-    }
-    
     /// Forward NTT
     pub fn forward_ntt(&self, input: &mut [i32]) -> AdvancedCryptoResult<()> {
         if input.len() != self.n {
             return Err(CursedError::InvalidInput("Input length mismatch".to_string()));
-        }
-        
         // Bit-reverse permutation
         bit_reverse_permute(input);
         
@@ -687,17 +531,11 @@ impl NumberTheoreticTransform {
                 }
             }
             len *= 2;
-        }
-        
         Ok(())
-    }
-    
     /// Inverse NTT
     pub fn inverse_ntt(&self, input: &mut [i32]) -> AdvancedCryptoResult<()> {
         if input.len() != self.n {
             return Err(CursedError::InvalidInput("Input length mismatch".to_string()));
-        }
-        
         // Bit-reverse permutation
         bit_reverse_permute(input);
         
@@ -714,25 +552,17 @@ impl NumberTheoreticTransform {
                 }
             }
             len *= 2;
-        }
-        
         // Scale by inverse of n
         let n_inv = mod_inverse(self.n as i32, self.modulus)
             .ok_or_else(|| CursedError::InvalidInput("No modular inverse for n".to_string()))?;
         
         for element in input.iter_mut() {
             *element = (*element as i64 * n_inv as i64 % self.modulus as i64) as i32;
-        }
-        
         Ok(())
-    }
-    
     /// Fast polynomial multiplication using NTT
     pub fn multiply_polynomials(&self, a: &[i32], b: &[i32]) -> AdvancedCryptoResult<Vec<i32>> {
         if a.len() + b.len() - 1 > self.n {
             return Err(CursedError::InvalidInput("Result would exceed NTT size".to_string()));
-        }
-        
         let mut a_padded = vec![0; self.n];
         let mut b_padded = vec![0; self.n];
         
@@ -745,8 +575,6 @@ impl NumberTheoreticTransform {
         // Pointwise multiplication
         for i in 0..self.n {
             a_padded[i] = (a_padded[i] as i64 * b_padded[i] as i64 % self.modulus as i64) as i32;
-        }
-        
         self.inverse_ntt(&mut a_padded)?;
         
         // Trim result to appropriate size
@@ -760,8 +588,6 @@ impl NumberTheoreticTransform {
 /// Helper functions
 fn is_power_of_two(n: usize) -> bool {
     n > 0 && (n & (n - 1)) == 0
-}
-
 fn bit_reverse_permute(input: &mut [i32]) {
     let n = input.len();
     let mut j = 0;
@@ -778,5 +604,3 @@ fn bit_reverse_permute(input: &mut [i32]) {
             input.swap(i, j);
         }
     }
-}
-

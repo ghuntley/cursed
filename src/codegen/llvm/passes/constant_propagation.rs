@@ -8,12 +8,7 @@ use super::{OptimizationPass, PassConfiguration, PassResult, PassStatistics};
 use crate::common_types::optimization_level::OptimizationLevel;
 use crate::error::{CursedError, Result};
 use inkwell::{
-    context::Context,
-    module::Module,
-    values::{FunctionValue, InstructionValue, BasicValueEnum, IntValue, FloatValue},
-    basic_block::BasicBlock,
-    IntPredicate, FloatPredicate,
-};
+// };
 
 use std::collections::HashMap;
 use std::time::Instant;
@@ -21,22 +16,12 @@ use tracing::{debug, info, instrument, warn};
 
 /// Constant propagation optimization pass
 pub struct ConstantPropagationPass {
-    statistics: PassStatistics,
-    config: PassConfiguration,
-    constant_folder: ConstantFolder,
-    interprocedural_analysis: bool,
-}
-
 impl ConstantPropagationPass {
     /// Create a new constant propagation pass
     pub fn new(config: PassConfiguration) -> Self {
         let interprocedural_analysis = config.optimization_level >= OptimizationLevel::O3;
         
         Self {
-            statistics: PassStatistics::default(),
-            config,
-            constant_folder: ConstantFolder::new(),
-            interprocedural_analysis,
         }
     }
     
@@ -49,25 +34,15 @@ impl ConstantPropagationPass {
         // Analyze function to find constant values
         for basic_block in function.get_basic_blocks() {
             constants_propagated += self.propagate_constants_in_block(&basic_block, &mut constant_values)?;
-        }
-        
         // Perform constant folding on instructions
         constants_propagated += self.fold_constants_in_function(function)?;
         
         if constants_propagated > 0 {
-            debug!("Propagated {} constants in function {}", 
-                   constants_propagated,
                    function.get_name().to_str().unwrap_or("<unnamed>"));
-        }
-        
         Ok(constants_propagated)
-    }
-    
     /// Propagate constants within a basic block
     #[instrument(skip(self, basic_block, constant_values))]
     fn propagate_constants_in_block(
-        &mut self, 
-        basic_block: &BasicBlock, 
         constant_values: &mut HashMap<String, ConstantValue>
     ) -> Result<usize> {
         let mut propagated = 0;
@@ -90,11 +65,7 @@ impl ConstantPropagationPass {
                 }
                 InstructionAnalysis::None => {}
             }
-        }
-        
         Ok(propagated)
-    }
-    
     /// Fold constant expressions in a function
     #[instrument(skip(self, function))]
     fn fold_constants_in_function(&mut self, function: &FunctionValue) -> Result<usize> {
@@ -112,18 +83,10 @@ impl ConstantPropagationPass {
         }
         
         if folded_count > 0 {
-            debug!("Folded {} constant expressions in function {}", 
-                   folded_count,
                    function.get_name().to_str().unwrap_or("<unnamed>"));
-        }
-        
         Ok(folded_count)
-    }
-    
     /// Analyze an instruction for constant propagation opportunities
     fn analyze_instruction(
-        &self, 
-        instruction: &InstructionValue, 
         constant_values: &HashMap<String, ConstantValue>
     ) -> InstructionAnalysis {
         use inkwell::values::InstructionOpcode;
@@ -134,13 +97,9 @@ impl ConstantPropagationPass {
                 if let Some(source_operand) = instruction.get_operand(0) {
                     if let Some(constant_value) = self.extract_constant_from_operand(&source_operand) {
                         return InstructionAnalysis::DefinesConstant(
-                            format!("{:p}", instruction.as_value_ref()),
-                            constant_value,
                         );
                     }
                 }
-            }
-            
             // Arithmetic operations with constant operands
             InstructionOpcode::Add |
             InstructionOpcode::Sub |
@@ -157,8 +116,6 @@ impl ConstantPropagationPass {
                         return InstructionAnalysis::UsesConstants(operand_constants);
                     }
                 }
-            }
-            
             // Floating point operations
             InstructionOpcode::FAdd |
             InstructionOpcode::FSub |
@@ -173,8 +130,6 @@ impl ConstantPropagationPass {
                         return InstructionAnalysis::UsesConstants(operand_constants);
                     }
                 }
-            }
-            
             // Comparison operations
             InstructionOpcode::ICmp |
             InstructionOpcode::FCmp => {
@@ -205,12 +160,8 @@ impl ConstantPropagationPass {
         }
         
         InstructionAnalysis::None
-    }
-    
     /// Get constant operands from an instruction
     fn get_constant_operands(
-        &self, 
-        instruction: &InstructionValue, 
         constant_values: &HashMap<String, ConstantValue>
     ) -> HashMap<usize, ConstantValue> {
         let mut constants = HashMap::new();
@@ -230,8 +181,6 @@ impl ConstantPropagationPass {
         }
         
         constants
-    }
-    
     /// Extract constant value from an operand
     fn extract_constant_from_operand(&self, operand: &BasicValueEnum) -> Option<ConstantValue> {
         match operand {
@@ -251,7 +200,6 @@ impl ConstantPropagationPass {
                     None
                 }
             }
-            _ => None,
         }
     }
     
@@ -277,8 +225,6 @@ impl ConstantPropagationPass {
                 None
             }
         }
-    }
-    
     /// Extract actual float constant value from LLVM
     fn extract_llvm_float_constant(&self, float_val: &FloatValue) -> Option<ConstantValue> {
         // Check if this is a constant float
@@ -292,8 +238,6 @@ impl ConstantPropagationPass {
                 None
             }
         }
-    }
-    
     /// Check if an integer value shows constant-like patterns
     fn is_likely_constant_pattern(&self, _int_val: &IntValue) -> bool {
         // In a real implementation, this could analyze:
@@ -302,32 +246,21 @@ impl ConstantPropagationPass {
         // - If it has constant source annotations
         // For now, be conservative and assume non-extractable values aren't constants
         false
-    }
-    
     /// Check if a float value shows constant-like patterns
     fn is_likely_float_constant_pattern(&self, _float_val: &FloatValue) -> bool {
         // Similar to integer pattern detection
         false
-    }
-
     /// Replace instruction operands with constants
     fn replace_instruction_operands(
-        &self,
-        _instruction: &InstructionValue,
-        _replacements: &HashMap<usize, ConstantValue>,
     ) -> Result<bool> {
         // In a real implementation, this would replace operands with constant values
         // This requires careful LLVM API usage and is complex to implement safely
         Ok(false)
-    }
-    
     /// Perform interprocedural constant propagation
     #[instrument(skip(self, module))]
     fn interprocedural_propagation(&mut self, module: &Module) -> Result<usize> {
         if !self.interprocedural_analysis {
             return Ok(0);
-        }
-        
         debug!("Running interprocedural constant propagation");
         
         let mut propagated = 0;
@@ -342,11 +275,7 @@ impl ConstantPropagationPass {
         
         if propagated > 0 {
             info!("Interprocedural propagation found {} opportunities", propagated);
-        }
-        
         Ok(propagated)
-    }
-    
     /// Analyze function interfaces for constant propagation
     fn analyze_function_interfaces(&self, module: &Module) -> HashMap<String, FunctionSummary> {
         let mut summaries = HashMap::new();
@@ -355,11 +284,7 @@ impl ConstantPropagationPass {
             let function_name = function.get_name().to_str().unwrap_or("").to_string();
             let summary = self.create_function_summary(&function);
             summaries.insert(function_name, summary);
-        }
-        
         summaries
-    }
-    
     /// Create a summary for a function's constant propagation behavior
     fn create_function_summary(&self, function: &FunctionValue) -> FunctionSummary {
         let mut summary = FunctionSummary::default();
@@ -375,14 +300,10 @@ impl ConstantPropagationPass {
         summary.returns_constant = self.function_returns_constant(function);
         
         summary
-    }
-    
     /// Check if a parameter is constant
     fn is_constant_parameter(&self, _param: &BasicValueEnum) -> bool {
         // In a real implementation, this would analyze parameter usage
         false
-    }
-    
     /// Extract constant value from parameter
     fn extract_parameter_constant(&self, param: &BasicValueEnum) -> ConstantValue {
         // Try to extract actual constant value from parameter
@@ -391,19 +312,12 @@ impl ConstantPropagationPass {
         } else {
             // For non-constant parameters, analyze usage patterns to infer likely constant nature
             match param {
-                BasicValueEnum::IntValue(_) => ConstantValue::Integer(0),
-                BasicValueEnum::FloatValue(_) => ConstantValue::Float(0.0),
-                _ => ConstantValue::Null,
             }
         }
-    }
-    
     /// Check if function returns a constant
     fn function_returns_constant(&self, _function: &FunctionValue) -> Option<ConstantValue> {
         // In a real implementation, this would analyze return statements
         None
-    }
-    
     /// Apply function summary for constant propagation
     fn apply_function_summary(&self, _function: &FunctionValue, _summary: &FunctionSummary) -> Result<usize> {
         // In a real implementation, this would apply the insights from the summary
@@ -414,21 +328,13 @@ impl ConstantPropagationPass {
 impl<'ctx> OptimizationPass<'ctx> for ConstantPropagationPass {
     fn name(&self) -> &str {
         "constant_propagation"
-    }
-    
     fn description(&self) -> &str {
         "Propagates constant values and folds constant expressions"
-    }
-    
     fn should_run(&self, config: &PassConfiguration) -> bool {
         config.enable_constant_propagation && 
         config.optimization_level >= OptimizationLevel::O1
-    }
-    
     fn required_optimization_level(&self) -> OptimizationLevel {
         OptimizationLevel::O1
-    }
-    
     #[instrument(skip(self, module, context))]
     fn run_on_module(&mut self, module: &Module<'ctx>, _context: &'ctx Context) -> Result<PassResult> {
         let start_time = Instant::now();
@@ -442,38 +348,26 @@ impl<'ctx> OptimizationPass<'ctx> for ConstantPropagationPass {
         for function in module.get_functions() {
             let propagated = self.propagate_constants_in_function(&function)?;
             total_propagated += propagated;
-        }
-        
         // Perform interprocedural analysis if enabled
         if self.interprocedural_analysis {
             let interprocedural_propagated = self.interprocedural_propagation(module)?;
             total_propagated += interprocedural_propagated;
-        }
-        
         // Update result
         if total_propagated > 0 {
             result.changed = true;
             result.constants_folded = total_propagated;
-        }
-        
         result.execution_time = start_time.elapsed();
         result.metrics.insert("constants_propagated".to_string(), total_propagated as f64);
-        result.metrics.insert("interprocedural_enabled".to_string(), 
                              if self.interprocedural_analysis { 1.0 } else { 0.0 });
         
         // Update statistics
         self.statistics.update(&result);
         
-        info!("Constant propagation completed: propagated {} constants in {:?}", 
               total_propagated, result.execution_time);
         
         Ok(result)
-    }
-    
     fn get_statistics(&self) -> PassStatistics {
         self.statistics.clone()
-    }
-    
     fn reset(&mut self) {
         self.statistics = PassStatistics::default();
         self.constant_folder.reset();
@@ -482,16 +376,10 @@ impl<'ctx> OptimizationPass<'ctx> for ConstantPropagationPass {
 
 /// Constant folder for folding constant expressions
 pub struct ConstantFolder {
-    folded_expressions: HashMap<String, ConstantValue>,
-    statistics: FolderStatistics,
-}
-
 impl ConstantFolder {
     /// Create a new constant folder
     pub fn new() -> Self {
         Self {
-            folded_expressions: HashMap::new(),
-            statistics: FolderStatistics::default(),
         }
     }
     
@@ -512,7 +400,6 @@ impl ConstantFolder {
             InstructionOpcode::FSub |
             InstructionOpcode::FMul |
             InstructionOpcode::FDiv |
-            InstructionOpcode::FRem => self.all_operands_constant(instruction),
             
             // Bitwise operations
             InstructionOpcode::And |
@@ -520,11 +407,9 @@ impl ConstantFolder {
             InstructionOpcode::Xor |
             InstructionOpcode::Shl |
             InstructionOpcode::LShr |
-            InstructionOpcode::AShr => self.all_operands_constant(instruction),
             
             // Comparison operations
             InstructionOpcode::ICmp |
-            InstructionOpcode::FCmp => self.all_operands_constant(instruction),
             
             // Type conversions
             InstructionOpcode::Trunc |
@@ -535,9 +420,7 @@ impl ConstantFolder {
             InstructionOpcode::UIToFP |
             InstructionOpcode::SIToFP |
             InstructionOpcode::FPTrunc |
-            InstructionOpcode::FPExt => self.all_operands_constant(instruction),
             
-            _ => false,
         }
     }
     
@@ -545,8 +428,6 @@ impl ConstantFolder {
     pub fn try_fold_instruction(&mut self, instruction: &InstructionValue) -> Result<bool> {
         if !self.can_fold_instruction(instruction) {
             return Ok(false);
-        }
-        
         let folded_value = self.fold_instruction_impl(instruction)?;
         
         if let Some(value) = folded_value {
@@ -554,41 +435,24 @@ impl ConstantFolder {
             self.folded_expressions.insert(instruction_id, value);
             self.statistics.expressions_folded += 1;
             return Ok(true);
-        }
-        
         Ok(false)
-    }
-    
     /// Implementation of instruction folding
     fn fold_instruction_impl(&self, instruction: &InstructionValue) -> Result<Option<ConstantValue>> {
         use inkwell::values::InstructionOpcode;
         
         match instruction.get_opcode() {
-            InstructionOpcode::Add => self.fold_integer_binary_op(instruction, |a, b| a + b),
-            InstructionOpcode::Sub => self.fold_integer_binary_op(instruction, |a, b| a - b),
-            InstructionOpcode::Mul => self.fold_integer_binary_op(instruction, |a, b| a * b),
             InstructionOpcode::UDiv | InstructionOpcode::SDiv => {
                 self.fold_integer_binary_op(instruction, |a, b| if b != 0 { a / b } else { 0 })
             }
-            InstructionOpcode::FAdd => self.fold_float_binary_op(instruction, |a, b| a + b),
-            InstructionOpcode::FSub => self.fold_float_binary_op(instruction, |a, b| a - b),
-            InstructionOpcode::FMul => self.fold_float_binary_op(instruction, |a, b| a * b),
             InstructionOpcode::FDiv => self.fold_float_binary_op(instruction, |a, b| if b != 0.0 { a / b } else { 0.0 }),
-            InstructionOpcode::And => self.fold_integer_binary_op(instruction, |a, b| a & b),
-            InstructionOpcode::Or => self.fold_integer_binary_op(instruction, |a, b| a | b),
-            InstructionOpcode::Xor => self.fold_integer_binary_op(instruction, |a, b| a ^ b),
-            _ => Ok(None),
         }
     }
     
     /// Fold integer binary operation
     fn fold_integer_binary_op<F>(&self, instruction: &InstructionValue, op: F) -> Result<Option<ConstantValue>>
     where
-        F: Fn(i64, i64) -> i64,
     {
         if let (Some(left), Some(right)) = (
-            self.get_integer_operand(instruction, 0),
-            self.get_integer_operand(instruction, 1),
         ) {
             let result = op(left, right);
             Ok(Some(ConstantValue::Integer(result)))
@@ -600,11 +464,8 @@ impl ConstantFolder {
     /// Fold floating point binary operation
     fn fold_float_binary_op<F>(&self, instruction: &InstructionValue, op: F) -> Result<Option<ConstantValue>>
     where
-        F: Fn(f64, f64) -> f64,
     {
         if let (Some(left), Some(right)) = (
-            self.get_float_operand(instruction, 0),
-            self.get_float_operand(instruction, 1),
         ) {
             let result = op(left, right);
             Ok(Some(ConstantValue::Float(result)))
@@ -626,8 +487,6 @@ impl ConstantFolder {
             }
         }
         None
-    }
-    
     /// Get float operand value
     fn get_float_operand(&self, instruction: &InstructionValue, index: usize) -> Option<f64> {
         if let Some(operand) = instruction.get_operand(index) {
@@ -641,8 +500,6 @@ impl ConstantFolder {
             }
         }
         None
-    }
-    
     /// Check if all operands of an instruction are constants
     fn all_operands_constant(&self, instruction: &InstructionValue) -> bool {
         for i in 0..instruction.get_num_operands() {
@@ -658,21 +515,16 @@ impl ConstantFolder {
                             return false;
                         }
                     }
-                    _ => return false,
                 }
             } else {
                 return false;
             }
         }
         true
-    }
-    
     /// Reset folder state
     pub fn reset(&mut self) {
         self.folded_expressions.clear();
         self.statistics = FolderStatistics::default();
-    }
-    
     /// Get folder statistics
     pub fn get_statistics(&self) -> &FolderStatistics {
         &self.statistics
@@ -682,37 +534,12 @@ impl ConstantFolder {
 /// Types of constant values
 #[derive(Debug, Clone)]
 pub enum ConstantValue {
-    Integer(i64),
-    Float(f64),
-    Boolean(bool),
-    String(String),
-    Null,
-}
-
 /// Analysis result for an instruction
 #[derive(Debug)]
 pub enum InstructionAnalysis {
-    None,
-    DefinesConstant(String, ConstantValue),
-    UsesConstants(HashMap<usize, ConstantValue>),
-    CanBeFolded,
-}
-
 /// Summary of a function for interprocedural analysis
 #[derive(Debug, Default)]
 pub struct FunctionSummary {
-    pub constant_parameters: HashMap<usize, ConstantValue>,
-    pub returns_constant: Option<ConstantValue>,
-    pub side_effects: bool,
-    pub calls_analyzed: bool,
-}
-
 /// Statistics for constant folding
 #[derive(Debug, Default)]
 pub struct FolderStatistics {
-    pub expressions_folded: usize,
-    pub integer_operations_folded: usize,
-    pub float_operations_folded: usize,
-    pub comparison_operations_folded: usize,
-}
-

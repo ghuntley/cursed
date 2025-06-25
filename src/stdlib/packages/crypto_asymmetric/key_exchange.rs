@@ -20,14 +20,9 @@ pub enum KeyExchangeAlgorithm {
     DiffieHellman,  // Classic DH with modular arithmetic
     X25519,         // Curve25519 key exchange
     X448,           // Curve448 key exchange (placeholder)
-}
-
 impl KeyExchangeAlgorithm {
     pub fn name(&self) -> &'static str {
         match self {
-            KeyExchangeAlgorithm::DiffieHellman => "Diffie-Hellman",
-            KeyExchangeAlgorithm::X25519 => "X25519",
-            KeyExchangeAlgorithm::X448 => "X448",
         }
     }
     
@@ -41,35 +36,16 @@ impl KeyExchangeAlgorithm {
     
     pub fn from_name(name: &str) -> crate::error::Result<()> {
         match name.to_uppercase().as_str() {
-            "DIFFIE-HELLMAN" | "DH" => Ok(KeyExchangeAlgorithm::DiffieHellman),
-            "X25519" => Ok(KeyExchangeAlgorithm::X25519),
-            "X448" => Ok(KeyExchangeAlgorithm::X448),
-            _ => Err(CursedError::InvalidArgument(format!("Unsupported key exchange algorithm: {}", name))),
         }
     }
-}
-
 /// Key exchange result container
 #[derive(Debug, Clone)]
 pub struct KeyExchangeResult {
-    pub algorithm: KeyExchangeAlgorithm,
-    pub shared_secret: Vec<u8>,
-    pub key_size: usize,
-    pub derived_key: Option<Vec<u8>>,
-}
-
 impl KeyExchangeResult {
     pub fn new(
-        algorithm: KeyExchangeAlgorithm,
-        shared_secret: Vec<u8>,
-        derived_key: Option<Vec<u8>>,
     ) -> Self {
         let key_size = algorithm.key_size();
         Self {
-            algorithm,
-            shared_secret,
-            key_size,
-            derived_key,
         }
     }
     
@@ -82,8 +58,6 @@ impl KeyExchangeResult {
         
         if let Some(derived) = &self.derived_key {
             map.insert("derived_key".to_string(), Value::String(hex::encode(derived)));
-        }
-        
         Ok(Value::Object(map))
     }
 }
@@ -94,8 +68,6 @@ pub struct DhParameters {
     pub p: BigUint,  // Prime modulus
     pub g: BigUint,  // Generator
     pub size: usize, // Key size in bits
-}
-
 impl DhParameters {
     /// Get standard 2048-bit DH parameters (RFC 3526)
     pub fn rfc3526_2048() -> Self {
@@ -106,17 +78,12 @@ impl DhParameters {
         let g = BigUint::from(2u32);
         
         Self {
-            p,
-            g,
-            size: 2048,
         }
     }
     
     /// Generate public key from private key
     pub fn generate_public_key(&self, private_key: &BigUint) -> BigUint {
         self.g.modpow(private_key, &self.p)
-    }
-    
     /// Compute shared secret
     pub fn compute_shared_secret(&self, private_key: &BigUint, other_public_key: &BigUint) -> BigUint {
         other_public_key.modpow(private_key, &self.p)
@@ -126,11 +93,6 @@ impl DhParameters {
 /// DH key pair
 #[derive(Debug, Clone)]
 pub struct DhKeyPair {
-    pub parameters: DhParameters,
-    pub private_key: BigUint,
-    pub public_key: BigUint,
-}
-
 impl DhKeyPair {
     pub fn generate(parameters: DhParameters) -> crate::error::Result<()> {
         let mut rng = OsRng;
@@ -140,12 +102,7 @@ impl DhKeyPair {
         let public_key = parameters.generate_public_key(&private_key);
         
         Ok(Self {
-            parameters,
-            private_key,
-            public_key,
         })
-    }
-    
     pub fn to_value(&self) -> crate::error::Result<()> {
         let mut map = HashMap::new();
         
@@ -164,17 +121,9 @@ impl DhKeyPair {
 pub fn dh_key_exchange(args: Vec<Value>) -> crate::error::Result<()> {
     if args.len() < 2 {
         return Err(CursedError::InvalidArgument("DH key exchange requires: private_key, other_public_key".to_string()));
-    }
-    
     let private_key_hex = match &args[0] {
-        Value::String(s) => s.clone(),
-        _ => return Err(CursedError::InvalidArgument("Private key must be a string".to_string())),
-    };
     
     let public_key_hex = match &args[1] {
-        Value::String(s) => s.clone(),
-        _ => return Err(CursedError::InvalidArgument("Public key must be a string".to_string())),
-    };
     
     // Use standard parameters if not provided
     let parameters = DhParameters::rfc3526_2048();
@@ -195,36 +144,21 @@ pub fn dh_key_exchange(args: Vec<Value>) -> crate::error::Result<()> {
         .map_err(|e| CursedError::CryptoError(format!("HKDF expansion failed: {}", e)))?;
     
     let result = KeyExchangeResult::new(
-        KeyExchangeAlgorithm::DiffieHellman,
-        shared_secret,
-        Some(derived_key),
     );
     
     result.to_value()
-}
-
 /// Generate DH key pair
 pub fn dh_generate_keypair(_args: Vec<Value>) -> crate::error::Result<()> {
     let parameters = DhParameters::rfc3526_2048();
     let keypair = DhKeyPair::generate(parameters)?;
     keypair.to_value()
-}
-
 /// X25519 key exchange
 pub fn x25519_key_exchange(args: Vec<Value>) -> crate::error::Result<()> {
     if args.len() < 2 {
         return Err(CursedError::InvalidArgument("X25519 key exchange requires: private_key, public_key".to_string()));
-    }
-    
     let private_key_hex = match &args[0] {
-        Value::String(s) => s.clone(),
-        _ => return Err(CursedError::InvalidArgument("Private key must be a string".to_string())),
-    };
     
     let public_key_hex = match &args[1] {
-        Value::String(s) => s.clone(),
-        _ => return Err(CursedError::InvalidArgument("Public key must be a string".to_string())),
-    };
     
     let private_key_bytes = hex::decode(private_key_hex)
         .map_err(|e| CursedError::InvalidArgument(format!("Invalid private key hex: {}", e)))?;
@@ -234,12 +168,8 @@ pub fn x25519_key_exchange(args: Vec<Value>) -> crate::error::Result<()> {
     
     if private_key_bytes.len() != 32 {
         return Err(CursedError::InvalidArgument("X25519 private key must be 32 bytes".to_string()));
-    }
-    
     if public_key_bytes.len() != 32 {
         return Err(CursedError::InvalidArgument("X25519 public key must be 32 bytes".to_string()));
-    }
-    
     let private_key = EphemeralSecret::from(<[u8; 32]>::try_from(private_key_bytes)
         .map_err(|_| CursedError::InvalidArgument("Invalid private key length".to_string()))?);
     
@@ -256,14 +186,9 @@ pub fn x25519_key_exchange(args: Vec<Value>) -> crate::error::Result<()> {
         .map_err(|e| CursedError::CryptoError(format!("HKDF expansion failed: {}", e)))?;
     
     let result = KeyExchangeResult::new(
-        KeyExchangeAlgorithm::X25519,
-        shared_secret_bytes,
-        Some(derived_key),
     );
     
     result.to_value()
-}
-
 /// Generate X25519 key pair
 pub fn x25519_generate_keypair(_args: Vec<Value>) -> crate::error::Result<()> {
     let mut rng = OsRng;
@@ -277,8 +202,6 @@ pub fn x25519_generate_keypair(_args: Vec<Value>) -> crate::error::Result<()> {
     map.insert("private_key".to_string(), Value::String(hex::encode(private_key.to_bytes())));
     
     Ok(Value::Object(map))
-}
-
 /// Generate ephemeral X25519 key pair
 pub fn x25519_generate_ephemeral_keypair(_args: Vec<Value>) -> crate::error::Result<()> {
     let mut rng = OsRng;
@@ -293,23 +216,13 @@ pub fn x25519_generate_ephemeral_keypair(_args: Vec<Value>) -> crate::error::Res
     map.insert("note".to_string(), Value::String("Ephemeral private key not exposed for security".to_string()));
     
     Ok(Value::Object(map))
-}
-
 /// X448 key exchange implementation
 pub fn x448_key_exchange(args: Vec<Value>) -> crate::error::Result<()> {
     if args.len() < 2 {
         return Err(CursedError::InvalidArgument("X448 key exchange requires: private_key, public_key".to_string()));
-    }
-    
     let private_key_hex = match &args[0] {
-        Value::String(s) => s.clone(),
-        _ => return Err(CursedError::InvalidArgument("Private key must be a string".to_string())),
-    };
     
     let public_key_hex = match &args[1] {
-        Value::String(s) => s.clone(),
-        _ => return Err(CursedError::InvalidArgument("Public key must be a string".to_string())),
-    };
     
     let private_key_bytes = hex::decode(private_key_hex)
         .map_err(|e| CursedError::InvalidArgument(format!("Invalid private key hex: {}", e)))?;
@@ -319,12 +232,8 @@ pub fn x448_key_exchange(args: Vec<Value>) -> crate::error::Result<()> {
     
     if private_key_bytes.len() != 56 {
         return Err(CursedError::InvalidArgument("X448 private key must be 56 bytes".to_string()));
-    }
-    
     if public_key_bytes.len() != 56 {
         return Err(CursedError::InvalidArgument("X448 public key must be 56 bytes".to_string()));
-    }
-    
     // Perform X448 key exchange using curve448 implementation
     let shared_secret = x448_scalar_mult(&private_key_bytes, &public_key_bytes)?;
     
@@ -335,14 +244,9 @@ pub fn x448_key_exchange(args: Vec<Value>) -> crate::error::Result<()> {
         .map_err(|e| CursedError::CryptoError(format!("HKDF expansion failed: {}", e)))?;
     
     let result = KeyExchangeResult::new(
-        KeyExchangeAlgorithm::X448,
-        shared_secret,
-        Some(derived_key),
     );
     
     result.to_value()
-}
-
 /// Generate X448 key pair
 pub fn x448_generate_keypair(_args: Vec<Value>) -> crate::error::Result<()> {
     let mut rng = OsRng;
@@ -362,14 +266,10 @@ pub fn x448_generate_keypair(_args: Vec<Value>) -> crate::error::Result<()> {
     map.insert("private_key".to_string(), Value::String(hex::encode(private_key)));
     
     Ok(Value::Object(map))
-}
-
 /// X448 scalar multiplication (basic implementation)
 fn x448_scalar_mult(scalar: &[u8], point: &[u8]) -> crate::error::Result<()> {
     if scalar.len() != 56 || point.len() != 56 {
         return Err(CursedError::InvalidArgument("X448 requires 56-byte keys".to_string()));
-    }
-    
     // This is a simplified X448 implementation
     // In production, you would use a proper curve448 library
     // For now, we'll use a secure but simplified approach
@@ -389,8 +289,6 @@ fn x448_scalar_mult(scalar: &[u8], point: &[u8]) -> crate::error::Result<()> {
     result_bytes.resize(56, 0);
     
     Ok(result_bytes)
-}
-
 /// Generate X448 public key from private key
 fn x448_generate_public_key(private_key: &[u8; 56]) -> crate::error::Result<()> {
     // X448 base point (u = 5)
@@ -398,15 +296,12 @@ fn x448_generate_public_key(private_key: &[u8; 56]) -> crate::error::Result<()> 
         let mut point = [0u8; 56];
         point[0] = 5;
         point
-    };
     
     let result = x448_scalar_mult(private_key, &base_point)?;
     let mut public_key = [0u8; 56];
     public_key.copy_from_slice(&result);
     
     Ok(public_key)
-}
-
 /// Clamp X448 private key according to specification
 fn x448_clamp_private_key(private_key: &mut [u8; 56]) {
     // Clear the two least significant bits
@@ -415,13 +310,8 @@ fn x448_clamp_private_key(private_key: &mut [u8; 56]) {
     // Set the most significant bit and clear the second most significant bit
     private_key[55] |= 0x80;
     private_key[55] &= 0x80;
-}
-
 /// Validate key exchange parameters
 pub fn validate_key_exchange_params(
-    algorithm: KeyExchangeAlgorithm,
-    private_key: &[u8],
-    public_key: &[u8],
 ) -> crate::error::Result<()> {
     match algorithm {
         KeyExchangeAlgorithm::X25519 => {
@@ -431,7 +321,6 @@ pub fn validate_key_exchange_params(
             if public_key.len() != 32 {
                 return Err(CursedError::InvalidArgument(format!("X25519 public key must be 32 bytes, got {}", public_key.len())));
             }
-        },
         KeyExchangeAlgorithm::DiffieHellman => {
             // DH keys can vary in size, basic validation
             if private_key.is_empty() {
@@ -440,7 +329,6 @@ pub fn validate_key_exchange_params(
             if public_key.is_empty() {
                 return Err(CursedError::InvalidArgument("DH public key cannot be empty".to_string()));
             }
-        },
         KeyExchangeAlgorithm::X448 => {
             if private_key.len() != 56 {
                 return Err(CursedError::InvalidArgument(format!("X448 private key must be 56 bytes, got {}", private_key.len())));
@@ -448,30 +336,17 @@ pub fn validate_key_exchange_params(
             if public_key.len() != 56 {
                 return Err(CursedError::InvalidArgument(format!("X448 public key must be 56 bytes, got {}", public_key.len())));
             }
-        },
     }
     Ok(())
-}
-
 /// List supported key exchange algorithms
 pub fn list_key_exchange_algorithms() -> Vec<String> {
     vec![
-        KeyExchangeAlgorithm::DiffieHellman.name().to_string(),
-        KeyExchangeAlgorithm::X25519.name().to_string(),
-        KeyExchangeAlgorithm::X448.name().to_string(),
     ]
-}
-
 /// Key derivation from shared secret
 pub fn derive_key_from_shared_secret(
-    shared_secret: &[u8],
-    key_length: usize,
-    info: Option<&str>,
 ) -> crate::error::Result<()> {
     if key_length == 0 || key_length > 255 * 32 {
         return Err(CursedError::InvalidArgument(format!("Invalid key length: {}", key_length)));
-    }
-    
     let hk = Hkdf::<Sha256>::new(None, shared_secret);
     let mut derived_key = vec![0u8; key_length];
     
@@ -480,5 +355,3 @@ pub fn derive_key_from_shared_secret(
         .map_err(|e| CursedError::CryptoError(format!("Key derivation failed: {}", e)))?;
     
     Ok(derived_key)
-}
-

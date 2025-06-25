@@ -5,7 +5,7 @@
 
 use std::sync::Arc;
 use std::time::SystemTime;
-// use crate::stdlib::database::{
+// Placeholder imports disabled
 //     Driver, DriverConn, DatabaseError, SqlIsolationLevel
 // };
 use crate::error::CursedError;
@@ -19,37 +19,20 @@ use super::error::{PostgresError, PostgresErrorKind, PostgresResult};
 #[derive(Debug, Clone)]
 pub struct PostgresDriver {
     /// Driver name
-    name: String,
     /// Driver version
-    version: String,
     /// Creation timestamp
-    created_at: SystemTime,
     /// Default configuration
-    default_config: PostgresConfig,
     /// Connection pool (if enabled)
-    pool: Option<Arc<PostgresPool>>,
-}
-
 impl PostgresDriver {
     /// Create new PostgreSQL driver
     pub fn new() -> Self {
         Self {
-            name: "PostgreSQL Driver for CURSED".to_string(),
-            version: "1.0.0".to_string(),
-            created_at: SystemTime::now(),
-            default_config: PostgresConfig::default(),
-            pool: None,
         }
     }
 
     /// Create driver with custom default configuration
     pub fn with_config(config: PostgresConfig) -> Self {
         Self {
-            name: "PostgreSQL Driver for CURSED".to_string(),
-            version: "1.0.0".to_string(),
-            created_at: SystemTime::now(),
-            default_config: config,
-            pool: None,
         }
     }
 
@@ -58,29 +41,13 @@ impl PostgresDriver {
         let pool = PostgresPool::new(config.clone()).await?;
         
         Ok(Self {
-            name: "PostgreSQL Driver for CURSED (Pooled)".to_string(),
-            version: "1.0.0".to_string(),
-            created_at: SystemTime::now(),
-            default_config: config,
-            pool: Some(Arc::new(pool)),
         })
-    }
-
     /// Get driver capabilities
     pub fn get_capabilities() -> DriverCapabilities {
         DriverCapabilities {
-            supports_transactions: true,
-            supports_prepared_statements: true,
             supports_multiple_result_sets: false, // PostgreSQL doesn't support multiple result sets in single query
-            supports_stored_procedures: true,
-            supports_batch_operations: true,
-            supports_concurrent_connections: true,
             max_connections: Some(1000), // Reasonable default
             supported_isolation_levels: vec![
-                SqlIsolationLevel::LevelReadCommitted,
-                SqlIsolationLevel::LevelRepeatableRead,
-                SqlIsolationLevel::LevelSerializable,
-            ],
             max_query_length: Some(1_000_000), // 1MB query limit
             max_parameter_count: Some(65535),   // PostgreSQL limit
         }
@@ -90,14 +57,10 @@ impl PostgresDriver {
     pub async fn connect_with_string(dsn: &str) -> PostgresResult<PostgresConnection> {
         let config = PostgresConnectionString::parse(dsn)?;
         PostgresConnection::new(config).await
-    }
-
     /// Create connection pool from connection string
     pub async fn create_pool_with_string(dsn: &str) -> PostgresResult<PostgresPool> {
         let config = PostgresConnectionString::parse(dsn)?;
         PostgresPool::new(config).await
-    }
-
     /// Test connection with given configuration
     pub async fn test_connection(config: &PostgresConfig) -> PostgresResult<()> {
         let mut connection = PostgresConnection::new(config.clone()).await?;
@@ -105,41 +68,27 @@ impl PostgresDriver {
             return Err(PostgresError::ConnectionLost);
         }
         Ok(())
-    }
-
     /// Get pool statistics if pool is enabled
     pub fn get_pool_stats(&self) -> Option<super::pool::PoolStatistics> {
         self.pool.as_ref().map(|pool| pool.get_statistics())
-    }
-
     /// Get pool health if pool is enabled
     pub fn get_pool_health(&self) -> Option<super::pool::PoolHealth> {
         self.pool.as_ref().map(|pool| pool.get_health())
-    }
-
     /// Check if driver is using connection pool
     pub fn is_pooled(&self) -> bool {
         self.pool.is_some()
-    }
-
     /// Get default configuration
     pub fn default_config(&self) -> &PostgresConfig {
         &self.default_config
-    }
-
     /// Set default configuration
     pub fn set_default_config(&mut self, config: PostgresConfig) {
         self.default_config = config;
-    }
-
     /// Create connection using default configuration
     pub async fn create_default_connection(&self) -> PostgresResult<PostgresConnection> {
         if let Some(ref pool) = self.pool {
             // If pool is available, get connection from pool
             let pooled_conn = pool.get_connection().await?;
             Ok(PostgresConnection::from_client(
-                pooled_conn.into_client(),
-                self.default_config.clone(),
             ))
         } else {
             // Create direct connection
@@ -153,28 +102,15 @@ impl PostgresDriver {
             pool.close().await;
         }
         Ok(())
-    }
-
     /// Get driver information
     pub fn info(&self) -> DriverInfo {
         DriverInfo {
-            name: self.name.clone(),
-            version: self.version.clone(),
-            created_at: self.created_at,
-            is_pooled: self.is_pooled(),
-            default_host: self.default_config.host.clone(),
-            default_port: self.default_config.port,
-            default_database: self.default_config.database.clone(),
-            ssl_mode: self.default_config.ssl_mode,
             max_connections: if self.is_pooled() {
                 Some(self.default_config.max_connections)
             } else {
                 None
-            },
         }
     }
-}
-
 impl Default for PostgresDriver {
     fn default() -> Self {
         Self::new()
@@ -195,8 +131,6 @@ impl Driver for PostgresDriver {
                 // Use pool if available
                 let pooled_conn = pool.get_connection().await?;
                 Ok(PostgresConnection::from_client(
-                pooled_conn.into_client(),
-                    config,
                 ))
             } else {
                 // Create direct connection
@@ -205,16 +139,10 @@ impl Driver for PostgresDriver {
         }).map_err(|e: PostgresError| e.to_database_error())?;
 
         Ok(Box::new(connection))
-    }
-
     fn name(&self) -> &str {
         &self.name
-    }
-
     fn capabilities(&self) -> DriverCapabilities {
         Self::get_capabilities()
-    }
-
     fn clone_driver(&self) -> Box<dyn Driver> {
         Box::new(self.clone())
     }
@@ -223,17 +151,6 @@ impl Driver for PostgresDriver {
 /// Driver information for introspection
 #[derive(Debug, Clone)]
 pub struct DriverInfo {
-    pub name: String,
-    pub version: String,
-    pub created_at: SystemTime,
-    pub is_pooled: bool,
-    pub default_host: String,
-    pub default_port: u16,
-    pub default_database: String,
-    pub ssl_mode: super::config::SslMode,
-    pub max_connections: Option<u32>,
-}
-
 impl std::fmt::Display for DriverInfo {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         writeln!(f, "PostgreSQL Driver Information:")?;
@@ -247,26 +164,16 @@ impl std::fmt::Display for DriverInfo {
         
         if let Some(max_conn) = self.max_connections {
             writeln!(f, "  Max Connections: {}", max_conn)?;
-        }
-        
         Ok(())
     }
 }
 
 /// PostgreSQL driver builder for advanced configuration
 pub struct PostgresDriverBuilder {
-    config: PostgresConfig,
-    enable_pool: bool,
-    pool_config: Option<PostgresPoolConfig>,
-}
-
 impl PostgresDriverBuilder {
     /// Create new driver builder
     pub fn new() -> Self {
         Self {
-            config: PostgresConfig::default(),
-            enable_pool: false,
-            pool_config: None,
         }
     }
 
@@ -277,39 +184,27 @@ impl PostgresDriverBuilder {
         self.config.database = database.to_string();
         self.config.username = username.to_string();
         self
-    }
-
     /// Set password
     pub fn password(mut self, password: &str) -> Self {
         self.config.password = Some(password.to_string());
         self
-    }
-
     /// Set SSL mode
     pub fn ssl_mode(mut self, ssl_mode: super::config::SslMode) -> Self {
         self.config.ssl_mode = ssl_mode;
         self
-    }
-
     /// Enable connection pooling
     pub fn with_pool(mut self) -> Self {
         self.enable_pool = true;
         self
-    }
-
     /// Set pool configuration
     pub fn pool_config(mut self, pool_config: PostgresPoolConfig) -> Self {
         self.pool_config = Some(pool_config);
         self
-    }
-
     /// Set connection timeouts
     pub fn timeouts(mut self, connect_timeout: std::time::Duration, query_timeout: std::time::Duration) -> Self {
         self.config.connect_timeout = connect_timeout;
         self.config.query_timeout = query_timeout;
         self
-    }
-
     /// Build the driver
     pub async fn build(self) -> PostgresResult<PostgresDriver> {
         if self.enable_pool {
@@ -318,8 +213,6 @@ impl PostgresDriverBuilder {
             Ok(PostgresDriver::with_config(self.config))
         }
     }
-}
-
 impl Default for PostgresDriverBuilder {
     fn default() -> Self {
         Self::new()

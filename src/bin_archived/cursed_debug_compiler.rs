@@ -9,12 +9,8 @@ use crate::error::CursedError;
 use cursed::codegen::llvm::{EnhancedLlvmCodegen, CodegenConfig, LlvmDebugMetadata};
 use cursed::debug::{DebugConfig, SourceLocation};
 use cursed::ast::{
-    AST, FunctionStatement, FunctionDeclaration, VariableDeclaration, Statement, Expression, 
-    Parameter, Literal, BinaryExpression, BinaryOperator, UnaryOperator, Identifier, 
-    VariableStatement, ExpressionStatement, ReturnStatement, 
-    BlockStatement, AssignmentExpression, VariableExpression, LiteralExpression,
     FunctionCallExpression, TypeParameter
-};
+// };
 
 use cursed::ast::{ConditionalIfStatement as IfStatement, ConditionalWhileStatement as WhileStatement};
 
@@ -33,19 +29,6 @@ use tracing_subscriber::EnvFilter;
 /// Command-line arguments
 #[derive(Debug)]
 struct CliArgs {
-    input_file: PathBuf,
-    output_file: Option<PathBuf>,
-    debug_level: u32,
-    optimization_level: OptimizationLevel,
-    emit_llvm_ir: bool,
-    emit_object: bool,
-    emit_assembly: bool,
-    verify_module: bool,
-    target_triple: Option<String>,
-    enable_timing: bool,
-    verbose: bool,
-}
-
 fn main() {
         // TODO: implement
     }
@@ -67,11 +50,7 @@ fn main() {
     if let Err(error) = run_compiler(args) {
         error!("Compilation failed: {}", error);
         process::exit(1);
-    }
-    
     info!("Compilation completed successfully");
-}
-
 /// Parse command-line arguments
 fn parse_args() -> CliArgs {
     let matches = App::new("CURSED Debug Compiler")
@@ -148,27 +127,10 @@ fn parse_args() -> CliArgs {
         .unwrap_or(2);
     
     let optimization_level = match matches.value_of("optimization").unwrap() {
-        "0" => OptimizationLevel::O0,
-        "1" => OptimizationLevel::O1,
-        "2" => OptimizationLevel::O2,
-        "3" => OptimizationLevel::O3,
         "s" => OptimizationLevel::O2, // Size optimization fallback
         "z" => OptimizationLevel::O2, // Size optimization fallback
-        _ => OptimizationLevel::O0,
-    };
 
     CliArgs {
-        input_file,
-        output_file,
-        debug_level,
-        optimization_level,
-        emit_llvm_ir: matches.is_present("emit-llvm"),
-        emit_object: matches.is_present("emit-obj"),
-        emit_assembly: matches.is_present("emit-asm"),
-        verify_module: !matches.is_present("no-verify"),
-        target_triple: matches.value_of("target").map(String::from),
-        enable_timing: matches.is_present("time"),
-        verbose: matches.is_present("verbose"),
     }
 }
 
@@ -184,8 +146,6 @@ fn run_compiler(args: CliArgs) -> crate::error::Result<()> {
     
     if args.verbose {
         debug!("Source code length: {} bytes", source_code.len());
-    }
-    
     // Create test AST (in a real compiler, this would come from the parser)
     let ast = create_test_ast(&args.input_file)?;
     
@@ -194,34 +154,19 @@ fn run_compiler(args: CliArgs) -> crate::error::Result<()> {
     
     // Create debug configuration
     let debug_config = DebugConfig {
-        generate_debug_info: true,
-        debug_level: args.debug_level,
-        optimized_debug: args.optimization_level != OptimizationLevel::O0,
-        include_source_text: true,
-        generate_line_tables: true,
         ..Default::default()
-    };
     
     // Create codegen configuration
     let codegen_config = CodegenConfig {
-        debug_config,
-        optimization_level: args.optimization_level,
-        target_triple: args.target_triple.clone(),
-        verify_module: args.verify_module,
-        enable_jit: false,
         module_name: args.input_file.file_stem()
             .unwrap_or_default()
             .to_string_lossy()
-            .to_string(),
-    };
     
     // Create enhanced code generator
     let mut codegen = EnhancedLlvmCodegen::new(&context, &args.input_file, codegen_config)?;
     
     if args.verbose {
         info!("Debug enabled: {}", codegen.debug_enabled());
-    }
-    
     // Compile the AST
     codegen.compile_ast(&ast)?;
     
@@ -233,26 +178,18 @@ fn run_compiler(args: CliArgs) -> crate::error::Result<()> {
     info!("  {}", result.stats);
     if let Some(debug_stats) = &result.debug_stats {
         info!("  Debug: {}", debug_stats);
-    }
-    
     // Verify module if requested
     if args.verify_module {
         if let Err(error) = result.verify() {
             return Err(CursedError::Compile(format!("Module verification failed: {}", error)));
         }
         info!("Module verification passed");
-    }
-    
     // Output generated code
     output_results(&result, &args)?;
     
     if args.enable_timing {
         info!("Compilation time: {:?}", start_time.elapsed());
-    }
-    
     Ok(())
-}
-
 /// Create a test AST for demonstration
 fn create_test_ast(source_file: &Path) -> crate::error::Result<()> {
     let location = SourceLocation::new(source_file.to_path_buf(), 1, 1);
@@ -265,11 +202,7 @@ fn create_test_ast(source_file: &Path) -> crate::error::Result<()> {
     ];
     
     Ok(AST::Program {
-        statements,
-        location,
     })
-}
-
 /// Output compilation results
 fn output_results(result: &cursed::codegen::llvm::CodegenResult, args: &CliArgs) -> crate::error::Result<()> {
     let output_path = args.output_file.as_ref()
@@ -286,32 +219,22 @@ fn output_results(result: &cursed::codegen::llvm::CodegenResult, args: &CliArgs)
         fs::write(&ir_path, result.to_string())
             .map_err(|e| CursedError::General(format!("Failed to write LLVM IR: {}", e)))?;
         info!("LLVM IR written to: {}", ir_path.display());
-    }
-
     if args.emit_object {
         // Output object file
         let obj_path = output_path.with_extension("o");
         result.write_object_file(&obj_path)
             .map_err(|e| CursedError::Compile(format!("Failed to write object file: {}", e)))?;
         info!("Object file written to: {}", obj_path.display());
-    }
-
     if args.emit_assembly {
         // For assembly, we'd need additional LLVM integration
         info!("Assembly output not yet implemented");
-    }
-
     // If no specific output was requested, default to LLVM IR
     if !args.emit_llvm_ir && !args.emit_object && !args.emit_assembly {
         let ir_path = output_path.with_extension("ll");
         fs::write(&ir_path, result.to_string())
             .map_err(|e| CursedError::General(format!("Failed to write LLVM IR: {}", e)))?;
         info!("LLVM IR written to: {}", ir_path.display());
-    }
-
     Ok(())
-}
-
 /// Demonstrate debug information features
 fn demonstrate_debug_features() {
         // TODO: implement
@@ -331,20 +254,11 @@ fn demonstrate_debug_features() {
     info!("✓ Comprehensive error handling");
     info!("✓ Performance monitoring and statistics");
     info!("==========================================");
-}
-
 /// Validate debug information
 fn validate_debug_info(llvm_ir: &str) -> crate::error::Result<()> {
     info!("Validating debug information in generated LLVM IR");
     
     let validation_checks = [
-        ("!DICompileUnit", "DWARF compile unit"),
-        ("!DIFile", "Debug file information"),
-        ("!DISubprogram", "Function debug information"),
-        ("!DILocalVariable", "Variable debug information"),
-        ("!DILocation", "Debug location information"),
-        ("!llvm.dbg.", "Debug intrinsics"),
-        ("!DIBasicType", "Type debug information"),
     ];
     
     let mut found_checks = 0;
@@ -388,5 +302,3 @@ fn print_usage_examples() {
     println!("");
     println!("  Verbose compilation with timing:");
     println!("    cursed_debug_compiler program.csd --verbose --time");
-}
-

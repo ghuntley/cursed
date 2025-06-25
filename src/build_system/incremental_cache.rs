@@ -13,87 +13,53 @@ use tracing::{debug, info, instrument, warn};
 /// Incremental build cache manager
 #[derive(Debug)]
 pub struct IncrementalCache {
-    cache_dir: PathBuf,
-    entries: HashMap<String, CacheEntry>,
-    metadata: CacheMetadata,
-}
-
 /// Cache entry for a build target
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct CacheEntry {
     /// Target name
-    pub target_name: String,
     
     /// Timestamp when cached
-    pub timestamp: SystemTime,
     
     /// Source file checksums
-    pub source_checksums: HashMap<PathBuf, String>,
     
     /// Dependency checksums
-    pub dependency_checksums: HashMap<String, String>,
     
     /// Output files produced
-    pub outputs: Vec<PathBuf>,
     
     /// Build artifacts
-    pub artifacts: HashMap<String, PathBuf>,
     
     /// Number of files processed
-    pub files_count: usize,
     
     /// Build profile used
-    pub profile: String,
     
     /// CURSED compiler version
-    pub compiler_version: String,
-}
-
 /// Cache metadata
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct CacheMetadata {
     /// Cache format version
-    pub version: u32,
     
     /// Creation time
-    pub created: SystemTime,
     
     /// Last cleanup time
-    pub last_cleanup: SystemTime,
     
     /// Total cache entries
-    pub entry_count: usize,
     
     /// Total cache size in bytes
-    pub cache_size: u64,
-}
-
 /// Cache manager for coordinating multiple caches
 #[derive(Debug)]
 pub struct CacheManager {
-    caches: HashMap<String, IncrementalCache>,
-    global_cache_dir: PathBuf,
-}
-
 /// Cache error types
 #[derive(Debug, thiserror::CursedError)]
 pub enum CacheError {
     #[error("IO error: {0}")]
-    IoError(#[from] std::io::Error),
     
     #[error("Serialization error: {0}")]
-    SerializationError(String),
     
     #[error("Cache corruption: {0}")]
-    CorruptionError(String),
     
     #[error("Cache not found: {0}")]
-    NotFound(String),
     
     #[error("Version mismatch: expected {expected}, found {found}")]
-    VersionMismatch { expected: u32, found: u32 },
-}
-
 impl IncrementalCache {
     /// Create a new incremental cache
     pub fn new(cache_dir: PathBuf) -> crate::error::Result<()> {
@@ -108,13 +74,7 @@ impl IncrementalCache {
                 .map_err(|e| CacheError::SerializationError(e.to_string()))?
         } else {
             CacheMetadata {
-                version: 1,
-                created: SystemTime::now(),
-                last_cleanup: SystemTime::now(),
-                entry_count: 0,
-                cache_size: 0,
             }
-        };
         
         let entries = if entries_path.exists() {
             let content = std::fs::read_to_string(&entries_path)?;
@@ -122,38 +82,21 @@ impl IncrementalCache {
                 .map_err(|e| CacheError::SerializationError(e.to_string()))?
         } else {
             HashMap::new()
-        };
         
         // Validate cache version
         if metadata.version != 1 {
             return Err(CacheError::VersionMismatch {
-                expected: 1,
-                found: metadata.version,
             });
-        }
-        
         Ok(IncrementalCache {
-            cache_dir,
-            entries,
-            metadata,
         })
-    }
-    
     /// Get cache entry for a target
     #[instrument(skip(self))]
     pub fn get(&self, target_name: &str) -> Option<&CacheEntry> {
         debug!("Looking up cache entry for target: {}", target_name);
         self.entries.get(target_name)
-    }
-    
     /// Insert a new cache entry
     #[instrument(skip(self, outputs, artifacts))]
     pub fn insert(
-        &mut self,
-        target_name: &str,
-        outputs: Vec<PathBuf>,
-        artifacts: HashMap<String, PathBuf>,
-        files_count: usize,
     ) -> crate::error::Result<()> {
         info!("Caching build result for target: {}", target_name);
         
@@ -174,7 +117,6 @@ impl IncrementalCache {
                                 Ok(checksum) => {
                                     source_checksums.insert(path, checksum);
                                 }
-                                Err(e) => warn!("Failed to calculate checksum for {:?}: {}", path, e),
                             }
                         }
                     }
@@ -183,24 +125,12 @@ impl IncrementalCache {
         }
 
         let entry = CacheEntry {
-            target_name: target_name.to_string(),
-            timestamp: SystemTime::now(),
-            source_checksums,
-            dependency_checksums,
-            outputs,
-            artifacts,
-            files_count,
-            profile: self.get_current_build_profile(),
-            compiler_version: env!("CARGO_PKG_VERSION").to_string(),
-        };
         
         self.entries.insert(target_name.to_string(), entry);
         self.metadata.entry_count = self.entries.len();
         
         self.save_to_disk()?;
         Ok(())
-    }
-    
     /// Remove a cache entry
     #[instrument(skip(self))]
     pub fn remove(&mut self, target_name: &str) -> crate::error::Result<()> {
@@ -210,11 +140,7 @@ impl IncrementalCache {
         if removed {
             self.metadata.entry_count = self.entries.len();
             self.save_to_disk()?;
-        }
-        
         Ok(removed)
-    }
-    
     /// Clear all cache entries
     #[instrument(skip(self))]
     pub fn clear(&mut self) -> crate::error::Result<()> {
@@ -226,33 +152,25 @@ impl IncrementalCache {
         
         self.save_to_disk()?;
         Ok(())
-    }
-    
     /// Check if target needs rebuilding based on source changes
     #[instrument(skip(self))]
     pub fn needs_rebuild(&self, target_name: &str, source_paths: &[PathBuf]) -> crate::error::Result<()> {
         let entry = match self.get(target_name) {
-            Some(entry) => entry,
             None => {
                 debug!("No cache entry found for target: {}", target_name);
                 return Ok(true);
             }
-        };
         
         // Check if any source files have been modified
         for path in source_paths {
             if !path.exists() {
                 continue;
-            }
-            
             let metadata = std::fs::metadata(path)?;
             let modified = metadata.modified()?;
             
             if modified > entry.timestamp {
                 debug!("Source file {} modified since last build", path.display());
                 return Ok(true);
-            }
-            
             // Check checksum if available
             if let Some(cached_checksum) = entry.source_checksums.get(path) {
                 let current_checksum = calculate_file_checksum(path)?;
@@ -261,12 +179,8 @@ impl IncrementalCache {
                     return Ok(true);
                 }
             }
-        }
-        
         debug!("Target {} is up to date", target_name);
         Ok(false)
-    }
-    
     /// Calculate cache size
     pub fn calculate_size(&self) -> u64 {
         let mut size = 0;
@@ -283,11 +197,7 @@ impl IncrementalCache {
                     size += metadata.len();
                 }
             }
-        }
-        
         size
-    }
-    
     /// Cleanup old cache entries
     #[instrument(skip(self))]
     pub fn cleanup(&mut self, max_age: std::time::Duration) -> crate::error::Result<()> {
@@ -304,16 +214,10 @@ impl IncrementalCache {
         for target_name in to_remove {
             self.remove(&target_name)?;
             removed_count += 1;
-        }
-        
         if removed_count > 0 {
             info!("Cleaned up {} old cache entries", removed_count);
             self.metadata.last_cleanup = SystemTime::now();
-        }
-        
         Ok(removed_count)
-    }
-    
     /// Save cache to disk
     fn save_to_disk(&self) -> crate::error::Result<()> {
         let metadata_path = self.cache_dir.join("metadata.json");
@@ -329,20 +233,14 @@ impl IncrementalCache {
         std::fs::write(&entries_path, entries_json)?;
         
         Ok(())
-    }
-    
     /// Get current build profile from environment or context
     fn get_current_build_profile(&self) -> String {
         // Try to get profile from environment variable
         if let Ok(profile) = std::env::var("CURSED_BUILD_PROFILE") {
             return profile;
-        }
-        
         // Check for common profile indicators
         if std::env::var("CARGO_CFG_DEBUG_ASSERTIONS").is_ok() {
             return "debug".to_string();
-        }
-        
         // Try to detect from build flags
         if let Ok(flags) = std::env::var("RUSTFLAGS") {
             if flags.contains("-O") || flags.contains("--opt-level") {
@@ -353,12 +251,8 @@ impl IncrementalCache {
         // Check Cargo profile from environment
         if let Ok(cargo_profile) = std::env::var("CARGO_PROFILE") {
             return cargo_profile;
-        }
-        
         // Default fallback
         "dev".to_string()
-    }
-    
     /// Validate cache entry against current build context
     pub fn validate_cache_entry(&self, entry: &CacheEntry) -> bool {
         let current_profile = self.get_current_build_profile();
@@ -367,22 +261,16 @@ impl IncrementalCache {
         if entry.profile != current_profile {
             debug!("Cache entry profile mismatch: {} != {}", entry.profile, current_profile);
             return false;
-        }
-        
         // Check compiler version compatibility
         let current_version = env!("CARGO_PKG_VERSION");
         if entry.compiler_version != current_version {
             debug!("Cache entry compiler version mismatch: {} != {}", entry.compiler_version, current_version);
             return false;
-        }
-        
         // Check if source files still exist and haven't changed
         for (source_path, cached_checksum) in &entry.source_checksums {
             if !source_path.exists() {
                 debug!("Source file no longer exists: {}", source_path.display());
                 return false;
-            }
-            
             match calculate_file_checksum(source_path) {
                 Ok(current_checksum) => {
                     if &current_checksum != cached_checksum {
@@ -395,11 +283,7 @@ impl IncrementalCache {
                     return false;
                 }
             }
-        }
-        
         true
-    }
-    
     /// Enhanced cache invalidation with dependency tracking
     pub fn invalidate_dependents(&mut self, changed_files: &[PathBuf]) -> crate::error::Result<()> {
         let mut invalidated = 0;
@@ -420,11 +304,7 @@ impl IncrementalCache {
             // Add explicit dependencies from metadata
             for dep in entry.dependency_checksums.keys() {
                 deps.push(dep.clone());
-            }
-            
             dependency_graph.insert(target_name.clone(), deps);
-        }
-        
         // Find targets affected by changed files
         for changed_file in changed_files {
             let changed_file_str = changed_file.to_string_lossy().to_string();
@@ -437,12 +317,8 @@ impl IncrementalCache {
                         break;
                     }
                 }
-            }
-            
             // Transitive dependencies
             self.find_transitive_dependents(&changed_file_str, &dependency_graph, &mut to_invalidate);
-        }
-        
         // Remove invalidated entries
         for target_name in to_invalidate {
             if self.entries.remove(&target_name).is_some() {
@@ -454,17 +330,9 @@ impl IncrementalCache {
         if invalidated > 0 {
             self.metadata.entry_count = self.entries.len();
             self.save_to_disk()?;
-        }
-        
         Ok(invalidated)
-    }
-    
     /// Find targets transitively dependent on a changed file
     fn find_transitive_dependents(
-        &self,
-        changed_file: &str,
-        dependency_graph: &HashMap<String, Vec<String>>,
-        to_invalidate: &mut Vec<String>,
     ) {
         for (target_name, dependencies) in dependency_graph {
             if dependencies.contains(&changed_file.to_string()) && !to_invalidate.contains(target_name) {
@@ -474,8 +342,6 @@ impl IncrementalCache {
                 self.find_transitive_dependents(target_name, dependency_graph, to_invalidate);
             }
         }
-    }
-
     /// Get cache statistics
     pub fn get_statistics(&self) -> CacheStatistics {
         // Calculate hit rate based on cache lookups vs hits
@@ -498,59 +364,34 @@ impl IncrementalCache {
             }
         } else {
             0.0
-        };
         
         CacheStatistics {
-            entry_count: self.metadata.entry_count,
-            cache_size: self.calculate_size(),
-            created: self.metadata.created,
-            last_cleanup: self.metadata.last_cleanup,
-            hit_rate,
         }
     }
-}
-
 impl CacheManager {
     /// Create a new cache manager
     pub fn new(cache_dir: PathBuf) -> crate::error::Result<()> {
         std::fs::create_dir_all(&cache_dir)?;
         
         Ok(CacheManager {
-            caches: HashMap::new(),
-            global_cache_dir: cache_dir,
         })
-    }
-    
     /// Get or create a cache for a specific project
     pub fn get_cache(&mut self, project_name: &str) -> crate::error::Result<()> {
         if !self.caches.contains_key(project_name) {
             let cache_dir = self.global_cache_dir.join(project_name);
             let cache = IncrementalCache::new(cache_dir)?;
             self.caches.insert(project_name.to_string(), cache);
-        }
-        
         Ok(self.caches.get_mut(project_name).unwrap())
-    }
-    
     /// Cleanup all caches
     pub fn cleanup_all(&mut self, max_age: std::time::Duration) -> crate::error::Result<()> {
         let mut total_removed = 0;
         
         for cache in self.caches.values_mut() {
             total_removed += cache.cleanup(max_age)?;
-        }
-        
         Ok(total_removed)
-    }
-    
     /// Get global cache statistics
     pub fn get_global_statistics(&self) -> GlobalCacheStatistics {
         let mut stats = GlobalCacheStatistics {
-            total_projects: self.caches.len(),
-            total_entries: 0,
-            total_size: 0,
-            average_entry_age: std::time::Duration::from_secs(0),
-        };
         
         let mut total_age = std::time::Duration::from_secs(0);
         let mut entry_count = 0;
@@ -568,8 +409,6 @@ impl CacheManager {
         
         if entry_count > 0 {
             stats.average_entry_age = total_age / entry_count as u32;
-        }
-        
         stats
     }
 }
@@ -577,22 +416,9 @@ impl CacheManager {
 /// Cache statistics for a single cache
 #[derive(Debug, Clone)]
 pub struct CacheStatistics {
-    pub entry_count: usize,
-    pub cache_size: u64,
-    pub created: SystemTime,
-    pub last_cleanup: SystemTime,
-    pub hit_rate: f64,
-}
-
 /// Global cache statistics across all projects
 #[derive(Debug, Clone)]
 pub struct GlobalCacheStatistics {
-    pub total_projects: usize,
-    pub total_entries: usize,
-    pub total_size: u64,
-    pub average_entry_age: std::time::Duration,
-}
-
 /// Calculate SHA-256 checksum of a file
 fn calculate_file_checksum(path: &Path) -> crate::error::Result<()> {
     use std::io::Read;
@@ -607,8 +433,4 @@ fn calculate_file_checksum(path: &Path) -> crate::error::Result<()> {
             break;
         }
         hasher.update(&buffer[..bytes_read]);
-    }
-    
     Ok(format!("{:x}", hasher.finalize()))
-}
-

@@ -9,10 +9,7 @@ use crate::error::{CursedError, CursedError};
 
 use std::collections::HashMap;
 use inkwell::{
-    values::{BasicValueEnum, PointerValue},
-    AddressSpace,
-    types::{BasicTypeEnum, IntType, PointerType},
-};
+// };
 
 // Type aliases for consistency
 type Cursedcrate::error::Result<()>;
@@ -21,125 +18,48 @@ type Cursedcrate::error::Result<()>;
 pub trait IpcCompiler {
     /// Compile shared memory operations
     fn compile_shared_memory_op(
-        &mut self,
-        operation: SharedMemoryOperation,
-        name: &LlvmValue,
-        size: Option<&LlvmValue>,
-        data: Option<&LlvmValue>,
     ) -> crate::error::Result<()>;
 
     /// Compile named pipe operations
     fn compile_pipe_op(
-        &mut self,
-        operation: PipeOperation,
-        name: BasicValueEnum,
-        data: Option<BasicValueEnum>,
     ) -> CursedResult<BasicValueEnum>;
 
     /// Compile message queue operations
     fn compile_message_queue_op(
-        &mut self,
-        operation: MessageQueueOperation,
-        name: BasicValueEnum,
-        message: Option<BasicValueEnum>,
-        priority: Option<BasicValueEnum>,
     ) -> CursedResult<BasicValueEnum>;
 
     /// Compile semaphore operations
     fn compile_semaphore_op(
-        &mut self,
-        operation: SemaphoreOperation,
-        name: BasicValueEnum,
-        count: Option<BasicValueEnum>,
     ) -> CursedResult<BasicValueEnum>;
 
     /// Compile signal operations
     fn compile_signal_op(
-        &mut self,
-        operation: SignalOperation,
-        signal: BasicValueEnum,
-        target: Option<BasicValueEnum>,
-        handler: Option<BasicValueEnum>,
     ) -> CursedResult<BasicValueEnum>;
 
     /// Generate FFI function declarations for IPC operations
     fn declare_ipc_ffi_functions(&mut self) -> CursedResult<()>;
-}
-
 /// Shared memory operation types
 #[derive(Debug, Clone, Copy)]
 pub enum SharedMemoryOperation {
-    Create,
-    Open,
-    Read,
-    Write,
-    Close,
-    Remove,
-}
-
 /// Named pipe operation types
 #[derive(Debug, Clone, Copy)]
 pub enum PipeOperation {
-    Create,
-    Open,
-    Read,
-    Write,
-    Close,
-}
-
 /// Message queue operation types
 #[derive(Debug, Clone, Copy)]
 pub enum MessageQueueOperation {
-    Create,
-    Open,
-    Send,
-    Receive,
-    Peek,
-    Close,
-    Remove,
-}
-
 /// Semaphore operation types
 #[derive(Debug, Clone, Copy)]
 pub enum SemaphoreOperation {
-    Create,
-    Open,
-    Acquire,
-    Release,
-    TryAcquire,
-    Close,
-    Remove,
-}
-
 /// Signal operation types
 #[derive(Debug, Clone, Copy)]
 pub enum SignalOperation {
-    Send,
-    Register,
-    Block,
-    Unblock,
-    Wait,
-}
-
 impl IpcCompiler for LlvmCodeGenerator {
     fn compile_shared_memory_op(
-        &mut self,
-        operation: SharedMemoryOperation,
-        name: &LlvmValue,
-        size: Option<&LlvmValue>,
-        data: Option<&LlvmValue>,
     ) -> crate::error::Result<()> {
         // Ensure FFI functions are declared
         self.declare_ipc_ffi_functions()?;
 
         let fn_name = match operation {
-            SharedMemoryOperation::Create => "cursed_shm_create",
-            SharedMemoryOperation::Open => "cursed_shm_open",
-            SharedMemoryOperation::Read => "cursed_shm_read",
-            SharedMemoryOperation::Write => "cursed_shm_write",
-            SharedMemoryOperation::Close => "cursed_shm_close",
-            SharedMemoryOperation::Remove => "cursed_shm_remove",
-        };
 
         let result_name = self.next_temp_name();
         let name_ptr = &name.llvm_name;
@@ -148,50 +68,31 @@ impl IpcCompiler for LlvmCodeGenerator {
             &s.llvm_name
         } else {
             "0"
-        };
 
         let data_ptr = if let Some(d) = data {
             &d.llvm_name
         } else {
             "null"
-        };
 
         // Generate the IR call
         let ir = format!(
-            "{} = call i64 @{}(i8* {}, i64 {}, i8* {})",
             result_name, fn_name, name_ptr, size_val, data_ptr
         );
 
         self.add_ir(&ir);
 
         Ok(LlvmValue {
-            value_type: LlvmType::Integer64,
-            llvm_name: result_name,
-            is_constant: false,
         })
-    }
-
     fn compile_pipe_op(
-        &mut self,
-        operation: PipeOperation,
-        name: BasicValueEnum,
-        data: Option<BasicValueEnum>,
     ) -> CursedResult<BasicValueEnum> {
         let context = &self.context;
         let builder = &self.builder;
         let module = &self.module;
 
         let fn_name = match operation {
-            PipeOperation::Create => "cursed_pipe_create",
-            PipeOperation::Open => "cursed_pipe_open",
-            PipeOperation::Read => "cursed_pipe_read",
-            PipeOperation::Write => "cursed_pipe_write",
-            PipeOperation::Close => "cursed_pipe_close",
-        };
 
         let pipe_fn = module.get_function(fn_name)
             .ok_or_else(|| CursedError::codegen_error(
-                "pipe_op",
                 &format!("FFI function {} not found", fn_name)
             ))?;
 
@@ -203,44 +104,25 @@ impl IpcCompiler for LlvmCodeGenerator {
             self.ensure_data_pointer(d)?
         } else {
             context.i8_type().ptr_type(AddressSpace::default()).const_null()
-        };
 
         // Call the FFI function
         let result = builder.build_call(
-            pipe_fn,
-            &[name_ptr.into(), data_ptr.into()],
             "pipe_result"
         ).map_err(|e| CursedError::codegen_error("pipe_op", &e.to_string()))?;
 
         Ok(result.try_as_basic_value().left().unwrap_or_else(|| {
             context.i64_type().const_int(0, false).into()
         }))
-    }
-
     fn compile_message_queue_op(
-        &mut self,
-        operation: MessageQueueOperation,
-        name: BasicValueEnum,
-        message: Option<BasicValueEnum>,
-        priority: Option<BasicValueEnum>,
     ) -> CursedResult<BasicValueEnum> {
         let context = &self.context;
         let builder = &self.builder;
         let module = &self.module;
 
         let fn_name = match operation {
-            MessageQueueOperation::Create => "cursed_mq_create",
-            MessageQueueOperation::Open => "cursed_mq_open",
-            MessageQueueOperation::Send => "cursed_mq_send",
-            MessageQueueOperation::Receive => "cursed_mq_receive",
-            MessageQueueOperation::Peek => "cursed_mq_peek",
-            MessageQueueOperation::Close => "cursed_mq_close",
-            MessageQueueOperation::Remove => "cursed_mq_remove",
-        };
 
         let mq_fn = module.get_function(fn_name)
             .ok_or_else(|| CursedError::codegen_error(
-                "message_queue_op",
                 &format!("FFI function {} not found", fn_name)
             ))?;
 
@@ -252,50 +134,31 @@ impl IpcCompiler for LlvmCodeGenerator {
             self.ensure_data_pointer(m)?
         } else {
             context.i8_type().ptr_type(AddressSpace::default()).const_null()
-        };
 
         // Convert priority to i32 (or 0 if not provided)
         let priority_i32 = if let Some(p) = priority {
             self.convert_to_int32(p)?
         } else {
             context.i32_type().const_int(0, false)
-        };
 
         // Call the FFI function
         let result = builder.build_call(
-            mq_fn,
-            &[name_ptr.into(), message_ptr.into(), priority_i32.into()],
             "mq_result"
         ).map_err(|e| CursedError::codegen_error("message_queue_op", &e.to_string()))?;
 
         Ok(result.try_as_basic_value().left().unwrap_or_else(|| {
             context.i64_type().const_int(0, false).into()
         }))
-    }
-
     fn compile_semaphore_op(
-        &mut self,
-        operation: SemaphoreOperation,
-        name: BasicValueEnum,
-        count: Option<BasicValueEnum>,
     ) -> CursedResult<BasicValueEnum> {
         let context = &self.context;
         let builder = &self.builder;
         let module = &self.module;
 
         let fn_name = match operation {
-            SemaphoreOperation::Create => "cursed_sem_create",
-            SemaphoreOperation::Open => "cursed_sem_open",
-            SemaphoreOperation::Acquire => "cursed_sem_acquire",
-            SemaphoreOperation::Release => "cursed_sem_release",
-            SemaphoreOperation::TryAcquire => "cursed_sem_try_acquire",
-            SemaphoreOperation::Close => "cursed_sem_close",
-            SemaphoreOperation::Remove => "cursed_sem_remove",
-        };
 
         let sem_fn = module.get_function(fn_name)
             .ok_or_else(|| CursedError::codegen_error(
-                "semaphore_op",
                 &format!("FFI function {} not found", fn_name)
             ))?;
 
@@ -307,42 +170,25 @@ impl IpcCompiler for LlvmCodeGenerator {
             self.convert_to_int32(c)?
         } else {
             context.i32_type().const_int(1, false)
-        };
 
         // Call the FFI function
         let result = builder.build_call(
-            sem_fn,
-            &[name_ptr.into(), count_i32.into()],
             "sem_result"
         ).map_err(|e| CursedError::codegen_error("semaphore_op", &e.to_string()))?;
 
         Ok(result.try_as_basic_value().left().unwrap_or_else(|| {
             context.i32_type().const_int(0, false).into()
         }))
-    }
-
     fn compile_signal_op(
-        &mut self,
-        operation: SignalOperation,
-        signal: BasicValueEnum,
-        target: Option<BasicValueEnum>,
-        handler: Option<BasicValueEnum>,
     ) -> CursedResult<BasicValueEnum> {
         let context = &self.context;
         let builder = &self.builder;
         let module = &self.module;
 
         let fn_name = match operation {
-            SignalOperation::Send => "cursed_signal_send",
-            SignalOperation::Register => "cursed_signal_register",
-            SignalOperation::Block => "cursed_signal_block",
-            SignalOperation::Unblock => "cursed_signal_unblock",
-            SignalOperation::Wait => "cursed_signal_wait",
-        };
 
         let signal_fn = module.get_function(fn_name)
             .ok_or_else(|| CursedError::codegen_error(
-                "signal_op",
                 &format!("FFI function {} not found", fn_name)
             ))?;
 
@@ -354,27 +200,21 @@ impl IpcCompiler for LlvmCodeGenerator {
             self.convert_to_int64(t)?
         } else {
             context.i64_type().const_int(0, false)
-        };
 
         // Convert handler to pointer (or null if not provided)
         let handler_ptr = if let Some(h) = handler {
             self.ensure_function_pointer(h)?
         } else {
             context.i8_type().ptr_type(AddressSpace::default()).const_null()
-        };
 
         // Call the FFI function
         let result = builder.build_call(
-            signal_fn,
-            &[signal_i32.into(), target_i64.into(), handler_ptr.into()],
             "signal_result"
         ).map_err(|e| CursedError::codegen_error("signal_op", &e.to_string()))?;
 
         Ok(result.try_as_basic_value().left().unwrap_or_else(|| {
             context.i32_type().const_int(0, false).into()
         }))
-    }
-
     fn declare_ipc_ffi_functions(&mut self) -> CursedResult<()> {
         let context = &self.context;
         let module = &self.module;
@@ -387,7 +227,6 @@ impl IpcCompiler for LlvmCodeGenerator {
         // Shared Memory Functions
         // cursed_shm_create(name: *const i8, size: i64, data: *const i8) -> i64
         let shm_create_fn_type = i64_type.fn_type(
-            &[i8_ptr_type.into(), i64_type.into(), i8_ptr_type.into()],
             false
         );
         module.add_function("cursed_shm_create", shm_create_fn_type, None);
@@ -400,7 +239,6 @@ impl IpcCompiler for LlvmCodeGenerator {
         // Named Pipe Functions
         // cursed_pipe_create(name: *const i8, data: *const i8) -> i64
         let pipe_fn_type = i64_type.fn_type(
-            &[i8_ptr_type.into(), i8_ptr_type.into()],
             false
         );
         module.add_function("cursed_pipe_create", pipe_fn_type, None);
@@ -412,7 +250,6 @@ impl IpcCompiler for LlvmCodeGenerator {
         // Message Queue Functions
         // cursed_mq_create(name: *const i8, message: *const i8, priority: i32) -> i64
         let mq_fn_type = i64_type.fn_type(
-            &[i8_ptr_type.into(), i8_ptr_type.into(), i32_type.into()],
             false
         );
         module.add_function("cursed_mq_create", mq_fn_type, None);
@@ -426,7 +263,6 @@ impl IpcCompiler for LlvmCodeGenerator {
         // Semaphore Functions
         // cursed_sem_create(name: *const i8, count: i32) -> i32
         let sem_fn_type = i32_type.fn_type(
-            &[i8_ptr_type.into(), i32_type.into()],
             false
         );
         module.add_function("cursed_sem_create", sem_fn_type, None);
@@ -440,7 +276,6 @@ impl IpcCompiler for LlvmCodeGenerator {
         // Signal Functions
         // cursed_signal_send(signal: i32, target: i64, handler: *const i8) -> i32
         let signal_fn_type = i32_type.fn_type(
-            &[i32_type.into(), i64_type.into(), i8_ptr_type.into()],
             false
         );
         module.add_function("cursed_signal_send", signal_fn_type, None);
@@ -457,11 +292,8 @@ impl LlvmCodeGenerator {
     /// Helper to ensure a value is a string pointer
     fn ensure_string_pointer(&self, value: BasicValueEnum) -> CursedResult<PointerValue> {
         match value {
-            BasicValueEnum::PointerValue(ptr) => Ok(ptr),
             BasicValueEnum::ArrayValue(arr) => {
                 let ptr = self.builder.build_bitcast(
-                    arr,
-                    self.context.i8_type().ptr_type(AddressSpace::default()),
                     "string_ptr"
                 ).map_err(|e| CursedError::codegen_error("ensure_string_pointer", &e.to_string()))?;
                 Ok(ptr.into_pointer_value())
@@ -474,14 +306,11 @@ impl LlvmCodeGenerator {
                 Ok(global_str.as_pointer_value())
             }
         }
-    }
-
     /// Helper to convert a value to i32
     fn convert_to_int32(&self, value: BasicValueEnum) -> CursedResult<inkwell::values::IntValue> {
         match value {
             BasicValueEnum::IntValue(int_val) => {
                 match int_val.get_type().get_bit_width() {
-                    32 => Ok(int_val),
                     64 => {
                         // Truncate i64 to i32
                         let i32_type = self.context.i32_type();
@@ -512,7 +341,6 @@ impl LlvmCodeGenerator {
         match value {
             BasicValueEnum::IntValue(int_val) => {
                 match int_val.get_type().get_bit_width() {
-                    64 => Ok(int_val),
                     32 | 16 | 8 => {
                         // Zero extend to i64
                         let i64_type = self.context.i64_type();
@@ -535,11 +363,8 @@ impl LlvmCodeGenerator {
     /// Helper to ensure a value is a data pointer
     fn ensure_data_pointer(&self, value: BasicValueEnum) -> CursedResult<PointerValue> {
         match value {
-            BasicValueEnum::PointerValue(ptr) => Ok(ptr),
             BasicValueEnum::ArrayValue(arr) => {
                 let ptr = self.builder.build_bitcast(
-                    arr,
-                    self.context.i8_type().ptr_type(AddressSpace::default()),
                     "data_ptr"
                 ).map_err(|e| CursedError::codegen_error("ensure_data_pointer", &e.to_string()))?;
                 Ok(ptr.into_pointer_value())
@@ -553,20 +378,14 @@ impl LlvmCodeGenerator {
                 Ok(alloca)
             }
         }
-    }
-
     /// Helper to ensure a value is a function pointer
     fn ensure_function_pointer(&self, value: BasicValueEnum) -> CursedResult<PointerValue> {
         match value {
-            BasicValueEnum::PointerValue(ptr) => Ok(ptr),
             _ => Err(CursedError::codegen_error(
-                "ensure_function_pointer",
                 "Value cannot be converted to function pointer"
             ))
         }
     }
-}
-
 /// FFI functions for IPC operations (to be implemented in the runtime)
 
 // Shared Memory FFI Functions
@@ -577,22 +396,15 @@ pub extern "C" fn cursed_shm_create(name: *const i8, size: i64, _data: *const i8
 
     if name.is_null() || size <= 0 {
         return -1; // CursedError: invalid parameters
-    }
-
     let name_str = unsafe {
         match CStr::from_ptr(name).to_str() {
-            Ok(s) => s,
             Err(_) => return -2, // CursedError: invalid UTF-8
         }
-    };
 
     let config = match SharedMemoryConfig::new(name_str, size as usize) {
-        Ok(cfg) => cfg,
         Err(_) => return -3, // CursedError: invalid config
-    };
 
     match create_shared_memory(config) {
-        Ok(shm) => store_shm_handle(shm) as i64,
         Err(_) => -4, // CursedError: creation failed
     }
 }
@@ -604,17 +416,12 @@ pub extern "C" fn cursed_shm_open(name: *const i8, _size: i64, _data: *const i8)
 
     if name.is_null() {
         return -1; // CursedError: invalid parameters
-    }
-
     let name_str = unsafe {
         match CStr::from_ptr(name).to_str() {
-            Ok(s) => s,
             Err(_) => return -2, // CursedError: invalid UTF-8
         }
-    };
 
     match open_shared_memory(name_str) {
-        Ok(shm) => store_shm_handle(shm) as i64,
         Err(_) => -3, // CursedError: open failed
     }
 }
@@ -623,8 +430,6 @@ pub extern "C" fn cursed_shm_open(name: *const i8, _size: i64, _data: *const i8)
 pub extern "C" fn cursed_shm_read(name: *const i8, size: i64, data: *const i8) -> i64 {
     if name.is_null() || data.is_null() || size <= 0 {
         return -1;
-    }
-
     let handle = name as usize; // Simplified handle system
     match get_shm_handle_mut(handle) {
         Some(shm) => {
@@ -633,8 +438,6 @@ pub extern "C" fn cursed_shm_read(name: *const i8, size: i64, data: *const i8) -
                     let len = bytes.len().min(size as usize);
                     unsafe {
                         std::ptr::copy_nonoverlapping(
-                            bytes.as_ptr(),
-                            data as *mut u8,
                             len
                         );
                     }
@@ -651,17 +454,13 @@ pub extern "C" fn cursed_shm_read(name: *const i8, size: i64, data: *const i8) -
 pub extern "C" fn cursed_shm_write(name: *const i8, size: i64, data: *const i8) -> i64 {
     if name.is_null() || data.is_null() || size <= 0 {
         return -1;
-    }
-
     let handle = name as usize; // Simplified handle system
     let data_slice = unsafe {
         std::slice::from_raw_parts(data as *const u8, size as usize)
-    };
 
     match get_shm_handle_mut(handle) {
         Some(shm) => {
             match shm.write_bytes(data_slice) {
-                Ok(()) => size,
                 Err(_) => -2, // CursedError: write failed
             }
         }
@@ -685,14 +484,10 @@ pub extern "C" fn cursed_shm_remove(name: *const i8, _size: i64, _data: *const i
 
     if name.is_null() {
         return -1;
-    }
-
     let name_str = unsafe {
         match CStr::from_ptr(name).to_str() {
-            Ok(s) => s,
             Err(_) => return -2, // CursedError: invalid UTF-8
         }
-    };
 
     match remove_shared_memory(name_str) {
         Ok(()) => 0, // Success
@@ -708,17 +503,12 @@ pub extern "C" fn cursed_pipe_create(name: *const i8, _data: *const i8) -> i64 {
 
     if name.is_null() {
         return -1;
-    }
-
     let name_str = unsafe {
         match CStr::from_ptr(name).to_str() {
-            Ok(s) => s,
             Err(_) => return -2, // CursedError: invalid UTF-8
         }
-    };
 
     match create_named_pipe(name_str, PipeMode::ReadWrite) {
-        Ok(pipe) => store_pipe_handle(pipe) as i64,
         Err(_) => -3, // CursedError: creation failed
     }
 }
@@ -730,17 +520,12 @@ pub extern "C" fn cursed_pipe_open(name: *const i8, _data: *const i8) -> i64 {
 
     if name.is_null() {
         return -1;
-    }
-
     let name_str = unsafe {
         match CStr::from_ptr(name).to_str() {
-            Ok(s) => s,
             Err(_) => return -2, // CursedError: invalid UTF-8
         }
-    };
 
     match open_pipe(name_str, PipeMode::ReadWrite) {
-        Ok(pipe) => store_pipe_handle(pipe) as i64,
         Err(_) => -3, // CursedError: open failed
     }
 }
@@ -749,8 +534,6 @@ pub extern "C" fn cursed_pipe_open(name: *const i8, _data: *const i8) -> i64 {
 pub extern "C" fn cursed_pipe_read(name: *const i8, data: *const i8) -> i64 {
     if name.is_null() || data.is_null() {
         return -1;
-    }
-
     let handle = name as usize;
     match get_pipe_handle_mut(handle) {
         Some(pipe) => {
@@ -760,8 +543,6 @@ pub extern "C" fn cursed_pipe_read(name: *const i8, data: *const i8) -> i64 {
                     let len = bytes.len().min(1024); // Max 1KB
                     unsafe {
                         std::ptr::copy_nonoverlapping(
-                            bytes.as_ptr(),
-                            data as *mut u8,
                             len
                         );
                     }
@@ -778,20 +559,15 @@ pub extern "C" fn cursed_pipe_read(name: *const i8, data: *const i8) -> i64 {
 pub extern "C" fn cursed_pipe_write(name: *const i8, data: *const i8) -> i64 {
     if name.is_null() || data.is_null() {
         return -1;
-    }
-
     let data_str = unsafe {
         match std::ffi::CStr::from_ptr(data).to_str() {
-            Ok(s) => s,
             Err(_) => return -2, // CursedError: invalid UTF-8
         }
-    };
 
     let handle = name as usize;
     match get_pipe_handle_mut(handle) {
         Some(pipe) => {
             match pipe.write(data_str) {
-                Ok(()) => data_str.len() as i64,
                 Err(_) => -3, // CursedError: write failed
             }
         }
@@ -816,17 +592,12 @@ pub extern "C" fn cursed_mq_create(name: *const i8, _message: *const i8, _priori
 
     if name.is_null() {
         return -1;
-    }
-
     let name_str = unsafe {
         match CStr::from_ptr(name).to_str() {
-            Ok(s) => s,
             Err(_) => return -2, // CursedError: invalid UTF-8
         }
-    };
 
     match create_message_queue(name_str, 10) {
-        Ok(mq) => store_mq_handle(mq) as i64,
         Err(_) => -3, // CursedError: creation failed
     }
 }
@@ -838,29 +609,18 @@ pub extern "C" fn cursed_mq_send(name: *const i8, message: *const i8, priority: 
 
     if name.is_null() || message.is_null() {
         return -1;
-    }
-
     let message_str = unsafe {
         match CStr::from_ptr(message).to_str() {
-            Ok(s) => s,
             Err(_) => return -2, // CursedError: invalid UTF-8
         }
-    };
 
     let msg_priority = match priority {
-        0 => MessagePriority::Low,
-        1 => MessagePriority::Medium,
-        2 => MessagePriority::High,
-        _ => MessagePriority::Medium,
-    };
 
     let handle = name as usize;
     match get_mq_handle_mut(handle) {
         Some(mq) => {
             let msg = match Message::new(message_str, msg_priority) {
-                Ok(m) => m,
                 Err(_) => return -3, // CursedError: message creation failed
-            };
 
             match mq.send(msg) {
                 Ok(()) => 0, // Success
@@ -878,17 +638,12 @@ pub extern "C" fn cursed_mq_open(name: *const i8, _message: *const i8, _priority
 
     if name.is_null() {
         return -1;
-    }
-
     let name_str = unsafe {
         match CStr::from_ptr(name).to_str() {
-            Ok(s) => s,
             Err(_) => return -2, // CursedError: invalid UTF-8
         }
-    };
 
     match open_message_queue(name_str) {
-        Ok(mq) => store_mq_handle(mq) as i64,
         Err(_) => -3, // CursedError: open failed
     }
 }
@@ -897,8 +652,6 @@ pub extern "C" fn cursed_mq_open(name: *const i8, _message: *const i8, _priority
 pub extern "C" fn cursed_mq_receive(name: *const i8, message: *const i8, _priority: i32) -> i64 {
     if name.is_null() || message.is_null() {
         return -1;
-    }
-
     let handle = name as usize;
     match get_mq_handle_mut(handle) {
         Some(mq) => {
@@ -908,8 +661,6 @@ pub extern "C" fn cursed_mq_receive(name: *const i8, message: *const i8, _priori
                     let len = content.len().min(1024); // Max 1KB
                     unsafe {
                         std::ptr::copy_nonoverlapping(
-                            content.as_ptr(),
-                            message as *mut u8,
                             len
                         );
                     }
@@ -926,8 +677,6 @@ pub extern "C" fn cursed_mq_receive(name: *const i8, message: *const i8, _priori
 pub extern "C" fn cursed_mq_peek(name: *const i8, message: *const i8, _priority: i32) -> i64 {
     if name.is_null() || message.is_null() {
         return -1;
-    }
-
     let handle = name as usize;
     match get_mq_handle_mut(handle) {
         Some(mq) => {
@@ -937,8 +686,6 @@ pub extern "C" fn cursed_mq_peek(name: *const i8, message: *const i8, _priority:
                     let len = content.len().min(1024); // Max 1KB
                     unsafe {
                         std::ptr::copy_nonoverlapping(
-                            content.as_ptr(),
-                            message as *mut u8,
                             len
                         );
                     }
@@ -968,14 +715,10 @@ pub extern "C" fn cursed_mq_remove(name: *const i8, _message: *const i8, _priori
 
     if name.is_null() {
         return -1;
-    }
-
     let name_str = unsafe {
         match CStr::from_ptr(name).to_str() {
-            Ok(s) => s,
             Err(_) => return -2, // CursedError: invalid UTF-8
         }
-    };
 
     match remove_message_queue(name_str) {
         Ok(()) => 0, // Success
@@ -991,17 +734,12 @@ pub extern "C" fn cursed_sem_create(name: *const i8, count: i32) -> i32 {
 
     if name.is_null() || count < 0 {
         return -1;
-    }
-
     let name_str = unsafe {
         match CStr::from_ptr(name).to_str() {
-            Ok(s) => s,
             Err(_) => return -2, // CursedError: invalid UTF-8
         }
-    };
 
     match create_semaphore(name_str, count as u32) {
-        Ok(sem) => store_sem_handle(sem) as i32,
         Err(_) => -3, // CursedError: creation failed
     }
 }
@@ -1013,17 +751,12 @@ pub extern "C" fn cursed_sem_open(name: *const i8, _count: i32) -> i32 {
 
     if name.is_null() {
         return -1;
-    }
-
     let name_str = unsafe {
         match CStr::from_ptr(name).to_str() {
-            Ok(s) => s,
             Err(_) => return -2, // CursedError: invalid UTF-8
         }
-    };
 
     match open_semaphore(name_str) {
-        Ok(sem) => store_sem_handle(sem) as i32,
         Err(_) => -3, // CursedError: open failed
     }
 }
@@ -1087,14 +820,10 @@ pub extern "C" fn cursed_sem_remove(name: *const i8, _count: i32) -> i32 {
 
     if name.is_null() {
         return -1;
-    }
-
     let name_str = unsafe {
         match CStr::from_ptr(name).to_str() {
-            Ok(s) => s,
             Err(_) => return -2, // CursedError: invalid UTF-8
         }
-    };
 
     match remove_semaphore(name_str) {
         Ok(()) => 0, // Success
@@ -1111,7 +840,6 @@ pub extern "C" fn cursed_signal_send(signal: i32, target: i64, _handler: *const 
         std::process::id() as u64
     } else {
         target as u64
-    };
 
     // Convert i32 signal to Signal enum (simplified mapping)
     let signal_enum = match signal {
@@ -1122,7 +850,6 @@ pub extern "C" fn cursed_signal_send(signal: i32, target: i64, _handler: *const 
 //         10 => crate::stdlib::ipc::Signal::SIGUSR1,
 //         12 => crate::stdlib::ipc::Signal::SIGUSR2,
         _ => return -1, // Unsupported signal
-    };
 
     match send_signal(target_pid, signal_enum) {
         Ok(()) => 0, // Success
@@ -1136,18 +863,9 @@ pub extern "C" fn cursed_signal_register(signal: i32, _target: i64, handler: *co
 
     if handler.is_null() {
         return -1;
-    }
-
     // Convert i32 signal to Signal enum (simplified mapping)
     let signal_enum = match signal {
-        1 => Signal::SIGHUP,
-        2 => Signal::SIGINT,
-        9 => Signal::SIGKILL,
-        15 => Signal::SIGTERM,
-        10 => Signal::SIGUSR1,
-        12 => Signal::SIGUSR2,
         _ => return -1, // Unsupported signal
-    };
 
     // For simplicity, use a default handler (in production this would be more complex)
     let action = SignalAction::Default;
@@ -1164,14 +882,7 @@ pub extern "C" fn cursed_signal_block(signal: i32, _target: i64, _handler: *cons
 
     // Convert i32 signal to Signal enum (simplified mapping)
     let signal_enum = match signal {
-        1 => Signal::SIGHUP,
-        2 => Signal::SIGINT,
-        9 => Signal::SIGKILL,
-        15 => Signal::SIGTERM,
-        10 => Signal::SIGUSR1,
-        12 => Signal::SIGUSR2,
         _ => return -1, // Unsupported signal
-    };
 
     match block_signal(signal_enum) {
         Ok(()) => 0, // Success
@@ -1185,14 +896,7 @@ pub extern "C" fn cursed_signal_unblock(signal: i32, _target: i64, _handler: *co
 
     // Convert i32 signal to Signal enum (simplified mapping)
     let signal_enum = match signal {
-        1 => Signal::SIGHUP,
-        2 => Signal::SIGINT,
-        9 => Signal::SIGKILL,
-        15 => Signal::SIGTERM,
-        10 => Signal::SIGUSR1,
-        12 => Signal::SIGUSR2,
         _ => return -1, // Unsupported signal
-    };
 
     match unblock_signal(signal_enum) {
         Ok(()) => 0, // Success
@@ -1206,25 +910,12 @@ pub extern "C" fn cursed_signal_wait(signal: i32, _target: i64, _handler: *const
 
     // Convert i32 signal to Signal enum (simplified mapping)
     let signal_enum = match signal {
-        1 => Signal::SIGHUP,
-        2 => Signal::SIGINT,
-        9 => Signal::SIGKILL,
-        15 => Signal::SIGTERM,
-        10 => Signal::SIGUSR1,
-        12 => Signal::SIGUSR2,
         _ => return -1, // Unsupported signal
-    };
 
     match wait_for_signal(signal_enum) {
         Ok(received_signal) => {
             // Return the signal number that was received
             match received_signal {
-                Signal::SIGHUP => 1,
-                Signal::SIGINT => 2,
-                Signal::SIGKILL => 9,
-                Signal::SIGTERM => 15,
-                Signal::SIGUSR1 => 10,
-                Signal::SIGUSR2 => 12,
                 _ => signal, // Return original signal if mapping not found
             }
         }
@@ -1242,8 +933,6 @@ lazy_static::lazy_static! {
     static ref MQ_REGISTRY: Mutex<HashMap<usize, MessageQueue>> = Mutex::new(HashMap::new());
     static ref SEM_REGISTRY: Mutex<HashMap<usize, Semaphore>> = Mutex::new(HashMap::new());
     static ref NEXT_IPC_HANDLE: Mutex<usize> = Mutex::new(1);
-}
-
 fn store_shm_handle(shm: SharedMemory) -> usize {
     let mut registry = SHM_REGISTRY.lock().unwrap();
     let mut next_handle = NEXT_IPC_HANDLE.lock().unwrap();
@@ -1253,18 +942,12 @@ fn store_shm_handle(shm: SharedMemory) -> usize {
     
     registry.insert(handle, shm);
     handle
-}
-
 fn get_shm_handle_mut(handle: usize) -> Option<SharedMemory> {
     let registry = SHM_REGISTRY.lock().unwrap();
     registry.get(&handle).cloned()
-}
-
 fn remove_shm_handle(handle: usize) -> Option<SharedMemory> {
     let mut registry = SHM_REGISTRY.lock().unwrap();
     registry.remove(&handle)
-}
-
 fn store_pipe_handle(pipe: NamedPipe) -> usize {
     let mut registry = PIPE_REGISTRY.lock().unwrap();
     let mut next_handle = NEXT_IPC_HANDLE.lock().unwrap();
@@ -1274,18 +957,12 @@ fn store_pipe_handle(pipe: NamedPipe) -> usize {
     
     registry.insert(handle, pipe);
     handle
-}
-
 fn get_pipe_handle_mut(handle: usize) -> Option<NamedPipe> {
     let registry = PIPE_REGISTRY.lock().unwrap();
     registry.get(&handle).cloned()
-}
-
 fn remove_pipe_handle(handle: usize) -> Option<NamedPipe> {
     let mut registry = PIPE_REGISTRY.lock().unwrap();
     registry.remove(&handle)
-}
-
 fn store_mq_handle(mq: MessageQueue) -> usize {
     let mut registry = MQ_REGISTRY.lock().unwrap();
     let mut next_handle = NEXT_IPC_HANDLE.lock().unwrap();
@@ -1295,13 +972,9 @@ fn store_mq_handle(mq: MessageQueue) -> usize {
     
     registry.insert(handle, mq);
     handle
-}
-
 fn get_mq_handle_mut(handle: usize) -> Option<MessageQueue> {
     let registry = MQ_REGISTRY.lock().unwrap();
     registry.get(&handle).cloned()
-}
-
 fn store_sem_handle(sem: Semaphore) -> usize {
     let mut registry = SEM_REGISTRY.lock().unwrap();
     let mut next_handle = NEXT_IPC_HANDLE.lock().unwrap();
@@ -1311,20 +984,12 @@ fn store_sem_handle(sem: Semaphore) -> usize {
     
     registry.insert(handle, sem);
     handle
-}
-
 fn get_sem_handle_mut(handle: usize) -> Option<Semaphore> {
     let registry = SEM_REGISTRY.lock().unwrap();
     registry.get(&handle).cloned()
-}
-
 fn remove_sem_handle(handle: usize) -> Option<Semaphore> {
     let mut registry = SEM_REGISTRY.lock().unwrap();
     registry.remove(&handle)
-}
-
 fn remove_mq_handle(handle: usize) -> Option<MessageQueue> {
     let mut registry = MQ_REGISTRY.lock().unwrap();
     registry.remove(&handle)
-}
-

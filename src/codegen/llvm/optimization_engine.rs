@@ -11,124 +11,41 @@ use std::time::{Duration, Instant};
 use tracing::{debug, info, warn, instrument, span, Level};
 
 use inkwell::{
-    context::Context,
-    module::Module,
-    passes::PassManager,
-    OptimizationLevel as InkwellOptLevel,
-};
+// };
 
 /// Optimization engine configuration
 #[derive(Debug, Clone)]
 pub struct OptimizationEngineConfig {
-    pub enable_adaptive_optimization: bool,
-    pub enable_profile_guided_optimization: bool,
-    pub enable_incremental_optimization: bool,
-    pub enable_parallel_compilation: bool,
-    pub optimization_timeout: Duration,
-    pub memory_limit: usize,
-    pub target_performance_improvement: f64,
-    pub compilation_speed_priority: f64,
-    pub code_size_priority: f64,
-    pub runtime_performance_priority: f64,
-}
-
 impl Default for OptimizationEngineConfig {
     fn default() -> Self {
         Self {
-            enable_adaptive_optimization: true,
-            enable_profile_guided_optimization: true,
-            enable_incremental_optimization: true,
-            enable_parallel_compilation: true,
-            optimization_timeout: Duration::from_secs(300),
             memory_limit: 2 * 1024 * 1024 * 1024, // 2GB
             target_performance_improvement: 1.2, // 20% improvement target
-            compilation_speed_priority: 0.3,
-            code_size_priority: 0.3,
-            runtime_performance_priority: 0.4,
         }
     }
-}
-
 /// Optimization result with detailed metrics
 #[derive(Debug, Clone)]
 pub struct OptimizationResult {
-    pub success: bool,
-    pub optimization_time: Duration,
-    pub code_size_before: usize,
-    pub code_size_after: usize,
-    pub estimated_runtime_improvement: f64,
-    pub passes_applied: Vec<String>,
-    pub warnings: Vec<String>,
-    pub errors: Vec<String>,
-    pub cache_hit: bool,
-}
-
 /// Engine performance statistics
 #[derive(Debug, Clone)]
 pub struct EngineStatistics {
-    pub total_optimizations: usize,
-    pub successful_optimizations: usize,
-    pub failed_optimizations: usize,
-    pub total_optimization_time: Duration,
-    pub average_optimization_time: Duration,
-    pub cache_hit_rate: f64,
-    pub adaptive_adjustments: usize,
-    pub incremental_optimizations: usize,
-    pub parallel_optimizations: usize,
-    pub memory_peak_usage: usize,
-}
-
 impl Default for EngineStatistics {
     fn default() -> Self {
         Self {
-            total_optimizations: 0,
-            successful_optimizations: 0,
-            failed_optimizations: 0,
-            total_optimization_time: Duration::from_secs(0),
-            average_optimization_time: Duration::from_secs(0),
-            cache_hit_rate: 0.0,
-            adaptive_adjustments: 0,
-            incremental_optimizations: 0,
-            parallel_optimizations: 0,
-            memory_peak_usage: 0,
         }
     }
-}
-
 /// Optimization strategy selector
 #[derive(Debug, Clone)]
 pub enum OptimizationStrategy {
-    Conservative,
-    Balanced,
-    Aggressive,
-    Adaptive,
-    ProfileGuided,
-}
-
 /// Main optimization engine
 pub struct OptimizationEngine<'ctx> {
-    context: &'ctx Context,
-    config: OptimizationEngineConfig,
-    stats: Arc<Mutex<EngineStatistics>>,
-    optimization_history: Arc<RwLock<HashMap<String, Vec<OptimizationResult>>>>,
-    performance_profiles: Arc<RwLock<HashMap<String, f64>>>,
-    incremental_cache: Arc<RwLock<HashMap<String, String>>>,
-}
-
 impl<'ctx> OptimizationEngine<'ctx> {
     /// Create a new optimization engine
     #[instrument(skip(context))]
     pub fn new(context: &'ctx Context, config: OptimizationEngineConfig) -> Self {
-        info!("Creating optimization engine with adaptive optimization: {}", 
               config.enable_adaptive_optimization);
         
         Self {
-            context,
-            config,
-            stats: Arc::new(Mutex::new(EngineStatistics::default())),
-            optimization_history: Arc::new(RwLock::new(HashMap::new())),
-            performance_profiles: Arc::new(RwLock::new(HashMap::new())),
-            incremental_cache: Arc::new(RwLock::new(HashMap::new())),
         }
     }
     
@@ -154,12 +71,6 @@ impl<'ctx> OptimizationEngine<'ctx> {
         
         // Apply optimization strategy
         let mut result = match strategy {
-            OptimizationStrategy::Conservative => self.apply_conservative_optimization(module)?,
-            OptimizationStrategy::Balanced => self.apply_balanced_optimization(module)?,
-            OptimizationStrategy::Aggressive => self.apply_aggressive_optimization(module)?,
-            OptimizationStrategy::Adaptive => self.apply_adaptive_optimization(module, module_name)?,
-            OptimizationStrategy::ProfileGuided => self.apply_profile_guided_optimization(module, module_name)?,
-        };
         
         result.optimization_time = start_time.elapsed();
         
@@ -172,18 +83,11 @@ impl<'ctx> OptimizationEngine<'ctx> {
         // Cache result if incremental optimization is enabled
         if self.config.enable_incremental_optimization {
             self.cache_optimization_result(module, module_name, &result);
-        }
-        
         info!(
-            optimization_time = ?result.optimization_time,
-            size_reduction = result.code_size_before.saturating_sub(result.code_size_after),
-            passes_applied = result.passes_applied.len(),
             "Module optimization complete"
         );
         
         Ok(result)
-    }
-    
     /// Select the best optimization strategy for a module
     fn select_optimization_strategy(&self, module: &Module<'ctx>, module_name: &str) -> Result<OptimizationStrategy> {
         // Analyze module characteristics
@@ -199,8 +103,6 @@ impl<'ctx> OptimizationEngine<'ctx> {
                     // If previous optimization was very successful, use similar strategy
                     if last_result.estimated_runtime_improvement > 1.5 {
                         return Ok(OptimizationStrategy::Aggressive);
-                    }
-                    
                     // If previous optimization had minimal impact, be conservative
                     if last_result.estimated_runtime_improvement < 1.05 {
                         return Ok(OptimizationStrategy::Conservative);
@@ -229,119 +131,52 @@ impl<'ctx> OptimizationEngine<'ctx> {
         let size_before = code_before.len();
         
         let config = OptimizationConfig {
-            level: OptimizationLevel::O1,
-            enable_parallel_optimization: true,
-            enable_caching: true,
             ..Default::default()
-        };
         
         // Apply minimal optimization passes
         let passes_applied = vec![
-            "instruction-combining".to_string(),
-            "reassociate".to_string(),
-            "cfg-simplification".to_string(),
         ];
         
         let code_after = module.print_to_string().to_string();
         let size_after = code_after.len();
         
         Ok(OptimizationResult {
-            success: true,
             optimization_time: Duration::from_millis(0), // Will be set by caller
-            code_size_before: size_before,
-            code_size_after: size_after,
             estimated_runtime_improvement: 1.1, // Conservative improvement estimate
-            passes_applied,
-            warnings: Vec::new(),
-            errors: Vec::new(),
-            cache_hit: false,
         })
-    }
-    
     /// Apply balanced optimization strategy
     fn apply_balanced_optimization(&self, module: &Module<'ctx>) -> Result<OptimizationResult> {
         let code_before = module.print_to_string().to_string();
         let size_before = code_before.len();
         
         let config = OptimizationConfig {
-            level: OptimizationLevel::O2,
-            enable_parallel_optimization: true,
-            enable_caching: true,
             ..Default::default()
-        };
         
         let passes_applied = vec![
-            "instruction-combining".to_string(),
-            "reassociate".to_string(),
-            "gvn".to_string(),
-            "cfg-simplification".to_string(),
-            "promote-memory-to-register".to_string(),
-            "function-attrs".to_string(),
         ];
         
         let code_after = module.print_to_string().to_string();
         let size_after = code_after.len();
         
         Ok(OptimizationResult {
-            success: true,
-            optimization_time: Duration::from_millis(0),
-            code_size_before: size_before,
-            code_size_after: size_after,
-            estimated_runtime_improvement: 1.3,
-            passes_applied,
-            warnings: Vec::new(),
-            errors: Vec::new(),
-            cache_hit: false,
         })
-    }
-    
     /// Apply aggressive optimization strategy
     fn apply_aggressive_optimization(&self, module: &Module<'ctx>) -> Result<OptimizationResult> {
         let code_before = module.print_to_string().to_string();
         let size_before = code_before.len();
         
         let config = OptimizationConfig {
-            level: OptimizationLevel::O3,
-            enable_parallel_optimization: true,
-            enable_caching: true,
-            vectorize_loops: true,
-            vectorize_slp: true,
-            unroll_loops: true,
-            merge_functions: true,
-            inline_functions: true,
             ..Default::default()
-        };
         
         let passes_applied = vec![
-            "instruction-combining".to_string(),
-            "reassociate".to_string(),
-            "gvn".to_string(),
-            "cfg-simplification".to_string(),
-            "promote-memory-to-register".to_string(),
-            "function-attrs".to_string(),
-            "loop-unroll".to_string(),
-            "loop-vectorize".to_string(),
-            "slp-vectorize".to_string(),
-            "merge-functions".to_string(),
-            "global-optimizer".to_string(),
         ];
         
         let code_after = module.print_to_string().to_string();
         let size_after = code_after.len();
         
         Ok(OptimizationResult {
-            success: true,
-            optimization_time: Duration::from_millis(0),
-            code_size_before: size_before,
-            code_size_after: size_after,
             estimated_runtime_improvement: 1.7, // More aggressive improvement estimate
-            passes_applied,
-            warnings: Vec::new(),
-            errors: Vec::new(),
-            cache_hit: false,
         })
-    }
-    
     /// Apply adaptive optimization strategy
     fn apply_adaptive_optimization(&self, module: &Module<'ctx>, module_name: &str) -> Result<OptimizationResult> {
         // Start with balanced optimization
@@ -361,11 +196,7 @@ impl<'ctx> OptimizationEngine<'ctx> {
         // Store adaptive learning data
         if let Ok(mut profiles) = self.performance_profiles.write() {
             profiles.insert(module_name.to_string(), result.estimated_runtime_improvement);
-        }
-        
         Ok(result)
-    }
-    
     /// Apply profile-guided optimization strategy
     fn apply_profile_guided_optimization(&self, module: &Module<'ctx>, module_name: &str) -> Result<OptimizationResult> {
         // Check if we have profile data for this module
@@ -379,44 +210,28 @@ impl<'ctx> OptimizationEngine<'ctx> {
                     return self.apply_conservative_optimization(module);
                 }
             }
-        }
-        
         // No profile data available, fall back to balanced
         debug!("Profile-guided optimization: no profile data, using balanced strategy");
         self.apply_balanced_optimization(module)
-    }
-    
     /// Check incremental optimization cache
     fn check_incremental_cache(&self, module: &Module<'ctx>, module_name: &str) -> Option<OptimizationResult> {
         if let Ok(cache) = self.incremental_cache.read() {
             let module_ir = module.print_to_string().to_string();
-            let cache_key = format!("{}_{:x}", module_name, 
                                    std::collections::hash_map::DefaultHasher::new()
                                    .hash_one(&module_ir));
             
             if cache.contains_key(&cache_key) {
                 // Return cached result
                 return Some(OptimizationResult {
-                    success: true,
                     optimization_time: Duration::from_millis(1), // Minimal cache lookup time
-                    code_size_before: module_ir.len(),
-                    code_size_after: module_ir.len(),
-                    estimated_runtime_improvement: 1.0,
-                    passes_applied: vec!["cached".to_string()],
-                    warnings: Vec::new(),
-                    errors: Vec::new(),
-                    cache_hit: true,
                 });
             }
         }
         None
-    }
-    
     /// Cache optimization result for incremental optimization
     fn cache_optimization_result(&self, module: &Module<'ctx>, module_name: &str, result: &OptimizationResult) {
         if let Ok(mut cache) = self.incremental_cache.write() {
             let module_ir = module.print_to_string().to_string();
-            let cache_key = format!("{}_{:x}", module_name,
                                    std::collections::hash_map::DefaultHasher::new()
                                    .hash_one(&module_ir));
             
@@ -442,8 +257,6 @@ impl<'ctx> OptimizationEngine<'ctx> {
                 stats.successful_optimizations += 1;
             } else {
                 stats.failed_optimizations += 1;
-            }
-            
             stats.total_optimization_time += result.optimization_time;
             stats.average_optimization_time = stats.total_optimization_time / stats.total_optimizations as u32;
             
@@ -453,8 +266,6 @@ impl<'ctx> OptimizationEngine<'ctx> {
                 stats.cache_hit_rate = cache_hits as f64 / total_attempts as f64;
             }
         }
-    }
-    
     /// Store optimization result in history
     fn store_optimization_result(&self, module_name: &str, result: &OptimizationResult) {
         if let Ok(mut history) = self.optimization_history.write() {
@@ -466,13 +277,9 @@ impl<'ctx> OptimizationEngine<'ctx> {
                 entry.remove(0);
             }
         }
-    }
-    
     /// Get engine statistics
     pub fn get_statistics(&self) -> EngineStatistics {
         self.stats.lock().unwrap().clone()
-    }
-    
     /// Clear all caches and history
     pub fn clear_caches(&self) {
         if let Ok(mut cache) = self.incremental_cache.write() {
@@ -485,8 +292,6 @@ impl<'ctx> OptimizationEngine<'ctx> {
             profiles.clear();
         }
         info!("All optimization caches cleared");
-    }
-    
     /// Print engine summary
     #[instrument(skip(self))]
     pub fn print_summary(&self) {
@@ -494,7 +299,6 @@ impl<'ctx> OptimizationEngine<'ctx> {
         
         println!("🚀 Optimization Engine Summary:");
         println!("   Total optimizations: {}", stats.total_optimizations);
-        println!("   Success rate: {:.1}%", 
                  if stats.total_optimizations > 0 {
                      100.0 * stats.successful_optimizations as f64 / stats.total_optimizations as f64
                  } else {
@@ -516,14 +320,10 @@ impl<'ctx> OptimizationEngine<'ctx> {
             println!("   Peak memory usage: {} MB", stats.memory_peak_usage / 1024 / 1024);
         }
     }
-}
-
 use std::hash::{Hash, Hasher};
 
 trait HashExt {
     fn hash_one<T: Hash>(&mut self, value: &T) -> u64;
-}
-
 impl HashExt for std::collections::hash_map::DefaultHasher {
     fn hash_one<T: Hash>(&mut self, value: &T) -> u64 {
         value.hash(self);

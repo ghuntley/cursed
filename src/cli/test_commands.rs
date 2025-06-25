@@ -130,11 +130,8 @@ pub fn add_test_commands(cmd: Command) -> Command {
                     .help("Directory containing test data files")
             )
     )
-}
-
 /// Handle test command execution
 pub async fn handle_test_command(
-    matches: &clap::ArgMatches,
     shutdown: Arc<AtomicBool>
 ) -> crate::error::Result<()> {
     let watch = matches.get_flag("watch");
@@ -172,8 +169,6 @@ async fn handle_single_test_command(matches: &clap::ArgMatches) -> crate::error:
 
     if let Some(output_path) = report_output {
         runner = runner.with_report_output(output_path);
-    }
-
     let mut runner = runner.build()
         .map_err(|e| format!("Failed to create test runner: {}", e))?;
 
@@ -194,11 +189,8 @@ async fn handle_single_test_command(matches: &clap::ArgMatches) -> crate::error:
     }
 
     Ok(())
-}
-
 /// Handle watch mode test execution
 async fn handle_watch_test_command(
-    matches: &clap::ArgMatches, 
     shutdown: Arc<AtomicBool>
 ) -> crate::error::Result<()> {
     let patterns = matches.get_many::<String>("watch-pattern")
@@ -216,8 +208,6 @@ async fn handle_watch_test_command(
     // Run tests initially
     if let Err(e) = handle_single_test_command(matches).await {
         eprintln!("Initial test run failed: {}", e);
-    }
-
     // Simplified watch implementation - demonstrate interface
     println!("🔧 File watching infrastructure ready");
     println!("   (Real file watching implementation will be integrated here)");
@@ -228,12 +218,8 @@ async fn handle_watch_test_command(
     while !shutdown.load(Ordering::SeqCst) {
         interval.tick().await;
         // In a real implementation, file change events would trigger test re-execution here
-    }
-
     println!("✅ Watch stopped");
     Ok(())
-}
-
 /// Parse test configuration from command-line arguments
 fn parse_test_config(matches: &clap::ArgMatches) -> crate::error::Result<()> {
     let mut config = TestConfig::default();
@@ -241,8 +227,6 @@ fn parse_test_config(matches: &clap::ArgMatches) -> crate::error::Result<()> {
     // Pattern filtering
     if let Some(pattern) = matches.get_one::<String>("pattern") {
         config.test_patterns.push(pattern.clone());
-    }
-
     // Verbose mode
     config.verbose = matches.get_flag("verbose");
 
@@ -260,41 +244,24 @@ fn parse_test_config(matches: &clap::ArgMatches) -> crate::error::Result<()> {
         let timeout: u64 = timeout_str.parse()
             .map_err(|_| "Invalid timeout value")?;
         config.timeout_seconds = timeout;
-    }
-
     // File patterns
     if let Some(include_patterns) = matches.get_many::<String>("include") {
         config.include_patterns = include_patterns.cloned().collect();
-    }
-
     if let Some(exclude_patterns) = matches.get_many::<String>("exclude") {
         config.exclude_patterns = exclude_patterns.cloned().collect();
-    }
-
     // Test data directory
     if let Some(test_data_dir) = matches.get_one::<String>("test-data-dir") {
         config.test_data_dir = Some(PathBuf::from(test_data_dir));
-    }
-
     // Additional configuration
     config.fail_fast = matches.get_flag("fail-fast");
     config.coverage = matches.get_flag("coverage");
 
     Ok(config)
-}
-
 /// Parse report format from command-line arguments
 fn parse_report_format(matches: &clap::ArgMatches) -> crate::error::Result<()> {
     let format_str = matches.get_one::<String>("format").unwrap();
     
     match format_str.as_str() {
-        "console" => Ok(ReportFormat::Console),
-        "json" => Ok(ReportFormat::Json),
-        "xml" => Ok(ReportFormat::Xml),
-        "html" => Ok(ReportFormat::Html),
-        "csv" => Ok(ReportFormat::Csv),
-        "markdown" => Ok(ReportFormat::Markdown),
-        _ => Err(format!("Unknown report format: {}", format_str).into()),
     }
 }
 
@@ -315,7 +282,6 @@ pub async fn run_tests_with_pattern(pattern: &str) -> TestResult<()> {
                 Ok(())
             }
         }
-        Err(e) => Err(e),
     }
 }
 
@@ -336,7 +302,6 @@ pub async fn run_tests_in_directory(directory: &str) -> TestResult<()> {
                 Ok(())
             }
         }
-        Err(e) => Err(e),
     }
 }
 
@@ -357,7 +322,6 @@ pub async fn run_test_file(file_path: &str) -> TestResult<()> {
                 Ok(())
             }
         }
-        Err(e) => Err(e),
     }
 }
 

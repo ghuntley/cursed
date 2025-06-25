@@ -17,18 +17,16 @@ pub use field_arithmetic::{FieldElement, FieldArithmetic};
 pub use merkle_trees::{MerkleTree, MerkleProof, SparseMerkleTree, MerkleTrees};
 pub use commitments::{
     PedersenCommitment, HashCommitment, VectorCommitment, KateCommitment, Commitments
-};
+// };
 pub use circuit_builder::{
     CircuitBuilder, Gate, Wire, R1CSConstraint, Circuits
-};
+// };
 pub use groth16::{
-    Groth16Proof, Groth16ProvingKey, Groth16VerifyingKey, Groth16Setup, 
     Groth16Prover, Groth16Verifier, Groth16, G1Point, G2Point
-};
+// };
 pub use plonk::{
-    PlonkProof, PlonkProvingKey, PlonkVerifyingKey, PlonkSetup,
     PlonkProver, PlonkVerifier, Plonk, PlonkGate, PlonkPolynomial
-};
+// };
 
 // use crate::stdlib::packages::crypto_advanced::AdvancedCryptoResult;
 // use crate::stdlib::value::Value;
@@ -49,8 +47,6 @@ pub fn init_crypto_zk() -> AdvancedCryptoResult<()> {
     println!("  ✓ Polynomial commitments");
     println!("  ✓ ZK protocol implementations");
     Ok(())
-}
-
 /// Get package information and capabilities
 pub fn get_package_info() -> Value {
     let mut info = HashMap::new();
@@ -59,36 +55,14 @@ pub fn get_package_info() -> Value {
     info.insert("description".to_string(), Value::String("Complete zero-knowledge proof systems".to_string()));
     
     let features = vec![
-        Value::String("Field arithmetic for BN254 curve".to_string()),
-        Value::String("Merkle trees (standard and sparse)".to_string()),
-        Value::String("Pedersen commitments".to_string()),
-        Value::String("Hash commitments".to_string()),
-        Value::String("Vector commitments".to_string()),
-        Value::String("Kate polynomial commitments".to_string()),
-        Value::String("R1CS circuit builder".to_string()),
-        Value::String("Groth16 zkSNARKs".to_string()),
-        Value::String("PLONK universal SNARKs".to_string()),
-        Value::String("Bulletproofs range proofs".to_string()),
-        Value::String("STARK transparent proofs".to_string()),
-        Value::String("KZG polynomial commitments".to_string()),
-        Value::String("ZK protocol implementations".to_string()),
     ];
     info.insert("features".to_string(), Value::Array(features));
     
     let algorithms = vec![
-        Value::String("BN254 elliptic curve".to_string()),
-        Value::String("SHA3-256 hashing".to_string()),
-        Value::String("FNV-1a hash function".to_string()),
-        Value::String("Lagrange interpolation".to_string()),
-        Value::String("Binary exponentiation".to_string()),
-        Value::String("Extended Euclidean algorithm".to_string()),
-        Value::String("Tonelli-Shanks square root".to_string()),
     ];
     info.insert("algorithms".to_string(), Value::Array(algorithms));
     
     Value::Object(info)
-}
-
 /// Demo function showcasing ZK proof capabilities
 pub fn demo_zk_proofs() -> AdvancedCryptoResult<Value> {
     let mut demo_results = HashMap::new();
@@ -101,9 +75,6 @@ pub fn demo_zk_proofs() -> AdvancedCryptoResult<Value> {
     
     // Merkle tree demo
     let data = Value::Array(vec![
-        Value::String("data1".to_string()),
-        Value::String("data2".to_string()),
-        Value::String("data3".to_string()),
     ]);
     let tree = MerkleTrees::create_tree(&data)?;
     let proof = MerkleTrees::generate_proof(&data, 1)?;
@@ -135,8 +106,6 @@ pub fn demo_zk_proofs() -> AdvancedCryptoResult<Value> {
     demo_results.insert("plonk_circuit".to_string(), plonk_circuit);
     
     Ok(Value::Object(demo_results))
-}
-
 /// Benchmark ZK proof systems
 pub fn benchmark_zk_systems() -> AdvancedCryptoResult<Value> {
     use std::time::Instant;
@@ -193,8 +162,6 @@ pub fn benchmark_zk_systems() -> AdvancedCryptoResult<Value> {
     benchmarks.insert("note".to_string(), Value::String("All times in milliseconds".to_string()));
     
     Ok(Value::Object(benchmarks))
-}
-
 /// Comprehensive test of all ZK functionalities
 pub fn test_all_functionality() -> AdvancedCryptoResult<Value> {
     let mut test_results = HashMap::new();
@@ -277,8 +244,6 @@ pub fn test_all_functionality() -> AdvancedCryptoResult<Value> {
     test_results.insert("success_rate".to_string(), Value::String(format!("{:.1}%", (passed_tests as f64 / total_tests as f64) * 100.0)));
     
     Ok(Value::Object(test_results))
-}
-
 // Helper test functions
 fn test_field_arithmetic() -> AdvancedCryptoResult<()> {
     let a = FieldArithmetic::from_integer(10);
@@ -296,8 +261,6 @@ fn test_field_arithmetic() -> AdvancedCryptoResult<()> {
 
 fn test_merkle_trees() -> AdvancedCryptoResult<()> {
     let data = Value::Array(vec![
-        Value::String("test1".to_string()),
-        Value::String("test2".to_string()),
     ]);
     
     let tree = MerkleTrees::create_tree(&data)?;
@@ -394,5 +357,3 @@ pub fn generate_test_parameters() -> AdvancedCryptoResult<Value> {
     params.insert("plonk_universal_setup".to_string(), plonk_setup);
     
     Ok(Value::Object(params))
-}
-

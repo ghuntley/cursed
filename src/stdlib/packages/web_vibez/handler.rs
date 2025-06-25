@@ -5,11 +5,8 @@ use std::sync::Arc;
 use std::future::Future;
 use std::pin::Pin;
 
-// use crate::stdlib::packages::web_vibez::{
-    request::HttpRequest,
-    response::HttpResponse,
-    error::{WebError, WebResult},
-};
+// Placeholder imports disabled
+// };
 
 /// fr fr Handler trait for processing HTTP requests - the core interface
 pub trait Handler: Send + Sync {
@@ -28,31 +25,22 @@ pub type HandlerFunc = Arc<dyn Fn(HttpRequest) -> Pin<Box<dyn Future<Output = We
 /// fr fr Simple function wrapper that implements Handler trait
 #[derive(Clone)]
 pub struct FunctionHandler {
-    func: HandlerFunc,
-    name: String,
-}
-
 impl FunctionHandler {
     /// fr fr Create new function handler - wrap a closure
     pub fn new<F, Fut>(name: String, func: F) -> Self
     where
-        F: Fn(HttpRequest) -> Fut + Send + Sync + 'static,
-        Fut: Future<Output = WebResult<HttpResponse>> + Send + 'static,
     {
         let handler_func = Arc::new(move |req: HttpRequest| -> Pin<Box<dyn Future<Output = WebResult<HttpResponse>> + Send>> {
             Box::pin(func(req))
         });
 
         Self {
-            func: handler_func,
-            name,
         }
     }
 
     /// fr fr Create simple sync handler - for basic responses
     pub fn sync<F>(name: String, func: F) -> Self
     where
-        F: Fn(HttpRequest) -> WebResult<HttpResponse> + Send + Sync + 'static,
     {
         Self::new(name, move |req| {
             let result = func(req);
@@ -64,8 +52,6 @@ impl FunctionHandler {
 impl Handler for FunctionHandler {
     fn handle(&self, request: HttpRequest) -> Pin<Box<dyn Future<Output = WebResult<HttpResponse>> + Send + '_>> {
         (self.func)(request)
-    }
-
     fn name(&self) -> &'static str {
         // Note: This is a limitation - we can't return a &str from String
         // In practice, you'd want to use a different approach for dynamic names
@@ -76,14 +62,10 @@ impl Handler for FunctionHandler {
 /// fr fr Handler chain for middleware pattern - composable processing
 #[derive(Clone)]
 pub struct HandlerChain {
-    handlers: Vec<Arc<dyn Handler>>,
-}
-
 impl HandlerChain {
     /// fr fr Create new empty handler chain - start building
     pub fn new() -> Self {
         Self {
-            handlers: Vec::new(),
         }
     }
 
@@ -91,30 +73,19 @@ impl HandlerChain {
     pub fn add<H: Handler + 'static>(mut self, handler: H) -> Self {
         self.handlers.push(Arc::new(handler));
         self
-    }
-
     /// fr fr Add function handler to chain - quick closure addition
     pub fn add_fn<F, Fut>(self, name: String, func: F) -> Self
     where
-        F: Fn(HttpRequest) -> Fut + Send + Sync + 'static,
-        Fut: Future<Output = WebResult<HttpResponse>> + Send + 'static,
     {
         self.add(FunctionHandler::new(name, func))
-    }
-
     /// fr fr Add sync function handler - simple closures
     pub fn add_sync<F>(self, name: String, func: F) -> Self
     where
-        F: Fn(HttpRequest) -> WebResult<HttpResponse> + Send + Sync + 'static,
     {
         self.add(FunctionHandler::sync(name, func))
-    }
-
     /// fr fr Get number of handlers in chain - size info
     pub fn len(&self) -> usize {
         self.handlers.len()
-    }
-
     /// fr fr Check if chain is empty - validation
     pub fn is_empty(&self) -> bool {
         self.handlers.is_empty()
@@ -142,13 +113,9 @@ impl Handler for HandlerChain {
                         continue;
                     }
                 }
-            }
-
             // If no handlers or all failed, return a default error
             Err(WebError::internal_server_error("No handlers available"))
         })
-    }
-
     fn name(&self) -> &'static str {
         "HandlerChain"
     }
@@ -156,16 +123,10 @@ impl Handler for HandlerChain {
 
 /// fr fr Static file handler - serve files from filesystem
 pub struct StaticFileHandler {
-    root_dir: String,
-    index_files: Vec<String>,
-}
-
 impl StaticFileHandler {
     /// fr fr Create new static file handler - serve from directory
     pub fn new(root_dir: String) -> Self {
         Self {
-            root_dir,
-            index_files: Vec::from(["index.html".to_string(), "index.htm".to_string()]),
         }
     }
 
@@ -173,8 +134,6 @@ impl StaticFileHandler {
     pub fn with_index_files(mut self, index_files: Vec<String>) -> Self {
         self.index_files = index_files;
         self
-    }
-
     /// fr fr Get MIME type from file extension - content type detection
     fn get_mime_type(&self, path: &str) -> &'static str {
         match path.split('.').last().unwrap_or("").to_lowercase().as_str() {
@@ -192,8 +151,6 @@ impl StaticFileHandler {
             _ => "application/octet-stream",
         }
     }
-}
-
 impl Handler for StaticFileHandler {
     fn handle(&self, request: HttpRequest) -> Pin<Box<dyn Future<Output = WebResult<HttpResponse>> + Send + '_>> {
         let root_dir = self.root_dir.clone();
@@ -203,8 +160,6 @@ impl Handler for StaticFileHandler {
             // Security: Prevent directory traversal attacks
             if request.path.contains("..") || request.path.contains("\\") {
                 return Ok(HttpResponse::forbidden().with_text("Access denied"));
-            }
-
             // Build file path
             let mut file_path = format!("{}{}", root_dir, request.path);
             
@@ -238,8 +193,6 @@ impl Handler for StaticFileHandler {
                 }
             }
         })
-    }
-
     fn name(&self) -> &'static str {
         "StaticFileHandler"
     }
@@ -247,32 +200,22 @@ impl Handler for StaticFileHandler {
 
 /// fr fr JSON API handler - structured response helpers
 pub struct JsonApiHandler<T> {
-    handler: Arc<dyn Fn(HttpRequest) -> Pin<Box<dyn Future<Output = WebResult<T>> + Send>> + Send + Sync>,
-}
-
 impl<T> JsonApiHandler<T>
 where
-    T: serde::Serialize + Send + 'static,
 {
     /// fr fr Create JSON API handler - auto-serialize responses
     pub fn new<F, Fut>(handler: F) -> Self
     where
-        F: Fn(HttpRequest) -> Fut + Send + Sync + 'static,
-        Fut: Future<Output = WebResult<T>> + Send + 'static,
     {
         let handler_fn = Arc::new(move |req: HttpRequest| -> Pin<Box<dyn Future<Output = WebResult<T>> + Send>> {
             Box::pin(handler(req))
         });
 
         Self {
-            handler: handler_fn,
         }
     }
-}
-
 impl<T> Handler for JsonApiHandler<T>
 where
-    T: serde::Serialize + Send + 'static,
 {
     fn handle(&self, request: HttpRequest) -> Pin<Box<dyn Future<Output = WebResult<HttpResponse>> + Send + '_>> {
         let handler = self.handler.clone();
@@ -282,11 +225,8 @@ where
                 Ok(data) => {
                     HttpResponse::ok().with_json(&data)
                 }
-                Err(e) => Ok(HttpResponse::from_error(&e)),
             }
         })
-    }
-
     fn name(&self) -> &'static str {
         "JsonApiHandler"
     }
@@ -294,28 +234,18 @@ where
 
 /// fr fr Redirect handler - send users elsewhere
 pub struct RedirectHandler {
-    location: String,
-    permanent: bool,
-}
-
 impl RedirectHandler {
     /// fr fr Create permanent redirect handler - 301 response
     pub fn permanent(location: String) -> Self {
         Self {
-            location,
-            permanent: true,
         }
     }
 
     /// fr fr Create temporary redirect handler - 302 response
     pub fn temporary(location: String) -> Self {
         Self {
-            location,
-            permanent: false,
         }
     }
-}
-
 impl Handler for RedirectHandler {
     fn handle(&self, _request: HttpRequest) -> Pin<Box<dyn Future<Output = WebResult<HttpResponse>> + Send + '_>> {
         let location = self.location.clone();
@@ -328,8 +258,6 @@ impl Handler for RedirectHandler {
                 Ok(HttpResponse::temporary_redirect(location))
             }
         })
-    }
-
     fn name(&self) -> &'static str {
         if self.permanent {
             "PermanentRedirectHandler"
@@ -337,26 +265,18 @@ impl Handler for RedirectHandler {
             "TemporaryRedirectHandler"
         }
     }
-}
-
 /// fr fr Health check handler - service monitoring
 pub struct HealthCheckHandler {
-    checks: Vec<Arc<dyn Fn() -> Pin<Box<dyn Future<Output = bool> + Send>> + Send + Sync>>,
-}
-
 impl HealthCheckHandler {
     /// fr fr Create new health check handler - monitoring endpoint
     pub fn new() -> Self {
         Self {
-            checks: Vec::new(),
         }
     }
 
     /// fr fr Add health check function - custom validation
     pub fn add_check<F, Fut>(mut self, check: F) -> Self
     where
-        F: Fn() -> Fut + Send + Sync + 'static,
-        Fut: Future<Output = bool> + Send + 'static,
     {
         let check_fn = Arc::new(move || -> Pin<Box<dyn Future<Output = bool> + Send>> {
             Box::pin(check())
@@ -382,9 +302,6 @@ impl Handler for HealthCheckHandler {
 
             let status = if all_healthy { "healthy" } else { "unhealthy" };
             let response_data = serde_json::json!({
-                "status": status,
-                "timestamp": chrono::Utc::now().to_rfc3339(),
-                "checks_passed": all_healthy,
             });
 
             if all_healthy {
@@ -394,8 +311,6 @@ impl Handler for HealthCheckHandler {
                     .with_json(&response_data)
             }
         })
-    }
-
     fn name(&self) -> &'static str {
         "HealthCheckHandler"
     }

@@ -7,24 +7,14 @@ use crate::error::{CursedError, SourceLocation};
 
 #[derive(Debug, Clone)]
 pub struct ConstantStatement {
-    pub name: String,
-    pub location: SourceLocation,
-}
-
 impl ConstantStatement {
     pub fn new(name: String) -> Self {
         ConstantStatement {
-            name,
-            location: SourceLocation::default(),
         }
     }
-}
-
 impl Node for ConstantStatement {
     fn string(&self) -> String {
         format!("facts {} = ...", self.name)
-    }
-    
     fn token_literal(&self) -> String {
         "facts".to_string()
     }
@@ -33,8 +23,6 @@ impl Node for ConstantStatement {
 impl Statement for ConstantStatement {
     fn as_any(&self) -> &dyn Any {
         self
-    }
-    
     fn clone_box(&self) -> Box<dyn Statement> {
         Box::new(self.clone())
     }

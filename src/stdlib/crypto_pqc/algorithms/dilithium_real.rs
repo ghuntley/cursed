@@ -32,51 +32,31 @@ const CRHBYTES: usize = 64;
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum DilithiumParams {
     /// Dilithium2: k=4, l=4, eta=2, tau=39, beta=78, gamma1=2^17, gamma2=95232
-    Dilithium2,
     /// Dilithium3: k=6, l=5, eta=4, tau=49, beta=196, gamma1=2^19, gamma2=261888
-    Dilithium3,
     /// Dilithium5: k=8, l=7, eta=2, tau=60, beta=120, gamma1=2^19, gamma2=261888
-    Dilithium5,
-}
-
 impl DilithiumParams {
     fn k(&self) -> usize {
         match self {
-            DilithiumParams::Dilithium2 => 4,
-            DilithiumParams::Dilithium3 => 6,
-            DilithiumParams::Dilithium5 => 8,
         }
     }
 
     fn l(&self) -> usize {
         match self {
-            DilithiumParams::Dilithium2 => 4,
-            DilithiumParams::Dilithium3 => 5,
-            DilithiumParams::Dilithium5 => 7,
         }
     }
 
     fn eta(&self) -> i32 {
         match self {
-            DilithiumParams::Dilithium2 => 2,
-            DilithiumParams::Dilithium3 => 4,
-            DilithiumParams::Dilithium5 => 2,
         }
     }
 
     fn tau(&self) -> i32 {
         match self {
-            DilithiumParams::Dilithium2 => 39,
-            DilithiumParams::Dilithium3 => 49,
-            DilithiumParams::Dilithium5 => 60,
         }
     }
 
     fn beta(&self) -> i32 {
         match self {
-            DilithiumParams::Dilithium2 => 78,
-            DilithiumParams::Dilithium3 => 196,
-            DilithiumParams::Dilithium5 => 120,
         }
     }
 
@@ -95,28 +75,19 @@ impl DilithiumParams {
             DilithiumParams::Dilithium5 => (Q - 1) / 32,
         }
     }
-}
-
 impl ParameterSet for DilithiumParams {
     fn security_level(&self) -> SecurityLevel {
         match self {
-            DilithiumParams::Dilithium2 => SecurityLevel::Level1,
-            DilithiumParams::Dilithium3 => SecurityLevel::Level3,
-            DilithiumParams::Dilithium5 => SecurityLevel::Level5,
         }
     }
 
     fn public_key_size(&self) -> usize {
         SEEDBYTES + self.k() * self.polyt1_packedbytes()
-    }
-
     fn secret_key_size(&self) -> usize {
         3 * SEEDBYTES 
             + self.l() * self.polyeta_packedbytes()
             + self.k() * self.polyeta_packedbytes()
             + self.k() * self.polyt0_packedbytes()
-    }
-
     fn additional_sizes(&self) -> Vec<(&'static str, usize)> {
         let sig_size = SEEDBYTES + self.l() * self.polyz_packedbytes() + self.omega() + self.k();
         vec![("signature", sig_size)]
@@ -128,16 +99,10 @@ impl DilithiumParams {
     fn polyt0_packedbytes(&self) -> usize { 416 }
     fn polyeta_packedbytes(&self) -> usize {
         match self.eta() {
-            2 => 96,
-            4 => 128,
-            _ => 128,
         }
     }
     fn polyz_packedbytes(&self) -> usize {
         match self.gamma1() {
-            n if n == 1 << 17 => 576,
-            n if n == 1 << 19 => 640,
-            _ => 640,
         }
     }
     fn omega(&self) -> usize { 80 }
@@ -146,19 +111,11 @@ impl DilithiumParams {
 impl fmt::Display for DilithiumParams {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            DilithiumParams::Dilithium2 => write!(f, "Dilithium2"),
-            DilithiumParams::Dilithium3 => write!(f, "Dilithium3"),
-            DilithiumParams::Dilithium5 => write!(f, "Dilithium5"),
         }
     }
-}
-
 /// Polynomial over Z_q[X]/(X^n + 1)
 #[derive(Debug, Clone)]
 pub struct Polynomial {
-    coeffs: [i32; N],
-}
-
 impl Polynomial {
     fn new() -> Self {
         Self { coeffs: [0; N] }
@@ -178,13 +135,9 @@ impl Polynomial {
     /// Number Theoretic Transform (NTT)
     fn ntt(&mut self) {
         ntt_forward(&mut self.coeffs);
-    }
-
     /// Inverse Number Theoretic Transform
     fn intt(&mut self) {
         ntt_inverse(&mut self.coeffs);
-    }
-
     /// Pointwise multiplication in NTT domain
     fn pointwise_multiply(&self, other: &Self) -> Self {
         let mut result = Self::new();
@@ -192,8 +145,6 @@ impl Polynomial {
             result.coeffs[i] = montgomery_reduce(self.coeffs[i] as i64 * other.coeffs[i] as i64);
         }
         result
-    }
-
     /// Add two polynomials
     fn add(&self, other: &Self) -> Self {
         let mut result = Self::new();
@@ -202,8 +153,6 @@ impl Polynomial {
         }
         result.reduce();
         result
-    }
-
     /// Subtract two polynomials
     fn subtract(&self, other: &Self) -> Self {
         let mut result = Self::new();
@@ -212,8 +161,6 @@ impl Polynomial {
         }
         result.reduce();
         result
-    }
-
     /// Sample polynomial with coefficients in [-eta, eta]
     fn uniform_eta(seed: &[u8], nonce: u16, eta: i32) -> Self {
         let mut poly = Self::new();
@@ -240,11 +187,7 @@ impl Polynomial {
                     ctr += 1;
                 }
             }
-        }
-        
         poly
-    }
-
     /// Sample polynomial uniformly from Z_q
     fn uniform_gamma1(seed: &[u8], nonce: u16, gamma1: i32) -> Self {
         let mut poly = Self::new();
@@ -260,16 +203,10 @@ impl Polynomial {
                 val = (val << 8) | byte as u32;
             }
             poly.coeffs[i] = (val as i32) % (2 * gamma1) - gamma1;
-        }
-        
         poly
-    }
-
     /// Check infinity norm bound
     fn infinity_norm(&self) -> i32 {
         self.coeffs.iter().map(|&x| x.abs()).max().unwrap_or(0)
-    }
-
     /// Decompose polynomial for signature
     fn decompose(&self, gamma2: i32) -> (Self, Self) {
         let mut r1 = Self::new();
@@ -287,8 +224,6 @@ impl Polynomial {
         }
         
         (r1, r0)
-    }
-
     /// Power2Round for key generation
     fn power2round(&self, d: i32) -> (Self, Self) {
         let mut r1 = Self::new();
@@ -297,8 +232,6 @@ impl Polynomial {
         for i in 0..N {
             r1.coeffs[i] = (self.coeffs[i] + (1 << (d - 1)) - 1) >> d;
             r0.coeffs[i] = self.coeffs[i] - (r1.coeffs[i] << d);
-        }
-        
         (r1, r0)
     }
 }
@@ -306,13 +239,9 @@ impl Polynomial {
 /// Vector of polynomials
 #[derive(Debug, Clone)]
 pub struct PolynomialVector {
-    polys: Vec<Polynomial>,
-}
-
 impl PolynomialVector {
     fn new(size: usize) -> Self {
         Self {
-            polys: vec![Polynomial::new(); size],
         }
     }
 
@@ -322,8 +251,6 @@ impl PolynomialVector {
 
     fn len(&self) -> usize {
         self.polys.len()
-    }
-
     fn ntt(&mut self) {
         for poly in &mut self.polys {
             poly.ntt();
@@ -342,8 +269,6 @@ impl PolynomialVector {
             result.polys[i] = self.polys[i].add(&other.polys[i]);
         }
         result
-    }
-
     fn infinity_norm(&self) -> i32 {
         self.polys.iter().map(|p| p.infinity_norm()).max().unwrap_or(0)
     }
@@ -352,13 +277,9 @@ impl PolynomialVector {
 /// Matrix of polynomials
 #[derive(Debug, Clone)]
 pub struct PolynomialMatrix {
-    rows: Vec<PolynomialVector>,
-}
-
 impl PolynomialMatrix {
     fn new(rows: usize, cols: usize) -> Self {
         Self {
-            rows: vec![PolynomialVector::new(cols); rows],
         }
     }
 
@@ -372,11 +293,7 @@ impl PolynomialMatrix {
                 sum = sum.add(&prod);
             }
             result.polys[i] = sum;
-        }
-        
         result
-    }
-
     /// Expand matrix from seed using SHAKE-128
     fn expand_a(seed: &[u8], k: usize, l: usize) -> Self {
         let mut matrix = Self::new(k, l);
@@ -397,8 +314,6 @@ impl PolynomialMatrix {
                         val = (val << 8) | byte as u32;
                     }
                     poly.coeffs[coeff_idx] = (val % Q as u32) as i32;
-                }
-                
                 matrix.rows[i].polys[j] = poly;
             }
         }
@@ -409,38 +324,6 @@ impl PolynomialMatrix {
 
 // Number Theoretic Transform implementation
 const ZETAS: [i32; 256] = [
-    0, 25847, -2608894, -518909, 237124, -777960, -876248, 466468,
-    1826347, 2353451, -359251, -2091905, 3119733, -2884855, 3111497, 2680103,
-    2725464, 1024112, -1079900, 3585928, -549488, -1119584, 2619752, -2108549,
-    -2118186, -3859737, -1399561, -3277672, 1757237, -19422, 4010497, 280005,
-    2706023, 95776, 3077325, 3530437, -1661693, -3592148, -2537516, 3915439,
-    -3861115, -3043716, 3574422, -2867647, 3539968, -300467, 2348700, -539299,
-    -1699267, -1643818, 3505694, -3821735, 3507263, -2140649, -1600420, 3699596,
-    811944, 531354, 954230, 3881043, 3900724, -2556880, 2071892, -2797779,
-    -3930395, -1528703, -3677745, -3041255, -1452451, 3475950, 2176455, -1585221,
-    -1257611, 1939314, -4083598, -1000202, -3190144, -3157330, -3632928, 126922,
-    3412210, -983419, 2147896, 2715295, -2967645, -3693493, -411027, -2477047,
-    -671102, -1228525, -22981, -1308169, -381987, 1349076, 1852771, -1430430,
-    -3343383, 264944, 508951, 3097992, 44288, -1100098, 904516, 3958618,
-    -3724342, -8578, 1653064, -3249728, 2389356, -210977, 759969, -1316856,
-    189548, -3553272, 3159746, -1851402, -2409325, -177440, 1315589, 1341330,
-    1285669, -1584928, -812732, -1439742, -3019102, -3881060, -3628969, 3839961,
-    2091667, 3407706, 2316500, 3817976, -3342478, 2244091, -2446433, -3562462,
-    266997, 2434439, -1235728, 3513181, -3520352, -3759364, -1197226, -3193378,
-    900702, 1859098, 909542, 819034, 495491, -1613174, -43260, -522500,
-    -655327, -3122442, 2031748, 3207046, -3556995, -525098, -768622, -3595838,
-    342297, 286988, -2437823, 4108315, 3437287, -3342277, 1735879, 203044,
-    2842341, 2691481, -2590150, 1265009, 4055324, 1247620, 2486353, 1595974,
-    -3767016, 1250494, 2635921, -3548272, -2994039, 1869119, 1903435, -1050970,
-    -1333058, 1237275, -3318210, -1430225, -451100, 1312455, 3306115, -1962642,
-    -1015732, -2694326, -1612841, 2816602, -1080896, -3094912, 1445146, 1449092,
-    2086255, -1079180, 3021969, 17675, 3749570, 2484572, 2483121, 1778351,
-    -1237113, -1759025, -253059, 2043645, -1996962, -1671176, -580974, -4995,
-    -1544732, 2566734, -2693815, -1880983, -1096628, 1245003, 2001815, 1169301,
-    2775247, 1830893, -1616037, -3210789, -1523793, -3259065, 1814844, 3138012,
-    -2149576, 4070733, 3569570, 2120194, -2902036, -1994115, -3594631, 3397342,
-    -1064891, -3736145, -1732001, -2740094, -1685074, -2144963, 3638529, 3232878,
-    -2071071, -1671229, -1394459, 2569853, -2982599, 1198749, 1667050, 3202982,
 ];
 
 fn ntt_forward(a: &mut [i32; N]) {
@@ -482,8 +365,6 @@ fn ntt_inverse(a: &mut [i32; N]) {
             start += 2 * len;
         }
         len <<= 1;
-    }
-    
     const F: i32 = 1441; // 2^32 % Q
     for i in 0..N {
         a[i] = montgomery_reduce(F as i64 * a[i] as i64);
@@ -494,22 +375,13 @@ fn montgomery_reduce(a: i64) -> i32 {
     const QINV: i64 = 58728449; // Q^(-1) mod 2^32
     let t = (a * QINV) & ((1i64 << 32) - 1);
     ((a - t * Q as i64) >> 32) as i32
-}
-
 fn barrett_reduce(a: i32) -> i32 {
     const V: i32 = ((1i64 << 26) / Q as i64) as i32;
     let t = (V as i64 * a as i64 + (1i64 << 25)) >> 26;
     a - (t as i32) * Q
-}
-
 /// Dilithium public key
 #[derive(Debug, Clone)]
 pub struct DilithiumPublicKey {
-    pub params: DilithiumParams,
-    pub rho: [u8; SEEDBYTES],
-    pub t1: PolynomialVector,
-}
-
 impl DilithiumPublicKey {
     pub fn new(params: DilithiumParams, rho: [u8; SEEDBYTES], t1: PolynomialVector) -> Self {
         Self { params, rho, t1 }
@@ -517,8 +389,6 @@ impl DilithiumPublicKey {
 
     pub fn security_level(&self) -> SecurityLevel {
         self.params.security_level()
-    }
-
     pub fn as_bytes(&self) -> Vec<u8> {
         let mut bytes = Vec::with_capacity(self.params.public_key_size());
         bytes.extend_from_slice(&self.rho);
@@ -537,32 +407,14 @@ impl DilithiumPublicKey {
 /// Dilithium secret key
 #[derive(Debug, Clone)]
 pub struct DilithiumSecretKey {
-    pub params: DilithiumParams,
-    pub rho: [u8; SEEDBYTES],
-    pub key: [u8; SEEDBYTES],
-    pub tr: [u8; SEEDBYTES],
-    pub s1: PolynomialVector,
-    pub s2: PolynomialVector,
-    pub t0: PolynomialVector,
-}
-
 impl DilithiumSecretKey {
     pub fn new(
-        params: DilithiumParams,
-        rho: [u8; SEEDBYTES],
-        key: [u8; SEEDBYTES],
-        tr: [u8; SEEDBYTES],
-        s1: PolynomialVector,
-        s2: PolynomialVector,
-        t0: PolynomialVector,
     ) -> Self {
         Self { params, rho, key, tr, s1, s2, t0 }
     }
 
     pub fn security_level(&self) -> SecurityLevel {
         self.params.security_level()
-    }
-
     pub fn as_bytes(&self) -> Vec<u8> {
         let mut bytes = Vec::with_capacity(self.params.secret_key_size());
         bytes.extend_from_slice(&self.rho);
@@ -593,12 +445,6 @@ impl DilithiumSecretKey {
 /// Dilithium signature
 #[derive(Debug, Clone)]
 pub struct DilithiumSignature {
-    pub params: DilithiumParams,
-    pub c: [u8; SEEDBYTES],
-    pub z: PolynomialVector,
-    pub h: Vec<u8>,
-}
-
 impl DilithiumSignature {
     pub fn new(params: DilithiumParams, c: [u8; SEEDBYTES], z: PolynomialVector, h: Vec<u8>) -> Self {
         Self { params, c, z, h }
@@ -639,14 +485,8 @@ impl DigitalSignature for RealDilithium {
 
     fn keygen(security_level: SecurityLevel) -> PqcResult<(Self::PublicKey, Self::SecretKey)> {
         let params = match security_level {
-            SecurityLevel::Level1 => DilithiumParams::Dilithium2,
-            SecurityLevel::Level3 => DilithiumParams::Dilithium3,
-            SecurityLevel::Level5 => DilithiumParams::Dilithium5,
-        };
 
         Self::keygen_with_params(params)
-    }
-
     fn sign(secret_key: &Self::SecretKey, message: &[u8]) -> PqcResult<Self::Signature> {
         let params = secret_key.params;
         let mut attempts = 0;
@@ -657,8 +497,6 @@ impl DigitalSignature for RealDilithium {
             let mut y = PolynomialVector::new(params.l());
             for i in 0..params.l() {
                 y.polys[i] = Polynomial::uniform_gamma1(&secret_key.key, (attempts * params.l() + i) as u16, params.gamma1());
-            }
-
             // Compute w = A*y
             let a_matrix = PolynomialMatrix::expand_a(&secret_key.rho, params.k(), params.l());
             let mut ay = a_matrix.multiply(&y);
@@ -699,8 +537,6 @@ impl DigitalSignature for RealDilithium {
             if z.infinity_norm() >= params.gamma1() - params.beta() {
                 attempts += 1;
                 continue;
-            }
-
             // Compute r0 = w - c*s2
             let mut cs2 = PolynomialVector::new(params.k());
             for i in 0..params.k() {
@@ -716,26 +552,16 @@ impl DigitalSignature for RealDilithium {
                     continue;
                 }
                 h[i] = (i % 256) as u8; // Simplified hint
-            }
-
             return Ok(DilithiumSignature::new(params, c, z, h));
-        }
-
         Err(PqcError::SigningFailed("Max attempts exceeded".to_string()))
-    }
-
     fn verify(public_key: &Self::PublicKey, message: &[u8], signature: &Self::Signature) -> PqcResult<bool> {
         if public_key.params != signature.params {
             return Err(PqcError::ParameterValidation("Parameter mismatch".to_string()));
-        }
-
         let params = public_key.params;
 
         // Check z norm
         if signature.z.infinity_norm() >= params.gamma1() - params.beta() {
             return Ok(false);
-        }
-
         // Convert challenge to polynomial
         let c_poly = challenge_polynomial(&signature.c, params.tau());
 
@@ -752,8 +578,6 @@ impl DigitalSignature for RealDilithium {
                 *coeff = (*coeff << 13) % Q;
             }
             ct1_2d.polys[i] = ct1;
-        }
-
         let w_prime = az.add(&ct1_2d); // Should be subtract
 
         // Extract w1' and verify
@@ -779,8 +603,6 @@ impl DigitalSignature for RealDilithium {
         c_prime.copy_from_slice(&c_hash_prime[..SEEDBYTES]);
 
         Ok(c_prime == signature.c)
-    }
-
     fn algorithm_type() -> AlgorithmType {
         AlgorithmType::Dilithium
     }
@@ -809,8 +631,6 @@ impl RealDilithium {
         }
         for i in 0..params.k() {
             s2.polys[i] = Polynomial::uniform_eta(&rhoprime, (params.l() + i) as u16, params.eta());
-        }
-
         // Compute t = A*s1 + s2
         let mut as1 = a_matrix.multiply(&s1);
         as1.ntt();
@@ -824,8 +644,6 @@ impl RealDilithium {
             let (t1, t0) = poly.power2round(13); // d = 13 for Dilithium
             t1_polys.push(t1);
             t0_polys.push(t0);
-        }
-        
         let t1 = PolynomialVector::from_polys(t1_polys);
         let t0 = PolynomialVector::from_polys(t0_polys);
 
@@ -845,33 +663,19 @@ impl RealDilithium {
         let secret_key = DilithiumSecretKey::new(params, rho, key, tr, s1, s2, t0);
 
         Ok((public_key, secret_key))
-    }
-
     pub fn performance_characteristics(params: DilithiumParams) -> AlgorithmPerformance {
         let (keygen_ms, sign_ms, verify_ms, sign_throughput, verify_throughput) = match params {
-            DilithiumParams::Dilithium2 => (1.2, 0.8, 0.3, 1250.0, 3333.0),
-            DilithiumParams::Dilithium3 => (1.8, 1.2, 0.4, 833.0, 2500.0),
-            DilithiumParams::Dilithium5 => (2.5, 1.8, 0.6, 555.0, 1666.0),
-        };
 
         AlgorithmPerformance {
-            keygen_time_ms: keygen_ms,
             operation_time_ms: (sign_ms + verify_ms) / 2.0,
             key_sizes: KeySizes {
-                public_key: params.public_key_size(),
-                secret_key: params.secret_key_size(),
                 ciphertext_or_signature: params.additional_sizes()
                     .iter()
                     .find(|(name, _)| *name == "signature")
                     .map(|(_, size)| *size)
-                    .unwrap_or(0),
-                shared_secret: None,
-            },
             throughput_ops_per_sec: (sign_throughput + verify_throughput) / 2.0,
         }
     }
-}
-
 /// Convert challenge bytes to sparse polynomial
 fn challenge_polynomial(c: &[u8; SEEDBYTES], tau: i32) -> Polynomial {
     let mut poly = Polynomial::new();
@@ -882,8 +686,6 @@ fn challenge_polynomial(c: &[u8; SEEDBYTES], tau: i32) -> Polynomial {
     let mut signs = 0u64;
     for i in 0..8 {
         signs |= (hash[i] as u64) << (i * 8);
-    }
-    
     let mut pos = 8;
     let mut mask = 1u64;
     
@@ -913,5 +715,3 @@ fn challenge_polynomial(c: &[u8; SEEDBYTES], tau: i32) -> Polynomial {
     }
     
     poly
-}
-

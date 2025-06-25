@@ -12,47 +12,33 @@ pub trait CharMethods {
     fn to_uppercase(&self) -> crate::error::Result<()>;
     fn to_lowercase(&self) -> crate::error::Result<()>;
     fn to_string(&self) -> crate::error::Result<()>;
-}
-
 /// Trait for character object operations
 pub trait CharObject {
     fn from_char(c: char) -> Object;
     fn to_char(&self) -> crate::error::Result<()>;
-}
-
 impl CharMethods for Object {
     fn is_uppercase(&self) -> crate::error::Result<()> {
         match self {
-            Object::Char(c) => Ok(Object::Boolean(c.is_uppercase())),
-            _ => Err(CursedError::Runtime("Expected character".to_string())),
         }
     }
 
     fn is_lowercase(&self) -> crate::error::Result<()> {
         match self {
-            Object::Char(c) => Ok(Object::Boolean(c.is_lowercase())),
-            _ => Err(CursedError::Runtime("Expected character".to_string())),
         }
     }
 
     fn is_alphabetic(&self) -> crate::error::Result<()> {
         match self {
-            Object::Char(c) => Ok(Object::Boolean(c.is_alphabetic())),
-            _ => Err(CursedError::Runtime("Expected character".to_string())),
         }
     }
 
     fn is_numeric(&self) -> crate::error::Result<()> {
         match self {
-            Object::Char(c) => Ok(Object::Boolean(c.is_numeric())),
-            _ => Err(CursedError::Runtime("Expected character".to_string())),
         }
     }
 
     fn is_whitespace(&self) -> crate::error::Result<()> {
         match self {
-            Object::Char(c) => Ok(Object::Boolean(c.is_whitespace())),
-            _ => Err(CursedError::Runtime("Expected character".to_string())),
         }
     }
 
@@ -67,7 +53,6 @@ impl CharMethods for Object {
                     Ok(Object::String(upper_chars.into_iter().collect()))
                 }
             }
-            _ => Err(CursedError::Runtime("Expected character".to_string())),
         }
     }
 
@@ -82,27 +67,18 @@ impl CharMethods for Object {
                     Ok(Object::String(lower_chars.into_iter().collect()))
                 }
             }
-            _ => Err(CursedError::Runtime("Expected character".to_string())),
         }
     }
 
     fn to_string(&self) -> crate::error::Result<()> {
         match self {
-            Object::Char(c) => Ok(Object::String(c.to_string())),
-            _ => Err(CursedError::Runtime("Expected character".to_string())),
         }
     }
-}
-
 impl CharObject for Object {
     fn from_char(c: char) -> Object {
         Object::Char(c)
-    }
-
     fn to_char(&self) -> crate::error::Result<()> {
         match self {
-            Object::Char(c) => Ok(*c),
-            _ => Err(CursedError::Runtime("Expected character".to_string())),
         }
     }
 }

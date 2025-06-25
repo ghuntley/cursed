@@ -5,9 +5,6 @@
 use crate::error::CursedError;
 
 pub struct CertificateChain {
-    pub certificates: Vec<Certificate>,
-}
-
 pub struct ChainBuilder;
 impl ChainBuilder {
     pub fn new() -> Self { Self }
@@ -31,12 +28,8 @@ pub type ChainConstraints = String;
 pub fn build_certificate_chain(cert: &Certificate, intermediates: &[Certificate]) -> ChainResult<CertificateChain> {
     let builder = ChainBuilder::new();
     builder.build_chain(cert, intermediates)
-}
-
 pub fn validate_certificate_chain(_chain: &CertificateChain) -> ChainResult<bool> {
     Ok(true)
-}
-
 pub fn find_chain_path(_cert: &Certificate, _anchors: &[Certificate]) -> ChainResult<CertificatePath> {
     Ok(Vec::new())
 }

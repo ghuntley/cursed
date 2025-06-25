@@ -13,15 +13,11 @@ use crate::tools::formatter::{FormatterConfig, BraceStyle, CursedFormatter, Oper
 /// Formatting provider for the LSP server
 pub struct FormattingProvider {
     /// Default formatting configuration
-    default_config: FormatterConfig,
-}
-
 impl FormattingProvider {
     /// Create a new formatting provider
     pub fn new() -> Self {
         let default_config = FormatterConfig::default();
         Self {
-            default_config,
         }
     }
 
@@ -51,14 +47,9 @@ impl FormattingProvider {
                 Ok(content.to_string())
             }
         }
-    }
-
     /// Format document and return text edits
     #[instrument(skip(self, content))]
     pub async fn format_document_edits(
-        &self,
-        content: &str,
-        options: FormattingOptions,
     ) -> Option<Vec<TextEdit>> {
         debug!("Getting document format edits");
         
@@ -74,8 +65,6 @@ impl FormattingProvider {
                 if !result.changes_made {
                     debug!("No formatting changes needed");
                     return Some(vec![]);
-                }
-                
                 if !result.formatting_errors.is_empty() {
                     warn!("Formatting completed with {} errors", result.formatting_errors.len());
                     for error in &result.formatting_errors {
@@ -89,19 +78,13 @@ impl FormattingProvider {
                 let end_character = lines.get(end_line).map(|line| line.len()).unwrap_or(0);
                 
                 let full_range = Range {
-                    start: Position { line: 0, character: 0 },
                     end: Position { 
-                        line: end_line as u32, 
                         character: end_character as u32 
-                    },
-                };
                 
                 debug!("Document formatted successfully, {} lines changed", result.lines_changed);
                 
                 // Return a single edit that replaces the entire document
                 Some(vec![TextEdit {
-                    range: full_range,
-                    new_text: result.formatted_code,
                 }])
             }
             Err(e) => {
@@ -109,15 +92,9 @@ impl FormattingProvider {
                 None
             }
         }
-    }
-
     /// Format range of document
     #[instrument(skip(self, content))]
     pub async fn format_range(
-        &self,
-        content: &str,
-        range: Range,
-        options: FormattingOptions,
     ) -> Option<Vec<TextEdit>> {
         debug!("Formatting range {:?}", range);
         
@@ -125,8 +102,6 @@ impl FormattingProvider {
         let range_content = self.extract_range_content(content, range);
         if range_content.is_empty() {
             return Some(vec![]);
-        }
-
         // Convert LSP formatting options to CURSED formatter config
         let config = self.lsp_options_to_config(options);
         
@@ -139,8 +114,6 @@ impl FormattingProvider {
                 if !result.changes_made {
                     debug!("No formatting changes needed in range");
                     return Some(vec![]);
-                }
-                
                 if !result.formatting_errors.is_empty() {
                     warn!("Range formatting completed with {} errors", result.formatting_errors.len());
                     for error in &result.formatting_errors {
@@ -155,8 +128,6 @@ impl FormattingProvider {
                 if formatted_range_content != range_content {
                     debug!("Range formatting applied changes");
                     Some(vec![TextEdit {
-                        range,
-                        new_text: formatted_range_content,
                     }])
                 } else {
                     debug!("Range content unchanged after formatting");
@@ -168,33 +139,18 @@ impl FormattingProvider {
                 None
             }
         }
-    }
-
     /// Format on type (triggered by specific characters)
     #[instrument(skip(self, content))]
     pub async fn format_on_type(
-        &self,
-        content: &str,
-        position: Position,
-        trigger_character: &str,
-        options: FormattingOptions,
     ) -> Option<Vec<TextEdit>> {
         debug!("Formatting on type: '{}' at {:?}", trigger_character, position);
         
         match trigger_character {
-            "{" => self.format_on_opening_brace(content, position, options).await,
-            "}" => self.format_on_closing_brace(content, position, options).await,
-            ";" => self.format_on_semicolon(content, position, options).await,
-            _ => None,
         }
     }
 
     /// Format when opening brace is typed
     pub async fn format_on_opening_brace(
-        &self,
-        content: &str,
-        position: Position,
-        options: FormattingOptions,
     ) -> Option<Vec<TextEdit>> {
         // Format the current line and potentially add proper indentation
         let lines = split_join::split(content, "\n");
@@ -202,8 +158,6 @@ impl FormattingProvider {
         
         if line_index >= lines.len() {
             return None;
-        }
-
         let line = &lines[line_index];
         let config = self.lsp_options_to_config(options);
         
@@ -213,28 +167,13 @@ impl FormattingProvider {
             let next_line_indent = indentation + config.indent_size;
             
             let insert_position = Position {
-                line: position.line,
-                character: line.len() as u32,
-            };
             
             return Some(vec![TextEdit {
                 range: Range {
-                    start: insert_position,
-                    end: insert_position,
-                },
-                new_text: format!("\n{}", string_core::repeat(" ", next_line_indent)),
             }]);
-        }
-
         None
-    }
-
     /// Format when closing brace is typed
     pub async fn format_on_closing_brace(
-        &self,
-        content: &str,
-        position: Position,
-        options: FormattingOptions,
     ) -> Option<Vec<TextEdit>> {
         // Adjust indentation of the current line with closing brace
         let lines = split_join::split(content, "\n");
@@ -242,8 +181,6 @@ impl FormattingProvider {
         
         if line_index >= lines.len() {
             return None;
-        }
-
         let line = &lines[line_index];
         let config = self.lsp_options_to_config(options);
         
@@ -254,22 +191,10 @@ impl FormattingProvider {
         if proper_indent != current_indent {
             return Some(vec![TextEdit {
                 range: Range {
-                    start: Position { line: position.line, character: 0 },
-                    end: Position { line: position.line, character: current_indent as u32 },
-                },
-                new_text: string_core::repeat(" ", proper_indent),
             }]);
-        }
-
         None
-    }
-
     /// Format when semicolon is typed
     pub async fn format_on_semicolon(
-        &self,
-        content: &str,
-        position: Position,
-        options: FormattingOptions,
     ) -> Option<Vec<TextEdit>> {
         // Format the current statement
         let lines = split_join::split(content, "\n");
@@ -277,8 +202,6 @@ impl FormattingProvider {
         
         if line_index >= lines.len() {
             return None;
-        }
-
         let line = &lines[line_index];
         let config = self.lsp_options_to_config(options);
         
@@ -288,16 +211,8 @@ impl FormattingProvider {
         if formatted_line != *line {
             return Some(vec![TextEdit {
                 range: Range {
-                    start: Position { line: position.line, character: 0 },
-                    end: Position { line: position.line, character: line.len() as u32 },
-                },
-                new_text: formatted_line,
             }]);
-        }
-
         None
-    }
-
     /// Convert LSP formatting options to CURSED formatter config
     pub fn lsp_options_to_config(&self, options: FormattingOptions) -> FormatterConfig {
         let mut config = self.default_config.clone();
@@ -315,23 +230,16 @@ impl FormattingProvider {
                 }
                 "braceStyle" | "brace_style" => {
                     match value.to_string().to_lowercase().as_str() {
-                        "sameline" | "same_line" => config.brace_style = BraceStyle::SameLine,
-                        "nextline" | "next_line" => config.brace_style = BraceStyle::NextLine,
-                        "nextlineunindented" | "next_line_unindented" => config.brace_style = BraceStyle::NextLineUnindented,
                         _ => {} // Keep default
                     }
                 }
                 "operatorSpacing" | "operator_spacing" => {
                     match value.to_string().to_lowercase().as_str() {
-                        "withspaces" | "with_spaces" | "true" => config.operator_spacing = OperatorSpacing::WithSpaces,
-                        "withoutspaces" | "without_spaces" | "false" => config.operator_spacing = OperatorSpacing::WithoutSpaces,
                         _ => {} // Keep default
                     }
                 }
                 "commaSpacing" | "comma_spacing" => {
                     match value.to_string().to_lowercase().as_str() {
-                        "withspaces" | "with_spaces" | "true" => config.comma_spacing = CommaSpacing::WithSpaces,
-                        "withoutspaces" | "without_spaces" | "false" => config.comma_spacing = CommaSpacing::WithoutSpaces,
                         _ => {} // Keep default
                     }
                 }
@@ -345,8 +253,6 @@ impl FormattingProvider {
         }
         
         config
-    }
-
     /// Extract content from a range
     pub fn extract_range_content(&self, content: &str, range: Range) -> String {
         let lines = split_join::split(content, "\n");
@@ -355,8 +261,6 @@ impl FormattingProvider {
         
         if start_line >= lines.len() {
             return String::new();
-        }
-        
         if start_line == end_line {
             // Single line range
             if let Some(line) = lines.get(start_line) {
@@ -368,8 +272,6 @@ impl FormattingProvider {
                 }
             }
             return String::new();
-        }
-        
         // Multi-line range
         let mut result = String::new();
         
@@ -389,29 +291,17 @@ impl FormattingProvider {
                 } else {
                     // Middle lines: entire line
                     result.push_str(line);
-                }
-                
                 // Add newline except for the last line
                 if line_idx < end_line {
                     result.push('\n');
                 }
             }
-        }
-        
         result
-    }
-
     /// Calculate indentation level for a line
     pub fn calculate_indentation(&self, _config: &FormatterConfig, line: &str) -> usize {
         line.len() - transform::trim_start(line).len()
-    }
-
     /// Calculate proper indentation for a closing brace
     pub fn calculate_closing_brace_indentation(
-        &self,
-        lines: &[String],
-        current_line: usize,
-        config: &FormatterConfig,
     ) -> usize {
         // Find the matching opening brace
         let mut brace_count = 0;
@@ -420,7 +310,6 @@ impl FormattingProvider {
             if let Some(line) = lines.get(line_idx) {
                 for ch in line.chars() {
                     match ch {
-                        '}' => brace_count += 1,
                         '{' => {
                             if brace_count == 0 {
                                 // Found matching opening brace
@@ -436,8 +325,6 @@ impl FormattingProvider {
         
         // Default indentation if no matching brace found
         0
-    }
-
     /// Format spacing in a line
     pub fn format_line_spacing(&self, line: &str, _config: &FormatterConfig) -> String {
         let mut result = String::new();
@@ -473,17 +360,11 @@ impl FormattingProvider {
             }
             
             i += 1;
-        }
-        
         result
-    }
-
     /// Check if formatting is available
     pub async fn is_formatter_available(&self) -> bool {
         // The CURSED formatter is built-in, so it's always available
         true
-    }
-
     /// Get formatter version
     pub async fn get_formatter_version(&self) -> Option<String> {
         Some("0.1.0".to_string())

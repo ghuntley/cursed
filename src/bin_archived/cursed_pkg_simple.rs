@@ -16,8 +16,6 @@ async fn main() -> crate::error::Result<()> {
     if args.len() < 2 {
         print_help();
         return Ok(());
-    }
-    
     match args[1].as_str() {
         "init" => {
             let name = args.get(2).map(|s| s.as_str()).unwrap_or("my-cursed-project");
@@ -53,8 +51,6 @@ async fn main() -> crate::error::Result<()> {
     }
     
     Ok(())
-}
-
 fn print_help() {
         // TODO: implement
     }
@@ -69,8 +65,6 @@ fn print_help() {
     println!("  list            List installed packages");
     println!("  clean           Clean package cache");
     println!("  help            Show this help message");
-}
-
 fn handle_init(name: &str) -> crate::error::Result<()> {
     println!("📦 Initializing package: {}", name);
     
@@ -102,8 +96,6 @@ authors = ["Your Name <your.email@example.com>"]
     println!("🚀 Run 'cursed-pkg-simple install' to install dependencies");
     
     Ok(())
-}
-
 async fn handle_install(package_name: &str) -> crate::error::Result<()> {
     println!("📦 Installing package: {}", package_name);
     
@@ -118,7 +110,6 @@ async fn handle_install(package_name: &str) -> crate::error::Result<()> {
         (name, Some(version))
     } else {
         (package_name, None)
-    };
     
     println!("🔍 Searching for package in registry...");
     
@@ -142,8 +133,6 @@ async fn handle_install(package_name: &str) -> crate::error::Result<()> {
     }
     
     Ok(())
-}
-
 async fn handle_search(query: &str) -> crate::error::Result<()> {
     println!("🔍 Searching for packages matching: {}", query);
     
@@ -172,9 +161,6 @@ async fn handle_search(query: &str) -> crate::error::Result<()> {
             
             // Mock search results
             let mock_results = vec![
-                ("json", "1.0.0", "JSON parsing and generation for CURSED"),
-                ("http", "2.1.0", "HTTP client and server for CURSED"),
-                ("crypto", "1.5.2", "Cryptographic functions for CURSED"),
             ];
             
             for (name, version, desc) in mock_results {
@@ -186,8 +172,6 @@ async fn handle_search(query: &str) -> crate::error::Result<()> {
     }
     
     Ok(())
-}
-
 async fn handle_list() -> crate::error::Result<()> {
     println!("📋 Listing installed packages");
     
@@ -212,8 +196,6 @@ async fn handle_list() -> crate::error::Result<()> {
     }
     
     Ok(())
-}
-
 async fn handle_clean() -> crate::error::Result<()> {
     println!("🧹 Cleaning package cache");
     

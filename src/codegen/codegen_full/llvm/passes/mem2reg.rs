@@ -9,13 +9,7 @@ use super::{OptimizationPass, PassConfiguration, PassResult};
 use crate::common_types::optimization_level::OptimizationLevel;
 use crate::error::{CursedError, Result};
 use inkwell::{
-    context::Context,
-    module::Module,
-    values::{FunctionValue, BasicValueEnum, InstructionValue, BasicValue, PointerValue},
-    basic_block::BasicBlock,
-    builder::Builder,
-    types::{BasicType, BasicTypeEnum},
-};
+// };
 
 use std::collections::{HashMap, HashSet, VecDeque};
 use std::time::{Duration, Instant};
@@ -23,56 +17,31 @@ use tracing::{debug, info, instrument, warn};
 
 /// Mem2Reg optimization pass
 pub struct Mem2RegPass<'ctx> {
-    context_lifetime: std::marker::PhantomData<&'ctx ()>,
-    statistics: Mem2RegStatistics,
-    promote_debug_info: bool,
-}
-
 impl<'ctx> Mem2RegPass<'ctx> {
     /// Create new Mem2Reg pass
     pub fn new() -> Self {
         Self {
-            context_lifetime: std::marker::PhantomData,
-            statistics: Mem2RegStatistics::default(),
-            promote_debug_info: false,
         }
     }
     
     /// Create Mem2Reg pass with debug info promotion
     pub fn with_debug_info(promote_debug_info: bool) -> Self {
         Self {
-            context_lifetime: std::marker::PhantomData,
-            statistics: Mem2RegStatistics::default(),
-            promote_debug_info,
         }
     }
-}
-
 impl<'ctx> OptimizationPass<'ctx> for Mem2RegPass<'ctx> {
     fn name(&self) -> &str {
         "mem2reg"
-    }
-    
     fn description(&self) -> &str {
         "Memory to Register Promotion - converts alloca/load/store to SSA values"
-    }
-    
     fn dependencies(&self) -> Vec<String> {
         vec![]
-    }
-    
     fn should_run(&self, config: &PassConfiguration) -> bool {
         config.enable_memory_optimizations && config.optimization_level >= OptimizationLevel::O1
-    }
-    
     fn required_optimization_level(&self) -> OptimizationLevel {
         OptimizationLevel::O1
-    }
-    
     fn estimated_execution_time(&self) -> Duration {
         Duration::from_millis(200)
-    }
-    
     #[instrument(skip(self, module, context))]
     fn run_on_module(&mut self, module: &Module<'ctx>, context: &'ctx Context) -> Result<PassResult> {
         let start_time = Instant::now();
@@ -91,12 +60,9 @@ impl<'ctx> OptimizationPass<'ctx> for Mem2RegPass<'ctx> {
         
         total_result.execution_time = start_time.elapsed();
         
-        info!("Mem2Reg pass completed: {} allocas promoted",
               total_result.memory_allocations_eliminated);
         
         Ok(total_result)
-    }
-    
     #[instrument(skip(self, function, context))]
     fn run_on_function(&mut self, function: &FunctionValue<'ctx>, context: &'ctx Context) -> Result<PassResult> {
         let mut result = PassResult::unchanged();
@@ -107,8 +73,6 @@ impl<'ctx> OptimizationPass<'ctx> for Mem2RegPass<'ctx> {
         if promotable_allocas.is_empty() {
             debug!("No promotable allocas found");
             return Ok(result);
-        }
-        
         info!("Found {} promotable allocas", promotable_allocas.len());
         
         // Create Mem2Reg promoter
@@ -130,18 +94,8 @@ impl<'ctx> OptimizationPass<'ctx> for Mem2RegPass<'ctx> {
         debug!("Promoted {} allocas to registers", promoted_count);
         
         Ok(result)
-    }
-    
     fn get_statistics(&self) -> super::PassStatistics {
         super::PassStatistics {
-            total_executions: self.statistics.functions_processed,
-            successful_executions: self.statistics.functions_processed,
-            total_execution_time: Duration::from_millis(0),
-            average_execution_time: Duration::from_millis(0),
-            total_instructions_eliminated: self.statistics.total_loads_eliminated + self.statistics.total_stores_eliminated,
-            total_functions_inlined: 0,
-            total_optimizations_applied: self.statistics.total_allocas_promoted,
-            peak_memory_usage: 0,
         }
     }
     
@@ -164,36 +118,24 @@ impl<'ctx> OptimizationPass<'ctx> for Mem2RegPass<'ctx> {
         }
         
         Ok(promotable_allocas)
-    }
-    
     /// Check if an alloca is promotable to registers
     fn is_promotable_alloca(&self, alloca: &InstructionValue<'ctx>) -> Result<bool> {
         // Check if the alloca allocates a single value (not an array)
         if !self.allocates_single_value(alloca)? {
             return Ok(false);
-        }
-        
         // Analyze all uses of the alloca
         let use_analysis = self.analyze_alloca_uses(alloca)?;
         
         // Check if all uses are simple loads and stores
         if !use_analysis.only_loads_and_stores {
             return Ok(false);
-        }
-        
         // Check if there are no volatile operations
         if use_analysis.has_volatile_ops {
             return Ok(false);
-        }
-        
         // Check if alloca is not used in multiple blocks in complex ways
         if !self.has_simple_use_pattern(&use_analysis)? {
             return Ok(false);
-        }
-        
         Ok(true)
-    }
-    
     /// Check if alloca allocates a single value
     fn allocates_single_value(&self, alloca: &InstructionValue<'ctx>) -> Result<bool> {
         // In a real implementation, we'd check:
@@ -201,18 +143,9 @@ impl<'ctx> OptimizationPass<'ctx> for Mem2RegPass<'ctx> {
         // 2. The allocated type is a simple scalar or small aggregate
         // For now, assume it's a single value
         Ok(true)
-    }
-    
     /// Analyze uses of an alloca
     fn analyze_alloca_uses(&self, alloca: &InstructionValue<'ctx>) -> Result<AllocaUseAnalysis> {
         let mut analysis = AllocaUseAnalysis {
-            only_loads_and_stores: true,
-            has_volatile_ops: false,
-            loads: Vec::new(),
-            stores: Vec::new(),
-            defining_blocks: HashSet::new(),
-            using_blocks: HashSet::new(),
-        };
         
         // In a real implementation, we'd iterate through all uses
         // For now, assume simple usage pattern
@@ -220,8 +153,6 @@ impl<'ctx> OptimizationPass<'ctx> for Mem2RegPass<'ctx> {
         analysis.has_volatile_ops = false;
         
         Ok(analysis)
-    }
-    
     /// Check if the use pattern is simple enough for promotion
     fn has_simple_use_pattern(&self, analysis: &AllocaUseAnalysis) -> Result<bool> {
         // Simple heuristics:
@@ -236,30 +167,18 @@ impl<'ctx> OptimizationPass<'ctx> for Mem2RegPass<'ctx> {
 
 /// Mem2Reg promoter that performs the actual promotion
 struct Mem2RegPromoter<'ctx> {
-    function: &'ctx FunctionValue<'ctx>,
-    context: &'ctx Context,
     
     // PHI nodes created during promotion
-    phi_nodes: HashMap<BasicBlock<'ctx>, HashMap<InstructionValue<'ctx>, InstructionValue<'ctx>>>,
     
     // Current value of each alloca in each block
-    current_values: HashMap<BasicBlock<'ctx>, HashMap<InstructionValue<'ctx>, BasicValueEnum<'ctx>>>,
     
     // Dominance information (simplified)
-    dominance_info: DominanceInfo<'ctx>,
-}
-
 impl<'ctx> Mem2RegPromoter<'ctx> {
     /// Create new Mem2Reg promoter
     fn new(function: &'ctx FunctionValue<'ctx>, context: &'ctx Context) -> Self {
         let dominance_info = DominanceInfo::compute(function);
         
         Self {
-            function,
-            context,
-            phi_nodes: HashMap::new(),
-            current_values: HashMap::new(),
-            dominance_info,
         }
     }
     
@@ -273,8 +192,6 @@ impl<'ctx> Mem2RegPromoter<'ctx> {
         if loads.is_empty() && stores.is_empty() {
             // No uses, can just delete the alloca
             return Ok(true);
-        }
-        
         // Compute where PHI nodes are needed
         let phi_locations = self.compute_phi_locations(&stores)?;
         
@@ -287,16 +204,11 @@ impl<'ctx> Mem2RegPromoter<'ctx> {
         // Remove the original alloca and load/store instructions
         self.cleanup_instructions(alloca, &loads, &stores)?;
         
-        debug!("Successfully promoted alloca with {} loads and {} stores", 
                loads.len(), stores.len());
         
         Ok(true)
-    }
-    
     /// Collect all load and store instructions for an alloca
     fn collect_loads_and_stores(
-        &self,
-        alloca: InstructionValue<'ctx>,
     ) -> Result<(Vec<InstructionValue<'ctx>>, Vec<InstructionValue<'ctx>>)> {
         let mut loads = Vec::new();
         let mut stores = Vec::new();
@@ -306,12 +218,8 @@ impl<'ctx> Mem2RegPromoter<'ctx> {
         // For now, return empty vectors
         
         Ok((loads, stores))
-    }
-    
     /// Compute where PHI nodes are needed
     fn compute_phi_locations(
-        &self,
-        stores: &[InstructionValue<'ctx>],
     ) -> Result<HashSet<BasicBlock<'ctx>>> {
         let mut phi_locations = HashSet::new();
         
@@ -325,13 +233,8 @@ impl<'ctx> Mem2RegPromoter<'ctx> {
         }
         
         Ok(phi_locations)
-    }
-    
     /// Insert PHI nodes at computed locations
     fn insert_phi_nodes(
-        &mut self,
-        alloca: InstructionValue<'ctx>,
-        phi_locations: &HashSet<BasicBlock<'ctx>>,
     ) -> Result<()> {
         for &block in phi_locations {
             // In a real implementation, we'd:
@@ -340,33 +243,16 @@ impl<'ctx> Mem2RegPromoter<'ctx> {
             // 3. Set up the PHI with the correct number of incoming values
             
             debug!("Would insert PHI node in block at address {}", block.get_address());
-        }
-        
         Ok(())
-    }
-    
     /// Rename variables (convert to SSA form)
     fn rename_variables(
-        &mut self,
-        alloca: InstructionValue<'ctx>,
-        loads: &[InstructionValue<'ctx>],
-        stores: &[InstructionValue<'ctx>],
     ) -> Result<()> {
         // Start renaming from the entry block
         if let Some(entry_block) = self.function.get_first_basic_block() {
             self.rename_in_block(alloca, entry_block, loads, stores)?;
-        }
-        
         Ok(())
-    }
-    
     /// Rename variables in a specific block
     fn rename_in_block(
-        &mut self,
-        alloca: InstructionValue<'ctx>,
-        block: BasicBlock<'ctx>,
-        loads: &[InstructionValue<'ctx>],
-        stores: &[InstructionValue<'ctx>],
     ) -> Result<()> {
         // Process instructions in the block
         let mut instruction = block.get_first_instruction();
@@ -375,28 +261,16 @@ impl<'ctx> Mem2RegPromoter<'ctx> {
             // Handle stores: update current value
             if stores.contains(&instr) {
                 self.handle_store_rename(alloca, &instr, block)?;
-            }
-            
             // Handle loads: replace with current value
             if loads.contains(&instr) {
                 self.handle_load_rename(alloca, &instr, block)?;
-            }
-            
             instruction = instr.get_next_instruction();
-        }
-        
         // Process successor blocks
         self.process_successor_blocks(alloca, block, loads, stores)?;
         
         Ok(())
-    }
-    
     /// Handle renaming of a store instruction
     fn handle_store_rename(
-        &mut self,
-        alloca: InstructionValue<'ctx>,
-        store: &InstructionValue<'ctx>,
-        block: BasicBlock<'ctx>,
     ) -> Result<()> {
         // In a real implementation:
         // 1. Get the stored value from the store instruction
@@ -405,14 +279,8 @@ impl<'ctx> Mem2RegPromoter<'ctx> {
         
         debug!("Handling store rename in block {}", block.get_address());
         Ok(())
-    }
-    
     /// Handle renaming of a load instruction
     fn handle_load_rename(
-        &mut self,
-        alloca: InstructionValue<'ctx>,
-        load: &InstructionValue<'ctx>,
-        block: BasicBlock<'ctx>,
     ) -> Result<()> {
         // In a real implementation:
         // 1. Get the current value for this alloca in this block
@@ -421,15 +289,8 @@ impl<'ctx> Mem2RegPromoter<'ctx> {
         
         debug!("Handling load rename in block {}", block.get_address());
         Ok(())
-    }
-    
     /// Process successor blocks
     fn process_successor_blocks(
-        &mut self,
-        alloca: InstructionValue<'ctx>,
-        block: BasicBlock<'ctx>,
-        loads: &[InstructionValue<'ctx>],
-        stores: &[InstructionValue<'ctx>],
     ) -> Result<()> {
         // In a real implementation:
         // 1. Get all successor blocks
@@ -437,21 +298,14 @@ impl<'ctx> Mem2RegPromoter<'ctx> {
         // 3. Recursively process successor blocks
         
         Ok(())
-    }
-    
     /// Clean up original instructions
     fn cleanup_instructions(
-        &self,
-        alloca: InstructionValue<'ctx>,
-        loads: &[InstructionValue<'ctx>],
-        stores: &[InstructionValue<'ctx>],
     ) -> Result<()> {
         // In a real implementation:
         // 1. Remove all load instructions
         // 2. Remove all store instructions  
         // 3. Remove the original alloca instruction
         
-        debug!("Cleaning up {} loads, {} stores, and 1 alloca", 
                loads.len(), stores.len());
         
         Ok(())
@@ -462,26 +316,15 @@ impl<'ctx> Mem2RegPromoter<'ctx> {
 #[derive(Debug)]
 struct AllocaUseAnalysis {
     /// Whether all uses are just loads and stores
-    only_loads_and_stores: bool,
     /// Whether any volatile operations are present
-    has_volatile_ops: bool,
     /// Load instructions
-    loads: Vec<InstructionValue<'static>>,
     /// Store instructions
-    stores: Vec<InstructionValue<'static>>,
     /// Blocks that define values (have stores)
-    defining_blocks: HashSet<usize>,
     /// Blocks that use values (have loads)
-    using_blocks: HashSet<usize>,
-}
-
 /// Simplified dominance information
 #[derive(Debug)]
 struct DominanceInfo<'ctx> {
     /// Dominance frontiers for each block
-    dominance_frontiers: HashMap<BasicBlock<'ctx>, HashSet<BasicBlock<'ctx>>>,
-}
-
 impl<'ctx> DominanceInfo<'ctx> {
     /// Compute dominance information for a function
     fn compute(function: &'ctx FunctionValue<'ctx>) -> Self {
@@ -493,10 +336,7 @@ impl<'ctx> DominanceInfo<'ctx> {
         while let Some(bb) = block {
             dominance_frontiers.insert(bb, HashSet::new());
             block = bb.get_next_basic_block();
-        }
-        
         Self {
-            dominance_frontiers,
         }
     }
     
@@ -509,9 +349,3 @@ impl<'ctx> DominanceInfo<'ctx> {
 /// Statistics for Mem2Reg pass
 #[derive(Debug, Default)]
 struct Mem2RegStatistics {
-    pub functions_processed: u64,
-    pub total_allocas_promoted: usize,
-    pub total_loads_eliminated: usize,
-    pub total_stores_eliminated: usize,
-}
-

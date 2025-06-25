@@ -8,57 +8,28 @@ use std::thread;
 use std::time::Duration;
 use std::collections::HashMap;
 
-// use crate::stdlib::packages::web_vibez::{
-    request::{HttpRequest, RequestBuilder},
-    response::HttpResponse,
-    router::Router,
-    handler::Handler,
-    middleware::MiddlewareChain,
-    method::HttpMethod,
-    types::{RequestBody, ContentType},
-    error::{WebError, WebResult, NetworkErrorKind},
-    status::StatusCode as WebStatusCode,
-};
+// Placeholder imports disabled
+// };
 
 /// fr fr Server configuration options - comprehensive setup
 #[derive(Debug, Clone)]
 pub struct ServerConfig {
     /// fr fr Server bind address
-    pub address: SocketAddr,
     /// fr fr Maximum concurrent connections
-    pub max_connections: usize,
     /// fr fr Connection timeout duration
-    pub connection_timeout: Duration,
     /// fr fr Read timeout for requests
-    pub read_timeout: Duration,
     /// fr fr Write timeout for responses
-    pub write_timeout: Duration,
     /// fr fr Maximum request body size in bytes
-    pub max_body_size: usize,
     /// fr fr Server name for headers
-    pub server_name: String,
     /// fr fr Enable keep-alive connections
-    pub keep_alive: bool,
     /// fr fr Keep-alive timeout
-    pub keep_alive_timeout: Duration,
     /// fr fr Thread pool size
-    pub thread_pool_size: usize,
-}
-
 impl ServerConfig {
     /// fr fr Create new server config with defaults - basic setup
     pub fn new(address: SocketAddr) -> Self {
         Self {
-            address,
-            max_connections: 1000,
-            connection_timeout: Duration::from_secs(30),
-            read_timeout: Duration::from_secs(30),
-            write_timeout: Duration::from_secs(30),
             max_body_size: 1024 * 1024 * 16, // 16MB
             server_name: "web_vibez/1.0".to_string(),
-            keep_alive: true,
-            keep_alive_timeout: Duration::from_secs(60),
-            thread_pool_size: num_cpus::get() * 2,
         }
     }
 
@@ -66,32 +37,22 @@ impl ServerConfig {
     pub fn max_connections(mut self, max: usize) -> Self {
         self.max_connections = max;
         self
-    }
-
     /// fr fr Set connection timeout - how long to wait
     pub fn connection_timeout(mut self, timeout: Duration) -> Self {
         self.connection_timeout = timeout;
         self
-    }
-
     /// fr fr Set maximum body size - request size limit
     pub fn max_body_size(mut self, size: usize) -> Self {
         self.max_body_size = size;
         self
-    }
-
     /// fr fr Set server name - identification header
     pub fn server_name(mut self, name: String) -> Self {
         self.server_name = name;
         self
-    }
-
     /// fr fr Enable/disable keep-alive - connection reuse
     pub fn keep_alive(mut self, enable: bool) -> Self {
         self.keep_alive = enable;
         self
-    }
-
     /// fr fr Set thread pool size - worker threads
     pub fn thread_pool_size(mut self, size: usize) -> Self {
         self.thread_pool_size = size;
@@ -101,22 +62,10 @@ impl ServerConfig {
 
 /// fr fr HTTP server implementation - the main server engine
 pub struct HttpServer {
-    config: ServerConfig,
-    router: Arc<Router>,
-    middleware_chain: MiddlewareChain,
-    listener: Option<TcpListener>,
-    running: Arc<std::sync::atomic::AtomicBool>,
-}
-
 impl HttpServer {
     /// fr fr Create new HTTP server - basic setup
     pub fn new(config: ServerConfig) -> Self {
         Self {
-            config,
-            router: Arc::new(Router::new()),
-            middleware_chain: MiddlewareChain::new(),
-            listener: None,
-            running: Arc::new(std::sync::atomic::AtomicBool::new(false)),
         }
     }
 
@@ -124,21 +73,15 @@ impl HttpServer {
     pub fn with_router(mut self, router: Router) -> Self {
         self.router = Arc::new(router);
         self
-    }
-
     /// fr fr Set middleware chain - request processing pipeline
     pub fn with_middleware(mut self, middleware_chain: MiddlewareChain) -> Self {
         self.middleware_chain = middleware_chain;
         self
-    }
-
     /// fr fr Start the server - begin accepting connections
     pub fn start(&mut self) -> WebResult<()> {
         // Create TCP listener
         let listener = TcpListener::bind(self.config.address).map_err(|e| {
             WebError::network(
-                NetworkErrorKind::Other,
-                format!("Failed to bind to {}: {}", self.config.address, e),
             )
         })?;
 
@@ -147,8 +90,6 @@ impl HttpServer {
         // Set non-blocking mode for the listener
         listener.set_nonblocking(true).map_err(|e| {
             WebError::network(
-                NetworkErrorKind::Other,
-                format!("Failed to set non-blocking mode: {}", e),
             )
         })?;
 
@@ -157,26 +98,17 @@ impl HttpServer {
 
         // Start accepting connections
         self.accept_loop()
-    }
-
     /// fr fr Stop the server - graceful shutdown
     pub fn stop(&mut self) {
         println!("🛑 Server stopping - peace out!");
         self.running.store(false, std::sync::atomic::Ordering::SeqCst);
-    }
-
     /// fr fr Check if server is running - status check
     pub fn is_running(&self) -> bool {
         self.running.load(std::sync::atomic::Ordering::SeqCst)
-    }
-
     /// fr fr Main connection acceptance loop - handle incoming connections
     fn accept_loop(&self) -> WebResult<()> {
         let listener = self.listener.as_ref().ok_or_else(|| {
             WebError::Configuration {
-                setting: "listener".to_string(),
-                value: "None".to_string(),
-                message: "Server not properly initialized".to_string(),
             }
         })?;
 
@@ -189,8 +121,6 @@ impl HttpServer {
                         println!("⚠️ Max connections reached, dropping new connection from {}", client_addr);
                         drop(stream);
                         continue;
-                    }
-
                     active_connections += 1;
                     println!("📞 New connection from {} (active: {})", client_addr, active_connections);
 
@@ -218,18 +148,9 @@ impl HttpServer {
                     thread::sleep(Duration::from_millis(100));
                 }
             }
-        }
-
         Ok(())
-    }
-
     /// fr fr Handle individual connection - process requests
     fn handle_connection(
-        mut stream: TcpStream,
-        client_addr: SocketAddr,
-        router: Arc<Router>,
-        middleware_chain: MiddlewareChain,
-        config: ServerConfig,
     ) -> WebResult<()> {
         // Set timeouts
         stream.set_read_timeout(Some(config.read_timeout)).ok();
@@ -240,7 +161,6 @@ impl HttpServer {
             let request = {
                 let mut buf_reader = BufReader::new(&stream);
                 match Self::parse_request(&mut buf_reader, client_addr, &config) {
-                    Ok(req) => req,
                     Err(e) => {
                         // Send error response and close connection
                         let error_response = HttpResponse::from_error(&e);
@@ -248,7 +168,6 @@ impl HttpServer {
                         break;
                     }
                 }
-            };
 
             // Handle the request through router and middleware
             let response = tokio::runtime::Runtime::new()
@@ -258,19 +177,12 @@ impl HttpServer {
                     let mut req_copy = request.clone();
                     if let Err(e) = middleware_chain.process_request(&mut req_copy).await {
                         return HttpResponse::from_error(&e);
-                    }
-
                     // Route the request
                     let mut response = match router.route_request(req_copy.clone()).await {
-                        Ok(resp) => resp,
-                        Err(e) => HttpResponse::from_error(&e),
-                    };
 
                     // Process response through middleware
                     if let Err(e) = middleware_chain.process_response(&req_copy, &mut response).await {
                         return HttpResponse::from_error(&e);
-                    }
-
                     response
                 });
 
@@ -278,8 +190,6 @@ impl HttpServer {
             if let Err(e) = Self::send_response(&mut stream, response, &config) {
                 println!("❌ Failed to send response to {}: {}", client_addr, e);
                 break;
-            }
-
             // Check for connection close
             if let Some(connection) = request.header("connection") {
                 if connection.to_lowercase() == "close" || !config.keep_alive {
@@ -297,23 +207,14 @@ impl HttpServer {
                     break;
                 }
             }
-        }
-
         Ok(())
-    }
-
     /// fr fr Parse HTTP request from stream - request parsing
     fn parse_request(
-        reader: &mut BufReader<&TcpStream>,
-        client_addr: SocketAddr,
-        config: &ServerConfig,
     ) -> WebResult<HttpRequest> {
         // Read request line
         let mut request_line = String::new();
         reader.read_line(&mut request_line).map_err(|e| {
             WebError::RequestParsing {
-                message: format!("Failed to read request line: {}", e),
-                field: Some("request_line".to_string()),
             }
         })?;
 
@@ -321,8 +222,6 @@ impl HttpServer {
         let parts: Vec<&str> = request_line.trim().split_whitespace().collect();
         if parts.len() != 3 {
             return Err(WebError::bad_request("Invalid request line format"));
-        }
-
         let method = parts[0].parse::<HttpMethod>().map_err(|_| {
             WebError::bad_request(format!("Invalid HTTP method: {}", parts[0]))
         })?;
@@ -338,7 +237,6 @@ impl HttpServer {
             (path, query)
         } else {
             (path_and_query.to_string(), HashMap::new())
-        };
 
         // Parse headers
         let mut headers = HashMap::new();
@@ -346,16 +244,12 @@ impl HttpServer {
             let mut header_line = String::new();
             reader.read_line(&mut header_line).map_err(|e| {
                 WebError::RequestParsing {
-                    message: format!("Failed to read header: {}", e),
-                    field: Some("headers".to_string()),
                 }
             })?;
 
             let header_line = header_line.trim();
             if header_line.is_empty() {
                 break; // End of headers
-            }
-
             if let Some(pos) = header_line.find(':') {
                 let name = header_line[..pos].trim().to_lowercase();
                 let value = header_line[pos + 1..].trim().to_string();
@@ -371,17 +265,11 @@ impl HttpServer {
 
             if length > config.max_body_size {
                 return Err(WebError::RequestParsing {
-                    message: format!("Request body too large: {} > {}", length, config.max_body_size),
-                    field: Some("body".to_string()),
                 });
-            }
-
             if length > 0 {
                 let mut body_bytes = vec![0; length];
                 reader.read_exact(&mut body_bytes).map_err(|e| {
                     WebError::RequestParsing {
-                        message: format!("Failed to read request body: {}", e),
-                        field: Some("body".to_string()),
                     }
                 })?;
 
@@ -390,8 +278,6 @@ impl HttpServer {
                     if content_type.starts_with("application/json") {
                         let body_text = String::from_utf8_lossy(&body_bytes);
                         match serde_json::from_str(&body_text) {
-                            Ok(json_value) => RequestBody::Json(json_value),
-                            Err(_) => RequestBody::Text(body_text.to_string()),
                         }
                     } else if content_type.starts_with("application/x-www-form-urlencoded") {
                         let body_text = String::from_utf8_lossy(&body_bytes);
@@ -411,7 +297,6 @@ impl HttpServer {
             }
         } else {
             RequestBody::Empty
-        };
 
         // Create request
         let request = RequestBuilder::new(method, path)
@@ -423,8 +308,6 @@ impl HttpServer {
             .build();
 
         Ok(request)
-    }
-
     /// fr fr Parse query string parameters - URL parameter extraction
     fn parse_query_string(query_string: &str) -> HashMap<String, String> {
         let mut params = HashMap::new();
@@ -440,53 +323,34 @@ impl HttpServer {
         }
         
         params
-    }
-
     /// fr fr Parse form data - form field extraction
     fn parse_form_data(form_string: &str) -> HashMap<String, String> {
         // For now, same as query string parsing
         // In a real implementation, you'd handle URL decoding
         Self::parse_query_string(form_string)
-    }
-
     /// fr fr Send HTTP response to client - response transmission
     fn send_response(
-        stream: &mut TcpStream,
-        mut response: HttpResponse,
-        config: &ServerConfig,
     ) -> WebResult<()> {
         // Add server header
         if !response.headers.contains_key("server") {
             response.headers.insert("server".to_string(), config.server_name.clone());
-        }
-
         // Add date header
         if !response.headers.contains_key("date") {
             response.headers.insert(
-                "date".to_string(),
-                chrono::Utc::now().format("%a, %d %b %Y %H:%M:%S GMT").to_string(),
             );
-        }
-
         // Add connection header
         if !response.headers.contains_key("connection") {
             let connection = if config.keep_alive { "keep-alive" } else { "close" };
             response.headers.insert("connection".to_string(), connection.to_string());
-        }
-
         // Send response
         let http_response = response.to_http_string();
         stream.write_all(http_response.as_bytes()).map_err(|e| {
             WebError::network(
-                NetworkErrorKind::Other,
-                format!("Failed to write response: {}", e),
             )
         })?;
 
         stream.flush().map_err(|e| {
             WebError::network(
-                NetworkErrorKind::Other,
-                format!("Failed to flush response: {}", e),
             )
         })?;
 
@@ -498,16 +362,12 @@ impl HttpServer {
 trait RequestBuilderExt {
     fn query_map(self, query: HashMap<String, String>) -> Self;
     fn headers_map(self, headers: HashMap<String, String>) -> Self;
-}
-
 impl RequestBuilderExt for RequestBuilder {
     fn query_map(mut self, query: HashMap<String, String>) -> Self {
         for (key, value) in query {
             self = self.query(key, value);
         }
         self
-    }
-
     fn headers_map(mut self, headers: HashMap<String, String>) -> Self {
         for (key, value) in headers {
             self = self.header(key, value);

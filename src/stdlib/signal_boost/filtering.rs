@@ -11,7 +11,6 @@ use std::time::{Duration, Instant};
 /// Filter signals based on a predicate function
 pub fn filter_signals<F>(input: Receiver<BoostSignal>, predicate: F) -> Receiver<BoostSignal>
 where
-    F: Fn(BoostSignal) -> bool + Send + 'static,
 {
     let (sender, receiver) = mpsc::channel();
     
@@ -31,8 +30,6 @@ where
     });
     
     receiver
-}
-
 /// Throttle signals to prevent flooding
 pub fn throttle_signals(input: Receiver<BoostSignal>, interval: Duration) -> Receiver<BoostSignal> {
     let (sender, receiver) = mpsc::channel();
@@ -43,9 +40,6 @@ pub fn throttle_signals(input: Receiver<BoostSignal>, interval: Duration) -> Rec
         while let Ok(signal) = input.recv() {
             let now = Instant::now();
             let should_send = match last_sent.get(&signal) {
-                Some(last_time) => now.duration_since(*last_time) >= interval,
-                None => true,
-            };
             
             if should_send {
                 if sender.send(signal).is_err() {
@@ -62,8 +56,6 @@ pub fn throttle_signals(input: Receiver<BoostSignal>, interval: Duration) -> Rec
     });
     
     receiver
-}
-
 /// Debounce signals to only process the last one in a sequence
 pub fn debounce_signals(input: Receiver<BoostSignal>, interval: Duration) -> Receiver<BoostSignal> {
     let (sender, receiver) = mpsc::channel();
@@ -101,8 +93,6 @@ pub fn debounce_signals(input: Receiver<BoostSignal>, interval: Duration) -> Rec
                         true // Keep in pending
                     }
                 });
-            }
-            
             for signal in to_send {
                 if sender.send(signal).is_err() {
                     tracing::debug!("Debounce output channel closed");
@@ -114,8 +104,6 @@ pub fn debounce_signals(input: Receiver<BoostSignal>, interval: Duration) -> Rec
     });
     
     receiver
-}
-
 /// Buffer signals and release them in batches
 pub fn buffer_signals(input: Receiver<BoostSignal>, buffer_size: usize, flush_interval: Duration) -> Receiver<Vec<BoostSignal>> {
     let (sender, receiver) = mpsc::channel();
@@ -140,7 +128,6 @@ pub fn buffer_signals(input: Receiver<BoostSignal>, buffer_size: usize, flush_in
                         buffer.clear();
                         last_flush = Instant::now();
                     }
-                },
                 Err(mpsc::RecvTimeoutError::Timeout) => {
                     // Check if we should flush due to time
                     if !buffer.is_empty() && last_flush.elapsed() >= flush_interval {
@@ -152,7 +139,6 @@ pub fn buffer_signals(input: Receiver<BoostSignal>, buffer_size: usize, flush_in
                         buffer.clear();
                         last_flush = Instant::now();
                     }
-                },
                 Err(mpsc::RecvTimeoutError::Disconnected) => {
                     // Flush remaining buffer before closing
                     if !buffer.is_empty() {
@@ -167,8 +153,6 @@ pub fn buffer_signals(input: Receiver<BoostSignal>, buffer_size: usize, flush_in
     });
     
     receiver
-}
-
 /// Rate limit signals globally across all signal types
 pub fn rate_limit_signals(input: Receiver<BoostSignal>, max_per_second: usize) -> Receiver<BoostSignal> {
     let (sender, receiver) = mpsc::channel();
@@ -199,8 +183,6 @@ pub fn rate_limit_signals(input: Receiver<BoostSignal>, max_per_second: usize) -
     });
     
     receiver
-}
-
 /// Sample signals - only pass through every Nth signal
 pub fn sample_signals(input: Receiver<BoostSignal>, sample_rate: usize) -> Receiver<BoostSignal> {
     let (sender, receiver) = mpsc::channel();
@@ -225,8 +207,6 @@ pub fn sample_signals(input: Receiver<BoostSignal>, sample_rate: usize) -> Recei
     });
     
     receiver
-}
-
 /// Deduplicate consecutive identical signals
 pub fn deduplicate_signals(input: Receiver<BoostSignal>) -> Receiver<BoostSignal> {
     let (sender, receiver) = mpsc::channel();
@@ -250,12 +230,9 @@ pub fn deduplicate_signals(input: Receiver<BoostSignal>) -> Receiver<BoostSignal
     });
     
     receiver
-}
-
 /// Transform signals using a mapping function
 pub fn transform_signals<F>(input: Receiver<BoostSignal>, transform: F) -> Receiver<BoostSignal>
 where
-    F: Fn(BoostSignal) -> Option<BoostSignal> + Send + 'static,
 {
     let (sender, receiver) = mpsc::channel();
     
@@ -275,8 +252,6 @@ where
     });
     
     receiver
-}
-
 /// Priority queue for signals - higher priority signals are sent first
 pub fn prioritize_signals(input: Receiver<BoostSignal>, get_priority: fn(BoostSignal) -> i32) -> Receiver<BoostSignal> {
     use std::collections::BinaryHeap;
@@ -284,21 +259,12 @@ pub fn prioritize_signals(input: Receiver<BoostSignal>, get_priority: fn(BoostSi
     
     #[derive(Eq, PartialEq)]
     struct PrioritySignal {
-        signal: BoostSignal,
-        priority: i32,
-        timestamp: Instant,
-    }
-    
     impl Ord for PrioritySignal {
         fn cmp(&self, other: &Self) -> Ordering {
             // Higher priority first, then older timestamp first
             match self.priority.cmp(&other.priority) {
-                Ordering::Equal => other.timestamp.cmp(&self.timestamp),
-                other => other,
             }
         }
-    }
-    
     impl PartialOrd for PrioritySignal {
         fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
             Some(self.cmp(other))
@@ -318,15 +284,10 @@ pub fn prioritize_signals(input: Receiver<BoostSignal>, get_priority: fn(BoostSi
                 Ok(signal) => {
                     let priority = get_priority(signal);
                     priority_queue.push(PrioritySignal {
-                        signal,
-                        priority,
-                        timestamp: Instant::now(),
                     });
                     tracing::debug!("Signal {} queued with priority {}", signal, priority);
-                },
                 Err(mpsc::RecvTimeoutError::Timeout) => {
                     // Normal timeout, continue to send queued signals
-                },
                 Err(mpsc::RecvTimeoutError::Disconnected) => {
                     // Input closed, send remaining signals and exit
                     while let Some(priority_signal) = priority_queue.pop() {
@@ -352,62 +313,38 @@ pub fn prioritize_signals(input: Receiver<BoostSignal>, get_priority: fn(BoostSi
     });
     
     receiver
-}
-
 /// Composite filter that applies multiple filtering stages
 pub struct SignalFilterChain {
-    stages: Vec<Box<dyn Fn(Receiver<BoostSignal>) -> Receiver<BoostSignal> + Send>>,
-}
-
 impl SignalFilterChain {
     pub fn new() -> Self {
         Self {
-            stages: Vec::new(),
         }
     }
     
     pub fn add_filter<F>(mut self, filter: F) -> Self
     where
-        F: Fn(Receiver<BoostSignal>) -> Receiver<BoostSignal> + Send + 'static,
     {
         self.stages.push(Box::new(filter));
         self
-    }
-    
     pub fn add_predicate_filter<P>(self, predicate: P) -> Self
     where
-        P: Fn(BoostSignal) -> bool + Send + 'static,
     {
         self.add_filter(move |input| filter_signals(input, predicate))
-    }
-    
     pub fn add_throttle(self, interval: Duration) -> Self {
         self.add_filter(move |input| throttle_signals(input, interval))
-    }
-    
     pub fn add_debounce(self, interval: Duration) -> Self {
         self.add_filter(move |input| debounce_signals(input, interval))
-    }
-    
     pub fn add_rate_limit(self, max_per_second: usize) -> Self {
         self.add_filter(move |input| rate_limit_signals(input, max_per_second))
-    }
-    
     pub fn add_sample(self, sample_rate: usize) -> Self {
         self.add_filter(move |input| sample_signals(input, sample_rate))
-    }
-    
     pub fn add_deduplicate(self) -> Self {
         self.add_filter(|input| deduplicate_signals(input))
-    }
-    
     pub fn apply(self, input: Receiver<BoostSignal>) -> Receiver<BoostSignal> {
         let mut current = input;
         
         for stage in self.stages {
             current = stage(current);
-        }
-        
         current
     }
 }

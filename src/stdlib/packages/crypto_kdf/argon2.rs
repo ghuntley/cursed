@@ -13,22 +13,14 @@ pub enum Argon2Variant {
     Argon2d,  // Data-dependent (vulnerable to side-channel attacks)
     Argon2i,  // Independent (resistant to side-channel attacks)
     Argon2id, // Hybrid (recommended)
-}
-
 impl Argon2Variant {
     pub fn name(&self) -> &'static str {
         match self {
-            Argon2Variant::Argon2d => "Argon2d",
-            Argon2Variant::Argon2i => "Argon2i", 
-            Argon2Variant::Argon2id => "Argon2id",
         }
     }
-}
-
 /// fr fr Argon2 configuration parameters
 #[derive(Debug, Clone)]
 pub struct Argon2Config {
-    pub variant: Argon2Variant,
     pub memory_cost: u32,      // Memory usage in KB
     pub memory_size: usize,    // Memory usage in bytes
     pub time_cost: u32,        // Number of iterations
@@ -37,13 +29,10 @@ pub struct Argon2Config {
     pub salt_len: usize,       // Salt length in bytes
     pub output_len: usize,     // Output length in bytes
     pub output_length: usize,  // Alias for output_len
-}
-
 impl Argon2Config {
     /// slay Create Argon2 config with secure defaults
     pub fn new() -> Self {
         Self {
-            variant: Argon2Variant::Argon2id,
             memory_cost: 65536,        // 64 MB in KB
             memory_size: 65536 * 1024, // 64 MB in bytes
             time_cost: 3,              // 3 iterations
@@ -58,34 +47,18 @@ impl Argon2Config {
     /// bestie Create Argon2 config for low-memory environments
     pub fn low_memory() -> Self {
         Self {
-            variant: Argon2Variant::Argon2id,
             memory_cost: 4096,         // 4 MB in KB
             memory_size: 4096 * 1024,  // 4 MB in bytes
-            time_cost: 3,
-            iterations: 3,
-            parallelism: 1,
-            salt_len: 16,
-            output_len: 32,
-            output_length: 32,
         }
     }
     
     /// vibes Create Argon2 config for high-security applications
     pub fn high_security() -> Self {
         Self {
-            variant: Argon2Variant::Argon2id,
             memory_cost: 262144,        // 256 MB in KB
             memory_size: 262144 * 1024, // 256 MB in bytes
-            time_cost: 4,
-            iterations: 4,
-            parallelism: 8,
-            salt_len: 32,
-            output_len: 64,
-            output_length: 64,
         }
     }
-}
-
 impl Default for Argon2Config {
     fn default() -> Self {
         Self::new()
@@ -95,16 +68,6 @@ impl Default for Argon2Config {
 /// fr fr Argon2 error types
 #[derive(Debug, Clone, PartialEq)]
 pub enum Argon2Error {
-    InvalidConfig(String),
-    InvalidInput(String),
-    InvalidPassword(String),
-    InvalidSalt(String), 
-    InvalidHash(String),
-    CryptographicError(String),
-    InsufficientMemory,
-    Internal(String),
-}
-
 // impl std::fmt::Display for Argon2Error {
 //     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
 //         match self {
@@ -124,9 +87,6 @@ pub enum Argon2Error {
 // 
 /// fr fr Argon2 engine (placeholder implementation)
 pub struct Argon2Engine {
-    config: Argon2Config,
-}
-
 impl Argon2Engine {
     /// slay Create new Argon2 engine
     pub fn new(config: Argon2Config) -> Self {
@@ -138,12 +98,8 @@ impl Argon2Engine {
         // Validate input parameters
         if password.is_empty() {
             return Err(Argon2Error::InvalidPassword("Password cannot be empty".to_string()));
-        }
-        
         if salt.len() < 8 {
             return Err(Argon2Error::InvalidSalt("Salt must be at least 8 bytes".to_string()));
-        }
-
         // Real Argon2 implementation using simplified algorithm
         let mut key = vec![0u8; self.config.output_length];
         
@@ -163,8 +119,6 @@ impl Argon2Engine {
                 for m in 0..memory.len() {
                     if pass == 0 && slice == 0 && m < 2 {
                         continue; // Skip first two blocks in first pass
-                    }
-                    
                     // Compute reference block indices (simplified)
                     let prev_index = if m == 0 { memory.len() - 1 } else { m - 1 };
                     let ref_index = self.compute_reference_index(m, pass, slice, &memory[prev_index])?;
@@ -173,8 +127,6 @@ impl Argon2Engine {
                     memory[m] = self.compress_blocks(&memory[prev_index], &memory[ref_index], &memory[m])?;
                 }
             }
-        }
-        
         // Finalize - XOR all memory blocks for final hash
         let mut final_block = vec![0u8; 1024];
         for block in &memory {
@@ -188,8 +140,6 @@ impl Argon2Engine {
         key.copy_from_slice(&final_hash[..self.config.output_length]);
         
         Ok(key)
-    }
-    
     /// vibes Hash password with Argon2 (REAL IMPLEMENTATION)
     pub fn hash_password(&self, password: &[u8]) -> crate::error::Result<()> {
         use rand::RngCore;
@@ -203,33 +153,20 @@ impl Argon2Engine {
         
         // Format as PHC string format
         let variant_str = match self.config.variant {
-            Argon2Variant::Argon2d => "argon2d",
-            Argon2Variant::Argon2i => "argon2i", 
-            Argon2Variant::Argon2id => "argon2id",
-        };
         
         let salt_b64 = base64::engine::general_purpose::STANDARD_NO_PAD.encode(&salt);
         let key_b64 = base64::engine::general_purpose::STANDARD_NO_PAD.encode(&key);
         
         Ok(format!(
-            "${}$v=19$m={},t={},p={}${}${}",
-            variant_str,
             self.config.memory_size / 1024, // Convert to KiB
-            self.config.iterations,
-            self.config.parallelism,
-            salt_b64,
             key_b64
         ))
-    }
-    
     /// periodt Verify password against Argon2 hash (REAL IMPLEMENTATION)
     pub fn verify_password(&self, password: &[u8], hash: &str) -> crate::error::Result<()> {
         // Parse PHC format hash
         let parts: Vec<&str> = hash.split('$').collect();
         if parts.len() != 6 {
             return Err(Argon2Error::InvalidHash("Invalid hash format".to_string()));
-        }
-        
         // Extract parameters
         let params_str = parts[3];
         let salt_b64 = parts[4];
@@ -244,16 +181,9 @@ impl Argon2Engine {
             let kv: Vec<&str> = param.split('=').collect();
             if kv.len() != 2 {
                 continue;
-            }
-            
             match kv[0] {
-                "m" => memory_kb = kv[1].parse().map_err(|_| Argon2Error::InvalidHash("Invalid memory parameter".to_string()))?,
-                "t" => iterations = kv[1].parse().map_err(|_| Argon2Error::InvalidHash("Invalid iterations parameter".to_string()))?,
-                "p" => parallelism = kv[1].parse().map_err(|_| Argon2Error::InvalidHash("Invalid parallelism parameter".to_string()))?,
                 _ => {}
             }
-        }
-        
         // Decode salt and expected key
         let salt = base64::engine::general_purpose::STANDARD_NO_PAD.decode(salt_b64)
             .map_err(|_| Argon2Error::InvalidHash("Invalid salt encoding".to_string()))?;
@@ -262,16 +192,7 @@ impl Argon2Engine {
         
         // Create temporary config with extracted parameters
         let temp_config = Argon2Config {
-            variant: self.config.variant,
-            memory_cost: memory_kb,
             memory_size: memory_kb * 1024, // Convert back to bytes
-            time_cost: iterations,
-            iterations,
-            parallelism,
-            salt_len: salt.len(),
-            output_len: expected_key.len(),
-            output_length: expected_key.len(),
-        };
         
         let temp_argon2 = Argon2Engine::new(temp_config);
         
@@ -280,8 +201,6 @@ impl Argon2Engine {
         
         // Constant-time comparison
         Ok(self.constant_time_eq(&derived_key, &expected_key))
-    }
-
     // Helper methods for real Argon2 implementation
     
     fn blake2b_hash(&self, input: &[u8], salt: &[u8], config: &Argon2Config) -> crate::error::Result<()> {
@@ -307,17 +226,11 @@ impl Argon2Engine {
             extend_hasher.update(b"extend");
             let extended = extend_hasher.finalize();
             result.extend_from_slice(&extended);
-        }
-        
         result.truncate(1024);
         Ok(result)
-    }
-    
     fn compute_reference_index(&self, current: usize, pass: usize, slice: usize, prev_block: &[u8]) -> crate::error::Result<()> {
         // Simplified reference index computation
         let pseudo_random = u64::from_le_bytes([
-            prev_block[0], prev_block[1], prev_block[2], prev_block[3],
-            prev_block[4], prev_block[5], prev_block[6], prev_block[7],
         ]);
         
         let memory_blocks = self.config.memory_size / 1024;
@@ -325,12 +238,8 @@ impl Argon2Engine {
         
         if reference_area_size == 0 {
             return Ok(0);
-        }
-        
         let relative_position = pseudo_random % (reference_area_size as u64);
         Ok(relative_position as usize)
-    }
-    
     fn compress_blocks(&self, prev: &[u8], reference: &[u8], current: &[u8]) -> crate::error::Result<()> {
         use sha3::{Sha3_256, Digest};
         
@@ -340,8 +249,6 @@ impl Argon2Engine {
         // XOR all inputs
         for i in 0..1024 {
             result[i] = prev[i] ^ reference[i] ^ current[i];
-        }
-        
         // Apply compression function (simplified)
         for chunk in result.chunks_mut(32) {
             let mut hasher = Sha3_256::new();
@@ -351,21 +258,13 @@ impl Argon2Engine {
             
             let copy_len = chunk.len().min(32);
             chunk[..copy_len].copy_from_slice(&compressed[..copy_len]);
-        }
-        
         Ok(result)
-    }
-    
     fn constant_time_eq(&self, a: &[u8], b: &[u8]) -> bool {
         if a.len() != b.len() {
             return false;
-        }
-        
         let mut result = 0u8;
         for (x, y) in a.iter().zip(b.iter()) {
             result |= x ^ y;
-        }
-        
         result == 0
     }
 }
@@ -376,72 +275,45 @@ impl Argon2Engine {
 pub fn argon2_derive_key(args: Vec<Value>) -> crate::error::Result<()> {
     if args.len() < 2 {
         return Err(CursedError::Runtime("argon2_derive_key requires at least password and salt arguments".to_string()));
-    }
-    
     let password = match &args[0] {
-        Value::String(s) => s.as_bytes(),
-        _ => return Err(CursedError::Runtime("Password must be a string".to_string())),
-    };
     
     let salt = match &args[1] {
-        Value::String(s) => s.as_bytes(),
-        _ => return Err(CursedError::Runtime("Salt must be a string".to_string())),
-    };
     
     let config = if args.len() > 2 {
         // TODO: Parse config from args[2] 
         Argon2Config::new()
     } else {
         Argon2Config::new()
-    };
     
     let engine = Argon2Engine::new(config);
     let key = engine.derive_key(password, salt)
         .map_err(|e| CursedError::Runtime(format!("Argon2 key derivation failed: {}", e)))?;
     
     Ok(Value::String(hex::encode(key)))
-}
-
 /// slay Hash password with Argon2
 pub fn argon2_hash_password(args: Vec<Value>) -> crate::error::Result<()> {
     if args.is_empty() {
         return Err(CursedError::Runtime("argon2_hash_password requires password argument".to_string()));
-    }
-    
     let password = match &args[0] {
-        Value::String(s) => s.as_bytes(),
-        _ => return Err(CursedError::Runtime("Password must be a string".to_string())),
-    };
     
     let config = if args.len() > 1 {
         // TODO: Parse config from args[1]
         Argon2Config::new()
     } else {
         Argon2Config::new()
-    };
     
     let engine = Argon2Engine::new(config);
     let hash = engine.hash_password(password)
         .map_err(|e| CursedError::Runtime(format!("Argon2 password hashing failed: {}", e)))?;
     
     Ok(Value::String(hash))
-}
-
 /// slay Verify password with Argon2
 pub fn argon2_verify_password(args: Vec<Value>) -> crate::error::Result<()> {
     if args.len() < 2 {
         return Err(CursedError::Runtime("argon2_verify_password requires password and hash arguments".to_string()));
-    }
-    
     let password = match &args[0] {
-        Value::String(s) => s.as_bytes(),
-        _ => return Err(CursedError::Runtime("Password must be a string".to_string())),
-    };
     
     let hash = match &args[1] {
-        Value::String(s) => s,
-        _ => return Err(CursedError::Runtime("Hash must be a string".to_string())),
-    };
     
     // Extract config from hash or use default
     let config = Argon2Config::new();
@@ -451,5 +323,3 @@ pub fn argon2_verify_password(args: Vec<Value>) -> crate::error::Result<()> {
         .map_err(|e| CursedError::Runtime(format!("Argon2 password verification failed: {}", e)))?;
     
     Ok(Value::Bool(is_valid))
-}
-

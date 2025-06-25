@@ -10,149 +10,68 @@ use std::fmt;
 pub enum PkiError {
     /// Certificate parsing or validation errors
     Certificate {
-        message: String,
-        certificate_id: Option<String>,
-        error_code: CertificateErrorCode,
-    },
     
     /// Certificate Authority operations errors  
     CertificateAuthority {
-        message: String,
-        ca_name: Option<String>,
-        operation: String,
-    },
     
     /// Certificate signing request errors
     CertificateSigningRequest {
-        message: String,
-        csr_id: Option<String>,
-        validation_errors: Vec<String>,
-    },
     
     /// Certificate chain validation errors
     ChainValidation {
-        message: String,
-        chain_length: Option<usize>,
-        failed_certificate: Option<String>,
-        validation_errors: Vec<String>,
-    },
     
     /// Certificate revocation list errors
     RevocationList {
-        message: String,
-        crl_issuer: Option<String>,
-        serial_numbers: Vec<String>,
-    },
     
     /// OCSP (Online Certificate Status Protocol) errors
     Ocsp {
-        message: String,
-        responder_url: Option<String>,
-        certificate_serial: Option<String>,
-    },
     
     /// Key management errors
     KeyManagement {
-        message: String,
-        key_id: Option<String>,
-        operation: String,
-    },
     
     /// Trust store errors
     TrustStore {
-        message: String,
-        store_name: Option<String>,
-        operation: String,
-    },
     
     /// X.509 specific errors
     X509 {
-        message: String,
-        field: Option<String>,
-        oid: Option<String>,
-    },
     
     /// PEM/DER encoding/decoding errors
     Encoding {
-        message: String,
-        format: String,
-        data_type: Option<String>,
-    },
     
     /// PKCS format errors
     Pkcs {
-        message: String,
-        version: Option<u8>,
-        format_type: String,
-    },
     
     /// Cryptographic operation errors
     Cryptographic {
-        message: String,
-        algorithm: Option<String>,
-        operation: String,
-    },
     
     /// Policy validation errors
     Policy {
-        message: String,
-        policy_oid: Option<String>,
-        constraint_violations: Vec<String>,
-    },
     
     /// Configuration errors
     Configuration {
-        message: String,
-        config_key: Option<String>,
-        invalid_value: Option<String>,
-    },
     
     /// Network-related errors (OCSP, CRL distribution points)
     Network {
-        message: String,
-        url: Option<String>,
-        status_code: Option<u16>,
-    },
     
     /// General PKI error
-    General(String),
-}
-
 /// Certificate-specific error codes for fine-grained error handling
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum CertificateErrorCode {
     /// Certificate has expired
-    Expired,
     /// Certificate is not yet valid
-    NotYetValid,
     /// Certificate signature is invalid
-    InvalidSignature,
     /// Certificate issuer is not trusted
-    UntrustedIssuer,
     /// Certificate has been revoked
-    Revoked,
     /// Certificate purpose does not match usage
-    InvalidPurpose,
     /// Certificate chain is incomplete
-    IncompleteChain,
     /// Certificate contains invalid extensions
-    InvalidExtensions,
     /// Certificate format is malformed
-    MalformedCertificate,
     /// Certificate algorithm is not supported
-    UnsupportedAlgorithm,
     /// Certificate key usage constraint violation
-    KeyUsageViolation,
     /// Certificate basic constraints violation
-    BasicConstraintsViolation,
     /// Certificate name constraints violation
-    NameConstraintsViolation,
     /// Certificate policy constraints violation
-    PolicyConstraintsViolation,
     /// General certificate validation error
-    ValidationError,
-}
-
 // impl fmt::Display for PkiError {
 //     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
 //         match self {
@@ -342,59 +261,38 @@ impl PkiError {
     /// Create a certificate error with specific error code
     pub fn certificate_error(message: impl Into<String>, error_code: CertificateErrorCode) -> Self {
         PkiError::Certificate {
-            message: message.into(),
-            certificate_id: None,
-            error_code,
         }
     }
     
     /// Create a certificate error with certificate ID and error code
     pub fn certificate_error_with_id(
-        message: impl Into<String>, 
-        certificate_id: impl Into<String>,
         error_code: CertificateErrorCode
     ) -> Self {
         PkiError::Certificate {
-            message: message.into(),
-            certificate_id: Some(certificate_id.into()),
-            error_code,
         }
     }
     
     /// Create a CA operation error
     pub fn ca_error(message: impl Into<String>, operation: impl Into<String>) -> Self {
         PkiError::CertificateAuthority {
-            message: message.into(),
-            ca_name: None,
-            operation: operation.into(),
         }
     }
     
     /// Create a chain validation error
     pub fn chain_validation_error(message: impl Into<String>) -> Self {
         PkiError::ChainValidation {
-            message: message.into(),
-            chain_length: None,
-            failed_certificate: None,
-            validation_errors: Vec::new(),
         }
     }
     
     /// Create an encoding error
     pub fn encoding_error(message: impl Into<String>, format: impl Into<String>) -> Self {
         PkiError::Encoding {
-            message: message.into(),
-            format: format.into(),
-            data_type: None,
         }
     }
     
     /// Create a cryptographic error
     pub fn crypto_error(message: impl Into<String>, operation: impl Into<String>) -> Self {
         PkiError::Cryptographic {
-            message: message.into(),
-            algorithm: None,
-            operation: operation.into(),
         }
     }
     

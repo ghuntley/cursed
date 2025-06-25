@@ -17,43 +17,27 @@ use std::sync::{Arc, Mutex, MutexGuard};
 /// LIFO stack implementation with dynamic resizing
 #[derive(Debug, Clone)]
 pub struct Stack<T> {
-    inner: Vec<T>,
-}
-
 /// Fixed-capacity stack for memory-constrained environments
 #[derive(Debug, Clone)]
 pub struct FixedStack<T> {
-    data: Vec<T>,
-    capacity: usize,
-}
-
 /// Thread-safe stack implementation using mutexes
 #[derive(Debug)]
 pub struct ThreadSafeStack<T> {
-    inner: Arc<Mutex<Vec<T>>>,
-}
-
 /// Stack that tracks minimum element in O(1) time
 #[derive(Debug, Clone)]
 pub struct StackWithMin<T> {
-    main_stack: Vec<T>,
-    min_stack: Vec<T>,
-}
-
 // ==================== Stack Implementation ====================
 
 impl<T> Stack<T> {
     /// Create a new empty stack
     pub fn new() -> Self {
         Self {
-            inner: Vec::new(),
         }
     }
 
     /// Create a new stack with specified capacity
     pub fn with_capacity(capacity: usize) -> Self {
         Self {
-            inner: Vec::with_capacity(capacity),
         }
     }
 
@@ -61,67 +45,42 @@ impl<T> Stack<T> {
     pub fn push(&mut self, item: T) -> CollectionsResult<()> {
         self.inner.push(item);
         Ok(())
-    }
-
     /// Pop an element from the stack
     pub fn pop(&mut self) -> Option<T> {
         self.inner.pop()
-    }
-
     /// Peek at the top element without removing it
     pub fn peek(&self) -> Option<&T> {
         self.inner.last()
-    }
-
     /// Peek at the top element mutably without removing it
     pub fn peek_mut(&mut self) -> Option<&mut T> {
         self.inner.last_mut()
-    }
-
     /// Get the number of elements in the stack
     pub fn len(&self) -> usize {
         self.inner.len()
-    }
-
     /// Alias for len() for compatibility
     pub fn size(&self) -> usize {
         self.len()
-    }
-
     /// Check if the stack is empty
     pub fn is_empty(&self) -> bool {
         self.inner.is_empty()
-    }
-
     /// Get the current capacity of the stack
     pub fn capacity(&self) -> usize {
         self.inner.capacity()
-    }
-
     /// Clear all elements from the stack
     pub fn clear(&mut self) {
         self.inner.clear();
-    }
-
     /// Reserve capacity for additional elements
     pub fn reserve(&mut self, additional: usize) {
         self.inner.reserve(additional);
-    }
-
     /// Shrink the capacity to fit the current number of elements
     pub fn shrink_to_fit(&mut self) {
         self.inner.shrink_to_fit();
-    }
-
     /// Push multiple elements onto the stack
     pub fn push_many<I>(&mut self, items: I) -> CollectionsResult<()>
     where
-        I: IntoIterator<Item = T>,
     {
         self.inner.extend(items);
         Ok(())
-    }
-
     /// Pop multiple elements from the stack
     pub fn pop_many(&mut self, count: usize) -> Vec<T> {
         let mut result = Vec::with_capacity(count.min(self.len()));
@@ -133,25 +92,17 @@ impl<T> Stack<T> {
             }
         }
         result
-    }
-
     /// Peek at multiple elements from the top
     pub fn peek_many(&self, count: usize) -> Vec<&T> {
         let actual_count = count.min(self.len());
         let start_index = self.len().saturating_sub(actual_count);
         self.inner[start_index..].iter().rev().collect()
-    }
-
     /// Get an iterator over stack elements (from top to bottom)
     pub fn iter(&self) -> impl Iterator<Item = &T> {
         self.inner.iter().rev()
-    }
-
     /// Convert stack to vector (top element becomes last)
     pub fn into_vec(self) -> Vec<T> {
         self.inner
-    }
-
     /// Create stack from vector (last element becomes top)
     pub fn from_vec(mut vec: Vec<T>) -> Self {
         Self { inner: vec }
@@ -160,7 +111,6 @@ impl<T> Stack<T> {
     /// Duplicate the top element
     pub fn dup(&mut self) -> CollectionsResult<()>
     where
-        T: Clone,
     {
         if let Some(top) = self.peek() {
             let item = top.clone();
@@ -175,7 +125,6 @@ impl<T> Stack<T> {
     pub fn swap(&mut self) -> CollectionsResult<()> {
         if self.len() < 2 {
             return Err(CollectionsError::IndexOutOfBounds { 
-                index: 1, 
                 size: self.len() 
             });
         }
@@ -206,11 +155,8 @@ impl<T> Into<Vec<T>> for Stack<T> {
 impl<T> FromIterator<T> for Stack<T> {
     fn from_iter<I: IntoIterator<Item = T>>(iter: I) -> Self {
         Self {
-            inner: iter.into_iter().collect(),
         }
     }
-}
-
 impl<T> IntoIterator for Stack<T> {
     type Item = T;
     type IntoIter = std::iter::Rev<std::vec::IntoIter<T>>;
@@ -238,11 +184,7 @@ impl<T> FixedStack<T> {
             return Err(CollectionsError::InvalidCapacity { capacity });
         }
         Ok(Self {
-            data: Vec::with_capacity(capacity),
-            capacity,
         })
-    }
-
     /// Push an element onto the stack
     pub fn push(&mut self, item: T) -> CollectionsResult<()> {
         if self.is_full() {
@@ -252,28 +194,18 @@ impl<T> FixedStack<T> {
         }
         self.data.push(item);
         Ok(())
-    }
-
     /// Pop an element from the stack
     pub fn pop(&mut self) -> Option<T> {
         self.data.pop()
-    }
-
     /// Peek at the top element without removing it
     pub fn peek(&self) -> Option<&T> {
         self.data.last()
-    }
-
     /// Peek at the top element mutably without removing it
     pub fn peek_mut(&mut self) -> Option<&mut T> {
         self.data.last_mut()
-    }
-
     /// Get the number of elements in the stack
     pub fn len(&self) -> usize {
         self.data.len()
-    }
-
     /// Alias for len() for compatibility
     pub fn size(&self) -> usize {
         self.len()
@@ -281,32 +213,21 @@ impl<T> FixedStack<T> {
     /// Check if the stack is empty
     pub fn is_empty(&self) -> bool {
         self.data.is_empty()
-    }
-
     /// Check if the stack is full
     pub fn is_full(&self) -> bool {
         self.data.len() >= self.capacity
-    }
-
     /// Get the capacity of the stack
     pub fn capacity(&self) -> usize {
         self.capacity
-    }
-
     /// Get the remaining capacity
     pub fn remaining_capacity(&self) -> usize {
         self.capacity - self.len()
-    }
-
     /// Clear all elements from the stack
     pub fn clear(&mut self) {
         self.data.clear();
-    }
-
     /// Push multiple elements, stopping when full
     pub fn push_many<I>(&mut self, items: I) -> CollectionsResult<usize>
     where
-        I: IntoIterator<Item = T>,
     {
         let mut count = 0;
         for item in items {
@@ -317,8 +238,6 @@ impl<T> FixedStack<T> {
             count += 1;
         }
         Ok(count)
-    }
-
     /// Pop multiple elements from the stack
     pub fn pop_many(&mut self, count: usize) -> Vec<T> {
         let mut result = Vec::with_capacity(count.min(self.len()));
@@ -330,8 +249,6 @@ impl<T> FixedStack<T> {
             }
         }
         result
-    }
-
     /// Get an iterator over stack elements (from top to bottom)
     pub fn iter(&self) -> impl Iterator<Item = &T> {
         self.data.iter().rev()
@@ -350,14 +267,12 @@ impl<T> ThreadSafeStack<T> {
     /// Create a new thread-safe stack
     pub fn new() -> Self {
         Self {
-            inner: Arc::new(Mutex::new(Vec::new())),
         }
     }
 
     /// Create a new thread-safe stack with capacity
     pub fn with_capacity(capacity: usize) -> Self {
         Self {
-            inner: Arc::new(Mutex::new(Vec::with_capacity(capacity))),
         }
     }
 
@@ -365,94 +280,62 @@ impl<T> ThreadSafeStack<T> {
     pub fn push(&self, item: T) -> CollectionsResult<()> {
         let mut guard = self.inner.lock().map_err(|_| {
             CollectionsError::OperationNotSupported {
-                operation: "push".to_string(),
-                collection_type: "ThreadSafeStack (poisoned)".to_string(),
             }
         })?;
         guard.push(item);
         Ok(())
-    }
-
     /// Pop an element from the stack
     pub fn pop(&self) -> CollectionsResult<Option<T>> {
         let mut guard = self.inner.lock().map_err(|_| {
             CollectionsError::OperationNotSupported {
-                operation: "pop".to_string(),
-                collection_type: "ThreadSafeStack (poisoned)".to_string(),
             }
         })?;
         Ok(guard.pop())
-    }
-
     /// Peek at the top element without removing it
     pub fn peek<F, R>(&self, f: F) -> CollectionsResult<Option<R>>
     where
-        F: FnOnce(&T) -> R,
     {
         let guard = self.inner.lock().map_err(|_| {
             CollectionsError::OperationNotSupported {
-                operation: "peek".to_string(),
-                collection_type: "ThreadSafeStack (poisoned)".to_string(),
             }
         })?;
         Ok(guard.last().map(f))
-    }
-
     /// Get the number of elements in the stack
     pub fn len(&self) -> CollectionsResult<usize> {
         let guard = self.inner.lock().map_err(|_| {
             CollectionsError::OperationNotSupported {
-                operation: "len".to_string(),
-                collection_type: "ThreadSafeStack (poisoned)".to_string(),
             }
         })?;
         Ok(guard.len())
-    }
-
     /// Check if the stack is empty
     pub fn is_empty(&self) -> CollectionsResult<bool> {
         let guard = self.inner.lock().map_err(|_| {
             CollectionsError::OperationNotSupported {
-                operation: "is_empty".to_string(),
-                collection_type: "ThreadSafeStack (poisoned)".to_string(),
             }
         })?;
         Ok(guard.is_empty())
-    }
-
     /// Clear all elements from the stack
     pub fn clear(&self) -> CollectionsResult<()> {
         let mut guard = self.inner.lock().map_err(|_| {
             CollectionsError::OperationNotSupported {
-                operation: "clear".to_string(),
-                collection_type: "ThreadSafeStack (poisoned)".to_string(),
             }
         })?;
         guard.clear();
         Ok(())
-    }
-
     /// Push multiple elements onto the stack
     pub fn push_many<I>(&self, items: I) -> CollectionsResult<()>
     where
-        I: IntoIterator<Item = T>,
     {
         let mut guard = self.inner.lock().map_err(|_| {
             CollectionsError::OperationNotSupported {
-                operation: "push_many".to_string(),
-                collection_type: "ThreadSafeStack (poisoned)".to_string(),
             }
         })?;
         guard.extend(items);
         Ok(())
-    }
-
     /// Pop multiple elements from the stack
     pub fn pop_many(&self, count: usize) -> CollectionsResult<Vec<T>> {
         let mut guard = self.inner.lock().map_err(|_| {
             CollectionsError::OperationNotSupported {
-                operation: "pop_many".to_string(),
-                collection_type: "ThreadSafeStack (poisoned)".to_string(),
             }
         })?;
         
@@ -465,17 +348,12 @@ impl<T> ThreadSafeStack<T> {
             }
         }
         Ok(result)
-    }
-
     /// Get a snapshot of the stack as a vector
     pub fn snapshot(&self) -> CollectionsResult<Vec<T>>
     where
-        T: Clone,
     {
         let guard = self.inner.lock().map_err(|_| {
             CollectionsError::OperationNotSupported {
-                operation: "snapshot".to_string(),
-                collection_type: "ThreadSafeStack (poisoned)".to_string(),
             }
         })?;
         Ok(guard.clone())
@@ -490,38 +368,29 @@ impl<T> Default for ThreadSafeStack<T> {
 
 impl<T> Clone for ThreadSafeStack<T>
 where
-    T: Clone,
 {
     fn clone(&self) -> Self {
         if let Ok(snapshot) = self.snapshot() {
             Self {
-                inner: Arc::new(Mutex::new(snapshot)),
             }
         } else {
             Self::new()
         }
     }
-}
-
 // ==================== StackWithMin Implementation ====================
 
 impl<T> StackWithMin<T>
 where
-    T: Ord + Clone,
 {
     /// Create a new stack that tracks minimum elements
     pub fn new() -> Self {
         Self {
-            main_stack: Vec::new(),
-            min_stack: Vec::new(),
         }
     }
 
     /// Create a new stack with specified capacity
     pub fn with_capacity(capacity: usize) -> Self {
         Self {
-            main_stack: Vec::with_capacity(capacity),
-            min_stack: Vec::with_capacity(capacity),
         }
     }
 
@@ -558,18 +427,12 @@ where
     /// Peek at the top element without removing it
     pub fn peek(&self) -> Option<&T> {
         self.main_stack.last()
-    }
-
     /// Get the minimum element in O(1) time
     pub fn min(&self) -> Option<&T> {
         self.min_stack.last()
-    }
-
     /// Get the number of elements in the stack
     pub fn len(&self) -> usize {
         self.main_stack.len()
-    }
-
     /// Alias for len() for compatibility
     pub fn size(&self) -> usize {
         self.len()
@@ -577,29 +440,20 @@ where
     /// Check if the stack is empty
     pub fn is_empty(&self) -> bool {
         self.main_stack.is_empty()
-    }
-
     /// Clear all elements from the stack
     pub fn clear(&mut self) {
         self.main_stack.clear();
         self.min_stack.clear();
-    }
-
     /// Get the current capacity of the stack
     pub fn capacity(&self) -> usize {
         self.main_stack.capacity()
-    }
-
     /// Reserve capacity for additional elements
     pub fn reserve(&mut self, additional: usize) {
         self.main_stack.reserve(additional);
         self.min_stack.reserve(additional);
-    }
-
     /// Push multiple elements onto the stack
     pub fn push_many<I>(&mut self, items: I)
     where
-        I: IntoIterator<Item = T>,
     {
         for item in items {
             let _ = self.push(item);
@@ -617,8 +471,6 @@ where
             }
         }
         result
-    }
-
     /// Get an iterator over stack elements (from top to bottom)
     pub fn iter(&self) -> impl Iterator<Item = &T> {
         self.main_stack.iter().rev()
@@ -627,7 +479,6 @@ where
 
 impl<T> Default for StackWithMin<T>
 where
-    T: Ord + Clone,
 {
     fn default() -> Self {
         Self::new()
@@ -636,7 +487,6 @@ where
 
 impl<T> FromIterator<T> for StackWithMin<T>
 where
-    T: Ord + Clone,
 {
     fn from_iter<I: IntoIterator<Item = T>>(iter: I) -> Self {
         let mut stack = Self::new();
@@ -688,8 +538,6 @@ impl<T: Display + Clone> Display for ThreadSafeStack<T> {
             write!(f, "ThreadSafeStack[<poisoned>]")
         }
     }
-}
-
 impl<T: Display + Ord + Clone> Display for StackWithMin<T> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "StackWithMin[")?;
@@ -705,5 +553,3 @@ impl<T: Display + Ord + Clone> Display for StackWithMin<T> {
             write!(f, "] (min: none)")
         }
     }
-}
-

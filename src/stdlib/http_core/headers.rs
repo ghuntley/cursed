@@ -16,19 +16,13 @@ impl HeaderName {
     /// Create a new header name
     pub fn new<S: Into<String>>(name: S) -> Self {
         Self(name.into().to_lowercase())
-    }
-
     /// Get the original case header name
     pub fn as_str(&self) -> &str {
         &self.0
-    }
-
     /// Validate header name according to RFC 7230
     pub fn validate(&self) -> HttpResult<()> {
         if self.0.is_empty() {
             return Err(HttpError::InvalidHeader("Empty header name".to_string()));
-        }
-
         // Header names must be tokens (RFC 7230)
         for ch in self.0.chars() {
             if !ch.is_ascii() || ch.is_ascii_control() || "()<>@,;:\\\"/[]?={} \t".contains(ch) {
@@ -68,13 +62,9 @@ impl HeaderValue {
     /// Create a new header value
     pub fn new<S: Into<String>>(value: S) -> Self {
         Self(value.into().trim().to_string())
-    }
-
     /// Get the header value as string
     pub fn as_str(&self) -> &str {
         &self.0
-    }
-
     /// Validate header value according to RFC 7230
     pub fn validate(&self) -> HttpResult<()> {
         // Header values must be visible VCHAR, WSP, or obs-text
@@ -87,13 +77,9 @@ impl HeaderValue {
         }
 
         Ok(())
-    }
-
     /// Check if value contains a specific substring (case-insensitive)
     pub fn contains(&self, needle: &str) -> bool {
         self.0.to_lowercase().contains(&needle.to_lowercase())
-    }
-
     /// Split value by delimiter and return trimmed parts
     pub fn split(&self, delimiter: char) -> Vec<String> {
         self.0
@@ -101,8 +87,6 @@ impl HeaderValue {
             .map(|s| s.trim().to_string())
             .filter(|s| !s.is_empty())
             .collect()
-    }
-
     /// Parse quality values (q=0.8 format)
     pub fn parse_quality(&self) -> f32 {
         if let Some(q_pos) = self.0.find("q=") {
@@ -138,24 +122,17 @@ impl fmt::Display for HeaderValue {
 /// Case-insensitive header map
 #[derive(Debug, Clone)]
 pub struct HeaderMap {
-    headers: HashMap<HeaderName, Vec<HeaderValue>>,
     original_names: HashMap<HeaderName, String>, // Preserve original case
-}
-
 impl HeaderMap {
     /// Create a new empty header map
     pub fn new() -> Self {
         Self {
-            headers: HashMap::new(),
-            original_names: HashMap::new(),
         }
     }
 
     /// Insert a header (replaces existing)
     pub fn insert<K, V>(&mut self, name: K, value: V) -> Option<Vec<HeaderValue>>
     where
-        K: Into<String>,
-        V: Into<String>,
     {
         let name_str = name.into();
         let header_name = HeaderName::new(name_str.to_lowercase());
@@ -165,13 +142,9 @@ impl HeaderMap {
         self.original_names.insert(header_name.clone(), name_str);
 
         self.headers.insert(header_name, Vec::from([header_value]))
-    }
-
     /// Append a header value (adds to existing)
     pub fn append<K, V>(&mut self, name: K, value: V)
     where
-        K: Into<String>,
-        V: Into<String>,
     {
         let name_str = name.into();
         let header_name = HeaderName::new(name_str.to_lowercase());
@@ -184,80 +157,56 @@ impl HeaderMap {
             .entry(header_name)
             .or_insert_with(Vec::new)
             .push(header_value);
-    }
-
     /// Get the first header value
     pub fn get<K>(&self, name: K) -> Option<&String>
     where
-        K: Into<String>,
     {
         let header_name = HeaderName::new(name.into());
         self.headers
             .get(&header_name)
             .and_then(|values| values.first())
             .map(|v| &v.0)
-    }
-
     /// Get all header values
     pub fn get_all<K>(&self, name: K) -> Vec<&str>
     where
-        K: Into<String>,
     {
         let header_name = HeaderName::new(name.into());
         self.headers
             .get(&header_name)
             .map(|values| values.iter().map(|v| v.as_str()).collect())
             .unwrap_or_default()
-    }
-
     /// Check if header exists
     pub fn contains_key<K>(&self, name: K) -> bool
     where
-        K: Into<String>,
     {
         let header_name = HeaderName::new(name.into());
         self.headers.contains_key(&header_name)
-    }
-
     /// Remove a header
     pub fn remove<K>(&mut self, name: K) -> Option<Vec<HeaderValue>>
     where
-        K: Into<String>,
     {
         let header_name = HeaderName::new(name.into());
         self.original_names.remove(&header_name);
         self.headers.remove(&header_name)
-    }
-
     /// Get header names (with original case preserved)
     pub fn keys(&self) -> Vec<&String> {
         self.original_names.values().collect()
-    }
-
     /// Get all header entries
     pub fn iter(&self) -> impl Iterator<Item = (&String, &Vec<HeaderValue>)> {
         self.headers.iter().map(|(name, values)| {
             let original_name = self.original_names.get(name).unwrap();
             (original_name, values)
         })
-    }
-
     /// Get number of headers
     pub fn len(&self) -> usize {
         self.headers.len()
-    }
-
     /// Check if header map is empty
     pub fn is_empty(&self) -> bool {
         self.headers.is_empty()
-    }
-
     /// Clear all headers
     pub fn clear(&mut self) {
         self.headers.clear();
         self.original_names.clear();
-    }
-
     /// Merge another header map into this one
     pub fn merge(&mut self, other: HeaderMap) {
         for (name, values) in other.headers {
@@ -271,33 +220,21 @@ impl HeaderMap {
                     .push(value);
             }
         }
-    }
-
     /// Get content type
     pub fn content_type(&self) -> Option<String> {
         self.get("Content-Type").cloned()
-    }
-
     /// Get content length
     pub fn content_length(&self) -> Option<usize> {
         self.get("Content-Length")?.parse().ok()
-    }
-
     /// Get authorization header
     pub fn authorization(&self) -> Option<String> {
         self.get("Authorization").cloned()
-    }
-
     /// Get user agent
     pub fn user_agent(&self) -> Option<String> {
         self.get("User-Agent").cloned()
-    }
-
     /// Get host
     pub fn host(&self) -> Option<String> {
         self.get("Host").cloned()
-    }
-
     /// Check if connection should be kept alive
     pub fn keep_alive(&self) -> bool {
         if let Some(connection) = self.get("Connection") {
@@ -421,30 +358,18 @@ pub trait Headers {
 
     fn header<K>(&self, name: K) -> Option<&String>
     where
-        K: Into<String>,
     {
         self.headers().get(name)
-    }
-
     fn set_header<K, V>(&mut self, name: K, value: V)
     where
-        K: Into<String>,
-        V: Into<String>,
     {
         self.headers_mut().insert(name, value);
-    }
-
     fn add_header<K, V>(&mut self, name: K, value: V)
     where
-        K: Into<String>,
-        V: Into<String>,
     {
         self.headers_mut().append(name, value);
-    }
-
     fn remove_header<K>(&mut self, name: K) -> Option<Vec<HeaderValue>>
     where
-        K: Into<String>,
     {
         self.headers_mut().remove(name)
     }

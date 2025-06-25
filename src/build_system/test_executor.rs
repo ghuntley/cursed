@@ -19,232 +19,144 @@ use regex::Regex;
 #[derive(Debug, Clone)]
 pub struct TestExecutionConfig {
     /// Number of parallel test threads
-    pub parallel_threads: usize,
     
     /// Default timeout for test execution (seconds)
-    pub default_timeout: u64,
     
     /// Maximum timeout for any test (seconds)
-    pub max_timeout: u64,
     
     /// Whether to capture test output
-    pub capture_output: bool,
     
     /// Whether to run tests in release mode
-    pub release_mode: bool,
     
     /// Additional cargo test arguments
-    pub cargo_args: Vec<String>,
     
     /// Environment variables for test execution
-    pub env_vars: HashMap<String, String>,
     
     /// Working directory for test execution
-    pub work_dir: PathBuf,
     
     /// Whether to use linking fix for Nix environment
-    pub use_linking_fix: bool,
     
     /// Linking fix script path
-    pub linking_fix_script: Option<PathBuf>,
-}
-
 impl Default for TestExecutionConfig {
     fn default() -> Self {
         Self {
-            parallel_threads: num_cpus::get(),
-            default_timeout: 60,
-            max_timeout: 300,
-            capture_output: true,
-            release_mode: false,
-            cargo_args: Vec::new(),
-            env_vars: HashMap::new(),
-            work_dir: PathBuf::from("."),
-            use_linking_fix: true,
             linking_fix_script: Some(PathBuf::from("./fix_linking.sh")),
         }
     }
-}
-
 /// Result of a single test execution
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct TestResult {
     /// Test function information
-    pub test_function: TestFunction,
     
     /// Test status
-    pub status: TestStatus,
     
     /// Execution duration
-    pub duration: Duration,
     
     /// Memory usage peak (if available)
-    pub memory_usage: Option<usize>,
     
     /// Test output (stdout)
-    pub output: String,
     
     /// Test error output (stderr)
-    pub error_output: String,
     
     /// Exit code
-    pub exit_code: Option<i32>,
     
     /// Failure reason (if failed)
-    pub failure_reason: Option<String>,
     
     /// Additional metrics
-    pub metrics: TestMetrics,
-}
-
 /// Test execution status
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub enum TestStatus {
     /// Test passed successfully
-    Passed,
     
     /// Test failed
-    Failed,
     
     /// Test was ignored/skipped
-    Ignored,
     
     /// Test timed out
-    TimedOut,
     
     /// Test compilation failed
-    CompilationFailed,
     
     /// Test execution was interrupted
-    Interrupted,
     
     /// Test status is unknown
-    Unknown,
-}
-
 /// Test execution metrics
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct TestMetrics {
     /// Compilation time
-    pub compilation_time: Option<Duration>,
     
     /// Test execution time
-    pub execution_time: Duration,
     
     /// Peak memory usage (bytes)
-    pub peak_memory: Option<usize>,
     
     /// Number of assertions (if parseable)
-    pub assertion_count: Option<usize>,
     
     /// Custom metrics from test output
-    pub custom_metrics: HashMap<String, f64>,
-}
-
 /// Overall test execution results
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct TestExecutionResult {
     /// Individual test results
-    pub test_results: Vec<TestResult>,
     
     /// Results organized by status
-    pub results_by_status: HashMap<TestStatus, Vec<TestResult>>,
     
     /// Execution statistics
-    pub statistics: TestExecutionStatistics,
     
     /// Total execution time
-    pub total_duration: Duration,
     
     /// Test execution summary
-    pub summary: TestExecutionSummary,
-}
-
 /// Test execution statistics
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct TestExecutionStatistics {
     /// Total number of tests run
-    pub total_tests: usize,
     
     /// Number of tests passed
-    pub passed: usize,
     
     /// Number of tests failed
-    pub failed: usize,
     
     /// Number of tests ignored
-    pub ignored: usize,
     
     /// Number of tests timed out
-    pub timed_out: usize,
     
     /// Number of compilation failures
-    pub compilation_failed: usize,
     
     /// Average test execution time
-    pub average_duration: Duration,
     
     /// Total memory usage
-    pub total_memory_usage: Option<usize>,
     
     /// Success rate percentage
-    pub success_rate: f64,
-}
-
 /// Test execution summary
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct TestExecutionSummary {
     /// Overall success status
-    pub success: bool,
     
     /// Summary message
-    pub message: String,
     
     /// Failed tests with details
-    pub failed_tests: Vec<TestFailureDetails>,
     
     /// Performance insights
-    pub performance_insights: Vec<String>,
     
     /// Recommendations for improvements
-    pub recommendations: Vec<String>,
-}
-
 /// Details about a failed test
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct TestFailureDetails {
     /// Test name
-    pub test_name: String,
     
     /// File path
-    pub file_path: PathBuf,
     
     /// Failure reason
-    pub reason: String,
     
     /// Relevant output excerpt
-    pub output_excerpt: String,
-}
-
 /// Main test executor
 pub struct TestExecutor {
-    config: TestExecutionConfig,
-    output_parser: TestOutputParser,
-}
-
 impl TestExecutor {
     /// Create a new test executor
     pub fn new(config: TestExecutionConfig) -> Self {
         Self {
-            config,
-            output_parser: TestOutputParser::new(),
         }
     }
     
     /// Execute a collection of tests
     #[instrument(skip(self, tests))]
     pub async fn execute_tests(&self, tests: Vec<TestFunction>) -> crate::error::Result<()> {
-        info!("Starting execution of {} tests with {} threads", 
               tests.len(), self.config.parallel_threads);
         
         let start_time = Instant::now();
@@ -265,8 +177,6 @@ impl TestExecutor {
             });
             
             handles.push(handle);
-        }
-        
         // Wait for all workers to complete
         for handle in handles {
             if let Err(e) = handle.join() {
@@ -280,19 +190,11 @@ impl TestExecutor {
         // Process and organize results
         let execution_result = self.process_results(results, total_duration);
         
-        info!("Test execution completed in {:?}. {} passed, {} failed", 
               total_duration, execution_result.statistics.passed, execution_result.statistics.failed);
         
         Ok(execution_result)
-    }
-    
     /// Worker thread for parallel test execution
     fn worker_thread(
-        worker_id: usize,
-        test_results: Arc<Mutex<Vec<TestResult>>>,
-        tests_remaining: Arc<Mutex<Vec<TestFunction>>>,
-        config: TestExecutionConfig,
-        output_parser: TestOutputParser,
     ) {
         debug!("Worker {} started", worker_id);
         
@@ -304,7 +206,6 @@ impl TestExecutor {
                     break;
                 }
                 tests.pop().unwrap()
-            };
             
             debug!("Worker {} executing test: {}", worker_id, test.name);
             
@@ -319,13 +220,8 @@ impl TestExecutor {
         }
         
         debug!("Worker {} finished", worker_id);
-    }
-    
     /// Execute a single test
     fn execute_single_test(
-        test: &TestFunction,
-        config: &TestExecutionConfig,
-        output_parser: &TestOutputParser,
     ) -> TestResult {
         let start_time = Instant::now();
         
@@ -336,7 +232,6 @@ impl TestExecutor {
             fix_cmd
         } else {
             Command::new("cargo")
-        };
         
         cmd.arg("test")
            .arg("--")
@@ -345,23 +240,15 @@ impl TestExecutor {
         // Add release flag if needed
         if config.release_mode {
             cmd.arg("--release");
-        }
-        
         // Add cargo arguments
         for arg in &config.cargo_args {
             cmd.arg(arg);
-        }
-        
         // Set environment variables
         for (key, value) in &config.env_vars {
             cmd.env(key, value);
-        }
-        
         // Configure output capture
         if config.capture_output {
             cmd.stdout(Stdio::piped()).stderr(Stdio::piped());
-        }
-        
         cmd.current_dir(&config.work_dir);
         
         // Determine timeout
@@ -383,13 +270,11 @@ impl TestExecutor {
                     TestStatus::Passed
                 } else {
                     TestStatus::Failed
-                };
                 
                 let failure_reason = if status == TestStatus::Failed {
                     output_parser.extract_failure_reason(&output, &stderr)
                 } else {
                     None
-                };
                 
                 (status, output, stderr, Some(exit_code), failure_reason)
             }
@@ -398,32 +283,19 @@ impl TestExecutor {
                     TestStatus::TimedOut
                 } else {
                     TestStatus::Failed
-                };
                 
                 (status, String::new(), e.to_string(), None, Some(e.to_string()))
             }
-        };
         
         // Extract metrics
         let metrics = output_parser.extract_metrics(&output, duration);
         
         TestResult {
-            test_function: test.clone(),
-            status,
-            duration,
-            memory_usage: metrics.peak_memory,
-            output,
-            error_output,
-            exit_code,
-            failure_reason,
-            metrics,
         }
     }
     
     /// Execute command with timeout
     fn execute_with_timeout(
-        mut cmd: Command,
-        timeout: Duration,
     ) -> crate::error::Result<()> {
         let start = Instant::now();
         
@@ -447,8 +319,6 @@ impl TestExecutor {
                         let _ = child.kill();
                         let _ = child.wait();
                         return Err(format!("Test execution timed out after {:?}", timeout).into());
-                    }
-                    
                     // Sleep briefly before checking again
                     thread::sleep(Duration::from_millis(100));
                 }
@@ -474,11 +344,6 @@ impl TestExecutor {
             results_by_status.entry(result.status.clone()).or_default().push(result.clone());
             
             match result.status {
-                TestStatus::Passed => passed += 1,
-                TestStatus::Failed => failed += 1,
-                TestStatus::Ignored => ignored += 1,
-                TestStatus::TimedOut => timed_out += 1,
-                TestStatus::CompilationFailed => compilation_failed += 1,
                 _ => {}
             }
             
@@ -495,41 +360,23 @@ impl TestExecutor {
             (passed as f64 / total_tests as f64) * 100.0
         } else {
             0.0
-        };
         
         let average_duration = if total_tests > 0 {
             total_duration_sum / total_tests as u32
         } else {
             Duration::new(0, 0)
-        };
         
         let total_memory = if memory_samples > 0 {
             Some(total_memory_usage)
         } else {
             None
-        };
         
         let statistics = TestExecutionStatistics {
-            total_tests,
-            passed,
-            failed,
-            ignored,
-            timed_out,
-            compilation_failed,
-            average_duration,
-            total_memory_usage: total_memory,
-            success_rate,
-        };
         
         // Generate summary
         let summary = self.generate_summary(&statistics, &results);
         
         TestExecutionResult {
-            test_results: results,
-            results_by_status,
-            statistics,
-            total_duration,
-            summary,
         }
     }
     
@@ -538,22 +385,14 @@ impl TestExecutor {
         let success = statistics.failed == 0 && statistics.timed_out == 0 && statistics.compilation_failed == 0;
         
         let message = if success {
-            format!("All {} tests passed successfully! ({:.1}% success rate)", 
                    statistics.total_tests, statistics.success_rate)
         } else {
-            format!("{} of {} tests failed. Success rate: {:.1}%", 
-                   statistics.failed + statistics.timed_out + statistics.compilation_failed,
                    statistics.total_tests, statistics.success_rate)
-        };
         
         // Extract failed test details
         let failed_tests = results.iter()
             .filter(|r| matches!(r.status, TestStatus::Failed | TestStatus::TimedOut | TestStatus::CompilationFailed))
             .map(|r| TestFailureDetails {
-                test_name: r.test_function.name.clone(),
-                file_path: r.test_function.file_path.clone(),
-                reason: r.failure_reason.clone().unwrap_or_else(|| format!("{:?}", r.status)),
-                output_excerpt: r.error_output.split("\n").take(3).collect::<Vec<_>>().join("\n"),
             })
             .collect();
         
@@ -562,64 +401,36 @@ impl TestExecutor {
         
         if statistics.average_duration > Duration::from_secs(5) {
             performance_insights.push(format!(
-                "Average test duration is {:.2}s, consider optimizing slow tests",
                 statistics.average_duration.as_secs_f64()
             ));
-        }
-        
         let slow_tests = results.iter()
             .filter(|r| r.duration > Duration::from_secs(10))
             .count();
         
         if slow_tests > 0 {
             performance_insights.push(format!(
-                "{} tests took longer than 10 seconds",
                 slow_tests
             ));
-        }
-        
         // Generate recommendations
         let mut recommendations = Vec::new();
         
         if statistics.failed > 0 {
             recommendations.push("Review failed tests and fix underlying issues".to_string());
-        }
-        
         if statistics.timed_out > 0 {
             recommendations.push("Consider increasing timeout for long-running tests".to_string());
-        }
-        
         if statistics.success_rate < 90.0 {
             recommendations.push("Focus on improving test reliability".to_string());
-        }
-        
         TestExecutionSummary {
-            success,
-            message,
-            failed_tests,
-            performance_insights,
-            recommendations,
         }
     }
-}
-
 /// Parser for test output to extract metrics and failure information
 #[derive(Debug, Clone)]
 pub struct TestOutputParser {
-    assertion_regex: Regex,
-    memory_regex: Regex,
-    benchmark_regex: Regex,
-    failure_regex: Regex,
-}
-
 impl TestOutputParser {
     /// Create a new output parser
     pub fn new() -> Self {
         Self {
-            assertion_regex: Regex::new(r"assertion failed").unwrap(),
-            memory_regex: Regex::new(r"memory usage: (\d+) bytes").unwrap(),
             benchmark_regex: Regex::new(r"bench: +(\d+(?:,\d+)*) ns/iter").unwrap(),
-            failure_regex: Regex::new(r"thread '.*' panicked at '(.+)'").unwrap(),
         }
     }
     
@@ -636,15 +447,9 @@ impl TestOutputParser {
         // Look for other common failure patterns
         if combined_output.contains("assertion failed") {
             return Some("Assertion failed".to_string());
-        }
-        
         if combined_output.contains("expected") && combined_output.contains("found") {
             return Some("Value mismatch".to_string());
-        }
-        
         None
-    }
-    
     /// Extract metrics from test output
     pub fn extract_metrics(&self, output: &str, execution_time: Duration) -> TestMetrics {
         let mut custom_metrics = HashMap::new();
@@ -654,7 +459,6 @@ impl TestOutputParser {
             captures.get(1).and_then(|m| m.as_str().replace(',', "").parse().ok())
         } else {
             None
-        };
         
         // Extract benchmark results
         if let Some(captures) = self.benchmark_regex.captures(output) {
@@ -663,18 +467,11 @@ impl TestOutputParser {
                     custom_metrics.insert("benchmark_ns_per_iter".to_string(), ns_value);
                 }
             }
-        }
-        
         // Count assertions (rough estimate)
         let assertion_count = output.matches("assert").count();
         let assertion_count = if assertion_count > 0 { Some(assertion_count) } else { None };
         
         TestMetrics {
-            compilation_time: self.extract_compilation_time(output),
-            execution_time,
-            peak_memory,
-            assertion_count,
-            custom_metrics,
         }
     }
     
@@ -714,8 +511,6 @@ impl TestOutputParser {
                     }
                 }
             }
-        }
-        
         if compilation_count > 0 {
             Some(Duration::from_secs_f64(total_time))
         } else {
@@ -760,8 +555,6 @@ impl TestOutputParser {
                         total_seconds += seconds;
                     }
                 }
-            }
-            
             if total_seconds > 0.0 {
                 return Some(Duration::from_secs_f64(total_seconds));
             }
@@ -775,22 +568,14 @@ impl TestOutputParser {
 #[derive(Debug, Clone)]
 pub struct TestBatch {
     /// Batch name
-    pub name: String,
     
     /// Tests in this batch
-    pub tests: Vec<TestFunction>,
     
     /// Batch-specific configuration
-    pub config: Option<TestExecutionConfig>,
-}
-
 impl TestBatch {
     /// Create a new test batch
     pub fn new(name: String, tests: Vec<TestFunction>) -> Self {
         Self {
-            name,
-            tests,
-            config: None,
         }
     }
     
@@ -800,17 +585,8 @@ impl TestBatch {
         
         for (category, tests) in tests_by_category {
             let batch_name = match category {
-                TestCategory::Unit => "unit_tests".to_string(),
-                TestCategory::Integration => "integration_tests".to_string(),
-                TestCategory::Benchmark => "benchmark_tests".to_string(),
-                TestCategory::Doc => "doc_tests".to_string(),
-                TestCategory::Example => "example_tests".to_string(),
-                TestCategory::Custom(name) => format!("custom_{}", name),
-            };
             
             batches.push(TestBatch::new(batch_name, tests.clone()));
-        }
-        
         batches
     }
 }

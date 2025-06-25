@@ -32,7 +32,6 @@ use super::{MathError, MathResult, validate_float};
 /// ```
 pub fn numerical_derivative<F>(f: F, x: f64, h: Option<f64>) -> MathResult<f64> 
 where
-    F: Fn(f64) -> f64,
 {
     validate_float("numerical_derivative", "x", x)?;
     
@@ -41,25 +40,14 @@ where
     
     if step <= 0.0 {
         return Err(MathError::InvalidInput {
-            function: "numerical_derivative".to_string(),
-            parameter: "h".to_string(),
-            value: step,
         });
-    }
-    
     let f_plus = f(x + step);
     let f_minus = f(x - step);
     
     if !f_plus.is_finite() || !f_minus.is_finite() {
         return Err(MathError::ComputationError {
-            function: "numerical_derivative".to_string(),
-            message: "Function evaluation resulted in non-finite value".to_string(),
         });
-    }
-    
     Ok((f_plus - f_minus) / (2.0 * step))
-}
-
 /// Computes definite integral using adaptive Simpson's rule
 /// 
 /// Uses recursive subdivision to achieve specified accuracy
@@ -77,14 +65,9 @@ where
 /// let integral = adaptive_simpson_integration(f, 0.0, 2.0, None, None)?;
 /// ```
 pub fn adaptive_simpson_integration<F>(
-    f: F, 
-    a: f64, 
-    b: f64, 
-    tolerance: Option<f64>,
     max_depth: Option<usize>
 ) -> MathResult<f64> 
 where
-    F: Fn(f64) -> f64,
 {
     validate_float("adaptive_simpson_integration", "a", a)?;
     validate_float("adaptive_simpson_integration", "b", b)?;
@@ -94,39 +77,21 @@ where
     
     if tol <= 0.0 {
         return Err(MathError::InvalidInput {
-            function: "adaptive_simpson_integration".to_string(),
-            parameter: "tolerance".to_string(),
-            value: tol,
         });
-    }
-    
     fn simpson_step<F>(f: &F, a: f64, b: f64) -> f64 
     where 
-        F: Fn(f64) -> f64,
     {
         let h = (b - a) / 6.0;
         let mid = (a + b) / 2.0;
         h * (f(a) + 4.0 * f(mid) + f(b))
-    }
-    
     fn adaptive_step<F>(
-        f: &F, 
-        a: f64, 
-        b: f64, 
-        tolerance: f64, 
-        depth: usize, 
         max_depth: usize
     ) -> MathResult<f64> 
     where 
-        F: Fn(f64) -> f64,
     {
         if depth > max_depth {
             return Err(MathError::ComputationError {
-                function: "adaptive_simpson_integration".to_string(),
-                message: format!("Maximum recursion depth {} exceeded", max_depth),
             });
-        }
-        
         let mid = (a + b) / 2.0;
         let whole = simpson_step(f, a, b);
         let left = simpson_step(f, a, mid);
@@ -144,8 +109,6 @@ where
     }
     
     adaptive_step(&f, a, b, tol, 0, max_d)
-}
-
 /// Multi-dimensional Newton-Raphson root finding
 /// 
 /// Solves systems of nonlinear equations using Newton's method
@@ -157,15 +120,8 @@ where
 /// * `tolerance` - Convergence tolerance
 /// * `max_iterations` - Maximum iterations
 pub fn multidimensional_newton_raphson<F, J>(
-    functions: F,
-    jacobian: J,
-    initial_guess: &[f64],
-    tolerance: Option<f64>,
-    max_iterations: Option<usize>,
 ) -> MathResult<Vec<f64>>
 where
-    F: Fn(&[f64]) -> Vec<f64>,
-    J: Fn(&[f64]) -> Vec<Vec<f64>>,
 {
     let tol = tolerance.unwrap_or(1e-10);
     let max_iter = max_iterations.unwrap_or(100);
@@ -173,12 +129,7 @@ where
     
     if n == 0 {
         return Err(MathError::InvalidInput {
-            function: "multidimensional_newton_raphson".to_string(),
-            parameter: "initial_guess".to_string(),
-            value: 0.0,
         });
-    }
-    
     let mut x = initial_guess.to_vec();
     
     for iteration in 0..max_iter {
@@ -189,31 +140,21 @@ where
         let norm = f_vals.iter().map(|&v| v * v).sum::<f64>().sqrt();
         if norm < tol {
             return Ok(x);
-        }
-        
         // Solve Jacobian * delta = -f_vals using Gaussian elimination
         let delta = solve_linear_system(&jac, &f_vals.iter().map(|&v| -v).collect::<Vec<_>>())?;
         
         // Update solution
         for i in 0..n {
             x[i] += delta[i];
-        }
-        
         // Check for divergence
         if x.iter().any(|&v| !v.is_finite()) {
             return Err(MathError::ComputationError {
-                function: "multidimensional_newton_raphson".to_string(),
-                message: format!("Diverged at iteration {}", iteration),
             });
         }
     }
     
     Err(MathError::ComputationError {
-        function: "multidimensional_newton_raphson".to_string(),
-        message: format!("Failed to converge after {} iterations", max_iter),
     })
-}
-
 // =============================================================================
 // OPTIMIZATION ALGORITHMS
 // =============================================================================
@@ -234,25 +175,16 @@ where
 /// let min_x = golden_section_search(f, 0.0, 4.0, None)?;
 /// ```
 pub fn golden_section_search<F>(
-    f: F, 
-    a: f64, 
-    b: f64, 
     tolerance: Option<f64>
 ) -> MathResult<f64>
 where
-    F: Fn(f64) -> f64,
 {
     validate_float("golden_section_search", "a", a)?;
     validate_float("golden_section_search", "b", b)?;
     
     if a >= b {
         return Err(MathError::InvalidInput {
-            function: "golden_section_search".to_string(),
-            parameter: "interval".to_string(),
-            value: b - a,
         });
-    }
-    
     let tol = tolerance.unwrap_or(1e-10);
     let phi = (1.0 + 5.0_f64.sqrt()) / 2.0; // Golden ratio
     let resphi = 2.0 - phi;
@@ -282,8 +214,6 @@ where
     }
     
     Ok((x1 + x2) / 2.0)
-}
-
 /// Gradient descent optimization
 /// 
 /// Minimizes function using gradient descent with adaptive learning rate
@@ -296,16 +226,8 @@ where
 /// * `tolerance` - Convergence tolerance
 /// * `max_iterations` - Maximum iterations
 pub fn gradient_descent<F, G>(
-    f: F,
-    gradient: G,
-    initial_point: &[f64],
-    learning_rate: Option<f64>,
-    tolerance: Option<f64>,
-    max_iterations: Option<usize>,
 ) -> MathResult<Vec<f64>>
 where
-    F: Fn(&[f64]) -> f64,
-    G: Fn(&[f64]) -> Vec<f64>,
 {
     let mut x = initial_point.to_vec();
     let mut lr = learning_rate.unwrap_or(0.01);
@@ -321,14 +243,10 @@ where
         let grad_norm = grad.iter().map(|&g| g * g).sum::<f64>().sqrt();
         if grad_norm < tol {
             return Ok(x);
-        }
-        
         // Update position
         let mut new_x = x.clone();
         for i in 0..x.len() {
             new_x[i] -= lr * grad[i];
-        }
-        
         let new_f = f(&new_x);
         
         // Adaptive learning rate
@@ -338,23 +256,15 @@ where
             prev_f = new_f;
         } else {
             lr *= 0.5; // Decrease learning rate if not improving
-        }
-        
         // Check for very small learning rate
         if lr < 1e-12 {
             return Err(MathError::ComputationError {
-                function: "gradient_descent".to_string(),
-                message: format!("Learning rate too small at iteration {}", iteration),
             });
         }
     }
     
     Err(MathError::ComputationError {
-        function: "gradient_descent".to_string(),
-        message: format!("Failed to converge after {} iterations", max_iter),
     })
-}
-
 // =============================================================================
 // FOURIER TRANSFORMS
 // =============================================================================
@@ -362,10 +272,6 @@ where
 /// Complex number representation for FFT
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct ComplexNumber {
-    pub real: f64,
-    pub imag: f64,
-}
-
 impl ComplexNumber {
     pub fn new(real: f64, imag: f64) -> Self {
         Self { real, imag }
@@ -373,12 +279,8 @@ impl ComplexNumber {
     
     pub fn magnitude(&self) -> f64 {
         (self.real * self.real + self.imag * self.imag).sqrt()
-    }
-    
     pub fn phase(&self) -> f64 {
         self.imag.atan2(self.real)
-    }
-    
     pub fn conjugate(&self) -> Self {
         Self::new(self.real, -self.imag)
     }
@@ -405,8 +307,6 @@ impl std::ops::Mul for ComplexNumber {
     
     fn mul(self, other: Self) -> Self {
         Self::new(
-            self.real * other.real - self.imag * other.imag,
-            self.real * other.imag + self.imag * other.real,
         )
     }
 }
@@ -432,12 +332,7 @@ pub fn fast_fourier_transform(signal: &[f64]) -> MathResult<Vec<ComplexNumber>> 
     // Check if length is power of 2
     if n == 0 || (n & (n - 1)) != 0 {
         return Err(MathError::InvalidInput {
-            function: "fast_fourier_transform".to_string(),
-            parameter: "signal_length".to_string(),
-            value: n as f64,
         });
-    }
-    
     // Convert to complex numbers
     let mut data: Vec<ComplexNumber> = signal.iter()
         .map(|&x| ComplexNumber::new(x, 0.0))
@@ -445,16 +340,12 @@ pub fn fast_fourier_transform(signal: &[f64]) -> MathResult<Vec<ComplexNumber>> 
     
     fft_recursive(&mut data);
     Ok(data)
-}
-
 /// Recursive FFT implementation
 fn fft_recursive(data: &mut [ComplexNumber]) {
     let n = data.len();
     
     if n <= 1 {
         return;
-    }
-    
     // Divide
     let mut even: Vec<ComplexNumber> = data.iter().step_by(2).copied().collect();
     let mut odd: Vec<ComplexNumber> = data.iter().skip(1).step_by(2).copied().collect();
@@ -488,12 +379,7 @@ pub fn inverse_fast_fourier_transform(spectrum: &[ComplexNumber]) -> MathResult<
     
     if n == 0 || (n & (n - 1)) != 0 {
         return Err(MathError::InvalidInput {
-            function: "inverse_fast_fourier_transform".to_string(),
-            parameter: "spectrum_length".to_string(),
-            value: n as f64,
         });
-    }
-    
     // Conjugate input
     let mut data: Vec<ComplexNumber> = spectrum.iter()
         .map(|c| c.conjugate())
@@ -508,8 +394,6 @@ pub fn inverse_fast_fourier_transform(spectrum: &[ComplexNumber]) -> MathResult<
         .collect();
     
     Ok(result)
-}
-
 // =============================================================================
 // INTERPOLATION AND APPROXIMATION
 // =============================================================================
@@ -526,29 +410,19 @@ pub fn inverse_fast_fourier_transform(spectrum: &[ComplexNumber]) -> MathResult<
 /// # Returns
 /// Interpolated value at x
 pub fn cubic_spline_interpolation(
-    x_values: &[f64], 
-    y_values: &[f64], 
     x: f64
 ) -> MathResult<f64> {
     validate_float("cubic_spline_interpolation", "x", x)?;
     
     if x_values.len() != y_values.len() || x_values.len() < 2 {
         return Err(MathError::InvalidInput {
-            function: "cubic_spline_interpolation".to_string(),
-            parameter: "input_size".to_string(),
-            value: x_values.len() as f64,
         });
-    }
-    
     let n = x_values.len();
     
     // Check if x_values are sorted
     for i in 1..n {
         if x_values[i] <= x_values[i-1] {
             return Err(MathError::InvalidInput {
-                function: "cubic_spline_interpolation".to_string(),
-                parameter: "x_values_sorting".to_string(),
-                value: i as f64,
             });
         }
     }
@@ -564,12 +438,7 @@ pub fn cubic_spline_interpolation(
     
     if x < x_values[0] || x > x_values[n-1] {
         return Err(MathError::DomainError {
-            function: "cubic_spline_interpolation".to_string(),
-            value: x,
-            message: "x outside interpolation range".to_string(),
         });
-    }
-    
     // Compute spline coefficients (simplified natural spline)
     let h = x_values[interval+1] - x_values[interval];
     let a = y_values[interval];
@@ -578,8 +447,6 @@ pub fn cubic_spline_interpolation(
     // For simplicity, use linear interpolation (can be extended to full cubic)
     let t = (x - x_values[interval]) / h;
     Ok(a + b * t * h)
-}
-
 /// Chebyshev polynomial approximation
 /// 
 /// Approximates function using Chebyshev polynomials
@@ -593,33 +460,19 @@ pub fn cubic_spline_interpolation(
 /// # Returns
 /// Coefficients of Chebyshev expansion
 pub fn chebyshev_approximation<F>(
-    f: F, 
-    a: f64, 
-    b: f64, 
     n: usize
 ) -> MathResult<Vec<f64>>
 where
-    F: Fn(f64) -> f64,
 {
     validate_float("chebyshev_approximation", "a", a)?;
     validate_float("chebyshev_approximation", "b", b)?;
     
     if a >= b {
         return Err(MathError::InvalidInput {
-            function: "chebyshev_approximation".to_string(),
-            parameter: "interval".to_string(),
-            value: b - a,
         });
-    }
-    
     if n == 0 {
         return Err(MathError::InvalidInput {
-            function: "chebyshev_approximation".to_string(),
-            parameter: "n".to_string(),
-            value: 0.0,
         });
-    }
-    
     let mut coefficients = vec![0.0; n];
     
     // Chebyshev nodes
@@ -638,11 +491,7 @@ where
     coefficients[0] /= n as f64;
     for j in 1..n {
         coefficients[j] *= 2.0 / n as f64;
-    }
-    
     Ok(coefficients)
-}
-
 // =============================================================================
 // MATRIX OPERATIONS
 // =============================================================================
@@ -660,12 +509,7 @@ pub fn solve_linear_system(matrix: &[Vec<f64>], vector: &[f64]) -> MathResult<Ve
     
     if n == 0 || matrix.iter().any(|row| row.len() != n) || vector.len() != n {
         return Err(MathError::InvalidInput {
-            function: "solve_linear_system".to_string(),
-            parameter: "matrix_dimensions".to_string(),
-            value: n as f64,
         });
-    }
-    
     // Create augmented matrix
     let mut aug: Vec<Vec<f64>> = matrix.iter()
         .zip(vector.iter())
@@ -692,11 +536,7 @@ pub fn solve_linear_system(matrix: &[Vec<f64>], vector: &[f64]) -> MathResult<Ve
         // Check for singular matrix
         if aug[i][i].abs() < 1e-12 {
             return Err(MathError::ComputationError {
-                function: "solve_linear_system".to_string(),
-                message: "Matrix is singular or nearly singular".to_string(),
             });
-        }
-        
         // Eliminate column
         for k in i+1..n {
             let factor = aug[k][i] / aug[i][i];
@@ -704,8 +544,6 @@ pub fn solve_linear_system(matrix: &[Vec<f64>], vector: &[f64]) -> MathResult<Ve
                 aug[k][j] -= factor * aug[i][j];
             }
         }
-    }
-    
     // Back substitution
     let mut x = vec![0.0; n];
     for i in (0..n).rev() {
@@ -714,11 +552,7 @@ pub fn solve_linear_system(matrix: &[Vec<f64>], vector: &[f64]) -> MathResult<Ve
             x[i] -= aug[i][j] * x[j];
         }
         x[i] /= aug[i][i];
-    }
-    
     Ok(x)
-}
-
 /// Computes matrix determinant using LU decomposition
 /// 
 /// # Arguments
@@ -731,12 +565,7 @@ pub fn matrix_determinant(matrix: &[Vec<f64>]) -> MathResult<f64> {
     
     if n == 0 || matrix.iter().any(|row| row.len() != n) {
         return Err(MathError::InvalidInput {
-            function: "matrix_determinant".to_string(),
-            parameter: "matrix_dimensions".to_string(),
-            value: n as f64,
         });
-    }
-    
     let mut m = matrix.to_vec();
     let mut det = 1.0;
     
@@ -754,13 +583,9 @@ pub fn matrix_determinant(matrix: &[Vec<f64>]) -> MathResult<f64> {
         if max_row != i {
             m.swap(i, max_row);
             det = -det;
-        }
-        
         // Check for zero diagonal element
         if m[i][i].abs() < 1e-12 {
             return Ok(0.0);
-        }
-        
         det *= m[i][i];
         
         // Eliminate column
@@ -770,11 +595,7 @@ pub fn matrix_determinant(matrix: &[Vec<f64>]) -> MathResult<f64> {
                 m[k][j] -= factor * m[i][j];
             }
         }
-    }
-    
     Ok(det)
-}
-
 // =============================================================================
 // SIGNAL PROCESSING
 // =============================================================================
@@ -792,12 +613,7 @@ pub fn matrix_determinant(matrix: &[Vec<f64>]) -> MathResult<f64> {
 pub fn convolution_filter(signal: &[f64], filter_coefficients: &[f64]) -> MathResult<Vec<f64>> {
     if signal.is_empty() || filter_coefficients.is_empty() {
         return Err(MathError::InvalidInput {
-            function: "convolution_filter".to_string(),
-            parameter: "input_size".to_string(),
-            value: 0.0,
         });
-    }
-    
     let signal_len = signal.len();
     let filter_len = filter_coefficients.len();
     let output_len = signal_len + filter_len - 1;
@@ -810,11 +626,7 @@ pub fn convolution_filter(signal: &[f64], filter_coefficients: &[f64]) -> MathRe
                 output[i] += signal[i - j] * filter_coefficients[j];
             }
         }
-    }
-    
     Ok(output)
-}
-
 /// Moving average filter
 /// 
 /// Applies simple moving average smoothing filter
@@ -828,20 +640,10 @@ pub fn convolution_filter(signal: &[f64], filter_coefficients: &[f64]) -> MathRe
 pub fn moving_average_filter(signal: &[f64], window_size: usize) -> MathResult<Vec<f64>> {
     if signal.is_empty() {
         return Err(MathError::InvalidInput {
-            function: "moving_average_filter".to_string(),
-            parameter: "signal_size".to_string(),
-            value: 0.0,
         });
-    }
-    
     if window_size == 0 || window_size > signal.len() {
         return Err(MathError::InvalidInput {
-            function: "moving_average_filter".to_string(),
-            parameter: "window_size".to_string(),
-            value: window_size as f64,
         });
-    }
-    
     let mut output = Vec::with_capacity(signal.len());
     
     for i in 0..signal.len() {
@@ -851,11 +653,7 @@ pub fn moving_average_filter(signal: &[f64], window_size: usize) -> MathResult<V
         let sum: f64 = signal[start..end].iter().sum();
         let count = end - start;
         output.push(sum / count as f64);
-    }
-    
     Ok(output)
-}
-
 // =============================================================================
 // MATHEMATICAL MODELING
 // =============================================================================
@@ -874,20 +672,10 @@ pub fn moving_average_filter(signal: &[f64], window_size: usize) -> MathResult<V
 pub fn polynomial_fit(x_data: &[f64], y_data: &[f64], degree: usize) -> MathResult<Vec<f64>> {
     if x_data.len() != y_data.len() || x_data.is_empty() {
         return Err(MathError::InvalidInput {
-            function: "polynomial_fit".to_string(),
-            parameter: "data_size".to_string(),
-            value: x_data.len() as f64,
         });
-    }
-    
     if degree >= x_data.len() {
         return Err(MathError::InvalidInput {
-            function: "polynomial_fit".to_string(),
-            parameter: "degree".to_string(),
-            value: degree as f64,
         });
-    }
-    
     let n = degree + 1;
     let m = x_data.len();
     
@@ -908,8 +696,6 @@ pub fn polynomial_fit(x_data: &[f64], y_data: &[f64], degree: usize) -> MathResu
     }
     
     solve_linear_system(&matrix, &vector)
-}
-
 /// Evaluates polynomial at given point
 /// 
 /// # Arguments
@@ -923,14 +709,8 @@ pub fn evaluate_polynomial(coefficients: &[f64], x: f64) -> MathResult<f64> {
     
     if coefficients.is_empty() {
         return Ok(0.0);
-    }
-    
     // Use Horner's method for numerical stability
     let mut result = coefficients[coefficients.len() - 1];
     for i in (0..coefficients.len() - 1).rev() {
         result = result * x + coefficients[i];
-    }
-    
     Ok(result)
-}
-

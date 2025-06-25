@@ -9,46 +9,21 @@ use std::sync::Arc;
 /// A single test case in a table-driven test
 #[derive(Clone)]
 pub struct TestCase {
-    pub Name: String,
-    pub Input: Value,
-    pub Expected: Value,
-    pub SetupFn: Option<Arc<dyn Fn(&VibeTest) -> TestVibesResult<()> + Send + Sync>>,
-    pub TestFn: Arc<dyn Fn(&VibeTest, &Value, &Value) -> TestVibesResult<()> + Send + Sync>,
-}
-
 impl TestCase {
     /// Create a new test case
     pub fn new<F>(name: &str, input: Value, expected: Value, test_fn: F) -> Self
     where
-        F: Fn(&VibeTest, &Value, &Value) -> TestVibesResult<()> + Send + Sync + 'static,
     {
         Self {
-            Name: name.to_string(),
-            Input: input,
-            Expected: expected,
-            SetupFn: None,
-            TestFn: Arc::new(test_fn),
         }
     }
 
     /// Create a new test case with setup function
     pub fn new_with_setup<S, F>(
-        name: &str,
-        input: Value,
-        expected: Value,
-        setup_fn: S,
-        test_fn: F,
     ) -> Self
     where
-        S: Fn(&VibeTest) -> TestVibesResult<()> + Send + Sync + 'static,
-        F: Fn(&VibeTest, &Value, &Value) -> TestVibesResult<()> + Send + Sync + 'static,
     {
         Self {
-            Name: name.to_string(),
-            Input: input,
-            Expected: expected,
-            SetupFn: Some(Arc::new(setup_fn)),
-            TestFn: Arc::new(test_fn),
         }
     }
 
@@ -60,12 +35,8 @@ impl TestCase {
         // Run setup if provided
         if let Some(ref setup) = self.SetupFn {
             setup(&sub_test)?;
-        }
-        
         // Log test case info
         sub_test.Log(&[Value::String(format!(
-            "Running test case: {} with input: {}",
-            self.Name,
             value_to_string(&self.Input)
         ))])?;
         
@@ -82,8 +53,6 @@ impl TestCase {
             parent_test.Log(&[Value::String(format!("  {}: SKIPPED", self.Name))])?;
         } else {
             parent_test.Log(&[Value::String(format!("  {}: PASSED", self.Name))])?;
-        }
-        
         result
     }
 }
@@ -109,90 +78,51 @@ pub fn RunTestCases(t: &VibeTest, test_cases: &[TestCase]) -> TestVibesResult<()
                 failed_cases.push(test_case.Name.clone());
             }
         }
-    }
-    
     // Log summary
     t.Log(&[Value::String(format!(
-        "Test cases summary: {} passed, {} failed, {} skipped",
-        passed_cases.len(),
-        failed_cases.len(),
         skipped_cases.len()
     ))])?;
     
     if !failed_cases.is_empty() {
         t.Log(&[Value::String(format!(
-            "Failed cases: {}",
             failed_cases.join(", ")
         ))])?;
         return t.Fatal(&[Value::String("One or more test cases failed".to_string())]);
-    }
-    
     Ok(())
-}
-
 /// Builder for creating table-driven test suites
 pub struct TableTestBuilder {
-    name: String,
-    cases: Vec<TestCase>,
-    global_setup: Option<Arc<dyn Fn(&VibeTest) -> TestVibesResult<()> + Send + Sync>>,
-    global_teardown: Option<Arc<dyn Fn(&VibeTest) -> TestVibesResult<()> + Send + Sync>>,
-}
-
 impl TableTestBuilder {
     /// Create a new table test builder
     pub fn new(name: &str) -> Self {
         Self {
-            name: name.to_string(),
-            cases: Vec::new(),
-            global_setup: None,
-            global_teardown: None,
         }
     }
 
     /// Add a test case
     pub fn add_case<F>(mut self, name: &str, input: Value, expected: Value, test_fn: F) -> Self
     where
-        F: Fn(&VibeTest, &Value, &Value) -> TestVibesResult<()> + Send + Sync + 'static,
     {
         self.cases.push(TestCase::new(name, input, expected, test_fn));
         self
-    }
-
     /// Add a test case with setup
     pub fn add_case_with_setup<S, F>(
-        mut self,
-        name: &str,
-        input: Value,
-        expected: Value,
-        setup_fn: S,
-        test_fn: F,
     ) -> Self
     where
-        S: Fn(&VibeTest) -> TestVibesResult<()> + Send + Sync + 'static,
-        F: Fn(&VibeTest, &Value, &Value) -> TestVibesResult<()> + Send + Sync + 'static,
     {
         self.cases.push(TestCase::new_with_setup(name, input, expected, setup_fn, test_fn));
         self
-    }
-
     /// Set global setup function
     pub fn with_setup<F>(mut self, setup_fn: F) -> Self
     where
-        F: Fn(&VibeTest) -> TestVibesResult<()> + Send + Sync + 'static,
     {
         self.global_setup = Some(Arc::new(setup_fn));
         self
-    }
-
     /// Set global teardown function
     pub fn with_teardown<F>(mut self, teardown_fn: F) -> Self
     where
-        F: Fn(&VibeTest) -> TestVibesResult<()> + Send + Sync + 'static,
     {
         self.global_teardown = Some(Arc::new(teardown_fn));
         self
-    }
-
     /// Run all test cases
     pub fn run(self, t: &VibeTest) -> TestVibesResult<()> {
         t.Log(&[Value::String(format!("Running table test: {}", self.name))])?;
@@ -200,8 +130,6 @@ impl TableTestBuilder {
         // Run global setup
         if let Some(ref setup) = self.global_setup {
             setup(t)?;
-        }
-        
         // Run test cases
         let result = RunTestCases(t, &self.cases);
         
@@ -222,9 +150,6 @@ impl TableTestBuilder {
 pub fn string_transform_cases() -> Vec<TestCase> {
     vec![
         TestCase::new(
-            "to_uppercase",
-            Value::String("hello".to_string()),
-            Value::String("HELLO".to_string()),
             |_t, input, expected| {
                 if let (Value::String(input_str), Value::String(expected_str)) = (input, expected) {
                     let result = input_str.to_uppercase();
@@ -239,11 +164,7 @@ pub fn string_transform_cases() -> Vec<TestCase> {
                     Err(super::assertion_failed("Invalid input/expected types").into())
                 }
             }
-        ),
         TestCase::new(
-            "to_lowercase",
-            Value::String("WORLD".to_string()),
-            Value::String("world".to_string()),
             |_t, input, expected| {
                 if let (Value::String(input_str), Value::String(expected_str)) = (input, expected) {
                     let result = input_str.to_lowercase();
@@ -258,11 +179,7 @@ pub fn string_transform_cases() -> Vec<TestCase> {
                     Err(super::assertion_failed("Invalid input/expected types").into())
                 }
             }
-        ),
         TestCase::new(
-            "trim_whitespace",
-            Value::String("  spaced  ".to_string()),
-            Value::String("spaced".to_string()),
             |_t, input, expected| {
                 if let (Value::String(input_str), Value::String(expected_str)) = (input, expected) {
                     let result = input_str.trim();
@@ -277,17 +194,11 @@ pub fn string_transform_cases() -> Vec<TestCase> {
                     Err(super::assertion_failed("Invalid input/expected types").into())
                 }
             }
-        ),
     ]
-}
-
 /// Helper for creating mathematical operation test cases
 pub fn math_operation_cases() -> Vec<TestCase> {
     vec![
         TestCase::new(
-            "addition",
-            Value::Array(vec![Value::Int(2), Value::Int(3)]),
-            Value::Int(5),
             |_t, input, expected| {
                 if let (Value::Array(operands), Value::Int(expected_result)) = (input, expected) {
                     if operands.len() == 2 {
@@ -310,11 +221,7 @@ pub fn math_operation_cases() -> Vec<TestCase> {
                     Err(super::assertion_failed("Invalid input/expected types").into())
                 }
             }
-        ),
         TestCase::new(
-            "multiplication",
-            Value::Array(vec![Value::Int(4), Value::Int(7)]),
-            Value::Int(28),
             |_t, input, expected| {
                 if let (Value::Array(operands), Value::Int(expected_result)) = (input, expected) {
                     if operands.len() == 2 {
@@ -337,11 +244,7 @@ pub fn math_operation_cases() -> Vec<TestCase> {
                     Err(super::assertion_failed("Invalid input/expected types").into())
                 }
             }
-        ),
         TestCase::new(
-            "division",
-            Value::Array(vec![Value::Int(15), Value::Int(3)]),
-            Value::Int(5),
             |_t, input, expected| {
                 if let (Value::Array(operands), Value::Int(expected_result)) = (input, expected) {
                     if operands.len() == 2 {
@@ -367,20 +270,12 @@ pub fn math_operation_cases() -> Vec<TestCase> {
                     Err(super::assertion_failed("Invalid input/expected types").into())
                 }
             }
-        ),
     ]
-}
-
 // Helper functions
 
 /// Convert value to string representation
 fn value_to_string(value: &Value) -> String {
     match value {
-        Value::Nil => "nil".to_string(),
-        Value::Bool(b) => b.to_string(),
-        Value::Int(i) => i.to_string(),
-        Value::Float(f) => f.to_string(),
-        Value::String(s) => format!("\"{}\"", s),
         Value::Array(arr) => {
             let elements: Vec<String> = arr.iter().map(value_to_string).collect();
             format!("[{}]", elements.join(", "))
@@ -392,5 +287,3 @@ fn value_to_string(value: &Value) -> String {
             format!("{{{}}}", pairs.join(", "))
         }
     }
-}
-

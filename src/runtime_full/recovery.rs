@@ -5,9 +5,8 @@
 
 use crate::error::CursedError;
 use crate::runtime::panic::{
-    PanicRuntime, CursedPanicInfo, PanicSeverity, PanicCategory, RecoveryAction,
     get_panic_runtime
-};
+// };
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex, RwLock};
 use std::thread::{self, ThreadId};
@@ -19,65 +18,30 @@ use std::any::Any;
 #[derive(Debug, Clone)]
 pub struct RecoveryScope {
     /// Scope ID for tracking
-    pub scope_id: String,
     /// Thread where scope is active
-    pub thread_id: ThreadId,
     /// Recovery configuration
-    pub config: RecoveryConfig,
     /// Start time for timeout tracking
-    pub start_time: Instant,
     /// Whether scope is currently active
-    pub active: bool,
     /// Nested recovery depth
-    pub depth: usize,
-}
-
 /// Configuration for recovery operations
 #[derive(Debug, Clone)]
 pub struct RecoveryConfig {
     /// Maximum time to wait for recovery
-    pub timeout: Duration,
     /// Whether to convert panics to errors
-    pub convert_to_error: bool,
     /// Whether to log recovery attempts
-    pub log_recovery: bool,
     /// Maximum recovery attempts
-    pub max_attempts: u32,
     /// Whether to propagate unrecoverable panics
-    pub propagate_unrecoverable: bool,
     /// Categories of panics that can be recovered
-    pub recoverable_categories: Vec<PanicCategory>,
-}
-
 impl Default for RecoveryConfig {
     fn default() -> Self {
         RecoveryConfig {
-            timeout: Duration::from_secs(30),
-            convert_to_error: true,
-            log_recovery: false,
-            max_attempts: 3,
-            propagate_unrecoverable: true,
             recoverable_categories: vec![
-                PanicCategory::User,
-                PanicCategory::TypeAssertion,
-                PanicCategory::BoundsCheck,
-                PanicCategory::Arithmetic,
-                PanicCategory::Channel,
-            ],
         }
     }
-}
-
 impl RecoveryScope {
     /// Create a new recovery scope
     pub fn new(scope_id: String, config: RecoveryConfig) -> Self {
         RecoveryScope {
-            scope_id,
-            thread_id: thread::current().id(),
-            config,
-            start_time: Instant::now(),
-            active: false,
-            depth: 0,
         }
     }
 
@@ -85,80 +49,49 @@ impl RecoveryScope {
     pub fn activate(&mut self) {
         self.active = true;
         self.start_time = Instant::now();
-    }
-
     /// Deactivate the recovery scope
     pub fn deactivate(&mut self) {
         self.active = false;
-    }
-
     /// Check if the scope has timed out
     pub fn has_timed_out(&self) -> bool {
         self.start_time.elapsed() > self.config.timeout
-    }
-
     /// Check if a panic category is recoverable in this scope
     pub fn is_recoverable(&self, category: &PanicCategory) -> bool {
         self.config.recoverable_categories.contains(category)
-    }
-
     /// Increment the recovery depth
     pub fn enter_nested(&mut self) {
         self.depth += 1;
-    }
-
     /// Decrement the recovery depth
     pub fn exit_nested(&mut self) {
         if self.depth > 0 {
             self.depth -= 1;
         }
     }
-}
-
 /// Recovery manager for handling panic recovery operations
 #[derive(Debug)]
 pub struct RecoveryManager {
     /// Active recovery scopes by thread
-    scopes: Arc<Mutex<HashMap<ThreadId, Vec<RecoveryScope>>>>,
     /// Recovery statistics
-    stats: Arc<RwLock<RecoveryStatistics>>,
     /// Default recovery configuration
-    default_config: RecoveryConfig,
-}
-
 /// Statistics for recovery operations
 #[derive(Debug, Default, Clone)]
 pub struct RecoveryStatistics {
     /// Total recovery attempts
-    pub total_attempts: u64,
     /// Successful recoveries
-    pub successful_recoveries: u64,
     /// Failed recoveries
-    pub failed_recoveries: u64,
     /// Recoveries by category
-    pub recoveries_by_category: HashMap<PanicCategory, u64>,
     /// Average recovery time
-    pub average_recovery_time: Duration,
     /// Timeouts during recovery
-    pub recovery_timeouts: u64,
-}
-
 impl RecoveryManager {
     /// Create a new recovery manager
     pub fn new() -> Self {
         RecoveryManager {
-            scopes: Arc::new(Mutex::new(HashMap::new())),
-            stats: Arc::new(RwLock::new(RecoveryStatistics::default())),
-            default_config: RecoveryConfig::default(),
         }
     }
 
     /// Create recovery manager with custom default config
     pub fn with_config(config: RecoveryConfig) -> Self {
         RecoveryManager {
-            scopes: Arc::new(Mutex::new(HashMap::new())),
-            stats: Arc::new(RwLock::new(RecoveryStatistics::default())),
-            default_config: config,
         }
     }
 
@@ -180,8 +113,6 @@ impl RecoveryManager {
         thread_scopes.push(scope);
 
         Ok(())
-    }
-
     /// Exit the current recovery scope
     pub fn exit_scope(&self) -> crate::error::Result<()> {
         let thread_id = thread::current().id();
@@ -197,8 +128,6 @@ impl RecoveryManager {
         }
         
         Ok(None)
-    }
-
     /// Get the current recovery scope
     pub fn current_scope(&self) -> crate::error::Result<()> {
         let thread_id = thread::current().id();
@@ -225,19 +154,14 @@ impl RecoveryManager {
         }
         
         false
-    }
-
     /// Get recovery statistics
     pub fn get_statistics(&self) -> crate::error::Result<()> {
         self.stats.read()
             .map(|stats| stats.clone())
             .map_err(|_| CursedError::Runtime("Failed to access recovery statistics".to_string()))
-    }
-
     /// Update recovery statistics
     fn update_stats<F>(&self, updater: F) -> crate::error::Result<()>
     where
-        F: FnOnce(&mut RecoveryStatistics),
     {
         let mut stats = self.stats.write()
             .map_err(|_| CursedError::Runtime("Failed to acquire recovery statistics lock".to_string()))?;
@@ -264,28 +188,18 @@ pub fn initialize_recovery_manager() -> crate::error::Result<()> {
         .map_err(|_| CursedError::Runtime("Failed to initialize recovery manager".to_string()))?;
     
     Ok(())
-}
-
 /// Get the global recovery manager
 pub fn get_recovery_manager() -> Option<&'static Arc<RecoveryManager>> {
     RECOVERY_MANAGER.get()
-}
-
 /// Catch panic and attempt recovery
 pub fn catch_panic<T, F>(operation: F) -> crate::error::Result<()>
 where
-    F: FnOnce() -> T + std::panic::UnwindSafe,
 {
     catch_panic_with_config(operation, None)
-}
-
 /// Catch panic with custom recovery configuration
 pub fn catch_panic_with_config<T, F>(
-    operation: F,
-    config: Option<RecoveryConfig>,
 ) -> crate::error::Result<()>
 where
-    F: FnOnce() -> T + std::panic::UnwindSafe,
 {
     let start_time = Instant::now();
     let scope_id = format!("recovery_{}", start_time.elapsed().as_nanos());
@@ -293,8 +207,6 @@ where
     // Enter recovery scope
     if let Some(manager) = get_recovery_manager() {
         manager.enter_scope(scope_id.clone(), config.clone())?;
-    }
-    
     // Get panic runtime for integrated recovery
     let panic_runtime = get_panic_runtime();
     
@@ -304,17 +216,12 @@ where
     } else {
         // Fallback to standard panic catching
         match panic::catch_unwind(AssertUnwindSafe(operation)) {
-            Ok(value) => Ok(value),
             Err(panic_payload) => {
                 let message = extract_panic_message(&panic_payload);
                 Err(CursedError::Recovery {
-                    message: format!("Panic caught: {}", message),
-                    recovery_attempts: 1,
-                    source_location: None,
                 })
             }
         }
-    };
     
     let recovery_time = start_time.elapsed();
     
@@ -342,11 +249,7 @@ where
         
         // Exit recovery scope
         let _ = manager.exit_scope();
-    }
-    
     result
-}
-
 /// Extract panic message from panic payload
 fn extract_panic_message(panic_payload: &Box<dyn Any + Send>) -> String {
     if let Some(s) = panic_payload.downcast_ref::<&str>() {
@@ -361,10 +264,6 @@ fn extract_panic_message(panic_payload: &Box<dyn Any + Send>) -> String {
 /// Convert panic to error
 pub fn panic_to_error(panic_info: &CursedPanicInfo) -> CursedError {
     CursedError::Panic {
-        message: panic_info.message.clone(),
-        panic_id: Some(panic_info.panic_id),
-        recoverable: panic_info.severity != PanicSeverity::Fatal,
-        source_location: panic_info.source_location.clone(),
     }
 }
 
@@ -377,29 +276,17 @@ pub fn error_to_recovery_action(error: CursedError) -> RecoveryAction {
         CursedError::Panic { recoverable: false, .. } => {
             RecoveryAction::TerminateGoroutine
         }
-        _ => RecoveryAction::Continue(error),
     }
 }
 
 /// Check if an error is recoverable
 pub fn is_recoverable_error(error: &CursedError) -> bool {
     match error {
-        CursedError::Panic { recoverable, .. } => *recoverable,
-        CursedError::Recovery { .. } => true,
-        CursedError::Runtime(_) => true,
-        CursedError::Parse(_) => false,
-        CursedError::Compile(_) => false,
-        CursedError::Io(_) => true,
-        _ => false,
     }
 }
 
 /// Recovery scope guard for RAII-style scope management
 pub struct RecoveryScopeGuard {
-    scope_id: Option<String>,
-    manager: Option<Arc<RecoveryManager>>,
-}
-
 impl RecoveryScopeGuard {
     /// Create a new recovery scope guard
     pub fn new(scope_id: String, config: Option<RecoveryConfig>) -> crate::error::Result<()> {
@@ -407,14 +294,8 @@ impl RecoveryScopeGuard {
         
         if let Some(ref mgr) = manager {
             mgr.enter_scope(scope_id.clone(), config)?;
-        }
-        
         Ok(RecoveryScopeGuard {
-            scope_id: Some(scope_id),
-            manager,
         })
-    }
-    
     /// Check if currently in recovery scope
     pub fn in_scope(&self) -> bool {
         self.manager.as_ref()
@@ -429,54 +310,38 @@ impl Drop for RecoveryScopeGuard {
             let _ = manager.exit_scope();
         }
     }
-}
-
 /// Macro for easy recovery scope creation
 #[macro_export]
 macro_rules! with_recovery {
     ($scope_id:expr, $code:block) => {
         {
             let _guard = $crate::runtime::recovery::RecoveryScopeGuard::new(
-                $scope_id.to_string(), 
                 None
             )?;
             $code
         }
-    };
     
     ($scope_id:expr, $config:expr, $code:block) => {
         {
             let _guard = $crate::runtime::recovery::RecoveryScopeGuard::new(
-                $scope_id.to_string(), 
                 Some($config)
             )?;
             $code
         }
-    };
-}
-
 // FFI functions for LLVM integration
 
 /// Enter a recovery scope from compiled code
 #[no_mangle]
 pub extern "C" fn cursed_enter_recovery_scope(
-    scope_id_ptr: *const u8,
-    scope_id_len: usize,
-    timeout_secs: u32,
 ) -> u8 {
     if scope_id_ptr.is_null() || scope_id_len == 0 {
         return 0; // Failed
-    }
-    
     let scope_id = unsafe {
         let slice = std::slice::from_raw_parts(scope_id_ptr, scope_id_len);
         String::from_utf8_lossy(slice).to_string()
-    };
     
     let config = RecoveryConfig {
-        timeout: Duration::from_secs(timeout_secs as u64),
         ..RecoveryConfig::default()
-    };
     
     if let Some(manager) = get_recovery_manager() {
         if manager.enter_scope(scope_id, Some(config)).is_ok() {

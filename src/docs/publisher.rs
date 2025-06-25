@@ -20,198 +20,97 @@ use tokio::process::Command;
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct PublishConfig {
     /// Publishing target (local, s3, github-pages, etc.)
-    pub target: PublishTarget,
     /// Base URL for the published documentation
-    pub base_url: String,
     /// CDN configuration for optimization
-    pub cdn: Option<CdnConfig>,
     /// Optimization settings
-    pub optimization: OptimizationConfig,
     /// Authentication settings
-    pub auth: Option<AuthConfig>,
     /// Custom domain configuration
-    pub domain: Option<DomainConfig>,
-}
-
 /// Publishing target configuration
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(tag = "type")]
 pub enum PublishTarget {
     Local {
-        path: PathBuf,
-    },
     S3 {
-        bucket: String,
-        region: String,
-        prefix: Option<String>,
-    },
     GithubPages {
-        repo: String,
-        branch: String,
-        token: String,
-    },
     Custom {
-        endpoint: String,
-        credentials: HashMap<String, String>,
-    },
-}
-
 /// CDN configuration for global delivery
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct CdnConfig {
     /// CDN provider (cloudflare, cloudfront, etc.)
-    pub provider: String,
     /// CDN domain or distribution ID
-    pub domain: String,
     /// Cache settings
-    pub cache_settings: CacheSettings,
     /// Geographic regions
-    pub regions: Vec<String>,
-}
-
 /// Cache configuration for optimization
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct CacheSettings {
     /// HTML files cache duration (seconds)
-    pub html_cache: u64,
     /// Static assets cache duration (seconds)
-    pub assets_cache: u64,
     /// API responses cache duration (seconds)
-    pub api_cache: u64,
-}
-
 /// Optimization settings for published documentation
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct OptimizationConfig {
     /// Enable HTML minification
-    pub minify_html: bool,
     /// Enable CSS minification
-    pub minify_css: bool,
     /// Enable JavaScript minification
-    pub minify_js: bool,
     /// Enable image optimization
-    pub optimize_images: bool,
     /// Enable Gzip compression
-    pub gzip_compression: bool,
     /// Enable Brotli compression
-    pub brotli_compression: bool,
-}
-
 /// Authentication configuration for publishing
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct AuthConfig {
     /// API key for publishing
-    pub api_key: String,
     /// Secret key for signing
-    pub secret_key: Option<String>,
     /// Additional auth headers
-    pub headers: HashMap<String, String>,
-}
-
 /// Custom domain configuration
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct DomainConfig {
     /// Custom domain name
-    pub domain: String,
     /// SSL certificate configuration
-    pub ssl: SslConfig,
     /// DNS configuration
-    pub dns: DnsConfig,
-}
-
 /// SSL certificate configuration
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct SslConfig {
     /// Certificate type (letsencrypt, custom, etc.)
-    pub cert_type: String,
     /// Certificate path (for custom)
-    pub cert_path: Option<PathBuf>,
     /// Private key path (for custom)
-    pub key_path: Option<PathBuf>,
-}
-
 /// DNS configuration
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct DnsConfig {
     /// DNS provider
-    pub provider: String,
     /// DNS records to configure
-    pub records: Vec<DnsRecord>,
-}
-
 /// DNS record configuration
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct DnsRecord {
-    pub record_type: String,
-    pub name: String,
-    pub value: String,
-    pub ttl: u32,
-}
-
 /// Publication metadata
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct PublicationMetadata {
     /// Package name
-    pub package_name: String,
     /// Package version
-    pub version: String,
     /// Publication timestamp
-    pub published_at: u64,
     /// Publication target
-    pub target: String,
     /// Documentation URL
-    pub url: String,
     /// Size information
-    pub size_info: SizeInfo,
     /// Performance metrics
-    pub performance: PerformanceMetrics,
-}
-
 /// Size information for published documentation
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct SizeInfo {
     /// Total size in bytes
-    pub total_bytes: u64,
     /// Number of HTML files
-    pub html_files: u32,
     /// Number of asset files
-    pub asset_files: u32,
     /// Compressed size (if compression enabled)
-    pub compressed_bytes: Option<u64>,
-}
-
 /// Performance metrics for published documentation
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct PerformanceMetrics {
     /// Build time in milliseconds
-    pub build_time_ms: u64,
     /// Upload time in milliseconds
-    pub upload_time_ms: u64,
     /// CDN propagation time in milliseconds
-    pub propagation_time_ms: Option<u64>,
-}
-
 /// Main documentation publisher
 pub struct DocumentationPublisher {
-    config: PublishConfig,
-    generator: DocumentationGenerator,
-    registry: DocumentationRegistry,
-    package_manager: PackageManager,
-}
-
 impl DocumentationPublisher {
     /// Create a new documentation publisher
     pub fn new(
-        config: PublishConfig,
-        generator: DocumentationGenerator,
-        registry: DocumentationRegistry,
-        package_manager: PackageManager,
     ) -> Self {
         Self {
-            config,
-            generator,
-            registry,
-            package_manager,
         }
     }
 
@@ -244,38 +143,19 @@ impl DocumentationPublisher {
             Some(self.update_cdn(package, &url).await?)
         } else {
             None
-        };
         
         // Create publication metadata
         let metadata = PublicationMetadata {
-            package_name: package.name.clone(),
-            version: package.version.clone(),
-            published_at: SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_secs(),
-            target: self.get_target_name(),
-            url: url.clone(),
-            size_info,
             performance: PerformanceMetrics {
-                build_time_ms: build_time,
-                upload_time_ms: upload_time,
-                propagation_time_ms: propagation_time,
-            },
-        };
         
         // Register publication
         self.registry.register_publication(&metadata).await?;
         
         info!(
-            package = %package.name,
-            version = %package.version,
-            url = %url,
-            build_time = build_time,
-            upload_time = upload_time,
             "Documentation published successfully"
         );
         
         Ok(metadata)
-    }
-
     /// Generate documentation for a package
     #[instrument(skip(self))]
     async fn generate_documentation(&mut self, package: &Package) -> Result<PathBuf> {
@@ -299,8 +179,6 @@ impl DocumentationPublisher {
         self.copy_static_assets(&output_dir).await?;
         
         Ok(output_dir)
-    }
-
     /// Generate search index for documentation
     #[instrument(skip(self))]
     async fn generate_search_index(&self, package: &Package, output_dir: &Path) -> Result<()> {
@@ -318,8 +196,6 @@ impl DocumentationPublisher {
         })?;
         
         Ok(())
-    }
-
     /// Build search index from package documentation
     async fn build_search_index(&self, package: &Package) -> Result<serde_json::Value> {
         // Implementation would extract searchable content from documentation
@@ -331,8 +207,6 @@ impl DocumentationPublisher {
         index.insert("searchable_content".to_string(), serde_json::Value::Array(vec![]));
         
         Ok(serde_json::Value::Object(index))
-    }
-
     /// Generate sitemap for SEO
     #[instrument(skip(self))]
     async fn generate_sitemap(&self, package: &Package, output_dir: &Path) -> Result<()> {
@@ -346,8 +220,6 @@ impl DocumentationPublisher {
         })?;
         
         Ok(())
-    }
-
     /// Build sitemap XML content
     async fn build_sitemap_xml(&self, package: &Package) -> Result<String> {
         let base_url = &self.config.base_url;
@@ -371,8 +243,6 @@ impl DocumentationPublisher {
         );
         
         Ok(sitemap)
-    }
-
     /// Copy static assets to documentation directory
     #[instrument(skip(self))]
     async fn copy_static_assets(&self, output_dir: &Path) -> Result<()> {
@@ -389,8 +259,6 @@ impl DocumentationPublisher {
         self.create_minimal_assets(&assets_dir).await?;
         
         Ok(())
-    }
-
     /// Create minimal required assets
     async fn create_minimal_assets(&self, assets_dir: &Path) -> Result<()> {
         let css_content = r#"
@@ -415,8 +283,6 @@ function initSearch() {
 function performSearch(query) {
     // Basic search implementation
     console.log('Searching for:', query);
-}
-
 document.addEventListener('DOMContentLoaded', initSearch);
 "#;
         
@@ -429,15 +295,11 @@ document.addEventListener('DOMContentLoaded', initSearch);
         })?;
         
         Ok(())
-    }
-
     /// Optimize generated documentation
     #[instrument(skip(self))]
     async fn optimize_documentation(&self, docs_path: &Path) -> Result<PathBuf> {
         if !self.should_optimize() {
             return Ok(docs_path.to_path_buf());
-        }
-        
         debug!("Optimizing documentation");
         
         let optimized_dir = docs_path.with_extension("optimized");
@@ -449,16 +311,12 @@ document.addEventListener('DOMContentLoaded', initSearch);
         self.copy_and_optimize_files(docs_path, &optimized_dir).await?;
         
         Ok(optimized_dir)
-    }
-
     /// Check if optimization should be performed
     fn should_optimize(&self) -> bool {
         self.config.optimization.minify_html ||
         self.config.optimization.minify_css ||
         self.config.optimization.minify_js ||
         self.config.optimization.optimize_images
-    }
-
     /// Copy and optimize files
     async fn copy_and_optimize_files(&self, source: &Path, dest: &Path) -> Result<()> {
         let mut entries = fs::read_dir(source).await.map_err(|e| {
@@ -482,8 +340,6 @@ document.addEventListener('DOMContentLoaded', initSearch);
         }
         
         Ok(())
-    }
-
     /// Optimize and copy a single file
     async fn optimize_and_copy_file(&self, source: &Path, dest: &Path) -> Result<()> {
         let extension = source.extension().and_then(|s| s.to_str()).unwrap_or("");
@@ -506,8 +362,6 @@ document.addEventListener('DOMContentLoaded', initSearch);
         }
         
         Ok(())
-    }
-
     /// Minify HTML file
     async fn minify_html_file(&self, source: &Path, dest: &Path) -> Result<()> {
         let content = fs::read_to_string(source).await.map_err(|e| {
@@ -527,8 +381,6 @@ document.addEventListener('DOMContentLoaded', initSearch);
         })?;
         
         Ok(())
-    }
-
     /// Minify CSS file
     async fn minify_css_file(&self, source: &Path, dest: &Path) -> Result<()> {
         let content = fs::read_to_string(source).await.map_err(|e| {
@@ -546,8 +398,6 @@ document.addEventListener('DOMContentLoaded', initSearch);
         })?;
         
         Ok(())
-    }
-
     /// Minify JavaScript file
     async fn minify_js_file(&self, source: &Path, dest: &Path) -> Result<()> {
         let content = fs::read_to_string(source).await.map_err(|e| {
@@ -567,8 +417,6 @@ document.addEventListener('DOMContentLoaded', initSearch);
         })?;
         
         Ok(())
-    }
-
     /// Calculate size information for documentation
     async fn calculate_size_info(&self, docs_path: &Path) -> Result<SizeInfo> {
         let mut total_bytes = 0u64;
@@ -598,22 +446,13 @@ document.addEventListener('DOMContentLoaded', initSearch);
                     
                     if let Some(extension) = path.extension().and_then(|s| s.to_str()) {
                         match extension {
-                            "html" => html_files += 1,
-                            _ => asset_files += 1,
                         }
                     }
                 }
             }
-        }
-        
         Ok(SizeInfo {
-            total_bytes,
-            html_files,
-            asset_files,
             compressed_bytes: None, // Would calculate if compression is enabled
         })
-    }
-
     /// Upload documentation to the configured target
     #[instrument(skip(self))]
     async fn upload_documentation(&self, package: &Package, docs_path: &Path) -> Result<String> {
@@ -633,8 +472,6 @@ document.addEventListener('DOMContentLoaded', initSearch);
                 self.upload_to_custom(package, docs_path, endpoint, credentials).await
             }
         }
-    }
-
     /// Upload to local filesystem
     async fn upload_to_local(&self, package: &Package, docs_path: &Path, target_path: &Path) -> Result<String> {
         let package_dir = target_path.join(&package.name).join(&package.version);
@@ -646,8 +483,6 @@ document.addEventListener('DOMContentLoaded', initSearch);
         self.copy_directory(docs_path, &package_dir).await?;
         
         Ok(format!("file://{}", package_dir.display()))
-    }
-
     /// Upload to Amazon S3
     async fn upload_to_s3(&self, package: &Package, docs_path: &Path, bucket: &str, region: &str, prefix: Option<&str>) -> Result<String> {
         // This would use AWS SDK to upload to S3
@@ -659,8 +494,6 @@ document.addEventListener('DOMContentLoaded', initSearch);
                          bucket, region, key_prefix, package.name, package.version);
         
         Ok(url)
-    }
-
     /// Upload to GitHub Pages
     async fn upload_to_github_pages(&self, package: &Package, docs_path: &Path, repo: &str, branch: &str, _token: &str) -> Result<String> {
         // This would use Git commands to push to GitHub Pages
@@ -672,8 +505,6 @@ document.addEventListener('DOMContentLoaded', initSearch);
                          package.name, package.version);
         
         Ok(url)
-    }
-
     /// Upload to custom endpoint
     async fn upload_to_custom(&self, package: &Package, docs_path: &Path, endpoint: &str, _credentials: &HashMap<String, String>) -> Result<String> {
         // This would use HTTP API to upload to custom endpoint
@@ -681,8 +512,6 @@ document.addEventListener('DOMContentLoaded', initSearch);
         
         let url = format!("{}/{}/{}/", endpoint, package.name, package.version);
         Ok(url)
-    }
-
     /// Copy entire directory recursively
     async fn copy_directory(&self, source: &Path, dest: &Path) -> Result<()> {
         let mut stack = vec![(source.to_path_buf(), dest.to_path_buf())];
@@ -710,11 +539,7 @@ document.addEventListener('DOMContentLoaded', initSearch);
                     })?;
                 }
             }
-        }
-        
         Ok(())
-    }
-
     /// Update CDN after upload
     #[instrument(skip(self))]
     async fn update_cdn(&self, package: &Package, url: &str) -> Result<u64> {
@@ -723,8 +548,6 @@ document.addEventListener('DOMContentLoaded', initSearch);
         })?;
         
         debug!(
-            package = %package.name,
-            provider = %cdn_config.provider,
             "Updating CDN"
         );
         
@@ -737,30 +560,19 @@ document.addEventListener('DOMContentLoaded', initSearch);
         let propagation_time = start_time.elapsed().unwrap().as_millis() as u64;
         
         info!(
-            package = %package.name,
-            provider = %cdn_config.provider,
-            propagation_time = propagation_time,
             "CDN updated successfully"
         );
         
         Ok(propagation_time)
-    }
-
     /// Get temporary directory for documentation generation
     fn get_temp_dir(&self, package: &Package) -> PathBuf {
         std::env::temp_dir()
             .join("cursed_docs")
             .join(&package.name)
             .join(&package.version)
-    }
-
     /// Get the name of the current target
     fn get_target_name(&self) -> String {
         match &self.config.target {
-            PublishTarget::Local { .. } => "local".to_string(),
-            PublishTarget::S3 { .. } => "s3".to_string(),
-            PublishTarget::GithubPages { .. } => "github-pages".to_string(),
-            PublishTarget::Custom { .. } => "custom".to_string(),
         }
     }
 
@@ -769,8 +581,6 @@ document.addEventListener('DOMContentLoaded', initSearch);
         // Validate base URL
         if self.config.base_url.is_empty() {
             return Err(CursedError::Configuration("Base URL cannot be empty".to_string()));
-        }
-        
         // Validate target-specific configuration
         match &self.config.target {
             PublishTarget::Local { path } => {
@@ -801,8 +611,6 @@ document.addEventListener('DOMContentLoaded', initSearch);
                     ));
                 }
             }
-        }
-        
         Ok(())
     }
 }
@@ -810,16 +618,8 @@ document.addEventListener('DOMContentLoaded', initSearch);
 impl Default for OptimizationConfig {
     fn default() -> Self {
         Self {
-            minify_html: true,
-            minify_css: true,
-            minify_js: true,
-            optimize_images: true,
-            gzip_compression: true,
-            brotli_compression: false,
         }
     }
-}
-
 impl Default for CacheSettings {
     fn default() -> Self {
         Self {
@@ -828,5 +628,3 @@ impl Default for CacheSettings {
             api_cache: 300,        // 5 minutes
         }
     }
-}
-

@@ -14,62 +14,27 @@ use std::thread;
 
 /// Network monitoring system for collecting and analyzing network metrics
 pub struct NetworkMonitor {
-    collectors: Vec<Box<dyn MetricCollector>>,
-    metrics_store: Arc<RwLock<MetricsStore>>,
-    monitoring_interval: Duration,
-    is_running: Arc<Mutex<bool>>,
-    event_handlers: Vec<Box<dyn EventHandler>>,
-}
-
 /// Trait for collecting different types of network metrics
 pub trait MetricCollector: Send + Sync {
     fn collect(&self) -> NetResult<Vec<Metric>>;
     fn name(&self) -> &str;
     fn collection_interval(&self) -> Duration;
-}
-
 /// Trait for handling network events
 pub trait EventHandler: Send + Sync {
     fn handle_event(&self, event: NetworkEvent);
-}
-
 /// Generic metric structure
 #[derive(Debug, Clone)]
 pub struct Metric {
-    pub name: String,
-    pub value: MetricValue,
-    pub timestamp: SystemTime,
-    pub labels: HashMap<String, String>,
-}
-
 #[derive(Debug, Clone)]
 pub enum MetricValue {
-    Counter(u64),
-    Gauge(f64),
-    Histogram(Vec<f64>),
-    Summary(SummaryValue),
-}
-
 #[derive(Debug, Clone)]
 pub struct SummaryValue {
-    pub count: u64,
-    pub sum: f64,
     pub quantiles: HashMap<f64, f64>, // percentile -> value
-}
-
 /// Storage for collected metrics
 pub struct MetricsStore {
-    metrics: HashMap<String, VecDeque<Metric>>,
-    max_metrics_per_series: usize,
-    retention_period: Duration,
-}
-
 impl MetricsStore {
     pub fn new(max_metrics_per_series: usize, retention_period: Duration) -> Self {
         Self {
-            metrics: HashMap::new(),
-            max_metrics_per_series,
-            retention_period,
         }
     }
 
@@ -82,12 +47,8 @@ impl MetricsStore {
         // Maintain size limit
         while series.len() > self.max_metrics_per_series {
             series.pop_front();
-        }
-        
         // Clean up old metrics
         self.cleanup_old_metrics();
-    }
-
     pub fn get_metrics(&self, name: &str, labels: Option<&HashMap<String, String>>) -> Vec<&Metric> {
         let mut results = Vec::new();
         
@@ -104,11 +65,7 @@ impl MetricsStore {
                     results.extend(series.iter());
                 }
             }
-        }
-        
         results
-    }
-
     fn labels_key(&self, labels: &HashMap<String, String>) -> String {
         let mut sorted_labels: Vec<_> = labels.iter().collect();
         sorted_labels.sort_by_key(|(k, _)| *k);
@@ -116,12 +73,8 @@ impl MetricsStore {
             .map(|(k, v)| format!("{}={}", k, v))
             .collect::<Vec<_>>()
             .join(",")
-    }
-
     fn labels_match(&self, actual: &HashMap<String, String>, required: &HashMap<String, String>) -> bool {
         required.iter().all(|(k, v)| actual.get(k) == Some(v))
-    }
-
     fn cleanup_old_metrics(&mut self) {
         let cutoff = SystemTime::now() - self.retention_period;
         
@@ -133,8 +86,6 @@ impl MetricsStore {
                     break;
                 }
             }
-        }
-        
         // Remove empty series
         self.metrics.retain(|_, series| !series.is_empty());
     }
@@ -142,60 +93,17 @@ impl MetricsStore {
 
 /// Connection health checker for monitoring endpoint availability
 pub struct ConnectionHealthChecker {
-    targets: Vec<HealthCheckTarget>,
-    check_interval: Duration,
-    timeout: Duration,
-    health_status: Arc<RwLock<HashMap<String, HealthStatus>>>,
-    history: Arc<RwLock<HashMap<String, VecDeque<HealthCheckResult>>>>,
-    max_history_size: usize,
-}
-
 #[derive(Debug, Clone)]
 pub struct HealthCheckTarget {
-    pub name: String,
-    pub address: SocketAddr,
-    pub check_type: HealthCheckType,
-    pub expected_response: Option<String>,
-    pub critical: bool,
-}
-
 #[derive(Debug, Clone)]
 pub enum HealthCheckType {
-    Tcp,
-    Http,
-    Https,
-    Ping,
-    Custom(String),
-}
-
 #[derive(Debug, Clone)]
 pub struct HealthStatus {
-    pub is_healthy: bool,
-    pub last_check: SystemTime,
-    pub last_success: Option<SystemTime>,
-    pub consecutive_failures: u32,
-    pub response_time: Option<Duration>,
-    pub error_message: Option<String>,
-}
-
 #[derive(Debug, Clone)]
 pub struct HealthCheckResult {
-    pub timestamp: SystemTime,
-    pub target: String,
-    pub success: bool,
-    pub response_time: Option<Duration>,
-    pub error: Option<String>,
-}
-
 impl ConnectionHealthChecker {
     pub fn new(targets: Vec<HealthCheckTarget>, check_interval: Duration, timeout: Duration) -> Self {
         Self {
-            targets,
-            check_interval,
-            timeout,
-            health_status: Arc::new(RwLock::new(HashMap::new())),
-            history: Arc::new(RwLock::new(HashMap::new())),
-            max_history_size: 100,
         }
     }
 
@@ -219,27 +127,14 @@ impl ConnectionHealthChecker {
         });
 
         Ok(())
-    }
-
     fn perform_health_check(target: &HealthCheckTarget, timeout: Duration) -> HealthCheckResult {
         let start_time = Instant::now();
         
         let (success, error) = match target.check_type {
-            HealthCheckType::Tcp => Self::check_tcp(&target.address, timeout),
-            HealthCheckType::Http => Self::check_http(&target.address, timeout),
-            HealthCheckType::Https => Self::check_https(&target.address, timeout),
-            HealthCheckType::Ping => Self::check_ping(&target.address.ip(), timeout),
-            HealthCheckType::Custom(_) => (false, Some("Custom checks not implemented".to_string())),
-        };
 
         let response_time = if success { Some(start_time.elapsed()) } else { None };
 
         HealthCheckResult {
-            timestamp: SystemTime::now(),
-            target: target.name.clone(),
-            success,
-            response_time,
-            error,
         }
     }
 
@@ -265,23 +160,15 @@ impl ConnectionHealthChecker {
         let tcp_result = Self::check_tcp(addr, Duration::from_secs(5));
         if !tcp_result.0 {
             return tcp_result;
-        }
-        
         // Additional HTTP-specific check simulation
         (true, None)
-    }
-
     fn check_https(addr: &SocketAddr, timeout: Duration) -> (bool, Option<String>) {
         // HTTPS is HTTP + TLS validation
         let http_result = Self::check_http(addr, timeout);
         if !http_result.0 {
             return http_result;
-        }
-        
         // Additional TLS validation simulation
         (true, None)
-    }
-
     fn check_ping(ip: &IpAddr, _timeout: Duration) -> (bool, Option<String>) {
         // Simulate ping check
         use std::collections::hash_map::DefaultHasher;
@@ -300,11 +187,6 @@ impl ConnectionHealthChecker {
     }
 
     fn update_health_status(
-        status_map: &Arc<RwLock<HashMap<String, HealthStatus>>>,
-        history_map: &Arc<RwLock<HashMap<String, VecDeque<HealthCheckResult>>>>,
-        target: &HealthCheckTarget,
-        result: HealthCheckResult,
-        max_history: usize,
     ) {
         // Update history
         {
@@ -321,12 +203,6 @@ impl ConnectionHealthChecker {
         {
             let mut status = status_map.write().unwrap();
             let current_status = status.entry(target.name.clone()).or_insert_with(|| HealthStatus {
-                is_healthy: true,
-                last_check: SystemTime::now(),
-                last_success: None,
-                consecutive_failures: 0,
-                response_time: None,
-                error_message: None,
             });
 
             current_status.last_check = result.timestamp;
@@ -353,14 +229,10 @@ impl ConnectionHealthChecker {
     pub fn get_health_status(&self, target_name: &str) -> Option<HealthStatus> {
         let status = self.health_status.read().unwrap();
         status.get(target_name).cloned()
-    }
-
     /// Get health check history for a target
     pub fn get_health_history(&self, target_name: &str) -> Vec<HealthCheckResult> {
         let history = self.history.read().unwrap();
         history.get(target_name).map(|h| h.iter().cloned().collect()).unwrap_or_default()
-    }
-
     /// Get overall health summary
     pub fn get_health_summary(&self) -> HealthSummary {
         let status = self.health_status.read().unwrap();
@@ -373,44 +245,14 @@ impl ConnectionHealthChecker {
             .count();
 
         HealthSummary {
-            total_targets,
-            healthy_targets,
-            unhealthy_targets: total_targets - healthy_targets,
-            critical_unhealthy,
-            overall_healthy: critical_unhealthy == 0,
         }
     }
-}
-
 #[derive(Debug, Clone)]
 pub struct HealthSummary {
-    pub total_targets: usize,
-    pub healthy_targets: usize,
-    pub unhealthy_targets: usize,
-    pub critical_unhealthy: usize,
-    pub overall_healthy: bool,
-}
-
 /// Network statistics collector for interface-level metrics
 pub struct NetworkStatsCollector {
-    interfaces: Vec<String>,
-    last_stats: HashMap<String, InterfaceStats>,
-}
-
 #[derive(Debug, Clone)]
 pub struct InterfaceStats {
-    pub interface_name: String,
-    pub bytes_sent: u64,
-    pub bytes_received: u64,
-    pub packets_sent: u64,
-    pub packets_received: u64,
-    pub errors_in: u64,
-    pub errors_out: u64,
-    pub drops_in: u64,
-    pub drops_out: u64,
-    pub timestamp: SystemTime,
-}
-
 impl MetricCollector for NetworkStatsCollector {
     fn collect(&self) -> NetResult<Vec<Metric>> {
         let mut metrics = Vec::new();
@@ -419,48 +261,30 @@ impl MetricCollector for NetworkStatsCollector {
             let stats = self.get_interface_stats(interface)?;
             
             metrics.push(Metric {
-                name: "network_bytes_total".to_string(),
-                value: MetricValue::Counter(stats.bytes_sent + stats.bytes_received),
-                timestamp: stats.timestamp,
                 labels: {
                     let mut labels = HashMap::new();
                     labels.insert("interface".to_string(), interface.clone());
                     labels.insert("direction".to_string(), "total".to_string());
                     labels
-                },
             });
 
             metrics.push(Metric {
-                name: "network_packets_total".to_string(),
-                value: MetricValue::Counter(stats.packets_sent + stats.packets_received),
-                timestamp: stats.timestamp,
                 labels: {
                     let mut labels = HashMap::new();
                     labels.insert("interface".to_string(), interface.clone());
                     labels.insert("direction".to_string(), "total".to_string());
                     labels
-                },
             });
 
             metrics.push(Metric {
-                name: "network_errors_total".to_string(),
-                value: MetricValue::Counter(stats.errors_in + stats.errors_out),
-                timestamp: stats.timestamp,
                 labels: {
                     let mut labels = HashMap::new();
                     labels.insert("interface".to_string(), interface.clone());
                     labels
-                },
             });
-        }
-
         Ok(metrics)
-    }
-
     fn name(&self) -> &str {
         "network_stats"
-    }
-
     fn collection_interval(&self) -> Duration {
         Duration::from_secs(60)
     }
@@ -469,8 +293,6 @@ impl MetricCollector for NetworkStatsCollector {
 impl NetworkStatsCollector {
     pub fn new(interfaces: Vec<String>) -> Self {
         Self {
-            interfaces,
-            last_stats: HashMap::new(),
         }
     }
 
@@ -488,16 +310,6 @@ impl NetworkStatsCollector {
         let hash = hasher.finish();
 
         Ok(InterfaceStats {
-            interface_name: interface.to_string(),
-            bytes_sent: (hash % 1000000000) + 1000000,
-            bytes_received: ((hash >> 10) % 1000000000) + 2000000,
-            packets_sent: (hash % 1000000) + 10000,
-            packets_received: ((hash >> 20) % 1000000) + 20000,
-            errors_in: hash % 100,
-            errors_out: (hash >> 30) % 100,
-            drops_in: hash % 50,
-            drops_out: (hash >> 40) % 50,
-            timestamp: SystemTime::now(),
         })
     }
 }
@@ -505,28 +317,10 @@ impl NetworkStatsCollector {
 /// Network event types and monitoring
 #[derive(Debug, Clone)]
 pub enum NetworkEvent {
-    ConnectionEstablished { local: SocketAddr, remote: SocketAddr },
-    ConnectionClosed { local: SocketAddr, remote: SocketAddr },
-    HealthCheckFailed { target: String, error: String },
-    HealthCheckRecovered { target: String },
-    HighLatency { target: String, latency: Duration },
-    PacketLoss { interface: String, percentage: f64 },
-    BandwidthThreshold { interface: String, usage: f64, threshold: f64 },
-}
-
 /// Simple event handler that logs events
 pub struct LoggingEventHandler {
-    log_level: LogLevel,
-}
-
 #[derive(Debug, Clone)]
 pub enum LogLevel {
-    Debug,
-    Info,
-    Warn,
-    CursedError,
-}
-
 impl EventHandler for LoggingEventHandler {
     fn handle_event(&self, event: NetworkEvent) {
         match event {
@@ -549,7 +343,6 @@ impl EventHandler for LoggingEventHandler {
                 println!("[WARN] Packet loss on {}: {:.2}%", interface, percentage);
             }
             NetworkEvent::BandwidthThreshold { interface, usage, threshold } => {
-                println!("[WARN] Bandwidth threshold exceeded on {}: {:.2}% (threshold: {:.2}%)", 
                     interface, usage, threshold);
             }
         }
@@ -560,29 +353,18 @@ impl LoggingEventHandler {
     pub fn new(log_level: LogLevel) -> Self {
         Self { log_level }
     }
-}
-
 impl NetworkMonitor {
     pub fn new(monitoring_interval: Duration) -> Self {
         Self {
-            collectors: Vec::new(),
-            metrics_store: Arc::new(RwLock::new(MetricsStore::new(1000, Duration::from_hours(24)))),
-            monitoring_interval,
-            is_running: Arc::new(Mutex::new(false)),
-            event_handlers: Vec::new(),
         }
     }
 
     /// Add a metric collector
     pub fn add_collector(&mut self, collector: Box<dyn MetricCollector>) {
         self.collectors.push(collector);
-    }
-
     /// Add an event handler
     pub fn add_event_handler(&mut self, handler: Box<dyn EventHandler>) {
         self.event_handlers.push(handler);
-    }
-
     /// Start monitoring
     pub fn start(&self) -> NetResult<()> {
         let mut running = self.is_running.lock().unwrap();
@@ -606,39 +388,24 @@ impl NetworkMonitor {
                 for collector_name in &collectors {
                     // Simulate collecting metrics
                     let metric = Metric {
-                        name: format!("{}_metric", collector_name),
-                        value: MetricValue::Gauge(42.0),
-                        timestamp: now,
-                        labels: HashMap::new(),
-                    };
                     store_guard.store_metric(metric);
-                }
-                
                 drop(store_guard);
                 thread::sleep(interval);
             }
         });
 
         Ok(())
-    }
-
     /// Stop monitoring
     pub fn stop(&self) {
         let mut running = self.is_running.lock().unwrap();
         *running = false;
-    }
-
     /// Get metrics from the store
     pub fn get_metrics(&self, name: &str, labels: Option<&HashMap<String, String>>) -> Vec<Metric> {
         let store = self.metrics_store.read().unwrap();
         store.get_metrics(name, labels).into_iter().cloned().collect()
-    }
-
     /// Emit a network event
     pub fn emit_event(&self, event: NetworkEvent) {
         for handler in &self.event_handlers {
             handler.handle_event(event.clone());
         }
     }
-}
-

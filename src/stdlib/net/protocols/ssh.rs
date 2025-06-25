@@ -19,66 +19,32 @@ use std::time::Duration;
 #[derive(Debug, Clone)]
 pub enum SshKey {
     /// RSA private key in OpenSSH or PEM format
-    Rsa(Vec<u8>),
     /// Ed25519 private key
-    Ed25519(Vec<u8>),
     /// ECDSA private key
-    Ecdsa(Vec<u8>),
-}
-
 /// SSH command execution result with comprehensive output capture
 #[derive(Debug, Clone)]
 pub struct SshCommand {
     /// The command that was executed
-    pub command: String,
     /// Standard output from the command
-    pub stdout: String,
     /// Standard error from the command
-    pub stderr: String,
     /// Exit code of the command (0 typically means success)
-    pub exit_code: i32,
-}
-
 /// SSH client configuration with authentication and connection options
 #[derive(Debug, Clone)]
 pub struct SshConfig {
     /// Remote host address (hostname or IP)
-    pub host: String,
     /// SSH port (default: 22)
-    pub port: u16,
     /// Username for authentication
-    pub username: String,
     /// Password for password-based authentication
-    pub password: Option<String>,
     /// Private key for key-based authentication
-    pub private_key: Option<SshKey>,
     /// Connection timeout in seconds
-    pub connect_timeout: Option<Duration>,
     /// Command execution timeout in seconds
-    pub command_timeout: Option<Duration>,
-}
-
 impl Default for SshConfig {
     fn default() -> Self {
         Self {
-            host: "localhost".to_string(),
-            port: 22,
-            username: "user".to_string(),
-            password: None,
-            private_key: None,
-            connect_timeout: Some(Duration::from_secs(30)),
-            command_timeout: Some(Duration::from_secs(300)),
         }
     }
-}
-
 /// SSH client with connection management and operation support
 pub struct SshClient {
-    config: SshConfig,
-    session: Option<Session>,
-    tcp_stream: Option<TcpStream>,
-}
-
 impl std::fmt::Debug for SshClient {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("SshClient")
@@ -92,9 +58,6 @@ impl SshClient {
     /// Create a new SSH client with the given configuration
     pub fn new(config: SshConfig) -> Self {
         Self {
-            config,
-            session: None,
-            tcp_stream: None,
         }
     }
 
@@ -123,7 +86,6 @@ impl SshClient {
         } else {
             TcpStream::connect(&addr)
                 .map_err(|e| ProtocolError::Connection(format!("TCP connection failed: {}", e)))?
-        };
 
         // Set TCP stream options for better performance
         tcp.set_nodelay(true)
@@ -136,8 +98,6 @@ impl SshClient {
         // Set timeout if configured
         if let Some(timeout) = self.config.command_timeout {
             session.set_timeout(timeout.as_millis() as u32);
-        }
-
         // Perform SSH handshake
         session.set_tcp_stream(tcp);
         session.handshake()
@@ -150,8 +110,6 @@ impl SshClient {
         self.session = Some(session);
         
         Ok(())
-    }
-
     /// Authenticate with the SSH server
     fn authenticate(&self, session: &mut Session) -> ProtocolResult<()> {
         let username = &self.config.username;
@@ -159,14 +117,11 @@ impl SshClient {
         // Try public key authentication first if available
         if let Some(ref key) = self.config.private_key {
             match self.authenticate_with_key(session, username, key) {
-                Ok(()) => return Ok(()),
                 Err(e) => {
                     // Log key auth failure but continue to password auth if available
                     eprintln!("Key authentication failed: {}", e);
                 }
             }
-        }
-
         // Try password authentication if available
         if let Some(ref password) = self.config.password {
             session.userauth_password(username, password)
@@ -174,17 +129,11 @@ impl SshClient {
             
             if !session.authenticated() {
                 return Err(ProtocolError::Authentication("Authentication failed".to_string()));
-            }
-            
             return Ok(());
-        }
-
         // No authentication method succeeded
         Err(ProtocolError::Authentication(
             "No valid authentication method available".to_string()
         ))
-    }
-
     /// Authenticate using private key
     fn authenticate_with_key(&self, session: &mut Session, username: &str, key: &SshKey) -> ProtocolResult<()> {
         match key {
@@ -199,13 +148,9 @@ impl SshClient {
                 
                 if !session.authenticated() {
                     return Err(ProtocolError::Authentication("Key authentication failed".to_string()));
-                }
-                
                 Ok(())
             }
         }
-    }
-
     /// Execute a command on the remote server
     /// 
     /// # Arguments
@@ -244,13 +189,7 @@ impl SshClient {
             .map_err(|e| ProtocolError::Protocol(format!("Failed to get exit status: {}", e)))?;
 
         Ok(SshCommand {
-            command: command.to_string(),
-            stdout,
-            stderr,
-            exit_code,
         })
-    }
-
     /// Upload a local file to the remote server via SCP
     /// 
     /// # Arguments
@@ -294,8 +233,6 @@ impl SshClient {
             .map_err(|e| ProtocolError::Protocol(format!("Failed to wait for close: {}", e)))?;
 
         Ok(())
-    }
-
     /// Download a file from the remote server via SCP
     /// 
     /// # Arguments
@@ -336,13 +273,9 @@ impl SshClient {
             .map_err(|e| ProtocolError::Protocol(format!("Failed to wait for close: {}", e)))?;
 
         Ok(())
-    }
-
     /// Check if the client is currently connected
     pub fn is_connected(&self) -> bool {
         self.session.is_some()
-    }
-
     /// Disconnect from the remote server
     pub fn disconnect(&mut self) -> ProtocolResult<()> {
         if let Some(mut session) = self.session.take() {
@@ -351,8 +284,6 @@ impl SshClient {
         }
         self.tcp_stream = None;
         Ok(())
-    }
-
     /// Get connection information
     pub fn connection_info(&self) -> Option<String> {
         if self.is_connected() {
@@ -361,8 +292,6 @@ impl SshClient {
             None
         }
     }
-}
-
 impl Drop for SshClient {
     fn drop(&mut self) {
         let _ = self.disconnect();

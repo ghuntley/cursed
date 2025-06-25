@@ -28,7 +28,6 @@ fn main() -> Result<()> {
                 .help("Input CURSED files or directories")
                 .value_name("FILES")
                 .num_args(1..)
-                .required(true),
         )
         .arg(
             Arg::new("jobs")
@@ -36,51 +35,43 @@ fn main() -> Result<()> {
                 .long("jobs")
                 .value_name("N")
                 .help("Number of parallel compilation threads")
-                .default_value("auto"),
         )
         .arg(
             Arg::new("cache-dir")
                 .long("cache-dir")
                 .value_name("DIR")
                 .help("Cache directory for incremental compilation")
-                .default_value(".cursed_cache"),
         )
         .arg(
             Arg::new("no-cache")
                 .long("no-cache")
                 .help("Disable incremental compilation cache")
-                .action(clap::ArgAction::SetTrue),
         )
         .arg(
             Arg::new("no-parallel")
                 .long("no-parallel")
                 .help("Disable parallel compilation")
-                .action(clap::ArgAction::SetTrue),
         )
         .arg(
             Arg::new("clear-cache")
                 .long("clear-cache")
                 .help("Clear compilation cache before building")
-                .action(clap::ArgAction::SetTrue),
         )
         .arg(
             Arg::new("report")
                 .long("report")
                 .value_name("FILE")
-                .help("Generate performance report to file"),
         )
         .arg(
             Arg::new("benchmark")
                 .long("benchmark")
                 .help("Run compilation multiple times for benchmarking")
-                .action(clap::ArgAction::SetTrue),
         )
         .arg(
             Arg::new("verbose")
                 .short('v')
                 .long("verbose")
                 .help("Enable verbose output")
-                .action(clap::ArgAction::SetTrue),
         )
         .get_matches();
 
@@ -91,9 +82,6 @@ fn main() -> Result<()> {
         .collect();
 
     let jobs = match matches.get_one::<String>("jobs").unwrap().as_str() {
-        "auto" => num_cpus::get(),
-        n => n.parse().unwrap_or(1),
-    };
 
     let cache_dir = PathBuf::from(matches.get_one::<String>("cache-dir").unwrap());
     let no_cache = matches.get_flag("no-cache");
@@ -111,15 +99,9 @@ fn main() -> Result<()> {
         println!("Incremental compilation: {}", !no_cache);
         println!("Parallel compilation: {}", !no_parallel);
         println!();
-    }
-
     // Create optimization configuration
     let config = OptimizationConfig {
-        enable_parallel_compilation: !no_parallel,
-        enable_incremental_compilation: !no_cache,
-        max_parallel_threads: jobs,
         ..Default::default()
-    };
 
     // Create compilation speed optimizer
     let optimizer = CompilationSpeedOptimizer::new(&config)?;
@@ -128,15 +110,11 @@ fn main() -> Result<()> {
     if clear_cache {
         info!("Clearing compilation cache...");
         optimizer.clear_caches()?;
-    }
-
     // Discover CURSED files
     let cursed_files = discover_cursed_files(&input_paths)?;
     
     if verbose {
         println!("Found {} CURSED files to compile", cursed_files.len());
-    }
-
     // Create compilation units
     let units = create_compilation_units(&cursed_files)?;
 
@@ -144,8 +122,6 @@ fn main() -> Result<()> {
         run_benchmark(&optimizer, units, verbose)?;
     } else {
         run_single_compilation(&optimizer, units, verbose)?;
-    }
-
     // Generate performance report
     let report = optimizer.generate_performance_report();
     
@@ -154,8 +130,6 @@ fn main() -> Result<()> {
         println!("Performance report written to {}", report_path);
     } else if verbose {
         println!("\n{}", report);
-    }
-
     // Display summary statistics
     let stats = optimizer.get_statistics();
     println!("\nCompilation Summary:");
@@ -169,11 +143,7 @@ fn main() -> Result<()> {
     if stats.total_units > 0 && stats.total_compilation_time.as_millis() > 0 {
         let units_per_second = (stats.total_units as f64 * 1000.0) / stats.total_compilation_time.as_millis() as f64;
         println!("  Compilation speed: {:.1} units/second", units_per_second);
-    }
-
     Ok(())
-}
-
 fn discover_cursed_files(paths: &[PathBuf]) -> Result<Vec<PathBuf>> {
     let mut files = Vec::new();
     
@@ -195,8 +165,6 @@ fn discover_cursed_files(paths: &[PathBuf]) -> Result<Vec<PathBuf>> {
     }
     
     Ok(files)
-}
-
 fn create_compilation_units(files: &[PathBuf]) -> Result<Vec<CompilationUnit>> {
     let mut units = Vec::new();
     
@@ -215,24 +183,10 @@ fn create_compilation_units(files: &[PathBuf]) -> Result<Vec<CompilationUnit>> {
         let last_modified = metadata.modified().unwrap_or(std::time::SystemTime::now());
         
         let mut unit = CompilationUnit {
-            id: format!("{}_{}", module_name, index),
-            source_path: file_path.clone(),
-            module_name,
-            source_code,
-            dependencies,
-            last_modified,
-            status: CompilationStatus::Pending,
-            priority: 1,
-            content_hash: String::new(),
-        };
         
         unit.content_hash = AstCache::calculate_content_hash(&unit);
         units.push(unit);
-    }
-    
     Ok(units)
-}
-
 fn extract_dependencies(source_code: &str) -> Vec<String> {
     let mut dependencies = Vec::new();
     
@@ -257,12 +211,7 @@ fn extract_dependencies(source_code: &str) -> Vec<String> {
     }
     
     dependencies
-}
-
 fn run_single_compilation(
-    optimizer: &CompilationSpeedOptimizer,
-    units: Vec<CompilationUnit>,
-    verbose: bool,
 ) -> Result<()> {
     info!("Starting compilation of {} units", units.len());
     
@@ -284,15 +233,8 @@ fn run_single_compilation(
                 error!("Failed to compile {}: {}", unit_id, error);
             }
         }
-    }
-    
     Ok(())
-}
-
 fn run_benchmark(
-    optimizer: &CompilationSpeedOptimizer,
-    units: Vec<CompilationUnit>,
-    verbose: bool,
 ) -> Result<()> {
     const BENCHMARK_RUNS: usize = 3;
     
@@ -303,13 +245,9 @@ fn run_benchmark(
     for run in 1..=BENCHMARK_RUNS {
         if verbose {
             println!("Benchmark run {}/{}", run, BENCHMARK_RUNS);
-        }
-        
         // Clear cache for consistent benchmark
         if run > 1 {
             optimizer.clear_caches()?;
-        }
-        
         let start_time = Instant::now();
         let results = optimizer.compile_incremental(units.clone())?;
         let run_time = start_time.elapsed();
@@ -337,7 +275,5 @@ fn run_benchmark(
     if units.len() > 0 && avg_time.as_millis() > 0 {
         let units_per_second = (units.len() as f64 * 1000.0) / avg_time.as_millis() as f64;
         println!("  Average speed: {:.1} units/second", units_per_second);
-    }
-    
     Ok(())
 }

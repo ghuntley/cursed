@@ -15,8 +15,6 @@ pub struct ScryptConfig {
     pub p: u32,          // Parallelization parameter
     pub salt_len: usize, // Salt length in bytes
     pub output_len: usize, // Output length in bytes
-}
-
 impl ScryptConfig {
     /// slay Create scrypt config with secure defaults
     pub fn new() -> Self {
@@ -33,10 +31,6 @@ impl ScryptConfig {
     pub fn interactive() -> Self {
         Self {
             n: 16384,        // 2^14
-            r: 8,
-            p: 1,
-            salt_len: 16,
-            output_len: 32,
         }
     }
     
@@ -44,10 +38,6 @@ impl ScryptConfig {
     pub fn sensitive() -> Self {
         Self {
             n: 1048576,      // 2^20, ~1GB memory
-            r: 8,
-            p: 1,
-            salt_len: 32,
-            output_len: 64,
         }
     }
     
@@ -55,27 +45,15 @@ impl ScryptConfig {
     pub fn validate(&self) -> crate::error::Result<()> {
         if self.n == 0 || (self.n & (self.n - 1)) != 0 {
             return Err(ScryptError::InvalidConfig("N must be a power of 2".to_string()));
-        }
-        
         if self.r == 0 {
             return Err(ScryptError::InvalidConfig("r must be greater than 0".to_string()));
-        }
-        
         if self.p == 0 {
             return Err(ScryptError::InvalidConfig("p must be greater than 0".to_string()));
-        }
-        
         if self.salt_len < 8 {
             return Err(ScryptError::InvalidConfig("Salt length must be at least 8 bytes".to_string()));
-        }
-        
         if self.output_len == 0 || self.output_len > 1024 {
             return Err(ScryptError::InvalidConfig("Output length must be between 1 and 1024 bytes".to_string()));
-        }
-        
         Ok(())
-    }
-    
     /// facts Calculate memory usage in bytes
     pub fn memory_usage(&self) -> usize {
         128 * self.r as usize * self.n as usize
@@ -91,16 +69,6 @@ impl Default for ScryptConfig {
 /// fr fr scrypt error types
 #[derive(Debug, Clone, PartialEq)]
 pub enum ScryptError {
-    InvalidConfig(String),
-    InvalidInput(String),
-    InvalidPassword(String),
-    InvalidSalt(String),
-    InvalidHash(String),
-    InsufficientMemory,
-    CryptographicError(String),
-    InternalError(String),
-}
-
 // impl std::fmt::Display for ScryptError {
 //     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
 //         match self {
@@ -120,27 +88,18 @@ pub enum ScryptError {
 // 
 /// fr fr scrypt engine (placeholder implementation)
 pub struct ScryptEngine {
-    config: ScryptConfig,
-}
-
 impl ScryptEngine {
     /// slay Create new scrypt engine
     pub fn new(config: ScryptConfig) -> crate::error::Result<()> {
         config.validate()?;
         Ok(Self { config })
-    }
-    
     /// bestie Derive key using scrypt (REAL IMPLEMENTATION)
     pub fn derive_key(&self, password: &[u8], salt: &[u8]) -> crate::error::Result<()> {
         // Validate inputs
         if password.is_empty() {
             return Err(ScryptError::InvalidPassword("Password cannot be empty".to_string()));
-        }
-        
         if salt.len() < 8 {
             return Err(ScryptError::InvalidSalt("Salt must be at least 8 bytes".to_string()));
-        }
-
         // Real scrypt implementation
         let mut key = vec![0u8; self.config.output_len];
         
@@ -164,8 +123,6 @@ impl ScryptEngine {
         key.copy_from_slice(&final_key[..self.config.output_len]);
         
         Ok(key)
-    }
-    
     /// vibes Hash password with scrypt (REAL IMPLEMENTATION)
     pub fn hash_password(&self, password: &[u8]) -> crate::error::Result<()> {
         use rand::RngCore;
@@ -182,23 +139,15 @@ impl ScryptEngine {
         let key_b64 = base64::engine::general_purpose::STANDARD_NO_PAD.encode(&key);
         
         Ok(format!(
-            "$scrypt$ln={},r={},p={}${}${}",
             (self.config.n as f64).log2() as u32, // log2(N)
-            self.config.r,
-            self.config.p,
-            salt_b64,
             key_b64
         ))
-    }
-    
     /// periodt Verify password against scrypt hash (REAL IMPLEMENTATION)
     pub fn verify_password(&self, password: &[u8], hash: &str) -> crate::error::Result<()> {
         // Parse scrypt hash format
         let parts: Vec<&str> = hash.split('$').collect();
         if parts.len() != 5 || parts[1] != "scrypt" {
             return Err(ScryptError::InvalidHash("Invalid scrypt hash format".to_string()));
-        }
-        
         // Parse parameters
         let params_str = parts[2];
         let salt_b64 = parts[3];
@@ -213,16 +162,9 @@ impl ScryptEngine {
             let kv: Vec<&str> = param.split('=').collect();
             if kv.len() != 2 {
                 continue;
-            }
-            
             match kv[0] {
-                "ln" => log_n = kv[1].parse().map_err(|_| ScryptError::InvalidHash("Invalid log N parameter".to_string()))?,
-                "r" => r = kv[1].parse().map_err(|_| ScryptError::InvalidHash("Invalid r parameter".to_string()))?,
-                "p" => p = kv[1].parse().map_err(|_| ScryptError::InvalidHash("Invalid p parameter".to_string()))?,
                 _ => {}
             }
-        }
-        
         let n = 1u32 << log_n; // 2^log_n
         
         // Decode salt and expected key
@@ -233,12 +175,6 @@ impl ScryptEngine {
         
         // Create temporary config with extracted parameters
         let temp_config = ScryptConfig {
-            n,
-            r,
-            p,
-            salt_len: salt.len(),
-            output_len: expected_key.len(),
-        };
         
         let temp_scrypt = ScryptEngine::new(temp_config)?;
         
@@ -247,8 +183,6 @@ impl ScryptEngine {
         
         // Constant-time comparison
         Ok(self.constant_time_eq(&derived_key, &expected_key))
-    }
-
     // Helper methods for real scrypt implementation
     
     fn pbkdf2_sha256(&self, password: &[u8], salt: &[u8], iterations: u32, output_length: usize) -> crate::error::Result<()> {
@@ -287,19 +221,13 @@ impl ScryptEngine {
             }
             
             output.extend_from_slice(&result);
-        }
-        
         output.truncate(output_length);
         Ok(output)
-    }
-    
     fn scrypt_romix(&self, block: &mut [u8]) -> crate::error::Result<()> {
         use sha2::{Sha256, Digest};
         
         if block.len() != 128 {
             return Err(ScryptError::InternalError("Block must be 128 bytes".to_string()));
-        }
-        
         // Allocate V array
         let mut v = vec![vec![0u8; 128]; self.config.n as usize];
         
@@ -308,36 +236,24 @@ impl ScryptEngine {
         
         for i in 1..self.config.n as usize {
             self.scrypt_blockmix(&v[i-1], &mut v[i])?;
-        }
-        
         // Phase 2: Process with random access
         for _ in 0..self.config.n {
             // Extract j from last 64 bytes
             let j_bytes = &block[64..72];
             let j = u64::from_le_bytes([
-                j_bytes[0], j_bytes[1], j_bytes[2], j_bytes[3],
-                j_bytes[4], j_bytes[5], j_bytes[6], j_bytes[7],
             ]) % (self.config.n as u64);
             
             // XOR with V[j]
             for (b, &vj) in block.iter_mut().zip(v[j as usize].iter()) {
                 *b ^= vj;
-            }
-            
             // Apply BlockMix
             let mut temp = vec![0u8; 128];
             self.scrypt_blockmix(block, &mut temp)?;
             block.copy_from_slice(&temp);
-        }
-        
         Ok(())
-    }
-    
     fn scrypt_blockmix(&self, input: &[u8], output: &mut [u8]) -> crate::error::Result<()> {
         if input.len() != 128 || output.len() != 128 {
             return Err(ScryptError::InternalError("Blocks must be 128 bytes".to_string()));
-        }
-        
         // Simplified BlockMix using Salsa20-like operations
         let mut x = [0u8; 64];
         x.copy_from_slice(&input[64..128]); // Last 64 bytes
@@ -352,20 +268,14 @@ impl ScryptEngine {
             // XOR with input block
             for (xi, &bi) in x.iter_mut().zip(input[block_start..block_end].iter()) {
                 *xi ^= bi;
-            }
-            
             // Apply hash function (simplified Salsa20)
             self.salsa20_hash(&mut x)?;
             
             // Store in output
             let output_pos = if i % 2 == 0 { i * 32 } else { 64 + (i-1) * 32 };
             y[output_pos..output_pos + 64].copy_from_slice(&x);
-        }
-        
         output.copy_from_slice(&y);
         Ok(())
-    }
-    
     fn salsa20_hash(&self, block: &mut [u8; 64]) -> crate::error::Result<()> {
         use sha2::{Sha256, Digest};
         
@@ -395,24 +305,14 @@ impl ScryptEngine {
                     block[i + 32] ^= h;
                 }
             }
-        }
-        
         Ok(())
-    }
-    
     fn constant_time_eq(&self, a: &[u8], b: &[u8]) -> bool {
         if a.len() != b.len() {
             return false;
-        }
-        
         let mut result = 0u8;
         for (x, y) in a.iter().zip(b.iter()) {
             result |= x ^ y;
-        }
-        
         result == 0
-    }
-    
     /// facts Generate secure random salt
     pub fn generate_salt(&self) -> crate::error::Result<()> {
         use rand::RngCore;
@@ -440,10 +340,6 @@ impl ScryptUtils {
         
         ScryptConfig {
             n: n.max(1024), // Minimum security
-            r: r as u32,
-            p: 1,
-            salt_len: 16,
-            output_len: 32,
         }
     }
     
@@ -460,24 +356,15 @@ impl ScryptUtils {
 pub fn scrypt_derive_key(args: Vec<Value>) -> crate::error::Result<()> {
     if args.len() < 2 {
         return Err(CursedError::Runtime("scrypt_derive_key requires at least password and salt arguments".to_string()));
-    }
-    
     let password = match &args[0] {
-        Value::String(s) => s.as_bytes(),
-        _ => return Err(CursedError::Runtime("Password must be a string".to_string())),
-    };
     
     let salt = match &args[1] {
-        Value::String(s) => s.as_bytes(),
-        _ => return Err(CursedError::Runtime("Salt must be a string".to_string())),
-    };
     
     let config = if args.len() > 2 {
         // TODO: Parse config from args[2] 
         ScryptConfig::new()
     } else {
         ScryptConfig::new()
-    };
     
     let engine = ScryptEngine::new(config)
         .map_err(|e| CursedError::Runtime(format!("scrypt engine creation failed: {}", e)))?;
@@ -485,25 +372,17 @@ pub fn scrypt_derive_key(args: Vec<Value>) -> crate::error::Result<()> {
         .map_err(|e| CursedError::Runtime(format!("scrypt key derivation failed: {}", e)))?;
     
     Ok(Value::String(hex::encode(key)))
-}
-
 /// slay Hash password with scrypt
 pub fn scrypt_hash_password(args: Vec<Value>) -> crate::error::Result<()> {
     if args.is_empty() {
         return Err(CursedError::Runtime("scrypt_hash_password requires password argument".to_string()));
-    }
-    
     let password = match &args[0] {
-        Value::String(s) => s.as_bytes(),
-        _ => return Err(CursedError::Runtime("Password must be a string".to_string())),
-    };
     
     let config = if args.len() > 1 {
         // TODO: Parse config from args[1]
         ScryptConfig::new()
     } else {
         ScryptConfig::new()
-    };
     
     let engine = ScryptEngine::new(config)
         .map_err(|e| CursedError::Runtime(format!("scrypt engine creation failed: {}", e)))?;
@@ -511,23 +390,13 @@ pub fn scrypt_hash_password(args: Vec<Value>) -> crate::error::Result<()> {
         .map_err(|e| CursedError::Runtime(format!("scrypt password hashing failed: {}", e)))?;
     
     Ok(Value::String(hash))
-}
-
 /// slay Verify password with scrypt
 pub fn scrypt_verify_password(args: Vec<Value>) -> crate::error::Result<()> {
     if args.len() < 2 {
         return Err(CursedError::Runtime("scrypt_verify_password requires password and hash arguments".to_string()));
-    }
-    
     let password = match &args[0] {
-        Value::String(s) => s.as_bytes(),
-        _ => return Err(CursedError::Runtime("Password must be a string".to_string())),
-    };
     
     let hash = match &args[1] {
-        Value::String(s) => s,
-        _ => return Err(CursedError::Runtime("Hash must be a string".to_string())),
-    };
     
     // Extract config from hash or use default
     let config = ScryptConfig::new();
@@ -538,44 +407,27 @@ pub fn scrypt_verify_password(args: Vec<Value>) -> crate::error::Result<()> {
         .map_err(|e| CursedError::Runtime(format!("scrypt password verification failed: {}", e)))?;
     
     Ok(Value::Bool(is_valid))
-}
-
 /// slay Create scrypt configuration
 pub fn create_scrypt_config(args: Vec<Value>) -> crate::error::Result<()> {
     let n = if args.is_empty() {
         16384
     } else {
         match &args[0] {
-            Value::Number(num) => *num as u32,
-            _ => 16384,
         }
-    };
     
     let r = if args.len() > 1 {
         match &args[1] {
-            Value::Number(num) => *num as u32,
-            _ => 8,
         }
     } else {
         8
-    };
     
     let p = if args.len() > 2 {
         match &args[2] {
-            Value::Number(num) => *num as u32,
-            _ => 1,
         }
     } else {
         1
-    };
     
     let config = ScryptConfig {
-        n,
-        r,
-        p,
-        salt_len: 16,
-        output_len: 32,
-    };
     
     match config.validate() {
         Ok(_) => {
@@ -587,8 +439,6 @@ pub fn create_scrypt_config(args: Vec<Value>) -> crate::error::Result<()> {
             result.insert("memory_usage_mb".to_string(), Value::Number((config.memory_usage() / 1024 / 1024) as f64));
             result.insert("implemented".to_string(), Value::bool(false));
             Ok(Value::Object(result))
-        },
-        Err(e) => Err(CursedError::Runtime(format!("Invalid scrypt configuration: {}", e))),
     }
 }
 

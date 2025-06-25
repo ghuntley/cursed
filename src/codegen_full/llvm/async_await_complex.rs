@@ -9,34 +9,22 @@ use std::ffi::CString;
 use crate::error::CursedError;
 
 use inkwell::{
-    context::Context,
-    values::{BasicValueEnum, FunctionValue},
-    types::{BasicTypeEnum, FunctionType},
-    basic_block::BasicBlock,
-};
+// };
 
 /// Async/await code generation trait (placeholder)
 pub trait AsyncAwaitCompiler {
     /// Compile an async function declaration (placeholder)
     fn compile_async_function(
-        &mut self,
-        name: &str,
-        parameters: &[String],
         body: &[String], // Simplified from dyn Statement
-        return_type: LLVMTypeRef,
     ) -> crate::error::Result<()>;
 
     /// Compile an await expression (placeholder)
     fn compile_await_expression(
-        &mut self,
         future_expr: &str, // Simplified from dyn Expression
     ) -> crate::error::Result<()>;
 
     /// Generate async runtime state machine (placeholder)
     fn generate_async_state_machine(
-        &mut self,
-        function: LLVMValueRef,
-        await_points: &[AwaitPoint],
     ) -> crate::error::Result<()>;
 
     /// Create future type for async function (placeholder)
@@ -44,37 +32,15 @@ pub trait AsyncAwaitCompiler {
 
     /// Generate yield point for async function (placeholder)
     fn generate_yield_point(&mut self, yield_value: Option<LLVMValueRef>) -> crate::error::Result<()>;
-}
-
 /// Information about an await point in async function
 #[derive(Debug, Clone)]
 pub struct AwaitPoint {
-    pub block_id: usize,
-    pub future_value: String,
-    pub result_type: LLVMTypeRef,
-    pub continuation_block: String,
-}
-
 /// Async function context for state machine generation
 #[derive(Debug)]
 pub struct AsyncFunctionContext {
-    pub function: LLVMValueRef,
-    pub state_variable: LLVMValueRef,
-    pub context_struct: LLVMTypeRef,
-    pub await_points: Vec<AwaitPoint>,
-    pub local_variables: HashMap<String, LLVMValueRef>,
-    pub current_state: usize,
-}
-
 impl AsyncFunctionContext {
     pub fn new(function: LLVMValueRef, context_struct: LLVMTypeRef) -> Self {
         Self {
-            function,
-            state_variable: std::ptr::null_mut(),
-            context_struct,
-            await_points: Vec::new(),
-            local_variables: HashMap::new(),
-            current_state: 0,
         }
     }
 
@@ -82,8 +48,6 @@ impl AsyncFunctionContext {
         let id = self.await_points.len();
         self.await_points.push(await_point);
         id
-    }
-
     pub fn next_state(&mut self) -> usize {
         self.current_state += 1;
         self.current_state
@@ -92,11 +56,6 @@ impl AsyncFunctionContext {
 
 impl AsyncAwaitCompiler for LlvmCodeGenerator {
     fn compile_async_function(
-        &mut self,
-        name: &str,
-        parameters: &[String],
-        body: &[dyn Statement],
-        return_type: LLVMTypeRef,
     ) -> crate::error::Result<()> {
         unsafe {
             // Create future type for this async function
@@ -109,10 +68,6 @@ impl AsyncAwaitCompiler for LlvmCodeGenerator {
                 .collect();
 
             let function_type = LLVMFunctionType(
-                future_type,
-                param_types.as_mut_ptr(),
-                param_types.len() as u32,
-                0,
             );
 
             let function_name = CString::new(format!("async_{}", name)).unwrap();
@@ -151,8 +106,6 @@ impl AsyncAwaitCompiler for LlvmCodeGenerator {
     }
 
     fn compile_await_expression(
-        &mut self,
-        future_expr: &dyn Expression,
     ) -> crate::error::Result<()> {
         unsafe {
             // Compile the future expression
@@ -179,12 +132,6 @@ impl AsyncAwaitCompiler for LlvmCodeGenerator {
             let future_id = LLVMConstInt(LLVMInt64Type(), await_point_id as u64, 0);
             let mut args = [future_id];
             let result = LLVMBuildCall2(
-                self.builder,
-                LLVMGetElementType(LLVMTypeOf(await_fn)),
-                await_fn,
-                args.as_mut_ptr(),
-                args.len() as u32,
-                CString::new("await_result").unwrap().as_ptr(),
             );
 
             Ok(result)
@@ -192,18 +139,11 @@ impl AsyncAwaitCompiler for LlvmCodeGenerator {
     }
 
     fn generate_async_state_machine(
-        &mut self,
-        function: LLVMValueRef,
-        await_points: &[AwaitPoint],
     ) -> crate::error::Result<()> {
         unsafe {
             // Create resume function for the state machine
             let resume_fn_name = CString::new(format!("{}_resume", "async_fn")).unwrap();
             let resume_fn_type = LLVMFunctionType(
-                LLVMVoidType(),
-                [LLVMPointerType(LLVMInt8Type(), 0)].as_mut_ptr(),
-                1,
-                0,
             );
             
             let resume_fn = LLVMAddFunction(self.module, resume_fn_name.as_ptr(), resume_fn_type);
@@ -215,17 +155,9 @@ impl AsyncAwaitCompiler for LlvmCodeGenerator {
 
             // Load state from context
             let state_ptr = LLVMBuildGEP(
-                self.builder,
-                context_param,
-                [LLVMConstInt(LLVMInt32Type(), 0, 0), LLVMConstInt(LLVMInt32Type(), 0, 0)].as_mut_ptr(),
-                2,
-                CString::new("state_ptr").unwrap().as_ptr(),
             );
             
             let state_value = LLVMBuildLoad(
-                self.builder,
-                state_ptr,
-                CString::new("state").unwrap().as_ptr(),
             );
 
             // Create switch statement for state machine
@@ -244,8 +176,6 @@ impl AsyncAwaitCompiler for LlvmCodeGenerator {
                 // Generate code for this state
                 LLVMPositionBuilderAtEnd(self.builder, state_block);
                 self.generate_state_code(await_point, context_param)?;
-            }
-
             // Default case - completion
             LLVMPositionBuilderAtEnd(self.builder, default_block);
             LLVMBuildRetVoid(self.builder);
@@ -273,10 +203,6 @@ impl AsyncAwaitCompiler for LlvmCodeGenerator {
             let future_struct_name = CString::new("Future").unwrap();
             let future_type = LLVMStructCreateNamed(self.context, future_struct_name.as_ptr());
             LLVMStructSetBody(
-                future_type,
-                field_types.as_mut_ptr(),
-                field_types.len() as u32,
-                0,
             );
 
             future_type
@@ -291,39 +217,21 @@ impl AsyncAwaitCompiler for LlvmCodeGenerator {
             
             if yield_fn.is_null() {
                 return Err(CursedError::Codegen("Yield runtime function not found".to_string()));
-            }
-
             // Call yield function
             let result = if let Some(value) = yield_value {
                 let mut args = [value];
                 LLVMBuildCall(
-                    self.builder,
-                    yield_fn,
-                    args.as_mut_ptr(),
-                    args.len() as u32,
-                    CString::new("yield_result").unwrap().as_ptr(),
                 )
             } else {
                 LLVMBuildCall(
-                    self.builder,
-                    yield_fn,
-                    std::ptr::null_mut(),
-                    0,
-                    CString::new("yield_void").unwrap().as_ptr(),
                 )
-            };
 
             Ok(result)
         }
     }
-}
-
 impl LlvmCodeGenerator {
     /// Create async context struct
     fn create_async_context_struct(
-        &mut self,
-        parameters: &[String],
-        return_type: LLVMTypeRef,
     ) -> crate::error::Result<()> {
         unsafe {
             // struct AsyncContext {
@@ -345,8 +253,6 @@ impl LlvmCodeGenerator {
             // Add parameter types
             for _ in parameters {
                 field_types.push(LLVMPointerType(LLVMInt8Type(), 0));
-            }
-
             // Add fixed-size local variable storage
             let local_vars_array_type = LLVMArrayType(LLVMPointerType(LLVMInt8Type(), 0), 16);
             field_types.push(local_vars_array_type);
@@ -354,10 +260,6 @@ impl LlvmCodeGenerator {
             let context_struct_name = CString::new("AsyncContext").unwrap();
             let context_type = LLVMStructCreateNamed(self.context, context_struct_name.as_ptr());
             LLVMStructSetBody(
-                context_type,
-                field_types.as_mut_ptr(),
-                field_types.len() as u32,
-                0,
             );
 
             Ok(context_type)
@@ -374,10 +276,6 @@ impl LlvmCodeGenerator {
             if malloc_fn.is_null() {
                 // Declare malloc if not available
                 let malloc_type = LLVMFunctionType(
-                    LLVMPointerType(LLVMInt8Type(), 0),
-                    [LLVMInt64Type()].as_mut_ptr(),
-                    1,
-                    0,
                 );
                 LLVMAddFunction(self.module, malloc_fn_name.as_ptr(), malloc_type);
                 let malloc_fn = LLVMGetNamedFunction(self.module, malloc_fn_name.as_ptr());
@@ -389,19 +287,10 @@ impl LlvmCodeGenerator {
 
             let mut args = [size];
             let allocation = LLVMBuildCall(
-                self.builder,
-                malloc_fn,
-                args.as_mut_ptr(),
-                args.len() as u32,
-                CString::new("async_context").unwrap().as_ptr(),
             );
 
             // Cast to correct type
             let typed_allocation = LLVMBuildBitCast(
-                self.builder,
-                allocation,
-                LLVMPointerType(context_type, 0),
-                CString::new("typed_context").unwrap().as_ptr(),
             );
 
             Ok(typed_allocation)
@@ -410,53 +299,29 @@ impl LlvmCodeGenerator {
 
     /// Initialize async context with parameters
     fn initialize_async_context(
-        &mut self,
-        context: LLVMValueRef,
-        parameters: &[String],
     ) -> crate::error::Result<()> {
         unsafe {
             // Initialize state to 0
             let state_ptr = LLVMBuildGEP(
-                self.builder,
-                context,
-                [LLVMConstInt(LLVMInt32Type(), 0, 0), LLVMConstInt(LLVMInt32Type(), 0, 0)].as_mut_ptr(),
-                2,
-                CString::new("state_ptr").unwrap().as_ptr(),
             );
             
             LLVMBuildStore(
-                self.builder,
-                LLVMConstInt(LLVMInt32Type(), 0, 0),
-                state_ptr,
             );
 
             // Initialize parameters (simplified)
             for (i, _param) in parameters.iter().enumerate() {
                 let param_ptr = LLVMBuildGEP(
-                    self.builder,
-                    context,
-                    [LLVMConstInt(LLVMInt32Type(), 0, 0), LLVMConstInt(LLVMInt32Type(), (i + 1) as u64, 0)].as_mut_ptr(),
-                    2,
-                    CString::new(format!("param_{}_ptr", i)).unwrap().as_ptr(),
                 );
                 
                 // Store null for now (would need actual parameter values)
                 LLVMBuildStore(
-                    self.builder,
-                    LLVMConstNull(LLVMPointerType(LLVMInt8Type(), 0)),
-                    param_ptr,
                 );
-            }
-
             Ok(())
         }
     }
 
     /// Create state machine dispatcher
     fn create_state_machine_dispatcher(
-        &mut self,
-        async_context: &mut AsyncFunctionContext,
-        body: &[dyn Statement],
     ) -> crate::error::Result<()> {
         // This would create the main dispatcher logic
         // For now, we'll create a simple version that processes the body
@@ -464,16 +329,9 @@ impl LlvmCodeGenerator {
         // Analyze body for await points
         for statement in body {
             self.analyze_statement_for_awaits(statement, async_context)?;
-        }
-
         Ok(())
-    }
-
     /// Analyze statement for await expressions
     fn analyze_statement_for_awaits(
-        &mut self,
-        statement: &dyn Statement,
-        async_context: &mut AsyncFunctionContext,
     ) -> crate::error::Result<()> {
         // This would recursively analyze statements to find await expressions
         // and create await points for state machine generation
@@ -489,23 +347,14 @@ impl LlvmCodeGenerator {
         }
 
         Ok(())
-    }
-
     /// Analyze expression for await expressions
     fn analyze_expression_for_awaits(
-        &mut self,
-        expression: &dyn Expression,
-        async_context: &mut AsyncFunctionContext,
     ) -> crate::error::Result<()> {
         match expression {
             Expression::Await(await_expr) => {
                 // Found an await expression - create await point
                 let await_point = AwaitPoint {
-                    block_id: async_context.next_state(),
-                    future_value: "future_placeholder".to_string(),
                     result_type: unsafe { LLVMInt32Type() }, // Placeholder
-                    continuation_block: format!("continue_{}", async_context.current_state),
-                };
                 
                 async_context.add_await_point(await_point);
             }
@@ -515,8 +364,6 @@ impl LlvmCodeGenerator {
         }
 
         Ok(())
-    }
-
     /// Generate await point
     fn generate_await_point(&mut self, future_value: LLVMValueRef) -> crate::error::Result<()> {
         // Generate unique await point ID
@@ -524,22 +371,15 @@ impl LlvmCodeGenerator {
         let id = unsafe {
             AWAIT_POINT_COUNTER += 1;
             AWAIT_POINT_COUNTER
-        };
 
         // Store future value for later use
         // In a complete implementation, this would integrate with the state machine
 
         Ok(id)
-    }
-
     /// Declare runtime await function
     fn declare_runtime_await_function(&mut self) -> crate::error::Result<()> {
         unsafe {
             let await_fn_type = LLVMFunctionType(
-                LLVMPointerType(LLVMInt8Type(), 0),
-                [LLVMInt64Type()].as_mut_ptr(),
-                1,
-                0,
             );
 
             let await_fn_name = CString::new("cursed_await_future").unwrap();
@@ -551,64 +391,33 @@ impl LlvmCodeGenerator {
 
     /// Create future from context
     fn create_future_from_context(
-        &mut self,
-        context: LLVMValueRef,
-        future_type: LLVMTypeRef,
     ) -> crate::error::Result<()> {
         unsafe {
             // Allocate future struct
             let future_alloc = LLVMBuildAlloca(
-                self.builder,
-                future_type,
-                CString::new("future").unwrap().as_ptr(),
             );
 
             // Set context field
             let context_field_ptr = LLVMBuildGEP(
-                self.builder,
-                future_alloc,
-                [LLVMConstInt(LLVMInt32Type(), 0, 0), LLVMConstInt(LLVMInt32Type(), 0, 0)].as_mut_ptr(),
-                2,
-                CString::new("context_field").unwrap().as_ptr(),
             );
 
             let context_as_void_ptr = LLVMBuildBitCast(
-                self.builder,
-                context,
-                LLVMPointerType(LLVMInt8Type(), 0),
-                CString::new("context_void_ptr").unwrap().as_ptr(),
             );
 
             LLVMBuildStore(self.builder, context_as_void_ptr, context_field_ptr);
 
             // Set initial state
             let state_field_ptr = LLVMBuildGEP(
-                self.builder,
-                future_alloc,
-                [LLVMConstInt(LLVMInt32Type(), 0, 0), LLVMConstInt(LLVMInt32Type(), 1, 0)].as_mut_ptr(),
-                2,
-                CString::new("state_field").unwrap().as_ptr(),
             );
 
             LLVMBuildStore(
-                self.builder,
-                LLVMConstInt(LLVMInt32Type(), 0, 0),
-                state_field_ptr,
             );
 
             // Set completed to false
             let completed_field_ptr = LLVMBuildGEP(
-                self.builder,
-                future_alloc,
-                [LLVMConstInt(LLVMInt32Type(), 0, 0), LLVMConstInt(LLVMInt32Type(), 3, 0)].as_mut_ptr(),
-                2,
-                CString::new("completed_field").unwrap().as_ptr(),
             );
 
             LLVMBuildStore(
-                self.builder,
-                LLVMConstInt(LLVMInt1Type(), 0, 0),
-                completed_field_ptr,
             );
 
             Ok(future_alloc)
@@ -617,9 +426,6 @@ impl LlvmCodeGenerator {
 
     /// Generate code for a specific state
     fn generate_state_code(
-        &mut self,
-        await_point: &AwaitPoint,
-        context: LLVMValueRef,
     ) -> crate::error::Result<()> {
         unsafe {
             // Generate code to resume execution from this await point
@@ -630,11 +436,6 @@ impl LlvmCodeGenerator {
 
             // Load current state
             let state_ptr = LLVMBuildGEP(
-                self.builder,
-                context,
-                [LLVMConstInt(LLVMInt32Type(), 0, 0), LLVMConstInt(LLVMInt32Type(), 0, 0)].as_mut_ptr(),
-                2,
-                CString::new("state_ptr").unwrap().as_ptr(),
             );
 
             // Check if future is ready
@@ -642,12 +443,8 @@ impl LlvmCodeGenerator {
             
             // Create ready and not_ready blocks
             let ready_block = LLVMAppendBasicBlock(
-                LLVMGetBasicBlockParent(LLVMGetInsertBlock(self.builder)),
-                CString::new("future_ready").unwrap().as_ptr(),
             );
             let not_ready_block = LLVMAppendBasicBlock(
-                LLVMGetBasicBlockParent(LLVMGetInsertBlock(self.builder)),
-                CString::new("future_not_ready").unwrap().as_ptr(),
             );
 
             // Branch based on future readiness
@@ -670,9 +467,6 @@ impl LlvmCodeGenerator {
 
     /// Register async function with runtime system
     fn register_async_function_with_runtime(
-        &mut self,
-        function: LLVMValueRef,
-        name: &str,
     ) -> crate::error::Result<()> {
         unsafe {
             // Create call to runtime registration function
@@ -682,13 +476,9 @@ impl LlvmCodeGenerator {
             if register_fn.is_null() {
                 // Declare the registration function
                 let register_fn_type = LLVMFunctionType(
-                    LLVMVoidType(),
                     [
                         LLVMPointerType(LLVMInt8Type(), 0), // function pointer
                         LLVMPointerType(LLVMInt8Type(), 0), // name
-                    ].as_mut_ptr(),
-                    2,
-                    0,
                 );
                 LLVMAddFunction(self.module, register_fn_name.as_ptr(), register_fn_type);
                 let register_fn = LLVMGetNamedFunction(self.module, register_fn_name.as_ptr());
@@ -701,27 +491,15 @@ impl LlvmCodeGenerator {
             // Create string constant for function name
             let name_str = CString::new(name).unwrap();
             let name_global = LLVMBuildGlobalStringPtr(
-                self.builder,
-                name_str.as_ptr(),
-                CString::new("async_fn_name").unwrap().as_ptr(),
             );
 
             // Cast function to void pointer
             let function_ptr = LLVMBuildBitCast(
-                self.builder,
-                function,
-                LLVMPointerType(LLVMInt8Type(), 0),
-                CString::new("async_fn_ptr").unwrap().as_ptr(),
             );
 
             // Call registration function
             let mut args = [function_ptr, name_global];
             LLVMBuildCall(
-                self.builder,
-                register_fn,
-                args.as_mut_ptr(),
-                args.len() as u32,
-                CString::new("").unwrap().as_ptr(),
             );
 
             Ok(())
@@ -730,8 +508,6 @@ impl LlvmCodeGenerator {
 
     /// Generate future ready check
     fn generate_future_ready_check(
-        &mut self,
-        await_point: &AwaitPoint,
     ) -> crate::error::Result<()> {
         unsafe {
             // Create call to runtime future ready check
@@ -740,17 +516,10 @@ impl LlvmCodeGenerator {
             
             if ready_fn.is_null() {
                 return Err(CursedError::Codegen("Future ready check function not found".to_string()));
-            }
-
             // Use block_id as future ID for now
             let future_id = LLVMConstInt(LLVMInt64Type(), await_point.block_id as u64, 0);
             let mut args = [future_id];
             let ready_result = LLVMBuildCall(
-                self.builder,
-                ready_fn,
-                args.as_mut_ptr(),
-                args.len() as u32,
-                CString::new("future_ready").unwrap().as_ptr(),
             );
 
             Ok(ready_result)
@@ -767,10 +536,6 @@ impl LlvmCodeGenerator {
             if yield_fn.is_null() {
                 // Declare the yield function
                 let yield_fn_type = LLVMFunctionType(
-                    LLVMVoidType(),
-                    [LLVMPointerType(LLVMInt8Type(), 0)].as_mut_ptr(),
-                    1,
-                    0,
                 );
                 LLVMAddFunction(self.module, yield_fn_name.as_ptr(), yield_fn_type);
                 let yield_fn = LLVMGetNamedFunction(self.module, yield_fn_name.as_ptr());
@@ -783,18 +548,11 @@ impl LlvmCodeGenerator {
             // Call yield function with context
             let mut args = [context];
             LLVMBuildCall(
-                self.builder,
-                yield_fn,
-                args.as_mut_ptr(),
-                args.len() as u32,
-                CString::new("").unwrap().as_ptr(),
             );
 
             Ok(())
         }
     }
-}
-
 /// FFI function implementations for async runtime integration
 use crate::runtime::r#async::{get_async_runtime, spawn, TaskHandle};
 use std::sync::{Arc, Mutex};
@@ -820,7 +578,6 @@ fn next_future_id() -> u64 {
 
 #[no_mangle]
 pub extern "C" fn cursed_spawn_async_task(
-    task_fn: extern "C" fn(),
     context: *mut std::ffi::c_void
 ) -> u64 {
     let future_id = next_future_id();
@@ -828,7 +585,6 @@ pub extern "C" fn cursed_spawn_async_task(
     // Create a future that calls the task function
     let future = async move {
         task_fn();
-    };
     
     // Spawn on the async runtime
     if let Some(runtime) = get_async_runtime() {
@@ -842,8 +598,6 @@ pub extern "C" fn cursed_spawn_async_task(
     }
     
     future_id
-}
-
 #[no_mangle]
 pub extern "C" fn cursed_await_future(future_id: u64) -> *mut std::ffi::c_void {
     let registry = get_future_registry();
@@ -857,8 +611,6 @@ pub extern "C" fn cursed_await_future(future_id: u64) -> *mut std::ffi::c_void {
     }
     
     std::ptr::null_mut()
-}
-
 #[no_mangle]
 pub extern "C" fn cursed_future_is_ready(future_id: u64) -> bool {
     let registry = get_future_registry();
@@ -872,8 +624,6 @@ pub extern "C" fn cursed_future_is_ready(future_id: u64) -> bool {
     }
     
     false
-}
-
 #[no_mangle]
 pub extern "C" fn cursed_future_get_result(future_id: u64) -> *mut std::ffi::c_void {
     let registry = get_future_registry();
@@ -887,8 +637,6 @@ pub extern "C" fn cursed_future_get_result(future_id: u64) -> *mut std::ffi::c_v
     }
     
     std::ptr::null_mut()
-}
-
 #[no_mangle]
 pub extern "C" fn cursed_create_delay(duration_ms: u64) -> u64 {
     let future_id = next_future_id();
@@ -896,7 +644,6 @@ pub extern "C" fn cursed_create_delay(duration_ms: u64) -> u64 {
     // Create a delay future
     let future = async move {
         crate::runtime::r#async::delay(std::time::Duration::from_millis(duration_ms)).await;
-    };
     
     // Spawn on the async runtime
     if let Some(runtime) = get_async_runtime() {
@@ -910,8 +657,6 @@ pub extern "C" fn cursed_create_delay(duration_ms: u64) -> u64 {
     }
     
     future_id
-}
-
 #[no_mangle]
 pub extern "C" fn cursed_create_timeout(future_id: u64, timeout_ms: u64) -> u64 {
     let timeout_future_id = next_future_id();
@@ -920,11 +665,8 @@ pub extern "C" fn cursed_create_timeout(future_id: u64, timeout_ms: u64) -> u64 
     // In a real implementation, we would wrap the existing future with a timeout
     
     timeout_future_id
-}
-
 #[no_mangle]
 pub extern "C" fn cursed_register_async_function(
-    function_ptr: *mut std::ffi::c_void,
     name: *const std::ffi::c_char
 ) {
     // Register the async function with the runtime
@@ -950,63 +692,37 @@ pub fn register_async_runtime_functions(generator: &mut LlvmCodeGenerator) -> cr
     unsafe {
         // Register cursed_spawn_async_task
         let spawn_task_type = LLVMFunctionType(
-            LLVMInt64Type(),
             [
-                LLVMPointerType(LLVMFunctionType(LLVMVoidType(), std::ptr::null_mut(), 0, 0), 0),
-                LLVMPointerType(LLVMInt8Type(), 0),
-            ].as_mut_ptr(),
-            2,
-            0,
         );
         let spawn_task_name = CString::new("cursed_spawn_async_task").unwrap();
         LLVMAddFunction(generator.module, spawn_task_name.as_ptr(), spawn_task_type);
 
         // Register cursed_await_future
         let await_future_type = LLVMFunctionType(
-            LLVMPointerType(LLVMInt8Type(), 0),
-            [LLVMInt64Type()].as_mut_ptr(),
-            1,
-            0,
         );
         let await_future_name = CString::new("cursed_await_future").unwrap();
         LLVMAddFunction(generator.module, await_future_name.as_ptr(), await_future_type);
 
         // Register cursed_future_is_ready
         let is_ready_type = LLVMFunctionType(
-            LLVMInt1Type(),
-            [LLVMInt64Type()].as_mut_ptr(),
-            1,
-            0,
         );
         let is_ready_name = CString::new("cursed_future_is_ready").unwrap();
         LLVMAddFunction(generator.module, is_ready_name.as_ptr(), is_ready_type);
 
         // Register cursed_future_get_result
         let get_result_type = LLVMFunctionType(
-            LLVMPointerType(LLVMInt8Type(), 0),
-            [LLVMInt64Type()].as_mut_ptr(),
-            1,
-            0,
         );
         let get_result_name = CString::new("cursed_future_get_result").unwrap();
         LLVMAddFunction(generator.module, get_result_name.as_ptr(), get_result_type);
 
         // Register cursed_create_delay
         let create_delay_type = LLVMFunctionType(
-            LLVMInt64Type(),
-            [LLVMInt64Type()].as_mut_ptr(),
-            1,
-            0,
         );
         let create_delay_name = CString::new("cursed_create_delay").unwrap();
         LLVMAddFunction(generator.module, create_delay_name.as_ptr(), create_delay_type);
 
         // Register cursed_create_timeout
         let create_timeout_type = LLVMFunctionType(
-            LLVMInt64Type(),
-            [LLVMInt64Type(), LLVMInt64Type()].as_mut_ptr(),
-            2,
-            0,
         );
         let create_timeout_name = CString::new("cursed_create_timeout").unwrap();
         LLVMAddFunction(generator.module, create_timeout_name.as_ptr(), create_timeout_type);

@@ -13,21 +13,16 @@ use crate::error::CursedError;
 /// Simple PostgreSQL driver (now redirects to full implementation)
 #[derive(Debug, Clone)]
 pub struct SimplePostgresDriver {
-    inner: PostgresDriver,
-}
-
 impl SimplePostgresDriver {
     /// Create new PostgreSQL driver
     pub fn new() -> Self {
         Self {
-            inner: PostgresDriver::new(),
         }
     }
 
     /// Create driver with custom configuration
     pub fn with_config(config: super::config::PostgresConfig) -> Self {
         Self {
-            inner: PostgresDriver::with_config(config),
         }
     }
 
@@ -48,14 +43,11 @@ impl Driver for SimplePostgresDriver {
         // Validate connection string first
         PostgresConnectionString::parse(data_source_name)
             .map_err(|e| DatabaseError::new(
-                DatabaseErrorKind::InvalidConfiguration,
-                &format!("Invalid PostgreSQL connection string: {}", e),
             ))?;
 
         // For now, return a helpful error message directing users to the full implementation
         // In a real implementation, this would use the full driver
         Err(DatabaseError::new(
-            DatabaseErrorKind::NotSupported,
             "PostgreSQL driver requires async runtime. Use the full PostgresDriver with tokio runtime. Example:\n\
              \n\
              let rt = tokio::runtime::Runtime::new().unwrap();\n\
@@ -66,16 +58,10 @@ impl Driver for SimplePostgresDriver {
              \n\
              For simple usage, consider using SQLite which has sync support."
         ))
-    }
-
     fn name(&self) -> &str {
         self.inner.name()
-    }
-
     fn capabilities(&self) -> super::super::driver::DriverCapabilities {
         self.inner.capabilities()
-    }
-
     fn clone_driver(&self) -> Box<dyn Driver> {
         Box::new(self.clone())
     }

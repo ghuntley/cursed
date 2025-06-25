@@ -15,111 +15,60 @@ use crate::ast::traits::TypeParameter;
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum Variance {
     /// Covariant: T' <: T implies F<T'> <: F<T>
-    Covariant,
     /// Contravariant: T' <: T implies F<T> <: F<T'>
-    Contravariant,
     /// Invariant: no subtyping relationship
-    Invariant,
     /// Bivariant: both covariant and contravariant (rarely used)
-    Bivariant,
-}
-
 impl Variance {
     /// Combine two variances (used for nested generic types)
     pub fn combine(self, other: Variance) -> Variance {
         match (self, other) {
             // Covariant rules
-            (Variance::Covariant, Variance::Covariant) => Variance::Covariant,
-            (Variance::Covariant, Variance::Contravariant) => Variance::Contravariant,
-            (Variance::Covariant, Variance::Invariant) => Variance::Invariant,
-            (Variance::Covariant, Variance::Bivariant) => Variance::Covariant,
 
             // Contravariant rules
-            (Variance::Contravariant, Variance::Covariant) => Variance::Contravariant,
-            (Variance::Contravariant, Variance::Contravariant) => Variance::Covariant,
-            (Variance::Contravariant, Variance::Invariant) => Variance::Invariant,
-            (Variance::Contravariant, Variance::Bivariant) => Variance::Contravariant,
 
             // Invariant rules
-            (Variance::Invariant, _) => Variance::Invariant,
 
             // Bivariant rules
-            (Variance::Bivariant, Variance::Covariant) => Variance::Covariant,
-            (Variance::Bivariant, Variance::Contravariant) => Variance::Contravariant,
-            (Variance::Bivariant, Variance::Invariant) => Variance::Invariant,
-            (Variance::Bivariant, Variance::Bivariant) => Variance::Bivariant,
         }
     }
 
     /// Invert variance (used for function parameters)
     pub fn invert(self) -> Variance {
         match self {
-            Variance::Covariant => Variance::Contravariant,
-            Variance::Contravariant => Variance::Covariant,
-            Variance::Invariant => Variance::Invariant,
-            Variance::Bivariant => Variance::Bivariant,
         }
     }
-}
-
 /// Variance information for a type parameter
 #[derive(Debug, Clone)]
 pub struct TypeParameterVariance {
     /// Name of the type parameter
-    pub parameter_name: String,
     /// Computed variance
-    pub variance: Variance,
     /// Source locations where this variance was determined
-    pub sources: Vec<VarianceSource>,
-}
-
 /// Source of variance information
 #[derive(Debug, Clone)]
 pub enum VarianceSource {
     /// Field access (usually covariant)
-    FieldAccess { field_name: String },
     /// Function parameter (contravariant)
-    FunctionParameter { function_name: String, param_index: usize },
     /// Function return type (covariant)
-    FunctionReturn { function_name: String },
     /// Array element (covariant)
-    ArrayElement,
     /// Interface method (depends on position)
-    InterfaceMethod { method_name: String, is_return: bool },
     /// Explicit annotation
-    Annotation,
-}
-
 /// Registry for managing variance analysis
 #[derive(Debug)]
 pub struct VarianceRegistry {
     /// Variance information for types and their parameters
-    type_variances: RwLock<HashMap<String, Vec<TypeParameterVariance>>>,
     /// Subtyping relationships cache
-    subtyping_cache: RwLock<HashMap<(Type, Type), bool>>,
     /// Safe variance relationships
-    safe_variance_relationships: RwLock<HashSet<(String, String, Variance)>>,
-}
-
 impl VarianceRegistry {
     /// Create a new variance registry
     #[instrument]
     pub fn new() -> Self {
         debug!("Creating new VarianceRegistry");
         let registry = Self {
-            type_variances: RwLock::new(HashMap::new()),
-            subtyping_cache: RwLock::new(HashMap::new()),
-            safe_variance_relationships: RwLock::new(HashSet::new()),
-        };
 
         // Register built-in type variances
         if let Err(e) = registry.register_builtin_variances() {
             error!("Failed to register builtin variances: {}", e);
-        }
-
         registry
-    }
-
     /// Analyze the variance of type parameters in a type definition
     #[instrument(skip(self))]
     pub fn analyze_type_variance(&self, type_name: &str, definition: &Type) -> crate::error::Result<()> {
@@ -133,13 +82,8 @@ impl VarianceRegistry {
             let mut type_variances = self.type_variances.write()
                 .map_err(|_| CursedError::system_error("Failed to acquire write lock"))?;
             type_variances.insert(type_name.to_string(), variances.clone());
-        }
-
-        info!("Completed variance analysis for type {}: {} parameters", 
               type_name, variances.len());
         Ok(variances)
-    }
-
     /// Get variance information for a type
     #[instrument(skip(self))]
     pub fn get_type_variance(&self, type_name: &str) -> crate::error::Result<()> {
@@ -147,8 +91,6 @@ impl VarianceRegistry {
             .map_err(|_| CursedError::system_error("Failed to acquire read lock"))?;
         
         Ok(type_variances.get(type_name).cloned().unwrap_or_default())
-    }
-
     /// Check if one type is a subtype of another (considering variance)
     #[instrument(skip(self))]
     pub fn is_subtype(&self, subtype: &Type, supertype: &Type) -> crate::error::Result<()> {
@@ -158,7 +100,6 @@ impl VarianceRegistry {
             let cache = self.subtyping_cache.read()
                 .map_err(|_| CursedError::system_error("Failed to acquire read lock"))?;
             if let Some(&result) = cache.get(&cache_key) {
-                debug!("Found cached subtyping result: {:?} <: {:?} = {}", 
                        subtype, supertype, result);
                 return Ok(result);
             }
@@ -172,20 +113,14 @@ impl VarianceRegistry {
             let mut cache = self.subtyping_cache.write()
                 .map_err(|_| CursedError::system_error("Failed to acquire write lock"))?;
             cache.insert(cache_key, result);
-        }
-
         debug!("Computed subtyping: {:?} <: {:?} = {}", subtype, supertype, result);
         Ok(result)
-    }
-
     /// Internal implementation for computing subtyping relationships
     #[instrument(skip(self))]
     fn compute_subtyping_relationship(&self, subtype: &Type, supertype: &Type) -> crate::error::Result<()> {
         // Reflexivity: T <: T
         if subtype == supertype {
             return Ok(true);
-        }
-
         match (subtype, supertype) {
             // Basic type relationships
             (Type::Integer, Type::Float) => Ok(true), // Int can be used as Float
@@ -195,20 +130,13 @@ impl VarianceRegistry {
             (Type::Generic(sub_name), Type::Generic(super_name)) => {
                 // For simplified Generic variant, check name equality
                 Ok(sub_name == super_name)
-            }
-
             // Function type relationships
-            (Type::Function(sub_params, sub_return),
              Type::Function(super_params, super_return)) => {
                 self.check_function_subtyping(sub_params, sub_return, super_params, super_return)
-            }
-
             // Array type relationships
             (Type::Array(sub_elem), Type::Array(super_elem)) => {
                 // Arrays are covariant in their element type
                 self.is_subtype(sub_elem, super_elem)
-            }
-
             // Tuple type relationships
             (Type::Tuple(sub_types), Type::Tuple(super_types)) => {
                 if sub_types.len() == super_types.len() {
@@ -228,16 +156,11 @@ impl VarianceRegistry {
             (Type::Interface(sub_interface), Type::Interface(super_interface)) => {
                 // For now, interface subtyping is nominal (by name)
                 Ok(sub_interface.name == super_interface.name)
-            }
-
             // Channel type relationships
             (Type::Channel(sub_elem), Type::Channel(super_elem)) => {
                 // Channels are invariant in their element type for safety
                 Ok(sub_elem == super_elem)
-            }
-
             // Default: no subtyping relationship
-            _ => Ok(false),
         }
     }
 
@@ -254,15 +177,9 @@ impl VarianceRegistry {
                 }
             }
             return Ok(true);
-        }
-
         for ((sub_arg, super_arg), variance_info) in sub_args.iter().zip(super_args.iter()).zip(variances.iter()) {
             let valid = match variance_info.variance {
-                Variance::Covariant => self.is_subtype(sub_arg, super_arg)?,
-                Variance::Contravariant => self.is_subtype(super_arg, sub_arg)?,
-                Variance::Invariant => sub_arg == super_arg,
                 Variance::Bivariant => true, // Both directions are acceptable
-            };
 
             if !valid {
                 return Ok(false);
@@ -270,22 +187,13 @@ impl VarianceRegistry {
         }
 
         Ok(true)
-    }
-
     /// Check subtyping for function types
     #[instrument(skip(self))]
     fn check_function_subtyping(
-        &self,
-        sub_params: &[Type],
-        sub_return: &Type,
-        super_params: &[Type],
-        super_return: &Type,
     ) -> crate::error::Result<()> {
         // Functions are contravariant in parameters and covariant in return type
         if sub_params.len() != super_params.len() {
             return Ok(false);
-        }
-
         // Check parameter types (contravariant)
         for (sub_param, super_param) in sub_params.iter().zip(super_params.iter()) {
             if !self.is_subtype(super_param, sub_param)? {
@@ -295,8 +203,6 @@ impl VarianceRegistry {
 
         // Check return type (covariant)
         self.is_subtype(sub_return, super_return)
-    }
-
     /// Register safe variance relationships
     #[instrument(skip(self))]
     pub fn register_safe_variance(&self, type_name: &str, param_name: &str, variance: Variance) -> crate::error::Result<()> {
@@ -306,8 +212,6 @@ impl VarianceRegistry {
         relationships.insert((type_name.to_string(), param_name.to_string(), variance));
         debug!("Registered safe variance: {}::{} = {:?}", type_name, param_name, variance);
         Ok(())
-    }
-
     /// Check if a variance relationship is safe
     #[instrument(skip(self))]
     pub fn is_variance_safe(&self, type_name: &str, param_name: &str, variance: Variance) -> crate::error::Result<()> {
@@ -315,8 +219,6 @@ impl VarianceRegistry {
             .map_err(|_| CursedError::system_error("Failed to acquire read lock"))?;
         
         Ok(relationships.contains(&(type_name.to_string(), param_name.to_string(), variance)))
-    }
-
     /// Register built-in type variances
     #[instrument(skip(self))]
     fn register_builtin_variances(&self) -> crate::error::Result<()> {
@@ -342,8 +244,6 @@ impl VarianceRegistry {
 
         info!("Registered built-in variance relationships");
         Ok(())
-    }
-
     /// Clear all caches
     #[instrument(skip(self))]
     pub fn clear_caches(&self) -> crate::error::Result<()> {
@@ -354,8 +254,6 @@ impl VarianceRegistry {
         }
         debug!("Cleared variance caches");
         Ok(())
-    }
-
     /// Get statistics about the variance registry
     #[instrument(skip(self))]
     pub fn get_statistics(&self) -> crate::error::Result<()> {
@@ -371,10 +269,6 @@ impl VarianceRegistry {
             .sum();
 
         Ok(VarianceStatistics {
-            analyzed_types: type_variances.len(),
-            total_analyzed_parameters: total_analyzed_params,
-            cached_subtyping_checks: subtyping_cache.len(),
-            safe_variance_relationships: safe_relationships.len(),
         })
     }
 }
@@ -382,23 +276,11 @@ impl VarianceRegistry {
 /// Statistics about variance analysis
 #[derive(Debug, Clone)]
 pub struct VarianceStatistics {
-    pub analyzed_types: usize,
-    pub total_analyzed_parameters: usize,
-    pub cached_subtyping_checks: usize,
-    pub safe_variance_relationships: usize,
-}
-
 /// Variance analyzer for computing type parameter variances
 struct VarianceAnalyzer {
-    parameter_variances: HashMap<String, Variance>,
-    variance_sources: HashMap<String, Vec<VarianceSource>>,
-}
-
 impl VarianceAnalyzer {
     fn new() -> Self {
         Self {
-            parameter_variances: HashMap::new(),
-            variance_sources: HashMap::new(),
         }
     }
 
@@ -410,23 +292,14 @@ impl VarianceAnalyzer {
         for (param_name, variance) in &self.parameter_variances {
             let sources = self.variance_sources.get(param_name).cloned().unwrap_or_default();
             result.push(TypeParameterVariance {
-                parameter_name: param_name.clone(),
-                variance: *variance,
-                sources,
             });
-        }
-
         Ok(result)
-    }
-
     #[instrument(skip(self))]
     fn visit_type(&mut self, type_ref: &Type, context_variance: Variance) -> crate::error::Result<()> {
         match type_ref {
             Type::Generic(name) => {
                 // This is a type parameter usage
                 self.record_parameter_usage(name, context_variance, VarianceSource::Annotation);
-            }
-
             Type::Function(params, return_type) => {
                 // Function parameters are contravariant
                 for param in params {
@@ -434,13 +307,9 @@ impl VarianceAnalyzer {
                 }
                 // Return type is covariant
                 self.visit_type(return_type, context_variance)?;
-            }
-
             Type::Array(element_type) => {
                 // Arrays are covariant in their element type
                 self.visit_type(element_type, context_variance)?;
-            }
-
             Type::Tuple(element_types) => {
                 // Tuples are covariant in all their element types
                 for element_type in element_types {
@@ -451,39 +320,23 @@ impl VarianceAnalyzer {
             Type::Channel(element_type) => {
                 // Channels are invariant for safety
                 self.visit_type(element_type, Variance::Invariant)?;
-            }
-
             Type::Interface { .. } => {
                 // Interface types don't directly contain type parameters we care about
                 // TODO: Handle interface methods and their type parameters
-            }
-
             Type::AssociatedTypeProjection { base_type, .. } => {
                 // Visit the base type with current variance
                 self.visit_type(base_type, context_variance)?;
-            }
-
             // Concrete types don't affect variance
             Type::Integer | Type::Float | Type::String | Type::Boolean | 
-            Type::Character | Type::Nil | Type::Any => {}
-
             // Struct types don't affect variance (usually)
-            Type::Struct(_) => {}
-
             // Primitive types don't affect variance
-            Type::Primitive(_) => {}
-
             // Map types - visit both key and value types
             Type::Map(key_type, value_type) => {
                 self.visit_type(key_type, context_variance)?;
                 self.visit_type(value_type, context_variance)?;
-            }
-
             // Type parameters - record usage
             Type::Parameter(name) => {
                 self.record_parameter_usage(name, context_variance, VarianceSource::Annotation);
-            }
-
             // Type constructors and applications
             Type::Constructor { .. } => {}
             Type::Application { constructor, arguments } => {
@@ -492,11 +345,7 @@ impl VarianceAnalyzer {
                     self.visit_type(arg, context_variance)?;
                 }
             }
-        }
-
         Ok(())
-    }
-
     fn record_parameter_usage(&mut self, param_name: &str, variance: Variance, source: VarianceSource) {
         let current_variance = self.parameter_variances.get(param_name).copied().unwrap_or(variance);
         let combined_variance = current_variance.combine(variance);
@@ -519,8 +368,6 @@ pub trait VarianceHandler {
     
     /// Validate variance annotations against actual usage
     fn validate_variance_annotations(&self, type_name: &str, annotations: &[(String, Variance)]) -> crate::error::Result<()>;
-}
-
 impl VarianceHandler for VarianceRegistry {
     #[instrument(skip(self))]
     fn is_variance_assignment_safe(&self, type_name: &str, param_name: &str, variance: Variance) -> crate::error::Result<()> {
@@ -530,15 +377,10 @@ impl VarianceHandler for VarianceRegistry {
             // Check if the requested variance is compatible with the computed variance
             match (param_variance.variance, variance) {
                 // Exact match is always safe
-                (computed, requested) if computed == requested => Ok(true),
                 
                 // More restrictive variance is generally safe
-                (Variance::Bivariant, _) => Ok(true),
-                (Variance::Covariant, Variance::Invariant) => Ok(true),
-                (Variance::Contravariant, Variance::Invariant) => Ok(true),
                 
                 // Less restrictive variance is unsafe
-                _ => Ok(false),
             }
         } else {
             // No variance information available, assume invariant is safe
@@ -565,7 +407,6 @@ impl VarianceHandler for VarianceRegistry {
         for (param_name, requested_variance) in annotations {
             if !self.is_variance_assignment_safe(type_name, param_name, *requested_variance)? {
                 errors.push(format!(
-                    "Unsafe variance annotation for parameter '{}': requested {:?} but computed variance is different",
                     param_name, requested_variance
                 ));
             }

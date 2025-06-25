@@ -15,105 +15,54 @@ use tracing::{debug, instrument, warn};
 /// Enhanced comment extractor with token stream support
 pub struct CommentExtractor {
     /// Known JSDoc-style tags
-    jsdoc_tags: HashSet<String>,
     /// Cross-reference patterns
-    crossref_patterns: Vec<CrossReferencePattern>,
-}
-
 /// Cross-reference pattern for detecting references
 #[derive(Debug, Clone)]
 pub struct CrossReferencePattern {
     /// Pattern to match
-    pub pattern: String,
     /// Type of reference
-    pub reference_type: CrossReferenceType,
-}
-
 /// Types of cross-references
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum CrossReferenceType {
-    Function,
-    Type,
-    Module,
-    Variable,
-    Constant,
-    Interface,
-    Generic,
-}
-
 /// Enhanced comment with token-level information
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct EnhancedComment {
     /// Base parsed comment
-    pub base: ParsedComment,
     /// Token range for the comment
-    pub token_range: Option<(usize, usize)>,
     /// Associated code elements
-    pub associated_elements: Vec<String>,
     /// Cross-references found
-    pub cross_references: Vec<CrossReference>,
     /// Code examples with enhanced metadata
-    pub enhanced_examples: Vec<EnhancedCodeExample>,
     /// JSDoc-style tags
-    pub jsdoc_tags: Vec<JSDocTag>,
-}
-
 /// Cross-reference information
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct CrossReference {
     /// Referenced item name
-    pub target: String,
     /// Type of reference
-    pub reference_type: CrossReferenceType,
     /// Location in comment
-    pub location: (usize, usize),
     /// Context around the reference
-    pub context: String,
-}
-
 /// Enhanced code example with validation
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct EnhancedCodeExample {
     /// Base code example
-    pub base: CodeExample,
     /// Syntax validation result
-    pub is_valid_syntax: bool,
     /// Dependencies required
-    pub dependencies: Vec<String>,
     /// Expected compilation result
-    pub compilation_result: Option<CompilationResult>,
     /// Performance characteristics
-    pub performance_notes: Vec<String>,
-}
-
 /// Compilation result for code examples
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct CompilationResult {
     /// Whether compilation succeeds
-    pub success: bool,
     /// Compilation warnings
-    pub warnings: Vec<String>,
     /// Compilation errors
-    pub errors: Vec<String>,
     /// Generated code size
-    pub code_size: Option<usize>,
-}
-
 /// JSDoc-style tag with enhanced metadata
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct JSDocTag {
     /// Tag name
-    pub name: String,
     /// Tag type information
-    pub type_info: Option<String>,
     /// Tag description
-    pub description: String,
     /// Additional attributes
-    pub attributes: HashMap<String, String>,
     /// Nested tags
-    pub nested_tags: Vec<JSDocTag>,
-}
-
 impl CommentExtractor {
     /// Create a new enhanced comment extractor
     #[instrument]
@@ -159,30 +108,15 @@ impl CommentExtractor {
         // Cross-reference patterns
         let crossref_patterns = vec![
             CrossReferencePattern {
-                pattern: r"@\{([a-zA-Z_][a-zA-Z0-9_]*)\}".to_string(),
-                reference_type: CrossReferenceType::Generic,
-            },
             CrossReferencePattern {
-                pattern: r"\[([a-zA-Z_][a-zA-Z0-9_]*)\]\(([^)]+)\)".to_string(),
-                reference_type: CrossReferenceType::Generic,
-            },
             CrossReferencePattern {
-                pattern: r"`([a-zA-Z_][a-zA-Z0-9_]*)`".to_string(),
-                reference_type: CrossReferenceType::Generic,
-            },
         ];
 
         Ok(Self {
-            jsdoc_tags,
-            crossref_patterns,
         })
-    }
-
     /// Extract comments from token stream with enhanced analysis
     #[instrument(skip(self, tokens))]
     pub fn extract_comments_from_tokens(
-        &self,
-        tokens: &[Token],
     ) -> crate::error::Result<()> {
         debug!("Extracting comments from {} tokens", tokens.len());
         
@@ -199,19 +133,12 @@ impl CommentExtractor {
 
         debug!("Extracted {} enhanced comments", comments.len());
         Ok(comments)
-    }
-
     /// Extract comment starting at a specific token index
     #[instrument(skip(self, tokens))]
     fn extract_comment_at_index(
-        &self,
-        tokens: &[Token],
-        index: &mut usize,
     ) -> crate::error::Result<()> {
         if *index >= tokens.len() {
             return Ok(None);
-        }
-
         let token = &tokens[*index];
         
         match &token.token_type {
@@ -237,9 +164,6 @@ impl CommentExtractor {
                 
                 // Parse the combined comment text
                 let parsed_comment = self.parse_enhanced_comment(
-                    &comment_text,
-                    token.line,
-                    token.column,
                 )?;
 
                 // Extract cross-references
@@ -252,31 +176,19 @@ impl CommentExtractor {
                 let jsdoc_tags = self.extract_jsdoc_tags(&parsed_comment.tags)?;
 
                 Ok(Some(EnhancedComment {
-                    base: parsed_comment,
-                    token_range: Some((start_index, end_index)),
-                    associated_elements: Vec::new(),
-                    cross_references,
-                    enhanced_examples,
-                    jsdoc_tags,
                 }))
             }
-            _ => Ok(None),
         }
     }
 
     /// Extract comments before a specific source location
     #[instrument(skip(self, source_code))]
     pub fn extract_comments_before(
-        &self,
-        location: &SourceLocation,
-        source_code: &str,
     ) -> crate::error::Result<()> {
         let lines: Vec<&str> = source_code.split("\n").collect();
         
         if location.line <= 1 || location.line > lines.len() {
             return Ok(Vec::new());
-        }
-
         let mut comments = Vec::new();
         let mut line_idx = location.line - 2; // Start from line before the declaration
         let mut comment_lines = Vec::new();
@@ -286,8 +198,6 @@ impl CommentExtractor {
         loop {
             if line_idx >= lines.len() {
                 break;
-            }
-
             let line = lines[line_idx].trim();
 
             if line.starts_with("///") || line.starts_with("//!") {
@@ -297,7 +207,6 @@ impl CommentExtractor {
                     line.trim_start_matches("///").trim()
                 } else {
                     line.trim_start_matches("//!").trim()
-                };
                 comment_lines.insert(0, comment_content.to_string());
             } else if line.starts_with("/**") {
                 // Start of block comment
@@ -331,8 +240,6 @@ impl CommentExtractor {
                     }
 
                     block_line_idx += 1;
-                }
-
                 comment_lines.splice(0..0, block_lines);
                 break;
             } else if line.starts_with("//") || line.is_empty() {
@@ -340,30 +247,18 @@ impl CommentExtractor {
             } else {
                 // Non-comment line - stop looking
                 break;
-            }
-
             if line_idx == 0 {
                 break;
             }
             line_idx -= 1;
-        }
-
         if found_comment && !comment_lines.is_empty() {
             let comment_text = comment_lines.join("\n");
             let parsed = self.parse_enhanced_comment(&comment_text, location.line, 1)?;
             comments.push(parsed);
-        }
-
         Ok(comments)
-    }
-
     /// Parse enhanced comment with JSDoc support
     #[instrument(skip(self, content))]
     fn parse_enhanced_comment(
-        &self,
-        content: &str,
-        line: usize,
-        column: usize,
     ) -> crate::error::Result<()> {
         let mut description_lines = Vec::new();
         let mut tags = Vec::new();
@@ -388,20 +283,13 @@ impl CommentExtractor {
                     in_code_block = true;
                     let language = line.trim_start_matches("```").trim();
                     current_example = Some(CodeExample {
-                        title: None,
-                        code: String::new(),
                         language: if language.is_empty() { 
                             "cursed".to_string() 
                         } else { 
                             language.to_string() 
-                        },
-                        expected_output: None,
-                        is_runnable: language == "cursed" || language == "csd",
                     });
                 }
                 continue;
-            }
-
             if in_code_block {
                 // Add line to current code example
                 if let Some(ref mut example) = current_example {
@@ -411,19 +299,12 @@ impl CommentExtractor {
                     example.code.push_str(line);
                 }
                 continue;
-            }
-
             // Handle JSDoc-style tags
             if line.starts_with('@') {
                 // Finish previous tag if any
                 if let Some((tag_name, tag_lines)) = current_tag.take() {
                     tags.push(DocTag {
-                        name: tag_name,
-                        value: tag_lines.join("\n").trim().to_string(),
-                        attributes: HashMap::new(),
                     });
-                }
-
                 // Parse new tag with type information
                 let tag_content = line.trim_start_matches('@');
                 let (tag_name, tag_value) = self.parse_jsdoc_tag(tag_content)?;
@@ -440,26 +321,12 @@ impl CommentExtractor {
         // Finish last tag if any
         if let Some((tag_name, tag_lines)) = current_tag {
             tags.push(DocTag {
-                name: tag_name,
-                value: tag_lines.join("\n").trim().to_string(),
-                attributes: HashMap::new(),
             });
-        }
-
         // Finish last example if any
         if let Some(example) = current_example {
             examples.push(example);
-        }
-
         Ok(ParsedComment {
-            description: description_lines.join("\n").trim().to_string(),
-            tags,
-            examples,
-            raw_text: content.to_string(),
-            location: (line, column),
         })
-    }
-
     /// Parse JSDoc-style tag with type information
     fn parse_jsdoc_tag(&self, tag_content: &str) -> crate::error::Result<()> {
         // Handle typed parameters: @param {string} name - The name parameter
@@ -487,8 +354,6 @@ impl CommentExtractor {
         (first.starts_with("///") && second.starts_with("///")) ||
         (first.starts_with("//!") && second.starts_with("//!")) ||
         (first.starts_with("/**") && !first.ends_with("*/"))
-    }
-
     /// Extract cross-references from comment text
     #[instrument(skip(self, text))]
     fn extract_cross_references(&self, text: &str) -> crate::error::Result<()> {
@@ -499,20 +364,13 @@ impl CommentExtractor {
             if let Some(pos) = text.find(&pattern.pattern) {
                 references.push(CrossReference {
                     target: "placeholder".to_string(), // Would extract from regex capture
-                    reference_type: pattern.reference_type.clone(),
-                    location: (pos, pos + pattern.pattern.len()),
-                    context: text.chars().skip(pos.saturating_sub(20)).take(40).collect(),
                 });
             }
         }
 
         Ok(references)
-    }
-
     /// Extract enhanced examples with validation
     fn extract_enhanced_examples(
-        &self,
-        examples: &[CodeExample],
     ) -> crate::error::Result<()> {
         let mut enhanced = Vec::new();
 
@@ -521,17 +379,9 @@ impl CommentExtractor {
             let is_valid_syntax = self.validate_example_syntax(&example.code)?;
 
             enhanced.push(EnhancedCodeExample {
-                base: example.clone(),
-                is_valid_syntax,
-                dependencies: self.extract_example_dependencies(&example.code)?,
                 compilation_result: None, // Would require actual compilation
-                performance_notes: Vec::new(),
             });
-        }
-
         Ok(enhanced)
-    }
-
     /// Validate example syntax (simplified)
     fn validate_example_syntax(&self, code: &str) -> crate::error::Result<()> {
         // Basic validation - check for balanced braces and semicolons
@@ -543,20 +393,10 @@ impl CommentExtractor {
             if escape_next {
                 escape_next = false;
                 continue;
-            }
-
             match ch {
-                '\\' if in_string => escape_next = true,
-                '"' => in_string = !in_string,
-                '{' if !in_string => brace_count += 1,
-                '}' if !in_string => brace_count -= 1,
                 _ => {}
             }
-        }
-
         Ok(brace_count == 0 && !in_string)
-    }
-
     /// Extract dependencies from example code
     fn extract_example_dependencies(&self, code: &str) -> crate::error::Result<()> {
         let mut dependencies = Vec::new();
@@ -576,8 +416,6 @@ impl CommentExtractor {
         }
 
         Ok(dependencies)
-    }
-
     /// Extract JSDoc tags from parsed tags
     fn extract_jsdoc_tags(&self, tags: &[DocTag]) -> crate::error::Result<()> {
         let mut jsdoc_tags = Vec::new();
@@ -587,18 +425,11 @@ impl CommentExtractor {
                 let (type_info, description) = self.parse_tag_type_info(&tag.value)?;
 
                 jsdoc_tags.push(JSDocTag {
-                    name: tag.name.clone(),
-                    type_info,
-                    description,
-                    attributes: tag.attributes.clone(),
-                    nested_tags: Vec::new(),
                 });
             }
         }
 
         Ok(jsdoc_tags)
-    }
-
     /// Parse type information from tag value
     fn parse_tag_type_info(&self, value: &str) -> crate::error::Result<()> {
         // Handle typed format: {string} name - Description
@@ -615,11 +446,7 @@ impl CommentExtractor {
                     return Ok((Some(type_info), rest.to_string()));
                 }
             }
-        }
-
         Ok((None, value.to_string()))
-    }
-
     /// Get main description from parsed comments
     pub fn get_main_description(&self, comments: &[ParsedComment]) -> Option<String> {
         for comment in comments {
@@ -628,8 +455,6 @@ impl CommentExtractor {
             }
         }
         None
-    }
-
     /// Get tags by name from parsed comments
     pub fn get_tags_by_name(&self, comments: &[ParsedComment], tag_name: &str) -> Vec<String> {
         let mut values = Vec::new();
@@ -640,8 +465,6 @@ impl CommentExtractor {
                     values.push(tag.value.clone());
                 }
             }
-        }
-        
         values
     }
 }

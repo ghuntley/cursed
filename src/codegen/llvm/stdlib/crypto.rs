@@ -12,361 +12,193 @@ use crate::codegen::llvm::LlvmCodeGenerator;
 
 /// fr fr Crypto function registry for LLVM
 pub struct CryptoLlvmRegistry {
-    functions: HashMap<String, CryptoLlvmFunction>,
-}
-
 /// fr fr LLVM-optimized crypto function
 pub struct CryptoLlvmFunction {
-    pub name: String,
-    pub signature: String,
-    pub implementation: Box<dyn Fn(&[Value]) -> crate::error::Result<()> + Send + Sync>,
-    pub intrinsic: bool,
-    pub hardware_accelerated: bool,
-}
-
 impl CryptoLlvmRegistry {
     /// slay Create new crypto LLVM registry
     pub fn new() -> Self {
         let mut registry = Self {
-            functions: HashMap::new(),
-        };
         
         registry.register_crypto_functions();
         registry
-    }
-    
     /// slay Register all crypto functions with LLVM
     fn register_crypto_functions(&mut self) {
         // RSA operations
         self.register_function(CryptoLlvmFunction {
-            name: "cursed_rsa_generate_keypair".to_string(),
-            signature: "{ ptr, ptr } @cursed_rsa_generate_keypair(i32)".to_string(),
             implementation: Box::new(|args| {
 //                 crate::stdlib::crypto::asymmetric::rsa_generate_keypair(args.to_vec())
-            }),
-            intrinsic: false,
-            hardware_accelerated: true,
         });
         
         self.register_function(CryptoLlvmFunction {
-            name: "cursed_rsa_encrypt".to_string(),
-            signature: "ptr @cursed_rsa_encrypt(ptr, ptr, i32)".to_string(),
             implementation: Box::new(|args| {
 //                 crate::stdlib::crypto::asymmetric::rsa_encrypt(args.to_vec())
-            }),
-            intrinsic: false,
-            hardware_accelerated: true,
         });
         
         self.register_function(CryptoLlvmFunction {
-            name: "cursed_rsa_decrypt".to_string(),
-            signature: "ptr @cursed_rsa_decrypt(ptr, ptr, i32)".to_string(),
             implementation: Box::new(|args| {
 //                 crate::stdlib::crypto::asymmetric::rsa_decrypt(args.to_vec())
-            }),
-            intrinsic: false,
-            hardware_accelerated: true,
         });
         
         self.register_function(CryptoLlvmFunction {
-            name: "cursed_rsa_sign".to_string(),
-            signature: "ptr @cursed_rsa_sign(ptr, ptr, i32)".to_string(),
             implementation: Box::new(|args| {
 //                 crate::stdlib::crypto::asymmetric::rsa_sign(args.to_vec())
-            }),
-            intrinsic: false,
-            hardware_accelerated: true,
         });
         
         self.register_function(CryptoLlvmFunction {
-            name: "cursed_rsa_verify".to_string(),
-            signature: "i1 @cursed_rsa_verify(ptr, ptr, ptr, i32)".to_string(),
             implementation: Box::new(|args| {
 //                 crate::stdlib::crypto::asymmetric::rsa_verify(args.to_vec())
-            }),
-            intrinsic: false,
-            hardware_accelerated: true,
         });
         
         // ECDSA operations
         self.register_function(CryptoLlvmFunction {
-            name: "cursed_ecdsa_generate_keypair".to_string(),
-            signature: "{ ptr, ptr } @cursed_ecdsa_generate_keypair(i32)".to_string(),
             implementation: Box::new(|args| {
 //                 crate::stdlib::crypto::asymmetric::ecdsa_generate_keypair(args.to_vec())
-            }),
-            intrinsic: false,
-            hardware_accelerated: true,
         });
         
         self.register_function(CryptoLlvmFunction {
-            name: "cursed_ecdsa_sign".to_string(),
-            signature: "ptr @cursed_ecdsa_sign(ptr, ptr)".to_string(),
             implementation: Box::new(|args| {
 //                 crate::stdlib::crypto::asymmetric::ecdsa_sign(args.to_vec())
-            }),
-            intrinsic: false,
-            hardware_accelerated: true,
         });
         
         self.register_function(CryptoLlvmFunction {
-            name: "cursed_ecdsa_verify".to_string(),
-            signature: "i1 @cursed_ecdsa_verify(ptr, ptr, ptr)".to_string(),
             implementation: Box::new(|args| {
 //                 crate::stdlib::crypto::asymmetric::ecdsa_verify(args.to_vec())
-            }),
-            intrinsic: false,
-            hardware_accelerated: true,
         });
         
         // ECDH key exchange
         self.register_function(CryptoLlvmFunction {
-            name: "cursed_ecdh_generate_keypair".to_string(),
-            signature: "{ ptr, ptr } @cursed_ecdh_generate_keypair(i32)".to_string(),
             implementation: Box::new(|args| {
 //                 crate::stdlib::crypto::asymmetric::ecdh_key_exchange(args.to_vec())
-            }),
-            intrinsic: false,
-            hardware_accelerated: true,
         });
         
         self.register_function(CryptoLlvmFunction {
-            name: "cursed_ecdh_exchange".to_string(),
-            signature: "ptr @cursed_ecdh_exchange(ptr, ptr)".to_string(),
             implementation: Box::new(|args| {
 //                 crate::stdlib::crypto::asymmetric::ecdh_key_exchange(args.to_vec())
-            }),
-            intrinsic: false,
-            hardware_accelerated: true,
         });
         
         // X25519 operations
         self.register_function(CryptoLlvmFunction {
-            name: "cursed_x25519_generate_keypair".to_string(),
-            signature: "{ [32 x i8], [32 x i8] } @cursed_x25519_generate_keypair()".to_string(),
             implementation: Box::new(|args| {
 //                 crate::stdlib::crypto::asymmetric::x25519_generate_keypair(args.to_vec())
-            }),
-            intrinsic: true,
-            hardware_accelerated: true,
         });
         
         self.register_function(CryptoLlvmFunction {
-            name: "cursed_x25519_exchange".to_string(),
-            signature: "[32 x i8] @cursed_x25519_exchange([32 x i8], [32 x i8])".to_string(),
             implementation: Box::new(|args| {
 //                 crate::stdlib::crypto::asymmetric::x25519_key_exchange(args.to_vec())
-            }),
-            intrinsic: true,
-            hardware_accelerated: true,
         });
         
         // Ed25519 operations
         self.register_function(CryptoLlvmFunction {
-            name: "cursed_ed25519_generate_keypair".to_string(),
-            signature: "{ [32 x i8], [32 x i8] } @cursed_ed25519_generate_keypair()".to_string(),
             implementation: Box::new(|args| {
 //                 crate::stdlib::crypto::asymmetric::ed25519_generate_keypair(args.to_vec())
-            }),
-            intrinsic: true,
-            hardware_accelerated: true,
         });
         
         self.register_function(CryptoLlvmFunction {
-            name: "cursed_ed25519_sign".to_string(),
-            signature: "[64 x i8] @cursed_ed25519_sign([32 x i8], ptr, i32)".to_string(),
             implementation: Box::new(|args| {
 //                 crate::stdlib::crypto::asymmetric::ed25519_sign(args.to_vec())
-            }),
-            intrinsic: true,
-            hardware_accelerated: true,
         });
         
         self.register_function(CryptoLlvmFunction {
-            name: "cursed_ed25519_verify".to_string(),
-            signature: "i1 @cursed_ed25519_verify([32 x i8], ptr, i32, [64 x i8])".to_string(),
             implementation: Box::new(|args| {
 //                 crate::stdlib::crypto::asymmetric::ed25519_verify(args.to_vec())
-            }),
-            intrinsic: true,
-            hardware_accelerated: true,
         });
         
         // Certificate operations
         self.register_function(CryptoLlvmFunction {
-            name: "cursed_parse_certificate_pem".to_string(),
-            signature: "ptr @cursed_parse_certificate_pem(ptr)".to_string(),
             implementation: Box::new(|args| {
 //                 crate::stdlib::crypto::certificates::parse_certificate_pem(args.to_vec())
-            }),
-            intrinsic: false,
-            hardware_accelerated: false,
         });
         
         self.register_function(CryptoLlvmFunction {
-            name: "cursed_parse_certificate_der".to_string(),
-            signature: "ptr @cursed_parse_certificate_der(ptr, i32)".to_string(),
             implementation: Box::new(|args| {
 //                 crate::stdlib::crypto::certificates::parse_certificate_der(args.to_vec())
-            }),
-            intrinsic: false,
-            hardware_accelerated: false,
         });
         
         self.register_function(CryptoLlvmFunction {
-            name: "cursed_validate_certificate".to_string(),
-            signature: "i1 @cursed_validate_certificate(ptr, ptr)".to_string(),
             implementation: Box::new(|args| {
 //                 crate::stdlib::crypto::certificates::validate_certificate(args.to_vec())
-            }),
-            intrinsic: false,
-            hardware_accelerated: false,
         });
         
         self.register_function(CryptoLlvmFunction {
-            name: "cursed_validate_certificate_chain".to_string(),
-            signature: "i1 @cursed_validate_certificate_chain(ptr, i32, ptr)".to_string(),
             implementation: Box::new(|args| {
 //                 crate::stdlib::crypto::certificates::validate_certificate_chain(args.to_vec())
-            }),
-            intrinsic: false,
-            hardware_accelerated: false,
         });
         
         self.register_function(CryptoLlvmFunction {
-            name: "cursed_get_certificate_fingerprint".to_string(),
-            signature: "ptr @cursed_get_certificate_fingerprint(ptr)".to_string(),
             implementation: Box::new(|args| {
 //                 crate::stdlib::crypto::certificates::get_certificate_fingerprint(args.to_vec())
-            }),
-            intrinsic: false,
-            hardware_accelerated: false,
         });
         
         // Utility operations
         self.register_function(CryptoLlvmFunction {
-            name: "cursed_pem_to_der".to_string(),
-            signature: "ptr @cursed_pem_to_der(ptr)".to_string(),
             implementation: Box::new(|args| {
 //                 crate::stdlib::crypto::certificates::pem_to_der(args.to_vec())
-            }),
-            intrinsic: false,
-            hardware_accelerated: false,
         });
         
         self.register_function(CryptoLlvmFunction {
-            name: "cursed_der_to_pem".to_string(),
-            signature: "ptr @cursed_der_to_pem(ptr, i32)".to_string(),
             implementation: Box::new(|args| {
 //                 crate::stdlib::crypto::certificates::der_to_pem(args.to_vec())
-            }),
-            intrinsic: false,
-            hardware_accelerated: false,
         });
 
         // Big integer operations for crypto
         self.register_function(CryptoLlvmFunction {
-            name: "cursed_bigint_add".to_string(),
-            signature: "ptr @cursed_bigint_add(ptr, ptr)".to_string(),
             implementation: Box::new(|_args| {
                 // Placeholder for big integer addition
                 Ok(Value::String("bigint_result".to_string()))
-            }),
-            intrinsic: true,
-            hardware_accelerated: true,
         });
 
         self.register_function(CryptoLlvmFunction {
-            name: "cursed_bigint_multiply".to_string(),
-            signature: "ptr @cursed_bigint_multiply(ptr, ptr)".to_string(),
             implementation: Box::new(|_args| {
                 // Placeholder for big integer multiplication
                 Ok(Value::String("bigint_result".to_string()))
-            }),
-            intrinsic: true,
-            hardware_accelerated: true,
         });
 
         self.register_function(CryptoLlvmFunction {
-            name: "cursed_bigint_mod_exp".to_string(),
-            signature: "ptr @cursed_bigint_mod_exp(ptr, ptr, ptr)".to_string(),
             implementation: Box::new(|_args| {
                 // Placeholder for modular exponentiation
                 Ok(Value::String("bigint_result".to_string()))
-            }),
-            intrinsic: true,
-            hardware_accelerated: true,
         });
 
         self.register_function(CryptoLlvmFunction {
-            name: "cursed_bigint_mod_inverse".to_string(),
-            signature: "ptr @cursed_bigint_mod_inverse(ptr, ptr)".to_string(),
             implementation: Box::new(|_args| {
                 // Placeholder for modular inverse
                 Ok(Value::String("bigint_result".to_string()))
-            }),
-            intrinsic: true,
-            hardware_accelerated: true,
         });
 
         // Secure memory operations
         self.register_function(CryptoLlvmFunction {
-            name: "cursed_secure_memzero".to_string(),
-            signature: "void @cursed_secure_memzero(ptr, i32)".to_string(),
             implementation: Box::new(|_args| {
                 // Placeholder for secure memory zeroing
                 Ok(Value::Boolean(true))
-            }),
-            intrinsic: true,
-            hardware_accelerated: false,
         });
 
         self.register_function(CryptoLlvmFunction {
-            name: "cursed_constant_time_memcmp".to_string(),
-            signature: "i1 @cursed_constant_time_memcmp(ptr, ptr, i32)".to_string(),
             implementation: Box::new(|_args| {
                 // Placeholder for constant-time memory comparison
                 Ok(Value::Boolean(true))
-            }),
-            intrinsic: true,
-            hardware_accelerated: false,
         });
-    }
-    
     /// slay Register a crypto function
     fn register_function(&mut self, function: CryptoLlvmFunction) {
         self.functions.insert(function.name.clone(), function);
-    }
-    
     /// slay Get function by name
     pub fn get_function(&self, name: &str) -> Option<&CryptoLlvmFunction> {
         self.functions.get(name)
-    }
-    
     /// slay Get all function names
     pub fn get_function_names(&self) -> Vec<String> {
         self.functions.keys().cloned().collect()
-    }
-    
     /// slay Get LLVM declarations for all crypto functions
     pub fn get_llvm_declarations(&self) -> String {
         let mut declarations = String::new();
         
         for function in self.functions.values() {
             declarations.push_str(&format!("declare {} \n", function.signature));
-        }
-        
         declarations
-    }
-    
     /// slay Get hardware accelerated functions
     pub fn get_hardware_accelerated_functions(&self) -> Vec<&str> {
         self.functions.values()
             .filter(|f| f.hardware_accelerated)
             .map(|f| f.name.as_str())
             .collect()
-    }
-    
     /// slay Get intrinsic functions
     pub fn get_intrinsic_functions(&self) -> Vec<&str> {
         self.functions.values()
@@ -395,8 +227,6 @@ pub trait CryptoLlvmIntegration {
     
     /// slay Enable hardware acceleration
     fn enable_hardware_acceleration(&mut self) -> crate::error::Result<()>;
-}
-
 impl CryptoLlvmIntegration for LlvmCodeGenerator {
     fn register_crypto_functions(&mut self) -> crate::error::Result<()> {
         let registry = CryptoLlvmRegistry::new();
@@ -405,15 +235,11 @@ impl CryptoLlvmIntegration for LlvmCodeGenerator {
         for (name, function) in &registry.functions {
             // In a real implementation, this would register the function with LLVM
             println!("Registering crypto function: {} -> {}", name, function.signature);
-        }
-        
         // Add LLVM declarations to module
         let declarations = registry.get_llvm_declarations();
         println!("LLVM Crypto Declarations:\n{}", declarations);
         
         Ok(())
-    }
-    
     fn generate_crypto_operation(&mut self, operation: &str, args: &[Value]) -> crate::error::Result<()> {
         let registry = CryptoLlvmRegistry::new();
         
@@ -429,7 +255,6 @@ impl CryptoLlvmIntegration for LlvmCodeGenerator {
                             %result = call ptr @cursed_rsa_encrypt(ptr %key_ptr, ptr %data_ptr, i32 %padding)
                             store ptr %result, ptr %output
                         "#)
-                    },
                     "cursed_ecdsa_sign" => {
                         format!(r#"
                             ; Optimized ECDSA signing with constant-time operations
@@ -438,7 +263,6 @@ impl CryptoLlvmIntegration for LlvmCodeGenerator {
                             %signature = call ptr @cursed_ecdsa_sign(ptr %priv_key, ptr %msg_ptr)
                             store ptr %signature, ptr %output
                         "#)
-                    },
                     "cursed_x25519_exchange" => {
                         format!(r#"
                             ; X25519 key exchange with SIMD optimization
@@ -447,7 +271,6 @@ impl CryptoLlvmIntegration for LlvmCodeGenerator {
                             %shared = call [32 x i8] @cursed_x25519_exchange([32 x i8] %priv, [32 x i8] %pub)
                             store [32 x i8] %shared, ptr %output
                         "#)
-                    },
                     "cursed_ed25519_verify" => {
                         format!(r#"
                             ; Ed25519 verification with optimized point operations
@@ -458,7 +281,6 @@ impl CryptoLlvmIntegration for LlvmCodeGenerator {
                             %valid = call i1 @cursed_ed25519_verify([32 x i8] %pub_key, ptr %msg_ptr, i32 %msg_len, [64 x i8] %sig)
                             store i1 %valid, ptr %output
                         "#)
-                    },
                     "cursed_bigint_mod_exp" => {
                         format!(r#"
                             ; Optimized modular exponentiation with Montgomery ladder
@@ -468,7 +290,6 @@ impl CryptoLlvmIntegration for LlvmCodeGenerator {
                             %result = call ptr @cursed_bigint_mod_exp(ptr %base_ptr, ptr %exp_ptr, ptr %mod_ptr)
                             store ptr %result, ptr %output
                         "#)
-                    },
                     _ => {
                         format!(r#"
                             ; Generic crypto operation: {}
@@ -476,10 +297,8 @@ impl CryptoLlvmIntegration for LlvmCodeGenerator {
                             store ptr %result, ptr %output
                         "#, operation, operation)
                     }
-                };
                 
                 Ok(llvm_code)
-            },
             None => Err(CursedError::Runtime(format!("Unknown crypto operation: {}", operation)))
         }
     }
@@ -495,8 +314,6 @@ impl CryptoLlvmIntegration for LlvmCodeGenerator {
         
         // In a real implementation, this would configure LLVM passes
         Ok(())
-    }
-    
     fn enable_hardware_acceleration(&mut self) -> crate::error::Result<()> {
         println!("Enabling hardware acceleration for crypto operations:");
         println!("  - Intel AES-NI instructions");
@@ -511,16 +328,10 @@ impl CryptoLlvmIntegration for LlvmCodeGenerator {
 
 /// fr fr Secure key storage for LLVM
 pub struct SecureKeyStorage {
-    keys: HashMap<String, Vec<u8>>,
-    protected: bool,
-}
-
 impl SecureKeyStorage {
     /// slay Create new secure key storage
     pub fn new() -> Self {
         Self {
-            keys: HashMap::new(),
-            protected: true,
         }
     }
     
@@ -533,15 +344,11 @@ impl SecureKeyStorage {
             return Err(CursedError::Runtime("Key storage not protected".to_string()));
         }
         Ok(())
-    }
-    
     /// slay Retrieve key securely
     pub fn retrieve_key(&self, key_id: &str) -> crate::error::Result<()> {
         self.keys.get(key_id)
             .cloned()
             .ok_or_else(|| CursedError::Runtime(format!("Key not found: {}", key_id)))
-    }
-    
     /// slay Delete key securely
     pub fn delete_key(&mut self, key_id: &str) -> crate::error::Result<()> {
         if let Some(mut key_data) = self.keys.remove(key_id) {
@@ -551,8 +358,6 @@ impl SecureKeyStorage {
             }
         }
         Ok(())
-    }
-    
     /// slay List stored keys
     pub fn list_keys(&self) -> Vec<String> {
         self.keys.keys().cloned().collect()
@@ -578,5 +383,3 @@ pub fn init_crypto_llvm_integration(codegen: &mut LlvmCodeGenerator) -> crate::e
     
     println!("🔐 Crypto LLVM integration initialized - optimized crypto ready bestie!");
     Ok(())
-}
-

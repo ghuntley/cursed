@@ -18,39 +18,23 @@ use tracing::{debug, error, info, instrument, warn};
 #[derive(Debug)]
 pub struct ErrorPropagationOperator {
     /// CursedError context stack for tracking propagation sites
-    pub context_stack: Arc<Mutex<ErrorContextStack>>,
     /// Propagation statistics for monitoring
-    pub statistics: Arc<RwLock<PropagationStatistics>>,
     /// Configuration for propagation behavior
-    pub config: PropagationConfig,
-}
-
 impl ErrorPropagationOperator {
     /// Create a new error propagation operator
     pub fn new() -> Self {
         Self::with_config(PropagationConfig::default())
-    }
-
     /// Create with custom configuration
     pub fn with_config(config: PropagationConfig) -> Self {
         Self {
-            context_stack: Arc::new(Mutex::new(ErrorContextStack::new())),
-            statistics: Arc::new(RwLock::new(PropagationStatistics::new())),
-            config,
         }
     }
 
     /// Apply the `?` operator to a Result value
     #[instrument(skip(self, result_value))]
     pub fn apply_question_mark<T, E>(
-        &self,
-        result_value: CursedResult<T, E>,
-        source_location: SourceLocation,
-        function_context: Option<String>,
     ) -> Result<T, PropagationError<E>>
     where
-        T: Clone + fmt::Debug,
-        E: Clone + fmt::Debug,
     {
         // Record propagation attempt
         let start_time = Instant::now();
@@ -59,8 +43,6 @@ impl ErrorPropagationOperator {
         match result_value {
             CursedResult::Ok(value) => {
                 debug!(
-                    location = ?source_location,
-                    function = ?function_context,
                     "Question mark operator: success path"
                 );
                 self.record_successful_propagation(start_time.elapsed());
@@ -69,25 +51,13 @@ impl ErrorPropagationOperator {
             CursedResult::Err(error) => {
                 // Create propagation error with context
                 let propagation_error = PropagationError::new(
-                    error,
-                    source_location.clone(),
-                    function_context.clone(),
                 );
 
                 // Add to context stack
                 if let Ok(mut stack) = self.context_stack.lock() {
                     stack.push_context(ErrorPropagationContext {
-                        location: source_location.clone(),
-                        function_name: function_context.clone(),
-                        error_type: "Result::Err".to_string(),
-                        timestamp: Instant::now(),
                     });
-                }
-
                 warn!(
-                    location = ?source_location,
-                    function = ?function_context,
-                    error = ?propagation_error.inner_error,
                     "Question mark operator: error propagation"
                 );
 
@@ -95,18 +65,11 @@ impl ErrorPropagationOperator {
                 Err(propagation_error)
             }
         }
-    }
-
     /// Apply the `?` operator to an Option value
     #[instrument(skip(self, option_value))]
     pub fn apply_question_mark_option<T>(
-        &self,
-        option_value: CursedOption<T>,
-        source_location: SourceLocation,
-        function_context: Option<String>,
     ) -> crate::error::Result<()>
     where
-        T: Clone + fmt::Debug,
     {
         let start_time = Instant::now();
         self.record_propagation_attempt();
@@ -114,8 +77,6 @@ impl ErrorPropagationOperator {
         match option_value {
             CursedOption::Some(value) => {
                 debug!(
-                    location = ?source_location,
-                    function = ?function_context,
                     "Question mark operator on Option: success path"
                 );
                 self.record_successful_propagation(start_time.elapsed());
@@ -123,29 +84,15 @@ impl ErrorPropagationOperator {
             }
             CursedOption::None => {
                 let none_error = NoneError {
-                    message: "Option was None".to_string(),
-                    location: source_location.clone(),
-                };
 
                 let propagation_error = PropagationError::new(
-                    none_error,
-                    source_location.clone(),
-                    function_context.clone(),
                 );
 
                 // Add to context stack
                 if let Ok(mut stack) = self.context_stack.lock() {
                     stack.push_context(ErrorPropagationContext {
-                        location: source_location.clone(),
-                        function_name: function_context.clone(),
-                        error_type: "Option::None".to_string(),
-                        timestamp: Instant::now(),
                     });
-                }
-
                 warn!(
-                    location = ?source_location,
-                    function = ?function_context,
                     "Question mark operator on Option: None propagation"
                 );
 
@@ -153,30 +100,22 @@ impl ErrorPropagationOperator {
                 Err(propagation_error)
             }
         }
-    }
-
     /// Get the current error context chain
     pub fn get_error_context_chain(&self) -> crate::error::Result<()> {
         let stack = self.context_stack.lock()
             .map_err(|_| CursedError::system_error("Failed to acquire context stack lock"))?;
         Ok(stack.get_contexts())
-    }
-
     /// Clear the error context stack
     pub fn clear_context_stack(&self) -> crate::error::Result<()> {
         let mut stack = self.context_stack.lock()
             .map_err(|_| CursedError::system_error("Failed to acquire context stack lock"))?;
         stack.clear();
         Ok(())
-    }
-
     /// Get propagation statistics
     pub fn get_statistics(&self) -> crate::error::Result<()> {
         let stats = self.statistics.read()
             .map_err(|_| CursedError::system_error("Failed to acquire statistics lock"))?;
         Ok(stats.clone())
-    }
-
     /// Record a propagation attempt
     fn record_propagation_attempt(&self) {
         if let Ok(mut stats) = self.statistics.write() {
@@ -199,39 +138,20 @@ impl ErrorPropagationOperator {
             stats.total_duration += duration;
         }
     }
-}
-
 /// CursedError that occurred during propagation
 #[derive(Debug, Clone)]
 pub struct PropagationError<E> {
     /// The original error being propagated
-    pub inner_error: E,
     /// Location where propagation occurred
-    pub propagation_site: SourceLocation,
     /// Function context
-    pub function_context: Option<String>,
     /// Propagation chain
-    pub propagation_chain: Vec<SourceLocation>,
     /// Additional context
-    pub additional_context: Option<String>,
     /// Timestamp of error
-    pub timestamp: Instant,
-}
-
 impl<E> PropagationError<E> {
     /// Create a new propagation error
     pub fn new(
-        inner_error: E,
-        propagation_site: SourceLocation,
-        function_context: Option<String>,
     ) -> Self {
         Self {
-            inner_error,
-            propagation_site,
-            function_context,
-            propagation_chain: Vec::new(),
-            additional_context: None,
-            timestamp: Instant::now(),
         }
     }
 
@@ -239,14 +159,10 @@ impl<E> PropagationError<E> {
     pub fn add_propagation_site(mut self, site: SourceLocation) -> Self {
         self.propagation_chain.push(site);
         self
-    }
-
     /// Add additional context
     pub fn with_context(mut self, context: String) -> Self {
         self.additional_context = Some(context);
         self
-    }
-
     /// Get the full propagation chain
     pub fn full_chain(&self) -> Vec<SourceLocation> {
         let mut chain = vec![self.propagation_site.clone()];
@@ -280,10 +196,6 @@ impl<E> PropagationError<E> {
 /// CursedError representing None in Option
 #[derive(Debug, Clone)]
 pub struct NoneError {
-    pub message: String,
-    pub location: SourceLocation,
-}
-
 // impl fmt::Display for NoneError {
 //     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
 //         write!(f, "{} at {}:{}", self.message, self.location.line, self.location.column)
@@ -294,15 +206,9 @@ pub struct NoneError {
 #[derive(Debug, Clone)]
 pub struct ErrorPropagationContext {
     /// Source location of the propagation
-    pub location: SourceLocation,
     /// Function name where propagation occurred
-    pub function_name: Option<String>,
     /// Type of error being propagated
-    pub error_type: String,
     /// Timestamp of the propagation
-    pub timestamp: Instant,
-}
-
 // impl fmt::Display for ErrorPropagationContext {
 //     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
 //         write!(
@@ -325,22 +231,14 @@ pub struct ErrorPropagationContext {
 #[derive(Debug)]
 pub struct ErrorContextStack {
     /// Stack of propagation contexts
-    contexts: VecDeque<ErrorPropagationContext>,
     /// Maximum stack depth
-    max_depth: usize,
-}
-
 impl ErrorContextStack {
     /// Create a new context stack
     pub fn new() -> Self {
         Self::with_capacity(100)
-    }
-
     /// Create with specific capacity
     pub fn with_capacity(max_depth: usize) -> Self {
         Self {
-            contexts: VecDeque::new(),
-            max_depth,
         }
     }
 
@@ -350,28 +248,18 @@ impl ErrorContextStack {
             self.contexts.pop_front();
         }
         self.contexts.push_back(context);
-    }
-
     /// Pop the most recent context
     pub fn pop_context(&mut self) -> Option<ErrorPropagationContext> {
         self.contexts.pop_back()
-    }
-
     /// Get all contexts as a vector
     pub fn get_contexts(&self) -> Vec<ErrorPropagationContext> {
         self.contexts.iter().cloned().collect()
-    }
-
     /// Clear all contexts
     pub fn clear(&mut self) {
         self.contexts.clear();
-    }
-
     /// Get the depth of the stack
     pub fn depth(&self) -> usize {
         self.contexts.len()
-    }
-
     /// Check if stack is empty
     pub fn is_empty(&self) -> bool {
         self.contexts.is_empty()
@@ -382,26 +270,14 @@ impl ErrorContextStack {
 #[derive(Debug, Clone)]
 pub struct PropagationStatistics {
     /// Total number of propagation attempts
-    pub total_attempts: u64,
     /// Number of successful propagations (Ok/Some values)
-    pub successful_propagations: u64,
     /// Number of error propagations (Err/None values)
-    pub error_propagations: u64,
     /// Total time spent in propagation operations
-    pub total_duration: Duration,
     /// Last reset timestamp
-    pub last_reset: Instant,
-}
-
 impl PropagationStatistics {
     /// Create new statistics
     pub fn new() -> Self {
         Self {
-            total_attempts: 0,
-            successful_propagations: 0,
-            error_propagations: 0,
-            total_duration: Duration::from_nanos(0),
-            last_reset: Instant::now(),
         }
     }
 
@@ -455,26 +331,14 @@ impl fmt::Display for PropagationStatistics {
 #[derive(Debug, Clone)]
 pub struct PropagationConfig {
     /// Maximum context stack depth
-    pub max_context_depth: usize,
     /// Whether to enable detailed tracing
-    pub enable_tracing: bool,
     /// Whether to collect timing statistics
-    pub collect_timing: bool,
     /// Timeout for propagation operations
-    pub propagation_timeout: Option<Duration>,
-}
-
 impl Default for PropagationConfig {
     fn default() -> Self {
         Self {
-            max_context_depth: 100,
-            enable_tracing: true,
-            collect_timing: true,
-            propagation_timeout: Some(Duration::from_millis(1000)),
         }
     }
-}
-
 /// Result type for error propagation operations
 pub type PropagationResult<T, E> = Result<T, PropagationError<E>>;
 
@@ -485,70 +349,33 @@ pub mod helpers {
     /// Create a propagation operator with default settings
     pub fn create_default_propagator() -> ErrorPropagationOperator {
         ErrorPropagationOperator::new()
-    }
-
     /// Apply `?` to a Result with source location
     pub fn propagate_result<T, E>(
-        operator: &ErrorPropagationOperator,
-        result: CursedResult<T, E>,
-        line: usize,
-        column: usize,
-        function: Option<&str>,
     ) -> PropagationResult<T, E>
     where
-        T: Clone + fmt::Debug,
-        E: Clone + fmt::Debug,
     {
         operator.apply_question_mark(
-            result,
-            SourceLocation::new(line, column),
-            function.map(|s| s.to_string()),
         )
-    }
-
     /// Apply `?` to an Option with source location
     pub fn propagate_option<T>(
-        operator: &ErrorPropagationOperator,
-        option: CursedOption<T>,
-        line: usize,
-        column: usize,
-        function: Option<&str>,
     ) -> Propagationcrate::error::Result<()>
     where
-        T: Clone + fmt::Debug,
     {
         operator.apply_question_mark_option(
-            option,
-            SourceLocation::new(line, column),
-            function.map(|s| s.to_string()),
         )
-    }
-
     /// Create a CURSED error from a propagation error
     pub fn to_cursed_error<E: fmt::Display>(
-        propagation_error: PropagationError<E>,
     ) -> CursedError {
         CursedError::ErrorPropagation {
-            message: format!("CursedError propagation failed: {}", propagation_error),
-            line: Some(propagation_error.propagation_site.line),
-            column: Some(propagation_error.propagation_site.column),
         }
     }
-}
-
 
 /// FFI function for enhanced question mark operator
 #[no_mangle]
 pub extern "C" fn cursed_enhanced_question_mark(
-    result_ptr: *const u8,
-    line: i32,
-    column: i32,
-    function_name: *const c_char,
 ) -> *mut u8 {
     if result_ptr.is_null() {
         return std::ptr::null_mut();
-    }
-    
     // Extract function name if provided
     let _function_name = if function_name.is_null() {
         None
@@ -559,48 +386,32 @@ pub extern "C" fn cursed_enhanced_question_mark(
                 .ok()
                 .map(|s| s.to_string())
         }
-    };
     
     // For now, return a simple placeholder
     let success_marker: u8 = 1;
     Box::into_raw(Box::new(success_marker))
-}
-
 /// FFI function for checking Result type
 #[no_mangle]
 pub extern "C" fn cursed_check_result(result_ptr: *const u8) -> *mut u8 {
     if result_ptr.is_null() {
         return std::ptr::null_mut();
-    }
-    
     // For now, assume success
     let success_marker: u8 = 1;
     Box::into_raw(Box::new(success_marker))
-}
-
 /// FFI function for checking Option type
 #[no_mangle]
 pub extern "C" fn cursed_check_option(option_ptr: *const u8) -> *mut u8 {
     if option_ptr.is_null() {
         return std::ptr::null_mut();
-    }
-    
     // For now, assume some value
     let success_marker: u8 = 1;
     Box::into_raw(Box::new(success_marker))
-}
-
 /// FFI function for error propagation check (expected by tests)
 #[no_mangle]
 pub extern "C" fn cursed_error_propagation_check(
-    value_ptr: *const u8,
-    line: i32,
-    column: i32,
 ) -> *mut u8 {
     if value_ptr.is_null() {
         return std::ptr::null_mut();
-    }
-    
     // For now, assume success
     let success_marker: u8 = 1;
     Box::into_raw(Box::new(success_marker))

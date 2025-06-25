@@ -19,63 +19,21 @@ use inkwell::context::Context;
 /// Execution context for REPL evaluations
 #[derive(Debug, Clone)]
 pub struct ExecutionContext {
-    pub variables: HashMap<String, ContextValue>,
-    pub functions: HashMap<String, ContextFunction>,
-    pub imports: Vec<String>,
-    pub current_module: Option<String>,
-}
-
 /// Value stored in REPL context
 #[derive(Debug, Clone)]
 pub struct ContextValue {
-    pub name: String,
-    pub type_info: String,
-    pub value: String,
-    pub is_mutable: bool,
-}
-
 /// Function stored in REPL context
 #[derive(Debug, Clone)]
 pub struct ContextFunction {
-    pub name: String,
-    pub signature: String,
-    pub return_type: String,
-    pub body: String,
-    pub is_external: bool,
-}
-
 /// REPL evaluation engine
 pub struct ReplEvaluator {
-    context: Arc<Mutex<ExecutionContext>>,
-    codegen: Option<LlvmCodeGenerator>,
-    jit_interface: Option<JitCompilationInterface<'static>>,
-    llvm_context: Option<Context>,
-    session_code: Vec<String>,
-    last_expression: Option<String>,
-    evaluation_timeout: Duration,
-}
-
 impl ReplEvaluator {
     /// Create a new REPL evaluator
     pub fn new() -> ReplResult<Self> {
         let context = ExecutionContext {
-            variables: HashMap::new(),
-            functions: HashMap::new(),
-            imports: Vec::new(),
-            current_module: None,
-        };
 
         Ok(Self {
-            context: Arc::new(Mutex::new(context)),
-            codegen: None,
-            jit_interface: None,
-            llvm_context: None,
-            session_code: Vec::new(),
-            last_expression: None,
-            evaluation_timeout: Duration::from_secs(30),
         })
-    }
-
     /// Initialize the LLVM code generator
     pub fn initialize_codegen(&mut self) -> ReplResult<()> {
         match LlvmCodeGenerator::new() {
@@ -86,8 +44,6 @@ impl ReplEvaluator {
                 if let Err(e) = self.initialize_jit_interface() {
                     tracing::warn!("JIT compilation not available: {}", e);
                     tracing::info!("Falling back to interpretation mode");
-                }
-                
                 Ok(())
             }
             Err(e) => {
@@ -97,8 +53,6 @@ impl ReplEvaluator {
                 Ok(())
             }
         }
-    }
-
     /// Initialize JIT compilation interface
     fn initialize_jit_interface(&mut self) -> ReplResult<()> {
         // Create LLVM context - in production this would be managed properly
@@ -118,8 +72,6 @@ impl ReplEvaluator {
                 )))
             }
         }
-    }
-
     /// Evaluate CURSED code in the current context
     pub fn evaluate(&mut self, code: &str, session_manager: &mut SessionManager) -> ReplResult<ReplOutput> {
         let start_time = Instant::now();
@@ -132,7 +84,6 @@ impl ReplEvaluator {
             self.evaluate_expression(code, &ast, session_manager)?
         } else {
             self.execute_statement(code, &ast, session_manager)?
-        };
 
         let execution_time = start_time.elapsed();
         
@@ -140,8 +91,6 @@ impl ReplEvaluator {
         session_manager.add_to_history(code.to_string(), true, execution_time);
         
         Ok(ReplOutput::success(result).with_timing(execution_time))
-    }
-
     /// Evaluate code using JIT compilation if available
     pub fn evaluate_with_jit(&mut self, code: &str) -> ReplResult<String> {
         if let Some(ref mut jit_interface) = self.jit_interface {
@@ -165,13 +114,9 @@ impl ReplEvaluator {
     /// Check if JIT compilation is available
     pub fn has_jit_support(&self) -> bool {
         self.jit_interface.is_some()
-    }
-
     /// Get JIT performance report
     pub fn get_jit_performance_report(&self) -> Option<String> {
         self.jit_interface.as_ref().map(|jit| jit.generate_performance_report())
-    }
-
     /// Compile and cache a function in JIT engine
     pub fn compile_function(&mut self, name: &str, source: &str) -> ReplResult<()> {
         if let Some(ref mut jit_interface) = self.jit_interface {
@@ -187,13 +132,10 @@ impl ReplEvaluator {
         self.jit_interface.as_ref()
             .map(|jit| jit.list_functions())
             .unwrap_or_default()
-    }
-
     /// Execute a previously compiled function
     pub fn execute_jit_function(&mut self, function_name: &str) -> ReplResult<String> {
         if let Some(ref mut jit_interface) = self.jit_interface {
             match jit_interface.execute_function(function_name) {
-                Ok(result) => Ok(result.to_string()),
                 Err(e) => Err(CursedError::repl_error(format!("Function execution failed: {}", e)))
             }
         } else {
@@ -214,17 +156,11 @@ impl ReplEvaluator {
         let errors = parser.errors();
         if !errors.is_empty() {
             return Err(CursedError::repl_error(format!("Parse errors: {}", errors.join(", "))));
-        }
-        
         Ok(program)
-    }
-
     /// Check if the AST represents an expression (returns a value)
     fn is_expression(&self, ast: &Program) -> bool {
         if ast.statements.len() != 1 {
             return false;
-        }
-        
         // Check if the single statement is an expression statement
         if let Some(expr_stmt) = ast.statements[0].as_any().downcast_ref::<crate::ast::ExpressionStatement>() {
             true
@@ -242,17 +178,12 @@ impl ReplEvaluator {
         // Try to compile and execute with LLVM if available
         if let Some(ref mut codegen) = self.codegen {
             match self.compile_and_execute_with_llvm(code, codegen) {
-                Ok(result) => return Ok(result),
                 Err(e) => {
                     eprintln!("LLVM execution failed, falling back to interpreter: {}", e);
                 }
             }
-        }
-        
         // Fall back to interpreter-based evaluation
         self.interpret_expression(code, ast, session_manager)
-    }
-
     /// Execute a statement (doesn't return a value)
     fn execute_statement(&mut self, code: &str, ast: &Program, session_manager: &mut SessionManager) -> ReplResult<String> {
         // Add to session code
@@ -269,12 +200,8 @@ impl ReplEvaluator {
                     eprintln!("LLVM execution failed, falling back to interpreter: {}", e);
                 }
             }
-        }
-        
         // Fall back to interpreter-based execution
         self.interpret_statement(code, ast, session_manager)
-    }
-
     /// Compile and execute code using LLVM
     fn compile_and_execute_with_llvm(&mut self, code: &str, codegen: &mut LlvmCodeGenerator) -> ReplResult<String> {
         // Create a complete program with session context
@@ -287,8 +214,6 @@ impl ReplEvaluator {
         // For now, return a placeholder since actual execution would require
         // LLVM JIT compilation which is more complex
         Ok("(compiled with LLVM)".to_string())
-    }
-
     /// Build a complete program including session context
     fn build_complete_program(&self, new_code: &str) -> String {
         let mut program = String::new();
@@ -307,8 +232,6 @@ impl ReplEvaluator {
                     program.push('\n');
                 }
             }
-        }
-        
         // Add session code
         for line in &self.session_code {
             if !line.starts_with("//") {
@@ -321,8 +244,6 @@ impl ReplEvaluator {
         program.push_str(new_code);
         
         program
-    }
-
     /// Interpret an expression using a simple evaluator
     fn interpret_expression(&mut self, code: &str, _ast: &Program, _session_manager: &mut SessionManager) -> ReplResult<String> {
         let trimmed = code.trim();
@@ -330,20 +251,12 @@ impl ReplEvaluator {
         // Handle literals
         if trimmed.chars().all(|c| c.is_ascii_digit()) {
             return Ok(trimmed.to_string());
-        }
-        
         if let Ok(float_val) = trimmed.parse::<f64>() {
             return Ok(float_val.to_string());
-        }
-        
         if trimmed.starts_with('"') && trimmed.ends_with('"') {
             return Ok(trimmed.to_string());
-        }
-        
         if trimmed == "true" || trimmed == "false" {
             return Ok(trimmed.to_string());
-        }
-        
         // Handle variable references
         if let Ok(context) = self.context.lock() {
             if let Some(var) = context.variables.get(trimmed) {
@@ -354,17 +267,11 @@ impl ReplEvaluator {
         // Handle simple arithmetic
         if let Some(result) = self.evaluate_simple_arithmetic(trimmed) {
             return Ok(result);
-        }
-        
         // Handle function calls
         if trimmed.contains('(') && trimmed.contains(')') {
             return self.evaluate_function_call(trimmed);
-        }
-        
         // Default case
         Ok(format!("(expression: {})", trimmed))
-    }
-
     /// Interpret a statement using a simple evaluator
     fn interpret_statement(&mut self, code: &str, _ast: &Program, _session_manager: &mut SessionManager) -> ReplResult<String> {
         let trimmed = code.trim();
@@ -372,29 +279,19 @@ impl ReplEvaluator {
         // Handle variable declarations
         if trimmed.starts_with("facts ") || trimmed.starts_with("sus ") {
             return self.handle_variable_declaration(trimmed);
-        }
-        
         // Handle function declarations
         if trimmed.starts_with("slay ") {
             return self.handle_function_declaration(trimmed);
-        }
-        
         // Handle import statements
         if trimmed.starts_with("import ") {
             return self.handle_import_statement(trimmed);
-        }
-        
         // Default case
         Ok("".to_string())
-    }
-
     /// Analyze AST for variable and function definitions
     fn analyze_definitions(&mut self, ast: &Program) -> ReplResult<()> {
         // This would be a more sophisticated analysis in a real implementation
         // For now, we'll rely on the simpler text-based analysis in interpret_statement
         Ok(())
-    }
-
     /// Evaluate simple arithmetic expressions
     fn evaluate_simple_arithmetic(&self, expr: &str) -> Option<String> {
         // Very basic arithmetic evaluation
@@ -434,11 +331,7 @@ impl ReplEvaluator {
                     return Some((l / r).to_string());
                 }
             }
-        }
-        
         None
-    }
-
     /// Evaluate function calls
     fn evaluate_function_call(&self, call: &str) -> ReplResult<String> {
         // Extract function name and arguments
@@ -447,7 +340,6 @@ impl ReplEvaluator {
             
             // Handle built-in functions
             match func_name {
-                "len" => Ok("(length function)".to_string()),
                 "print" | "println" => {
                     // Extract the argument and return empty string (side effect)
                     Ok("".to_string())
@@ -491,7 +383,6 @@ impl ReplEvaluator {
                 value_expr
             } else {
                 value_expr
-            };
             
             // Infer type
             let type_info = if value.chars().all(|c| c.is_ascii_digit()) {
@@ -504,19 +395,11 @@ impl ReplEvaluator {
                 "bool".to_string()
             } else {
                 "unknown".to_string()
-            };
             
             // Store in context
             if let Ok(mut context) = self.context.lock() {
                 let context_value = ContextValue {
-                    name: var_name.clone(),
-                    type_info,
-                    value,
-                    is_mutable,
-                };
                 context.variables.insert(var_name.clone(), context_value);
-            }
-            
             Ok(format!("Variable {} declared", var_name))
         } else {
             Err(CursedError::repl_error("Invalid variable declaration syntax".to_string()))
@@ -534,15 +417,7 @@ impl ReplEvaluator {
                 // For now, just record that the function exists
                 if let Ok(mut context) = self.context.lock() {
                     let context_function = ContextFunction {
-                        name: func_name.to_string(),
-                        signature: decl.to_string(),
-                        return_type: "unknown".to_string(),
-                        body: decl.to_string(),
-                        is_external: false,
-                    };
                     context.functions.insert(func_name.to_string(), context_function);
-                }
-                
                 Ok(format!("Function {} declared", func_name))
             } else {
                 Err(CursedError::repl_error("Invalid function name".to_string()))
@@ -608,8 +483,6 @@ impl ReplEvaluator {
         if let Ok(context) = self.context.lock() {
             if let Some(var) = context.variables.get(trimmed) {
                 return Ok(var.type_info.clone());
-            }
-            
             if let Some(func) = context.functions.get(trimmed) {
                 return Ok(format!("function {}", func.signature));
             }
@@ -635,14 +508,10 @@ impl ReplEvaluator {
             context.variables.clear();
             context.functions.clear();
             context.imports.clear();
-        }
-        
         self.session_code.clear();
         self.last_expression = None;
         
         Ok(())
-    }
-
     /// Get the current session code
     pub fn get_session_code(&self) -> String {
         self.session_code.join("\n")

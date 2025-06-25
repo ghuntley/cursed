@@ -11,68 +11,39 @@ use std::fmt;
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum SphincsParameterSet {
     /// SPHINCS+-128s: 128-bit security, small signatures
-    Sphincs128s,
     /// SPHINCS+-192s: 192-bit security, small signatures 
-    Sphincs192s,
     /// SPHINCS+-256s: 256-bit security, small signatures
-    Sphincs256s,
     /// SPHINCS+-128f: 128-bit security, fast verification
-    Sphincs128f,
     /// SPHINCS+-192f: 192-bit security, fast verification
-    Sphincs192f,
     /// SPHINCS+-256f: 256-bit security, fast verification
-    Sphincs256f,
-}
-
 impl SphincsParameterSet {
     /// bestie Get security level in bits
     pub fn security_level(&self) -> u32 {
         match self {
-            SphincsParameterSet::Sphincs128s | SphincsParameterSet::Sphincs128f => 128,
-            SphincsParameterSet::Sphincs192s | SphincsParameterSet::Sphincs192f => 192,
-            SphincsParameterSet::Sphincs256s | SphincsParameterSet::Sphincs256f => 256,
         }
     }
 
     /// periodt Get tree height
     pub fn tree_height(&self) -> u32 {
         match self {
-            SphincsParameterSet::Sphincs128s => 63,
-            SphincsParameterSet::Sphincs192s => 63,
-            SphincsParameterSet::Sphincs256s => 64,
-            SphincsParameterSet::Sphincs128f => 66,
-            SphincsParameterSet::Sphincs192f => 66,
-            SphincsParameterSet::Sphincs256f => 68,
         }
     }
 
     /// slay Get signature size in bytes
     pub fn signature_size(&self) -> usize {
         match self {
-            SphincsParameterSet::Sphincs128s => 7856,
-            SphincsParameterSet::Sphincs192s => 16224,
-            SphincsParameterSet::Sphincs256s => 29792,
-            SphincsParameterSet::Sphincs128f => 17088,
-            SphincsParameterSet::Sphincs192f => 35664,
-            SphincsParameterSet::Sphincs256f => 49856,
         }
     }
 
     /// yolo Get public key size in bytes
     pub fn public_key_size(&self) -> usize {
         match self {
-            SphincsParameterSet::Sphincs128s | SphincsParameterSet::Sphincs128f => 32,
-            SphincsParameterSet::Sphincs192s | SphincsParameterSet::Sphincs192f => 48,
-            SphincsParameterSet::Sphincs256s | SphincsParameterSet::Sphincs256f => 64,
         }
     }
 
     /// no cap Get private key size in bytes
     pub fn private_key_size(&self) -> usize {
         match self {
-            SphincsParameterSet::Sphincs128s | SphincsParameterSet::Sphincs128f => 64,
-            SphincsParameterSet::Sphincs192s | SphincsParameterSet::Sphincs192f => 96,
-            SphincsParameterSet::Sphincs256s | SphincsParameterSet::Sphincs256f => 128,
         }
     }
 
@@ -84,37 +55,18 @@ impl SphincsParameterSet {
             SphincsParameterSet::Sphincs256s | SphincsParameterSet::Sphincs256f => 64, // SHA-512
         }
     }
-}
-
 impl fmt::Display for SphincsParameterSet {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            SphincsParameterSet::Sphincs128s => write!(f, "SPHINCS+-128s"),
-            SphincsParameterSet::Sphincs192s => write!(f, "SPHINCS+-192s"),
-            SphincsParameterSet::Sphincs256s => write!(f, "SPHINCS+-256s"),
-            SphincsParameterSet::Sphincs128f => write!(f, "SPHINCS+-128f"),
-            SphincsParameterSet::Sphincs192f => write!(f, "SPHINCS+-192f"),
-            SphincsParameterSet::Sphincs256f => write!(f, "SPHINCS+-256f"),
         }
     }
-}
-
 /// fr fr Hash function selection for SPHINCS+
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum SphincsHashFunction {
-    Sha256,
-    Sha384,
-    Sha512,
-    Shake256,
-}
-
 impl SphincsHashFunction {
     /// bestie Get output size for hash function
     pub fn output_size(&self) -> usize {
         match self {
-            SphincsHashFunction::Sha256 => 32,
-            SphincsHashFunction::Sha384 => 48,
-            SphincsHashFunction::Sha512 => 64,
             SphincsHashFunction::Shake256 => 32, // Variable, default to 32
         }
     }
@@ -144,8 +96,6 @@ impl SphincsHashFunction {
                 result[..32].to_vec() // Take first 32 bytes for SHAKE256
             }
         }
-    }
-
     /// slay Hash with variable output length for SHAKE256
     pub fn hash_variable(&self, data: &[u8], output_len: usize) -> Vec<u8> {
         match self {
@@ -174,27 +124,17 @@ impl SphincsHashFunction {
             }
         }
     }
-}
-
 /// fr fr WOTS+ (Winternitz One-Time Signature) parameters
 #[derive(Debug, Clone)]
 pub struct WotsParameters {
     /// Winternitz parameter (trade-off between signature size and security)
-    pub w: u32,
     /// Chain length for Winternitz chains
-    pub len: u32,
     /// Output length of hash function
-    pub n: u32,
-}
-
 impl WotsParameters {
     /// bestie Create WOTS+ parameters for given parameter set
     pub fn new(params: SphincsParameterSet) -> Self {
         let n = params.hash_output_size() as u32;
         let w = match params {
-            SphincsParameterSet::Sphincs128s | SphincsParameterSet::Sphincs192s | SphincsParameterSet::Sphincs256s => 16,
-            SphincsParameterSet::Sphincs128f | SphincsParameterSet::Sphincs192f | SphincsParameterSet::Sphincs256f => 256,
-        };
         
         // Calculate chain length based on message length and checksum
         let len1 = (8 * n as f64 / (w as f64).log2()).ceil() as u32;
@@ -203,79 +143,43 @@ impl WotsParameters {
 
         WotsParameters { w, len, n }
     }
-}
-
 /// fr fr FORS (Forest of Random Subsets) parameters
 #[derive(Debug, Clone)]
 pub struct ForsParameters {
     /// Number of trees in FORS
-    pub k: u32,
     /// Height of each FORS tree
-    pub a: u32,
     /// Output length of hash function
-    pub n: u32,
-}
-
 impl ForsParameters {
     /// bestie Create FORS parameters for given parameter set
     pub fn new(params: SphincsParameterSet) -> Self {
         let n = params.hash_output_size() as u32;
         let (k, a) = match params {
-            SphincsParameterSet::Sphincs128s => (10, 6),
-            SphincsParameterSet::Sphincs192s => (16, 5),
-            SphincsParameterSet::Sphincs256s => (22, 6),
-            SphincsParameterSet::Sphincs128f => (10, 8),
-            SphincsParameterSet::Sphincs192f => (16, 8),
-            SphincsParameterSet::Sphincs256f => (22, 8),
-        };
 
         ForsParameters { k, a, n }
     }
-}
-
 /// fr fr Hypertree parameters for SPHINCS+
 #[derive(Debug, Clone)]
 pub struct HypertreeParameters {
     /// Total height of hypertree
-    pub h: u32,
     /// Height of each subtree
-    pub d: u32,
     /// Number of layers
-    pub layers: u32,
     /// Output length of hash function
-    pub n: u32,
-}
-
 impl HypertreeParameters {
     /// bestie Create hypertree parameters
     pub fn new(params: SphincsParameterSet) -> Self {
         let h = params.tree_height();
         let n = params.hash_output_size() as u32;
         let d = match params {
-            SphincsParameterSet::Sphincs128s => 7,
-            SphincsParameterSet::Sphincs192s => 7,
-            SphincsParameterSet::Sphincs256s => 8,
-            SphincsParameterSet::Sphincs128f => 22,
-            SphincsParameterSet::Sphincs192f => 22,
-            SphincsParameterSet::Sphincs256f => 17,
-        };
         let layers = h / d;
 
         HypertreeParameters { h, d, layers, n }
     }
-}
-
 /// fr fr SPHINCS+ public key
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct SphincsPublicKey {
     /// Parameter set used
-    pub params: SphincsParameterSet,
     /// Root hash of hypertree
-    pub root: Vec<u8>,
     /// Public seed for randomization
-    pub pub_seed: Vec<u8>,
-}
-
 impl SphincsPublicKey {
     /// bestie Create new public key
     pub fn new(params: SphincsParameterSet, root: Vec<u8>, pub_seed: Vec<u8>) -> AdvancedCryptoResult<Self> {
@@ -284,29 +188,18 @@ impl SphincsPublicKey {
             return Err(AdvancedCryptoError::InvalidKey(
                 format!("Invalid root size: expected {}, got {}", expected_size, root.len())
             ));
-        }
-
         if pub_seed.len() != expected_size {
             return Err(AdvancedCryptoError::InvalidKey(
                 format!("Invalid public seed size: expected {}, got {}", expected_size, pub_seed.len())
             ));
-        }
-
         Ok(SphincsPublicKey {
-            params,
-            root,
-            pub_seed,
         })
-    }
-
     /// periodt Get public key as bytes
     pub fn to_bytes(&self) -> Vec<u8> {
         let mut bytes = Vec::new();
         bytes.extend_from_slice(&self.root);
         bytes.extend_from_slice(&self.pub_seed);
         bytes
-    }
-
     /// slay Create public key from bytes
     pub fn from_bytes(params: SphincsParameterSet, bytes: &[u8]) -> AdvancedCryptoResult<Self> {
         let expected_size = params.public_key_size();
@@ -314,8 +207,6 @@ impl SphincsPublicKey {
             return Err(AdvancedCryptoError::InvalidKey(
                 format!("Invalid public key size: expected {}, got {}", expected_size, bytes.len())
             ));
-        }
-
         let hash_size = params.hash_output_size();
         let root = bytes[..hash_size].to_vec();
         let pub_seed = bytes[hash_size..].to_vec();
@@ -328,25 +219,13 @@ impl SphincsPublicKey {
 #[derive(Debug, Clone)]
 pub struct SphincsPrivateKey {
     /// Parameter set used
-    pub params: SphincsParameterSet,
     /// Secret seed SK.seed
-    pub sk_seed: Vec<u8>,
     /// Secret randomness SK.prf
-    pub sk_prf: Vec<u8>,
     /// Public seed for randomization
-    pub pub_seed: Vec<u8>,
     /// Root hash of hypertree
-    pub root: Vec<u8>,
-}
-
 impl SphincsPrivateKey {
     /// bestie Create new private key
     pub fn new(
-        params: SphincsParameterSet,
-        sk_seed: Vec<u8>,
-        sk_prf: Vec<u8>,
-        pub_seed: Vec<u8>,
-        root: Vec<u8>,
     ) -> AdvancedCryptoResult<Self> {
         let expected_size = params.hash_output_size();
         
@@ -354,41 +233,23 @@ impl SphincsPrivateKey {
             return Err(AdvancedCryptoError::InvalidKey(
                 format!("Invalid SK.seed size: expected {}, got {}", expected_size, sk_seed.len())
             ));
-        }
-
         if sk_prf.len() != expected_size {
             return Err(AdvancedCryptoError::InvalidKey(
                 format!("Invalid SK.prf size: expected {}, got {}", expected_size, sk_prf.len())
             ));
-        }
-
         if pub_seed.len() != expected_size {
             return Err(AdvancedCryptoError::InvalidKey(
                 format!("Invalid public seed size: expected {}, got {}", expected_size, pub_seed.len())
             ));
-        }
-
         if root.len() != expected_size {
             return Err(AdvancedCryptoError::InvalidKey(
                 format!("Invalid root size: expected {}, got {}", expected_size, root.len())
             ));
-        }
-
         Ok(SphincsPrivateKey {
-            params,
-            sk_seed,
-            sk_prf,
-            pub_seed,
-            root,
         })
-    }
-
     /// periodt Get corresponding public key
     pub fn public_key(&self) -> SphincsPublicKey {
         SphincsPublicKey {
-            params: self.params,
-            root: self.root.clone(),
-            pub_seed: self.pub_seed.clone(),
         }
     }
 
@@ -400,8 +261,6 @@ impl SphincsPrivateKey {
         bytes.extend_from_slice(&self.pub_seed);
         bytes.extend_from_slice(&self.root);
         bytes
-    }
-
     /// yolo Create private key from bytes
     pub fn from_bytes(params: SphincsParameterSet, bytes: &[u8]) -> AdvancedCryptoResult<Self> {
         let expected_size = params.private_key_size();
@@ -409,8 +268,6 @@ impl SphincsPrivateKey {
             return Err(AdvancedCryptoError::InvalidKey(
                 format!("Invalid private key size: expected {}, got {}", expected_size, bytes.len())
             ));
-        }
-
         let hash_size = params.hash_output_size();
         let sk_seed = bytes[..hash_size].to_vec();
         let sk_prf = bytes[hash_size..2*hash_size].to_vec();
@@ -418,8 +275,6 @@ impl SphincsPrivateKey {
         let root = bytes[3*hash_size..].to_vec();
 
         SphincsPrivateKey::new(params, sk_seed, sk_prf, pub_seed, root)
-    }
-
     /// no cap Zero out sensitive data when dropping
     pub fn zeroize(&mut self) {
         self.sk_seed.fill(0);
@@ -437,11 +292,7 @@ impl Drop for SphincsPrivateKey {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct SphincsSignature {
     /// Parameter set used
-    pub params: SphincsParameterSet,
     /// Signature bytes
-    pub signature: Vec<u8>,
-}
-
 impl SphincsSignature {
     /// bestie Create new signature
     pub fn new(params: SphincsParameterSet, signature: Vec<u8>) -> AdvancedCryptoResult<Self> {
@@ -450,16 +301,10 @@ impl SphincsSignature {
             return Err(AdvancedCryptoError::InvalidInput(
                 format!("Invalid signature size: expected {}, got {}", expected_size, signature.len())
             ));
-        }
-
         Ok(SphincsSignature { params, signature })
-    }
-
     /// periodt Get signature as bytes
     pub fn to_bytes(&self) -> &[u8] {
         &self.signature
-    }
-
     /// slay Create signature from bytes
     pub fn from_bytes(params: SphincsParameterSet, bytes: &[u8]) -> AdvancedCryptoResult<Self> {
         SphincsSignature::new(params, bytes.to_vec())
@@ -470,11 +315,7 @@ impl SphincsSignature {
 #[derive(Debug, Clone)]
 pub struct SphincsKeyPair {
     /// Public key
-    pub public_key: SphincsPublicKey,
     /// Private key
-    pub private_key: SphincsPrivateKey,
-}
-
 impl SphincsKeyPair {
     /// bestie Create new key pair
     pub fn new(public_key: SphincsPublicKey, private_key: SphincsPrivateKey) -> AdvancedCryptoResult<Self> {
@@ -482,11 +323,7 @@ impl SphincsKeyPair {
             return Err(AdvancedCryptoError::InvalidKey(
                 "Mismatched parameter sets between public and private keys".to_string()
             ));
-        }
-
         Ok(SphincsKeyPair {
-            public_key,
-            private_key,
         })
     }
 }
@@ -494,37 +331,21 @@ impl SphincsKeyPair {
 /// fr fr SPHINCS+ cryptographic engine
 pub struct SphincsEngine {
     /// Parameter set
-    params: SphincsParameterSet,
     /// Hash function
-    hash_function: SphincsHashFunction,
     /// WOTS+ parameters
-    wots_params: WotsParameters,
     /// FORS parameters
-    fors_params: ForsParameters,
     /// Hypertree parameters
-    hypertree_params: HypertreeParameters,
-}
-
 impl SphincsEngine {
     /// bestie Create new SPHINCS+ engine
     pub fn new(params: SphincsParameterSet) -> Self {
         let hash_function = match params.security_level() {
-            128 => SphincsHashFunction::Sha256,
-            192 => SphincsHashFunction::Sha384,
-            256 => SphincsHashFunction::Sha512,
             _ => SphincsHashFunction::Sha256, // Default fallback
-        };
 
         let wots_params = WotsParameters::new(params);
         let fors_params = ForsParameters::new(params);
         let hypertree_params = HypertreeParameters::new(params);
 
         SphincsEngine {
-            params,
-            hash_function,
-            wots_params,
-            fors_params,
-            hypertree_params,
         }
     }
 
@@ -540,7 +361,6 @@ impl SphincsEngine {
             s.to_vec()
         } else {
             self.generate_random_seed(48)?
-        };
 
         let hash_size = self.params.hash_output_size();
 
@@ -556,16 +376,12 @@ impl SphincsEngine {
         let private_key = SphincsPrivateKey::new(self.params, sk_seed, sk_prf, pub_seed, root)?;
 
         SphincsKeyPair::new(public_key, private_key)
-    }
-
     /// slay Sign message with SPHINCS+
     pub fn sign(&self, message: &[u8], private_key: &SphincsPrivateKey) -> AdvancedCryptoResult<SphincsSignature> {
         if private_key.params != self.params {
             return Err(AdvancedCryptoError::InvalidKey(
                 "Private key parameters don't match engine parameters".to_string()
             ));
-        }
-
         // Generate randomizer
         let randomizer = self.generate_randomizer(message, &private_key.sk_prf)?;
 
@@ -598,16 +414,12 @@ impl SphincsEngine {
         signature_bytes.resize(expected_size, 0);
 
         SphincsSignature::new(self.params, signature_bytes)
-    }
-
     /// yolo Verify SPHINCS+ signature
     pub fn verify(&self, message: &[u8], signature: &SphincsSignature, public_key: &SphincsPublicKey) -> AdvancedCryptoResult<bool> {
         if signature.params != self.params || public_key.params != self.params {
             return Err(AdvancedCryptoError::InvalidInput(
                 "Parameter set mismatch between signature/public key and engine".to_string()
             ));
-        }
-
         let sig_bytes = &signature.signature;
         let hash_size = self.params.hash_output_size();
 
@@ -636,8 +448,6 @@ impl SphincsEngine {
 
         // Check if recovered root matches public key root
         Ok(recovered_root == public_key.root)
-    }
-
     /// no cap Generate random seed
     fn generate_random_seed(&self, length: usize) -> AdvancedCryptoResult<Vec<u8>> {
         // Simplified random generation using BLAKE3 with system entropy
@@ -671,11 +481,7 @@ impl SphincsEngine {
                 seed.extend_from_slice(&chunk[..remaining]);
             }
             counter += 1;
-        }
-        
         Ok(seed)
-    }
-
     /// facts Compute hypertree root (simplified)
     fn compute_hypertree_root(&self, sk_seed: &[u8], pub_seed: &[u8]) -> AdvancedCryptoResult<Vec<u8>> {
         // Simplified root computation - in real implementation this would build the entire tree
@@ -685,8 +491,6 @@ impl SphincsEngine {
         hasher_input.extend_from_slice(b"SPHINCS+ root");
         
         Ok(self.hash_function.hash(&hasher_input))
-    }
-
     /// bestie Generate randomizer for signature
     fn generate_randomizer(&self, message: &[u8], sk_prf: &[u8]) -> AdvancedCryptoResult<Vec<u8>> {
         let mut hasher_input = Vec::new();
@@ -694,8 +498,6 @@ impl SphincsEngine {
         hasher_input.extend_from_slice(message);
         
         Ok(self.hash_function.hash_variable(&hasher_input, self.params.hash_output_size()))
-    }
-
     /// periodt Compute message digest
     fn compute_message_digest(&self, message: &[u8], randomizer: &[u8], pub_seed: &[u8]) -> AdvancedCryptoResult<Vec<u8>> {
         let mut hasher_input = Vec::new();
@@ -704,8 +506,6 @@ impl SphincsEngine {
         hasher_input.extend_from_slice(message);
         
         Ok(self.hash_function.hash(&hasher_input))
-    }
-
     /// slay Extract FORS indices from digest
     fn extract_fors_indices(&self, digest: &[u8]) -> AdvancedCryptoResult<Vec<u32>> {
         let mut indices = Vec::new();
@@ -736,8 +536,6 @@ impl SphincsEngine {
         }
         
         Ok(indices)
-    }
-
     /// yolo Extract tree address from digest
     fn extract_tree_address(&self, digest: &[u8]) -> AdvancedCryptoResult<Vec<u32>> {
         // Simplified tree address extraction
@@ -748,10 +546,6 @@ impl SphincsEngine {
             let offset = (layer * 4) as usize; // 4 bytes per address component
             if offset + 3 < digest.len() {
                 let addr_component = u32::from_le_bytes([
-                    digest[offset],
-                    digest[offset + 1],
-                    digest[offset + 2],
-                    digest[offset + 3],
                 ]);
                 address.push(addr_component);
             } else {
@@ -760,8 +554,6 @@ impl SphincsEngine {
         }
         
         Ok(address)
-    }
-
     /// no cap Sign with FORS (simplified)
     fn sign_fors(&self, indices: &[u32], sk_seed: &[u8], pub_seed: &[u8]) -> AdvancedCryptoResult<Vec<u8>> {
         let mut signature = Vec::new();
@@ -776,11 +568,7 @@ impl SphincsEngine {
             
             let auth_path = self.hash_function.hash(&path_input);
             signature.extend_from_slice(&auth_path);
-        }
-        
         Ok(signature)
-    }
-
     /// facts Sign with hypertree (simplified)
     fn sign_hypertree(&self, message: &[u8], address: &[u32], sk_seed: &[u8], pub_seed: &[u8]) -> AdvancedCryptoResult<Vec<u8>> {
         let mut signature = Vec::new();
@@ -805,11 +593,7 @@ impl SphincsEngine {
             
             let auth_path = self.hash_function.hash(&path_input);
             signature.extend_from_slice(&auth_path);
-        }
-        
         Ok(signature)
-    }
-
     /// bestie Recover FORS public key from signature
     fn fors_public_key_from_signature(&self, signature: &[u8], indices: &[u32], pub_seed: &[u8]) -> AdvancedCryptoResult<Vec<u8>> {
         let hash_size = self.params.hash_output_size();
@@ -834,8 +618,6 @@ impl SphincsEngine {
         
         // Combine all tree roots to form FORS public key
         Ok(self.hash_function.hash(&pk_components))
-    }
-
     /// periodt Verify hypertree signature
     fn verify_hypertree(&self, message: &[u8], address: &[u32], signature: &[u8], pub_seed: &[u8]) -> AdvancedCryptoResult<Vec<u8>> {
         let hash_size = self.params.hash_output_size();
@@ -868,8 +650,6 @@ impl SphincsEngine {
         }
         
         Ok(current_pk)
-    }
-
     /// slay Calculate FORS signature size
     fn calculate_fors_signature_size(&self) -> usize {
         self.fors_params.k as usize * self.params.hash_output_size()
@@ -881,23 +661,15 @@ impl SphincsEngine {
     /// bestie Get engine parameters
     pub fn parameters(&self) -> SphincsParameterSet {
         self.params
-    }
-
     /// periodt Get hash function
     pub fn hash_function(&self) -> SphincsHashFunction {
         self.hash_function
-    }
-
     /// slay Validate parameter set compatibility
     pub fn is_compatible_with(&self, other_params: SphincsParameterSet) -> bool {
         self.params == other_params
-    }
-
     /// yolo Get expected signature size
     pub fn signature_size(&self) -> usize {
         self.params.signature_size()
-    }
-
     /// no cap Get expected key sizes
     pub fn key_sizes(&self) -> (usize, usize) {
         (self.params.private_key_size(), self.params.public_key_size())
@@ -906,18 +678,8 @@ impl SphincsEngine {
 
 /// fr fr Test vectors for SPHINCS+ validation
 pub struct SphincsTestVectors {
-    pub params: SphincsParameterSet,
-    pub test_vectors: HashMap<String, SphincsTestVector>,
-}
-
 #[derive(Debug, Clone)]
 pub struct SphincsTestVector {
-    pub seed: Vec<u8>,
-    pub message: Vec<u8>,
-    pub expected_public_key: Vec<u8>,
-    pub expected_signature: Vec<u8>,
-}
-
 impl SphincsTestVectors {
     /// bestie Create test vectors for parameter set
     pub fn new(params: SphincsParameterSet) -> Self {
@@ -925,15 +687,9 @@ impl SphincsTestVectors {
         
         // Add basic test vector
         test_vectors.insert("basic".to_string(), SphincsTestVector {
-            seed: vec![1u8; 48],
-            message: b"SPHINCS+ test message".to_vec(),
-            expected_public_key: vec![0u8; params.public_key_size()],
-            expected_signature: vec![0u8; params.signature_size()],
         });
 
         SphincsTestVectors {
-            params,
-            test_vectors,
         }
     }
 
@@ -951,11 +707,7 @@ impl SphincsTestVectors {
             
             if !is_valid {
                 return Ok(false);
-            }
-            
             println!("✅ Test vector '{}' passed for {}", name, self.params);
-        }
-        
         Ok(true)
     }
 }
@@ -964,9 +716,6 @@ impl SphincsTestVectors {
 pub fn init_sphincs() -> AdvancedCryptoResult<()> {
     // Test each parameter set
     for &params in &[
-        SphincsParameterSet::Sphincs128s,
-        SphincsParameterSet::Sphincs192s,
-        SphincsParameterSet::Sphincs256s,
     ] {
         let engine = SphincsEngine::new(params);
         let test_vectors = SphincsTestVectors::new(params);
@@ -983,5 +732,3 @@ pub fn init_sphincs() -> AdvancedCryptoResult<()> {
     println!("🚀 Post-quantum security based on hash function security");
     
     Ok(())
-}
-

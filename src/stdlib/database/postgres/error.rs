@@ -11,49 +11,26 @@ use std::fmt;
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum PostgresErrorKind {
     /// Connection failed or was lost
-    ConnectionFailed,
     /// Authentication failed
-    AuthenticationFailed,
     /// SSL/TLS connection error
-    SslError,
     /// Query execution error
-    QueryError,
     /// Transaction error
-    TransactionError,
     /// Type conversion error
-    TypeConversionError,
     /// Configuration error
-    InvalidConfiguration,
     /// Connection pool error
-    PoolError,
     /// Timeout error
-    TimeoutError,
     /// Protocol error
-    ProtocolError,
     /// Database does not exist
-    DatabaseNotFound,
     /// Permission denied
-    PermissionDenied,
     /// Constraint violation
-    ConstraintViolation,
     /// Syntax error in SQL
-    SyntaxError,
     /// Data type error
-    DataTypeError,
     /// Serialization failure
-    SerializationFailure,
     /// Deadlock detected
-    DeadlockDetected,
     /// Invalid cursor state
-    InvalidCursorState,
     /// Feature not supported
-    FeatureNotSupported,
     /// Server error (5xx class)
-    ServerError,
     /// Other PostgreSQL error
-    Other(String),
-}
-
 // impl fmt::Display for PostgresErrorKind {
 //     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
 //         match self {
@@ -86,53 +63,23 @@ pub enum PostgresErrorKind {
 #[derive(Debug, Clone)]
 pub struct PostgresError {
     /// CursedError kind
-    pub kind: PostgresErrorKind,
     /// CursedError message
-    pub message: String,
     /// PostgreSQL SQLSTATE code (if available)
-    pub sqlstate: Option<String>,
     /// PostgreSQL error code (if available)
-    pub code: Option<String>,
     /// Detail message from PostgreSQL
-    pub detail: Option<String>,
     /// Hint message from PostgreSQL
-    pub hint: Option<String>,
     /// Position in query where error occurred
-    pub position: Option<u32>,
     /// Internal position in query
-    pub internal_position: Option<u32>,
     /// Internal query that caused the error
-    pub internal_query: Option<String>,
     /// Constraint name (for constraint violations)
-    pub constraint: Option<String>,
     /// Table name where error occurred
-    pub table: Option<String>,
     /// Column name where error occurred
-    pub column: Option<String>,
     /// Data type name related to error
-    pub datatype: Option<String>,
     /// Schema name where error occurred
-    pub schema: Option<String>,
-}
-
 impl PostgresError {
     /// Create a new PostgreSQL error
     pub fn new(kind: PostgresErrorKind, message: &str) -> Self {
         Self {
-            kind,
-            message: message.to_string(),
-            sqlstate: None,
-            code: None,
-            detail: None,
-            hint: None,
-            position: None,
-            internal_position: None,
-            internal_query: None,
-            constraint: None,
-            table: None,
-            column: None,
-            datatype: None,
-            schema: None,
         }
     }
 
@@ -154,47 +101,17 @@ impl PostgresError {
             pg_error.column = db_error.column().map(|s| s.to_string());
             pg_error.datatype = db_error.datatype().map(|s| s.to_string());
             pg_error.schema = db_error.schema().map(|s| s.to_string());
-        }
-        
         pg_error
-    }
-
     /// Create error from bb8 pool error
     pub fn from_bb8_error(error: bb8::RunError<tokio_postgres::CursedError>) -> Self {
         match error {
-            bb8::RunError::User(pg_error) => Self::from_tokio_postgres(pg_error),
             bb8::RunError::TimedOut => Self::new(
-                PostgresErrorKind::TimeoutError,
-                "Connection pool timeout",
-            ),
         }
     }
 
     /// Convert to generic database error
     pub fn to_database_error(&self) -> DatabaseError {
         let kind = match self.kind {
-            PostgresErrorKind::ConnectionFailed => DatabaseErrorKind::ConnectionFailed,
-            PostgresErrorKind::AuthenticationFailed => DatabaseErrorKind::AuthenticationFailed,
-            PostgresErrorKind::SslError => DatabaseErrorKind::ConnectionFailed,
-            PostgresErrorKind::QueryError => DatabaseErrorKind::QueryError,
-            PostgresErrorKind::TransactionError => DatabaseErrorKind::TransactionError,
-            PostgresErrorKind::TypeConversionError => DatabaseErrorKind::TypeConversionError,
-            PostgresErrorKind::InvalidConfiguration => DatabaseErrorKind::InvalidConfiguration,
-            PostgresErrorKind::PoolError => DatabaseErrorKind::ConnectionFailed,
-            PostgresErrorKind::TimeoutError => DatabaseErrorKind::TimeoutError,
-            PostgresErrorKind::ProtocolError => DatabaseErrorKind::ConnectionFailed,
-            PostgresErrorKind::DatabaseNotFound => DatabaseErrorKind::DatabaseNotFound,
-            PostgresErrorKind::PermissionDenied => DatabaseErrorKind::PermissionDenied,
-            PostgresErrorKind::ConstraintViolation => DatabaseErrorKind::ConstraintViolation,
-            PostgresErrorKind::SyntaxError => DatabaseErrorKind::SyntaxError,
-            PostgresErrorKind::DataTypeError => DatabaseErrorKind::TypeConversionError,
-            PostgresErrorKind::SerializationFailure => DatabaseErrorKind::TransactionError,
-            PostgresErrorKind::DeadlockDetected => DatabaseErrorKind::DeadlockDetected,
-            PostgresErrorKind::InvalidCursorState => DatabaseErrorKind::QueryError,
-            PostgresErrorKind::FeatureNotSupported => DatabaseErrorKind::NotSupported,
-            PostgresErrorKind::ServerError => DatabaseErrorKind::ServerError,
-            PostgresErrorKind::Other(_) => DatabaseErrorKind::UnknownError,
-        };
         
         let mut message = self.message.clone();
         if let Some(ref detail) = self.detail {
@@ -202,32 +119,22 @@ impl PostgresError {
         }
         if let Some(ref hint) = self.hint {
             message.push_str(&format!(" Hint: {}", hint));
-        }
-        
         DatabaseError::new(kind, &message)
-    }
-
     /// Get SQLSTATE code if available
     pub fn sqlstate(&self) -> Option<&str> {
         self.sqlstate.as_deref()
-    }
-
     /// Check if error is retryable
     pub fn is_retryable(&self) -> bool {
         matches!(
-            self.kind,
             PostgresErrorKind::ConnectionFailed
                 | PostgresErrorKind::TimeoutError
                 | PostgresErrorKind::PoolError
                 | PostgresErrorKind::SerializationFailure
                 | PostgresErrorKind::DeadlockDetected
         )
-    }
-
     /// Check if error is due to connection loss
     pub fn is_connection_error(&self) -> bool {
         matches!(
-            self.kind,
             PostgresErrorKind::ConnectionFailed
                 | PostgresErrorKind::SslError
                 | PostgresErrorKind::ProtocolError
@@ -280,8 +187,6 @@ impl From<PostgresError> for DatabaseError {
 fn classify_tokio_postgres_error(error: &tokio_postgres::CursedError) -> PostgresErrorKind {
     if error.is_closed() {
         return PostgresErrorKind::ConnectionFailed;
-    }
-    
     if let Some(db_error) = error.as_db_error() {
         let code = db_error.code().code();
         
@@ -299,9 +204,6 @@ fn classify_tokio_postgres_error(error: &tokio_postgres::CursedError) -> Postgre
             "57" => PostgresErrorKind::ServerError,       // Operator intervention
             "58" => PostgresErrorKind::ServerError,       // System error
             _ => match code {
-                "40001" => PostgresErrorKind::SerializationFailure,
-                "40P01" => PostgresErrorKind::DeadlockDetected,
-                _ => PostgresErrorKind::QueryError,
             }
         }
     } else {
@@ -319,8 +221,6 @@ fn classify_tokio_postgres_error(error: &tokio_postgres::CursedError) -> Postgre
             PostgresErrorKind::Other(error_str)
         }
     }
-}
-
 /// Type alias for PostgreSQL result
 pub type PostgresResult<T> = std::result::Result<T, PostgresError>;
 

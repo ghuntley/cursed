@@ -16,101 +16,54 @@ use super::core::{register_process, unregister_process};
 #[derive(Debug)]
 pub struct Cmd {
     /// Path to the executable
-    pub path: String,
     /// Command arguments
-    pub args: Vec<String>,
     /// Environment variables for the process
-    pub env: Vec<String>,
     /// Working directory
-    pub dir: Option<PathBuf>,
     /// Standard input configuration
-    pub stdin: Option<Box<dyn Read + Send>>,
     /// Standard output configuration  
-    pub stdout: Option<Box<dyn Write + Send>>,
     /// Standard error configuration
-    pub stderr: Option<Box<dyn Write + Send>>,
     /// Process context for cancellation
-    pub context: Option<VibeContext>,
     /// Internal child process handle
-    child: Option<Child>,
     /// Process start time
-    start_time: Option<Instant>,
     /// Environment inheritance flag
-    inherit_env: bool,
-}
-
 /// Process represents a running process
 #[derive(Debug)]
 pub struct Process {
     /// Process ID
-    pub pid: u32,
     /// Process handle
-    child: Arc<Mutex<Child>>,
     /// Start time
-    start_time: Instant,
     /// Command that created this process
-    command: String,
-}
-
 /// ProcessState contains information about a process that has exited
 #[derive(Debug, Clone)]
 pub struct ProcessState {
     /// Exit status
-    exit_status: ExitStatus,
     /// Process ID
-    pid: u32,
     /// User CPU time used
-    user_time: Duration,
     /// System CPU time used
-    system_time: Duration,
     /// System-specific information
-    sys_info: Vec<u8>,
-}
-
 impl Cmd {
     /// Create a new Cmd instance
     pub fn new<S: AsRef<str>>(name: S, args: &[&str]) -> Self {
         Self {
-            path: name.as_ref().to_string(),
-            args: args.iter().map(|s| s.to_string()).collect(),
-            env: Vec::new(),
-            dir: None,
-            stdin: None,
-            stdout: None,
-            stderr: None,
-            context: None,
-            child: None,
-            start_time: None,
-            inherit_env: true,
         }
     }
 
     /// Set the working directory for the command
     pub fn set_dir<P: Into<PathBuf>>(&mut self, dir: P) {
         self.dir = Some(dir.into());
-    }
-
     /// Set environment variables (replaces existing)
     pub fn set_env(&mut self, env: Vec<String>) {
         self.env = env;
         self.inherit_env = false;
-    }
-
     /// Add an environment variable
     pub fn add_env<K: AsRef<str>, V: AsRef<str>>(&mut self, key: K, value: V) {
         self.env.push(format!("{}={}", key.as_ref(), value.as_ref()));
-    }
-
     /// Set whether to inherit parent environment
     pub fn set_inherit_env(&mut self, inherit: bool) {
         self.inherit_env = inherit;
-    }
-
     /// Set the process context
     pub fn set_context(&mut self, context: VibeContext) {
         self.context = Some(context);
-    }
-
     /// Start the process without waiting
     pub fn start(&mut self) -> ExecResult<()> {
         let mut command = StdCommand::new(&self.path);
@@ -119,8 +72,6 @@ impl Cmd {
         // Set working directory
         if let Some(ref dir) = self.dir {
             command.current_dir(dir);
-        }
-
         // Set environment
         if !self.inherit_env {
             command.env_clear();
@@ -148,14 +99,10 @@ impl Cmd {
         register_process(pid, &self.path, &self.args, self.dir.clone());
 
         Ok(())
-    }
-
     /// Run the command and wait for completion
     pub fn run(&mut self) -> ExecResult<()> {
         self.start()?;
         self.wait()
-    }
-
     /// Capture stdout output
     pub fn output(&mut self) -> ExecResult<Vec<u8>> {
         self.start()?;
@@ -165,7 +112,6 @@ impl Cmd {
                 .map_err(|e| io_error("output", &format!("{:?}", e.kind()), &e.to_string()))?
         } else {
             return Err(invalid_arguments("output", "command", "Command not started"));
-        };
 
         if !output.status.success() {
             if let Some(code) = output.status.code() {
@@ -174,8 +120,6 @@ impl Cmd {
         }
 
         Ok(output.stdout)
-    }
-
     /// Capture combined stdout and stderr
     pub fn combined_output(&mut self) -> ExecResult<Vec<u8>> {
         self.start()?;
@@ -185,7 +129,6 @@ impl Cmd {
                 .map_err(|e| io_error("combined_output", &format!("{:?}", e.kind()), &e.to_string()))?
         } else {
             return Err(invalid_arguments("combined_output", "command", "Command not started"));
-        };
 
         if !output.status.success() {
             if let Some(code) = output.status.code() {
@@ -196,14 +139,10 @@ impl Cmd {
         let mut combined = output.stdout;
         combined.extend_from_slice(&output.stderr);
         Ok(combined)
-    }
-
     /// Get stdin pipe (WriteCloser equivalent)
     pub fn stdin_pipe(&mut self) -> ExecResult<Box<dyn Write + Send>> {
         if !self.is_started() {
             self.start()?;
-        }
-        
         if let Some(child) = &mut self.child {
             if let Some(stdin) = child.stdin.take() {
                 Ok(Box::new(stdin))
@@ -219,8 +158,6 @@ impl Cmd {
     pub fn stdout_pipe(&mut self) -> ExecResult<Box<dyn Read + Send>> {
         if !self.is_started() {
             self.start()?;
-        }
-        
         if let Some(child) = &mut self.child {
             if let Some(stdout) = child.stdout.take() {
                 Ok(Box::new(stdout))
@@ -236,8 +173,6 @@ impl Cmd {
     pub fn stderr_pipe(&mut self) -> ExecResult<Box<dyn Read + Send>> {
         if !self.is_started() {
             self.start()?;
-        }
-        
         if let Some(child) = &mut self.child {
             if let Some(stderr) = child.stderr.take() {
                 Ok(Box::new(stderr))
@@ -253,8 +188,6 @@ impl Cmd {
     pub fn set_env(&mut self, env: super::environment::Environment) {
         self.env = env.to_env_vec();
         self.inherit_env = false;
-    }
-
     /// Set timeout for command execution
     pub fn set_timeout(&mut self, timeout: Duration) {
         // Store timeout in context for later use
@@ -293,8 +226,6 @@ impl Cmd {
                         return Err(ExecError::from(err));
                     }
                 }
-            }
-            
             let status = child.wait()
                 .map_err(|e| io_error("wait", &format!("{:?}", e.kind()), &e.to_string()))?;
             
@@ -318,13 +249,9 @@ impl Cmd {
     pub fn process(&self) -> ExecResult<Process> {
         if let Some(child) = &self.child {
             Ok(Process {
-                pid: child.id(),
                 child: Arc::new(Mutex::new(unsafe { 
                     // This is unsafe but necessary for the API
                     std::ptr::read(child as *const Child)
-                })),
-                start_time: self.start_time.unwrap_or_else(Instant::now),
-                command: self.path.clone(),
             })
         } else {
             Err(invalid_arguments("process", "command", "Command not started"))
@@ -339,10 +266,6 @@ impl Cmd {
             // Create a basic process state
             Ok(ProcessState {
                 exit_status: ExitStatus::from_raw(0), // Will be updated when process exits
-                pid,
-                user_time: Duration::from_millis(0),
-                system_time: Duration::from_millis(0),
-                sys_info: Vec::new(),
             })
         } else {
             Err(invalid_arguments("process_state", "command", "Command not started"))
@@ -352,23 +275,15 @@ impl Cmd {
     /// Check if the process has been started
     pub fn is_started(&self) -> bool {
         self.child.is_some()
-    }
-
     /// Get the command path
     pub fn command_path(&self) -> &str {
         &self.path
-    }
-
     /// Get the command arguments
     pub fn command_args(&self) -> &[String] {
         &self.args
-    }
-
     /// Get the working directory
     pub fn working_dir(&self) -> Option<&PathBuf> {
         self.dir.as_ref()
-    }
-
     /// Get the start time if the process has been started
     pub fn start_time(&self) -> Option<Instant> {
         self.start_time
@@ -385,8 +300,6 @@ impl Process {
         // Unregister process
         unregister_process(self.pid);
         Ok(())
-    }
-
     /// Send signal to process (Unix only)
     #[cfg(unix)]
     pub fn signal(&self, sig: i32) -> ExecResult<()> {
@@ -396,20 +309,14 @@ impl Process {
             } else {
                 use super::error::system_error;
                 Err(system_error(
-                    std::io::Error::last_os_error().raw_os_error().unwrap_or(-1),
-                    "signal",
                     "Failed to send signal"
                 ))
             }
         }
-    }
-
     #[cfg(not(unix))]
     pub fn signal(&self, _sig: i32) -> ExecResult<()> {
         use super::error::platform_error;
         Err(platform_error("current", "Signal sending not supported on this platform"))
-    }
-
     /// Wait for process completion
     pub fn wait(&self) -> ExecResult<ProcessState> {
         let mut child = self.child.lock().unwrap();
@@ -420,35 +327,20 @@ impl Process {
         unregister_process(self.pid);
 
         Ok(ProcessState {
-            exit_status: status,
-            pid: self.pid,
-            user_time: Duration::from_millis(0),
-            system_time: Duration::from_millis(0),
-            sys_info: Vec::new(),
         })
-    }
-
     /// Release process resources
     pub fn release(&self) -> ExecResult<()> {
         // Process will be cleaned up when dropped
         Ok(())
-    }
-
     /// Get process ID
     pub fn pid(&self) -> u32 {
         self.pid
-    }
-
     /// Get process start time
     pub fn start_time(&self) -> Instant {
         self.start_time
-    }
-
     /// Get process uptime
     pub fn uptime(&self) -> Duration {
         self.start_time.elapsed()
-    }
-
     /// Get the command that created this process
     pub fn command(&self) -> &str {
         &self.command
@@ -459,48 +351,30 @@ impl ProcessState {
     /// Check if process exited normally
     pub fn exited(&self) -> bool {
         true // All processes that reach this state have exited
-    }
-
     /// Get exit code
     pub fn exit_code(&self) -> i32 {
         self.exit_status.code().unwrap_or(-1)
-    }
-
     /// Check if process was successful
     pub fn success(&self) -> bool {
         self.exit_status.success()
-    }
-
     /// Get system-specific information
     pub fn sys(&self) -> Box<dyn std::any::Any> {
         Box::new(self.exit_status)
-    }
-
     /// Get system usage information
     pub fn sys_usage(&self) -> Box<dyn std::any::Any> {
         Box::new((self.user_time, self.system_time))
-    }
-
     /// String representation
     pub fn string(&self) -> String {
         format!("Process {} exited with code {}", self.pid, self.exit_code())
-    }
-
     /// Get user CPU time
     pub fn user_time(&self) -> Duration {
         self.user_time
-    }
-
     /// Get system CPU time
     pub fn system_time(&self) -> Duration {
         self.system_time
-    }
-
     /// Get process ID
     pub fn pid(&self) -> u32 {
         self.pid
-    }
-
     /// Get exit status
     pub fn exit_status(&self) -> &ExitStatus {
         &self.exit_status
@@ -513,44 +387,30 @@ impl From<super::context::ContextError> for ExecError {
         match err {
             super::context::ContextError::Cancelled => {
                 ExecError::ExecutionFailed {
-                    command: "unknown".to_string(),
-                    message: "Process cancelled".to_string(),
-                    exit_code: Some(-1),
                 }
             }
             super::context::ContextError::DeadlineExceeded => {
                 ExecError::Timeout {
-                    command: "unknown".to_string(),
                     timeout: Duration::from_secs(0), // Unknown timeout
                 }
             }
         }
     }
-}
-
 /// Core command creation functions
 
 /// Create a new Cmd instance to execute a given program
 pub fn Command(name: &str, args: &[&str]) -> Cmd {
     Cmd::new(name, args)
-}
-
 /// Create a new Cmd with a context for timeout/cancellation
 pub fn CommandContext(ctx: VibeContext, name: &str, args: &[&str]) -> Cmd {
     let mut cmd = Cmd::new(name, args);
     cmd.set_context(ctx);
     cmd
-}
-
 /// Create a new Cmd instance to execute a given program (lowercase version)
 pub fn command(name: &str, args: &[&str]) -> Cmd {
     Cmd::new(name, args)
-}
-
 /// Create a new Cmd with a context for timeout/cancellation (lowercase version)
 pub fn command_context(ctx: VibeContext, name: &str, args: &[&str]) -> Cmd {
     let mut cmd = Cmd::new(name, args);
     cmd.context = Some(ctx);
     cmd
-}
-

@@ -19,95 +19,42 @@ use crate::parser::Parser;
 /// Configuration for package integration
 #[derive(Debug, Clone)]
 pub struct PackageIntegrationConfig {
-    pub package_manager_config: PackageManagerConfig,
-    pub import_resolver_config: ImportResolverConfig,
-    pub enable_auto_install: bool,
-    pub cache_compiled_packages: bool,
-    pub parallel_compilation: bool,
-}
-
 impl Default for PackageIntegrationConfig {
     fn default() -> Self {
         Self {
-            package_manager_config: PackageManagerConfig::default(),
-            import_resolver_config: ImportResolverConfig::default(),
-            enable_auto_install: true,
-            cache_compiled_packages: true,
-            parallel_compilation: true,
         }
     }
-}
-
 /// Errors during package integration
 #[derive(CursedError, Debug)]
 pub enum PackageIntegrationError {
     #[error("Package manager error: {0}")]
-    PackageManager(#[from] PackageManagerError),
     
     #[error("Import resolution error: {0}")]
-    ImportResolution(#[from] ImportError),
     
     #[error("Compilation error: {0}")]
-    Compilation(#[from] CursedError),
     
     #[error("Type checking error for package {package}: {error}")]
-    TypeChecking { package: String, error: String },
     
     #[error("Missing dependency: {dependency} required by {package}")]
-    MissingDependency { dependency: String, package: String },
     
     #[error("Version conflict: {package} requires {required} but {installed} is installed")]
-    VersionConflict { package: String, required: String, installed: String },
-}
-
 /// Main package integration coordinator
 #[derive(Debug)]
 pub struct PackageIntegration {
-    package_manager: Arc<Mutex<PackageManager>>,
-    import_manager: ImportManager,
-    config: PackageIntegrationConfig,
-    compiled_packages: HashMap<String, CompiledPackage>,
-}
-
 /// Information about a compiled package
 #[derive(Debug, Clone)]
 pub struct CompiledPackage {
-    pub metadata: PackageMetadata,
-    pub modules: HashMap<String, Arc<LoadedModule>>,
-    pub llvm_ir: Option<String>,
     pub type_info: Vec<String>, // Exported types
     pub symbols: Vec<String>,   // Exported symbols
-}
-
 /// Context for compilation with package information
 #[derive(Debug, Clone)]
 pub struct CompilationContext {
-    pub main_program: Program,
-    pub resolved_imports: Vec<ResolvedImport>,
-    pub loaded_modules: HashMap<String, Arc<LoadedModule>>,
-    pub available_packages: Vec<PackageMetadata>,
-    pub source_file: Option<PathBuf>,
-}
-
 /// Result of integrated build with package information
 #[derive(Debug)]
 pub struct IntegratedBuildResult {
-    pub llvm_ir: String,
-    pub compilation_context: CompilationContext,
-    pub package_stats: PackageStats,
-    pub warnings: Vec<String>,
-}
-
 /// Statistics about package usage during build
 #[derive(Debug, Clone)]
 pub struct PackageStats {
-    pub packages_resolved: usize,
-    pub modules_loaded: usize,
-    pub auto_installed: Vec<String>,
-    pub resolution_time: std::time::Duration,
-    pub compilation_time: std::time::Duration,
-}
-
 impl PackageIntegration {
     /// Create new package integration
     pub fn new(config: PackageIntegrationConfig) -> crate::error::Result<()> {
@@ -116,23 +63,13 @@ impl PackageIntegration {
         ));
         
         let import_manager = ImportManager::new(
-            package_manager.clone(), 
             config.import_resolver_config.clone()
         )?;
         
         Ok(Self {
-            package_manager,
-            import_manager,
-            config,
-            compiled_packages: HashMap::new(),
         })
-    }
-    
     /// Compile CURSED source with full package integration
     pub async fn compile_with_packages(
-        &mut self,
-        source: &str,
-        source_file: Option<&Path>,
     ) -> crate::error::Result<()> {
         let start_time = std::time::Instant::now();
         
@@ -149,14 +86,10 @@ impl PackageIntegration {
             return Err(PackageIntegrationError::Compilation(
                 CursedError::Parse(format!("Parse errors: {}", errors.join(", ")))
             ));
-        }
-        
         let resolution_start = std::time::Instant::now();
         
         // Resolve all imports
         let resolved_imports = self.import_manager.resolve_imports(
-            &program.imports,
-            source_file,
         ).await?;
         
         // Load all modules
@@ -181,8 +114,6 @@ impl PackageIntegration {
             // Load the module
             let loaded = self.import_manager.load_module(resolved).await?;
             loaded_modules.insert(resolved.original_path.clone(), loaded);
-        }
-        
         let resolution_time = resolution_start.elapsed();
         
         // Get available packages
@@ -190,12 +121,6 @@ impl PackageIntegration {
         
         // Create compilation context
         let context = CompilationContext {
-            main_program: program,
-            resolved_imports,
-            loaded_modules: loaded_modules.clone(),
-            available_packages: available_packages.clone(),
-            source_file: source_file.map(|p| p.to_path_buf()),
-        };
         
         let compilation_start = std::time::Instant::now();
         
@@ -205,41 +130,21 @@ impl PackageIntegration {
         
         if let Err(e) = type_checker.check_program(&context.main_program) {
             tracing::warn!("Type checking failed: {}, continuing with compilation", e);
-        }
-        
         // Generate LLVM IR with package integration
         let llvm_ir = self.generate_ir_with_packages(&context).await?;
         
         let compilation_time = compilation_start.elapsed();
         
         let stats = PackageStats {
-            packages_resolved: available_packages.len(),
-            modules_loaded: loaded_modules.len(),
-            auto_installed,
-            resolution_time,
-            compilation_time,
-        };
         
         tracing::info!(
-            total_time = ?start_time.elapsed(),
-            packages = stats.packages_resolved,
-            modules = stats.modules_loaded,
             "Package-aware compilation completed"
         );
         
         Ok(IntegratedBuildResult {
-            llvm_ir,
-            compilation_context: context,
-            package_stats: stats,
-            warnings: Vec::new(),
         })
-    }
-    
     /// Register package types with the type checker
     fn register_package_types(
-        &self,
-        type_checker: &mut TypeChecker,
-        loaded_modules: &HashMap<String, Arc<LoadedModule>>,
     ) -> crate::error::Result<()> {
         for (module_name, module) in loaded_modules {
             tracing::debug!(module = module_name, types = ?module.info.types, "Registering module types");
@@ -253,12 +158,8 @@ impl PackageIntegration {
         }
         
         Ok(())
-    }
-    
     /// Generate LLVM IR with package integration
     async fn generate_ir_with_packages(
-        &mut self,
-        context: &CompilationContext,
     ) -> crate::error::Result<()> {
         let mut codegen = LlvmCodeGenerator::new()?;
         
@@ -276,14 +177,10 @@ impl PackageIntegration {
         // Compile main program
         if let Err(e) = codegen.compile(&context.main_program) {
             tracing::warn!(error = ?e, "Failed to compile main program");
-        }
-        
         // Generate IR for everything
         let ir = codegen.generate_ir("// Generated from package-aware compilation")?;
         
         Ok(ir)
-    }
-    
     /// Install packages from a package file
     pub async fn install_dependencies(&mut self, package_file: &Path) -> crate::error::Result<()> {
         // Read package metadata
@@ -298,7 +195,6 @@ impl PackageIntegration {
         let mut installed = Vec::new();
         let mut package_manager = self.package_manager.lock().map_err(|_| {
             PackageIntegrationError::PackageManager(PackageManagerError::RegistryError {
-                message: "Failed to lock package manager".to_string(),
             })
         })?;
         
@@ -306,17 +202,11 @@ impl PackageIntegration {
         for (dep_name, _dep_version) in &metadata.dependencies {
             let packages = package_manager.install_package(dep_name, None).await?;
             installed.extend(packages);
-        }
-        
         // Install dev dependencies if in development mode
         for (dep_name, _dep_version) in &metadata.dev_dependencies {
             let packages = package_manager.install_package(dep_name, None).await?;
             installed.extend(packages);
-        }
-        
         Ok(installed)
-    }
-    
     /// Check if all dependencies are satisfied
     pub fn validate_dependencies(&self, package_file: &Path) -> crate::error::Result<()> {
         let content = std::fs::read_to_string(package_file)
@@ -329,7 +219,6 @@ impl PackageIntegration {
         
         let package_manager = self.package_manager.lock().map_err(|_| {
             PackageIntegrationError::PackageManager(PackageManagerError::RegistryError {
-                message: "Failed to lock package manager".to_string(),
             })
         })?;
         
@@ -343,44 +232,28 @@ impl PackageIntegration {
         }
         
         Ok(missing)
-    }
-    
     /// Update package integration configuration
     pub fn update_config(&mut self, config: PackageIntegrationConfig) {
         self.config = config;
-    }
-    
     /// Get package integration statistics
     pub fn get_stats(&self) -> IntegrationStats {
         let import_stats = self.import_manager.get_stats();
         
         IntegrationStats {
-            compiled_packages: self.compiled_packages.len(),
-            cached_imports: import_stats.cached_imports,
-            loaded_modules: import_stats.loaded_modules,
         }
     }
-}
-
 /// Package-aware compiler that integrates with the build system
 #[derive(Debug)]
 pub struct PackageAwareCompiler {
-    integration: PackageIntegration,
-}
-
 impl PackageAwareCompiler {
     /// Create new package-aware compiler
     pub fn new(config: PackageIntegrationConfig) -> crate::error::Result<()> {
         let integration = PackageIntegration::new(config)?;
         Ok(Self { integration })
-    }
-    
     /// Compile source with automatic package resolution
     pub async fn compile(&mut self, source: &str, source_file: Option<&Path>) -> crate::error::Result<()> {
         let result = self.integration.compile_with_packages(source, source_file).await?;
         Ok(result.llvm_ir)
-    }
-    
     /// Check source for errors including package dependencies
     pub async fn check(&mut self, source: &str, source_file: Option<&Path>) -> crate::error::Result<()> {
         // Compilation check includes dependency resolution
@@ -392,8 +265,3 @@ impl PackageAwareCompiler {
 /// Statistics about package integration
 #[derive(Debug, Clone)]
 pub struct IntegrationStats {
-    pub compiled_packages: usize,
-    pub cached_imports: usize,
-    pub loaded_modules: usize,
-}
-

@@ -18,85 +18,44 @@ static SOCKET_REGISTRY: std::sync::OnceLock<Arc<RwLock<HashMap<String, PathBuf>>
 
 fn get_socket_registry() -> &'static Arc<RwLock<HashMap<String, PathBuf>>> {
     SOCKET_REGISTRY.get_or_init(|| Arc::new(RwLock::new(HashMap::new())))
-}
-
 /// Unix socket type
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum UnixSocketType {
     /// Stream socket (TCP-like, reliable, ordered)
-    Stream,
     /// Datagram socket (UDP-like, connectionless)
-    Datagram,
-}
-
 /// Unix socket configuration
 #[derive(Debug, Clone)]
 pub struct UnixSocketConfig {
     /// Socket type
-    pub socket_type: UnixSocketType,
     /// Buffer size for I/O operations
-    pub buffer_size: usize,
     /// Socket file permissions
-    pub permissions: u32,
     /// Whether to remove existing socket file
-    pub remove_existing: bool,
     /// Timeout for operations
-    pub timeout: Option<Duration>,
     /// Maximum pending connections (server mode)
-    pub max_connections: usize,
-}
-
 impl Default for UnixSocketConfig {
     fn default() -> Self {
         Self {
-            socket_type: UnixSocketType::Stream,
-            buffer_size: 8192,
-            permissions: 0o666,
-            remove_existing: true,
-            timeout: Some(Duration::from_secs(30)),
-            max_connections: 128,
         }
     }
-}
-
 /// Cross-platform Unix socket
 #[derive(Debug)]
 pub struct UnixSocket {
-    path: PathBuf,
-    config: UnixSocketConfig,
-    stream: Option<UnixStream>,
-    datagram: Option<UnixDatagram>,
-    is_connected: bool,
-}
-
 impl UnixSocket {
     /// Create a new Unix socket
     pub fn new<P: AsRef<Path>>(path: P) -> Self {
         Self {
-            path: path.as_ref().to_path_buf(),
-            config: UnixSocketConfig::default(),
-            stream: None,
-            datagram: None,
-            is_connected: false,
         }
     }
 
     /// Create with configuration
     pub fn with_config<P: AsRef<Path>>(path: P, config: UnixSocketConfig) -> Self {
         Self {
-            path: path.as_ref().to_path_buf(),
-            config,
-            stream: None,
-            datagram: None,
-            is_connected: false,
         }
     }
 
     /// Connect to a Unix socket server
     pub fn connect(&mut self) -> IpcResult<()> {
         match self.config.socket_type {
-            UnixSocketType::Stream => self.connect_stream(),
-            UnixSocketType::Datagram => self.connect_datagram(),
         }
     }
 
@@ -112,21 +71,15 @@ impl UnixSocket {
         self.config.timeout = original_timeout;
         
         result
-    }
-
     /// Send data
     pub fn send(&mut self, data: &[u8]) -> IpcResult<usize> {
         match self.config.socket_type {
-            UnixSocketType::Stream => self.send_stream(data),
-            UnixSocketType::Datagram => self.send_datagram(data),
         }
     }
 
     /// Receive data
     pub fn receive(&mut self, buffer: &mut [u8]) -> IpcResult<usize> {
         match self.config.socket_type {
-            UnixSocketType::Stream => self.receive_stream(buffer),
-            UnixSocketType::Datagram => self.receive_datagram(buffer),
         }
     }
 
@@ -135,8 +88,6 @@ impl UnixSocket {
         let data = message.as_bytes();
         self.send(data)?;
         Ok(())
-    }
-
     /// Receive a message (convenience method for strings)
     pub fn receive_message(&mut self) -> IpcResult<String> {
         let mut buffer = vec![0u8; self.config.buffer_size];
@@ -145,16 +96,12 @@ impl UnixSocket {
         
         String::from_utf8(buffer)
             .map_err(|e| unix_socket_error(Some(self.path.to_str()), "receive_message", &e.to_string()))
-    }
-
     /// Send line (adds newline)
     pub fn send_line(&mut self, line: &str) -> IpcResult<()> {
         let mut data = line.to_string();
         data.push('\n');
         self.send(data.as_bytes())?;
         Ok(())
-    }
-
     /// Receive line
     pub fn receive_line(&mut self) -> IpcResult<String> {
         match &mut self.stream {
@@ -174,7 +121,6 @@ impl UnixSocket {
                 
                 Ok(line)
             }
-            None => Err(unix_socket_error(Some(self.path.to_str()), "receive_line", "Stream socket not connected")),
         }
     }
 
@@ -185,8 +131,6 @@ impl UnixSocket {
                 .map_err(|e| unix_socket_error(Some(self.path.to_str()), "shutdown", &e.to_string()))?;
         }
         Ok(())
-    }
-
     /// Close the socket
     pub fn close(&mut self) -> IpcResult<()> {
         if self.stream.is_some() {
@@ -197,18 +141,12 @@ impl UnixSocket {
         }
         self.is_connected = false;
         Ok(())
-    }
-
     /// Get socket path
     pub fn path(&self) -> &Path {
         &self.path
-    }
-
     /// Check if connected
     pub fn is_connected(&self) -> bool {
         self.is_connected
-    }
-
     fn connect_stream(&mut self) -> IpcResult<()> {
         let stream = UnixStream::connect(&self.path)
             .map_err(|e| connection_error(&self.path.to_string_lossy(), &e.to_string()))?;
@@ -219,14 +157,10 @@ impl UnixSocket {
                 .map_err(|e| unix_socket_error(Some(self.path.to_str()), "set_read_timeout", &e.to_string()))?;
             stream.set_write_timeout(Some(timeout))
                 .map_err(|e| unix_socket_error(Some(self.path.to_str()), "set_write_timeout", &e.to_string()))?;
-        }
-        
         self.stream = Some(stream);
         self.is_connected = true;
         self.register_socket();
         Ok(())
-    }
-
     fn connect_datagram(&mut self) -> IpcResult<()> {
         let datagram = UnixDatagram::unbound()
             .map_err(|e| unix_socket_error(Some(self.path.to_str()), "connect_datagram", &e.to_string()))?;
@@ -240,14 +174,10 @@ impl UnixSocket {
                 .map_err(|e| unix_socket_error(Some(self.path.to_str()), "set_read_timeout", &e.to_string()))?;
             datagram.set_write_timeout(Some(timeout))
                 .map_err(|e| unix_socket_error(Some(self.path.to_str()), "set_write_timeout", &e.to_string()))?;
-        }
-        
         self.datagram = Some(datagram);
         self.is_connected = true;
         self.register_socket();
         Ok(())
-    }
-
     fn send_stream(&mut self, data: &[u8]) -> IpcResult<usize> {
         if let Some(stream) = &mut self.stream {
             stream.write(data)
@@ -288,13 +218,9 @@ impl UnixSocket {
         let registry = get_socket_registry();
         if let Ok(mut sockets) = registry.write() {
             sockets.insert(
-                self.path.to_string_lossy().to_string(),
-                self.path.clone(),
             );
         }
     }
-}
-
 impl Drop for UnixSocket {
     fn drop(&mut self) {
         let _ = self.close();
@@ -304,30 +230,16 @@ impl Drop for UnixSocket {
 /// Unix socket server for handling multiple connections
 #[derive(Debug)]
 pub struct UnixSocketServer {
-    path: PathBuf,
-    config: UnixSocketConfig,
-    listener: Option<UnixListener>,
-    is_listening: bool,
-}
-
 impl UnixSocketServer {
     /// Create a new Unix socket server
     pub fn new<P: AsRef<Path>>(path: P) -> Self {
         Self {
-            path: path.as_ref().to_path_buf(),
-            config: UnixSocketConfig::default(),
-            listener: None,
-            is_listening: false,
         }
     }
 
     /// Create with configuration
     pub fn with_config<P: AsRef<Path>>(path: P, config: UnixSocketConfig) -> Self {
         Self {
-            path: path.as_ref().to_path_buf(),
-            config,
-            listener: None,
-            is_listening: false,
         }
     }
 
@@ -337,8 +249,6 @@ impl UnixSocketServer {
         if self.config.remove_existing && self.path.exists() {
             std::fs::remove_file(&self.path)
                 .map_err(|e| unix_socket_error(Some(self.path.to_str()), "remove_socket", &e.to_string()))?;
-        }
-        
         let listener = UnixListener::bind(&self.path)
             .map_err(|e| unix_socket_error(Some(self.path.to_str()), "bind", &e.to_string()))?;
         
@@ -346,8 +256,6 @@ impl UnixSocketServer {
         self.is_listening = true;
         self.register_server();
         Ok(())
-    }
-
     /// Accept a connection
     pub fn accept(&mut self) -> IpcResult<UnixSocket> {
         if let Some(listener) = &self.listener {
@@ -360,8 +268,6 @@ impl UnixSocketServer {
                     .map_err(|e| unix_socket_error(Some(self.path.to_str()), "set_read_timeout", &e.to_string()))?;
                 stream.set_write_timeout(Some(timeout))
                     .map_err(|e| unix_socket_error(Some(self.path.to_str()), "set_write_timeout", &e.to_string()))?;
-            }
-            
             let mut socket = UnixSocket::with_config(&self.path, self.config.clone());
             socket.stream = Some(stream);
             socket.is_connected = true;
@@ -384,29 +290,19 @@ impl UnixSocketServer {
             }
         }
         Ok(())
-    }
-
     /// Get server path
     pub fn path(&self) -> &Path {
         &self.path
-    }
-
     /// Check if listening
     pub fn is_listening(&self) -> bool {
         self.is_listening
-    }
-
     fn register_server(&self) {
         let registry = get_socket_registry();
         if let Ok(mut sockets) = registry.write() {
             sockets.insert(
-                format!("server:{}", self.path.to_string_lossy()),
-                self.path.clone(),
             );
         }
     }
-}
-
 impl Drop for UnixSocketServer {
     fn drop(&mut self) {
         let _ = self.stop();
@@ -416,21 +312,16 @@ impl Drop for UnixSocketServer {
 /// Unix socket client for connecting to servers
 #[derive(Debug)]
 pub struct UnixSocketClient {
-    config: UnixSocketConfig,
-}
-
 impl UnixSocketClient {
     /// Create a new Unix socket client
     pub fn new() -> Self {
         Self {
-            config: UnixSocketConfig::default(),
         }
     }
 
     /// Create with configuration
     pub fn with_config(config: UnixSocketConfig) -> Self {
         Self {
-            config,
         }
     }
 
@@ -439,8 +330,6 @@ impl UnixSocketClient {
         let mut socket = UnixSocket::with_config(path, self.config.clone());
         socket.connect()?;
         Ok(socket)
-    }
-
     /// Connect with timeout
     pub fn connect_timeout<P: AsRef<Path>>(&self, path: P, timeout: Duration) -> IpcResult<UnixSocket> {
         let mut socket = UnixSocket::with_config(path, self.config.clone());
@@ -458,23 +347,12 @@ impl Default for UnixSocketClient {
 /// Unix datagram socket server
 #[derive(Debug)]
 pub struct UnixDatagramServer {
-    path: PathBuf,
-    config: UnixSocketConfig,
-    socket: Option<UnixDatagram>,
-    is_bound: bool,
-}
-
 impl UnixDatagramServer {
     /// Create a new Unix datagram server
     pub fn new<P: AsRef<Path>>(path: P) -> Self {
         Self {
-            path: path.as_ref().to_path_buf(),
             config: UnixSocketConfig {
-                socket_type: UnixSocketType::Datagram,
                 ..Default::default()
-            },
-            socket: None,
-            is_bound: false,
         }
     }
 
@@ -484,8 +362,6 @@ impl UnixDatagramServer {
         if self.config.remove_existing && self.path.exists() {
             std::fs::remove_file(&self.path)
                 .map_err(|e| unix_socket_error(Some(self.path.to_str()), "remove_socket", &e.to_string()))?;
-        }
-        
         let socket = UnixDatagram::bind(&self.path)
             .map_err(|e| unix_socket_error(Some(self.path.to_str()), "bind", &e.to_string()))?;
         
@@ -495,14 +371,10 @@ impl UnixDatagramServer {
                 .map_err(|e| unix_socket_error(Some(self.path.to_str()), "set_read_timeout", &e.to_string()))?;
             socket.set_write_timeout(Some(timeout))
                 .map_err(|e| unix_socket_error(Some(self.path.to_str()), "set_write_timeout", &e.to_string()))?;
-        }
-        
         self.socket = Some(socket);
         self.is_bound = true;
         self.register_server();
         Ok(())
-    }
-
     /// Receive data from any client
     pub fn receive_from(&mut self, buffer: &mut [u8]) -> IpcResult<(usize, PathBuf)> {
         if let Some(socket) = &self.socket {
@@ -543,29 +415,19 @@ impl UnixDatagramServer {
             }
         }
         Ok(())
-    }
-
     /// Get server path
     pub fn path(&self) -> &Path {
         &self.path
-    }
-
     /// Check if bound
     pub fn is_bound(&self) -> bool {
         self.is_bound
-    }
-
     fn register_server(&self) {
         let registry = get_socket_registry();
         if let Ok(mut sockets) = registry.write() {
             sockets.insert(
-                format!("datagram_server:{}", self.path.to_string_lossy()),
-                self.path.clone(),
             );
         }
     }
-}
-
 impl Drop for UnixDatagramServer {
     fn drop(&mut self) {
         let _ = self.stop();
@@ -584,5 +446,3 @@ pub fn cleanup_sockets() -> IpcResult<()> {
         }
     }
     Ok(())
-}
-

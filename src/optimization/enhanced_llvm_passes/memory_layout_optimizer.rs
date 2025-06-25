@@ -10,134 +10,57 @@ use std::sync::{Arc, Mutex};
 use tracing::{debug, trace, info, instrument};
 
 use inkwell::{
-    values::{FunctionValue, BasicValue, BasicValueEnum, InstructionValue, PointerValue},
-    types::{BasicType, BasicTypeEnum, StructType, ArrayType, PointerType},
-    basic_block::BasicBlock,
-    builder::Builder,
-    context::Context,
-    module::Module,
-    AddressSpace,
-};
+// };
 
 use crate::optimization::enhanced_llvm_passes_manager::EnhancedOptimizationStatistics;
 
 /// Memory layout optimizer for struct packing and cache alignment
 pub struct MemoryLayoutOptimizer<'ctx> {
-    context_lifetime: std::marker::PhantomData<&'ctx ()>,
-    statistics: Arc<Mutex<EnhancedOptimizationStatistics>>,
     
     // Analysis data
-    struct_analysis: StructAnalysis,
-    memory_access_patterns: MemoryAccessPatterns,
-    alignment_requirements: AlignmentRequirements,
-}
-
 /// Analysis of struct types and their usage patterns
 #[derive(Debug, Default)]
 struct StructAnalysis {
     /// Struct type -> field access patterns
-    field_access_patterns: HashMap<String, Vec<FieldAccessInfo>>,
     /// Struct type -> size and alignment info
-    layout_info: HashMap<String, LayoutInfo>,
     /// Struct type -> optimization opportunities
-    optimization_opportunities: HashMap<String, Vec<OptimizationOpportunity>>,
-}
-
 /// Memory access pattern analysis
 #[derive(Debug, Default)]
 struct MemoryAccessPatterns {
     /// Function -> memory access hotspots
-    access_hotspots: HashMap<String, Vec<MemoryAccess>>,
     /// Temporal locality patterns
-    temporal_patterns: HashMap<String, Vec<TemporalAccess>>,
     /// Spatial locality patterns
-    spatial_patterns: HashMap<String, Vec<SpatialAccess>>,
-}
-
 /// Alignment requirements for different architectures
 #[derive(Debug)]
 struct AlignmentRequirements {
     /// Cache line size (typically 64 bytes)
-    cache_line_size: usize,
     /// Page size (typically 4KB)
-    page_size: usize,
     /// Vector alignment requirements
-    vector_alignment: usize,
     /// Preferred struct alignment
-    struct_alignment: usize,
-}
-
 /// Information about field access patterns
 #[derive(Debug, Clone)]
 struct FieldAccessInfo {
-    field_index: usize,
-    access_frequency: usize,
-    access_pattern: AccessPattern,
-    temporal_locality: f64,
-}
-
 /// Layout information for structs
 #[derive(Debug, Clone)]
 struct LayoutInfo {
-    original_size: usize,
-    original_alignment: usize,
-    optimal_size: usize,
-    optimal_alignment: usize,
-    padding_bytes: usize,
-}
-
 /// Optimization opportunities identified
 #[derive(Debug, Clone)]
 enum OptimizationOpportunity {
-    FieldReordering { estimated_improvement: f64 },
-    CachePadding { target_alignment: usize },
-    StructSplitting { hot_fields: Vec<usize> },
-    ArrayOfStructsToStructOfArrays { estimated_speedup: f64 },
-}
-
 /// Memory access information
 #[derive(Debug, Clone)]
 struct MemoryAccess {
-    instruction_type: MemoryInstructionType,
-    frequency: usize,
-    cache_locality: CacheLocality,
-    access_size: usize,
-}
-
 /// Temporal access pattern
 #[derive(Debug, Clone)]
 struct TemporalAccess {
-    first_access: String,
-    subsequent_accesses: Vec<String>,
-    time_distance: f64,
-}
-
 /// Spatial access pattern
 #[derive(Debug, Clone)]
 struct SpatialAccess {
-    base_address: String,
-    related_accesses: Vec<String>,
-    distance: usize,
-}
-
 /// Types of memory access patterns
 #[derive(Debug, Clone)]
 enum AccessPattern {
-    Sequential,
-    Random,
-    Strided { stride: usize },
-    Clustered { cluster_size: usize },
-}
-
 /// Types of memory instructions
 #[derive(Debug, Clone)]
 enum MemoryInstructionType {
-    Load,
-    Store,
-    Alloca,
-    GetElementPtr,
-}
-
 /// Cache locality classification
 #[derive(Debug, Clone)]
 enum CacheLocality {
@@ -145,28 +68,15 @@ enum CacheLocality {
     Good,      // Adjacent cache lines  
     Fair,      // Same page
     Poor,      // Different pages
-}
-
 impl Default for AlignmentRequirements {
     fn default() -> Self {
         Self {
-            cache_line_size: 64,
-            page_size: 4096,
-            vector_alignment: 16,
-            struct_alignment: 8,
         }
     }
-}
-
 impl<'ctx> MemoryLayoutOptimizer<'ctx> {
     /// Create new memory layout optimizer
     pub fn new(statistics: Arc<Mutex<EnhancedOptimizationStatistics>>) -> Self {
         Self {
-            context_lifetime: std::marker::PhantomData,
-            statistics,
-            struct_analysis: StructAnalysis::default(),
-            memory_access_patterns: MemoryAccessPatterns::default(),
-            alignment_requirements: AlignmentRequirements::default(),
         }
     }
     
@@ -190,8 +100,6 @@ impl<'ctx> MemoryLayoutOptimizer<'ctx> {
         
         info!("Memory pattern analysis completed");
         Ok(())
-    }
-    
     /// Optimize memory layout for a function
     #[instrument(skip(self, function))]
     pub fn optimize_memory_layout(&mut self, function: FunctionValue<'ctx>) -> Result<()> {
@@ -217,13 +125,8 @@ impl<'ctx> MemoryLayoutOptimizer<'ctx> {
             let mut stats = self.statistics.lock().unwrap();
             stats.memory_layout_improvements += optimizations_applied;
             
-            debug!("Applied {} memory layout optimizations to function {}", 
                    optimizations_applied, function_name);
-        }
-        
         Ok(())
-    }
-    
     /// Analyze struct types in the module
     fn analyze_struct_types(&mut self, module: &Module<'ctx>) -> Result<()> {
         debug!("Analyzing struct types for layout optimization");
@@ -237,8 +140,6 @@ impl<'ctx> MemoryLayoutOptimizer<'ctx> {
         }
         
         Ok(())
-    }
-    
     /// Analyze struct usage patterns in a function
     fn analyze_struct_usage_in_function(&mut self, function: FunctionValue<'ctx>, block: BasicBlock<'ctx>) -> Result<()> {
         let mut current_block = Some(block);
@@ -252,26 +153,15 @@ impl<'ctx> MemoryLayoutOptimizer<'ctx> {
                     match gep {
                         inkwell::values::InstructionOpcode::GetElementPtr => {
                             self.analyze_gep_instruction(instr)?;
-                        },
                         inkwell::values::InstructionOpcode::Load => {
                             self.analyze_load_instruction(instr)?;
-                        },
                         inkwell::values::InstructionOpcode::Store => {
                             self.analyze_store_instruction(instr)?;
-                        },
                         _ => {}
                     }
-                }
-                
                 instruction = instr.get_next_instruction();
-            }
-            
             current_block = bb.get_next_basic_block();
-        }
-        
         Ok(())
-    }
-    
     /// Analyze memory access patterns in a function
     fn analyze_function_memory_access(&mut self, function: FunctionValue<'ctx>) -> Result<()> {
         let function_name = function.get_name().to_str().unwrap_or("unknown").to_string();
@@ -286,15 +176,9 @@ impl<'ctx> MemoryLayoutOptimizer<'ctx> {
                     access_patterns.push(access);
                 }
                 instruction = instr.get_next_instruction();
-            }
-            
             current_block = block.get_next_basic_block();
-        }
-        
         self.memory_access_patterns.access_hotspots.insert(function_name, access_patterns);
         Ok(())
-    }
-    
     /// Analyze a GetElementPtr instruction
     fn analyze_gep_instruction(&mut self, instruction: InstructionValue<'ctx>) -> Result<()> {
         // Analyze struct field access patterns
@@ -308,45 +192,29 @@ impl<'ctx> MemoryLayoutOptimizer<'ctx> {
         // 4. Build temporal and spatial locality maps
         
         Ok(())
-    }
-    
     /// Analyze a load instruction
     fn analyze_load_instruction(&mut self, instruction: InstructionValue<'ctx>) -> Result<()> {
         trace!("Analyzing load instruction for memory access patterns");
         // Track load patterns, cache locality, and access frequency
         Ok(())
-    }
-    
     /// Analyze a store instruction
     fn analyze_store_instruction(&mut self, instruction: InstructionValue<'ctx>) -> Result<()> {
         trace!("Analyzing store instruction for memory access patterns");
         // Track store patterns and write locality
         Ok(())
-    }
-    
     /// Analyze memory instruction for access patterns
     fn analyze_memory_instruction(&self, instruction: InstructionValue<'ctx>) -> Result<Option<MemoryAccess>> {
         let opcode = instruction.get_opcode();
         
         let instruction_type = match opcode.get_instruction_opcode() {
-            Some(inkwell::values::InstructionOpcode::Load) => MemoryInstructionType::Load,
-            Some(inkwell::values::InstructionOpcode::Store) => MemoryInstructionType::Store,
-            Some(inkwell::values::InstructionOpcode::Alloca) => MemoryInstructionType::Alloca,
-            Some(inkwell::values::InstructionOpcode::GetElementPtr) => MemoryInstructionType::GetElementPtr,
-            _ => return Ok(None),
-        };
         
         // Estimate access frequency and cache locality
         let access = MemoryAccess {
-            instruction_type,
             frequency: 1, // Would be determined by profiling data
             cache_locality: CacheLocality::Good, // Would be analyzed based on access patterns
             access_size: 8, // Would be determined from type information
-        };
         
         Ok(Some(access))
-    }
-    
     /// Identify optimization opportunities based on analysis
     fn identify_optimization_opportunities(&mut self) -> Result<()> {
         debug!("Identifying memory layout optimization opportunities");
@@ -360,30 +228,20 @@ impl<'ctx> MemoryLayoutOptimizer<'ctx> {
                 opportunities.push(OptimizationOpportunity::FieldReordering {
                     estimated_improvement: 0.15, // 15% estimated improvement
                 });
-            }
-            
             // Check for cache padding opportunities
             if self.can_benefit_from_cache_padding(struct_name) {
                 opportunities.push(OptimizationOpportunity::CachePadding {
-                    target_alignment: self.alignment_requirements.cache_line_size,
                 });
-            }
-            
             // Check for struct splitting opportunities
             if let Some(hot_fields) = self.identify_hot_fields(access_patterns) {
                 if hot_fields.len() < access_patterns.len() {
                     opportunities.push(OptimizationOpportunity::StructSplitting {
-                        hot_fields,
                     });
                 }
             }
             
             self.struct_analysis.optimization_opportunities.insert(struct_name.clone(), opportunities);
-        }
-        
         Ok(())
-    }
-    
     /// Check if field reordering would be beneficial
     fn can_benefit_from_field_reordering(&self, access_patterns: &[FieldAccessInfo]) -> bool {
         // Look for fields that are accessed together but not adjacent
@@ -395,8 +253,6 @@ impl<'ctx> MemoryLayoutOptimizer<'ctx> {
             }
         }
         false
-    }
-    
     /// Check if cache padding would be beneficial
     fn can_benefit_from_cache_padding(&self, struct_name: &str) -> bool {
         if let Some(layout_info) = self.struct_analysis.layout_info.get(struct_name) {
@@ -444,11 +300,7 @@ impl<'ctx> MemoryLayoutOptimizer<'ctx> {
         
         if optimizations_found > 0 {
             debug!("Found {} field reordering opportunities", optimizations_found);
-        }
-        
         Ok(optimizations_found)
-    }
-    
     /// Apply cache alignment optimizations
     fn apply_cache_alignment(&mut self, function: FunctionValue<'ctx>) -> Result<usize> {
         debug!("Applying cache alignment optimizations");
@@ -462,11 +314,7 @@ impl<'ctx> MemoryLayoutOptimizer<'ctx> {
         
         if optimizations_found > 0 {
             debug!("Applied {} cache alignment optimizations", optimizations_found);
-        }
-        
         Ok(optimizations_found)
-    }
-    
     /// Optimize array access patterns
     fn optimize_array_access_patterns(&mut self, function: FunctionValue<'ctx>) -> Result<usize> {
         debug!("Optimizing array access patterns");
@@ -481,11 +329,7 @@ impl<'ctx> MemoryLayoutOptimizer<'ctx> {
         
         if optimizations_found > 0 {
             debug!("Applied {} array access optimizations", optimizations_found);
-        }
-        
         Ok(optimizations_found)
-    }
-    
     /// Optimize data structure layout
     fn optimize_data_structure_layout(&mut self, function: FunctionValue<'ctx>) -> Result<usize> {
         debug!("Optimizing data structure layout");
@@ -500,11 +344,7 @@ impl<'ctx> MemoryLayoutOptimizer<'ctx> {
         
         if optimizations_found > 0 {
             debug!("Applied {} data structure layout optimizations", optimizations_found);
-        }
-        
         Ok(optimizations_found)
-    }
-    
     /// Count field reordering optimization opportunities
     fn count_field_reordering_opportunities(&self, function: FunctionValue<'ctx>) -> usize {
         let mut count = 0;
@@ -524,14 +364,8 @@ impl<'ctx> MemoryLayoutOptimizer<'ctx> {
                     }
                 }
                 instruction = instr.get_next_instruction();
-            }
-            
             current_block = block.get_next_basic_block();
-        }
-        
         count
-    }
-    
     /// Count cache alignment optimization opportunities
     fn count_cache_alignment_opportunities(&self, function: FunctionValue<'ctx>) -> usize {
         let mut count = 0;
@@ -550,14 +384,8 @@ impl<'ctx> MemoryLayoutOptimizer<'ctx> {
                     }
                 }
                 instruction = instr.get_next_instruction();
-            }
-            
             current_block = block.get_next_basic_block();
-        }
-        
         count
-    }
-    
     /// Count array optimization opportunities
     fn count_array_optimization_opportunities(&self, function: FunctionValue<'ctx>) -> usize {
         let mut count = 0;
@@ -569,14 +397,8 @@ impl<'ctx> MemoryLayoutOptimizer<'ctx> {
             // Simulate finding array access patterns in loops
             if self.block_contains_loop_like_structure(block) {
                 count += 1;
-            }
-            
             current_block = block.get_next_basic_block();
-        }
-        
         count.min(2) // Realistic limit
-    }
-    
     /// Count data structure optimization opportunities
     fn count_data_structure_opportunities(&self, function: FunctionValue<'ctx>) -> usize {
         let function_name = function.get_name().to_str().unwrap_or("unknown");
@@ -585,11 +407,7 @@ impl<'ctx> MemoryLayoutOptimizer<'ctx> {
         let mut count = 0;
         for opportunities in self.struct_analysis.optimization_opportunities.values() {
             count += opportunities.len();
-        }
-        
         count.min(1) // Conservative estimate
-    }
-    
     /// Check if a basic block contains loop-like structure
     fn block_contains_loop_like_structure(&self, block: BasicBlock<'ctx>) -> bool {
         // Simple heuristic: look for back-edges or PHI nodes
@@ -602,22 +420,15 @@ impl<'ctx> MemoryLayoutOptimizer<'ctx> {
                 }
             }
             instruction = instr.get_next_instruction();
-        }
-        
         false
-    }
-    
     /// Get optimization statistics
     pub fn get_optimization_statistics(&self) -> Result<HashMap<String, usize>> {
         let mut stats = HashMap::new();
         
-        stats.insert("field_reordering_opportunities".to_string(), 
                     self.struct_analysis.optimization_opportunities.len());
         
-        stats.insert("cache_alignment_candidates".to_string(),
                     self.struct_analysis.layout_info.len());
         
-        stats.insert("memory_access_hotspots".to_string(),
                     self.memory_access_patterns.access_hotspots.len());
         
         Ok(stats)

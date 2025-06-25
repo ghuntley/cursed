@@ -20,210 +20,100 @@ use super::{SlayOptions, SlayResult, ProcessStats, SignalOptions, io_error_to_cu
 #[derive(Debug)]
 pub struct EnhancedSlayCommand {
     /// Command name/path
-    pub name: String,
     /// Command arguments
-    pub args: Vec<String>,
     /// Enhanced options
-    pub options: EnhancedSlayOptions,
     /// Process state
-    pub(crate) state: Arc<Mutex<EnhancedProcessState>>,
     /// Resource monitor
-    pub(crate) resource_monitor: Option<Arc<Mutex<ResourceMonitor>>>,
-}
-
 /// Enhanced execution options with advanced features
 #[derive(Debug, Clone)]
 pub struct EnhancedSlayOptions {
     /// Basic options
-    pub basic: SlayOptions,
     /// Resource limits
-    pub memory_limit: Option<u64>,
-    pub cpu_limit: Option<f64>,
     /// Process priority
-    pub priority: Option<ProcessPriority>,
     /// Security context
-    pub security: SecurityContext,
     /// I/O configuration
-    pub io_config: IoConfiguration,
     /// Monitoring configuration
-    pub monitoring: MonitoringConfig,
-}
-
 /// Process priority levels
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum ProcessPriority {
-    Low = -10,
-    Normal = 0,
-    High = 10,
-    RealTime = 20,
-}
-
 /// Security context for process execution
 #[derive(Debug, Clone)]
 pub struct SecurityContext {
     /// User ID to run as (Unix only)
-    pub user_id: Option<u32>,
     /// Group ID to run as (Unix only)  
-    pub group_id: Option<u32>,
     /// Chroot directory (Unix only)
-    pub chroot_dir: Option<String>,
     /// Process isolation level
-    pub isolation_level: IsolationLevel,
     /// Resource limits enforcement
-    pub enforce_limits: bool,
-}
-
 /// Process isolation levels
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum IsolationLevel {
-    None,
-    Basic,
-    Sandbox,
-    Container,
-}
-
 /// I/O configuration options
 #[derive(Debug, Clone)]
 pub struct IoConfiguration {
     /// Buffer size for I/O operations
-    pub buffer_size: usize,
     /// Line-based processing for stdout
-    pub line_buffered_stdout: bool,
     /// Line-based processing for stderr
-    pub line_buffered_stderr: bool,
     /// Callback for stdout lines
     pub stdout_callback: Option<String>, // Function name for callback
     /// Callback for stderr lines
     pub stderr_callback: Option<String>, // Function name for callback
     /// Input data to send to stdin
-    pub stdin_data: Option<Vec<u8>>,
-}
-
 /// Monitoring configuration
 #[derive(Debug, Clone)]
 pub struct MonitoringConfig {
     /// Enable resource monitoring
-    pub enabled: bool,
     /// Monitoring interval
-    pub interval: Duration,
     /// Resource thresholds
-    pub memory_threshold: Option<u64>,
-    pub cpu_threshold: Option<f64>,
     /// Action on threshold breach
-    pub threshold_action: ThresholdAction,
-}
-
 /// Action to take when resource thresholds are breached
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum ThresholdAction {
-    None,
-    Warn,
-    Throttle,
-    Kill,
-}
-
 /// Enhanced process state with monitoring
 #[derive(Debug)]
 pub struct EnhancedProcessState {
     /// Child process handle
-    pub child: Option<Child>,
     /// Process start time
-    pub start_time: Instant,
     /// Exit status when completed
-    pub exit_status: Option<ExitStatus>,
     /// Collected stdout
-    pub stdout_data: Vec<u8>,
     /// Collected stderr
-    pub stderr_data: Vec<u8>,
     /// Whether the process is running
-    pub is_running: bool,
     /// Last error encountered
-    pub last_error: Option<String>,
     /// Current resource usage
-    pub current_stats: ProcessStats,
     /// Resource usage history
-    pub stats_history: Vec<(Instant, ProcessStats)>,
     /// Process signals sent
-    pub signals_sent: Vec<(Instant, i32)>,
-}
-
 /// Resource monitoring system
 #[derive(Debug)]
 pub struct ResourceMonitor {
     /// Process ID being monitored
-    pub pid: Option<u32>,
     /// Monitoring enabled
-    pub enabled: bool,
     /// Update interval
-    pub interval: Duration,
     /// Statistics history
-    pub history: Vec<(Instant, ProcessStats)>,
     /// Threshold configuration
-    pub thresholds: MonitoringConfig,
     /// Monitor thread handle
-    pub monitor_thread: Option<thread::JoinHandle<()>>,
-}
-
 impl Default for EnhancedSlayOptions {
     fn default() -> Self {
         Self {
-            basic: SlayOptions::default(),
-            memory_limit: None,
-            cpu_limit: None,
-            priority: Some(ProcessPriority::Normal),
-            security: SecurityContext::default(),
-            io_config: IoConfiguration::default(),
-            monitoring: MonitoringConfig::default(),
         }
     }
-}
-
 impl Default for SecurityContext {
     fn default() -> Self {
         Self {
-            user_id: None,
-            group_id: None,
-            chroot_dir: None,
-            isolation_level: IsolationLevel::None,
-            enforce_limits: false,
         }
     }
-}
-
 impl Default for IoConfiguration {
     fn default() -> Self {
         Self {
-            buffer_size: 8192,
-            line_buffered_stdout: false,
-            line_buffered_stderr: false,
-            stdout_callback: None,
-            stderr_callback: None,
-            stdin_data: None,
         }
     }
-}
-
 impl Default for MonitoringConfig {
     fn default() -> Self {
         Self {
-            enabled: false,
-            interval: Duration::from_secs(1),
-            memory_threshold: None,
-            cpu_threshold: None,
-            threshold_action: ThresholdAction::None,
         }
     }
-}
-
 impl EnhancedSlayCommand {
     /// Create a new enhanced command
     pub fn new(name: &str, args: &[&str]) -> Self {
         Self {
-            name: name.to_string(),
-            args: args.iter().map(|s| s.to_string()).collect(),
-            options: EnhancedSlayOptions::default(),
-            state: Arc::new(Mutex::new(EnhancedProcessState::new())),
-            resource_monitor: None,
         }
     }
 
@@ -231,45 +121,31 @@ impl EnhancedSlayCommand {
     pub fn with_options(mut self, options: EnhancedSlayOptions) -> Self {
         self.options = options;
         self
-    }
-
     /// Set memory limit in bytes
     pub fn set_memory_limit(&mut self, limit: u64) -> &mut Self {
         self.options.memory_limit = Some(limit);
         self
-    }
-
     /// Set CPU usage limit as percentage
     pub fn set_cpu_limit(&mut self, limit: f64) -> &mut Self {
         self.options.cpu_limit = Some(limit);
         self
-    }
-
     /// Set process priority
     pub fn set_priority(&mut self, priority: ProcessPriority) -> &mut Self {
         self.options.priority = Some(priority);
         self
-    }
-
     /// Enable resource monitoring
     pub fn enable_monitoring(&mut self, interval: Duration) -> &mut Self {
         self.options.monitoring.enabled = true;
         self.options.monitoring.interval = interval;
         self
-    }
-
     /// Set security context
     pub fn set_security_context(&mut self, security: SecurityContext) -> &mut Self {
         self.options.security = security;
         self
-    }
-
     /// Run the command with enhanced features
     pub fn run_enhanced(&mut self) -> SlayResult<()> {
         self.start_enhanced()?;
         self.wait_enhanced()
-    }
-
     /// Start the command with enhanced features
     pub fn start_enhanced(&mut self) -> SlayResult<()> {
         // Build the command with enhanced options
@@ -296,19 +172,13 @@ impl EnhancedSlayCommand {
             state.child = Some(child);
             state.is_running = true;
             state.start_time = Instant::now();
-        }
-
         // Start resource monitoring if enabled
         if self.options.monitoring.enabled {
             self.start_resource_monitoring(pid)?;
-        }
-
         // Handle I/O operations
         self.handle_io_operations()?;
 
         Ok(())
-    }
-
     /// Wait for command completion with enhanced monitoring
     pub fn wait_enhanced(&mut self) -> SlayResult<()> {
         let timeout = self.options.basic.timeout;
@@ -317,14 +187,11 @@ impl EnhancedSlayCommand {
             self.wait_with_timeout_enhanced(timeout_duration)
         } else {
             self.wait_indefinitely_enhanced()
-        };
 
         // Stop resource monitoring
         self.stop_resource_monitoring();
 
         result
-    }
-
     /// Get current resource statistics
     pub fn get_stats(&self) -> Option<ProcessStats> {
         let state = self.state.lock().unwrap();
@@ -339,8 +206,6 @@ impl EnhancedSlayCommand {
     pub fn get_stats_history(&self) -> Vec<(Instant, ProcessStats)> {
         let state = self.state.lock().unwrap();
         state.stats_history.clone()
-    }
-
     /// Send signal to the process
     pub fn send_signal(&mut self, signal: i32) -> SlayResult<()> {
         let mut state = self.state.lock().unwrap();
@@ -359,8 +224,6 @@ impl EnhancedSlayCommand {
                 return Err(CursedError::RuntimeError(
                     "Signal sending not implemented on Windows".to_string()
                 ));
-            }
-            
             state.signals_sent.push((Instant::now(), signal));
             Ok(())
         } else {
@@ -380,22 +243,14 @@ impl EnhancedSlayCommand {
                 return Ok(());
             }
             thread::sleep(Duration::from_millis(100));
-        }
-        
         // Force kill if necessary
         if options.force && self.is_running() {
             self.send_signal(9)?; // SIGKILL
-        }
-        
         Ok(())
-    }
-
     /// Check if process is running
     pub fn is_running(&self) -> bool {
         let state = self.state.lock().unwrap();
         state.is_running
-    }
-
     /// Build enhanced command with all configurations
     fn build_enhanced_command(&self) -> SlayResult<Command> {
         let mut cmd = if self.options.basic.use_shell {
@@ -404,8 +259,6 @@ impl EnhancedSlayCommand {
             
             if shell_args.len() > 1 {
                 shell_cmd.args(&shell_args[1..]);
-            }
-            
             let full_cmd = format!("{} {}", self.name, self.args.join(" "));
             shell_cmd.arg(full_cmd);
             shell_cmd
@@ -413,13 +266,10 @@ impl EnhancedSlayCommand {
             let mut direct_cmd = Command::new(&self.name);
             direct_cmd.args(&self.args);
             direct_cmd
-        };
 
         // Set working directory
         if let Some(ref dir) = self.options.basic.dir {
             cmd.current_dir(dir);
-        }
-
         // Set environment variables
         for env_var in &self.options.basic.env {
             if let Some(eq_pos) = env_var.find('=') {
@@ -430,8 +280,6 @@ impl EnhancedSlayCommand {
         }
 
         Ok(cmd)
-    }
-
     /// Apply security context to command
     fn apply_security_context(&self, cmd: &mut Command) -> SlayResult<()> {
         #[cfg(unix)]
@@ -440,12 +288,8 @@ impl EnhancedSlayCommand {
             
             if let Some(uid) = self.options.security.user_id {
                 cmd.uid(uid);
-            }
-            
             if let Some(gid) = self.options.security.group_id {
                 cmd.gid(gid);
-            }
-            
             // Apply chroot if specified
             if let Some(ref chroot_dir) = self.options.security.chroot_dir {
                 cmd.pre_exec(move || {
@@ -461,8 +305,6 @@ impl EnhancedSlayCommand {
         }
         
         Ok(())
-    }
-
     /// Apply process priority
     fn apply_priority(&self, cmd: &mut Command) -> SlayResult<()> {
         if let Some(priority) = self.options.priority {
@@ -479,13 +321,9 @@ impl EnhancedSlayCommand {
             }
         }
         Ok(())
-    }
-
     /// Start resource monitoring
     fn start_resource_monitoring(&mut self, pid: u32) -> SlayResult<()> {
         let monitor = Arc::new(Mutex::new(ResourceMonitor::new(
-            pid,
-            self.options.monitoring.clone(),
         )));
         
         let monitor_clone = monitor.clone();
@@ -499,12 +337,8 @@ impl EnhancedSlayCommand {
         {
             let mut mon = monitor.lock().unwrap();
             mon.monitor_thread = Some(handle);
-        }
-        
         self.resource_monitor = Some(monitor);
         Ok(())
-    }
-
     /// Stop resource monitoring
     fn stop_resource_monitoring(&mut self) {
         if let Some(monitor) = &self.resource_monitor {
@@ -517,8 +351,6 @@ impl EnhancedSlayCommand {
             }
         }
         self.resource_monitor = None;
-    }
-
     /// Handle I/O operations based on configuration
     fn handle_io_operations(&mut self) -> SlayResult<()> {
         let mut state = self.state.lock().unwrap();
@@ -531,11 +363,7 @@ impl EnhancedSlayCommand {
                     stdin.flush().map_err(io_error_to_cursed)?;
                 }
             }
-        }
-        
         Ok(())
-    }
-
     /// Wait with timeout and enhanced monitoring
     fn wait_with_timeout_enhanced(&mut self, timeout: Duration) -> SlayResult<()> {
         let start_time = Instant::now();
@@ -551,8 +379,6 @@ impl EnhancedSlayCommand {
                             
                             if self.options.basic.collect_output {
                                 self.collect_output_enhanced(&mut state, child)?;
-                            }
-                            
                             return Ok(());
                         }
                         Ok(None) => {
@@ -591,8 +417,6 @@ impl EnhancedSlayCommand {
         }
         
         Ok(())
-    }
-
     /// Enhanced output collection with line processing
     fn collect_output_enhanced(&self, state: &mut EnhancedProcessState, child: &mut Child) -> SlayResult<()> {
         // Read stdout
@@ -600,15 +424,11 @@ impl EnhancedSlayCommand {
             let mut stdout_data = Vec::new();
             stdout.read_to_end(&mut stdout_data).map_err(io_error_to_cursed)?;
             state.stdout_data = stdout_data;
-        }
-
         // Read stderr
         if let Some(ref mut stderr) = child.stderr {
             let mut stderr_data = Vec::new();
             stderr.read_to_end(&mut stderr_data).map_err(io_error_to_cursed)?;
             state.stderr_data = stderr_data;
-        }
-
         Ok(())
     }
 }
@@ -616,37 +436,16 @@ impl EnhancedSlayCommand {
 impl EnhancedProcessState {
     pub fn new() -> Self {
         Self {
-            child: None,
-            start_time: Instant::now(),
-            exit_status: None,
-            stdout_data: Vec::new(),
-            stderr_data: Vec::new(),
-            is_running: false,
-            last_error: None,
-            current_stats: ProcessStats::default(),
-            stats_history: Vec::new(),
-            signals_sent: Vec::new(),
         }
     }
-}
-
 impl ResourceMonitor {
     pub fn new(pid: u32, config: MonitoringConfig) -> Self {
         Self {
-            pid: Some(pid),
-            enabled: config.enabled,
-            interval: config.interval,
-            history: Vec::new(),
-            thresholds: config,
-            monitor_thread: None,
         }
     }
 
     /// Main monitoring loop
     pub fn monitor_loop(
-        monitor: Arc<Mutex<ResourceMonitor>>,
-        state: Arc<Mutex<EnhancedProcessState>>,
-        interval: Duration,
     ) {
         while {
             let monitor_guard = monitor.lock().unwrap();
@@ -655,7 +454,6 @@ impl ResourceMonitor {
             let pid = {
                 let monitor_guard = monitor.lock().unwrap();
                 monitor_guard.pid
-            };
             
             if let Some(pid) = pid {
                 if let Ok(stats) = Self::collect_process_stats(pid) {
@@ -663,8 +461,6 @@ impl ResourceMonitor {
                         let mut state_guard = state.lock().unwrap();
                         state_guard.current_stats = stats.clone();
                         state_guard.stats_history.push((Instant::now(), stats.clone()));
-                    }
-                    
                     {
                         let mut monitor_guard = monitor.lock().unwrap();
                         monitor_guard.history.push((Instant::now(), stats.clone()));
@@ -673,8 +469,6 @@ impl ResourceMonitor {
                         Self::check_thresholds(&monitor_guard.thresholds, &stats);
                     }
                 }
-            }
-            
             thread::sleep(interval);
         }
     }
@@ -708,7 +502,6 @@ impl ResourceMonitor {
             stat_fields[14].parse::<u64>().unwrap_or(0)
         } else {
             0
-        };
         
         // Read /proc/pid/status for memory info
         let status_path = format!("/proc/{}/status", pid);
@@ -730,32 +523,20 @@ impl ResourceMonitor {
                     memory = resident_memory; // Use RSS as main memory metric
                 }
             }
-        }
-        
         Ok(ProcessStats {
             cpu: cpu_time as f64, // Simplified CPU calculation
-            memory,
-            resident_memory,
-            virtual_memory,
             swap_memory: 0, // Would need additional parsing
             read_bytes: 0,  // Would need /proc/pid/io
             write_bytes: 0, // Would need /proc/pid/io
-            read_ops: 0,
-            write_ops: 0,
             up_time: Duration::from_secs(0), // Would need process start time calculation
-            thread_count: stat_fields.get(19).and_then(|s| s.parse().ok()).unwrap_or(1),
             open_files: 0,    // Would need /proc/pid/fd
             network_conns: 0, // Would need /proc/net analysis
         })
-    }
-
     #[cfg(windows)]
     fn collect_windows_stats(pid: u32) -> SlayResult<ProcessStats> {
         // Windows implementation would use Windows API
         // For now, return default stats
         Ok(ProcessStats::default())
-    }
-
     /// Check resource thresholds and take action
     fn check_thresholds(config: &MonitoringConfig, stats: &ProcessStats) {
         if let Some(memory_threshold) = config.memory_threshold {
@@ -775,8 +556,6 @@ impl ResourceMonitor {
                     ThresholdAction::None => {}
                 }
             }
-        }
-        
         if let Some(cpu_threshold) = config.cpu_threshold {
             if stats.cpu > cpu_threshold {
                 match config.threshold_action {
@@ -794,5 +573,3 @@ impl ResourceMonitor {
             }
         }
     }
-}
-

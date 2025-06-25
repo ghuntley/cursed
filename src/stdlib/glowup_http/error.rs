@@ -11,43 +11,23 @@ pub type GlowUpResult<T> = std::result::Result<T, GlowUpError>;
 #[derive(Debug, Clone)]
 pub enum GlowUpError {
     /// I/O related errors
-    Io(String),
     /// HTTP parsing errors
-    Parse(String),
     /// Connection errors
-    Connection(String),
     /// Server binding errors
-    Bind(String),
     /// TLS/SSL errors
-    Tls(String),
     /// Timeout errors
-    Timeout(String),
     /// Authentication errors
-    Auth(String),
     /// Configuration errors
-    Config(String),
     /// Middleware errors
-    Middleware(String),
     /// Router errors
-    Router(String),
     /// WebSocket errors
-    WebSocket(String),
     /// JSON parsing/serialization errors
-    Json(String),
     /// General HTTP errors with status code
-    Http(u16, String),
     /// Other generic errors
-    Other(String),
     /// Invalid request format
-    InvalidRequest(String),
     /// Server already running
-    ServerAlreadyRunning,
     /// Server not running
-    ServerNotRunning,
     /// Internal server error
-    Internal(String),
-}
-
 // impl fmt::Display for GlowUpError {
 //     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
 //         match self {
@@ -102,60 +82,32 @@ impl<T> From<PoisonError<T>> for GlowUpError {
 impl GlowUpError {
     pub fn io_error(msg: impl Into<String>) -> Self {
         GlowUpError::Io(msg.into())
-    }
-    
     pub fn parse_error(msg: impl Into<String>) -> Self {
         GlowUpError::Parse(msg.into())
-    }
-    
     pub fn connection_error(msg: impl Into<String>) -> Self {
         GlowUpError::Connection(msg.into())
-    }
-    
     pub fn timeout_error(msg: impl Into<String>) -> Self {
         GlowUpError::Timeout(msg.into())
-    }
-    
     pub fn http_error(code: u16, msg: impl Into<String>) -> Self {
         GlowUpError::Http(code, msg.into())
-    }
-    
     pub fn invalid_request(msg: impl Into<String>) -> Self {
         GlowUpError::InvalidRequest(msg.into())
-    }
-    
     pub fn internal_error(msg: impl Into<String>) -> Self {
         GlowUpError::Internal(msg.into())
-    }
-    
     pub fn timeout(msg: impl Into<String>) -> Self {
         GlowUpError::Timeout(msg.into())
-    }
-    
     pub fn bad_request(msg: impl Into<String>) -> Self {
         GlowUpError::Http(400, msg.into())
-    }
-    
     pub fn unauthorized(msg: impl Into<String>) -> Self {
         GlowUpError::Http(401, msg.into())
-    }
-    
     pub fn forbidden(msg: impl Into<String>) -> Self {
         GlowUpError::Http(403, msg.into())
-    }
-    
     pub fn not_found(msg: impl Into<String>) -> Self {
         GlowUpError::Http(404, msg.into())
-    }
-    
     pub fn rate_limited(msg: impl Into<String>) -> Self {
         GlowUpError::Http(429, msg.into())
-    }
-    
     pub fn server_error(msg: impl Into<String>) -> Self {
         GlowUpError::Http(500, msg.into())
-    }
-    
     pub fn invalid_input(msg: impl Into<String>) -> Self {
         GlowUpError::InvalidRequest(msg.into())
     }

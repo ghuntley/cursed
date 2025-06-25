@@ -11,5 +11,3 @@
 // pub fn init_db_query() -> crate::stdlib::packages::db_core::error::DatabaseResult<()> {
     println!("🔍 db_query package initialized - query building ready bestie!");
     Ok(())
-}
-

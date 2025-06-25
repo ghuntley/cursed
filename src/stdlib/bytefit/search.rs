@@ -7,8 +7,6 @@ pub fn contains(b: &[u8], subslice: &[u8]) -> bool {
         return true;
     }
     b.windows(subslice.len()).any(|window| window == subslice)
-}
-
 /// ContainsAny reports whether any of the UTF-8-encoded code points in chars are within b.
 pub fn contains_any(b: &[u8], chars: &str) -> bool {
     if let Ok(s) = std::str::from_utf8(b) {
@@ -31,8 +29,6 @@ pub fn contains_rune(b: &[u8], r: char) -> bool {
 pub fn count(s: &[u8], sep: &[u8]) -> usize {
     if sep.is_empty() {
         return s.len() + 1;
-    }
-    
     let mut count = 0;
     let mut start = 0;
     
@@ -46,27 +42,17 @@ pub fn count(s: &[u8], sep: &[u8]) -> usize {
     }
     
     count
-}
-
 /// HasPrefix tests whether the byte slice s begins with prefix.
 pub fn has_prefix(s: &[u8], prefix: &[u8]) -> bool {
     s.starts_with(prefix)
-}
-
 /// HasSuffix tests whether the byte slice s ends with suffix.
 pub fn has_suffix(s: &[u8], suffix: &[u8]) -> bool {
     s.ends_with(suffix)
-}
-
 /// Index returns the index of the first instance of sep in s, or -1 if sep is not present.
 pub fn index(s: &[u8], sep: &[u8]) -> i32 {
     if sep.is_empty() {
         return 0;
-    }
-    
     match find_at(s, sep, 0) {
-        Some(pos) => pos as i32,
-        None => -1,
     }
 }
 
@@ -80,13 +66,9 @@ pub fn index_any(s: &[u8], chars: &str) -> i32 {
         }
     }
     -1
-}
-
 /// IndexByte returns the index of the first instance of c in s, or -1 if c is not present.
 pub fn index_byte(s: &[u8], c: u8) -> i32 {
     match s.iter().position(|&x| x == c) {
-        Some(pos) => pos as i32,
-        None => -1,
     }
 }
 
@@ -98,14 +80,10 @@ pub fn index_rune(s: &[u8], r: char) -> i32 {
         }
     }
     -1
-}
-
 /// LastIndex returns the index of the last instance of sep in s, or -1 if sep is not present.
 pub fn last_index(s: &[u8], sep: &[u8]) -> i32 {
     if sep.is_empty() {
         return s.len() as i32;
-    }
-    
     let mut last_pos = None;
     let mut start = 0;
     
@@ -119,8 +97,6 @@ pub fn last_index(s: &[u8], sep: &[u8]) -> i32 {
     }
     
     match last_pos {
-        Some(pos) => pos as i32,
-        None => -1,
     }
 }
 
@@ -138,13 +114,9 @@ pub fn last_index_any(s: &[u8], chars: &str) -> i32 {
         }
     }
     -1
-}
-
 /// LastIndexByte returns the index of the last instance of c in s, or -1 if c is not present.
 pub fn last_index_byte(s: &[u8], c: u8) -> i32 {
     match s.iter().rposition(|&x| x == c) {
-        Some(pos) => pos as i32,
-        None => -1,
     }
 }
 
@@ -152,10 +124,6 @@ pub fn last_index_byte(s: &[u8], c: u8) -> i32 {
 fn find_at(s: &[u8], pattern: &[u8], start: usize) -> Option<usize> {
     if start > s.len() || pattern.len() > s.len() - start {
         return None;
-    }
-    
     s[start..].windows(pattern.len())
         .position(|window| window == pattern)
         .map(|pos| start + pos)
-}
-

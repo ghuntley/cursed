@@ -18,78 +18,42 @@ use tracing::{debug, info, warn, error, instrument, Span};
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum MiddlewareOrdering {
     /// Execute in registration order
-    Registration,
     /// Execute by priority (lower numbers first)
-    Priority,
     /// Execute by explicit dependency graph
-    Dependency,
     /// Custom ordering function
-    Custom(fn(&Arc<dyn Middleware>, &Arc<dyn Middleware>) -> std::cmp::Ordering),
-}
-
 /// Middleware execution strategy
 #[derive(Debug, Clone)]
 pub enum ChainExecution {
     /// Execute all middleware sequentially
-    Sequential,
     /// Skip remaining middleware on first error
-    FailFast,
     /// Continue on errors, collect all errors
-    ContinueOnError,
     /// Execute with timeout per middleware
-    WithTimeout(Duration),
     /// Conditional execution based on context
-    Conditional,
-}
-
 /// Middleware dependency specification
 #[derive(Debug, Clone)]
 pub struct MiddlewareDependency {
     /// Middleware that has dependencies
-    pub middleware_name: String,
     /// Middleware that must run before this one
-    pub depends_on: Vec<String>,
     /// Middleware that must run after this one
-    pub runs_before: Vec<String>,
-}
-
 /// Performance metrics for middleware execution
 #[derive(Debug, Default, Clone)]
 pub struct ChainMetrics {
     /// Total chain execution time
-    pub total_execution_time: Duration,
     /// Per-middleware execution times
-    pub middleware_times: HashMap<String, Duration>,
     /// Number of successful executions
-    pub successful_executions: u64,
     /// Number of failed executions
-    pub failed_executions: u64,
     /// CursedError counts by middleware
-    pub error_counts: HashMap<String, u32>,
     /// Average execution time
-    pub average_execution_time: Duration,
-}
-
 /// Advanced middleware chain builder
 pub struct ChainBuilder {
     /// Registered middleware
-    middleware: Vec<Arc<dyn Middleware>>,
     /// Middleware ordering strategy
-    ordering: MiddlewareOrdering,
     /// Execution strategy
-    execution: ChainExecution,
     /// Dependency specifications
-    dependencies: Vec<MiddlewareDependency>,
     /// Middleware conditions
-    conditions: HashMap<String, Box<dyn Fn(&RequestContext) -> bool + Send + Sync>>,
     /// Global middleware timeout
-    global_timeout: Option<Duration>,
     /// Enable performance metrics
-    enable_metrics: bool,
     /// Maximum chain depth
-    max_chain_depth: usize,
-}
-
 impl std::fmt::Debug for ChainBuilder {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("ChainBuilder")
@@ -109,14 +73,6 @@ impl ChainBuilder {
     /// Create a new chain builder
     pub fn new() -> Self {
         Self {
-            middleware: Vec::new(),
-            ordering: MiddlewareOrdering::Priority,
-            execution: ChainExecution::FailFast,
-            dependencies: Vec::new(),
-            conditions: HashMap::new(),
-            global_timeout: None,
-            enable_metrics: true,
-            max_chain_depth: 50,
         }
     }
 
@@ -124,103 +80,69 @@ impl ChainBuilder {
     pub fn add(mut self, middleware: Arc<dyn Middleware>) -> Self {
         self.middleware.push(middleware);
         self
-    }
-
     /// Add middleware with condition
     pub fn add_conditional<F>(mut self, middleware: Arc<dyn Middleware>, condition: F) -> Self
     where
-        F: Fn(&RequestContext) -> bool + Send + Sync + 'static,
     {
         let name = middleware.name().to_string();
         self.conditions.insert(name, Box::new(condition));
         self.middleware.push(middleware);
         self
-    }
-
     /// Set middleware ordering strategy
     pub fn with_ordering(mut self, ordering: MiddlewareOrdering) -> Self {
         self.ordering = ordering;
         self
-    }
-
     /// Set execution strategy
     pub fn with_execution(mut self, execution: ChainExecution) -> Self {
         self.execution = execution;
         self
-    }
-
     /// Add middleware dependency
     pub fn add_dependency(mut self, dependency: MiddlewareDependency) -> Self {
         self.dependencies.push(dependency);
         self
-    }
-
     /// Set global timeout for entire chain
     pub fn with_timeout(mut self, timeout: Duration) -> Self {
         self.global_timeout = Some(timeout);
         self
-    }
-
     /// Enable or disable performance metrics
     pub fn with_metrics(mut self, enable: bool) -> Self {
         self.enable_metrics = enable;
         self
-    }
-
     /// Set maximum chain depth
     pub fn with_max_depth(mut self, depth: usize) -> Self {
         self.max_chain_depth = depth;
         self
-    }
-
     /// Build the optimized middleware chain
     #[instrument(skip(self))]
     pub fn build(self) -> MiddlewareChain {
         if self.middleware.len() > self.max_chain_depth {
             warn!(
-                middleware_count = self.middleware.len(),
-                max_depth = self.max_chain_depth,
                 "Middleware chain exceeds maximum depth"
             );
-        }
-
         let ordered_middleware = self.order_middleware();
         
         debug!(
-            middleware_count = ordered_middleware.len(),
-            ordering = ?self.ordering,
-            execution = ?self.execution,
             "Built middleware chain"
         );
 
         MiddlewareChain {
-            middleware: ordered_middleware,
-            execution: self.execution,
-            conditions: self.conditions,
-            global_timeout: self.global_timeout,
-            enable_metrics: self.enable_metrics,
-            metrics: Arc::new(std::sync::Mutex::new(ChainMetrics::default())),
         }
     }
 
     /// Order middleware according to the selected strategy
     fn order_middleware(&self) -> Vec<Arc<dyn Middleware>> {
         match self.ordering {
-            MiddlewareOrdering::Registration => self.middleware.clone(),
             MiddlewareOrdering::Priority => {
                 let mut middleware = self.middleware.clone();
                 middleware.sort_by_key(|m| m.priority());
                 middleware
             }
-            MiddlewareOrdering::Dependency => self.order_by_dependencies(),
             MiddlewareOrdering::Custom(compare_fn) => {
                 let mut middleware = self.middleware.clone();
                 middleware.sort_by(compare_fn);
                 middleware
             }
         }
-    }
-
     /// Order middleware by dependency graph using topological sort
     fn order_by_dependencies(&self) -> Vec<Arc<dyn Middleware>> {
         // Create a map of middleware names to middleware
@@ -249,19 +171,12 @@ impl ChainBuilder {
         let mut temp_visited = std::collections::HashSet::new();
 
         fn visit(
-            name: &str,
-            dependencies: &HashMap<String, Vec<String>>,
-            visited: &mut std::collections::HashSet<String>,
-            temp_visited: &mut std::collections::HashSet<String>,
-            sorted: &mut Vec<String>,
         ) -> Result<(), String> {
             if temp_visited.contains(name) {
                 return Err(format!("Circular dependency detected involving {}", name));
             }
             if visited.contains(name) {
                 return Ok(());
-            }
-
             temp_visited.insert(name.to_string());
 
             if let Some(deps) = dependencies.get(name) {
@@ -275,8 +190,6 @@ impl ChainBuilder {
             sorted.push(name.to_string());
 
             Ok(())
-        }
-
         // Visit all middleware
         for middleware in &self.middleware {
             let name = middleware.name();
@@ -286,8 +199,6 @@ impl ChainBuilder {
                     return self.middleware.clone();
                 }
             }
-        }
-
         // Convert sorted names back to middleware
         let mut ordered = Vec::new();
         for name in sorted {
@@ -316,19 +227,11 @@ impl Default for ChainBuilder {
 /// Optimized middleware chain with advanced execution capabilities
 pub struct MiddlewareChain {
     /// Ordered middleware
-    middleware: Vec<Arc<dyn Middleware>>,
     /// Execution strategy
-    execution: ChainExecution,
     /// Conditional execution rules
-    conditions: HashMap<String, Box<dyn Fn(&RequestContext) -> bool + Send + Sync>>,
     /// Global timeout
-    global_timeout: Option<Duration>,
     /// Enable metrics collection
-    enable_metrics: bool,
     /// Performance metrics
-    metrics: Arc<std::sync::Mutex<ChainMetrics>>,
-}
-
 impl std::fmt::Debug for MiddlewareChain {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("MiddlewareChain")
@@ -350,18 +253,10 @@ impl MiddlewareChain {
         
         for m in middleware {
             builder = builder.add(m);
-        }
-        
         builder.build()
-    }
-
     /// Execute the middleware chain
     #[instrument(skip(self, context, response, handler))]
     pub async fn execute(
-        &self,
-        mut context: RequestContext,
-        mut response: ResponseContext,
-        handler: Arc<dyn RequestHandler>,
     ) -> HandlerResult {
         let chain_start = Instant::now();
         let execution_span = Span::current();
@@ -369,11 +264,9 @@ impl MiddlewareChain {
         // Apply global timeout if configured
         let execution_future = async {
             self.execute_internal(&mut context, &mut response, handler).await
-        };
 
         let result = if let Some(timeout) = self.global_timeout {
             match tokio::time::timeout(timeout, execution_future).await {
-                Ok(result) => result,
                 Err(_) => {
                     error!(timeout_ms = timeout.as_millis(), "Middleware chain timed out");
 //                     response.set_status(crate::stdlib::web_vibez::StatusCode(408)); // Request Timeout
@@ -383,7 +276,6 @@ impl MiddlewareChain {
             }
         } else {
             execution_future.await
-        };
 
         // Update metrics if enabled
         if self.enable_metrics {
@@ -394,8 +286,6 @@ impl MiddlewareChain {
                     metrics.successful_executions += 1;
                 } else {
                     metrics.failed_executions += 1;
-                }
-
                 let total_executions = metrics.successful_executions + metrics.failed_executions;
                 if total_executions > 0 {
                     metrics.average_execution_time = Duration::from_nanos(
@@ -403,17 +293,9 @@ impl MiddlewareChain {
                     );
                 }
             }
-        }
-
         result
-    }
-
     /// Internal execution logic
     async fn execute_internal(
-        &self,
-        context: &mut RequestContext,
-        response: &mut ResponseContext,
-        handler: Arc<dyn RequestHandler>,
     ) -> HandlerResult {
         let mut errors = Vec::new();
 
@@ -434,8 +316,6 @@ impl MiddlewareChain {
                     // This is a limitation - async timeout would require async trait
                     middleware.before_request(context, response)
                 }
-                _ => middleware.before_request(context, response),
-            };
 
             // Update per-middleware metrics
             if self.enable_metrics {
@@ -518,8 +398,6 @@ impl MiddlewareChain {
                     // This is a limitation - async timeout would require async trait
                     middleware.after_response(context, response)
                 }
-                _ => middleware.after_response(context, response),
-            };
 
             // Update metrics
             if self.enable_metrics {
@@ -569,8 +447,6 @@ impl MiddlewareChain {
         }
 
         Ok(response.clone())
-    }
-
     /// Get performance metrics
     pub fn get_metrics(&self) -> Option<ChainMetrics> {
         if self.enable_metrics {
@@ -590,8 +466,6 @@ impl MiddlewareChain {
     /// Get middleware count
     pub fn middleware_count(&self) -> usize {
         self.middleware.len()
-    }
-
     /// Get middleware names in execution order
     pub fn middleware_names(&self) -> Vec<String> {
         self.middleware.iter().map(|m| m.name().to_string()).collect()
@@ -611,13 +485,10 @@ impl ChainPatterns {
             .add(Arc::new(CorsMiddleware::new()))
             .with_ordering(MiddlewareOrdering::Priority)
             .with_execution(ChainExecution::FailFast)
-    }
-
     /// Create a secure API chain with authentication
     pub fn secure_api() -> ChainBuilder {
 //         use crate::stdlib::web_vibez::middleware::{
             LoggingMiddleware, CorsMiddleware, AuthMiddleware, RateLimitMiddleware, AuthScheme
-        };
 
         ChainBuilder::new()
             .add(Arc::new(LoggingMiddleware::new()))
@@ -626,8 +497,6 @@ impl ChainPatterns {
             .add(Arc::new(CorsMiddleware::new()))
             .with_ordering(MiddlewareOrdering::Priority)
             .with_execution(ChainExecution::FailFast)
-    }
-
     /// Create a static file serving chain
     pub fn static_files(root_dir: std::path::PathBuf) -> ChainBuilder {
 //         use crate::stdlib::web_vibez::middleware::{LoggingMiddleware, StaticFileMiddleware};
@@ -637,8 +506,6 @@ impl ChainPatterns {
             .add(Arc::new(StaticFileMiddleware::new(root_dir, "/static")))
             .with_ordering(MiddlewareOrdering::Priority)
             .with_execution(ChainExecution::Sequential)
-    }
-
     /// Create a development chain with verbose logging
     pub fn development() -> ChainBuilder {
 //         use crate::stdlib::web_vibez::middleware::{LoggingMiddleware, CorsMiddleware, LogLevel};

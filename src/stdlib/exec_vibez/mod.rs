@@ -27,12 +27,10 @@ pub use timeout::{RunWithTimeout, TimeoutConfig};
 pub use context::{ProcessContext, VibeContext};
 pub use enhanced::{
     // Enhanced features
-    LookPath, ProcessMonitor, ResourceLimits, SecurityOptions,
     // Process coordination
-    ProcessPool, ProcessQueue, BatchRunner,
     // Platform utilities
     PlatformFeatures, CrossPlatformUtils
-};
+// };
 
 // Module initialization
 use std::sync::Once;
@@ -56,34 +54,17 @@ pub fn initialize() -> ExecResult<()> {
     });
     
     Ok(())
-}
-
 /// Get module statistics and status
 pub fn get_statistics() -> ModuleStatistics {
     ModuleStatistics {
-        active_processes: core::get_active_process_count(),
-        total_spawned: core::get_total_spawned_count(),
-        process_groups: groups::get_active_group_count(),
-        streamers_active: streaming::get_active_streamer_count(),
     }
 }
 
 /// Module statistics
 #[derive(Debug, Clone)]
 pub struct ModuleStatistics {
-    pub active_processes: usize,
-    pub total_spawned: u64,
-    pub process_groups: usize,
-    pub streamers_active: usize,
-}
-
 #[derive(Debug, Clone)]
 pub enum ContextError {
-    InvalidContext(String),
-    MissingContext,
-    ContextSetup(String),
-}
-
 // impl std::fmt::Display for ContextError {
 //     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
 //         match self {

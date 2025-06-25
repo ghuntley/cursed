@@ -1,9 +1,7 @@
 /// fr fr Mock database driver for testing - fake it till you make it periodt
-// use crate::stdlib::packages::sql_vibes::{
-    DatabaseDriver, DatabaseConnection, PreparedStatement, Transaction,
-    ConnectionConfig, DriverInfo, DriverFeature, ConnectionInfo, TransactionState, TransactionIsolation,
+// Placeholder imports disabled
     SqlResult, SqlError, SqlValue, Row, ResultSet, Parameter
-};
+// };
 use std::collections::HashMap;
 use std::time::{Duration, Instant};
 use std::sync::{Arc, Mutex};
@@ -11,55 +9,24 @@ use std::sync::{Arc, Mutex};
 /// fr fr Mock driver for testing - simulates database operations without real database
 #[derive(Debug)]
 pub struct MockDriver {
-    name: String,
-    version: String,
-    behavior: Arc<Mutex<MockBehavior>>,
-}
-
 /// fr fr Mock behavior configuration - control how the mock behaves
 #[derive(Debug, Clone)]
 pub struct MockBehavior {
-    pub should_fail_connection: bool,
-    pub should_fail_queries: bool,
-    pub should_timeout: bool,
-    pub connection_delay: Duration,
-    pub query_delay: Duration,
-    pub mock_data: HashMap<String, ResultSet>,
-    pub connection_count: usize,
-    pub query_count: usize,
-}
-
 impl Default for MockBehavior {
     fn default() -> Self {
         Self {
-            should_fail_connection: false,
-            should_fail_queries: false,
-            should_timeout: false,
-            connection_delay: Duration::from_millis(10),
-            query_delay: Duration::from_millis(5),
-            mock_data: HashMap::new(),
-            connection_count: 0,
-            query_count: 0,
         }
     }
-}
-
 impl MockDriver {
     /// sus Create new mock driver
     pub fn new() -> Self {
         Self {
-            name: "mock".to_string(),
-            version: "1.0.0".to_string(),
-            behavior: Arc::new(Mutex::new(MockBehavior::default())),
         }
     }
     
     /// facts Create mock driver with custom behavior
     pub fn with_behavior(behavior: MockBehavior) -> Self {
         Self {
-            name: "mock".to_string(),
-            version: "1.0.0".to_string(),
-            behavior: Arc::new(Mutex::new(behavior)),
         }
     }
     
@@ -93,8 +60,6 @@ impl MockDriver {
             behavior.query_count = 0;
         }
     }
-}
-
 impl Default for MockDriver {
     fn default() -> Self {
         Self::new()
@@ -110,8 +75,6 @@ impl DatabaseDriver for MockDriver {
             // Check if we should fail
             if behavior.should_fail_connection {
                 return Err(SqlError::connection("Mock driver configured to fail connections - testing failure scenario bestie".to_string()));
-            }
-            
             // Simulate connection delay
             if behavior.connection_delay > Duration::ZERO {
                 std::thread::sleep(behavior.connection_delay);
@@ -121,52 +84,25 @@ impl DatabaseDriver for MockDriver {
         // Validate connection string format
         if config.connection_string.is_empty() {
             return Err(SqlError::connection("Connection string cannot be empty - even for mock driver bestie".to_string()));
-        }
-        
         Ok(DatabaseConnection::Mock(MockConnection::new(config, self.behavior.clone())?))
-    }
-    
     fn driver_info(&self) -> DriverInfo {
         DriverInfo {
-            name: self.name.clone(),
-            version: self.version.clone(),
-            supported_versions: Vec::from(["any".to_string()]),
             features: vec![
-                DriverFeature::PreparedStatements,
-                DriverFeature::Transactions,
-                DriverFeature::Savepoints,
-                DriverFeature::BatchExecution,
-                DriverFeature::ConnectionPooling,
-                DriverFeature::SslEncryption,
-                DriverFeature::AsyncOperations,
-                DriverFeature::CustomTypes,
-                DriverFeature::StreamingResults,
-                DriverFeature::JsonSupport,
-                DriverFeature::FullTextSearch,
-                DriverFeature::StoredProcedures,
-                DriverFeature::WindowFunctions,
-                DriverFeature::CommonTableExpressions,
-            ],
             metadata: {
                 let mut meta = HashMap::new();
                 meta.insert("testing_only".to_string(), "true".to_string());
                 meta.insert("supports_everything".to_string(), "true".to_string());
                 meta.insert("no_real_storage".to_string(), "true".to_string());
                 meta
-            },
         }
     }
     
     fn supports_feature(&self, _feature: DriverFeature) -> bool {
         // Mock driver supports everything for testing
         true
-    }
-    
     fn validate_connection_string(&self, connection_string: &str) -> SqlResult<()> {
         if connection_string.is_empty() {
             return Err(SqlError::connection("Connection string cannot be empty - even for mock driver bestie".to_string()));
-        }
-        
         // Mock driver accepts any non-empty connection string
         Ok(())
     }
@@ -175,24 +111,10 @@ impl DatabaseDriver for MockDriver {
 /// fr fr Mock connection implementation
 #[derive(Debug)]
 pub struct MockConnection {
-    config: ConnectionConfig,
-    connected_at: Instant,
-    transaction_state: TransactionState,
-    connection_id: u64,
-    is_open: bool,
-    behavior: Arc<Mutex<MockBehavior>>,
-}
-
 impl MockConnection {
     /// sus Create new mock connection
     pub fn new(config: ConnectionConfig, behavior: Arc<Mutex<MockBehavior>>) -> SqlResult<Self> {
         Ok(Self {
-            config,
-            connected_at: Instant::now(),
-            transaction_state: TransactionState::None,
-            connection_id: rand::random(),
-            is_open: true,
-            behavior,
         })
     }
 }
@@ -201,25 +123,17 @@ impl DatabaseConnection for MockConnection {
     fn execute_query(&mut self, sql: &str, params: &[Parameter]) -> SqlResult<ResultSet> {
         if !self.is_open {
             return Err(SqlError::connection("Connection is closed - can't execute queries bestie".to_string()));
-        }
-        
         // Increment query count and check behavior
         if let Ok(mut behavior) = self.behavior.lock() {
             behavior.query_count += 1;
             
             if behavior.should_fail_queries {
                 return Err(SqlError::query("Mock driver configured to fail queries - testing failure scenario bestie".to_string()));
-            }
-            
             if behavior.should_timeout {
                 return Err(SqlError::query("Mock driver simulating timeout - testing timeout scenario bestie".to_string()));
-            }
-            
             // Simulate query delay
             if behavior.query_delay > Duration::ZERO {
                 std::thread::sleep(behavior.query_delay);
-            }
-            
             // Check for pre-configured mock data
             if let Some(result_set) = behavior.mock_data.get(sql) {
                 return Ok(result_set.clone());
@@ -231,21 +145,15 @@ impl DatabaseConnection for MockConnection {
         
         // Generate mock result set
         Ok(create_mock_result_set(sql, params))
-    }
-    
     fn execute_statement(&mut self, sql: &str, params: &[Parameter]) -> SqlResult<u64> {
         if !self.is_open {
             return Err(SqlError::connection("Connection is closed - can't execute statements bestie".to_string()));
-        }
-        
         // Check behavior
         if let Ok(mut behavior) = self.behavior.lock() {
             behavior.query_count += 1;
             
             if behavior.should_fail_queries {
                 return Err(SqlError::query("Mock driver configured to fail queries - testing failure scenario bestie".to_string()));
-            }
-            
             // Simulate query delay
             if behavior.query_delay > Duration::ZERO {
                 std::thread::sleep(behavior.query_delay);
@@ -269,80 +177,46 @@ impl DatabaseConnection for MockConnection {
     fn prepare_statement(&mut self, sql: &str) -> SqlResult<PreparedStatement> {
         if !self.is_open {
             return Err(SqlError::connection("Connection is closed - can't prepare statements bestie".to_string()));
-        }
-        
         validate_mock_sql(sql)?;
         
         Ok(PreparedStatement::Mock(MockPreparedStatement::new(
-            sql.to_string(),
-            count_mock_parameters(sql),
-            self.connection_id,
             self.behavior.clone()
         )?))
-    }
-    
     fn begin_transaction(&mut self) -> SqlResult<Box<dyn Transaction>> {
         if !self.is_open {
             return Err(SqlError::connection("Connection is closed - can't start transaction bestie".to_string()));
-        }
-        
         if self.transaction_state != TransactionState::None {
             return Err(SqlError::connection("Transaction already active - finish current transaction first periodt".to_string()));
-        }
-        
         self.transaction_state = TransactionState::Active;
         
         Ok(Box::new(MockTransaction::new(
-            self.connection_id,
-            TransactionIsolation::ReadCommitted,
             self.behavior.clone()
         )?))
-    }
-    
     fn is_alive(&self) -> bool {
         self.is_open
-    }
-    
     fn close(&mut self) -> SqlResult<()> {
         if self.transaction_state == TransactionState::Active {
             return Err(SqlError::connection("Cannot close connection with active transaction - commit or rollback first bestie".to_string()));
-        }
-        
         self.is_open = false;
         Ok(())
-    }
-    
     fn connection_info(&self) -> ConnectionInfo {
         ConnectionInfo {
-            server_version: "Mock Database 1.0.0".to_string(),
-            database_name: "mock_database".to_string(),
-            username: "mock_user".to_string(),
-            host: "mock_host".to_string(),
-            port: 9999,
-            connection_id: Some(self.connection_id),
-            transaction_state: self.transaction_state,
-            uptime: self.connected_at.elapsed(),
             server_properties: {
                 let mut props = HashMap::new();
                 props.insert("mock_driver".to_string(), "true".to_string());
                 props.insert("testing_mode".to_string(), "enabled".to_string());
                 props
-            },
         }
     }
     
     fn execute_batch(&mut self, statements: &[(&str, &[Parameter])]) -> SqlResult<Vec<SqlResult<u64>>> {
         if !self.is_open {
             return Err(SqlError::connection("Connection is closed - can't execute batch bestie".to_string()));
-        }
-        
         let mut results = Vec::new();
         
         for (sql, params) in statements {
             let result = self.execute_statement(sql, params);
             results.push(result);
-        }
-        
         Ok(results)
     }
 }
@@ -350,21 +224,9 @@ impl DatabaseConnection for MockConnection {
 /// fr fr Mock prepared statement implementation
 #[derive(Debug)]
 pub struct MockPreparedStatement {
-    sql: String,
-    parameter_count: usize,
-    connection_id: u64,
-    is_closed: bool,
-    behavior: Arc<Mutex<MockBehavior>>,
-}
-
 impl MockPreparedStatement {
     pub fn new(sql: String, parameter_count: usize, connection_id: u64, behavior: Arc<Mutex<MockBehavior>>) -> SqlResult<Self> {
         Ok(Self {
-            sql,
-            parameter_count,
-            connection_id,
-            is_closed: false,
-            behavior,
         })
     }
 }
@@ -373,21 +235,14 @@ impl PreparedStatement for MockPreparedStatement {
     fn execute(&mut self, params: &[Parameter]) -> SqlResult<ResultSet> {
         if self.is_closed {
             return Err(SqlError::connection("Prepared statement is closed - can't execute bestie".to_string()));
-        }
-        
         if params.len() != self.parameter_count {
             return Err(SqlError::connection(
-                format!("Parameter count mismatch: expected {}, got {} - that's sus bestie", 
                     self.parameter_count, params.len())
             ));
-        }
-        
         // Check behavior
         if let Ok(behavior) = self.behavior.lock() {
             if behavior.should_fail_queries {
                 return Err(SqlError::query("Mock driver configured to fail queries - testing failure scenario bestie".to_string()));
-            }
-            
             // Check for pre-configured mock data
             if let Some(result_set) = behavior.mock_data.get(&self.sql) {
                 return Ok(result_set.clone());
@@ -398,20 +253,13 @@ impl PreparedStatement for MockPreparedStatement {
         
         // Mock result set
         Ok(create_mock_result_set(&self.sql, params))
-    }
-    
     fn execute_update(&mut self, params: &[Parameter]) -> SqlResult<u64> {
         if self.is_closed {
             return Err(SqlError::connection("Prepared statement is closed - can't execute bestie".to_string()));
-        }
-        
         if params.len() != self.parameter_count {
             return Err(SqlError::connection(
-                format!("Parameter count mismatch: expected {}, got {} - that's sus bestie", 
                     self.parameter_count, params.len())
             ));
-        }
-        
         // Check behavior
         if let Ok(behavior) = self.behavior.lock() {
             if behavior.should_fail_queries {
@@ -423,16 +271,10 @@ impl PreparedStatement for MockPreparedStatement {
         
         // Mock affected rows
         Ok(1)
-    }
-    
     fn sql(&self) -> &str {
         &self.sql
-    }
-    
     fn parameter_count(&self) -> usize {
         self.parameter_count
-    }
-    
     fn close(&mut self) -> SqlResult<()> {
         self.is_closed = true;
         Ok(())
@@ -442,21 +284,9 @@ impl PreparedStatement for MockPreparedStatement {
 /// fr fr Mock transaction implementation
 #[derive(Debug)]
 pub struct MockTransaction {
-    connection_id: u64,
-    isolation_level: TransactionIsolation,
-    is_active: bool,
-    savepoints: Vec<String>,
-    behavior: Arc<Mutex<MockBehavior>>,
-}
-
 impl MockTransaction {
     pub fn new(connection_id: u64, isolation_level: TransactionIsolation, behavior: Arc<Mutex<MockBehavior>>) -> SqlResult<Self> {
         Ok(Self {
-            connection_id,
-            isolation_level,
-            is_active: true,
-            savepoints: Vec::new(),
-            behavior,
         })
     }
 }
@@ -465,14 +295,10 @@ impl Transaction for MockTransaction {
     fn execute_query(&mut self, sql: &str, params: &[Parameter]) -> SqlResult<ResultSet> {
         if !self.is_active {
             return Err(SqlError::connection("Transaction is not active - that's sus bestie".to_string()));
-        }
-        
         // Check behavior
         if let Ok(behavior) = self.behavior.lock() {
             if behavior.should_fail_queries {
                 return Err(SqlError::query("Mock driver configured to fail queries - testing failure scenario bestie".to_string()));
-            }
-            
             // Check for pre-configured mock data
             if let Some(result_set) = behavior.mock_data.get(sql) {
                 return Ok(result_set.clone());
@@ -483,13 +309,9 @@ impl Transaction for MockTransaction {
         validate_mock_parameters(params)?;
         
         Ok(create_mock_result_set(sql, params))
-    }
-    
     fn execute_statement(&mut self, sql: &str, params: &[Parameter]) -> SqlResult<u64> {
         if !self.is_active {
             return Err(SqlError::connection("Transaction is not active - that's sus bestie".to_string()));
-        }
-        
         // Check behavior
         if let Ok(behavior) = self.behavior.lock() {
             if behavior.should_fail_queries {
@@ -501,61 +323,35 @@ impl Transaction for MockTransaction {
         validate_mock_parameters(params)?;
         
         Ok(1) // Mock affected rows
-    }
-    
     fn commit(mut self: Box<Self>) -> SqlResult<()> {
         if !self.is_active {
             return Err(SqlError::connection("Transaction is not active - can't commit bestie".to_string()));
-        }
-        
         self.is_active = false;
         Ok(())
-    }
-    
     fn rollback(mut self: Box<Self>) -> SqlResult<()> {
         if !self.is_active {
             return Err(SqlError::connection("Transaction is not active - can't rollback bestie".to_string()));
-        }
-        
         self.is_active = false;
         Ok(())
-    }
-    
     fn savepoint(&mut self, name: &str) -> SqlResult<()> {
         if !self.is_active {
             return Err(SqlError::connection("Transaction is not active - can't create savepoint bestie".to_string()));
-        }
-        
         if self.savepoints.contains(&name.to_string()) {
             return Err(SqlError::connection(format!("Savepoint '{}' already exists - choose different name periodt", name)));
-        }
-        
         self.savepoints.push(name.to_string());
         Ok(())
-    }
-    
     fn rollback_to_savepoint(&mut self, name: &str) -> SqlResult<()> {
         if !self.is_active {
             return Err(SqlError::connection("Transaction is not active - can't rollback to savepoint bestie".to_string()));
-        }
-        
         if !self.savepoints.contains(&name.to_string()) {
             return Err(SqlError::connection(format!("Savepoint '{}' does not exist - check the name bestie", name)));
-        }
-        
         // Remove savepoints created after this one
         if let Some(pos) = self.savepoints.iter().position(|sp| sp == name) {
             self.savepoints.truncate(pos + 1);
-        }
-        
         Ok(())
-    }
-    
     fn release_savepoint(&mut self, name: &str) -> SqlResult<()> {
         if !self.is_active {
             return Err(SqlError::connection("Transaction is not active - can't release savepoint bestie".to_string()));
-        }
-        
         if let Some(pos) = self.savepoints.iter().position(|sp| sp == name) {
             self.savepoints.remove(pos);
             Ok(())
@@ -575,11 +371,7 @@ impl Transaction for MockTransaction {
 fn validate_mock_sql(sql: &str) -> SqlResult<()> {
     if sql.trim().is_empty() {
         return Err(SqlError::query("SQL statement cannot be empty - even for mock driver bestie".to_string()));
-    }
-    
     Ok(()) // Mock driver is permissive
-}
-
 /// Validate mock parameters
 fn validate_mock_parameters(params: &[Parameter]) -> SqlResult<()> {
     for (i, param) in params.iter().enumerate() {
@@ -588,15 +380,12 @@ fn validate_mock_parameters(params: &[Parameter]) -> SqlResult<()> {
                 if name.is_empty() {
                     return Err(SqlError::query(format!("Parameter {} has empty name - that's sus bestie", i)));
                 }
-            },
             Parameter::Positional { index: _, value: _ } => {
                 // Positional parameters are generally fine
             }
         }
     }
     Ok(())
-}
-
 /// Count parameters in mock SQL statement
 fn count_mock_parameters(sql: &str) -> usize {
     // Mock driver supports both ? and $1, $2, etc.
@@ -607,8 +396,6 @@ fn count_mock_parameters(sql: &str) -> usize {
         .count();
     
     std::cmp::max(question_marks, dollar_params)
-}
-
 /// Create mock result set for testing
 fn create_mock_result_set(sql: &str, _params: &[Parameter]) -> ResultSet {
     let sql_upper = sql.trim().to_uppercase();
@@ -618,23 +405,8 @@ fn create_mock_result_set(sql: &str, _params: &[Parameter]) -> ResultSet {
         let columns = Vec::from(["id".to_string(), "name".to_string(), "value".to_string(), "timestamp".to_string()]);
         let rows = vec![
             Row::new(vec![
-                SqlValue::Integer(1),
-                SqlValue::Text("Mock Record 1".to_string()),
-                SqlValue::Text("Value 1".to_string()),
-                SqlValue::Text("2024-01-01T00:00:00Z".to_string()),
-            ]),
             Row::new(vec![
-                SqlValue::Integer(2),
-                SqlValue::Text("Mock Record 2".to_string()),
-                SqlValue::Text("Value 2".to_string()),
-                SqlValue::Text("2024-01-02T00:00:00Z".to_string()),
-            ]),
             Row::new(vec![
-                SqlValue::Integer(3),
-                SqlValue::Text("Mock Record 3".to_string()),
-                SqlValue::Null,
-                SqlValue::Text("2024-01-03T00:00:00Z".to_string()),
-            ]),
         ];
         
         ResultSet::new(columns, rows)

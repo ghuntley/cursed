@@ -12,9 +12,6 @@ use tracing::{debug, error, info, instrument};
 /// Visualization generator for profiling data
 #[derive(Debug)]
 pub struct VisualizationGenerator {
-    config: VisualizationConfig,
-}
-
 impl VisualizationGenerator {
     pub fn new(config: VisualizationConfig) -> Self {
         Self { config }
@@ -28,8 +25,6 @@ impl VisualizationGenerator {
         
         let svg = self.flame_graph_to_svg(&flame_graph)?;
         Ok(svg)
-    }
-    
     #[instrument(skip(self, cpu_data))]
     pub fn generate_call_graph(&self, cpu_data: &CpuProfileData) -> crate::error::Result<()> {
         info!("Generating call graph visualization");
@@ -37,8 +32,6 @@ impl VisualizationGenerator {
         let call_graph = cpu_data.get_call_graph();
         let dot = self.call_graph_to_dot(&call_graph)?;
         Ok(dot)
-    }
-    
     #[instrument(skip(self, memory_data))]
     pub fn generate_memory_timeline(&self, memory_data: &MemoryProfileData) -> crate::error::Result<()> {
         info!("Generating memory timeline visualization");
@@ -46,8 +39,6 @@ impl VisualizationGenerator {
         let analysis = memory_data.analyze_patterns();
         let svg = self.memory_timeline_to_svg(&analysis.temporal_patterns)?;
         Ok(svg)
-    }
-    
     #[instrument(skip(self, memory_data))]
     pub fn generate_allocation_heatmap(&self, memory_data: &MemoryProfileData) -> crate::error::Result<()> {
         info!("Generating allocation heatmap");
@@ -55,8 +46,6 @@ impl VisualizationGenerator {
         let analysis = memory_data.analyze_patterns();
         let svg = self.allocation_heatmap_to_svg(&analysis.size_histogram)?;
         Ok(svg)
-    }
-    
     #[instrument(skip(self, concurrency_data))]
     pub fn generate_goroutine_timeline(&self, concurrency_data: &ConcurrencyProfileData) -> crate::error::Result<()> {
         info!("Generating goroutine timeline visualization");
@@ -64,8 +53,6 @@ impl VisualizationGenerator {
         let timeline = concurrency_data.generate_goroutine_timeline();
         let svg = self.goroutine_timeline_to_svg(&timeline)?;
         Ok(svg)
-    }
-    
     #[instrument(skip(self, concurrency_data))]
     pub fn generate_channel_flow_diagram(&self, concurrency_data: &ConcurrencyProfileData) -> crate::error::Result<()> {
         info!("Generating channel flow diagram");
@@ -73,16 +60,12 @@ impl VisualizationGenerator {
         let analysis = concurrency_data.analyze_channels();
         let svg = self.channel_flow_to_svg(&analysis)?;
         Ok(svg)
-    }
-    
     #[instrument(skip(self))]
     pub fn generate_interactive_dashboard(&self, profile_data: &crate::profiling::core::ProfileData) -> crate::error::Result<()> {
         info!("Generating interactive dashboard");
         
         let html = self.generate_dashboard_html(profile_data)?;
         Ok(html)
-    }
-    
     fn flame_graph_to_svg(&self, flame_graph: &FlameGraph) -> crate::error::Result<()> {
         let mut svg = String::new();
         
@@ -123,8 +106,6 @@ impl VisualizationGenerator {
         let mut levels: HashMap<usize, Vec<&FlameGraphNode>> = HashMap::new();
         for node in &flame_graph.nodes {
             levels.entry(node.depth).or_default().push(node);
-        }
-        
         // Render each level
         for depth in 0..=flame_graph.max_depth {
             if let Some(nodes) = levels.get(&depth) {
@@ -140,9 +121,6 @@ impl VisualizationGenerator {
                         
                         // Frame rectangle
                         svg.push_str(&format!(
-                            r#"<rect x="{}" y="{}" width="{}" height="{}" fill="{}" class="frame" title="{}: {} samples ({:.1}%)">"#,
-                            x_offset, y, width, frame_height, color,
-                            node.name, node.value,
                             (node.value as f64 / flame_graph.total_samples as f64) * 100.0
                         ));
                         svg.push_str("</rect>");
@@ -151,12 +129,8 @@ impl VisualizationGenerator {
                         if width > 50.0 {
                             svg.push_str(&format!(
                                 r#"<text x="{}" y="{}" class="label" fill="black">{}</text>"#,
-                                x_offset + 2.0,
-                                y + frame_height - 4.0,
                                 self.truncate_text(&node.name, width as usize / 6)
                             ));
-                        }
-                        
                         x_offset += width;
                     }
                 }
@@ -165,8 +139,6 @@ impl VisualizationGenerator {
         
         svg.push_str("</svg>");
         Ok(svg)
-    }
-    
     fn call_graph_to_dot(&self, call_graph: &crate::profiling::cpu::CallGraph) -> crate::error::Result<()> {
         let mut dot = String::new();
         
@@ -182,14 +154,10 @@ impl VisualizationGenerator {
                 "orange"
             } else {
                 "lightblue"
-            };
             
             dot.push_str(&format!(
-                "  \"{}\" [fillcolor={}, label=\"{}\\n{} samples\"];\n",
                 function, color, function, stats.sample_count
             ));
-        }
-        
         // Add edges
         for (caller, callees) in &call_graph.edges {
             for (callee, count) in callees {
@@ -199,10 +167,8 @@ impl VisualizationGenerator {
                     "2"
                 } else {
                     "1"
-                };
                 
                 dot.push_str(&format!(
-                    "  \"{}\" -> \"{}\" [label=\"{}\", penwidth={}];\n",
                     caller, callee, count, weight
                 ));
             }
@@ -210,8 +176,6 @@ impl VisualizationGenerator {
         
         dot.push_str("}\n");
         Ok(dot)
-    }
-    
     fn memory_timeline_to_svg(&self, timeline: &[crate::profiling::memory::TemporalAllocation]) -> crate::error::Result<()> {
         let mut svg = String::new();
         
@@ -262,8 +226,6 @@ impl VisualizationGenerator {
                     r#"<text x="{}" y="{}" class="axis-label">{}</text>"#,
                     margin - 10.0, y + 5.0, self.format_bytes(value)
                 ));
-            }
-            
             // Timeline data
             let mut path = String::from("M");
             for (i, point) in timeline.iter().enumerate() {
@@ -278,12 +240,8 @@ impl VisualizationGenerator {
             }
             
             svg.push_str(&format!(r#"<path d="{}" class="timeline-line"/>"#, path));
-        }
-        
         svg.push_str("</svg>");
         Ok(svg)
-    }
-    
     fn allocation_heatmap_to_svg(&self, histogram: &HashMap<usize, u64>) -> crate::error::Result<()> {
         let mut svg = String::new();
         
@@ -324,9 +282,6 @@ impl VisualizationGenerator {
                 let y = margin + chart_height - cell_height;
                 
                 let intensity = (**count as f64 / max_count as f64).min(1.0);
-                let color = format!("rgb({}, {}, {})",
-                    (255.0 * intensity) as u8,
-                    (100.0 * (1.0 - intensity)) as u8,
                     (100.0 * (1.0 - intensity)) as u8
                 );
                 
@@ -344,12 +299,8 @@ impl VisualizationGenerator {
                     ));
                 }
             }
-        }
-        
         svg.push_str("</svg>");
         Ok(svg)
-    }
-    
     fn goroutine_timeline_to_svg(&self, timeline: &[crate::profiling::concurrency::GoroutineTimeline]) -> crate::error::Result<()> {
         let mut svg = String::new();
         
@@ -388,28 +339,19 @@ impl VisualizationGenerator {
                     
                     svg.push_str(&format!(
                         r#"<rect x="{}" y="{}" width="{}" height="{}" fill="green" class="goroutine-bar" title="Goroutine {}: {:?}"/>"#,
-                        margin,
-                        y,
                         chart_width.min(200.0), // Simplified width calculation
-                        bar_height - 2.0,
-                        goroutine.goroutine_id,
                         lifetime
                     ));
                     
                     svg.push_str(&format!(
                         r#"<text x="{}" y="{}" class="label">G{}</text>"#,
-                        margin + 5.0,
                         y + bar_height / 2.0 + 3.0,
                         goroutine.goroutine_id
                     ));
                 }
             }
-        }
-        
         svg.push_str("</svg>");
         Ok(svg)
-    }
-    
     fn channel_flow_to_svg(&self, analysis: &crate::profiling::concurrency::ChannelAnalysis) -> crate::error::Result<()> {
         let mut svg = String::new();
         
@@ -457,12 +399,8 @@ impl VisualizationGenerator {
                 r#"<text x="{}" y="{}" class="label">Ch{}</text>"#,
                 x, y + 5.0, channel_id
             ));
-        }
-        
         svg.push_str("</svg>");
         Ok(svg)
-    }
-    
     fn generate_dashboard_html(&self, _profile_data: &crate::profiling::core::ProfileData) -> crate::error::Result<()> {
         let html = r#"
 <!DOCTYPE html>
@@ -521,18 +459,12 @@ impl VisualizationGenerator {
 "#;
         
         Ok(html.to_string())
-    }
-    
     fn generate_color(&self, name: &str) -> String {
         let mut hash = 0;
         for byte in name.bytes() {
             hash = ((hash << 5) - hash + byte as u32) & 0xffffff;
-        }
-        
         let hue = (hash % 360) as f64;
         format!("hsl({}, 70%, 60%)", hue)
-    }
-    
     fn truncate_text(&self, text: &str, max_len: usize) -> String {
         if text.len() <= max_len {
             text.to_string()
@@ -549,54 +481,20 @@ impl VisualizationGenerator {
         while value >= 1024.0 && unit_index < UNITS.len() - 1 {
             value /= 1024.0;
             unit_index += 1;
-        }
-        
         if value < 10.0 && unit_index > 0 {
             format!("{:.1}{}", value, UNITS[unit_index])
         } else {
             format!("{:.0}{}", value, UNITS[unit_index])
         }
     }
-}
-
 /// Visualization configuration
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct VisualizationConfig {
-    pub flame_graph_width: u32,
-    pub flame_graph_height: u32,
-    pub timeline_width: u32,
-    pub timeline_height: u32,
-    pub heatmap_width: u32,
-    pub heatmap_height: u32,
-    pub flow_diagram_width: u32,
-    pub flow_diagram_height: u32,
-    pub interactive_mode: bool,
-    pub color_scheme: ColorScheme,
-}
-
 impl Default for VisualizationConfig {
     fn default() -> Self {
         Self {
-            flame_graph_width: 1200,
-            flame_graph_height: 600,
-            timeline_width: 1000,
-            timeline_height: 400,
-            heatmap_width: 800,
-            heatmap_height: 300,
-            flow_diagram_width: 900,
-            flow_diagram_height: 500,
-            interactive_mode: true,
-            color_scheme: ColorScheme::Default,
         }
     }
-}
-
 /// Color schemes for visualizations
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum ColorScheme {
-    Default,
-    HighContrast,
-    Colorblind,
-    Dark,
-}
-

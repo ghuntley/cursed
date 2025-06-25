@@ -28,8 +28,6 @@ pub mod web_vibez {
     pub use crate::common_types::*;
     
     pub struct SecurityContext;
-}
-
 // Cryptographic modules
 pub mod crypto;
 pub mod crypto_pqc;
@@ -127,24 +125,14 @@ pub mod sync {
         
         pub fn thread_pool_error(msg: &str) -> SyncError {
             SyncError::General(format!("Thread pool error: {}", msg))
-        }
-        
         pub fn timeout_error(msg: &str) -> SyncError {
             SyncError::General(format!("Timeout error: {}", msg))
-        }
-        
         pub fn channel_error(msg: &str) -> SyncError {
             SyncError::General(format!("Channel error: {}", msg))
-        }
-        
         pub fn thread_error(msg: &str) -> SyncError {
             SyncError::General(format!("Thread error: {}", msg))
-        }
-        
         pub fn lock_error(msg: &str) -> SyncError {
             SyncError::General(format!("Lock error: {}", msg))
-        }
-        
         pub fn thread_local_error(msg: &str) -> SyncError {
             SyncError::General(format!("Thread local error: {}", msg))
         }
@@ -155,16 +143,10 @@ pub mod sync {
         
         pub fn spawn<F>(_f: F) where F: FnOnce() {
             // Minimal implementation
-        }
-        
         pub use std::sync::{Mutex, RwLock, Arc, atomic::{AtomicUsize, AtomicBool, Ordering}, Condvar};
-    }
-    
     pub mod parallel;
     pub mod collections;
     pub mod thread_local;
-}
-
 pub mod process {
     // Basic process management
     pub use crate::common_types::*;
@@ -177,9 +159,6 @@ pub mod process {
         
         #[derive(Debug, Clone)]
         pub enum ProcessState {
-            Running,
-            Stopped,
-            Terminated,
         }
     }
     
@@ -188,8 +167,6 @@ pub mod process {
         
         pub struct IpcChannel;
         pub struct IpcMessage;
-    }
-    
     pub mod error {
         pub use crate::common_types::*;
         
@@ -200,8 +177,6 @@ pub mod process {
             ProcessError::General(format!("System error: {}", msg))
         }
     }
-}
-
 pub mod time {
     // Time utilities
     pub use crate::common_types::*;
@@ -214,12 +189,8 @@ pub mod time {
         
         pub fn invalid_date_error(msg: &str) -> TimeError {
             TimeError::General(format!("Invalid date: {}", msg))
-        }
-        
         pub fn invalid_time_error(msg: &str) -> TimeError {
             TimeError::General(format!("Invalid time: {}", msg))
-        }
-        
         pub fn system_time_error(msg: &str) -> TimeError {
             TimeError::General(format!("System time error: {}", msg))
         }
@@ -235,8 +206,6 @@ pub mod time {
                 Self(std::time::Duration::from_millis(millis))
             }
         }
-    }
-    
     pub mod datetime {
         pub use crate::common_types::*;
         
@@ -252,15 +221,11 @@ pub mod time {
     pub mod relative;
     pub mod benchmarking;
     pub mod formatting;
-}
-
 pub mod net {
     // Network utilities  
     pub use crate::common_types::*;
     
     pub type Result<T> = std::result::Result<T, Box<dyn std::error::Error>>;
-}
-
 pub mod testing {
     // Testing framework basics
     pub use crate::common_types::*;
@@ -273,13 +238,7 @@ pub mod testing {
         pub struct VibeTestingManager;
         
         pub enum TestResult {
-            Pass,
-            Fail(String),
-        }
-        
         pub enum BenchResult {
-            Success { duration: std::time::Duration },
-            CursedError(String),
         }
     }
 }

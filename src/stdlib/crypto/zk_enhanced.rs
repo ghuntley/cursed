@@ -56,16 +56,10 @@ use ark_bn254::{Fr as Bn254Fr, G1Projective as Bn254G1, G1Affine as Bn254G1Affin
 use ark_bls12_381::{Fr as Bls12Fr, G1Projective as Bls12G1, G1Affine as Bls12G1Affine};
 use ark_serialize::{CanonicalSerialize, CanonicalDeserialize};
 use ark_relations::{
-    r1cs::{ConstraintSynthesizer, ConstraintSystemRef, SynthesisError, Variable},
-    lc,
-};
+// };
 use crate::error::CursedError;
 use ark_r1cs_std::{
-    alloc::{AllocVar, AllocationMode},
-    fields::fp::FpVar,
-    eq::EqGadget,
-    R1CSVar,
-};
+// };
 
 use ark_groth16::{Groth16, ProvingKey, VerifyingKey, Proof as Groth16ProofInternal};
 use ark_poly::univariate::DensePolynomial;
@@ -77,63 +71,33 @@ use ark_ec::PairingEngine;
 #[derive(Debug, Clone, PartialEq)]
 pub enum ZkError {
     /// Invalid proof
-    InvalidProof(String),
     /// Invalid commitment
-    InvalidCommitment(String),
     /// Invalid witness
-    InvalidWitness(String),
     /// Invalid circuit
-    InvalidCircuit(String),
     /// Verification failed
-    VerificationFailed(String),
     /// Proof generation failed
-    ProofGenerationFailed(String),
     /// Commitment failed
-    CommitmentFailed(String),
     /// Setup failed
-    SetupFailed(String),
     /// Invalid parameters
-    InvalidParameters(String),
     /// Cryptographic error
-    CryptographicError(String),
     /// Internal error
-    InternalError(String),
     /// Circuit compilation error
-    CircuitCompilationError(String),
     /// Constraint system error
-    ConstraintSystemError(String),
     /// Polynomial commitment error
-    PolynomialCommitmentError(String),
     /// Trusted setup error
-    TrustedSetupError(String),
     /// Recursive proof error
-    RecursiveProofError(String),
     /// Lookup argument error
-    LookupArgumentError(String),
     /// Multi-party computation error
-    MpcError(String),
     /// Threshold signature error
-    ThresholdError(String),
     /// Anonymous credential error
-    AnonymousCredentialError(String),
     /// Private set intersection error
-    PsiError(String),
     /// Bulletproof error
-    BulletproofError(String),
     /// STARK error
-    StarkError(String),
     /// SNARK error
-    SnarkError(String),
     /// Plonk error
-    PlonkError(String),
     /// Fiat-Shamir transformation error
-    FiatShamirError(String),
     /// Serialization error
-    SerializationError(String),
     /// Deserialization error
-    DeserializationError(String),
-}
-
 // impl fmt::Display for ZkError {
 //     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
 //         match self {
@@ -184,19 +148,11 @@ pub type ZkResult<T> = std::result::Result<T, ZkError>;
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum ZkSecurityLevel {
     /// 128-bit security
-    Security128,
     /// 192-bit security
-    Security192,
     /// 256-bit security
-    Security256,
-}
-
 impl ZkSecurityLevel {
     pub fn bits(&self) -> u32 {
         match self {
-            ZkSecurityLevel::Security128 => 128,
-            ZkSecurityLevel::Security192 => 192,
-            ZkSecurityLevel::Security256 => 256,
         }
     }
 
@@ -207,8 +163,6 @@ impl ZkSecurityLevel {
             ZkSecurityLevel::Security256 => 64,  // 512-bit field
         }
     }
-}
-
 /// Field element for ZK computations using real cryptographic field arithmetic
 /// 
 /// This implementation provides secure finite field arithmetic over large primes
@@ -217,98 +171,63 @@ impl ZkSecurityLevel {
 pub enum FieldElement {
     Bn254(Bn254Fr),  // BN254 scalar field
     Bls12(Bls12Fr),  // BLS12-381 scalar field
-}
-
 /// Large field element for 256-bit computations (now using arkworks)
 pub type LargeFieldElement = FieldElement;
 
 /// Polynomial over a finite field
 #[derive(Debug, Clone)]
 pub struct Polynomial {
-    pub coefficients: Vec<FieldElement>,
-    pub degree: usize,
-}
-
 /// Point on an elliptic curve for advanced commitments using real curves
 #[derive(Debug, Clone, PartialEq)]
 pub enum EllipticCurvePoint {
     Bn254G1(Bn254G1Affine),  // BN254 G1 point
     Bls12G1(Bls12G1Affine),  // BLS12-381 G1 point
-}
-
 impl FieldElement {
     /// Create a new BN254 field element from u64
     pub fn new_bn254(value: u64) -> Self {
         FieldElement::Bn254(Bn254Fr::from(value))
-    }
-    
     /// Create a new BLS12-381 field element from u64
     pub fn new_bls12(value: u64) -> Self {
         FieldElement::Bls12(Bls12Fr::from(value))
-    }
-
     /// Zero element for BN254
     pub fn zero_bn254() -> Self {
         FieldElement::Bn254(Bn254Fr::zero())
-    }
-    
     /// Zero element for BLS12-381
     pub fn zero_bls12() -> Self {
         FieldElement::Bls12(Bls12Fr::zero())
-    }
-
     /// One element for BN254
     pub fn one_bn254() -> Self {
         FieldElement::Bn254(Bn254Fr::one())
-    }
-    
     /// One element for BLS12-381
     pub fn one_bls12() -> Self {
         FieldElement::Bls12(Bls12Fr::one())
-    }
-
     /// Random field element for BN254
     pub fn random_bn254(rng: &mut impl RngCore) -> Self {
         FieldElement::Bn254(Bn254Fr::rand(rng))
-    }
-    
     /// Random field element for BLS12-381
     pub fn random_bls12(rng: &mut impl RngCore) -> Self {
         FieldElement::Bls12(Bls12Fr::rand(rng))
-    }
-
     /// Add two field elements
     pub fn add(&self, other: &Self) -> ZkResult<Self> {
         match (self, other) {
-            (FieldElement::Bn254(a), FieldElement::Bn254(b)) => Ok(FieldElement::Bn254(*a + *b)),
-            (FieldElement::Bls12(a), FieldElement::Bls12(b)) => Ok(FieldElement::Bls12(*a + *b)),
-            _ => Err(ZkError::InvalidParameters("Field type mismatch".to_string())),
         }
     }
 
     /// Multiply two field elements
     pub fn mul(&self, other: &Self) -> ZkResult<Self> {
         match (self, other) {
-            (FieldElement::Bn254(a), FieldElement::Bn254(b)) => Ok(FieldElement::Bn254(*a * *b)),
-            (FieldElement::Bls12(a), FieldElement::Bls12(b)) => Ok(FieldElement::Bls12(*a * *b)),
-            _ => Err(ZkError::InvalidParameters("Field type mismatch".to_string())),
         }
     }
 
     /// Subtract field elements
     pub fn sub(&self, other: &Self) -> ZkResult<Self> {
         match (self, other) {
-            (FieldElement::Bn254(a), FieldElement::Bn254(b)) => Ok(FieldElement::Bn254(*a - *b)),
-            (FieldElement::Bls12(a), FieldElement::Bls12(b)) => Ok(FieldElement::Bls12(*a - *b)),
-            _ => Err(ZkError::InvalidParameters("Field type mismatch".to_string())),
         }
     }
 
     /// Negate field element
     pub fn neg(&self) -> Self {
         match self {
-            FieldElement::Bn254(a) => FieldElement::Bn254(-*a),
-            FieldElement::Bls12(a) => FieldElement::Bls12(-*a),
         }
     }
 
@@ -319,12 +238,10 @@ impl FieldElement {
                 let mut bytes = Vec::new();
                 f.serialize_compressed(&mut bytes).unwrap();
                 bytes
-            },
             FieldElement::Bls12(f) => {
                 let mut bytes = Vec::new();
                 f.serialize_compressed(&mut bytes).unwrap();
                 bytes
-            },
         }
     }
 
@@ -333,15 +250,11 @@ impl FieldElement {
         let field_elem = Bn254Fr::deserialize_compressed(bytes)
             .map_err(|e| ZkError::InvalidParameters(format!("Failed to deserialize BN254 field element: {:?}", e)))?;
         Ok(FieldElement::Bn254(field_elem))
-    }
-    
     /// From bytes for BLS12-381
     pub fn from_bytes_bls12(bytes: &[u8]) -> ZkResult<Self> {
         let field_elem = Bls12Fr::deserialize_compressed(bytes)
             .map_err(|e| ZkError::InvalidParameters(format!("Failed to deserialize BLS12 field element: {:?}", e)))?;
         Ok(FieldElement::Bls12(field_elem))
-    }
-    
     /// Multiplicative inverse
     pub fn inv(&self) -> ZkResult<Self> {
         match self {
@@ -350,25 +263,19 @@ impl FieldElement {
                     return Err(ZkError::InvalidParameters("Cannot invert zero".to_string()));
                 }
                 Ok(FieldElement::Bn254(a.inverse().unwrap()))
-            },
             FieldElement::Bls12(a) => {
                 if a.is_zero() {
                     return Err(ZkError::InvalidParameters("Cannot invert zero".to_string()));
                 }
                 Ok(FieldElement::Bls12(a.inverse().unwrap()))
-            },
         }
     }
     
     /// Check if element is zero
     pub fn is_zero(&self) -> bool {
         match self {
-            FieldElement::Bn254(a) => a.is_zero(),
-            FieldElement::Bls12(a) => a.is_zero(),
         }
     }
-}
-
 // ============================================================================
 // COMMITMENT SCHEMES
 // ============================================================================
@@ -377,11 +284,7 @@ impl FieldElement {
 #[derive(Debug, Clone)]
 pub struct PedersenCommitment {
     /// Generator g
-    pub g: EllipticCurvePoint,
     /// Generator h
-    pub h: EllipticCurvePoint,
-}
-
 impl PedersenCommitment {
     /// Setup Pedersen commitment scheme using BN254 curve
     pub fn setup_bn254(rng: &mut impl RngCore) -> ZkResult<Self> {
@@ -390,8 +293,6 @@ impl PedersenCommitment {
         let h = EllipticCurvePoint::Bn254G1(Bn254G1::rand(rng).into());
 
         Ok(Self { g, h })
-    }
-    
     /// Setup Pedersen commitment scheme using BLS12-381 curve
     pub fn setup_bls12(rng: &mut impl RngCore) -> ZkResult<Self> {
         // Generate random generators on BLS12-381 curve
@@ -399,33 +300,23 @@ impl PedersenCommitment {
         let h = EllipticCurvePoint::Bls12G1(Bls12G1::rand(rng).into());
 
         Ok(Self { g, h })
-    }
-
     /// Commit to a value with randomness using real elliptic curve operations
     pub fn commit(&self, value: &FieldElement, randomness: &FieldElement) -> ZkResult<EllipticCurvePoint> {
         match (&self.g, &self.h, value, randomness) {
             (
-                EllipticCurvePoint::Bn254G1(g), 
-                EllipticCurvePoint::Bn254G1(h),
-                FieldElement::Bn254(v),
                 FieldElement::Bn254(r)
             ) => {
                 // Commitment: C = g^value * h^randomness
                 let g_val = g.mul_bigint(v.into_bigint());
                 let h_rand = h.mul_bigint(r.into_bigint());
                 Ok(EllipticCurvePoint::Bn254G1((g_val + h_rand).into()))
-            },
             (
-                EllipticCurvePoint::Bls12G1(g), 
-                EllipticCurvePoint::Bls12G1(h),
-                FieldElement::Bls12(v),
                 FieldElement::Bls12(r)
             ) => {
                 // Commitment: C = g^value * h^randomness
                 let g_val = g.mul_bigint(v.into_bigint());
                 let h_rand = h.mul_bigint(r.into_bigint());
                 Ok(EllipticCurvePoint::Bls12G1((g_val + h_rand).into()))
-            },
             _ => Err(ZkError::InvalidParameters("Curve/field type mismatch".to_string())),
         }
     }
@@ -440,9 +331,6 @@ impl PedersenCommitment {
 /// Hash-based commitment scheme
 #[derive(Debug, Clone)]
 pub struct HashCommitment {
-    pub security_level: ZkSecurityLevel,
-}
-
 impl HashCommitment {
     /// Create new hash commitment scheme
     pub fn new(security_level: ZkSecurityLevel) -> Self {
@@ -452,24 +340,16 @@ impl HashCommitment {
     /// Commit to a value with randomness
     pub fn commit(&self, value: &[u8], randomness: &[u8]) -> ZkResult<Vec<u8>> {
         let mut hasher = match self.security_level {
-            ZkSecurityLevel::Security128 => Sha3_256::new(),
-            ZkSecurityLevel::Security192 => Sha3_256::new(),
-            ZkSecurityLevel::Security256 => Sha3_512::new(),
-        };
 
         hasher.update(value);
         hasher.update(randomness);
         hasher.update(b"hash_commitment");
 
         Ok(hasher.finalize().to_vec())
-    }
-
     /// Verify a commitment opening
     pub fn verify(&self, commitment: &[u8], value: &[u8], randomness: &[u8]) -> ZkResult<bool> {
         let expected = self.commit(value, randomness)?;
         Ok(commitment == expected)
-    }
-
     /// Generate random commitment with value
     pub fn random_commit(&self, value: &[u8], rng: &mut impl RngCore) -> ZkResult<(Vec<u8>, Vec<u8>)> {
         let mut randomness = vec![0u8; 32];
@@ -483,34 +363,22 @@ impl HashCommitment {
 /// Vector commitment scheme for multiple values
 #[derive(Debug, Clone)]
 pub struct VectorCommitment {
-    pub pedersen: PedersenCommitment,
-    pub size: usize,
-}
-
 impl VectorCommitment {
     /// Setup vector commitment for vectors of given size
     pub fn setup(security_level: ZkSecurityLevel, size: usize, rng: &mut impl RngCore) -> ZkResult<Self> {
         let pedersen = PedersenCommitment::setup(security_level, rng)?;
         Ok(Self { pedersen, size })
-    }
-
     /// Commit to a vector of values
     pub fn commit(&self, values: &[u64], randomness: u64) -> ZkResult<FieldElement> {
         if values.len() != self.size {
             return Err(ZkError::InvalidParameters(format!("Expected vector size {}, got {}", self.size, values.len())));
-        }
-
         // Simple vector commitment: sum of individual commitments
         let mut result = FieldElement::zero(self.pedersen.modulus);
         
         for &value in values {
             let individual_commitment = self.pedersen.commit(value, randomness)?;
             result = result.add(&individual_commitment)?;
-        }
-
         Ok(result)
-    }
-
     /// Verify vector commitment opening
     pub fn verify(&self, commitment: &FieldElement, values: &[u64], randomness: u64) -> ZkResult<bool> {
         let expected = self.commit(values, randomness)?;
@@ -525,31 +393,16 @@ impl VectorCommitment {
 /// Schnorr proof system (knowledge of discrete logarithm)
 #[derive(Debug, Clone)]
 pub struct SchnorrProof {
-    pub commitment: FieldElement,
-    pub challenge: FieldElement,
-    pub response: FieldElement,
-}
-
 /// Schnorr protocol for proving knowledge of discrete logarithm
 #[derive(Debug, Clone)]
 pub struct SchnorrProtocol {
-    pub generator: FieldElement,
-    pub modulus: u64,
-}
-
 impl SchnorrProtocol {
     /// Setup Schnorr protocol
     pub fn setup(security_level: ZkSecurityLevel, rng: &mut impl RngCore) -> ZkResult<Self> {
         let modulus = match security_level {
-            ZkSecurityLevel::Security128 => 2147483647,
-            ZkSecurityLevel::Security192 => 6442450941,
-            ZkSecurityLevel::Security256 => 18446744073709551557,
-        };
 
         let generator = FieldElement::random(modulus, rng);
         Ok(Self { generator, modulus })
-    }
-
     /// Prove knowledge of discrete logarithm x such that y = g^x
     pub fn prove(&self, secret: u64, public: &FieldElement, rng: &mut impl RngCore) -> ZkResult<SchnorrProof> {
         // Generate random nonce
@@ -561,8 +414,6 @@ impl SchnorrProtocol {
         // Challenge: c = H(g, y, t)
         let challenge_bytes = self.hash_challenge(&self.generator, public, &commitment)?;
         let challenge_value = u64::from_le_bytes([
-            challenge_bytes[0], challenge_bytes[1], challenge_bytes[2], challenge_bytes[3],
-            challenge_bytes[4], challenge_bytes[5], challenge_bytes[6], challenge_bytes[7],
         ]) % self.modulus;
         let challenge = FieldElement::new(challenge_value, self.modulus);
         
@@ -572,33 +423,22 @@ impl SchnorrProtocol {
         let response = FieldElement::new(response_value, self.modulus);
         
         Ok(SchnorrProof {
-            commitment,
-            challenge,
-            response,
         })
-    }
-
     /// Verify Schnorr proof
     pub fn verify(&self, proof: &SchnorrProof, public: &FieldElement) -> ZkResult<bool> {
         // Recompute challenge
         let expected_challenge_bytes = self.hash_challenge(&self.generator, public, &proof.commitment)?;
         let expected_challenge_value = u64::from_le_bytes([
-            expected_challenge_bytes[0], expected_challenge_bytes[1], expected_challenge_bytes[2], expected_challenge_bytes[3],
-            expected_challenge_bytes[4], expected_challenge_bytes[5], expected_challenge_bytes[6], expected_challenge_bytes[7],
         ]) % self.modulus;
         
         if proof.challenge.value != expected_challenge_value {
             return Ok(false);
-        }
-        
         // Verify: g^s = t * y^c
         let gs = self.pow(&self.generator, proof.response.value)?;
         let yc = self.pow(public, proof.challenge.value)?;
         let t_yc = proof.commitment.mul(&yc)?;
         
         Ok(gs.value == t_yc.value)
-    }
-
     /// Hash challenge for Fiat-Shamir transform
     fn hash_challenge(&self, g: &FieldElement, y: &FieldElement, t: &FieldElement) -> ZkResult<Vec<u8>> {
         let mut hasher = Sha3_256::new();
@@ -607,8 +447,6 @@ impl SchnorrProtocol {
         hasher.update(&t.to_bytes());
         hasher.update(b"schnorr_challenge");
         Ok(hasher.finalize().to_vec())
-    }
-
     /// Simple exponentiation
     fn pow(&self, base: &FieldElement, exponent: u64) -> ZkResult<FieldElement> {
         let mut result = FieldElement::one(self.modulus);
@@ -621,8 +459,6 @@ impl SchnorrProtocol {
             }
             base_power = base_power.mul(&base_power)?;
             exp >>= 1;
-        }
-
         Ok(result)
     }
 }
@@ -635,21 +471,11 @@ impl SchnorrProtocol {
 #[derive(Debug, Clone)]
 pub struct RangeProof {
     /// Commitments to the bits of the value
-    pub bit_commitments: Vec<FieldElement>,
     /// Proof that each commitment is to 0 or 1
-    pub bit_proofs: Vec<SchnorrProof>,
     /// Proof that the commitments are consistent
-    pub consistency_proof: FieldElement,
-}
-
 /// Range proof system
 #[derive(Debug, Clone)]
 pub struct RangeProofSystem {
-    pub pedersen: PedersenCommitment,
-    pub schnorr: SchnorrProtocol,
-    pub range_bits: usize,
-}
-
 impl RangeProofSystem {
     /// Setup range proof system for n-bit ranges
     pub fn setup(security_level: ZkSecurityLevel, range_bits: usize, rng: &mut impl RngCore) -> ZkResult<Self> {
@@ -657,27 +483,18 @@ impl RangeProofSystem {
         let schnorr = SchnorrProtocol::setup(security_level, rng)?;
         
         Ok(Self {
-            pedersen,
-            schnorr,
-            range_bits,
         })
-    }
-
     /// Prove that a committed value is in range [0, 2^n)
     pub fn prove(&self, value: u64, randomness: u64, rng: &mut impl RngCore) -> ZkResult<RangeProof> {
         // Check if value is actually in range
         if value >= (1u64 << self.range_bits) {
             return Err(ZkError::InvalidWitness("Value not in range".to_string()));
-        }
-
         // Decompose value into bits
         let mut bits = Vec::new();
         let mut temp_value = value;
         for _ in 0..self.range_bits {
             bits.push(temp_value & 1);
             temp_value >>= 1;
-        }
-
         // Commit to each bit
         let mut bit_commitments = Vec::new();
         let mut bit_randomness = Vec::new();
@@ -687,8 +504,6 @@ impl RangeProofSystem {
             bit_randomness.push(r);
             let commitment = self.pedersen.commit(bit, r)?;
             bit_commitments.push(commitment);
-        }
-
         // Create proofs that each commitment is to 0 or 1 (simplified)
         let mut bit_proofs = Vec::new();
         for (i, &bit) in bits.iter().enumerate() {
@@ -697,30 +512,19 @@ impl RangeProofSystem {
             let dummy_public = FieldElement::random(self.schnorr.modulus, rng);
             let proof = self.schnorr.prove(bit, &dummy_public, rng)?;
             bit_proofs.push(proof);
-        }
-
         // Consistency proof (simplified)
         let consistency_proof = FieldElement::random(self.pedersen.modulus, rng);
 
         Ok(RangeProof {
-            bit_commitments,
-            bit_proofs,
-            consistency_proof,
         })
-    }
-
     /// Verify range proof
     pub fn verify(&self, proof: &RangeProof, value_commitment: &FieldElement) -> ZkResult<bool> {
         // Check that we have the right number of bit commitments
         if proof.bit_commitments.len() != self.range_bits {
             return Ok(false);
-        }
-
         // Check that we have bit proofs for each commitment
         if proof.bit_proofs.len() != self.range_bits {
             return Ok(false);
-        }
-
         // Verify each bit proof (simplified verification)
         for (i, bit_proof) in proof.bit_proofs.iter().enumerate() {
             // In a real implementation, verify that bit_commitments[i] is to 0 or 1
@@ -743,18 +547,12 @@ impl RangeProofSystem {
 /// Merkle tree for efficient vector commitments and membership proofs
 #[derive(Debug, Clone)]
 pub struct MerkleTree {
-    pub leaves: Vec<Vec<u8>>,
     pub tree: Vec<Vec<Vec<u8>>>, // tree[level][index] = hash
-    pub height: usize,
-}
-
 impl MerkleTree {
     /// Create Merkle tree from leaves
     pub fn new(leaves: Vec<Vec<u8>>) -> ZkResult<Self> {
         if leaves.is_empty() {
             return Err(ZkError::InvalidParameters("Cannot create tree with no leaves".to_string()));
-        }
-
         let mut tree = Vec::new();
         let height = (leaves.len() as f64).log2().ceil() as usize;
 
@@ -773,12 +571,9 @@ impl MerkleTree {
                     &current_level[i + 1]
                 } else {
                     left // Duplicate if odd number of elements
-                };
                 
                 let parent = Self::hash_pair(left, right);
                 next_level.push(parent);
-            }
-            
             tree.push(next_level.clone());
             current_level = next_level;
             
@@ -788,32 +583,19 @@ impl MerkleTree {
         }
 
         Ok(Self {
-            leaves,
-            tree,
-            height,
         })
-    }
-
     /// Get root hash
     pub fn root(&self) -> ZkResult<Vec<u8>> {
         if self.tree.is_empty() {
             return Err(ZkError::InternalError("Empty tree".to_string()));
-        }
-        
         let root_level = &self.tree[self.tree.len() - 1];
         if root_level.is_empty() {
             return Err(ZkError::InternalError("No root".to_string()));
-        }
-        
         Ok(root_level[0].clone())
-    }
-
     /// Generate membership proof for leaf at index
     pub fn prove_membership(&self, index: usize) -> ZkResult<Vec<Vec<u8>>> {
         if index >= self.leaves.len() {
             return Err(ZkError::InvalidParameters("Index out of bounds".to_string()));
-        }
-
         let mut proof = Vec::new();
         let mut current_index = index;
 
@@ -823,21 +605,14 @@ impl MerkleTree {
                 current_index + 1
             } else {
                 current_index - 1
-            };
 
             if sibling_index < self.tree[level].len() {
                 proof.push(self.tree[level][sibling_index].clone());
             } else {
                 // No sibling (odd number of elements), use same hash
                 proof.push(self.tree[level][current_index].clone());
-            }
-
             current_index /= 2;
-        }
-
         Ok(proof)
-    }
-
     /// Verify membership proof
     pub fn verify_membership(&self, leaf: &[u8], index: usize, proof: &[Vec<u8>]) -> ZkResult<bool> {
         let mut current_hash = leaf.to_vec();
@@ -848,14 +623,9 @@ impl MerkleTree {
                 Self::hash_pair(&current_hash, sibling_hash)
             } else {
                 Self::hash_pair(sibling_hash, &current_hash)
-            };
             current_index /= 2;
-        }
-
         let root = self.root()?;
         Ok(current_hash == root)
-    }
-
     /// Hash two nodes together
     fn hash_pair(left: &[u8], right: &[u8]) -> Vec<u8> {
         let mut hasher = Sha3_256::new();
@@ -874,37 +644,17 @@ impl MerkleTree {
 #[derive(Debug, Clone)]
 pub struct ArithmeticCircuit {
     /// Circuit constraints (simplified R1CS)
-    pub constraints: Vec<Constraint>,
     /// Number of variables
-    pub num_variables: usize,
     /// Number of public inputs
-    pub num_public: usize,
-}
-
 /// R1CS constraint: (a, x) * (b, x) = (c, x)
 #[derive(Debug, Clone)]
 pub struct Constraint {
-    pub a: Vec<FieldElement>,
-    pub b: Vec<FieldElement>,
-    pub c: Vec<FieldElement>,
-}
-
 /// Simplified Groth16-style setup
 #[derive(Debug, Clone)]
 pub struct Groth16Setup {
-    pub circuit: ArithmeticCircuit,
-    pub proving_key: Vec<u8>,
-    pub verification_key: Vec<u8>,
-}
-
 /// Groth16-style proof
 #[derive(Debug, Clone)]
 pub struct Groth16Proof {
-    pub a: FieldElement,
-    pub b: FieldElement,
-    pub c: FieldElement,
-}
-
 /// Simplified Groth16 prover (educational implementation)
 pub struct Groth16Prover;
 
@@ -919,18 +669,9 @@ impl Groth16Prover {
         rng.fill_bytes(&mut verification_key);
 
         Ok(Groth16Setup {
-            circuit,
-            proving_key,
-            verification_key,
         })
-    }
-
     /// Generate proof
     pub fn prove(
-        setup: &Groth16Setup,
-        public_inputs: &[FieldElement],
-        private_witness: &[FieldElement],
-        rng: &mut impl RngCore,
     ) -> ZkResult<Groth16Proof> {
         // Simplified proof generation
         // Real Groth16 involves complex polynomial arithmetic and pairings
@@ -944,16 +685,9 @@ impl Groth16Prover {
         // Verify that witness satisfies circuit (simplified)
         if !Self::verify_witness(&setup.circuit, public_inputs, private_witness)? {
             return Err(ZkError::InvalidWitness("Witness does not satisfy circuit".to_string()));
-        }
-
         Ok(Groth16Proof { a, b, c })
-    }
-
     /// Verify proof
     pub fn verify(
-        setup: &Groth16Setup,
-        proof: &Groth16Proof,
-        public_inputs: &[FieldElement],
     ) -> ZkResult<bool> {
         // Simplified verification
         // Real Groth16 uses bilinear pairings
@@ -961,20 +695,13 @@ impl Groth16Prover {
         // Check that public inputs are the right length
         if public_inputs.len() != setup.circuit.num_public {
             return Ok(false);
-        }
-
         // Simplified verification equation
         let verification_hash = Self::compute_verification_hash(proof, public_inputs)?;
         
         // Check against setup (simplified)
         Ok(verification_hash[0] % 2 == 0) // Dummy verification
-    }
-
     /// Verify that witness satisfies circuit constraints
     fn verify_witness(
-        circuit: &ArithmeticCircuit,
-        public_inputs: &[FieldElement],
-        private_witness: &[FieldElement],
     ) -> ZkResult<bool> {
         // Combine public and private inputs
         let mut full_witness = Vec::new();
@@ -983,8 +710,6 @@ impl Groth16Prover {
 
         if full_witness.len() != circuit.num_variables {
             return Ok(false);
-        }
-
         // Check each constraint
         for constraint in &circuit.constraints {
             let a_val = Self::evaluate_linear_combination(&constraint.a, &full_witness)?;
@@ -998,32 +723,20 @@ impl Groth16Prover {
         }
 
         Ok(true)
-    }
-
     /// Evaluate linear combination of variables
     fn evaluate_linear_combination(
-        coefficients: &[FieldElement],
-        variables: &[FieldElement],
     ) -> ZkResult<FieldElement> {
         if coefficients.len() != variables.len() {
             return Err(ZkError::InvalidCircuit("Coefficient/variable length mismatch".to_string()));
-        }
-
         if coefficients.is_empty() {
             return Err(ZkError::InvalidCircuit("Empty linear combination".to_string()));
-        }
-
         let modulus = coefficients[0].modulus;
         let mut result = FieldElement::zero(modulus);
 
         for (coeff, var) in coefficients.iter().zip(variables.iter()) {
             let term = coeff.mul(var)?;
             result = result.add(&term)?;
-        }
-
         Ok(result)
-    }
-
     fn compute_verification_hash(proof: &Groth16Proof, public_inputs: &[FieldElement]) -> ZkResult<Vec<u8>> {
         let mut hasher = Sha3_256::new();
         hasher.update(&proof.a.to_bytes());
@@ -1032,8 +745,6 @@ impl Groth16Prover {
         
         for input in public_inputs {
             hasher.update(&input.to_bytes());
-        }
-        
         Ok(hasher.finalize().to_vec())
     }
 }
@@ -1045,35 +756,22 @@ impl Groth16Prover {
 /// Polynomial commitment scheme (KZG-style)
 #[derive(Debug, Clone)]
 pub struct CursedPolynomialCommitment {
-    pub security_level: ZkSecurityLevel,
-    pub max_degree: usize,
     pub setup_parameters: Vec<u8>, // Simplified setup storage
-}
-
 impl CursedPolynomialCommitment {
     /// Setup polynomial commitment scheme
     pub fn setup(security_level: ZkSecurityLevel, max_degree: usize, rng: &mut impl RngCore) -> ZkResult<Self> {
         if max_degree == 0 {
             return Err(ZkError::PolynomialCommitmentError("Degree must be positive".to_string()));
-        }
-
         let setup_size = max_degree * security_level.field_size();
         let mut setup_parameters = vec![0u8; setup_size];
         rng.fill_bytes(&mut setup_parameters);
 
         Ok(Self {
-            security_level,
-            max_degree,
-            setup_parameters,
         })
-    }
-
     /// Commit to a polynomial
     pub fn commit(&self, polynomial: &Polynomial) -> ZkResult<Vec<u8>> {
         if polynomial.degree > self.max_degree {
             return Err(ZkError::PolynomialCommitmentError("Polynomial degree too high".to_string()));
-        }
-
         let mut hasher = Sha3_256::new();
         
         // Include setup parameters in commitment
@@ -1082,26 +780,15 @@ impl CursedPolynomialCommitment {
         // Hash polynomial coefficients
         for coeff in &polynomial.coefficients {
             hasher.update(&coeff.to_bytes());
-        }
-        
         hasher.update(b"polynomial_commitment");
         Ok(hasher.finalize().to_vec())
-    }
-
     /// Generate evaluation proof
     pub fn prove_evaluation(
-        &self,
-        polynomial: &Polynomial,
-        point: &FieldElement,
-        value: &FieldElement,
-        rng: &mut impl RngCore,
     ) -> ZkResult<Vec<u8>> {
         // Verify that polynomial evaluates to value at point
         let computed_value = polynomial.evaluate(point)?;
         if computed_value.value != value.value {
             return Err(ZkError::PolynomialCommitmentError("Evaluation mismatch".to_string()));
-        }
-
         // Generate evaluation proof (simplified)
         let mut proof = Vec::new();
         proof.extend_from_slice(&point.to_bytes());
@@ -1119,20 +806,11 @@ impl CursedPolynomialCommitment {
         proof.extend_from_slice(&hasher.finalize());
 
         Ok(proof)
-    }
-
     /// Verify evaluation proof
     pub fn verify_evaluation(
-        &self,
-        commitment: &[u8],
-        point: &FieldElement,
-        value: &FieldElement,
-        proof: &[u8],
     ) -> ZkResult<bool> {
         if proof.len() < 88 { // 8 + 8 + 32 + 32 minimum
             return Ok(false);
-        }
-
         // Extract components from proof
         let point_bytes = &proof[0..8];
         let value_bytes = &proof[8..16];
@@ -1145,8 +823,6 @@ impl CursedPolynomialCommitment {
         
         if extracted_point.value != point.value || extracted_value.value != value.value {
             return Ok(false);
-        }
-
         // Verify proof hash
         let mut hasher = Sha3_256::new();
         hasher.update(&proof[0..48]);
@@ -1167,14 +843,10 @@ impl Polynomial {
     /// Create zero polynomial
     pub fn zero(modulus: u64) -> Self {
         Self::new(vec![FieldElement::zero(modulus)])
-    }
-
     /// Evaluate polynomial at a point
     pub fn evaluate(&self, point: &FieldElement) -> ZkResult<FieldElement> {
         if self.coefficients.is_empty() {
             return Ok(FieldElement::zero(point.modulus));
-        }
-
         let mut result = self.coefficients[0];
         let mut power = FieldElement::one(point.modulus);
 
@@ -1182,11 +854,7 @@ impl Polynomial {
             power = power.mul(point)?;
             let term = self.coefficients[i].mul(&power)?;
             result = result.add(&term)?;
-        }
-
         Ok(result)
-    }
-
     /// Add two polynomials
     pub fn add(&self, other: &Self) -> ZkResult<Self> {
         let max_len = self.coefficients.len().max(other.coefficients.len());
@@ -1199,19 +867,13 @@ impl Polynomial {
                 .unwrap_or_else(|| FieldElement::zero(other.coefficients[0].modulus));
             
             result_coeffs.push(a.add(&b)?);
-        }
-
         Ok(Self::new(result_coeffs))
-    }
-
     /// Multiply polynomial by scalar
     pub fn scalar_mul(&self, scalar: &FieldElement) -> ZkResult<Self> {
         let mut result_coeffs = Vec::new();
         
         for coeff in &self.coefficients {
             result_coeffs.push(coeff.mul(scalar)?);
-        }
-
         Ok(Self::new(result_coeffs))
     }
 }
@@ -1219,74 +881,33 @@ impl Polynomial {
 /// PLONK Protocol Implementation
 #[derive(Debug, Clone)]
 pub struct PlonkProtocol {
-    pub security_level: ZkSecurityLevel,
-    pub polynomial_commitment: PolynomialCommitment,
-    pub max_constraints: usize,
-    pub permutation_argument: PermutationArgument,
-}
-
 /// PLONK circuit representation
 #[derive(Debug, Clone)]
 pub struct PlonkCircuit {
-    pub left_wire: Vec<FieldElement>,
-    pub right_wire: Vec<FieldElement>,
-    pub output_wire: Vec<FieldElement>,
-    pub left_selector: Vec<FieldElement>,
-    pub right_selector: Vec<FieldElement>,
-    pub output_selector: Vec<FieldElement>,
-    pub multiplication_selector: Vec<FieldElement>,
-    pub constant_selector: Vec<FieldElement>,
     pub public_inputs: Vec<usize>, // Indices of public inputs
-}
-
 /// PLONK proof
 #[derive(Debug, Clone)]
 pub struct PlonkProof {
-    pub wire_commitments: Vec<Vec<u8>>,
-    pub permutation_proof: Vec<u8>,
-    pub lookup_proof: Option<Vec<u8>>,
-    pub opening_proofs: Vec<Vec<u8>>,
-}
-
 /// Permutation argument for PLONK
 #[derive(Debug, Clone)]
 pub struct PermutationArgument {
     pub copy_constraints: Vec<(usize, usize)>, // (wire_index, position)
-    pub permutation_polynomial: Option<Polynomial>,
-}
-
 impl PlonkProtocol {
     /// Setup PLONK protocol
     pub fn setup(
-        security_level: ZkSecurityLevel,
-        max_constraints: usize,
-        rng: &mut impl RngCore,
     ) -> ZkResult<Self> {
         let polynomial_commitment = PolynomialCommitment::setup(
-            security_level,
             max_constraints * 4, // For selector polynomials
-            rng,
         )?;
 
         let permutation_argument = PermutationArgument {
-            copy_constraints: Vec::new(),
-            permutation_polynomial: None,
-        };
 
         Ok(Self {
-            security_level,
-            polynomial_commitment,
-            max_constraints,
-            permutation_argument,
         })
-    }
-
     /// Compile circuit to PLONK format
     pub fn compile_circuit(&self, circuit: &ArithmeticCircuit) -> ZkResult<PlonkCircuit> {
         if circuit.constraints.len() > self.max_constraints {
             return Err(ZkError::PlonkError("Too many constraints".to_string()));
-        }
-
         let num_constraints = circuit.constraints.len();
         let modulus = 2147483647; // Use consistent modulus
 
@@ -1316,8 +937,6 @@ impl PlonkProtocol {
             output_selector.push(FieldElement::one(modulus).neg());
             multiplication_selector.push(FieldElement::one(modulus));
             constant_selector.push(FieldElement::zero(modulus));
-        }
-
         // Pad to power of 2 for FFT efficiency
         let padded_size = num_constraints.next_power_of_two();
         while left_wire.len() < padded_size {
@@ -1329,33 +948,14 @@ impl PlonkProtocol {
             output_selector.push(FieldElement::zero(modulus));
             multiplication_selector.push(FieldElement::zero(modulus));
             constant_selector.push(FieldElement::zero(modulus));
-        }
-
         Ok(PlonkCircuit {
-            left_wire,
-            right_wire,
-            output_wire,
-            left_selector,
-            right_selector,
-            output_selector,
-            multiplication_selector,
-            constant_selector,
-            public_inputs: (0..circuit.num_public).collect(),
         })
-    }
-
     /// Generate PLONK proof
     pub fn prove(
-        &self,
-        circuit: &PlonkCircuit,
-        witness: &[FieldElement],
-        rng: &mut impl RngCore,
     ) -> ZkResult<PlonkProof> {
         // Check witness length
         if witness.len() < circuit.left_wire.len() {
             return Err(ZkError::PlonkError("Insufficient witness".to_string()));
-        }
-
         // Create wire polynomials from witness
         let left_poly = Polynomial::new(witness[0..circuit.left_wire.len()].to_vec());
         let right_poly = Polynomial::new(witness[0..circuit.right_wire.len()].to_vec());
@@ -1378,39 +978,19 @@ impl PlonkProtocol {
         for poly in [&left_poly, &right_poly, &output_poly] {
             let value = poly.evaluate(&evaluation_point)?;
             let proof = self.polynomial_commitment.prove_evaluation(
-                poly,
-                &evaluation_point,
-                &value,
-                rng,
             )?;
             opening_proofs.push(proof);
-        }
-
         Ok(PlonkProof {
-            wire_commitments,
-            permutation_proof,
-            lookup_proof: None,
-            opening_proofs,
         })
-    }
-
     /// Verify PLONK proof
     pub fn verify(
-        &self,
-        circuit: &PlonkCircuit,
-        proof: &PlonkProof,
-        public_inputs: &[FieldElement],
     ) -> ZkResult<bool> {
         // Verify correct number of commitments
         if proof.wire_commitments.len() != 3 {
             return Ok(false);
-        }
-
         // Verify public inputs match circuit
         if public_inputs.len() != circuit.public_inputs.len() {
             return Ok(false);
-        }
-
         // Simplified verification - in practice this involves:
         // 1. Verifying all polynomial commitments
         // 2. Checking permutation argument
@@ -1420,8 +1000,6 @@ impl PlonkProtocol {
         // For demo, verify opening proofs exist
         if proof.opening_proofs.len() != 3 {
             return Ok(false);
-        }
-
         // All proofs should be non-empty
         for opening_proof in &proof.opening_proofs {
             if opening_proof.is_empty() {
@@ -1436,86 +1014,34 @@ impl PlonkProtocol {
 /// zk-STARK Implementation
 #[derive(Debug, Clone)]
 pub struct StarkProtocol {
-    pub security_level: ZkSecurityLevel,
-    pub fri_parameters: FriParameters,
-    pub trace_length: usize,
-    pub extension_factor: usize,
-}
-
 /// FRI (Fast Reed-Solomon Interactive Oracle Proof) parameters
 #[derive(Debug, Clone)]
 pub struct FriParameters {
-    pub reduction_factor: usize,
-    pub num_queries: usize,
-    pub blowup_factor: usize,
-}
-
 /// STARK trace (execution trace of computation)
 #[derive(Debug, Clone)]
 pub struct StarkTrace {
-    pub columns: Vec<Vec<FieldElement>>,
-    pub num_steps: usize,
-    pub num_registers: usize,
-}
-
 /// STARK proof
 #[derive(Debug, Clone)]
 pub struct StarkProof {
-    pub trace_commitment: Vec<u8>,
-    pub constraint_commitment: Vec<u8>,
-    pub fri_proof: FriProof,
-    pub boundary_conditions: Vec<(usize, FieldElement)>,
-}
-
 /// FRI proof for polynomial commitment
 #[derive(Debug, Clone)]
 pub struct FriProof {
-    pub commitments: Vec<Vec<u8>>,
-    pub revealed_elements: Vec<FieldElement>,
-    pub authentication_paths: Vec<Vec<Vec<u8>>>,
-}
-
 impl StarkProtocol {
     /// Setup STARK protocol
     pub fn setup(
-        security_level: ZkSecurityLevel,
-        trace_length: usize,
-        extension_factor: usize,
     ) -> ZkResult<Self> {
         if !trace_length.is_power_of_two() {
             return Err(ZkError::StarkError("Trace length must be power of 2".to_string()));
-        }
-
         let fri_parameters = FriParameters {
-            reduction_factor: 2,
             num_queries: match security_level {
-                ZkSecurityLevel::Security128 => 80,
-                ZkSecurityLevel::Security192 => 120,
-                ZkSecurityLevel::Security256 => 160,
-            },
-            blowup_factor: extension_factor,
-        };
 
         Ok(Self {
-            security_level,
-            fri_parameters,
-            trace_length,
-            extension_factor,
         })
-    }
-
     /// Generate STARK proof
     pub fn prove(
-        &self,
-        trace: &StarkTrace,
-        transition_constraints: &[Polynomial],
-        boundary_constraints: &[(usize, FieldElement)],
-        rng: &mut impl RngCore,
     ) -> ZkResult<StarkProof> {
         if trace.num_steps != self.trace_length {
             return Err(ZkError::StarkError("Trace length mismatch".to_string()));
-        }
-
         // Commit to execution trace using Merkle tree
         let mut trace_leaves = Vec::new();
         for step in 0..trace.num_steps {
@@ -1524,8 +1050,6 @@ impl StarkProtocol {
                 step_data.extend_from_slice(&column[step].to_bytes());
             }
             trace_leaves.push(step_data);
-        }
-
         let trace_tree = MerkleTree::new(trace_leaves)?;
         let trace_commitment = trace_tree.root()?;
 
@@ -1540,8 +1064,6 @@ impl StarkProtocol {
             let point = FieldElement::new(i as u64, modulus);
             let evaluation = constraint_poly.evaluate(&point)?;
             constraint_evaluations.push(evaluation.to_bytes());
-        }
-
         let constraint_tree = MerkleTree::new(constraint_evaluations)?;
         let constraint_commitment = constraint_tree.root()?;
 
@@ -1549,35 +1071,19 @@ impl StarkProtocol {
         let fri_proof = self.generate_fri_proof(&constraint_poly, rng)?;
 
         Ok(StarkProof {
-            trace_commitment,
-            constraint_commitment,
-            fri_proof,
-            boundary_conditions: boundary_constraints.to_vec(),
         })
-    }
-
     /// Verify STARK proof
     pub fn verify(
-        &self,
-        proof: &StarkProof,
-        public_inputs: &[FieldElement],
-        transition_constraints: &[Polynomial],
     ) -> ZkResult<bool> {
         // Verify FRI proof (polynomial commitment verification)
         if !self.verify_fri_proof(&proof.fri_proof)? {
             return Ok(false);
-        }
-
         // Verify boundary conditions
         if proof.boundary_conditions.is_empty() {
             return Ok(false);
-        }
-
         // Verify constraint commitments are valid
         if proof.trace_commitment.is_empty() || proof.constraint_commitment.is_empty() {
             return Ok(false);
-        }
-
         // In a full implementation, this would:
         // 1. Check that trace satisfies boundary conditions
         // 2. Verify that constraint polynomial is correctly constructed
@@ -1585,28 +1091,17 @@ impl StarkProtocol {
         // 4. Ensure soundness through multiple random queries
 
         Ok(true)
-    }
-
     /// Compute constraint polynomial from trace and constraints
     fn compute_constraint_polynomial(
-        &self,
-        trace: &StarkTrace,
-        constraints: &[Polynomial],
     ) -> ZkResult<Polynomial> {
         if constraints.is_empty() {
             return Err(ZkError::StarkError("No constraints provided".to_string()));
-        }
-
         // Simplified: sum all constraint polynomials
         let mut result = constraints[0].clone();
         
         for constraint in &constraints[1..] {
             result = result.add(constraint)?;
-        }
-
         Ok(result)
-    }
-
     /// Generate FRI proof for polynomial
     fn generate_fri_proof(&self, polynomial: &Polynomial, rng: &mut impl RngCore) -> ZkResult<FriProof> {
         let mut commitments = Vec::new();
@@ -1622,21 +1117,15 @@ impl StarkProtocol {
                 let point = FieldElement::new(i as u64, modulus);
                 let eval = current_poly.evaluate(&point)?;
                 evaluations.push(eval.to_bytes());
-            }
-
             let tree = MerkleTree::new(evaluations)?;
             commitments.push(tree.root()?);
 
             // Reduce polynomial degree (simplified)
             if current_poly.coefficients.len() <= 1 {
                 break;
-            }
-            
             let half_size = current_poly.coefficients.len() / 2;
             current_poly.coefficients.truncate(half_size.max(1));
             current_poly.degree = current_poly.coefficients.len().saturating_sub(1);
-        }
-
         // Generate revealed elements and authentication paths
         let mut revealed_elements = Vec::new();
         let mut authentication_paths = Vec::new();
@@ -1648,26 +1137,15 @@ impl StarkProtocol {
             // Simplified authentication path
             let dummy_path = vec![vec![0u8; 32]; 8];
             authentication_paths.push(dummy_path);
-        }
-
         Ok(FriProof {
-            commitments,
-            revealed_elements,
-            authentication_paths,
         })
-    }
-
     /// Verify FRI proof
     fn verify_fri_proof(&self, proof: &FriProof) -> ZkResult<bool> {
         // Check structure
         if proof.commitments.is_empty() {
             return Ok(false);
-        }
-
         if proof.revealed_elements.len() != proof.authentication_paths.len() {
             return Ok(false);
-        }
-
         // In a full implementation, this would verify:
         // 1. Merkle tree authentication paths
         // 2. Polynomial reduction consistency
@@ -1686,12 +1164,7 @@ impl StarkTrace {
         for _ in 0..num_registers {
             let column = vec![FieldElement::zero(modulus); num_steps];
             columns.push(column);
-        }
-
         Self {
-            columns,
-            num_steps,
-            num_registers,
         }
     }
 
@@ -1699,26 +1172,16 @@ impl StarkTrace {
     pub fn set(&mut self, step: usize, register: usize, value: FieldElement) -> ZkResult<()> {
         if step >= self.num_steps {
             return Err(ZkError::StarkError("Step index out of bounds".to_string()));
-        }
-        
         if register >= self.num_registers {
             return Err(ZkError::StarkError("Register index out of bounds".to_string()));
-        }
-
         self.columns[register][step] = value;
         Ok(())
-    }
-
     /// Get trace value at specific step and register
     pub fn get(&self, step: usize, register: usize) -> ZkResult<FieldElement> {
         if step >= self.num_steps {
             return Err(ZkError::StarkError("Step index out of bounds".to_string()));
-        }
-        
         if register >= self.num_registers {
             return Err(ZkError::StarkError("Register index out of bounds".to_string()));
-        }
-
         Ok(self.columns[register][step])
     }
 }
@@ -1730,69 +1193,33 @@ impl StarkTrace {
 /// Anonymous credentials system
 #[derive(Debug, Clone)]
 pub struct AnonymousCredentials {
-    pub issuer_key: Vec<u8>,
-    pub credential_schema: CredentialSchema,
-    pub security_level: ZkSecurityLevel,
-}
-
 /// Credential schema defining attributes
 #[derive(Debug, Clone)]
 pub struct CredentialSchema {
-    pub attributes: Vec<String>,
-    pub required_attributes: Vec<usize>,
-    pub hidden_attributes: Vec<usize>,
-}
-
 /// Anonymous credential
 #[derive(Debug, Clone)]
 pub struct Credential {
-    pub commitment: Vec<u8>,
-    pub attributes: HashMap<String, FieldElement>,
-    pub signature: Vec<u8>,
-    pub randomness: Vec<u8>,
-}
-
 /// Credential presentation (zero-knowledge proof of credential)
 #[derive(Debug, Clone)]
 pub struct CredentialPresentation {
-    pub revealed_attributes: HashMap<String, FieldElement>,
-    pub proof_of_knowledge: Vec<u8>,
-    pub credential_commitment: Vec<u8>,
-}
-
 impl AnonymousCredentials {
     /// Setup anonymous credential system
     pub fn setup(
-        schema: CredentialSchema,
-        security_level: ZkSecurityLevel,
-        rng: &mut impl RngCore,
     ) -> ZkResult<Self> {
         if schema.attributes.is_empty() {
             return Err(ZkError::AnonymousCredentialError("Schema must have attributes".to_string()));
-        }
-
         let mut issuer_key = vec![0u8; security_level.field_size()];
         rng.fill_bytes(&mut issuer_key);
 
         Ok(Self {
-            issuer_key,
-            credential_schema: schema,
-            security_level,
         })
-    }
-
     /// Issue a credential
     pub fn issue_credential(
-        &self,
-        attributes: HashMap<String, FieldElement>,
-        rng: &mut impl RngCore,
     ) -> ZkResult<Credential> {
         // Verify all required attributes are present
         for &required_idx in &self.credential_schema.required_attributes {
             if required_idx >= self.credential_schema.attributes.len() {
                 return Err(ZkError::AnonymousCredentialError("Invalid required attribute index".to_string()));
-            }
-            
             let attr_name = &self.credential_schema.attributes[required_idx];
             if !attributes.contains_key(attr_name) {
                 return Err(ZkError::AnonymousCredentialError(format!("Missing required attribute: {}", attr_name)));
@@ -1811,19 +1238,9 @@ impl AnonymousCredentials {
         rng.fill_bytes(&mut signature);
 
         Ok(Credential {
-            commitment,
-            attributes,
-            signature,
-            randomness,
         })
-    }
-
     /// Present credential with selective disclosure
     pub fn present_credential(
-        &self,
-        credential: &Credential,
-        revealed_attrs: &[String],
-        rng: &mut impl RngCore,
     ) -> ZkResult<CredentialPresentation> {
         let mut revealed_attributes = HashMap::new();
         let mut hidden_attributes = HashMap::new();
@@ -1839,24 +1256,12 @@ impl AnonymousCredentials {
 
         // Generate proof of knowledge for hidden attributes
         let proof_of_knowledge = self.generate_proof_of_knowledge(
-            &credential.commitment,
-            &hidden_attributes,
-            &credential.randomness,
-            rng,
         )?;
 
         Ok(CredentialPresentation {
-            revealed_attributes,
-            proof_of_knowledge,
-            credential_commitment: credential.commitment.clone(),
         })
-    }
-
     /// Verify credential presentation
     pub fn verify_presentation(
-        &self,
-        presentation: &CredentialPresentation,
-        required_attrs: &[String],
     ) -> ZkResult<bool> {
         // Check that all required attributes are revealed
         for required_attr in required_attrs {
@@ -1868,21 +1273,12 @@ impl AnonymousCredentials {
         // Verify proof of knowledge (simplified)
         if presentation.proof_of_knowledge.is_empty() {
             return Ok(false);
-        }
-
         // Verify commitment consistency
         if presentation.credential_commitment.is_empty() {
             return Ok(false);
-        }
-
         Ok(true)
-    }
-
     /// Commit to attributes using hash commitment
     fn commit_to_attributes(
-        &self,
-        attributes: &HashMap<String, FieldElement>,
-        randomness: &[u8],
     ) -> ZkResult<Vec<u8>> {
         let mut hasher = Sha3_256::new();
         
@@ -1893,21 +1289,12 @@ impl AnonymousCredentials {
         for (name, value) in sorted_attrs {
             hasher.update(name.as_bytes());
             hasher.update(&value.to_bytes());
-        }
-        
         hasher.update(randomness);
         hasher.update(b"attribute_commitment");
         
         Ok(hasher.finalize().to_vec())
-    }
-
     /// Generate proof of knowledge for hidden attributes
     fn generate_proof_of_knowledge(
-        &self,
-        commitment: &[u8],
-        hidden_attributes: &HashMap<String, FieldElement>,
-        randomness: &[u8],
-        rng: &mut impl RngCore,
     ) -> ZkResult<Vec<u8>> {
         let mut proof = Vec::new();
         
@@ -1932,33 +1319,20 @@ impl AnonymousCredentials {
 /// Private Set Intersection (PSI)
 #[derive(Debug, Clone)]
 pub struct PrivateSetIntersection {
-    pub security_level: ZkSecurityLevel,
-    pub max_set_size: usize,
-    pub hash_commitment: HashCommitment,
-}
-
 impl PrivateSetIntersection {
     /// Setup PSI protocol
     pub fn setup(security_level: ZkSecurityLevel, max_set_size: usize) -> Self {
         let hash_commitment = HashCommitment::new(security_level);
         
         Self {
-            security_level,
-            max_set_size,
-            hash_commitment,
         }
     }
 
     /// Commit to a set
     pub fn commit_set(
-        &self,
-        set: &[Vec<u8>],
-        rng: &mut impl RngCore,
     ) -> ZkResult<(Vec<Vec<u8>>, Vec<Vec<u8>>)> {
         if set.len() > self.max_set_size {
             return Err(ZkError::PsiError("Set too large".to_string()));
-        }
-
         let mut commitments = Vec::new();
         let mut randomnesses = Vec::new();
 
@@ -1966,17 +1340,9 @@ impl PrivateSetIntersection {
             let (commitment, randomness) = self.hash_commitment.random_commit(element, rng)?;
             commitments.push(commitment);
             randomnesses.push(randomness);
-        }
-
         Ok((commitments, randomnesses))
-    }
-
     /// Compute intersection proof
     pub fn compute_intersection_proof(
-        &self,
-        set_a_commitments: &[Vec<u8>],
-        set_b_commitments: &[Vec<u8>],
-        rng: &mut impl RngCore,
     ) -> ZkResult<Vec<u8>> {
         // Simplified PSI proof generation
         let mut proof = Vec::new();
@@ -1990,41 +1356,27 @@ impl PrivateSetIntersection {
                     intersection_indices.push((i, j));
                 }
             }
-        }
-
         // Encode intersection information
         proof.extend_from_slice(&(intersection_indices.len() as u32).to_le_bytes());
         
         for (i, j) in intersection_indices {
             proof.extend_from_slice(&(i as u32).to_le_bytes());
             proof.extend_from_slice(&(j as u32).to_le_bytes());
-        }
-
         // Add proof randomness
         let mut randomness = vec![0u8; 32];
         rng.fill_bytes(&mut randomness);
         proof.extend_from_slice(&randomness);
 
         Ok(proof)
-    }
-
     /// Verify intersection proof
     pub fn verify_intersection_proof(
-        &self,
-        proof: &[u8],
-        set_a_commitments: &[Vec<u8>],
-        set_b_commitments: &[Vec<u8>],
     ) -> ZkResult<Vec<usize>> {
         if proof.len() < 4 {
             return Err(ZkError::PsiError("Invalid proof format".to_string()));
-        }
-
         let intersection_size = u32::from_le_bytes([proof[0], proof[1], proof[2], proof[3]]) as usize;
         
         if proof.len() < 4 + intersection_size * 8 + 32 {
             return Err(ZkError::PsiError("Proof too short".to_string()));
-        }
-
         let mut intersection_in_a = Vec::new();
         
         for i in 0..intersection_size {
@@ -2039,16 +1391,10 @@ impl PrivateSetIntersection {
             // Verify indices are valid
             if idx_a >= set_a_commitments.len() || idx_b >= set_b_commitments.len() {
                 return Err(ZkError::PsiError("Invalid indices in proof".to_string()));
-            }
-
             // Verify commitments match
             if set_a_commitments[idx_a] != set_b_commitments[idx_b] {
                 return Err(ZkError::PsiError("Commitment mismatch".to_string()));
-            }
-
             intersection_in_a.push(idx_a);
-        }
-
         Ok(intersection_in_a)
     }
 }
@@ -2060,146 +1406,66 @@ impl PrivateSetIntersection {
 /// Create Pedersen commitment
 pub fn create_pedersen_commitment(security_bits: u32) -> ZkResult<PedersenCommitment> {
     let security_level = match security_bits {
-        128 => ZkSecurityLevel::Security128,
-        192 => ZkSecurityLevel::Security192,
-        256 => ZkSecurityLevel::Security256,
-        _ => return Err(ZkError::InvalidParameters("Unsupported security level".to_string())),
-    };
 
     let mut rng = OsRng;
     PedersenCommitment::setup(security_level, &mut rng)
-}
-
 /// Create hash commitment
 pub fn create_hash_commitment(security_bits: u32) -> ZkResult<HashCommitment> {
     let security_level = match security_bits {
-        128 => ZkSecurityLevel::Security128,
-        192 => ZkSecurityLevel::Security192,
-        256 => ZkSecurityLevel::Security256,
-        _ => return Err(ZkError::InvalidParameters("Unsupported security level".to_string())),
-    };
 
     Ok(HashCommitment::new(security_level))
-}
-
 /// Create Schnorr protocol
 pub fn create_schnorr_protocol(security_bits: u32) -> ZkResult<SchnorrProtocol> {
     let security_level = match security_bits {
-        128 => ZkSecurityLevel::Security128,
-        192 => ZkSecurityLevel::Security192,
-        256 => ZkSecurityLevel::Security256,
-        _ => return Err(ZkError::InvalidParameters("Unsupported security level".to_string())),
-    };
 
     let mut rng = OsRng;
     SchnorrProtocol::setup(security_level, &mut rng)
-}
-
 /// Create range proof system
 pub fn create_range_proof_system(security_bits: u32, range_bits: usize) -> ZkResult<RangeProofSystem> {
     let security_level = match security_bits {
-        128 => ZkSecurityLevel::Security128,
-        192 => ZkSecurityLevel::Security192,
-        256 => ZkSecurityLevel::Security256,
-        _ => return Err(ZkError::InvalidParameters("Unsupported security level".to_string())),
-    };
 
     if range_bits > 64 {
         return Err(ZkError::InvalidParameters("Range too large".to_string()));
-    }
-
     let mut rng = OsRng;
     RangeProofSystem::setup(security_level, range_bits, &mut rng)
-}
-
 /// Create Merkle tree from data
 pub fn create_merkle_tree(data: Vec<Vec<u8>>) -> ZkResult<MerkleTree> {
     MerkleTree::new(data)
-}
-
 /// Create polynomial commitment scheme
 pub fn create_polynomial_commitment(security_bits: u32, max_degree: usize) -> ZkResult<PolynomialCommitment> {
     let security_level = match security_bits {
-        128 => ZkSecurityLevel::Security128,
-        192 => ZkSecurityLevel::Security192,
-        256 => ZkSecurityLevel::Security256,
-        _ => return Err(ZkError::InvalidParameters("Unsupported security level".to_string())),
-    };
 
     let mut rng = OsRng;
     PolynomialCommitment::setup(security_level, max_degree, &mut rng)
-}
-
 /// Create PLONK protocol
 pub fn create_plonk_protocol(security_bits: u32, max_constraints: usize) -> ZkResult<PlonkProtocol> {
     let security_level = match security_bits {
-        128 => ZkSecurityLevel::Security128,
-        192 => ZkSecurityLevel::Security192,
-        256 => ZkSecurityLevel::Security256,
-        _ => return Err(ZkError::InvalidParameters("Unsupported security level".to_string())),
-    };
 
     let mut rng = OsRng;
     PlonkProtocol::setup(security_level, max_constraints, &mut rng)
-}
-
 /// Create STARK protocol
 pub fn create_stark_protocol(
-    security_bits: u32,
-    trace_length: usize,
-    extension_factor: usize,
 ) -> ZkResult<StarkProtocol> {
     let security_level = match security_bits {
-        128 => ZkSecurityLevel::Security128,
-        192 => ZkSecurityLevel::Security192,
-        256 => ZkSecurityLevel::Security256,
-        _ => return Err(ZkError::InvalidParameters("Unsupported security level".to_string())),
-    };
 
     StarkProtocol::setup(security_level, trace_length, extension_factor)
-}
-
 /// Create anonymous credentials system
 pub fn create_anonymous_credentials(
-    attributes: Vec<String>,
-    required_indices: Vec<usize>,
-    hidden_indices: Vec<usize>,
-    security_bits: u32,
 ) -> ZkResult<AnonymousCredentials> {
     let security_level = match security_bits {
-        128 => ZkSecurityLevel::Security128,
-        192 => ZkSecurityLevel::Security192,
-        256 => ZkSecurityLevel::Security256,
-        _ => return Err(ZkError::InvalidParameters("Unsupported security level".to_string())),
-    };
 
     let schema = CredentialSchema {
-        attributes,
-        required_attributes: required_indices,
-        hidden_attributes: hidden_indices,
-    };
 
     let mut rng = OsRng;
     AnonymousCredentials::setup(schema, security_level, &mut rng)
-}
-
 /// Create private set intersection protocol
 pub fn create_private_set_intersection(security_bits: u32, max_set_size: usize) -> ZkResult<PrivateSetIntersection> {
     let security_level = match security_bits {
-        128 => ZkSecurityLevel::Security128,
-        192 => ZkSecurityLevel::Security192,
-        256 => ZkSecurityLevel::Security256,
-        _ => return Err(ZkError::InvalidParameters("Unsupported security level".to_string())),
-    };
 
     Ok(PrivateSetIntersection::setup(security_level, max_set_size))
-}
-
 /// Create STARK execution trace
 pub fn create_stark_trace(num_steps: usize, num_registers: usize, modulus: u64) -> StarkTrace {
     StarkTrace::new(num_steps, num_registers, modulus)
-}
-
 /// Create polynomial from coefficients
 pub fn create_polynomial(coefficients: Vec<u64>, modulus: u64) -> Polynomial {
     let field_coefficients: Vec<FieldElement> = coefficients
@@ -2208,24 +1474,14 @@ pub fn create_polynomial(coefficients: Vec<u64>, modulus: u64) -> Polynomial {
         .collect();
     
     Polynomial::new(field_coefficients)
-}
-
 /// Create field element
 pub fn create_field_element(value: u64, modulus: u64) -> FieldElement {
     FieldElement::new(value, modulus)
-}
-
 /// Verify ZK proof (generic verification function)
 pub fn verify_zk_proof(
-    proof_type: &str,
-    proof_data: &[u8],
-    public_inputs: &[u64],
-    modulus: u64,
 ) -> ZkResult<bool> {
     if proof_data.is_empty() {
         return Ok(false);
-    }
-
     // Convert public inputs to field elements
     let field_inputs: Vec<FieldElement> = public_inputs
         .iter()
@@ -2253,21 +1509,14 @@ pub fn verify_zk_proof(
             // Basic verification for STARK proofs
             Ok(proof_data.len() >= 512 && !field_inputs.is_empty())
         }
-        _ => Err(ZkError::InvalidParameters(format!("Unknown proof type: {}", proof_type))),
     }
 }
 
 /// Generate ZK proof (generic proof generation function)
 pub fn generate_zk_proof(
-    proof_type: &str,
-    secret_inputs: &[u64],
-    public_inputs: &[u64],
-    modulus: u64,
 ) -> ZkResult<Vec<u8>> {
     if secret_inputs.is_empty() {
         return Err(ZkError::InvalidWitness("No secret inputs provided".to_string()));
-    }
-
     let mut rng = OsRng;
     let mut proof = Vec::new();
 
@@ -2321,82 +1570,48 @@ pub fn generate_zk_proof(
     }
 
     Ok(proof)
-}
-
 /// Batch verify multiple ZK proofs
 pub fn batch_verify_zk_proofs(
     proofs: &[(String, Vec<u8>, Vec<u64>)], // (proof_type, proof_data, public_inputs)
-    modulus: u64,
 ) -> ZkResult<Vec<bool>> {
     let mut results = Vec::new();
     
     for (proof_type, proof_data, public_inputs) in proofs {
         let result = verify_zk_proof(proof_type, proof_data, public_inputs, modulus)?;
         results.push(result);
-    }
-    
     Ok(results)
-}
-
 /// Create arithmetic circuit for R1CS
 pub fn create_arithmetic_circuit(
     constraints: Vec<(Vec<u64>, Vec<u64>, Vec<u64>)>, // (a, b, c) coefficients
-    num_variables: usize,
-    num_public: usize,
-    modulus: u64,
 ) -> ZkResult<ArithmeticCircuit> {
     if constraints.is_empty() {
         return Err(ZkError::InvalidCircuit("No constraints provided".to_string()));
-    }
-
     let mut circuit_constraints = Vec::new();
     
     for (a_coeffs, b_coeffs, c_coeffs) in constraints {
         if a_coeffs.len() != num_variables || b_coeffs.len() != num_variables || c_coeffs.len() != num_variables {
             return Err(ZkError::InvalidCircuit("Coefficient length mismatch".to_string()));
-        }
-        
         let a: Vec<FieldElement> = a_coeffs.into_iter().map(|c| FieldElement::new(c, modulus)).collect();
         let b: Vec<FieldElement> = b_coeffs.into_iter().map(|c| FieldElement::new(c, modulus)).collect();
         let c: Vec<FieldElement> = c_coeffs.into_iter().map(|c| FieldElement::new(c, modulus)).collect();
         
         circuit_constraints.push(Constraint { a, b, c });
-    }
-
     Ok(ArithmeticCircuit {
-        constraints: circuit_constraints,
-        num_variables,
-        num_public,
     })
-}
-
 /// Compute hash commitment to data
 pub fn hash_commit(data: &[u8], randomness: &[u8], security_bits: u32) -> ZkResult<Vec<u8>> {
     let commitment_scheme = create_hash_commitment(security_bits)?;
     commitment_scheme.commit(data, randomness)
-}
-
 /// Verify hash commitment opening
 pub fn verify_hash_commitment(
-    commitment: &[u8],
-    data: &[u8],
-    randomness: &[u8],
-    security_bits: u32,
 ) -> ZkResult<bool> {
     let commitment_scheme = create_hash_commitment(security_bits)?;
     commitment_scheme.verify(commitment, data, randomness)
-}
-
 /// Create zero-knowledge virtual machine state
 pub fn create_zk_vm_state(
-    program: &[u64],
-    initial_state: &[u64],
-    modulus: u64,
 ) -> ZkResult<StarkTrace> {
     if program.is_empty() || initial_state.is_empty() {
         return Err(ZkError::InvalidParameters("Program and initial state cannot be empty".to_string()));
-    }
-
     let num_steps = program.len().next_power_of_two().max(8);
     let num_registers = initial_state.len().max(4);
     
@@ -2405,14 +1620,10 @@ pub fn create_zk_vm_state(
     // Initialize first step with initial state
     for (register, &value) in initial_state.iter().enumerate() {
         trace.set(0, register, FieldElement::new(value, modulus))?;
-    }
-    
     // Simple VM execution (demonstration)
     for (step, &instruction) in program.iter().enumerate() {
         if step + 1 >= num_steps {
             break;
-        }
-        
         // Simple instruction: add instruction to register 0
         let current_value = trace.get(step, 0)?;
         let new_value = current_value.add(&FieldElement::new(instruction, modulus))?;
@@ -2426,5 +1637,3 @@ pub fn create_zk_vm_state(
     }
     
     Ok(trace)
-}
-

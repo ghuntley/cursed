@@ -1,34 +1,60 @@
+/// Error handling module for CURSED
+/// 
+/// This module provides comprehensive error handling for the CURSED language
+/// implementation, including error types, debugging contexts, and recovery.
+
 pub mod debug_context;
-pub mod types;
 
-pub use types::{SourceLocation, ErrorContext, ParseError, RuntimeError, IoError, ErrorManager, ErrorManagerConfig, ErrorCategory, ErrorSeverity, CursedErrorTrait};
-pub use debug_context::{DebugContext, DebugContextBuilder, DebugResult, IntoDebugContext};
-
-// Main CursedError type
 #[derive(Debug, Clone)]
 pub enum CursedError {
-    Parse(String),
-    Runtime(String),
-    Io(String),
-    Compilation(String),
+    SyntaxError(String),
+    TypeError(String),
+    RuntimeError(String),
+    ImportError(String),
+    CompilerError(String),
+    General(String),
 }
 
 impl std::fmt::Display for CursedError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            CursedError::Parse(msg) => write!(f, "Parse error: {}", msg),
-            CursedError::Runtime(msg) => write!(f, "Runtime error: {}", msg),
-            CursedError::Io(msg) => write!(f, "IO error: {}", msg),
-            CursedError::Compilation(msg) => write!(f, "Compilation error: {}", msg),
+            CursedError::SyntaxError(msg) => write!(f, "Syntax error: {}", msg),
+            CursedError::TypeError(msg) => write!(f, "Type error: {}", msg),
+            CursedError::RuntimeError(msg) => write!(f, "Runtime error: {}", msg),
+            CursedError::ImportError(msg) => write!(f, "Import error: {}", msg),
+            CursedError::CompilerError(msg) => write!(f, "Compiler error: {}", msg),
+            CursedError::General(msg) => write!(f, "Error: {}", msg),
         }
     }
 }
 
 impl std::error::Error for CursedError {}
 
-// Add conversion traits for database errors
-// impl From<crate::stdlib::database::error::DatabaseError> for crate::error::CursedError {
-//     fn from(err: crate::stdlib::database::error::DatabaseError) -> Self {
-//         crate::CursedError::Runtime(format!("Database error: {}", err))
-//     }
-// }
+pub type Result<T> = std::result::Result<T, CursedError>;
+
+// Convenience constructor functions
+impl CursedError {
+    pub fn syntax_error(msg: &str) -> Self {
+        CursedError::SyntaxError(msg.to_string())
+    }
+    
+    pub fn type_error(msg: &str) -> Self {
+        CursedError::TypeError(msg.to_string())
+    }
+    
+    pub fn runtime_error(msg: &str) -> Self {
+        CursedError::RuntimeError(msg.to_string())
+    }
+    
+    pub fn import_error(msg: &str) -> Self {
+        CursedError::ImportError(msg.to_string())
+    }
+    
+    pub fn compiler_error(msg: &str) -> Self {
+        CursedError::CompilerError(msg.to_string())
+    }
+    
+    pub fn general_error(msg: &str) -> Self {
+        CursedError::General(msg.to_string())
+    }
+}

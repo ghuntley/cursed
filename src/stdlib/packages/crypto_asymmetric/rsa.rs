@@ -21,11 +21,6 @@ pub const RSA_4096_BITS: usize = 4096;
 /// fr fr RSA key pair structure
 #[derive(Debug, Clone)]
 pub struct CursedRsaKeyPair {
-    pub public_key: RsaPublicKey,
-    pub private_key: RsaPrivateKey,
-    pub key_size: usize,
-}
-
 /// fr fr Padding schemes for RSA operations
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum RsaPadding {
@@ -36,22 +31,11 @@ pub enum RsaPadding {
     PssSha256,     // PSS with SHA-256 for signatures
     PssSha384,     // PSS with SHA-384 for signatures
     PssSha512,     // PSS with SHA-512 for signatures
-}
-
 impl RsaPadding {
     pub fn name(&self) -> &'static str {
         match self {
-            RsaPadding::Pkcs1v15 => "PKCS1v15",
-            RsaPadding::OaepSha256 => "OAEP-SHA256",
-            RsaPadding::OaepSha384 => "OAEP-SHA384",
-            RsaPadding::OaepSha512 => "OAEP-SHA512",
-            RsaPadding::PssSha256 => "PSS-SHA256",
-            RsaPadding::PssSha384 => "PSS-SHA384",
-            RsaPadding::PssSha512 => "PSS-SHA512",
         }
     }
-}
-
 /// fr fr Key serialization formats
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum KeyFormat {
@@ -59,26 +43,9 @@ pub enum KeyFormat {
     Pkcs1Der,      // PKCS#1 DER format
     Pkcs8Pem,      // PKCS#8 PEM format
     Pkcs8Der,      // PKCS#8 DER format
-}
-
 /// fr fr RSA error types
 #[derive(Debug, Clone, PartialEq)]
 pub enum RsaError {
-    InvalidKeySize(usize),
-    KeyGenerationFailed(String),
-    EncryptionFailed(String),
-    DecryptionFailed(String),
-    SigningFailed(String),
-    VerificationFailed(String),
-    InvalidPadding(String),
-    InvalidInput(String),
-    InvalidFormat(String),
-    SerializationFailed(String),
-    DeserializationFailed(String),
-    InsufficientEntropy,
-    Internal(String),
-}
-
 // impl std::fmt::Display for RsaError {
 //     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
 //         match self {
@@ -123,14 +90,10 @@ type Rsacrate::error::Result<T> = Result<T>;
 
 /// fr fr RSA implementation with real cryptographic operations
 pub struct RsaEngine {
-    rng: OsRng,
-}
-
 impl RsaEngine {
     /// slay Create new RSA engine with cryptographically secure RNG
     pub fn new() -> Self {
         Self {
-            rng: OsRng,
         }
     }
     
@@ -144,13 +107,7 @@ impl RsaEngine {
         // Validate key size - enforce minimum security standards
         if key_size < RSA_2048_BITS {
             return Err(RsaError::InvalidKeySize(key_size));
-        }
-        
         match key_size {
-            RSA_2048_BITS | RSA_3072_BITS | RSA_4096_BITS => {},
-            _ => return Err(RsaError::InvalidKeySize(key_size)),
-        }
-        
         // Generate RSA key pair using cryptographically secure methods
         let private_key = RsaPrivateKey::new(&mut self.rng, key_size)
             .map_err(|e| RsaError::KeyGenerationFailed(e.to_string()))?;
@@ -161,12 +118,7 @@ impl RsaEngine {
         self.validate_keypair(&public_key, &private_key)?;
         
         Ok(CursedRsaKeyPair {
-            public_key,
-            private_key,
-            key_size,
         })
-    }
-    
     /// slay RSA encrypt with public key using specified padding
     /// 
     /// # Security Notes
@@ -183,23 +135,18 @@ impl RsaEngine {
             RsaPadding::Pkcs1v15 => {
                 public_key.encrypt(&mut rng, Pkcs1v15Encrypt, plaintext)
                     .map_err(|e| RsaError::EncryptionFailed(e.to_string()))
-            },
             RsaPadding::OaepSha256 => {
                 let padding = Oaep::new::<Sha256>();
                 public_key.encrypt(&mut rng, padding, plaintext)
                     .map_err(|e| RsaError::EncryptionFailed(e.to_string()))
-            },
             RsaPadding::OaepSha384 => {
                 let padding = Oaep::new::<Sha384>();
                 public_key.encrypt(&mut rng, padding, plaintext)
                     .map_err(|e| RsaError::EncryptionFailed(e.to_string()))
-            },
             RsaPadding::OaepSha512 => {
                 let padding = Oaep::new::<Sha512>();
                 public_key.encrypt(&mut rng, padding, plaintext)
                     .map_err(|e| RsaError::EncryptionFailed(e.to_string()))
-            },
-            _ => Err(RsaError::InvalidPadding(format!("Padding {} not supported for encryption", padding.name()))),
         }
     }
     
@@ -214,32 +161,24 @@ impl RsaEngine {
         let expected_size = private_key.size();
         if ciphertext.len() != expected_size {
             return Err(RsaError::DecryptionFailed(format!(
-                "Invalid ciphertext size: expected {} bytes, got {}", 
                 expected_size, ciphertext.len()
             )));
-        }
-        
         match padding {
             RsaPadding::Pkcs1v15 => {
                 private_key.decrypt(Pkcs1v15Encrypt, ciphertext)
                     .map_err(|e| RsaError::DecryptionFailed(e.to_string()))
-            },
             RsaPadding::OaepSha256 => {
                 let padding = Oaep::new::<Sha256>();
                 private_key.decrypt(padding, ciphertext)
                     .map_err(|e| RsaError::DecryptionFailed(e.to_string()))
-            },
             RsaPadding::OaepSha384 => {
                 let padding = Oaep::new::<Sha384>();
                 private_key.decrypt(padding, ciphertext)
                     .map_err(|e| RsaError::DecryptionFailed(e.to_string()))
-            },
             RsaPadding::OaepSha512 => {
                 let padding = Oaep::new::<Sha512>();
                 private_key.decrypt(padding, ciphertext)
                     .map_err(|e| RsaError::DecryptionFailed(e.to_string()))
-            },
-            _ => Err(RsaError::InvalidPadding(format!("Padding {} not supported for decryption", padding.name()))),
         }
     }
     
@@ -258,23 +197,18 @@ impl RsaEngine {
                 let signing_key = rsa::pkcs1v15::SigningKey::<Sha256>::new(private_key.clone());
                 let signature = signing_key.sign_with_rng(&mut rng, message);
                 Ok(signature.to_bytes().to_vec())
-            },
             RsaPadding::PssSha256 => {
                 let signing_key = rsa::pss::SigningKey::<Sha256>::new(private_key.clone());
                 let signature = signing_key.sign_with_rng(&mut rng, message);
                 Ok(signature.to_bytes().to_vec())
-            },
             RsaPadding::PssSha384 => {
                 let signing_key = rsa::pss::SigningKey::<Sha384>::new(private_key.clone());
                 let signature = signing_key.sign_with_rng(&mut rng, message);
                 Ok(signature.to_bytes().to_vec())
-            },
             RsaPadding::PssSha512 => {
                 let signing_key = rsa::pss::SigningKey::<Sha512>::new(private_key.clone());
                 let signature = signing_key.sign_with_rng(&mut rng, message);
                 Ok(signature.to_bytes().to_vec())
-            },
-            _ => Err(RsaError::InvalidPadding(format!("Padding {} not supported for signing", padding.name()))),
         }
     }
     
@@ -289,39 +223,29 @@ impl RsaEngine {
         let expected_size = public_key.size();
         if signature.len() != expected_size {
             return Ok(false);
-        }
-        
         let result = match padding {
             RsaPadding::Pkcs1v15 => {
                 let verifying_key = rsa::pkcs1v15::VerifyingKey::<Sha256>::new(public_key.clone());
                 let sig = rsa::pkcs1v15::Signature::try_from(signature)
                     .map_err(|e| RsaError::VerificationFailed(e.to_string()))?;
                 verifying_key.verify(message, &sig)
-            },
             RsaPadding::PssSha256 => {
                 let verifying_key = rsa::pss::VerifyingKey::<Sha256>::new(public_key.clone());
                 let sig = rsa::pss::Signature::try_from(signature)
                     .map_err(|e| RsaError::VerificationFailed(e.to_string()))?;
                 verifying_key.verify(message, &sig)
-            },
             RsaPadding::PssSha384 => {
                 let verifying_key = rsa::pss::VerifyingKey::<Sha384>::new(public_key.clone());
                 let sig = rsa::pss::Signature::try_from(signature)
                     .map_err(|e| RsaError::VerificationFailed(e.to_string()))?;
                 verifying_key.verify(message, &sig)
-            },
             RsaPadding::PssSha512 => {
                 let verifying_key = rsa::pss::VerifyingKey::<Sha512>::new(public_key.clone());
                 let sig = rsa::pss::Signature::try_from(signature)
                     .map_err(|e| RsaError::VerificationFailed(e.to_string()))?;
                 verifying_key.verify(message, &sig)
-            },
-            _ => return Err(RsaError::InvalidPadding(format!("Padding {} not supported for verification", padding.name()))),
-        };
         
         Ok(result.is_ok())
-    }
-    
     /// slay Serialize private key to specified format
     /// 
     /// # Security Notes
@@ -334,21 +258,17 @@ impl RsaEngine {
                 let pem = private_key.to_pkcs1_pem(rsa::pkcs8::LineEnding::LF)
                     .map_err(|e| RsaError::SerializationFailed(e.to_string()))?;
                 Ok(Zeroizing::new(pem.as_bytes().to_vec()))
-            },
             KeyFormat::Pkcs1Der => {
                 let der = private_key.to_pkcs1_der()?;
                 Ok(Zeroizing::new(der.to_bytes().to_vec()))
-            },
             KeyFormat::Pkcs8Pem => {
                 let pem = private_key.to_pkcs8_pem(rsa::pkcs8::LineEnding::LF)
                     .map_err(|e| RsaError::SerializationFailed(e.to_string()))?;
                 Ok(Zeroizing::new(pem.as_bytes().to_vec()))
-            },
             KeyFormat::Pkcs8Der => {
                 let der = private_key.to_pkcs8_der()
                     .map_err(|e| RsaError::SerializationFailed(e.to_string()))?;
                 Ok(Zeroizing::new(der.to_bytes().to_vec()))
-            },
         }
     }
     
@@ -359,21 +279,17 @@ impl RsaEngine {
                 let pem = public_key.to_pkcs1_pem(rsa::pkcs8::LineEnding::LF)
                     .map_err(|e| RsaError::SerializationFailed(e.to_string()))?;
                 Ok(pem.as_bytes().to_vec())
-            },
             KeyFormat::Pkcs1Der => {
                 let der = public_key.to_pkcs1_der()?;
                 Ok(der.to_bytes().to_vec())
-            },
             KeyFormat::Pkcs8Pem => {
                 let pem = public_key.to_public_key_pem(rsa::pkcs8::LineEnding::LF)
                     .map_err(|e| RsaError::SerializationFailed(e.to_string()))?;
                 Ok(pem.as_bytes().to_vec())
-            },
             KeyFormat::Pkcs8Der => {
                 let der = public_key.to_public_key_der()
                     .map_err(|e| RsaError::SerializationFailed(e.to_string()))?;
                 Ok(der.to_bytes().to_vec())
-            },
         }
     }
     
@@ -390,7 +306,6 @@ impl RsaEngine {
                     RsaPrivateKey::from_pkcs1_der(key_data)
                         .map_err(|e| RsaError::DeserializationFailed(e.to_string()))
                 }
-            },
             KeyFormat::Pkcs8Pem | KeyFormat::Pkcs8Der => {
                 if format == KeyFormat::Pkcs8Pem {
                     let pem_str = std::str::from_utf8(key_data)
@@ -401,7 +316,6 @@ impl RsaEngine {
                     RsaPrivateKey::from_pkcs8_der(key_data)
                         .map_err(|e| RsaError::DeserializationFailed(e.to_string()))
                 }
-            },
         }
     }
     
@@ -418,7 +332,6 @@ impl RsaEngine {
                     RsaPublicKey::from_pkcs1_der(key_data)
                         .map_err(|e| RsaError::DeserializationFailed(e.to_string()))
                 }
-            },
             KeyFormat::Pkcs8Pem | KeyFormat::Pkcs8Der => {
                 if format == KeyFormat::Pkcs8Pem {
                     let pem_str = std::str::from_utf8(key_data)
@@ -429,7 +342,6 @@ impl RsaEngine {
                     RsaPublicKey::from_public_key_der(key_data)
                         .map_err(|e| RsaError::DeserializationFailed(e.to_string()))
                 }
-            },
         }
     }
     
@@ -449,28 +361,18 @@ impl RsaEngine {
         
         if decrypted != test_message {
             return Err(RsaError::KeyGenerationFailed("Generated keys do not match".to_string()));
-        }
-        
         Ok(())
-    }
-    
     fn validate_encryption_input(&self, public_key: &RsaPublicKey, plaintext: &[u8], padding: RsaPadding) -> RsaResult<()> {
         let key_size = public_key.size();
         let max_plaintext_len = match padding {
-            RsaPadding::Pkcs1v15 => key_size - 11,
             RsaPadding::OaepSha256 => key_size - 2 * 32 - 2, // 2 * hash_len + 2
             RsaPadding::OaepSha384 => key_size - 2 * 48 - 2, // 2 * hash_len + 2
             RsaPadding::OaepSha512 => key_size - 2 * 64 - 2, // 2 * hash_len + 2
-            _ => return Err(RsaError::InvalidPadding("Invalid padding for encryption".to_string())),
-        };
         
         if plaintext.len() > max_plaintext_len {
             return Err(RsaError::InvalidInput(format!(
-                "Plaintext too large: {} bytes (max {} bytes for {} with {}-bit key)",
                 plaintext.len(), max_plaintext_len, padding.name(), key_size * 8
             )));
-        }
-        
         Ok(())
     }
 }
@@ -490,10 +392,7 @@ pub fn rsa_generate_keypair(args: Vec<Value>) -> crate::error::Result<()> {
         RSA_2048_BITS
     } else {
         match &args[0] {
-            Value::Number(n) => *n as usize,
-            _ => RSA_2048_BITS,
         }
-    };
     
     let mut engine = RsaEngine::new();
     match engine.generate_keypair(key_size) {
@@ -505,14 +404,10 @@ pub fn rsa_generate_keypair(args: Vec<Value>) -> crate::error::Result<()> {
             // Serialize public key to PEM for easy transport
             if let Ok(public_pem) = engine.serialize_public_key(&keypair.public_key, KeyFormat::Pkcs8Pem) {
                 result.insert("public_key_pem".to_string(), Value::String(String::from_utf8_lossy(&public_pem).to_string()));
-            }
-            
             // Don't expose private key in API response for security
             result.insert("has_private_key".to_string(), Value::bool(true));
             
             Ok(Value::Object(result))
-        },
-        Err(e) => Err(CursedError::Runtime(format!("RSA key generation failed: {}", e))),
     }
 }
 
@@ -520,32 +415,17 @@ pub fn rsa_generate_keypair(args: Vec<Value>) -> crate::error::Result<()> {
 pub fn rsa_encrypt(args: Vec<Value>) -> crate::error::Result<()> {
     if args.len() < 2 {
         return Err(CursedError::Runtime("RSA encrypt requires public key and plaintext".to_string()));
-    }
-    
     let public_key_pem = match &args[0] {
-        Value::String(s) => s,
-        _ => return Err(CursedError::Runtime("Public key must be a PEM string".to_string())),
-    };
     
     let plaintext = match &args[1] {
-        Value::String(s) => s.as_bytes(),
-        _ => return Err(CursedError::Runtime("Plaintext must be a string".to_string())),
-    };
     
     let padding = if args.len() > 2 {
         match &args[2] {
             Value::String(s) => match s.as_str() {
-                "PKCS1v15" => RsaPadding::Pkcs1v15,
-                "OAEP-SHA256" => RsaPadding::OaepSha256,
-                "OAEP-SHA384" => RsaPadding::OaepSha384,
-                "OAEP-SHA512" => RsaPadding::OaepSha512,
                 _ => RsaPadding::OaepSha256, // Default to secure padding
-            },
-            _ => RsaPadding::OaepSha256,
         }
     } else {
         RsaPadding::OaepSha256 // Default to secure padding
-    };
     
     let engine = RsaEngine::new();
     
@@ -558,38 +438,20 @@ pub fn rsa_encrypt(args: Vec<Value>) -> crate::error::Result<()> {
         .map_err(|e| CursedError::Runtime(format!("Encryption failed: {}", e)))?;
     
     Ok(Value::String(base64::encode(ciphertext)))
-}
-
 /// slay RSA decrypt data with private key  
 pub fn rsa_decrypt(args: Vec<Value>) -> crate::error::Result<()> {
     if args.len() < 2 {
         return Err(CursedError::Runtime("RSA decrypt requires private key and ciphertext".to_string()));
-    }
-    
     let private_key_pem = match &args[0] {
-        Value::String(s) => s,
-        _ => return Err(CursedError::Runtime("Private key must be a PEM string".to_string())),
-    };
     
     let ciphertext_b64 = match &args[1] {
-        Value::String(s) => s,
-        _ => return Err(CursedError::Runtime("Ciphertext must be a base64 string".to_string())),
-    };
     
     let padding = if args.len() > 2 {
         match &args[2] {
             Value::String(s) => match s.as_str() {
-                "PKCS1v15" => RsaPadding::Pkcs1v15,
-                "OAEP-SHA256" => RsaPadding::OaepSha256,
-                "OAEP-SHA384" => RsaPadding::OaepSha384,
-                "OAEP-SHA512" => RsaPadding::OaepSha512,
-                _ => RsaPadding::OaepSha256,
-            },
-            _ => RsaPadding::OaepSha256,
         }
     } else {
         RsaPadding::OaepSha256
-    };
     
     let engine = RsaEngine::new();
     
@@ -606,38 +468,21 @@ pub fn rsa_decrypt(args: Vec<Value>) -> crate::error::Result<()> {
         .map_err(|e| CursedError::Runtime(format!("Decryption failed: {}", e)))?;
     
     Ok(Value::String(String::from_utf8_lossy(&plaintext).to_string()))
-}
-
 /// slay RSA sign data with private key
 pub fn rsa_sign(args: Vec<Value>) -> crate::error::Result<()> {
     if args.len() < 2 {
         return Err(CursedError::Runtime("RSA sign requires private key and message".to_string()));
-    }
-    
     let private_key_pem = match &args[0] {
-        Value::String(s) => s,
-        _ => return Err(CursedError::Runtime("Private key must be a PEM string".to_string())),
-    };
     
     let message = match &args[1] {
-        Value::String(s) => s.as_bytes(),
-        _ => return Err(CursedError::Runtime("Message must be a string".to_string())),
-    };
     
     let padding = if args.len() > 2 {
         match &args[2] {
             Value::String(s) => match s.as_str() {
-                "PKCS1v15" => RsaPadding::Pkcs1v15,
-                "PSS-SHA256" => RsaPadding::PssSha256,
-                "PSS-SHA384" => RsaPadding::PssSha384,
-                "PSS-SHA512" => RsaPadding::PssSha512,
                 _ => RsaPadding::PssSha256, // Default to secure PSS padding
-            },
-            _ => RsaPadding::PssSha256,
         }
     } else {
         RsaPadding::PssSha256 // Default to secure PSS padding
-    };
     
     let engine = RsaEngine::new();
     
@@ -650,43 +495,22 @@ pub fn rsa_sign(args: Vec<Value>) -> crate::error::Result<()> {
         .map_err(|e| CursedError::Runtime(format!("Signing failed: {}", e)))?;
     
     Ok(Value::String(base64::encode(signature)))
-}
-
 /// slay RSA verify signature with public key
 pub fn rsa_verify(args: Vec<Value>) -> crate::error::Result<()> {
     if args.len() < 3 {
         return Err(CursedError::Runtime("RSA verify requires public key, message, and signature".to_string()));
-    }
-    
     let public_key_pem = match &args[0] {
-        Value::String(s) => s,
-        _ => return Err(CursedError::Runtime("Public key must be a PEM string".to_string())),
-    };
     
     let message = match &args[1] {
-        Value::String(s) => s.as_bytes(),
-        _ => return Err(CursedError::Runtime("Message must be a string".to_string())),
-    };
     
     let signature_b64 = match &args[2] {
-        Value::String(s) => s,
-        _ => return Err(CursedError::Runtime("Signature must be a base64 string".to_string())),
-    };
     
     let padding = if args.len() > 3 {
         match &args[3] {
             Value::String(s) => match s.as_str() {
-                "PKCS1v15" => RsaPadding::Pkcs1v15,
-                "PSS-SHA256" => RsaPadding::PssSha256,
-                "PSS-SHA384" => RsaPadding::PssSha384,
-                "PSS-SHA512" => RsaPadding::PssSha512,
-                _ => RsaPadding::PssSha256,
-            },
-            _ => RsaPadding::PssSha256,
         }
     } else {
         RsaPadding::PssSha256
-    };
     
     let engine = RsaEngine::new();
     
@@ -703,5 +527,3 @@ pub fn rsa_verify(args: Vec<Value>) -> crate::error::Result<()> {
         .map_err(|e| CursedError::Runtime(format!("Verification failed: {}", e)))?;
     
     Ok(Value::bool(is_valid))
-}
-

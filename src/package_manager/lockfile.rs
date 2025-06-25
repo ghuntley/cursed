@@ -18,38 +18,25 @@ pub const LOCK_FILE_VERSION: u32 = 1;
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct LockFile {
     /// Lock file format version
-    pub version: u32,
     
     /// Locked packages with resolved versions
     #[serde(rename = "package")]
-    pub packages: Vec<LockedPackage>,
     
     /// Lock file metadata
-    pub metadata: LockFileMetadata,
-}
-
 /// Individual locked package entry
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct LockedPackage {
     /// Package name
-    pub name: String,
     
     /// Exact version that was resolved
-    pub version: String,
     
     /// Source of the package (registry, git, path)
-    pub source: PackageSource,
     
     /// Dependencies of this package with locked versions
-    pub dependencies: Vec<String>,
     
     /// Checksum for integrity verification
-    pub checksum: String,
     
     /// Optional build metadata
-    pub build_metadata: Option<HashMap<String, String>>,
-}
-
 /// Package source information
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(tag = "type")]
@@ -57,94 +44,58 @@ pub enum PackageSource {
     /// Registry package
     Registry {
         /// Registry URL
-        url: String,
-    },
     
     /// Git repository
     Git {
         /// Git repository URL
-        url: String,
         /// Branch, tag, or commit
-        reference: String,
-    },
     
     /// Local path
     Path {
         /// Relative or absolute path
-        path: String,
-    },
-}
-
 /// Lock file metadata
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct LockFileMetadata {
     /// When the lock file was generated
-    pub generated_at: String,
     
     /// Version of the package manager that generated this
-    pub cursed_version: String,
     
     /// Platform information
-    pub platform: String,
     
     /// Optional workspace root
-    pub workspace_root: Option<String>,
-}
-
 /// Lock file manager
 #[derive(Debug)]
 pub struct LockFileManager {
     /// Path to the lock file
-    pub lock_file_path: PathBuf,
     
     /// Current lock file data
-    pub lock_file: Option<LockFile>,
-}
-
 /// Lock file specific errors
 #[derive(CursedError, Debug)]
 pub enum LockFileError {
     #[error("Lock file not found at {path:?}")]
-    NotFound { path: PathBuf },
     
     #[error("Lock file format version {found} is not supported (expected {expected})")]
-    UnsupportedVersion { found: u32, expected: u32 },
     
     #[error("Checksum mismatch for package {package}: expected {expected}, got {actual}")]
     ChecksumMismatch {
-        package: String,
-        expected: String,
-        actual: String,
-    },
     
     #[error("Lock file is corrupted: {reason}")]
-    Corrupted { reason: String },
     
     #[error("Lock file validation failed: {reason}")]
-    ValidationFailed { reason: String },
     
     #[error("Package {package} version {version} not found in lock file")]
-    PackageNotLocked { package: String, version: String },
     
     #[error("Lock file is out of date with package dependencies")]
-    OutOfDate,
     
     #[error("IO error: {0}")]
-    Io(#[from] std::io::Error),
     
     #[error("TOML parsing error: {0}")]
-    TomlParse(#[from] toml::de::Error),
     
     #[error("TOML serialization error: {0}")]
-    TomlSerialize(#[from] toml::ser::Error),
-}
-
 impl LockFileManager {
     /// Create a new lock file manager
     pub fn new<P: AsRef<Path>>(lock_file_path: P) -> Self {
         Self {
-            lock_file_path: lock_file_path.as_ref().to_path_buf(),
-            lock_file: None,
         }
     }
     
@@ -152,67 +103,35 @@ impl LockFileManager {
     pub fn load(&mut self) -> crate::error::Result<()> {
         if !self.lock_file_path.exists() {
             return Err(LockFileError::NotFound {
-                path: self.lock_file_path.clone(),
             });
-        }
-        
         let content = std::fs::read_to_string(&self.lock_file_path)?;
         let lock_file: LockFile = toml::from_str(&content)?;
         
         // Validate version compatibility
         if lock_file.version != LOCK_FILE_VERSION {
             return Err(LockFileError::UnsupportedVersion {
-                found: lock_file.version,
-                expected: LOCK_FILE_VERSION,
             });
-        }
-        
         self.lock_file = Some(lock_file);
         Ok(())
-    }
-    
     /// Generate lock file from resolved dependencies
     pub fn generate_from_dependencies(
-        &mut self,
-        dependencies: &[PackageMetadata],
-        workspace_root: Option<String>,
     ) -> crate::error::Result<()> {
         let mut packages = Vec::new();
         
         for dep in dependencies {
             let locked_package = LockedPackage {
-                name: dep.name.clone(),
-                version: dep.version.clone(),
                 source: PackageSource::Registry {
                     url: "registry+https://packages.cursed-lang.org/".to_string(),
-                },
-                dependencies: dep.dependencies.keys().cloned().collect(),
-                checksum: self.calculate_checksum(dep)?,
-                build_metadata: None,
-            };
             packages.push(locked_package);
-        }
-        
         let lock_file = LockFile {
-            version: LOCK_FILE_VERSION,
-            packages,
             metadata: LockFileMetadata {
-                generated_at: chrono::Utc::now().to_rfc3339(),
-                cursed_version: env!("CARGO_PKG_VERSION").to_string(),
-                platform: format!("{}-{}", std::env::consts::OS, std::env::consts::ARCH),
-                workspace_root,
-            },
-        };
         
         self.lock_file = Some(lock_file);
         Ok(())
-    }
-    
     /// Save lock file to disk
     pub fn save(&self) -> crate::error::Result<()> {
         let lock_file = self.lock_file.as_ref().ok_or_else(|| {
             LockFileError::Corrupted {
-                reason: "No lock file data to save".to_string(),
             }
         })?;
         
@@ -221,46 +140,30 @@ impl LockFileManager {
         // Ensure parent directory exists
         if let Some(parent) = self.lock_file_path.parent() {
             std::fs::create_dir_all(parent)?;
-        }
-        
         std::fs::write(&self.lock_file_path, content)?;
         tracing::info!(path = ?self.lock_file_path, "Lock file saved successfully");
         Ok(())
-    }
-    
     /// Validate lock file integrity
     pub fn validate(&self) -> crate::error::Result<()> {
         let lock_file = self.lock_file.as_ref().ok_or_else(|| {
             LockFileError::Corrupted {
-                reason: "No lock file loaded".to_string(),
             }
         })?;
         
         // Check version compatibility
         if lock_file.version != LOCK_FILE_VERSION {
             return Err(LockFileError::UnsupportedVersion {
-                found: lock_file.version,
-                expected: LOCK_FILE_VERSION,
             });
-        }
-        
         // Validate package entries
         for package in &lock_file.packages {
             if package.name.is_empty() {
                 return Err(LockFileError::ValidationFailed {
-                    reason: "Package name cannot be empty".to_string(),
                 });
-            }
-            
             if package.version.is_empty() {
                 return Err(LockFileError::ValidationFailed {
-                    reason: format!("Package {} has empty version", package.name),
                 });
-            }
-            
             if package.checksum.is_empty() {
                 return Err(LockFileError::ValidationFailed {
-                    reason: format!("Package {} has empty checksum", package.name),
                 });
             }
         }
@@ -271,49 +174,32 @@ impl LockFileManager {
             let key = (&package.name, &package.version);
             if seen_packages.contains_key(&key) {
                 return Err(LockFileError::ValidationFailed {
-                    reason: format!("Duplicate package entry: {} {}", package.name, package.version),
                 });
             }
             seen_packages.insert(key, package);
-        }
-        
         Ok(())
-    }
-    
     /// Get locked version for a package
     pub fn get_locked_version(&self, package_name: &str) -> Option<&LockedPackage> {
         self.lock_file.as_ref()?.packages.iter()
             .find(|pkg| pkg.name == package_name)
-    }
-    
     /// Check if lock file exists
     pub fn exists(&self) -> bool {
         self.lock_file_path.exists()
-    }
-    
     /// Update lock file with new dependencies
     pub fn update_dependencies(&mut self, new_dependencies: &[PackageMetadata]) -> crate::error::Result<()> {
         self.generate_from_dependencies(new_dependencies, None)?;
         self.save()
-    }
-    
     /// Get all locked packages
     pub fn get_packages(&self) -> Option<&[LockedPackage]> {
         self.lock_file.as_ref().map(|lf| lf.packages.as_slice())
-    }
-    
     /// Verify package checksum
     pub fn verify_package_checksum(&self, package: &PackageMetadata) -> crate::error::Result<()> {
         let locked_package = self.get_locked_version(&package.name)
             .ok_or_else(|| LockFileError::PackageNotLocked {
-                package: package.name.clone(),
-                version: package.version.clone(),
             })?;
         
         let calculated_checksum = self.calculate_checksum(package)?;
         Ok(locked_package.checksum == calculated_checksum)
-    }
-    
     /// Calculate checksum for a package
     fn calculate_checksum(&self, package: &PackageMetadata) -> crate::error::Result<()> {
         let mut hasher = Sha256::new();
@@ -329,42 +215,22 @@ impl LockFileManager {
         for (name, version) in deps {
             hasher.update(name.as_bytes());
             hasher.update(version.to_string().as_bytes());
-        }
-        
         let result = hasher.finalize();
         Ok(format!("sha256:{:x}", result))
-    }
-    
     /// Convert lock file error to package manager error
     pub fn to_package_manager_error(err: LockFileError) -> PackageManagerError {
         match err {
-            LockFileError::Io(io_err) => PackageManagerError::Io(io_err),
             LockFileError::TomlParse(_) => PackageManagerError::InvalidMetadata {
-                reason: "Invalid lock file format".to_string(),
-            },
             LockFileError::TomlSerialize(e) => PackageManagerError::InvalidMetadata {
-                reason: format!("Lock file serialization failed: {}", e),
-            },
             _ => PackageManagerError::InvalidMetadata {
-                reason: err.to_string(),
-            },
         }
     }
-}
-
 /// Helper functions for lock file operations
 impl LockFile {
     /// Create a new empty lock file
     pub fn new() -> Self {
         Self {
-            version: LOCK_FILE_VERSION,
-            packages: Vec::new(),
             metadata: LockFileMetadata {
-                generated_at: chrono::Utc::now().to_rfc3339(),
-                cursed_version: env!("CARGO_PKG_VERSION").to_string(),
-                platform: format!("{}-{}", std::env::consts::OS, std::env::consts::ARCH),
-                workspace_root: None,
-            },
         }
     }
     
@@ -376,13 +242,9 @@ impl LockFile {
         
         // Sort packages by name for consistency
         self.packages.sort_by(|a, b| a.name.cmp(&b.name));
-    }
-    
     /// Remove a package from the lock file
     pub fn remove_package(&mut self, name: &str) {
         self.packages.retain(|p| p.name != name);
-    }
-    
     /// Find packages that depend on a given package
     pub fn find_dependents(&self, package_name: &str) -> Vec<&LockedPackage> {
         self.packages.iter()
@@ -406,10 +268,6 @@ pub fn parse_dependency_string(dep_str: &str) -> Option<(&str, &str)> {
     let name = parts.next()?;
     let version = parts.next()?;
     Some((name, version))
-}
-
 /// Format dependency as lock file string
 pub fn format_dependency_string(name: &str, version: &str) -> String {
     format!("{} {}", name, version)
-}
-

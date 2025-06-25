@@ -129,8 +129,6 @@ impl DocsCommand {
                     .args(["verbose", "quiet"])
                     .required(false)
             )
-    }
-
     /// Execute the docs command
     pub fn execute(matches: &clap::ArgMatches) -> crate::error::Result<()> {
         let input_path = matches.get_one::<PathBuf>("input").unwrap();
@@ -145,26 +143,12 @@ impl DocsCommand {
 
         // Build configuration
         let mut config = DocGeneratorConfig {
-            output_dir: output_path.clone(),
-            format,
-            include_examples: !matches.get_flag("no-examples"),
-            include_private: matches.get_flag("include-private"),
-            generate_cross_refs: !matches.get_flag("no-cross-refs"),
-            custom_css: None,
-            template_dir: matches.get_one::<PathBuf>("template-dir").cloned(),
-            title: matches.get_one::<String>("title").unwrap().clone(),
-            description: matches.get_one::<String>("description").cloned(),
-            version: matches.get_one::<String>("version").cloned(),
             authors: matches.get_many::<String>("author")
                 .map(|vals| vals.cloned().collect())
-                .unwrap_or_default(),
-            base_url: matches.get_one::<String>("base-url").cloned(),
-        };
 
         // Load custom CSS if provided
         if let Some(css_path) = matches.get_one::<PathBuf>("custom-css") {
             match std::fs::read_to_string(css_path) {
-                Ok(css_content) => config.custom_css = Some(css_content),
                 Err(e) => {
                     if !quiet {
                         eprintln!("Warning: Failed to load custom CSS from {}: {}", css_path.display(), e);
@@ -191,8 +175,6 @@ impl DocsCommand {
             println!("  Include private: {}", config.include_private);
             println!("  Include examples: {}", config.include_examples);
             println!("  Generate cross-refs: {}", config.generate_cross_refs);
-        }
-
         // Create and run generator
         let mut generator = DocumentationGenerator::new(config);
 
@@ -200,7 +182,6 @@ impl DocsCommand {
             generator.generate_from_files(vec![input_path.clone()])
         } else {
             generator.generate_from_directory(input_path)
-        };
 
         match result {
             Ok(()) => {
@@ -232,24 +213,9 @@ impl DocsCommand {
                 Err(e)
             }
         }
-    }
-
     /// Generate documentation for the entire CURSED standard library
     pub fn generate_stdlib_docs(output_dir: &PathBuf, format: DocFormat) -> crate::error::Result<()> {
         let config = DocGeneratorConfig {
-            output_dir: output_dir.clone(),
-            format,
-            include_examples: true,
-            include_private: false,
-            generate_cross_refs: true,
-            custom_css: None,
-            template_dir: None,
-            title: "CURSED Standard Library".to_string(),
-            description: Some("Comprehensive documentation for the CURSED programming language standard library".to_string()),
-            version: Some(env!("CARGO_PKG_VERSION").to_string()),
-            authors: vec!["CURSED Team".to_string()],
-            base_url: None,
-        };
 
         let mut generator = DocumentationGenerator::new(config);
         
@@ -265,19 +231,6 @@ impl DocsCommand {
     /// Generate API documentation for external tools
     pub fn generate_api_docs(input_dir: &PathBuf, output_dir: &PathBuf) -> crate::error::Result<()> {
         let config = DocGeneratorConfig {
-            output_dir: output_dir.clone(),
-            format: DocFormat::Json,
-            include_examples: true,
-            include_private: false,
-            generate_cross_refs: true,
-            custom_css: None,
-            template_dir: None,
-            title: "CURSED API Documentation".to_string(),
-            description: Some("Machine-readable API documentation for tooling integration".to_string()),
-            version: Some(env!("CARGO_PKG_VERSION").to_string()),
-            authors: vec!["CURSED Team".to_string()],
-            base_url: None,
-        };
 
         let mut generator = DocumentationGenerator::new(config);
         generator.generate_from_directory(input_dir)?;
@@ -285,8 +238,6 @@ impl DocsCommand {
         // Also generate search index and schema files
         println!("Generated API documentation with search index and schema");
         Ok(())
-    }
-
     /// Quick documentation generation with sensible defaults
     pub fn quick_generate(input_path: &PathBuf) -> crate::error::Result<()> {
         let output_path = input_path.parent()
@@ -294,19 +245,6 @@ impl DocsCommand {
             .join("docs");
 
         let config = DocGeneratorConfig {
-            output_dir: output_path.clone(),
-            format: DocFormat::Html,
-            include_examples: true,
-            include_private: false,
-            generate_cross_refs: true,
-            custom_css: None,
-            template_dir: None,
-            title: "Project Documentation".to_string(),
-            description: None,
-            version: None,
-            authors: Vec::new(),
-            base_url: None,
-        };
 
         let mut generator = DocumentationGenerator::new(config);
         
@@ -314,8 +252,6 @@ impl DocsCommand {
             generator.generate_from_files(vec![input_path.clone()])?;
         } else {
             generator.generate_from_directory(input_path)?;
-        }
-
         println!("Quick documentation generated in {}", output_path.display());
         Ok(())
     }
@@ -329,8 +265,6 @@ pub mod utils {
     pub fn has_cursed_files(path: &PathBuf) -> bool {
         if path.is_file() {
             return path.extension().map_or(false, |ext| ext == "csd");
-        }
-
         if path.is_dir() {
             return std::fs::read_dir(path)
                 .map(|entries| {
@@ -343,11 +277,7 @@ pub mod utils {
                         })
                 })
                 .unwrap_or(false);
-        }
-
         false
-    }
-
     /// Detect project metadata from common files
     pub fn detect_project_metadata(project_dir: &PathBuf) -> (Option<String>, Option<String>, Vec<String>) {
         let mut title = None;
@@ -377,19 +307,13 @@ pub mod utils {
             title = project_dir.file_name()
                 .and_then(|name| name.to_str())
                 .map(|name| format!("{} Documentation", name));
-        }
-
         (title, description, authors)
-    }
-
     /// Validate documentation configuration
     pub fn validate_config(config: &DocGeneratorConfig) -> Result<(), Vec<String>> {
         let mut errors = Vec::new();
 
         if config.title.is_empty() {
             errors.push("Title cannot be empty".to_string());
-        }
-
         if !config.output_dir.exists() {
             if let Err(e) = std::fs::create_dir_all(&config.output_dir) {
                 errors.push(format!("Cannot create output directory: {}", e));

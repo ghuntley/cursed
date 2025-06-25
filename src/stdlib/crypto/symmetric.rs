@@ -27,21 +27,6 @@ use hmac::{Hmac, Mac};
 /// fr fr Comprehensive crypto error types
 #[derive(Debug, Clone)]
 pub enum CryptoError {
-    InvalidKeySize(String),
-    InvalidIvSize(String),
-    InvalidNonceSize(String),
-    InvalidDataSize(String),
-    EncryptionFailed(String),
-    DecryptionFailed(String),
-    AuthenticationFailed(String),
-    KeyDerivationFailed(String),
-    RandomGenerationFailed(String),
-    UnsupportedCipher(String),
-    UnsupportedMode(String),
-    PaddingError(String),
-    Internal(String),
-}
-
 // impl fmt::Display for CryptoError {
 //     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
 //         match self {
@@ -70,23 +55,9 @@ pub type CryptoResult<T> = std::result::Result<T, CryptoError>;
 /// fr fr Encryption result with metadata
 #[derive(Debug, Clone)]
 pub struct EncryptionResult {
-    pub ciphertext: Vec<u8>,
-    pub iv: Option<Vec<u8>>,
-    pub nonce: Option<Vec<u8>>,
-    pub tag: Option<Vec<u8>>,
-    pub salt: Option<Vec<u8>>,
-    pub algorithm: String,
-    pub mode: String,
-}
-
 /// fr fr Decryption result
 #[derive(Debug, Clone)]
 pub struct DecryptionResult {
-    pub plaintext: Vec<u8>,
-    pub verified: bool,
-    pub algorithm: String,
-}
-
 /// fr fr Symmetric encryption trait
 pub trait SymmetricEncryption {
     /// slay Encrypt data
@@ -100,14 +71,10 @@ pub trait SymmetricEncryption {
     
     /// slay Get IV/nonce size in bytes
     fn iv_size(&self) -> usize;
-}
-
 /// fr fr Symmetric decryption trait
 pub trait SymmetricDecryption {
     /// slay Decrypt data
     fn decrypt(&self, ciphertext: &[u8], associated_data: &[u8], metadata: &EncryptionResult) -> CryptoResult<DecryptionResult>;
-}
-
 /// fr fr Authenticated encryption trait
 pub trait AuthenticatedEncryption: SymmetricEncryption + SymmetricDecryption {
     /// slay Get authentication tag size
@@ -122,11 +89,6 @@ pub trait AuthenticatedEncryption: SymmetricEncryption + SymmetricDecryption {
 /// fr fr Secure encryption key with automatic zeroing
 #[derive(Debug)]
 pub struct EncryptionKey {
-    key_data: SecureMemory,
-    algorithm: String,
-    size: usize,
-}
-
 impl EncryptionKey {
     /// slay Create new encryption key
     pub fn new(key_data: Vec<u8>, algorithm: String) -> CryptoResult<Self> {
@@ -134,27 +96,16 @@ impl EncryptionKey {
         let secure_key = SecureMemory::new(key_data)?;
         
         Ok(Self {
-            key_data: secure_key,
-            algorithm,
-            size,
         })
-    }
-    
     /// slay Get key data (read-only)
     pub fn as_bytes(&self) -> &[u8] {
         self.key_data.as_bytes()
-    }
-    
     /// slay Get key size
     pub fn size(&self) -> usize {
         self.size
-    }
-    
     /// slay Get algorithm
     pub fn algorithm(&self) -> &str {
         &self.algorithm
-    }
-    
     /// slay Generate random key for algorithm
     pub fn generate(algorithm: &str, size: usize) -> CryptoResult<Self> {
         let mut key_data = vec![0u8; size];
@@ -173,27 +124,17 @@ impl Drop for EncryptionKey {
 
 /// fr fr AES-256-CBC implementation
 pub struct Aes256Cbc {
-    key: EncryptionKey,
-}
-
 impl Aes256Cbc {
     /// slay Create new AES-256-CBC cipher
     pub fn new(key: &[u8]) -> CryptoResult<Self> {
         if key.len() != 32 {
             return Err(CryptoError::InvalidKeySize(format!("AES-256 requires 32-byte key, got {}", key.len())));
-        }
-        
         Ok(Self {
-            key: EncryptionKey::new(key.to_vec(), "AES-256-CBC".to_string())?,
         })
-    }
-    
     /// slay Generate new AES-256-CBC cipher with random key
     pub fn generate() -> CryptoResult<Self> {
         let key = EncryptionKey::generate("AES-256-CBC", 32)?;
         Ok(Self { key })
-    }
-    
     /// Apply PKCS#7 padding
     fn apply_pkcs7_padding(&self, data: &[u8]) -> Vec<u8> {
         let block_size = 16;
@@ -201,19 +142,13 @@ impl Aes256Cbc {
         let mut padded = data.to_vec();
         padded.extend(vec![padding_len as u8; padding_len]);
         padded
-    }
-    
     /// Remove PKCS#7 padding
     fn remove_pkcs7_padding(&self, data: &[u8]) -> CryptoResult<Vec<u8>> {
         if data.is_empty() {
             return Err(CryptoError::PaddingError("Empty data for padding removal".to_string()));
-        }
-        
         let padding_len = *data.last().unwrap() as usize;
         if padding_len == 0 || padding_len > 16 || padding_len > data.len() {
             return Err(CryptoError::PaddingError("Invalid padding length".to_string()));
-        }
-        
         // Verify padding bytes
         for &byte in &data[data.len() - padding_len..] {
             if byte != padding_len as u8 {
@@ -243,24 +178,11 @@ impl SymmetricEncryption for Aes256Cbc {
         let ciphertext = cipher.encrypt_vec(&padded_plaintext);
         
         Ok(EncryptionResult {
-            ciphertext,
-            iv: Some(iv),
-            nonce: None,
-            tag: None,
-            salt: None,
-            algorithm: "AES-256".to_string(),
-            mode: "CBC".to_string(),
         })
-    }
-    
     fn algorithm_name(&self) -> &str {
         "AES-256-CBC"
-    }
-    
     fn key_size(&self) -> usize {
         32
-    }
-    
     fn iv_size(&self) -> usize {
         16
     }
@@ -273,8 +195,6 @@ impl SymmetricDecryption for Aes256Cbc {
         
         if iv.len() != 16 {
             return Err(CryptoError::InvalidIvSize(format!("Expected 16-byte IV, got {}", iv.len())));
-        }
-        
         // Real AES-CBC decryption
         type Aes256CbcDec = cbc::Decryptor<Aes256>;
         let cipher = Aes256CbcDec::new_from_slices(self.key.as_bytes(), iv)
@@ -287,35 +207,22 @@ impl SymmetricDecryption for Aes256Cbc {
         let unpadded = self.remove_pkcs7_padding(&plaintext)?;
         
         Ok(DecryptionResult {
-            plaintext: unpadded,
-            verified: true,
-            algorithm: "AES-256-CBC".to_string(),
         })
     }
 }
 
 /// fr fr AES-256-GCM implementation (Authenticated Encryption)
 pub struct Aes256Gcm {
-    key: EncryptionKey,
-    cipher: AesGcmCipher,
-}
-
 impl Aes256Gcm {
     /// slay Create new AES-256-GCM cipher
     pub fn new(key: &[u8]) -> CryptoResult<Self> {
         if key.len() != 32 {
             return Err(CryptoError::InvalidKeySize(format!("AES-256 requires 32-byte key, got {}", key.len())));
-        }
-        
         let aes_key = Key::<AesGcmCipher>::from_slice(key);
         let cipher = AesGcmCipher::new(aes_key);
         
         Ok(Self {
-            key: EncryptionKey::new(key.to_vec(), "AES-256-GCM".to_string())?,
-            cipher,
         })
-    }
-    
     /// slay Generate new AES-256-GCM cipher with random key
     pub fn generate() -> CryptoResult<Self> {
         let key = EncryptionKey::generate("AES-256-GCM", 32)?;
@@ -340,10 +247,7 @@ impl SymmetricEncryption for Aes256Gcm {
             Payload::from(plaintext)
         } else {
             Payload {
-                msg: plaintext,
-                aad: associated_data,
             }
-        };
         
         // Perform AES-GCM encryption
         let ciphertext_with_tag = self.cipher.encrypt(nonce, payload)
@@ -352,29 +256,14 @@ impl SymmetricEncryption for Aes256Gcm {
         // Split ciphertext and tag (tag is last 16 bytes)
         if ciphertext_with_tag.len() < 16 {
             return Err(CryptoError::EncryptionFailed("Invalid ciphertext length".to_string()));
-        }
-        
         let (ciphertext, tag) = ciphertext_with_tag.split_at(ciphertext_with_tag.len() - 16);
         
         Ok(EncryptionResult {
-            ciphertext: ciphertext.to_vec(),
-            iv: None,
-            nonce: Some(nonce_bytes),
-            tag: Some(tag.to_vec()),
-            salt: None,
-            algorithm: "AES-256".to_string(),
-            mode: "GCM".to_string(),
         })
-    }
-    
     fn algorithm_name(&self) -> &str {
         "AES-256-GCM"
-    }
-    
     fn key_size(&self) -> usize {
         32
-    }
-    
     fn iv_size(&self) -> usize {
         12
     }
@@ -390,12 +279,8 @@ impl SymmetricDecryption for Aes256Gcm {
         
         if nonce_bytes.len() != 12 {
             return Err(CryptoError::InvalidNonceSize(format!("Expected 12-byte nonce, got {}", nonce_bytes.len())));
-        }
-        
         if tag.len() != 16 {
             return Err(CryptoError::InvalidDataSize(format!("Expected 16-byte tag, got {}", tag.len())));
-        }
-        
         let nonce = Nonce::from_slice(nonce_bytes);
         
         // Combine ciphertext and tag for AES-GCM decryption
@@ -407,19 +292,13 @@ impl SymmetricDecryption for Aes256Gcm {
             Payload::from(ciphertext_with_tag.as_slice())
         } else {
             Payload {
-                msg: &ciphertext_with_tag,
-                aad: associated_data,
             }
-        };
         
         // Perform AES-GCM decryption (includes authentication verification)
         let plaintext = self.cipher.decrypt(nonce, payload)
             .map_err(|e| CryptoError::AuthenticationFailed(format!("AES-GCM decryption/verification failed: {:?}", e)))?;
         
         Ok(DecryptionResult {
-            plaintext,
-            verified: true,
-            algorithm: "AES-256-GCM".to_string(),
         })
     }
 }
@@ -432,21 +311,13 @@ impl AuthenticatedEncryption for Aes256Gcm {
 
 /// fr fr ChaCha20 stream cipher wrapper
 pub struct ChaCha20Cipher {
-    key: EncryptionKey,
-}
-
 impl ChaCha20Cipher {
     /// slay Create new ChaCha20 cipher
     pub fn new(key: &[u8]) -> CryptoResult<Self> {
         if key.len() != 32 {
             return Err(CryptoError::InvalidKeySize(format!("ChaCha20 requires 32-byte key, got {}", key.len())));
-        }
-        
         Ok(Self {
-            key: EncryptionKey::new(key.to_vec(), "ChaCha20".to_string())?,
         })
-    }
-    
     /// slay Generate new ChaCha20 cipher with random key
     pub fn generate() -> CryptoResult<Self> {
         let key = EncryptionKey::generate("ChaCha20", 32)?;
@@ -469,24 +340,11 @@ impl SymmetricEncryption for ChaCha20 {
         cipher.apply_keystream(&mut ciphertext);
         
         Ok(EncryptionResult {
-            ciphertext,
-            iv: None,
-            nonce: Some(nonce),
-            tag: None,
-            salt: None,
-            algorithm: "ChaCha20".to_string(),
-            mode: "Stream".to_string(),
         })
-    }
-    
     fn algorithm_name(&self) -> &str {
         "ChaCha20"
-    }
-    
     fn key_size(&self) -> usize {
         32
-    }
-    
     fn iv_size(&self) -> usize {
         12
     }
@@ -499,8 +357,6 @@ impl SymmetricDecryption for ChaCha20 {
         
         if nonce.len() != 12 {
             return Err(CryptoError::InvalidNonceSize(format!("Expected 12-byte nonce, got {}", nonce.len())));
-        }
-        
         // Real ChaCha20 decryption (same as encryption - XOR with keystream)
         let mut cipher = chacha20::ChaCha20::new_from_slices(self.key.as_bytes(), nonce)
             .map_err(|e| CryptoError::DecryptionFailed(format!("ChaCha20 cipher init failed: {:?}", e)))?;
@@ -509,30 +365,20 @@ impl SymmetricDecryption for ChaCha20 {
         cipher.apply_keystream(&mut plaintext);
         
         Ok(DecryptionResult {
-            plaintext,
             verified: false, // Stream cipher doesn't provide authentication
-            algorithm: "ChaCha20".to_string(),
         })
     }
 }
 
 /// fr fr ChaCha20-Poly1305 AEAD implementation
 pub struct ChaCha20Poly1305Aead {
-    key: EncryptionKey,
-}
-
 impl ChaCha20Poly1305Aead {
     /// slay Create new ChaCha20-Poly1305 cipher
     pub fn new(key: &[u8]) -> CryptoResult<Self> {
         if key.len() != 32 {
             return Err(CryptoError::InvalidKeySize(format!("ChaCha20-Poly1305 requires 32-byte key, got {}", key.len())));
-        }
-        
         Ok(Self {
-            key: EncryptionKey::new(key.to_vec(), "ChaCha20-Poly1305".to_string())?,
         })
-    }
-    
     /// slay Generate new ChaCha20-Poly1305 cipher with random key
     pub fn generate() -> CryptoResult<Self> {
         let key = EncryptionKey::generate("ChaCha20-Poly1305", 32)?;
@@ -558,10 +404,7 @@ impl SymmetricEncryption for ChaCha20Poly1305Aead {
             chacha20poly1305::aead::Payload::from(plaintext)
         } else {
             chacha20poly1305::aead::Payload {
-                msg: plaintext,
-                aad: associated_data,
             }
-        };
         
         // Perform ChaCha20-Poly1305 encryption
         let ciphertext_with_tag = cipher.encrypt(nonce, payload)
@@ -570,29 +413,14 @@ impl SymmetricEncryption for ChaCha20Poly1305Aead {
         // Split ciphertext and tag (tag is last 16 bytes)
         if ciphertext_with_tag.len() < 16 {
             return Err(CryptoError::EncryptionFailed("Invalid ciphertext length".to_string()));
-        }
-        
         let (ciphertext, tag) = ciphertext_with_tag.split_at(ciphertext_with_tag.len() - 16);
         
         Ok(EncryptionResult {
-            ciphertext: ciphertext.to_vec(),
-            iv: None,
-            nonce: Some(nonce_bytes),
-            tag: Some(tag.to_vec()),
-            salt: None,
-            algorithm: "ChaCha20-Poly1305".to_string(),
-            mode: "AEAD".to_string(),
         })
-    }
-    
     fn algorithm_name(&self) -> &str {
         "ChaCha20-Poly1305"
-    }
-    
     fn key_size(&self) -> usize {
         32
-    }
-    
     fn iv_size(&self) -> usize {
         12
     }
@@ -608,12 +436,8 @@ impl SymmetricDecryption for ChaCha20Poly1305Aead {
         
         if nonce_bytes.len() != 12 {
             return Err(CryptoError::InvalidNonceSize(format!("Expected 12-byte nonce, got {}", nonce_bytes.len())));
-        }
-        
         if tag.len() != 16 {
             return Err(CryptoError::InvalidDataSize(format!("Expected 16-byte tag, got {}", tag.len())));
-        }
-        
         // Real ChaCha20-Poly1305 decryption
         let cipher = ChaCha20Poly1305::new_from_slice(self.key.as_bytes())
             .map_err(|e| CryptoError::DecryptionFailed(format!("ChaCha20-Poly1305 cipher init failed: {:?}", e)))?;
@@ -629,19 +453,13 @@ impl SymmetricDecryption for ChaCha20Poly1305Aead {
             chacha20poly1305::aead::Payload::from(ciphertext_with_tag.as_slice())
         } else {
             chacha20poly1305::aead::Payload {
-                msg: &ciphertext_with_tag,
-                aad: associated_data,
             }
-        };
         
         // Perform ChaCha20-Poly1305 decryption (includes authentication verification)
         let plaintext = cipher.decrypt(nonce, payload)
             .map_err(|e| CryptoError::AuthenticationFailed(format!("ChaCha20-Poly1305 decryption/verification failed: {:?}", e)))?;
         
         Ok(DecryptionResult {
-            plaintext,
-            verified: true,
-            algorithm: "ChaCha20-Poly1305".to_string(),
         })
     }
 }
@@ -655,35 +473,16 @@ impl AuthenticatedEncryption for ChaCha20Poly1305Aead {
 /// fr fr Key derivation configuration
 #[derive(Debug, Clone)]
 pub struct KeyDerivationConfig {
-    pub iterations: u32,
-    pub salt: Vec<u8>,
-    pub key_length: usize,
-}
-
 impl Default for KeyDerivationConfig {
     fn default() -> Self {
         Self {
-            iterations: 100_000,
-            salt: vec![0u8; 32],
-            key_length: 32,
         }
     }
-}
-
 /// fr fr Derived key result
 #[derive(Debug)]
 pub struct DerivedKey {
-    pub key: EncryptionKey,
-    pub salt: Vec<u8>,
-    pub iterations: u32,
-    pub algorithm: String,
-}
-
 /// fr fr Key management system
 pub struct KeyManager {
-    secure_random: CryptographicRng,
-}
-
 impl KeyManager {
     /// slay Create new key manager
     pub fn new() -> CryptoResult<Self> {
@@ -691,15 +490,11 @@ impl KeyManager {
             .map_err(|e| CryptoError::RandomGenerationFailed(format!("Failed to create RNG: {:?}", e)))?;
         
         Ok(Self { secure_random })
-    }
-    
     /// slay Initialize secure memory for key storage
     pub fn init_secure_memory() -> CryptoResult<()> {
         // Placeholder for secure memory initialization
         // In a real implementation, this would lock memory pages, etc.
         Ok(())
-    }
-    
     /// slay Generate encryption key
     pub fn generate_key(&self, size: usize) -> CryptoResult<EncryptionKey> {
         let mut key_data = vec![0u8; size];
@@ -707,8 +502,6 @@ impl KeyManager {
             .map_err(|e| CryptoError::RandomGenerationFailed(format!("Key generation failed: {:?}", e)))?;
         
         EncryptionKey::new(key_data, "Generated".to_string())
-    }
-    
     /// slay Derive key using PBKDF2
     pub fn derive_key_pbkdf2(&self, password: &[u8], config: &KeyDerivationConfig) -> CryptoResult<EncryptionKey> {
         let mut derived_key = vec![0u8; config.key_length];
@@ -716,8 +509,6 @@ impl KeyManager {
             .map_err(|_| CryptoError::KeyDerivationError("PBKDF2 derivation failed".to_string()))?;
         
         EncryptionKey::new(derived_key, "PBKDF2".to_string())
-    }
-    
     /// slay Derive key using scrypt
     pub fn derive_key_scrypt(&self, password: &[u8], config: &KeyDerivationConfig) -> CryptoResult<EncryptionKey> {
         let params = scrypt::Params::new(15, 8, 1, config.key_length)

@@ -14,123 +14,37 @@ use std::time::{Duration, Instant};
 use tracing::{debug, info, warn, instrument, span, Level};
 
 use inkwell::{
-    context::Context,
-    module::Module,
-    values::{FunctionValue, BasicValue, BasicValueEnum, InstructionValue, IntValue, FloatValue, PointerValue},
-    basic_block::BasicBlock,
-    builder::Builder,
-    passes::PassManager,
-    OptimizationLevel as InkwellOptLevel,
-    types::{BasicType, BasicTypeEnum},
-    IntPredicate, FloatPredicate,
-};
+// };
 
 /// Enhanced LLVM pass manager with real optimization algorithms
 pub struct EnhancedLlvmPassManager<'ctx> {
-    context: &'ctx Context,
-    optimization_level: OptimizationLevel,
-    statistics: Arc<Mutex<EnhancedOptimizationStatistics>>,
     
     // Real optimization passes
-    intelligent_inliner: IntelligentFunctionInliner<'ctx>,
-    advanced_dce: AdvancedDeadCodeEliminator<'ctx>,
-    enhanced_constant_propagator: EnhancedConstantPropagator<'ctx>,
-    advanced_loop_optimizer: AdvancedLoopOptimizer<'ctx>,
-    cfg_simplifier: ControlFlowGraphSimplifier<'ctx>,
-    performance_analyzer: PerformanceAnalyzer<'ctx>,
-}
-
 /// Enhanced optimization statistics with detailed metrics
 #[derive(Debug, Clone)]
 pub struct EnhancedOptimizationStatistics {
     // Basic counts
-    pub initial_functions: usize,
-    pub final_functions: usize,
-    pub initial_instructions: usize,
-    pub final_instructions: usize,
-    pub initial_basic_blocks: usize,
-    pub final_basic_blocks: usize,
     
     // Pass-specific statistics
-    pub functions_inlined: usize,
-    pub inlining_profitability_score: f64,
-    pub instructions_eliminated: usize,
-    pub dead_blocks_removed: usize,
-    pub constants_propagated: usize,
-    pub constant_folding_operations: usize,
-    pub loops_optimized: usize,
-    pub loops_unrolled: usize,
-    pub loops_vectorized: usize,
-    pub cfg_simplifications: usize,
-    pub branch_elimination_count: usize,
     
     // Performance metrics
-    pub estimated_runtime_improvement: f64,
-    pub estimated_code_size_reduction: f64,
-    pub estimated_memory_reduction: f64,
-    pub optimization_time: Duration,
     
     // Advanced metrics
-    pub cache_miss_reductions: usize,
-    pub vectorization_opportunities: usize,
-    pub register_pressure_reductions: usize,
-    pub call_overhead_reductions: usize,
-}
-
 impl Default for EnhancedOptimizationStatistics {
     fn default() -> Self {
         Self {
-            initial_functions: 0,
-            final_functions: 0,
-            initial_instructions: 0,
-            final_instructions: 0,
-            initial_basic_blocks: 0,
-            final_basic_blocks: 0,
-            functions_inlined: 0,
-            inlining_profitability_score: 0.0,
-            instructions_eliminated: 0,
-            dead_blocks_removed: 0,
-            constants_propagated: 0,
-            constant_folding_operations: 0,
-            loops_optimized: 0,
-            loops_unrolled: 0,
-            loops_vectorized: 0,
-            cfg_simplifications: 0,
-            branch_elimination_count: 0,
-            estimated_runtime_improvement: 0.0,
-            estimated_code_size_reduction: 0.0,
-            estimated_memory_reduction: 0.0,
-            optimization_time: Duration::default(),
-            cache_miss_reductions: 0,
-            vectorization_opportunities: 0,
-            register_pressure_reductions: 0,
-            call_overhead_reductions: 0,
         }
     }
-}
-
 impl<'ctx> EnhancedLlvmPassManager<'ctx> {
     /// Create new enhanced LLVM pass manager
     #[instrument(skip(context, config))]
     pub fn new(
-        context: &'ctx Context, 
-        optimization_level: OptimizationLevel,
-        config: &OptimizationConfig,
     ) -> Self {
         info!("Initializing enhanced LLVM pass manager with level {}", optimization_level.as_str());
         
         let statistics = Arc::new(Mutex::new(EnhancedOptimizationStatistics::default()));
         
         Self {
-            context,
-            optimization_level,
-            statistics: statistics.clone(),
-            intelligent_inliner: IntelligentFunctionInliner::new(statistics.clone(), config),
-            advanced_dce: AdvancedDeadCodeEliminator::new(statistics.clone()),
-            enhanced_constant_propagator: EnhancedConstantPropagator::new(statistics.clone()),
-            advanced_loop_optimizer: AdvancedLoopOptimizer::new(statistics.clone()),
-            cfg_simplifier: ControlFlowGraphSimplifier::new(statistics.clone()),
-            performance_analyzer: PerformanceAnalyzer::new(statistics.clone()),
         }
     }
     
@@ -149,8 +63,6 @@ impl<'ctx> EnhancedLlvmPassManager<'ctx> {
             stats.initial_functions = initial_analysis.function_count;
             stats.initial_instructions = initial_analysis.instruction_count;
             stats.initial_basic_blocks = initial_analysis.basic_block_count;
-        }
-        
         // Execute optimization phases based on level
         match self.optimization_level {
             OptimizationLevel::O0 => {
@@ -170,7 +82,6 @@ impl<'ctx> EnhancedLlvmPassManager<'ctx> {
         // Record final metrics and calculate improvements
         let final_analysis = self.performance_analyzer.analyze_module(module)?;
         let performance_improvements = self.performance_analyzer.calculate_improvements(
-            &initial_analysis, 
             &final_analysis
         );
         
@@ -185,18 +96,11 @@ impl<'ctx> EnhancedLlvmPassManager<'ctx> {
             stats.estimated_code_size_reduction = performance_improvements.size_reduction;
             stats.estimated_memory_reduction = performance_improvements.memory_reduction;
             stats.optimization_time = optimization_time;
-        }
-        
         info!(
-            optimization_time = ?optimization_time,
-            runtime_improvement = %format!("{:.1}%", performance_improvements.runtime_improvement),
-            size_reduction = %format!("{:.1}%", performance_improvements.size_reduction),
             "Enhanced LLVM optimization completed"
         );
         
         Ok(())
-    }
-    
     /// Minimal optimization for O0
     fn run_minimal_optimization_phase(&self, module: &Module<'ctx>) -> Result<()> {
         debug!("Running minimal optimization phase");
@@ -213,8 +117,6 @@ impl<'ctx> EnhancedLlvmPassManager<'ctx> {
         }
         
         Ok(())
-    }
-    
     /// Basic optimization for O1
     fn run_basic_optimization_phase(&self, module: &Module<'ctx>) -> Result<()> {
         debug!("Running basic optimization phase");
@@ -236,11 +138,7 @@ impl<'ctx> EnhancedLlvmPassManager<'ctx> {
                     self.intelligent_inliner.inline_function_calls(module, function)?;
                 }
             }
-        }
-        
         Ok(())
-    }
-    
     /// Standard optimization for O2
     fn run_standard_optimization_phase(&self, module: &Module<'ctx>) -> Result<()> {
         debug!("Running standard optimization phase");
@@ -264,8 +162,6 @@ impl<'ctx> EnhancedLlvmPassManager<'ctx> {
                     // Intelligent function inlining
                     if self.intelligent_inliner.is_inlining_profitable(function, true) {
                         changed |= self.intelligent_inliner.inline_function_calls(module, function)?;
-                    }
-                    
                     // Control flow graph simplification
                     changed |= self.cfg_simplifier.simplify_control_flow(function)?;
                 }
@@ -279,8 +175,6 @@ impl<'ctx> EnhancedLlvmPassManager<'ctx> {
         }
         
         Ok(())
-    }
-    
     /// Aggressive optimization for O3/Os/Oz
     fn run_aggressive_optimization_phase(&self, module: &Module<'ctx>) -> Result<()> {
         debug!("Running aggressive optimization phase");
@@ -319,14 +213,10 @@ impl<'ctx> EnhancedLlvmPassManager<'ctx> {
                     break;
                 }
             }
-        }
-        
         // Final cleanup pass
         self.run_final_cleanup_pass(module)?;
         
         Ok(())
-    }
-    
     /// Final cleanup pass
     fn run_final_cleanup_pass(&self, module: &Module<'ctx>) -> Result<()> {
         debug!("Running final cleanup pass");
@@ -342,13 +232,9 @@ impl<'ctx> EnhancedLlvmPassManager<'ctx> {
         }
         
         Ok(())
-    }
-    
     /// Get optimization statistics
     pub fn get_statistics(&self) -> EnhancedOptimizationStatistics {
         self.statistics.lock().unwrap().clone()
-    }
-    
     /// Generate comprehensive optimization report
     pub fn generate_optimization_report(&self) -> Result<String> {
         let stats = self.get_statistics();
@@ -358,27 +244,19 @@ impl<'ctx> EnhancedLlvmPassManager<'ctx> {
         
         // Basic metrics
         report.push_str("### Module Metrics\n");
-        report.push_str(&format!("- Functions: {} → {} ({:+})\n", 
-                                stats.initial_functions, stats.final_functions,
                                 stats.final_functions as i32 - stats.initial_functions as i32));
-        report.push_str(&format!("- Instructions: {} → {} ({:.1}% reduction)\n",
-                                stats.initial_instructions, stats.final_instructions,
                                 if stats.initial_instructions > 0 {
                                     (stats.initial_instructions - stats.final_instructions) as f64 
                                         / stats.initial_instructions as f64 * 100.0
                                 } else { 0.0 }));
-        report.push_str(&format!("- Basic Blocks: {} → {} ({:+})\n\n",
-                                stats.initial_basic_blocks, stats.final_basic_blocks,
                                 stats.final_basic_blocks as i32 - stats.initial_basic_blocks as i32));
         
         // Optimization statistics
         report.push_str("### Optimization Results\n");
-        report.push_str(&format!("- Functions Inlined: {} (profitability score: {:.2})\n",
                                 stats.functions_inlined, stats.inlining_profitability_score));
         report.push_str(&format!("- Instructions Eliminated: {}\n", stats.instructions_eliminated));
         report.push_str(&format!("- Dead Blocks Removed: {}\n", stats.dead_blocks_removed));
         report.push_str(&format!("- Constants Propagated: {}\n", stats.constants_propagated));
-        report.push_str(&format!("- Loops Optimized: {} (unrolled: {}, vectorized: {})\n",
                                 stats.loops_optimized, stats.loops_unrolled, stats.loops_vectorized));
         report.push_str(&format!("- CFG Simplifications: {}\n", stats.cfg_simplifications));
         report.push_str(&format!("- Branch Eliminations: {}\n\n", stats.branch_elimination_count));
@@ -403,19 +281,9 @@ impl<'ctx> EnhancedLlvmPassManager<'ctx> {
 
 /// Intelligent function inliner with profitability analysis
 pub struct IntelligentFunctionInliner<'ctx> {
-    context_lifetime: std::marker::PhantomData<&'ctx ()>,
-    statistics: Arc<Mutex<EnhancedOptimizationStatistics>>,
-    config: OptimizationConfig,
-    profitability_analyzer: InliningProfitabilityAnalyzer,
-}
-
 impl<'ctx> IntelligentFunctionInliner<'ctx> {
     pub fn new(statistics: Arc<Mutex<EnhancedOptimizationStatistics>>, config: &OptimizationConfig) -> Self {
         Self {
-            context_lifetime: std::marker::PhantomData,
-            statistics,
-            config: config.clone(),
-            profitability_analyzer: InliningProfitabilityAnalyzer::new(),
         }
     }
     
@@ -424,12 +292,8 @@ impl<'ctx> IntelligentFunctionInliner<'ctx> {
         // Don't inline external functions
         if function.get_first_basic_block().is_none() {
             return false;
-        }
-        
         let profitability = self.profitability_analyzer.analyze_function(function, aggressive);
         profitability.is_profitable()
-    }
-    
     /// Inline function calls with intelligent selection
     pub fn inline_function_calls(&self, module: &Module<'ctx>, caller: FunctionValue<'ctx>) -> Result<bool> {
         let mut inlined_any = false;
@@ -443,8 +307,6 @@ impl<'ctx> IntelligentFunctionInliner<'ctx> {
         for call_site in call_sites {
             if let Some(called_function) = self.get_called_function(&call_site) {
                 let profitability = self.profitability_analyzer.analyze_call_site(
-                    called_function, 
-                    &call_site, 
                     false
                 );
                 
@@ -452,8 +314,6 @@ impl<'ctx> IntelligentFunctionInliner<'ctx> {
                     profitable_calls.push((call_site, called_function, profitability.score()));
                 }
             }
-        }
-        
         // Sort by profitability score (highest first)
         profitable_calls.sort_by(|a, b| b.2.partial_cmp(&a.2).unwrap_or(std::cmp::Ordering::Equal));
         
@@ -468,18 +328,12 @@ impl<'ctx> IntelligentFunctionInliner<'ctx> {
                     stats.functions_inlined += 1;
                     stats.inlining_profitability_score += score;
                     stats.call_overhead_reductions += 1;
-                }
-                
                 // Check if we should continue inlining
                 if self.should_stop_inlining(caller, &called_function) {
                     break;
                 }
             }
-        }
-        
         Ok(inlined_any)
-    }
-    
     /// Aggressive inlining pass for O3
     pub fn aggressive_inlining_pass(&self, module: &Module<'ctx>) -> Result<()> {
         // Multiple passes with increasing thresholds
@@ -493,16 +347,12 @@ impl<'ctx> IntelligentFunctionInliner<'ctx> {
                         changed = true;
                     }
                 }
-            }
-            
             if !changed {
                 break;
             }
         }
         
         Ok(())
-    }
-    
     // Helper methods
     
     fn find_call_sites(&self, function: FunctionValue<'ctx>) -> Vec<InstructionValue<'ctx>> {
@@ -518,16 +368,10 @@ impl<'ctx> IntelligentFunctionInliner<'ctx> {
                 instruction = instr.get_next_instruction();
             }
             block = bb.get_next_basic_block();
-        }
-        
         call_sites
-    }
-    
     fn get_called_function(&self, call_instr: &InstructionValue<'ctx>) -> Option<FunctionValue<'ctx>> {
         if call_instr.get_opcode() != inkwell::values::InstructionOpcode::Call {
             return None;
-        }
-        
         let num_operands = call_instr.get_num_operands();
         if num_operands > 0 {
             if let Some(operand) = call_instr.get_operand(num_operands - 1) {
@@ -535,24 +379,14 @@ impl<'ctx> IntelligentFunctionInliner<'ctx> {
                     return function.try_into().ok();
                 }
             }
-        }
-        
         None
-    }
-    
     fn inline_call_site(
-        &self,
-        builder: &Builder<'ctx>,
-        call_site: &InstructionValue<'ctx>,
-        called_function: FunctionValue<'ctx>,
     ) -> Result<bool> {
         // For now, implement basic single-block inlining
         if let Some(entry_block) = called_function.get_first_basic_block() {
             // Only inline simple single-block functions
             if entry_block.get_next_basic_block().is_some() {
                 return Ok(false);
-            }
-            
             if let Some(_call_block) = call_site.get_parent() {
                 builder.position_before(call_site);
                 
@@ -568,11 +402,7 @@ impl<'ctx> IntelligentFunctionInliner<'ctx> {
                     return Ok(true);
                 }
             }
-        }
-        
         Ok(false)
-    }
-    
     fn get_call_arguments(&self, call_site: &InstructionValue<'ctx>) -> Vec<BasicValueEnum<'ctx>> {
         let mut args = Vec::new();
         let num_operands = call_site.get_num_operands();
@@ -583,16 +413,8 @@ impl<'ctx> IntelligentFunctionInliner<'ctx> {
                     args.push(value);
                 }
             }
-        }
-        
         args
-    }
-    
     fn clone_function_body(
-        &self,
-        builder: &Builder<'ctx>,
-        function: FunctionValue<'ctx>,
-        args: &[BasicValueEnum<'ctx>],
     ) -> Result<bool> {
         if let Some(entry_block) = function.get_first_basic_block() {
             // Create parameter mapping
@@ -608,23 +430,11 @@ impl<'ctx> IntelligentFunctionInliner<'ctx> {
             while let Some(instr) = instruction {
                 if instr.get_opcode() == inkwell::values::InstructionOpcode::Return {
                     break;
-                }
-                
                 self.clone_instruction_with_mapping(builder, &instr, &param_map)?;
                 instruction = instr.get_next_instruction();
-            }
-            
             return Ok(true);
-        }
-        
         Ok(false)
-    }
-    
     fn clone_instruction_with_mapping(
-        &self,
-        builder: &Builder<'ctx>,
-        instruction: &InstructionValue<'ctx>,
-        value_map: &HashMap<BasicValueEnum<'ctx>, BasicValueEnum<'ctx>>,
     ) -> Result<()> {
         // Simplified instruction cloning
         match instruction.get_opcode() {
@@ -646,14 +456,10 @@ impl<'ctx> IntelligentFunctionInliner<'ctx> {
         }
         
         Ok(())
-    }
-    
     fn should_stop_inlining(&self, caller: FunctionValue<'ctx>, _called: &FunctionValue<'ctx>) -> bool {
         // Stop if caller has grown too large
         let current_size = self.count_instructions(caller);
         current_size > 1000 // Conservative threshold
-    }
-    
     fn count_instructions(&self, function: FunctionValue<'ctx>) -> usize {
         let mut count = 0;
         let mut block = function.get_first_basic_block();
@@ -665,8 +471,6 @@ impl<'ctx> IntelligentFunctionInliner<'ctx> {
                 instruction = instruction.unwrap().get_next_instruction();
             }
             block = bb.get_next_basic_block();
-        }
-        
         count
     }
 }
@@ -674,17 +478,9 @@ impl<'ctx> IntelligentFunctionInliner<'ctx> {
 /// Inlining profitability analyzer
 pub struct InliningProfitabilityAnalyzer {
     // Configuration thresholds
-    size_threshold: usize,
-    complexity_threshold: f64,
-    frequency_weight: f64,
-}
-
 impl InliningProfitabilityAnalyzer {
     pub fn new() -> Self {
         Self {
-            size_threshold: 50,
-            complexity_threshold: 0.5,
-            frequency_weight: 0.3,
         }
     }
     
@@ -697,30 +493,19 @@ impl InliningProfitabilityAnalyzer {
             self.size_threshold * 2 
         } else { 
             self.size_threshold 
-        };
         
         let profitability_score = self.calculate_profitability_score(size, complexity, frequency);
         
         ProfitabilityResult {
-            size,
-            complexity,
-            frequency,
-            score: profitability_score,
-            profitable: size <= threshold && profitability_score > self.complexity_threshold,
         }
     }
     
     pub fn analyze_call_site(
-        &self, 
-        function: FunctionValue, 
-        _call_site: &InstructionValue, 
         aggressive: bool
     ) -> ProfitabilityResult {
         // For now, delegate to function analysis
         // In a full implementation, would analyze call site context
         self.analyze_function(function, aggressive)
-    }
-    
     fn calculate_function_size(&self, function: FunctionValue) -> usize {
         let mut size = 0;
         let mut block = function.get_first_basic_block();
@@ -732,11 +517,7 @@ impl InliningProfitabilityAnalyzer {
                 instruction = instruction.unwrap().get_next_instruction();
             }
             block = bb.get_next_basic_block();
-        }
-        
         size
-    }
-    
     fn calculate_complexity(&self, function: FunctionValue) -> f64 {
         let mut branches = 0;
         let mut calls = 0;
@@ -750,25 +531,17 @@ impl InliningProfitabilityAnalyzer {
             while let Some(instr) = instruction {
                 match instr.get_opcode() {
                     inkwell::values::InstructionOpcode::Br |
-                    inkwell::values::InstructionOpcode::Switch => branches += 1,
-                    inkwell::values::InstructionOpcode::Call => calls += 1,
                     _ => {}
                 }
                 instruction = instr.get_next_instruction();
             }
             block = bb.get_next_basic_block();
-        }
-        
         // Cyclomatic complexity approximation
         (branches as f64 + calls as f64 * 0.5) / (blocks as f64 + 1.0)
-    }
-    
     fn estimate_call_frequency(&self, _function: FunctionValue) -> f64 {
         // Simplified frequency estimation
         // In a real implementation, would use profile data
         1.0
-    }
-    
     fn calculate_profitability_score(&self, size: usize, complexity: f64, frequency: f64) -> f64 {
         let size_score = 1.0 / (1.0 + size as f64 / 20.0);
         let complexity_score = 1.0 / (1.0 + complexity);
@@ -780,18 +553,9 @@ impl InliningProfitabilityAnalyzer {
 
 /// Profitability analysis result
 pub struct ProfitabilityResult {
-    pub size: usize,
-    pub complexity: f64,
-    pub frequency: f64,
-    pub score: f64,
-    pub profitable: bool,
-}
-
 impl ProfitabilityResult {
     pub fn is_profitable(&self) -> bool {
         self.profitable
-    }
-    
     pub fn score(&self) -> f64 {
         self.score
     }
@@ -801,15 +565,9 @@ impl ProfitabilityResult {
 
 /// Advanced dead code eliminator with sophisticated analysis
 pub struct AdvancedDeadCodeEliminator<'ctx> {
-    context_lifetime: std::marker::PhantomData<&'ctx ()>,
-    statistics: Arc<Mutex<EnhancedOptimizationStatistics>>,
-}
-
 impl<'ctx> AdvancedDeadCodeEliminator<'ctx> {
     pub fn new(statistics: Arc<Mutex<EnhancedOptimizationStatistics>>) -> Self {
         Self {
-            context_lifetime: std::marker::PhantomData,
-            statistics,
         }
     }
     
@@ -826,13 +584,9 @@ impl<'ctx> AdvancedDeadCodeEliminator<'ctx> {
         changed |= self.remove_unreachable_blocks(function)?;
         
         Ok(changed)
-    }
-    
     pub fn eliminate_trivially_dead_code(&self, function: FunctionValue<'ctx>) -> Result<bool> {
         // Simplified dead code elimination for O0
         self.remove_unused_instructions(function)
-    }
-    
     pub fn aggressive_elimination(&self, function: FunctionValue<'ctx>) -> Result<bool> {
         let mut changed = false;
         
@@ -845,8 +599,6 @@ impl<'ctx> AdvancedDeadCodeEliminator<'ctx> {
         }
         
         Ok(changed)
-    }
-    
     fn mark_live_instructions(&self, function: FunctionValue<'ctx>) -> Result<HashSet<*const InstructionValue<'ctx>>> {
         let mut live_instructions = HashSet::new();
         let mut worklist = VecDeque::new();
@@ -863,8 +615,6 @@ impl<'ctx> AdvancedDeadCodeEliminator<'ctx> {
                 instruction = instr.get_next_instruction();
             }
             block = bb.get_next_basic_block();
-        }
-        
         // Propagate liveness backwards
         while let Some(instr) = worklist.pop_front() {
             // Mark operands as live
@@ -885,8 +635,6 @@ impl<'ctx> AdvancedDeadCodeEliminator<'ctx> {
         }
         
         Ok(live_instructions)
-    }
-    
     fn has_side_effects(&self, instruction: &InstructionValue<'ctx>) -> bool {
         match instruction.get_opcode() {
             inkwell::values::InstructionOpcode::Store |
@@ -896,14 +644,11 @@ impl<'ctx> AdvancedDeadCodeEliminator<'ctx> {
             inkwell::values::InstructionOpcode::Switch |
             inkwell::values::InstructionOpcode::Invoke |
             inkwell::values::InstructionOpcode::Resume |
-            inkwell::values::InstructionOpcode::Unreachable => true,
             _ => false
         }
     }
     
     fn remove_dead_instructions(
-        &self, 
-        function: FunctionValue<'ctx>, 
         live_instructions: &HashSet<*const InstructionValue<'ctx>>
     ) -> Result<bool> {
         let mut changed = false;
@@ -920,8 +665,6 @@ impl<'ctx> AdvancedDeadCodeEliminator<'ctx> {
                 instruction = instr.get_next_instruction();
             }
             block = bb.get_next_basic_block();
-        }
-        
         // Remove dead instructions
         for instr in instructions_to_remove {
             unsafe {
@@ -936,8 +679,6 @@ impl<'ctx> AdvancedDeadCodeEliminator<'ctx> {
         }
         
         Ok(changed)
-    }
-    
     fn remove_unreachable_blocks(&self, function: FunctionValue<'ctx>) -> Result<bool> {
         let reachable_blocks = self.find_reachable_blocks(function);
         let mut changed = false;
@@ -957,11 +698,7 @@ impl<'ctx> AdvancedDeadCodeEliminator<'ctx> {
             }
             
             block = next_block;
-        }
-        
         Ok(changed)
-    }
-    
     fn find_reachable_blocks(&self, function: FunctionValue<'ctx>) -> HashSet<usize> {
         let mut reachable = HashSet::new();
         let mut worklist = VecDeque::new();
@@ -976,16 +713,8 @@ impl<'ctx> AdvancedDeadCodeEliminator<'ctx> {
                     self.add_successor_blocks(&terminator, &mut worklist, &mut reachable);
                 }
             }
-        }
-        
         reachable
-    }
-    
     fn add_successor_blocks(
-        &self,
-        terminator: &InstructionValue<'ctx>,
-        worklist: &mut VecDeque<BasicBlock<'ctx>>,
-        reachable: &mut HashSet<usize>,
     ) {
         match terminator.get_opcode() {
             inkwell::values::InstructionOpcode::Br => {
@@ -1006,8 +735,6 @@ impl<'ctx> AdvancedDeadCodeEliminator<'ctx> {
             }
             _ => {}
         }
-    }
-    
     fn remove_unused_instructions(&self, function: FunctionValue<'ctx>) -> Result<bool> {
         let mut changed = false;
         let mut instructions_to_remove = Vec::new();
@@ -1022,22 +749,14 @@ impl<'ctx> AdvancedDeadCodeEliminator<'ctx> {
                 instruction = instr.get_next_instruction();
             }
             block = bb.get_next_basic_block();
-        }
-        
         for instr in instructions_to_remove {
             unsafe {
                 instr.erase_from_basic_block();
             }
             changed = true;
-        }
-        
         Ok(changed)
-    }
-    
     fn is_instruction_unused(&self, instruction: &InstructionValue<'ctx>) -> bool {
         !self.has_side_effects(instruction) && self.count_uses(instruction) == 0
-    }
-    
     fn count_uses(&self, instruction: &InstructionValue<'ctx>) -> usize {
         // Simplified use counting
         let mut use_count = 0;
@@ -1065,8 +784,6 @@ impl<'ctx> AdvancedDeadCodeEliminator<'ctx> {
                     block = bb.get_next_basic_block();
                 }
             }
-        }
-        
         use_count
     }
 }
@@ -1076,15 +793,9 @@ impl<'ctx> AdvancedDeadCodeEliminator<'ctx> {
 
 /// Enhanced constant propagator with advanced folding
 pub struct EnhancedConstantPropagator<'ctx> {
-    context_lifetime: std::marker::PhantomData<&'ctx ()>,
-    statistics: Arc<Mutex<EnhancedOptimizationStatistics>>,
-}
-
 impl<'ctx> EnhancedConstantPropagator<'ctx> {
     pub fn new(statistics: Arc<Mutex<EnhancedOptimizationStatistics>>) -> Self {
         Self {
-            context_lifetime: std::marker::PhantomData,
-            statistics,
         }
     }
     
@@ -1101,13 +812,9 @@ impl<'ctx> EnhancedConstantPropagator<'ctx> {
         changed |= self.fold_constant_expressions(function)?;
         
         Ok(changed)
-    }
-    
     pub fn fold_compile_time_constants(&self, function: FunctionValue<'ctx>) -> Result<bool> {
         // Simplified constant folding for O0
         self.fold_constant_expressions(function)
-    }
-    
     pub fn aggressive_propagation(&self, function: FunctionValue<'ctx>) -> Result<bool> {
         let mut changed = false;
         
@@ -1121,8 +828,6 @@ impl<'ctx> EnhancedConstantPropagator<'ctx> {
         }
         
         Ok(changed)
-    }
-    
     fn build_constant_mapping(&self, function: FunctionValue<'ctx>) -> Result<HashMap<BasicValueEnum<'ctx>, i64>> {
         let mut constant_map = HashMap::new();
         
@@ -1136,11 +841,7 @@ impl<'ctx> EnhancedConstantPropagator<'ctx> {
                 instruction = instr.get_next_instruction();
             }
             block = bb.get_next_basic_block();
-        }
-        
         Ok(constant_map)
-    }
-    
     fn evaluate_as_constant(&self, instruction: &InstructionValue<'ctx>) -> Option<i64> {
         match instruction.get_opcode() {
             inkwell::values::InstructionOpcode::Add => {
@@ -1174,8 +875,6 @@ impl<'ctx> EnhancedConstantPropagator<'ctx> {
         }
         
         None
-    }
-    
     fn get_constant_value(&self, value: BasicValueEnum<'ctx>) -> Result<i64, ()> {
         if let Ok(int_value) = value.try_into() as Result<IntValue<'ctx>, _> {
             if int_value.is_const() {
@@ -1183,11 +882,7 @@ impl<'ctx> EnhancedConstantPropagator<'ctx> {
             }
         }
         Err(())
-    }
-    
     fn apply_constant_propagation(
-        &self, 
-        function: FunctionValue<'ctx>, 
         constant_map: &HashMap<BasicValueEnum<'ctx>, i64>
     ) -> Result<bool> {
         let mut changed = false;
@@ -1210,11 +905,7 @@ impl<'ctx> EnhancedConstantPropagator<'ctx> {
                 instruction = instr.get_next_instruction();
             }
             block = bb.get_next_basic_block();
-        }
-        
         Ok(changed)
-    }
-    
     fn fold_constant_expressions(&self, function: FunctionValue<'ctx>) -> Result<bool> {
         let mut changed = false;
         
@@ -1234,11 +925,7 @@ impl<'ctx> EnhancedConstantPropagator<'ctx> {
                 instruction = instr.get_next_instruction();
             }
             block = bb.get_next_basic_block();
-        }
-        
         Ok(changed)
-    }
-    
     fn can_fold_instruction(&self, instruction: &InstructionValue<'ctx>) -> bool {
         // Check if all operands are constants
         for i in 0..instruction.get_num_operands() {
@@ -1256,7 +943,6 @@ impl<'ctx> EnhancedConstantPropagator<'ctx> {
         }
         
         // Check if the instruction type can be folded
-        matches!(instruction.get_opcode(),
             inkwell::values::InstructionOpcode::Add |
             inkwell::values::InstructionOpcode::Sub |
             inkwell::values::InstructionOpcode::Mul |
@@ -1270,15 +956,9 @@ impl<'ctx> EnhancedConstantPropagator<'ctx> {
 
 /// Advanced loop optimizer
 pub struct AdvancedLoopOptimizer<'ctx> {
-    context_lifetime: std::marker::PhantomData<&'ctx ()>,
-    statistics: Arc<Mutex<EnhancedOptimizationStatistics>>,
-}
-
 impl<'ctx> AdvancedLoopOptimizer<'ctx> {
     pub fn new(statistics: Arc<Mutex<EnhancedOptimizationStatistics>>) -> Self {
         Self {
-            context_lifetime: std::marker::PhantomData,
-            statistics,
         }
     }
     
@@ -1291,22 +971,14 @@ impl<'ctx> AdvancedLoopOptimizer<'ctx> {
         for loop_info in loops {
             // Apply loop optimizations
             changed |= self.optimize_single_loop(function, &loop_info)?;
-        }
-        
         Ok(changed)
-    }
-    
     pub fn aggressive_loop_optimization(&self, function: FunctionValue<'ctx>) -> Result<bool> {
         let mut changed = false;
         
         // Multiple passes of aggressive loop optimization
         for _ in 0..3 {
             changed |= self.optimize_loops(function)?;
-        }
-        
         Ok(changed)
-    }
-    
     fn find_loops(&self, function: FunctionValue<'ctx>) -> Result<Vec<LoopInfo>> {
         let mut loops = Vec::new();
         
@@ -1315,16 +987,11 @@ impl<'ctx> AdvancedLoopOptimizer<'ctx> {
         while let Some(bb) = block {
             if self.is_loop_header(bb) {
                 loops.push(LoopInfo {
-                    header: bb,
                     estimated_trip_count: 10, // Conservative estimate
                 });
             }
             block = bb.get_next_basic_block();
-        }
-        
         Ok(loops)
-    }
-    
     fn is_loop_header(&self, block: BasicBlock<'ctx>) -> bool {
         // Look for PHI nodes which often indicate loop headers
         let mut instruction = block.get_first_instruction();
@@ -1335,8 +1002,6 @@ impl<'ctx> AdvancedLoopOptimizer<'ctx> {
             instruction = instr.get_next_instruction();
         }
         false
-    }
-    
     fn optimize_single_loop(&self, _function: FunctionValue<'ctx>, loop_info: &LoopInfo) -> Result<bool> {
         let mut changed = false;
         
@@ -1356,8 +1021,6 @@ impl<'ctx> AdvancedLoopOptimizer<'ctx> {
         changed |= self.apply_loop_invariant_code_motion(loop_info)?;
         
         Ok(changed)
-    }
-    
     fn apply_loop_invariant_code_motion(&self, _loop_info: &LoopInfo) -> Result<bool> {
         // Simplified LICM implementation
         Ok(false)
@@ -1366,21 +1029,11 @@ impl<'ctx> AdvancedLoopOptimizer<'ctx> {
 
 /// Loop information
 pub struct LoopInfo {
-    pub header: BasicBlock<'static>,
-    pub estimated_trip_count: usize,
-}
-
 /// Control flow graph simplifier
 pub struct ControlFlowGraphSimplifier<'ctx> {
-    context_lifetime: std::marker::PhantomData<&'ctx ()>,
-    statistics: Arc<Mutex<EnhancedOptimizationStatistics>>,
-}
-
 impl<'ctx> ControlFlowGraphSimplifier<'ctx> {
     pub fn new(statistics: Arc<Mutex<EnhancedOptimizationStatistics>>) -> Self {
         Self {
-            context_lifetime: std::marker::PhantomData,
-            statistics,
         }
     }
     
@@ -1397,8 +1050,6 @@ impl<'ctx> ControlFlowGraphSimplifier<'ctx> {
         changed |= self.simplify_conditional_branches(function)?;
         
         Ok(changed)
-    }
-    
     pub fn aggressive_simplification(&self, function: FunctionValue<'ctx>) -> Result<bool> {
         let mut changed = false;
         
@@ -1412,13 +1063,9 @@ impl<'ctx> ControlFlowGraphSimplifier<'ctx> {
         }
         
         Ok(changed)
-    }
-    
     pub fn final_cleanup(&self, function: FunctionValue<'ctx>) -> Result<bool> {
         // Final CFG cleanup pass
         self.simplify_control_flow(function)
-    }
-    
     fn merge_empty_blocks(&self, function: FunctionValue<'ctx>) -> Result<bool> {
         let mut changed = false;
         
@@ -1437,11 +1084,7 @@ impl<'ctx> ControlFlowGraphSimplifier<'ctx> {
             }
             
             block = next_block;
-        }
-        
         Ok(changed)
-    }
-    
     fn is_empty_block(&self, block: BasicBlock<'ctx>) -> bool {
         let mut instruction_count = 0;
         let mut instruction = block.get_first_instruction();
@@ -1450,22 +1093,13 @@ impl<'ctx> ControlFlowGraphSimplifier<'ctx> {
             instruction_count += 1;
             if instruction_count > 1 {
                 return false;
-            }
-            
             // Only consider blocks with just a terminator as empty
-            if !matches!(instr.get_opcode(),
                 inkwell::values::InstructionOpcode::Br |
                 inkwell::values::InstructionOpcode::Return
             ) {
                 return false;
-            }
-            
             instruction = instr.get_next_instruction();
-        }
-        
         instruction_count <= 1
-    }
-    
     fn eliminate_redundant_branches(&self, function: FunctionValue<'ctx>) -> Result<bool> {
         let mut changed = false;
         
@@ -1483,16 +1117,10 @@ impl<'ctx> ControlFlowGraphSimplifier<'ctx> {
                 }
             }
             block = bb.get_next_basic_block();
-        }
-        
         Ok(changed)
-    }
-    
     fn is_redundant_branch(&self, _terminator: &InstructionValue<'ctx>) -> bool {
         // Simplified redundant branch detection
         false
-    }
-    
     fn simplify_conditional_branches(&self, function: FunctionValue<'ctx>) -> Result<bool> {
         let mut changed = false;
         
@@ -1510,11 +1138,7 @@ impl<'ctx> ControlFlowGraphSimplifier<'ctx> {
                 }
             }
             block = bb.get_next_basic_block();
-        }
-        
         Ok(changed)
-    }
-    
     fn can_simplify_conditional(&self, _terminator: &InstructionValue<'ctx>) -> bool {
         // Simplified conditional simplification
         false
@@ -1523,15 +1147,9 @@ impl<'ctx> ControlFlowGraphSimplifier<'ctx> {
 
 /// Performance analyzer for optimization effectiveness
 pub struct PerformanceAnalyzer<'ctx> {
-    context_lifetime: std::marker::PhantomData<&'ctx ()>,
-    statistics: Arc<Mutex<EnhancedOptimizationStatistics>>,
-}
-
 impl<'ctx> PerformanceAnalyzer<'ctx> {
     pub fn new(statistics: Arc<Mutex<EnhancedOptimizationStatistics>>) -> Self {
         Self {
-            context_lifetime: std::marker::PhantomData,
-            statistics,
         }
     }
     
@@ -1552,72 +1170,52 @@ impl<'ctx> PerformanceAnalyzer<'ctx> {
                         
                         // Analyze instruction characteristics
                         match instr.get_opcode() {
-                            inkwell::values::InstructionOpcode::Call => analysis.call_count += 1,
-                            inkwell::values::InstructionOpcode::Load => analysis.load_count += 1,
-                            inkwell::values::InstructionOpcode::Store => analysis.store_count += 1,
-                            inkwell::values::InstructionOpcode::Br => analysis.branch_count += 1,
                             _ => {}
                         }
                         
                         instruction = instr.get_next_instruction();
-                    }
-                    
                     block = bb.get_next_basic_block();
                 }
             }
-        }
-        
         // Estimate complexity metrics
         analysis.estimated_cycles = self.estimate_execution_cycles(&analysis);
         analysis.estimated_code_size = module.print_to_string().to_string().len();
         
         Ok(analysis)
-    }
-    
     pub fn analyze_hot_paths(&self, _module: &Module<'ctx>) -> Result<()> {
         // Analyze frequently executed paths
         // In a real implementation, would use profile data
         Ok(())
-    }
-    
     pub fn calculate_improvements(&self, initial: &ModuleAnalysis, final_analysis: &ModuleAnalysis) -> PerformanceImprovements {
         let instruction_reduction = if initial.instruction_count > 0 {
             (initial.instruction_count as f64 - final_analysis.instruction_count as f64) 
                 / initial.instruction_count as f64 * 100.0
         } else {
             0.0
-        };
         
         let size_reduction = if initial.estimated_code_size > 0 {
             (initial.estimated_code_size as f64 - final_analysis.estimated_code_size as f64) 
                 / initial.estimated_code_size as f64 * 100.0
         } else {
             0.0
-        };
         
         let cycle_reduction = if initial.estimated_cycles > 0 {
             (initial.estimated_cycles as f64 - final_analysis.estimated_cycles as f64)
                 / initial.estimated_cycles as f64 * 100.0
         } else {
             0.0
-        };
         
         // Calculate realistic performance improvements
         let runtime_improvement = self.calculate_runtime_improvement(&initial, &final_analysis, instruction_reduction, cycle_reduction);
         let memory_reduction = self.calculate_memory_reduction(&initial, &final_analysis, size_reduction);
         
         PerformanceImprovements {
-            runtime_improvement,
-            size_reduction,
-            memory_reduction,
         }
     }
     
     fn estimate_execution_cycles(&self, analysis: &ModuleAnalysis) -> usize {
         // Simplified cycle estimation
         analysis.instruction_count * 2 + analysis.call_count * 10 + analysis.load_count * 3 + analysis.store_count * 3
-    }
-    
     fn calculate_runtime_improvement(&self, initial: &ModuleAnalysis, final_analysis: &ModuleAnalysis, instruction_reduction: f64, cycle_reduction: f64) -> f64 {
         let base_statistics = self.statistics.lock().unwrap();
         
@@ -1640,8 +1238,6 @@ impl<'ctx> PerformanceAnalyzer<'ctx> {
         
         // Cap the improvement at 50%
         improvement.min(50.0).max(0.0)
-    }
-    
     fn calculate_memory_reduction(&self, _initial: &ModuleAnalysis, _final_analysis: &ModuleAnalysis, size_reduction: f64) -> f64 {
         let base_statistics = self.statistics.lock().unwrap();
         
@@ -1661,22 +1257,6 @@ impl<'ctx> PerformanceAnalyzer<'ctx> {
 /// Module analysis results
 #[derive(Debug, Clone, Default)]
 pub struct ModuleAnalysis {
-    pub function_count: usize,
-    pub basic_block_count: usize,
-    pub instruction_count: usize,
-    pub call_count: usize,
-    pub load_count: usize,
-    pub store_count: usize,
-    pub branch_count: usize,
-    pub estimated_cycles: usize,
-    pub estimated_code_size: usize,
-}
-
 /// Performance improvements calculated by analysis
 #[derive(Debug, Clone)]
 pub struct PerformanceImprovements {
-    pub runtime_improvement: f64,
-    pub size_reduction: f64,
-    pub memory_reduction: f64,
-}
-

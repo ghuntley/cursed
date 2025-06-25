@@ -30,29 +30,15 @@ use super::error::{ProcessError, ProcessResult};
 #[derive(Debug, Clone)]
 pub struct PlatformCapabilities {
     /// Supports process monitoring
-    pub supports_monitoring: bool,
     /// Supports signal handling
-    pub supports_signals: bool,
     /// Supports process groups
-    pub supports_process_groups: bool,
     /// Supports memory mapping
-    pub supports_memory_mapping: bool,
     /// Maximum number of processes
-    pub max_processes: Option<u32>,
-}
-
 impl Default for PlatformCapabilities {
     fn default() -> Self {
         Self {
-            supports_monitoring: true,
-            supports_signals: cfg!(unix),
-            supports_process_groups: cfg!(unix),
-            supports_memory_mapping: true,
-            max_processes: None,
         }
     }
-}
-
 /// Platform-specific process handler trait
 pub trait PlatformHandler: std::fmt::Debug + Send + Sync {
     /// Get platform capabilities
@@ -72,8 +58,6 @@ pub trait PlatformHandler: std::fmt::Debug + Send + Sync {
     
     /// Platform-specific cleanup
     fn cleanup(&mut self) -> ProcessResult<()>;
-}
-
 /// Platform-specific process utilities
 pub struct PlatformUtils;
 
@@ -103,33 +87,10 @@ pub mod windows {
         
         #[repr(C)]
         pub struct PROCESS_MEMORY_COUNTERS {
-            pub cb: DWORD,
-            pub PageFaultCount: DWORD,
-            pub PeakWorkingSetSize: SIZE_T,
-            pub WorkingSetSize: SIZE_T,
-            pub QuotaPeakPagedPoolUsage: SIZE_T,
-            pub QuotaPagedPoolUsage: SIZE_T,
-            pub QuotaPeakNonPagedPoolUsage: SIZE_T,
-            pub QuotaNonPagedPoolUsage: SIZE_T,
-            pub PagefileUsage: SIZE_T,
-            pub PeakPagefileUsage: SIZE_T,
-        }
-        
         #[repr(C)]
         pub struct FILETIME {
-            pub dwLowDateTime: DWORD,
-            pub dwHighDateTime: DWORD,
-        }
-        
         #[repr(C)]
         pub struct THREADENTRY32 {
-            pub dwSize: DWORD,
-            pub cntUsage: DWORD,
-            pub th32ThreadID: DWORD,
-            pub th32OwnerProcessID: DWORD,
-            pub tpBasePri: i32,
-            pub tpDeltaPri: i32,
-            pub dwFlags: DWORD,
         }
     }
     
@@ -157,8 +118,6 @@ pub mod windows {
     #[cfg(not(feature = "winapi"))]
     unsafe fn Thread32First(_snapshot: HANDLE, _entry: *mut THREADENTRY32) -> BOOL { 0 }
     #[cfg(not(feature = "winapi"))]
-    unsafe fn Thread32Next(_snapshot: HANDLE, _entry: *mut THREADENTRY32) -> BOOL { 0 }
-    
     /// Get process command line on Windows
     pub fn get_process_command_line(pid: u32) -> ProcessResult<String> {
         #[cfg(feature = "winapi")]
@@ -166,8 +125,6 @@ pub mod windows {
             let handle = OpenProcess(PROCESS_QUERY_INFORMATION | PROCESS_VM_READ, FALSE, pid);
             if handle == ptr::null_mut() {
                 return Err(ProcessError::ProcessNotFound(pid));
-            }
-            
             let mut buffer: [u16; 32768] = [0; 32768];
             let mut size = buffer.len() as DWORD;
             
@@ -214,8 +171,6 @@ pub mod windows {
         #[cfg(feature = "winapi")]
         {
             get_process_environment_winapi(pid)
-        }
-        
         #[cfg(not(feature = "winapi"))]
         {
             get_process_environment_fallback(pid)
@@ -227,8 +182,6 @@ pub mod windows {
         // Complex implementation using ReadProcessMemory to read PEB
         // For now, return basic environment
         Ok(HashMap::new())
-    }
-    
     fn get_process_environment_fallback(pid: u32) -> ProcessResult<HashMap<String, String>> {
         use std::process::Command;
         
@@ -255,8 +208,6 @@ pub mod windows {
                             env_vars.insert(key, value);
                         }
                     }
-                }
-                
                 Ok(env_vars)
             }
             _ => Ok(HashMap::new())
@@ -270,8 +221,6 @@ pub mod windows {
             let handle = OpenProcess(PROCESS_SET_INFORMATION, FALSE, pid);
             if handle == ptr::null_mut() {
                 return Err(ProcessError::ProcessNotFound(pid));
-            }
-            
             let result = SetPriorityClass(handle, priority_class);
             CloseHandle(handle);
             
@@ -298,8 +247,6 @@ pub mod windows {
             0x00008000 => "abovenormal", // ABOVE_NORMAL_PRIORITY_CLASS
             0x00000080 => "high",      // HIGH_PRIORITY_CLASS
             0x00000100 => "realtime",  // REALTIME_PRIORITY_CLASS
-            _ => "normal",
-        };
         
         let result = Command::new("wmic")
             .arg("process")
@@ -311,7 +258,6 @@ pub mod windows {
             .output();
             
         match result {
-            Ok(output) if output.status.success() => Ok(()),
             _ => Err(ProcessError::ExecutionFailed("Failed to set priority class".to_string()))
         }
     }
@@ -325,17 +271,8 @@ pub mod windows {
         let (memory_usage, cpu_usage) = get_process_performance_winapi(pid)?;
         
         Ok(WindowsProcessInfo {
-            pid,
-            command_line,
-            environment,
-            memory_usage,
-            cpu_usage,
             priority_class: get_process_priority_class(pid).unwrap_or(0x00000020), // NORMAL_PRIORITY_CLASS
-            handle_count: get_process_handle_count_winapi(pid).unwrap_or(0),
-            thread_count: get_process_thread_count_winapi(pid).unwrap_or(0),
         })
-    }
-    
     /// Get process performance metrics using WinAPI
     fn get_process_performance_winapi(pid: u32) -> ProcessResult<(u64, f64)> {
         #[cfg(feature = "winapi")]
@@ -343,8 +280,6 @@ pub mod windows {
             let handle = OpenProcess(PROCESS_QUERY_INFORMATION | PROCESS_VM_READ, FALSE, pid);
             if handle == ptr::null_mut() {
                 return Ok((0, 0.0)); // Process not accessible, return zeros
-            }
-            
             let _handle_guard = HandleGuard(handle);
             
             // Get memory information
@@ -352,13 +287,8 @@ pub mod windows {
             let mut memory_usage = 0u64;
             
             if GetProcessMemoryInfo(
-                handle,
-                &mut mem_counters,
-                mem::size_of::<PROCESS_MEMORY_COUNTERS>() as u32,
             ) != 0 {
                 memory_usage = mem_counters.WorkingSetSize as u64;
-            }
-            
             // Get timing information for CPU calculation
             let mut creation_time: FILETIME = mem::zeroed();
             let mut exit_time: FILETIME = mem::zeroed();
@@ -367,11 +297,6 @@ pub mod windows {
             
             let mut cpu_usage = 0.0f64;
             if GetProcessTimes(
-                handle,
-                &mut creation_time,
-                &mut exit_time,
-                &mut kernel_time,
-                &mut user_time,
             ) != 0 {
                 // Convert FILETIME to CPU percentage (simplified calculation)
                 let kernel_ns = ((kernel_time.dwHighDateTime as u64) << 32) | (kernel_time.dwLowDateTime as u64);
@@ -381,11 +306,7 @@ pub mod windows {
                 // This is a simplified CPU calculation - real implementation would need
                 // to track time between measurements
                 cpu_usage = (total_ns as f64) / 10_000_000.0; // Convert to seconds
-            }
-            
             Ok((memory_usage, cpu_usage))
-        }
-        
         #[cfg(not(feature = "winapi"))]
         {
             // Fallback to PowerShell command
@@ -400,7 +321,6 @@ pub mod windows {
         let output = Command::new("powershell")
             .arg("-Command")
             .arg(&format!(
-                "Get-Process -Id {} | Select-Object WorkingSet,CPU | ConvertTo-Json", 
                 pid
             ))
             .output();
@@ -424,14 +344,10 @@ pub mod windows {
             let handle = OpenProcess(PROCESS_QUERY_INFORMATION, FALSE, pid);
             if handle == ptr::null_mut() {
                 return Err(ProcessError::ProcessNotFound(pid));
-            }
-            
             let priority = GetPriorityClass(handle);
             CloseHandle(handle);
             
             Ok(priority)
-        }
-        
         #[cfg(not(feature = "winapi"))]
         {
             Ok(0x00000020) // NORMAL_PRIORITY_CLASS
@@ -445,8 +361,6 @@ pub mod windows {
             let handle = OpenProcess(PROCESS_QUERY_INFORMATION, FALSE, pid);
             if handle == ptr::null_mut() {
                 return Ok(0);
-            }
-            
             let _handle_guard = HandleGuard(handle);
             
             let mut handle_count: u32 = 0;
@@ -491,8 +405,6 @@ pub mod windows {
             let snapshot = CreateToolhelp32Snapshot(TH32CS_SNAPTHREAD, 0);
             if snapshot == ptr::null_mut() {
                 return Ok(0);
-            }
-            
             let mut thread_count = 0u32;
             let mut thread_entry: THREADENTRY32 = mem::zeroed();
             thread_entry.dwSize = mem::size_of::<THREADENTRY32>() as u32;
@@ -501,18 +413,12 @@ pub mod windows {
                 loop {
                     if thread_entry.th32OwnerProcessID == pid {
                         thread_count += 1;
-                    }
-                    
                     if Thread32Next(snapshot, &mut thread_entry) == 0 {
                         break;
                     }
                 }
-            }
-            
             CloseHandle(snapshot);
             Ok(thread_count)
-        }
-        
         #[cfg(not(feature = "winapi"))]
         {
             get_process_thread_count_fallback(pid)
@@ -578,7 +484,6 @@ pub mod windows {
             .output();
             
         match result {
-            Ok(output) if output.status.success() => Ok(()),
             Ok(output) => {
                 let error_msg = String::from_utf8_lossy(&output.stderr);
                 Err(ProcessError::ExecutionFailed(format!("Failed to start service '{}': {}", service_name, error_msg)))
@@ -597,7 +502,6 @@ pub mod windows {
             .output();
             
         match result {
-            Ok(output) if output.status.success() => Ok(()),
             Ok(output) => {
                 let error_msg = String::from_utf8_lossy(&output.stderr);
                 Err(ProcessError::ExecutionFailed(format!("Failed to stop service '{}': {}", service_name, error_msg)))
@@ -608,18 +512,10 @@ pub mod windows {
     
     /// Create Windows service
     pub fn create_service(
-        service_name: &str,
-        display_name: &str,
-        executable_path: &str,
-        start_type: ServiceStartType,
     ) -> ProcessResult<()> {
         use std::process::Command;
         
         let start_type_str = match start_type {
-            ServiceStartType::Auto => "auto",
-            ServiceStartType::Manual => "demand",
-            ServiceStartType::Disabled => "disabled",
-        };
         
         let result = Command::new("sc")
             .arg("create")
@@ -630,7 +526,6 @@ pub mod windows {
             .output();
             
         match result {
-            Ok(output) if output.status.success() => Ok(()),
             Ok(output) => {
                 let error_msg = String::from_utf8_lossy(&output.stderr);
                 Err(ProcessError::ExecutionFailed(format!("Failed to create service '{}': {}", service_name, error_msg)))
@@ -649,7 +544,6 @@ pub mod windows {
             .output();
             
         match result {
-            Ok(output) if output.status.success() => Ok(()),
             Ok(output) => {
                 let error_msg = String::from_utf8_lossy(&output.stderr);
                 Err(ProcessError::ExecutionFailed(format!("Failed to delete service '{}': {}", service_name, error_msg)))
@@ -695,8 +589,6 @@ pub mod windows {
             None
         }
     }
-}
-
 /// Unix-specific process utilities
 #[cfg(unix)]
 pub mod unix {
@@ -717,8 +609,6 @@ pub mod unix {
             .collect();
         
         Ok(args)
-    }
-    
     /// Get process environment variables on Unix
     pub fn get_process_environment(pid: u32) -> ProcessResult<HashMap<String, String>> {
         let environ_path = format!("/proc/{}/environ", pid);
@@ -736,8 +626,6 @@ pub mod unix {
         }
         
         Ok(env_vars)
-    }
-    
     /// Get process file descriptors on Unix
     pub fn get_process_file_descriptors(pid: u32) -> ProcessResult<Vec<FileDescriptorInfo>> {
         let fd_dir = format!("/proc/{}/fd", pid);
@@ -753,17 +641,10 @@ pub mod unix {
                     let target = fs::read_link(&fd_path).unwrap_or_else(|_| fd_path.clone());
                     
                     descriptors.push(FileDescriptorInfo {
-                        fd: fd_num,
-                        path: target,
-                        flags: get_fd_flags(pid, fd_num).unwrap_or(0),
                     });
                 }
             }
-        }
-        
         Ok(descriptors)
-    }
-    
     /// Get file descriptor flags
     fn get_fd_flags(pid: u32, fd: u32) -> ProcessResult<u32> {
         let fdinfo_path = format!("/proc/{}/fdinfo/{}", pid, fd);
@@ -785,41 +666,30 @@ pub mod unix {
         }
         
         Ok(flags)
-    }
-    
     /// Create daemon process on Unix
     pub fn create_daemon_process<F>(daemon_fn: F) -> ProcessResult<u32>
     where
-        F: FnOnce() -> ProcessResult<()> + Send + 'static,
     {
         // Fork the process
         let pid = unsafe { libc::fork() };
         
         match pid {
             -1 => Err(ProcessError::SystemError(
-                std::io::Error::last_os_error().raw_os_error().unwrap_or(-1),
                 "Failed to fork".to_string()
-            )),
             0 => {
                 // Child process
                 
                 // Create new session
                 if unsafe { libc::setsid() } == -1 {
                     std::process::exit(1);
-                }
-                
                 // Change working directory to root
                 if unsafe { libc::chdir(b"/\0".as_ptr() as *const i8) } == -1 {
                     std::process::exit(1);
-                }
-                
                 // Close standard file descriptors
                 unsafe {
                     libc::close(0); // stdin
                     libc::close(1); // stdout
                     libc::close(2); // stderr
-                }
-                
                 // Redirect to /dev/null
                 let dev_null = std::ffi::CString::new("/dev/null").unwrap();
                 unsafe {
@@ -832,17 +702,12 @@ pub mod unix {
                             libc::close(null_fd);
                         }
                     }
-                }
-                
                 // Run daemon function
                 if let Err(e) = daemon_fn() {
                     eprintln!("Daemon error: {}", e);
                     std::process::exit(1);
-                }
-                
                 std::process::exit(0);
             }
-            child_pid => Ok(child_pid as u32),
         }
     }
     
@@ -852,25 +717,16 @@ pub mod unix {
         
         unsafe {
             let mut rlimit = libc::rlimit {
-                rlim_cur: 0,
-                rlim_max: 0,
-            };
             
             // Get maximum file descriptors
             if libc::getrlimit(libc::RLIMIT_NOFILE, &mut rlimit) == 0 {
                 limits.max_file_descriptors = rlimit.rlim_cur;
-            }
-            
             // Get maximum processes
             if libc::getrlimit(libc::RLIMIT_NPROC, &mut rlimit) == 0 {
                 limits.max_processes = rlimit.rlim_cur;
-            }
-            
             // Get maximum memory
             if libc::getrlimit(libc::RLIMIT_AS, &mut rlimit) == 0 {
                 limits.max_virtual_memory = rlimit.rlim_cur;
-            }
-            
             // Get maximum core file size
             if libc::getrlimit(libc::RLIMIT_CORE, &mut rlimit) == 0 {
                 limits.max_core_file_size = rlimit.rlim_cur;
@@ -878,22 +734,11 @@ pub mod unix {
         }
         
         Ok(limits)
-    }
-    
     /// Set resource limits
     pub fn set_resource_limit(resource: ResourceType, soft_limit: u64, hard_limit: u64) -> ProcessResult<()> {
         let resource_id = match resource {
-            ResourceType::FileDescriptors => libc::RLIMIT_NOFILE,
-            ResourceType::Processes => libc::RLIMIT_NPROC,
-            ResourceType::VirtualMemory => libc::RLIMIT_AS,
-            ResourceType::CoreFileSize => libc::RLIMIT_CORE,
-            ResourceType::CpuTime => libc::RLIMIT_CPU,
-        };
         
         let rlimit = libc::rlimit {
-            rlim_cur: soft_limit,
-            rlim_max: hard_limit,
-        };
         
         let result = unsafe { libc::setrlimit(resource_id, &rlimit) };
         
@@ -901,7 +746,6 @@ pub mod unix {
             Ok(())
         } else {
             Err(ProcessError::SystemError(
-                std::io::Error::last_os_error().raw_os_error().unwrap_or(-1),
                 "Failed to set resource limit".to_string()
             ))
         }
@@ -920,8 +764,6 @@ pub mod unix {
             Ok(false)
         }
     }
-}
-
 /// Linux-specific process utilities
 #[cfg(target_os = "linux")]
 pub mod linux {
@@ -940,16 +782,11 @@ pub mod linux {
             let parts: Vec<&str> = line.split(':').collect();
             if parts.len() >= 3 {
                 cgroups.push(CgroupInfo {
-                    hierarchy_id: parts[0].parse().unwrap_or(0),
-                    subsystems: parts[1].split(',').map(|s| s.to_string()).collect(),
-                    path: parts[2].to_string(),
                 });
             }
         }
         
         Ok(cgroups)
-    }
-    
     /// Get process namespace information
     pub fn get_process_namespaces(pid: u32) -> ProcessResult<Vec<NamespaceInfo>> {
         let ns_dir = format!("/proc/{}/ns", pid);
@@ -963,17 +800,10 @@ pub mod linux {
                 let ns_path = entry.path();
                 if let Ok(target) = fs::read_link(&ns_path) {
                     namespaces.push(NamespaceInfo {
-                        ns_type: file_name,
-                        inode: extract_namespace_inode(&target).unwrap_or(0),
-                        path: target,
                     });
                 }
             }
-        }
-        
         Ok(namespaces)
-    }
-    
     /// Extract namespace inode from symlink target
     fn extract_namespace_inode(target: &PathBuf) -> Option<u64> {
         let target_str = target.to_string_lossy();
@@ -994,17 +824,11 @@ pub mod linux {
         let selinux_path = format!("{}/current", attr_path);
         if let Ok(selinux_content) = fs::read_to_string(&selinux_path) {
             context.selinux = Some(selinux_content.trim().to_string());
-        }
-        
         // Try to read AppArmor context  
         let apparmor_path = format!("{}/apparmor/current", attr_path);
         if let Ok(apparmor_content) = fs::read_to_string(&apparmor_path) {
             context.apparmor = Some(apparmor_content.trim().to_string());
-        }
-        
         Ok(context)
-    }
-    
     /// Set process CPU affinity
     pub fn set_cpu_affinity(pid: u32, cpu_mask: u64) -> ProcessResult<()> {
         use std::mem;
@@ -1016,21 +840,15 @@ pub mod linux {
             if (cpu_mask & (1 << cpu)) != 0 {
                 unsafe { libc::CPU_SET(cpu, &mut cpu_set); }
             }
-        }
-        
         let result = unsafe {
             libc::sched_setaffinity(
-                pid as libc::pid_t,
-                mem::size_of::<libc::cpu_set_t>(),
                 &cpu_set
             )
-        };
         
         if result == 0 {
             Ok(())
         } else {
             Err(ProcessError::SystemError(
-                std::io::Error::last_os_error().raw_os_error().unwrap_or(-1),
                 "Failed to set CPU affinity".to_string()
             ))
         }
@@ -1044,19 +862,13 @@ pub mod linux {
         
         let result = unsafe {
             libc::sched_getaffinity(
-                pid as libc::pid_t,
-                mem::size_of::<libc::cpu_set_t>(),
                 &mut cpu_set
             )
-        };
         
         if result != 0 {
             return Err(ProcessError::SystemError(
-                std::io::Error::last_os_error().raw_os_error().unwrap_or(-1),
                 "Failed to get CPU affinity".to_string()
             ));
-        }
-        
         let mut mask = 0u64;
         for cpu in 0..64 {
             if unsafe { libc::CPU_ISSET(cpu, &cpu_set) } {
@@ -1086,69 +898,44 @@ pub mod macos {
         
         let result = unsafe {
             libc::sysctl(
-                mib.as_mut_ptr(),
-                4,
-                &mut kinfo as *mut _ as *mut libc::c_void,
-                &mut size,
-                ptr::null_mut(),
-                0,
             )
-        };
         
         if result != 0 {
             return Err(ProcessError::ProcessNotFound(pid));
-        }
-        
         // Extract information from kinfo_proc structure
         let name = unsafe {
             let name_ptr = kinfo.kp_proc.p_comm.as_ptr();
             CStr::from_ptr(name_ptr).to_string_lossy().to_string()
-        };
         
         let parent_pid = if kinfo.kp_eproc.e_ppid > 0 {
             Some(kinfo.kp_eproc.e_ppid as u32)
         } else {
             None
-        };
         
         let process_group_id = if kinfo.kp_eproc.e_pgid > 0 {
             Some(kinfo.kp_eproc.e_pgid as u32)
         } else {
             None
-        };
         
         let session_id = if kinfo.kp_eproc.e_sid > 0 {
             Some(kinfo.kp_eproc.e_sid as u32)
         } else {
             None
-        };
         
         // Try to get executable path using proc_pidpath
         let executable_path = get_process_executable_path(pid);
         
         Ok(MacOSProcessInfo {
-            pid,
-            name,
-            executable_path,
-            parent_pid,
-            process_group_id,
-            session_id,
             controlling_terminal: None, // Would need additional syscalls to determine
         })
-    }
-    
     /// Get process memory regions
     pub fn get_process_memory_regions(pid: u32) -> ProcessResult<Vec<MemoryRegion>> {
         // This would use vm_region_recurse_64 or similar
         Ok(Vec::new())
-    }
-    
     /// Get process Mach port information
     pub fn get_process_mach_ports(pid: u32) -> ProcessResult<Vec<MachPortInfo>> {
         // This would use mach_port_names or similar
         Ok(Vec::new())
-    }
-    
     /// Get process executable path using proc_pidpath
     fn get_process_executable_path(pid: u32) -> Option<PathBuf> {
         use std::mem;
@@ -1161,11 +948,7 @@ pub mod macos {
         
         let result = unsafe {
             libc::proc_pidpath(
-                pid as i32,
-                path_buf.as_mut_ptr() as *mut libc::c_void,
-                path_buf.len() as u32,
             )
-        };
         
         if result > 0 {
             // Find the null terminator
@@ -1179,135 +962,46 @@ pub mod macos {
             None
         }
     }
-}
-
 // Common data structures
 
 #[derive(Debug, Clone)]
 pub struct FileDescriptorInfo {
-    pub fd: u32,
-    pub path: PathBuf,
-    pub flags: u32,
-}
-
 #[derive(Debug, Clone)]
 pub struct ResourceLimits {
-    pub max_file_descriptors: u64,
-    pub max_processes: u64,
-    pub max_virtual_memory: u64,
-    pub max_core_file_size: u64,
-    pub max_cpu_time: u64,
-}
-
 impl Default for ResourceLimits {
     fn default() -> Self {
         Self {
-            max_file_descriptors: 1024,
-            max_processes: 32768,
-            max_virtual_memory: u64::MAX,
-            max_core_file_size: 0,
-            max_cpu_time: u64::MAX,
         }
     }
-}
-
 #[derive(Debug, Clone)]
 pub enum ResourceType {
-    FileDescriptors,
-    Processes,
-    VirtualMemory,
-    CoreFileSize,
-    CpuTime,
-}
-
 #[cfg(windows)]
 #[derive(Debug, Clone)]
 pub enum ServiceStatus {
-    Stopped,
-    StartPending,
-    StopPending,
-    Running,
-    ContinuePending,
-    PausePending,
-    Paused,
-    Unknown,
-}
-
 #[cfg(windows)]
 #[derive(Debug, Clone)]
 pub enum ServiceStartType {
-    Auto,
-    Manual,
-    Disabled,
-}
-
 #[cfg(windows)]
 #[derive(Debug, Clone)]
 pub struct WindowsProcessInfo {
-    pub pid: u32,
-    pub command_line: String,
-    pub environment: HashMap<String, String>,
-    pub memory_usage: u64,
-    pub cpu_usage: f64,
-    pub priority_class: u32,
-    pub handle_count: u32,
-    pub thread_count: u32,
-}
-
 #[cfg(target_os = "linux")]
 #[derive(Debug, Clone)]
 pub struct CgroupInfo {
-    pub hierarchy_id: u32,
-    pub subsystems: Vec<String>,
-    pub path: String,
-}
-
 #[cfg(target_os = "linux")]
 #[derive(Debug, Clone)]
 pub struct NamespaceInfo {
-    pub ns_type: String,
-    pub inode: u64,
-    pub path: PathBuf,
-}
-
 #[cfg(target_os = "linux")]
 #[derive(Debug, Clone, Default)]
 pub struct SecurityContext {
-    pub selinux: Option<String>,
-    pub apparmor: Option<String>,
-}
-
 #[cfg(target_os = "macos")]
 #[derive(Debug, Clone)]
 pub struct MacOSProcessInfo {
-    pub pid: u32,
-    pub name: String,
-    pub executable_path: Option<PathBuf>,
-    pub parent_pid: Option<u32>,
-    pub process_group_id: Option<u32>,
-    pub session_id: Option<u32>,
-    pub controlling_terminal: Option<String>,
-}
-
 #[cfg(target_os = "macos")]
 #[derive(Debug, Clone)]
 pub struct MemoryRegion {
-    pub start_address: u64,
-    pub size: u64,
-    pub protection: u32,
-    pub max_protection: u32,
-    pub inheritance: u32,
-    pub is_shared: bool,
-}
-
 #[cfg(target_os = "macos")]
 #[derive(Debug, Clone)]
 pub struct MachPortInfo {
-    pub name: u32,
-    pub port_type: String,
-    pub refs: u32,
-}
-
 impl PlatformUtils {
     /// Get platform-specific process information
     pub fn get_platform_info(pid: u32) -> ProcessResult<PlatformProcessInfo> {
@@ -1318,41 +1012,19 @@ impl PlatformUtils {
             let security_context = linux::get_process_security_context(pid)?;
             
             Ok(PlatformProcessInfo::Linux {
-                command_line: unix::get_process_command_line(pid)?,
-                environment: unix::get_process_environment(pid)?,
-                file_descriptors: unix::get_process_file_descriptors(pid)?,
-                cgroups,
-                namespaces,
-                security_context,
             })
-        }
-        
         #[cfg(target_os = "macos")]
         {
             Ok(PlatformProcessInfo::MacOS {
-                sysctl_info: macos::get_process_info_sysctl(pid)?,
-                memory_regions: macos::get_process_memory_regions(pid)?,
-                mach_ports: macos::get_process_mach_ports(pid)?,
             })
-        }
-        
         #[cfg(all(unix, not(target_os = "linux"), not(target_os = "macos")))]
         {
             Ok(PlatformProcessInfo::Unix {
-                command_line: unix::get_process_command_line(pid)?,
-                environment: unix::get_process_environment(pid)?,
-                file_descriptors: unix::get_process_file_descriptors(pid)?,
             })
-        }
-        
         #[cfg(windows)]
         {
             Ok(PlatformProcessInfo::Windows {
-                command_line: windows::get_process_command_line(pid)?,
-                environment: windows::get_process_environment(pid)?,
             })
-        }
-        
         #[cfg(not(any(windows, unix)))]
         {
             Err(super::error::platform_error("Process platform information not supported on this platform"))
@@ -1365,8 +1037,6 @@ impl PlatformUtils {
         {
             // Would check for admin privileges on Windows
             false
-        }
-        
         #[cfg(unix)]
         {
             unsafe { libc::geteuid() == 0 }
@@ -1386,71 +1056,31 @@ impl PlatformUtils {
             let gid = unsafe { libc::getgid() };
             
             Ok(UserInfo {
-                uid: Some(uid),
-                gid: Some(gid),
-                username: std::env::var("USER").unwrap_or_else(|_| "unknown".to_string()),
-                home_directory: std::env::var("HOME").ok().map(PathBuf::from),
             })
-        }
-        
         #[cfg(windows)]
         {
             Ok(UserInfo {
-                uid: None,
-                gid: None,
-                username: std::env::var("USERNAME").unwrap_or_else(|_| "unknown".to_string()),
-                home_directory: std::env::var("USERPROFILE").ok().map(PathBuf::from),
             })
-        }
-        
         #[cfg(not(any(unix, windows)))]
         {
             Err(super::error::platform_error("User information not supported on this platform"))
         }
     }
-}
-
 #[derive(Debug, Clone)]
 pub enum PlatformProcessInfo {
     #[cfg(windows)]
     Windows {
-        command_line: String,
-        environment: HashMap<String, String>,
-    },
     
     #[cfg(unix)]
     Unix {
-        command_line: Vec<String>,
-        environment: HashMap<String, String>,
-        file_descriptors: Vec<FileDescriptorInfo>,
-    },
     
     #[cfg(target_os = "linux")]
     Linux {
-        command_line: Vec<String>,
-        environment: HashMap<String, String>,
-        file_descriptors: Vec<FileDescriptorInfo>,
-        cgroups: Vec<CgroupInfo>,
-        namespaces: Vec<NamespaceInfo>,
-        security_context: SecurityContext,
-    },
     
     #[cfg(target_os = "macos")]
     MacOS {
-        sysctl_info: MacOSProcessInfo,
-        memory_regions: Vec<MemoryRegion>,
-        mach_ports: Vec<MachPortInfo>,
-    },
-}
-
 #[derive(Debug, Clone)]
 pub struct UserInfo {
-    pub uid: Option<u32>,
-    pub gid: Option<u32>,
-    pub username: String,
-    pub home_directory: Option<PathBuf>,
-}
-
 /// Get platform name
 pub fn get_platform_name() -> &'static str {
     #[cfg(target_os = "windows")]
@@ -1472,42 +1102,15 @@ pub fn get_platform_name() -> &'static str {
     return "netbsd";
     
     #[cfg(not(any(
-        target_os = "windows",
-        target_os = "linux", 
-        target_os = "macos",
-        target_os = "freebsd",
-        target_os = "openbsd",
         target_os = "netbsd"
     )))]
     return "unknown";
-}
-
 /// Check if platform supports feature
 pub fn supports_feature(feature: PlatformFeature) -> bool {
     match feature {
-        PlatformFeature::Signals => cfg!(unix),
-        PlatformFeature::ProcessGroups => cfg!(unix),
-        PlatformFeature::ResourceLimits => cfg!(unix),
-        PlatformFeature::FileDescriptors => cfg!(unix),
-        PlatformFeature::WindowsServices => cfg!(windows),
-        PlatformFeature::Cgroups => cfg!(target_os = "linux"),
-        PlatformFeature::Namespaces => cfg!(target_os = "linux"),
-        PlatformFeature::SELinux => cfg!(target_os = "linux"),
-        PlatformFeature::AppArmor => cfg!(target_os = "linux"),
-        PlatformFeature::MachPorts => cfg!(target_os = "macos"),
     }
 }
 
 #[derive(Debug, Clone, Copy)]
 pub enum PlatformFeature {
-    Signals,
-    ProcessGroups,
-    ResourceLimits,
-    FileDescriptors,
-    WindowsServices,
-    Cgroups,
-    Namespaces,
-    SELinux,
-    AppArmor,
-    MachPorts,
 }

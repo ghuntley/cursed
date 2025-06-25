@@ -9,27 +9,18 @@ use std::sync::Arc;
 /// Test fixture that handles setup and teardown
 #[derive(Clone)]
 pub struct FixtureVibe {
-    setup_fn: Arc<dyn Fn(&VibeTest) -> TestVibesResult<Value> + Send + Sync>,
-    teardown_fn: Arc<dyn Fn(&VibeTest, &Value) -> TestVibesResult<()> + Send + Sync>,
-}
-
 impl FixtureVibe {
     /// Create a new test fixture
     pub fn new<S, T>(setup: S, teardown: T) -> Self
     where
-        S: Fn(&VibeTest) -> TestVibesResult<Value> + Send + Sync + 'static,
-        T: Fn(&VibeTest, &Value) -> TestVibesResult<()> + Send + Sync + 'static,
     {
         Self {
-            setup_fn: Arc::new(setup),
-            teardown_fn: Arc::new(teardown),
         }
     }
 
     /// Run a test with this fixture
     pub fn Run<F>(&self, t: &VibeTest, test_fn: F) -> TestVibesResult<()>
     where
-        F: Fn(&VibeTest, &Value) -> TestVibesResult<()>,
     {
         // Run setup
         let fixture_data = (self.setup_fn)(t)?;
@@ -42,7 +33,6 @@ impl FixtureVibe {
         
         // Return test result if it failed, otherwise teardown result
         match test_result {
-            Ok(_) => teardown_result,
             Err(e) => {
                 // Log teardown error but preserve test error
                 if let Err(teardown_err) = teardown_result {
@@ -57,12 +47,8 @@ impl FixtureVibe {
 /// Helper function to create a new fixture
 pub fn NewFixtureVibe<S, T>(setup: S, teardown: T) -> FixtureVibe
 where
-    S: Fn(&VibeTest) -> TestVibesResult<Value> + Send + Sync + 'static,
-    T: Fn(&VibeTest, &Value) -> TestVibesResult<()> + Send + Sync + 'static,
 {
     FixtureVibe::new(setup, teardown)
-}
-
 // Common fixture types and utilities
 
 /// Database fixture helper
@@ -77,14 +63,9 @@ impl DatabaseFixture {
                 
                 // In a real implementation, this would create a test database
                 let db_config = vec![
-                    ("host".to_string(), Value::String("localhost".to_string())),
-                    ("port".to_string(), Value::Int(5432)),
-                    ("database".to_string(), Value::String("test_db".to_string())),
-                    ("username".to_string(), Value::String("test_user".to_string())),
                 ];
                 
                 Ok(Value::Object(db_config.into_iter().collect()))
-            },
             |t: &VibeTest, fixture: &Value| -> TestVibesResult<()> {
                 t.Log(&[Value::String("Tearing down test database".to_string())])?;
                 
@@ -121,7 +102,6 @@ impl FileSystemFixture {
                 
                 // In a real implementation, would actually create these files
                 Ok(Value::Array(test_files.into_iter().map(Value::String).collect()))
-            },
             |t: &VibeTest, fixture: &Value| -> TestVibesResult<()> {
                 if let Value::Array(files) = fixture {
                     t.Log(&[Value::String(format!("Cleaning up {} test files", files.len()))])?;
@@ -132,8 +112,6 @@ impl FileSystemFixture {
                             t.Log(&[Value::String(format!("Removed: {}", file_path))])?;
                         }
                     }
-                }
-                
                 Ok(())
             }
         )
@@ -152,14 +130,11 @@ impl HttpServerFixture {
                 
                 // In a real implementation, this would start an actual HTTP server
                 let server_info = vec![
-                    ("port".to_string(), Value::Int(port as i32)),
-                    ("host".to_string(), Value::String("localhost".to_string())),
                     ("url".to_string(), Value::String(format!("http://localhost:{}", port))),
                     ("pid".to_string(), Value::Int(12345)), // Mock PID
                 ];
                 
                 Ok(Value::Object(server_info.into_iter().collect()))
-            },
             |t: &VibeTest, fixture: &Value| -> TestVibesResult<()> {
                 if let Value::Object(server_info) = fixture {
                     if let Some(Value::Int(pid)) = server_info.get("pid") {
@@ -187,11 +162,9 @@ impl MemoryFixture {
                 let initial_memory = vec![
                     ("heap_size".to_string(), Value::Int(1024 * 1024)), // 1MB
                     ("allocated".to_string(), Value::Int(512 * 1024)),  // 512KB
-                    ("gc_count".to_string(), Value::Int(0)),
                 ];
                 
                 Ok(Value::Object(initial_memory.into_iter().collect()))
-            },
             |t: &VibeTest, fixture: &Value| -> TestVibesResult<()> {
                 if let Value::Object(initial_stats) = fixture {
                     // In a real implementation, would compare final vs initial memory
@@ -207,8 +180,6 @@ impl MemoryFixture {
                             t.Log(&[Value::String("⚠️  Significant memory growth detected".to_string())])?;
                         }
                     }
-                }
-                
                 Ok(())
             }
         )
@@ -227,14 +198,9 @@ impl NetworkFixture {
                 
                 // Mock network configuration
                 let network_config = vec![
-                    ("mock_server_port".to_string(), Value::Int(8080)),
-                    ("mock_client_port".to_string(), Value::Int(8081)),
-                    ("timeout_ms".to_string(), Value::Int(5000)),
-                    ("max_connections".to_string(), Value::Int(100)),
                 ];
                 
                 Ok(Value::Object(network_config.into_iter().collect()))
-            },
             |t: &VibeTest, fixture: &Value| -> TestVibesResult<()> {
                 if let Value::Object(config) = fixture {
                     if let Some(Value::Int(server_port)) = config.get("mock_server_port") {

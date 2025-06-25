@@ -13,82 +13,46 @@ use super::{SqliteError, SqliteResult, SqliteErrorCode};
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum SqliteFlags {
     /// Open database read-only
-    ReadOnly = 0x01,
     /// Open database read-write
-    ReadWrite = 0x02,
     /// Create database if it doesn't exist
-    Create = 0x04,
     /// Delete file on close (test only)
-    DeleteOnClose = 0x08,
     /// VFS only (not database)
-    Exclusive = 0x10,
     /// Auto proxy VFS
-    AutoProxy = 0x20,
     /// Use URI filename
-    Uri = 0x40,
     /// Memory database
-    Memory = 0x80,
     /// Main database only
-    MainDb = 0x100,
     /// Temporary database
-    TempDb = 0x200,
     /// Transient database
-    Transient = 0x400,
     /// Main journal
-    MainJournal = 0x800,
     /// Temp journal
-    TempJournal = 0x1000,
     /// Sub journal
-    SubJournal = 0x2000,
     /// Super journal
-    SuperJournal = 0x4000,
     /// No mutex
-    NoMutex = 0x8000,
     /// Full mutex
-    FullMutex = 0x10000,
     /// Shared cache
-    SharedCache = 0x20000,
     /// Private cache
-    PrivateCache = 0x40000,
     /// WAL mode
-    Wal = 0x80000,
     /// No follow symlinks
-    NoFollow = 0x1000000,
     /// External reader
-    ExternalReader = 0x2000000,
-}
-
 impl SqliteFlags {
     /// slay Get flag value as integer
     pub fn value(self) -> i32 {
         self as i32
-    }
-
     /// slay Combine multiple flags
     pub fn combine(flags: &[SqliteFlags]) -> i32 {
         flags.iter().map(|f| f.value()).fold(0, |acc, f| acc | f)
-    }
-
     /// slay Get default flags for normal operation
     pub fn default_flags() -> i32 {
         Self::combine(&[SqliteFlags::ReadWrite, SqliteFlags::Create])
-    }
-
     /// slay Get flags for read-only access
     pub fn readonly_flags() -> i32 {
         SqliteFlags::ReadOnly.value()
-    }
-
     /// slay Get flags for memory database
     pub fn memory_flags() -> i32 {
         Self::combine(&[SqliteFlags::ReadWrite, SqliteFlags::Create, SqliteFlags::Memory])
-    }
-
     /// slay Get flags for URI connections
     pub fn uri_flags() -> i32 {
         Self::combine(&[SqliteFlags::ReadWrite, SqliteFlags::Create, SqliteFlags::Uri])
-    }
-
     /// slay Check if flags include specific flag
     pub fn has_flag(flags: i32, flag: SqliteFlags) -> bool {
         (flags & flag.value()) != 0
@@ -99,42 +63,21 @@ impl SqliteFlags {
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum SqliteJournalMode {
     /// Delete journal file after commit
-    Delete,
     /// Keep journal file after commit
-    Persist,
     /// Write journal to memory
-    Memory,
     /// Write-ahead logging
-    Wal,
     /// No journal
-    Off,
     /// Truncate journal file
-    Truncate,
-}
-
 impl SqliteJournalMode {
     /// slay Get journal mode as string
     pub fn as_str(self) -> &'static str {
         match self {
-            SqliteJournalMode::Delete => "DELETE",
-            SqliteJournalMode::Persist => "PERSIST",
-            SqliteJournalMode::Memory => "MEMORY",
-            SqliteJournalMode::Wal => "WAL",
-            SqliteJournalMode::Off => "OFF",
-            SqliteJournalMode::Truncate => "TRUNCATE",
         }
     }
 
     /// slay Parse from string
     pub fn from_str(s: &str) -> SqliteResult<Self> {
         match s.to_uppercase().as_str() {
-            "DELETE" => Ok(SqliteJournalMode::Delete),
-            "PERSIST" => Ok(SqliteJournalMode::Persist),
-            "MEMORY" => Ok(SqliteJournalMode::Memory),
-            "WAL" => Ok(SqliteJournalMode::Wal),
-            "OFF" => Ok(SqliteJournalMode::Off),
-            "TRUNCATE" => Ok(SqliteJournalMode::Truncate),
-            _ => Err(SqliteError::invalid_parameter(&format!("Invalid journal mode: {}", s))),
         }
     }
 
@@ -154,42 +97,25 @@ impl Default for SqliteJournalMode {
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum SqliteSynchronous {
     /// No synchronization
-    Off = 0,
     /// Normal synchronization
-    Normal = 1,
     /// Full synchronization
-    Full = 2,
     /// Extra synchronization
-    Extra = 3,
-}
-
 impl SqliteSynchronous {
     /// slay Get synchronous mode as string
     pub fn as_str(self) -> &'static str {
         match self {
-            SqliteSynchronous::Off => "OFF",
-            SqliteSynchronous::Normal => "NORMAL", 
-            SqliteSynchronous::Full => "FULL",
-            SqliteSynchronous::Extra => "EXTRA",
         }
     }
 
     /// slay Parse from string
     pub fn from_str(s: &str) -> SqliteResult<Self> {
         match s.to_uppercase().as_str() {
-            "OFF" | "0" => Ok(SqliteSynchronous::Off),
-            "NORMAL" | "1" => Ok(SqliteSynchronous::Normal),
-            "FULL" | "2" => Ok(SqliteSynchronous::Full),
-            "EXTRA" | "3" => Ok(SqliteSynchronous::Extra),
-            _ => Err(SqliteError::invalid_parameter(&format!("Invalid synchronous mode: {}", s))),
         }
     }
 
     /// slay Get PRAGMA statement to set this mode
     pub fn pragma_statement(self) -> String {
         format!("PRAGMA synchronous = {}", self.as_str())
-    }
-
     /// slay Get as integer value
     pub fn value(self) -> i32 {
         self as i32
@@ -206,26 +132,17 @@ impl Default for SqliteSynchronous {
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum SqliteLockingMode {
     /// Normal locking (default)
-    Normal,
     /// Exclusive locking
-    Exclusive,
-}
-
 impl SqliteLockingMode {
     /// slay Get locking mode as string
     pub fn as_str(self) -> &'static str {
         match self {
-            SqliteLockingMode::Normal => "NORMAL",
-            SqliteLockingMode::Exclusive => "EXCLUSIVE",
         }
     }
 
     /// slay Parse from string
     pub fn from_str(s: &str) -> SqliteResult<Self> {
         match s.to_uppercase().as_str() {
-            "NORMAL" => Ok(SqliteLockingMode::Normal),
-            "EXCLUSIVE" => Ok(SqliteLockingMode::Exclusive),
-            _ => Err(SqliteError::invalid_parameter(&format!("Invalid locking mode: {}", s))),
         }
     }
 
@@ -245,86 +162,40 @@ impl Default for SqliteLockingMode {
 #[derive(Debug, Clone)]
 pub struct SqliteConfig {
     /// fr fr Database file path
-    pub database_path: String,
     /// fr fr Open flags
-    pub open_flags: i32,
     /// fr fr Connection timeout
-    pub connection_timeout: Duration,
     /// fr fr Command timeout
-    pub command_timeout: Duration,
     /// fr fr Busy timeout (milliseconds)
-    pub busy_timeout: i32,
     /// fr fr Page size (bytes)
-    pub page_size: i32,
     /// fr fr Cache size (pages)
-    pub cache_size: i32,
     /// fr fr Memory-mapped I/O size (bytes)
-    pub mmap_size: i64,
     /// fr fr Journal mode
-    pub journal_mode: SqliteJournalMode,
     /// fr fr Synchronous mode
-    pub synchronous: SqliteSynchronous,
     /// fr fr Locking mode
-    pub locking_mode: SqliteLockingMode,
     /// fr fr Auto vacuum mode (0=none, 1=full, 2=incremental)
-    pub auto_vacuum: i32,
     /// fr fr Foreign key constraints enabled
-    pub foreign_keys: bool,
     /// fr fr Recursive triggers enabled
-    pub recursive_triggers: bool,
     /// fr fr Secure delete enabled
-    pub secure_delete: bool,
     /// fr fr WAL autocheckpoint threshold
-    pub wal_autocheckpoint: i32,
     /// fr fr Maximum WAL size
-    pub max_wal_size: i64,
     /// fr fr Connection pool size
-    pub pool_size: usize,
     /// fr fr Enable query logging
-    pub enable_logging: bool,
     /// fr fr Enable performance monitoring
-    pub enable_monitoring: bool,
     /// fr fr Custom PRAGMA statements
-    pub custom_pragmas: Vec<String>,
     /// fr fr Custom collations
-    pub custom_collations: HashMap<String, String>,
     /// fr fr Extensions to load
-    pub extensions: Vec<String>,
     /// fr fr User-defined functions
-    pub custom_functions: Vec<String>,
     /// fr fr Additional connection parameters
-    pub additional_params: HashMap<String, String>,
-}
-
 impl SqliteConfig {
     /// slay Create new configuration with defaults
     pub fn new(database_path: &str) -> Self {
         Self {
-            database_path: database_path.to_string(),
-            open_flags: SqliteFlags::default_flags(),
-            connection_timeout: Duration::from_secs(30),
-            command_timeout: Duration::from_secs(300),
             busy_timeout: 30000, // 30 seconds
-            page_size: 4096,
             cache_size: 2000, // 2000 pages = ~8MB with 4KB pages
             mmap_size: 268435456, // 256MB
-            journal_mode: SqliteJournalMode::default(),
-            synchronous: SqliteSynchronous::default(),
-            locking_mode: SqliteLockingMode::default(),
             auto_vacuum: 0, // disabled
-            foreign_keys: true,
-            recursive_triggers: false,
-            secure_delete: false,
             wal_autocheckpoint: 1000, // 1000 pages
             max_wal_size: 104857600, // 100MB
-            pool_size: 10,
-            enable_logging: false,
-            enable_monitoring: true,
-            custom_pragmas: Vec::new(),
-            custom_collations: HashMap::new(),
-            extensions: Vec::new(),
-            custom_functions: Vec::new(),
-            additional_params: HashMap::new(),
         }
     }
 
@@ -335,15 +206,11 @@ impl SqliteConfig {
         config.journal_mode = SqliteJournalMode::Memory;
         config.mmap_size = 0; // No point for memory DB
         config
-    }
-
     /// slay Create read-only configuration
     pub fn readonly(database_path: &str) -> Self {
         let mut config = Self::new(database_path);
         config.open_flags = SqliteFlags::readonly_flags();
         config
-    }
-
     /// slay Create WAL mode configuration (optimized for performance)
     pub fn wal_mode(database_path: &str) -> Self {
         let mut config = Self::new(database_path);
@@ -352,8 +219,6 @@ impl SqliteConfig {
         config.mmap_size = 1073741824; // 1GB for better performance
         config.cache_size = 10000; // Larger cache for WAL
         config
-    }
-
     /// slay Create high-performance configuration
     pub fn high_performance(database_path: &str) -> Self {
         let mut config = Self::wal_mode(database_path);
@@ -365,8 +230,6 @@ impl SqliteConfig {
         config.custom_pragmas.push("PRAGMA temp_store = memory".to_string());
         config.custom_pragmas.push("PRAGMA optimize".to_string());
         config
-    }
-
     /// slay Create safe configuration (maximum data integrity)
     pub fn safe_mode(database_path: &str) -> Self {
         let mut config = Self::new(database_path);
@@ -376,51 +239,33 @@ impl SqliteConfig {
         config.auto_vacuum = 1; // Full auto vacuum
         config.custom_pragmas.push("PRAGMA integrity_check".to_string());
         config
-    }
-
     /// slay Validate configuration
     pub fn validate(&self) -> SqliteResult<()> {
         // Validate database path
         if self.database_path.is_empty() {
             return Err(SqliteError::invalid_parameter("Database path cannot be empty"));
-        }
-
         // Validate page size (must be power of 2, 512-65536)
         let is_power_of_two = self.page_size > 0 && (self.page_size & (self.page_size - 1)) == 0;
         if !is_power_of_two || self.page_size < 512 || self.page_size > 65536 {
             return Err(SqliteError::invalid_parameter(
                 "Page size must be power of 2 between 512 and 65536"
             ));
-        }
-
         // Validate cache size (positive)
         if self.cache_size <= 0 {
             return Err(SqliteError::invalid_parameter("Cache size must be positive"));
-        }
-
         // Validate busy timeout (non-negative)
         if self.busy_timeout < 0 {
             return Err(SqliteError::invalid_parameter("Busy timeout cannot be negative"));
-        }
-
         // Validate auto vacuum mode
         if !(0..=2).contains(&self.auto_vacuum) {
             return Err(SqliteError::invalid_parameter("Auto vacuum mode must be 0, 1, or 2"));
-        }
-
         // Validate WAL autocheckpoint
         if self.wal_autocheckpoint < 0 {
             return Err(SqliteError::invalid_parameter("WAL autocheckpoint cannot be negative"));
-        }
-
         // Validate pool size
         if self.pool_size == 0 {
             return Err(SqliteError::invalid_parameter("Pool size must be at least 1"));
-        }
-
         Ok(())
-    }
-
     /// slay Generate initialization SQL statements
     pub fn initialization_sql(&self) -> Vec<String> {
         let mut statements = Vec::new();
@@ -440,60 +285,38 @@ impl SqliteConfig {
         // Memory-mapped I/O
         if self.mmap_size > 0 {
             statements.push(format!("PRAGMA mmap_size = {}", self.mmap_size));
-        }
-
         // WAL settings
         if self.journal_mode == SqliteJournalMode::Wal {
             statements.push(format!("PRAGMA wal_autocheckpoint = {}", self.wal_autocheckpoint));
-        }
-
         // Custom PRAGMA statements
         statements.extend(self.custom_pragmas.clone());
 
         statements
-    }
-
     /// slay Add custom PRAGMA statement
     pub fn add_pragma(&mut self, pragma: &str) {
         self.custom_pragmas.push(pragma.to_string());
-    }
-
     /// slay Add custom collation
     pub fn add_collation(&mut self, name: &str, definition: &str) {
         self.custom_collations.insert(name.to_string(), definition.to_string());
-    }
-
     /// slay Add extension
     pub fn add_extension(&mut self, extension: &str) {
         self.extensions.push(extension.to_string());
-    }
-
     /// slay Add custom function
     pub fn add_function(&mut self, function: &str) {
         self.custom_functions.push(function.to_string());
-    }
-
     /// slay Add additional parameter
     pub fn add_parameter(&mut self, key: &str, value: &str) {
         self.additional_params.insert(key.to_string(), value.to_string());
-    }
-
     /// slay Check if database is in-memory
     pub fn is_memory_database(&self) -> bool {
         self.database_path == ":memory:" || 
         SqliteFlags::has_flag(self.open_flags, SqliteFlags::Memory)
-    }
-
     /// slay Check if database is read-only
     pub fn is_readonly(&self) -> bool {
         SqliteFlags::has_flag(self.open_flags, SqliteFlags::ReadOnly)
-    }
-
     /// slay Check if WAL mode is enabled
     pub fn is_wal_mode(&self) -> bool {
         self.journal_mode == SqliteJournalMode::Wal
-    }
-
     /// slay Get estimated memory usage
     pub fn estimated_memory_usage(&self) -> u64 {
         let cache_memory = (self.cache_size as u64) * (self.page_size as u64);
@@ -514,11 +337,7 @@ impl Default for SqliteConfig {
 #[derive(Debug, Clone)]
 pub struct SqliteConnectionString {
     /// fr fr Parsed configuration
-    pub config: SqliteConfig,
     /// fr fr Original connection string
-    pub original: String,
-}
-
 impl SqliteConnectionString {
     /// slay Parse connection string
     pub fn parse(connection_string: &str) -> SqliteResult<Self> {
@@ -540,13 +359,9 @@ impl SqliteConnectionString {
         } else {
             // Simple file path
             config.database_path = connection_string.to_string();
-        }
-
         config.validate()?;
 
         Ok(Self { config, original })
-    }
-
     /// slay Parse URI format: file:path?param=value&param2=value2
     fn parse_uri_format(config: &mut SqliteConfig, uri: &str) -> SqliteResult<()> {
         let uri_without_scheme = uri.strip_prefix("file:")
@@ -558,18 +373,13 @@ impl SqliteConnectionString {
             (path, Some(params))
         } else {
             (uri_without_scheme, None)
-        };
 
         config.database_path = path.to_string();
         config.open_flags |= SqliteFlags::Uri.value();
 
         if let Some(params_str) = params {
             Self::parse_uri_parameters(config, params_str)?;
-        }
-
         Ok(())
-    }
-
     /// slay Parse URI parameters
     fn parse_uri_parameters(config: &mut SqliteConfig, params: &str) -> SqliteResult<()> {
         for param in params.split('&') {
@@ -583,15 +393,11 @@ impl SqliteConnectionString {
             }
         }
         Ok(())
-    }
-
     /// slay Parse data source format: key=value;key2=value2
     fn parse_data_source_format(config: &mut SqliteConfig, data_source: &str) -> SqliteResult<()> {
         for pair in data_source.split(';') {
             if pair.trim().is_empty() {
                 continue;
-            }
-
             if let Some((key, value)) = pair.split_once('=') {
                 let key = key.trim().to_lowercase();
                 let value = value.trim();
@@ -607,8 +413,6 @@ impl SqliteConnectionString {
             }
         }
         Ok(())
-    }
-
     /// slay Apply parameter to configuration
     fn apply_parameter(config: &mut SqliteConfig, key: &str, value: &str) -> SqliteResult<()> {
         match key.to_lowercase().as_str() {
@@ -626,7 +430,6 @@ impl SqliteConnectionString {
                     "memory" => {
                         config.open_flags = SqliteFlags::memory_flags();
                     }
-                    _ => return Err(SqliteError::invalid_parameter(&format!("Invalid mode: {}", value))),
                 }
             }
             "cache" => {
@@ -637,7 +440,6 @@ impl SqliteConnectionString {
                     "private" => {
                         config.open_flags |= SqliteFlags::PrivateCache.value();
                     }
-                    _ => return Err(SqliteError::invalid_parameter(&format!("Invalid cache mode: {}", value))),
                 }
             }
             "page_size" => {
@@ -698,14 +500,9 @@ impl SqliteConnectionString {
             }
         }
         Ok(())
-    }
-
     /// slay Parse boolean value
     fn parse_bool(value: &str) -> SqliteResult<bool> {
         match value.to_lowercase().as_str() {
-            "true" | "1" | "yes" | "on" | "enabled" => Ok(true),
-            "false" | "0" | "no" | "off" | "disabled" => Ok(false),
-            _ => Err(SqliteError::invalid_parameter(&format!("Invalid boolean value: {}", value))),
         }
     }
 
@@ -713,8 +510,6 @@ impl SqliteConnectionString {
     pub fn build_connection_string(config: &SqliteConfig) -> String {
         if config.is_memory_database() {
             return ":memory:".to_string();
-        }
-
         let mut uri = format!("file:{}", config.database_path);
         let mut params = Vec::new();
 
@@ -723,15 +518,11 @@ impl SqliteConnectionString {
             params.push("mode=ro".to_string());
         } else {
             params.push("mode=rwc".to_string());
-        }
-
         // Add cache mode
         if SqliteFlags::has_flag(config.open_flags, SqliteFlags::SharedCache) {
             params.push("cache=shared".to_string());
         } else if SqliteFlags::has_flag(config.open_flags, SqliteFlags::PrivateCache) {
             params.push("cache=private".to_string());
-        }
-
         // Add other parameters
         if config.page_size != 4096 {
             params.push(format!("page_size={}", config.page_size));
@@ -747,18 +538,12 @@ impl SqliteConnectionString {
         }
         if config.synchronous != SqliteSynchronous::Full {
             params.push(format!("synchronous={}", config.synchronous.as_str()));
-        }
-
         // Add additional parameters
         for (key, value) in &config.additional_params {
             params.push(format!("{}={}", key, value));
-        }
-
         if !params.is_empty() {
             uri.push('?');
             uri.push_str(&params.join("&"));
-        }
-
         uri
     }
 }

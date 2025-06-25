@@ -7,13 +7,8 @@ use std::pin::Pin;
 use std::time::{Duration, Instant};
 use std::net::IpAddr;
 
-// use crate::stdlib::packages::web_vibez::{
-    request::HttpRequest,
-    response::HttpResponse,
-    handler::Handler,
-    error::{WebError, WebResult},
-    types::Headers,
-};
+// Placeholder imports disabled
+// };
 
 /// fr fr Middleware trait for request/response processing - pipeline component
 pub trait Middleware: Send + Sync {
@@ -32,14 +27,10 @@ pub trait Middleware: Send + Sync {
 /// fr fr Middleware chain for composing multiple middleware - processing pipeline
 #[derive(Clone)]
 pub struct MiddlewareChain {
-    middleware: Vec<Arc<dyn Middleware>>,
-}
-
 impl MiddlewareChain {
     /// fr fr Create new middleware chain - empty pipeline
     pub fn new() -> Self {
         Self {
-            middleware: Vec::new(),
         }
     }
 
@@ -47,26 +38,18 @@ impl MiddlewareChain {
     pub fn add<M: Middleware + 'static>(mut self, middleware: M) -> Self {
         self.middleware.push(Arc::new(middleware));
         self
-    }
-
     /// fr fr Get middleware count - pipeline size
     pub fn len(&self) -> usize {
         self.middleware.len()
-    }
-
     /// fr fr Check if chain is empty - validation
     pub fn is_empty(&self) -> bool {
         self.middleware.is_empty()
-    }
-
     /// fr fr Process request through all middleware - complete preprocessing
     pub async fn process_request(&self, request: &mut HttpRequest) -> WebResult<()> {
         for middleware in &self.middleware {
             middleware.before_request(request).await?;
         }
         Ok(())
-    }
-
     /// fr fr Process response through all middleware - complete postprocessing  
     pub async fn process_response(&self, request: &HttpRequest, response: &mut HttpResponse) -> WebResult<()> {
         // Process in reverse order for response
@@ -85,20 +68,12 @@ impl Default for MiddlewareChain {
 
 /// fr fr Middleware-aware handler wrapper - combines handler with middleware
 pub struct MiddlewareHandler {
-    handler: Arc<dyn Handler>,
-    middleware_chain: MiddlewareChain,
-}
-
 impl MiddlewareHandler {
     /// fr fr Create new middleware handler - wrap handler with middleware
     pub fn new<H: Handler + 'static>(handler: H, middleware_chain: MiddlewareChain) -> Self {
         Self {
-            handler: Arc::new(handler),
-            middleware_chain,
         }
     }
-}
-
 impl Handler for MiddlewareHandler {
     fn handle(&self, mut request: HttpRequest) -> Pin<Box<dyn Future<Output = WebResult<HttpResponse>> + Send + '_>> {
         let handler = self.handler.clone();
@@ -116,8 +91,6 @@ impl Handler for MiddlewareHandler {
             
             Ok(response)
         })
-    }
-
     fn name(&self) -> &'static str {
         "MiddlewareHandler"
     }
@@ -126,24 +99,11 @@ impl Handler for MiddlewareHandler {
 /// fr fr CORS middleware for cross-origin requests - security headers
 #[derive(Clone)]
 pub struct CorsMiddleware {
-    allowed_origins: Vec<String>,
-    allowed_methods: Vec<String>,
-    allowed_headers: Vec<String>,
-    exposed_headers: Vec<String>,
-    max_age: Option<Duration>,
-    allow_credentials: bool,
-}
-
 impl CorsMiddleware {
     /// fr fr Create new CORS middleware - basic setup
     pub fn new() -> Self {
         Self {
-            allowed_origins: Vec::from(["*".to_string()]),
-            allowed_methods: Vec::from(["GET".to_string(), "POST".to_string(), "PUT".to_string(), "DELETE".to_string()]),
-            allowed_headers: Vec::from(["Content-Type".to_string(), "Authorization".to_string()]),
-            exposed_headers: Vec::new(),
             max_age: Some(Duration::from_secs(86400)), // 24 hours
-            allow_credentials: false,
         }
     }
 
@@ -151,45 +111,31 @@ impl CorsMiddleware {
     pub fn allowed_origins(mut self, origins: Vec<String>) -> Self {
         self.allowed_origins = origins;
         self
-    }
-
     /// fr fr Set allowed methods - what methods are OK
     pub fn allowed_methods(mut self, methods: Vec<String>) -> Self {
         self.allowed_methods = methods;
         self
-    }
-
     /// fr fr Set allowed headers - what headers are OK
     pub fn allowed_headers(mut self, headers: Vec<String>) -> Self {
         self.allowed_headers = headers;
         self
-    }
-
     /// fr fr Set exposed headers - what headers client can see
     pub fn exposed_headers(mut self, headers: Vec<String>) -> Self {
         self.exposed_headers = headers;
         self
-    }
-
     /// fr fr Set max age for preflight cache - how long to cache
     pub fn max_age(mut self, duration: Duration) -> Self {
         self.max_age = Some(duration);
         self
-    }
-
     /// fr fr Allow credentials - cookies and auth
     pub fn allow_credentials(mut self, allow: bool) -> Self {
         self.allow_credentials = allow;
         self
-    }
-
     /// fr fr Create permissive CORS - allow everything (dev mode)
     pub fn permissive() -> Self {
         Self::new()
             .allowed_origins(Vec::from(["*".to_string()]))
             .allow_credentials(false)
-    }
-
     /// fr fr Check if origin is allowed - validation
     fn is_origin_allowed(&self, origin: &str) -> bool {
         self.allowed_origins.contains(&"*".to_string()) || self.allowed_origins.contains(&origin.to_string())
@@ -199,8 +145,6 @@ impl CorsMiddleware {
 impl Middleware for CorsMiddleware {
     fn before_request<'a>(&'a self, _request: &'a mut HttpRequest) -> Pin<Box<dyn Future<Output = WebResult<()>> + Send + '_>> {
         Box::pin(async { Ok(()) })
-    }
-
     fn after_response<'a>(&'a self, request: &'a HttpRequest, response: &'a mut HttpResponse) -> Pin<Box<dyn Future<Output = WebResult<()>> + Send + '_>> {
         let allowed_origins = self.allowed_origins.clone();
         let allowed_methods = self.allowed_methods.clone();
@@ -219,52 +163,33 @@ impl Middleware for CorsMiddleware {
                         response.headers.insert("access-control-allow-origin".to_string(), origin.clone());
                     }
                 }
-            }
-
             // Add allowed methods
             if !allowed_methods.is_empty() {
                 response.headers.insert(
-                    "access-control-allow-methods".to_string(),
                     allowed_methods.join(", ")
                 );
-            }
-
             // Add allowed headers
             if !allowed_headers.is_empty() {
                 response.headers.insert(
-                    "access-control-allow-headers".to_string(),
                     allowed_headers.join(", ")
                 );
-            }
-
             // Add exposed headers
             if !exposed_headers.is_empty() {
                 response.headers.insert(
-                    "access-control-expose-headers".to_string(),
                     exposed_headers.join(", ")
                 );
-            }
-
             // Add max age for preflight
             if let Some(max_age) = max_age {
                 response.headers.insert(
-                    "access-control-max-age".to_string(),
                     max_age.as_secs().to_string()
                 );
-            }
-
             // Add credentials flag
             if allow_credentials {
                 response.headers.insert(
-                    "access-control-allow-credentials".to_string(),
                     "true".to_string()
                 );
-            }
-
             Ok(())
         })
-    }
-
     fn name(&self) -> &'static str {
         "CorsMiddleware"
     }
@@ -279,20 +204,10 @@ impl Default for CorsMiddleware {
 /// fr fr Logging middleware for request/response tracking - observability
 #[derive(Clone)]
 pub struct LoggingMiddleware {
-    log_requests: bool,
-    log_responses: bool,
-    log_headers: bool,
-    log_body: bool,
-}
-
 impl LoggingMiddleware {
     /// fr fr Create new logging middleware - basic setup
     pub fn new() -> Self {
         Self {
-            log_requests: true,
-            log_responses: true,
-            log_headers: false,
-            log_body: false,
         }
     }
 
@@ -300,20 +215,14 @@ impl LoggingMiddleware {
     pub fn log_requests(mut self, enable: bool) -> Self {
         self.log_requests = enable;
         self
-    }
-
     /// fr fr Enable/disable response logging - control verbosity
     pub fn log_responses(mut self, enable: bool) -> Self {
         self.log_responses = enable;
         self
-    }
-
     /// fr fr Enable/disable header logging - detailed info
     pub fn log_headers(mut self, enable: bool) -> Self {
         self.log_headers = enable;
         self
-    }
-
     /// fr fr Enable/disable body logging - sensitive data
     pub fn log_body(mut self, enable: bool) -> Self {
         self.log_body = enable;
@@ -336,8 +245,6 @@ impl Middleware for LoggingMiddleware {
                 
                 if let Some(client_ip) = request.client_ip() {
                     println!("  Client: {}", client_ip);
-                }
-
                 if log_headers && !request.headers.is_empty() {
                     println!("  Headers:");
                     for (name, value) in &request.headers {
@@ -351,15 +258,12 @@ impl Middleware for LoggingMiddleware {
                             format!("{}...", &body_text[..200])
                         } else {
                             body_text
-                        };
                         println!("  Body: {}", preview);
                     }
                 }
             }
             Ok(())
         })
-    }
-
     fn after_response<'a>(&'a self, request: &'a HttpRequest, response: &'a mut HttpResponse) -> Pin<Box<dyn Future<Output = WebResult<()>> + Send + '_>> {
         let log_responses = self.log_responses;
         let log_headers = self.log_headers;
@@ -371,7 +275,6 @@ impl Middleware for LoggingMiddleware {
                     format!(" ({}ms)", start_time.as_u64().unwrap_or(0))
                 } else {
                     String::new()
-                };
 
                 println!("← {} {}{}", response.status, response.content_length(), duration);
 
@@ -388,15 +291,12 @@ impl Middleware for LoggingMiddleware {
                             format!("{}...", &body_text[..200])
                         } else {
                             body_text
-                        };
                         println!("  Body: {}", preview);
                     }
                 }
             }
             Ok(())
         })
-    }
-
     fn name(&self) -> &'static str {
         "LoggingMiddleware"
     }
@@ -411,24 +311,10 @@ impl Default for LoggingMiddleware {
 /// fr fr Security headers middleware - common security headers
 #[derive(Clone)]
 pub struct SecurityHeadersMiddleware {
-    content_security_policy: Option<String>,
-    x_frame_options: Option<String>,
-    x_content_type_options: bool,
-    x_xss_protection: bool,
-    strict_transport_security: Option<String>,
-    referrer_policy: Option<String>,
-}
-
 impl SecurityHeadersMiddleware {
     /// fr fr Create new security headers middleware - basic security
     pub fn new() -> Self {
         Self {
-            content_security_policy: Some("default-src 'self'".to_string()),
-            x_frame_options: Some("DENY".to_string()),
-            x_content_type_options: true,
-            x_xss_protection: true,
-            strict_transport_security: Some("max-age=31536000; includeSubDomains".to_string()),
-            referrer_policy: Some("strict-origin-when-cross-origin".to_string()),
         }
     }
 
@@ -436,20 +322,14 @@ impl SecurityHeadersMiddleware {
     pub fn content_security_policy(mut self, policy: Option<String>) -> Self {
         self.content_security_policy = policy;
         self
-    }
-
     /// fr fr Set X-Frame-Options - clickjacking protection
     pub fn x_frame_options(mut self, value: Option<String>) -> Self {
         self.x_frame_options = value;
         self
-    }
-
     /// fr fr Enable/disable X-Content-Type-Options - MIME sniffing protection
     pub fn x_content_type_options(mut self, enable: bool) -> Self {
         self.x_content_type_options = enable;
         self
-    }
-
     /// fr fr Set Strict Transport Security - HTTPS enforcement
     pub fn strict_transport_security(mut self, value: Option<String>) -> Self {
         self.strict_transport_security = value;
@@ -460,8 +340,6 @@ impl SecurityHeadersMiddleware {
 impl Middleware for SecurityHeadersMiddleware {
     fn before_request<'a>(&'a self, _request: &'a mut HttpRequest) -> Pin<Box<dyn Future<Output = WebResult<()>> + Send + '_>> {
         Box::pin(async { Ok(()) })
-    }
-
     fn after_response<'a>(&'a self, _request: &'a HttpRequest, response: &'a mut HttpResponse) -> Pin<Box<dyn Future<Output = WebResult<()>> + Send + '_>> {
         let csp = self.content_security_policy.clone();
         let x_frame = self.x_frame_options.clone();
@@ -473,32 +351,18 @@ impl Middleware for SecurityHeadersMiddleware {
         Box::pin(async move {
             if let Some(csp) = csp {
                 response.headers.insert("content-security-policy".to_string(), csp);
-            }
-
             if let Some(x_frame) = x_frame {
                 response.headers.insert("x-frame-options".to_string(), x_frame);
-            }
-
             if x_content_type {
                 response.headers.insert("x-content-type-options".to_string(), "nosniff".to_string());
-            }
-
             if x_xss {
                 response.headers.insert("x-xss-protection".to_string(), "1; mode=block".to_string());
-            }
-
             if let Some(hsts) = hsts {
                 response.headers.insert("strict-transport-security".to_string(), hsts);
-            }
-
             if let Some(referrer) = referrer {
                 response.headers.insert("referrer-policy".to_string(), referrer);
-            }
-
             Ok(())
         })
-    }
-
     fn name(&self) -> &'static str {
         "SecurityHeadersMiddleware"
     }
@@ -511,18 +375,11 @@ impl Default for SecurityHeadersMiddleware {
 }
 
 /// fr fr Rate limiting middleware - production-ready request throttling
-// use crate::stdlib::packages::web_vibez::ratelimit::{
-    RateLimiter, RateLimitConfig, RateLimitDecision, InMemoryStore, FixedWindow,
-    extract_client_id, WindowConfig, BucketConfig, ClientIdentification, ErrorConfig,
-};
+// Placeholder imports disabled
+// };
 
 #[derive(Clone)]
 pub struct RateLimitMiddleware {
-    limiter: Arc<RateLimiter>,
-    config: RateLimitConfig,
-    client_identification: ClientIdentification,
-}
-
 impl RateLimitMiddleware {
     /// fr fr Create new rate limit middleware - comprehensive setup
     pub fn new(config: RateLimitConfig) -> Self {
@@ -531,18 +388,12 @@ impl RateLimitMiddleware {
         let limiter = Arc::new(RateLimiter::new(store, algorithm, config.clone()));
         
         Self {
-            limiter,
-            client_identification: config.client_identification.clone(),
-            config,
         }
     }
 
     /// fr fr Create with custom limiter - advanced setup
     pub fn with_limiter(limiter: Arc<RateLimiter>, config: RateLimitConfig) -> Self {
         Self {
-            limiter,
-            client_identification: config.client_identification.clone(),
-            config,
         }
     }
 
@@ -550,34 +401,24 @@ impl RateLimitMiddleware {
     pub fn per_minute(max_requests: u64) -> Self {
         let config = RateLimitConfig::per_minute(max_requests);
         Self::new(config)
-    }
-
     /// fr fr Create rate limiter per hour - lenient setup
     pub fn per_hour(max_requests: u64) -> Self {
         let config = RateLimitConfig::per_hour(max_requests);
         Self::new(config)
-    }
-
     /// fr fr Create rate limiter per second - strict setup
     pub fn per_second(max_requests: u64) -> Self {
         let config = RateLimitConfig::per_second(max_requests);
         Self::new(config)
-    }
-
     /// fr fr Create sliding window rate limiter - smooth limiting
     pub fn sliding_window(max_requests: u64, duration: Duration) -> Self {
         let config = RateLimitConfig::new(max_requests, duration)
             .with_sliding_window(duration);
         Self::new(config)
-    }
-
     /// fr fr Create token bucket rate limiter - burst-friendly
     pub fn token_bucket(max_requests: u64, window: Duration, capacity: f64, refill_rate: f64) -> Self {
         let config = RateLimitConfig::new(max_requests, window)
             .with_token_bucket(capacity, refill_rate);
         Self::new(config)
-    }
-
     /// fr fr Extract client identifier from request - configurable identification
     fn extract_client_id(&self, request: &HttpRequest) -> String {
         match &self.client_identification {
@@ -623,22 +464,16 @@ impl RateLimitMiddleware {
                 format!("custom:{}", identifier)
             }
         }
-    }
-
     /// fr fr Add rate limit headers to response
     fn add_rate_limit_headers(&self, response: &mut HttpResponse, decision: &RateLimitDecision, client_id: &str) {
         if !self.config.error_config.include_headers {
             return;
-        }
-
         match decision {
             RateLimitDecision::Allow { remaining, reset_time, .. } => {
                 response.headers.insert("x-ratelimit-limit".to_string(), self.config.max_requests.to_string());
                 response.headers.insert("x-ratelimit-remaining".to_string(), remaining.to_string());
                 response.headers.insert("x-ratelimit-reset".to_string(), reset_time.to_string());
                 response.headers.insert("x-ratelimit-policy".to_string(), format!("{};w={}", self.config.max_requests, match &self.config.window_config {
-                    WindowConfig::Fixed { duration } => duration.as_secs(),
-                    WindowConfig::Sliding { duration } => duration.as_secs(),
                 }));
             }
             RateLimitDecision::Deny { retry_after, reset_time } => {
@@ -650,8 +485,6 @@ impl RateLimitMiddleware {
                     response.headers.insert("retry-after".to_string(), retry_after.to_string());
                 }
             }
-        }
-        
         // Add client identifier for debugging (if not sensitive)
         if matches!(self.client_identification, ClientIdentification::IpAddress) {
             response.headers.insert("x-ratelimit-scope".to_string(), client_id.to_string());
@@ -661,8 +494,6 @@ impl RateLimitMiddleware {
     /// fr fr Get rate limiter metrics - monitoring
 //     pub async fn get_metrics(&self) -> crate::stdlib::packages::web_vibez::ratelimit::RateLimitMetrics {
         self.limiter.get_metrics().await
-    }
-
     /// fr fr Reset client rate limit - administrative function
 //     pub async fn reset_client(&self, client_id: &str) -> crate::stdlib::packages::web_vibez::ratelimit::RateLimitResult<()> {
         self.limiter.reset_client(client_id).await
@@ -687,17 +518,10 @@ impl Middleware for RateLimitMiddleware {
                         custom_response.clone()
                     } else {
                         serde_json::json!({
-                            "error": error_config.message,
-                            "code": "RATE_LIMIT_EXCEEDED",
-                            "retry_after": retry_after,
                             "client_id": client_id
                         }).to_string()
-                    };
                     
                     Err(WebError::RateLimit {
-                        status_code: error_config.status_code,
-                        message: error_response,
-                        retry_after: Some(retry_after),
                     })
                 }
                 Err(rate_limit_error) => {
@@ -709,8 +533,6 @@ impl Middleware for RateLimitMiddleware {
                 }
             }
         })
-    }
-
     fn after_response<'a>(&'a self, request: &'a HttpRequest, response: &'a mut HttpResponse) -> Pin<Box<dyn Future<Output = WebResult<()>> + Send + '_>> {
         let client_id = self.extract_client_id(request);
         let limiter = self.limiter.clone();
@@ -721,16 +543,10 @@ impl Middleware for RateLimitMiddleware {
             if let Ok(context) = limiter.get_context(&client_id).await {
                 let decision = if context.remaining > 0 {
                     RateLimitDecision::Allow {
-                        remaining: context.remaining,
-                        reset_time: context.reset_time,
-                        retry_after: context.retry_after,
                     }
                 } else {
                     RateLimitDecision::Deny {
-                        retry_after: context.retry_after.unwrap_or(60),
-                        reset_time: context.reset_time,
                     }
-                };
                 
                 if config.error_config.include_headers {
                     self.add_rate_limit_headers(response, &decision, &client_id);
@@ -739,8 +555,6 @@ impl Middleware for RateLimitMiddleware {
             
             Ok(())
         })
-    }
-
     fn name(&self) -> &'static str {
         "RateLimitMiddleware"
     }

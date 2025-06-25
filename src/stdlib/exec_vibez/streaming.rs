@@ -21,64 +21,40 @@ static ACTIVE_STREAMERS: AtomicUsize = AtomicUsize::new(0);
 #[derive(Debug)]
 pub struct OutputStreamer {
     /// Associated command
-    cmd: Cmd,
     /// Line callback function
-    line_callback: Option<Box<dyn Fn(String) + Send + Sync>>,
     /// Data callback function
-    data_callback: Option<Box<dyn Fn(&[u8]) + Send + Sync>>,
     /// Whether the streamer is active
-    active: Arc<Mutex<bool>>,
     /// Buffer size for reading
-    buffer_size: usize,
     /// Whether to stream stderr as well
-    include_stderr: bool,
-}
-
 impl OutputStreamer {
     /// Create a new output streamer
     pub fn new(cmd: Cmd) -> Self {
         ACTIVE_STREAMERS.fetch_add(1, Ordering::Relaxed);
         
         Self {
-            cmd,
-            line_callback: None,
-            data_callback: None,
-            active: Arc::new(Mutex::new(false)),
-            buffer_size: 8192,
-            include_stderr: true,
         }
     }
     
     /// Set the line callback function
     pub fn on_line<F>(&mut self, callback: F) -> &mut Self
     where
-        F: Fn(String) + Send + Sync + 'static,
     {
         self.line_callback = Some(Box::new(callback));
         self
-    }
-    
     /// Set the data callback function
     pub fn on_data<F>(&mut self, callback: F) -> &mut Self
     where
-        F: Fn(&[u8]) + Send + Sync + 'static,
     {
         self.data_callback = Some(Box::new(callback));
         self
-    }
-    
     /// Set the buffer size
     pub fn set_buffer_size(&mut self, size: usize) -> &mut Self {
         self.buffer_size = size;
         self
-    }
-    
     /// Set whether to include stderr in streaming
     pub fn include_stderr(&mut self, include: bool) -> &mut Self {
         self.include_stderr = include;
         self
-    }
-    
     /// Start streaming the command output
     pub fn start(&mut self) -> ExecResult<()> {
         // Start the command
@@ -87,8 +63,6 @@ impl OutputStreamer {
         {
             let mut active = self.active.lock().unwrap();
             *active = true;
-        }
-        
         // Get stdout pipe
         if let Some(stdout) = self.cmd.stdout_pipe() {
             let line_callback = self.line_callback.take();
@@ -104,10 +78,7 @@ impl OutputStreamer {
                     for line_result in reader.split("\n") {
                         if !*active.lock().unwrap() {
                             break;
-                        }
-                        
                         match line_result {
-                            Ok(line) => line_cb(line),
                             Err(e) => {
                                 tracing::warn!("CursedError reading line from stdout: {}", e);
                                 break;
@@ -122,11 +93,8 @@ impl OutputStreamer {
                     loop {
                         if !*active.lock().unwrap() {
                             break;
-                        }
-                        
                         match reader.read(&mut buffer) {
                             Ok(0) => break, // EOF
-                            Ok(n) => data_cb(&buffer[..n]),
                             Err(e) => {
                                 tracing::warn!("CursedError reading data from stdout: {}", e);
                                 break;
@@ -135,8 +103,6 @@ impl OutputStreamer {
                     }
                 }
             });
-        }
-        
         // Handle stderr if requested
         if self.include_stderr {
             if let Some(stderr) = self.cmd.stderr_pipe() {
@@ -149,8 +115,6 @@ impl OutputStreamer {
                     for line_result in reader.split("\n") {
                         if !*active.lock().unwrap() {
                             break;
-                        }
-                        
                         match line_result {
                             Ok(line) => {
                                 tracing::debug!("stderr: {}", line);
@@ -166,8 +130,6 @@ impl OutputStreamer {
         }
         
         Ok(())
-    }
-    
     /// Wait for the command to complete
     pub fn wait(&mut self) -> ExecResult<ProcessState> {
         let state = self.cmd.wait()?;
@@ -175,25 +137,15 @@ impl OutputStreamer {
         {
             let mut active = self.active.lock().unwrap();
             *active = false;
-        }
-        
         Ok(state)
-    }
-    
     /// Stop streaming (kill the process)
     pub fn stop(&mut self) -> ExecResult<()> {
         {
             let mut active = self.active.lock().unwrap();
             *active = false;
-        }
-        
         if let Some(process) = self.cmd.process() {
             process.kill()?;
-        }
-        
         Ok(())
-    }
-    
     /// Check if the streamer is active
     pub fn is_active(&self) -> bool {
         *self.active.lock().unwrap()
@@ -209,19 +161,12 @@ impl Drop for OutputStreamer {
             *active = false;
         }
     }
-}
-
 /// Input generator for programmatic command input
 #[derive(Debug)]
 pub struct InputGenerator {
     /// Input queue with timing
-    input_queue: Arc<Mutex<VecDeque<(Vec<u8>, Option<Duration>)>>>,
     /// Whether the generator is active
-    active: Arc<Mutex<bool>>,
     /// Input thread handle
-    thread_handle: Option<thread::JoinHandle<()>>,
-}
-
 impl InputGenerator {
     /// Create a new input generator
     pub fn new(cmd: &mut Cmd) -> ExecResult<Self> {
@@ -240,12 +185,9 @@ impl InputGenerator {
             loop {
                 if !*active_clone.lock().unwrap() {
                     break;
-                }
-                
                 let input_item = {
                     let mut queue = queue_clone.lock().unwrap();
                     queue.pop_front()
-                };
                 
                 if let Some((data, delay)) = input_item {
                     // Apply delay if specified
@@ -260,13 +202,9 @@ impl InputGenerator {
                     if let Err(e) = stdin.write_all(&data) {
                         tracing::warn!("CursedError writing to stdin: {}", e);
                         break;
-                    }
-                    
                     if let Err(e) = stdin.flush() {
                         tracing::warn!("CursedError flushing stdin: {}", e);
                         break;
-                    }
-                    
                     last_write = Instant::now();
                 } else {
                     // No input available, sleep briefly
@@ -276,55 +214,36 @@ impl InputGenerator {
         });
         
         Ok(Self {
-            input_queue,
-            active,
-            thread_handle: Some(thread_handle),
         })
-    }
-    
     /// Write data immediately
     pub fn write(&self, data: &str) -> &Self {
         self.write_bytes(data.as_bytes())
-    }
-    
     /// Write bytes immediately
     pub fn write_bytes(&self, data: &[u8]) -> &Self {
         let mut queue = self.input_queue.lock().unwrap();
         queue.push_back((data.to_vec(), None));
         self
-    }
-    
     /// Write data after a delay
     pub fn write_after(&self, data: &str, delay: Duration) -> &Self {
         self.write_bytes_after(data.as_bytes(), delay)
-    }
-    
     /// Write bytes after a delay
     pub fn write_bytes_after(&self, data: &[u8], delay: Duration) -> &Self {
         let mut queue = self.input_queue.lock().unwrap();
         queue.push_back((data.to_vec(), Some(delay)));
         self
-    }
-    
     /// Write a line (with newline)
     pub fn write_line(&self, line: &str) -> &Self {
         let data = format!("{}\n", line);
         self.write(&data)
-    }
-    
     /// Write a line after a delay
     pub fn write_line_after(&self, line: &str, delay: Duration) -> &Self {
         let data = format!("{}\n", line);
         self.write_after(&data, delay)
-    }
-    
     /// Close the input stream
     pub fn close(&mut self) {
         {
             let mut active = self.active.lock().unwrap();
             *active = false;
-        }
-        
         // Wait for the thread to finish
         if let Some(handle) = self.thread_handle.take() {
             let _ = handle.join();
@@ -334,8 +253,6 @@ impl InputGenerator {
     /// Check if the generator is active
     pub fn is_active(&self) -> bool {
         *self.active.lock().unwrap()
-    }
-    
     /// Get the number of queued input items
     pub fn queue_size(&self) -> usize {
         self.input_queue.lock().unwrap().len()
@@ -351,15 +268,9 @@ impl Drop for InputGenerator {
 /// Create a new output streamer
 pub fn new_output_streamer(cmd: Cmd) -> OutputStreamer {
     OutputStreamer::new(cmd)
-}
-
 /// Create a new input generator
 pub fn new_input_generator(cmd: &mut Cmd) -> ExecResult<InputGenerator> {
     InputGenerator::new(cmd)
-}
-
 /// Get the number of active streamers
 pub fn get_active_streamer_count() -> usize {
     ACTIVE_STREAMERS.load(Ordering::Relaxed)
-}
-

@@ -236,39 +236,22 @@ static EMOJI_CATEGORIES: Lazy<HashMap<&'static str, Vec<&'static str>>> = Lazy::
     let mut categories = HashMap::new();
     
     categories.insert("smileys_emotion", vec![
-        "😀", "😁", "😂", "🤣", "😃", "😄", "😅", "😆", "😉", "😊",
-        "😋", "😎", "😍", "😘", "🥰", "😗", "😙", "😚", "🙂", "🤗",
-        "🤩", "🤔", "🤨", "😐", "😑", "😶", "🙄", "😏", "😣", "😥",
-        "😮", "🤐", "😯", "😪", "😫", "🥱", "😴", "😌", "😛", "😜",
-        "😝", "🤤", "😒", "😓", "😔", "😕", "🙃", "🤑", "😲", "☹️",
-        "🙁", "😖", "😞", "😟", "😤", "😢", "😭", "😦", "😧", "😨",
-        "😩", "🤯", "😬", "😰", "😱", "🥵", "🥶", "😳", "🤪", "😵",
-        "🥴", "😷", "🤒", "🤕", "🤢", "🤮", "🤧", "😇", "🥳", "🥺",
         "🤠", "🤡", "🤥", "🤫", "🤭", "🧐", "🤓"
     ]);
     
     categories.insert("people_body", vec![
-        "👍", "👎", "👌", "✌️", "🤞", "🤟", "🤘", "🤙", "👈", "👉",
-        "👆", "🖕", "👇", "☝️", "👋", "🤚", "🖐️", "✋", "🖖", "👏",
         "🙌", "🤝", "🙏", "✍️", "💅", "🤳", "💪"
     ]);
     
     categories.insert("hearts", vec![
-        "❤️", "🧡", "💛", "💚", "💙", "💜", "🖤", "🤍", "🤎", "💔",
         "❣️", "💕", "💞", "💓", "💗", "💖", "💘", "💝", "💟"
     ]);
     
     categories.insert("nature", vec![
-        "🔥", "💧", "⭐", "🌟", "✨", "⚡", "☀️", "🌈", "☁️", "⛅",
         "🌧️", "⛈️", "🌩️", "🌨️", "❄️", "☃️", "⛄", "🌊", "💨"
     ]);
     
     categories.insert("food_drink", vec![
-        "🍕", "🍔", "🍟", "🌭", "🍗", "🍖", "🥓", "🍳", "🥚", "🧀",
-        "🥖", "🍞", "🥯", "🥨", "🍝", "🍜", "🍲", "🍛", "🍣", "🍱",
-        "🥟", "🍤", "🍙", "🍚", "🍘", "🍥", "🥠", "🍢", "🍡", "🍧",
-        "🍨", "🍦", "🥧", "🍰", "🎂", "🧁", "🍮", "🍭", "🍬", "🍫",
-        "🍿", "🍩", "🍪", "☕", "🍵", "🧃", "🥤", "🍶", "🍺", "🍻",
         "🥂", "🍷", "🥃", "🍸", "🍹", "🧊"
     ]);
     
@@ -279,25 +262,17 @@ static EMOJI_CATEGORIES: Lazy<HashMap<&'static str, Vec<&'static str>>> = Lazy::
 pub fn is_emoji_sequence(s: &str) -> bool {
     if s.is_empty() {
         return false;
-    }
-    
     // Check if the string contains ZWJ (Zero Width Joiner) which indicates a sequence
     if s.contains('\u{200D}') {
         return true;
-    }
-    
     // Check if it's a single emoji character
     if s.chars().count() == 1 {
         let ch = s.chars().next().unwrap();
         return EMOJI.contains(ch);
-    }
-    
     // Check for emoji modifier sequences (emoji + modifier)
     let chars: Vec<char> = s.chars().collect();
     if chars.len() == 2 {
         return EMOJI_MODIFIER_BASE.contains(chars[0]) && EMOJI_MODIFIER.contains(chars[1]);
-    }
-    
     // For more complex sequences, check if all characters are emoji-related
     chars.iter().all(|&ch| {
         EMOJI.contains(ch) || 
@@ -307,13 +282,9 @@ pub fn is_emoji_sequence(s: &str) -> bool {
         ch == '\u{FE0F}' || // Variation Selector-16 (emoji presentation)
         ch == '\u{FE0E}'    // Variation Selector-15 (text presentation)
     })
-}
-
 /// Check if a string contains any emoji characters
 pub fn contains_emoji(s: &str) -> bool {
     s.chars().any(|ch| EMOJI.contains(ch))
-}
-
 /// Extract all emoji sequences from a string
 pub fn extract_emojis(s: &str) -> Vec<String> {
     let mut emojis = Vec::new();
@@ -340,11 +311,7 @@ pub fn extract_emojis(s: &str) -> Vec<String> {
     // Add the last emoji if we ended with one
     if !current_emoji.is_empty() {
         emojis.push(current_emoji);
-    }
-    
     emojis
-}
-
 /// Replace all emojis in a string with a replacement string
 pub fn replace_emojis(s: &str, replacement: &str) -> String {
     let mut result = String::new();
@@ -367,8 +334,6 @@ pub fn replace_emojis(s: &str, replacement: &str) -> String {
     result.push_str(&s[current_pos..]);
     
     result
-}
-
 /// Get the name of an emoji
 pub fn get_emoji_name(emoji: &str) -> String {
     if let Some(&name) = EMOJI_NAMES.get(emoji) {
@@ -386,8 +351,6 @@ pub fn get_emoji_name(emoji: &str) -> String {
             "UNKNOWN EMOJI".to_string()
         }
     }
-}
-
 /// Find an emoji by its name
 pub fn find_emoji_by_name(name: &str) -> GlyphGangResult<String> {
     let name_upper = name.to_uppercase();
@@ -399,13 +362,9 @@ pub fn find_emoji_by_name(name: &str) -> GlyphGangResult<String> {
     }
     
     Err(emoji_error(&format!("Emoji not found: {}", name)))
-}
-
 /// Get all available emoji categories
 pub fn emoji_categories() -> Vec<String> {
     EMOJI_CATEGORIES.keys().map(|&k| k.to_string()).collect()
-}
-
 /// Get all emojis in a specific category
 pub fn emojis_in_category(category: &str) -> Vec<String> {
     if let Some(emojis) = EMOJI_CATEGORIES.get(category) {
@@ -424,12 +383,6 @@ pub fn initialize_emoji_data() -> GlyphGangResult<()> {
     // Validate that data loaded correctly
     if EMOJI_NAMES.is_empty() {
         return Err(emoji_error("Failed to initialize emoji name database"));
-    }
-    
     if EMOJI_CATEGORIES.is_empty() {
         return Err(emoji_error("Failed to initialize emoji categories"));
-    }
-    
     Ok(())
-}
-

@@ -13,10 +13,7 @@ use serde::{Deserialize, Serialize};
 use tokio::time::timeout;
 
 use crate::optimization::{
-    OptimizationPass, OptimizationConfig, OptimizationEngine,
-    analysis::{PerformanceAnalyzer, CompilationProfiler, BenchmarkRunner},
-    utils::{OptimizationRecommendations, PerformanceReport},
-};
+// };
 
 // use crate::profiling::performance::{PerformanceMonitor, CompilationPhase, ReportFormat, ReportConfig};
 use crate::common_types::optimization_level::OptimizationLevel;
@@ -26,81 +23,43 @@ use crate::optimization::performance_pipeline::PerformancePipeline;
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct OptimizationCliConfig {
     /// Default optimization level
-    pub default_level: OptimizationLevel,
     /// Enabled optimization passes
-    pub enabled_passes: Vec<String>,
     /// Disabled optimization passes
-    pub disabled_passes: Vec<String>,
     /// Custom optimization parameters
-    pub custom_params: HashMap<String, String>,
     /// Benchmark configuration
-    pub benchmark_config: BenchmarkConfig,
     /// Profiling configuration
-    pub profiling_config: ProfilingConfig,
     /// Project profiles
-    pub profiles: HashMap<String, ProjectProfile>,
-}
-
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct BenchmarkConfig {
     /// Number of iterations per optimization level
-    pub iterations: usize,
     /// Timeout for each compilation in seconds
-    pub timeout_seconds: u64,
     /// Warm-up iterations before measurement
-    pub warmup_iterations: usize,
     /// Test files to use for benchmarking
-    pub test_files: Vec<PathBuf>,
-}
-
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ProfilingConfig {
     /// Enable detailed phase timing
-    pub detailed_timing: bool,
     /// Enable memory usage tracking
-    pub memory_tracking: bool,
     /// Sample rate for profiling
-    pub sample_rate: u64,
     /// Output format for profiling reports
-    pub output_format: String,
-}
-
 /// Project optimization profile
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ProjectProfile {
     /// Profile name
-    pub name: String,
     /// Profile description
-    pub description: String,
     /// Optimization level
-    pub optimization_level: OptimizationLevel,
     /// Specific passes for this profile
-    pub enabled_passes: Vec<String>,
     /// Disabled passes for this profile
-    pub disabled_passes: Vec<String>,
     /// Profile-specific parameters
-    pub parameters: HashMap<String, String>,
     /// Build configuration
-    pub build_config: BuildConfig,
-}
-
 /// Build configuration for project profiles
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct BuildConfig {
     /// Parallel compilation enabled
-    pub parallel: bool,
     /// Number of parallel jobs
-    pub jobs: Option<usize>,
     /// Incremental compilation enabled
-    pub incremental: bool,
     /// LTO enabled
-    pub lto: bool,
     /// Target CPU
-    pub target_cpu: Option<String>,
     /// Target features
-    pub target_features: Vec<String>,
-}
-
 impl Default for OptimizationCliConfig {
     fn default() -> Self {
         let mut profiles = HashMap::new();
@@ -116,18 +75,12 @@ impl Default for OptimizationCliConfig {
         Self {
             default_level: OptimizationLevel::O3, // Changed to O3 for aggressive optimization by default
             enabled_passes: vec![
-                "inline".to_string(),
                 "aggressive-inline".to_string(), // Added aggressive inlining
-                "dce".to_string(),
-                "mem2reg".to_string(),
-                "gvn".to_string(),
                 "loop-unroll".to_string(), // Added loop unrolling
                 "vectorize".to_string(), // Added vectorization
                 "slp-vectorize".to_string(), // Added SLP vectorization
                 "math-optimize".to_string(), // Added math optimization
                 "pgo-optimize".to_string(), // Added PGO optimization
-            ],
-            disabled_passes: vec![],
             custom_params: {
                 let mut params = HashMap::new();
                 params.insert("lto".to_string(), "true".to_string()); // Enable LTO by default
@@ -136,191 +89,81 @@ impl Default for OptimizationCliConfig {
                 params.insert("pgo-path".to_string(), "target/pgo-data".to_string()); // Default PGO path
                 params.insert("enhanced-passes".to_string(), "true".to_string()); // Enable enhanced passes
                 params
-            },
             benchmark_config: BenchmarkConfig {
                 iterations: 10, // Increased for better accuracy
                 timeout_seconds: 600, // Increased timeout for aggressive optimization
                 warmup_iterations: 3, // Increased warmup
-                test_files: vec![],
-            },
             profiling_config: ProfilingConfig {
-                detailed_timing: true,
                 memory_tracking: true, // Enable memory tracking by default
-                sample_rate: 1000,
-                output_format: "markdown".to_string(),
-            },
-            profiles,
         }
     }
-}
-
 impl Default for BuildConfig {
     fn default() -> Self {
         Self {
-            parallel: true,
             jobs: None, // Auto-detect
-            incremental: true,
-            lto: false,
-            target_cpu: None,
-            target_features: vec![],
         }
     }
-}
-
 impl ProjectProfile {
     /// Web application profile - optimized for startup time and size
     pub fn web() -> Self {
         Self {
-            name: "web".to_string(),
-            description: "Optimized for web applications - fast startup, small size".to_string(),
             optimization_level: OptimizationLevel::Oz, // Size optimization
             enabled_passes: vec![
-                "inline".to_string(),
-                "dce".to_string(),
-                "mem2reg".to_string(),
-                "gvn".to_string(),
-                "strip-debug".to_string(),
-                "minify".to_string(),
-            ],
-            disabled_passes: vec!["aggressive-inline".to_string()],
             parameters: {
                 let mut params = HashMap::new();
                 params.insert("inline-threshold".to_string(), "50".to_string());
                 params.insert("size-priority".to_string(), "true".to_string());
                 params
-            },
             build_config: BuildConfig {
-                parallel: true,
-                jobs: Some(4),
-                incremental: true,
-                lto: true,
-                target_cpu: None,
-                target_features: vec!["wasm".to_string()],
-            },
         }
     }
     
     /// Systems programming profile - optimized for performance
     pub fn systems() -> Self {
         Self {
-            name: "systems".to_string(),
-            description: "Optimized for systems programming - maximum performance".to_string(),
-            optimization_level: OptimizationLevel::O3,
             enabled_passes: vec![
-                "inline".to_string(),
-                "aggressive-inline".to_string(),
-                "dce".to_string(),
-                "mem2reg".to_string(),
-                "gvn".to_string(),
-                "loop-unroll".to_string(),
-                "vectorize".to_string(),
-            ],
-            disabled_passes: vec![],
             parameters: {
                 let mut params = HashMap::new();
                 params.insert("inline-threshold".to_string(), "1000".to_string());
                 params.insert("performance-priority".to_string(), "true".to_string());
                 params
-            },
             build_config: BuildConfig {
-                parallel: true,
-                jobs: None,
-                incremental: false,
-                lto: true,
-                target_cpu: Some("native".to_string()),
-                target_features: vec!["avx2".to_string(), "fma".to_string()],
-            },
         }
     }
     
     /// Machine learning profile - optimized for math operations
     pub fn ml() -> Self {
         Self {
-            name: "ml".to_string(),
-            description: "Optimized for machine learning - vectorization and math".to_string(),
-            optimization_level: OptimizationLevel::O3,
             enabled_passes: vec![
-                "inline".to_string(),
-                "dce".to_string(),
-                "mem2reg".to_string(),
-                "gvn".to_string(),
-                "vectorize".to_string(),
-                "slp-vectorize".to_string(),
-                "math-optimize".to_string(),
-            ],
-            disabled_passes: vec![],
             parameters: {
                 let mut params = HashMap::new();
                 params.insert("vectorize-threshold".to_string(), "2".to_string());
                 params.insert("math-fast".to_string(), "true".to_string());
                 params
-            },
             build_config: BuildConfig {
-                parallel: true,
-                jobs: None,
-                incremental: true,
                 lto: false, // Faster iteration
-                target_cpu: Some("native".to_string()),
                 target_features: vec![
-                    "avx2".to_string(), 
-                    "fma".to_string(), 
                     "avx512f".to_string()
-                ],
-            },
         }
     }
     
     /// Game development profile - balanced performance and compile time
     pub fn game() -> Self {
         Self {
-            name: "game".to_string(),
-            description: "Optimized for game development - balanced performance".to_string(),
-            optimization_level: OptimizationLevel::O2,
             enabled_passes: vec![
-                "inline".to_string(),
-                "dce".to_string(),
-                "mem2reg".to_string(),
-                "gvn".to_string(),
-                "loop-unroll".to_string(),
-            ],
-            disabled_passes: vec!["aggressive-inline".to_string()],
             parameters: {
                 let mut params = HashMap::new();
                 params.insert("inline-threshold".to_string(), "200".to_string());
                 params.insert("balanced-mode".to_string(), "true".to_string());
                 params
-            },
             build_config: BuildConfig {
-                parallel: true,
-                jobs: Some(8),
-                incremental: true,
-                lto: false,
-                target_cpu: Some("x86-64-v3".to_string()),
-                target_features: vec!["sse4.2".to_string(), "popcnt".to_string()],
-            },
         }
     }
     
     /// Release profile - maximum performance optimization (new default)
     pub fn release() -> Self {
         Self {
-            name: "release".to_string(),
-            description: "Maximum performance optimization - aggressive settings for production".to_string(),
-            optimization_level: OptimizationLevel::O3,
             enabled_passes: vec![
-                "inline".to_string(),
-                "aggressive-inline".to_string(),
-                "dce".to_string(),
-                "mem2reg".to_string(),
-                "gvn".to_string(),
-                "loop-unroll".to_string(),
-                "vectorize".to_string(),
-                "slp-vectorize".to_string(),
-                "math-optimize".to_string(),
-                "pgo-optimize".to_string(),
-                "interprocedural".to_string(),
-            ],
-            disabled_passes: vec![],
             parameters: {
                 let mut params = HashMap::new();
                 params.insert("inline-threshold".to_string(), "1000".to_string());
@@ -328,60 +171,29 @@ impl ProjectProfile {
                 params.insert("pgo-enabled".to_string(), "true".to_string());
                 params.insert("lto-mode".to_string(), "fat".to_string());
                 params
-            },
             build_config: BuildConfig {
-                parallel: true,
-                jobs: None,
                 incremental: false, // Disable for maximum optimization
-                lto: true,
-                target_cpu: Some("native".to_string()),
                 target_features: vec![
-                    "sse4.2".to_string(), 
-                    "popcnt".to_string(),
-                    "avx".to_string(),
-                    "avx2".to_string(),
                     "fma".to_string()
-                ],
-            },
         }
     }
     
     /// Development profile - fast compilation for debugging
     pub fn dev() -> Self {
         Self {
-            name: "dev".to_string(),
-            description: "Fast compilation for development - minimal optimization".to_string(),
-            optimization_level: OptimizationLevel::O1,
             enabled_passes: vec![
-                "mem2reg".to_string(),
-                "dce".to_string(),
-                "gvn".to_string(),
-            ],
             disabled_passes: vec![
-                "aggressive-inline".to_string(),
-                "loop-unroll".to_string(),
-                "vectorize".to_string(),
-                "pgo-optimize".to_string(),
-            ],
             parameters: {
                 let mut params = HashMap::new();
                 params.insert("inline-threshold".to_string(), "25".to_string());
                 params.insert("debug-mode".to_string(), "true".to_string());
                 params.insert("fast-compile".to_string(), "true".to_string());
                 params
-            },
             build_config: BuildConfig {
-                parallel: true,
-                jobs: Some(4),
                 incremental: true, // Enable for faster builds
                 lto: false, // Disable for faster linking
-                target_cpu: None,
-                target_features: vec![],
-            },
         }
     }
-}
-
 /// Add optimization commands to the CLI
 pub fn add_optimization_commands(cmd: Command) -> Command {
     cmd.subcommand(
@@ -789,28 +601,14 @@ pub fn add_optimization_commands(cmd: Command) -> Command {
                         .help("Import profile from file")
                 )
         )
-}
-
 /// Handle optimization commands
 pub async fn handle_optimization_command(matches: &ArgMatches) -> crate::error::Result<()> {
     match matches.subcommand() {
-        Some(("analyze", sub_matches)) => handle_analyze_command(sub_matches).await,
-        Some(("benchmark", sub_matches)) => handle_benchmark_command(sub_matches).await,
-        Some(("profile", sub_matches)) => handle_profile_command(sub_matches).await,
-        Some(("enable", sub_matches)) => handle_enable_command(sub_matches).await,
-        Some(("disable", sub_matches)) => handle_disable_command(sub_matches).await,
-        Some(("config", sub_matches)) => handle_config_command(sub_matches).await,
-        Some(("reset", sub_matches)) => handle_reset_command(sub_matches).await,
-        Some(("interactive", sub_matches)) => handle_interactive_command(sub_matches).await,
-        Some(("apply", sub_matches)) => handle_apply_command(sub_matches).await,
-        Some(("profiles", sub_matches)) => handle_profiles_command(sub_matches).await,
         _ => {
             eprintln!("No optimization subcommand provided. Use --help for usage information.");
             std::process::exit(1);
         }
     }
-}
-
 async fn handle_analyze_command(matches: &ArgMatches) -> crate::error::Result<()> {
     let file = matches.get_one::<String>("file").unwrap();
     let output = matches.get_one::<String>("output");
@@ -823,8 +621,6 @@ async fn handle_analyze_command(matches: &ArgMatches) -> crate::error::Result<()
     // Verify file exists
     if !Path::new(file).exists() {
         return Err(format!("File not found: {}", file).into());
-    }
-
     // Read source code
     let source = fs::read_to_string(file)?;
 
@@ -846,8 +642,6 @@ async fn handle_analyze_command(matches: &ArgMatches) -> crate::error::Result<()
         println!("✅ Analysis report written to: {}", output_file);
     } else {
         println!("\n{}", report);
-    }
-
     // Print summary
     println!("\n📈 Analysis Summary:");
     println!("   Compilation phases analyzed: {}", analysis_result.phases.len());
@@ -862,8 +656,6 @@ async fn handle_analyze_command(matches: &ArgMatches) -> crate::error::Result<()
     }
 
     Ok(())
-}
-
 async fn handle_benchmark_command(matches: &ArgMatches) -> crate::error::Result<()> {
     let file = matches.get_one::<String>("file").unwrap();
     let levels_str = matches.get_one::<String>("levels").unwrap();
@@ -886,14 +678,11 @@ async fn handle_benchmark_command(matches: &ArgMatches) -> crate::error::Result<
     // Verify file exists
     if !Path::new(file).exists() {
         return Err(format!("File not found: {}", file).into());
-    }
-
     // Load previous results for comparison if requested
     let previous_results = if let Some(compare_file) = compare {
         load_benchmark_results(compare_file)?
     } else {
         None
-    };
 
     // Create benchmark runner
     let mut runner = BenchmarkRunner::new();
@@ -922,8 +711,6 @@ async fn handle_benchmark_command(matches: &ArgMatches) -> crate::error::Result<
         results.insert(*level, level_result);
         
         println!("         ✅ Completed in {:.2}s", total_time.as_secs_f64());
-    }
-
     // Generate report
     let report = generate_benchmark_report(&results, previous_results.as_ref())?;
 
@@ -933,16 +720,12 @@ async fn handle_benchmark_command(matches: &ArgMatches) -> crate::error::Result<
         let json_results = serde_json::to_string_pretty(&results)?;
         fs::write(output_file, &json_results)?;
         println!("✅ Benchmark results saved to: {}", output_file);
-    }
-
     println!("\n{}", report);
 
     // Print performance summary
     print_benchmark_summary(&results);
 
     Ok(())
-}
-
 async fn handle_profile_command(matches: &ArgMatches) -> crate::error::Result<()> {
     let file = matches.get_one::<String>("file").unwrap();
     let opt_level = matches.get_one::<String>("opt-level").unwrap();
@@ -957,8 +740,6 @@ async fn handle_profile_command(matches: &ArgMatches) -> crate::error::Result<()
     // Verify file exists
     if !Path::new(file).exists() {
         return Err(format!("File not found: {}", file).into());
-    }
-
     // Parse optimization level
     let level: OptimizationLevel = opt_level.parse()
         .map_err(|e| format!("Invalid optimization level: {}", e))?;
@@ -970,8 +751,6 @@ async fn handle_profile_command(matches: &ArgMatches) -> crate::error::Result<()
     config.sample_rate = sample_rate;
     if flamegraph {
         config.format = ReportFormat::Flamegraph;
-    }
-
     // Create performance monitor
     let mut monitor = PerformanceMonitor::with_config(config);
 
@@ -1002,14 +781,10 @@ async fn handle_profile_command(matches: &ArgMatches) -> crate::error::Result<()
         println!("✅ Profiling report written to: {}", output_file);
     } else {
         println!("\n{}", report);
-    }
-
     // Print profiling summary
     print_profiling_summary(&profile_result);
 
     Ok(())
-}
-
 async fn handle_enable_command(matches: &ArgMatches) -> crate::error::Result<()> {
     let passes_str = matches.get_one::<String>("passes").unwrap();
     let global = matches.get_flag("global");
@@ -1032,16 +807,12 @@ async fn handle_enable_command(matches: &ArgMatches) -> crate::error::Result<()>
         }
         config.disabled_passes.retain(|p| p != pass);
         println!("   ✅ Enabled: {}", pass);
-    }
-
     // Save configuration
     save_optimization_config(&config, global, project)?;
 
     println!("✅ Configuration updated successfully");
     
     Ok(())
-}
-
 async fn handle_disable_command(matches: &ArgMatches) -> crate::error::Result<()> {
     let passes_str = matches.get_one::<String>("passes").unwrap();
     let global = matches.get_flag("global");
@@ -1064,16 +835,12 @@ async fn handle_disable_command(matches: &ArgMatches) -> crate::error::Result<()
         }
         config.enabled_passes.retain(|p| p != pass);
         println!("   ❌ Disabled: {}", pass);
-    }
-
     // Save configuration
     save_optimization_config(&config, global, project)?;
 
     println!("✅ Configuration updated successfully");
     
     Ok(())
-}
-
 async fn handle_config_command(matches: &ArgMatches) -> crate::error::Result<()> {
     let show = matches.get_flag("show");
     let set_values = matches.get_many::<String>("set");
@@ -1089,28 +856,21 @@ async fn handle_config_command(matches: &ArgMatches) -> crate::error::Result<()>
     if show {
         print_configuration(&config, global);
         return Ok(());
-    }
-
     if let Some(import_file) = import {
         println!("📥 Importing configuration from: {}", import_file);
         let imported_config: OptimizationCliConfig = {
             let content = fs::read_to_string(import_file)?;
             serde_json::from_str(&content)?
-        };
         config = imported_config;
         save_optimization_config(&config, global, false)?;
         println!("✅ Configuration imported successfully");
         return Ok(());
-    }
-
     if let Some(export_file) = export {
         println!("📤 Exporting configuration to: {}", export_file);
         let json = serde_json::to_string_pretty(&config)?;
         fs::write(export_file, json)?;
         println!("✅ Configuration exported successfully");
         return Ok(());
-    }
-
     let mut modified = false;
 
     // Set values
@@ -1120,8 +880,6 @@ async fn handle_config_command(matches: &ArgMatches) -> crate::error::Result<()>
             if parts.len() != 2 {
                 eprintln!("Invalid set format: {}. Use KEY=VALUE", set_value);
                 continue;
-            }
-            
             let key = parts[0].trim();
             let value = parts[1].trim();
             
@@ -1141,8 +899,6 @@ async fn handle_config_command(matches: &ArgMatches) -> crate::error::Result<()>
                 println!("⚠️  Key not found: {}", key);
             }
         }
-    }
-
     // Set default level
     if let Some(level_str) = default_level {
         let level: OptimizationLevel = level_str.parse()
@@ -1150,18 +906,12 @@ async fn handle_config_command(matches: &ArgMatches) -> crate::error::Result<()>
         config.default_level = level;
         println!("✅ Set default optimization level: O{:?}", level);
         modified = true;
-    }
-
     if modified {
         save_optimization_config(&config, global, false)?;
         println!("✅ Configuration updated successfully");
     } else {
         println!("ℹ️  No configuration changes made");
-    }
-
     Ok(())
-}
-
 async fn handle_reset_command(matches: &ArgMatches) -> crate::error::Result<()> {
     let global = matches.get_flag("global");
     let project = matches.get_flag("project");
@@ -1169,8 +919,6 @@ async fn handle_reset_command(matches: &ArgMatches) -> crate::error::Result<()> 
 
     if !global && !project {
         return Err("Must specify either --global or --project".into());
-    }
-
     if !confirm {
         println!("⚠️  This will reset optimization configuration to defaults.");
         print!("Are you sure? [y/N]: ");
@@ -1199,11 +947,7 @@ async fn handle_reset_command(matches: &ArgMatches) -> crate::error::Result<()> 
     }
     if project {
         println!("✅ Project optimization configuration reset to defaults");
-    }
-
     Ok(())
-}
-
 async fn handle_interactive_command(matches: &ArgMatches) -> crate::error::Result<()> {
     let file = matches.get_one::<String>("file");
     let quick = matches.get_flag("quick");
@@ -1221,19 +965,13 @@ async fn handle_interactive_command(matches: &ArgMatches) -> crate::error::Resul
         // Verify file exists
         if !Path::new(file_path).exists() {
             return Err(format!("File not found: {}", file_path).into());
-        }
-
         // Analyze the file to provide specific recommendations
         analyze_file_for_recommendations(file_path).await?;
-    }
-
     // Interactive questions
     if !quick {
         config = run_interactive_wizard(config, advanced).await?;
     } else {
         config = run_quick_wizard(config).await?;
-    }
-
     // Save configuration
     save_optimization_config(&config, false, true)?;
     
@@ -1241,8 +979,6 @@ async fn handle_interactive_command(matches: &ArgMatches) -> crate::error::Resul
     println!("   Use 'cursed optimize config --show' to review your settings");
     
     Ok(())
-}
-
 async fn handle_apply_command(matches: &ArgMatches) -> crate::error::Result<()> {
     let file = matches.get_one::<String>("file").unwrap();
     let profile = matches.get_one::<String>("profile");
@@ -1256,8 +992,6 @@ async fn handle_apply_command(matches: &ArgMatches) -> crate::error::Result<()> 
     // Verify file exists
     if !Path::new(file).exists() {
         return Err(format!("File not found: {}", file).into());
-    }
-
     // Load current configuration
     let mut config = load_optimization_config(false, true)?;
 
@@ -1288,8 +1022,6 @@ async fn handle_apply_command(matches: &ArgMatches) -> crate::error::Result<()> 
     } else if safe {
         apply_safe_optimizations(&mut config);
         println!("   🛡️  Applied safe optimizations only");
-    }
-
     // Apply recommendations
     apply_recommendations(&mut config, &recommendations);
 
@@ -1306,11 +1038,7 @@ async fn handle_apply_command(matches: &ArgMatches) -> crate::error::Result<()> 
         
         // Show summary of what was applied
         print_applied_optimizations_summary(&config, &recommendations);
-    }
-
     Ok(())
-}
-
 async fn handle_profiles_command(matches: &ArgMatches) -> crate::error::Result<()> {
     let list = matches.get_flag("list");
     let create = matches.get_one::<String>("create");
@@ -1328,8 +1056,6 @@ async fn handle_profiles_command(matches: &ArgMatches) -> crate::error::Result<(
         for (name, profile) in &config.profiles {
             println!("   🎯 {} ({})", name, profile.optimization_level.as_str());
             println!("      {}", profile.description);
-            println!("      Passes: {} enabled, {} disabled", 
-                     profile.enabled_passes.len(), 
                      profile.disabled_passes.len());
             
             if profile.build_config.lto {
@@ -1341,8 +1067,6 @@ async fn handle_profiles_command(matches: &ArgMatches) -> crate::error::Result<(
             println!();
         }
         return Ok(());
-    }
-
     if let Some(name) = create {
         println!("🔧 Creating new profile: {}", name);
         
@@ -1352,8 +1076,6 @@ async fn handle_profiles_command(matches: &ArgMatches) -> crate::error::Result<(
         save_optimization_config(&config, false, false)?;
         println!("✅ Profile '{}' created successfully", name);
         return Ok(());
-    }
-
     if let Some(name) = delete {
         if config.profiles.remove(name).is_some() {
             save_optimization_config(&config, false, false)?;
@@ -1362,14 +1084,10 @@ async fn handle_profiles_command(matches: &ArgMatches) -> crate::error::Result<(
             println!("❌ Profile '{}' not found", name);
         }
         return Ok(());
-    }
-
     if let Some(copy_spec) = copy {
         let parts: Vec<&str> = copy_spec.split(',').collect();
         if parts.len() != 2 {
             return Err("Copy format should be 'source,destination'".into());
-        }
-        
         let (source, dest) = (parts[0].trim(), parts[1].trim());
         
         if let Some(source_profile) = config.profiles.get(source) {
@@ -1385,14 +1103,10 @@ async fn handle_profiles_command(matches: &ArgMatches) -> crate::error::Result<(
             return Err(format!("Source profile '{}' not found", source).into());
         }
         return Ok(());
-    }
-
     if let Some(export_spec) = export {
         let parts: Vec<&str> = export_spec.split(',').collect();
         if parts.len() != 2 {
             return Err("Export format should be 'profile_name,file_path'".into());
-        }
-        
         let (profile_name, file_path) = (parts[0].trim(), parts[1].trim());
         
         if let Some(profile) = config.profiles.get(profile_name) {
@@ -1403,14 +1117,10 @@ async fn handle_profiles_command(matches: &ArgMatches) -> crate::error::Result<(
             return Err(format!("Profile '{}' not found", profile_name).into());
         }
         return Ok(());
-    }
-
     if let Some(import_spec) = import {
         let parts: Vec<&str> = import_spec.split(',').collect();
         if parts.len() != 2 {
             return Err("Import format should be 'file_path,profile_name'".into());
-        }
-        
         let (file_path, profile_name) = (parts[0].trim(), parts[1].trim());
         
         let content = fs::read_to_string(file_path)?;
@@ -1422,12 +1132,8 @@ async fn handle_profiles_command(matches: &ArgMatches) -> crate::error::Result<(
         
         println!("✅ Profile imported as '{}'", profile_name);
         return Ok(());
-    }
-
     println!("ℹ️  Use --help to see available profile commands");
     Ok(())
-}
-
 // Helper functions for interactive optimization
 
 async fn analyze_file_for_recommendations(file_path: &str) -> crate::error::Result<()> {
@@ -1452,11 +1158,7 @@ async fn analyze_file_for_recommendations(file_path: &str) -> crate::error::Resu
     }
     if has_loops {
         println!("      💡 Loops detected - loop optimization recommended");
-    }
-    
     Ok(())
-}
-
 async fn run_interactive_wizard(mut config: OptimizationCliConfig, advanced: bool) -> crate::error::Result<()> {
     use std::io::{self, Write};
 
@@ -1476,12 +1178,6 @@ async fn run_interactive_wizard(mut config: OptimizationCliConfig, advanced: boo
     io::stdin().read_line(&mut input)?;
     
     match input.trim().to_lowercase().as_str() {
-        "a" => config.default_level = OptimizationLevel::O0,
-        "c" => config.default_level = OptimizationLevel::O3,
-        "d" => config.default_level = OptimizationLevel::Oz,
-        _ => config.default_level = OptimizationLevel::O2,
-    }
-    
     // Ask about parallelization
     println!("\n2. Enable parallel compilation? [Y/n]: ");
     io::stdout().flush()?;
@@ -1491,8 +1187,6 @@ async fn run_interactive_wizard(mut config: OptimizationCliConfig, advanced: boo
     let enable_parallel = !input.trim().to_lowercase().starts_with('n');
     if enable_parallel {
         config.custom_params.insert("parallel".to_string(), "true".to_string());
-    }
-    
     if advanced {
         // Advanced questions
         println!("\n🔧 Advanced Options");
@@ -1504,8 +1198,6 @@ async fn run_interactive_wizard(mut config: OptimizationCliConfig, advanced: boo
         
         if input.trim().to_lowercase().starts_with('y') {
             config.custom_params.insert("lto".to_string(), "true".to_string());
-        }
-        
         println!("\n4. Aggressive inlining? [y/N]: ");
         io::stdout().flush()?;
         input.clear();
@@ -1518,26 +1210,17 @@ async fn run_interactive_wizard(mut config: OptimizationCliConfig, advanced: boo
     
     println!("\n✅ Configuration wizard completed!");
     Ok(config)
-}
-
 async fn run_quick_wizard(mut config: OptimizationCliConfig) -> crate::error::Result<()> {
     println!("\n⚡ Quick optimization setup");
     println!("   Applying balanced performance settings...");
     
     config.default_level = OptimizationLevel::O2;
     config.enabled_passes = vec![
-        "inline".to_string(),
-        "dce".to_string(),
-        "mem2reg".to_string(),
-        "gvn".to_string(),
-        "loop-simplify".to_string(),
     ];
     config.custom_params.insert("parallel".to_string(), "true".to_string());
     
     println!("   ✅ Quick setup complete!");
     Ok(config)
-}
-
 async fn analyze_file_for_specific_recommendations(file_path: &str) -> crate::error::Result<()> {
     let source = fs::read_to_string(file_path)?;
     let mut recommendations = Vec::new();
@@ -1546,60 +1229,34 @@ async fn analyze_file_for_specific_recommendations(file_path: &str) -> crate::er
     if source.contains("lowkey") && source.matches("lowkey").count() > 10 {
         recommendations.push("loop-unroll".to_string());
         recommendations.push("loop-optimize".to_string());
-    }
-    
     if source.contains("math::") || source.contains("calculate") || source.contains("compute") {
         recommendations.push("vectorize".to_string());
         recommendations.push("math-optimize".to_string());
-    }
-    
     if source.contains("goroutine") || source.contains("stan") {
         recommendations.push("goroutine-optimize".to_string());
-    }
-    
     if source.contains("channel") || source.contains("pipe") {
         recommendations.push("channel-optimize".to_string());
-    }
-    
     if source.split("\n").count() > 500 {
         recommendations.push("inline".to_string());
         recommendations.push("dce".to_string());
-    }
-    
     Ok(recommendations)
-}
-
 fn apply_aggressive_optimizations(config: &mut OptimizationCliConfig) {
     config.default_level = OptimizationLevel::O3;
     config.enabled_passes.extend_from_slice(&[
-        "aggressive-inline".to_string(),
-        "loop-unroll".to_string(),
-        "vectorize".to_string(),
-        "slp-vectorize".to_string(),
-        "gvn-hoist".to_string(),
     ]);
     config.custom_params.insert("aggressive".to_string(), "true".to_string());
     config.custom_params.insert("lto".to_string(), "true".to_string());
-}
-
 fn apply_safe_optimizations(config: &mut OptimizationCliConfig) {
     config.default_level = OptimizationLevel::O1;
     config.enabled_passes = vec![
-        "mem2reg".to_string(),
-        "dce".to_string(),
-        "gvn".to_string(),
     ];
     config.custom_params.insert("safe-mode".to_string(), "true".to_string());
-}
-
 fn apply_recommendations(config: &mut OptimizationCliConfig, recommendations: &[String]) {
     for rec in recommendations {
         if !config.enabled_passes.contains(rec) {
             config.enabled_passes.push(rec.clone());
         }
     }
-}
-
 fn print_optimization_preview(config: &OptimizationCliConfig) {
     println!("   Optimization Level: {}", config.default_level.as_str());
     println!("   Enabled Passes: {:?}", config.enabled_passes);
@@ -1612,8 +1269,6 @@ fn print_optimization_preview(config: &OptimizationCliConfig) {
             println!("     {}: {}", key, value);
         }
     }
-}
-
 fn print_applied_optimizations_summary(config: &OptimizationCliConfig, recommendations: &[String]) {
     println!("\n📊 Applied Optimizations Summary:");
     println!("   Level: {}", config.default_level.as_str());
@@ -1626,8 +1281,6 @@ fn print_applied_optimizations_summary(config: &OptimizationCliConfig, recommend
             println!("     ✓ {}", rec);
         }
     }
-}
-
 async fn create_interactive_profile(name: String) -> crate::error::Result<()> {
     use std::io::{self, Write};
     
@@ -1647,23 +1300,10 @@ async fn create_interactive_profile(name: String) -> crate::error::Result<()> {
         OptimizationLevel::O2
     } else {
         level_input.trim().parse().unwrap_or(OptimizationLevel::O2)
-    };
     
     Ok(ProjectProfile {
-        name,
-        description: description.trim().to_string(),
-        optimization_level,
         enabled_passes: vec![
-            "inline".to_string(),
-            "dce".to_string(),
-            "mem2reg".to_string(),
-        ],
-        disabled_passes: vec![],
-        parameters: HashMap::new(),
-        build_config: BuildConfig::default(),
     })
-}
-
 // Helper functions for configuration management
 fn get_config_path(global: bool, project: bool) -> crate::error::Result<()> {
     if global {
@@ -1696,14 +1336,10 @@ fn save_optimization_config(config: &OptimizationCliConfig, global: bool, projec
     // Create directory if it doesn't exist
     if let Some(parent) = config_path.parent() {
         fs::create_dir_all(parent)?;
-    }
-    
     let json = serde_json::to_string_pretty(config)?;
     fs::write(&config_path, json)?;
     
     Ok(())
-}
-
 fn print_configuration(config: &OptimizationCliConfig, global: bool) {
     let scope = if global { "Global" } else { "Project" };
     
@@ -1712,8 +1348,6 @@ fn print_configuration(config: &OptimizationCliConfig, global: bool) {
     println!("   Enabled Passes: {:?}", config.enabled_passes);
     if !config.disabled_passes.is_empty() {
         println!("   Disabled Passes: {:?}", config.disabled_passes);
-    }
-    
     if !config.custom_params.is_empty() {
         println!("   Custom Parameters:");
         for (key, value) in &config.custom_params {
@@ -1730,148 +1364,58 @@ fn print_configuration(config: &OptimizationCliConfig, global: bool) {
     println!("     Detailed Timing: {}", config.profiling_config.detailed_timing);
     println!("     Memory Tracking: {}", config.profiling_config.memory_tracking);
     println!("     Sample Rate: {}Hz", config.profiling_config.sample_rate);
-}
-
 // Real report generation functions with comprehensive analysis and formatting
 fn generate_analysis_report(
-    result: &crate::optimization::analysis::AnalysisResult,
-    format: &str,
-    detailed: bool,
-    suggestions: bool,
 ) -> crate::error::Result<()> {
     match format {
-        "json" => generate_json_analysis_report(result),
-        "markdown" => generate_markdown_analysis_report(result, detailed, suggestions),
-        "table" => generate_table_analysis_report(result),
-        _ => Err(format!("Unsupported format: {}", format).into()),
     }
 }
 
 fn generate_json_analysis_report(
-    result: &crate::optimization::analysis::AnalysisResult,
 ) -> crate::error::Result<()> {
     let json_report = serde_json::json!({
-        "analysis_timestamp": result.analysis_timestamp,
-        "source_file": result.source_file,
         "performance_summary": {
-            "total_compilation_time_ms": result.performance_summary.total_compilation_time.as_millis(),
             "peak_memory_mb": result.performance_summary.total_memory_peak / (1024 * 1024),
-            "cpu_efficiency": result.performance_summary.cpu_efficiency,
-            "memory_efficiency": result.performance_summary.memory_efficiency,
-            "io_efficiency": result.performance_summary.io_efficiency,
-            "overall_score": result.performance_summary.overall_performance_score,
-            "optimization_opportunities": result.performance_summary.optimization_opportunities,
             "critical_bottlenecks": result.performance_summary.critical_bottlenecks
-        },
         "phases": result.phases.iter().map(|phase| {
             serde_json::json!({
-                "name": phase.name,
-                "duration_ms": phase.duration.as_millis(),
-                "cpu_usage": phase.cpu_usage,
                 "memory_peak_mb": phase.memory_peak / (1024 * 1024),
                 "memory_average_mb": phase.memory_average / (1024 * 1024),
-                "efficiency_score": phase.efficiency_score,
                 "io_operations": {
-                    "read_ops": phase.io_operations.read_operations,
-                    "write_ops": phase.io_operations.write_operations,
-                    "bytes_read": phase.io_operations.bytes_read,
                     "bytes_written": phase.io_operations.bytes_written
-                },
                 "bottlenecks": phase.bottlenecks
             })
-        }).collect::<Vec<_>>(),
         "bottlenecks": result.bottlenecks.iter().map(|bottleneck| {
             serde_json::json!({
-                "type": format!("{:?}", bottleneck.bottleneck_type),
-                "severity": format!("{:?}", bottleneck.severity),
                 "location": {
-                    "phase": bottleneck.location.phase,
-                    "function": bottleneck.location.function,
-                    "line_number": bottleneck.location.line_number,
                     "module": bottleneck.location.module
-                },
-                "description": bottleneck.description,
-                "impact_percentage": bottleneck.impact_percentage,
-                "time_spent_ms": bottleneck.time_spent.as_millis(),
                 "suggested_fixes": bottleneck.suggested_fixes
             })
-        }).collect::<Vec<_>>(),
         "recommendations": result.recommendations.iter().map(|rec| {
             serde_json::json!({
-                "id": rec.recommendation_id,
-                "priority": rec.priority,
-                "category": format!("{:?}", rec.category),
-                "title": rec.title,
-                "summary": rec.summary,
                 "expected_improvement": {
-                    "compilation_time_reduction": rec.expected_improvement.compilation_time_reduction,
-                    "runtime_performance_gain": rec.expected_improvement.runtime_performance_gain,
-                    "memory_reduction": rec.expected_improvement.memory_reduction,
                     "confidence_level": rec.expected_improvement.confidence_level
-                },
                 "effort_estimate": {
-                    "time_hours": rec.effort_estimate.time_hours,
                     "complexity": format!("{:?}", rec.effort_estimate.complexity)
-                },
-                "implementation_steps": rec.implementation_steps,
-                "prerequisites": rec.prerequisites,
                 "risks": rec.risks
             })
-        }).collect::<Vec<_>>(),
         "detailed_metrics": {
             "compilation_metrics": {
-                "lexing_time_ms": result.detailed_metrics.compilation_metrics.lexing_time.as_millis(),
-                "parsing_time_ms": result.detailed_metrics.compilation_metrics.parsing_time.as_millis(),
-                "semantic_analysis_time_ms": result.detailed_metrics.compilation_metrics.semantic_analysis_time.as_millis(),
-                "type_checking_time_ms": result.detailed_metrics.compilation_metrics.type_checking_time.as_millis(),
-                "ir_generation_time_ms": result.detailed_metrics.compilation_metrics.ir_generation_time.as_millis(),
-                "optimization_time_ms": result.detailed_metrics.compilation_metrics.optimization_time.as_millis(),
-                "code_generation_time_ms": result.detailed_metrics.compilation_metrics.code_generation_time.as_millis(),
-                "linking_time_ms": result.detailed_metrics.compilation_metrics.linking_time.as_millis(),
-                "total_frontend_time_ms": result.detailed_metrics.compilation_metrics.total_frontend_time.as_millis(),
                 "total_backend_time_ms": result.detailed_metrics.compilation_metrics.total_backend_time.as_millis()
-            },
             "resource_metrics": {
-                "peak_memory_usage": result.detailed_metrics.resource_metrics.peak_memory_usage,
-                "average_memory_usage": result.detailed_metrics.resource_metrics.average_memory_usage,
-                "peak_cpu_usage": result.detailed_metrics.resource_metrics.peak_cpu_usage,
-                "average_cpu_usage": result.detailed_metrics.resource_metrics.average_cpu_usage,
-                "disk_reads": result.detailed_metrics.resource_metrics.disk_reads,
-                "disk_writes": result.detailed_metrics.resource_metrics.disk_writes,
-                "context_switches": result.detailed_metrics.resource_metrics.context_switches,
                 "page_faults": result.detailed_metrics.resource_metrics.page_faults
-            },
             "instruction_counts": {
-                "total_instructions": result.detailed_metrics.instruction_counts.total_instructions,
-                "arithmetic_instructions": result.detailed_metrics.instruction_counts.arithmetic_instructions,
-                "memory_instructions": result.detailed_metrics.instruction_counts.memory_instructions,
-                "branch_instructions": result.detailed_metrics.instruction_counts.branch_instructions,
-                "floating_point_instructions": result.detailed_metrics.instruction_counts.floating_point_instructions,
                 "vector_instructions": result.detailed_metrics.instruction_counts.vector_instructions
-            },
             "cache_performance": {
-                "l1_hit_rate": result.detailed_metrics.cache_performance.l1_hit_rate,
-                "l2_hit_rate": result.detailed_metrics.cache_performance.l2_hit_rate,
-                "l3_hit_rate": result.detailed_metrics.cache_performance.l3_hit_rate,
-                "cache_misses": result.detailed_metrics.cache_performance.cache_misses,
                 "cache_miss_penalty_ns": result.detailed_metrics.cache_performance.cache_miss_penalty.as_nanos()
-            },
             "branch_prediction": {
-                "prediction_accuracy": result.detailed_metrics.branch_prediction.prediction_accuracy,
-                "mispredicted_branches": result.detailed_metrics.branch_prediction.mispredicted_branches,
-                "branch_penalty_ns": result.detailed_metrics.branch_prediction.branch_penalty.as_nanos(),
                 "indirect_branches": result.detailed_metrics.branch_prediction.indirect_branches
             }
         }
     });
 
     Ok(serde_json::to_string_pretty(&json_report)?)
-}
-
 fn generate_markdown_analysis_report(
-    result: &crate::optimization::analysis::AnalysisResult,
-    detailed: bool,
-    suggestions: bool,
 ) -> crate::error::Result<()> {
     let mut report = String::new();
     
@@ -1893,12 +1437,6 @@ fn generate_markdown_analysis_report(
     
     // Performance Grade
     let grade = match result.performance_summary.overall_performance_score {
-        score if score >= 0.9 => "🟢 Excellent (A)",
-        score if score >= 0.8 => "🟡 Good (B)",
-        score if score >= 0.7 => "🟠 Fair (C)",
-        score if score >= 0.6 => "🔴 Poor (D)",
-        _ => "❌ Critical (F)",
-    };
     report.push_str(&format!("**Performance Grade:** {}\n\n", grade));
     
     // Phase Analysis
@@ -1912,15 +1450,9 @@ fn generate_markdown_analysis_report(
             format!("⚠️ {}", bottleneck_count)
         } else { 
             "✅".to_string() 
-        };
         
         report.push_str(&format!(
-            "| {} | {:.1}ms | {:.1}% | {:.1}MB | {:.1}% | {} |\n",
-            phase.name,
-            phase.duration.as_millis(),
-            phase.cpu_usage,
             phase.memory_peak as f64 / (1024.0 * 1024.0),
-            phase.efficiency_score * 100.0,
             bottleneck_indicator
         ));
     }
@@ -1932,12 +1464,6 @@ fn generate_markdown_analysis_report(
         
         for (i, bottleneck) in result.bottlenecks.iter().enumerate() {
             let severity_emoji = match bottleneck.severity {
-                crate::optimization::real_performance_analyzer::BottleneckSeverity::Critical => "🔴",
-                crate::optimization::real_performance_analyzer::BottleneckSeverity::High => "🟠",
-                crate::optimization::real_performance_analyzer::BottleneckSeverity::Medium => "🟡",
-                crate::optimization::real_performance_analyzer::BottleneckSeverity::Low => "🟢",
-                crate::optimization::real_performance_analyzer::BottleneckSeverity::Minimal => "⚪",
-            };
             
             report.push_str(&format!("### {} Bottleneck #{}: {}\n\n", severity_emoji, i + 1, bottleneck.description));
             report.push_str(&format!("- **Type:** {:?}\n", bottleneck.bottleneck_type));
@@ -1961,20 +1487,12 @@ fn generate_markdown_analysis_report(
                 report.push_str("\n");
             }
         }
-    }
-    
     // Optimization Recommendations
     if suggestions && !result.recommendations.is_empty() {
         report.push_str("## 💡 Optimization Recommendations\n\n");
         
         for (i, rec) in result.recommendations.iter().enumerate() {
             let priority_emoji = match rec.priority {
-                9..=10 => "🔴",
-                7..=8 => "🟠", 
-                5..=6 => "🟡",
-                3..=4 => "🟢",
-                _ => "⚪",
-            };
             
             report.push_str(&format!("### {} Priority {}: {}\n\n", priority_emoji, rec.priority, rec.title));
             report.push_str(&format!("**Category:** {:?}\n\n", rec.category));
@@ -1982,8 +1500,6 @@ fn generate_markdown_analysis_report(
             
             if detailed {
                 report.push_str(&format!("**Detailed Description:**\n{}\n\n", rec.detailed_description));
-            }
-            
             report.push_str("**Expected Improvements:**\n");
             report.push_str(&format!("- Compilation Time: -{:.1}%\n", rec.expected_improvement.compilation_time_reduction));
             report.push_str(&format!("- Runtime Performance: +{:.1}%\n", rec.expected_improvement.runtime_performance_gain));
@@ -2028,14 +1544,6 @@ fn generate_markdown_analysis_report(
                         result.detailed_metrics.compilation_metrics.total_backend_time;
         
         let phases = vec![
-            ("Lexing", result.detailed_metrics.compilation_metrics.lexing_time),
-            ("Parsing", result.detailed_metrics.compilation_metrics.parsing_time),
-            ("Semantic Analysis", result.detailed_metrics.compilation_metrics.semantic_analysis_time),
-            ("Type Checking", result.detailed_metrics.compilation_metrics.type_checking_time),
-            ("IR Generation", result.detailed_metrics.compilation_metrics.ir_generation_time),
-            ("Optimization", result.detailed_metrics.compilation_metrics.optimization_time),
-            ("Code Generation", result.detailed_metrics.compilation_metrics.code_generation_time),
-            ("Linking", result.detailed_metrics.compilation_metrics.linking_time),
         ];
         
         for (name, duration) in phases {
@@ -2043,7 +1551,6 @@ fn generate_markdown_analysis_report(
                 (duration.as_nanos() as f64 / total_time.as_nanos() as f64) * 100.0
             } else {
                 0.0
-            };
             report.push_str(&format!("| {} | {:.1} | {:.1}% |\n", name, duration.as_millis(), percentage));
         }
         report.push_str("\n");
@@ -2060,20 +1567,12 @@ fn generate_markdown_analysis_report(
         
         report.push_str("### Instruction Analysis\n\n");
         report.push_str(&format!("- **Total Instructions:** {}\n", result.detailed_metrics.instruction_counts.total_instructions));
-        report.push_str(&format!("- **Arithmetic Instructions:** {} ({:.1}%)\n", 
-            result.detailed_metrics.instruction_counts.arithmetic_instructions,
             (result.detailed_metrics.instruction_counts.arithmetic_instructions as f64 / result.detailed_metrics.instruction_counts.total_instructions as f64) * 100.0
         ));
-        report.push_str(&format!("- **Memory Instructions:** {} ({:.1}%)\n", 
-            result.detailed_metrics.instruction_counts.memory_instructions,
             (result.detailed_metrics.instruction_counts.memory_instructions as f64 / result.detailed_metrics.instruction_counts.total_instructions as f64) * 100.0
         ));
-        report.push_str(&format!("- **Branch Instructions:** {} ({:.1}%)\n", 
-            result.detailed_metrics.instruction_counts.branch_instructions,
             (result.detailed_metrics.instruction_counts.branch_instructions as f64 / result.detailed_metrics.instruction_counts.total_instructions as f64) * 100.0
         ));
-        report.push_str(&format!("- **Vector Instructions:** {} ({:.1}%)\n\n", 
-            result.detailed_metrics.instruction_counts.vector_instructions,
             (result.detailed_metrics.instruction_counts.vector_instructions as f64 / result.detailed_metrics.instruction_counts.total_instructions as f64) * 100.0
         ));
         
@@ -2089,8 +1588,6 @@ fn generate_markdown_analysis_report(
         report.push_str(&format!("- **Mispredicted Branches:** {}\n", result.detailed_metrics.branch_prediction.mispredicted_branches));
         report.push_str(&format!("- **Branch Penalty:** {}ns\n", result.detailed_metrics.branch_prediction.branch_penalty.as_nanos()));
         report.push_str(&format!("- **Indirect Branches:** {}\n\n", result.detailed_metrics.branch_prediction.indirect_branches));
-    }
-    
     // Trend Analysis
     if let Some(ref trend_analysis) = result.trend_analysis {
         report.push_str("## 📊 Performance Trends\n\n");
@@ -2105,18 +1602,13 @@ fn generate_markdown_analysis_report(
             report.push_str("- **✅ Performance Improvement Detected**\n");
         }
         report.push_str("\n");
-    }
-    
     // Footer
     report.push_str("---\n\n");
     report.push_str("*Generated by CURSED Compiler Performance Analysis System*\n");
     report.push_str(&format!("*Report generated at: {}*", chrono::Utc::now().format("%Y-%m-%d %H:%M:%S UTC")));
     
     Ok(report)
-}
-
 fn generate_table_analysis_report(
-    result: &crate::optimization::analysis::AnalysisResult,
 ) -> crate::error::Result<()> {
     let mut report = String::new();
     
@@ -2147,10 +1639,6 @@ fn generate_table_analysis_report(
     
     for phase in &result.phases {
         report.push_str(&format!(
-            "{:<24} {:>8.1} {:>6.1} {:>8.1} {:>10.1}%\n",
-            phase.name,
-            phase.duration.as_millis(),
-            phase.cpu_usage,
             phase.memory_peak as f64 / (1024.0 * 1024.0),
             phase.efficiency_score * 100.0
         ));
@@ -2166,25 +1654,12 @@ fn generate_table_analysis_report(
         
         for bottleneck in &result.bottlenecks {
             let severity_str = match bottleneck.severity {
-                crate::optimization::real_performance_analyzer::BottleneckSeverity::Critical => "CRITICAL",
-                crate::optimization::real_performance_analyzer::BottleneckSeverity::High => "HIGH    ",
-                crate::optimization::real_performance_analyzer::BottleneckSeverity::Medium => "MEDIUM  ",
-                crate::optimization::real_performance_analyzer::BottleneckSeverity::Low => "LOW     ",
-                crate::optimization::real_performance_analyzer::BottleneckSeverity::Minimal => "MINIMAL ",
-            };
             
             report.push_str(&format!(
-                "{:<18} {} {:<18} {:>6.1}% {:>7.1}ms\n",
-                format!("{:?}", bottleneck.bottleneck_type),
-                severity_str,
-                bottleneck.location.phase,
-                bottleneck.impact_percentage,
                 bottleneck.time_spent.as_millis()
             ));
         }
         report.push_str("\n");
-    }
-    
     // Top Recommendations Table
     if !result.recommendations.is_empty() {
         report.push_str("TOP OPTIMIZATION RECOMMENDATIONS\n");
@@ -2194,17 +1669,10 @@ fn generate_table_analysis_report(
         
         for rec in result.recommendations.iter().take(10) {
             report.push_str(&format!(
-                "{:>8}  {:<17} {:>10.1}% {:>8.1}  {}\n",
-                rec.priority,
-                format!("{:?}", rec.category),
-                rec.expected_improvement.compilation_time_reduction + rec.expected_improvement.runtime_performance_gain,
-                rec.effort_estimate.time_hours,
                 if rec.title.len() > 25 { &rec.title[..25] } else { &rec.title }
             ));
         }
         report.push_str("\n");
-    }
-    
     // Resource Metrics Table
     report.push_str("DETAILED RESOURCE METRICS\n");
     report.push_str("───────────────────────────────────────────────────────────────\n");
@@ -2232,11 +1700,7 @@ fn generate_table_analysis_report(
     report.push_str("Generated by CURSED Compiler Performance Analysis System\n");
     
     Ok(report)
-}
-
 fn generate_benchmark_report(
-    results: &HashMap<OptimizationLevel, crate::optimization::enhanced_benchmarking::EnhancedBenchmarkResult>,
-    previous: Option<&HashMap<OptimizationLevel, crate::optimization::enhanced_benchmarking::EnhancedBenchmarkResult>>,
 ) -> crate::error::Result<()> {
     let mut report = String::new();
     
@@ -2277,11 +1741,6 @@ fn generate_benchmark_report(
         if let Some(result) = results.get(level) {
             let level_result = result.level_results.values().next().unwrap(); // Get first result for stats
             report.push_str(&format!(
-                "| {:?} | {:.1}ms | {:.1}ms | {:.1}ms | {:.1}MB | {:.1}KB | {:.1}% |\n",
-                level,
-                level_result.statistics.mean_time.as_millis(),
-                level_result.statistics.std_deviation.as_millis(),
-                level_result.statistics.p95_time.as_millis(),
                 level_result.resource_usage.memory.peak_usage as f64 / (1024.0 * 1024.0),
                 level_result.quality_metrics.binary_size.mean_size as f64 / 1024.0,
                 level_result.quality_metrics.optimization_effectiveness * 100.0
@@ -2328,8 +1787,6 @@ fn generate_benchmark_report(
                 report.push_str("\n");
             }
         }
-    }
-    
     // Statistical Analysis
     report.push_str("## 📈 Statistical Analysis\n\n");
     
@@ -2347,8 +1804,6 @@ fn generate_benchmark_report(
         report.push_str(&format!("- Effect size: {:.2}\n", first_result.statistical_summary.power_analysis.effect_size));
         report.push_str(&format!("- Required sample size: {}\n", first_result.statistical_summary.power_analysis.required_sample_size));
         report.push_str(&format!("- Observed sample size: {}\n\n", first_result.statistical_summary.power_analysis.observed_sample_size));
-    }
-    
     // Comparison with Previous Results
     if let Some(prev_results) = previous {
         report.push_str("## 🔄 Comparison with Previous Results\n\n");
@@ -2363,7 +1818,6 @@ fn generate_benchmark_report(
                         ((current_time as f64 - prev_time as f64) / prev_time as f64) * 100.0
                     } else {
                         0.0
-                    };
                     
                     let change_indicator = if change_percent > 5.0 {
                         "📈 Regression"
@@ -2371,26 +1825,18 @@ fn generate_benchmark_report(
                         "📉 Improvement"
                     } else {
                         "➡️ Stable"
-                    };
                     
                     report.push_str(&format!("**{:?}:** {} ({:+.1}%)\n", level, change_indicator, change_percent));
                 }
             }
         }
         report.push_str("\n");
-    }
-    
     // Recommendations
     report.push_str("## 💡 Recommendations\n\n");
     
     if let Some(first_result) = results.values().next() {
         for (i, rec) in first_result.recommendations.iter().enumerate() {
             let priority_emoji = match rec.priority {
-                8..=10 => "🔴",
-                6..=7 => "🟠",
-                4..=5 => "🟡",
-                _ => "🟢",
-            };
             
             report.push_str(&format!("{}. {} **{}**\n", i + 1, priority_emoji, rec.description));
             report.push_str(&format!("   - Expected impact: {:.1}%\n", rec.expected_impact * 100.0));
@@ -2403,9 +1849,6 @@ fn generate_benchmark_report(
     
     if let Some(first_result) = results.values().next() {
         report.push_str(&format!("- **Operating System:** {}\n", first_result.environment.os));
-        report.push_str(&format!("- **CPU:** {} ({} cores, {} threads)\n", 
-            first_result.environment.cpu_info.model,
-            first_result.environment.cpu_info.cores,
             first_result.environment.cpu_info.threads
         ));
         report.push_str(&format!("- **CPU Frequency:** {}MHz\n", first_result.environment.cpu_info.frequency_mhz));
@@ -2416,23 +1859,15 @@ fn generate_benchmark_report(
         
         // System load during benchmark
         report.push_str(&format!("- **System Load (1m/5m/15m):** {:.2}/{:.2}/{:.2}\n", 
-            first_result.environment.system_load.load_average_1min,
-            first_result.environment.system_load.load_average_5min,
             first_result.environment.system_load.load_average_15min
         ));
         report.push_str(&format!("- **CPU Usage during test:** {:.1}%\n", first_result.environment.system_load.cpu_usage_percentage));
         report.push_str(&format!("- **Memory Usage during test:** {:.1}%\n\n", first_result.environment.system_load.memory_usage_percentage));
-    }
-    
     report.push_str("---\n\n");
     report.push_str("*Generated by CURSED Compiler Enhanced Benchmarking System*\n");
     
     Ok(report)
-}
-
 fn generate_profiling_report(
-    result: &crate::optimization::real_compilation_profiler::ProfileResult,
-    flamegraph: bool,
 ) -> crate::error::Result<()> {
     let mut report = String::new();
     
@@ -2458,12 +1893,6 @@ fn generate_profiling_report(
                              result.performance_characteristics.efficiency_metrics.io_efficiency) / 3.0;
     
     let grade = match overall_efficiency {
-        eff if eff >= 0.9 => "🟢 Excellent (A)",
-        eff if eff >= 0.8 => "🟡 Good (B)", 
-        eff if eff >= 0.7 => "🟠 Fair (C)",
-        eff if eff >= 0.6 => "🔴 Poor (D)",
-        _ => "❌ Critical (F)",
-    };
     report.push_str(&format!("**Performance Grade:** {}\n\n", grade));
     
     // Phase Breakdown
@@ -2477,18 +1906,11 @@ fn generate_profiling_report(
         
         for phase in &result.phase_breakdown.frontend_phases {
             report.push_str(&format!(
-                "| {} | {:.1}ms | {:.1}ms | {:.1}MB | {:.1}% | {:.1}x |\n",
-                phase.phase_name,
-                phase.duration.as_millis(),
-                phase.cpu_time.as_millis(),
                 phase.memory_peak as f64 / (1024.0 * 1024.0),
-                phase.efficiency_score * 100.0,
                 phase.parallelism_factor
             ));
         }
         report.push_str("\n");
-    }
-    
     // Backend phases
     if !result.phase_breakdown.backend_phases.is_empty() {
         report.push_str("### Backend Phases\n\n");
@@ -2497,18 +1919,11 @@ fn generate_profiling_report(
         
         for phase in &result.phase_breakdown.backend_phases {
             report.push_str(&format!(
-                "| {} | {:.1}ms | {:.1}ms | {:.1}MB | {:.1}% | {:.1}x |\n",
-                phase.phase_name,
-                phase.duration.as_millis(),
-                phase.cpu_time.as_millis(),
                 phase.memory_peak as f64 / (1024.0 * 1024.0),
-                phase.efficiency_score * 100.0,
                 phase.parallelism_factor
             ));
         }
         report.push_str("\n");
-    }
-    
     // Optimization phases
     if !result.phase_breakdown.optimization_phases.is_empty() {
         report.push_str("### Optimization Phases\n\n");
@@ -2517,18 +1932,11 @@ fn generate_profiling_report(
         
         for phase in &result.phase_breakdown.optimization_phases {
             report.push_str(&format!(
-                "| {} | {:.1}ms | {:.1}ms | {:.1}MB | {:.1}% | {:.1}x |\n",
-                phase.phase_name,
-                phase.duration.as_millis(),
-                phase.cpu_time.as_millis(),
                 phase.memory_peak as f64 / (1024.0 * 1024.0),
-                phase.efficiency_score * 100.0,
                 phase.parallelism_factor
             ));
         }
         report.push_str("\n");
-    }
-    
     // Resource Usage Analysis
     report.push_str("## 💾 Resource Usage Analysis\n\n");
     
@@ -2586,8 +1994,6 @@ fn generate_profiling_report(
                 report.push_str("\n");
             }
         }
-    }
-    
     // Optimization Opportunities
     if !result.optimization_opportunities.is_empty() {
         report.push_str("## 💡 Optimization Opportunities\n\n");
@@ -2602,8 +2008,6 @@ fn generate_profiling_report(
             
             if !opportunity.related_phases.is_empty() {
                 report.push_str(&format!("- **Related Phases:** {}\n", opportunity.related_phases.join(", ")));
-            }
-            
             if !opportunity.suggested_actions.is_empty() {
                 report.push_str("\n**Suggested Actions:**\n");
                 for action in &opportunity.suggested_actions {
@@ -2655,15 +2059,11 @@ fn generate_profiling_report(
         report.push_str(&format!("- **Trend Direction:** {}\n", comparison.trend_analysis.trend_direction));
         report.push_str(&format!("- **Trend Strength:** {:.1}%\n", comparison.trend_analysis.trend_strength * 100.0));
         report.push_str(&format!("- **Prediction Confidence:** {:.1}%\n\n", comparison.trend_analysis.prediction_confidence * 100.0));
-    }
-    
     // Flamegraph section
     if flamegraph {
         report.push_str("## 🔥 Flamegraph Analysis\n\n");
         report.push_str("*Note: Flamegraph data would be generated here in a real implementation.*\n");
         report.push_str("*This would include interactive SVG flamegraphs showing call stack profiling data.*\n\n");
-    }
-    
     // Detailed Metrics
     report.push_str("## 📊 Detailed Metrics\n\n");
     
@@ -2686,31 +2086,23 @@ fn generate_profiling_report(
     report.push_str("*Generated by CURSED Compiler Real Compilation Profiler*\n");
     
     Ok(report)
-}
-
 fn load_benchmark_results(file: &str) -> crate::error::Result<()> {
     use std::fs;
     use std::path::Path;
     
     if !Path::new(file).exists() {
         return Ok(None);
-    }
-    
     let content = fs::read_to_string(file)?;
     let results: HashMap<OptimizationLevel, crate::optimization::enhanced_benchmarking::EnhancedBenchmarkResult> = 
         serde_json::from_str(&content)?;
     
     Ok(Some(results))
-}
-
 fn print_benchmark_summary(results: &HashMap<OptimizationLevel, crate::optimization::enhanced_benchmarking::EnhancedBenchmarkResult>) {
     println!("\n📊 Benchmark Summary:");
     
     if results.is_empty() {
         println!("   No benchmark results available");
         return;
-    }
-    
     // Find best and worst performing levels
     let mut performance_data: Vec<_> = results.iter()
         .filter_map(|(level, result)| {
@@ -2729,14 +2121,7 @@ fn print_benchmark_summary(results: &HashMap<OptimizationLevel, crate::optimizat
             println!("   📈 Performance Rankings:");
             for (i, (level, time)) in performance_data.iter().enumerate() {
                 let rank_emoji = match i {
-                    0 => "🥇",
-                    1 => "🥈", 
-                    2 => "🥉",
-                    _ => "📊",
-                };
                 println!("      {} {:?}: {:.1}ms", rank_emoji, level, time);
-            }
-            
             println!("\n   🏆 Best Performance: {:?} ({:.1}ms)", best_level, best_time);
             println!("   🐌 Worst Performance: {:?} ({:.1}ms)", worst_level, worst_time);
             println!("   ⚡ Maximum Speedup: {:.2}x", speedup);
@@ -2750,8 +2135,6 @@ fn print_benchmark_summary(results: &HashMap<OptimizationLevel, crate::optimizat
                 println!("   ⚠️  Limited optimization impact detected");
             }
         }
-    }
-    
     // Resource efficiency summary
     if let Some(first_result) = results.values().next() {
         println!("\n   💾 Resource Efficiency:");
@@ -2774,8 +2157,6 @@ fn print_benchmark_summary(results: &HashMap<OptimizationLevel, crate::optimizat
             
             println!("      Memory Usage: {:.1}MB (average)", avg_memory as f64 / (1024.0 * 1024.0));
             println!("      Optimization Effectiveness: {:.1}%", avg_efficiency * 100.0);
-        }
-        
         // Statistical confidence
         println!("      Statistical Confidence: {:.1}%", first_result.statistical_summary.overall_confidence * 100.0);
         
@@ -2854,16 +2235,12 @@ fn print_profiling_summary(result: &crate::optimization::real_compilation_profil
     
     if let Some(phase_name) = slowest_phase {
         println!("   🐌 Slowest Phase: {} ({:.2}ms)", phase_name, slowest_time.as_millis());
-    }
-    
     // Cache performance
     let l1_hit_rate = result.resource_usage.cache_profile.l1_cache_stats.hit_rate * 100.0;
     println!("   🎯 L1 Cache Hit Rate: {:.1}%", l1_hit_rate);
     
     if l1_hit_rate < 90.0 {
         println!("   ⚠️  Cache performance could be improved");
-    }
-    
     // Bottlenecks and opportunities
     let bottleneck_count = result.bottleneck_analysis.identified_bottlenecks.len();
     let opportunity_count = result.optimization_opportunities.len();
@@ -2889,12 +2266,6 @@ fn print_profiling_summary(result: &crate::optimization::real_compilation_profil
     
     // Performance grade
     let grade = match overall_efficiency {
-        eff if eff >= 0.9 => "🟢 Excellent",
-        eff if eff >= 0.8 => "🟡 Good",
-        eff if eff >= 0.7 => "🟠 Fair", 
-        eff if eff >= 0.6 => "🔴 Poor",
-        _ => "❌ Critical",
-    };
     println!("   🎖️  Performance Grade: {}", grade);
     
     // Parallelization potential
@@ -2908,8 +2279,6 @@ fn print_profiling_summary(result: &crate::optimization::real_compilation_profil
         println!("   🔄 Good parallelization potential detected ({:.1}x average)", avg_parallelism);
     } else {
         println!("   ⚠️  Limited parallelization potential ({:.1}x average)", avg_parallelism);
-    }
-    
     // Comparison analysis summary
     if let Some(ref comparison) = result.comparison_analysis {
         if comparison.baseline_comparison.regression_detected {

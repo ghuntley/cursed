@@ -11,107 +11,26 @@ use std::ptr;
 /// fr fr PostgreSQL connection handle (opaque pointer)
 #[repr(C)]
 pub struct PGconn {
-    _private: [u8; 0],
-}
-
 /// fr fr PostgreSQL result handle (opaque pointer)  
 #[repr(C)]
 pub struct PGresult {
-    _private: [u8; 0],
-}
-
 /// fr fr PostgreSQL connection status enumeration
 #[repr(C)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum ConnStatusType {
-    ConnectionOk = 0,
-    ConnectionBad = 1,
-    ConnectionStarted = 2,
-    ConnectionMade = 3,
-    ConnectionAwaitingResponse = 4,
-    ConnectionAuthOk = 5,
-    ConnectionSetenv = 6,
-    ConnectionSslStartup = 7,
-    ConnectionNeeded = 8,
-    ConnectionCheckWritable = 9,
-    ConnectionConsume = 10,
-    ConnectionGssStartup = 11,
-    ConnectionCheckTarget = 12,
-    ConnectionCheckStandby = 13,
-}
-
 /// fr fr PostgreSQL result status enumeration
 #[repr(C)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum ExecStatusType {
-    PgresEmptyQuery = 0,
-    PgresCommandOk = 1,
-    PgresTuplesOk = 2,
-    PgresCopyOut = 3,
-    PgresCopyIn = 4,
-    PgresBadResponse = 5,
-    PgresNonfatalError = 6,
-    PgresFatalError = 7,
-    PgresCopyBoth = 8,
-    PgresSingleTuple = 9,
-    PgresPipelineSync = 10,
-    PgresPipelineAborted = 11,
-}
-
 /// fr fr PostgreSQL data type OIDs
 #[repr(C)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum PostgreSQLOid {
-    Bool = 16,
-    Bytea = 17,
-    Char = 18,
-    Name = 19,
-    Int8 = 20,
-    Int2 = 21,
-    Int2Vector = 22,
-    Int4 = 23,
-    Regproc = 24,
-    Text = 25,
-    Oid = 26,
-    Tid = 27,
-    Xid = 28,
-    Cid = 29,
-    Varchar = 1043,
-    Date = 1082,
-    Time = 1083,
-    Timestamp = 1114,
-    Timestamptz = 1184,
-    Interval = 1186,
-    Numeric = 1700,
-    Json = 114,
-    Jsonb = 3802,
-    Uuid = 2950,
-    Inet = 869,
-    Float4 = 700,
-    Float8 = 701,
     // Array types (add 1000 to base type)
-    BoolArray = 1000,
-    ByteaArray = 1001,
-    CharArray = 1002,
-    NameArray = 1003,
-    Int2Array = 1005,
-    Int4Array = 1007,
-    TextArray = 1009,
-    VarcharArray = 1015,
-    Float4Array = 1021,
-    Float8Array = 1022,
-}
-
 /// fr fr Transaction isolation levels for PostgreSQL
 #[repr(C)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum PostgreSQLIsolationLevel {
-    ReadUncommitted = 1,
-    ReadCommitted = 2,
-    RepeatableRead = 3,
-    Serializable = 4,
-}
-
 extern "C" {
     /// slay Connect to PostgreSQL database
     pub fn PQconnectdb(conninfo: *const c_char) -> *mut PGconn;
@@ -139,34 +58,14 @@ extern "C" {
     
     /// slay Execute parameterized query
     pub fn PQexecParams(
-        conn: *mut PGconn,
-        command: *const c_char,
-        nParams: c_int,
-        paramTypes: *const c_uint,
-        paramValues: *const *const c_char,
-        paramLengths: *const c_int,
-        paramFormats: *const c_int,
-        resultFormat: c_int,
     ) -> *mut PGresult;
     
     /// slay Prepare a statement
     pub fn PQprepare(
-        conn: *mut PGconn,
-        stmtName: *const c_char,
-        query: *const c_char,
-        nParams: c_int,
-        paramTypes: *const c_uint,
     ) -> *mut PGresult;
     
     /// slay Execute prepared statement
     pub fn PQexecPrepared(
-        conn: *mut PGconn,
-        stmtName: *const c_char,
-        nParams: c_int,
-        paramValues: *const *const c_char,
-        paramLengths: *const c_int,
-        paramFormats: *const c_int,
-        resultFormat: c_int,
     ) -> *mut PGresult;
     
     /// slay Deallocate prepared statement
@@ -246,9 +145,6 @@ extern "C" {
     
     /// slay Set notice receiver
     pub fn PQsetNoticeReceiver(
-        conn: *mut PGconn,
-        proc: extern "C" fn(*mut c_void, *const PGresult),
-        arg: *mut c_void,
     );
     
     /// slay Get database name
@@ -268,8 +164,6 @@ extern "C" {
     
     /// slay Get options
     pub fn PQoptions(conn: *mut PGconn) -> *const c_char;
-}
-
 /// fr fr CursedError field codes for detailed error information
 pub mod error_field_codes {
     pub const SEVERITY: i32 = b'S' as i32;
@@ -290,13 +184,8 @@ pub mod error_field_codes {
     pub const SOURCE_FILE: i32 = b'F' as i32;
     pub const SOURCE_LINE: i32 = b'L' as i32;
     pub const SOURCE_FUNCTION: i32 = b'R' as i32;
-}
-
 /// fr fr Safe wrapper for PostgreSQL connection
 pub struct SafePGconn {
-    conn: *mut PGconn,
-}
-
 impl SafePGconn {
     /// slay Create a new connection wrapper
     pub fn new(conn: *mut PGconn) -> Option<Self> {
@@ -310,8 +199,6 @@ impl SafePGconn {
     /// slay Get raw connection pointer
     pub fn as_ptr(&self) -> *mut PGconn {
         self.conn
-    }
-    
     /// slay Check if connection is valid
     pub fn is_valid(&self) -> bool {
         !self.conn.is_null() && unsafe { PQstatus(self.conn) } == ConnStatusType::ConnectionOk
@@ -333,9 +220,6 @@ unsafe impl Sync for SafePGconn {}
 
 /// fr fr Safe wrapper for PostgreSQL result
 pub struct SafePGresult {
-    result: *mut PGresult,
-}
-
 impl SafePGresult {
     /// slay Create a new result wrapper
     pub fn new(result: *mut PGresult) -> Option<Self> {
@@ -384,7 +268,6 @@ impl SafePGconn {
                     } else {
                         CStr::from_ptr(ptr).to_string_lossy().to_string()
                     }
-                };
                 Err(error_msg)
             }
         } else {
@@ -413,7 +296,6 @@ impl SafePGconn {
                         } else {
                             CStr::from_ptr(ptr).to_string_lossy().to_string()
                         }
-                    };
                     Err(error_msg)
                 }
             }
@@ -432,8 +314,6 @@ impl SafePGconn {
                 CStr::from_ptr(ptr).to_string_lossy().to_string()
             }
         }
-    }
-    
     /// slay Get database information
     pub fn database_info(&self) -> DatabaseInfo {
         unsafe {
@@ -443,10 +323,6 @@ impl SafePGconn {
             let port = PQport(self.conn);
             
             DatabaseInfo {
-                database: if db.is_null() { "unknown".to_string() } else { CStr::from_ptr(db).to_string_lossy().to_string() },
-                user: if user.is_null() { "unknown".to_string() } else { CStr::from_ptr(user).to_string_lossy().to_string() },
-                host: if host.is_null() { "localhost".to_string() } else { CStr::from_ptr(host).to_string_lossy().to_string() },
-                port: if port.is_null() { 5432 } else { CStr::from_ptr(port).to_string_lossy().parse().unwrap_or(5432) },
             }
         }
     }
@@ -455,12 +331,6 @@ impl SafePGconn {
 /// fr fr Database connection information
 #[derive(Debug, Clone)]
 pub struct DatabaseInfo {
-    pub database: String,
-    pub user: String,
-    pub host: String,
-    pub port: u16,
-}
-
 /// fr fr Helper functions for result processing
 impl SafePGresult {
     /// slay Get number of rows
@@ -483,8 +353,6 @@ impl SafePGresult {
                 CStr::from_ptr(ptr).to_string_lossy().to_string()
             }
         }
-    }
-    
     /// slay Get field type OID
     pub fn field_type(&self, column: i32) -> u32 {
         unsafe { PQftype(self.result, column) }
@@ -519,8 +387,6 @@ impl SafePGresult {
                 CStr::from_ptr(ptr).to_string_lossy().to_string()
             }
         }
-    }
-    
     /// slay Get affected row count
     pub fn affected_rows(&self) -> i64 {
         unsafe {
@@ -531,27 +397,12 @@ impl SafePGresult {
                 CStr::from_ptr(ptr).to_string_lossy().parse().unwrap_or(0)
             }
         }
-    }
-    
     /// slay Get detailed error information
     pub fn error_details(&self) -> ErrorDetails {
         unsafe {
             ErrorDetails {
-                severity: self.get_error_field(error_field_codes::SEVERITY),
-                sqlstate: self.get_error_field(error_field_codes::SQLSTATE),
-                message: self.get_error_field(error_field_codes::MESSAGE_PRIMARY),
-                detail: self.get_error_field(error_field_codes::MESSAGE_DETAIL),
-                hint: self.get_error_field(error_field_codes::MESSAGE_HINT),
-                position: self.get_error_field(error_field_codes::STATEMENT_POSITION),
-                context: self.get_error_field(error_field_codes::CONTEXT),
-                schema_name: self.get_error_field(error_field_codes::SCHEMA_NAME),
-                table_name: self.get_error_field(error_field_codes::TABLE_NAME),
-                column_name: self.get_error_field(error_field_codes::COLUMN_NAME),
-                constraint_name: self.get_error_field(error_field_codes::CONSTRAINT_NAME),
             }
         }
-    }
-    
     fn get_error_field(&self, field_code: i32) -> Option<String> {
         unsafe {
             let ptr = PQresultErrorField(self.result, field_code);
@@ -567,15 +418,4 @@ impl SafePGresult {
 /// fr fr Detailed error information from PostgreSQL
 #[derive(Debug, Clone)]
 pub struct ErrorDetails {
-    pub severity: Option<String>,
-    pub sqlstate: Option<String>,
-    pub message: Option<String>,
-    pub detail: Option<String>,
-    pub hint: Option<String>,
-    pub position: Option<String>,
-    pub context: Option<String>,
-    pub schema_name: Option<String>,
-    pub table_name: Option<String>,
-    pub column_name: Option<String>,
-    pub constraint_name: Option<String>,
 }

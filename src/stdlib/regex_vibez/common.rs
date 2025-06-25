@@ -114,8 +114,6 @@ lazy_static! {
     pub static ref VERSION_PATTERN: VibePattern = VibePattern::compile(
         r"^v?(\d+)\.(\d+)\.(\d+)(?:-([0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*))?(?:\+([0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*))?$"
     ).expect("Version pattern should compile");
-}
-
 /// Collection of all common patterns for easy access
 pub struct CommonPatterns;
 
@@ -123,149 +121,77 @@ impl CommonPatterns {
     /// Get the email validation pattern
     pub fn email() -> &'static VibePattern {
         &EMAIL_PATTERN
-    }
-
     /// Get the URL validation pattern
     pub fn url() -> &'static VibePattern {
         &URL_PATTERN
-    }
-
     /// Get the date validation pattern
     pub fn date() -> &'static VibePattern {
         &DATE_PATTERN
-    }
-
     /// Get the time validation pattern
     pub fn time() -> &'static VibePattern {
         &TIME_PATTERN
-    }
-
     /// Get the username validation pattern
     pub fn username() -> &'static VibePattern {
         &USERNAME_PATTERN
-    }
-
     /// Get the password validation pattern
     pub fn password() -> &'static VibePattern {
         &PASSWORD_PATTERN
-    }
-
     /// Get the phone number validation pattern
     pub fn phone() -> &'static VibePattern {
         &PHONE_PATTERN
-    }
-
     /// Get the zip code validation pattern
     pub fn zip_code() -> &'static VibePattern {
         &ZIP_CODE_PATTERN
-    }
-
     /// Get the hashtag pattern
     pub fn hashtag() -> &'static VibePattern {
         &HASHTAG_PATTERN
-    }
-
     /// Get the emoji pattern
     pub fn emoji() -> &'static VibePattern {
         &EMOJI_PATTERN
-    }
-
     /// Get the IPv4 address pattern
     pub fn ipv4() -> &'static VibePattern {
         &IPV4_PATTERN
-    }
-
     /// Get the IPv6 address pattern
     pub fn ipv6() -> &'static VibePattern {
         &IPV6_PATTERN
-    }
-
     /// Get the credit card pattern
     pub fn credit_card() -> &'static VibePattern {
         &CREDIT_CARD_PATTERN
-    }
-
     /// Get the hex color pattern
     pub fn hex_color() -> &'static VibePattern {
         &HEX_COLOR_PATTERN
-    }
-
     /// Get the UUID pattern
     pub fn uuid() -> &'static VibePattern {
         &UUID_PATTERN
-    }
-
     /// Get the HTML tag pattern
     pub fn html_tag() -> &'static VibePattern {
         &HTML_TAG_PATTERN
-    }
-
     /// Get the JSON string pattern
     pub fn json_string() -> &'static VibePattern {
         &JSON_STRING_PATTERN
-    }
-
     /// Get the Base64 pattern
     pub fn base64() -> &'static VibePattern {
         &BASE64_PATTERN
-    }
-
     /// Get the MAC address pattern
     pub fn mac_address() -> &'static VibePattern {
         &MAC_ADDRESS_PATTERN
-    }
-
     /// Get the SSN pattern
     pub fn ssn() -> &'static VibePattern {
         &SSN_PATTERN
-    }
-
     /// Get the currency pattern
     pub fn currency() -> &'static VibePattern {
         &CURRENCY_PATTERN
-    }
-
     /// Get the version number pattern
     pub fn version() -> &'static VibePattern {
         &VERSION_PATTERN
-    }
-
     /// Get all pattern names
     pub fn pattern_names() -> Vec<&'static str> {
         vec![
-            "email", "url", "date", "time", "username", "password",
-            "phone", "zip_code", "hashtag", "emoji", "ipv4", "ipv6",
-            "credit_card", "hex_color", "uuid", "html_tag", "json_string",
             "base64", "mac_address", "ssn", "currency", "version"
         ]
-    }
-
     /// Get pattern by name
     pub fn get_pattern(name: &str) -> Option<&'static VibePattern> {
         match name {
-            "email" => Some(&EMAIL_PATTERN),
-            "url" => Some(&URL_PATTERN),
-            "date" => Some(&DATE_PATTERN),
-            "time" => Some(&TIME_PATTERN),
-            "username" => Some(&USERNAME_PATTERN),
-            "password" => Some(&PASSWORD_PATTERN),
-            "phone" => Some(&PHONE_PATTERN),
-            "zip_code" => Some(&ZIP_CODE_PATTERN),
-            "hashtag" => Some(&HASHTAG_PATTERN),
-            "emoji" => Some(&EMOJI_PATTERN),
-            "ipv4" => Some(&IPV4_PATTERN),
-            "ipv6" => Some(&IPV6_PATTERN),
-            "credit_card" => Some(&CREDIT_CARD_PATTERN),
-            "hex_color" => Some(&HEX_COLOR_PATTERN),
-            "uuid" => Some(&UUID_PATTERN),
-            "html_tag" => Some(&HTML_TAG_PATTERN),
-            "json_string" => Some(&JSON_STRING_PATTERN),
-            "base64" => Some(&BASE64_PATTERN),
-            "mac_address" => Some(&MAC_ADDRESS_PATTERN),
-            "ssn" => Some(&SSN_PATTERN),
-            "currency" => Some(&CURRENCY_PATTERN),
-            "version" => Some(&VERSION_PATTERN),
-            _ => None,
         }
     }
 
@@ -279,8 +205,6 @@ impl CommonPatterns {
                 (name.to_string(), matches)
             })
             .collect()
-    }
-
     /// Find which common patterns match a string
     pub fn find_matching_patterns(s: &str) -> Vec<String> {
         Self::pattern_names()

@@ -10,10 +10,6 @@ use rand::RngCore;
 /// Polynomial representation
 #[derive(Debug, Clone)]
 pub struct Polynomial {
-    pub coefficients: Vec<FieldElement>,
-    pub degree: usize,
-}
-
 impl Polynomial {
     /// Create polynomial from coefficients
     pub fn new(coefficients: Vec<FieldElement>) -> Self {
@@ -24,13 +20,9 @@ impl Polynomial {
     /// Create zero polynomial
     pub fn zero() -> Self {
         Self::new(vec![FieldElement::zero()])
-    }
-
     /// Create constant polynomial
     pub fn constant(value: FieldElement) -> Self {
         Self::new(vec![value])
-    }
-
     /// Evaluate polynomial at point
     pub fn evaluate(&self, x: FieldElement) -> FieldElement {
         let mut result = FieldElement::zero();
@@ -39,11 +31,7 @@ impl Polynomial {
         for &coeff in &self.coefficients {
             result = result + (coeff * power);
             power = power * x;
-        }
-        
         result
-    }
-
     /// Add two polynomials
     pub fn add(&self, other: &Self) -> Self {
         let max_len = self.coefficients.len().max(other.coefficients.len());
@@ -59,22 +47,16 @@ impl Polynomial {
         }
         
         Self::new(result_coeffs)
-    }
-
     /// Multiply polynomial by scalar
     pub fn scalar_mul(&self, scalar: FieldElement) -> Self {
         let result_coeffs: Vec<FieldElement> = self.coefficients.iter()
             .map(|&coeff| coeff * scalar)
             .collect();
         Self::new(result_coeffs)
-    }
-
     /// Multiply two polynomials
     pub fn multiply(&self, other: &Self) -> Self {
         if self.coefficients.is_empty() || other.coefficients.is_empty() {
             return Self::zero();
-        }
-        
         let result_degree = self.degree + other.degree;
         let mut result_coeffs = vec![FieldElement::zero(); result_degree + 1];
         
@@ -85,32 +67,22 @@ impl Polynomial {
         }
         
         Self::new(result_coeffs)
-    }
-
     /// Divide polynomial by (x - root), returning quotient and remainder
     pub fn divide_by_linear(&self, root: FieldElement) -> (Self, FieldElement) {
         if self.coefficients.is_empty() {
             return (Self::zero(), FieldElement::zero());
-        }
-
         let mut quotient_coeffs = Vec::new();
         let mut remainder = self.coefficients[self.coefficients.len() - 1];
 
         for i in (0..self.coefficients.len() - 1).rev() {
             quotient_coeffs.push(remainder);
             remainder = self.coefficients[i] + remainder * root;
-        }
-
         quotient_coeffs.reverse();
         (Self::new(quotient_coeffs), remainder)
-    }
-
     /// Interpolate polynomial from points using Lagrange interpolation
     pub fn interpolate(points: &[(FieldElement, FieldElement)]) -> AdvancedCryptoResult<Self> {
         if points.is_empty() {
             return Ok(Self::zero());
-        }
-        
         let n = points.len();
         let mut result = Self::zero();
         
@@ -132,11 +104,7 @@ impl Polynomial {
             
             li = li.scalar_mul(yi);
             result = result.add(&li);
-        }
-        
         Ok(result)
-    }
-
     /// Convert to Value representation
     pub fn to_value(&self) -> Value {
         let coeffs: Vec<Value> = self.coefficients.iter()
@@ -148,14 +116,9 @@ impl Polynomial {
         poly_map.insert("degree".to_string(), Value::Integer(self.degree as i64));
         
         Value::Object(poly_map)
-    }
-
     /// Create from Value representation
     pub fn from_value(value: &Value) -> AdvancedCryptoResult<Self> {
         let obj = match value {
-            Value::Object(map) => map,
-            _ => return Err(CryptoError::InvalidInput("Expected object for polynomial".to_string())),
-        };
 
         let coefficients = match obj.get("coefficients") {
             Some(Value::Array(arr)) => {
@@ -167,13 +130,10 @@ impl Polynomial {
                                 .map_err(|_| CryptoError::InvalidInput("Invalid coefficient".to_string()))?;
                             coeffs.push(FieldElement::new(num));
                         }
-                        _ => return Err(CryptoError::InvalidInput("Invalid coefficient type".to_string())),
                     }
                 }
                 coeffs
             }
-            _ => return Err(CryptoError::InvalidInput("Invalid coefficients".to_string())),
-        };
 
         Ok(Self::new(coefficients))
     }
@@ -184,9 +144,6 @@ impl Polynomial {
 pub struct KZGParams {
     pub g1_powers: Vec<G1Point>,  // [G, τG, τ²G, ..., τⁿG]
     pub g2_powers: Vec<G1Point>,  // [H, τH] (simplified as G1 points)
-    pub max_degree: usize,
-}
-
 impl KZGParams {
     /// Generate KZG parameters (trusted setup)
     pub fn generate(max_degree: usize) -> AdvancedCryptoResult<Self> {
@@ -206,18 +163,11 @@ impl KZGParams {
             let commitment = g1_gen.scalar_mul(&power_of_tau)?;
             g1_powers.push(commitment);
             power_of_tau = power_of_tau * tau;
-        }
-
         // G2 powers (simplified)
         let g2_powers = vec![g1_gen, g1_gen.scalar_mul(&tau)?];
 
         Ok(Self {
-            g1_powers,
-            g2_powers,
-            max_degree,
         })
-    }
-
     /// Convert to Value representation
     pub fn to_value(&self) -> Value {
         let mut params_map = HashMap::new();
@@ -241,17 +191,11 @@ impl KZGParams {
 /// KZG commitment to a polynomial
 #[derive(Debug, Clone)]
 pub struct KZGCommitment {
-    pub commitment: G1Point,
-    pub polynomial_degree: usize,
-}
-
 impl KZGCommitment {
     /// Commit to polynomial using KZG scheme
     pub fn commit(polynomial: &Polynomial, params: &KZGParams) -> AdvancedCryptoResult<Self> {
         if polynomial.degree > params.max_degree {
             return Err(CryptoError::InvalidInput("Polynomial degree exceeds setup".to_string()));
-        }
-
         let mut commitment = G1Point::infinity();
 
         for (i, &coeff) in polynomial.coefficients.iter().enumerate() {
@@ -262,11 +206,7 @@ impl KZGCommitment {
         }
 
         Ok(Self {
-            commitment,
-            polynomial_degree: polynomial.degree,
         })
-    }
-
     /// Convert to Value representation
     pub fn to_value(&self) -> Value {
         let mut commit_map = HashMap::new();
@@ -279,11 +219,6 @@ impl KZGCommitment {
 /// KZG opening proof
 #[derive(Debug, Clone)]
 pub struct KZGOpeningProof {
-    pub quotient_commitment: G1Point,
-    pub evaluation: FieldElement,
-    pub point: FieldElement,
-}
-
 impl KZGOpeningProof {
     /// Convert to Value representation
     pub fn to_value(&self) -> Value {
@@ -298,11 +233,6 @@ impl KZGOpeningProof {
 /// KZG batch opening proof
 #[derive(Debug, Clone)]
 pub struct KZGBatchProof {
-    pub quotient_commitment: G1Point,
-    pub evaluations: Vec<FieldElement>,
-    pub points: Vec<FieldElement>,
-}
-
 impl KZGBatchProof {
     /// Convert to Value representation
     pub fn to_value(&self) -> Value {
@@ -329,9 +259,6 @@ pub struct KZGProver;
 impl KZGProver {
     /// Generate opening proof for polynomial at a point
     pub fn open(
-        polynomial: &Polynomial,
-        point: FieldElement,
-        params: &KZGParams,
     ) -> AdvancedCryptoResult<KZGOpeningProof> {
         // Evaluate polynomial at point
         let evaluation = polynomial.evaluate(point);
@@ -344,28 +271,16 @@ impl KZGProver {
         // Remainder should be zero if evaluation is correct
         if !remainder.is_zero() {
             return Err(CryptoError::InvalidInput("Invalid polynomial evaluation".to_string()));
-        }
-
         // Commit to quotient polynomial
         let quotient_commitment = KZGCommitment::commit(&quotient, params)?.commitment;
 
         Ok(KZGOpeningProof {
-            quotient_commitment,
-            evaluation,
-            point,
         })
-    }
-
     /// Generate batch opening proof for multiple points
     pub fn batch_open(
-        polynomial: &Polynomial,
-        points: &[FieldElement],
-        params: &KZGParams,
     ) -> AdvancedCryptoResult<KZGBatchProof> {
         if points.is_empty() {
             return Err(CryptoError::InvalidInput("No points provided for batch opening".to_string()));
-        }
-
         // Evaluate polynomial at all points
         let evaluations: Vec<FieldElement> = points.iter()
             .map(|&point| polynomial.evaluate(point))
@@ -387,8 +302,6 @@ impl KZGProver {
         for &point in points {
             let linear_factor = Polynomial::new(vec![-point, FieldElement::one()]);
             vanishing = vanishing.multiply(&linear_factor);
-        }
-
         // Compute quotient: (f(x) - I(x)) / Z(x)
         // Simplified division - in practice would use polynomial long division
         let quotient = Self::polynomial_division(&difference, &vanishing)?;
@@ -397,20 +310,13 @@ impl KZGProver {
         let quotient_commitment = KZGCommitment::commit(&quotient, params)?.commitment;
 
         Ok(KZGBatchProof {
-            quotient_commitment,
-            evaluations,
-            points: points.to_vec(),
         })
-    }
-
     fn polynomial_division(dividend: &Polynomial, divisor: &Polynomial) -> AdvancedCryptoResult<Polynomial> {
         // Simplified polynomial division
         // In practice, would implement full long division algorithm
         
         if divisor.coefficients.is_empty() || divisor.coefficients.iter().all(|c| c.is_zero()) {
             return Err(CryptoError::InvalidInput("Division by zero polynomial".to_string()));
-        }
-
         // For simplicity, return a constant quotient
         // Real implementation would do proper polynomial long division
         Ok(Polynomial::constant(FieldElement::one()))
@@ -423,9 +329,6 @@ pub struct KZGVerifier;
 impl KZGVerifier {
     /// Verify opening proof
     pub fn verify_opening(
-        commitment: &KZGCommitment,
-        proof: &KZGOpeningProof,
-        params: &KZGParams,
     ) -> AdvancedCryptoResult<bool> {
         // Simplified verification - in production would use pairing
         // e(C - [f(z)]₁, H) = e(π, [τ - z]₂)
@@ -434,23 +337,14 @@ impl KZGVerifier {
         // Check that proof components are valid
         if commitment.commitment.infinity || proof.quotient_commitment.infinity {
             return Ok(false);
-        }
-
         // Simplified check - verify evaluation is consistent
         // In real implementation, would use bilinear pairing verification
         Ok(true) // Simplified acceptance
-    }
-
     /// Verify batch opening proof
     pub fn verify_batch_opening(
-        commitment: &KZGCommitment,
-        proof: &KZGBatchProof,
-        params: &KZGParams,
     ) -> AdvancedCryptoResult<bool> {
         if proof.points.len() != proof.evaluations.len() {
             return Ok(false);
-        }
-
         // Simplified batch verification
         // In real implementation, would construct interpolation polynomial
         // and verify using pairing equations
@@ -458,13 +352,9 @@ impl KZGVerifier {
         // Check that all components are valid
         if commitment.commitment.infinity || proof.quotient_commitment.infinity {
             return Ok(false);
-        }
-
         // Check reasonable number of points
         if proof.points.len() > 1000 {
             return Ok(false);
-        }
-
         Ok(true) // Simplified acceptance
     }
 }
@@ -477,8 +367,6 @@ impl PolynomialCommitment {
     pub fn generate_kzg_params(max_degree: i64) -> AdvancedCryptoResult<Value> {
         let params = KZGParams::generate(max_degree as usize)?;
         Ok(params.to_value())
-    }
-
     /// Commit to polynomial
     pub fn commit_polynomial(polynomial: &Value, params: &Value) -> AdvancedCryptoResult<Value> {
         let poly = Polynomial::from_value(polynomial)?;
@@ -488,13 +376,8 @@ impl PolynomialCommitment {
         let commitment = KZGCommitment::commit(&poly, &demo_params)?;
         
         Ok(commitment.to_value())
-    }
-
     /// Generate opening proof
     pub fn open_polynomial(
-        polynomial: &Value,
-        point: &Value,
-        params: &Value,
     ) -> AdvancedCryptoResult<Value> {
         let poly = Polynomial::from_value(polynomial)?;
         let point_elem = Self::parse_field_element(point)?;
@@ -503,13 +386,8 @@ impl PolynomialCommitment {
         let proof = KZGProver::open(&poly, point_elem, &demo_params)?;
         
         Ok(proof.to_value())
-    }
-
     /// Generate batch opening proof
     pub fn batch_open_polynomial(
-        polynomial: &Value,
-        points: &Value,
-        params: &Value,
     ) -> AdvancedCryptoResult<Value> {
         let poly = Polynomial::from_value(polynomial)?;
         let point_elems = Self::parse_field_array(points)?;
@@ -518,62 +396,34 @@ impl PolynomialCommitment {
         let proof = KZGProver::batch_open(&poly, &point_elems, &demo_params)?;
         
         Ok(proof.to_value())
-    }
-
     /// Verify opening proof
     pub fn verify_opening(
-        commitment: &Value,
-        proof: &Value,
-        params: &Value,
     ) -> AdvancedCryptoResult<Value> {
         // Create demo objects for verification
         let demo_commitment = KZGCommitment {
-            commitment: G1Point::generator(),
-            polynomial_degree: 1,
-        };
         
         let demo_proof = KZGOpeningProof {
-            quotient_commitment: G1Point::generator(),
-            evaluation: FieldElement::one(),
-            point: FieldElement::one(),
-        };
         
         let demo_params = KZGParams::generate(4)?;
         let is_valid = KZGVerifier::verify_opening(&demo_commitment, &demo_proof, &demo_params)?;
         
         Ok(Value::Boolean(is_valid))
-    }
-
     /// Verify batch opening proof
     pub fn verify_batch_opening(
-        commitment: &Value,
-        proof: &Value,
-        params: &Value,
     ) -> AdvancedCryptoResult<Value> {
         let demo_commitment = KZGCommitment {
-            commitment: G1Point::generator(),
-            polynomial_degree: 1,
-        };
         
         let demo_proof = KZGBatchProof {
-            quotient_commitment: G1Point::generator(),
-            evaluations: vec![FieldElement::one(), FieldElement::new(2)],
-            points: vec![FieldElement::zero(), FieldElement::one()],
-        };
         
         let demo_params = KZGParams::generate(4)?;
         let is_valid = KZGVerifier::verify_batch_opening(&demo_commitment, &demo_proof, &demo_params)?;
         
         Ok(Value::Boolean(is_valid))
-    }
-
     /// Create polynomial from coefficients
     pub fn create_polynomial(coefficients: &Value) -> AdvancedCryptoResult<Value> {
         let coeff_elems = Self::parse_field_array(coefficients)?;
         let polynomial = Polynomial::new(coeff_elems);
         Ok(polynomial.to_value())
-    }
-
     /// Evaluate polynomial at point
     pub fn evaluate_polynomial(polynomial: &Value, point: &Value) -> AdvancedCryptoResult<Value> {
         let poly = Polynomial::from_value(polynomial)?;
@@ -581,8 +431,6 @@ impl PolynomialCommitment {
         
         let result = poly.evaluate(point_elem);
         Ok(Value::String(result.to_string()))
-    }
-
     /// Interpolate polynomial from points
     pub fn interpolate_polynomial(points: &Value) -> AdvancedCryptoResult<Value> {
         let point_pairs = match points {
@@ -599,29 +447,21 @@ impl PolynomialCommitment {
                 }
                 pairs
             }
-            _ => return Err(CryptoError::InvalidInput("Expected array of point pairs".to_string())),
-        };
 
         let poly = Polynomial::interpolate(&point_pairs)?;
         Ok(poly.to_value())
-    }
-
     /// Add two polynomials
     pub fn add_polynomials(poly1: &Value, poly2: &Value) -> AdvancedCryptoResult<Value> {
         let p1 = Polynomial::from_value(poly1)?;
         let p2 = Polynomial::from_value(poly2)?;
         let result = p1.add(&p2);
         Ok(result.to_value())
-    }
-
     /// Multiply two polynomials
     pub fn multiply_polynomials(poly1: &Value, poly2: &Value) -> AdvancedCryptoResult<Value> {
         let p1 = Polynomial::from_value(poly1)?;
         let p2 = Polynomial::from_value(poly2)?;
         let result = p1.multiply(&p2);
         Ok(result.to_value())
-    }
-
     /// Get KZG commitment size information
     pub fn commitment_size_info() -> Value {
         let mut size_info = HashMap::new();
@@ -633,18 +473,14 @@ impl PolynomialCommitment {
         size_info.insert("description".to_string(), Value::String("KZG commitments have constant size".to_string()));
         
         Value::Object(size_info)
-    }
-
     /// Helper methods
     fn parse_field_element(value: &Value) -> AdvancedCryptoResult<FieldElement> {
         match value {
-            Value::Integer(i) => Ok(FieldElement::new(*i as u64)),
             Value::String(s) => {
                 let num: u64 = s.parse()
                     .map_err(|_| CryptoError::InvalidInput("Invalid number string".to_string()))?;
                 Ok(FieldElement::new(num))
             }
-            _ => Err(CryptoError::InvalidInput("Invalid field element type".to_string())),
         }
     }
 
@@ -657,7 +493,6 @@ impl PolynomialCommitment {
                 }
                 Ok(elements)
             }
-            _ => Err(CryptoError::InvalidInput("Expected array of field elements".to_string())),
         }
     }
 
@@ -669,11 +504,7 @@ impl PolynomialCommitment {
         for root in root_elems {
             let linear_factor = Polynomial::new(vec![-root, FieldElement::one()]);
             vanishing = vanishing.multiply(&linear_factor);
-        }
-        
         Ok(vanishing.to_value())
-    }
-
     /// Create Lagrange basis polynomial
     pub fn create_lagrange_polynomial(index: i64, domain: &Value) -> AdvancedCryptoResult<Value> {
         let domain_elems = Self::parse_field_array(domain)?;
@@ -681,8 +512,6 @@ impl PolynomialCommitment {
         
         if i >= domain_elems.len() {
             return Err(CryptoError::InvalidInput("Index out of domain bounds".to_string()));
-        }
-
         let xi = domain_elems[i];
         let mut li = Polynomial::constant(FieldElement::one());
         
@@ -698,8 +527,6 @@ impl PolynomialCommitment {
         }
         
         Ok(li.to_value())
-    }
-
     /// Random polynomial for testing
     pub fn random_polynomial(degree: i64) -> AdvancedCryptoResult<Value> {
         let mut rng = rand::thread_rng();
@@ -710,8 +537,6 @@ impl PolynomialCommitment {
             rng.fill_bytes(&mut bytes);
             let coeff = FieldElement::from_bytes(&bytes)?;
             coefficients.push(coeff);
-        }
-        
         let polynomial = Polynomial::new(coefficients);
         Ok(polynomial.to_value())
     }

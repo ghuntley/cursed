@@ -6,8 +6,6 @@ use super::{ByteFitError, ByteFitResult, invalid_pattern, regex_error};
 /// Supports '*' for any sequence of bytes and '?' for any single byte
 pub fn wildcard_match(pattern: &[u8], data: &[u8]) -> bool {
     wildcard_match_impl(pattern, data, 0, 0)
-}
-
 /// RegexMatch performs regular expression matching on byte data
 pub fn regex_match(pattern: &str, data: &[u8]) -> ByteFitResult<bool> {
     match std::str::from_utf8(data) {
@@ -16,7 +14,6 @@ pub fn regex_match(pattern: &str, data: &[u8]) -> ByteFitResult<bool> {
             // In production, would use the regex crate
             simple_regex_match(pattern, text)
         }
-        Err(_) => Err(regex_error("Data contains invalid UTF-8")),
     }
 }
 
@@ -27,7 +24,6 @@ pub fn regex_find_all(pattern: &str, data: &[u8], n: i32) -> ByteFitResult<Vec<V
             let matches = simple_regex_find_all(pattern, text, n)?;
             Ok(matches.into_iter().map(|s| s.into_bytes()).collect())
         }
-        Err(_) => Err(regex_error("Data contains invalid UTF-8")),
     }
 }
 
@@ -38,7 +34,6 @@ pub fn regex_replace(pattern: &str, data: &[u8], repl: &[u8]) -> ByteFitResult<V
             let result = simple_regex_replace(pattern, text, replacement)?;
             Ok(result.into_bytes())
         }
-        _ => Err(regex_error("Data or replacement contains invalid UTF-8")),
     }
 }
 
@@ -47,13 +42,9 @@ fn wildcard_match_impl(pattern: &[u8], data: &[u8], p_idx: usize, d_idx: usize) 
     // Base cases
     if p_idx == pattern.len() {
         return d_idx == data.len();
-    }
-    
     if d_idx == data.len() {
         // Check if remaining pattern is all '*'
         return pattern[p_idx..].iter().all(|&c| c == b'*');
-    }
-    
     match pattern[p_idx] {
         b'*' => {
             // Try matching zero or more characters
@@ -84,46 +75,30 @@ fn wildcard_match_impl(pattern: &[u8], data: &[u8], p_idx: usize, d_idx: usize) 
 fn simple_regex_match(pattern: &str, text: &str) -> ByteFitResult<bool> {
     // Handle some basic regex patterns
     match pattern {
-        ".*" => Ok(true),
-        "" => Ok(text.is_empty()),
         _ => {
             // Convert some common patterns
             if pattern.starts_with('^') && pattern.ends_with('$') {
                 let inner = &pattern[1..pattern.len()-1];
                 return Ok(text == inner);
-            }
-            
             if pattern.starts_with('^') {
                 let prefix = &pattern[1..];
                 return Ok(text.starts_with(prefix));
-            }
-            
             if pattern.ends_with('$') {
                 let suffix = &pattern[..pattern.len()-1];
                 return Ok(text.ends_with(suffix));
-            }
-            
             // Handle digit pattern
             if pattern == r"\d+" {
                 return Ok(text.chars().all(|c| c.is_ascii_digit()) && !text.is_empty());
-            }
-            
             // Handle word pattern
             if pattern == r"\w+" {
                 return Ok(text.chars().all(|c| c.is_alphanumeric()) && !text.is_empty());
-            }
-            
             // Handle whitespace pattern
             if pattern == r"\s+" {
                 return Ok(text.chars().all(|c| c.is_whitespace()) && !text.is_empty());
-            }
-            
             // Simple literal match
             Ok(text.contains(pattern))
         }
     }
-}
-
 /// Simple regex find all implementation
 fn simple_regex_find_all(pattern: &str, text: &str, n: i32) -> ByteFitResult<Vec<String>> {
     let mut matches = Vec::new();
@@ -182,8 +157,6 @@ fn simple_regex_find_all(pattern: &str, text: &str, n: i32) -> ByteFitResult<Vec
     }
     
     Ok(matches)
-}
-
 /// Simple regex replace implementation
 fn simple_regex_replace(pattern: &str, text: &str, replacement: &str) -> ByteFitResult<String> {
     match pattern {
@@ -205,8 +178,6 @@ fn simple_regex_replace(pattern: &str, text: &str, replacement: &str) -> ByteFit
             
             if !current.is_empty() {
                 result.push_str(replacement);
-            }
-            
             Ok(result)
         }
         r"\w+" => {
@@ -227,8 +198,6 @@ fn simple_regex_replace(pattern: &str, text: &str, replacement: &str) -> ByteFit
             
             if !current.is_empty() {
                 result.push_str(replacement);
-            }
-            
             Ok(result)
         }
         _ => {
@@ -236,5 +205,3 @@ fn simple_regex_replace(pattern: &str, text: &str, replacement: &str) -> ByteFit
             Ok(text.replace(pattern, replacement))
         }
     }
-}
-

@@ -14,49 +14,30 @@ use tracing::{debug, instrument};
 /// Data that can be stored in context
 #[derive(Debug, Clone)]
 pub enum ContextData {
-    String(String),
-    Integer(i64),
-    Float(f64),
-    Boolean(bool),
-    Bytes(Vec<u8>),
-    Map(HashMap<String, ContextData>),
-    List(Vec<ContextData>),
-}
-
 impl ContextData {
     /// Get as string if possible
     pub fn as_string(&self) -> Option<&str> {
         match self {
-            ContextData::String(s) => Some(s),
-            _ => None,
         }
     }
 
     /// Get as integer if possible
     pub fn as_integer(&self) -> Option<i64> {
         match self {
-            ContextData::Integer(i) => Some(*i),
-            _ => None,
         }
     }
 
     /// Get as boolean if possible
     pub fn as_boolean(&self) -> Option<bool> {
         match self {
-            ContextData::Boolean(b) => Some(*b),
-            _ => None,
         }
     }
 
     /// Get as bytes if possible
     pub fn as_bytes(&self) -> Option<&[u8]> {
         match self {
-            ContextData::Bytes(b) => Some(b),
-            _ => None,
         }
     }
-}
-
 impl From<String> for ContextData {
     fn from(s: String) -> Self {
         ContextData::String(s)
@@ -91,31 +72,17 @@ impl From<Vec<u8>> for ContextData {
 #[derive(Debug, Clone)]
 pub struct RequestContext {
     /// HTTP method
-    pub method: HttpMethod,
     /// Request path
-    pub path: String,
     /// Query string parameters
-    pub query_params: HashMap<String, String>,
     /// Route parameters (extracted from path)
-    pub route_params: HashMap<String, String>,
     /// Request headers
-    pub headers: HashMap<String, String>,
     /// Request body
-    pub body: Vec<u8>,
     /// Custom context data
-    pub data: Arc<RwLock<HashMap<String, ContextData>>>,
     /// Request ID for tracing
-    pub request_id: String,
     /// Request start time
-    pub start_time: Instant,
     /// Client IP address
-    pub client_ip: Option<String>,
     /// User agent
-    pub user_agent: Option<String>,
     /// Request timeout
-    pub timeout: Option<Duration>,
-}
-
 impl RequestContext {
     /// Create a new request context
     #[instrument(skip(method, path))]
@@ -126,18 +93,6 @@ impl RequestContext {
         debug!(method = %method, path = %path, request_id = %request_id, "Creating request context");
         
         Self {
-            method: parsed_method,
-            path,
-            query_params: HashMap::new(),
-            route_params: HashMap::new(),
-            headers: HashMap::new(),
-            body: Vec::new(),
-            data: Arc::new(RwLock::new(HashMap::new())),
-            request_id,
-            start_time: Instant::now(),
-            client_ip: None,
-            user_agent: None,
-            timeout: None,
         }
     }
 
@@ -153,53 +108,33 @@ impl RequestContext {
             .as_millis();
         
         format!("req_{}_{}", timestamp, count)
-    }
-
     /// Add a route parameter
     pub fn add_param(&mut self, key: &str, value: &str) {
         self.route_params.insert(key.to_string(), value.to_string());
-    }
-
     /// Get a route parameter
     pub fn param(&self, key: &str) -> Option<&str> {
         self.route_params.get(key).map(|s| s.as_str())
-    }
-
     /// Add a query parameter
     pub fn add_query_param(&mut self, key: &str, value: &str) {
         self.query_params.insert(key.to_string(), value.to_string());
-    }
-
     /// Get a query parameter
     pub fn query_param(&self, key: &str) -> Option<&str> {
         self.query_params.get(key).map(|s| s.as_str())
-    }
-
     /// Add a header
     pub fn add_header(&mut self, key: &str, value: &str) {
         self.headers.insert(key.to_lowercase(), value.to_string());
-    }
-
     /// Get a header
     pub fn header(&self, key: &str) -> Option<&str> {
         self.headers.get(&key.to_lowercase()).map(|s| s.as_str())
-    }
-
     /// Set request body
     pub fn set_body(&mut self, body: Vec<u8>) {
         self.body = body;
-    }
-
     /// Get request body as bytes
     pub fn body(&self) -> &[u8] {
         &self.body
-    }
-
     /// Get request body as string
     pub fn body_string(&self) -> crate::error::Result<()> {
         String::from_utf8(self.body.clone())
-    }
-
     /// Set custom context data
     #[instrument(skip(self, value))]
     pub fn set_data(&self, key: &str, value: ContextData) {
@@ -230,23 +165,15 @@ impl RequestContext {
     /// Set client IP address
     pub fn set_client_ip(&mut self, ip: String) {
         self.client_ip = Some(ip);
-    }
-
     /// Set user agent
     pub fn set_user_agent(&mut self, user_agent: String) {
         self.user_agent = Some(user_agent);
-    }
-
     /// Set request timeout
     pub fn set_timeout(&mut self, timeout: Duration) {
         self.timeout = Some(timeout);
-    }
-
     /// Get elapsed time since request start
     pub fn elapsed(&self) -> Duration {
         self.start_time.elapsed()
-    }
-
     /// Check if request has timed out
     pub fn is_timed_out(&self) -> bool {
         if let Some(timeout) = self.timeout {
@@ -259,8 +186,6 @@ impl RequestContext {
     /// Get content type from headers
     pub fn content_type(&self) -> Option<&str> {
         self.header("content-type")
-    }
-
     /// Check if request is JSON
     pub fn is_json(&self) -> bool {
         if let Some(content_type) = self.content_type() {
@@ -283,70 +208,35 @@ impl RequestContext {
     /// Parse JSON body
     pub fn json<T>(&self) -> crate::error::Result<()>
     where
-        T: serde::de::DeserializeOwned,
     {
         serde_json::from_slice(&self.body)
-    }
-
     /// Clone context for middleware chain passing
     pub fn clone_for_middleware(&self) -> Self {
         Self {
-            method: self.method,
-            path: self.path.clone(),
-            query_params: self.query_params.clone(),
-            route_params: self.route_params.clone(),
-            headers: self.headers.clone(),
-            body: self.body.clone(),
-            data: Arc::clone(&self.data),
-            request_id: self.request_id.clone(),
-            start_time: self.start_time,
-            client_ip: self.client_ip.clone(),
-            user_agent: self.user_agent.clone(),
-            timeout: self.timeout,
         }
     }
-}
-
 /// HTTP response context for building responses
 #[derive(Debug, Clone)]
 pub struct ResponseContext {
     /// HTTP status code
-    pub status: StatusCode,
     /// Response headers
-    pub headers: HashMap<String, String>,
     /// Response body
-    pub body: Vec<u8>,
     /// Custom response data
-    pub data: Arc<RwLock<HashMap<String, ContextData>>>,
     /// Whether response has been sent
-    pub sent: bool,
     /// Response creation time
-    pub created_at: Instant,
-}
-
 impl ResponseContext {
     /// Create a new response context
     pub fn new() -> Self {
         Self {
-            status: StatusCode::OK,
-            headers: HashMap::new(),
-            body: Vec::new(),
-            data: Arc::new(RwLock::new(HashMap::new())),
-            sent: false,
-            created_at: Instant::now(),
         }
     }
 
     /// Set status code
     pub fn set_status(&mut self, status: StatusCode) {
         self.status = status;
-    }
-
     /// Set a header
     pub fn set_header(&mut self, key: &str, value: &str) {
         self.headers.insert(key.to_string(), value.to_string());
-    }
-
     /// Add a header (append if exists)
     pub fn add_header(&mut self, key: &str, value: &str) {
         if let Some(existing) = self.headers.get_mut(key) {
@@ -360,51 +250,35 @@ impl ResponseContext {
     /// Get a header
     pub fn header(&self, key: &str) -> Option<&str> {
         self.headers.get(key).map(|s| s.as_str())
-    }
-
     /// Set response body
     pub fn set_body(&mut self, body: Vec<u8>) {
         self.body = body;
-    }
-
     /// Set response body from string
     pub fn set_body_string(&mut self, body: &str) {
         self.body = body.as_bytes().to_vec();
-    }
-
     /// Set JSON response body
     pub fn set_json<T>(&mut self, data: &T) -> crate::error::Result<()>
     where
-        T: serde::Serialize,
     {
         let json_data = serde_json::to_vec(data)?;
         self.set_body(json_data);
         self.set_header("Content-Type", "application/json");
         Ok(())
-    }
-
     /// Set HTML response body
     pub fn set_html(&mut self, html: &str) {
         self.set_body_string(html);
         self.set_header("Content-Type", "text/html; charset=utf-8");
-    }
-
     /// Set plain text response body
     pub fn set_text(&mut self, text: &str) {
         self.set_body_string(text);
         self.set_header("Content-Type", "text/plain; charset=utf-8");
-    }
-
     /// Set redirect response
     pub fn set_redirect(&mut self, location: &str, permanent: bool) {
         self.status = if permanent {
             StatusCode(301) // Moved Permanently
         } else {
             StatusCode(302) // Found
-        };
         self.set_header("Location", location);
-    }
-
     /// Set custom response data
     #[instrument(skip(self, value))]
     pub fn set_data(&self, key: &str, value: ContextData) {
@@ -426,62 +300,40 @@ impl ResponseContext {
     /// Mark response as sent
     pub fn mark_sent(&mut self) {
         self.sent = true;
-    }
-
     /// Check if response has been sent
     pub fn is_sent(&self) -> bool {
         self.sent
-    }
-
     /// Get response size in bytes
     pub fn size(&self) -> usize {
         self.body.len()
-    }
-
     /// Set CORS headers
     pub fn set_cors_headers(&mut self, allowed_origins: &[String], allowed_methods: &[String]) {
         let origins = if allowed_origins.contains(&"*".to_string()) {
             "*".to_string()
         } else {
             allowed_origins.join(", ")
-        };
         
         self.set_header("Access-Control-Allow-Origin", &origins);
         self.set_header("Access-Control-Allow-Methods", &allowed_methods.join(", "));
         self.set_header("Access-Control-Allow-Headers", "Content-Type, Authorization");
-    }
-
     /// Set cache control headers
     pub fn set_cache_control(&mut self, max_age: u32, public: bool) {
         let cache_control = if public {
             format!("public, max-age={}", max_age)
         } else {
             format!("private, max-age={}", max_age)
-        };
         self.set_header("Cache-Control", &cache_control);
-    }
-
     /// Set security headers
     pub fn set_security_headers(&mut self) {
         self.set_header("X-Content-Type-Options", "nosniff");
         self.set_header("X-Frame-Options", "DENY");
         self.set_header("X-XSS-Protection", "1; mode=block");
         self.set_header("Strict-Transport-Security", "max-age=31536000; includeSubDomains");
-    }
-
     /// Clone response for middleware chain passing
     pub fn clone_for_middleware(&self) -> Self {
         Self {
-            status: self.status,
-            headers: self.headers.clone(),
-            body: self.body.clone(),
-            data: Arc::clone(&self.data),
-            sent: self.sent,
-            created_at: self.created_at,
         }
     }
-}
-
 impl Default for ResponseContext {
     fn default() -> Self {
         Self::new()
@@ -496,13 +348,6 @@ impl ContextUtils {
     pub fn extract_client_ip(context: &RequestContext) -> Option<String> {
         // Try various headers in order of preference
         let headers_to_check = [
-            "x-forwarded-for",
-            "x-real-ip",
-            "cf-connecting-ip",
-            "x-cluster-client-ip",
-            "x-forwarded",
-            "forwarded-for",
-            "forwarded",
         ];
         
         for header in &headers_to_check {
@@ -513,11 +358,7 @@ impl ContextUtils {
                     return Some(ip.to_string());
                 }
             }
-        }
-        
         context.client_ip.clone()
-    }
-
     /// Parse basic authentication from Authorization header
     pub fn parse_basic_auth(context: &RequestContext) -> Option<(String, String)> {
         if let Some(auth_header) = context.header("authorization") {
@@ -535,8 +376,6 @@ impl ContextUtils {
             }
         }
         None
-    }
-
     /// Extract bearer token from Authorization header
     pub fn extract_bearer_token(context: &RequestContext) -> Option<String> {
         if let Some(auth_header) = context.header("authorization") {
@@ -545,8 +384,6 @@ impl ContextUtils {
             }
         }
         None
-    }
-
     /// Parse query string into parameters
     pub fn parse_query_string(query: &str) -> HashMap<String, String> {
         let mut params = HashMap::new();
@@ -567,8 +404,6 @@ impl ContextUtils {
                     params.insert(decoded_key, String::new());
                 }
             }
-        }
-        
         params
     }
 }
@@ -604,11 +439,7 @@ fn url_decode(input: &str) -> crate::error::Result<()> {
                 result.extend(encoded.bytes());
             }
         }
-    }
-    
     String::from_utf8(result)
-}
-
 /// Base64 decoding implementation for HTTP authentication and data parsing
 mod base64 {
     use std::collections::HashMap;
@@ -616,12 +447,6 @@ mod base64 {
     /// Base64 decoding errors
     #[derive(Debug, Clone)]
     pub enum Base64Error {
-        InvalidCharacter(char, usize),
-        InvalidLength,
-        InvalidPadding,
-        Empty,
-    }
-    
 //     impl std::fmt::Display for Base64Error {
 //         fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
 //             match self {
@@ -645,9 +470,6 @@ mod base64 {
 //     
     /// Base64 decoder with standard alphabet
     pub struct Base64Decoder {
-        decode_table: HashMap<char, u8>,
-    }
-    
     impl Base64Decoder {
         /// Create a new Base64 decoder with standard alphabet
         pub fn new() -> Self {
@@ -656,8 +478,6 @@ mod base64 {
             
             for (i, ch) in alphabet.chars().enumerate() {
                 decode_table.insert(ch, i as u8);
-            }
-            
             Self { decode_table }
         }
         
@@ -665,16 +485,12 @@ mod base64 {
         pub fn decode(&self, input: &str) -> crate::error::Result<()> {
             if input.is_empty() {
                 return Err(Base64Error::Empty);
-            }
-            
             // Remove whitespace and validate characters
             let cleaned: String = input.chars().filter(|c| !c.is_whitespace()).collect();
             
             // Check for valid length (must be multiple of 4)
             if cleaned.len() % 4 != 0 {
                 return Err(Base64Error::InvalidLength);
-            }
-            
             let mut result = Vec::new();
             let chars: Vec<char> = cleaned.chars().collect();
             
@@ -705,8 +521,6 @@ mod base64 {
                 // Validate padding
                 if padding_count > 2 {
                     return Err(Base64Error::InvalidPadding);
-                }
-                
                 // Convert 4 6-bit values to 3 8-bit bytes
                 let byte1 = (values[0] << 2) | (values[1] >> 4);
                 result.push(byte1);
@@ -714,8 +528,6 @@ mod base64 {
                 if padding_count < 2 {
                     let byte2 = ((values[1] & 0x0F) << 4) | (values[2] >> 2);
                     result.push(byte2);
-                }
-                
                 if padding_count < 1 {
                     let byte3 = ((values[2] & 0x03) << 6) | values[3];
                     result.push(byte3);
@@ -734,8 +546,6 @@ mod base64 {
     pub fn decode(input: &str) -> Result<Vec<u8>, String> {
         let decoder = DECODER.get_or_init(|| Base64Decoder::new());
         decoder.decode(input).map_err(|e| e.to_string())
-    }
-    
     #[cfg(test)]
     mod tests {
         use super::*;
@@ -747,8 +557,6 @@ mod base64 {
             assert_eq!(decode("SGVsbG8=").unwrap(), b"Hello");
             assert_eq!(decode("V29ybGQ=").unwrap(), b"World");
             assert_eq!(decode("").unwrap_err(), "Empty Base64 string");
-        }
-        
         #[test]
         fn test_padding() {
         // TODO: implement
@@ -756,8 +564,6 @@ mod base64 {
             assert_eq!(decode("QQ==").unwrap(), b"A");
             assert_eq!(decode("QUI=").unwrap(), b"AB");
             assert_eq!(decode("QUJD").unwrap(), b"ABC");
-        }
-        
         #[test]
         fn test_invalid_input() {
         // TODO: implement
@@ -765,8 +571,6 @@ mod base64 {
             assert!(decode("SGVsbG8").is_err()); // Invalid length
             assert!(decode("SGVsbG8@").is_err()); // Invalid character
             assert!(decode("S=VsbG8=").is_err()); // Invalid padding position
-        }
-        
         #[test]
         fn test_whitespace() {
         // TODO: implement
@@ -775,5 +579,3 @@ mod base64 {
             assert_eq!(decode("SGVs\nbG8=").unwrap(), b"Hello");
         }
     }
-}
-

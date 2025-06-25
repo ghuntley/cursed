@@ -10,206 +10,108 @@ use std::sync::{Arc, Mutex};
 use tracing::{debug, trace, info};
 
 use inkwell::{
-    values::{FunctionValue, BasicValue, BasicValueEnum, InstructionValue, CallSiteValue},
-    basic_block::BasicBlock,
-    module::Module,
-};
+// };
 
 use crate::optimization::enhanced_llvm_passes_manager::EnhancedOptimizationStatistics;
 
 /// Channel optimizer for CURSED channel operations
 pub struct ChannelOptimizer<'ctx> {
-    context_lifetime: std::marker::PhantomData<&'ctx ()>,
-    statistics: Arc<Mutex<EnhancedOptimizationStatistics>>,
-    channel_patterns: ChannelPatternAnalysis,
-    optimization_config: ChannelOptimizationConfig,
-}
-
 /// Configuration for channel optimizations
 #[derive(Debug, Clone)]
 struct ChannelOptimizationConfig {
     /// Enable buffer size optimization
-    enable_buffer_optimization: bool,
     /// Enable send/receive batching
-    enable_batching: bool,
     /// Enable channel pooling
-    enable_channel_pooling: bool,
     /// Enable lock-free optimizations
-    enable_lock_free: bool,
     /// Maximum channels to optimize per function
-    max_channels_per_function: usize,
     /// Buffer size threshold for optimization
-    buffer_size_threshold: usize,
-}
-
 impl Default for ChannelOptimizationConfig {
     fn default() -> Self {
         Self {
-            enable_buffer_optimization: true,
-            enable_batching: true,
-            enable_channel_pooling: true,
-            enable_lock_free: true,
-            max_channels_per_function: 50,
-            buffer_size_threshold: 100,
         }
     }
-}
-
 /// Analysis of channel usage patterns
 #[derive(Debug, Default)]
 struct ChannelPatternAnalysis {
     /// Function name -> channel operations
-    channel_operations: HashMap<String, Vec<ChannelOperation>>,
     /// Channel communication graphs
-    communication_graphs: Vec<CommunicationGraph>,
     /// Buffer usage patterns
-    buffer_patterns: HashMap<String, BufferUsagePattern>,
     /// Synchronization patterns
-    sync_patterns: Vec<SynchronizationPattern>,
-}
-
 /// Information about a channel operation
 #[derive(Debug, Clone)]
 struct ChannelOperation {
     /// Type of operation
-    operation_type: ChannelOperationType,
     /// Channel identifier
-    channel_id: String,
     /// Location in source code
-    location: String,
     /// Message type
-    message_type: String,
     /// Operation frequency
-    frequency: usize,
     /// Whether operation is blocking
-    is_blocking: bool,
     /// Buffer size if known
-    buffer_size: Option<usize>,
-}
-
 /// Types of channel operations
 #[derive(Debug, Clone, PartialEq)]
 enum ChannelOperationType {
     /// Send operation (channel <- value)
-    Send,
     /// Receive operation (<- channel)
-    Receive,
     /// Channel creation
-    Create,
     /// Channel close
-    Close,
     /// Select operation
-    Select,
     /// Range iteration
-    Range,
-}
-
 /// Communication graph between goroutines via channels
 #[derive(Debug, Clone)]
 struct CommunicationGraph {
     /// Nodes (goroutines/functions)
-    nodes: Vec<String>,
     /// Edges (channel communications)
-    edges: Vec<CommunicationEdge>,
     /// Graph properties
-    properties: GraphProperties,
-}
-
 /// Communication edge in the graph
 #[derive(Debug, Clone)]
 struct CommunicationEdge {
     /// Source goroutine
-    from: String,
     /// Destination goroutine
-    to: String,
     /// Channel used
-    channel: String,
     /// Message frequency
-    frequency: usize,
     /// Message size estimate
-    message_size: usize,
-}
-
 /// Properties of communication graph
 #[derive(Debug, Clone)]
 struct GraphProperties {
     /// Whether graph has cycles
-    has_cycles: bool,
     /// Whether graph is strongly connected
-    is_strongly_connected: bool,
     /// Maximum fan-out
-    max_fan_out: usize,
     /// Communication density
-    density: f64,
-}
-
 /// Buffer usage pattern for channels
 #[derive(Debug, Clone)]
 struct BufferUsagePattern {
     /// Average buffer utilization (0.0 to 1.0)
-    average_utilization: f64,
     /// Maximum buffer utilization
-    max_utilization: f64,
     /// Buffer overflow events
-    overflow_events: usize,
     /// Recommended buffer size
-    recommended_size: usize,
     /// Access pattern type
-    access_pattern: AccessPattern,
-}
-
 /// Channel access patterns
 #[derive(Debug, Clone, PartialEq)]
 enum AccessPattern {
     /// Burst access pattern
-    Burst,
     /// Steady stream
-    SteadyStream,
     /// Sporadic access
-    Sporadic,
     /// Producer-consumer
-    ProducerConsumer,
-}
-
 /// Synchronization pattern analysis
 #[derive(Debug, Clone)]
 struct SynchronizationPattern {
     /// Pattern type
-    pattern_type: SyncPatternType,
     /// Channels involved
-    channels: Vec<String>,
     /// Goroutines involved
-    goroutines: Vec<String>,
     /// Synchronization frequency
-    frequency: usize,
     /// Critical path length
-    critical_path_length: usize,
-}
-
 /// Types of synchronization patterns
 #[derive(Debug, Clone, PartialEq)]
 enum SyncPatternType {
     /// One-to-one communication
-    OneToOne,
     /// One-to-many (broadcast)
-    OneToMany,
     /// Many-to-one (collection)
-    ManyToOne,
     /// Many-to-many
-    ManyToMany,
     /// Pipeline pattern
-    Pipeline,
     /// Worker pool pattern
-    WorkerPool,
-}
-
 impl<'ctx> ChannelOptimizer<'ctx> {
     pub fn new(statistics: Arc<Mutex<EnhancedOptimizationStatistics>>) -> Self {
         Self {
-            context_lifetime: std::marker::PhantomData,
-            statistics,
-            channel_patterns: ChannelPatternAnalysis::default(),
-            optimization_config: ChannelOptimizationConfig::default(),
         }
     }
     
@@ -236,12 +138,9 @@ impl<'ctx> ChannelOptimizer<'ctx> {
         let total_operations: usize = self.channel_patterns.channel_operations.values()
             .map(|ops| ops.len()).sum();
         
-        info!("Channel pattern analysis completed: {} operations, {} communication graphs",
               total_operations, self.channel_patterns.communication_graphs.len());
         
         Ok(())
-    }
-    
     /// Optimize channel operations in a function
     pub fn optimize_channel_operations(&self, function: FunctionValue<'ctx>) -> Result<()> {
         let function_name = function.get_name().to_str().unwrap_or("unnamed");
@@ -252,13 +151,9 @@ impl<'ctx> ChannelOptimizer<'ctx> {
         // Get channel operations for this function
         if let Some(operations) = self.channel_patterns.channel_operations.get(function_name) {
             optimizations_applied += self.optimize_operations(function, operations)?;
-        }
-        
         // Apply buffer optimizations
         if let Some(buffer_pattern) = self.channel_patterns.buffer_patterns.get(function_name) {
             optimizations_applied += self.optimize_buffer_usage(function, buffer_pattern)?;
-        }
-        
         // Apply synchronization optimizations
         optimizations_applied += self.optimize_synchronization_patterns(function)?;
         
@@ -266,15 +161,9 @@ impl<'ctx> ChannelOptimizer<'ctx> {
         {
             let mut stats = self.statistics.lock().unwrap();
             stats.channels_optimized += optimizations_applied;
-        }
-        
         if optimizations_applied > 0 {
             debug!("Applied {} channel optimizations to function {}", optimizations_applied, function_name);
-        }
-        
         Ok(())
-    }
-    
     /// Analyze channel operations in a specific function
     fn analyze_function_channels(&mut self, function: FunctionValue<'ctx>) -> Result<()> {
         let function_name = function.get_name().to_str().unwrap_or("unnamed").to_string();
@@ -283,11 +172,7 @@ impl<'ctx> ChannelOptimizer<'ctx> {
         while let Some(bb) = block {
             self.analyze_basic_block_channels(&function_name, bb)?;
             block = bb.get_next_basic_block();
-        }
-        
         Ok(())
-    }
-    
     /// Analyze channel operations in a basic block
     fn analyze_basic_block_channels(&mut self, function_name: &str, block: BasicBlock<'ctx>) -> Result<()> {
         let mut instruction = block.get_first_instruction();
@@ -303,14 +188,8 @@ impl<'ctx> ChannelOptimizer<'ctx> {
                             .push(operation);
                     }
                 }
-            }
-            
             instruction = instr.get_next_instruction();
-        }
-        
         Ok(())
-    }
-    
     /// Analyze a potential channel-related call
     fn analyze_channel_call(&self, _call_site: CallSiteValue<'ctx>) -> Result<Option<ChannelOperation>> {
         // This is a simplified analysis - in a real implementation, we'd need to:
@@ -322,12 +201,6 @@ impl<'ctx> ChannelOptimizer<'ctx> {
         if self.is_channel_operation(&_call_site) {
             Ok(Some(ChannelOperation {
                 operation_type: ChannelOperationType::Send, // Simplified
-                channel_id: "channel_1".to_string(),
-                location: "unknown".to_string(),
-                message_type: "unknown".to_string(),
-                frequency: 1,
-                is_blocking: true,
-                buffer_size: Some(10),
             }))
         } else {
             Ok(None)
@@ -339,8 +212,6 @@ impl<'ctx> ChannelOptimizer<'ctx> {
         // In a real implementation, this would check function names or metadata
         // to identify calls that correspond to channel operations
         false
-    }
-    
     /// Build communication graphs from channel operations
     fn build_communication_graphs(&mut self) -> Result<()> {
         debug!("Building communication graphs");
@@ -353,28 +224,12 @@ impl<'ctx> ChannelOptimizer<'ctx> {
         
         // For now, create a simple example graph
         let example_graph = CommunicationGraph {
-            nodes: vec!["main".to_string(), "worker1".to_string(), "worker2".to_string()],
             edges: vec![
                 CommunicationEdge {
-                    from: "main".to_string(),
-                    to: "worker1".to_string(),
-                    channel: "work_channel".to_string(),
-                    frequency: 100,
-                    message_size: 64,
-                },
-            ],
             properties: GraphProperties {
-                has_cycles: false,
-                is_strongly_connected: false,
-                max_fan_out: 2,
-                density: 0.5,
-            },
-        };
         
         self.channel_patterns.communication_graphs.push(example_graph);
         Ok(())
-    }
-    
     /// Analyze buffer usage patterns
     fn analyze_buffer_patterns(&mut self) -> Result<()> {
         debug!("Analyzing buffer usage patterns");
@@ -383,11 +238,7 @@ impl<'ctx> ChannelOptimizer<'ctx> {
         for (function_name, operations) in &self.channel_patterns.channel_operations {
             let pattern = self.compute_buffer_pattern(operations);
             self.channel_patterns.buffer_patterns.insert(function_name.clone(), pattern);
-        }
-        
         Ok(())
-    }
-    
     /// Compute buffer usage pattern from operations
     fn compute_buffer_pattern(&self, operations: &[ChannelOperation]) -> BufferUsagePattern {
         let sends = operations.iter().filter(|op| op.operation_type == ChannelOperationType::Send).count();
@@ -397,18 +248,12 @@ impl<'ctx> ChannelOptimizer<'ctx> {
             sends as f64 / (sends + receives) as f64
         } else {
             0.0
-        };
         
         BufferUsagePattern {
-            average_utilization,
-            max_utilization: average_utilization.min(1.0),
-            overflow_events: 0,
-            recommended_size: if sends > receives { sends * 2 } else { 10 },
             access_pattern: if sends > receives * 2 {
                 AccessPattern::Burst
             } else {
                 AccessPattern::SteadyStream
-            },
         }
     }
     
@@ -421,19 +266,9 @@ impl<'ctx> ChannelOptimizer<'ctx> {
             let pattern_type = self.classify_sync_pattern(graph);
             
             let sync_pattern = SynchronizationPattern {
-                pattern_type,
-                channels: graph.edges.iter().map(|e| e.channel.clone()).collect(),
-                goroutines: graph.nodes.clone(),
-                frequency: graph.edges.iter().map(|e| e.frequency).sum(),
-                critical_path_length: graph.edges.len(),
-            };
             
             self.channel_patterns.sync_patterns.push(sync_pattern);
-        }
-        
         Ok(())
-    }
-    
     /// Classify synchronization pattern from communication graph
     fn classify_sync_pattern(&self, graph: &CommunicationGraph) -> SyncPatternType {
         let node_count = graph.nodes.len();
@@ -462,13 +297,9 @@ impl<'ctx> ChannelOptimizer<'ctx> {
         if self.optimization_config.enable_batching && sends.len() > 5 {
             debug!("Applying send batching optimization");
             optimizations += 1;
-        }
-        
         if self.optimization_config.enable_batching && receives.len() > 5 {
             debug!("Applying receive batching optimization");
             optimizations += 1;
-        }
-        
         // Apply lock-free optimizations
         if self.optimization_config.enable_lock_free {
             let blocking_ops = operations.iter().filter(|op| op.is_blocking).count();
@@ -479,8 +310,6 @@ impl<'ctx> ChannelOptimizer<'ctx> {
         }
         
         Ok(optimizations)
-    }
-    
     /// Optimize buffer usage
     fn optimize_buffer_usage(&self, _function: FunctionValue<'ctx>, pattern: &BufferUsagePattern) -> Result<usize> {
         let mut optimizations = 0;
@@ -493,8 +322,6 @@ impl<'ctx> ChannelOptimizer<'ctx> {
             } else if pattern.average_utilization > 0.8 {
                 debug!("Increasing buffer size for high utilization channel");
                 optimizations += 1;
-            }
-            
             // Optimize access pattern
             match pattern.access_pattern {
                 AccessPattern::Burst => {
@@ -510,8 +337,6 @@ impl<'ctx> ChannelOptimizer<'ctx> {
         }
         
         Ok(optimizations)
-    }
-    
     /// Optimize synchronization patterns
     fn optimize_synchronization_patterns(&self, _function: FunctionValue<'ctx>) -> Result<usize> {
         let mut optimizations = 0;
@@ -535,8 +360,6 @@ impl<'ctx> ChannelOptimizer<'ctx> {
         }
         
         Ok(optimizations)
-    }
-    
     /// Generate channel optimization report
     pub fn generate_optimization_report(&self) -> Result<String> {
         let mut report = String::new();
@@ -558,16 +381,12 @@ impl<'ctx> ChannelOptimizer<'ctx> {
             let receives = operations.iter().filter(|op| op.operation_type == ChannelOperationType::Receive).count();
             
             report.push_str(&format!("- {}: {} sends, {} receives\n", function_name, sends, receives));
-        }
-        
         // Buffer optimization opportunities
         report.push_str("\n### Buffer Optimization Opportunities\n");
         for (function_name, pattern) in &self.channel_patterns.buffer_patterns {
             if pattern.average_utilization < 0.3 {
-                report.push_str(&format!("- {}: low buffer utilization ({:.1}%) - size reduction candidate\n", 
                                        function_name, pattern.average_utilization * 100.0));
             } else if pattern.average_utilization > 0.8 {
-                report.push_str(&format!("- {}: high buffer utilization ({:.1}%) - size increase candidate\n", 
                                        function_name, pattern.average_utilization * 100.0));
             }
         }

@@ -12,98 +12,48 @@ use tracing::{debug, error, info, instrument, warn};
 /// Memory profiler for allocation tracking and analysis
 #[derive(Debug)]
 pub struct MemoryProfiler {
-    tracking_threshold: usize,
-    collecting: Arc<Mutex<bool>>,
-    data: Arc<RwLock<MemoryProfileData>>,
-    stats: Arc<RwLock<CollectorStats>>,
-    allocation_hooks: AllocationHooks,
-}
-
 impl MemoryProfiler {
     pub fn new(tracking_threshold: usize) -> Self {
         Self {
-            tracking_threshold,
-            collecting: Arc::new(Mutex::new(false)),
-            data: Arc::new(RwLock::new(MemoryProfileData::new())),
-            stats: Arc::new(RwLock::new(CollectorStats::default())),
-            allocation_hooks: AllocationHooks::new(),
         }
     }
     
     #[instrument(skip(self))]
     pub fn track_allocation(
-        &self,
-        size: usize,
-        address: u64,
-        stack_trace: Vec<String>,
     ) -> crate::error::Result<()> {
         if !self.is_collecting() || size < self.tracking_threshold {
             return Ok(());
-        }
-        
         let allocation = AllocationEvent {
-            event_type: AllocationEventType::Allocate,
-            size,
-            address,
-            stack_trace,
-            timestamp: Instant::now(),
-            thread_id: Self::get_current_thread_id(),
-        };
         
         if let Ok(mut data) = self.data.write() {
             data.add_allocation_event(allocation);
-        }
-        
         self.update_stats(|stats| {
             stats.data_points += 1;
         });
         
         Ok(())
-    }
-    
     #[instrument(skip(self))]
     pub fn track_deallocation(
-        &self,
-        address: u64,
-        stack_trace: Vec<String>,
     ) -> crate::error::Result<()> {
         if !self.is_collecting() {
             return Ok(());
-        }
-        
         let deallocation = AllocationEvent {
-            event_type: AllocationEventType::Deallocate,
             size: 0, // Size not available for deallocations
-            address,
-            stack_trace,
-            timestamp: Instant::now(),
-            thread_id: Self::get_current_thread_id(),
-        };
         
         if let Ok(mut data) = self.data.write() {
             data.add_allocation_event(deallocation);
-        }
-        
         self.update_stats(|stats| {
             stats.data_points += 1;
         });
         
         Ok(())
-    }
-    
     #[instrument(skip(self))]
     pub fn track_gc_event(&self, gc_event: GcEvent) -> crate::error::Result<()> {
         if !self.is_collecting() {
             return Ok(());
-        }
-        
         if let Ok(mut data) = self.data.write() {
             data.add_gc_event(gc_event);
-        }
-        
         Ok(())
-    }
-    
     fn get_current_thread_id() -> u64 {
         // Use a simple hash of the thread id since as_u64() is unstable
         use std::collections::hash_map::DefaultHasher;
@@ -112,11 +62,8 @@ impl MemoryProfiler {
         let mut hasher = DefaultHasher::new();
         std::thread::current().id().hash(&mut hasher);
         hasher.finish()
-    }
-    
     fn update_stats<F>(&self, updater: F)
     where
-        F: FnOnce(&mut CollectorStats),
     {
         if let Ok(mut stats) = self.stats.write() {
             updater(&mut stats);
@@ -146,28 +93,20 @@ impl MemoryProfiler {
             Vec::new()
         }
     }
-}
-
 impl DataCollector for MemoryProfiler {
     #[instrument(skip(self))]
     fn start_collection(&mut self) -> crate::error::Result<()> {
         if self.is_collecting() {
             return Err(ProfilerError::ConfigError("Memory profiler already collecting".to_string()));
-        }
-        
         *self.collecting.lock().unwrap() = true;
         self.allocation_hooks.install()?;
         
         info!("Started memory profiling with threshold {} bytes", self.tracking_threshold);
         Ok(())
-    }
-    
     #[instrument(skip(self))]
     fn stop_collection(&mut self) -> crate::error::Result<()> {
         if !self.is_collecting() {
             return Err(ProfilerError::ConfigError("Memory profiler not collecting".to_string()));
-        }
-        
         *self.collecting.lock().unwrap() = false;
         self.allocation_hooks.uninstall()?;
         
@@ -177,18 +116,14 @@ impl DataCollector for MemoryProfiler {
                 if let Ok(mut stats) = self.stats.write() {
                     stats.bytes_collected = data.len() as u64;
                 }
-                info!("Memory profiling stopped, collected {} allocation events", 
                       profile_data.allocation_events.len());
                 Ok(data)
             }
-            Err(e) => Err(ProfilerError::SerializationError(e.to_string())),
         }
     }
     
     fn is_collecting(&self) -> bool {
         *self.collecting.lock().unwrap()
-    }
-    
     fn get_stats(&self) -> CollectorStats {
         self.stats.read().unwrap().clone()
     }
@@ -197,34 +132,18 @@ impl DataCollector for MemoryProfiler {
 /// Memory profiling data collection
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct MemoryProfileData {
-    pub allocation_events: Vec<AllocationEvent>,
-    pub gc_events: Vec<GcEvent>,
-    pub heap_snapshots: Vec<HeapSnapshot>,
-    pub start_time: SystemTime,
-}
-
 impl MemoryProfileData {
     pub fn new() -> Self {
         Self {
-            allocation_events: Vec::new(),
-            gc_events: Vec::new(),
-            heap_snapshots: Vec::new(),
-            start_time: SystemTime::now(),
         }
     }
     
     pub fn add_allocation_event(&mut self, event: AllocationEvent) {
         self.allocation_events.push(event);
-    }
-    
     pub fn add_gc_event(&mut self, event: GcEvent) {
         self.gc_events.push(event);
-    }
-    
     pub fn add_heap_snapshot(&mut self, snapshot: HeapSnapshot) {
         self.heap_snapshots.push(snapshot);
-    }
-    
     pub fn calculate_current_usage(&self) -> MemoryUsageSnapshot {
         let mut allocated_bytes = 0;
         let mut allocated_objects: u64 = 0;
@@ -254,10 +173,6 @@ impl MemoryProfileData {
         }
         
         MemoryUsageSnapshot {
-            allocated_bytes,
-            allocated_objects,
-            active_allocations: active_allocations.len(),
-            timestamp: SystemTime::now(),
         }
     }
     
@@ -280,12 +195,8 @@ impl MemoryProfileData {
                     stats.allocation_count += 1;
                     stats.total_bytes += event.size;
                     stats.average_size = stats.total_bytes / stats.allocation_count;
-                }
-                
                 // Temporal patterns
                 temporal_patterns.push(TemporalAllocation {
-                    timestamp: event.timestamp,
-                    size: event.size,
                     cumulative_size: 0, // Will be calculated
                 });
             }
@@ -296,14 +207,7 @@ impl MemoryProfileData {
         for pattern in &mut temporal_patterns {
             cumulative += pattern.size;
             pattern.cumulative_size = cumulative;
-        }
-        
         AllocationAnalysis {
-            size_histogram,
-            function_allocations,
-            temporal_patterns,
-            peak_memory_usage: cumulative,
-            allocation_rate: self.calculate_allocation_rate(),
         }
     }
     
@@ -312,13 +216,9 @@ impl MemoryProfileData {
         if size == 0 { return 0; }
         let bucket = (size - 1).next_power_of_two();
         std::cmp::min(bucket, 1024 * 1024) // Cap at 1MB bucket
-    }
-    
     fn calculate_allocation_rate(&self) -> f64 {
         if self.allocation_events.is_empty() {
             return 0.0;
-        }
-        
         let duration = self.start_time.elapsed().unwrap_or(Duration::from_secs(1));
         let allocations = self.allocation_events
             .iter()
@@ -326,8 +226,6 @@ impl MemoryProfileData {
             .count();
         
         allocations as f64 / duration.as_secs_f64()
-    }
-    
     pub fn detect_leaks(&self) -> Vec<MemoryLeak> {
         let mut active_allocations: HashMap<u64, &AllocationEvent> = HashMap::new();
         let mut leaks = Vec::new();
@@ -346,8 +244,6 @@ impl MemoryProfileData {
                     active_allocations.insert(event.address, event);
                 }
             }
-        }
-        
         // Remaining allocations are potential leaks
         let now = SystemTime::now();
         for (address, allocation) in active_allocations {
@@ -357,11 +253,6 @@ impl MemoryProfileData {
             // Consider allocations older than 10 seconds as potential leaks
             if age > Duration::from_secs(10) {
                 leaks.push(MemoryLeak {
-                    address,
-                    size: allocation.size,
-                    age,
-                    stack_trace: allocation.stack_trace.clone(),
-                    allocation_timestamp: allocation.timestamp,
                 });
             }
         }
@@ -374,143 +265,56 @@ impl MemoryProfileData {
 /// Individual allocation/deallocation event
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct AllocationEvent {
-    pub event_type: AllocationEventType,
-    pub size: usize,
-    pub address: u64,
-    pub stack_trace: Vec<String>,
     #[serde(skip, default = "Instant::now")]
-    pub timestamp: Instant,
-    pub thread_id: u64,
-}
-
 /// Type of allocation event
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum AllocationEventType {
-    Allocate,
-    Deallocate,
-    Realloc,
-}
-
 /// Garbage collection event information
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct GcEvent {
-    pub gc_type: GcType,
-    pub duration: Duration,
-    pub bytes_collected: usize,
-    pub bytes_remaining: usize,
-    pub objects_collected: u64,
-    pub objects_remaining: u64,
     #[serde(skip, default = "Instant::now")]
-    pub timestamp: Instant,
-    pub trigger_reason: String,
-}
-
 /// Types of garbage collection
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum GcType {
-    Minor,
-    Major,
-    Full,
-    Incremental,
-}
-
 /// Heap snapshot at a point in time
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct HeapSnapshot {
-    pub timestamp: SystemTime,
-    pub total_size: usize,
-    pub used_size: usize,
-    pub free_size: usize,
-    pub object_count: u64,
-    pub fragmentation_ratio: f64,
-}
-
 /// Current memory usage snapshot
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct MemoryUsageSnapshot {
-    pub allocated_bytes: usize,
-    pub allocated_objects: u64,
-    pub active_allocations: usize,
     #[serde(default = "SystemTime::now")]
-    pub timestamp: SystemTime,
-}
-
 impl Default for MemoryUsageSnapshot {
     fn default() -> Self {
         Self {
-            allocated_bytes: 0,
-            allocated_objects: 0,
-            active_allocations: 0,
-            timestamp: SystemTime::now(),
         }
     }
-}
-
 /// Allocation pattern analysis results
 #[derive(Debug, Clone, Default, Serialize)]
 pub struct AllocationAnalysis {
-    pub size_histogram: HashMap<usize, u64>,
-    pub function_allocations: HashMap<String, AllocationStats>,
     #[serde(skip)]
-    pub temporal_patterns: Vec<TemporalAllocation>,
-    pub peak_memory_usage: usize,
     pub allocation_rate: f64, // allocations per second
-}
-
 /// Allocation statistics per function
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct AllocationStats {
-    pub allocation_count: usize,
-    pub total_bytes: usize,
-    pub average_size: usize,
-}
-
 /// Temporal allocation pattern
 #[derive(Debug, Clone, Serialize)]
 pub struct TemporalAllocation {
     #[serde(skip)]
-    pub timestamp: Instant,
-    pub size: usize,
-    pub cumulative_size: usize,
-}
-
 /// Detected memory leak
 #[derive(Debug, Clone, Serialize)]
 pub struct MemoryLeak {
-    pub address: u64,
-    pub size: usize,
-    pub age: Duration,
-    pub stack_trace: Vec<String>,
     #[serde(skip)]
-    pub allocation_timestamp: Instant,
-}
-
 impl MemoryLeak {
     pub fn severity(&self) -> LeakSeverity {
         match self.size {
-            0..=1024 => LeakSeverity::Low,
-            1025..=65536 => LeakSeverity::Medium,
-            65537..=1048576 => LeakSeverity::High,
-            _ => LeakSeverity::Critical,
         }
     }
-}
-
 /// Memory leak severity levels
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub enum LeakSeverity {
-    Low,
-    Medium,
-    High,
-    Critical,
-}
-
 /// Allocation hook system for instrumenting memory operations
 #[derive(Debug)]
 struct AllocationHooks {
-    installed: bool,
-}
-
 impl AllocationHooks {
     fn new() -> Self {
         Self { installed: false }
@@ -519,8 +323,6 @@ impl AllocationHooks {
     fn install(&mut self) -> crate::error::Result<()> {
         if self.installed {
             return Ok(());
-        }
-        
         // In a real implementation, this would:
         // - Hook into the system allocator (malloc/free)
         // - Instrument CURSED's garbage collector
@@ -530,13 +332,9 @@ impl AllocationHooks {
         self.installed = true;
         debug!("Memory allocation hooks installed");
         Ok(())
-    }
-    
     fn uninstall(&mut self) -> crate::error::Result<()> {
         if !self.installed {
             return Ok(());
-        }
-        
         // In a real implementation, this would:
         // - Remove allocator hooks
         // - Uninstall callbacks

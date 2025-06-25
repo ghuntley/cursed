@@ -13,39 +13,17 @@ use std::os::raw::{c_char, c_int, c_void};
 /// LLVM plugin configuration
 #[derive(Debug, Clone)]
 pub struct LlvmPluginConfig {
-    pub jit_enabled: bool,
-    pub optimization_enabled: bool,
-    pub optimization_level: u32,
-    pub compile_to_memory: bool,
-    pub cache_compiled_plugins: bool,
-}
-
 impl Default for LlvmPluginConfig {
     fn default() -> Self {
         Self {
-            jit_enabled: true,
-            optimization_enabled: true,
-            optimization_level: 2,
-            compile_to_memory: true,
-            cache_compiled_plugins: true,
         }
     }
-}
-
 /// LLVM plugin compilation context
 #[derive(Debug, Clone)]
 pub struct LlvmPluginContext {
-    pub functions: HashMap<String, String>,
-    pub types: HashMap<String, String>,
-    pub globals: HashMap<String, String>,
-}
-
 impl LlvmPluginContext {
     pub fn new() -> Self {
         Self {
-            functions: HashMap::new(),
-            types: HashMap::new(),
-            globals: HashMap::new(),
         }
     }
     
@@ -56,18 +34,10 @@ impl LlvmPluginContext {
 
 /// LLVM plugin compilation context
 pub struct LLVMPluginContext {
-    registry: Arc<PlugRegistry>,
-    manager: Option<Arc<Mutex<PlugManager>>>,
-    runtime_plugins: Arc<Mutex<HashMap<String, Arc<Mutex<Plug>>>>>,
-}
-
 impl LLVMPluginContext {
     /// Create a new LLVM plugin context
     pub fn new() -> Self {
         Self {
-            registry: Arc::new(PlugRegistry::new()),
-            manager: None,
-            runtime_plugins: Arc::new(Mutex::new(HashMap::new())),
         }
     }
 
@@ -75,18 +45,12 @@ impl LLVMPluginContext {
     pub fn with_manager(mut self, manager: Arc<Mutex<PlugManager>>) -> Self {
         self.manager = Some(manager);
         self
-    }
-
     /// Get the plugin registry
     pub fn registry(&self) -> &Arc<PlugRegistry> {
         &self.registry
-    }
-
     /// Get the plugin manager
     pub fn manager(&self) -> Option<&Arc<Mutex<PlugManager>>> {
         self.manager.as_ref()
-    }
-
     /// Register a runtime-compiled plugin
     pub fn register_runtime_plugin(&self, name: &str, plugin: Arc<Mutex<Plug>>) -> PluginResult<()> {
         let mut plugins = self.runtime_plugins.lock().map_err(|_| {
@@ -95,16 +59,12 @@ impl LLVMPluginContext {
 
         plugins.insert(name.to_string(), plugin);
         Ok(())
-    }
-
     /// Get a runtime-compiled plugin
     pub fn get_runtime_plugin(&self, name: &str) -> Option<Arc<Mutex<Plug>>> {
         self.runtime_plugins.lock()
             .ok()?
             .get(name)
             .cloned()
-    }
-
     /// List all runtime plugins
     pub fn list_runtime_plugins(&self) -> Vec<String> {
         self.runtime_plugins.lock()
@@ -151,19 +111,12 @@ pub trait LLVMPluginCompiler {
     
     /// Generate FFI declarations for plugin runtime
     fn generate_plugin_ffi_declarations(&self) -> String;
-}
-
 /// Default LLVM plugin compiler implementation
 pub struct DefaultLLVMPluginCompiler {
-    context: Arc<LLVMPluginContext>,
-}
-
 impl DefaultLLVMPluginCompiler {
     pub fn new(context: Arc<LLVMPluginContext>) -> Self {
         Self { context }
     }
-}
-
 impl LLVMPluginCompiler for DefaultLLVMPluginCompiler {
     fn compile_plugin_load(&self, plugin_path: &str, plugin_name: &str) -> PluginResult<String> {
         // Generate LLVM IR for loading a plugin
@@ -189,8 +142,6 @@ entry:
     ; Call plugin load function
     %result = call i32 @cursed_load_plugin(i8* %path_str, i8* %name_str)
     ret i32 %result
-}}
-
 ; Plugin path constant
 @plugin_path_{} = private unnamed_addr constant [{} x i8] c"{}\00"
 
@@ -199,7 +150,6 @@ entry:
 
 ; Memory copy intrinsic declaration
 declare void @llvm.memcpy.p0i8.p0i8.i64(i8* noalias nocapture writeonly, i8* noalias nocapture readonly, i64, i1 immarg)
-"#,
             plugin_name, // function name suffix
             plugin_path.len() + 1, plugin_path.len() + 1, plugin_name, plugin_path.len() + 1, // path
             plugin_name.len() + 1, plugin_name.len() + 1, plugin_name, plugin_name.len() + 1, // name
@@ -208,8 +158,6 @@ declare void @llvm.memcpy.p0i8.p0i8.i64(i8* noalias nocapture writeonly, i8* noa
         );
         
         Ok(ir)
-    }
-
     fn compile_plugin_call(&self, plugin_name: &str, function_name: &str, args: &[String]) -> PluginResult<String> {
         // Generate LLVM IR for calling a plugin function
         let ir = format!(
@@ -234,13 +182,9 @@ entry:
     
     ; Setup arguments array
     %args_ptr = getelementptr [{}  x i8*], [{}  x i8*]* %args, i32 0, i32 0
-    {}
-    
     ; Call plugin function
     %result = call i8* @cursed_call_plugin_function(i8* %plugin_name_str, i8* %function_name_str, i8** %args_ptr, i32 {})
     ret i8* %result
-}}
-
 ; Plugin name constant
 @plugin_name_{}_{} = private unnamed_addr constant [{} x i8] c"{}\00"
 
@@ -248,7 +192,6 @@ entry:
 @function_name_{}_{} = private unnamed_addr constant [{} x i8] c"{}\00"
 
 {}
-"#,
             plugin_name, function_name, // function name suffix
             args.len(), // args array size
             plugin_name.len() + 1, plugin_name.len() + 1, plugin_name, function_name, plugin_name.len() + 1, // plugin name
@@ -262,8 +205,6 @@ entry:
         );
         
         Ok(ir)
-    }
-
     fn compile_plugin_unload(&self, plugin_name: &str) -> PluginResult<String> {
         // Generate LLVM IR for unloading a plugin
         let ir = format!(
@@ -283,19 +224,14 @@ entry:
     ; Call plugin unload function
     %result = call i32 @cursed_unload_plugin(i8* %name_str)
     ret i32 %result
-}}
-
 ; Plugin name constant
 @unload_plugin_name_{} = private unnamed_addr constant [{} x i8] c"{}\00"
-"#,
             plugin_name, // function name suffix
             plugin_name.len() + 1, plugin_name.len() + 1, plugin_name, plugin_name.len() + 1, // name
             plugin_name, plugin_name.len() + 1, plugin_name, // name constant
         );
         
         Ok(ir)
-    }
-
     fn generate_plugin_ffi_declarations(&self) -> String {
         r#"
 ; Plugin management FFI functions
@@ -321,28 +257,21 @@ fn generate_args_setup(args: &[String]) -> String {
     let mut setup = String::new();
     for (i, _arg) in args.iter().enumerate() {
         setup.push_str(&format!(
-            "    %arg{}_ptr = getelementptr [{}  x i8*], [{}  x i8*]* %args, i32 0, i32 {}\n",
             i, args.len(), args.len(), i
         ));
         setup.push_str(&format!(
-            "    store i8* getelementptr inbounds ([{} x i8], [{} x i8]* @arg_{}_{}, i32 0, i32 0), i8** %arg{}_ptr\n",
             args[i].len() + 1, args[i].len() + 1, i, i, i
         ));
     }
     setup
-}
-
 fn generate_arg_constants(args: &[String]) -> String {
     let mut constants = String::new();
     for (i, arg) in args.iter().enumerate() {
         constants.push_str(&format!(
-            "@arg_{}_{} = private unnamed_addr constant [{} x i8] c\"{}\00\"\n",
             i, i, arg.len() + 1, arg
         ));
     }
     constants
-}
-
 // FFI functions for runtime plugin operations
 
 /// Load a plugin from the runtime
@@ -350,26 +279,18 @@ fn generate_arg_constants(args: &[String]) -> String {
 pub extern "C" fn cursed_load_plugin(plugin_path: *const c_char, plugin_name: *const c_char) -> c_int {
     if plugin_path.is_null() || plugin_name.is_null() {
         return -1; // CursedError: null pointers
-    }
-
     let path_str = unsafe {
         match CStr::from_ptr(plugin_path).to_str() {
-            Ok(s) => s,
             Err(_) => return -2, // CursedError: invalid UTF-8
         }
-    };
 
     let name_str = unsafe {
         match CStr::from_ptr(plugin_name).to_str() {
-            Ok(s) => s,
             Err(_) => return -3, // CursedError: invalid UTF-8
         }
-    };
 
     let context = match get_llvm_plugin_context() {
-        Some(ctx) => ctx,
         None => return -4, // CursedError: context not initialized
-    };
 
     // Load the plugin
 //     match crate::stdlib::plug_vibes::plug::load_with_options(path_str, LoadOptions::default()) {
@@ -389,19 +310,13 @@ pub extern "C" fn cursed_load_plugin(plugin_path: *const c_char, plugin_name: *c
 pub extern "C" fn cursed_unload_plugin(plugin_name: *const c_char) -> c_int {
     if plugin_name.is_null() {
         return -1; // CursedError: null pointer
-    }
-
     let name_str = unsafe {
         match CStr::from_ptr(plugin_name).to_str() {
-            Ok(s) => s,
             Err(_) => return -2, // CursedError: invalid UTF-8
         }
-    };
 
     let context = match get_llvm_plugin_context() {
-        Some(ctx) => ctx,
         None => return -3, // CursedError: context not initialized
-    };
 
     // Unload the plugin
     match context.registry().unregister(name_str) {
@@ -413,28 +328,18 @@ pub extern "C" fn cursed_unload_plugin(plugin_name: *const c_char) -> c_int {
 /// Call a plugin function from the runtime
 #[no_mangle]
 pub extern "C" fn cursed_call_plugin_function(
-    plugin_name: *const c_char,
-    function_name: *const c_char,
-    args: *const *const c_char,
-    arg_count: c_int,
 ) -> *mut c_char {
     if plugin_name.is_null() || function_name.is_null() {
         return std::ptr::null_mut(); // CursedError: null pointers
-    }
-
     let name_str = unsafe {
         match CStr::from_ptr(plugin_name).to_str() {
-            Ok(s) => s,
             Err(_) => return std::ptr::null_mut(), // CursedError: invalid UTF-8
         }
-    };
 
     let func_str = unsafe {
         match CStr::from_ptr(function_name).to_str() {
-            Ok(s) => s,
             Err(_) => return std::ptr::null_mut(), // CursedError: invalid UTF-8
         }
-    };
 
     // Convert arguments
     let mut plugin_args = Vec::new();
@@ -450,114 +355,78 @@ pub extern "C" fn cursed_call_plugin_function(
     }
 
     let context = match get_llvm_plugin_context() {
-        Some(ctx) => ctx,
         None => return std::ptr::null_mut(), // CursedError: context not initialized
-    };
 
     // Get the plugin
     let plugin_arc = match context.registry().get(name_str) {
-        Ok(plugin) => plugin,
         Err(_) => return std::ptr::null_mut(), // CursedError: plugin not found
-    };
 
     // Call the function
     let result = {
         let plugin = match plugin_arc.lock() {
-            Ok(p) => p,
             Err(_) => return std::ptr::null_mut(), // CursedError: failed to lock plugin
-        };
 
         // In a real implementation, we'd call the actual plugin function here
         // For now, return a success message
         "function_called_successfully"
-    };
 
     // Allocate and return result string
     let result_cstring = match CString::new(result) {
-        Ok(s) => s,
         Err(_) => return std::ptr::null_mut(), // CursedError: invalid result string
-    };
 
     let result_ptr = result_cstring.into_raw();
     result_ptr
-}
-
 /// Get a plugin symbol from the runtime
 #[no_mangle]
 pub extern "C" fn cursed_get_plugin_symbol(
-    plugin_name: *const c_char,
-    symbol_name: *const c_char,
 ) -> *mut c_char {
     if plugin_name.is_null() || symbol_name.is_null() {
         return std::ptr::null_mut(); // CursedError: null pointers
-    }
-
     let name_str = unsafe {
         match CStr::from_ptr(plugin_name).to_str() {
-            Ok(s) => s,
             Err(_) => return std::ptr::null_mut(), // CursedError: invalid UTF-8
         }
-    };
 
     let symbol_str = unsafe {
         match CStr::from_ptr(symbol_name).to_str() {
-            Ok(s) => s,
             Err(_) => return std::ptr::null_mut(), // CursedError: invalid UTF-8
         }
-    };
 
     let context = match get_llvm_plugin_context() {
-        Some(ctx) => ctx,
         None => return std::ptr::null_mut(), // CursedError: context not initialized
-    };
 
     // Get the plugin
     let plugin_arc = match context.registry().get(name_str) {
-        Ok(plugin) => plugin,
         Err(_) => return std::ptr::null_mut(), // CursedError: plugin not found
-    };
 
     // Get the symbol
     let symbol_value = {
         let plugin = match plugin_arc.lock() {
-            Ok(p) => p,
             Err(_) => return std::ptr::null_mut(), // CursedError: failed to lock plugin
-        };
 
         match plugin.lookup(symbol_str) {
             Ok(value) => format!("{:?}", value), // Convert value to string representation
             Err(_) => return std::ptr::null_mut(), // CursedError: symbol not found
         }
-    };
 
     // Allocate and return result string
     let result_cstring = match CString::new(symbol_value) {
-        Ok(s) => s,
         Err(_) => return std::ptr::null_mut(), // CursedError: invalid result string
-    };
 
     let result_ptr = result_cstring.into_raw();
     result_ptr
-}
-
 /// Check if a plugin exists in the runtime
 #[no_mangle]
 pub extern "C" fn cursed_plugin_exists(plugin_name: *const c_char) -> c_int {
     if plugin_name.is_null() {
         return 0; // False: null pointer
-    }
-
     let name_str = unsafe {
         match CStr::from_ptr(plugin_name).to_str() {
-            Ok(s) => s,
             Err(_) => return 0, // False: invalid UTF-8
         }
-    };
 
     let context = match get_llvm_plugin_context() {
-        Some(ctx) => ctx,
         None => return 0, // False: context not initialized
-    };
 
     if context.registry().contains(name_str) {
         1 // True: plugin exists
@@ -574,5 +443,3 @@ pub extern "C" fn cursed_free_string(ptr: *mut c_char) {
             let _ = CString::from_raw(ptr);
         }
     }
-}
-

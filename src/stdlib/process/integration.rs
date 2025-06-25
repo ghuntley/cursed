@@ -28,54 +28,27 @@ pub type ProcessIntegration = UnifiedProcessManager;
 #[derive(Debug, Clone)]
 pub struct IntegrationOptions {
     /// Enable monitoring
-    pub enable_monitoring: bool,
     /// Enable lifecycle management
-    pub enable_lifecycle: bool,
     /// Health check configuration
-    pub health_config: Option<HealthCheckConfig>,
     /// Performance metrics collection
-    pub collect_metrics: bool,
-}
-
 /// Unified process manager that integrates all process management capabilities
 #[derive(Debug)]
 pub struct UnifiedProcessManager {
     /// Lifecycle manager for process tracking
-    lifecycle_manager: ProcessLifecycleManager,
     /// Process monitor for health checks
-    process_monitor: ProcessMonitor,
     /// Active processes registry
-    active_processes: Arc<Mutex<HashMap<u32, ProcessInfo>>>,
-}
-
 /// Comprehensive process information
 #[derive(Debug, Clone)]
 pub struct ProcessInfo {
     /// Process ID
-    pub pid: u32,
     /// Process command line
-    pub command: String,
     /// Process start time
-    pub start_time: std::time::Instant,
     /// Process status
-    pub status: ProcessStatus,
     /// Health status
-    pub health: HealthStatus,
     /// Resource usage
-    pub resources: Option<ProcessStats>,
-}
-
 /// Process status enumeration
 #[derive(Debug, Clone, PartialEq)]
 pub enum ProcessStatus {
-    Starting,
-    Running,
-    Paused,
-    Stopping,
-    Stopped,
-    Failed(String),
-}
-
 impl UnifiedProcessManager {
     /// Create a new unified process manager
     pub fn new() -> ProcessResult<Self> {
@@ -86,12 +59,7 @@ impl UnifiedProcessManager {
         start_global_monitoring();
         
         Ok(Self {
-            lifecycle_manager,
-            process_monitor,
-            active_processes: Arc::new(Mutex::new(HashMap::new())),
         })
-    }
-
     /// Spawn a process with comprehensive tracking
     #[tracing::instrument(skip(self))]
     pub fn spawn_tracked<S: AsRef<str>>(&mut self, command: S, args: &[&str]) -> ProcessResult<u32> {
@@ -110,24 +78,13 @@ impl UnifiedProcessManager {
         
         // Register in our active processes
         let process_info = ProcessInfo {
-            pid,
-            command: format!("{} {}", command_str, args.join(" ")),
-            start_time: std::time::Instant::now(),
-            status: ProcessStatus::Starting,
-            health: HealthStatus::Unknown,
-            resources: None,
-        };
         
         {
             let mut active = self.active_processes.lock()
                 .map_err(|_| ProcessError::SystemError(-1, "Failed to lock active processes".to_string()))?;
             active.insert(pid, process_info);
-        }
-        
         tracing::info!(pid = pid, "Process spawned and tracked successfully");
         Ok(pid)
-    }
-
     /// Get comprehensive process information
     pub fn get_process_info(&self, pid: u32) -> ProcessResult<ProcessInfo> {
         let active = self.active_processes.lock()
@@ -137,17 +94,12 @@ impl UnifiedProcessManager {
             // Update with latest monitoring data
             if let Ok(health) = self.process_monitor.get_health_status(pid) {
                 info.health = health;
-            }
-            
             // Get real-time process state
             if let Ok(real_state) = get_current_process_state(pid) {
                 info.status = if real_state.is_running {
                     ProcessStatus::Running
                 } else {
                     ProcessStatus::Stopped
-                };
-            }
-            
             Ok(info)
         } else {
             Err(ProcessError::ProcessNotFound(pid))
@@ -160,8 +112,6 @@ impl UnifiedProcessManager {
             .map_err(|_| ProcessError::SystemError(-1, "Failed to lock active processes".to_string()))?;
         
         Ok(active.values().cloned().collect())
-    }
-
     /// Terminate a process gracefully
     #[tracing::instrument(skip(self))]
     pub fn terminate_process(&mut self, pid: u32) -> ProcessResult<()> {
@@ -181,8 +131,6 @@ impl UnifiedProcessManager {
         
         tracing::info!(pid = pid, "Process terminated successfully");
         Ok(())
-    }
-
     /// Kill a process immediately
     #[tracing::instrument(skip(self))]
     pub fn kill_process(&mut self, pid: u32) -> ProcessResult<()> {
@@ -202,38 +150,24 @@ impl UnifiedProcessManager {
         
         tracing::info!(pid = pid, "Process killed successfully");
         Ok(())
-    }
-
     /// Get health summary for all processes
     pub fn get_health_summary(&self) -> ProcessResult<HashMap<u32, HealthStatus>> {
         self.process_monitor.get_health_summary()
-    }
-
     /// Get performance metrics for a process
     pub fn get_performance_metrics(&self, pid: u32) -> ProcessResult<Vec<PerformanceMetrics>> {
         self.process_monitor.get_performance_history(pid)
-    }
-
     /// Send signal to process
     pub fn send_signal(&self, pid: u32, signal: Signal) -> ProcessResult<()> {
         ProcessControl::send_signal(pid, signal)
-    }
-
     /// Set process priority
     pub fn set_priority(&self, pid: u32, priority: Priority) -> ProcessResult<()> {
         ProcessControl::set_priority(pid, priority)
-    }
-
     /// Start monitoring all processes
     pub fn start_monitoring(&mut self) -> ProcessResult<()> {
         self.process_monitor.start()
-    }
-
     /// Stop monitoring
     pub fn stop_monitoring(&mut self) -> ProcessResult<()> {
         self.process_monitor.stop()
-    }
-
     /// Cleanup finished processes
     pub fn cleanup_finished(&mut self) -> ProcessResult<usize> {
         let mut cleaned_count = 0;
@@ -241,7 +175,6 @@ impl UnifiedProcessManager {
             let active = self.active_processes.lock()
                 .map_err(|_| ProcessError::SystemError(-1, "Failed to lock active processes".to_string()))?;
             active.keys().copied().collect()
-        };
 
         for pid in pids_to_check {
             if let Ok(real_state) = get_current_process_state(pid) {
@@ -251,8 +184,6 @@ impl UnifiedProcessManager {
                         let mut active = self.active_processes.lock()
                             .map_err(|_| ProcessError::SystemError(-1, "Failed to lock active processes".to_string()))?;
                         active.remove(&pid);
-                    }
-                    
                     // Remove from monitoring
                     let _ = self.process_monitor.remove_process(pid);
                     
@@ -260,15 +191,9 @@ impl UnifiedProcessManager {
                     tracing::debug!(pid = pid, "Cleaned up finished process");
                 }
             }
-        }
-
         if cleaned_count > 0 {
             tracing::info!(count = cleaned_count, "Cleaned up finished processes");
-        }
-        
         Ok(cleaned_count)
-    }
-
     /// Update process status
     fn update_process_status(&self, pid: u32, status: ProcessStatus) -> ProcessResult<()> {
         let mut active = self.active_processes.lock()
@@ -276,11 +201,7 @@ impl UnifiedProcessManager {
         
         if let Some(process_info) = active.get_mut(&pid) {
             process_info.status = status;
-        }
-        
         Ok(())
-    }
-
     /// Shutdown the manager
     pub fn shutdown(&mut self) -> ProcessResult<()> {
         tracing::info!("Shutting down unified process manager");
@@ -293,12 +214,9 @@ impl UnifiedProcessManager {
             let active = self.active_processes.lock()
                 .map_err(|_| ProcessError::SystemError(-1, "Failed to lock active processes".to_string()))?;
             active.keys().copied().collect()
-        };
         
         for pid in pids {
             let _ = self.terminate_process(pid);
-        }
-        
         // Shutdown lifecycle manager
         self.lifecycle_manager.shutdown()?;
         
@@ -316,8 +234,6 @@ impl Drop for UnifiedProcessManager {
             tracing::error!(error = ?e, "CursedError during UnifiedProcessManager shutdown");
         }
     }
-}
-
 /// High-level process execution functions
 pub mod quick_exec {
     use super::*;
@@ -327,8 +243,6 @@ pub mod quick_exec {
     pub fn exec<S: AsRef<str>>(command: S) -> ProcessResult<ProcessOutput> {
         let config = ProcessConfig::new(command);
 //         crate::stdlib::process::core::run_command(config)
-    }
-    
     /// Execute a command with arguments
     #[tracing::instrument]
     pub fn exec_with_args<S: AsRef<str>>(command: S, args: &[&str]) -> ProcessResult<ProcessOutput> {
@@ -337,15 +251,11 @@ pub mod quick_exec {
             config = config.arg(arg);
         }
 //         crate::stdlib::process::core::run_command(config)
-    }
-    
     /// Execute a command with timeout
     #[tracing::instrument]
     pub fn exec_timeout<S: AsRef<str>>(command: S, timeout: Duration) -> ProcessResult<ProcessOutput> {
         let config = ProcessConfig::new(command).timeout(timeout);
 //         crate::stdlib::process::core::run_command_timeout(config, timeout)
-    }
-    
     /// Execute a shell command
     #[tracing::instrument]
     pub fn shell<S: AsRef<str>>(command: S) -> ProcessResult<ProcessOutput> {
@@ -363,19 +273,11 @@ pub mod process_groups {
     /// Process group manager
     #[derive(Debug)]
     pub struct ProcessGroupManager {
-        groups: Arc<Mutex<HashMap<String, Vec<u32>>>>,
-        manager: Arc<Mutex<UnifiedProcessManager>>,
-    }
-    
     impl ProcessGroupManager {
         /// Create a new process group manager
         pub fn new() -> ProcessResult<Self> {
             Ok(Self {
-                groups: Arc::new(Mutex::new(HashMap::new())),
-                manager: Arc::new(Mutex::new(UnifiedProcessManager::new()?)),
             })
-        }
-        
         /// Create a new process group
         pub fn create_group<S: AsRef<str>>(&self, group_name: S) -> ProcessResult<()> {
             let mut groups = self.groups.lock()
@@ -383,8 +285,6 @@ pub mod process_groups {
             
             groups.insert(group_name.as_ref().to_string(), Vec::new());
             Ok(())
-        }
-        
         /// Add process to group
         pub fn add_to_group<S: AsRef<str>>(&self, group_name: S, pid: u32) -> ProcessResult<()> {
             let mut groups = self.groups.lock()
@@ -393,8 +293,6 @@ pub mod process_groups {
             let group = groups.entry(group_name.as_ref().to_string()).or_insert_with(Vec::new);
             group.push(pid);
             Ok(())
-        }
-        
         /// Terminate entire group
         pub fn terminate_group<S: AsRef<str>>(&self, group_name: S) -> ProcessResult<()> {
             let pids = {
@@ -402,17 +300,12 @@ pub mod process_groups {
                     .map_err(|_| ProcessError::SystemError(-1, "Failed to lock groups".to_string()))?;
                 
                 groups.get(group_name.as_ref()).cloned().unwrap_or_default()
-            };
             
             let mut manager = self.manager.lock()
                 .map_err(|_| ProcessError::SystemError(-1, "Failed to lock manager".to_string()))?;
             
             for pid in pids {
                 let _ = manager.terminate_process(pid);
-            }
-            
             Ok(())
         }
     }
-}
-

@@ -18,179 +18,82 @@ use tracing::{debug, error, info, instrument, warn};
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct CacheEntry {
     /// Associated job ID
-    pub job_id: String,
     /// Compiled output
-    pub output: Vec<u8>,
     /// When this entry was created
-    pub created_at: SystemTime,
     /// Number of times this entry has been accessed
-    pub access_count: usize,
-}
-
 /// Cache strategy configuration
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum CacheStrategy {
     /// Least Recently Used with Time-To-Live
     LruWithTtl {
-        max_entries: usize,
-        ttl: Duration,
-    },
     /// Least Frequently Used
     LFU {
-        max_entries: usize,
-    },
     /// Time-based expiration only
     TimeOnly {
-        ttl: Duration,
-    },
     /// Size-based cache with LRU eviction
     SizeLimited {
-        max_size_bytes: usize,
-    },
     /// Adaptive strategy that changes based on usage patterns
     Adaptive {
-        max_entries: usize,
-        max_size_bytes: usize,
-        ttl: Duration,
-    },
-}
-
 impl Default for CacheStrategy {
     fn default() -> Self {
         Self::LruWithTtl {
-            max_entries: 10000,
             ttl: Duration::from_secs(24 * 60 * 60), // 24 hours
         }
     }
-}
-
 /// Cache configuration
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct CacheConfig {
     /// Caching strategy
-    pub strategy: CacheStrategy,
     /// Persistent storage directory
-    pub storage_dir: Option<PathBuf>,
     /// Enable persistent storage
-    pub persistent: bool,
     /// Enable distributed cache sharing
-    pub distributed: bool,
     /// Cache warming on startup
-    pub warm_on_startup: bool,
     /// Compression for cache entries
-    pub compression_enabled: bool,
     /// Maximum individual entry size
-    pub max_entry_size: usize,
     /// Enable cache statistics
-    pub stats_enabled: bool,
-}
-
 impl Default for CacheConfig {
     fn default() -> Self {
         Self {
-            strategy: CacheStrategy::default(),
             storage_dir: Some(PathBuf::from("./cache")),
-            persistent: true,
-            distributed: false,
-            warm_on_startup: true,
-            compression_enabled: true,
             max_entry_size: 100 * 1024 * 1024, // 100MB
-            stats_enabled: true,
         }
     }
-}
-
 /// Cache statistics
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct CacheStats {
     /// Total cache hits
-    pub hits: usize,
     /// Total cache misses
-    pub misses: usize,
     /// Cache hit rate (0.0 - 1.0)
-    pub hit_rate: f64,
     /// Number of entries currently in cache
-    pub entry_count: usize,
     /// Total size of cache in bytes
-    pub total_size_bytes: usize,
     /// Number of evictions
-    pub evictions: usize,
     /// Number of entries loaded from persistent storage
-    pub loads_from_disk: usize,
     /// Number of entries saved to persistent storage
-    pub saves_to_disk: usize,
     /// Average entry access time
-    pub average_access_time: Duration,
     /// Cache efficiency score (0.0 - 1.0)
-    pub efficiency_score: f64,
-}
-
 impl Default for CacheStats {
     fn default() -> Self {
         Self {
-            hits: 0,
-            misses: 0,
-            hit_rate: 0.0,
-            entry_count: 0,
-            total_size_bytes: 0,
-            evictions: 0,
-            loads_from_disk: 0,
-            saves_to_disk: 0,
-            average_access_time: Duration::ZERO,
-            efficiency_score: 0.0,
         }
     }
-}
-
 /// Cache entry metadata for management
 #[derive(Debug, Clone)]
 struct CacheEntryMetadata {
-    key: String,
-    size_bytes: usize,
-    last_accessed: SystemTime,
-    access_count: usize,
-    created_at: SystemTime,
-    frequency_score: f64,
-}
-
 /// Compilation cache manager
 pub struct CompilationCache {
-    config: CacheConfig,
-    entries: Arc<RwLock<HashMap<String, CacheEntry>>>,
-    metadata: Arc<RwLock<HashMap<String, CacheEntryMetadata>>>,
     access_order: Arc<RwLock<VecDeque<String>>>, // LRU tracking
-    stats: Arc<RwLock<CacheStats>>,
-    is_enabled: bool,
-}
-
 impl CompilationCache {
     /// Create a new compilation cache
     #[instrument]
     pub fn new(strategy: CacheStrategy) -> Result<Self> {
         let config = CacheConfig {
-            strategy,
             ..CacheConfig::default()
-        };
 
         Ok(Self {
-            config,
-            entries: Arc::new(RwLock::new(HashMap::new())),
-            metadata: Arc::new(RwLock::new(HashMap::new())),
-            access_order: Arc::new(RwLock::new(VecDeque::new())),
-            stats: Arc::new(RwLock::new(CacheStats::default())),
-            is_enabled: true,
         })
-    }
-
     /// Create a disabled cache (no-op)
     pub fn disabled() -> Self {
         Self {
-            config: CacheConfig::default(),
-            entries: Arc::new(RwLock::new(HashMap::new())),
-            metadata: Arc::new(RwLock::new(HashMap::new())),
-            access_order: Arc::new(RwLock::new(VecDeque::new())),
-            stats: Arc::new(RwLock::new(CacheStats::default())),
-            is_enabled: false,
         }
     }
 
@@ -199,8 +102,6 @@ impl CompilationCache {
     pub async fn initialize(&mut self) -> Result<()> {
         if !self.is_enabled {
             return Ok(());
-        }
-
         // Create storage directory if persistent storage is enabled
         if self.config.persistent {
             if let Some(storage_dir) = &self.config.storage_dir {
@@ -212,35 +113,23 @@ impl CompilationCache {
         // Load existing entries if warming is enabled
         if self.config.warm_on_startup {
             self.warm_cache().await?;
-        }
-
         info!("Compilation cache initialized");
         Ok(())
-    }
-
     /// Shutdown the cache
     #[instrument(skip(self))]
     pub async fn shutdown(&mut self) -> Result<()> {
         if !self.is_enabled {
             return Ok(());
-        }
-
         // Save all entries to persistent storage
         if self.config.persistent {
             self.save_all_to_disk().await?;
-        }
-
         info!("Compilation cache shutdown");
         Ok(())
-    }
-
     /// Get an entry from the cache
     #[instrument(skip(self))]
     pub async fn get(&self, key: &str) -> Result<Option<CacheEntry>> {
         if !self.is_enabled {
             return Ok(None);
-        }
-
         let start_time = std::time::Instant::now();
 
         // Check memory cache first
@@ -248,7 +137,6 @@ impl CompilationCache {
             let entries = self.entries.read()
                 .map_err(|_| CursedError::system_error("Failed to lock entries"))?;
             entries.get(key).cloned()
-        };
 
         if let Some(mut entry) = entry {
             // Update access tracking
@@ -260,8 +148,6 @@ impl CompilationCache {
             entry.access_count += 1;
             debug!(key, "Cache hit");
             return Ok(Some(entry));
-        }
-
         // Try loading from persistent storage
         if self.config.persistent {
             if let Some(entry) = self.load_from_disk(key).await? {
@@ -281,25 +167,17 @@ impl CompilationCache {
         self.update_miss_stats().await?;
         debug!(key, "Cache miss");
         Ok(None)
-    }
-
     /// Put an entry into the cache
     #[instrument(skip(self, entry))]
     pub async fn put(&self, key: String, entry: CacheEntry) -> Result<()> {
         if !self.is_enabled {
             return Ok(());
-        }
-
         // Check entry size
         let entry_size = self.estimate_entry_size(&entry);
         if entry_size > self.config.max_entry_size {
             warn!(key, size = entry_size, "Entry too large for cache");
             return Ok(());
-        }
-
         self.put_internal(key, entry).await
-    }
-
     /// Internal put implementation
     pub async fn put_internal(&self, key: String, entry: CacheEntry) -> Result<()> {
         let entry_size = self.estimate_entry_size(&entry);
@@ -312,61 +190,39 @@ impl CompilationCache {
             let mut entries = self.entries.write()
                 .map_err(|_| CursedError::system_error("Failed to lock entries"))?;
             entries.insert(key.clone(), entry.clone());
-        }
-
         // Update metadata
         {
             let mut metadata = self.metadata.write()
                 .map_err(|_| CursedError::system_error("Failed to lock metadata"))?;
             
             let meta = CacheEntryMetadata {
-                key: key.clone(),
-                size_bytes: entry_size,
-                last_accessed: SystemTime::now(),
-                access_count: 1,
-                created_at: entry.created_at,
-                frequency_score: 1.0,
-            };
             
             metadata.insert(key.clone(), meta);
-        }
-
         // Update access order for LRU
         {
             let mut access_order = self.access_order.write()
                 .map_err(|_| CursedError::system_error("Failed to lock access order"))?;
             access_order.push_back(key.clone());
-        }
-
         // Update statistics
         {
             let mut stats = self.stats.write()
                 .map_err(|_| CursedError::system_error("Failed to lock stats"))?;
             stats.entry_count += 1;
             stats.total_size_bytes += entry_size;
-        }
-
         // Save to persistent storage if enabled
         if self.config.persistent {
             self.save_to_disk(&key, &entry).await?;
-        }
-
         debug!(key, size = entry_size, "Entry cached");
         Ok(())
-    }
-
     /// Remove an entry from the cache
     #[instrument(skip(self))]
     pub async fn remove(&self, key: &str) -> Result<Option<CacheEntry>> {
         if !self.is_enabled {
             return Ok(None);
-        }
-
         let removed_entry = {
             let mut entries = self.entries.write()
                 .map_err(|_| CursedError::system_error("Failed to lock entries"))?;
             entries.remove(key)
-        };
 
         if removed_entry.is_some() {
             // Remove metadata
@@ -374,107 +230,72 @@ impl CompilationCache {
                 let mut metadata = self.metadata.write()
                     .map_err(|_| CursedError::system_error("Failed to lock metadata"))?;
                 metadata.remove(key).map(|m| m.size_bytes).unwrap_or(0)
-            };
 
             // Remove from access order
             {
                 let mut access_order = self.access_order.write()
                     .map_err(|_| CursedError::system_error("Failed to lock access order"))?;
                 access_order.retain(|k| k != key);
-            }
-
             // Update statistics
             {
                 let mut stats = self.stats.write()
                     .map_err(|_| CursedError::system_error("Failed to lock stats"))?;
                 stats.entry_count = stats.entry_count.saturating_sub(1);
                 stats.total_size_bytes = stats.total_size_bytes.saturating_sub(entry_size);
-            }
-
             // Remove from persistent storage
             if self.config.persistent {
                 self.remove_from_disk(key).await?;
-            }
-
             debug!(key, "Entry removed from cache");
-        }
-
         Ok(removed_entry)
-    }
-
     /// Clear the entire cache
     #[instrument(skip(self))]
     pub async fn clear(&self) -> Result<()> {
         if !self.is_enabled {
             return Ok(());
-        }
-
         {
             let mut entries = self.entries.write()
                 .map_err(|_| CursedError::system_error("Failed to lock entries"))?;
             entries.clear();
-        }
-
         {
             let mut metadata = self.metadata.write()
                 .map_err(|_| CursedError::system_error("Failed to lock metadata"))?;
             metadata.clear();
-        }
-
         {
             let mut access_order = self.access_order.write()
                 .map_err(|_| CursedError::system_error("Failed to lock access order"))?;
             access_order.clear();
-        }
-
         {
             let mut stats = self.stats.write()
                 .map_err(|_| CursedError::system_error("Failed to lock stats"))?;
             stats.entry_count = 0;
             stats.total_size_bytes = 0;
-        }
-
         // Clear persistent storage
         if self.config.persistent {
             self.clear_disk_storage().await?;
-        }
-
         info!("Cache cleared");
         Ok(())
-    }
-
     /// Get current cache statistics
     pub async fn get_stats(&self) -> Result<CacheStats> {
         let stats = self.stats.read()
             .map_err(|_| CursedError::system_error("Failed to lock stats"))?;
         Ok(stats.clone())
-    }
-
     /// Check if an entry exists in cache
     pub async fn contains(&self, key: &str) -> Result<bool> {
         if !self.is_enabled {
             return Ok(false);
-        }
-
         let entries = self.entries.read()
             .map_err(|_| CursedError::system_error("Failed to lock entries"))?;
         Ok(entries.contains_key(key))
-    }
-
     /// Get current cache size in bytes
     pub async fn size_bytes(&self) -> Result<usize> {
         let stats = self.stats.read()
             .map_err(|_| CursedError::system_error("Failed to lock stats"))?;
         Ok(stats.total_size_bytes)
-    }
-
     /// Get current entry count
     pub async fn entry_count(&self) -> Result<usize> {
         let stats = self.stats.read()
             .map_err(|_| CursedError::system_error("Failed to lock stats"))?;
         Ok(stats.entry_count)
-    }
-
     /// Update access tracking for an entry
     pub async fn update_access_tracking(&self, key: &str) -> Result<()> {
         // Update metadata
@@ -497,11 +318,7 @@ impl CompilationCache {
             // Remove from current position and add to end
             access_order.retain(|k| k != key);
             access_order.push_back(key.to_string());
-        }
-
         Ok(())
-    }
-
     /// Check if eviction is needed and perform it
     pub async fn maybe_evict(&self, new_key: &str, new_entry_size: usize) -> Result<()> {
         match &self.config.strategy {
@@ -525,8 +342,6 @@ impl CompilationCache {
         }
 
         Ok(())
-    }
-
     /// Evict expired entries
     pub async fn evict_expired(&self, ttl: Duration) -> Result<()> {
         let now = SystemTime::now();
@@ -548,18 +363,13 @@ impl CompilationCache {
         for key in keys_to_remove {
             self.remove(&key).await?;
             self.update_eviction_stats().await?;
-        }
-
         Ok(())
-    }
-
     /// Evict using LRU strategy if needed
     pub async fn evict_lru_if_needed(&self, max_entries: usize, _new_entry_size: usize) -> Result<()> {
         let current_count = {
             let stats = self.stats.read()
                 .map_err(|_| CursedError::system_error("Failed to lock stats"))?;
             stats.entry_count
-        };
 
         if current_count >= max_entries {
             let keys_to_remove = {
@@ -568,7 +378,6 @@ impl CompilationCache {
                 
                 let remove_count = current_count - max_entries + 1;
                 access_order.iter().take(remove_count).cloned().collect::<Vec<_>>()
-            };
 
             for key in keys_to_remove {
                 self.remove(&key).await?;
@@ -577,15 +386,12 @@ impl CompilationCache {
         }
 
         Ok(())
-    }
-
     /// Evict using LFU strategy if needed
     pub async fn evict_lfu_if_needed(&self, max_entries: usize, _new_entry_size: usize) -> Result<()> {
         let current_count = {
             let stats = self.stats.read()
                 .map_err(|_| CursedError::system_error("Failed to lock stats"))?;
             stats.entry_count
-        };
 
         if current_count >= max_entries {
             let key_to_remove = {
@@ -595,7 +401,6 @@ impl CompilationCache {
                 metadata.iter()
                     .min_by(|a, b| a.1.frequency_score.partial_cmp(&b.1.frequency_score).unwrap_or(std::cmp::Ordering::Equal))
                     .map(|(k, _)| k.clone())
-            };
 
             if let Some(key) = key_to_remove {
                 self.remove(&key).await?;
@@ -604,15 +409,12 @@ impl CompilationCache {
         }
 
         Ok(())
-    }
-
     /// Evict based on size limits
     pub async fn evict_size_limited(&self, max_size_bytes: usize, new_entry_size: usize) -> Result<()> {
         let current_size = {
             let stats = self.stats.read()
                 .map_err(|_| CursedError::system_error("Failed to lock stats"))?;
             stats.total_size_bytes
-        };
 
         if current_size + new_entry_size > max_size_bytes {
             // Use LRU eviction to free space
@@ -636,7 +438,6 @@ impl CompilationCache {
                     }
                 }
                 keys
-            };
 
             for key in keys_to_remove {
                 self.remove(&key).await?;
@@ -645,16 +446,12 @@ impl CompilationCache {
         }
 
         Ok(())
-    }
-
     /// Evict using adaptive strategy
     pub async fn evict_adaptive(&self, max_entries: usize, max_size_bytes: usize, new_entry_size: usize) -> Result<()> {
         // Combine multiple strategies
         self.evict_lru_if_needed(max_entries, new_entry_size).await?;
         self.evict_size_limited(max_size_bytes, new_entry_size).await?;
         Ok(())
-    }
-
     /// Estimate the size of a cache entry
     pub fn estimate_entry_size(&self, entry: &CacheEntry) -> usize {
         // Basic size estimation
@@ -662,21 +459,15 @@ impl CompilationCache {
         entry.job_id.len() + 
         std::mem::size_of::<SystemTime>() + 
         std::mem::size_of::<usize>()
-    }
-
     /// Warm the cache by loading existing entries
     pub async fn warm_cache(&self) -> Result<()> {
         if !self.config.persistent {
             return Ok(());
-        }
-
         let storage_dir = self.config.storage_dir.as_ref()
             .ok_or_else(|| CursedError::system_error("No storage directory configured"))?;
 
         if !storage_dir.exists() {
             return Ok(());
-        }
-
         let mut entries = fs::read_dir(storage_dir).await
             .map_err(|e| CursedError::system_error(&format!("Failed to read cache directory: {}", e)))?;
 
@@ -697,8 +488,6 @@ impl CompilationCache {
 
         info!(entries_loaded = loaded_count, "Cache warmed");
         Ok(())
-    }
-
     /// Save an entry to disk
     pub async fn save_to_disk(&self, key: &str, entry: &CacheEntry) -> Result<()> {
         let storage_dir = self.config.storage_dir.as_ref()
@@ -722,8 +511,6 @@ impl CompilationCache {
         self.update_disk_save_stats().await?;
 
         Ok(())
-    }
-
     /// Load an entry from disk
     pub async fn load_from_disk(&self, key: &str) -> Result<Option<CacheEntry>> {
         let storage_dir = self.config.storage_dir.as_ref()
@@ -733,8 +520,6 @@ impl CompilationCache {
         
         if !file_path.exists() {
             return Ok(None);
-        }
-
         let mut file = fs::File::open(&file_path).await
             .map_err(|e| CursedError::system_error(&format!("Failed to open cache file: {}", e)))?;
 
@@ -746,8 +531,6 @@ impl CompilationCache {
             .map_err(|e| CursedError::system_error(&format!("Failed to deserialize cache entry: {}", e)))?;
 
         Ok(Some(entry))
-    }
-
     /// Remove an entry from disk
     pub async fn remove_from_disk(&self, key: &str) -> Result<()> {
         let storage_dir = self.config.storage_dir.as_ref()
@@ -758,18 +541,13 @@ impl CompilationCache {
         if file_path.exists() {
             fs::remove_file(&file_path).await
                 .map_err(|e| CursedError::system_error(&format!("Failed to remove cache file: {}", e)))?;
-        }
-
         Ok(())
-    }
-
     /// Save all entries to disk
     pub async fn save_all_to_disk(&self) -> Result<()> {
         let entries = {
             let entries = self.entries.read()
                 .map_err(|_| CursedError::system_error("Failed to lock entries"))?;
             entries.clone()
-        };
 
         for (key, entry) in entries {
             if let Err(e) = self.save_to_disk(&key, &entry).await {
@@ -778,8 +556,6 @@ impl CompilationCache {
         }
 
         Ok(())
-    }
-
     /// Clear disk storage
     pub async fn clear_disk_storage(&self) -> Result<()> {
         let storage_dir = self.config.storage_dir.as_ref()
@@ -791,11 +567,7 @@ impl CompilationCache {
             
             fs::create_dir_all(storage_dir).await
                 .map_err(|e| CursedError::system_error(&format!("Failed to recreate cache directory: {}", e)))?;
-        }
-
         Ok(())
-    }
-
     /// Update hit statistics
     pub async fn update_hit_stats(&self, access_time: Duration) -> Result<()> {
         let mut stats = self.stats.write()
@@ -813,15 +585,11 @@ impl CompilationCache {
             stats.average_access_time = Duration::from_nanos(new_avg as u64);
         } else {
             stats.average_access_time = access_time;
-        }
-
         // Update efficiency score
         stats.efficiency_score = stats.hit_rate * 0.7 + (1.0 - stats.average_access_time.as_secs_f64() / 0.001) * 0.3;
         stats.efficiency_score = stats.efficiency_score.max(0.0).min(1.0);
 
         Ok(())
-    }
-
     /// Update miss statistics
     pub async fn update_miss_stats(&self) -> Result<()> {
         let mut stats = self.stats.write()
@@ -832,24 +600,18 @@ impl CompilationCache {
         stats.hit_rate = stats.hits as f64 / total_accesses as f64;
 
         Ok(())
-    }
-
     /// Update eviction statistics
     pub async fn update_eviction_stats(&self) -> Result<()> {
         let mut stats = self.stats.write()
             .map_err(|_| CursedError::system_error("Failed to lock stats"))?;
         stats.evictions += 1;
         Ok(())
-    }
-
     /// Update disk load statistics
     pub async fn update_disk_load_stats(&self) -> Result<()> {
         let mut stats = self.stats.write()
             .map_err(|_| CursedError::system_error("Failed to lock stats"))?;
         stats.loads_from_disk += 1;
         Ok(())
-    }
-
     /// Update disk save statistics
     pub async fn update_disk_save_stats(&self) -> Result<()> {
         let mut stats = self.stats.write()

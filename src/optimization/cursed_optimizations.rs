@@ -17,201 +17,87 @@ use tracing::{debug, info, instrument, warn};
 #[derive(Debug, Clone)]
 pub struct CursedOptimizer {
     /// CursedError propagation optimizer
-    error_propagation_optimizer: ErrorPropagationOptimizer,
     /// Goroutine optimizer
-    goroutine_optimizer: GoroutineOptimizer,
     /// Channel optimizer  
-    channel_optimizer: ChannelOptimizer,
     /// Gen Z slang optimizer
-    slang_optimizer: SlangOptimizer,
     /// Memory layout optimizer
-    memory_layout_optimizer: CursedMemoryLayoutOptimizer,
     /// Optimization statistics
-    statistics: CursedOptimizationStats,
-}
-
 /// CursedError propagation optimizer for `?` operator
 #[derive(Debug, Clone)]
 pub struct ErrorPropagationOptimizer {
     /// CursedError propagation chains
-    propagation_chains: Vec<ErrorPropagationChain>,
     /// Optimization statistics
-    chains_optimized: usize,
-    redundant_checks_removed: usize,
-}
-
 /// CursedError propagation chain for optimization
 #[derive(Debug, Clone)]
 pub struct ErrorPropagationChain {
-    pub expressions: Vec<Expression>,
-    pub optimization_opportunity: ErrorOptimizationType,
-    pub estimated_savings: f64,
-}
-
 /// Types of error propagation optimizations
 #[derive(Debug, Clone, PartialEq)]
 pub enum ErrorOptimizationType {
     /// Combine multiple error checks into single check
-    ChainCollapse,
     /// Remove redundant error checks
-    RedundantCheckRemoval,
     /// Early return optimization
-    EarlyReturn,
     /// CursedError value caching
-    ErrorCaching,
-}
-
 /// Goroutine operation optimizer
 #[derive(Debug, Clone)]
 pub struct GoroutineOptimizer {
     /// Goroutine spawn optimizations
-    spawn_optimizations: Vec<GoroutineSpawnOptimization>,
     /// Yield point optimizations
-    yield_optimizations: Vec<YieldOptimization>,
     /// Statistics
-    goroutines_optimized: usize,
-    yields_optimized: usize,
-}
-
 /// Goroutine spawn optimization
 #[derive(Debug, Clone)]
 pub struct GoroutineSpawnOptimization {
-    pub optimization_type: GoroutineOptimizationType,
-    pub original_cost: f64,
-    pub optimized_cost: f64,
-    pub confidence: f64,
-}
-
 /// Types of goroutine optimizations
 #[derive(Debug, Clone, PartialEq)]
 pub enum GoroutineOptimizationType {
     /// Inline small goroutines
-    InlineSmallGoroutine,
     /// Batch goroutine spawning
-    BatchSpawning,
     /// Work stealing optimization
-    WorkStealing,
     /// Stack size optimization
-    StackSizeOptimization,
-}
-
 /// Yield point optimization
 #[derive(Debug, Clone)]
 pub struct YieldOptimization {
-    pub location: String,
-    pub frequency: f64,
-    pub optimization_applied: bool,
-}
-
 /// Channel operation optimizer
 #[derive(Debug, Clone)]
 pub struct ChannelOptimizer {
     /// Channel operations found
-    channel_operations: Vec<ChannelOperation>,
     /// Optimization statistics
-    operations_optimized: usize,
-    buffering_optimizations: usize,
-}
-
 /// Channel operation representation
 #[derive(Debug, Clone)]
 pub struct ChannelOperation {
-    pub operation_type: ChannelOperationType,
-    pub frequency: f64,
-    pub buffer_size: Option<usize>,
-    pub optimization_applied: bool,
-}
-
 /// Types of channel operations
 #[derive(Debug, Clone, PartialEq)]
 pub enum ChannelOperationType {
-    Send,
-    Receive,
-    Select,
-    Close,
-    BufferedSend,
-    BufferedReceive,
-}
-
 /// Gen Z slang keyword optimizer
 #[derive(Debug, Clone)]
 pub struct SlangOptimizer {
     /// Slang patterns found
-    slang_patterns: Vec<SlangPattern>,
     /// Common patterns cache
-    pattern_cache: HashMap<String, SlangOptimization>,
     /// Statistics
-    patterns_optimized: usize,
-}
-
 /// Gen Z slang pattern for optimization
 #[derive(Debug, Clone)]
 pub struct SlangPattern {
-    pub keyword: String,
-    pub usage_frequency: f64,
-    pub optimization_potential: f64,
-    pub optimization: Option<SlangOptimization>,
-}
-
 /// Slang optimization
 #[derive(Debug, Clone)]
 pub struct SlangOptimization {
-    pub original_form: String,
-    pub optimized_form: String,
-    pub performance_gain: f64,
-}
-
 /// CURSED memory layout optimizer
 #[derive(Debug, Clone)]
 pub struct CursedMemoryLayoutOptimizer {
     /// Struct layout optimizations
-    struct_optimizations: Vec<StructLayoutOptimization>,
     /// Interface layout optimizations
-    interface_optimizations: Vec<InterfaceLayoutOptimization>,
     /// Statistics
-    structs_optimized: usize,
-    interfaces_optimized: usize,
-}
-
 /// Struct layout optimization
 #[derive(Debug, Clone)]
 pub struct StructLayoutOptimization {
-    pub struct_name: String,
-    pub original_size: usize,
-    pub optimized_size: usize,
-    pub alignment_savings: usize,
-}
-
 /// Interface layout optimization
 #[derive(Debug, Clone)]
 pub struct InterfaceLayoutOptimization {
-    pub interface_name: String,
-    pub vtable_optimizations: usize,
-    pub dispatch_optimizations: usize,
-}
-
 /// CURSED optimization statistics
 #[derive(Debug, Clone, Default)]
 pub struct CursedOptimizationStats {
-    pub error_propagations_optimized: usize,
-    pub goroutines_optimized: usize,
-    pub channels_optimized: usize,
-    pub slang_patterns_optimized: usize,
-    pub memory_layouts_optimized: usize,
-    pub total_performance_gain: f64,
-    pub optimization_time: Duration,
-}
-
 impl CursedOptimizer {
     /// Create new CURSED optimizer
     pub fn new() -> Self {
         Self {
-            error_propagation_optimizer: ErrorPropagationOptimizer::new(),
-            goroutine_optimizer: GoroutineOptimizer::new(),
-            channel_optimizer: ChannelOptimizer::new(),
-            slang_optimizer: SlangOptimizer::new(),
-            memory_layout_optimizer: CursedMemoryLayoutOptimizer::new(),
-            statistics: CursedOptimizationStats::default(),
         }
     }
 
@@ -243,8 +129,6 @@ impl CursedOptimizer {
         
         info!("CURSED optimizations completed in {:?}", self.statistics.optimization_time);
         Ok(())
-    }
-
     /// Optimize error propagation patterns
     fn optimize_error_propagation(&mut self, ast: &mut AstNode) -> Result<()> {
         // Find error propagation chains
@@ -265,13 +149,9 @@ impl CursedOptimizer {
                     self.cache_error_values(&mut chain)?;
                 }
             }
-        }
-        
         self.statistics.error_propagations_optimized = self.error_propagation_optimizer.chains_optimized;
         debug!("Optimized {} error propagation patterns", self.statistics.error_propagations_optimized);
         Ok(())
-    }
-
     /// Optimize goroutine operations
     fn optimize_goroutines(&mut self, ast: &mut AstNode) -> Result<()> {
         // Find goroutine spawn patterns
@@ -292,19 +172,13 @@ impl CursedOptimizer {
                     self.optimize_stack_size(&spawn)?;
                 }
             }
-        }
-        
         // Optimize yield points
         let yields = self.goroutine_optimizer.find_yield_points(ast)?;
         for mut yield_point in yields {
             self.optimize_yield_point(&mut yield_point)?;
-        }
-        
         self.statistics.goroutines_optimized = self.goroutine_optimizer.goroutines_optimized;
         debug!("Optimized {} goroutine operations", self.statistics.goroutines_optimized);
         Ok(())
-    }
-
     /// Optimize channel operations
     fn optimize_channels(&mut self, ast: &mut AstNode) -> Result<()> {
         // Find channel operations
@@ -325,18 +199,13 @@ impl CursedOptimizer {
                     self.optimize_channel_close(&mut operation)?;
                 }
             }
-        }
-        
         self.statistics.channels_optimized = self.channel_optimizer.operations_optimized;
         debug!("Optimized {} channel operations", self.statistics.channels_optimized);
         Ok(())
-    }
-
     /// Optimize Gen Z slang patterns
     fn optimize_slang_patterns(&mut self, ast: &mut AstNode) -> Result<()> {
         // Common CURSED slang optimizations
         let slang_keywords = vec![
-            "slay", "yolo", "periodt", "bestie", "flex", "lowkey", "highkey",
             "sus", "facts", "stan", "vibe_check", "mood", "basic"
         ];
         
@@ -348,13 +217,9 @@ impl CursedOptimizer {
                     self.apply_slang_optimization(keyword, optimization)?;
                 }
             }
-        }
-        
         self.statistics.slang_patterns_optimized = self.slang_optimizer.patterns_optimized;
         debug!("Optimized {} slang patterns", self.statistics.slang_patterns_optimized);
         Ok(())
-    }
-
     /// Optimize memory layouts
     fn optimize_memory_layouts(&mut self, ast: &mut AstNode) -> Result<()> {
         // Optimize struct layouts
@@ -368,14 +233,10 @@ impl CursedOptimizer {
         
         debug!("Optimized {} memory layouts", self.statistics.memory_layouts_optimized);
         Ok(())
-    }
-
     /// Update overall optimization statistics
     fn update_statistics(&mut self) {
         self.statistics.total_performance_gain = 
             self.calculate_total_performance_gain();
-    }
-
     /// Calculate total performance gain from all optimizations
     fn calculate_total_performance_gain(&self) -> f64 {
         let mut total_gain = 0.0;
@@ -396,13 +257,9 @@ impl CursedOptimizer {
         total_gain += self.memory_layout_optimizer.structs_optimized as f64 * 0.03;
         
         total_gain
-    }
-
     /// Get optimization statistics
     pub fn get_statistics(&self) -> &CursedOptimizationStats {
         &self.statistics
-    }
-
     // Helper methods for specific optimizations
     
     fn collapse_error_chain(&mut self, chain: &mut ErrorPropagationChain) -> Result<()> {
@@ -410,52 +267,36 @@ impl CursedOptimizer {
         self.error_propagation_optimizer.chains_optimized += 1;
         debug!("Collapsed error chain with {} expressions", chain.expressions.len());
         Ok(())
-    }
-
     fn remove_redundant_checks(&mut self, chain: &mut ErrorPropagationChain) -> Result<()> {
         // Implementation would remove redundant error checks
         self.error_propagation_optimizer.redundant_checks_removed += 1;
         debug!("Removed redundant error checks");
         Ok(())
-    }
-
     fn optimize_early_return(&mut self, chain: &mut ErrorPropagationChain) -> Result<()> {
         // Implementation would optimize early return patterns
         debug!("Optimized early return pattern");
         Ok(())
-    }
-
     fn cache_error_values(&mut self, chain: &mut ErrorPropagationChain) -> Result<()> {
         // Implementation would cache frequently accessed error values
         debug!("Cached error values");
         Ok(())
-    }
-
     fn inline_small_goroutine(&mut self, spawn: &GoroutineSpawnOptimization) -> Result<()> {
         // Implementation would inline small goroutines
         self.goroutine_optimizer.goroutines_optimized += 1;
         debug!("Inlined small goroutine");
         Ok(())
-    }
-
     fn batch_goroutine_spawning(&mut self, spawn: &GoroutineSpawnOptimization) -> Result<()> {
         // Implementation would batch multiple goroutine spawns
         debug!("Batched goroutine spawning");
         Ok(())
-    }
-
     fn optimize_work_stealing(&mut self, spawn: &GoroutineSpawnOptimization) -> Result<()> {
         // Implementation would optimize work stealing scheduler
         debug!("Optimized work stealing");
         Ok(())
-    }
-
     fn optimize_stack_size(&mut self, spawn: &GoroutineSpawnOptimization) -> Result<()> {
         // Implementation would optimize goroutine stack sizes
         debug!("Optimized stack size");
         Ok(())
-    }
-
     fn optimize_yield_point(&mut self, yield_point: &mut YieldOptimization) -> Result<()> {
         // Implementation would optimize yield point placement
         if yield_point.frequency > 0.8 {
@@ -464,35 +305,25 @@ impl CursedOptimizer {
         }
         debug!("Optimized yield point at {}", yield_point.location);
         Ok(())
-    }
-
     fn optimize_channel_operation(&mut self, operation: &mut ChannelOperation) -> Result<()> {
         // Implementation would optimize channel send/receive
         operation.optimization_applied = true;
         self.channel_optimizer.operations_optimized += 1;
         debug!("Optimized channel operation");
         Ok(())
-    }
-
     fn optimize_select_operation(&mut self, operation: &mut ChannelOperation) -> Result<()> {
         // Implementation would optimize select statements
         debug!("Optimized select operation");
         Ok(())
-    }
-
     fn optimize_buffered_operation(&mut self, operation: &mut ChannelOperation) -> Result<()> {
         // Implementation would optimize buffered channel operations
         self.channel_optimizer.buffering_optimizations += 1;
         debug!("Optimized buffered operation");
         Ok(())
-    }
-
     fn optimize_channel_close(&mut self, operation: &mut ChannelOperation) -> Result<()> {
         // Implementation would optimize channel close operations
         debug!("Optimized channel close");
         Ok(())
-    }
-
     fn apply_slang_optimization(&mut self, keyword: &str, optimization: &SlangOptimization) -> Result<()> {
         // Implementation would apply slang-specific optimizations
         self.slang_optimizer.patterns_optimized += 1;
@@ -506,9 +337,6 @@ impl CursedOptimizer {
 impl ErrorPropagationOptimizer {
     fn new() -> Self {
         Self {
-            propagation_chains: Vec::new(),
-            chains_optimized: 0,
-            redundant_checks_removed: 0,
         }
     }
 
@@ -517,8 +345,6 @@ impl ErrorPropagationOptimizer {
         self.analyze_node_for_error_chains(ast, &mut chains)?;
         self.propagation_chains = chains.clone();
         Ok(chains)
-    }
-    
     /// Recursively analyze AST nodes for error propagation patterns
     fn analyze_node_for_error_chains(&self, node: &AstNode, chains: &mut Vec<ErrorPropagationChain>) -> Result<()> {
         match node {
@@ -536,8 +362,6 @@ impl ErrorPropagationOptimizer {
             _ => {}
         }
         Ok(())
-    }
-    
     /// Analyze statements for error patterns
     fn analyze_statement_for_errors(&self, stmt: &dyn Statement, chains: &mut Vec<ErrorPropagationChain>) -> Result<()> {
         match stmt {
@@ -570,8 +394,6 @@ impl ErrorPropagationOptimizer {
             _ => {}
         }
         Ok(())
-    }
-    
     /// Analyze expressions for error propagation patterns
     fn analyze_expression_for_errors(&self, expr: &dyn Expression, chains: &mut Vec<ErrorPropagationChain>) -> Result<()> {
         match expr {
@@ -583,8 +405,6 @@ impl ErrorPropagationOptimizer {
                 if chain_expressions.len() > 1 {
                     // Multiple ? operators can be optimized
                     chains.push(ErrorPropagationChain {
-                        expressions: chain_expressions,
-                        optimization_opportunity: ErrorOptimizationType::ChainCollapse,
                         estimated_savings: 0.15, // 15% improvement estimated
                     });
                 }
@@ -597,13 +417,8 @@ impl ErrorPropagationOptimizer {
                         error_check_args.push(arg.clone());
                     }
                     self.analyze_expression_for_errors(arg, chains)?;
-                }
-                
                 if error_check_args.len() > 1 {
                     chains.push(ErrorPropagationChain {
-                        expressions: error_check_args,
-                        optimization_opportunity: ErrorOptimizationType::RedundantCheckRemoval,
-                        estimated_savings: 0.08,
                     });
                 }
             }
@@ -617,8 +432,6 @@ impl ErrorPropagationOptimizer {
             _ => {}
         }
         Ok(())
-    }
-    
     /// Collect chained ? expressions for optimization
     fn collect_chained_expressions(&self, expr: &dyn Expression, chain: &mut Vec<Expression>) {
         match expr {
@@ -640,7 +453,6 @@ impl ErrorPropagationOptimizer {
     /// Check if expression is error checking related
     fn is_error_checking_expression(&self, expr: &dyn Expression) -> bool {
         match expr {
-            Expression::QuestionMark(_) => true,
             Expression::FunctionCall { function_name, .. } => {
                 function_name.contains("check") || 
                 function_name.contains("validate") || 
@@ -649,18 +461,11 @@ impl ErrorPropagationOptimizer {
             Expression::Binary { operator, .. } => {
                 operator == "==" || operator == "!=" // Common error comparisons
             }
-            _ => false,
         }
     }
-}
-
 impl GoroutineOptimizer {
     fn new() -> Self {
         Self {
-            spawn_optimizations: Vec::new(),
-            yield_optimizations: Vec::new(),
-            goroutines_optimized: 0,
-            yields_optimized: 0,
         }
     }
 
@@ -669,15 +474,11 @@ impl GoroutineOptimizer {
         self.analyze_node_for_goroutine_spawns(ast, &mut spawns)?;
         self.spawn_optimizations = spawns.clone();
         Ok(spawns)
-    }
-
     fn find_yield_points(&mut self, ast: &AstNode) -> Result<Vec<YieldOptimization>> {
         let mut yields = Vec::new();
         self.analyze_node_for_yield_points(ast, &mut yields)?;
         self.yield_optimizations = yields.clone();
         Ok(yields)
-    }
-    
     /// Analyze AST nodes for goroutine spawn patterns
     fn analyze_node_for_goroutine_spawns(&self, node: &AstNode, spawns: &mut Vec<GoroutineSpawnOptimization>) -> Result<()> {
         match node {
@@ -695,8 +496,6 @@ impl GoroutineOptimizer {
             _ => {}
         }
         Ok(())
-    }
-    
     /// Analyze statements for goroutine spawn patterns
     fn analyze_statement_for_spawns(&self, stmt: &dyn Statement, spawns: &mut Vec<GoroutineSpawnOptimization>) -> Result<()> {
         match stmt {
@@ -711,15 +510,11 @@ impl GoroutineOptimizer {
                         spawn_count += 1;
                     }
                     self.analyze_statement_for_spawns(stmt, spawns)?;
-                }
-                
                 if spawn_count > 3 {
                     // Multiple spawns in loop - can batch them
                     spawns.push(GoroutineSpawnOptimization {
-                        optimization_type: GoroutineOptimizationType::BatchSpawning,
                         original_cost: spawn_count as f64 * 0.1, // Each spawn costs 0.1 units
                         optimized_cost: 0.2, // Batched spawn costs 0.2 units total
-                        confidence: 0.8,
                     });
                 }
             }
@@ -736,8 +531,6 @@ impl GoroutineOptimizer {
             _ => {}
         }
         Ok(())
-    }
-    
     /// Analyze expressions for goroutine spawn patterns
     fn analyze_expression_for_spawns(&self, expr: &dyn Expression, spawns: &mut Vec<GoroutineSpawnOptimization>) -> Result<()> {
         match expr {
@@ -745,8 +538,6 @@ impl GoroutineOptimizer {
                 // Check for 'stan' keyword (CURSED goroutine spawn)
                 if function_name == "stan" {
                     self.analyze_goroutine_spawn(arguments, spawns)?;
-                }
-                
                 // Recursively analyze arguments
                 for arg in arguments {
                     self.analyze_expression_for_spawns(arg, spawns)?;
@@ -762,38 +553,23 @@ impl GoroutineOptimizer {
             _ => {}
         }
         Ok(())
-    }
-    
     /// Analyze a specific goroutine spawn for optimization opportunities
     fn analyze_goroutine_spawn(&self, arguments: &[dyn Expression], spawns: &mut Vec<GoroutineSpawnOptimization>) -> Result<()> {
         if arguments.is_empty() {
             return Ok(());
-        }
-        
         // Analyze the function being spawned
         let function_complexity = self.estimate_function_complexity(&arguments[0]);
         
         if function_complexity < 10.0 {
             // Small function - candidate for inlining
             spawns.push(GoroutineSpawnOptimization {
-                optimization_type: GoroutineOptimizationType::InlineSmallGoroutine,
-                original_cost: 1.0 + function_complexity * 0.1,
                 optimized_cost: function_complexity * 0.05, // Much cheaper when inlined
-                confidence: 0.9,
             });
         } else if function_complexity > 100.0 {
             // Large function - optimize stack size
             spawns.push(GoroutineSpawnOptimization {
-                optimization_type: GoroutineOptimizationType::StackSizeOptimization,
-                original_cost: 2.0 + function_complexity * 0.02,
-                optimized_cost: 1.5 + function_complexity * 0.015,
-                confidence: 0.7,
             });
-        }
-        
         Ok(())
-    }
-    
     /// Estimate the complexity of a function for optimization decisions
     fn estimate_function_complexity(&self, expr: &dyn Expression) -> f64 {
         match expr {
@@ -805,8 +581,6 @@ impl GoroutineOptimizer {
                 let body_cost = self.estimate_statement_complexity(body);
                 param_cost + body_cost
             }
-            Expression::Literal(_) => 1.0,
-            Expression::Identifier(_) => 1.0,
             Expression::Binary { left, right, .. } => {
                 3.0 + self.estimate_function_complexity(left) + self.estimate_function_complexity(right)
             }
@@ -817,8 +591,6 @@ impl GoroutineOptimizer {
     /// Estimate complexity of a statement
     fn estimate_statement_complexity(&self, stmt: &dyn Statement) -> f64 {
         match stmt {
-            Statement::Expression(expr) => self.estimate_function_complexity(expr),
-            Statement::Assignment { value, .. } => 2.0 + self.estimate_function_complexity(value),
             Statement::If { condition, then_branch, else_branch } => {
                 let mut cost = 3.0 + self.estimate_function_complexity(condition);
                 cost += then_branch.len() as f64 * 2.0;
@@ -833,28 +605,21 @@ impl GoroutineOptimizer {
             Statement::While { body, .. } => {
                 8.0 + body.len() as f64 * 3.0
             }
-            _ => 2.0,
         }
     }
     
     /// Check if statement contains goroutine spawn
     fn statement_contains_spawn(&self, stmt: &dyn Statement) -> bool {
         match stmt {
-            Statement::Expression(expr) => self.expression_contains_spawn(expr),
-            Statement::Assignment { value, .. } => self.expression_contains_spawn(value),
-            _ => false,
         }
     }
     
     /// Check if expression contains goroutine spawn
     fn expression_contains_spawn(&self, expr: &dyn Expression) -> bool {
         match expr {
-            Expression::FunctionCall { function_name, .. } => function_name == "stan",
             Expression::Binary { left, right, .. } => {
                 self.expression_contains_spawn(left) || self.expression_contains_spawn(right)
             }
-            Expression::Unary { operand, .. } => self.expression_contains_spawn(operand),
-            _ => false,
         }
     }
     
@@ -872,8 +637,6 @@ impl GoroutineOptimizer {
             _ => {}
         }
         Ok(())
-    }
-    
     /// Analyze statements for yield points
     fn analyze_statement_for_yields(&self, stmt: &dyn Statement, yields: &mut Vec<YieldOptimization>) -> Result<()> {
         match stmt {
@@ -882,9 +645,7 @@ impl GoroutineOptimizer {
                     if function_name == "yolo" {
                         // Found a yield point
                         yields.push(YieldOptimization {
-                            location: "expression".to_string(),
                             frequency: 0.5, // Default frequency
-                            optimization_applied: false,
                         });
                     }
                 }
@@ -897,13 +658,9 @@ impl GoroutineOptimizer {
                         has_yield = true;
                     }
                     self.analyze_statement_for_yields(stmt, yields)?;
-                }
-                
                 if has_yield {
                     yields.push(YieldOptimization {
-                        location: "loop".to_string(),
                         frequency: 0.9, // High frequency in loops
-                        optimization_applied: false,
                     });
                 }
             }
@@ -915,8 +672,6 @@ impl GoroutineOptimizer {
             _ => {}
         }
         Ok(())
-    }
-    
     /// Check if statement contains yield
     fn statement_contains_yield(&self, stmt: &dyn Statement) -> bool {
         match stmt {
@@ -927,17 +682,11 @@ impl GoroutineOptimizer {
                     false
                 }
             }
-            _ => false,
         }
     }
-}
-
 impl ChannelOptimizer {
     fn new() -> Self {
         Self {
-            channel_operations: Vec::new(),
-            operations_optimized: 0,
-            buffering_optimizations: 0,
         }
     }
 
@@ -950,16 +699,10 @@ impl ChannelOptimizer {
 impl SlangOptimizer {
     fn new() -> Self {
         let mut optimizer = Self {
-            slang_patterns: Vec::new(),
-            pattern_cache: HashMap::new(),
-            patterns_optimized: 0,
-        };
         
         // Initialize common slang optimizations
         optimizer.initialize_slang_optimizations();
         optimizer
-    }
-
     fn find_slang_patterns(&mut self, ast: &AstNode, keyword: &str) -> Result<Vec<SlangPattern>> {
         let mut patterns = Vec::new();
         self.analyze_node_for_slang(ast, keyword, &mut patterns)?;
@@ -968,14 +711,10 @@ impl SlangOptimizer {
         self.slang_patterns.extend(patterns.clone());
         
         Ok(patterns)
-    }
-    
     /// Initialize common slang optimizations
     fn initialize_slang_optimizations(&mut self) {
         // Optimize 'slay' (function definition) patterns
         self.pattern_cache.insert("slay".to_string(), SlangOptimization {
-            original_form: "slay function_name() { ... }".to_string(),
-            optimized_form: "inline function_name() { ... }".to_string(),
             performance_gain: 0.10, // 10% improvement for small functions
         });
         
@@ -983,51 +722,30 @@ impl SlangOptimizer {
         self.pattern_cache.insert("yolo".to_string(), SlangOptimization {
             original_form: "yolo; // unconditional yield".to_string(),
             optimized_form: "yield_if_needed(); // conditional yield".to_string(),
-            performance_gain: 0.05,
         });
         
         // Optimize 'sus' (variable declaration) patterns
         self.pattern_cache.insert("sus".to_string(), SlangOptimization {
-            original_form: "sus x = expr;".to_string(),
-            optimized_form: "let x = optimize(expr);".to_string(),
-            performance_gain: 0.03,
         });
         
         // Optimize 'periodt' (assertion/termination) patterns
         self.pattern_cache.insert("periodt".to_string(), SlangOptimization {
-            original_form: "periodt condition;".to_string(),
-            optimized_form: "assert_fast(condition);".to_string(),
-            performance_gain: 0.08,
         });
         
         // Optimize 'lowkey/highkey' (conditional) patterns
         self.pattern_cache.insert("lowkey".to_string(), SlangOptimization {
-            original_form: "lowkey (condition) { ... }".to_string(),
-            optimized_form: "if likely(condition) { ... }".to_string(),
-            performance_gain: 0.12,
         });
         
         self.pattern_cache.insert("highkey".to_string(), SlangOptimization {
-            original_form: "highkey (condition) { ... }".to_string(),
-            optimized_form: "if unlikely(condition) { ... }".to_string(),
-            performance_gain: 0.12,
         });
         
         // Optimize 'stan' (goroutine spawn) patterns
         self.pattern_cache.insert("stan".to_string(), SlangOptimization {
-            original_form: "stan function();".to_string(),
-            optimized_form: "spawn_optimized(function);".to_string(),
-            performance_gain: 0.15,
         });
         
         // Optimize 'vibe_check' (switch/match) patterns
         self.pattern_cache.insert("vibe_check".to_string(), SlangOptimization {
-            original_form: "vibe_check expr { ... }".to_string(),
-            optimized_form: "jump_table_switch(expr) { ... }".to_string(),
-            performance_gain: 0.20,
         });
-    }
-    
     /// Analyze AST node for slang patterns
     fn analyze_node_for_slang(&self, node: &AstNode, keyword: &str, patterns: &mut Vec<SlangPattern>) -> Result<()> {
         match node {
@@ -1045,8 +763,6 @@ impl SlangOptimizer {
             _ => {}
         }
         Ok(())
-    }
-    
     /// Analyze statements for slang patterns
     fn analyze_statement_for_slang(&self, stmt: &dyn Statement, keyword: &str, patterns: &mut Vec<SlangPattern>) -> Result<()> {
         match stmt {
@@ -1055,10 +771,6 @@ impl SlangOptimizer {
                     // Function declaration with 'slay' keyword
                     let usage_frequency = self.estimate_function_usage_frequency(name);
                     patterns.push(SlangPattern {
-                        keyword: keyword.to_string(),
-                        usage_frequency,
-                        optimization_potential: if usage_frequency > 0.7 { 0.15 } else { 0.05 },
-                        optimization: self.pattern_cache.get(keyword).cloned(),
                     });
                 }
             }
@@ -1067,10 +779,6 @@ impl SlangOptimizer {
                     // Variable declaration with slang keywords
                     let usage_frequency = self.estimate_variable_usage_frequency(name);
                     patterns.push(SlangPattern {
-                        keyword: keyword.to_string(),
-                        usage_frequency,
-                        optimization_potential: 0.03,
-                        optimization: self.pattern_cache.get(keyword).cloned(),
                     });
                 }
             }
@@ -1078,10 +786,8 @@ impl SlangOptimizer {
                 if keyword == "lowkey" || keyword == "highkey" {
                     // Conditional statements
                     patterns.push(SlangPattern {
-                        keyword: keyword.to_string(),
                         usage_frequency: 0.6, // Common in conditionals
                         optimization_potential: 0.12, // Good potential for branch prediction
-                        optimization: self.pattern_cache.get(keyword).cloned(),
                     });
                 }
             }
@@ -1094,10 +800,8 @@ impl SlangOptimizer {
                     let has_yield = body.iter().any(|s| self.statement_contains_keyword(s, "yolo"));
                     if has_yield {
                         patterns.push(SlangPattern {
-                            keyword: keyword.to_string(),
                             usage_frequency: 0.8, // High in loops
                             optimization_potential: 0.10, // Good optimization potential
-                            optimization: self.pattern_cache.get(keyword).cloned(),
                         });
                     }
                 }
@@ -1110,8 +814,6 @@ impl SlangOptimizer {
             _ => {}
         }
         Ok(())
-    }
-    
     /// Analyze expressions for slang patterns
     fn analyze_expression_for_slang(&self, expr: &dyn Expression, keyword: &str, patterns: &mut Vec<SlangPattern>) -> Result<()> {
         match expr {
@@ -1121,13 +823,7 @@ impl SlangOptimizer {
                     let optimization_potential = self.calculate_optimization_potential(keyword, arguments);
                     
                     patterns.push(SlangPattern {
-                        keyword: keyword.to_string(),
-                        usage_frequency,
-                        optimization_potential,
-                        optimization: self.pattern_cache.get(keyword).cloned(),
                     });
-                }
-                
                 // Recursively analyze arguments
                 for arg in arguments {
                     self.analyze_expression_for_slang(arg, keyword, patterns)?;
@@ -1143,21 +839,15 @@ impl SlangOptimizer {
             _ => {}
         }
         Ok(())
-    }
-    
     /// Estimate function usage frequency
     fn estimate_function_usage_frequency(&self, _name: &str) -> f64 {
         // In a real implementation, this would analyze call sites
         // For now, return a reasonable default
         0.5
-    }
-    
     /// Estimate variable usage frequency
     fn estimate_variable_usage_frequency(&self, _name: &str) -> f64 {
         // In a real implementation, this would analyze variable references
         0.4
-    }
-    
     /// Estimate call frequency
     fn estimate_call_frequency(&self, function_name: &str, arguments: &[dyn Expression]) -> f64 {
         match function_name {
@@ -1165,7 +855,6 @@ impl SlangOptimizer {
             "yolo" => 0.8, // Yields are frequent in concurrent code
             "vibe_check" => 0.6, // Switch statements are moderately frequent
             "periodt" => 0.2, // Assertions are less frequent
-            _ => 0.5,
         }
     }
     
@@ -1216,9 +905,6 @@ impl SlangOptimizer {
     /// Check if statement contains a specific keyword
     fn statement_contains_keyword(&self, stmt: &dyn Statement, keyword: &str) -> bool {
         match stmt {
-            Statement::Expression(expr) => self.expression_contains_keyword(expr, keyword),
-            Statement::Assignment { value, .. } => self.expression_contains_keyword(value, keyword),
-            _ => false,
         }
     }
     
@@ -1238,26 +924,17 @@ impl SlangOptimizer {
             Expression::Unary { operand, .. } => {
                 self.expression_contains_keyword(operand, keyword)
             }
-            _ => false,
         }
     }
-}
-
 impl CursedMemoryLayoutOptimizer {
     fn new() -> Self {
         Self {
-            struct_optimizations: Vec::new(),
-            interface_optimizations: Vec::new(),
-            structs_optimized: 0,
-            interfaces_optimized: 0,
         }
     }
 
     fn optimize_structs(&mut self, ast: &AstNode) -> Result<usize> {
         // Implementation would optimize struct layouts
         Ok(0)
-    }
-
     fn optimize_interfaces(&mut self, ast: &AstNode) -> Result<usize> {
         // Implementation would optimize interface layouts
         Ok(0)

@@ -11,9 +11,9 @@ use std::thread;
 use std::time::{Duration, Instant};
 use std::process::{Child, ExitStatus};
 
-// use crate::stdlib::process::error::{
+// Placeholder imports disabled
     ProcessError, ProcessResult, execution_failed, timeout_error, invalid_arguments
-};
+// };
 
 // use crate::stdlib::process::enhanced_exec_slay::{SlayCommand, SlayProcess, SlayProcessState};
 // use crate::stdlib::process::real_monitoring::{ProcessStats, get_real_process_stats};
@@ -28,118 +28,49 @@ pub type TaskHandle = SlayTask;
 #[derive(Debug)]
 pub struct SlayTask {
     /// Task ID
-    pub id: u64,
     /// Original command
-    pub command: SlayCommand,
     /// Task start time
-    pub start_time: Instant,
     /// Task completion time
-    pub completion_time: Option<Instant>,
     /// Exit code when finished
-    pub exit_code: Option<i32>,
     /// Whether task has finished
-    pub finished: bool,
     /// Task error if any
-    pub error: Option<String>,
     /// Captured stdout output
-    pub output: Vec<u8>,
     /// Captured stderr output
-    pub stderr_output: Vec<u8>,
     /// Combined output (stdout + stderr)
-    pub combined_output: Vec<u8>,
     /// Process handle
-    process: Option<Arc<Mutex<Child>>>,
     /// Task state
-    state: TaskState,
     /// Resource usage statistics
-    stats: Arc<Mutex<Option<ProcessStats>>>,
     /// Output capture channels
-    output_rx: Option<mpsc::Receiver<OutputChunk>>,
     /// Task configuration
-    config: TaskConfig,
-}
-
 /// Task execution state
 #[derive(Debug, Clone, PartialEq)]
 pub enum TaskState {
-    Created,
-    Starting,
-    Running,
-    Completed,
-    Failed,
-    Killed,
-    Timeout,
-}
-
 /// Task configuration options
 #[derive(Debug, Clone)]
 pub struct TaskConfig {
     /// Capture output in real-time
-    pub capture_output: bool,
     /// Maximum output buffer size
-    pub max_output_size: usize,
     /// Task timeout
-    pub timeout: Option<Duration>,
     /// Enable resource monitoring
-    pub monitor_resources: bool,
     /// Monitoring interval
-    pub monitor_interval: Duration,
     /// Auto-cleanup on completion
-    pub auto_cleanup: bool,
     /// Priority level
-    pub priority: TaskPriority,
-}
-
 impl Default for TaskConfig {
     fn default() -> Self {
         Self {
-            capture_output: true,
             max_output_size: 1024 * 1024, // 1MB
-            timeout: None,
-            monitor_resources: false,
-            monitor_interval: Duration::from_secs(1),
-            auto_cleanup: true,
-            priority: TaskPriority::Normal,
         }
     }
-}
-
 /// Task priority levels
 #[derive(Debug, Clone, PartialEq)]
 pub enum TaskPriority {
-    Low,
-    Normal,
-    High,
-    Critical,
-}
-
 /// Output chunk for real-time streaming
 #[derive(Debug, Clone)]
 pub struct OutputChunk {
-    pub data: Vec<u8>,
-    pub is_stderr: bool,
-    pub timestamp: Instant,
-}
-
 impl SlayTask {
     /// Create a new task from a command
     pub fn new(id: u64, command: SlayCommand, config: TaskConfig) -> Self {
         Self {
-            id,
-            command,
-            start_time: Instant::now(),
-            completion_time: None,
-            exit_code: None,
-            finished: false,
-            error: None,
-            output: Vec::new(),
-            stderr_output: Vec::new(),
-            combined_output: Vec::new(),
-            process: None,
-            state: TaskState::Created,
-            stats: Arc::new(Mutex::new(None)),
-            output_rx: None,
-            config,
         }
     }
 
@@ -155,8 +86,6 @@ impl SlayTask {
         // Set working directory
         if let Some(dir) = &self.command.dir {
             cmd.current_dir(dir);
-        }
-        
         // Set environment variables
         for env_pair in &self.command.env {
             if let Some((key, value)) = env_pair.split_once('=') {
@@ -181,33 +110,22 @@ impl SlayTask {
         // Set up output capture if enabled
         if self.config.capture_output {
             self.setup_output_capture(&mut child)?;
-        }
-        
         self.process = Some(Arc::new(Mutex::new(child)));
         self.state = TaskState::Running;
         
         // Start resource monitoring if enabled
         if self.config.monitor_resources {
             self.start_resource_monitoring();
-        }
-        
         // Start timeout handling if configured
         if let Some(timeout) = self.config.timeout {
             self.start_timeout_handling(timeout);
-        }
-        
         Ok(())
-    }
-
     /// Wait for task completion
     pub fn wait(&mut self) -> ProcessResult<()> {
         if let Some(process) = &self.process {
             if let Ok(mut child) = process.lock() {
                 let status = child.wait()
                     .map_err(|e| ProcessError::IoError {
-                        operation: "wait".to_string(),
-                        error_type: format!("{:?}", e.kind()),
-                        message: e.to_string(),
                     })?;
                 
                 self.completion_time = Some(Instant::now());
@@ -218,26 +136,18 @@ impl SlayTask {
                     self.state = TaskState::Completed;
                 } else {
                     self.state = TaskState::Failed;
-                    self.error = Some(format!("Process exited with code {}", 
                         status.code().unwrap_or(-1)));
-                }
-                
                 // Collect any remaining output
                 self.collect_remaining_output();
             }
         }
         Ok(())
-    }
-
     /// Kill the background task
     pub fn kill(&mut self) -> ProcessResult<()> {
         if let Some(process) = &self.process {
             if let Ok(mut child) = process.lock() {
                 child.kill()
                     .map_err(|e| ProcessError::IoError {
-                        operation: "kill".to_string(),
-                        error_type: format!("{:?}", e.kind()),
-                        message: e.to_string(),
                     })?;
                 
                 self.state = TaskState::Killed;
@@ -246,14 +156,10 @@ impl SlayTask {
             }
         }
         Ok(())
-    }
-
     /// Check if task is still running
     pub fn is_running(&mut self) -> bool {
         if self.finished {
             return false;
-        }
-        
         if let Some(process) = &self.process {
             if let Ok(mut child) = process.lock() {
                 match child.try_wait() {
@@ -267,8 +173,6 @@ impl SlayTask {
                             self.state = TaskState::Completed;
                         } else {
                             self.state = TaskState::Failed;
-                        }
-                        
                         false
                     }
                     Ok(None) => true, // Still running
@@ -290,28 +194,18 @@ impl SlayTask {
     /// Get elapsed time since task started
     pub fn elapsed_time(&self) -> Duration {
         self.start_time.elapsed()
-    }
-
     /// Get total execution time (if finished)
     pub fn execution_time(&self) -> Option<Duration> {
         self.completion_time.map(|end| end.duration_since(self.start_time))
-    }
-
     /// Get captured output
     pub fn get_output(&self) -> ProcessResult<Vec<u8>> {
         Ok(self.output.clone())
-    }
-
     /// Get captured stderr
     pub fn get_stderr(&self) -> ProcessResult<Vec<u8>> {
         Ok(self.stderr_output.clone())
-    }
-
     /// Get combined output (stdout + stderr)
     pub fn get_combined_output(&self) -> ProcessResult<Vec<u8>> {
         Ok(self.combined_output.clone())
-    }
-
     /// Get current resource usage statistics
     pub fn get_stats(&self) -> Option<ProcessStats> {
         if let Ok(stats_guard) = self.stats.lock() {
@@ -324,8 +218,6 @@ impl SlayTask {
     /// Get task state
     pub fn state(&self) -> TaskState {
         self.state.clone()
-    }
-
     /// Get process ID if running
     pub fn pid(&self) -> Option<u32> {
         if let Some(process) = &self.process {
@@ -357,20 +249,13 @@ impl SlayTask {
                         Ok(0) => break, // EOF
                         Ok(n) => {
                             let chunk = OutputChunk {
-                                data: buffer[..n].to_vec(),
-                                is_stderr: false,
-                                timestamp: Instant::now(),
-                            };
                             if tx_stdout.send(chunk).is_err() {
                                 break; // Receiver dropped
                             }
                         }
-                        Err(_) => break,
                     }
                 }
             });
-        }
-        
         // Capture stderr
         if let Some(stderr) = child.stderr.take() {
             thread::spawn(move || {
@@ -383,23 +268,14 @@ impl SlayTask {
                         Ok(0) => break, // EOF
                         Ok(n) => {
                             let chunk = OutputChunk {
-                                data: buffer[..n].to_vec(),
-                                is_stderr: true,
-                                timestamp: Instant::now(),
-                            };
                             if tx.send(chunk).is_err() {
                                 break; // Receiver dropped
                             }
                         }
-                        Err(_) => break,
                     }
                 }
             });
-        }
-        
         Ok(())
-    }
-
     /// Start resource monitoring in background
     fn start_resource_monitoring(&self) {
         if let Some(pid) = self.pid() {
@@ -457,53 +333,27 @@ impl SlayTask {
 /// Background task manager for coordinating multiple tasks
 pub struct TaskManager {
     /// Active tasks
-    tasks: Arc<RwLock<HashMap<u64, Arc<Mutex<SlayTask>>>>>,
     /// Next task ID
-    next_id: Arc<Mutex<u64>>,
     /// Task completion notification
-    completion_notifier: Arc<(Mutex<Vec<u64>>, Condvar)>,
     /// Manager configuration
-    config: ManagerConfig,
     /// Cleanup thread handle
-    cleanup_thread: Option<thread::JoinHandle<()>>,
     /// Active flag
-    active: Arc<Mutex<bool>>,
-}
-
 /// Task manager configuration
 #[derive(Debug, Clone)]
 pub struct ManagerConfig {
     /// Maximum concurrent tasks
-    pub max_concurrent_tasks: usize,
     /// Cleanup interval for finished tasks
-    pub cleanup_interval: Duration,
     /// Default task timeout
-    pub default_timeout: Option<Duration>,
     /// Enable automatic resource monitoring
-    pub auto_monitor: bool,
-}
-
 impl Default for ManagerConfig {
     fn default() -> Self {
         Self {
-            max_concurrent_tasks: 100,
-            cleanup_interval: Duration::from_secs(60),
-            default_timeout: None,
-            auto_monitor: false,
         }
     }
-}
-
 impl TaskManager {
     /// Create a new task manager
     pub fn new(config: ManagerConfig) -> Self {
         Self {
-            tasks: Arc::new(RwLock::new(HashMap::new())),
-            next_id: Arc::new(Mutex::new(1)),
-            completion_notifier: Arc::new((Mutex::new(Vec::new()), Condvar::new())),
-            config,
-            cleanup_thread: None,
-            active: Arc::new(Mutex::new(true)),
         }
     }
 
@@ -534,8 +384,6 @@ impl TaskManager {
                                 to_remove.push(id);
                             }
                         }
-                    }
-                    
                     for id in to_remove {
                         task_map.remove(&id);
                     }
@@ -545,31 +393,21 @@ impl TaskManager {
         
         self.cleanup_thread = Some(cleanup_handle);
         Ok(())
-    }
-
     /// Stop the task manager
     pub fn stop(&mut self) -> ProcessResult<()> {
         // Signal shutdown
         if let Ok(mut active) = self.active.lock() {
             *active = false;
-        }
-        
         // Wait for cleanup thread
         if let Some(handle) = self.cleanup_thread.take() {
             handle.join().map_err(|_| 
                 ProcessError::System {
-                    operation: "stop_manager".to_string(),
-                    message: "Failed to join cleanup thread".to_string(),
                 }
             )?;
-        }
-        
         // Kill all remaining tasks
         self.kill_all_tasks()?;
         
         Ok(())
-    }
-
     /// Submit a task for background execution
     pub fn submit_task(&self, command: SlayCommand, config: Option<TaskConfig>) -> ProcessResult<u64> {
         // Check concurrent task limit
@@ -581,8 +419,6 @@ impl TaskManager {
             
             if running_count >= self.config.max_concurrent_tasks {
                 return Err(ProcessError::System {
-                    operation: "submit_task".to_string(),
-                    message: "Maximum concurrent tasks reached".to_string(),
                 });
             }
         }
@@ -594,10 +430,7 @@ impl TaskManager {
             id
         } else {
             return Err(ProcessError::System {
-                operation: "submit_task".to_string(),
-                message: "Failed to generate task ID".to_string(),
             });
-        };
         
         // Create task with merged configuration
         let mut task_config = config.unwrap_or_default();
@@ -606,8 +439,6 @@ impl TaskManager {
         }
         if !task_config.monitor_resources && self.config.auto_monitor {
             task_config.monitor_resources = true;
-        }
-        
         let mut task = SlayTask::new(id, command, task_config);
         
         // Start the task
@@ -616,11 +447,7 @@ impl TaskManager {
         // Store in manager
         if let Ok(mut tasks) = self.tasks.write() {
             tasks.insert(id, Arc::new(Mutex::new(task)));
-        }
-        
         Ok(id)
-    }
-
     /// Get task by ID
     pub fn get_task(&self, id: u64) -> Option<Arc<Mutex<SlayTask>>> {
         if let Ok(tasks) = self.tasks.read() {
@@ -638,8 +465,6 @@ impl TaskManager {
             }
         }
         Ok(())
-    }
-
     /// Wait for all tasks to complete
     pub fn wait_for_all(&self) -> ProcessResult<()> {
         loop {
@@ -647,12 +472,9 @@ impl TaskManager {
                 tasks.keys().cloned().collect()
             } else {
                 break;
-            };
             
             if task_ids.is_empty() {
                 break;
-            }
-            
             let mut all_finished = true;
             for id in task_ids {
                 if let Some(task) = self.get_task(id) {
@@ -666,14 +488,8 @@ impl TaskManager {
             
             if all_finished {
                 break;
-            }
-            
             thread::sleep(Duration::from_millis(100));
-        }
-        
         Ok(())
-    }
-
     /// Kill a specific task
     pub fn kill_task(&self, id: u64) -> ProcessResult<()> {
         if let Some(task) = self.get_task(id) {
@@ -682,8 +498,6 @@ impl TaskManager {
             }
         }
         Ok(())
-    }
-
     /// Kill all tasks
     pub fn kill_all_tasks(&self) -> ProcessResult<()> {
         if let Ok(tasks) = self.tasks.read() {
@@ -694,8 +508,6 @@ impl TaskManager {
             }
         }
         Ok(())
-    }
-
     /// Get list of all task IDs
     pub fn list_tasks(&self) -> Vec<u64> {
         if let Ok(tasks) = self.tasks.read() {
@@ -713,10 +525,6 @@ impl TaskManager {
             for task in tasks.values() {
                 if let Ok(task_guard) = task.lock() {
                     match task_guard.state() {
-                        TaskState::Running => stats.running_tasks += 1,
-                        TaskState::Completed => stats.completed_tasks += 1,
-                        TaskState::Failed => stats.failed_tasks += 1,
-                        TaskState::Killed => stats.killed_tasks += 1,
                         _ => {}
                     }
                 }
@@ -728,18 +536,9 @@ impl TaskManager {
             TaskManagerStats::default()
         }
     }
-}
-
 /// Task manager statistics
 #[derive(Debug, Default)]
 pub struct TaskManagerStats {
-    pub total_tasks: usize,
-    pub running_tasks: usize,
-    pub completed_tasks: usize,
-    pub failed_tasks: usize,
-    pub killed_tasks: usize,
-}
-
 /// Global task manager instance
 static mut GLOBAL_TASK_MANAGER: Option<TaskManager> = None;
 static INIT: std::sync::Once = std::sync::Once::new();
@@ -762,11 +561,7 @@ pub fn get_global_task_manager() -> &'static mut TaskManager {
 pub fn run_background(command: SlayCommand) -> ProcessResult<u64> {
     let manager = get_global_task_manager();
     manager.submit_task(command, None)
-}
-
 /// Convenience function to run a command with specific configuration
 pub fn run_background_with_config(command: SlayCommand, config: TaskConfig) -> ProcessResult<u64> {
     let manager = get_global_task_manager();
     manager.submit_task(command, Some(config))
-}
-

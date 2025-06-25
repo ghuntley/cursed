@@ -8,39 +8,20 @@ use std::collections::HashMap;
 /// Wire types in arithmetic circuits
 #[derive(Debug, Clone, PartialEq)]
 pub enum WireType {
-    Input,
-    Output,
-    Intermediate,
-}
-
 /// Circuit wire
 #[derive(Debug, Clone)]
 pub struct Wire {
-    pub id: usize,
-    pub wire_type: WireType,
-    pub value: Option<FieldElement>,
-    pub label: Option<String>,
-}
-
 impl Wire {
     pub fn new(id: usize, wire_type: WireType) -> Self {
         Self {
-            id,
-            wire_type,
-            value: None,
-            label: None,
         }
     }
 
     pub fn with_label(mut self, label: String) -> Self {
         self.label = Some(label);
         self
-    }
-
     pub fn set_value(&mut self, value: FieldElement) {
         self.value = Some(value);
-    }
-
     pub fn to_value(&self) -> Value {
         let mut wire_map = HashMap::new();
         wire_map.insert("id".to_string(), Value::Integer(self.id as i64));
@@ -48,12 +29,8 @@ impl Wire {
         
         if let Some(ref value) = self.value {
             wire_map.insert("value".to_string(), Value::String(value.to_string()));
-        }
-        
         if let Some(ref label) = self.label {
             wire_map.insert("label".to_string(), Value::String(label.clone()));
-        }
-        
         Value::Object(wire_map)
     }
 }
@@ -61,71 +38,32 @@ impl Wire {
 /// Arithmetic gate types
 #[derive(Debug, Clone, PartialEq)]
 pub enum GateType {
-    Add,
-    Mul,
-    Constant(FieldElement),
-    Input,
-    Output,
-}
-
 /// Arithmetic gate in R1CS
 #[derive(Debug, Clone)]
 pub struct Gate {
-    pub id: usize,
-    pub gate_type: GateType,
-    pub input_wires: Vec<usize>,
-    pub output_wire: usize,
-    pub constraint: Option<R1CSConstraint>,
-}
-
 impl Gate {
     pub fn new_add(id: usize, left: usize, right: usize, output: usize) -> Self {
         Self {
-            id,
-            gate_type: GateType::Add,
-            input_wires: vec![left, right],
-            output_wire: output,
-            constraint: None,
         }
     }
 
     pub fn new_mul(id: usize, left: usize, right: usize, output: usize) -> Self {
         Self {
-            id,
-            gate_type: GateType::Mul,
-            input_wires: vec![left, right],
-            output_wire: output,
-            constraint: None,
         }
     }
 
     pub fn new_constant(id: usize, constant: FieldElement, output: usize) -> Self {
         Self {
-            id,
-            gate_type: GateType::Constant(constant),
-            input_wires: vec![],
-            output_wire: output,
-            constraint: None,
         }
     }
 
     pub fn new_input(id: usize, wire: usize) -> Self {
         Self {
-            id,
-            gate_type: GateType::Input,
-            input_wires: vec![],
-            output_wire: wire,
-            constraint: None,
         }
     }
 
     pub fn new_output(id: usize, wire: usize) -> Self {
         Self {
-            id,
-            gate_type: GateType::Output,
-            input_wires: vec![wire],
-            output_wire: wire,
-            constraint: None,
         }
     }
 
@@ -151,7 +89,6 @@ impl Gate {
                     .ok_or_else(|| CryptoError::InvalidInput("Missing right input".to_string()))?;
                 Ok(*left * *right)
             }
-            GateType::Constant(c) => Ok(*c),
             GateType::Input => {
                 wire_values.get(&self.output_wire)
                     .copied()
@@ -163,8 +100,6 @@ impl Gate {
                     .ok_or_else(|| CryptoError::InvalidInput("Missing output input".to_string()))
             }
         }
-    }
-
     pub fn to_value(&self) -> Value {
         let mut gate_map = HashMap::new();
         gate_map.insert("id".to_string(), Value::Integer(self.id as i64));
@@ -184,39 +119,24 @@ impl Gate {
 #[derive(Debug, Clone)]
 pub struct R1CSConstraint {
     pub a: Vec<(usize, FieldElement)>, // (wire_index, coefficient)
-    pub b: Vec<(usize, FieldElement)>,
-    pub c: Vec<(usize, FieldElement)>,
-}
-
 impl R1CSConstraint {
     pub fn new() -> Self {
         Self {
-            a: Vec::new(),
-            b: Vec::new(),
-            c: Vec::new(),
         }
     }
 
     pub fn add_a_term(&mut self, wire: usize, coeff: FieldElement) {
         self.a.push((wire, coeff));
-    }
-
     pub fn add_b_term(&mut self, wire: usize, coeff: FieldElement) {
         self.b.push((wire, coeff));
-    }
-
     pub fn add_c_term(&mut self, wire: usize, coeff: FieldElement) {
         self.c.push((wire, coeff));
-    }
-
     pub fn evaluate(&self, witness: &[FieldElement]) -> AdvancedCryptoResult<bool> {
         let a_result = self.evaluate_linear_combination(&self.a, witness)?;
         let b_result = self.evaluate_linear_combination(&self.b, witness)?;
         let c_result = self.evaluate_linear_combination(&self.c, witness)?;
 
         Ok(a_result * b_result == c_result)
-    }
-
     fn evaluate_linear_combination(&self, terms: &[(usize, FieldElement)], witness: &[FieldElement]) -> AdvancedCryptoResult<FieldElement> {
         let mut result = FieldElement::zero();
         
@@ -225,11 +145,7 @@ impl R1CSConstraint {
                 return Err(CryptoError::InvalidInput("Wire index out of bounds".to_string()));
             }
             result = result + (coeff * witness[wire_index]);
-        }
-        
         Ok(result)
-    }
-
     pub fn to_value(&self) -> Value {
         let mut constraint_map = HashMap::new();
         
@@ -265,25 +181,9 @@ impl R1CSConstraint {
 /// Arithmetic circuit builder
 #[derive(Debug, Clone)]
 pub struct CircuitBuilder {
-    pub wires: HashMap<usize, Wire>,
-    pub gates: Vec<Gate>,
-    pub constraints: Vec<R1CSConstraint>,
-    pub next_wire_id: usize,
-    pub next_gate_id: usize,
-    pub input_wires: Vec<usize>,
-    pub output_wires: Vec<usize>,
-}
-
 impl CircuitBuilder {
     pub fn new() -> Self {
         Self {
-            wires: HashMap::new(),
-            gates: Vec::new(),
-            constraints: Vec::new(),
-            next_wire_id: 0,
-            next_gate_id: 0,
-            input_wires: Vec::new(),
-            output_wires: Vec::new(),
         }
     }
 
@@ -296,14 +196,10 @@ impl CircuitBuilder {
         self.wires.insert(wire_id, wire);
         
         match wire_type {
-            WireType::Input => self.input_wires.push(wire_id),
-            WireType::Output => self.output_wires.push(wire_id),
             _ => {}
         }
         
         wire_id
-    }
-
     /// Create a labeled wire
     pub fn new_labeled_wire(&mut self, wire_type: WireType, label: String) -> usize {
         let wire_id = self.new_wire(wire_type);
@@ -311,8 +207,6 @@ impl CircuitBuilder {
             wire.label = Some(label);
         }
         wire_id
-    }
-
     /// Add an addition gate
     pub fn add_gate(&mut self, left: usize, right: usize) -> AdvancedCryptoResult<usize> {
         let output = self.new_wire(WireType::Intermediate);
@@ -331,8 +225,6 @@ impl CircuitBuilder {
         self.constraints.push(constraint);
 
         Ok(output)
-    }
-
     /// Add a multiplication gate
     pub fn mul_gate(&mut self, left: usize, right: usize) -> AdvancedCryptoResult<usize> {
         let output = self.new_wire(WireType::Intermediate);
@@ -350,8 +242,6 @@ impl CircuitBuilder {
         self.constraints.push(constraint);
 
         Ok(output)
-    }
-
     /// Add a constant gate
     pub fn constant_gate(&mut self, value: FieldElement) -> AdvancedCryptoResult<usize> {
         let output = self.new_wire(WireType::Intermediate);
@@ -369,8 +259,6 @@ impl CircuitBuilder {
         self.constraints.push(constraint);
 
         Ok(output)
-    }
-
     /// Add constraint that wire equals a specific value
     pub fn constrain_equal(&mut self, wire: usize, value: FieldElement) -> AdvancedCryptoResult<()> {
         let mut constraint = R1CSConstraint::new();
@@ -379,19 +267,13 @@ impl CircuitBuilder {
         constraint.add_c_term(0, value); // Constant value wire
         self.constraints.push(constraint);
         Ok(())
-    }
-
     /// Add custom R1CS constraint
     pub fn add_constraint(&mut self, constraint: R1CSConstraint) {
         self.constraints.push(constraint);
-    }
-
     /// Evaluate circuit with given inputs
     pub fn evaluate(&self, inputs: &[FieldElement]) -> AdvancedCryptoResult<Vec<FieldElement>> {
         if inputs.len() != self.input_wires.len() {
             return Err(CryptoError::InvalidInput("Input count mismatch".to_string()));
-        }
-
         let mut wire_values = HashMap::new();
         
         // Set constant 1 wire (wire 0)
@@ -400,29 +282,19 @@ impl CircuitBuilder {
         // Set input values
         for (i, &input_wire) in self.input_wires.iter().enumerate() {
             wire_values.insert(input_wire, inputs[i]);
-        }
-
         // Evaluate gates in order
         for gate in &self.gates {
             if gate.gate_type == GateType::Input {
                 continue; // Already set
-            }
-            
             let output_value = gate.evaluate(&wire_values)?;
             wire_values.insert(gate.output_wire, output_value);
-        }
-
         // Collect output values
         let mut outputs = Vec::new();
         for &output_wire in &self.output_wires {
             let value = wire_values.get(&output_wire)
                 .ok_or_else(|| CryptoError::InvalidInput("Missing output value".to_string()))?;
             outputs.push(*value);
-        }
-
         Ok(outputs)
-    }
-
     /// Generate witness (assignment to all wires)
     pub fn generate_witness(&self, inputs: &[FieldElement]) -> AdvancedCryptoResult<Vec<FieldElement>> {
         let mut witness = vec![FieldElement::zero(); self.next_wire_id];
@@ -433,27 +305,17 @@ impl CircuitBuilder {
         // Set input values
         for (i, &input_wire) in self.input_wires.iter().enumerate() {
             witness[input_wire] = inputs[i];
-        }
-
         // Evaluate gates in order
         let mut wire_values = HashMap::new();
         for i in 0..self.next_wire_id {
             wire_values.insert(i, witness[i]);
-        }
-
         for gate in &self.gates {
             if gate.gate_type == GateType::Input {
                 continue;
-            }
-            
             let output_value = gate.evaluate(&wire_values)?;
             witness[gate.output_wire] = output_value;
             wire_values.insert(gate.output_wire, output_value);
-        }
-
         Ok(witness)
-    }
-
     /// Verify that witness satisfies all constraints
     pub fn verify_witness(&self, witness: &[FieldElement]) -> AdvancedCryptoResult<bool> {
         for constraint in &self.constraints {
@@ -462,8 +324,6 @@ impl CircuitBuilder {
             }
         }
         Ok(true)
-    }
-
     /// Get circuit statistics
     pub fn get_stats(&self) -> Value {
         let mut stats = HashMap::new();
@@ -478,16 +338,12 @@ impl CircuitBuilder {
             let gate_type_str = format!("{:?}", gate.gate_type);
             let count = gate_types.get(&gate_type_str).unwrap_or(&0) + 1;
             gate_types.insert(gate_type_str, count);
-        }
-        
         let gate_type_values: HashMap<String, Value> = gate_types.into_iter()
             .map(|(k, v)| (k, Value::Integer(v)))
             .collect();
         stats.insert("gate_types".to_string(), Value::Object(gate_type_values));
         
         Value::Object(stats)
-    }
-
     /// Convert circuit to Value representation
     pub fn to_value(&self) -> Value {
         let mut circuit_map = HashMap::new();
@@ -529,21 +385,15 @@ impl Circuits {
     pub fn new_builder() -> AdvancedCryptoResult<Value> {
         let builder = CircuitBuilder::new();
         Ok(builder.to_value())
-    }
-
     /// Add input wire to circuit
     pub fn add_input(circuit: &Value, label: Option<&str>) -> AdvancedCryptoResult<Value> {
         // This would modify the circuit in place
         // For now, return a mock wire ID
         Ok(Value::Integer(1))
-    }
-
     /// Add output wire to circuit
     pub fn add_output(circuit: &Value, wire_id: i64) -> AdvancedCryptoResult<Value> {
         // This would modify the circuit in place
         Ok(Value::Boolean(true))
-    }
-
     /// Build multiplication circuit (x * y)
     pub fn build_multiplication_circuit() -> AdvancedCryptoResult<Value> {
         let mut builder = CircuitBuilder::new();
@@ -556,8 +406,6 @@ impl Circuits {
         builder.output_wires.push(result);
         
         Ok(builder.to_value())
-    }
-
     /// Build addition circuit (x + y)
     pub fn build_addition_circuit() -> AdvancedCryptoResult<Value> {
         let mut builder = CircuitBuilder::new();
@@ -570,8 +418,6 @@ impl Circuits {
         builder.output_wires.push(result);
         
         Ok(builder.to_value())
-    }
-
     /// Build polynomial evaluation circuit
     pub fn build_polynomial_circuit(degree: i64) -> AdvancedCryptoResult<Value> {
         let mut builder = CircuitBuilder::new();
@@ -582,21 +428,15 @@ impl Circuits {
         // Build x^degree
         for i in 1..degree {
             current = builder.mul_gate(current, x)?;
-        }
-        
         // Add coefficients (simplified)
         for i in 0..=degree {
             let coeff = builder.constant_gate(FieldElement::new(i as u64))?;
             let term = builder.mul_gate(coeff, current)?;
             current = if i == 0 { term } else { builder.add_gate(current, term)? };
-        }
-        
         builder.wires.get_mut(&current).unwrap().wire_type = WireType::Output;
         builder.output_wires.push(current);
         
         Ok(builder.to_value())
-    }
-
     /// Evaluate circuit with inputs
     pub fn evaluate_circuit(circuit: &Value, inputs: &Value) -> AdvancedCryptoResult<Value> {
         // Parse inputs
@@ -605,19 +445,15 @@ impl Circuits {
                 let mut elements = Vec::new();
                 for input in arr {
                     match input {
-                        Value::Integer(i) => elements.push(FieldElement::new(*i as u64)),
                         Value::String(s) => {
                             let num: u64 = s.parse()
                                 .map_err(|_| CryptoError::InvalidInput("Invalid number".to_string()))?;
                             elements.push(FieldElement::new(num));
                         }
-                        _ => return Err(CryptoError::InvalidInput("Invalid input type".to_string())),
                     }
                 }
                 elements
             }
-            _ => return Err(CryptoError::InvalidInput("Expected array of inputs".to_string())),
-        };
 
         // For demo, return the inputs processed
         let outputs: Vec<Value> = input_elements.iter()
@@ -625,8 +461,6 @@ impl Circuits {
             .collect();
         
         Ok(Value::Array(outputs))
-    }
-
     /// Get circuit statistics
     pub fn get_circuit_stats(circuit: &Value) -> AdvancedCryptoResult<Value> {
         // Mock statistics
@@ -635,8 +469,6 @@ impl Circuits {
         stats.insert("wires".to_string(), Value::Integer(15));
         stats.insert("constraints".to_string(), Value::Integer(8));
         Ok(Value::Object(stats))
-    }
-
     /// Verify circuit constraints
     pub fn verify_circuit(circuit: &Value, witness: &Value) -> AdvancedCryptoResult<Value> {
         // Mock verification

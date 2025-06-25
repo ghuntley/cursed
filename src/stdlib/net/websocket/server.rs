@@ -11,9 +11,9 @@
 
 // use crate::stdlib::net::error::{NetError, NetResult, websocket_error};
 // use crate::stdlib::net::socket::{TcpSocket, TcpListener};
-// use crate::stdlib::net::websocket::{
+// Placeholder imports disabled
     WebSocketFrame, WebSocketMessage, WebSocketConfig, CloseCode, ConnectionState, Opcode, FrameType
-};
+// };
 
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex, RwLock};
@@ -30,36 +30,12 @@ const WEBSOCKET_GUID: &str = "258EAFA5-E914-47DA-95CA-C5AB0DC85B11";
 /// WebSocket server with connection management
 #[derive(Debug)]
 pub struct WebSocketServer {
-    config: WebSocketConfig,
-    connections: Arc<RwLock<HashMap<u64, Arc<WebSocketConnection>>>>,
-    next_connection_id: AtomicU64,
-    is_running: AtomicBool,
-    message_handlers: Arc<RwLock<Vec<Arc<dyn MessageHandler + Send + Sync>>>>,
-    heartbeat_thread: Mutex<Option<JoinHandle<()>>>,
-}
-
 /// WebSocket connection representation
 #[derive(Debug)]
 pub struct WebSocketConnection {
-    id: u64,
-    socket: Arc<Mutex<TcpSocket>>,
-    state: Arc<RwLock<ConnectionState>>,
-    last_ping: Arc<Mutex<Instant>>,
-    last_pong: Arc<Mutex<Instant>>,
-    metadata: Arc<RwLock<HashMap<String, String>>>,
-    message_queue: Arc<Mutex<Vec<WebSocketMessage>>>,
-    close_code: Arc<Mutex<Option<CloseCode>>>,
-    read_thread: Mutex<Option<JoinHandle<()>>>,
-    write_thread: Mutex<Option<JoinHandle<()>>>,
-}
-
 /// WebSocket listener for accepting connections
 #[derive(Debug)]
 pub struct WebSocketListener {
-    listener: TcpListener,
-    server: Arc<WebSocketServer>,
-}
-
 /// Message handler trait for processing WebSocket messages
 pub trait MessageHandler: Send + Sync {
     fn on_connect(&self, connection: &WebSocketConnection) -> NetResult<()>;
@@ -68,29 +44,13 @@ pub trait MessageHandler: Send + Sync {
     fn on_error(&self, connection: &WebSocketConnection, error: &NetError) -> NetResult<()>;
     fn on_ping(&self, connection: &WebSocketConnection, data: &[u8]) -> NetResult<()>;
     fn on_pong(&self, connection: &WebSocketConnection, data: &[u8]) -> NetResult<()>;
-}
-
 /// WebSocket handshake information
 #[derive(Debug, Clone)]
 pub struct HandshakeInfo {
-    pub key: String,
-    pub version: String,
-    pub protocol: Option<String>,
-    pub extensions: Vec<String>,
-    pub origin: Option<String>,
-    pub headers: HashMap<String, String>,
-}
-
 impl WebSocketServer {
     /// Create a new WebSocket server with configuration
     pub fn new(config: WebSocketConfig) -> Self {
         Self {
-            config,
-            connections: Arc::new(RwLock::new(HashMap::new())),
-            next_connection_id: AtomicU64::new(1),
-            is_running: AtomicBool::new(false),
-            message_handlers: Arc::new(RwLock::new(Vec::new())),
-            heartbeat_thread: Mutex::new(None),
         }
     }
     
@@ -101,31 +61,23 @@ impl WebSocketServer {
         let server = Arc::new(WebSocketServer::new(config));
         
         Ok(WebSocketListener::new(listener, server))
-    }
-    
     /// Bind with custom configuration
     pub fn bind_with_config(addr: &str, config: WebSocketConfig) -> NetResult<WebSocketListener> {
         let listener = TcpListener::bind(addr)?;
         let server = Arc::new(WebSocketServer::new(config));
         
         Ok(WebSocketListener::new(listener, server))
-    }
-    
     /// Add a message handler
     pub fn add_handler(&self, handler: Arc<dyn MessageHandler + Send + Sync>) -> NetResult<()> {
         let mut handlers = self.message_handlers.write()
             .map_err(|e| websocket_error(&format!("Failed to acquire handler lock: {}", e), None, None))?;
         handlers.push(handler);
         Ok(())
-    }
-    
     /// Start the server
     pub fn start(&self) -> NetResult<()> {
         self.is_running.store(true, Ordering::SeqCst);
         self.start_heartbeat_thread()?;
         Ok(())
-    }
-    
     /// Stop the server
     pub fn stop(&self) -> NetResult<()> {
         self.is_running.store(false, Ordering::SeqCst);
@@ -136,8 +88,6 @@ impl WebSocketServer {
         
         for connection in connections.values() {
             let _ = connection.close(CloseCode::GOING_AWAY, "Server shutting down");
-        }
-        
         // Stop heartbeat thread
         if let Ok(mut thread) = self.heartbeat_thread.lock() {
             if let Some(handle) = thread.take() {
@@ -146,15 +96,11 @@ impl WebSocketServer {
         }
         
         Ok(())
-    }
-    
     /// Get active connection count
     pub fn connection_count(&self) -> NetResult<usize> {
         let connections = self.connections.read()
             .map_err(|e| websocket_error(&format!("Failed to read connections: {}", e), None, None))?;
         Ok(connections.len())
-    }
-    
     /// Broadcast message to all connections
     pub fn broadcast(&self, message: &WebSocketMessage) -> NetResult<usize> {
         let connections = self.connections.read()
@@ -167,34 +113,24 @@ impl WebSocketServer {
                     sent_count += 1;
                 }
             }
-        }
-        
         Ok(sent_count)
-    }
-    
     /// Get connection by ID
     pub fn get_connection(&self, id: u64) -> NetResult<Option<Arc<WebSocketConnection>>> {
         let connections = self.connections.read()
             .map_err(|e| websocket_error(&format!("Failed to read connections: {}", e), None, None))?;
         Ok(connections.get(&id).cloned())
-    }
-    
     /// Remove connection
     fn remove_connection(&self, id: u64) -> NetResult<()> {
         let mut connections = self.connections.write()
             .map_err(|e| websocket_error(&format!("Failed to write connections: {}", e), None, None))?;
         connections.remove(&id);
         Ok(())
-    }
-    
     /// Add connection
     fn add_connection(&self, connection: Arc<WebSocketConnection>) -> NetResult<()> {
         let mut connections = self.connections.write()
             .map_err(|e| websocket_error(&format!("Failed to write connections: {}", e), None, None))?;
         connections.insert(connection.id, connection);
         Ok(())
-    }
-    
     /// Start heartbeat monitoring thread
     fn start_heartbeat_thread(&self) -> NetResult<()> {
         let connections = Arc::clone(&self.connections);
@@ -224,8 +160,6 @@ impl WebSocketServer {
                                 to_close.push(connection.id);
                             }
                         }
-                    }
-                    
                     // Close timed out connections
                     for id in to_close {
                         if let Some(connection) = connections_guard.get(&id) {
@@ -268,8 +202,6 @@ impl WebSocketListener {
         self.notify_connect(&connection)?;
         
         Ok(connection)
-    }
-    
     /// Start accepting connections in a loop
     pub fn run(&self) -> NetResult<()> {
         self.server.start()?;
@@ -284,11 +216,7 @@ impl WebSocketListener {
                     // Continue accepting other connections
                 }
             }
-        }
-        
         Ok(())
-    }
-    
     /// Perform WebSocket handshake according to RFC 6455
     fn perform_handshake(&self, socket: &TcpSocket) -> NetResult<HandshakeInfo> {
         let mut reader = BufReader::new(socket);
@@ -300,8 +228,6 @@ impl WebSocketListener {
         let parts: Vec<&str> = request_line.trim().split_whitespace().collect();
         if parts.len() != 3 || parts[0] != "GET" || parts[2] != "HTTP/1.1" {
             return Err(websocket_error("Invalid HTTP request line", None, None));
-        }
-        
         // Parse headers
         let mut headers = HashMap::new();
         let mut line = String::new();
@@ -312,17 +238,11 @@ impl WebSocketListener {
             let trimmed = line.trim();
             if trimmed.is_empty() {
                 break; // End of headers
-            }
-            
             if let Some(colon_pos) = trimmed.find(':') {
                 let key = trimmed[..colon_pos].trim().to_lowercase();
                 let value = trimmed[colon_pos + 1..].trim().to_string();
                 headers.insert(key, value);
-            }
-            
             line.clear();
-        }
-        
         // Validate WebSocket headers
         self.validate_handshake_headers(&headers)?;
         
@@ -343,13 +263,6 @@ impl WebSocketListener {
             .unwrap_or_else(Vec::new);
         
         let handshake_info = HandshakeInfo {
-            key: key.clone(),
-            version,
-            protocol,
-            extensions,
-            origin,
-            headers,
-        };
         
         // Generate response
         let accept_key = self.generate_accept_key(&key)?;
@@ -360,33 +273,21 @@ impl WebSocketListener {
             .map_err(|e| websocket_error(&format!("Failed to send handshake response: {}", e), Some(e.into()), None))?;
         
         Ok(handshake_info)
-    }
-    
     /// Validate WebSocket handshake headers
     fn validate_handshake_headers(&self, headers: &HashMap<String, String>) -> NetResult<()> {
         // Check required headers
         if !headers.contains_key("sec-websocket-key") {
             return Err(websocket_error("Missing Sec-WebSocket-Key header", None, None));
-        }
-        
         if headers.get("upgrade").map(|v| v.to_lowercase()) != Some("websocket".to_string()) {
             return Err(websocket_error("Invalid Upgrade header", None, None));
-        }
-        
         if !headers.get("connection")
             .map(|v| v.to_lowercase().contains("upgrade"))
             .unwrap_or(false) {
             return Err(websocket_error("Invalid Connection header", None, None));
-        }
-        
         // Check WebSocket version
         if headers.get("sec-websocket-version") != Some(&"13".to_string()) {
             return Err(websocket_error("Unsupported WebSocket version", None, None));
-        }
-        
         Ok(())
-    }
-    
     /// Generate WebSocket accept key
     fn generate_accept_key(&self, client_key: &str) -> NetResult<String> {
         let mut hasher = Sha1::new();
@@ -394,33 +295,24 @@ impl WebSocketListener {
         hasher.update(WEBSOCKET_GUID.as_bytes());
         let hash = hasher.finalize();
         Ok(BASE64.encode(&hash))
-    }
-    
     /// Build WebSocket handshake response
     fn build_handshake_response(&self, accept_key: &str, handshake: &HandshakeInfo) -> NetResult<String> {
         let mut response = format!(
             "HTTP/1.1 101 Switching Protocols\r\n\
              Upgrade: websocket\r\n\
              Connection: Upgrade\r\n\
-             Sec-WebSocket-Accept: {}\r\n",
             accept_key
         );
         
         // Add protocol if negotiated
         if let Some(ref protocol) = handshake.protocol {
             response.push_str(&format!("Sec-WebSocket-Protocol: {}\r\n", protocol));
-        }
-        
         // Add extensions if supported
         if !handshake.extensions.is_empty() {
             // For now, we don't support any extensions
             // response.push_str(&format!("Sec-WebSocket-Extensions: {}\r\n", handshake.extensions.join(", ")));
-        }
-        
         response.push_str("\r\n");
         Ok(response)
-    }
-    
     /// Notify handlers of new connection
     fn notify_connect(&self, connection: &WebSocketConnection) -> NetResult<()> {
         let handlers = self.server.message_handlers.read()
@@ -447,31 +339,13 @@ impl WebSocketConnection {
         
         if let Some(protocol) = handshake.protocol {
             metadata.insert("protocol".to_string(), protocol);
-        }
-        
         if let Some(origin) = handshake.origin {
             metadata.insert("origin".to_string(), origin);
-        }
-        
         Ok(Self {
-            id,
-            socket: Arc::new(Mutex::new(socket)),
-            state: Arc::new(RwLock::new(ConnectionState::Open)),
-            last_ping: Arc::new(Mutex::new(now)),
-            last_pong: Arc::new(Mutex::new(now)),
-            metadata: Arc::new(RwLock::new(metadata)),
-            message_queue: Arc::new(Mutex::new(Vec::new())),
-            close_code: Arc::new(Mutex::new(None)),
-            read_thread: Mutex::new(None),
-            write_thread: Mutex::new(None),
         })
-    }
-    
     /// Get connection ID
     pub fn id(&self) -> u64 {
         self.id
-    }
-    
     /// Check if connection is open
     pub fn is_open(&self) -> bool {
         if let Ok(state) = self.state.read() {
@@ -486,22 +360,13 @@ impl WebSocketConnection {
         let state = self.state.read()
             .map_err(|e| websocket_error(&format!("Failed to read state: {}", e), None, None))?;
         Ok(*state)
-    }
-    
     /// Send a message
     pub fn send_message(&self, message: WebSocketMessage) -> NetResult<()> {
         if !self.is_open() {
             return Err(websocket_error("Connection is not open", None, None));
-        }
-        
         let frame = match message {
-            WebSocketMessage::Text(text) => WebSocketFrame::text(text),
-            WebSocketMessage::Binary(data) => WebSocketFrame::binary(data),
-        };
         
         self.send_frame(frame)
-    }
-    
     /// Send a frame
     pub fn send_frame(&self, frame: WebSocketFrame) -> NetResult<()> {
         let socket = self.socket.lock()
@@ -512,8 +377,6 @@ impl WebSocketConnection {
             .map_err(|e| websocket_error(&format!("Failed to send frame: {}", e), Some(e.into()), None))?;
         
         Ok(())
-    }
-    
     /// Send ping frame
     pub fn send_ping(&self, data: Vec<u8>) -> NetResult<()> {
         let frame = WebSocketFrame::ping(data);
@@ -522,17 +385,11 @@ impl WebSocketConnection {
         // Update last ping time
         if let Ok(mut last_ping) = self.last_ping.lock() {
             *last_ping = Instant::now();
-        }
-        
         Ok(())
-    }
-    
     /// Send pong frame
     pub fn send_pong(&self, data: Vec<u8>) -> NetResult<()> {
         let frame = WebSocketFrame::pong(data);
         self.send_frame(frame)
-    }
-    
     /// Close the connection
     pub fn close(&self, code: CloseCode, reason: &str) -> NetResult<()> {
         // Set state to closing
@@ -545,8 +402,6 @@ impl WebSocketConnection {
         // Store close code
         if let Ok(mut close_code) = self.close_code.lock() {
             *close_code = Some(code);
-        }
-        
         // Send close frame
         let close_frame = WebSocketFrame::close(code, reason);
         let _ = self.send_frame(close_frame);
@@ -554,33 +409,23 @@ impl WebSocketConnection {
         // Set state to closed
         if let Ok(mut state) = self.state.write() {
             *state = ConnectionState::Closed;
-        }
-        
         Ok(())
-    }
-    
     /// Get metadata value
     pub fn get_metadata(&self, key: &str) -> NetResult<Option<String>> {
         let metadata = self.metadata.read()
             .map_err(|e| websocket_error(&format!("Failed to read metadata: {}", e), None, None))?;
         Ok(metadata.get(key).cloned())
-    }
-    
     /// Set metadata value
     pub fn set_metadata(&self, key: String, value: String) -> NetResult<()> {
         let mut metadata = self.metadata.write()
             .map_err(|e| websocket_error(&format!("Failed to write metadata: {}", e), None, None))?;
         metadata.insert(key, value);
         Ok(())
-    }
-    
     /// Start connection threads for reading and writing
     pub fn start_threads(&self, server: Arc<WebSocketServer>) -> NetResult<()> {
         self.start_read_thread(Arc::clone(&server))?;
         self.start_write_thread()?;
         Ok(())
-    }
-    
     /// Start read thread for processing incoming frames
     fn start_read_thread(&self, server: Arc<WebSocketServer>) -> NetResult<()> {
         let socket = Arc::clone(&self.socket);
@@ -600,15 +445,12 @@ impl WebSocketConnection {
                 let frame = match socket.lock() {
                     Ok(socket_guard) => {
                         match WebSocketFrame::from_socket(&*socket_guard) {
-                            Ok(frame) => frame,
                             Err(e) => {
                                 eprintln!("Failed to read frame: {}", e);
                                 break;
                             }
                         }
                     }
-                    Err(_) => break,
-                };
                 
                 // Process frame
                 match frame.opcode {
@@ -643,11 +485,9 @@ impl WebSocketConnection {
                                 String::from_utf8_lossy(&frame.payload[2..]).to_string()
                             } else {
                                 String::new()
-                            };
                             (CloseCode(code), reason)
                         } else {
                             (CloseCode::NO_STATUS_RECEIVED, String::new())
-                        };
                         
                         Self::notify_close(&handlers, connection_id, code, &reason);
                         
@@ -661,8 +501,6 @@ impl WebSocketConnection {
                         // Handle other opcodes (continuation, etc.)
                     }
                 }
-            }
-            
             // Remove connection from server
             let _ = server.remove_connection(connection_id);
         });
@@ -672,8 +510,6 @@ impl WebSocketConnection {
         *read_thread = Some(handle);
         
         Ok(())
-    }
-    
     /// Start write thread for sending queued messages
     fn start_write_thread(&self) -> NetResult<()> {
         let message_queue = Arc::clone(&self.message_queue);
@@ -695,9 +531,6 @@ impl WebSocketConnection {
                         
                         for message in messages {
                             let frame = match message {
-                                WebSocketMessage::Text(text) => WebSocketFrame::text(text),
-                                WebSocketMessage::Binary(data) => WebSocketFrame::binary(data),
-                            };
                             
                             if let Ok(socket_guard) = socket.lock() {
                                 if let Ok(frame_bytes) = frame.to_bytes() {
@@ -706,8 +539,6 @@ impl WebSocketConnection {
                             }
                         }
                     }
-                }
-                
                 thread::sleep(Duration::from_millis(10));
             }
         });
@@ -717,13 +548,8 @@ impl WebSocketConnection {
         *write_thread = Some(handle);
         
         Ok(())
-    }
-    
     /// Notify handlers of message
     fn notify_message(
-        handlers: &Arc<RwLock<Vec<Arc<dyn MessageHandler + Send + Sync>>>>,
-        connection_id: u64,
-        message: &WebSocketMessage,
     ) {
         if let Ok(handlers_guard) = handlers.read() {
             for handler in handlers_guard.iter() {
@@ -731,13 +557,8 @@ impl WebSocketConnection {
                 // let _ = handler.on_message(connection, message);
             }
         }
-    }
-    
     /// Notify handlers of ping
     fn notify_ping(
-        handlers: &Arc<RwLock<Vec<Arc<dyn MessageHandler + Send + Sync>>>>,
-        connection_id: u64,
-        data: &[u8],
     ) {
         if let Ok(handlers_guard) = handlers.read() {
             for handler in handlers_guard.iter() {
@@ -745,13 +566,8 @@ impl WebSocketConnection {
                 // let _ = handler.on_ping(connection, data);
             }
         }
-    }
-    
     /// Notify handlers of pong
     fn notify_pong(
-        handlers: &Arc<RwLock<Vec<Arc<dyn MessageHandler + Send + Sync>>>>,
-        connection_id: u64,
-        data: &[u8],
     ) {
         if let Ok(handlers_guard) = handlers.read() {
             for handler in handlers_guard.iter() {
@@ -759,14 +575,8 @@ impl WebSocketConnection {
                 // let _ = handler.on_pong(connection, data);
             }
         }
-    }
-    
     /// Notify handlers of close
     fn notify_close(
-        handlers: &Arc<RwLock<Vec<Arc<dyn MessageHandler + Send + Sync>>>>,
-        connection_id: u64,
-        code: CloseCode,
-        reason: &str,
     ) {
         if let Ok(handlers_guard) = handlers.read() {
             for handler in handlers_guard.iter() {
@@ -785,8 +595,6 @@ impl MessageHandler for DefaultMessageHandler {
     fn on_connect(&self, connection: &WebSocketConnection) -> NetResult<()> {
         println!("WebSocket connection {} established", connection.id());
         Ok(())
-    }
-    
     fn on_message(&self, connection: &WebSocketConnection, message: &WebSocketMessage) -> NetResult<()> {
         match message {
             WebSocketMessage::Text(text) => {
@@ -797,24 +605,16 @@ impl MessageHandler for DefaultMessageHandler {
             }
         }
         Ok(())
-    }
-    
     fn on_close(&self, connection: &WebSocketConnection, code: CloseCode, reason: &str) -> NetResult<()> {
         println!("Connection {} closed: {} {}", connection.id(), code, reason);
         Ok(())
-    }
-    
     fn on_error(&self, connection: &WebSocketConnection, error: &NetError) -> NetResult<()> {
         println!("Connection {} error: {}", connection.id(), error);
         Ok(())
-    }
-    
     fn on_ping(&self, connection: &WebSocketConnection, data: &[u8]) -> NetResult<()> {
         println!("Connection {}: Received ping: {} bytes", connection.id(), data.len());
         // Auto-respond with pong
         connection.send_pong(data.to_vec())
-    }
-    
     fn on_pong(&self, connection: &WebSocketConnection, data: &[u8]) -> NetResult<()> {
         println!("Connection {}: Received pong: {} bytes", connection.id(), data.len());
         Ok(())

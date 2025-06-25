@@ -12,7 +12,6 @@ use std::thread;
 /// Define a benchmark function
 pub fn Benchmark<F>(name: &str, f: F) -> TestVibesResult<super::BenchmarkResult>
 where
-    F: Fn(&mut VibeBench) -> TestVibesResult<()>,
 {
     // Determine optimal number of iterations
     let iterations = determine_iterations(name, &f)?;
@@ -27,12 +26,9 @@ where
     bench.StopTimer()?;
     
     Ok(bench.result())
-}
-
 /// Benchmark memory usage
 pub fn BenchmarkMemory<F>(name: &str, f: F) -> TestVibesResult<super::BenchmarkResult>
 where
-    F: Fn(&mut VibeBench) -> TestVibesResult<()>,
 {
     // Create benchmark with memory tracking
     let mut bench = VibeBench::new(name, 1000);
@@ -50,7 +46,6 @@ where
         (final_memory - initial_memory) / bench.N
     } else {
         0
-    };
     
     bench.ReportMetric(memory_per_op as f64, "bytes_per_op")?;
     
@@ -58,12 +53,9 @@ where
     result.bytes_per_op = Some(memory_per_op);
     
     Ok(result)
-}
-
 /// Parallel benchmark execution
 pub fn BenchmarkParallel<F>(name: &str, parallelism: usize, f: F) -> TestVibesResult<super::BenchmarkResult>
 where
-    F: Fn(&mut VibeBench) -> TestVibesResult<()> + Send + Sync + Clone + 'static,
 {
     let iterations_per_worker = 1000 / parallelism.max(1);
     let start_time = Instant::now();
@@ -99,76 +91,44 @@ where
                 return Err(super::TestVibesError::BenchmarkFailed("Worker thread panicked".to_string()).into());
             }
         }
-    }
-    
     let total_elapsed = start_time.elapsed();
     let average_ns_per_op = if total_iterations > 0 {
         total_duration.as_nanos() as f64 / total_iterations as f64
     } else {
         0.0
-    };
     
     Ok(super::BenchmarkResult {
-        name: name.to_string(),
-        state: super::VibeBenchState::Completed,
-        iterations: total_iterations,
-        duration: total_elapsed,
-        ns_per_op: average_ns_per_op,
-        bytes_per_op: None,
-        allocations: None,
-        custom_metrics: std::collections::HashMap::new(),
     })
-}
-
 /// Benchmark suite for running multiple benchmarks
 pub struct BenchmarkSuite {
-    name: String,
-    benchmarks: Vec<Box<dyn Fn() -> TestVibesResult<super::BenchmarkResult> + Send + Sync>>,
-    setup: Option<Box<dyn Fn() -> TestVibesResult<()> + Send + Sync>>,
-    teardown: Option<Box<dyn Fn() -> TestVibesResult<()> + Send + Sync>>,
-}
-
 impl BenchmarkSuite {
     /// Create a new benchmark suite
     pub fn new(name: &str) -> Self {
         Self {
-            name: name.to_string(),
-            benchmarks: Vec::new(),
-            setup: None,
-            teardown: None,
         }
     }
 
     /// Add a benchmark to the suite
     pub fn add_benchmark<F>(mut self, name: &str, f: F) -> Self
     where
-        F: Fn(&mut VibeBench) -> TestVibesResult<()> + Send + Sync + 'static,
     {
         let benchmark_name = name.to_string();
         self.benchmarks.push(Box::new(move || {
             Benchmark(&benchmark_name, &f)
         }));
         self
-    }
-
     /// Add setup function
     pub fn with_setup<F>(mut self, setup: F) -> Self
     where
-        F: Fn() -> TestVibesResult<()> + Send + Sync + 'static,
     {
         self.setup = Some(Box::new(setup));
         self
-    }
-
     /// Add teardown function
     pub fn with_teardown<F>(mut self, teardown: F) -> Self
     where
-        F: Fn() -> TestVibesResult<()> + Send + Sync + 'static,
     {
         self.teardown = Some(Box::new(teardown));
         self
-    }
-
     /// Run all benchmarks in the suite
     pub fn run(self) -> TestVibesResult<BenchmarkSuiteResult> {
         println!("Running benchmark suite: {}", self.name);
@@ -176,8 +136,6 @@ impl BenchmarkSuite {
         // Run setup
         if let Some(setup) = &self.setup {
             setup()?;
-        }
-        
         let mut results = Vec::new();
         let suite_start = Instant::now();
         
@@ -196,19 +154,12 @@ impl BenchmarkSuite {
                     return Err(e);
                 }
             }
-        }
-        
         let suite_duration = suite_start.elapsed();
         
         // Run teardown
         if let Some(teardown) = &self.teardown {
             teardown()?;
-        }
-        
         Ok(BenchmarkSuiteResult {
-            suite_name: self.name,
-            results,
-            total_duration: suite_duration,
         })
     }
 }
@@ -216,11 +167,6 @@ impl BenchmarkSuite {
 /// Results from running a benchmark suite
 #[derive(Debug)]
 pub struct BenchmarkSuiteResult {
-    pub suite_name: String,
-    pub results: Vec<super::BenchmarkResult>,
-    pub total_duration: Duration,
-}
-
 impl BenchmarkSuiteResult {
     /// Print a formatted report
     pub fn print_report(&self) {
@@ -231,14 +177,10 @@ impl BenchmarkSuiteResult {
         // Print individual results
         for result in &self.results {
             println!("{:<30} {:>15} iterations {:>15.2} ns/op", 
-                     result.name, 
-                     result.iterations, 
                      result.ns_per_op);
             
             if let Some(bytes) = result.bytes_per_op {
                 println!("{:<30} {:>15} bytes/op", "", bytes);
-            }
-            
             for (metric, value) in &result.custom_metrics {
                 println!("{:<30} {:>15.2} {}", "", value, metric);
             }
@@ -260,8 +202,6 @@ impl BenchmarkSuiteResult {
     /// Get the fastest benchmark
     pub fn fastest(&self) -> Option<&super::BenchmarkResult> {
         self.results.iter().min_by(|a, b| a.ns_per_op.partial_cmp(&b.ns_per_op).unwrap())
-    }
-
     /// Get the slowest benchmark
     pub fn slowest(&self) -> Option<&super::BenchmarkResult> {
         self.results.iter().max_by(|a, b| a.ns_per_op.partial_cmp(&b.ns_per_op).unwrap())
@@ -270,10 +210,6 @@ impl BenchmarkSuiteResult {
 
 /// Benchmark comparison utilities
 pub struct BenchmarkComparison {
-    baseline: super::BenchmarkResult,
-    comparison: super::BenchmarkResult,
-}
-
 impl BenchmarkComparison {
     /// Create a new comparison
     pub fn new(baseline: super::BenchmarkResult, comparison: super::BenchmarkResult) -> Self {
@@ -293,13 +229,9 @@ impl BenchmarkComparison {
     pub fn percentage_change(&self) -> f64 {
         let ratio = self.performance_ratio();
         (ratio - 1.0) * 100.0
-    }
-
     /// Check if comparison is faster
     pub fn is_faster(&self) -> bool {
         self.comparison.ns_per_op < self.baseline.ns_per_op
-    }
-
     /// Print comparison report
     pub fn print_comparison(&self) {
         let ratio = self.performance_ratio();
@@ -316,14 +248,11 @@ impl BenchmarkComparison {
             println!("  Result: {:.1}% slower", percentage);
         }
     }
-}
-
 // Helper functions
 
 /// Determine optimal number of iterations for a benchmark
 fn determine_iterations<F>(_name: &str, f: &F) -> TestVibesResult<usize>
 where
-    F: Fn(&mut VibeBench) -> TestVibesResult<()>,
 {
     // Start with a small number to estimate timing
     let mut test_bench = VibeBench::new("calibration", 10);
@@ -360,8 +289,6 @@ fn get_memory_usage() -> usize {
     let variation = (hasher.finish() % (9 * 1024 * 1024)) as usize; // 0-9MB variation
     
     base_memory + variation
-}
-
 // Common benchmark scenarios
 
 /// Benchmark string operations
@@ -386,8 +313,6 @@ pub fn benchmark_string_operations() -> TestVibesResult<BenchmarkSuiteResult> {
             Ok(())
         })
         .run()
-}
-
 /// Benchmark collection operations
 pub fn benchmark_collection_operations() -> TestVibesResult<BenchmarkSuiteResult> {
     BenchmarkSuite::new("Collection Operations")
@@ -418,5 +343,3 @@ pub fn benchmark_collection_operations() -> TestVibesResult<BenchmarkSuiteResult
             Ok(())
         })
         .run()
-}
-

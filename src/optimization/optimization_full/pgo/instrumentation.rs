@@ -13,61 +13,31 @@ use std::collections::HashMap;
 use std::time::Duration;
 use tracing::{debug, info, warn, error, instrument};
 use inkwell::{
-    context::Context,
-    module::Module,
-    values::{FunctionValue, InstructionValue, BasicValue, BasicValueEnum},
-    basic_block::BasicBlock,
-    builder::Builder,
-    types::{IntType, PointerType, BasicTypeEnum},
-    AddressSpace,
-    IntPredicate,
-};
+// };
 
 /// Profile instrumentation system for code generation
 pub struct ProfileInstrumentation<'ctx> {
     /// LLVM context
-    context: &'ctx Context,
     /// Instrumentation configuration
-    config: InstrumentationConfig,
     /// Counter instrumentation
-    counter_instrumentation: CounterInstrumentation<'ctx>,
     /// Timing instrumentation
-    timing_instrumentation: TimingInstrumentation<'ctx>,
     /// Edge instrumentation
-    edge_instrumentation: EdgeInstrumentation<'ctx>,
     /// Memory access instrumentation
-    memory_instrumentation: MemoryInstrumentation<'ctx>,
     /// Instrumentation statistics
-    statistics: InstrumentationStatistics,
-}
-
 /// Configuration for instrumentation
 #[derive(Debug, Clone)]
 pub struct InstrumentationConfig {
     /// Enable counter instrumentation
-    pub enable_counters: bool,
     /// Enable timing instrumentation
-    pub enable_timing: bool,
     /// Enable edge instrumentation
-    pub enable_edges: bool,
     /// Enable memory instrumentation
-    pub enable_memory: bool,
     /// Instrumentation sampling rate (0.0 to 1.0)
-    pub sampling_rate: f64,
     /// Maximum instrumentation overhead percentage
-    pub max_overhead: f64,
     /// Instrumentation safety level
-    pub safety_level: InstrumentationSafetyLevel,
     /// Enable debug instrumentation
-    pub enable_debug: bool,
     /// Instrumentation buffer size
-    pub buffer_size: usize,
     /// Flush interval for instrumentation data
-    pub flush_interval: Duration,
     /// Enable thread-safe instrumentation
-    pub thread_safe: bool,
-}
-
 /// Instrumentation safety levels
 #[derive(Debug, Clone, Copy)]
 pub enum InstrumentationSafetyLevel {
@@ -75,26 +45,14 @@ pub enum InstrumentationSafetyLevel {
     Basic,     // Standard instrumentation
     Detailed,  // Comprehensive instrumentation
     Extensive, // Maximum instrumentation coverage
-}
-
 impl Default for InstrumentationConfig {
     fn default() -> Self {
         Self {
-            enable_counters: true,
-            enable_timing: true,
-            enable_edges: true,
             enable_memory: false, // Disabled by default due to overhead
-            sampling_rate: 1.0,
             max_overhead: 0.1, // 10% overhead limit
-            safety_level: InstrumentationSafetyLevel::Basic,
-            enable_debug: false,
             buffer_size: 65536, // 64KB buffer
-            flush_interval: Duration::from_secs(1),
-            thread_safe: true,
         }
     }
-}
-
 impl InstrumentationConfig {
     /// Create config from PGO system config
     pub fn from_pgo_config(pgo_config: &PgoSystemConfig) -> Self {
@@ -136,37 +94,16 @@ impl InstrumentationConfig {
 /// Types of instrumentation
 #[derive(Debug, Clone, Copy)]
 pub enum InstrumentationType {
-    FunctionEntry,
-    FunctionExit,
-    BasicBlockEntry,
-    BranchTaken,
-    BranchNotTaken,
-    LoopEntry,
-    LoopExit,
-    MemoryLoad,
-    MemoryStore,
-    CallSite,
-}
-
 /// Instrumentation statistics
 #[derive(Debug, Clone, Default)]
 pub struct InstrumentationStatistics {
     /// Total instrumentation points added
-    pub total_instrumentation_points: usize,
     /// Instrumentation points by type
-    pub points_by_type: HashMap<String, usize>,
     /// Estimated overhead percentage
-    pub estimated_overhead: f64,
     /// Instrumentation time
-    pub instrumentation_time: Duration,
     /// Memory usage for instrumentation
-    pub memory_usage: usize,
     /// Functions instrumented
-    pub functions_instrumented: usize,
     /// Basic blocks instrumented
-    pub basic_blocks_instrumented: usize,
-}
-
 impl<'ctx> ProfileInstrumentation<'ctx> {
     /// Create new profile instrumentation system
     #[instrument(skip(context, config))]
@@ -179,16 +116,7 @@ impl<'ctx> ProfileInstrumentation<'ctx> {
         let memory_instrumentation = MemoryInstrumentation::new(context, &config)?;
 
         Ok(Self {
-            context,
-            config,
-            counter_instrumentation,
-            timing_instrumentation,
-            edge_instrumentation,
-            memory_instrumentation,
-            statistics: InstrumentationStatistics::default(),
         })
-    }
-
     /// Prepare instrumentation for profile collection
     #[instrument(skip(self))]
     pub fn prepare_for_collection(&mut self) -> Result<()> {
@@ -197,24 +125,14 @@ impl<'ctx> ProfileInstrumentation<'ctx> {
         // Initialize runtime data structures
         if self.config.enable_counters {
             self.counter_instrumentation.initialize()?;
-        }
-
         if self.config.enable_timing {
             self.timing_instrumentation.initialize()?;
-        }
-
         if self.config.enable_edges {
             self.edge_instrumentation.initialize()?;
-        }
-
         if self.config.enable_memory {
             self.memory_instrumentation.initialize()?;
-        }
-
         debug!("Instrumentation preparation completed");
         Ok(())
-    }
-
     /// Instrument a module for profile collection
     #[instrument(skip(self, module))]
     pub fn instrument_module(&mut self, module: &Module<'ctx>) -> Result<usize> {
@@ -226,23 +144,16 @@ impl<'ctx> ProfileInstrumentation<'ctx> {
         // Instrument each function in the module
         for function in module.get_functions() {
             total_instrumentation_points += self.instrument_function(&function)?;
-        }
-
         // Update statistics
         self.statistics.total_instrumentation_points += total_instrumentation_points;
         self.statistics.instrumentation_time += start_time.elapsed();
         self.statistics.estimated_overhead = self.calculate_estimated_overhead(total_instrumentation_points);
 
         info!(
-            instrumentation_points = total_instrumentation_points,
-            instrumentation_time = ?start_time.elapsed(),
-            estimated_overhead = %self.statistics.estimated_overhead,
             "Module instrumentation completed"
         );
 
         Ok(total_instrumentation_points)
-    }
-
     /// Instrument a function for profile collection
     #[instrument(skip(self, function))]
     pub fn instrument_function(&mut self, function: &FunctionValue<'ctx>) -> Result<usize> {
@@ -254,36 +165,24 @@ impl<'ctx> ProfileInstrumentation<'ctx> {
         // Check if function should be instrumented based on sampling rate
         if !self.should_instrument_function(function) {
             return Ok(0);
-        }
-
         let builder = self.context.create_builder();
 
         // Instrument function entry
         if self.config.enable_counters || self.config.enable_timing {
             instrumentation_points += self.instrument_function_entry(function, &builder)?;
-        }
-
         // Instrument basic blocks
         for basic_block in function.get_basic_blocks() {
             instrumentation_points += self.instrument_basic_block(&basic_block, &builder)?;
-        }
-
         // Instrument function exit
         if self.config.enable_counters || self.config.enable_timing {
             instrumentation_points += self.instrument_function_exit(function, &builder)?;
-        }
-
         self.statistics.functions_instrumented += 1;
         debug!("Instrumented function '{}' with {} points", function_name, instrumentation_points);
 
         Ok(instrumentation_points)
-    }
-
     /// Get instrumentation statistics
     pub fn get_statistics(&self) -> InstrumentationStatistics {
         self.statistics.clone()
-    }
-
     // Private helper methods
 
     fn should_instrument_function(&self, function: &FunctionValue<'ctx>) -> bool {
@@ -324,8 +223,6 @@ impl<'ctx> ProfileInstrumentation<'ctx> {
                 true
             }
         }
-    }
-
     fn instrument_function_entry(&mut self, function: &FunctionValue<'ctx>, builder: &Builder<'ctx>) -> Result<usize> {
         let mut instrumentation_points = 0;
 
@@ -337,8 +234,6 @@ impl<'ctx> ProfileInstrumentation<'ctx> {
             if self.config.enable_counters {
                 self.counter_instrumentation.add_function_entry_counter(function, builder)?;
                 instrumentation_points += 1;
-            }
-
             // Add timing instrumentation
             if self.config.enable_timing {
                 self.timing_instrumentation.add_function_entry_timer(function, builder)?;
@@ -347,8 +242,6 @@ impl<'ctx> ProfileInstrumentation<'ctx> {
         }
 
         Ok(instrumentation_points)
-    }
-
     fn instrument_function_exit(&mut self, function: &FunctionValue<'ctx>, builder: &Builder<'ctx>) -> Result<usize> {
         let mut instrumentation_points = 0;
 
@@ -369,8 +262,6 @@ impl<'ctx> ProfileInstrumentation<'ctx> {
         }
 
         Ok(instrumentation_points)
-    }
-
     fn instrument_basic_block(&mut self, basic_block: &BasicBlock<'ctx>, builder: &Builder<'ctx>) -> Result<usize> {
         let mut instrumentation_points = 0;
 
@@ -382,8 +273,6 @@ impl<'ctx> ProfileInstrumentation<'ctx> {
             if self.config.enable_counters {
                 self.counter_instrumentation.add_basic_block_counter(basic_block, builder)?;
                 instrumentation_points += 1;
-            }
-
             // Add edge instrumentation for branches
             if self.config.enable_edges {
                 if let Some(terminator) = basic_block.get_terminator() {
@@ -391,8 +280,6 @@ impl<'ctx> ProfileInstrumentation<'ctx> {
                         instrumentation_points += self.edge_instrumentation.add_branch_instrumentation(&terminator, builder)?;
                     }
                 }
-            }
-
             // Add memory instrumentation
             if self.config.enable_memory {
                 for instruction in basic_block.get_instructions() {
@@ -408,8 +295,6 @@ impl<'ctx> ProfileInstrumentation<'ctx> {
 
         self.statistics.basic_blocks_instrumented += 1;
         Ok(instrumentation_points)
-    }
-
     fn calculate_estimated_overhead(&self, instrumentation_points: usize) -> f64 {
         // Estimate overhead based on instrumentation points and types
         let base_overhead_per_point = 0.001; // 0.1% per instrumentation point
@@ -417,11 +302,6 @@ impl<'ctx> ProfileInstrumentation<'ctx> {
 
         // Apply safety level multiplier
         let safety_multiplier = match self.config.safety_level {
-            InstrumentationSafetyLevel::Minimal => 0.5,
-            InstrumentationSafetyLevel::Basic => 1.0,
-            InstrumentationSafetyLevel::Detailed => 1.5,
-            InstrumentationSafetyLevel::Extensive => 2.0,
-        };
 
         (overhead * safety_multiplier).min(self.config.max_overhead)
     }
@@ -429,28 +309,14 @@ impl<'ctx> ProfileInstrumentation<'ctx> {
 
 /// Counter instrumentation for tracking execution frequency
 pub struct CounterInstrumentation<'ctx> {
-    context: &'ctx Context,
-    config: InstrumentationConfig,
-    counter_arrays: HashMap<String, inkwell::values::GlobalValue<'ctx>>,
-    counter_indices: HashMap<String, usize>,
-}
-
 impl<'ctx> CounterInstrumentation<'ctx> {
     pub fn new(context: &'ctx Context, config: &InstrumentationConfig) -> Result<Self> {
         Ok(Self {
-            context,
-            config: config.clone(),
-            counter_arrays: HashMap::new(),
-            counter_indices: HashMap::new(),
         })
-    }
-
     pub fn initialize(&mut self) -> Result<()> {
         debug!("Initializing counter instrumentation");
         // Initialize global counter arrays
         Ok(())
-    }
-
     pub fn add_function_entry_counter(&mut self, function: &FunctionValue<'ctx>, builder: &Builder<'ctx>) -> Result<()> {
         let function_name = function.get_name().to_str().unwrap_or("unknown");
         
@@ -462,8 +328,6 @@ impl<'ctx> CounterInstrumentation<'ctx> {
         
         debug!("Added function entry counter for '{}'", function_name);
         Ok(())
-    }
-
     pub fn add_basic_block_counter(&mut self, basic_block: &BasicBlock<'ctx>, builder: &Builder<'ctx>) -> Result<()> {
         let block_name = basic_block.get_name().to_str().unwrap_or("unknown");
         
@@ -475,8 +339,6 @@ impl<'ctx> CounterInstrumentation<'ctx> {
         
         debug!("Added basic block counter for '{}'", block_name);
         Ok(())
-    }
-
     fn get_or_create_counter_index(&mut self, counter_name: &str) -> usize {
         if let Some(&index) = self.counter_indices.get(counter_name) {
             index
@@ -501,26 +363,14 @@ impl<'ctx> CounterInstrumentation<'ctx> {
 
 /// Timing instrumentation for measuring execution time
 pub struct TimingInstrumentation<'ctx> {
-    context: &'ctx Context,
-    config: InstrumentationConfig,
-    timer_storage: HashMap<String, inkwell::values::GlobalValue<'ctx>>,
-}
-
 impl<'ctx> TimingInstrumentation<'ctx> {
     pub fn new(context: &'ctx Context, config: &InstrumentationConfig) -> Result<Self> {
         Ok(Self {
-            context,
-            config: config.clone(),
-            timer_storage: HashMap::new(),
         })
-    }
-
     pub fn initialize(&mut self) -> Result<()> {
         debug!("Initializing timing instrumentation");
         // Initialize timing data structures
         Ok(())
-    }
-
     pub fn add_function_entry_timer(&mut self, function: &FunctionValue<'ctx>, builder: &Builder<'ctx>) -> Result<()> {
         let function_name = function.get_name().to_str().unwrap_or("unknown");
         
@@ -529,8 +379,6 @@ impl<'ctx> TimingInstrumentation<'ctx> {
         
         debug!("Added function entry timer for '{}'", function_name);
         Ok(())
-    }
-
     pub fn add_function_exit_timer(&mut self, function: &FunctionValue<'ctx>, builder: &Builder<'ctx>) -> Result<()> {
         let function_name = function.get_name().to_str().unwrap_or("unknown");
         
@@ -539,8 +387,6 @@ impl<'ctx> TimingInstrumentation<'ctx> {
         
         debug!("Added function exit timer for '{}'", function_name);
         Ok(())
-    }
-
     fn generate_timestamp_recording(&self, timer_name: &str, builder: &Builder<'ctx>) -> Result<()> {
         // In a real implementation, this would generate LLVM IR to:
         // 1. Call a timestamp function (like rdtsc or clock_gettime)
@@ -548,8 +394,6 @@ impl<'ctx> TimingInstrumentation<'ctx> {
         
         debug!("Generated timestamp recording for '{}'", timer_name);
         Ok(())
-    }
-
     fn generate_duration_calculation(&self, timer_name: &str, builder: &Builder<'ctx>) -> Result<()> {
         // In a real implementation, this would generate LLVM IR to:
         // 1. Get current timestamp
@@ -563,26 +407,14 @@ impl<'ctx> TimingInstrumentation<'ctx> {
 
 /// Edge instrumentation for branch prediction analysis
 pub struct EdgeInstrumentation<'ctx> {
-    context: &'ctx Context,
-    config: InstrumentationConfig,
-    edge_counters: HashMap<String, usize>,
-}
-
 impl<'ctx> EdgeInstrumentation<'ctx> {
     pub fn new(context: &'ctx Context, config: &InstrumentationConfig) -> Result<Self> {
         Ok(Self {
-            context,
-            config: config.clone(),
-            edge_counters: HashMap::new(),
         })
-    }
-
     pub fn initialize(&mut self) -> Result<()> {
         debug!("Initializing edge instrumentation");
         // Initialize edge tracking data structures
         Ok(())
-    }
-
     pub fn add_branch_instrumentation(&mut self, branch_instruction: &InstructionValue<'ctx>, builder: &Builder<'ctx>) -> Result<usize> {
         // Analyze the branch instruction and add appropriate instrumentation
         let branch_id = format!("branch_{:p}", branch_instruction as *const _);
@@ -592,8 +424,6 @@ impl<'ctx> EdgeInstrumentation<'ctx> {
         
         debug!("Added branch instrumentation for branch '{}'", branch_id);
         Ok(instrumentation_points)
-    }
-
     fn instrument_branch_paths(&mut self, branch_id: &str, branch_instruction: &InstructionValue<'ctx>, builder: &Builder<'ctx>) -> Result<usize> {
         // In a real implementation, this would:
         // 1. Analyze the branch instruction to determine targets
@@ -605,8 +435,6 @@ impl<'ctx> EdgeInstrumentation<'ctx> {
         
         debug!("Instrumented branch paths: taken={}, not_taken={}", taken_counter, not_taken_counter);
         Ok(2) // Two instrumentation points added
-    }
-
     fn get_or_create_edge_counter(&mut self, edge_name: &str) -> usize {
         if let Some(&counter) = self.edge_counters.get(edge_name) {
             counter
@@ -616,45 +444,25 @@ impl<'ctx> EdgeInstrumentation<'ctx> {
             counter
         }
     }
-}
-
 /// Memory access instrumentation for cache behavior analysis
 pub struct MemoryInstrumentation<'ctx> {
-    context: &'ctx Context,
-    config: InstrumentationConfig,
-    memory_access_trackers: HashMap<String, usize>,
-}
-
 impl<'ctx> MemoryInstrumentation<'ctx> {
     pub fn new(context: &'ctx Context, config: &InstrumentationConfig) -> Result<Self> {
         Ok(Self {
-            context,
-            config: config.clone(),
-            memory_access_trackers: HashMap::new(),
         })
-    }
-
     pub fn initialize(&mut self) -> Result<()> {
         debug!("Initializing memory access instrumentation");
         // Initialize memory tracking data structures
         Ok(())
-    }
-
     pub fn add_memory_access_instrumentation(&mut self, memory_instruction: &InstructionValue<'ctx>, builder: &Builder<'ctx>) -> Result<()> {
         let access_id = format!("mem_{:p}", memory_instruction as *const _);
         let access_type = match memory_instruction.get_opcode() {
-            inkwell::values::InstructionOpcode::Load => "load",
-            inkwell::values::InstructionOpcode::Store => "store",
-            _ => "unknown",
-        };
         
         // Add memory access tracking
         self.instrument_memory_access(&access_id, access_type, memory_instruction, builder)?;
         
         debug!("Added memory access instrumentation for '{}' ({})", access_id, access_type);
         Ok(())
-    }
-
     fn instrument_memory_access(&mut self, access_id: &str, access_type: &str, memory_instruction: &InstructionValue<'ctx>, builder: &Builder<'ctx>) -> Result<()> {
         // In a real implementation, this would:
         // 1. Extract memory address and size from the instruction
@@ -665,8 +473,6 @@ impl<'ctx> MemoryInstrumentation<'ctx> {
         
         debug!("Instrumented memory access: {} (tracker_id={})", access_id, tracker_id);
         Ok(())
-    }
-
     fn get_or_create_memory_tracker(&mut self, tracker_name: &str) -> usize {
         if let Some(&tracker) = self.memory_access_trackers.get(tracker_name) {
             tracker
@@ -676,27 +482,17 @@ impl<'ctx> MemoryInstrumentation<'ctx> {
             tracker
         }
     }
-}
-
 /// Instrumentation pass for adding profile collection code
 pub struct InstrumentationPass<'ctx> {
-    instrumentation: ProfileInstrumentation<'ctx>,
-}
-
 impl<'ctx> InstrumentationPass<'ctx> {
     pub fn new(context: &'ctx Context, config: InstrumentationConfig) -> Result<Self> {
         let instrumentation = ProfileInstrumentation::new(context, config)?;
         
         Ok(Self {
-            instrumentation,
         })
-    }
-
     /// Run instrumentation pass on a module
     pub fn run_on_module(&mut self, module: &Module<'ctx>) -> Result<usize> {
         self.instrumentation.instrument_module(module)
-    }
-
     /// Get instrumentation statistics
     pub fn get_statistics(&self) -> InstrumentationStatistics {
         self.instrumentation.get_statistics()
@@ -722,8 +518,6 @@ extern "C" {
     
     /// Flush profile data
     fn cursed_profile_flush();
-}
-
 /// Helper functions for profile data collection
 impl<'ctx> ProfileInstrumentation<'ctx> {
     /// Generate call to runtime function entry recorder
@@ -731,22 +525,16 @@ impl<'ctx> ProfileInstrumentation<'ctx> {
         // In a real implementation, would generate LLVM call instruction
         debug!("Generated function entry call for function_id: {}", function_id);
         Ok(())
-    }
-
     /// Generate call to runtime function exit recorder
     pub fn generate_function_exit_call(&self, function_id: u32, builder: &Builder<'ctx>) -> Result<()> {
         // In a real implementation, would generate LLVM call instruction
         debug!("Generated function exit call for function_id: {}", function_id);
         Ok(())
-    }
-
     /// Generate call to runtime branch recorder
     pub fn generate_branch_call(&self, branch_id: u32, taken: bool, builder: &Builder<'ctx>) -> Result<()> {
         // In a real implementation, would generate LLVM call instruction
         debug!("Generated branch call for branch_id: {}, taken: {}", branch_id, taken);
         Ok(())
-    }
-
     /// Generate call to runtime memory access recorder
     pub fn generate_memory_access_call(&self, address: u64, size: u32, access_type: u32, builder: &Builder<'ctx>) -> Result<()> {
         // In a real implementation, would generate LLVM call instruction

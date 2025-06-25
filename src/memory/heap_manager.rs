@@ -30,17 +30,10 @@ use crate::error::CursedError;
 #[derive(Debug)]
 pub struct MemoryBlock {
     /// Pointer to the start of the block
-    pub ptr: NonNull<u8>,
     /// Total size of the block in bytes
-    pub size: usize,
     /// Number of bytes currently used
-    pub used: usize,
     /// Next free offset for bump allocation
-    pub next_free: usize,
     /// Block ID for debugging
-    pub id: u32,
-}
-
 impl MemoryBlock {
     /// Allocate a new memory block from the system
     /// 
@@ -50,8 +43,6 @@ impl MemoryBlock {
     pub fn new(size: usize, id: u32) -> Result<Self, String> {
         if size == 0 {
             return Err("Cannot allocate zero-sized memory block".to_string());
-        }
-        
         // Ensure size is properly aligned
         let aligned_size = (size + 7) & !7; // 8-byte alignment
         
@@ -61,22 +52,13 @@ impl MemoryBlock {
         let ptr = unsafe { alloc(layout) };
         if ptr.is_null() {
             return Err(format!("Failed to allocate {} bytes from system", aligned_size));
-        }
-        
         let non_null_ptr = NonNull::new(ptr)
             .ok_or("System allocator returned null pointer")?;
         
         debug!("Allocated memory block {} of {} bytes at {:p}", id, aligned_size, ptr);
         
         Ok(Self {
-            ptr: non_null_ptr,
-            size: aligned_size,
-            used: 0,
-            next_free: 0,
-            id,
         })
-    }
-    
     /// Try to allocate space within this block
     /// 
     /// Returns the offset within the block if successful, or None if
@@ -85,32 +67,23 @@ impl MemoryBlock {
     pub fn try_allocate(&mut self, size: usize, align: usize) -> Option<usize> {
         if size == 0 {
             return None;
-        }
-        
         // Calculate aligned offset
         let aligned_offset = (self.next_free + align - 1) & !(align - 1);
         
         // Check if allocation fits
         if aligned_offset + size > self.size {
-            debug!("Block {} cannot fit {} bytes (need {}, have {})", 
                    self.id, size, aligned_offset + size, self.size);
             return None;
-        }
-        
         // Update block state
         self.next_free = aligned_offset + size;
         self.used += size;
         
         debug!("Allocated {} bytes at offset {} in block {}", size, aligned_offset, self.id);
         Some(aligned_offset)
-    }
-    
     /// Get pointer to allocated space at given offset
     pub fn ptr_at_offset(&self, offset: usize) -> Result<NonNull<u8>, String> {
         if offset >= self.size {
             return Err(format!("Offset {} exceeds block size {}", offset, self.size));
-        }
-        
         unsafe {
             let ptr = self.ptr.as_ptr().add(offset);
             NonNull::new(ptr).ok_or("Computed null pointer".to_string())
@@ -120,8 +93,6 @@ impl MemoryBlock {
     /// Get remaining free space in this block
     pub fn free_space(&self) -> usize {
         self.size - self.next_free
-    }
-    
     /// Get utilization percentage
     pub fn utilization(&self) -> f64 {
         if self.size == 0 {
@@ -147,8 +118,6 @@ impl Drop for MemoryBlock {
         
         unsafe {
             dealloc(self.ptr.as_ptr(), layout);
-        }
-        
         debug!("Deallocated memory block {} of {} bytes", self.id, self.size);
     }
 }
@@ -158,144 +127,74 @@ impl Drop for MemoryBlock {
 // 2. All other fields (usize, u32) are Copy and Send
 // 3. The memory pointed to is heap-allocated and owned by this block
 // 4. Access is coordinated through the heap manager's locking
-unsafe impl Send for MemoryBlock {}
-
 // Safety: MemoryBlock is safe to share between threads because:
 // 1. All mutation is coordinated through the heap manager's RwLock
 // 2. The NonNull<u8> pointer is stable (doesn't change once allocated)
 // 3. Field access is atomic or protected by the containing lock
-unsafe impl Sync for MemoryBlock {}
-
 /// Configuration for heap manager behavior
 #[derive(Debug, Clone)]
 pub struct HeapConfig {
     /// Default size for new memory blocks
-    pub default_block_size: usize,
     /// Maximum number of blocks to maintain
-    pub max_blocks: usize,
     /// Minimum block utilization before compaction
-    pub min_utilization: f64,
     /// Enable memory profiling integration
-    pub enable_profiling: bool,
     /// Memory pressure threshold (percentage of capacity)
-    pub pressure_threshold: f64,
     /// Adaptive allocation growth factor
-    pub growth_factor: f64,
     /// Maximum single allocation size relative to block size
-    pub max_allocation_ratio: f64,
     /// GC trigger threshold (percentage of heap usage)
-    pub gc_trigger_threshold: f64,
-}
-
 /// Memory pressure levels for adaptive allocation
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum MemoryPressure {
-    Low,
-    Medium,
-    High,
-    Critical,
-}
-
 /// Allocation strategy based on current memory conditions
 #[derive(Debug, Clone, Copy)]
 pub enum AllocationStrategy {
     /// Standard bump allocation
-    BumpAllocator,
     /// Best-fit allocation to reduce fragmentation
-    BestFit,
     /// Compact existing blocks before allocating
-    CompactFirst,
-}
-
 impl Default for HeapConfig {
     fn default() -> Self {
         Self {
             default_block_size: 1024 * 1024, // 1MB default blocks
-            max_blocks: 64,
             min_utilization: 0.5, // 50% minimum utilization
-            enable_profiling: true,
             pressure_threshold: 0.8, // 80% capacity triggers pressure
             growth_factor: 1.5, // 50% growth when expanding
             max_allocation_ratio: 0.5, // Max 50% of block size per allocation
             gc_trigger_threshold: 0.75, // Trigger GC at 75% heap usage
         }
     }
-}
-
 /// Information about an allocated object in the heap
 #[derive(Debug, Clone)]
 pub struct AllocationInfo {
     /// Object identifier
-    pub object_id: ObjectId,
     /// Block where object is allocated
-    pub block_id: u32,
     /// Offset within the block
-    pub offset: usize,
     /// Size of the allocation
-    pub size: usize,
     /// Pointer to the allocated memory
-    pub ptr: NonNull<u8>,
-}
-
 // Safety: AllocationInfo is safe to send between threads because:
 // 1. ObjectId is Copy and thread-safe
 // 2. u32 and usize are Copy and Send
 // 3. NonNull<u8> points to heap-allocated memory that is owned by the heap manager
 // 4. Access to the pointed memory is coordinated through the heap manager's locks
 // 5. The pointer remains valid as long as the object is tracked in the heap manager
-unsafe impl Send for AllocationInfo {}
-
 // Safety: AllocationInfo is safe to share between threads because:
 // 1. All fields are either Copy or have stable addresses (NonNull<u8>)
 // 2. The NonNull<u8> pointer doesn't change once allocated
 // 3. Access to the memory is coordinated through heap manager synchronization
 // 4. The struct itself is immutable after creation (only read operations)
-unsafe impl Sync for AllocationInfo {}
-
 /// Allocation metrics for performance monitoring
 #[derive(Debug, Clone)]
 pub struct AllocationMetrics {
-    pub total_allocations: u64,
-    pub total_deallocations: u64,
-    pub bytes_allocated: u64,
-    pub bytes_deallocated: u64,
-    pub allocation_failures: u64,
-    pub average_allocation_time: Duration,
-    pub peak_memory_usage: usize,
-    pub gc_triggers: u64,
-    pub compaction_events: u64,
-}
-
 impl Default for AllocationMetrics {
     fn default() -> Self {
         Self {
-            total_allocations: 0,
-            total_deallocations: 0,
-            bytes_allocated: 0,
-            bytes_deallocated: 0,
-            allocation_failures: 0,
-            average_allocation_time: Duration::from_nanos(0),
-            peak_memory_usage: 0,
-            gc_triggers: 0,
-            compaction_events: 0,
         }
     }
-}
-
 /// Recent allocation history for adaptive strategies
 #[derive(Debug)]
 struct AllocationHistory {
-    recent_allocations: VecDeque<(Instant, usize)>,
-    recent_failures: VecDeque<Instant>,
-    pressure_events: VecDeque<(Instant, MemoryPressure)>,
-}
-
 impl AllocationHistory {
     fn new() -> Self {
         Self {
-            recent_allocations: VecDeque::with_capacity(1000),
-            recent_failures: VecDeque::with_capacity(100),
-            pressure_events: VecDeque::with_capacity(100),
         }
     }
     
@@ -330,8 +229,6 @@ impl AllocationHistory {
             .filter(|(time, _)| *time > cutoff)
             .count();
         recent_count as f64 / window.as_secs_f64()
-    }
-    
     fn get_failure_rate(&self, window: Duration) -> f64 {
         let cutoff = Instant::now() - window;
         let recent_failures = self.recent_failures
@@ -349,45 +246,22 @@ impl AllocationHistory {
 #[derive(Debug)]
 pub struct HeapManager {
     /// Configuration for heap behavior
-    config: HeapConfig,
     /// Active memory blocks
-    blocks: RwLock<Vec<MemoryBlock>>,
     /// Next block ID to assign
-    next_block_id: Mutex<u32>,
     /// Object ID generator
-    id_generator: ObjectIdGenerator,
     /// Object registry for metadata tracking
-    object_registry: SharedObjectRegistry,
     /// Allocation tracking for objects
-    allocations: RwLock<HashMap<ObjectId, AllocationInfo>>,
     /// Memory profiler (optional)
-    profiler: Option<Arc<MemoryProfiler>>,
     /// Allocation metrics for monitoring
-    metrics: RwLock<AllocationMetrics>,
     /// Allocation history for adaptive strategies
-    history: RwLock<AllocationHistory>,
     /// Current memory pressure level
-    pressure_level: RwLock<MemoryPressure>,
-}
-
 impl HeapManager {
     /// Create a new heap manager with the given configuration
     #[instrument]
     pub fn new(config: HeapConfig, object_registry: SharedObjectRegistry) -> Self {
-        info!("Creating heap manager with {} byte blocks, max {} blocks", 
               config.default_block_size, config.max_blocks);
         
         Self {
-            config,
-            blocks: RwLock::new(Vec::new()),
-            next_block_id: Mutex::new(1),
-            id_generator: ObjectIdGenerator::new(),
-            object_registry,
-            allocations: RwLock::new(HashMap::new()),
-            profiler: None,
-            metrics: RwLock::new(AllocationMetrics::default()),
-            history: RwLock::new(AllocationHistory::new()),
-            pressure_level: RwLock::new(MemoryPressure::Low),
         }
     }
     
@@ -409,8 +283,6 @@ impl HeapManager {
         
         if size == 0 {
             return Err("Cannot allocate zero bytes".to_string());
-        }
-        
         // Check memory pressure and possibly trigger GC
         self.check_memory_pressure()?;
         
@@ -425,14 +297,10 @@ impl HeapManager {
         let result = match strategy {
             AllocationStrategy::BumpAllocator => {
                 self.allocate_with_bump_strategy(object_id, size, align, type_name)
-            },
             AllocationStrategy::BestFit => {
                 self.allocate_with_best_fit_strategy(object_id, size, align, type_name)
-            },
             AllocationStrategy::CompactFirst => {
                 self.allocate_with_compaction_strategy(object_id, size, align, type_name)
-            },
-        };
         
         // Update metrics
         let allocation_time = start_time.elapsed();
@@ -444,7 +312,6 @@ impl HeapManager {
                     history.record_allocation(size);
                 }
                 Ok((id, ptr))
-            },
             Err(e) => {
                 if let Ok(mut history) = self.history.write() {
                     history.record_failure();
@@ -452,8 +319,6 @@ impl HeapManager {
                 Err(e)
             }
         }
-    }
-    
     /// Determine the best allocation strategy based on current conditions
     fn determine_allocation_strategy(&self, size: usize) -> Result<AllocationStrategy, String> {
         let pressure = *self.pressure_level.read()
@@ -462,10 +327,7 @@ impl HeapManager {
         // Check if allocation is too large for normal strategy
         if size > (self.config.default_block_size as f64 * self.config.max_allocation_ratio) as usize {
             return Ok(AllocationStrategy::BestFit);
-        }
-        
         match pressure {
-            MemoryPressure::Low => Ok(AllocationStrategy::BumpAllocator),
             MemoryPressure::Medium => {
                 // Check recent failure rate
                 if let Ok(history) = self.history.read() {
@@ -478,40 +340,26 @@ impl HeapManager {
                 } else {
                     Ok(AllocationStrategy::BumpAllocator)
                 }
-            },
-            MemoryPressure::High => Ok(AllocationStrategy::BestFit),
-            MemoryPressure::Critical => Ok(AllocationStrategy::CompactFirst),
         }
     }
     
     /// Allocate using bump allocation strategy
-    fn allocate_with_bump_strategy(&self, object_id: ObjectId, size: usize, 
                                   align: usize, type_name: &str) -> Result<(ObjectId, NonNull<u8>), String> {
         // Try to allocate in existing blocks first
         if let Some((block_id, offset, ptr)) = self.try_allocate_in_existing_blocks(size, align)? {
             return self.finalize_allocation(object_id, block_id, offset, size, ptr, type_name);
-        }
-        
         // Need to create a new block
         let (block_id, offset, ptr) = self.allocate_new_block(size, align)?;
         self.finalize_allocation(object_id, block_id, offset, size, ptr, type_name)
-    }
-    
     /// Allocate using best-fit strategy to reduce fragmentation
-    fn allocate_with_best_fit_strategy(&self, object_id: ObjectId, size: usize, 
                                       align: usize, type_name: &str) -> Result<(ObjectId, NonNull<u8>), String> {
         // First try best-fit allocation in existing blocks
         if let Some((block_id, offset, ptr)) = self.try_best_fit_allocation(size, align)? {
             return self.finalize_allocation(object_id, block_id, offset, size, ptr, type_name);
-        }
-        
         // Fall back to creating new block
         let (block_id, offset, ptr) = self.allocate_new_block(size, align)?;
         self.finalize_allocation(object_id, block_id, offset, size, ptr, type_name)
-    }
-    
     /// Allocate with compaction strategy
-    fn allocate_with_compaction_strategy(&self, object_id: ObjectId, size: usize, 
                                         align: usize, type_name: &str) -> Result<(ObjectId, NonNull<u8>), String> {
         // Try compaction first
         self.compact_blocks()?;
@@ -519,13 +367,9 @@ impl HeapManager {
         // Try allocation after compaction
         if let Some((block_id, offset, ptr)) = self.try_allocate_in_existing_blocks(size, align)? {
             return self.finalize_allocation(object_id, block_id, offset, size, ptr, type_name);
-        }
-        
         // Still need new block
         let (block_id, offset, ptr) = self.allocate_new_block(size, align)?;
         self.finalize_allocation(object_id, block_id, offset, size, ptr, type_name)
-    }
-    
     /// Try best-fit allocation in existing blocks
     fn try_best_fit_allocation(&self, size: usize, align: usize) 
         -> Result<Option<(u32, usize, NonNull<u8>)>, String> {
@@ -547,8 +391,6 @@ impl HeapManager {
                     best_fit_size = free_space;
                 }
             }
-        }
-        
         if let Some(idx) = best_block_idx {
             if let Some(offset) = blocks[idx].try_allocate(size, align) {
                 let ptr = blocks[idx].ptr_at_offset(offset)?;
@@ -557,8 +399,6 @@ impl HeapManager {
         }
         
         Ok(None)
-    }
-    
     /// Check memory pressure and trigger GC if needed
     fn check_memory_pressure(&self) -> Result<(), String> {
         let stats = self.get_stats()?;
@@ -572,12 +412,10 @@ impl HeapManager {
             MemoryPressure::Medium
         } else {
             MemoryPressure::Low
-        };
         
         // Update pressure level
         if let Ok(mut pressure) = self.pressure_level.write() {
             if *pressure != new_pressure {
-                info!("Memory pressure changed from {:?} to {:?} (utilization: {:.1}%)", 
                       *pressure, new_pressure, utilization * 100.0);
                 *pressure = new_pressure;
                 
@@ -586,16 +424,10 @@ impl HeapManager {
                     history.record_pressure(new_pressure);
                 }
             }
-        }
-        
         // Trigger GC if needed
         if utilization >= self.config.gc_trigger_threshold {
             self.trigger_gc_internal("memory_pressure")?;
-        }
-        
         Ok(())
-    }
-    
     /// Update allocation metrics
     fn update_allocation_metrics(&self, size: usize, allocation_time: Duration, success: bool) -> Result<(), String> {
         if let Ok(mut metrics) = self.metrics.write() {
@@ -619,14 +451,10 @@ impl HeapManager {
             }
         }
         Ok(())
-    }
-    
     /// Compact blocks to reduce fragmentation
     fn compact_blocks(&self) -> Result<(), String> {
         if let Ok(mut metrics) = self.metrics.write() {
             metrics.compaction_events += 1;
-        }
-        
         debug!("Starting block compaction");
         
         // For now, just log the compaction - actual implementation would need
@@ -634,38 +462,21 @@ impl HeapManager {
         warn!("Block compaction requested but not fully implemented - requires GC integration");
         
         Ok(())
-    }
-    
     /// Internal GC trigger with metrics tracking
     fn trigger_gc_internal(&self, reason: &str) -> Result<(), String> {
         if let Ok(mut metrics) = self.metrics.write() {
             metrics.gc_triggers += 1;
-        }
-        
         info!("Triggering GC due to: {}", reason);
         
         // Profile the GC event
         if let Some(profiler) = &self.profiler {
 //             use crate::profiling::memory::{GcEvent, GcType};
             let gc_event = GcEvent {
-                gc_type: GcType::Minor,
-                duration: Duration::from_millis(0),
-                bytes_collected: 0,
-                bytes_remaining: 0,
-                objects_collected: 0,
-                objects_remaining: 0,
-                timestamp: Instant::now(),
-                trigger_reason: reason.to_string(),
-            };
             let _ = profiler.track_gc_event(gc_event);
-        }
-        
         // For now, just log - actual GC integration would happen here
         debug!("GC triggered: {}", reason);
         
         Ok(())
-    }
-    
     /// Try to allocate in existing blocks
     fn try_allocate_in_existing_blocks(&self, size: usize, align: usize) 
         -> Result<Option<(u32, usize, NonNull<u8>)>, String> {
@@ -681,8 +492,6 @@ impl HeapManager {
         }
         
         Ok(None)
-    }
-    
     /// Allocate a new memory block
     fn allocate_new_block(&self, min_size: usize, align: usize) 
         -> Result<(u32, usize, NonNull<u8>), String> {
@@ -693,7 +502,6 @@ impl HeapManager {
             let id = *next_id;
             *next_id += 1;
             id
-        };
         
         // Determine block size (at least default, but larger if needed)
         let block_size = self.config.default_block_size.max(min_size + 1024);
@@ -711,17 +519,10 @@ impl HeapManager {
             // Check if we need to remove old blocks
             if blocks.len() >= self.config.max_blocks {
                 warn!("Reached maximum blocks ({}), may need compaction", self.config.max_blocks);
-            }
-            
             blocks.push(new_block);
-        }
-        
         info!("Created new memory block {} of {} bytes", block_id, block_size);
         Ok((block_id, offset, ptr))
-    }
-    
     /// Finalize allocation by recording metadata and profiling info
-    fn finalize_allocation(&self, object_id: ObjectId, block_id: u32, offset: usize, 
                           size: usize, ptr: NonNull<u8>, type_name: &str) 
         -> Result<(ObjectId, NonNull<u8>), String> {
         
@@ -731,28 +532,16 @@ impl HeapManager {
         
         // Track allocation info
         let alloc_info = AllocationInfo {
-            object_id,
-            block_id,
-            offset,
-            size,
-            ptr,
-        };
         
         {
             let mut allocations = self.allocations.write()
                 .map_err(|_| "Failed to acquire write lock on allocations")?;
             allocations.insert(object_id, alloc_info);
-        }
-        
         // Profile the allocation
         if let Some(profiler) = &self.profiler {
             let _ = profiler.track_allocation(size, ptr.as_ptr() as u64, Vec::new());
-        }
-        
         debug!("Finalized allocation for object {} at {:p}", object_id, ptr.as_ptr());
         Ok((object_id, ptr))
-    }
-    
     /// Deallocate an object
     #[instrument(skip(self))]
     pub fn deallocate(&self, object_id: ObjectId) -> Result<(), String> {
@@ -764,29 +553,22 @@ impl HeapManager {
                 .map_err(|_| "Failed to acquire write lock on allocations")?;
             allocations.remove(&object_id)
                 .ok_or_else(|| format!("Object {} not found in allocations", object_id))?
-        };
         
         // Update deallocation metrics
         if let Ok(mut metrics) = self.metrics.write() {
             metrics.total_deallocations += 1;
             metrics.bytes_deallocated += alloc_info.size as u64;
-        }
-        
         // Unregister from object registry
         self.object_registry.unregister(object_id)?;
         
         // Profile the deallocation
         if let Some(profiler) = &self.profiler {
             let _ = profiler.track_deallocation(alloc_info.ptr.as_ptr() as u64, Vec::new());
-        }
-        
         // Check if block can be consolidated or freed
         self.check_block_consolidation(alloc_info.block_id)?;
         
         debug!("Successfully deallocated object {}", object_id);
         Ok(())
-    }
-    
     /// Check if blocks can be consolidated after deallocation
     fn check_block_consolidation(&self, block_id: u32) -> Result<(), String> {
         let blocks = self.blocks.read()
@@ -795,15 +577,12 @@ impl HeapManager {
         if let Some(block) = blocks.iter().find(|b| b.id == block_id) {
             let utilization = block.utilization();
             if utilization < self.config.min_utilization * 100.0 {
-                debug!("Block {} has low utilization ({:.1}%), may need consolidation", 
                        block_id, utilization);
                 // In a full implementation, we would trigger consolidation here
             }
         }
         
         Ok(())
-    }
-    
     /// Get heap statistics
     pub fn get_stats(&self) -> Result<HeapStats, String> {
         let blocks = self.blocks.read()
@@ -824,32 +603,17 @@ impl HeapManager {
             (total_used as f64 / total_capacity as f64) * 100.0
         } else {
             0.0
-        };
         
         let active_objects = allocations.len();
         let object_registry_count = self.object_registry.object_count()
             .unwrap_or(0);
         
         Ok(HeapStats {
-            total_blocks,
-            total_capacity,
-            total_used,
-            total_free,
-            average_utilization,
-            active_objects,
-            object_registry_count,
-            fragmentation_ratio: Self::calculate_fragmentation(&blocks),
-            memory_pressure: pressure,
-            metrics,
         })
-    }
-    
     /// Calculate fragmentation ratio
     fn calculate_fragmentation(blocks: &[MemoryBlock]) -> f64 {
         if blocks.is_empty() {
             return 0.0;
-        }
-        
         let total_free: usize = blocks.iter().map(|b| b.free_space()).sum();
         let largest_free = blocks.iter().map(|b| b.free_space()).max().unwrap_or(0);
         
@@ -865,8 +629,6 @@ impl HeapManager {
         // For now, just log the GC trigger - profiling integration can be added later
         debug!("GC triggered: {}", _gc_type);
         Ok(())
-    }
-    
     /// Get current thread ID for profiling
     fn get_current_thread_id() -> u64 {
         use std::collections::hash_map::DefaultHasher;
@@ -875,22 +637,16 @@ impl HeapManager {
         let mut hasher = DefaultHasher::new();
         std::thread::current().id().hash(&mut hasher);
         hasher.finish()
-    }
-    
     /// Get allocation info for an object
     pub fn get_allocation_info(&self, object_id: ObjectId) -> Result<Option<AllocationInfo>, String> {
         let allocations = self.allocations.read()
             .map_err(|_| "Failed to acquire read lock on allocations")?;
         Ok(allocations.get(&object_id).cloned())
-    }
-    
     /// Get the complete allocation map for pointer-to-ObjectId resolution
     pub fn get_allocation_map(&self) -> Result<HashMap<ObjectId, AllocationInfo>, String> {
         let allocations = self.allocations.read()
             .map_err(|_| "Failed to acquire read lock on allocations")?;
         Ok(allocations.clone())
-    }
-    
     /// Check if pointer is valid (within heap bounds)
     pub fn is_valid_pointer(&self, ptr: *const u8) -> bool {
         if let Ok(blocks) = self.blocks.read() {
@@ -905,15 +661,11 @@ impl HeapManager {
         self.pressure_level.read()
             .map(|guard| *guard)
             .unwrap_or(MemoryPressure::Low)
-    }
-    
     /// Get allocation metrics
     pub fn get_allocation_metrics(&self) -> Result<AllocationMetrics, String> {
         self.metrics.read()
             .map(|m| m.clone())
             .map_err(|_| "Failed to read allocation metrics".to_string())
-    }
-    
     /// Get allocation history summary
     pub fn get_allocation_history_summary(&self, window: Duration) -> Result<(f64, f64), String> {
         let history = self.history.read()
@@ -923,14 +675,10 @@ impl HeapManager {
         let failure_rate = history.get_failure_rate(window);
         
         Ok((allocation_rate, failure_rate))
-    }
-    
     /// Force memory pressure check (for testing or external triggers)
     pub fn force_pressure_check(&self) -> Result<MemoryPressure, String> {
         self.check_memory_pressure()?;
         Ok(self.get_memory_pressure())
-    }
-    
     /// Set heap configuration (runtime reconfiguration)
     pub fn update_config(&mut self, new_config: HeapConfig) -> Result<(), String> {
         info!("Updating heap configuration");
@@ -944,13 +692,9 @@ impl HeapManager {
         }
         if new_config.pressure_threshold < 0.0 || new_config.pressure_threshold > 1.0 {
             return Err("Pressure threshold must be between 0.0 and 1.0".to_string());
-        }
-        
         self.config = new_config;
         info!("Heap configuration updated successfully");
         Ok(())
-    }
-    
     /// Get detailed block information for debugging
     pub fn get_block_details(&self) -> Result<Vec<(u32, usize, usize, f64)>, String> {
         let blocks = self.blocks.read()
@@ -959,8 +703,6 @@ impl HeapManager {
         Ok(blocks.iter().map(|block| {
             (block.id, block.size, block.used, block.utilization())
         }).collect())
-    }
-    
     /// Perform heap consistency check
     pub fn check_heap_consistency(&self) -> Result<Vec<String>, String> {
         let mut issues = Vec::new();
@@ -973,11 +715,9 @@ impl HeapManager {
         // Check block consistency
         for block in blocks.iter() {
             if block.used > block.size {
-                issues.push(format!("Block {} has used ({}) > size ({})", 
                                   block.id, block.used, block.size));
             }
             if block.next_free > block.size {
-                issues.push(format!("Block {} has next_free ({}) > size ({})", 
                                   block.id, block.next_free, block.size));
             }
         }
@@ -985,18 +725,12 @@ impl HeapManager {
         // Check allocation consistency
         for (object_id, alloc_info) in allocations.iter() {
             if !blocks.iter().any(|b| b.id == alloc_info.block_id) {
-                issues.push(format!("Object {} references non-existent block {}", 
                                   object_id, alloc_info.block_id));
-            }
-            
             if let Some(block) = blocks.iter().find(|b| b.id == alloc_info.block_id) {
                 if alloc_info.offset + alloc_info.size > block.size {
-                    issues.push(format!("Object {} allocation extends beyond block {} bounds", 
                                       object_id, alloc_info.block_id));
                 }
             }
-        }
-        
         Ok(issues)
     }
 }
@@ -1004,21 +738,8 @@ impl HeapManager {
 /// Heap statistics for monitoring and debugging
 #[derive(Debug, Clone)]
 pub struct HeapStats {
-    pub total_blocks: usize,
-    pub total_capacity: usize,
-    pub total_used: usize,
-    pub total_free: usize,
-    pub average_utilization: f64,
-    pub active_objects: usize,
-    pub object_registry_count: usize,
-    pub fragmentation_ratio: f64,
-    pub memory_pressure: MemoryPressure,
-    pub metrics: AllocationMetrics,
-}
-
 impl std::fmt::Display for HeapStats {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, 
             "Heap Stats:\n\
              - Blocks: {}\n\
              - Capacity: {} bytes\n\
@@ -1032,20 +753,6 @@ impl std::fmt::Display for HeapStats {
              - Allocation Failures: {}\n\
              - Peak Memory: {} bytes\n\
              - GC Triggers: {}\n\
-             - Avg Allocation Time: {:.2}μs",
-            self.total_blocks,
-            self.total_capacity,
-            self.total_used,
-            self.average_utilization,
-            self.total_free,
-            self.active_objects,
-            self.fragmentation_ratio * 100.0,
-            self.memory_pressure,
-            self.metrics.total_allocations,
-            self.metrics.total_deallocations,
-            self.metrics.allocation_failures,
-            self.metrics.peak_memory_usage,
-            self.metrics.gc_triggers,
             self.metrics.average_allocation_time.as_micros()
         )
     }

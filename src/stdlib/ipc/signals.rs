@@ -47,38 +47,11 @@ impl BoostSignal {
     /// Get signal number
     pub fn signal_number(&self) -> i32 {
         self.0
-    }
-    
     /// Get signal name
     pub fn name(&self) -> &'static str {
         match self.0 {
-            2 => "SIGINT",
-            15 => "SIGTERM",
-            1 => "SIGHUP",
-            3 => "SIGQUIT",
-            4 => "SIGILL",
-            5 => "SIGTRAP",
-            6 => "SIGABRT",
-            7 => "SIGBUS",
-            8 => "SIGFPE",
-            9 => "SIGKILL",
-            11 => "SIGSEGV",
-            13 => "SIGPIPE",
-            14 => "SIGALRM",
-            17 => "SIGCHLD",
-            18 => "SIGCONT",
-            19 => "SIGSTOP",
-            20 => "SIGTSTP",
-            21 => "SIGTTIN",
-            22 => "SIGTTOU",
-            10 => "SIGUSR1",
-            12 => "SIGUSR2",
-            28 => "SIGWINCH",
-            _ => "UNKNOWN",
         }
     }
-}
-
 impl fmt::Display for BoostSignal {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "{} ({})", self.name(), self.0)
@@ -87,11 +60,6 @@ impl fmt::Display for BoostSignal {
 
 /// Handle for stopping signal notifications
 pub struct NotifyHandle {
-    sender: Option<Sender<()>>,
-    thread: Option<JoinHandle<()>>,
-    active: Arc<Mutex<bool>>,
-}
-
 impl NotifyHandle {
     /// Stop signal notifications
     pub fn stop(&mut self) {
@@ -102,8 +70,6 @@ impl NotifyHandle {
             let _ = thread.join();
         }
         *self.active.lock().unwrap() = false;
-    }
-    
     /// Reset the signals being monitored
     pub fn reset(&mut self, _signals: &[BoostSignal]) -> IpcResult<()> {
         // Implementation would reset signal monitoring
@@ -119,50 +85,30 @@ impl Drop for NotifyHandle {
 
 /// SignalHandler for managing signal callbacks
 pub struct SignalHandler {
-    handlers: Arc<RwLock<HashMap<BoostSignal, Vec<Box<dyn Fn(BoostSignal) + Send + Sync>>>>>,
-    priorities: Arc<RwLock<HashMap<BoostSignal, i32>>>,
-    debug_enabled: Arc<Mutex<bool>>,
-    active: Arc<Mutex<bool>>,
-    notify_handle: Option<NotifyHandle>,
-}
-
 impl SignalHandler {
     /// Create a new signal handler
     pub fn new() -> Self {
         Self {
-            handlers: Arc::new(RwLock::new(HashMap::new())),
-            priorities: Arc::new(RwLock::new(HashMap::new())),
-            debug_enabled: Arc::new(Mutex::new(false)),
-            active: Arc::new(Mutex::new(false)),
-            notify_handle: None,
         }
     }
     
     /// Register a signal handler
     pub fn register<F>(&mut self, signal: BoostSignal, handler: F) -> &mut Self
     where
-        F: Fn(BoostSignal) + Send + Sync + 'static,
     {
         let mut handlers = self.handlers.write().unwrap();
         handlers.entry(signal).or_insert_with(Vec::new).push(Box::new(handler));
         self
-    }
-    
     /// Register a simple function handler
     pub fn register_func<F>(&mut self, signal: BoostSignal, handler: F) -> &mut Self
     where
-        F: Fn() + Send + Sync + 'static,
     {
         self.register(signal, move |_| handler())
-    }
-    
     /// Unregister all handlers for a signal
     pub fn unregister(&mut self, signal: BoostSignal) -> &mut Self {
         let mut handlers = self.handlers.write().unwrap();
         handlers.remove(&signal);
         self
-    }
-    
     /// Start handling signals
     pub fn handle(&mut self) -> IpcResult<()> {
         *self.active.lock().unwrap() = true;
@@ -183,14 +129,9 @@ impl SignalHandler {
         });
         
         self.notify_handle = Some(NotifyHandle {
-            sender: Some(tx),
-            thread: Some(thread),
-            active: self.active.clone(),
         });
         
         Ok(())
-    }
-    
     /// Stop handling signals
     pub fn stop(&mut self) -> IpcResult<()> {
         *self.active.lock().unwrap() = false;
@@ -198,14 +139,10 @@ impl SignalHandler {
             handle.stop();
         }
         Ok(())
-    }
-    
     /// Enable debug logging
     pub fn enable_debug(&mut self, enabled: bool) -> &mut Self {
         *self.debug_enabled.lock().unwrap() = enabled;
         self
-    }
-    
     /// Set priority for a signal
     pub fn set_priority(&mut self, signal: BoostSignal, priority: i32) -> &mut Self {
         let mut priorities = self.priorities.write().unwrap();
@@ -217,66 +154,25 @@ impl SignalHandler {
 /// Options for graceful shutdown
 #[derive(Debug, Clone)]
 pub struct ShutdownOptions {
-    pub timeout: Duration,
-    pub pre_shutdown_fn: Option<fn()>,
-    pub error_handler: Option<fn(&str)>,
-    pub keep_alive: bool,
-    pub sync_shutdown: bool,
-    pub signals: Vec<BoostSignal>,
-}
-
 impl Default for ShutdownOptions {
     fn default() -> Self {
         Self {
-            timeout: Duration::from_secs(30),
-            pre_shutdown_fn: None,
-            error_handler: None,
-            keep_alive: false,
-            sync_shutdown: false,
-            signals: vec![BoostSignal::SIGINT, BoostSignal::SIGTERM],
         }
     }
-}
-
 /// Status of graceful shutdown
 #[derive(Debug, Clone)]
 pub struct ShutdownStatus {
-    pub in_progress: bool,
-    pub elapsed_time: Duration,
-    pub completed_tasks: Vec<String>,
-    pub remaining_tasks: Vec<String>,
-    pub errors: HashMap<String, String>,
-    pub shutdown_triggered_by: Option<BoostSignal>,
-}
-
 /// Task for shutdown
 type ShutdownTask = Box<dyn Fn() -> Result<(), String> + Send + Sync>;
 
 /// GracefulShutdown manager
 pub struct GracefulShutdown {
-    options: ShutdownOptions,
     tasks: Arc<RwLock<HashMap<String, (i32, ShutdownTask)>>>, // name -> (order, task)
-    status: Arc<RwLock<ShutdownStatus>>,
-    signal_handler: Option<SignalHandler>,
-    start_time: Option<Instant>,
-}
-
 impl GracefulShutdown {
     /// Create a new graceful shutdown manager
     pub fn new() -> Self {
         Self {
-            options: ShutdownOptions::default(),
-            tasks: Arc::new(RwLock::new(HashMap::new())),
             status: Arc::new(RwLock::new(ShutdownStatus {
-                in_progress: false,
-                elapsed_time: Duration::from_secs(0),
-                completed_tasks: Vec::new(),
-                remaining_tasks: Vec::new(),
-                errors: HashMap::new(),
-                shutdown_triggered_by: None,
-            })),
-            signal_handler: None,
-            start_time: None,
         }
     }
     
@@ -284,28 +180,20 @@ impl GracefulShutdown {
     pub fn with_options(mut self, options: ShutdownOptions) -> Self {
         self.options = options;
         self
-    }
-    
     /// Add a shutdown task
     pub fn add<F>(&mut self, name: &str, task: F) -> &mut Self
     where
-        F: Fn() -> Result<(), String> + Send + Sync + 'static,
     {
         let mut tasks = self.tasks.write().unwrap();
         tasks.insert(name.to_string(), (0, Box::new(task)));
         self
-    }
-    
     /// Add a shutdown task with specific order
     pub fn add_with_order<F>(&mut self, name: &str, order: i32, task: F) -> &mut Self
     where
-        F: Fn() -> Result<(), String> + Send + Sync + 'static,
     {
         let mut tasks = self.tasks.write().unwrap();
         tasks.insert(name.to_string(), (order, Box::new(task)));
         self
-    }
-    
     /// Add a group of shutdown tasks
     pub fn add_group(&mut self, base_name: &str, tasks: Vec<Box<dyn Fn() -> Result<(), String> + Send + Sync>>) -> &mut Self {
         let task_map = self.tasks.clone();
@@ -315,8 +203,6 @@ impl GracefulShutdown {
             task_map.insert(name, (0, task));
         }
         self
-    }
-    
     /// Start the graceful shutdown system
     pub fn start(&mut self) -> IpcResult<()> {
         let mut handler = SignalHandler::new();
@@ -338,30 +224,21 @@ impl GracefulShutdown {
                 
                 for (name, (_, task)) in task_list {
                     match task() {
-                        Ok(()) => status.completed_tasks.push(name.clone()),
                         Err(e) => {
                             status.errors.insert(name.clone(), e);
                         }
                     }
-                }
-                
                 status.in_progress = false;
             });
-        }
-        
         handler.handle()?;
         self.signal_handler = Some(handler);
         self.start_time = Some(Instant::now());
         
         Ok(())
-    }
-    
     /// Manually trigger shutdown
     pub fn shutdown(&mut self) -> IpcResult<()> {
         if let Some(pre_shutdown) = self.options.pre_shutdown_fn {
             pre_shutdown();
-        }
-        
         let mut status = self.status.write().unwrap();
         status.in_progress = true;
         
@@ -372,7 +249,6 @@ impl GracefulShutdown {
         
         for (name, (_, task)) in task_list {
             match task() {
-                Ok(()) => status.completed_tasks.push(name.clone()),
                 Err(e) => {
                     status.errors.insert(name.clone(), e);
                     if let Some(error_handler) = self.options.error_handler {
@@ -385,8 +261,6 @@ impl GracefulShutdown {
         status.in_progress = false;
         
         Ok(())
-    }
-    
     /// Wait for shutdown to complete
     pub fn wait(&self) -> IpcResult<()> {
         let timeout = Instant::now() + self.options.timeout;
@@ -401,8 +275,6 @@ impl GracefulShutdown {
             
             if Instant::now() > timeout {
                 return Err(timeout_error("shutdown", self.options.timeout, "Shutdown timeout exceeded"));
-            }
-            
             thread::sleep(Duration::from_millis(10));
         }
     }
@@ -414,8 +286,6 @@ impl GracefulShutdown {
             status.elapsed_time = start_time.elapsed();
         }
         status
-    }
-    
     /// Set timeout
     pub fn set_timeout(&mut self, timeout: Duration) -> &mut Self {
         self.options.timeout = timeout;
@@ -425,20 +295,10 @@ impl GracefulShutdown {
 
 /// Signal multiplexer for distributing signals to multiple channels
 pub struct SignalMultiplexer {
-    channels: Arc<RwLock<HashMap<i32, (Sender<BoostSignal>, Vec<BoostSignal>)>>>,
-    next_id: Arc<Mutex<i32>>,
-    active: Arc<Mutex<bool>>,
-    notify_handle: Option<NotifyHandle>,
-}
-
 impl SignalMultiplexer {
     /// Create a new signal multiplexer
     pub fn new() -> Self {
         Self {
-            channels: Arc::new(RwLock::new(HashMap::new())),
-            next_id: Arc::new(Mutex::new(1)),
-            active: Arc::new(Mutex::new(false)),
-            notify_handle: None,
         }
     }
     
@@ -449,20 +309,15 @@ impl SignalMultiplexer {
             let id = *next_id;
             *next_id += 1;
             id
-        };
         
         let mut channels = self.channels.write().unwrap();
         channels.insert(id, (sender, signals.to_vec()));
         
         id
-    }
-    
     /// Remove a channel
     pub fn remove(&mut self, id: i32) {
         let mut channels = self.channels.write().unwrap();
         channels.remove(&id);
-    }
-    
     /// Start the multiplexer
     pub fn start(&mut self) -> IpcResult<()> {
         *self.active.lock().unwrap() = true;
@@ -475,22 +330,15 @@ impl SignalMultiplexer {
             while *active.lock().unwrap() {
                 if let Ok(_) = rx.recv_timeout(Duration::from_millis(100)) {
                     break;
-                }
-                
                 // In a real implementation, this would listen for actual signals
                 // and distribute them to registered channels
             }
         });
         
         self.notify_handle = Some(NotifyHandle {
-            sender: Some(tx),
-            thread: Some(thread),
-            active: self.active.clone(),
         });
         
         Ok(())
-    }
-    
     /// Stop the multiplexer
     pub fn stop(&mut self) -> IpcResult<()> {
         *self.active.lock().unwrap() = false;
@@ -498,8 +346,6 @@ impl SignalMultiplexer {
             handle.stop();
         }
         Ok(())
-    }
-    
     /// Get count of registered channels
     pub fn count(&self) -> usize {
         self.channels.read().unwrap().len()
@@ -511,23 +357,12 @@ pub type SignalAction = Box<dyn Fn(BoostSignal) -> bool + Send + Sync>;
 
 /// VibeChecker for health checks triggered by signals
 pub struct VibeChecker {
-    signal: BoostSignal,
-    check_fn: Box<dyn Fn() -> bool + Send + Sync>,
-    handler: Option<SignalHandler>,
-    last_status: Arc<Mutex<bool>>,
-}
-
 impl VibeChecker {
     /// Create a new vibe checker
     pub fn new<F>(signal: BoostSignal, check_fn: F) -> Self
     where
-        F: Fn() -> bool + Send + Sync + 'static,
     {
         Self {
-            signal,
-            check_fn: Box::new(check_fn),
-            handler: None,
-            last_status: Arc::new(Mutex::new(true)),
         }
     }
     
@@ -547,16 +382,12 @@ impl VibeChecker {
         self.handler = Some(handler);
         
         Ok(())
-    }
-    
     /// Stop the vibe checker
     pub fn stop(&mut self) -> IpcResult<()> {
         if let Some(mut handler) = self.handler.take() {
             handler.stop()?;
         }
         Ok(())
-    }
-    
     /// Get last health check status
     pub fn get_status(&self) -> bool {
         *self.last_status.lock().unwrap()
@@ -565,21 +396,11 @@ impl VibeChecker {
 
 /// Main SignalBoost system
 pub struct SignalBoost {
-    handlers: HashMap<BoostSignal, Vec<Sender<BoostSignal>>>,
-    multiplexers: Vec<SignalMultiplexer>,
-    graceful_shutdowns: Vec<GracefulShutdown>,
-}
-
 impl SignalBoost {
     fn new() -> Self {
         Self {
-            handlers: HashMap::new(),
-            multiplexers: Vec::new(),
-            graceful_shutdowns: Vec::new(),
         }
     }
-}
-
 // Core SignalBoost functions
 
 /// Notify causes SignalBoost to relay incoming signals to the channel
@@ -592,37 +413,26 @@ pub fn notify(channel: Sender<BoostSignal>, signals: &[BoostSignal]) -> NotifyHa
         while *active_clone.lock().unwrap() {
             if let Ok(_) = rx.recv_timeout(Duration::from_millis(100)) {
                 break;
-            }
-            
             // In real implementation, would listen for actual signals
             // and send them to the channel
         }
     });
     
     NotifyHandle {
-        sender: Some(tx),
-        thread: Some(thread),
-        active,
     }
 }
 
 /// Stop signal notifications to a channel
 pub fn stop(channel: &Sender<BoostSignal>) {
     // Implementation would stop notifications for this specific channel
-}
-
 /// Reset signal handling to default behavior
 pub fn reset(signals: &[BoostSignal]) -> IpcResult<()> {
     // Implementation would reset signal handlers
     Ok(())
-}
-
 /// Check if signal is currently ignored
 pub fn ignored(signal: BoostSignal) -> bool {
     // Implementation would check if signal is ignored
     false
-}
-
 /// Send a signal to a process
 pub fn send_signal(pid: i32, signal: BoostSignal) -> IpcResult<()> {
     #[cfg(unix)]
@@ -633,16 +443,10 @@ pub fn send_signal(pid: i32, signal: BoostSignal) -> IpcResult<()> {
                 return Err(system_error(errno, "kill", &format!("Failed to send signal {} to process {}", signal, pid)));
             }
         }
-    }
-    
     #[cfg(not(unix))]
     {
         return Err(system_error(0, "send_signal", "Signal sending not supported on this platform"));
-    }
-    
     Ok(())
-}
-
 /// Send a signal to a process group
 pub fn signal_group(pgid: i32, signal: BoostSignal) -> IpcResult<()> {
     #[cfg(unix)]
@@ -653,35 +457,22 @@ pub fn signal_group(pgid: i32, signal: BoostSignal) -> IpcResult<()> {
                 return Err(system_error(errno, "killpg", &format!("Failed to send signal {} to process group {}", signal, pgid)));
             }
         }
-    }
-    
     #[cfg(not(unix))]
     {
         return Err(system_error(0, "signal_group", "Process group signaling not supported on this platform"));
-    }
-    
     Ok(())
-}
-
 /// Signal action functions
 pub fn ignore_action(_signal: BoostSignal) -> bool {
     true // Signal was handled (ignored)
-}
-
 pub fn exit_action(_signal: BoostSignal) -> bool {
     std::process::exit(0);
-}
-
 pub fn exit_with_code_action(code: i32) -> SignalAction {
     Box::new(move |_| {
         std::process::exit(code);
     })
-}
-
 /// Filter signals based on a predicate
 pub fn filter_signals<F>(receiver: Receiver<BoostSignal>, predicate: F) -> Receiver<BoostSignal>
 where
-    F: Fn(BoostSignal) -> bool + Send + 'static,
 {
     let (tx, rx) = mpsc::channel();
     
@@ -696,8 +487,6 @@ where
     });
     
     rx
-}
-
 /// Throttle signals to prevent flooding
 pub fn throttle_signals(receiver: Receiver<BoostSignal>, interval: Duration) -> Receiver<BoostSignal> {
     let (tx, rx) = mpsc::channel();
@@ -721,8 +510,6 @@ pub fn throttle_signals(receiver: Receiver<BoostSignal>, interval: Duration) -> 
     });
     
     rx
-}
-
 /// Debounce signals to only process the last one in a sequence
 pub fn debounce_signals(receiver: Receiver<BoostSignal>, interval: Duration) -> Receiver<BoostSignal> {
     let (tx, rx) = mpsc::channel();
@@ -745,24 +532,18 @@ pub fn debounce_signals(receiver: Receiver<BoostSignal>, interval: Duration) -> 
                         }
                     }
                 }
-                Err(mpsc::RecvTimeoutError::Disconnected) => break,
             }
         }
     });
     
     rx
-}
-
 // GenZ themed features
 
 /// Create a vibe checker
 pub fn vibe_check<F>(signal: BoostSignal, check: F) -> VibeChecker
 where
-    F: Fn() -> bool + Send + Sync + 'static,
 {
     VibeChecker::new(signal, check)
-}
-
 /// Yeet on signal - terminate dramatically
 pub fn yeet_on_signal(signal: BoostSignal, message: &str) -> NotifyHandle {
     let message = message.to_string();
@@ -776,16 +557,12 @@ pub fn yeet_on_signal(signal: BoostSignal, message: &str) -> NotifyHandle {
     
     // This is a simplified implementation
     NotifyHandle {
-        sender: Some(sender),
-        thread: None,
-        active: Arc::new(Mutex::new(true)),
     }
 }
 
 /// No cap reload config - reload on SIGHUP
 pub fn nocap_reload_config<F>(config_path: &str, reload_fn: F) -> NotifyHandle 
 where
-    F: Fn() -> Result<(), String> + Send + Sync + 'static,
 {
     let config_path = config_path.to_string();
     let (sender, receiver) = mpsc::channel();
@@ -793,15 +570,10 @@ where
     let mut handler = SignalHandler::new();
     handler.register(BoostSignal::SIGHUP, move |_| {
         match reload_fn() {
-            Ok(()) => println!("📋 No cap! Config reloaded from {}", config_path),
-            Err(e) => eprintln!("❌ Failed to reload config: {}", e),
         }
     });
     
     NotifyHandle {
-        sender: Some(sender),
-        thread: None,
-        active: Arc::new(Mutex::new(true)),
     }
 }
 
@@ -814,12 +586,8 @@ pub fn initialize_signal_boost() -> IpcResult<()> {
     
     tracing::info!("SignalBoost system initialized");
     Ok(())
-}
-
 /// Cleanup SignalBoost system
 pub fn cleanup_signal_boost() -> IpcResult<()> {
     // Cleanup would stop all active handlers and threads
     tracing::info!("SignalBoost system cleaned up");
     Ok(())
-}
-
