@@ -5,13 +5,11 @@
 /// - Basic parser for CURSED language grammar
 /// - Simple AST representation
 /// - Essential error handling
-/// - LLVM code generation
 // Core modules only - absolutely minimal
 pub mod error;
 pub mod lexer;
 pub mod minimal_parser;
 pub mod minimal_ast;
-pub mod codegen;
 
 // Critical module stubs to prevent compilation errors
 pub mod stdlib {
@@ -166,25 +164,6 @@ pub fn compile_to_ir(_source: &str) -> Result<String, Error> {
 
 pub fn compile_to_ir_with_optimization(_source: &str, _opt_level: Option<&str>) -> Result<String, Error> {
     Err(Error::NotImplemented("LLVM codegen not available in minimal build".to_string()))
-}
-
-/// Parse a CURSED source file and return the AST
-pub fn parse_file(filename: &str) -> Result<minimal_ast::Program, Error> {
-    let source = std::fs::read_to_string(filename)
-        .map_err(|e| Error::Io(format!("Failed to read file {}: {}", filename, e)))?;
-    parse(&source)
-}
-
-/// Compile a CURSED program to LLVM IR
-pub fn compile_to_llvm_ir(program: &minimal_ast::Program, module_name: &str, output_file: &str) -> Result<(), Error> {
-    let llvm_ir = codegen::compile_cursed_to_llvm(program, module_name)?;
-    std::fs::write(output_file, llvm_ir)
-        .map_err(|e| Error::Io(format!("Failed to write LLVM IR to {}: {}", output_file, e)))
-}
-
-/// Compile a CURSED program to an object file
-pub fn compile_to_object(program: &minimal_ast::Program, module_name: &str, output_file: &str) -> Result<(), Error> {
-    codegen::compile_cursed_to_object(program, module_name, output_file)
 }
 
 

@@ -22,7 +22,6 @@ fn main() {
         Some(("format", sub_matches)) => handle_format_command(sub_matches),
         Some(("tokenize", sub_matches)) => handle_tokenize_command(sub_matches),
         Some(("test", _)) => handle_test_command(),
-        Some(("compile", sub_matches)) => handle_compile_command(sub_matches),
         _ => {
             eprintln!("No subcommand provided. Use --help for usage information.");
             process::exit(1);
@@ -102,29 +101,6 @@ fn build_minimal_cli() -> Command {
         .subcommand(
             Command::new("test")
                 .about("Test minimal CURSED functionality")
-        )
-        .subcommand(
-            Command::new("compile")
-                .about("Compile CURSED source to LLVM IR or object file")
-                .arg(
-                    Arg::new("file")
-                        .help("CURSED source file to compile")
-                        .required(true)
-                        .value_name("FILE")
-                )
-                .arg(
-                    Arg::new("output")
-                        .short('o')
-                        .long("output")
-                        .value_name("OUTPUT")
-                        .help("Output file name")
-                )
-                .arg(
-                    Arg::new("emit-llvm")
-                        .long("emit-llvm")
-                        .action(ArgAction::SetTrue)
-                        .help("Emit LLVM IR instead of object file")
-                )
         )
 }
 
@@ -288,42 +264,5 @@ slay greet(name) {
     println!();
 
     println!("🎉 Minimal CURSED functionality test completed!");
-    Ok(())
-}
-
-fn handle_compile_command(matches: &clap::ArgMatches) -> Result<(), Error> {
-    let file = matches.get_one::<String>("file").unwrap();
-    let emit_llvm = matches.get_flag("emit-llvm");
-    
-    println!("🔥 Compiling CURSED program: {}", file);
-    
-    // Check if file exists
-    if !std::path::Path::new(file).exists() {
-        return Err(format!("File not found: {}", file).into());
-    }
-
-    // Parse the file first
-    let program = cursed::parse_file(file)?;
-    
-    if emit_llvm {
-        // Generate LLVM IR
-        let output = matches.get_one::<String>("output")
-            .map(|s| s.as_str())
-            .unwrap_or("output.ll");
-            
-        println!("📄 Generating LLVM IR: {}", output);
-        cursed::compile_to_llvm_ir(&program, file, output)?;
-        println!("✅ LLVM IR generated: {}", output);
-    } else {
-        // Generate object file
-        let output = matches.get_one::<String>("output")
-            .map(|s| s.as_str())
-            .unwrap_or("output.o");
-            
-        println!("🔧 Compiling to object file: {}", output);
-        cursed::compile_to_object(&program, file, output)?;
-        println!("✅ Object file generated: {}", output);
-    }
-    
     Ok(())
 }
